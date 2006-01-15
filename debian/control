@@ -1,0 +1,13 @@
+Source: telepathy-voip-engine
+Section: libs
+Priority: optional
+Maintainer: Rob Taylor <rob.taylor@collbora.co.uk>
+Build-Depends: debhelper (>= 4.0.0), pkg-config, libdbus-1-dev (>=0.60), libdbus-glib-1-dev (>= 0.60), perl
+Standards-Version: 3.6.0
+
+Package: telepathy-voip-engine
+Section: net
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Telepathy voice over IP engine
+
