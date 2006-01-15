@@ -10,11 +10,11 @@
       <arg type="s" name="candidate_id" />
     </signal>
     <signal name="SetRemoteCandidateList">
-      <arg type="a(sa(isqisdiss))" name="remote_candidates" />
+      <arg type="a(sa(isqissdiss))" name="remote_candidates" />
     </signal>
     <method name="NewNativeCandidate">
       <arg direction="in"  type="s" name="candidate_id" />
-      <arg direction="in"  type="a(isqisdiss)" name="transports" />
+      <arg direction="in"  type="a(isqissdiss)" name="transports" />
     </method>
     <method name="NewActiveCandidatePair">
       <arg direction="in"  type="s" name="native_candidate_id" />
@@ -30,7 +30,7 @@
     </method>
     <signal name="AddRemoteCandidate">
       <arg type="s" name="candidate_id" />
-      <arg type="a(isqisdiss)" name="transports" />
+      <arg type="a(isqissdiss)" name="transports" />
     </signal>
     <method name="Error">
       <arg direction="in"  type="i" name="errno" />
