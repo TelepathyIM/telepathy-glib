@@ -1,0 +1,136 @@
+.PS
+copy "sequence.pic";
+
+# Define the objects
+object(Remote,"Remote GTalk"); move;
+object(Connmgr,"Gabble");move;
+placeholder_object(Channel,"StreamedMediaChannel");move;
+placeholder_object(SessionHandler,"SessionHandler");move;
+placeholder_object(StreamHandler,"StreamHandler");
+move;move;
+placeholder_object(Client,"VoIP engine");
+move;
+placeholder_object(Session);
+move;
+placeholder_object(Stream);
+step();
+
+# Message sequences
+active(Remote);
+step();
+active(Connmgr);
+message(Remote,Connmgr,"jingle initiate")
+message(Connmgr,Remote,"prelim accept")
+create_message(Connmgr,Channel,"StreamedMediaChannel");
+active(Channel)
+create_message(Channel,Client, "VoIPEngine");
+create_message(Channel,SessionHandler, "SessionHandler");
+active(Client);
+message(Channel,Client,"NewMediaSessionHandler(member,StreamHandler)");
+create_message(Client,Session, "FarsightSession");
+inactive(Client);
+step;
+
+active(SessionHandler)
+create_message(SessionHandler,StreamHandler, "StreamHandler");
+active(Client);
+message(SessionHandler,Client,"NewMediaStreamHandler(member,StreamHandler)");
+message(Client,Session,"create_stream()");
+create_message(Session,Stream,"FarsightStream");
+return_message(Session,Client);
+inactive(SessionHandler);
+inactive(Session);
+
+active(StreamHandler);
+message(StreamHandler,Client,"set-remote-codecs(...)");
+active(Stream);
+message(Client,Stream,"set_remote_codecs(...)");
+return_message(Stream,Client)
+message(Client,Stream,"list_codecs()");
+return_message(Stream,Client);
+message(Client,StreamHandler,"codecs(...)");
+return_message(StreamHandler,Client);
+
+message(Client,Stream,"prepare_transports()");
+return_message(Stream,Client);
+
+message(Remote,StreamHandler,"jingle candidate");
+message(StreamHandler,Client,"new-candidate(...)");
+message(Client,Stream,"new_remote_candidiate(...)");
+return_message(Stream,Client);
+
+message(Stream,Client,"new-native-candidate(id)");
+message(Client,Stream,"get_native_candidate(id)");
+return_message(Stream,Client);
+message(Client,StreamHandler,"new_native_candidate(...)");
+return_message(StreamHandler,Client);
+message(StreamHandler,Remote,"jingle candidiate");
+step;
+message(Remote,StreamHandler,"jingle candidate");
+message(StreamHandler,Client,"new-candidate(...)");
+message(Client,Stream,"new_remote_candidiate(...)");
+return_message(Stream,Client);
+
+message(Stream,Client,"new-native-candidate(id)");
+message(Client,Stream,"get_native_candidate(id)");
+return_message(Stream,Client);
+message(Client,StreamHandler,"new_native_candidate(...)");
+return_message(StreamHandler,Client);
+message(StreamHandler,Remote,"jingle candidiate");
+
+step;
+
+message(Stream,Client,"native-candidates-prepared");
+message(Client,StreamHandler,"native_candidates_prepared");
+return_message(StreamHandler,Client);
+
+message(Remote,StreamHandler,"ack candidates");
+
+step;
+message(Remote,Stream,"STUN")
+message(Stream,Remote,"STUN")
+step;
+
+message(Stream,Client,"new-active-candidate-pair");
+message(Client,Stream,"get_native_candidate");
+return_message(Stream,Client);
+message(Client,StreamHandler,"new_active_candidate_pair(...)")
+message(StreamHandler,Remote,"jingle accept");
+return_message(StreamHandler,Client);
+step();
+message(Remote,StreamHandler,"ack accept");
+
+
+step;
+message(Remote,Stream,"RTP+STUN")
+message(Stream,Remote,"RTP+STUN")
+step;
+
+message(Remote,StreamHandler,"terminate");
+message(StreamHandler,Client,"stop");
+message(Client,Stream,"state_playing(stopped)");
+return_message(Stream,Client);
+
+message(StreamHandler,Remote,"ack termianate");
+
+inactive(Stream);
+inactive(Session);
+inactive(StreamHandler);
+inactive(SessionHandler);
+destroy_message(Client,Stream);
+destroy_message(Client,Session);
+destroy_message(StreamHandler,SessionHandler);
+destroy_message(SessionHandler,Channel);
+inactive(Client);
+
+# Complete the lifelines
+step();
+complete(Remote);
+complete(Connmgr);
+complete(Channel);
+complete(SessionHandler);
+complete(StreamHandler);
+
+complete(Client);
+complete(Session);
+.PE
