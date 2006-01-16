@@ -17,7 +17,6 @@ CORE_SOURCES = \
     $(BUILT_SOURCES)
 
 voip_engine_tester_SOURCES = \
-    voip-engine.c \
     $(CORE_SOURCES)
 
 AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @LOUDMOUTH_CFLAGS@
