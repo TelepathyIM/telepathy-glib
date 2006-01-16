@@ -12,6 +12,6 @@ python $top_srcdir/tools/generrors.py
 
 cd $top_srcdir/src
 
-echo Generating TpChannelHandler files ...
-python $top_srcdir/tools/gengobject.py $top_srcdir/xml/tp-channel-handler.xml TpChannelHandler
+echo Generating VoipEngine files ...
+python $top_srcdir/tools/gengobject.py $top_srcdir/xml/voip-engine.xml VoipEngine
 

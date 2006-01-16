@@ -1,5 +1,7 @@
 BUILT_SOURCES = \
-    tp-channel-handler-glue.h \
+    voip-engine-glue.h \
+    voip-engine-signals-marshal.h \
+    voip-engine-signals-marshal.c \
     tp-media-session-handler-gen.h \
     tp-media-stream-handler-gen.h
 
@@ -9,9 +11,10 @@ CLEANFILES = $(BUILT_SOURCES)
 bin_PROGRAMS = telepathy-voip-engine
 
 CORE_SOURCES = \
-	tp-media-session-handler.h \
-	tp-media-stream-handler.c \
 	$(BUILT_SOURCES)
+
+#tp-media-session-handler.h 
+#tp-media-stream-handler.c 
 
 libvoipengine_convenience_la_SOURCES = \
 	$(CORE_SOURCES)
@@ -23,8 +26,8 @@ telepathy_voip_engine_LDADD = libvoipengine-convenience.la
 
 noinst_LTLIBRARIES = libvoipengine-convenience.la
 
-AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @LOUDMOUTH_CFLAGS@
-AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LOUDMOUTH_LIBS@
+AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @LIBTELEPATHY_CFLAGS@
+AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@
 
 
 
@@ -32,7 +35,7 @@ AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LOUDMOUTH_LIBS@
 %-gen.h: ../xml/%.xml Makefile.am
 	dbus-binding-tool --prefix=$(subst -,_,$*) --mode=glib-client $< > $*-gen.h
 
-%-glue.h: ../%.xml Makefile
+%-glue.h: ../xml/%.xml Makefile
 	dbus-binding-tool --mode=glib-server --output=$@ --prefix=$(subst -,_,$*) $<
 
 %-signals-marshal.h: %-signals-marshal.list Makefile
