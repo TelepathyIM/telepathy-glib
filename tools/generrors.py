@@ -38,4 +38,28 @@ for val in errors:
 
 out.write("} TelepathyErrors; \n\n")
 
+out.write(
+"""
+  GQuark telepathy_errors_quark (void);
+  #define TELEPATHY_ERRORS telepathy_errors_quark ()
+""")
+
+
 gengobject.print_header_end(out, "telepathy_errors");
+
+out = open("telepathy-errors.c", 'w')
+
+out.write(
+"""
+#include <glib.h>
+#include "telepathy-errors.h"
+
+GQuark
+telepathy_errors_quark (void)
+{
+  static GQuark quark = 0;
+  if (!quark)
+    quark = g_quark_from_static_string ("telepathy_errors");
+  return quark;
+}
+""")
