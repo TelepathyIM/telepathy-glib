@@ -13,6 +13,9 @@ cd $top_srcdir/common
 echo Generating error enums ...
 python $top_srcdir/tools/generrors.py
 
+echo Generating interface defines...
+python $top_srcdir/tools/geninterfaces.py
+
 cd $top_srcdir/src
 
 echo Generating VoipEngine files ...
