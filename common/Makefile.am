@@ -1,27 +1,21 @@
 BUILT_SOURCES = \
-    tp-media-session-handler-glue.h \
-    tp-media-session-handler-signals-marshal.h \
-    tp-media-session-handler-signals-marshal.c \
-    tp-media-stream-handler-glue.h \
-    tp-media-stream-handler-signals-marshal.h \
-    tp-media-stream-handler-signals-marshal.c 
+    telepathy-errors-enumtypes.h \
+    telepathy-errors-enumtypes.c
 
 # correctly clean the generated source files
 CLEANFILES = $(BUILT_SOURCES)
 
-noinst_PROGRAMS=voip-engine-tester
 
 CORE_SOURCES = \
-    tp-media-session-handler.c \
-    tp-media-stream-handler.c \
     $(BUILT_SOURCES)
 
-voip_engine_tester_SOURCES = \
-    voip-engine.c \
-    $(CORE_SOURCES)
+libcommon_convenience_la_SOURCES = \
+	$(CORE_SOURCES)
 
-AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @LOUDMOUTH_CFLAGS@
-AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LOUDMOUTH_LIBS@
+noinst_LTLIBRARIES = libcommon-convenience.la
+
+AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@
+AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@
 
 
 # rule to generate the binding headers

@@ -67,6 +67,7 @@ fi
 
 AC_OUTPUT( Makefile \
           doc/Makefile
+          common/Makefile
           src/Makefile
           test/Makefile
           xml/Makefile

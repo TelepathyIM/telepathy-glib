@@ -22,7 +22,9 @@ libvoipengine_convenience_la_SOURCES = \
 telepathy_voip_engine_SOURCES = \
 	voip-engine.c
 
-telepathy_voip_engine_LDADD = libvoipengine-convenience.la
+telepathy_voip_engine_LDADD = \
+	libvoipengine-convenience.la \
+	$(top_builddir)/common/libcommon-convenience.la
 
 noinst_LTLIBRARIES = libvoipengine-convenience.la
 

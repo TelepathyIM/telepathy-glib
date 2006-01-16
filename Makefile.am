@@ -1,3 +1,3 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src doc test xml
+SUBDIRS = common src test doc xml
