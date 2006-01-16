@@ -5,6 +5,10 @@
       <arg direction="out" type="s" />
     </method>
   </interface>
+  <interface name="org.freedesktop.Telepathy.Media.StreamHandler">
+    <method name="Ready">
+    </method>
+  </interface>
   <interface name="org.freedesktop.Telepathy.Media.SessionHandler">
     <signal name="NewMediaStreamHandler">
       <arg type="o" name="stream_handler" />
