@@ -1,18 +1,30 @@
 AC_INIT(Makefile.am)
 
-AM_INIT_AUTOMAKE(libtelepathy, 0.1.`date +%Y%m%d`)
+AS_VERSION(telepathy-voip-engine, TELEPATHY_VOIP_ENGINE_VERSION, 0, 0, 1, 1, WERROR="no", WERROR="yes")
+
+AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+
 AM_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_PROG_LIBTOOL
+AM_PROG_LIBTOOL
 AC_PROG_CC
 AC_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
-CFLAGS="$CFLAGS -Wall -ansi"
+dnl decide on error flags
+AS_COMPILER_FLAG(-Wall, WALL="yes", WALL="no")
+
+if test "x$WALL" = "xyes"; then
+  ERROR_CFLAGS="-Wall"
+
+  if test "x$WERROR" = "xyes"; then
+    AS_COMPILER_FLAG(-Werror,ERROR_CFLAGS="$ERROR_CFLAGS -Werror",ERROR_CFLAGS="$ERROR_CFLAGS")
+  fi
+fi
 
 AC_SUBST(ERROR_CFLAGS)
 
