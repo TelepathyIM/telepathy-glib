@@ -57,6 +57,7 @@
 \-marshal.(c|h)$
 \-enumtypes.(c|h)$
 \-bindings.(c|h)$
+\-gen.h$
 \.pc$
 ^tests/farsight_test$
 ^tests/sip_test$
@@ -68,3 +69,10 @@
 ^docs/core/html($|/)
 ^docs/core/tmpl($|/)
 ^docs/core/xml($|/)
+^debian/files$
+^debian/stamp-autotools-files$
+^debian/stamp-makefile-build$
+^doc/.sequence.temp
+^doc/log.sh
+\.png$
+
