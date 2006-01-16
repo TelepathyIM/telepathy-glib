@@ -31,6 +31,7 @@
 
 #include "tp-voip-engine-glue.h"
 
+#include "common/telepathy-helpers.h"
 #include "common/telepathy-interfaces.h"
 #include "common/telepathy-constants.h"
 #include "common/telepathy-errors.h"
@@ -39,45 +40,6 @@
 
 #define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
-
-DBusGConnection *
-get_bus ()
-{
-  static DBusGConnection *bus = NULL;
-
-  if (bus == NULL)
-    {
-      GError *error = NULL;
-
-      bus = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-
-      if (bus == NULL)
-        g_error ("Failed to connect to starter bus: %s", error->message);
-    }
-
-  return bus;
-}
-
-DBusGProxy *
-get_bus_proxy ()
-{
-  static DBusGProxy *bus_proxy = NULL;
-
-  if (bus_proxy == NULL)
-    {
-      DBusGConnection *bus = get_bus ();
-
-      bus_proxy = dbus_g_proxy_new_for_name (bus,
-                                            "org.freedesktop.DBus",
-                                            "/org/freedesktop/DBus",
-                                            "org.freedesktop.DBus");
-
-      if (bus_proxy == NULL)
-        g_error ("Failed to get proxy object for bus.");
-    }
-
-  return bus_proxy;
-}
 
 
 
@@ -207,7 +169,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
       return FALSE;
      }
 
-  priv->chan =  tp_chan_new (get_bus(),
+  priv->chan =  tp_chan_new (tp_get_bus(),
                              bus_name, connection,
                              TP_CHANNEL_INTERFACE,
                              TP_CHANNEL_TYPE_STREAMED_MEDIA,
@@ -258,8 +220,8 @@ _tp_voip_engine_register (TpVoipEngine *self)
 
   g_assert (TP_IS_VOIP_ENGINE(self));
 
-  bus = get_bus ();
-  bus_proxy = get_bus_proxy ();
+  bus = tp_get_bus ();
+  bus_proxy = tp_get_bus_proxy ();
 
   if (!dbus_g_proxy_call (bus_proxy, "RequestName", &error,
                           G_TYPE_STRING, BUS_NAME,
