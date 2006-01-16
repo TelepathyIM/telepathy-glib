@@ -26,6 +26,11 @@
 #include "voip-engine-signals-marshal.h"
 
 #include "voip-engine-glue.h"
+#include "common/telepathy-constants.h"
+#include "common/telepathy-errors.h"
+
+
+static gboolean handling_channel = FALSE;
 
 G_DEFINE_TYPE(VoipEngine, voip_engine, G_TYPE_OBJECT)
 
@@ -115,6 +120,13 @@ voip_engine_finalize (GObject *object)
  */
 gboolean voip_engine_handle_channel (VoipEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
 {
+  if (handling_channel)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+                            "VoIP Engine is already handling a channel");
+
+      return FALSE;
+    }
   return TRUE;
 }
 
