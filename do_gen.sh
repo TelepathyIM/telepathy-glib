@@ -6,7 +6,7 @@ cd $top_srcdir/test
 echo Generating TpMediaSessionHandler files ...
 python $top_srcdir/tools/gengobject.py $top_srcdir/xml/tp-media-session-handler.xml TpMediaSessionHandler
 echo Generating TpMediaStreamHandler files ...
-python $top_srcdir/tools/gengobject.py $top_srcdir/xml/tp-media-session-handler.xml TpMediaSessionHandler
+python $top_srcdir/tools/gengobject.py $top_srcdir/xml/tp-media-stream-handler.xml TpMediaStreamHandler
 
 cd $top_srcdir/common
 
