@@ -1,4 +1,7 @@
 BUILT_SOURCES = \
+    test-streamed-media-channel-glue.h \
+    test-streamed-media-channel-signals-marshal.h \
+    test-streamed-media-channel-signals-marshal.c \
     tp-media-session-handler-glue.h \
     tp-media-session-handler-signals-marshal.h \
     tp-media-session-handler-signals-marshal.c \
@@ -13,6 +16,7 @@ noinst_PROGRAMS=voip-engine-tester
 
 CORE_SOURCES = \
     test-voip-engine.c \
+    test-streamed-media-channel.c \
     tp-media-session-handler.c \
     tp-media-stream-handler.c \
     $(BUILT_SOURCES)
