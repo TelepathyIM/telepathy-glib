@@ -39,7 +39,19 @@ PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.51, dbus-glib-1 >= 0.51], have_dbus=yes, ha
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
-dnl TODO Error if dbus isn't found
+if test x$have_dbus = xno ; then
+    AC_MSG_ERROR([DBus development libraries not found])
+fi
+
+dnl Check for libtelepathy
+PKG_CHECK_MODULES(LIBTELEPATHY, [libtelepathy], have_libtelepathy=yes, have_libtelepathy=no)
+
+AC_SUBST(LIBTELEPATHY_CFLAGS)
+AC_SUBST(LIBTELEPATHY_LIBS)
+
+if test x$have_libtelepathy = xno ; then
+    AC_MSG_ERROR([libtelepathy development libraries not found])
+fi
 
 AC_OUTPUT( Makefile \
           doc/Makefile
