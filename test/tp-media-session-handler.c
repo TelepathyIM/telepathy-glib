@@ -118,24 +118,6 @@ tp_media_session_handler_finalize (GObject *object)
 
 
 /**
- * tp_media_session_handler_ready
- *
- * Implements DBus method Ready
- * on interface org.freedesktop.Telepathy.Media.StreamHandler
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_media_session_handler_ready (TpMediaSessionHandler *obj, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
  * tp_media_session_handler_error
  *
  * Implements DBus method Error
@@ -166,6 +148,24 @@ gboolean tp_media_session_handler_error (TpMediaSessionHandler *obj, gint errno,
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
 gboolean tp_media_session_handler_introspect (TpMediaSessionHandler *obj, gchar ** ret, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * tp_media_session_handler_ready
+ *
+ * Implements DBus method Ready
+ * on interface org.freedesktop.Telepathy.Media.StreamHandler
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_media_session_handler_ready (TpMediaSessionHandler *obj, GError **error)
 {
   return TRUE;
 }

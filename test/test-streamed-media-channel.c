@@ -32,9 +32,9 @@ G_DEFINE_TYPE(TestStreamedMediaChannel, test_streamed_media_channel, G_TYPE_OBJE
 /* signal enum */
 enum
 {
-    MEMBERS_CHANGED,
-    GROUP_FLAGS_CHANGED,
     CLOSED,
+    GROUP_FLAGS_CHANGED,
+    MEMBERS_CHANGED,
     NEW_MEDIA_SESSION_HANDLER,
     LAST_SIGNAL
 };
@@ -75,14 +75,14 @@ test_streamed_media_channel_class_init (TestStreamedMediaChannelClass *test_stre
   object_class->dispose = test_streamed_media_channel_dispose;
   object_class->finalize = test_streamed_media_channel_finalize;
 
-  signals[MEMBERS_CHANGED] =
-    g_signal_new ("members-changed",
+  signals[CLOSED] =
+    g_signal_new ("closed",
                   G_OBJECT_CLASS_TYPE (test_streamed_media_channel_class),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   NULL, NULL,
-                  test_streamed_media_channel_marshal_VOID__STRING_BOXED_BOXED_BOXED_BOXED,
-                  G_TYPE_NONE, 5, G_TYPE_STRING, DBUS_TYPE_G_UINT_ARRAY, DBUS_TYPE_G_UINT_ARRAY, DBUS_TYPE_G_UINT_ARRAY, DBUS_TYPE_G_UINT_ARRAY);
+                  test_streamed_media_channel_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
 
   signals[GROUP_FLAGS_CHANGED] =
     g_signal_new ("group-flags-changed",
@@ -93,14 +93,14 @@ test_streamed_media_channel_class_init (TestStreamedMediaChannelClass *test_stre
                   test_streamed_media_channel_marshal_VOID__INT_INT,
                   G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
-  signals[CLOSED] =
-    g_signal_new ("closed",
+  signals[MEMBERS_CHANGED] =
+    g_signal_new ("members-changed",
                   G_OBJECT_CLASS_TYPE (test_streamed_media_channel_class),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   NULL, NULL,
-                  test_streamed_media_channel_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
+                  test_streamed_media_channel_marshal_VOID__STRING_BOXED_BOXED_BOXED_BOXED,
+                  G_TYPE_NONE, 5, G_TYPE_STRING, DBUS_TYPE_G_UINT_ARRAY, DBUS_TYPE_G_UINT_ARRAY, DBUS_TYPE_G_UINT_ARRAY, DBUS_TYPE_G_UINT_ARRAY);
 
   signals[NEW_MEDIA_SESSION_HANDLER] =
     g_signal_new ("new-media-session-handler",
@@ -148,60 +148,6 @@ test_streamed_media_channel_finalize (GObject *object)
 
 
 /**
- * test_streamed_media_channel_get_group_flags
- *
- * Implements DBus method GetGroupFlags
- * on interface org.freedesktop.Telepathy.Channel.Interface.Group
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean test_streamed_media_channel_get_group_flags (TestStreamedMediaChannel *obj, guint* ret, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * test_streamed_media_channel_get_self_handle
- *
- * Implements DBus method GetSelfHandle
- * on interface org.freedesktop.Telepathy.Channel.Interface.Group
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean test_streamed_media_channel_get_self_handle (TestStreamedMediaChannel *obj, guint* ret, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * test_streamed_media_channel_get_members
- *
- * Implements DBus method GetMembers
- * on interface org.freedesktop.Telepathy.Channel.Interface.Group
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean test_streamed_media_channel_get_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
  * test_streamed_media_channel_add_members
  *
  * Implements DBus method AddMembers
@@ -220,9 +166,45 @@ gboolean test_streamed_media_channel_add_members (TestStreamedMediaChannel *obj,
 
 
 /**
- * test_streamed_media_channel_get_remote_pending_members
+ * test_streamed_media_channel_close
  *
- * Implements DBus method GetRemotePendingMembers
+ * Implements DBus method Close
+ * on interface org.freedesktop.Telepathy.Channel
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean test_streamed_media_channel_close (TestStreamedMediaChannel *obj, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * test_streamed_media_channel_get_channel_type
+ *
+ * Implements DBus method GetChannelType
+ * on interface org.freedesktop.Telepathy.Channel
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean test_streamed_media_channel_get_channel_type (TestStreamedMediaChannel *obj, gchar ** ret, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * test_streamed_media_channel_get_group_flags
+ *
+ * Implements DBus method GetGroupFlags
  * on interface org.freedesktop.Telepathy.Channel.Interface.Group
  *
  * @error: Used to return a pointer to a GError detailing any error
@@ -231,43 +213,7 @@ gboolean test_streamed_media_channel_add_members (TestStreamedMediaChannel *obj,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean test_streamed_media_channel_get_remote_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * test_streamed_media_channel_get_local_pending_members
- *
- * Implements DBus method GetLocalPendingMembers
- * on interface org.freedesktop.Telepathy.Channel.Interface.Group
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean test_streamed_media_channel_get_local_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * test_streamed_media_channel_introspect
- *
- * Implements DBus method Introspect
- * on interface org.freedesktop.DBus.Introspectable
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean test_streamed_media_channel_introspect (TestStreamedMediaChannel *obj, gchar ** ret, GError **error)
+gboolean test_streamed_media_channel_get_group_flags (TestStreamedMediaChannel *obj, guint* ret, GError **error)
 {
   return TRUE;
 }
@@ -310,10 +256,10 @@ gboolean test_streamed_media_channel_get_interfaces (TestStreamedMediaChannel *o
 
 
 /**
- * test_streamed_media_channel_get_channel_type
+ * test_streamed_media_channel_get_local_pending_members
  *
- * Implements DBus method GetChannelType
- * on interface org.freedesktop.Telepathy.Channel
+ * Implements DBus method GetLocalPendingMembers
+ * on interface org.freedesktop.Telepathy.Channel.Interface.Group
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occured, DBus will throw the error only if this
@@ -321,17 +267,17 @@ gboolean test_streamed_media_channel_get_interfaces (TestStreamedMediaChannel *o
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean test_streamed_media_channel_get_channel_type (TestStreamedMediaChannel *obj, gchar ** ret, GError **error)
+gboolean test_streamed_media_channel_get_local_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
 {
   return TRUE;
 }
 
 
 /**
- * test_streamed_media_channel_close
+ * test_streamed_media_channel_get_members
  *
- * Implements DBus method Close
- * on interface org.freedesktop.Telepathy.Channel
+ * Implements DBus method GetMembers
+ * on interface org.freedesktop.Telepathy.Channel.Interface.Group
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occured, DBus will throw the error only if this
@@ -339,7 +285,43 @@ gboolean test_streamed_media_channel_get_channel_type (TestStreamedMediaChannel 
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean test_streamed_media_channel_close (TestStreamedMediaChannel *obj, GError **error)
+gboolean test_streamed_media_channel_get_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * test_streamed_media_channel_get_remote_pending_members
+ *
+ * Implements DBus method GetRemotePendingMembers
+ * on interface org.freedesktop.Telepathy.Channel.Interface.Group
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean test_streamed_media_channel_get_remote_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * test_streamed_media_channel_get_self_handle
+ *
+ * Implements DBus method GetSelfHandle
+ * on interface org.freedesktop.Telepathy.Channel.Interface.Group
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean test_streamed_media_channel_get_self_handle (TestStreamedMediaChannel *obj, guint* ret, GError **error)
 {
   return TRUE;
 }
@@ -358,6 +340,24 @@ gboolean test_streamed_media_channel_close (TestStreamedMediaChannel *obj, GErro
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
 gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * test_streamed_media_channel_introspect
+ *
+ * Implements DBus method Introspect
+ * on interface org.freedesktop.DBus.Introspectable
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean test_streamed_media_channel_introspect (TestStreamedMediaChannel *obj, gchar ** ret, GError **error)
 {
   return TRUE;
 }

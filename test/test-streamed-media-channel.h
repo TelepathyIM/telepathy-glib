@@ -53,18 +53,18 @@ GType test_streamed_media_channel_get_type(void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TEST_TYPE_STREAMED_MEDIA_CHANNEL, TestStreamedMediaChannelClass))
 
 
-gboolean test_streamed_media_channel_get_group_flags (TestStreamedMediaChannel *obj, guint* ret, GError **error);
-gboolean test_streamed_media_channel_get_self_handle (TestStreamedMediaChannel *obj, guint* ret, GError **error);
-gboolean test_streamed_media_channel_get_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
 gboolean test_streamed_media_channel_add_members (TestStreamedMediaChannel *obj, const GArray * contacts, const gchar * message, GError **error);
-gboolean test_streamed_media_channel_get_remote_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
-gboolean test_streamed_media_channel_get_local_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
-gboolean test_streamed_media_channel_introspect (TestStreamedMediaChannel *obj, gchar ** ret, GError **error);
+gboolean test_streamed_media_channel_close (TestStreamedMediaChannel *obj, GError **error);
+gboolean test_streamed_media_channel_get_channel_type (TestStreamedMediaChannel *obj, gchar ** ret, GError **error);
+gboolean test_streamed_media_channel_get_group_flags (TestStreamedMediaChannel *obj, guint* ret, GError **error);
 gboolean test_streamed_media_channel_get_handle (TestStreamedMediaChannel *obj, guint* ret, guint* ret1, GError **error);
 gboolean test_streamed_media_channel_get_interfaces (TestStreamedMediaChannel *obj, gchar *** ret, GError **error);
-gboolean test_streamed_media_channel_get_channel_type (TestStreamedMediaChannel *obj, gchar ** ret, GError **error);
-gboolean test_streamed_media_channel_close (TestStreamedMediaChannel *obj, GError **error);
+gboolean test_streamed_media_channel_get_local_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
+gboolean test_streamed_media_channel_get_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
+gboolean test_streamed_media_channel_get_remote_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
+gboolean test_streamed_media_channel_get_self_handle (TestStreamedMediaChannel *obj, guint* ret, GError **error);
 gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
+gboolean test_streamed_media_channel_introspect (TestStreamedMediaChannel *obj, gchar ** ret, GError **error);
 gboolean test_streamed_media_channel_remove_members (TestStreamedMediaChannel *obj, const GArray * contacts, const gchar * message, GError **error);
 
 

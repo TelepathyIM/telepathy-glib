@@ -32,11 +32,11 @@ G_DEFINE_TYPE(TpMediaStreamHandler, tp_media_stream_handler, G_TYPE_OBJECT)
 /* signal enum */
 enum
 {
-    REMOVE_REMOTE_CANDIDATE,
-    SET_REMOTE_CANDIDATE_LIST,
     ADD_REMOTE_CANDIDATE,
-    SET_REMOTE_CODECS,
+    REMOVE_REMOTE_CANDIDATE,
     SET_ACTIVE_CANDIDATE_PAIR,
+    SET_REMOTE_CANDIDATE_LIST,
+    SET_REMOTE_CODECS,
     LAST_SIGNAL
 };
 
@@ -76,6 +76,15 @@ tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *tp_media_stream_h
   object_class->dispose = tp_media_stream_handler_dispose;
   object_class->finalize = tp_media_stream_handler_finalize;
 
+  signals[ADD_REMOTE_CANDIDATE] =
+    g_signal_new ("add-remote-candidate",
+                  G_OBJECT_CLASS_TYPE (tp_media_stream_handler_class),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  tp_media_stream_handler_marshal_VOID__STRING_BOXED,
+                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_BOXED);
+
   signals[REMOVE_REMOTE_CANDIDATE] =
     g_signal_new ("remove-remote-candidate",
                   G_OBJECT_CLASS_TYPE (tp_media_stream_handler_class),
@@ -84,6 +93,15 @@ tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *tp_media_stream_h
                   NULL, NULL,
                   tp_media_stream_handler_marshal_VOID__STRING,
                   G_TYPE_NONE, 1, G_TYPE_STRING);
+
+  signals[SET_ACTIVE_CANDIDATE_PAIR] =
+    g_signal_new ("set-active-candidate-pair",
+                  G_OBJECT_CLASS_TYPE (tp_media_stream_handler_class),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  tp_media_stream_handler_marshal_VOID__STRING_STRING,
+                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 
   signals[SET_REMOTE_CANDIDATE_LIST] =
     g_signal_new ("set-remote-candidate-list",
@@ -94,15 +112,6 @@ tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *tp_media_stream_h
                   tp_media_stream_handler_marshal_VOID__BOXED,
                   G_TYPE_NONE, 1, G_TYPE_BOXED);
 
-  signals[ADD_REMOTE_CANDIDATE] =
-    g_signal_new ("add-remote-candidate",
-                  G_OBJECT_CLASS_TYPE (tp_media_stream_handler_class),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  NULL, NULL,
-                  tp_media_stream_handler_marshal_VOID__STRING_BOXED,
-                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_BOXED);
-
   signals[SET_REMOTE_CODECS] =
     g_signal_new ("set-remote-codecs",
                   G_OBJECT_CLASS_TYPE (tp_media_stream_handler_class),
@@ -111,15 +120,6 @@ tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *tp_media_stream_h
                   NULL, NULL,
                   tp_media_stream_handler_marshal_VOID__BOXED,
                   G_TYPE_NONE, 1, G_TYPE_BOXED);
-
-  signals[SET_ACTIVE_CANDIDATE_PAIR] =
-    g_signal_new ("set-active-candidate-pair",
-                  G_OBJECT_CLASS_TYPE (tp_media_stream_handler_class),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  NULL, NULL,
-                  tp_media_stream_handler_marshal_VOID__STRING_STRING,
-                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 
   dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_media_stream_handler_class), &dbus_glib_tp_media_stream_handler_object_info);
 }
@@ -158,42 +158,6 @@ tp_media_stream_handler_finalize (GObject *object)
 
 
 /**
- * tp_media_stream_handler_new_native_candidate
- *
- * Implements DBus method NewNativeCandidate
- * on interface org.freedesktop.Telepathy.Media.StreamHandler
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_media_stream_handler_new_native_candidate (TpMediaStreamHandler *obj, const gchar * candidate_id, const GArray * transports, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * tp_media_stream_handler_new_active_candidate_pair
- *
- * Implements DBus method NewActiveCandidatePair
- * on interface org.freedesktop.Telepathy.Media.StreamHandler
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_media_stream_handler_new_active_candidate_pair (TpMediaStreamHandler *obj, const gchar * native_candidate_id, const gchar * remote_candidate_id, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
  * tp_media_stream_handler_codec_choice
  *
  * Implements DBus method CodecChoice
@@ -206,42 +170,6 @@ gboolean tp_media_stream_handler_new_active_candidate_pair (TpMediaStreamHandler
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
 gboolean tp_media_stream_handler_codec_choice (TpMediaStreamHandler *obj, gint codec_id, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * tp_media_stream_handler_native_candidates_prepared
- *
- * Implements DBus method NativeCandidatesPrepared
- * on interface org.freedesktop.Telepathy.Media.StreamHandler
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_media_stream_handler_native_candidates_prepared (TpMediaStreamHandler *obj, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * tp_media_stream_handler_supported_codecs
- *
- * Implements DBus method SupportedCodecs
- * on interface org.freedesktop.Telepathy.Media.StreamHandler
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_media_stream_handler_supported_codecs (TpMediaStreamHandler *obj, const GArray * codecs, GError **error)
 {
   return TRUE;
 }
@@ -266,6 +194,78 @@ gboolean tp_media_stream_handler_error (TpMediaStreamHandler *obj, gint errno, c
 
 
 /**
+ * tp_media_stream_handler_introspect
+ *
+ * Implements DBus method Introspect
+ * on interface org.freedesktop.DBus.Introspectable
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_media_stream_handler_introspect (TpMediaStreamHandler *obj, gchar ** ret, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * tp_media_stream_handler_native_candidates_prepared
+ *
+ * Implements DBus method NativeCandidatesPrepared
+ * on interface org.freedesktop.Telepathy.Media.StreamHandler
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_media_stream_handler_native_candidates_prepared (TpMediaStreamHandler *obj, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * tp_media_stream_handler_new_active_candidate_pair
+ *
+ * Implements DBus method NewActiveCandidatePair
+ * on interface org.freedesktop.Telepathy.Media.StreamHandler
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_media_stream_handler_new_active_candidate_pair (TpMediaStreamHandler *obj, const gchar * native_candidate_id, const gchar * remote_candidate_id, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * tp_media_stream_handler_new_native_candidate
+ *
+ * Implements DBus method NewNativeCandidate
+ * on interface org.freedesktop.Telepathy.Media.StreamHandler
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_media_stream_handler_new_native_candidate (TpMediaStreamHandler *obj, const gchar * candidate_id, const GArray * transports, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
  * tp_media_stream_handler_ready
  *
  * Implements DBus method Ready
@@ -284,10 +284,10 @@ gboolean tp_media_stream_handler_ready (TpMediaStreamHandler *obj, GError **erro
 
 
 /**
- * tp_media_stream_handler_introspect
+ * tp_media_stream_handler_supported_codecs
  *
- * Implements DBus method Introspect
- * on interface org.freedesktop.DBus.Introspectable
+ * Implements DBus method SupportedCodecs
+ * on interface org.freedesktop.Telepathy.Media.StreamHandler
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occured, DBus will throw the error only if this
@@ -295,7 +295,7 @@ gboolean tp_media_stream_handler_ready (TpMediaStreamHandler *obj, GError **erro
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_stream_handler_introspect (TpMediaStreamHandler *obj, gchar ** ret, GError **error)
+gboolean tp_media_stream_handler_supported_codecs (TpMediaStreamHandler *obj, const GArray * codecs, GError **error)
 {
   return TRUE;
 }
