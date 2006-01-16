@@ -128,3 +128,100 @@ gboolean voip_engine_handle_channel (VoipEngine *obj, const gchar * bus_name, co
   return TRUE;
 }
 
+DBusGConnection *
+get_bus ()
+{
+  static DBusGConnection *bus = NULL;
+
+  if (bus == NULL)
+    {
+      GError *error = NULL;
+
+      bus = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
+
+      if (bus == NULL)
+        g_error ("Failed to connect to starter bus: %s", error->message);
+    }
+
+  return bus;
+}
+
+DBusGProxy *
+get_bus_proxy ()
+{
+  static DBusGProxy *bus_proxy = NULL;
+
+  if (bus_proxy == NULL)
+    {
+      DBusGConnection *bus = get_bus ();
+
+      bus_proxy = dbus_g_proxy_new_for_name (bus,
+                                            "org.freedesktop.DBus",
+                                            "/org/freedesktop/DBus",
+                                            "org.freedesktop.DBus");
+
+      if (bus_proxy == NULL)
+        g_error ("Failed to get proxy object for bus.");
+    }
+
+  return bus_proxy;
+}
+
+void
+_voip_engine_register (VoipEngine *self)
+{
+  DBusGConnection *bus;
+  DBusGProxy *bus_proxy;
+  GError *error = NULL;
+  guint request_name_result;
+
+  g_assert (VOIP_IS_ENGINE(self));
+
+  bus = gabble_get_bus ();
+  bus_proxy = gabble_get_bus_proxy ();
+
+  if (!dbus_g_proxy_call (bus_proxy, "RequestName", &error,
+                          G_TYPE_STRING, BUS_NAME,
+                          G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
+                          G_TYPE_INVALID,
+                          G_TYPE_UINT, &request_name_result,
+                          G_TYPE_INVALID))
+    g_error ("Failed to request bus name: %s", error->message);
+
+  if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
+    g_error ("Failed to acquire bus name, connection manager already running?");
+
+  dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
+}
+
+
+int main(int argc, char **argv) {
+  VoipEngine *voip_engine;
+  GMainLoop *mainloop;
+
+  g_type_init();
+
+  {
+    GLogLevelFlags fatal_mask;
+
+    fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
+    fatal_mask |= G_LOG_LEVEL_CRITICAL;
+    g_log_set_always_fatal (fatal_mask);
+  }
+
+  g_set_prgname("telepathy-voip-engine");
+
+  mainloop = g_main_loop_new (NULL, FALSE);
+
+  dbus_g_error_domain_register (TELEPATHY_ERRORS, NULL, TELEPATHY_TYPE_ERRORS);
+
+  voip_engine = g_object_new (VOIP_TYPE_ENGINE, NULL);
+
+  _voip_engine_register (manager);
+
+  g_debug("started");
+
+  g_main_loop_run (mainloop);
+
+  return 0;
+}
