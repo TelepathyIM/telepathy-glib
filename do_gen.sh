@@ -16,5 +16,5 @@ python $top_srcdir/tools/generrors.py
 cd $top_srcdir/src
 
 echo Generating VoipEngine files ...
-python $top_srcdir/tools/gengobject.py $top_srcdir/xml/voip-engine.xml VoipEngine
+python $top_srcdir/tools/gengobject.py $top_srcdir/xml/tp-voip-engine.xml TpVoipEngine
 

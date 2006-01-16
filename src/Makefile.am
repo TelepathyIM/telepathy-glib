@@ -1,7 +1,7 @@
 BUILT_SOURCES = \
-    voip-engine-glue.h \
-    voip-engine-signals-marshal.h \
-    voip-engine-signals-marshal.c \
+    tp-voip-engine-glue.h \
+    tp-voip-engine-signals-marshal.h \
+    tp-voip-engine-signals-marshal.c \
     tp-media-session-handler-gen.h \
     tp-media-stream-handler-gen.h
 
@@ -20,7 +20,7 @@ libvoipengine_convenience_la_SOURCES = \
 	$(CORE_SOURCES)
 
 telepathy_voip_engine_SOURCES = \
-	voip-engine.c
+	tp-voip-engine.c
 
 telepathy_voip_engine_LDADD = \
 	libvoipengine-convenience.la \
