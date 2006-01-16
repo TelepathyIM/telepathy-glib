@@ -357,7 +357,7 @@ gboolean test_streamed_media_channel_close (TestStreamedMediaChannel *obj, GErro
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, gpointer* ret, GError **error)
+gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
 {
   return TRUE;
 }

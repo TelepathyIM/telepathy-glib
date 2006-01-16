@@ -64,7 +64,7 @@ gboolean test_streamed_media_channel_get_handle (TestStreamedMediaChannel *obj, 
 gboolean test_streamed_media_channel_get_interfaces (TestStreamedMediaChannel *obj, gchar *** ret, GError **error);
 gboolean test_streamed_media_channel_get_channel_type (TestStreamedMediaChannel *obj, gchar ** ret, GError **error);
 gboolean test_streamed_media_channel_close (TestStreamedMediaChannel *obj, GError **error);
-gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, gpointer* ret, GError **error);
+gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
 gboolean test_streamed_media_channel_remove_members (TestStreamedMediaChannel *obj, const GArray * contacts, const gchar * message, GError **error);
 
 

@@ -169,7 +169,7 @@ tp_media_stream_handler_finalize (GObject *object)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_stream_handler_new_native_candidate (TpMediaStreamHandler *obj, const gchar * candidate_id, const gpointer transports, GError **error)
+gboolean tp_media_stream_handler_new_native_candidate (TpMediaStreamHandler *obj, const gchar * candidate_id, const GArray * transports, GError **error)
 {
   return TRUE;
 }
@@ -241,7 +241,7 @@ gboolean tp_media_stream_handler_native_candidates_prepared (TpMediaStreamHandle
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_stream_handler_supported_codecs (TpMediaStreamHandler *obj, const gpointer codecs, GError **error)
+gboolean tp_media_stream_handler_supported_codecs (TpMediaStreamHandler *obj, const GArray * codecs, GError **error)
 {
   return TRUE;
 }
