@@ -9,9 +9,14 @@ gengobject.print_license(out, "telepathy-interfaces.h", "Header for Telepathy in
 
 gengobject.print_header_begin(out, "telepathy_interfaces")
 
-for (cname,val) in telepathy.interfaces.__dict__.items():
+interfaces = telepathy.interfaces.__dict__.keys()
+interfaces.sort()
+
+for cname in interfaces:
+    val = telepathy.interfaces.__dict__[cname]
     if cname[:2] !='__':
-        out.write('#define '+cname +' '+'"'+val+'"\n')
+        out.write('#define TP_'+cname +' \\\n')
+        out.write('        "'+val+'"\n')
 
 
 gengobject.print_header_end(out, "telepathy_interfaces");
