@@ -25,7 +25,16 @@
 #include "tp-voip-engine.h"
 #include "tp-voip-engine-signals-marshal.h"
 
-#include "voip-engine-glue.h"
+#include "tp-voip-engine-glue.h"
+
+#include "common/telepathy-constants.h"
+#include "common/telepathy-errors.h"
+#include "common/telepathy-errors-enumtypes.h"
+
+#define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
+#define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
+
+static gboolean handling_channel = FALSE;
 
 G_DEFINE_TYPE(TpVoipEngine, tp_voip_engine, G_TYPE_OBJECT)
 
@@ -163,17 +172,17 @@ get_bus_proxy ()
 }
 
 void
-_voip_engine_register (VoipEngine *self)
+_tp_voip_engine_register (TpVoipEngine *self)
 {
   DBusGConnection *bus;
   DBusGProxy *bus_proxy;
   GError *error = NULL;
   guint request_name_result;
 
-  g_assert (VOIP_IS_ENGINE(self));
+  g_assert (TP_IS_VOIP_ENGINE(self));
 
-  bus = gabble_get_bus ();
-  bus_proxy = gabble_get_bus_proxy ();
+  bus = get_bus ();
+  bus_proxy = get_bus_proxy ();
 
   if (!dbus_g_proxy_call (bus_proxy, "RequestName", &error,
                           G_TYPE_STRING, BUS_NAME,
@@ -184,14 +193,14 @@ _voip_engine_register (VoipEngine *self)
     g_error ("Failed to request bus name: %s", error->message);
 
   if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
-    g_error ("Failed to acquire bus name, connection manager already running?");
+    g_error ("Failed to acquire bus name, voip engine already running?");
 
   dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
 }
 
 
 int main(int argc, char **argv) {
-  VoipEngine *voip_engine;
+  TpVoipEngine *voip_engine;
   GMainLoop *mainloop;
 
   g_type_init();
@@ -210,9 +219,9 @@ int main(int argc, char **argv) {
 
   dbus_g_error_domain_register (TELEPATHY_ERRORS, NULL, TELEPATHY_TYPE_ERRORS);
 
-  voip_engine = g_object_new (VOIP_TYPE_ENGINE, NULL);
+  voip_engine = g_object_new (TP_TYPE_VOIP_ENGINE, NULL);
 
-  _voip_engine_register (manager);
+  _tp_voip_engine_register (voip_engine);
 
   g_debug("started");
 
