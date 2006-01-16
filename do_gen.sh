@@ -7,6 +7,9 @@ echo Generating TpMediaSessionHandler files ...
 python $top_srcdir/tools/gengobject.py $top_srcdir/xml/tp-media-session-handler.xml TpMediaSessionHandler
 echo Generating TpMediaStreamHandler files ...
 python $top_srcdir/tools/gengobject.py $top_srcdir/xml/tp-media-session-handler.xml TpMediaSessionHandler
+
+cd $top_srcdir/common
+
 echo Generating error enums ...
 python $top_srcdir/tools/generrors.py
 
