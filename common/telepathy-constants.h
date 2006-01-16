@@ -18,14 +18,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __VOIP_ENGINE_H__
-#define __VOIP_ENGINE_H__
+#ifndef __TELEPATHY_CONSTANTS_H__
+#define __TELEPATHY_CONSTANTS_H__ 
 
 #include <glib.h>
 G_BEGIN_DECLS
 
 typedef enum {
-CONNECTION_ALIAS_FLAG_USER_SET = 1
+TELEPATHY_CONNECTION_ALIAS_FLAG_USER_SET = 1
 } ConnectionAliasFlags;
 
 typedef enum {
@@ -133,5 +133,6 @@ TELEPATHY_MEDIA_STREAM_TRANSPORT_TYPE_RELAY = 2
 } TelepathyMediaStreamTransportType;
 
 G_END_DECLS
+
 
 #endif
