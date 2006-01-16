@@ -12,6 +12,7 @@ CLEANFILES = $(BUILT_SOURCES)
 noinst_PROGRAMS=voip-engine-tester
 
 CORE_SOURCES = \
+    test-voip-engine.c \
     tp-media-session-handler.c \
     tp-media-stream-handler.c \
     $(BUILT_SOURCES)
@@ -19,8 +20,8 @@ CORE_SOURCES = \
 voip_engine_tester_SOURCES = \
     $(CORE_SOURCES)
 
-AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @LOUDMOUTH_CFLAGS@
-AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LOUDMOUTH_LIBS@
+AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@
+AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@
 
 
 # rule to generate the binding headers
