@@ -75,4 +75,6 @@
 ^doc/.sequence.temp
 ^doc/log.sh
 \.png$
+^src/telepathy-voip-engine$
+^test/voip-engine-tester$
 
