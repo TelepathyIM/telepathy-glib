@@ -75,6 +75,10 @@ def type_to_gtype(s):
         return ("GArray *", "DBUS_TYPE_G_DOUBLE_ARRAY", "BOXED", True)
     if s == 'ab': #boolean array
         return ("GArray *", "DBUS_TYPE_G_BOOLEAN_ARRAY", "BOXED", True)
+    if s[:2] == 'a(': #array of structs
+        return ("GArray *", "G_TYPE_BOXED", "BOXED", True)
+    if s[:2] == 'a{': #dict
+        return ("GHashTable *", "G_TYPE_BOXED", "BOXED", True)
 
     # we just don't know ..
     return ("gpointer", "G_TYPE_BOXED", "BOXED", True)
