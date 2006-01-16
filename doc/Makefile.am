@@ -2,7 +2,7 @@ CLEANFILES =
 
 if MAKE_SEQ_DIAS
 
-SEQ_DIA_PICS = make-call.pic recieve-call.pic
+SEQ_DIA_PICS = make-call.pic
 SEQ_DIA_PNGS = $(patsubst %.pic,%.png,$(SEQ_DIA_PICS))
 CLEANFILES += $(SEQ_DIA_FILES)
 
