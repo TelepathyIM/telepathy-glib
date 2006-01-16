@@ -1,33 +1,37 @@
 BUILT_SOURCES = \
-    tp-media-session-handler-glue.h \
-    tp-media-session-handler-signals-marshal.h \
-    tp-media-session-handler-signals-marshal.c \
-    tp-media-stream-handler-glue.h \
-    tp-media-stream-handler-signals-marshal.h \
-    tp-media-stream-handler-signals-marshal.c \
-    telepathy-errors-enumtypes.h \
-    telepathy-errors-enumtypes.c
+    tp-channel-handler-glue.h \
+    tp-media-session-handler-gen.h \
+    tp-media-stream-handler-gen.h
 
-# correctly clean the generated source files
+# Correctly clean the generated headers, but keep the xml description
 CLEANFILES = $(BUILT_SOURCES)
 
-noinst_PROGRAMS=voip-engine-tester
+bin_PROGRAMS = telepathy-voip-engine
 
 CORE_SOURCES = \
-    tp-media-session-handler.c \
-    tp-media-stream-handler.c \
-    telepathy-errors.c \
-    $(BUILT_SOURCES)
+	tp-media-session-handler.h \
+	tp-media-stream-handler.c \
+	$(BUILT_SOURCES)
 
-voip_engine_tester_SOURCES = \
-    voip-engine.c \
-    $(CORE_SOURCES)
+libvoipengine_convenience_la_SOURCES = \
+	$(CORE_SOURCES)
+
+telepathy_voip_engine_SOURCES = \
+	voip-engine.c
+
+telepathy_voip_engine_LDADD = libvoipengine-convenience.la
+
+noinst_LTLIBRARIES = libvoipengine-convenience.la
 
 AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @LOUDMOUTH_CFLAGS@
 AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LOUDMOUTH_LIBS@
 
 
-# rule to generate the binding headers
+
+#Rule to generate the binding headers
+%-gen.h: ../xml/%.xml Makefile.am
+	dbus-binding-tool --prefix=$(subst -,_,$*) --mode=glib-client $< > $*-gen.h
+
 %-glue.h: ../%.xml Makefile
 	dbus-binding-tool --mode=glib-server --output=$@ --prefix=$(subst -,_,$*) $<
 

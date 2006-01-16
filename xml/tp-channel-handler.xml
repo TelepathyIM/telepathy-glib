@@ -1,0 +1,13 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node name="/TpChannelHandler">
+  <interface name="org.freedesktop.Telepathy.ChannelHandler">
+    <method name="HandleChannel">
+      <arg direction="in" type="s" name="bus_name" />
+      <arg direction="in" type="o" name="connection" />
+      <arg direction="in" type="s" name="channel_type" />
+      <arg direction="in" type="o" name="channel" />
+      <arg direction="in" type="u" name="handle_type" />
+      <arg direction="in" type="u" name="handle" />
+    </method>
+  </interface>
+</node>
