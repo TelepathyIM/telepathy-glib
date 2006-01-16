@@ -22,19 +22,63 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <tp-chan.h>
+#include <tp-chan-type-streamed-media.h>
+
 #include "tp-voip-engine.h"
 #include "tp-voip-engine-signals-marshal.h"
 
 #include "tp-voip-engine-glue.h"
 
+#include "common/telepathy-interfaces.h"
 #include "common/telepathy-constants.h"
 #include "common/telepathy-errors.h"
 #include "common/telepathy-errors-enumtypes.h"
 
+
 #define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
 
-static gboolean handling_channel = FALSE;
+DBusGConnection *
+get_bus ()
+{
+  static DBusGConnection *bus = NULL;
+
+  if (bus == NULL)
+    {
+      GError *error = NULL;
+
+      bus = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
+
+      if (bus == NULL)
+        g_error ("Failed to connect to starter bus: %s", error->message);
+    }
+
+  return bus;
+}
+
+DBusGProxy *
+get_bus_proxy ()
+{
+  static DBusGProxy *bus_proxy = NULL;
+
+  if (bus_proxy == NULL)
+    {
+      DBusGConnection *bus = get_bus ();
+
+      bus_proxy = dbus_g_proxy_new_for_name (bus,
+                                            "org.freedesktop.DBus",
+                                            "/org/freedesktop/DBus",
+                                            "org.freedesktop.DBus");
+
+      if (bus_proxy == NULL)
+        g_error ("Failed to get proxy object for bus.");
+    }
+
+  return bus_proxy;
+}
+
+
 
 G_DEFINE_TYPE(TpVoipEngine, tp_voip_engine, G_TYPE_OBJECT)
 
@@ -44,6 +88,11 @@ typedef struct _TpVoipEnginePrivate TpVoipEnginePrivate;
 struct _TpVoipEnginePrivate
 {
   gboolean dispose_has_run;
+  gboolean handling_channel;
+
+  TpChan *chan;
+  DBusGProxy *session;
+  DBusGProxy *stream;
 };
 
 #define TP_VOIP_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_VOIP_ENGINE, TpVoipEnginePrivate))
@@ -106,6 +155,20 @@ tp_voip_engine_finalize (GObject *object)
   G_OBJECT_CLASS (tp_voip_engine_parent_class)->finalize (object);
 }
 
+void
+tp_voip_engine_add_session (TpVoipEngine *self, guint member,
+                            const char *session_handler_path, 
+                            const gchar* type)
+{
+  
+}
+
+static void
+new_media_session_handler (DBusGProxy *proxy, guint member, const char *session_handler_path, const gchar* type, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  tp_voip_engine_add_session (self, member, session_handler_path, type);
+}
 
 
 /**
@@ -122,53 +185,64 @@ tp_voip_engine_finalize (GObject *object)
  */
 gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
 {
-  if (handling_channel)
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
+  GArray *session_handlers;
+  GValueArray *session;
+  if (priv->handling_channel)
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
                             "VoIP Engine is already handling a channel");
 
       return FALSE;
     }
+  if (strcmp (channel_type, TP_CHANNEL_TYPE_STREAMED_MEDIA)!=0)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+                            "VoIP Engine was passed a channel that was not a "
+                            TP_CHANNEL_TYPE_STREAMED_MEDIA);
+
+      return FALSE;
+     }
+
+  priv->chan =  tp_chan_new (get_conn(), connection,
+                             bus_name, obj_path,
+                             TP_CHANNEL_INTERFACE,
+                             TP_CHANNEL_TYPE_STREAMED_MEDIA,
+                             handle_type, handle);
+
+/* TODO check for group interface
+ * chan_interfaces = (GSList *) tp_chan_local_get_interface_objs(priv->chan);
+  if (chan_interfaces == NULL)
+  {
+    g_error("Channel does not have interfaces.");
+    exit(1);
+  }
+  */
+  dbus_g_proxy_add_signal (priv->chan->proxy, "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->chan->proxy, "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
+
+  if (!tp_chan_type_streamed_media_get_session_handlers (priv->chan->proxy, &session_handlers, error))
+    {
+      return FALSE;
+    }
+  if (session_handlers->len)
+    {
+      for (i=0; i<len; i++)
+        {
+          session = &g_array_index(session_handlers, GValueArray,i);
+          g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (session,0)));
+          g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 1)) == DBUS_TYPE_G_OBJECT_PATH);
+          g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session,2)));
+
+          tp_voip_engine_add_session(obj,
+              g_value_get_uint (g_value_array_get_nth (session, 0)),
+              g_value_get_boxed (g_value_array_get_nth (session, 1)),
+              g_value_get_string (g_value_array_get_nth (session, 2)));
+
+        }
+    }
   return TRUE;
-}
-
-DBusGConnection *
-get_bus ()
-{
-  static DBusGConnection *bus = NULL;
-
-  if (bus == NULL)
-    {
-      GError *error = NULL;
-
-      bus = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-
-      if (bus == NULL)
-        g_error ("Failed to connect to starter bus: %s", error->message);
-    }
-
-  return bus;
-}
-
-DBusGProxy *
-get_bus_proxy ()
-{
-  static DBusGProxy *bus_proxy = NULL;
-
-  if (bus_proxy == NULL)
-    {
-      DBusGConnection *bus = get_bus ();
-
-      bus_proxy = dbus_g_proxy_new_for_name (bus,
-                                            "org.freedesktop.DBus",
-                                            "/org/freedesktop/DBus",
-                                            "org.freedesktop.DBus");
-
-      if (bus_proxy == NULL)
-        g_error ("Failed to get proxy object for bus.");
-    }
-
-  return bus_proxy;
 }
 
 void
