@@ -7,6 +7,7 @@ CLEANFILES = $(BUILT_SOURCES)
 
 
 CORE_SOURCES = \
+    telepathy-errors.c \
     $(BUILT_SOURCES)
 
 libcommon_convenience_la_SOURCES = \
