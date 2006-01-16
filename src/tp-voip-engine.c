@@ -21,9 +21,10 @@
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <tp-chan.h>
-#include <tp-chan-type-streamed-media.h>
+#include <libtelepathy/tp-chan.h>
+#include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 
 #include "tp-voip-engine.h"
 #include "tp-voip-engine-signals-marshal.h"
@@ -188,6 +189,8 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
   GArray *session_handlers;
   GValueArray *session;
+  int i;
+
   if (priv->handling_channel)
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
@@ -204,8 +207,8 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
       return FALSE;
      }
 
-  priv->chan =  tp_chan_new (get_conn(), connection,
-                             bus_name, obj_path,
+  priv->chan =  tp_chan_new (get_bus(),
+                             bus_name, connection,
                              TP_CHANNEL_INTERFACE,
                              TP_CHANNEL_TYPE_STREAMED_MEDIA,
                              handle_type, handle);
@@ -228,7 +231,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
     }
   if (session_handlers->len)
     {
-      for (i=0; i<len; i++)
+      for (i=0; i<session_handlers->len; i++)
         {
           session = &g_array_index(session_handlers, GValueArray,i);
           g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (session,0)));
