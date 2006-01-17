@@ -36,11 +36,6 @@
       <arg direction="out" type="au" />
     </method>
   </interface>
-  <interface name="org.freedesktop.DBus.Introspectable">
-    <method name="Introspect">
-      <arg direction="out" type="s" />
-    </method>
-  </interface>
   <interface name="org.freedesktop.Telepathy.Channel">
     <method name="GetHandle">
       <arg direction="out" type="u" />
@@ -64,6 +59,8 @@
       <arg type="s" name="type" />
     </signal>
     <method name="GetSessionHandlers">
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+
       <arg direction="out" type="a(uos)" />
     </method>
   </interface>
