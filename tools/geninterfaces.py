@@ -15,7 +15,7 @@ interfaces.sort()
 for cname in interfaces:
     val = telepathy.interfaces.__dict__[cname]
     if cname[:2] !='__':
-        out.write('#define TP_'+cname +' \\\n')
+        out.write('#define TP_IFACE_'+cname +' \\\n')
         out.write('        "'+val+'"\n')
 
 
