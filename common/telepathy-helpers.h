@@ -1,5 +1,6 @@
 /*
- * tp-voip-engine.c - Source for TpVoipEngine
+ * telepathy-helpers.h - Header for various helper functions 
+ * for telepathy implementation
  * Copyright (C) 2005 Collabora Ltd.
  * Copyright (C) 2005 Nokia Corporation
  *
