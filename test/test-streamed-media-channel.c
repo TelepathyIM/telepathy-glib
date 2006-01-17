@@ -336,34 +336,11 @@ gboolean test_streamed_media_channel_get_self_handle (TestStreamedMediaChannel *
  * Implements DBus method GetSessionHandlers
  * on interface org.freedesktop.Telepathy.Channel.Type.StreamedMedia
  *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
+ * @context: The DBUS invocation context to use to return values
+ *           or throw an error.
  */
 gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
 {
-  GValueArray *valarr;
-  GValue val = {0,};
-
-  *ret =g_array_sized_new(TRUE, FALSE, sizeof(GValueArray *),1);
-
-  valarr = g_value_array_new(3);
-
-  g_value_init(&val, G_TYPE_UINT);
-  g_value_set_uint(&val, 0);
-  g_value_array_append(valarr, &val);
-
-  g_value_init(&val, DBUS_TYPE_G_OBJECT_PATH);
-  g_value_set_boxed (&val, g_strdup(TEST_SESSION_PATH));
-  g_value_array_append(valarr, &val);
-
-  g_value_init(&val, G_TYPE_STRING);
-  g_value_set_string(&val, "rtp");
-  g_value_array_append(valarr, &val);
-
-  g_array_append_val(*ret, valarr);
   return TRUE;
 }
 

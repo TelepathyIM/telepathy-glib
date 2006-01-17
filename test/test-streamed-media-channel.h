@@ -63,8 +63,7 @@ gboolean test_streamed_media_channel_get_local_pending_members (TestStreamedMedi
 gboolean test_streamed_media_channel_get_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
 gboolean test_streamed_media_channel_get_remote_pending_members (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
 gboolean test_streamed_media_channel_get_self_handle (TestStreamedMediaChannel *obj, guint* ret, GError **error);
-gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, GArray ** ret, GError **error);
-gboolean test_streamed_media_channel_introspect (TestStreamedMediaChannel *obj, gchar ** ret, GError **error);
+gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, DBusGMethodInvocation *context);
 gboolean test_streamed_media_channel_remove_members (TestStreamedMediaChannel *obj, const GArray * contacts, const gchar * message, GError **error);
 
 
