@@ -22,6 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "test-voip-engine.h"
+#include "tp-media-session-handler.h"
+#include "tp-media-stream-handler.h"
 #include "test-streamed-media-channel.h"
 #include "test-streamed-media-channel-signals-marshal.h"
 
@@ -341,6 +344,26 @@ gboolean test_streamed_media_channel_get_self_handle (TestStreamedMediaChannel *
  */
 gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
 {
+  GValueArray *valarr;
+  GValue val = {0,};
+
+  *ret =g_array_sized_new(TRUE, FALSE, sizeof(GValueArray *),1);
+
+  valarr = g_value_array_new(3);
+
+  g_value_init(&val, G_TYPE_UINT);
+  g_value_set_uint(&val, 0);
+  g_value_array_append(valarr, &val);
+
+  g_value_init(&val, DBUS_TYPE_G_OBJECT_PATH);
+  g_value_set_boxed (&val, g_strdup(TEST_SESSION_PATH));
+  g_value_array_append(valarr, &val);
+
+  g_value_init(&val, G_TYPE_STRING);
+  g_value_set_string(&val, "rtp");
+  g_value_array_append(valarr, &val);
+
+  g_array_append_val(*ret, valarr);
   return TRUE;
 }
 

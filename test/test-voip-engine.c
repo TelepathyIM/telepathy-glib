@@ -23,10 +23,64 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "common/telepathy-errors.h"
+#include "common/telepathy-errors-enumtypes.h"
 #include "common/telepathy-helpers.h"
 
-/*temporary to make compile unti this is written*/
+#include "test-streamed-media-channel.h"
+#include "tp-media-session-handler.h"
+#include "tp-media-stream-handler.h"
+
+#include "test-voip-engine.h"
+
+void
+register_service() {
+  DBusGConnection *bus;
+  DBusGProxy *bus_proxy;
+  GError *error = NULL;
+  guint request_name_result;
+
+  bus = tp_get_bus ();
+  bus_proxy = tp_get_bus_proxy ();
+
+  if (!dbus_g_proxy_call (bus_proxy, "RequestName", &error,
+                          G_TYPE_STRING, TEST_APP_NAME,
+                          G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
+                          G_TYPE_INVALID,
+                          G_TYPE_UINT, &request_name_result,
+                          G_TYPE_INVALID))
+    g_error ("Failed to request bus name: %s", error->message);
+
+  if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
+    g_error ("Failed to acquire bus name, voip engine already running?");
+
+}
 
 int main(int argc, char **argv) {
-    return 0;
+  GMainLoop *mainloop;
+  DBusGConnection *bus;
+
+  g_type_init();
+
+  g_set_prgname("test-voip-engine");
+
+  mainloop = g_main_loop_new (NULL, FALSE);
+
+  bus = tp_get_bus ();
+  register_service();
+
+  dbus_g_error_domain_register (TELEPATHY_ERRORS, NULL, TELEPATHY_TYPE_ERRORS);
+
+  dbus_g_connection_register_g_object (bus, TEST_STREAM_PATH,
+    g_object_new (TP_TYPE_MEDIA_STREAM_HANDLER, NULL));
+  dbus_g_connection_register_g_object (bus, TEST_SESSION_PATH,
+    g_object_new (TP_TYPE_MEDIA_SESSION_HANDLER, NULL));
+  dbus_g_connection_register_g_object (bus, TEST_CHANNEL_PATH,
+    g_object_new (TEST_TYPE_STREAMED_MEDIA_CHANNEL, NULL));
+
+  g_debug("started");
+
+  g_main_loop_run (mainloop);
+
+  return 0;
 }
