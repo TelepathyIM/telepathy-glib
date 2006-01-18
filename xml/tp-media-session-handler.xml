@@ -6,13 +6,13 @@
   </interface>
   <interface name="org.freedesktop.Telepathy.Media.SessionHandler">
     <method name="Error">
-      <arg direction="in"  type="i" name="errno" />
+      <arg direction="in"  type="u" name="errno" />
       <arg direction="in"  type="s" name="message" />
     </method>
     <signal name="NewMediaStreamHandler">
       <arg type="o" name="stream_handler" />
-      <arg type="i" name="media_type" />
-      <arg type="i" name="direction" />
+      <arg type="u" name="media_type" />
+      <arg type="u" name="direction" />
     </signal>
   </interface>
 </node>
