@@ -136,24 +136,6 @@ gboolean tp_media_session_handler_error (TpMediaSessionHandler *obj, gint errno,
 
 
 /**
- * tp_media_session_handler_introspect
- *
- * Implements DBus method Introspect
- * on interface org.freedesktop.DBus.Introspectable
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_media_session_handler_introspect (TpMediaSessionHandler *obj, gchar ** ret, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
  * tp_media_session_handler_ready
  *
  * Implements DBus method Ready

@@ -54,7 +54,6 @@ GType tp_media_session_handler_get_type(void);
 
 
 gboolean tp_media_session_handler_error (TpMediaSessionHandler *obj, gint errno, const gchar * message, GError **error);
-gboolean tp_media_session_handler_introspect (TpMediaSessionHandler *obj, gchar ** ret, GError **error);
 gboolean tp_media_session_handler_ready (TpMediaSessionHandler *obj, GError **error);
 
 

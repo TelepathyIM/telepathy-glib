@@ -169,7 +169,7 @@ tp_media_stream_handler_finalize (GObject *object)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_stream_handler_codec_choice (TpMediaStreamHandler *obj, gint codec_id, GError **error)
+gboolean tp_media_stream_handler_codec_choice (TpMediaStreamHandler *obj, guint codec_id, GError **error)
 {
   return TRUE;
 }
@@ -187,25 +187,7 @@ gboolean tp_media_stream_handler_codec_choice (TpMediaStreamHandler *obj, gint c
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_stream_handler_error (TpMediaStreamHandler *obj, gint errno, const gchar * message, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * tp_media_stream_handler_introspect
- *
- * Implements DBus method Introspect
- * on interface org.freedesktop.DBus.Introspectable
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_media_stream_handler_introspect (TpMediaStreamHandler *obj, gchar ** ret, GError **error)
+gboolean tp_media_stream_handler_error (TpMediaStreamHandler *obj, guint errno, const gchar * message, GError **error)
 {
   return TRUE;
 }

@@ -53,9 +53,8 @@ GType tp_media_stream_handler_get_type(void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_MEDIA_STREAM_HANDLER, TpMediaStreamHandlerClass))
 
 
-gboolean tp_media_stream_handler_codec_choice (TpMediaStreamHandler *obj, gint codec_id, GError **error);
-gboolean tp_media_stream_handler_error (TpMediaStreamHandler *obj, gint errno, const gchar * message, GError **error);
-gboolean tp_media_stream_handler_introspect (TpMediaStreamHandler *obj, gchar ** ret, GError **error);
+gboolean tp_media_stream_handler_codec_choice (TpMediaStreamHandler *obj, guint codec_id, GError **error);
+gboolean tp_media_stream_handler_error (TpMediaStreamHandler *obj, guint errno, const gchar * message, GError **error);
 gboolean tp_media_stream_handler_native_candidates_prepared (TpMediaStreamHandler *obj, GError **error);
 gboolean tp_media_stream_handler_new_active_candidate_pair (TpMediaStreamHandler *obj, const gchar * native_candidate_id, const gchar * remote_candidate_id, GError **error);
 gboolean tp_media_stream_handler_new_native_candidate (TpMediaStreamHandler *obj, const gchar * candidate_id, const GArray * transports, GError **error);
