@@ -79,7 +79,7 @@ tp_media_session_handler_class_init (TpMediaSessionHandlerClass *tp_media_sessio
                   0,
                   NULL, NULL,
                   tp_media_session_handler_marshal_VOID__STRING_INT_INT,
-                  G_TYPE_NONE, 3, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INT, G_TYPE_INT);
+                  G_TYPE_NONE, 3, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT);
 
   dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_media_session_handler_class), &dbus_glib_tp_media_session_handler_object_info);
 }
@@ -129,7 +129,7 @@ tp_media_session_handler_finalize (GObject *object)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_session_handler_error (TpMediaSessionHandler *obj, gint errno, const gchar * message, GError **error)
+gboolean tp_media_session_handler_error (TpMediaSessionHandler *obj, guint errno, const gchar * message, GError **error)
 {
   return TRUE;
 }
