@@ -139,7 +139,7 @@ gboolean tp_media_session_handler_error (TpMediaSessionHandler *obj, guint errno
  * tp_media_session_handler_ready
  *
  * Implements DBus method Ready
- * on interface org.freedesktop.Telepathy.Media.StreamHandler
+ * on interface org.freedesktop.Telepathy.Media.SessionHandler
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occured, DBus will throw the error only if this
