@@ -18,9 +18,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define DBUS_API_SUBJECT_TO_CHANGE 
+
+#include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-lowlevel.h>
 
 #include "test-voip-engine.h"
 #include "tp-media-session-handler.h"
@@ -339,9 +343,36 @@ gboolean test_streamed_media_channel_get_self_handle (TestStreamedMediaChannel *
  * @context: The DBUS invocation context to use to return values
  *           or throw an error.
  */
-gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, GArray ** ret, GError **error)
+gboolean test_streamed_media_channel_get_session_handlers (TestStreamedMediaChannel *obj, DBusGMethodInvocation *context)
 {
+  DBusMessage *reply;
+  DBusMessageIter iter;
+  DBusMessageIter array_iter;
+  DBusMessageIter struct_iter;
+  int member = 0;
+
+  g_message ("GetSessionHandlers called");
+
+  reply = dbus_g_method_get_reply(context);
+  dbus_message_iter_init_append (reply, &iter);
+  if ( !dbus_message_iter_open_container( &iter, DBUS_TYPE_ARRAY, "(uos)", &array_iter) )
+    goto memerr;
+
+  if ( !dbus_message_iter_open_container( &array_iter, DBUS_TYPE_STRUCT, NULL, &struct_iter) )
+    goto memerr;
+
+  dbus_message_iter_append_basic(&struct_iter, DBUS_TYPE_UINT32, &member);
+  dbus_message_iter_append_basic(&struct_iter, DBUS_TYPE_OBJECT_PATH, TEST_SESSION_PATH);
+  dbus_message_iter_append_basic(&struct_iter, DBUS_TYPE_STRING, "rtp");
+  dbus_message_iter_close_container(&array_iter, &struct_iter); 
+
+  dbus_message_iter_close_container(&iter, &array_iter);
+  dbus_g_method_send_reply(context, reply);
+
   return TRUE;
+
+memerr:
+  return FALSE;
 }
 
 

@@ -26,10 +26,12 @@
 #include "common/telepathy-errors.h"
 #include "common/telepathy-errors-enumtypes.h"
 #include "common/telepathy-helpers.h"
+#include "common/telepathy-interfaces.h"
 
 #include "test-streamed-media-channel.h"
 #include "tp-media-session-handler.h"
 #include "tp-media-stream-handler.h"
+#include "tp-voip-engine-gen.h"
 
 #include "test-voip-engine.h"
 
@@ -59,6 +61,9 @@ register_service() {
 int main(int argc, char **argv) {
   GMainLoop *mainloop;
   DBusGConnection *bus;
+  DBusGProxy *proxy;
+  GError *error = NULL;
+  guint result;
 
   g_type_init();
 
@@ -78,6 +83,39 @@ int main(int argc, char **argv) {
   dbus_g_connection_register_g_object (bus, TEST_CHANNEL_PATH,
     g_object_new (TEST_TYPE_STREAMED_MEDIA_CHANNEL, NULL));
 
+  /* Activate voip engine*/
+  g_print ("Activating VoipEngine\n");
+
+  error = NULL;
+  if (!dbus_g_proxy_call (tp_get_bus_proxy(), "StartServiceByName", &error,
+                          G_TYPE_STRING,
+                          "org.freedesktop.Telepathy.VoipEngine",
+                          G_TYPE_UINT,
+                          0,
+                          G_TYPE_INVALID,
+                          G_TYPE_UINT, &result,
+                          G_TYPE_INVALID)) {
+    g_warning ("Failed to complete Activate call %s", error->message);
+  }
+  else
+    g_message ("Voip engine activated\n");
+
+  proxy = dbus_g_proxy_new_for_name (bus,
+    "org.freedesktop.Telepathy.VoipEngine",
+    "/org/freedesktop/Telepathy/VoipEngine",
+    "org.freedesktop.Telepathy.ChannelHandler");
+
+  error = NULL;
+  if (!org_freedesktop_Telepathy_ChannelHandler_handle_channel 
+         (proxy, TEST_APP_NAME, "/dummy",  TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA, 
+          TEST_CHANNEL_PATH, 0, 0, &error))
+    {
+      g_error ("Handle Channel failed, %s", error->message);
+      g_error_free (error);
+      exit (1);
+    }
+  g_object_unref (proxy);
+  
   g_debug("started");
 
   g_main_loop_run (mainloop);

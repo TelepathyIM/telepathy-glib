@@ -70,6 +70,8 @@ AC_OUTPUT( Makefile \
           common/Makefile
           src/Makefile
           test/Makefile
+          test/glib/Makefile
+          test/python/Makefile
           xml/Makefile
 )
 
