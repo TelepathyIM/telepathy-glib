@@ -81,15 +81,14 @@ if test x$have_farsight = xno ; then
 fi
 
 
-AC_OUTPUT( Makefile 
-          common/Makefile
-          data/Makefile
-          data/org.freedesktop.Telepathy.VoipEngine.service
-          doc/Makefile
-          src/Makefile
-          test/Makefile
-          test/glib/Makefile
-          test/python/Makefile
+AC_OUTPUT( Makefile \
+          common/Makefile \
+          data/Makefile \
+          doc/Makefile \
+          src/Makefile  \
+          test/Makefile \
+          test/glib/Makefile \
+          test/python/Makefile \
           xml/Makefile
 )
 
