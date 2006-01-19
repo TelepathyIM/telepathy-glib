@@ -1,0 +1,4 @@
+general tidyup
+add reporting when the max no streams/sessions are allocated
+preallocate elements/pipelines
+att watch for session/stream handlers falling off the bus
