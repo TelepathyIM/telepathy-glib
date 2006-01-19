@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.freedesktop.Telepathy.VoipEngine
-Exec=/tmp/arse/bin/telepathy-voip-engine
