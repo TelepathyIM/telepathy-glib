@@ -199,13 +199,13 @@ session_error (FarsightSession *stream,
 
 
 static void
-new_active_candidate_pair (FarsightStream *stream, gchar* native_candidate, gchar *remote_candidate, gpointer user_data)
+new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate, const gchar *remote_candidate, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   g_message ("%s: new-native-candidate-pair: stream=%p\n", __FUNCTION__, stream);
   
-  org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async_callback
+  org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
     (priv->stream_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
 }
 
@@ -237,7 +237,7 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
         info->candidate_id, info->component, (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP)?"TCP":"UDP",
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
-  org_freedesktop_Telepathy_Media_StreamHandler_native_candidates_prepared_async_callback
+  org_freedesktop_Telepathy_Media_StreamHandler_native_candidates_prepared_async
      (priv->stream_proxy, dummy_callback,"Media.StreamHandler::NativeCandidatesPrepared");
 }
 
@@ -247,8 +247,6 @@ state_changed (FarsightStream *stream,
                FarsightStreamDirection dir,
                gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   switch (state) {
     case FARSIGHT_STREAM_STATE_STOPPED:
           g_message ("%s: %p stopped\n", __FUNCTION__, stream);
@@ -266,68 +264,68 @@ new_native_candidate (FarsightStream *stream,
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-  GList *fs_candidates, *lp;
+  const GList *fs_candidates, *lp;
   GPtrArray *transports;
   GValueArray *transport;
-  FarsightTransportInto *fs_transport;
+  FarsightTransportInfo *fs_transport;
 
   fs_candidates = farsight_stream_get_native_candidate (stream, candidate_id);
-  transports = g_ptr_array_new (g_list_length (fs_candidates));
+  transports = g_ptr_array_sized_new (g_list_length ((GList*)fs_candidates));
 
   for (lp = fs_candidates; lp; lp = lp->next)
     {
       fs_transport = (FarsightTransportInfo*) lp->data;
       transport = g_value_array_new (9);
 
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+      g_value_array_append (transport, NULL);
+      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
                     G_TYPE_INT);
-      g_value_set_int (g_value_array_get_nth (vals, 0), 
+      g_value_set_int (g_value_array_get_nth (transport, 0), 
                        fs_transport->component);
 
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+      g_value_array_append (transport, NULL);
+      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
                     G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (vals, 0), 
+      g_value_set_string (g_value_array_get_nth (transport, 0), 
                           fs_transport->ip);
 
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+      g_value_array_append (transport, NULL);
+      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
                     G_TYPE_INT);
-      g_value_set_int (g_value_array_get_nth (vals, 0), 
+      g_value_set_int (g_value_array_get_nth (transport, 0), 
                        fs_transport->proto);
 
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+      g_value_array_append (transport, NULL);
+      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
                     G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (vals, 0), 
+      g_value_set_string (g_value_array_get_nth (transport, 0), 
                           fs_transport->proto_subtype);
 
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+      g_value_array_append (transport, NULL);
+      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
                     G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (vals, 0), 
+      g_value_set_string (g_value_array_get_nth (transport, 0), 
                           fs_transport->proto_profile);
 
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+      g_value_array_append (transport, NULL);
+      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
                     G_TYPE_DOUBLE);
-      g_value_set_double (g_value_array_get_nth (vals, 0), 
+      g_value_set_double (g_value_array_get_nth (transport, 0), 
                           (double)fs_transport->preference);
 
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+      g_value_array_append (transport, NULL);
+      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
                     G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (vals, 0), 
+      g_value_set_string (g_value_array_get_nth (transport, 0), 
                           fs_transport->username);
 
-      g_value_array_append (vals, NULL);
-      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+      g_value_array_append (transport, NULL);
+      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
                     G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (vals, 0), 
+      g_value_set_string (g_value_array_get_nth (transport, 0), 
                           fs_transport->password);
 
-      g_ptr_array_append (transports, transport);
+      g_ptr_array_add (transports, transport);
      }
   org_freedesktop_Telepathy_Media_StreamHandler_new_native_candidate_async
      (priv->stream_proxy, candidate_id, transports, dummy_callback,"Media.StreamHandler::NativeCandidatesPrepared");
@@ -589,6 +587,8 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                     G_CALLBACK (native_candidates_prepared), self);
   g_signal_connect (G_OBJECT (stream), "state-changed", 
                     G_CALLBACK (state_changed), self);
+  g_signal_connect (G_OBJECT (stream), "new-native-candidate", 
+                    G_CALLBACK (new_native_candidate), self);
 
   /*OMG, Can we make dbus-binding-tool do this stuff for us??*/
   /* tell the gproxy about the AddRemoteCandidate signal*/
