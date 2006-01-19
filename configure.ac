@@ -55,6 +55,11 @@ if test x$have_dbus = xno ; then
     AC_MSG_ERROR([DBus development libraries not found])
 fi
 
+AS_AC_EXPAND(DATADIR, $datadir)
+DBUS_SERVICES_DIR="$DATADIR/dbus-1/services"
+AC_SUBST(DBUS_SERVICES_DIR)
+AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [DBus services directory])
+
 dnl Check for libtelepathy
 PKG_CHECK_MODULES(LIBTELEPATHY, [libtelepathy], have_libtelepathy=yes, have_libtelepathy=no)
 
@@ -76,9 +81,11 @@ if test x$have_farsight = xno ; then
 fi
 
 
-AC_OUTPUT( Makefile \
-          doc/Makefile
+AC_OUTPUT( Makefile 
           common/Makefile
+          data/Makefile
+          data/org.freedesktop.Telepathy.VoipEngine.service
+          doc/Makefile
           src/Makefile
           test/Makefile
           test/glib/Makefile
