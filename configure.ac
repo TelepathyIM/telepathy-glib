@@ -65,6 +65,17 @@ if test x$have_libtelepathy = xno ; then
     AC_MSG_ERROR([libtelepathy development libraries not found])
 fi
 
+dnl Check for farsight 
+PKG_CHECK_MODULES(FARSIGHT, [farsight-0.1], have_farsight=yes, have_farsight=no)
+
+AC_SUBST(FARSIGHT_CFLAGS)
+AC_SUBST(FARSIGHT_LIBS)
+
+if test x$have_farsight = xno ; then
+    AC_MSG_ERROR([Farsight development libraries not found])
+fi
+
+
 AC_OUTPUT( Makefile \
           doc/Makefile
           common/Makefile

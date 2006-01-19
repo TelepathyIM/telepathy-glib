@@ -26,8 +26,16 @@
 #include <libtelepathy/tp-chan.h>
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 
+#include <farsight/farsight-session.h>
+#include <farsight/farsight-stream.h>
+#include <farsight/farsight-codec.h>
+#include <farsight/farsight-transport.h>
+
 #include "tp-voip-engine.h"
 #include "tp-voip-engine-signals-marshal.h"
+#include "misc-signals-marshal.h"
+#include "tp-media-session-handler-gen.h"
+#include "tp-media-stream-handler-gen.h"
 
 #include "tp-voip-engine-glue.h"
 
@@ -41,21 +49,57 @@
 #define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
 
+#define DBUS_TYPE_G_ARRAY_OF_STRUCTS dbus_g_type_get_collection ("GPtrArray", G_TYPE_VALUE_ARRAY)
+
+static void
+register_dbus_signal_marshallers()
+{
+  /*register a marshaller for the NewMediaStreamHandler signal*/
+  dbus_g_object_register_marshaller 
+    (misc_marshal_VOID__BOXED_UINT_UINT, G_TYPE_NONE,
+     DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
+
+  /*register a marshaller for the NewMediaSessionHandler signal*/
+  dbus_g_object_register_marshaller 
+    (misc_marshal_VOID__UINT_BOXED_STRING, G_TYPE_NONE,
+     G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
+
+  /*register a marshaller for the AddRemoteCandidate signal*/
+  dbus_g_object_register_marshaller 
+    (misc_marshal_VOID__STRING_BOXED, G_TYPE_NONE,
+     G_TYPE_STRING, DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+ 
+  /*register a marshaller for the SetActiveCandidatePair signal*/
+  dbus_g_object_register_marshaller 
+    (misc_marshal_VOID__STRING_STRING, G_TYPE_NONE,
+     G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
+
+   /*register a marshaller for the SetRemoteCandidateList and SetRemoteCodecs
+    * signals
+    */
+  dbus_g_object_register_marshaller 
+    (misc_marshal_VOID__BOXED, G_TYPE_NONE,
+     G_TYPE_STRING, DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+
+}
+
+
 
 
 G_DEFINE_TYPE(TpVoipEngine, tp_voip_engine, G_TYPE_OBJECT)
 
 /* private structure */
 typedef struct _TpVoipEnginePrivate TpVoipEnginePrivate;
-
 struct _TpVoipEnginePrivate
 {
   gboolean dispose_has_run;
   gboolean handling_channel;
 
   TpChan *chan;
-  DBusGProxy *session;
-  DBusGProxy *stream;
+  DBusGProxy *session_proxy;
+  DBusGProxy *stream_proxy;
+  FarsightSession *fs_session;
+  FarsightStream *fs_stream;
 };
 
 #define TP_VOIP_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_VOIP_ENGINE, TpVoipEnginePrivate))
@@ -118,12 +162,526 @@ tp_voip_engine_finalize (GObject *object)
   G_OBJECT_CLASS (tp_voip_engine_parent_class)->finalize (object);
 }
 
+/* dummy callback handler for async calling calls with no return values */
+static void
+dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
+{
+  if (error)
+    g_critical ("%s calling %s", error->message, (char*)user_data);
+}
+
+static void
+stream_error (FarsightStream *stream,
+       FarsightStreamError error,
+       const gchar *debug,
+       gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  g_message ("%s: stream error: stream=%p error=%s\n", __FUNCTION__, stream, debug);
+  org_freedesktop_Telepathy_Media_StreamHandler_error_async 
+    (priv->stream_proxy, error, debug, dummy_callback, "Media.StreamHandler::Error");
+}
+
+static void
+session_error (FarsightSession *stream,
+       FarsightSessionError error,
+       const gchar *debug,
+       gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  g_message ("%s: session error: session=%p error=%s\n", __FUNCTION__, stream, debug);
+
+  org_freedesktop_Telepathy_Media_SessionHandler_error_async 
+    (priv->session_proxy, error, debug, dummy_callback, "Media.SessionHandler::Error");
+}
+
+
+static void
+new_active_candidate_pair (FarsightStream *stream, gchar* native_candidate, gchar *remote_candidate, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  g_message ("%s: new-native-candidate-pair: stream=%p\n", __FUNCTION__, stream);
+  
+  org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async_callback
+    (priv->stream_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
+}
+
+static void
+codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  g_message ("%s: codec-changed: codec_id=%d, stream=%p\n", __FUNCTION__, codec_id, stream);
+   org_freedesktop_Telepathy_Media_StreamHandler_codec_choice_async
+     (priv->stream_proxy, codec_id, dummy_callback,"Media.StreamHandler::CodecChoice");
+}
+
+static void
+native_candidates_prepared (FarsightStream *stream, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  const GList *transport_candidates, *lp;
+  FarsightTransportInfo *info;
+
+  g_message ("%s: preparation-complete: stream=%p\n", __FUNCTION__, stream);
+
+  transport_candidates = farsight_stream_get_native_candidate_list (stream); 
+  for (lp = transport_candidates; lp; lp = g_list_next (lp)) 
+  {
+    info = (FarsightTransportInfo*)lp->data;
+    g_message ("Local transport candidate: %s %d %s %s %s:%d, pref %f", 
+        info->candidate_id, info->component, (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP)?"TCP":"UDP",
+        info->proto_subtype, info->ip, info->port, (double) info->preference);
+  }
+  org_freedesktop_Telepathy_Media_StreamHandler_native_candidates_prepared_async_callback
+     (priv->stream_proxy, dummy_callback,"Media.StreamHandler::NativeCandidatesPrepared");
+}
+
+static void 
+state_changed (FarsightStream *stream, 
+               FarsightStreamState state,
+               FarsightStreamDirection dir,
+               gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  switch (state) {
+    case FARSIGHT_STREAM_STATE_STOPPED:
+          g_message ("%s: %p stopped\n", __FUNCTION__, stream);
+          break;
+    case FARSIGHT_STREAM_STATE_PLAYING: 
+          g_message ("%s: %p playing\n", __FUNCTION__, stream);
+          break;
+  }
+}
+
+static void
+new_native_candidate (FarsightStream *stream, 
+                      gchar *candidate_id, 
+                      gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  GList *fs_candidates, *lp;
+  GPtrArray *transports;
+  GValueArray *transport;
+  FarsightTransportInto *fs_transport;
+
+  fs_candidates = farsight_stream_get_native_candidate (stream, candidate_id);
+  transports = g_ptr_array_new (g_list_length (fs_candidates));
+
+  for (lp = fs_candidates; lp; lp = lp->next)
+    {
+      fs_transport = (FarsightTransportInfo*) lp->data;
+      transport = g_value_array_new (9);
+
+      g_value_array_append (vals, NULL);
+      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+                    G_TYPE_INT);
+      g_value_set_int (g_value_array_get_nth (vals, 0), 
+                       fs_transport->component);
+
+      g_value_array_append (vals, NULL);
+      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+                    G_TYPE_STRING);
+      g_value_set_string (g_value_array_get_nth (vals, 0), 
+                          fs_transport->ip);
+
+      g_value_array_append (vals, NULL);
+      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+                    G_TYPE_INT);
+      g_value_set_int (g_value_array_get_nth (vals, 0), 
+                       fs_transport->proto);
+
+      g_value_array_append (vals, NULL);
+      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+                    G_TYPE_STRING);
+      g_value_set_string (g_value_array_get_nth (vals, 0), 
+                          fs_transport->proto_subtype);
+
+      g_value_array_append (vals, NULL);
+      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+                    G_TYPE_STRING);
+      g_value_set_string (g_value_array_get_nth (vals, 0), 
+                          fs_transport->proto_profile);
+
+      g_value_array_append (vals, NULL);
+      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+                    G_TYPE_DOUBLE);
+      g_value_set_double (g_value_array_get_nth (vals, 0), 
+                          (double)fs_transport->preference);
+
+      g_value_array_append (vals, NULL);
+      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+                    G_TYPE_STRING);
+      g_value_set_string (g_value_array_get_nth (vals, 0), 
+                          fs_transport->username);
+
+      g_value_array_append (vals, NULL);
+      g_value_init (g_value_array_get_nth (vals, vals->n_values - 1),
+                    G_TYPE_STRING);
+      g_value_set_string (g_value_array_get_nth (vals, 0), 
+                          fs_transport->password);
+
+      g_ptr_array_append (transports, transport);
+     }
+  org_freedesktop_Telepathy_Media_StreamHandler_new_native_candidate_async
+     (priv->stream_proxy, candidate_id, transports, dummy_callback,"Media.StreamHandler::NativeCandidatesPrepared");
+}
+
+/**
+ * small helper function to help converting a
+ * telepathy dbus candidate to a list of FarsightTransportInfos
+ * nothing is copied, so always keep the usage of this within a function
+ * if you need to do multiple candidates, call this repeastedly and 
+ * g_list_join them together.
+ * Free the list using free_fs_transports
+ */
+static GList*
+tp_transports_to_fs (gchar* candidate, GPtrArray *transports)
+{
+  GList *fs_trans_list = NULL;
+  GValueArray *transport;
+  FarsightTransportInfo *fs_transport;
+  int i;
+
+  for (i=0; i< transports->len; i++)
+    {
+      transport = g_ptr_array_index (transports, i);
+      fs_transport = g_new0(FarsightTransportInfo, 1);
+
+      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport,0)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,1)));
+      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport,2)));
+      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport,3)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,4)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,5)));
+      g_assert(G_VALUE_HOLDS_DOUBLE (g_value_array_get_nth (transport,6)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,7)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,8)));
+
+      fs_transport->candidate_id = candidate;
+      fs_transport->component = 
+        g_value_get_uint (g_value_array_get_nth (transport, 0));
+      fs_transport->ip = 
+        g_value_get_string (g_value_array_get_nth (transport, 1));
+      fs_transport->port =
+        (guint16) g_value_get_uint (g_value_array_get_nth (transport, 2));
+      fs_transport->proto =
+        g_value_get_uint (g_value_array_get_nth (transport, 3));
+      fs_transport->proto_subtype = 
+        g_value_get_string (g_value_array_get_nth (transport, 4));
+      fs_transport->proto_profile = 
+        g_value_get_string (g_value_array_get_nth (transport, 5));
+      fs_transport->preference = 
+        (float) g_value_get_double (g_value_array_get_nth (transport, 6));
+      fs_transport->username = 
+        g_value_get_string (g_value_array_get_nth (transport, 7));
+      fs_transport->password = 
+        g_value_get_string (g_value_array_get_nth (transport, 8));
+
+      fs_trans_list = g_list_prepend (fs_trans_list, fs_transport);
+    }
+  fs_trans_list = g_list_reverse (fs_trans_list);
+
+  return fs_trans_list;
+}
+
+static void
+free_fs_transports (GList *fs_trans_list)
+{
+  GList *lp;
+  for (lp = g_list_first (fs_trans_list); lp; lp = g_list_next (lp))
+    {
+      g_free(lp->data);
+    }
+  g_list_free (fs_trans_list);
+}
+
+static void
+add_remote_candidate (DBusGProxy *proxy, gchar* candidate, 
+                      GPtrArray *transports, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  GList *fs_transports;
+
+  fs_transports = tp_transports_to_fs (candidate, transports);
+  
+  farsight_stream_add_remote_candidate (priv->fs_stream, fs_transports);
+
+  free_fs_transports (fs_transports);
+}
+
+static void
+remove_remote_candidate (DBusGProxy *proxy, gchar* candidate, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  farsight_stream_remove_remote_candidate (priv->fs_stream, candidate);
+}
+
+static void
+set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
+                           gchar* remote_candidate, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  farsight_stream_set_active_candidate_pair (priv->fs_stream, 
+                                             native_candidate,
+                                             remote_candidate);
+}
+
+static void
+set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
+                           gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  GList *fs_transports = NULL;
+  GValueArray *candidate = NULL;
+  GPtrArray *transports = NULL;
+  gchar *candidate_id = NULL;
+  int i;
+
+  for (i=0; i<candidates->len; i++)
+    {
+      candidate = g_ptr_array_index (candidates, i);
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (candidate,0)));
+      g_assert(G_VALUE_TYPE (g_value_array_get_nth (candidate, 1)) == 
+                               DBUS_TYPE_G_ARRAY_OF_STRUCTS);
+
+      /*TODO: mmm, candidate_id should be const in farsight api*/
+      candidate_id =
+        (gchar*) g_value_get_string (g_value_array_get_nth (candidate, 0));
+      transports =
+        g_value_get_boxed (g_value_array_get_nth (candidate, 1));
+
+      fs_transports = g_list_concat(fs_transports, 
+                        tp_transports_to_fs (candidate_id, transports));
+    }
+  
+  farsight_stream_set_remote_candidate_list (priv->fs_stream, fs_transports);
+
+  free_fs_transports (fs_transports);
+}
+
+static void
+fill_fs_params (gpointer key, gpointer value, gpointer user_data)
+{
+  GList *fs_params = (GList *) user_data;
+  FarsightCodecParameter *param = g_new0(FarsightCodecParameter,1);
+  param->name = key;
+  param->value = value;
+  g_list_prepend (fs_params, param);
+}
+
+void
+set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  GList *fs_codecs =NULL, *lp, *lp2;
+  GValueArray *codec;
+  GHashTable *params = NULL;
+  FarsightCodec *fs_codec;
+  GList *fs_params = NULL;
+  int i;
+
+  for (i=0; i<codecs->len; i++)
+    {
+      codec = g_ptr_array_index (codecs, i);
+      fs_codec = g_new0(FarsightCodec,1);
+
+      g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (codec,0)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (codec,1)));
+      g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (codec,2)));
+      g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (codec,3)));
+      g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (codec,4)));
+      g_assert(G_VALUE_TYPE (g_value_array_get_nth (codec, 5)) == 
+                               DBUS_TYPE_G_STRING_STRING_HASHTABLE);
+
+      fs_codec->id =
+        g_value_get_uint (g_value_array_get_nth (codec, 0));
+      /* TODO, farsight api shoudl take const strings*/
+      fs_codec->encoding_name =
+        (gchar*)g_value_get_string (g_value_array_get_nth (codec, 1));
+      fs_codec->media_type =
+        g_value_get_uint (g_value_array_get_nth (codec, 2));
+      fs_codec->clock_rate =
+        g_value_get_uint (g_value_array_get_nth (codec, 3));
+      fs_codec->channels =
+        g_value_get_uint (g_value_array_get_nth (codec, 4));
+
+      params = g_value_get_boxed (g_value_array_get_nth (codec, 5));
+      fs_params = NULL;
+      g_hash_table_foreach (params, fill_fs_params, fs_params);
+      fs_params = g_list_first(fs_params);
+
+      fs_codec->optional_params = fs_params;
+
+      fs_codecs = g_list_prepend (fs_codecs, fs_codec);
+  }
+  g_list_reverse(fs_codecs);
+
+  farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs);
+
+  for (lp = g_list_first (fs_codecs); lp; lp = g_list_next (lp))
+    {
+      /*free the optional parameters lists*/
+      fs_codec = (FarsightCodec*) lp->data;
+      fs_params = fs_codec->optional_params;
+      for (lp2 = g_list_first (fs_params); lp2; lp2 = g_list_next (lp2))
+      {
+        g_free(lp2->data);
+      }
+      g_list_free(fs_params);
+      g_free(lp->data);
+    }
+  g_list_free (fs_codecs);
+
+}
+
+
+
+static void
+new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path, 
+                          guint media_type, guint direction, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  FarsightStream *stream;
+
+  g_message ("Adding stream, media_type=%d, direction=%d",media_type,direction);
+  if (priv->stream_proxy) 
+    {
+      g_warning("already allocated the one supported stream.");
+      return;
+    }
+
+  priv->stream_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
+    priv->chan->name,
+    stream_handler_path,
+    TP_IFACE_MEDIA_STREAM_HANDLER);
+
+  if (!priv->stream_proxy)
+    {
+      g_critical ("couldn't get proxy for stream");
+      return;
+    }
+
+
+  stream = farsight_session_create_stream (priv->fs_session,
+                                           media_type, direction);
+  priv->fs_stream = stream;
+
+  g_signal_connect (G_OBJECT (stream), "error", 
+                    G_CALLBACK (stream_error), self);
+  g_signal_connect (G_OBJECT (stream), "new-active-candidate-pair", 
+                    G_CALLBACK (new_active_candidate_pair), self);
+  g_signal_connect (G_OBJECT (stream), "codec-changed", 
+                    G_CALLBACK (codec_changed), self);
+  g_signal_connect (G_OBJECT (stream), "native-candidates-prepared", 
+                    G_CALLBACK (native_candidates_prepared), self);
+  g_signal_connect (G_OBJECT (stream), "state-changed", 
+                    G_CALLBACK (state_changed), self);
+
+  /*OMG, Can we make dbus-binding-tool do this stuff for us??*/
+  /* tell the gproxy about the AddRemoteCandidate signal*/
+  dbus_g_proxy_add_signal (priv->stream_proxy, "AddRemoteCandidate",
+      G_TYPE_STRING, DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "AddRemoteCandidate", 
+      G_CALLBACK (add_remote_candidate), self, NULL);
+
+  /* tell the gproxy about the RemoveRemoteCandidate signal*/
+  dbus_g_proxy_add_signal (priv->stream_proxy, "RemoveRemoteCandidate",
+      G_TYPE_STRING, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "RemoveRemoteCandidate", 
+      G_CALLBACK (remove_remote_candidate), self, NULL);
+
+  /* tell the gproxy about the SetActiveCandidatePair signal*/
+  dbus_g_proxy_add_signal (priv->stream_proxy, "SetActiveCandidatePair",
+      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetActiveCandidatePair", 
+      G_CALLBACK (set_active_candidate_pair), self, NULL);
+
+  /* tell the gproxy about the SetRemoteCandidateList signal*/
+  dbus_g_proxy_add_signal (priv->stream_proxy, "SetRemoteCandidateList",
+      DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCandidateList", 
+      G_CALLBACK (set_remote_candidate_list), self, NULL);
+
+  /* tell the gproxy about the SetRemoteCodecs signal*/
+  dbus_g_proxy_add_signal (priv->stream_proxy, "SetRemoteCodecs",
+      DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCodecs", 
+      G_CALLBACK (set_remote_codecs), self, NULL);
+
+
+  g_message("Calling MediaStreamHandler::Ready"); 
+  org_freedesktop_Telepathy_Media_StreamHandler_ready_async
+    (priv->stream_proxy,dummy_callback,"Media.StreamHandler::Ready");
+}
+
 void
 tp_voip_engine_add_session (TpVoipEngine *self, guint member,
                             const char *session_handler_path, 
                             const gchar* type)
 {
-  
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+
+  g_message ("adding session for member %d, %s, %s", member, session_handler_path, type);
+
+  if (priv->session_proxy) 
+    {
+      g_warning("already allocated the one supported session.");
+      return;
+    }
+  priv->session_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
+    priv->chan->name,
+    session_handler_path,
+    TP_IFACE_MEDIA_SESSION_HANDLER);
+
+  if (!priv->session_proxy)
+    {
+      g_critical ("couldn't get proxy for session");
+      return;
+    }
+
+  priv->fs_session = farsight_session_factory_make(type);
+
+  if (!priv->fs_session) 
+    {
+      g_error("RTP plugin not found");
+      return;
+    }
+  g_message ("protocol details:\n name: %s\n description: %s\n author: %s\n",
+           farsight_plugin_get_name (priv->fs_session->plugin),
+           farsight_plugin_get_description (priv->fs_session->plugin),
+           farsight_plugin_get_author (priv->fs_session->plugin));
+  g_signal_connect (G_OBJECT (priv->fs_session), "error", 
+                    G_CALLBACK (session_error), self);
+
+
+   /* tell the gproxy about the NewMediaSessionHandler signal*/
+  dbus_g_proxy_add_signal (priv->session_proxy, "NewMediaStreamHandler",
+      DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->session_proxy, "NewMediaStreamHandler", 
+      G_CALLBACK (new_media_stream_handler), self, NULL);
+
+  g_message("Calling MediaSessionHandler::Ready"); 
+  org_freedesktop_Telepathy_Media_SessionHandler_ready_async
+    (priv->session_proxy, dummy_callback,"Media.SessionHandler::Ready");
 }
 
 static void
@@ -133,6 +691,33 @@ new_media_session_handler (DBusGProxy *proxy, guint member, const char *session_
   tp_voip_engine_add_session (self, member, session_handler_path, type);
 }
 
+void 
+get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GError *error, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  GValueArray *session;
+  int i;
+  if (error)
+    g_critical ("Error calling GetSessionHandlers: %s", error->message);
+
+  g_message("GetSessionHandlers replied: ");
+  if (session_handlers->len)
+    {
+      for (i=0; i<session_handlers->len; i++)
+        {
+          session = g_ptr_array_index(session_handlers, i);
+          g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (session,0)));
+          g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 1)) == DBUS_TYPE_G_OBJECT_PATH);
+          g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session,2)));
+
+          tp_voip_engine_add_session(self,
+              g_value_get_uint (g_value_array_get_nth (session, 0)),
+              g_value_get_boxed (g_value_array_get_nth (session, 1)),
+              g_value_get_string (g_value_array_get_nth (session, 2)));
+
+        }
+    }
+}
 
 /**
  * tp_voip_engine_handle_channel
@@ -149,10 +734,8 @@ new_media_session_handler (DBusGProxy *proxy, guint member, const char *session_
 gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
-  GArray *session_handlers;
-  GValueArray *session;
-  int i;
 
+  g_message("HandleChannel called");
   if (priv->handling_channel)
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
@@ -160,19 +743,19 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 
       return FALSE;
     }
-  if (strcmp (channel_type, TP_CHANNEL_TYPE_STREAMED_MEDIA)!=0)
+  if (strcmp (channel_type, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA)!=0)
     {
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
                             "VoIP Engine was passed a channel that was not a "
-                            TP_CHANNEL_TYPE_STREAMED_MEDIA);
+                            TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
 
       return FALSE;
      }
 
   priv->chan =  tp_chan_new (tp_get_bus(),
-                             bus_name, connection,
-                             TP_CHANNEL_INTERFACE,
-                             TP_CHANNEL_TYPE_STREAMED_MEDIA,
+                             bus_name, channel,
+                             TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
+                             "WTF is this supposed to be?",
                              handle_type, handle);
 
 /* TODO check for group interface
@@ -183,30 +766,14 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
     exit(1);
   }
   */
+
+  /* tell the gproxy about the NewMediaSessionHandler signal*/
   dbus_g_proxy_add_signal (priv->chan->proxy, "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (priv->chan->proxy, "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
 
-  if (!tp_chan_type_streamed_media_get_session_handlers (priv->chan->proxy, &session_handlers, error))
-    {
-      return FALSE;
-    }
-  if (session_handlers->len)
-    {
-      for (i=0; i<session_handlers->len; i++)
-        {
-          session = &g_array_index(session_handlers, GValueArray,i);
-          g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (session,0)));
-          g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 1)) == DBUS_TYPE_G_OBJECT_PATH);
-          g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session,2)));
-
-          tp_voip_engine_add_session(obj,
-              g_value_get_uint (g_value_array_get_nth (session, 0)),
-              g_value_get_boxed (g_value_array_get_nth (session, 1)),
-              g_value_get_string (g_value_array_get_nth (session, 2)));
-
-        }
-    }
+  tp_chan_type_streamed_media_get_session_handlers_async 
+         (priv->chan->proxy, get_session_handlers_reply, obj);
   return TRUE;
 }
 
@@ -223,6 +790,8 @@ _tp_voip_engine_register (TpVoipEngine *self)
   bus = tp_get_bus ();
   bus_proxy = tp_get_bus_proxy ();
 
+  g_message("Requesting " BUS_NAME);
+
   if (!dbus_g_proxy_call (bus_proxy, "RequestName", &error,
                           G_TYPE_STRING, BUS_NAME,
                           G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
@@ -234,6 +803,7 @@ _tp_voip_engine_register (TpVoipEngine *self)
   if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
     g_error ("Failed to acquire bus name, voip engine already running?");
 
+  g_message("registering VoipEngine at " OBJECT_PATH);
   dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
 }
 
@@ -243,6 +813,7 @@ int main(int argc, char **argv) {
   GMainLoop *mainloop;
 
   g_type_init();
+  gst_init (&argc, &argv);
 
   {
     GLogLevelFlags fatal_mask;
@@ -261,6 +832,7 @@ int main(int argc, char **argv) {
   voip_engine = g_object_new (TP_TYPE_VOIP_ENGINE, NULL);
 
   _tp_voip_engine_register (voip_engine);
+  register_dbus_signal_marshallers();
 
   g_debug("started");
 
