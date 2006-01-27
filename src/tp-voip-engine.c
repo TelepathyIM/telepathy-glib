@@ -562,7 +562,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
     }
 
   priv->stream_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
-    priv->chan->name,
+    priv->chan->bus_name,
     stream_handler_path,
     TP_IFACE_MEDIA_STREAM_HANDLER);
 
@@ -647,7 +647,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
       return;
     }
   priv->session_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
-    priv->chan->name,
+    priv->chan->bus_name,
     session_handler_path,
     TP_IFACE_MEDIA_SESSION_HANDLER);
 
@@ -752,11 +752,12 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
       return FALSE;
      }
 
-  priv->chan =  tp_chan_new (tp_get_bus(),
-                             bus_name, channel,
-                             TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
-                             "WTF is this supposed to be?",
-                             handle_type, handle);
+  priv->chan =  tp_chan_new (tp_get_bus(),                              /* connection  */
+                             bus_name,                                  /* bus_name    */
+                             channel,                                   /* object_name */
+                             TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,      /* type        */
+                             handle_type,                               /* handle_type */
+                             handle);                                   /* handle      */
 
 /* TODO check for group interface
  * chan_interfaces = (GSList *) tp_chan_local_get_interface_objs(priv->chan);
