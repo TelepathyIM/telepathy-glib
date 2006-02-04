@@ -553,6 +553,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   FarsightStream *stream;
+  gchar *bus_name;
 
   g_message ("Adding stream, media_type=%d, direction=%d",media_type,direction);
   if (priv->stream_proxy) 
@@ -561,10 +562,14 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
       return;
     }
 
+  g_object_get (priv->chan, "name", &bus_name, NULL);
+
   priv->stream_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
-    priv->chan->bus_name,
+    bus_name,
     stream_handler_path,
     TP_IFACE_MEDIA_STREAM_HANDLER);
+
+  g_free (bus_name);
 
   if (!priv->stream_proxy)
     {
@@ -638,6 +643,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
                             const gchar* type)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  gchar *bus_name;
 
   g_message ("adding session for member %d, %s, %s", member, session_handler_path, type);
 
@@ -646,11 +652,16 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
       g_warning("already allocated the one supported session.");
       return;
     }
+  
+  g_object_get (priv->chan, "name", &bus_name, NULL);
+  
   priv->session_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
-    priv->chan->bus_name,
+    bus_name,
     session_handler_path,
     TP_IFACE_MEDIA_SESSION_HANDLER);
 
+  g_free (bus_name);
+  
   if (!priv->session_proxy)
     {
       g_critical ("couldn't get proxy for session");
@@ -769,12 +780,13 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
   */
 
   /* tell the gproxy about the NewMediaSessionHandler signal*/
-  dbus_g_proxy_add_signal (priv->chan->proxy, "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (DBUS_G_PROXY (priv->chan), "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->chan->proxy, "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
-
+  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->chan), "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
+  
   tp_chan_type_streamed_media_get_session_handlers_async 
-         (priv->chan->proxy, get_session_handlers_reply, obj);
+         (DBUS_G_PROXY (priv->chan), get_session_handlers_reply, obj);
+  
   return TRUE;
 }
 
@@ -786,7 +798,7 @@ _tp_voip_engine_register (TpVoipEngine *self)
   GError *error = NULL;
   guint request_name_result;
 
-  g_assert (TP_IS_VOIP_ENGINE(self));
+  g_assert (TP_IS_VOIP_ENGINE (self));
 
   bus = tp_get_bus ();
   bus_proxy = tp_get_bus_proxy ();
