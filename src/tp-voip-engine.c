@@ -711,22 +711,18 @@ get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GErr
   if (error)
     g_critical ("Error calling GetSessionHandlers: %s", error->message);
 
-  g_message("GetSessionHandlers replied: ");
-  if (session_handlers->len)
+  g_message ("GetSessionHandlers replied: ");
+  for (i = 0; i < session_handlers->len; i++)
     {
-      for (i=0; i<session_handlers->len; i++)
-        {
-          session = g_ptr_array_index(session_handlers, i);
-          g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (session,0)));
-          g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 1)) == DBUS_TYPE_G_OBJECT_PATH);
-          g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session,2)));
+      session = g_ptr_array_index (session_handlers, i);
+      g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (session, 0)));
+      g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 1)) == DBUS_TYPE_G_OBJECT_PATH);
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session, 2)));
 
-          tp_voip_engine_add_session(self,
-              g_value_get_uint (g_value_array_get_nth (session, 0)),
-              g_value_get_boxed (g_value_array_get_nth (session, 1)),
-              g_value_get_string (g_value_array_get_nth (session, 2)));
-
-        }
+      tp_voip_engine_add_session (self,
+          g_value_get_uint (g_value_array_get_nth (session, 0)),
+          g_value_get_boxed (g_value_array_get_nth (session, 1)),
+          g_value_get_string (g_value_array_get_nth (session, 2)));
     }
 }
 
