@@ -483,7 +483,7 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
       candidate = g_ptr_array_index (candidates, i);
       g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (candidate,0)));
       g_assert(G_VALUE_TYPE (g_value_array_get_nth (candidate, 1)) == 
-                               TP_TYPE_CANDIDATE_LIST);
+                               TP_TYPE_TRANSPORT_LIST);
 
       /*TODO: mmm, candidate_id should be const in farsight api*/
       candidate_id =
