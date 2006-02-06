@@ -382,17 +382,18 @@ tp_transports_to_fs (gchar* candidate, GPtrArray *transports)
   for (i=0; i< transports->len; i++)
     {
       transport = g_ptr_array_index (transports, i);
-      fs_transport = g_new0(FarsightTransportInfo, 1);
+      fs_transport = g_new0 (FarsightTransportInfo, 1);
 
-      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport,0)));
-      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,1)));
-      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport,2)));
-      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport,3)));
-      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,4)));
-      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,5)));
-      g_assert(G_VALUE_HOLDS_DOUBLE (g_value_array_get_nth (transport,6)));
-      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,7)));
-      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport,8)));
+      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport, 0)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport, 1)));
+      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport, 2)));
+      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport, 3)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport, 4)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport, 5)));
+      g_assert(G_VALUE_HOLDS_DOUBLE (g_value_array_get_nth (transport, 6)));
+      g_assert(G_VALUE_HOLDS_UINT   (g_value_array_get_nth (transport, 7)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport, 8)));
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport, 9)));
 
       fs_transport->candidate_id = candidate;
       fs_transport->component = 
@@ -409,10 +410,12 @@ tp_transports_to_fs (gchar* candidate, GPtrArray *transports)
         g_value_get_string (g_value_array_get_nth (transport, 5));
       fs_transport->preference = 
         (float) g_value_get_double (g_value_array_get_nth (transport, 6));
+      fs_transport->type =
+        g_value_get_uint (g_value_array_get_nth (transport, 7));
       fs_transport->username = 
-        g_value_get_string (g_value_array_get_nth (transport, 7));
-      fs_transport->password = 
         g_value_get_string (g_value_array_get_nth (transport, 8));
+      fs_transport->password = 
+        g_value_get_string (g_value_array_get_nth (transport, 9));
 
       fs_trans_list = g_list_prepend (fs_trans_list, fs_transport);
     }
