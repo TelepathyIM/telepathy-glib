@@ -49,7 +49,37 @@
 #define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
 
-#define DBUS_TYPE_G_ARRAY_OF_STRUCTS dbus_g_type_get_collection ("GPtrArray", G_TYPE_VALUE_ARRAY)
+#define TP_TYPE_TRANSPORT_STRUCT (dbus_g_type_get_struct ("GValueArray", \
+      G_TYPE_UINT, \
+      G_TYPE_STRING, \
+      G_TYPE_UINT, \
+      G_TYPE_UINT, \
+      G_TYPE_STRING, \
+      G_TYPE_STRING, \
+      G_TYPE_DOUBLE, \
+      G_TYPE_UINT, \
+      G_TYPE_STRING, \
+      G_TYPE_STRING, \
+      G_TYPE_INVALID))
+#define TP_TYPE_TRANSPORT_LIST (dbus_g_type_get_collection ("GPtrArray", \
+      TP_TYPE_TRANSPORT_STRUCT))
+#define TP_TYPE_CANDIDATE_STRUCT (dbus_g_type_get_struct ("GValueArray", \
+      G_TYPE_STRING, \
+      TP_TYPE_TRANSPORT_LIST, \
+      G_TYPE_INVALID))
+#define TP_TYPE_CANDIDATE_LIST (dbus_g_type_get_collection ("GPtrArray", \
+      TP_TYPE_CANDIDATE_STRUCT))
+
+#define TP_TYPE_CODEC_STRUCT (dbus_g_type_get_struct ("GValueArray", \
+      G_TYPE_UINT, \
+      G_TYPE_STRING, \
+      G_TYPE_UINT, \
+      G_TYPE_UINT, \
+      G_TYPE_UINT, \
+      DBUS_TYPE_G_STRING_STRING_HASHTABLE, \
+      G_TYPE_INVALID))
+#define TP_TYPE_CODEC_LIST (dbus_g_type_get_collection ("GPtrArray", \
+      TP_TYPE_CODEC_STRUCT))
 
 static void
 register_dbus_signal_marshallers()
@@ -67,20 +97,22 @@ register_dbus_signal_marshallers()
   /*register a marshaller for the AddRemoteCandidate signal*/
   dbus_g_object_register_marshaller 
     (misc_marshal_VOID__STRING_BOXED, G_TYPE_NONE,
-     G_TYPE_STRING, DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+     G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
  
   /*register a marshaller for the SetActiveCandidatePair signal*/
   dbus_g_object_register_marshaller 
     (misc_marshal_VOID__STRING_STRING, G_TYPE_NONE,
      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
 
-   /*register a marshaller for the SetRemoteCandidateList and SetRemoteCodecs
-    * signals
-    */
+  /*register a marshaller for the SetRemoteCandidateList signal*/
   dbus_g_object_register_marshaller 
     (misc_marshal_VOID__BOXED, G_TYPE_NONE,
-     G_TYPE_STRING, DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
-
+     TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
+  
+  /*register a marshaller for the SetRemoteCodecs signal*/
+  dbus_g_object_register_marshaller 
+    (misc_marshal_VOID__BOXED, G_TYPE_NONE,
+     TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
 }
 
 
@@ -451,7 +483,7 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
       candidate = g_ptr_array_index (candidates, i);
       g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (candidate,0)));
       g_assert(G_VALUE_TYPE (g_value_array_get_nth (candidate, 1)) == 
-                               DBUS_TYPE_G_ARRAY_OF_STRUCTS);
+                               TP_TYPE_CANDIDATE_LIST);
 
       /*TODO: mmm, candidate_id should be const in farsight api*/
       candidate_id =
@@ -489,6 +521,8 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   FarsightCodec *fs_codec;
   GList *fs_params = NULL;
   int i;
+  
+  g_message ("%s called", G_STRFUNC);
 
   for (i=0; i<codecs->len; i++)
     {
@@ -598,7 +632,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   /*OMG, Can we make dbus-binding-tool do this stuff for us??*/
   /* tell the gproxy about the AddRemoteCandidate signal*/
   dbus_g_proxy_add_signal (priv->stream_proxy, "AddRemoteCandidate",
-      G_TYPE_STRING, DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+      G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (priv->stream_proxy, "AddRemoteCandidate", 
       G_CALLBACK (add_remote_candidate), self, NULL);
@@ -619,14 +653,14 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 
   /* tell the gproxy about the SetRemoteCandidateList signal*/
   dbus_g_proxy_add_signal (priv->stream_proxy, "SetRemoteCandidateList",
-      DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+      TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCandidateList", 
       G_CALLBACK (set_remote_candidate_list), self, NULL);
 
   /* tell the gproxy about the SetRemoteCodecs signal*/
   dbus_g_proxy_add_signal (priv->stream_proxy, "SetRemoteCodecs",
-      DBUS_TYPE_G_ARRAY_OF_STRUCTS, G_TYPE_INVALID);
+      TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCodecs", 
       G_CALLBACK (set_remote_codecs), self, NULL);
