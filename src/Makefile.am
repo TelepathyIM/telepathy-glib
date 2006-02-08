@@ -41,10 +41,10 @@ AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@ @FARSIGHT_LIBS@
 
 
 #Rule to generate the binding headers
-%-gen.h: ../xml/%.xml Makefile.am
+%-gen.h: ../generate/xml-modified/%.xml Makefile.am
 	dbus-binding-tool --prefix=$(subst -,_,$*) --mode=glib-client $< > $*-gen.h
 
-%-glue.h: ../xml/%.xml Makefile
+%-glue.h: ../generate/xml-modified/%.xml Makefile
 	dbus-binding-tool --mode=glib-server --output=$@ --prefix=$(subst -,_,$*) $<
 
 %-signals-marshal.h: %-signals-marshal.list Makefile
