@@ -1,1 +1,1 @@
-SUBDIRS = glib python
+SUBDIRS = python

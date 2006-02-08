@@ -1,0 +1,3 @@
+test-streamed-media-channel.xml	TestStreamedMediaChannel 	ChannelTypeStreamedMedia, ChannelInterfaceGroup
+tp-media-session-handler.xml	TpMediaSessionHandler	MediaSessionHandler
+tp-media-stream-handler.xml	TpMediaStreamHandler	MediaStreamHandler
