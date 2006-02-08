@@ -591,6 +591,8 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   FarsightStream *stream;
   gchar *bus_name;
+  const GList *list, *element;
+  GPtrArray *codecs;
 
   g_message ("Adding stream, media_type=%d, direction=%d",media_type,direction);
   if (priv->stream_proxy) 
@@ -669,9 +671,44 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
       G_CALLBACK (set_remote_codecs), self, NULL);
 
 
+  list = farsight_stream_get_local_codecs (stream);
+  for (element = list; element; element = g_list_next (element))
+    {
+      FarsightCodec *fsc = element->data;
+      GValue codec = { 0 };
+      TelepathyMediaStreamType type;
+
+      switch (fsc->media_type) {
+        case FARSIGHT_MEDIA_TYPE_AUDIO:
+          type = TP_MEDIA_STREAM_TYPE_AUDIO;
+          break;
+        case FARSIGHT_MEDIA_TYPE_VIDEO:
+          type = TP_MEDIA_STREAM_TYPE_VIDEO;
+          break;
+        default:
+          g_error ("%s: FarsightCodec.media_type has an invalid value",
+              G_STRFUNC);
+      }
+
+      g_value_init (&codec, TP_TYPE_CODEC_STRUCT);
+      g_value_set_static_boxed (&codec,
+          dbus_g_type_specialized_construct (TP_TYPE_CODEC_STRUCT));
+
+      dbus_g_type_struct_set (&codec,
+          0, fsc->id,
+          1, fsc->encoding_name,
+          2, type,
+          3, fsc->clock_rate,
+          4, fsc->channels,
+          5, g_hash_table_new (g_str_hash, g_str_equal), /* FIXME: parse fsc->optional_params */
+          G_MAXUINT);
+
+      g_ptr_array_add (codecs, g_value_get_boxed (&codec));
+    }
+
   g_message("Calling MediaStreamHandler::Ready"); 
   org_freedesktop_Telepathy_Media_StreamHandler_ready_async
-    (priv->stream_proxy,dummy_callback,"Media.StreamHandler::Ready");
+    (priv->stream_proxy, codecs, dummy_callback, "Media.StreamHandler::Ready");
 }
 
 void
