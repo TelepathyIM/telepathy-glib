@@ -24,6 +24,9 @@
 #include <string.h>
 
 #include <libtelepathy/tp-chan.h>
+#include <libtelepathy/tp-helpers.h>
+#include <libtelepathy/tp-interfaces.h>
+#include <libtelepathy/tp-constants.h>
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 
 #include <farsight/farsight-session.h>
@@ -39,9 +42,6 @@
 
 #include "tp-voip-engine-glue.h"
 
-#include "common/telepathy-helpers.h"
-#include "common/telepathy-interfaces.h"
-#include "common/telepathy-constants.h"
 #include "common/telepathy-errors.h"
 #include "common/telepathy-errors-enumtypes.h"
 
