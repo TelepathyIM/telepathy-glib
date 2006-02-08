@@ -581,7 +581,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
 }
 
-
+static void ready_called (DBusGProxy *proxy, GError *error, gpointer user_data);
 
 static void
 new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path, 
@@ -706,9 +706,26 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
       g_ptr_array_add (codecs, g_value_get_boxed (&codec));
     }
 
-  g_message("Calling MediaStreamHandler::Ready"); 
+  g_message ("Calling MediaStreamHandler::Ready");
   org_freedesktop_Telepathy_Media_StreamHandler_ready_async
-    (priv->stream_proxy, codecs, dummy_callback, "Media.StreamHandler::Ready");
+    (priv->stream_proxy, codecs, ready_called, self);
+}
+
+static void
+ready_called (DBusGProxy *proxy, GError *error, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv;
+  
+  g_assert (TP_IS_VOIP_ENGINE (self));
+  
+  priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+
+  if (error)
+    g_critical ("%s calling Media.StreamHandler::Ready", error->message);
+  
+  g_message ("Calling farsight_stream_prepare_transports");
+  farsight_stream_prepare_transports (priv->fs_stream);
 }
 
 void
