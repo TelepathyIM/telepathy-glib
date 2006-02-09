@@ -128,6 +128,7 @@ struct _TpVoipEnginePrivate
   gboolean handling_channel;
 
   TpChan *chan;
+  DBusGProxy *streamed_proxy;
   DBusGProxy *session_proxy;
   DBusGProxy *stream_proxy;
   FarsightSession *fs_session;
@@ -855,6 +856,10 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
                              handle_type,                               /* handle_type */
                              handle);                                   /* handle      */
 
+  priv->streamed_proxy = tp_chan_get_interface (priv->chan, TELEPATHY_CHAN_IFACE_STREAMED_QUARK);
+  g_assert (priv->streamed_proxy != NULL);
+
+
 /* TODO check for group interface
  * chan_interfaces = (GSList *) tp_chan_local_get_interface_objs(priv->chan);
   if (chan_interfaces == NULL)
@@ -865,12 +870,12 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
   */
 
   /* tell the gproxy about the NewMediaSessionHandler signal*/
-  dbus_g_proxy_add_signal (DBUS_G_PROXY (priv->chan), "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (DBUS_G_PROXY (priv->streamed_proxy), "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->chan), "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
+  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->streamed_proxy), "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
   
   tp_chan_type_streamed_media_get_session_handlers_async 
-         (DBUS_G_PROXY (priv->chan), get_session_handlers_reply, obj);
+         (DBUS_G_PROXY (priv->streamed_proxy), get_session_handlers_reply, obj);
   
   return TRUE;
 }
