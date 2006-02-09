@@ -670,7 +670,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCodecs", 
       G_CALLBACK (set_remote_codecs), self, NULL);
 
-
+  codecs = g_ptr_array_new ();
   list = farsight_stream_get_local_codecs (stream);
   for (element = list; element; element = g_list_next (element))
     {
