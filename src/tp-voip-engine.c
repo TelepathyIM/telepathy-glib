@@ -298,69 +298,67 @@ new_native_candidate (FarsightStream *stream,
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   const GList *fs_candidates, *lp;
   GPtrArray *transports;
-  GValueArray *transport;
-  FarsightTransportInfo *fs_transport;
 
   fs_candidates = farsight_stream_get_native_candidate (stream, candidate_id);
-  transports = g_ptr_array_sized_new (g_list_length ((GList*)fs_candidates));
+  transports = g_ptr_array_new ();
 
   for (lp = fs_candidates; lp; lp = lp->next)
     {
-      fs_transport = (FarsightTransportInfo*) lp->data;
-      transport = g_value_array_new (9);
+      FarsightTransportInfo *fs_transport = lp->data;
+      GValue transport = { 0 };
+      TelepathyMediaStreamProto proto;
+      TelepathyMediaStreamTransportType type;
+      
+      g_value_init (&transport, TP_TYPE_TRANSPORT_STRUCT);
+      g_value_set_static_boxed (&transport,
+          dbus_g_type_specialized_construct (TP_TYPE_TRANSPORT_STRUCT));
 
-      g_value_array_append (transport, NULL);
-      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
-                    G_TYPE_INT);
-      g_value_set_int (g_value_array_get_nth (transport, 0), 
-                       fs_transport->component);
+      switch (fs_transport->proto) {
+        case FARSIGHT_NETWORK_PROTOCOL_UDP:
+          proto = TP_MEDIA_STREAM_PROTO_UDP;
+          break;
+        case FARSIGHT_NETWORK_PROTOCOL_TCP:
+          proto = TP_MEDIA_STREAM_PROTO_TCP;
+          break;
+        default:
+          g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+              G_STRFUNC);
+      }
 
-      g_value_array_append (transport, NULL);
-      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
-                    G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (transport, 0), 
-                          fs_transport->ip);
+      switch (fs_transport->type) {
+        case FARSIGHT_CANDIDATE_TYPE_LOCAL:
+          type = TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
+          break;
+        case FARSIGHT_CANDIDATE_TYPE_DERIVED:
+          type = TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
+          break;
+        case FARSIGHT_CANDIDATE_TYPE_RELAY:
+          type = TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
+          break;
+        default:
+          g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+              G_STRFUNC);
+      }
 
-      g_value_array_append (transport, NULL);
-      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
-                    G_TYPE_INT);
-      g_value_set_int (g_value_array_get_nth (transport, 0), 
-                       fs_transport->proto);
+      dbus_g_type_struct_set (&transport,
+          0, fs_transport->component,
+          1, fs_transport->ip,
+          2, fs_transport->port,
+          3, proto,
+          4, fs_transport->proto_subtype,
+          5, fs_transport->proto_profile,
+          6, (double) fs_transport->preference,
+          7, type,
+          8, fs_transport->username,
+          9, fs_transport->password,
+          G_MAXUINT);
+      
+      g_ptr_array_add (transports, g_value_get_boxed (&transport));
+    }
 
-      g_value_array_append (transport, NULL);
-      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
-                    G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (transport, 0), 
-                          fs_transport->proto_subtype);
-
-      g_value_array_append (transport, NULL);
-      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
-                    G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (transport, 0), 
-                          fs_transport->proto_profile);
-
-      g_value_array_append (transport, NULL);
-      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
-                    G_TYPE_DOUBLE);
-      g_value_set_double (g_value_array_get_nth (transport, 0), 
-                          (double)fs_transport->preference);
-
-      g_value_array_append (transport, NULL);
-      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
-                    G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (transport, 0), 
-                          fs_transport->username);
-
-      g_value_array_append (transport, NULL);
-      g_value_init (g_value_array_get_nth (transport, transport->n_values - 1),
-                    G_TYPE_STRING);
-      g_value_set_string (g_value_array_get_nth (transport, 0), 
-                          fs_transport->password);
-
-      g_ptr_array_add (transports, transport);
-     }
   org_freedesktop_Telepathy_Media_StreamHandler_new_native_candidate_async
-     (priv->stream_proxy, candidate_id, transports, dummy_callback,"Media.StreamHandler::NativeCandidatesPrepared");
+     (priv->stream_proxy, candidate_id, transports, dummy_callback,
+      "Media.StreamHandler::NativeCandidatesPrepared");
 }
 
 /**
