@@ -25,7 +25,8 @@ libvoipengine_convenience_la_SOURCES = \
 	$(CORE_SOURCES)
 
 telepathy_voip_engine_SOURCES = \
-	tp-voip-engine.c
+	tp-voip-engine.c \
+	voip-engine-main.c
 
 telepathy_voip_engine_LDADD = \
 	libvoipengine-convenience.la \

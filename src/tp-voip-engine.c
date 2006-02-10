@@ -45,7 +45,6 @@
 #include "common/telepathy-errors.h"
 #include "common/telepathy-errors-enumtypes.h"
 
-
 #define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
 
@@ -120,6 +119,17 @@ register_dbus_signal_marshallers()
 
 G_DEFINE_TYPE(TpVoipEngine, tp_voip_engine, G_TYPE_OBJECT)
 
+/* signal enum */
+enum
+{
+  HANDLING_CHANNEL,
+  NO_MORE_CHANNELS,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0};
+
+
 /* private structure */
 typedef struct _TpVoipEnginePrivate TpVoipEnginePrivate;
 struct _TpVoipEnginePrivate
@@ -159,6 +169,35 @@ tp_voip_engine_class_init (TpVoipEngineClass *tp_voip_engine_class)
 
   object_class->dispose = tp_voip_engine_dispose;
   object_class->finalize = tp_voip_engine_finalize;
+
+  /**
+   * TpVoipEngine::handling-channel:
+   * 
+   * Emitted whenever this object starts handling a channel
+   */
+  signals[HANDLING_CHANNEL] =
+  g_signal_new ("handling-channel",
+                G_OBJECT_CLASS_TYPE (tp_voip_engine_class),
+                G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                0,
+                NULL, NULL,
+                g_cclosure_marshal_VOID__VOID,
+                G_TYPE_NONE, 0);
+
+  /**
+   * TpVoipEngine::no-more-channels:
+   * 
+   * Emitted whenever this object is handling no channels
+   */
+  signals[HANDLING_CHANNEL] =
+  g_signal_new ("no-more-channels",
+                G_OBJECT_CLASS_TYPE (tp_voip_engine_class),
+                G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                0,
+                NULL, NULL,
+                g_cclosure_marshal_VOID__VOID,
+                G_TYPE_NONE, 0);
+
 
   dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_voip_engine_class), &dbus_glib_tp_voip_engine_object_info);
 }
@@ -817,6 +856,13 @@ get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GErr
     }
 }
 
+static void
+channel_closed (DBusGProxy *proxy, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
+}
+
 /**
  * tp_voip_engine_handle_channel
  *
@@ -874,10 +920,15 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
   dbus_g_proxy_add_signal (DBUS_G_PROXY (priv->streamed_proxy), "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->streamed_proxy), "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
-  
+
+  /*connect up channel closed signal*/
+  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->chan), "Closed", G_CALLBACK (channel_closed), obj, NULL);
+
+  g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
+
   tp_chan_type_streamed_media_get_session_handlers_async 
          (DBUS_G_PROXY (priv->streamed_proxy), get_session_handlers_reply, obj);
-  
+
   return TRUE;
 }
 
@@ -909,38 +960,9 @@ _tp_voip_engine_register (TpVoipEngine *self)
 
   g_message("registering VoipEngine at " OBJECT_PATH);
   dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
-}
 
-
-int main(int argc, char **argv) {
-  TpVoipEngine *voip_engine;
-  GMainLoop *mainloop;
-
-  g_type_init();
-  gst_init (&argc, &argv);
-
-  {
-    GLogLevelFlags fatal_mask;
-
-    fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
-    fatal_mask |= G_LOG_LEVEL_CRITICAL;
-    g_log_set_always_fatal (fatal_mask);
-  }
-
-  g_set_prgname("telepathy-voip-engine");
-
-  mainloop = g_main_loop_new (NULL, FALSE);
-
-  dbus_g_error_domain_register (TELEPATHY_ERRORS, NULL, TELEPATHY_TYPE_ERRORS);
-
-  voip_engine = g_object_new (TP_TYPE_VOIP_ENGINE, NULL);
-
-  _tp_voip_engine_register (voip_engine);
   register_dbus_signal_marshallers();
-
-  g_debug("started");
-
-  g_main_loop_run (mainloop);
-
-  return 0;
 }
+
+
+

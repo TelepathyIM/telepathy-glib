@@ -56,6 +56,8 @@ GType tp_voip_engine_get_type(void);
 gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error);
 
 
+void _tp_voip_engine_register (TpVoipEngine *self);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_VOIP_ENGINE_H__*/
