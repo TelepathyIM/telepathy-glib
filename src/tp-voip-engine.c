@@ -125,7 +125,6 @@ typedef struct _TpVoipEnginePrivate TpVoipEnginePrivate;
 struct _TpVoipEnginePrivate
 {
   gboolean dispose_has_run;
-  gboolean handling_channel;
 
   TpChan *chan;
   DBusGProxy *streamed_proxy;
@@ -173,6 +172,8 @@ tp_voip_engine_dispose (GObject *object)
   if (priv->dispose_has_run)
     return;
 
+  if (priv->chan)
+    g_object_unref (priv->chan);
   priv->dispose_has_run = TRUE;
 
   /* release any references held by the object here */
@@ -833,7 +834,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
 
   g_message("HandleChannel called");
-  if (priv->handling_channel)
+  if (priv->chan)
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
                             "VoIP Engine is already handling a channel");
