@@ -364,6 +364,7 @@ new_native_candidate (FarsightStream *stream,
         default:
           g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
               G_STRFUNC);
+          return;
       }
 
       switch (fs_transport->type) {
@@ -379,6 +380,7 @@ new_native_candidate (FarsightStream *stream,
         default:
           g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
               G_STRFUNC);
+          return;
       }
 
       dbus_g_type_struct_set (&transport,
@@ -727,6 +729,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
         default:
           g_error ("%s: FarsightCodec.media_type has an invalid value",
               G_STRFUNC);
+          return;
       }
 
       g_value_init (&codec, TP_TYPE_CODEC_STRUCT);
