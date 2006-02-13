@@ -35,7 +35,7 @@ guint timeout_id;
 static gboolean
 kill_voip_engine (gpointer data)
 {
-  if (!connections_exist)
+  if (!g_getenv ("VOIP_ENGINE_PERSIST") && !connections_exist)
     {
       g_debug("no channels are being handled, and timed out");
       g_object_unref (voip_engine);
