@@ -565,6 +565,59 @@ set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
                                              remote_candidate);
 }
 
+static gchar *
+find_badger (GList *badger_list)
+{
+  GList *li;
+
+  if (!badger_list)
+    return NULL;
+
+  for (li = g_list_first (badger_list); li; li = g_list_next (li))
+    {
+      FarsightTransportInfo *info = li->data;
+
+      g_debug ("%s: transport with address '%s'",
+          G_STRFUNC, info->ip);
+
+      if (g_str_has_prefix (info->ip, "192.168.1."))
+        {
+          g_debug ("%s: found a badger!", G_STRFUNC);
+          return (gchar *) info->candidate_id;
+        }
+      else
+        {
+          g_debug ("%s: not an interesting badger", G_STRFUNC);
+        }
+    }
+
+  return NULL;
+}
+
+static void
+try_to_set_active_pair_of_badgers (TpVoipEnginePrivate *priv, GList *remote_candidates)
+{
+  gchar *native_badger, *remote_badger;
+
+  native_badger = find_badger ((GList *) farsight_stream_get_native_candidate_list (priv->fs_stream));
+  if (!native_badger)
+    {
+      g_debug ("%s: badger not found in native badger list", G_STRFUNC);
+      return;
+    }
+
+  remote_badger = find_badger (remote_candidates);
+  if (!remote_badger)
+    {
+      g_debug ("%s: badger not found in remote badger list", G_STRFUNC);
+      return;
+    }
+
+  g_debug ("%s: setting active pair of badgers!", G_STRFUNC);
+
+  farsight_stream_set_active_candidate_pair (priv->fs_stream, native_badger, remote_badger);
+}
+
 static void
 set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
                            gpointer user_data)
@@ -595,6 +648,8 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
     }
 
   farsight_stream_set_remote_candidate_list (priv->fs_stream, fs_transports);
+
+  try_to_set_active_pair_of_badgers (priv, fs_transports);
 
   free_fs_transports (fs_transports);
 }
