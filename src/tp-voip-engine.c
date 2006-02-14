@@ -383,6 +383,8 @@ new_native_candidate (FarsightStream *stream,
           return;
       }
 
+      g_debug ("%s: fs_transport->ip = '%s'", G_STRFUNC, fs_transport->ip);
+
       dbus_g_type_struct_set (&transport,
           0, fs_transport->component,
           1, fs_transport->ip,
@@ -599,6 +601,9 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
       fs_params = g_list_first(fs_params);
 
       fs_codec->optional_params = fs_params;
+
+      g_debug ("%s: adding remote codec %s [%d]'",
+          G_STRFUNC, fs_codec->encoding_name, fs_codec->id);
 
       fs_codecs = g_list_prepend (fs_codecs, fs_codec);
   }
