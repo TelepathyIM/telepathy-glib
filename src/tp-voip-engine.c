@@ -97,7 +97,7 @@ register_dbus_signal_marshallers()
   dbus_g_object_register_marshaller 
     (misc_marshal_VOID__STRING_BOXED, G_TYPE_NONE,
      G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
- 
+
   /*register a marshaller for the SetActiveCandidatePair signal*/
   dbus_g_object_register_marshaller 
     (misc_marshal_VOID__STRING_STRING, G_TYPE_NONE,
@@ -107,7 +107,7 @@ register_dbus_signal_marshallers()
   dbus_g_object_register_marshaller 
     (misc_marshal_VOID__BOXED, G_TYPE_NONE,
      TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
-  
+
   /*register a marshaller for the SetRemoteCodecs signal*/
   dbus_g_object_register_marshaller 
     (misc_marshal_VOID__BOXED, G_TYPE_NONE,
@@ -277,7 +277,7 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   g_message ("%s: new-native-candidate-pair: stream=%p\n", __FUNCTION__, stream);
-  
+
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
     (priv->stream_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
 }
@@ -349,7 +349,7 @@ new_native_candidate (FarsightStream *stream,
       GValue transport = { 0 };
       TelepathyMediaStreamProto proto;
       TelepathyMediaStreamTransportType type;
-      
+
       g_value_init (&transport, TP_TYPE_TRANSPORT_STRUCT);
       g_value_set_static_boxed (&transport,
           dbus_g_type_specialized_construct (TP_TYPE_TRANSPORT_STRUCT));
@@ -395,7 +395,7 @@ new_native_candidate (FarsightStream *stream,
           8, fs_transport->username,
           9, fs_transport->password,
           G_MAXUINT);
-      
+
       g_ptr_array_add (transports, g_value_get_boxed (&transport));
     }
 
@@ -408,11 +408,11 @@ new_native_candidate (FarsightStream *stream,
  * small helper function to help converting a
  * telepathy dbus candidate to a list of FarsightTransportInfos
  * nothing is copied, so always keep the usage of this within a function
- * if you need to do multiple candidates, call this repeastedly and 
+ * if you need to do multiple candidates, call this repeatedly and
  * g_list_join them together.
  * Free the list using free_fs_transports
  */
-static GList*
+static GList *
 tp_transports_to_fs (gchar* candidate, GPtrArray *transports)
 {
   GList *fs_trans_list = NULL;
@@ -485,7 +485,7 @@ add_remote_candidate (DBusGProxy *proxy, gchar* candidate,
   GList *fs_transports;
 
   fs_transports = tp_transports_to_fs (candidate, transports);
-  
+
   farsight_stream_add_remote_candidate (priv->fs_stream, fs_transports);
 
   free_fs_transports (fs_transports);
@@ -538,7 +538,7 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
       fs_transports = g_list_concat(fs_transports, 
                         tp_transports_to_fs (candidate_id, transports));
     }
-  
+
   farsight_stream_set_remote_candidate_list (priv->fs_stream, fs_transports);
 
   free_fs_transports (fs_transports);
@@ -568,7 +568,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   
   g_message ("%s called", G_STRFUNC);
 
-  for (i=0; i<codecs->len; i++)
+  for (i = 0; i < codecs->len; i++)
     {
       codec = g_ptr_array_index (codecs, i);
       fs_codec = g_new0(FarsightCodec,1);
@@ -635,8 +635,9 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   const GList *list, *element;
   GPtrArray *codecs;
 
-  g_message ("Adding stream, media_type=%d, direction=%d",media_type,direction);
-  if (priv->stream_proxy) 
+  g_message ("Adding stream, media_type=%d, direction=%d",
+      media_type, direction);
+  if (priv->stream_proxy)
     {
       g_warning("already allocated the one supported stream.");
       return;
@@ -662,17 +663,17 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                                            media_type, direction);
   priv->fs_stream = stream;
 
-  g_signal_connect (G_OBJECT (stream), "error", 
+  g_signal_connect (G_OBJECT (stream), "error",
                     G_CALLBACK (stream_error), self);
-  g_signal_connect (G_OBJECT (stream), "new-active-candidate-pair", 
+  g_signal_connect (G_OBJECT (stream), "new-active-candidate-pair",
                     G_CALLBACK (new_active_candidate_pair), self);
-  g_signal_connect (G_OBJECT (stream), "codec-changed", 
+  g_signal_connect (G_OBJECT (stream), "codec-changed",
                     G_CALLBACK (codec_changed), self);
-  g_signal_connect (G_OBJECT (stream), "native-candidates-prepared", 
+  g_signal_connect (G_OBJECT (stream), "native-candidates-prepared",
                     G_CALLBACK (native_candidates_prepared), self);
-  g_signal_connect (G_OBJECT (stream), "state-changed", 
+  g_signal_connect (G_OBJECT (stream), "state-changed",
                     G_CALLBACK (state_changed), self);
-  g_signal_connect (G_OBJECT (stream), "new-native-candidate", 
+  g_signal_connect (G_OBJECT (stream), "new-native-candidate",
                     G_CALLBACK (new_native_candidate), self);
 
   /*OMG, Can we make dbus-binding-tool do this stuff for us??*/
@@ -785,16 +786,16 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
       g_warning("already allocated the one supported session.");
       return;
     }
-  
+
   g_object_get (priv->chan, "name", &bus_name, NULL);
-  
+
   priv->session_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
     bus_name,
     session_handler_path,
     TP_IFACE_MEDIA_SESSION_HANDLER);
 
   g_free (bus_name);
-  
+
   if (!priv->session_proxy)
     {
       g_critical ("couldn't get proxy for session");
@@ -823,9 +824,9 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
   dbus_g_proxy_connect_signal (priv->session_proxy, "NewMediaStreamHandler", 
       G_CALLBACK (new_media_stream_handler), self, NULL);
 
-  g_message("Calling MediaSessionHandler::Ready"); 
+  g_message("Calling MediaSessionHandler::Ready");
   org_freedesktop_Telepathy_Media_SessionHandler_ready_async
-    (priv->session_proxy, dummy_callback,"Media.SessionHandler::Ready");
+    (priv->session_proxy, dummy_callback, "Media.SessionHandler::Ready");
 }
 
 static void
