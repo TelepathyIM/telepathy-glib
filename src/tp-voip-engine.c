@@ -716,7 +716,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
       fs_codecs = g_list_prepend (fs_codecs, fs_codec);
   }
-  g_list_reverse(fs_codecs);
+  fs_codecs = g_list_reverse (fs_codecs);
 
   farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs);
 
