@@ -346,7 +346,7 @@ new_native_candidate (FarsightStream *stream,
   for (lp = fs_candidates; lp; lp = lp->next)
     {
       FarsightTransportInfo *fs_transport = lp->data;
-      GValue transport = { 0 };
+      GValue transport = { 0, };
       TelepathyMediaStreamProto proto;
       TelepathyMediaStreamTransportType type;
 
