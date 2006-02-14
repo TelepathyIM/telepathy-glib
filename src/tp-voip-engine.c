@@ -781,6 +781,12 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 
   stream = farsight_session_create_stream (priv->fs_session,
                                            media_type, direction);
+
+  farsight_stream_set_source (stream,
+      gst_element_factory_make ("alsasrc", "alsasrc"));
+  farsight_stream_set_sink (stream,
+      gst_element_factory_make ("alsasink", "alsasink"));
+
   priv->fs_stream = stream;
 
   g_signal_connect (G_OBJECT (stream), "error",
