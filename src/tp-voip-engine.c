@@ -407,6 +407,59 @@ new_native_candidate (FarsightStream *stream,
 }
 
 /**
+ * Small helper function to help converting a list of FarsightCodecs
+ * to a Telepathy codec list.
+ */
+static GPtrArray *
+fs_codecs_to_tp (const GList *codecs)
+{
+  GPtrArray *tp_codecs;
+  const GList *el;
+
+  tp_codecs = g_ptr_array_new ();
+
+  for (el = codecs; el; el = g_list_next (el))
+    {
+      FarsightCodec *fsc = el->data;
+      GValue codec = { 0, };
+      TelepathyMediaStreamType type;
+
+      switch (fsc->media_type) {
+        case FARSIGHT_MEDIA_TYPE_AUDIO:
+          type = TP_MEDIA_STREAM_TYPE_AUDIO;
+          break;
+        case FARSIGHT_MEDIA_TYPE_VIDEO:
+          type = TP_MEDIA_STREAM_TYPE_VIDEO;
+          break;
+        default:
+          g_critical ("%s: FarsightCodec [%d, %s]'s media_type has an invalid value",
+              G_STRFUNC, fsc->id, fsc->encoding_name);
+          return NULL;
+      }
+
+      g_value_init (&codec, TP_TYPE_CODEC_STRUCT);
+      g_value_set_static_boxed (&codec,
+          dbus_g_type_specialized_construct (TP_TYPE_CODEC_STRUCT));
+
+      dbus_g_type_struct_set (&codec,
+          0, fsc->id,
+          1, fsc->encoding_name,
+          2, type,
+          3, fsc->clock_rate,
+          4, fsc->channels,
+          5, g_hash_table_new (g_str_hash, g_str_equal), /* FIXME: parse fsc->optional_params */
+          G_MAXUINT);
+
+      g_debug ("%s: adding codec %s [%d]'",
+          G_STRFUNC, fsc->encoding_name, fsc->id);
+
+      g_ptr_array_add (tp_codecs, g_value_get_boxed (&codec));
+    }
+
+  return tp_codecs;
+}
+
+/**
  * small helper function to help converting a
  * telepathy dbus candidate to a list of FarsightTransportInfos
  * nothing is copied, so always keep the usage of this within a function
@@ -567,7 +620,8 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   FarsightCodec *fs_codec;
   GList *fs_params = NULL;
   int i;
-  
+  GPtrArray *supp_codecs;
+
   g_message ("%s called", G_STRFUNC);
 
   for (i = 0; i < codecs->len; i++)
@@ -611,6 +665,15 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
   farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs);
 
+  farsight_stream_start (priv->fs_stream);
+
+  supp_codecs = fs_codecs_to_tp (
+      farsight_stream_get_codec_intersection (priv->fs_stream));
+
+  org_freedesktop_Telepathy_Media_StreamHandler_supported_codecs_async
+    (priv->stream_proxy, supp_codecs, dummy_callback,
+     "Media.StreamHandler::SupportedCodecs");
+
   for (lp = g_list_first (fs_codecs); lp; lp = g_list_next (lp))
     {
       /*free the optional parameters lists*/
@@ -627,8 +690,6 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
 }
 
-static void ready_called (DBusGProxy *proxy, GError *error, gpointer user_data);
-
 static void
 new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path, 
                           guint media_type, guint direction, gpointer user_data)
@@ -637,7 +698,6 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   FarsightStream *stream;
   gchar *bus_name;
-  const GList *list, *element;
   GPtrArray *codecs;
 
   g_message ("Adding stream, media_type=%d, direction=%d",
@@ -681,6 +741,8 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   g_signal_connect (G_OBJECT (stream), "new-native-candidate",
                     G_CALLBACK (new_native_candidate), self);
 
+  farsight_stream_prepare_transports (priv->fs_stream);
+
   /*OMG, Can we make dbus-binding-tool do this stuff for us??*/
   /* tell the gproxy about the AddRemoteCandidate signal*/
   dbus_g_proxy_add_signal (priv->stream_proxy, "AddRemoteCandidate",
@@ -717,63 +779,11 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCodecs", 
       G_CALLBACK (set_remote_codecs), self, NULL);
 
-  codecs = g_ptr_array_new ();
-  list = farsight_stream_get_local_codecs (stream);
-  for (element = list; element; element = g_list_next (element))
-    {
-      FarsightCodec *fsc = element->data;
-      GValue codec = { 0 };
-      TelepathyMediaStreamType type;
-
-      switch (fsc->media_type) {
-        case FARSIGHT_MEDIA_TYPE_AUDIO:
-          type = TP_MEDIA_STREAM_TYPE_AUDIO;
-          break;
-        case FARSIGHT_MEDIA_TYPE_VIDEO:
-          type = TP_MEDIA_STREAM_TYPE_VIDEO;
-          break;
-        default:
-          g_error ("%s: FarsightCodec.media_type has an invalid value",
-              G_STRFUNC);
-          return;
-      }
-
-      g_value_init (&codec, TP_TYPE_CODEC_STRUCT);
-      g_value_set_static_boxed (&codec,
-          dbus_g_type_specialized_construct (TP_TYPE_CODEC_STRUCT));
-
-      dbus_g_type_struct_set (&codec,
-          0, fsc->id,
-          1, fsc->encoding_name,
-          2, type,
-          3, fsc->clock_rate,
-          4, fsc->channels,
-          5, g_hash_table_new (g_str_hash, g_str_equal), /* FIXME: parse fsc->optional_params */
-          G_MAXUINT);
-
-      g_ptr_array_add (codecs, g_value_get_boxed (&codec));
-    }
+  codecs = fs_codecs_to_tp (farsight_stream_get_local_codecs (stream));
 
   g_message ("Calling MediaStreamHandler::Ready");
   org_freedesktop_Telepathy_Media_StreamHandler_ready_async
-    (priv->stream_proxy, codecs, ready_called, self);
-}
-
-static void
-ready_called (DBusGProxy *proxy, GError *error, gpointer user_data)
-{
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv;
-  
-  g_assert (TP_IS_VOIP_ENGINE (self));
-  
-  priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-
-  if (error)
-    g_critical ("%s calling Media.StreamHandler::Ready", error->message);
-  
-  g_message ("Calling farsight_stream_prepare_transports");
-  farsight_stream_prepare_transports (priv->fs_stream);
+    (priv->stream_proxy, codecs, dummy_callback, self);
 }
 
 void
