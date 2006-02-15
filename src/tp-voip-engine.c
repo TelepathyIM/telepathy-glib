@@ -142,6 +142,7 @@ struct _TpVoipEnginePrivate
   DBusGProxy *stream_proxy;
   FarsightSession *fs_session;
   FarsightStream *fs_stream;
+  gboolean stream_started;
 };
 
 #define TP_VOIP_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_VOIP_ENGINE, TpVoipEnginePrivate))
@@ -278,6 +279,11 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   g_message ("%s: new-native-candidate-pair: stream=%p\n", __FUNCTION__, stream);
 
+  if (!priv->stream_started)
+    {
+      farsight_stream_start (priv->fs_stream);
+      priv->stream_started = TRUE;
+    }
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
     (priv->stream_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
 }
@@ -719,8 +725,6 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   fs_codecs = g_list_reverse (fs_codecs);
 
   farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs);
-
-  farsight_stream_start (priv->fs_stream);
 
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
