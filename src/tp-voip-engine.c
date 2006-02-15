@@ -547,6 +547,7 @@ add_remote_candidate (DBusGProxy *proxy, gchar* candidate,
 
   fs_transports = tp_transports_to_fs (candidate, transports);
 
+  g_debug ("%s:adding remote candidate %s", G_STRFUNC, candidate);
   farsight_stream_add_remote_candidate (priv->fs_stream, fs_transports);
 
   free_fs_transports (fs_transports);
@@ -557,6 +558,8 @@ remove_remote_candidate (DBusGProxy *proxy, gchar* candidate, gpointer user_data
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+
+  g_debug ("%s: removing remote candidate %s", G_STRFUNC, candidate);
   farsight_stream_remove_remote_candidate (priv->fs_stream, candidate);
 }
 
