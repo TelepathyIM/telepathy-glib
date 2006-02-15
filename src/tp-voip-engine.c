@@ -574,6 +574,7 @@ set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
                                              remote_candidate);
 }
 
+#if 0
 static gchar *
 find_badger (GList *badger_list)
 {
@@ -626,6 +627,7 @@ try_to_set_active_pair_of_badgers (TpVoipEnginePrivate *priv, GList *remote_cand
 
   farsight_stream_set_active_candidate_pair (priv->fs_stream, native_badger, remote_badger);
 }
+#endif
 
 static void
 set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
@@ -657,9 +659,9 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
     }
 
   farsight_stream_set_remote_candidate_list (priv->fs_stream, fs_transports);
-
+#if 0
   try_to_set_active_pair_of_badgers (priv, fs_transports);
-
+#endif
   free_fs_transports (fs_transports);
 }
 
