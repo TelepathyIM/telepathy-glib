@@ -277,10 +277,11 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-  g_message ("%s: new-native-candidate-pair: stream=%p\n", __FUNCTION__, stream);
+  g_message ("%s: new-active-candidate-pair: stream=%p\n", __FUNCTION__, stream);
 
   if (!priv->stream_started)
     {
+      g_message ("%s: calling start on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
       farsight_stream_start (priv->fs_stream);
       priv->stream_started = TRUE;
     }
@@ -763,6 +764,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   FarsightStream *stream;
   gchar *bus_name;
   GPtrArray *codecs;
+  GstElement *src, *sink;
 
   g_message ("Adding stream, media_type=%d, direction=%d",
       media_type, direction);
@@ -791,10 +793,16 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   stream = farsight_session_create_stream (priv->fs_session,
                                            media_type, direction);
 
-  farsight_stream_set_source (stream,
-      gst_element_factory_make ("alsasrc", "alsasrc"));
-  farsight_stream_set_sink (stream,
-      gst_element_factory_make ("alsasink", "alsasink"));
+  src = gst_element_factory_make ("alsasrc", NULL);
+  sink = gst_element_factory_make ("alsasink", NULL);
+  g_assert (src && sink);
+
+  g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
+  g_object_set(G_OBJECT(src), "latency-time", G_GINT64_CONSTANT (20000), NULL);
+  /*g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);*/
+
+  farsight_stream_set_source (stream, src);
+  farsight_stream_set_sink (stream, sink);
 
   priv->fs_stream = stream;
 
