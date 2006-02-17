@@ -142,7 +142,10 @@ struct _TpVoipEnginePrivate
   DBusGProxy *stream_proxy;
   FarsightSession *fs_session;
   FarsightStream *fs_stream;
+
   gboolean stream_started;
+  gboolean got_active_candidate_pair;
+  gboolean got_remote_codecs;
 };
 
 #define TP_VOIP_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_VOIP_ENGINE, TpVoipEnginePrivate))
@@ -271,6 +274,19 @@ session_error (FarsightSession *stream,
     (priv->session_proxy, error, debug, dummy_callback, "Media.SessionHandler::Error");
 }
 
+static void
+check_start_stream (TpVoipEnginePrivate *priv)
+{
+  if (!priv->stream_started)
+    {
+      if (priv->got_active_candidate_pair && priv->got_remote_codecs)
+        {
+          g_message ("%s: calling start on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
+          farsight_stream_start (priv->fs_stream);
+          priv->stream_started = TRUE;
+        }
+    }
+}
 
 static void
 new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate, const gchar *remote_candidate, gpointer user_data)
@@ -279,12 +295,9 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   g_message ("%s: new-active-candidate-pair: stream=%p\n", __FUNCTION__, stream);
 
-  if (!priv->stream_started)
-    {
-      g_message ("%s: calling start on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
-      farsight_stream_start (priv->fs_stream);
-      priv->stream_started = TRUE;
-    }
+  priv->got_active_candidate_pair = TRUE;
+  check_start_stream (priv);
+
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
     (priv->stream_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
 }
@@ -731,6 +744,9 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   fs_codecs = g_list_reverse (fs_codecs);
 
   farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs);
+
+  priv->got_remote_codecs = TRUE;
+  check_start_stream (priv);
 
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
