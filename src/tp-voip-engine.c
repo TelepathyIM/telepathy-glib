@@ -809,8 +809,17 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   stream = farsight_session_create_stream (priv->fs_session,
                                            media_type, direction);
 
-  src = gst_element_factory_make ("alsasrc", NULL);
-  sink = gst_element_factory_make ("alsasink", NULL);
+  if (getenv("FS_FAKESTREAM"))
+  {
+      src = gst_element_factory_make ("fakesrc", NULL);
+      sink = gst_element_factory_make ("fakesink", NULL);
+  }
+  else
+  {
+      src = gst_element_factory_make ("alsasrc", NULL);
+      sink = gst_element_factory_make ("alsasink", NULL);
+  }
+
   g_assert (src && sink);
 
   g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
