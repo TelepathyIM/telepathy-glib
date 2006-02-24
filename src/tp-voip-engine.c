@@ -193,7 +193,7 @@ tp_voip_engine_class_init (TpVoipEngineClass *tp_voip_engine_class)
    * 
    * Emitted whenever this object is handling no channels
    */
-  signals[HANDLING_CHANNEL] =
+  signals[NO_MORE_CHANNELS] =
   g_signal_new ("no-more-channels",
                 G_OBJECT_CLASS_TYPE (tp_voip_engine_class),
                 G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
