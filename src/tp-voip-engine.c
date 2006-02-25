@@ -924,6 +924,56 @@ static void
 channel_closed (DBusGProxy *proxy, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+
+  g_message ("Channel closed, cleaning up");
+
+  if (priv->fs_stream)
+    {
+      g_object_unref (priv->fs_stream);
+      priv->fs_stream = NULL;
+    }
+
+  if (priv->fs_session)
+    {
+      g_object_unref (priv->fs_session);
+      priv->fs_session = NULL;
+    }
+
+  g_debug ("priv->chan->ref_count before any unrefs == %d", G_OBJECT (priv->chan)->ref_count);
+
+  if (priv->streamed_proxy)
+    {
+      g_debug ("priv->streamed_proxy->ref_count before unref == %d", G_OBJECT (priv->streamed_proxy)->ref_count);
+      g_object_unref (priv->streamed_proxy);
+      priv->streamed_proxy = NULL;
+    }
+
+  if (priv->session_proxy)
+    {
+      g_debug ("priv->session_proxy->ref_count before unref == %d", G_OBJECT (priv->session_proxy)->ref_count);
+      g_object_unref (priv->session_proxy);
+      priv->session_proxy = NULL;
+    }
+
+  if (priv->stream_proxy)
+    {
+      g_debug ("priv->stream_proxy->ref_count before unref == %d", G_OBJECT (priv->stream_proxy)->ref_count);
+      g_object_unref (priv->stream_proxy);
+      priv->stream_proxy = NULL;
+    }
+
+  if (priv->chan)
+    {
+      g_debug ("priv->chan->ref_count before unref == %d", G_OBJECT (priv->chan)->ref_count);
+      g_object_unref (priv->chan);
+      priv->chan = NULL;
+    }
+
+  priv->stream_started = FALSE;
+  priv->got_active_candidate_pair = FALSE;
+  priv->got_remote_codecs = FALSE;
+
   g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
 }
 
