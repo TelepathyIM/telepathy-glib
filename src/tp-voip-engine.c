@@ -144,7 +144,6 @@ struct _TpVoipEnginePrivate
   FarsightStream *fs_stream;
 
   gboolean stream_started;
-  gboolean got_active_candidate_pair;
   gboolean got_remote_codecs;
 };
 
@@ -279,7 +278,8 @@ check_start_stream (TpVoipEnginePrivate *priv)
 {
   if (!priv->stream_started)
     {
-      if (priv->got_active_candidate_pair && priv->got_remote_codecs)
+      if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED
+          && priv->got_remote_codecs)
         {
           g_message ("%s: calling start on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
           farsight_stream_start (priv->fs_stream);
@@ -294,9 +294,6 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   g_message ("%s: new-active-candidate-pair: stream=%p\n", __FUNCTION__, stream);
-
-  priv->got_active_candidate_pair = TRUE;
-  check_start_stream (priv);
 
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
     (priv->stream_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
@@ -340,9 +337,19 @@ state_changed (FarsightStream *stream,
                FarsightStreamDirection dir,
                gpointer user_data)
 {
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   switch (state) {
     case FARSIGHT_STREAM_STATE_STOPPED:
           g_message ("%s: %p stopped\n", __FUNCTION__, stream);
+          break;
+    case FARSIGHT_STREAM_STATE_CONNECTING: 
+          g_message ("%s: %p connecting\n", __FUNCTION__, stream);
+          break;
+    case FARSIGHT_STREAM_STATE_CONNECTED: 
+          g_message ("%s: %p connected\n", __FUNCTION__, stream);
+          /* let's try to start the stream */
+          check_start_stream (priv);
           break;
     case FARSIGHT_STREAM_STATE_PLAYING: 
           g_message ("%s: %p playing\n", __FUNCTION__, stream);
@@ -971,7 +978,6 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
     }
 
   priv->stream_started = FALSE;
-  priv->got_active_candidate_pair = FALSE;
   priv->got_remote_codecs = FALSE;
 
   g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
