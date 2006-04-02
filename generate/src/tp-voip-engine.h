@@ -54,6 +54,8 @@ GType tp_voip_engine_get_type(void);
 
 
 gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error);
+gboolean tp_voip_engine_mute (TpVoipEngine *obj, gboolean mute_state, GError **error);
+gboolean tp_voip_engine_set_volume (TpVoipEngine *obj, guint volume, GError **error);
 
 
 G_END_DECLS

@@ -10,4 +10,12 @@
       <arg direction="in" type="u" name="handle" />
     </method>
   </interface>
+  <interface name="org.freedesktop.Telepathy.StreamingEngine">
+    <method name="SetVolume">
+      <arg direction="in" type="u" name="volume" />
+    </method>
+    <method name="Mute">
+      <arg direction="in" type="b" name="mute_state" />
+    </method>
+  </interface>
 </node>
