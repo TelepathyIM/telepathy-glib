@@ -84,32 +84,32 @@ static void
 register_dbus_signal_marshallers()
 {
   /*register a marshaller for the NewMediaStreamHandler signal*/
-  dbus_g_object_register_marshaller 
+  dbus_g_object_register_marshaller
     (misc_marshal_VOID__BOXED_UINT_UINT, G_TYPE_NONE,
      DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
 
   /*register a marshaller for the NewMediaSessionHandler signal*/
-  dbus_g_object_register_marshaller 
+  dbus_g_object_register_marshaller
     (misc_marshal_VOID__UINT_BOXED_STRING, G_TYPE_NONE,
      G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
 
   /*register a marshaller for the AddRemoteCandidate signal*/
-  dbus_g_object_register_marshaller 
+  dbus_g_object_register_marshaller
     (misc_marshal_VOID__STRING_BOXED, G_TYPE_NONE,
      G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
 
   /*register a marshaller for the SetActiveCandidatePair signal*/
-  dbus_g_object_register_marshaller 
+  dbus_g_object_register_marshaller
     (misc_marshal_VOID__STRING_STRING, G_TYPE_NONE,
      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
 
   /*register a marshaller for the SetRemoteCandidateList signal*/
-  dbus_g_object_register_marshaller 
+  dbus_g_object_register_marshaller
     (misc_marshal_VOID__BOXED, G_TYPE_NONE,
      TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
 
   /*register a marshaller for the SetRemoteCodecs signal*/
-  dbus_g_object_register_marshaller 
+  dbus_g_object_register_marshaller
     (misc_marshal_VOID__BOXED, G_TYPE_NONE,
      TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
 }
@@ -128,7 +128,6 @@ enum
 };
 
 static guint signals[LAST_SIGNAL] = {0};
-
 
 /* private structure */
 typedef struct _TpVoipEnginePrivate TpVoipEnginePrivate;
@@ -536,25 +535,25 @@ tp_transports_to_fs (gchar* candidate, GPtrArray *transports)
       g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (transport, 9)));
 
       fs_transport->candidate_id = candidate;
-      fs_transport->component = 
+      fs_transport->component =
         g_value_get_uint (g_value_array_get_nth (transport, 0));
-      fs_transport->ip = 
+      fs_transport->ip =
         g_value_get_string (g_value_array_get_nth (transport, 1));
       fs_transport->port =
         (guint16) g_value_get_uint (g_value_array_get_nth (transport, 2));
       fs_transport->proto =
         g_value_get_uint (g_value_array_get_nth (transport, 3));
-      fs_transport->proto_subtype = 
+      fs_transport->proto_subtype =
         g_value_get_string (g_value_array_get_nth (transport, 4));
-      fs_transport->proto_profile = 
+      fs_transport->proto_profile =
         g_value_get_string (g_value_array_get_nth (transport, 5));
-      fs_transport->preference = 
+      fs_transport->preference =
         (float) g_value_get_double (g_value_array_get_nth (transport, 6));
       fs_transport->type =
         g_value_get_uint (g_value_array_get_nth (transport, 7));
-      fs_transport->username = 
+      fs_transport->username =
         g_value_get_string (g_value_array_get_nth (transport, 8));
-      fs_transport->password = 
+      fs_transport->password =
         g_value_get_string (g_value_array_get_nth (transport, 9));
 
       fs_trans_list = g_list_prepend (fs_trans_list, fs_transport);
@@ -576,7 +575,7 @@ free_fs_transports (GList *fs_trans_list)
 }
 
 static void
-add_remote_candidate (DBusGProxy *proxy, gchar* candidate, 
+add_remote_candidate (DBusGProxy *proxy, gchar* candidate,
                       GPtrArray *transports, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
@@ -607,7 +606,7 @@ set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-  farsight_stream_set_active_candidate_pair (priv->fs_stream, 
+  farsight_stream_set_active_candidate_pair (priv->fs_stream,
                                              native_candidate,
                                              remote_candidate);
 }
@@ -628,7 +627,7 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
     {
       candidate = g_ptr_array_index (candidates, i);
       g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (candidate,0)));
-      g_assert(G_VALUE_TYPE (g_value_array_get_nth (candidate, 1)) == 
+      g_assert(G_VALUE_TYPE (g_value_array_get_nth (candidate, 1)) ==
                                TP_TYPE_TRANSPORT_LIST);
 
       /*TODO: mmm, candidate_id should be const in farsight api*/
@@ -637,7 +636,7 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
       transports =
         g_value_get_boxed (g_value_array_get_nth (candidate, 1));
 
-      fs_transports = g_list_concat(fs_transports, 
+      fs_transports = g_list_concat(fs_transports,
                         tp_transports_to_fs (candidate_id, transports));
     }
 
@@ -680,7 +679,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
       g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (codec,2)));
       g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (codec,3)));
       g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (codec,4)));
-      g_assert(G_VALUE_TYPE (g_value_array_get_nth (codec, 5)) == 
+      g_assert(G_VALUE_TYPE (g_value_array_get_nth (codec, 5)) ==
                                DBUS_TYPE_G_STRING_STRING_HASHTABLE);
 
       fs_codec->id =
@@ -738,7 +737,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 }
 
 static void
-new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path, 
+new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                           guint media_type, guint direction, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
@@ -817,35 +816,35 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   dbus_g_proxy_add_signal (priv->stream_proxy, "AddRemoteCandidate",
       G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->stream_proxy, "AddRemoteCandidate", 
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "AddRemoteCandidate",
       G_CALLBACK (add_remote_candidate), self, NULL);
 
   /* tell the gproxy about the RemoveRemoteCandidate signal*/
   dbus_g_proxy_add_signal (priv->stream_proxy, "RemoveRemoteCandidate",
       G_TYPE_STRING, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->stream_proxy, "RemoveRemoteCandidate", 
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "RemoveRemoteCandidate",
       G_CALLBACK (remove_remote_candidate), self, NULL);
 
   /* tell the gproxy about the SetActiveCandidatePair signal*/
   dbus_g_proxy_add_signal (priv->stream_proxy, "SetActiveCandidatePair",
       G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetActiveCandidatePair", 
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetActiveCandidatePair",
       G_CALLBACK (set_active_candidate_pair), self, NULL);
 
   /* tell the gproxy about the SetRemoteCandidateList signal*/
   dbus_g_proxy_add_signal (priv->stream_proxy, "SetRemoteCandidateList",
       TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCandidateList", 
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCandidateList",
       G_CALLBACK (set_remote_candidate_list), self, NULL);
 
   /* tell the gproxy about the SetRemoteCodecs signal*/
   dbus_g_proxy_add_signal (priv->stream_proxy, "SetRemoteCodecs",
       TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCodecs", 
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCodecs",
       G_CALLBACK (set_remote_codecs), self, NULL);
 
   codecs = fs_codecs_to_tp (farsight_stream_get_local_codecs (stream));
@@ -857,7 +856,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 
 void
 tp_voip_engine_add_session (TpVoipEngine *self, guint member,
-                            const char *session_handler_path, 
+                            const char *session_handler_path,
                             const gchar* type)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
@@ -865,7 +864,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
 
   g_message ("adding session for member %d, %s, %s", member, session_handler_path, type);
 
-  if (priv->session_proxy) 
+  if (priv->session_proxy)
     {
       g_warning("already allocated the one supported session.");
       return;
@@ -888,7 +887,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
 
   priv->fs_session = farsight_session_factory_make(type);
 
-  if (!priv->fs_session) 
+  if (!priv->fs_session)
     {
       g_error("RTP plugin not found");
       return;
@@ -897,7 +896,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
            farsight_plugin_get_name (priv->fs_session->plugin),
            farsight_plugin_get_description (priv->fs_session->plugin),
            farsight_plugin_get_author (priv->fs_session->plugin));
-  g_signal_connect (G_OBJECT (priv->fs_session), "error", 
+  g_signal_connect (G_OBJECT (priv->fs_session), "error",
                     G_CALLBACK (session_error), self);
 
 
@@ -905,7 +904,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
   dbus_g_proxy_add_signal (priv->session_proxy, "NewMediaStreamHandler",
       DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->session_proxy, "NewMediaStreamHandler", 
+  dbus_g_proxy_connect_signal (priv->session_proxy, "NewMediaStreamHandler",
       G_CALLBACK (new_media_stream_handler), self, NULL);
 
   g_message("Calling MediaSessionHandler::Ready");
@@ -920,7 +919,7 @@ new_media_session_handler (DBusGProxy *proxy, guint member, const char *session_
   tp_voip_engine_add_session (self, member, session_handler_path, type);
 }
 
-void 
+void
 get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GError *error, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
@@ -1063,7 +1062,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
-  tp_chan_type_streamed_media_get_session_handlers_async 
+  tp_chan_type_streamed_media_get_session_handlers_async
          (DBUS_G_PROXY (priv->streamed_proxy), get_session_handlers_reply, obj);
 
   return TRUE;
