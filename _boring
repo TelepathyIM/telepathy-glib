@@ -78,3 +78,4 @@
 ^src/telepathy-voip-engine$
 ^test/voip-engine-tester$
 (^|/).svn$|/)
+^debian($|/)
