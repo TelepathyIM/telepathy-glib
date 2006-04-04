@@ -647,11 +647,11 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
 static void
 fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 {
-  GList *fs_params = (GList *) user_data;
+  GList **fs_params = (GList **) user_data;
   FarsightCodecParameter *param = g_new0(FarsightCodecParameter,1);
   param->name = key;
   param->value = value;
-  g_list_prepend (fs_params, param);
+  *fs_params = g_list_prepend (*fs_params, param);
 }
 
 void
@@ -696,8 +696,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
       params = g_value_get_boxed (g_value_array_get_nth (codec, 5));
       fs_params = NULL;
-      g_hash_table_foreach (params, fill_fs_params, fs_params);
-      fs_params = g_list_first(fs_params);
+      g_hash_table_foreach (params, fill_fs_params, &fs_params);
 
       fs_codec->optional_params = fs_params;
 
