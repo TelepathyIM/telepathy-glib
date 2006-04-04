@@ -120,9 +120,9 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 
 
 /**
- * tp_voip_engine_mute
+ * tp_voip_engine_mute_input
  *
- * Implements DBus method Mute
+ * Implements DBus method MuteInput
  * on interface org.freedesktop.Telepathy.StreamingEngine
  *
  * @error: Used to return a pointer to a GError detailing any error
@@ -131,16 +131,16 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_voip_engine_mute (TpVoipEngine *obj, gboolean mute_state, GError **error)
+gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GError **error)
 {
   return TRUE;
 }
 
 
 /**
- * tp_voip_engine_set_volume
+ * tp_voip_engine_mute_output
  *
- * Implements DBus method SetVolume
+ * Implements DBus method MuteOutput
  * on interface org.freedesktop.Telepathy.StreamingEngine
  *
  * @error: Used to return a pointer to a GError detailing any error
@@ -149,7 +149,25 @@ gboolean tp_voip_engine_mute (TpVoipEngine *obj, gboolean mute_state, GError **e
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_voip_engine_set_volume (TpVoipEngine *obj, guint volume, GError **error)
+gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
+ * tp_voip_engine_set_output_volume
+ *
+ * Implements DBus method SetOutputVolume
+ * on interface org.freedesktop.Telepathy.StreamingEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_voip_engine_set_output_volume (TpVoipEngine *obj, guint volume, GError **error)
 {
   return TRUE;
 }
