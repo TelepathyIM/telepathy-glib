@@ -773,25 +773,35 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   stream = farsight_session_create_stream (priv->fs_session,
                                            media_type, direction);
 
+  /* TODO Make this smarter, i should only create those sources and sinks if
+   * they exist */
   if (getenv("FS_FAKESTREAM"))
   {
       src = gst_element_factory_make ("fakesrc", NULL);
       sink = gst_element_factory_make ("fakesink", NULL);
+      if (src)
+        {
+          g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
+          farsight_stream_set_source (stream, src);
+        }
+      if (sink)
+        farsight_stream_set_sink (stream, sink);
   }
   else
   {
       src = gst_element_factory_make ("alsasrc", NULL);
       sink = gst_element_factory_make ("alsasink", NULL);
+      if (src)
+        {
+          g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
+          g_object_set(G_OBJECT(src), "latency-time", G_GINT64_CONSTANT (20000), NULL);
+          g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
+          farsight_stream_set_source (stream, src);
+        }
+      if (sink)
+        farsight_stream_set_sink (stream, sink);
   }
 
-  g_assert (src && sink);
-
-  g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
-  g_object_set(G_OBJECT(src), "latency-time", G_GINT64_CONSTANT (20000), NULL);
-  /*g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);*/
-
-  farsight_stream_set_source (stream, src);
-  farsight_stream_set_sink (stream, sink);
 
   priv->fs_stream = stream;
 
