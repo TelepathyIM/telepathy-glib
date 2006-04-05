@@ -371,6 +371,8 @@ state_changed (FarsightStream *stream,
           g_message ("%s: %p playing\n", __FUNCTION__, stream);
           break;
   }
+  org_freedesktop_Telepathy_Media_StreamHandler_stream_state_async
+    (priv->stream_proxy, state, dummy_callback,"Media.StreamHandler::StreamState");
 }
 
 static void
