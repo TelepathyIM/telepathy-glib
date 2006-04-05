@@ -334,18 +334,18 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
 
   GstElement *sink = farsight_stream_get_sink (stream);
   GstElement *source = farsight_stream_get_source (stream);
-
   if (sink)
     {
       g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
+      g_debug("%s volume set",G_STRFUNC);
       g_object_set (G_OBJECT (sink), "mute", priv->output_mute, NULL);
+      g_debug("%s mute set",G_STRFUNC);
     }
 
   if (source)
     {
-      g_object_set (G_OBJECT (source), "mute", priv->input_mute, NULL);
+      /*g_object_set (G_OBJECT (source), "mute", priv->input_mute, NULL);*/
     }
-
 
   g_message ("%s: codec-changed: codec_id=%d, stream=%p\n", __FUNCTION__, codec_id, stream);
    org_freedesktop_Telepathy_Media_StreamHandler_codec_choice_async
