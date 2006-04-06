@@ -1175,7 +1175,9 @@ gboolean tp_voip_engine_set_output_volume (TpVoipEngine *obj, guint volume, GErr
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
   GstElement *sink = farsight_stream_get_sink (priv->fs_stream);
   priv->output_volume = (volume * 65535)/100;
+  g_debug ("Setting volume to %d", priv->output_volume);
   g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
+  g_debug ("Finished setting volume to %d", priv->output_volume);
   return TRUE;
 }
 
