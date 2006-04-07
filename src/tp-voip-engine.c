@@ -1176,9 +1176,16 @@ _tp_voip_engine_register (TpVoipEngine *self)
 gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GError **error)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
-  GstElement *source = farsight_stream_get_source (priv->fs_stream);
+  GstElement *source;
   priv->input_mute = mute_state;
-  g_object_set (G_OBJECT (source), "mute", mute_state, NULL);
+
+  if (priv->fs_stream &&
+      farsight_stream_get_state (priv->fs_stream) ==
+        FARSIGHT_STREAM_STATE_CONNECTED )
+    {
+      source = farsight_stream_get_source (priv->fs_stream);
+      g_object_set (G_OBJECT (source), "mute", mute_state, NULL);
+    }
   return TRUE;
 }
 
@@ -1198,9 +1205,15 @@ gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GErr
 gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GError **error)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
-  GstElement *sink = farsight_stream_get_sink (priv->fs_stream);
+  GstElement *sink;
   priv->output_mute = mute_state;
-  g_object_set (G_OBJECT (sink), "mute", mute_state, NULL);
+  if (priv->fs_stream &&
+      farsight_stream_get_state (priv->fs_stream) ==
+        FARSIGHT_STREAM_STATE_CONNECTED )
+    {
+      sink = farsight_stream_get_sink (priv->fs_stream);
+      g_object_set (G_OBJECT (sink), "mute", mute_state, NULL);
+    }
   return TRUE;
 }
 
@@ -1220,11 +1233,17 @@ gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GEr
 gboolean tp_voip_engine_set_output_volume (TpVoipEngine *obj, guint volume, GError **error)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
-  GstElement *sink = farsight_stream_get_sink (priv->fs_stream);
+  GstElement *sink;
   priv->output_volume = (volume * 65535)/100;
-  g_debug ("Setting volume to %d", priv->output_volume);
-  g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
-  g_debug ("Finished setting volume to %d", priv->output_volume);
+  if (priv->fs_stream &&
+      farsight_stream_get_state (priv->fs_stream) ==
+        FARSIGHT_STREAM_STATE_CONNECTED )
+    {
+      sink = farsight_stream_get_sink (priv->fs_stream);
+      g_debug ("Setting volume to %d", priv->output_volume);
+      g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
+      g_debug ("Finished setting volume to %d", priv->output_volume);
+    }
   return TRUE;
 }
 
