@@ -1077,6 +1077,14 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
                              handle_type,                               /* handle_type */
                              handle);                                   /* handle      */
 
+  if (!priv->chan)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+                            "Unable to bind to channel");
+
+      return FALSE;
+    }
+ 
   priv->streamed_proxy = tp_chan_get_interface (priv->chan, TELEPATHY_CHAN_IFACE_STREAMED_QUARK);
   g_assert (priv->streamed_proxy != NULL);
 
