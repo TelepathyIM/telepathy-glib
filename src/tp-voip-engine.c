@@ -18,6 +18,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#define MAEMO_OSSO_SUPPORT
+
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +41,7 @@
 #include "misc-signals-marshal.h"
 #include "tp-media-session-handler-gen.h"
 #include "tp-media-stream-handler-gen.h"
+#include "media-engine-gen.h"
 
 #include "tp-voip-engine-glue.h"
 
@@ -47,6 +50,10 @@
 
 #define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
+
+#define MEDIA_SERVER_SERVICE_NAME "com.nokia.osso_media_server"
+#define MEDIA_SERVER_INTERFACE_NAME "com.nokia.osso_media_server"
+#define MEDIA_SERVER_SERVICE_OBJECT "/com/nokia/osso_media_server"
 
 #define TP_TYPE_TRANSPORT_STRUCT (dbus_g_type_get_struct ("GValueArray", \
       G_TYPE_UINT, \
@@ -139,6 +146,7 @@ struct _TpVoipEnginePrivate
   DBusGProxy *streamed_proxy;
   DBusGProxy *session_proxy;
   DBusGProxy *stream_proxy;
+  DBusGProxy *media_engine_proxy;
   FarsightSession *fs_session;
   FarsightStream *fs_stream;
 
@@ -148,6 +156,9 @@ struct _TpVoipEnginePrivate
 
   gboolean stream_started;
   gboolean got_remote_codecs;
+
+  gboolean media_engine_paused;
+  gboolean stream_start_scheduled;
 };
 
 #define TP_VOIP_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_VOIP_ENGINE, TpVoipEnginePrivate))
@@ -276,17 +287,33 @@ session_error (FarsightSession *stream,
 static void
 check_start_stream (TpVoipEnginePrivate *priv)
 {
+  priv->stream_start_scheduled =TRUE;
   if (!priv->stream_started)
-    {
-      if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED
-          && priv->got_remote_codecs)
-        {
-          g_message ("%s: calling start on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
-          farsight_stream_start (priv->fs_stream);
-          priv->stream_started = TRUE;
-        }
-    }
+  {
+    if (priv->media_engine_paused)
+      {
+        if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED
+            && priv->got_remote_codecs)
+          {
+            g_message ("%s: calling start on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
+            farsight_stream_start (priv->fs_stream);
+            priv->stream_started = TRUE;
+          }
+      }
+   }
 }
+
+#ifdef MAEMO_OSSO_SUPPORT
+void
+media_engine_pause_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  priv->media_engine_paused = TRUE;
+  if (priv->stream_start_scheduled)
+    check_start_stream (priv);
+}
+#endif
 
 static void
 new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate, const gchar *remote_candidate, gpointer user_data)
@@ -1054,6 +1081,14 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
   g_assert (priv->streamed_proxy != NULL);
 
 
+#ifdef MAEMO_OSSO_SUPPORT
+  priv->media_engine_proxy =
+    dbus_g_proxy_new_for_name (tp_get_bus(),
+                               MEDIA_SERVER_SERVICE_NAME,
+                               MEDIA_SERVER_SERVICE_OBJECT,
+                               MEDIA_SERVER_INTERFACE_NAME);
+#endif
+
 /* TODO check for group interface
  * chan_interfaces = (GSList *) tp_chan_local_get_interface_objs(priv->chan);
   if (chan_interfaces == NULL)
@@ -1073,6 +1108,18 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
+#ifdef MAEMO_OSSO_SUPPORT
+  if (priv->media_engine_proxy)
+    {
+      com_nokia_osso_media_server_pause_async (
+          DBUS_G_PROXY (priv->media_engine_proxy),
+          media_engine_pause_cb, obj);
+    }
+  else
+#endif
+    {
+      priv->media_engine_paused = TRUE;
+    }
   tp_chan_type_streamed_media_get_session_handlers_async
          (DBUS_G_PROXY (priv->streamed_proxy), get_session_handlers_reply, obj);
 
