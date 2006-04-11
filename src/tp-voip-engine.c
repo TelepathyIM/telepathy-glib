@@ -337,14 +337,15 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
   if (sink)
     {
       g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
-      g_debug("%s volume set",G_STRFUNC);
+      g_debug("%s output volume set to %d",G_STRFUNC, priv->output_volume);
       g_object_set (G_OBJECT (sink), "mute", priv->output_mute, NULL);
-      g_debug("%s mute set",G_STRFUNC);
+      g_debug ("%s: output mute set to %s", G_STRFUNC, priv->output_mute?"on":"off");
     }
 
   if (source)
     {
-      /*g_object_set (G_OBJECT (source), "mute", priv->input_mute, NULL);*/
+      g_debug ("%s: input mute set to %s", G_STRFUNC, priv->input_mute?"on":"off");
+      g_object_set (G_OBJECT (source), "mute", priv->input_mute, NULL);
     }
 
   g_message ("%s: codec-changed: codec_id=%d, stream=%p\n", __FUNCTION__, codec_id, stream);
@@ -1119,6 +1120,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 #ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_engine_proxy)
     {
+      g_debug ("pausing media engine");
       com_nokia_osso_media_server_pause_async (
           DBUS_G_PROXY (priv->media_engine_proxy),
           media_engine_pause_cb, obj);
@@ -1187,6 +1189,8 @@ gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GErr
   GstElement *source;
   priv->input_mute = mute_state;
 
+  g_debug ("%s: input mute set to %s", G_STRFUNC, mute_state?"on":"off");
+
   if (priv->fs_stream &&
       farsight_stream_get_state (priv->fs_stream) ==
         FARSIGHT_STREAM_STATE_CONNECTED )
@@ -1215,6 +1219,9 @@ gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GEr
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
   GstElement *sink;
   priv->output_mute = mute_state;
+
+  g_debug ("%s: output mute set to %s", G_STRFUNC, mute_state?"on":"off");
+
   if (priv->fs_stream &&
       farsight_stream_get_state (priv->fs_stream) ==
         FARSIGHT_STREAM_STATE_CONNECTED )
@@ -1242,7 +1249,11 @@ gboolean tp_voip_engine_set_output_volume (TpVoipEngine *obj, guint volume, GErr
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
   GstElement *sink;
+
+  if (volume > 100) volume=100;
+
   priv->output_volume = (volume * 65535)/100;
+  g_debug ("%s: Setting output volume to %d", G_STRFUNC, priv->output_volume);
   if (priv->fs_stream &&
       farsight_stream_get_state (priv->fs_stream) ==
         FARSIGHT_STREAM_STATE_CONNECTED )
