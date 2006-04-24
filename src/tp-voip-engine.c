@@ -992,6 +992,18 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   g_message ("Channel closed, cleaning up");
 
+  dbus_g_proxy_disconnect_signal (priv->stream_proxy, "AddRemoteCandidate",
+      G_CALLBACK (add_remote_candidate), self);
+
+  dbus_g_proxy_disconnect_signal (priv->stream_proxy, "RemoveRemoteCandidate",
+      G_CALLBACK (remove_remote_candidate), self);
+
+  dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetActiveCandidatePair",
+      G_CALLBACK (set_active_candidate_pair), self);
+
+  dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetRemoteCandidateList",
+      G_CALLBACK (set_remote_candidate_list), self);
+
   if (priv->fs_stream)
     {
       g_object_unref (priv->fs_stream);
@@ -1027,6 +1039,14 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
       priv->stream_proxy = NULL;
     }
 
+  if (priv->media_engine_proxy)
+    {
+      g_debug ("priv->media_engine_proxy->ref_count before unref == %d", G_OBJECT (priv->media_engine_proxy)->ref_count);
+      g_object_unref (priv->media_engine_proxy);
+      priv->media_engine_proxy = NULL;
+    }
+
+
   if (priv->chan)
     {
       g_debug ("priv->chan->ref_count before unref == %d", G_OBJECT (priv->chan)->ref_count);
@@ -1036,6 +1056,8 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   priv->stream_started = FALSE;
   priv->got_remote_codecs = FALSE;
+  priv->media_engine_paused = FALSE;
+  priv->stream_start_scheduled = FALSE;
 
   g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
 }
