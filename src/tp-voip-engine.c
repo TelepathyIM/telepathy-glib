@@ -338,14 +338,16 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
     {
       g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
       g_debug("%s output volume set to %d",G_STRFUNC, priv->output_volume);
-      g_object_set (G_OBJECT (sink), "mute", priv->output_mute, NULL);
+      if (getenv("VOIP_MUTE_ENABLED"))
+        g_object_set (G_OBJECT (sink), "mute", priv->output_mute, NULL);
       g_debug ("%s: output mute set to %s", G_STRFUNC, priv->output_mute?"on":"off");
     }
 
   if (source)
     {
       g_debug ("%s: input mute set to %s", G_STRFUNC, priv->input_mute?"on":"off");
-      g_object_set (G_OBJECT (source), "mute", priv->input_mute, NULL);
+      if (getenv("VOIP_MUTE_ENABLED"))
+        g_object_set (G_OBJECT (source), "mute", priv->input_mute, NULL);
     }
 
   g_message ("%s: codec-changed: codec_id=%d, stream=%p\n", __FUNCTION__, codec_id, stream);
@@ -1196,7 +1198,8 @@ gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GErr
         FARSIGHT_STREAM_STATE_CONNECTED )
     {
       source = farsight_stream_get_source (priv->fs_stream);
-      g_object_set (G_OBJECT (source), "mute", mute_state, NULL);
+      if (getenv("VOIP_MUTE_ENABLED") && source)
+        g_object_set (G_OBJECT (source), "mute", mute_state, NULL);
     }
   return TRUE;
 }
@@ -1227,7 +1230,8 @@ gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GEr
         FARSIGHT_STREAM_STATE_CONNECTED )
     {
       sink = farsight_stream_get_sink (priv->fs_stream);
-      g_object_set (G_OBJECT (sink), "mute", mute_state, NULL);
+      if (getenv("VOIP_MUTE_ENABLED") && sink)
+        g_object_set (G_OBJECT (sink), "mute", mute_state, NULL);
     }
   return TRUE;
 }
