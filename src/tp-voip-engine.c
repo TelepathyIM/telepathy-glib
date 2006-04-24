@@ -1083,6 +1083,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
                             "VoIP Engine is already handling a channel");
+      g_debug ("VoIP Engine is already handling a channel!");
 
       return FALSE;
     }
@@ -1091,7 +1092,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
                             "VoIP Engine was passed a channel that was not a "
                             TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
-
+      g_debug ("VoIP Engine was passed a channel that was not of type " TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
       return FALSE;
      }
 

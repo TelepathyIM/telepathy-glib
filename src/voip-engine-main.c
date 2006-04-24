@@ -96,6 +96,7 @@ int main(int argc, char **argv) {
 
   g_debug("started");
   g_main_loop_run (mainloop);
+  g_debug("finished");
 
   return 0;
 }
