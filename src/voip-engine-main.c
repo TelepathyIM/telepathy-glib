@@ -18,6 +18,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#define USE_REALTIME
+#ifdef USE_REALTIME
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sched.h>
+#include <sys/mman.h>
+#endif /* USE_REALTIME */
 #include <dbus/dbus-glib.h>
 #include <gst/gst.h>
 #include "tp-voip-engine.h"
@@ -31,6 +41,42 @@ gboolean connections_exist = FALSE;
 guint timeout_id;
 
 #define DIE_TIME 5000
+
+#ifdef USE_REALTIME
+#define PRIORITY_POLICY SCHED_RR
+#define PRIORITY_DELTA 1
+
+static void
+set_realtime (const char *argv0) {
+  int orig_uid, orig_euid;
+  int prio_delta = PRIORITY_DELTA;
+  struct sched_param schedp;
+
+  /* get original uid */
+  orig_uid = getuid();
+  orig_euid = geteuid();
+  /* set uid to root */
+  if (setreuid(orig_uid, 0) == -1) {
+    perror("setreuid()");
+    g_warning("unable to setreuid(,0), maybe you should: \n");
+    g_warning("\tchown root %s ; chmod u+s %s\n", argv0, argv0);
+  }
+  /* set scheduling parameters, scheduler either SCHED_RR or SCHED_FIFO */
+  memset(&schedp, 0x00, sizeof(schedp));
+  schedp.sched_priority = sched_get_priority_min(PRIORITY_POLICY) + prio_delta;
+  /* 0 pid equals to getpid() ie. current process */
+  if (sched_setscheduler(0, PRIORITY_POLICY, &schedp) == -1) {
+    perror("sched_setscheduler()");
+  }
+  /* nail everything to RAM, needed for realtime on systems with swap,
+   * also avoids extra calls to vm subsystem */
+  /*if (mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
+    perror("mlockall()");
+  }*/
+  /* restore original uid */
+  setreuid(orig_uid, orig_euid);
+}
+#endif /* USE_REALTIME */
 
 static gboolean
 kill_voip_engine (gpointer data)
@@ -65,6 +111,8 @@ no_more_channels (TpVoipEngine *voip_engine)
 }
 
 int main(int argc, char **argv) {
+  char *rt_env;
+
   g_type_init();
   gst_init (&argc, &argv);
 
@@ -94,6 +142,22 @@ int main(int argc, char **argv) {
 
   timeout_id = g_timeout_add(DIE_TIME, kill_voip_engine, NULL);
 
+#ifdef USE_REALTIME
+  /* Here we don't yet have any media threads running, so the to-be-created
+   * threads will inherit the scheduling parameters, as glib doesn't know
+   * anything about that... */
+  rt_env = getenv("VOIP_ENGINE_REALTIME");
+  if (rt_env != NULL) {
+    if (atoi(rt_env)) {
+      g_debug("realtime scheduling enabled");
+      set_realtime(argv[0]);
+    } else {
+      g_debug("realtime scheduling disabled");
+    }
+  } else {
+    g_debug("not using realtime scheduling, enable through VOIP_ENGINE_REALTIME env");
+  }
+#endif /* USE_REALTIME */
   g_debug("started");
   g_main_loop_run (mainloop);
   g_debug("finished");
