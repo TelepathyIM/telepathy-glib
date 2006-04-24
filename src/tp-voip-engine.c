@@ -1218,7 +1218,7 @@ gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GErr
 
   if (priv->fs_stream &&
       farsight_stream_get_state (priv->fs_stream) ==
-        FARSIGHT_STREAM_STATE_CONNECTED )
+        FARSIGHT_STREAM_STATE_PLAYING)
     {
       source = farsight_stream_get_source (priv->fs_stream);
       if (getenv("VOIP_MUTE_ENABLED") && source)
@@ -1250,7 +1250,7 @@ gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GEr
 
   if (priv->fs_stream &&
       farsight_stream_get_state (priv->fs_stream) ==
-        FARSIGHT_STREAM_STATE_CONNECTED )
+        FARSIGHT_STREAM_STATE_PLAYING)
     {
       sink = farsight_stream_get_sink (priv->fs_stream);
       if (getenv("VOIP_MUTE_ENABLED") && sink)
@@ -1283,12 +1283,15 @@ gboolean tp_voip_engine_set_output_volume (TpVoipEngine *obj, guint volume, GErr
   g_debug ("%s: Setting output volume to %d", G_STRFUNC, priv->output_volume);
   if (priv->fs_stream &&
       farsight_stream_get_state (priv->fs_stream) ==
-        FARSIGHT_STREAM_STATE_CONNECTED )
+        FARSIGHT_STREAM_STATE_PLAYING)
     {
       sink = farsight_stream_get_sink (priv->fs_stream);
-      g_debug ("Setting volume to %d", priv->output_volume);
-      g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
-      g_debug ("Finished setting volume to %d", priv->output_volume);
+      if (sink)
+        {
+          g_debug ("Setting volume to %d", priv->output_volume);
+          g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
+          g_debug ("Finished setting volume to %d", priv->output_volume);
+        }
     }
   return TRUE;
 }
