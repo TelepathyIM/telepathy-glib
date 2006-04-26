@@ -287,8 +287,7 @@ session_error (FarsightSession *stream,
 static void
 check_start_stream (TpVoipEnginePrivate *priv)
 {
-  priv->stream_start_scheduled =TRUE;
-  if (!priv->stream_started)
+  if (priv->stream_start_scheduled && !priv->stream_started)
   {
     if (priv->media_engine_paused)
       {
@@ -303,6 +302,14 @@ check_start_stream (TpVoipEnginePrivate *priv)
    }
 }
 
+static void
+stop_stream (TpVoipEnginePrivate *priv)
+{
+  g_message ("%s: calling stop on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
+  farsight_stream_stop (priv->fs_stream);
+  priv->stream_started = FALSE;
+}
+
 #ifdef MAEMO_OSSO_SUPPORT
 void
 media_engine_pause_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
@@ -310,8 +317,7 @@ media_engine_pause_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   priv->media_engine_paused = TRUE;
-  if (priv->stream_start_scheduled)
-    check_start_stream (priv);
+  check_start_stream (priv);
 }
 #endif
 
@@ -394,8 +400,8 @@ state_changed (FarsightStream *stream,
           break;
     case FARSIGHT_STREAM_STATE_CONNECTED: 
           g_message ("%s: %p connected\n", __FUNCTION__, stream);
-          /* let's try to start the stream */
-          check_start_stream (priv);
+          /* start the stream if its supposed to be playing already*/
+          check_start_stream(priv);
           break;
     case FARSIGHT_STREAM_STATE_PLAYING: 
           g_message ("%s: %p playing\n", __FUNCTION__, stream);
@@ -742,7 +748,8 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs);
 
   priv->got_remote_codecs = TRUE;
-  check_start_stream (priv);
+
+  check_start_stream(priv);
 
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
@@ -765,6 +772,22 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
     }
   g_list_free (fs_codecs);
 
+}
+
+void
+set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  if (play)
+    {
+      priv->stream_start_scheduled = TRUE;
+      check_start_stream (priv);
+    }
+  else
+    {
+      stop_stream (priv);
+    }
 }
 
 static void
@@ -887,6 +910,14 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 
   dbus_g_proxy_connect_signal (priv->stream_proxy, "SetRemoteCodecs",
       G_CALLBACK (set_remote_codecs), self, NULL);
+
+  /* tell the gproxy about the SetStreamPlaying signal*/
+  dbus_g_proxy_add_signal (priv->stream_proxy, "SetStreamPlaying",
+      G_TYPE_BOOLEAN, G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->stream_proxy, "SetStreamPlaying",
+      G_CALLBACK (set_stream_playing), self, NULL);
+
 
   codecs = fs_codecs_to_tp (farsight_stream_get_local_codecs (stream));
 
