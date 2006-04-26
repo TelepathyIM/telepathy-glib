@@ -779,6 +779,8 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+
+  g_debug ("%s: %d", G_STRFUNC, play);
   if (play)
     {
       priv->stream_start_scheduled = TRUE;
