@@ -155,7 +155,6 @@ struct _TpVoipEnginePrivate
   gboolean input_mute;
 
   gboolean stream_started;
-  gboolean got_remote_codecs;
 
   gboolean media_engine_paused;
   gboolean stream_start_scheduled;
@@ -291,8 +290,7 @@ check_start_stream (TpVoipEnginePrivate *priv)
   {
     if (priv->media_engine_paused)
       {
-        if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED
-            && priv->got_remote_codecs)
+        if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED)
           {
             g_message ("%s: calling start on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
             farsight_stream_start (priv->fs_stream);
@@ -747,10 +745,6 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
   farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs);
 
-  priv->got_remote_codecs = TRUE;
-
-  check_start_stream(priv);
-
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
 
@@ -1088,7 +1082,6 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
     }
 
   priv->stream_started = FALSE;
-  priv->got_remote_codecs = FALSE;
   priv->media_engine_paused = FALSE;
   priv->stream_start_scheduled = FALSE;
 
