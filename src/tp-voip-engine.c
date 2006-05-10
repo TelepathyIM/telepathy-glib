@@ -866,6 +866,14 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   stream = farsight_session_create_stream (priv->fs_session,
                                            media_type, direction);
 
+  gchar *conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
+  if (conn_timeout_str)
+  {
+    gint conn_timeout = (int)g_ascii_strtod (conn_timeout_str, NULL);
+    g_debug ("Setting connection timeout at %d", conn_timeout);
+    g_object_set (G_OBJECT(stream), "conn_timeout", conn_timeout, NULL);
+  }
+  
   /* TODO Make this smarter, i should only create those sources and sinks if
    * they exist */
   if (getenv("FS_FAKESTREAM"))
