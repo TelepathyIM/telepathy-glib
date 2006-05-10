@@ -299,17 +299,23 @@ dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
     g_critical ("%s calling %s", error->message, (char*)user_data);
 }
 
-static void
+void
+_tp_voip_engine_signal_stream_error (TpVoipEngine *self, int error,
+                                     const char *debug)
+{
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  org_freedesktop_Telepathy_Media_StreamHandler_error_async 
+    (priv->stream_proxy, error, debug, dummy_callback, "Media.StreamHandler::Error");
+}
+void
 stream_error (FarsightStream *stream,
        FarsightStreamError error,
        const gchar *debug,
        gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   g_message ("%s: stream error: stream=%p error=%s\n", __FUNCTION__, stream, debug);
-  org_freedesktop_Telepathy_Media_StreamHandler_error_async 
-    (priv->stream_proxy, error, debug, dummy_callback, "Media.StreamHandler::Error");
+  _tp_voip_engine_signal_stream_error (self, (int) error, debug);
 }
 
 static void
@@ -342,12 +348,16 @@ check_start_stream (TpVoipEnginePrivate *priv)
    }
 }
 
-static void
-stop_stream (TpVoipEnginePrivate *priv)
+void
+_tp_voip_engine_stop_stream (TpVoipEngine *self)
 {
-  g_message ("%s: calling stop on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
-  farsight_stream_stop (priv->fs_stream);
-  priv->stream_started = FALSE;
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_PLAYING)
+    {
+      g_debug ("%s: calling stop on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
+      farsight_stream_stop (priv->fs_stream);
+      priv->stream_started = FALSE;
+    }
 }
 
 #ifdef MAEMO_OSSO_SUPPORT
@@ -824,7 +834,7 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
     }
   else
     {
-      stop_stream (priv);
+      _tp_voip_engine_stop_stream (self);
     }
 }
 

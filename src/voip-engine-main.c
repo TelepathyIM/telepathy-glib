@@ -18,6 +18,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <signal.h>
 #define USE_REALTIME
 #ifdef USE_REALTIME
 #include <stdlib.h>
@@ -110,9 +111,22 @@ no_more_channels (TpVoipEngine *voip_engine)
   timeout_id = g_timeout_add(DIE_TIME, kill_voip_engine, NULL);
 }
 
+static void
+got_sigbus (int i)
+{
+  if (voip_engine)
+  {
+    _tp_voip_engine_stop_stream(voip_engine);
+    _tp_voip_engine_signal_stream_error (voip_engine, 0, "DSP Crash");
+    g_object_unref (voip_engine);
+    g_main_loop_quit (mainloop);
+  }
+}
+
 int main(int argc, char **argv) {
   char *rt_env;
 
+  signal (SIGBUS, got_sigbus);
   g_type_init();
   gst_init (&argc, &argv);
 

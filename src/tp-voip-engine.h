@@ -60,6 +60,8 @@ gboolean tp_voip_engine_set_output_volume (TpVoipEngine *obj, guint volume, GErr
 
 
 void _tp_voip_engine_register (TpVoipEngine *self);
+void _tp_voip_engine_stop_stream (TpVoipEngine *self);
+void _tp_voip_engine_signal_stream_error (TpVoipEngine *self, int error, const char *debug);
 
 G_END_DECLS
 
