@@ -5,6 +5,7 @@ BUILT_SOURCES = \
     tp-media-session-handler-gen.h \
     tp-media-stream-handler-gen.h \
     media-engine-gen.h \
+    statusbar-gen.h \
     tp-voip-engine-signals-marshal.h \
     tp-voip-engine-signals-marshal.c \
     misc-signals-marshal.h \

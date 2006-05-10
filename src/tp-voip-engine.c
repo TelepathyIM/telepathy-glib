@@ -20,6 +20,10 @@
 
 #define MAEMO_OSSO_SUPPORT
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +46,7 @@
 #include "tp-media-session-handler-gen.h"
 #include "tp-media-stream-handler-gen.h"
 #include "media-engine-gen.h"
+#include "statusbar-gen.h"
 
 #include "tp-voip-engine-glue.h"
 
@@ -54,6 +59,10 @@
 #define MEDIA_SERVER_SERVICE_NAME "com.nokia.osso_media_server"
 #define MEDIA_SERVER_INTERFACE_NAME "com.nokia.osso_media_server"
 #define MEDIA_SERVER_SERVICE_OBJECT "/com/nokia/osso_media_server"
+
+#define STATUS_BAR_SERVICE_NAME "com.nokia.statusbar"
+#define STATUS_BAR_INTERFACE_NAME "com.nokia.statusbar"
+#define STATUS_BAR_OBJECT_PATH "/com/nokia/statusbar"
 
 #define TP_TYPE_TRANSPORT_STRUCT (dbus_g_type_get_struct ("GValueArray", \
       G_TYPE_UINT, \
@@ -147,6 +156,7 @@ struct _TpVoipEnginePrivate
   DBusGProxy *session_proxy;
   DBusGProxy *stream_proxy;
   DBusGProxy *media_engine_proxy;
+  DBusGProxy *infoprint_proxy;
   FarsightSession *fs_session;
   FarsightStream *fs_stream;
 
@@ -162,6 +172,19 @@ struct _TpVoipEnginePrivate
 
 #define TP_VOIP_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_VOIP_ENGINE, TpVoipEnginePrivate))
 
+#ifdef USE_INFOPRINT
+static void tp_voip_engine_infoprint (const gchar *log_domain,
+    GLogLevelFlags log_level,
+    const gchar *message,
+    gpointer user_data)
+{
+	TpVoipEnginePrivate *priv = (TpVoipEnginePrivate *)user_data;
+  com_nokia_statusbar_system_note_infoprint (
+          DBUS_G_PROXY (priv->infoprint_proxy),
+          message, NULL);
+}
+#endif
+
 static void
 tp_voip_engine_init (TpVoipEngine *obj)
 {
@@ -169,6 +192,26 @@ tp_voip_engine_init (TpVoipEngine *obj)
 
   /*sensible default*/
   priv->output_volume = (65535*7)/10;
+
+#ifdef USE_INFOPRINT
+  priv->infoprint_proxy =
+    dbus_g_proxy_new_for_name (tp_get_bus(),
+        STATUS_BAR_SERVICE_NAME,
+        STATUS_BAR_OBJECT_PATH,
+        STATUS_BAR_INTERFACE_NAME);
+
+  g_debug ("Using infoprint %p", priv->infoprint_proxy);
+  /* handler for voip-engine messages */
+  g_log_set_handler (NULL, G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_CRITICAL |
+      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_voip_engine_infoprint, priv);
+
+  /* handler for farsight messages */
+  /*
+  g_log_set_handler ("Farsight", G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_CRITICAL |
+      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_voip_engine_infoprint, NULL);
+      */
+
+#endif
 }
 
 static void tp_voip_engine_dispose (GObject *object);
@@ -292,7 +335,6 @@ check_start_stream (TpVoipEnginePrivate *priv)
       {
         if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED)
           {
-            g_message ("%s: calling start on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
             farsight_stream_start (priv->fs_stream);
             priv->stream_started = TRUE;
           }
@@ -324,7 +366,7 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-  g_message ("%s: new-active-candidate-pair: stream=%p\n", __FUNCTION__, stream);
+  g_debug ("%s: new-active-candidate-pair: stream=%p\n", __FUNCTION__, stream);
 
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
     (priv->stream_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
@@ -354,7 +396,7 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
         g_object_set (G_OBJECT (source), "mute", priv->input_mute, NULL);
     }
 
-  g_message ("%s: codec-changed: codec_id=%d, stream=%p\n", __FUNCTION__, codec_id, stream);
+  g_debug ("%s: codec-changed: codec_id=%d, stream=%p\n", __FUNCTION__, codec_id, stream);
    org_freedesktop_Telepathy_Media_StreamHandler_codec_choice_async
      (priv->stream_proxy, codec_id, dummy_callback,"Media.StreamHandler::CodecChoice");
 }
@@ -367,13 +409,13 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
   const GList *transport_candidates, *lp;
   FarsightTransportInfo *info;
 
-  g_message ("%s: preparation-complete: stream=%p\n", __FUNCTION__, stream);
+  g_debug ("%s: preparation-complete: stream=%p\n", __FUNCTION__, stream);
 
   transport_candidates = farsight_stream_get_native_candidate_list (stream); 
   for (lp = transport_candidates; lp; lp = g_list_next (lp)) 
   {
     info = (FarsightTransportInfo*)lp->data;
-    g_message ("Local transport candidate: %s %d %s %s %s:%d, pref %f", 
+    g_debug ("Local transport candidate: %s %d %s %s %s:%d, pref %f", 
         info->candidate_id, info->component, (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP)?"TCP":"UDP",
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
@@ -620,7 +662,7 @@ add_remote_candidate (DBusGProxy *proxy, gchar* candidate,
 
   fs_transports = tp_transports_to_fs (candidate, transports);
 
-  g_debug ("%s:adding remote candidate %s", G_STRFUNC, candidate);
+  g_message ("%s:adding remote candidate %s", G_STRFUNC, candidate);
   farsight_stream_add_remote_candidate (priv->fs_stream, fs_transports);
 
   free_fs_transports (fs_transports);
@@ -632,7 +674,7 @@ remove_remote_candidate (DBusGProxy *proxy, gchar* candidate, gpointer user_data
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
 
-  g_debug ("%s: removing remote candidate %s", G_STRFUNC, candidate);
+  g_message ("%s: removing remote candidate %s", G_STRFUNC, candidate);
   farsight_stream_remove_remote_candidate (priv->fs_stream, candidate);
 }
 
@@ -703,7 +745,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   int i;
   GPtrArray *supp_codecs;
 
-  g_message ("%s called", G_STRFUNC);
+  g_debug ("%s called", G_STRFUNC);
 
   for (i = 0; i < codecs->len; i++)
     {
@@ -736,7 +778,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
       fs_codec->optional_params = fs_params;
 
-      g_debug ("%s: adding remote codec %s [%d]'",
+      g_message ("%s: adding remote codec %s [%d]'",
           G_STRFUNC, fs_codec->encoding_name, fs_codec->id);
 
       fs_codecs = g_list_prepend (fs_codecs, fs_codec);
@@ -797,7 +839,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   GPtrArray *codecs;
   GstElement *src, *sink;
 
-  g_message ("Adding stream, media_type=%d, direction=%d",
+  g_debug ("Adding stream, media_type=%d, direction=%d",
       media_type, direction);
   if (priv->stream_proxy)
     {
@@ -917,7 +959,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 
   codecs = fs_codecs_to_tp (farsight_stream_get_local_codecs (stream));
 
-  g_message ("Calling MediaStreamHandler::Ready");
+  g_debug ("Calling MediaStreamHandler::Ready");
   org_freedesktop_Telepathy_Media_StreamHandler_ready_async
     (priv->stream_proxy, codecs, dummy_callback, self);
 }
@@ -930,7 +972,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   gchar *bus_name;
 
-  g_message ("adding session for member %d, %s, %s", member, session_handler_path, type);
+  g_debug("adding session for member %d, %s, %s", member, session_handler_path, type);
 
   if (priv->session_proxy)
     {
@@ -960,7 +1002,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
       g_error("RTP plugin not found");
       return;
     }
-  g_message ("protocol details:\n name: %s\n description: %s\n author: %s\n",
+  g_debug ("protocol details:\n name: %s\n description: %s\n author: %s\n",
            farsight_plugin_get_name (priv->fs_session->plugin),
            farsight_plugin_get_description (priv->fs_session->plugin),
            farsight_plugin_get_author (priv->fs_session->plugin));
@@ -975,7 +1017,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
   dbus_g_proxy_connect_signal (priv->session_proxy, "NewMediaStreamHandler",
       G_CALLBACK (new_media_stream_handler), self, NULL);
 
-  g_message("Calling MediaSessionHandler::Ready");
+  g_debug ("Calling MediaSessionHandler::Ready");
   org_freedesktop_Telepathy_Media_SessionHandler_ready_async
     (priv->session_proxy, dummy_callback, "Media.SessionHandler::Ready");
 }
@@ -996,7 +1038,7 @@ get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GErr
   if (error)
     g_critical ("Error calling GetSessionHandlers: %s", error->message);
 
-  g_message ("GetSessionHandlers replied: ");
+  g_debug ("GetSessionHandlers replied: ");
   for (i = 0; i < session_handlers->len; i++)
     {
       session = g_ptr_array_index (session_handlers, i);
@@ -1017,19 +1059,7 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
 
-  g_message ("Channel closed, cleaning up");
-
-  dbus_g_proxy_disconnect_signal (priv->stream_proxy, "AddRemoteCandidate",
-      G_CALLBACK (add_remote_candidate), self);
-
-  dbus_g_proxy_disconnect_signal (priv->stream_proxy, "RemoveRemoteCandidate",
-      G_CALLBACK (remove_remote_candidate), self);
-
-  dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetActiveCandidatePair",
-      G_CALLBACK (set_active_candidate_pair), self);
-
-  dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetRemoteCandidateList",
-      G_CALLBACK (set_remote_candidate_list), self);
+  g_debug ("Channel closed, cleaning up");
 
   if (priv->fs_stream)
     {
@@ -1047,6 +1077,8 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   if (priv->streamed_proxy)
     {
+      dbus_g_proxy_disconnect_signal (DBUS_G_PROXY (priv->streamed_proxy), "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), self);
+
       g_debug ("priv->streamed_proxy->ref_count before unref == %d", G_OBJECT (priv->streamed_proxy)->ref_count);
       g_object_unref (priv->streamed_proxy);
       priv->streamed_proxy = NULL;
@@ -1054,6 +1086,9 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   if (priv->session_proxy)
     {
+      dbus_g_proxy_disconnect_signal (priv->session_proxy, "NewMediaStreamHandler",
+          G_CALLBACK (new_media_stream_handler), self);
+
       g_debug ("priv->session_proxy->ref_count before unref == %d", G_OBJECT (priv->session_proxy)->ref_count);
       g_object_unref (priv->session_proxy);
       priv->session_proxy = NULL;
@@ -1061,6 +1096,24 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   if (priv->stream_proxy)
     {
+      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "AddRemoteCandidate",
+          G_CALLBACK (add_remote_candidate), self);
+
+      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "RemoveRemoteCandidate",
+          G_CALLBACK (remove_remote_candidate), self);
+
+      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetActiveCandidatePair",
+          G_CALLBACK (set_active_candidate_pair), self);
+
+      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetRemoteCandidateList",
+          G_CALLBACK (set_remote_candidate_list), self);
+
+      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetRemoteCodecs",
+          G_CALLBACK (set_remote_codecs), self);
+
+      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetStreamPlaying",
+          G_CALLBACK (set_stream_playing), self);
+
       g_debug ("priv->stream_proxy->ref_count before unref == %d", G_OBJECT (priv->stream_proxy)->ref_count);
       g_object_unref (priv->stream_proxy);
       priv->stream_proxy = NULL;
@@ -1073,9 +1126,18 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
       priv->media_engine_proxy = NULL;
     }
 
+  if (priv->infoprint_proxy)
+    {
+      g_debug ("priv->infoprint_proxy->ref_count before unref == %d", G_OBJECT (priv->infoprint_proxy)->ref_count);
+      g_object_unref (priv->infoprint_proxy);
+      priv->infoprint_proxy = NULL;
+    }
 
   if (priv->chan)
     {
+      /*connect up channel closed signal*/
+      dbus_g_proxy_disconnect_signal (DBUS_G_PROXY (priv->chan), "Closed", G_CALLBACK (channel_closed), self);
+
       g_debug ("priv->chan->ref_count before unref == %d", G_OBJECT (priv->chan)->ref_count);
       g_object_unref (priv->chan);
       priv->chan = NULL;
@@ -1104,12 +1166,12 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
 
-  g_message("HandleChannel called");
+  g_debug("HandleChannel called");
   if (priv->chan)
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
                             "VoIP Engine is already handling a channel");
-      g_debug ("VoIP Engine is already handling a channel!");
+      g_message ("VoIP Engine is already handling a channel!");
 
       return FALSE;
     }
@@ -1118,7 +1180,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
                             "VoIP Engine was passed a channel that was not a "
                             TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
-      g_debug ("VoIP Engine was passed a channel that was not of type " TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
+      g_message ("VoIP Engine was passed a channel that was not of type " TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
       return FALSE;
      }
 
@@ -1171,7 +1233,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 #ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_engine_proxy)
     {
-      g_debug ("pausing media engine");
+      g_message ("pausing media engine");
       com_nokia_osso_media_server_pause_async (
           DBUS_G_PROXY (priv->media_engine_proxy),
           media_engine_pause_cb, obj);
@@ -1200,7 +1262,7 @@ _tp_voip_engine_register (TpVoipEngine *self)
   bus = tp_get_bus ();
   bus_proxy = tp_get_bus_proxy ();
 
-  g_message("Requesting " BUS_NAME);
+  g_debug("Requesting " BUS_NAME);
 
   if (!dbus_g_proxy_call (bus_proxy, "RequestName", &error,
                           G_TYPE_STRING, BUS_NAME,
@@ -1213,7 +1275,7 @@ _tp_voip_engine_register (TpVoipEngine *self)
   if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
     g_error ("Failed to acquire bus name, voip engine already running?");
 
-  g_message("registering VoipEngine at " OBJECT_PATH);
+  g_debug("registering VoipEngine at " OBJECT_PATH);
   dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
 
   register_dbus_signal_marshallers();
@@ -1240,7 +1302,7 @@ gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GErr
   GstElement *source;
   priv->input_mute = mute_state;
 
-  g_debug ("%s: input mute set to %s", G_STRFUNC, mute_state?"on":"off");
+  g_message ("%s: input mute set to %s", G_STRFUNC, mute_state?"on":"off");
 
   if (priv->fs_stream &&
       farsight_stream_get_state (priv->fs_stream) ==
@@ -1272,7 +1334,7 @@ gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GEr
   GstElement *sink;
   priv->output_mute = mute_state;
 
-  g_debug ("%s: output mute set to %s", G_STRFUNC, mute_state?"on":"off");
+  g_message ("%s: output mute set to %s", G_STRFUNC, mute_state?"on":"off");
 
   if (priv->fs_stream &&
       farsight_stream_get_state (priv->fs_stream) ==
@@ -1316,7 +1378,7 @@ gboolean tp_voip_engine_set_output_volume (TpVoipEngine *obj, guint volume, GErr
         {
           g_debug ("Setting volume to %d", priv->output_volume);
           g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
-          g_debug ("Finished setting volume to %d", priv->output_volume);
+          g_message ("Finished setting volume to %d", priv->output_volume);
         }
     }
   return TRUE;

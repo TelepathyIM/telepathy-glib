@@ -80,6 +80,14 @@ if test x$have_farsight = xno ; then
     AC_MSG_ERROR([Farsight development libraries not found])
 fi
 
+dnl use infoprint 
+AC_ARG_ENABLE( infoprint,
+  AC_HELP_STRING([--enable-infoprint],[compile without infoprint support]),
+  use_infoprint=$enableval, use_infoprint=no )
+
+if test x$use_infoprint = xyes ; then
+  AC_DEFINE(USE_INFOPRINT, , [Use infoprint])
+fi
 
 AC_OUTPUT( Makefile \
           common/Makefile \
