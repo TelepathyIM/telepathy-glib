@@ -125,7 +125,7 @@ no_more_channels (TpVoipEngine *voip_engine)
 static void
 got_sigbus (int i)
 {
-  g_message ("DSP Crashed");
+  g_warning ("DSP Crashed");
   if (voip_engine)
   {
     _tp_voip_engine_stop_stream(voip_engine);
