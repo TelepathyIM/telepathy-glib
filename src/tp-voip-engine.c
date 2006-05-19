@@ -183,6 +183,7 @@ static void tp_voip_engine_infoprint (const gchar *log_domain,
   com_nokia_statusbar_system_note_infoprint (
           DBUS_G_PROXY (priv->infoprint_proxy),
           message, NULL);
+  g_log_default_handler (log_domain, log_level, message, user_data);
 }
 #endif
 
@@ -203,7 +204,7 @@ tp_voip_engine_init (TpVoipEngine *obj)
 
   g_debug ("Using infoprint %p", priv->infoprint_proxy);
   /* handler for voip-engine messages */
-  g_log_set_handler (NULL, G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_CRITICAL |
+  g_log_set_handler (NULL, G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL |
       G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_voip_engine_infoprint, priv);
 
   /* handler for farsight messages */
@@ -287,12 +288,17 @@ tp_voip_engine_dispose (GObject *object)
 void
 tp_voip_engine_finalize (GObject *object)
 {
-  /*
   TpVoipEngine *self = TP_VOIP_ENGINE (object);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-  */
 
   /* free any data held directly by the object here */
+
+  if (priv->infoprint_proxy)
+    {
+      g_debug ("priv->infoprint_proxy->ref_count before unref == %d", G_OBJECT (priv->infoprint_proxy)->ref_count);
+      g_object_unref (priv->infoprint_proxy);
+      priv->infoprint_proxy = NULL;
+    }
 
   G_OBJECT_CLASS (tp_voip_engine_parent_class)->finalize (object);
 }
@@ -1157,13 +1163,6 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
       g_debug ("priv->media_engine_proxy->ref_count before unref == %d", G_OBJECT (priv->media_engine_proxy)->ref_count);
       g_object_unref (priv->media_engine_proxy);
       priv->media_engine_proxy = NULL;
-    }
-
-  if (priv->infoprint_proxy)
-    {
-      g_debug ("priv->infoprint_proxy->ref_count before unref == %d", G_OBJECT (priv->infoprint_proxy)->ref_count);
-      g_object_unref (priv->infoprint_proxy);
-      priv->infoprint_proxy = NULL;
     }
 
   if (priv->chan)
