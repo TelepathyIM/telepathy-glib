@@ -44,12 +44,13 @@ guint timeout_id;
 #define DIE_TIME 5000
 
 #ifdef USE_REALTIME
-#define PRIORITY_POLICY SCHED_RR
+#define DEF_PRIORITY_POLICY SCHED_RR
 #define PRIORITY_DELTA 1
 
 static void
-set_realtime (const char *argv0) {
+set_realtime (const char *argv0, int policy) {
   int orig_uid, orig_euid;
+  int prio_policy;
   int prio_delta = PRIORITY_DELTA;
   struct sched_param schedp;
 
@@ -63,10 +64,20 @@ set_realtime (const char *argv0) {
     g_warning("\tchown root %s ; chmod u+s %s\n", argv0, argv0);
   }
   /* set scheduling parameters, scheduler either SCHED_RR or SCHED_FIFO */
+  switch (policy) {
+    case 1:
+      prio_policy = SCHED_RR;
+      break;
+    case 2:
+      prio_policy = SCHED_FIFO;
+      break;
+    default:
+      prio_policy = DEF_PRIORITY_POLICY;
+  }
   memset(&schedp, 0x00, sizeof(schedp));
-  schedp.sched_priority = sched_get_priority_min(PRIORITY_POLICY) + prio_delta;
+  schedp.sched_priority = sched_get_priority_min(prio_policy) + prio_delta;
   /* 0 pid equals to getpid() ie. current process */
-  if (sched_setscheduler(0, PRIORITY_POLICY, &schedp) == -1) {
+  if (sched_setscheduler(0, prio_policy, &schedp) == -1) {
     perror("sched_setscheduler()");
   }
   /* nail everything to RAM, needed for realtime on systems with swap,
@@ -125,6 +136,7 @@ got_sigbus (int i)
 }
 
 int main(int argc, char **argv) {
+  int rt_mode;
   char *rt_env;
 
   signal (SIGBUS, got_sigbus);
@@ -163,9 +175,9 @@ int main(int argc, char **argv) {
    * anything about that... */
   rt_env = getenv("VOIP_ENGINE_REALTIME");
   if (rt_env != NULL) {
-    if (atoi(rt_env)) {
+    if ((rt_mode = atoi(rt_env))) {
       g_debug("realtime scheduling enabled");
-      set_realtime(argv[0]);
+      set_realtime(argv[0], rt_mode);
     } else {
       g_debug("realtime scheduling disabled");
     }
