@@ -267,12 +267,7 @@ tp_voip_engine_dispose (GObject *object)
   TpVoipEngine *self = TP_VOIP_ENGINE (object);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
 
-  if (priv->need_to_enable_media_engine)
-    {
-      com_nokia_osso_media_server_enable(
-          DBUS_G_PROXY (priv->media_engine_proxy), NULL);
-    }
-  if (priv->dispose_has_run)
+ if (priv->dispose_has_run)
     return;
 
   if (priv->chan)
@@ -1095,9 +1090,20 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  GError *error = NULL;
 
   g_debug ("Channel closed, cleaning up");
 
+  if (priv->need_to_enable_media_engine)
+    {
+      com_nokia_osso_media_server_enable(
+          DBUS_G_PROXY (priv->media_engine_proxy), &error);
+      if (error)
+      {
+        g_message ("Unable to enable media-engine: %s", error->message);
+      }
+    }
+ 
   if (priv->fs_stream)
     {
       g_object_unref (priv->fs_stream);
