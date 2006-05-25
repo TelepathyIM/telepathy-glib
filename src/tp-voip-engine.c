@@ -179,7 +179,7 @@ static void tp_voip_engine_infoprint (const gchar *log_domain,
     const gchar *message,
     gpointer user_data)
 {
-	TpVoipEnginePrivate *priv = (TpVoipEnginePrivate *)user_data;
+  TpVoipEnginePrivate *priv = (TpVoipEnginePrivate *)user_data;
   com_nokia_statusbar_system_note_infoprint (
           DBUS_G_PROXY (priv->infoprint_proxy),
           message, NULL);
@@ -231,7 +231,7 @@ tp_voip_engine_class_init (TpVoipEngineClass *tp_voip_engine_class)
 
   /**
    * TpVoipEngine::handling-channel:
-   * 
+   *
    * Emitted whenever this object starts handling a channel
    */
   signals[HANDLING_CHANNEL] =
@@ -245,7 +245,7 @@ tp_voip_engine_class_init (TpVoipEngineClass *tp_voip_engine_class)
 
   /**
    * TpVoipEngine::no-more-channels:
-   * 
+   *
    * Emitted whenever this object is handling no channels
    */
   signals[NO_MORE_CHANNELS] =
@@ -311,7 +311,7 @@ _tp_voip_engine_signal_stream_error (TpVoipEngine *self, int error,
                                      const char *debug)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-  org_freedesktop_Telepathy_Media_StreamHandler_error_async 
+  org_freedesktop_Telepathy_Media_StreamHandler_error_async
     (priv->stream_proxy, error, debug, dummy_callback, "Media.StreamHandler::Error");
 }
 void
@@ -335,7 +335,7 @@ session_error (FarsightSession *stream,
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   g_message ("%s: session error: session=%p error=%s\n", __FUNCTION__, stream, debug);
 
-  org_freedesktop_Telepathy_Media_SessionHandler_error_async 
+  org_freedesktop_Telepathy_Media_SessionHandler_error_async
     (priv->session_proxy, error, debug, dummy_callback, "Media.SessionHandler::Error");
 }
 
@@ -435,11 +435,11 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
 
   g_debug ("%s: preparation-complete: stream=%p\n", __FUNCTION__, stream);
 
-  transport_candidates = farsight_stream_get_native_candidate_list (stream); 
-  for (lp = transport_candidates; lp; lp = g_list_next (lp)) 
+  transport_candidates = farsight_stream_get_native_candidate_list (stream);
+  for (lp = transport_candidates; lp; lp = g_list_next (lp))
   {
     info = (FarsightTransportInfo*)lp->data;
-    g_debug ("Local transport candidate: %s %d %s %s %s:%d, pref %f", 
+    g_debug ("Local transport candidate: %s %d %s %s %s:%d, pref %f",
         info->candidate_id, info->component, (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP)?"TCP":"UDP",
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
@@ -447,8 +447,8 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
      (priv->stream_proxy, dummy_callback,"Media.StreamHandler::NativeCandidatesPrepared");
 }
 
-static void 
-state_changed (FarsightStream *stream, 
+static void
+state_changed (FarsightStream *stream,
                FarsightStreamState state,
                FarsightStreamDirection dir,
                gpointer user_data)
@@ -459,15 +459,15 @@ state_changed (FarsightStream *stream,
     case FARSIGHT_STREAM_STATE_STOPPED:
           g_message ("%s: %p stopped\n", __FUNCTION__, stream);
           break;
-    case FARSIGHT_STREAM_STATE_CONNECTING: 
+    case FARSIGHT_STREAM_STATE_CONNECTING:
           g_message ("%s: %p connecting\n", __FUNCTION__, stream);
           break;
-    case FARSIGHT_STREAM_STATE_CONNECTED: 
+    case FARSIGHT_STREAM_STATE_CONNECTED:
           g_message ("%s: %p connected\n", __FUNCTION__, stream);
           /* start the stream if its supposed to be playing already*/
           check_start_stream(priv);
           break;
-    case FARSIGHT_STREAM_STATE_PLAYING: 
+    case FARSIGHT_STREAM_STATE_PLAYING:
           g_message ("%s: %p playing\n", __FUNCTION__, stream);
           break;
   }
@@ -476,8 +476,8 @@ state_changed (FarsightStream *stream,
 }
 
 static void
-new_native_candidate (FarsightStream *stream, 
-                      gchar *candidate_id, 
+new_native_candidate (FarsightStream *stream,
+                      gchar *candidate_id,
                       gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
@@ -897,7 +897,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
     g_debug ("Setting connection timeout at %d", conn_timeout);
     g_object_set (G_OBJECT(stream), "conn_timeout", conn_timeout, NULL);
   }
-  
+
   /* TODO Make this smarter, i should only create those sources and sinks if
    * they exist */
   if (getenv("FS_FAKESTREAM"))
