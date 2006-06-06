@@ -138,7 +138,7 @@ got_sigbus (int i)
 static void
 got_segv (int id)
 {
-  g_warning ("VoIP Engine causght SIGSEGV!");
+  g_warning ("VoIP Engine caught SIGSEGV!");
   _tp_voip_engine_stop_stream(voip_engine);
   g_object_unref (voip_engine);
   g_main_loop_quit (mainloop);
