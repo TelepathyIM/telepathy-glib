@@ -46,7 +46,10 @@
 #include "tp-media-session-handler-gen.h"
 #include "tp-media-stream-handler-gen.h"
 #include "media-engine-gen.h"
+
+#ifdef USE_INFOPRINT
 #include "statusbar-gen.h"
+#endif
 
 #include "tp-voip-engine-glue.h"
 

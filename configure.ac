@@ -89,6 +89,8 @@ if test x$use_infoprint = xyes ; then
   AC_DEFINE(USE_INFOPRINT, , [Use infoprint])
 fi
 
+AM_CONDITIONAL(USE_INFOPRINT, test x$USE_INFOPRINT =xyes)
+
 AC_OUTPUT( Makefile \
           common/Makefile \
           data/Makefile \
