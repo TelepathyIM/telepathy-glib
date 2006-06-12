@@ -80,16 +80,27 @@ if test x$have_farsight = xno ; then
     AC_MSG_ERROR([Farsight development libraries not found])
 fi
 
+dnl maemo support
+AC_ARG_ENABLE( maemo-support,
+  AC_HELP_STRING([--enable-maemo-support],[compile with Maemo support]),
+  maemo_support=$enableval, memo_support=no )
+
+if test x$maemo_support = xyes; then
+  AC_DEFINE(MAEMO_OSSO_SUPPORT, , [Enable Maemo support])
+fi
+
+AM_CONDITIONAL(MAEMO_OSSO_SUPPORT, test x$MAEMO_OSSO_SUPPORT = xyes)
+
 dnl use infoprint 
 AC_ARG_ENABLE( infoprint,
-  AC_HELP_STRING([--enable-infoprint],[compile without infoprint support]),
+  AC_HELP_STRING([--enable-infoprint],[compile with infoprint support]),
   use_infoprint=$enableval, use_infoprint=no )
 
-if test x$use_infoprint = xyes ; then
+if test x$MAEMO_OSSO_SUPPORT = xyes -a x$use_infoprint = xyes; then
   AC_DEFINE(USE_INFOPRINT, , [Use infoprint])
 fi
 
-AM_CONDITIONAL(USE_INFOPRINT, test x$USE_INFOPRINT =xyes)
+AM_CONDITIONAL(USE_INFOPRINT, test x$USE_INFOPRINT = xyes)
 
 AC_OUTPUT( Makefile \
           common/Makefile \
