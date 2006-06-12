@@ -170,7 +170,6 @@ struct _TpVoipEnginePrivate
   gboolean stream_started;
 
   gboolean media_engine_disabled;
-  gboolean need_to_enable_media_engine;
   gboolean stream_start_scheduled;
 };
 
@@ -369,26 +368,6 @@ _tp_voip_engine_stop_stream (TpVoipEngine *self)
       priv->stream_started = FALSE;
     }
 }
-
-#ifdef MAEMO_OSSO_SUPPORT
-void
-media_engine_disable_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
-{
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-  g_debug ("Media engine disabled");
-  if (!error)
-    {
-      priv->need_to_enable_media_engine = TRUE;
-    }
-  else
-    {
-      g_message ("Unable to disable media-engine: %s", error->message);
-    }
-  priv->media_engine_disabled = TRUE;
-  check_start_stream (priv);
-}
-#endif
 
 static void
 new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate, const gchar *remote_candidate, gpointer user_data)
@@ -1093,20 +1072,24 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
-  GError *error = NULL;
 
   g_debug ("Channel closed, cleaning up");
 
-  if (priv->need_to_enable_media_engine)
+#ifdef MAEMO_OSSO_SUPPORT
+  if (priv->media_engine_disabled)
     {
+      GError *error = NULL;
+
       com_nokia_osso_media_server_enable(
           DBUS_G_PROXY (priv->media_engine_proxy), &error);
       if (error)
       {
         g_message ("Unable to enable media-engine: %s", error->message);
+        g_error_free (error);
       }
     }
- 
+#endif
+
   if (priv->fs_stream)
     {
       g_object_unref (priv->fs_stream);
@@ -1223,6 +1206,41 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
       return FALSE;
      }
 
+#ifdef MAEMO_OSSO_SUPPORT
+  priv->media_engine_proxy =
+    dbus_g_proxy_new_for_name (tp_get_bus(),
+                               MEDIA_SERVER_SERVICE_NAME,
+                               MEDIA_SERVER_SERVICE_OBJECT,
+                               MEDIA_SERVER_INTERFACE_NAME);
+
+  if (priv->media_engine_proxy)
+    {
+      GError *me_error = NULL;
+      g_message ("pausing media engine");
+      com_nokia_osso_media_server_disable (
+          DBUS_G_PROXY (priv->media_engine_proxy),
+          &me_error);
+
+      if (!me_error)
+        {
+          priv->media_engine_disabled = TRUE;
+        }
+      else
+        {
+          g_message("Unable to disable media-engine: %s", me_error->message);
+          priv->media_engine_disabled = FALSE;
+          *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+                                "DSP in use");
+          g_error_free (me_error);
+          return FALSE;
+        }
+    }
+  else
+#endif
+    {
+      priv->media_engine_disabled = TRUE;
+    }
+
   priv->chan =  tp_chan_new (tp_get_bus(),                              /* connection  */
                              bus_name,                                  /* bus_name    */
                              channel,                                   /* object_name */
@@ -1237,18 +1255,10 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 
       return FALSE;
     }
- 
+
   priv->streamed_proxy = tp_chan_get_interface (priv->chan, TELEPATHY_CHAN_IFACE_STREAMED_QUARK);
   g_assert (priv->streamed_proxy != NULL);
 
-
-#ifdef MAEMO_OSSO_SUPPORT
-  priv->media_engine_proxy =
-    dbus_g_proxy_new_for_name (tp_get_bus(),
-                               MEDIA_SERVER_SERVICE_NAME,
-                               MEDIA_SERVER_SERVICE_OBJECT,
-                               MEDIA_SERVER_INTERFACE_NAME);
-#endif
 
 /* TODO check for group interface
  * chan_interfaces = (GSList *) tp_chan_local_get_interface_objs(priv->chan);
@@ -1269,19 +1279,6 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
-#ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_engine_proxy)
-    {
-      g_message ("pausing media engine");
-      com_nokia_osso_media_server_disable_async (
-          DBUS_G_PROXY (priv->media_engine_proxy),
-          media_engine_disable_cb, obj);
-    }
-  else
-#endif
-    {
-      priv->media_engine_disabled = TRUE;
-    }
   tp_chan_type_streamed_media_get_session_handlers_async
          (DBUS_G_PROXY (priv->streamed_proxy), get_session_handlers_reply, obj);
 
