@@ -29,6 +29,7 @@ libvoipengine_convenience_la_SOURCES = \
 	$(CORE_SOURCES)
 
 telepathy_voip_engine_SOURCES = \
+	tp-voip-engine.h \
 	tp-voip-engine.c \
 	voip-engine-main.c
 
@@ -39,28 +40,29 @@ telepathy_voip_engine_LDADD = \
 noinst_LTLIBRARIES = libvoipengine-convenience.la
 
 AM_CFLAGS = $(ERROR_CFLAGS) \
-	@DBUS_CFLAGS@ @GLIB_CFLAGS@ @LIBTELEPATHY_CFLAGS@ @FARSIGHT_CFLAGS@
+	@DBUS_CFLAGS@ @GLIB_CFLAGS@ @LIBTELEPATHY_CFLAGS@ @FARSIGHT_CFLAGS@ \
+	-I $(top_srcdir)
 
 AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@ @FARSIGHT_LIBS@
 
 
 
 #Rule to generate the binding headers
-%-gen.h: ../generate/xml-modified/%.xml Makefile.am
+%-gen.h: ../generate/xml-modified/%.xml Makefile.in
 	dbus-binding-tool --prefix=$(subst -,_,$*) --mode=glib-client $< > $*-gen.h
 
-%-glue.h: ../generate/xml-modified/%.xml Makefile
+%-glue.h: ../generate/xml-modified/%.xml Makefile.in
 	dbus-binding-tool --mode=glib-server --output=$@ --prefix=$(subst -,_,$*) $<
 
-%-signals-marshal.h: %-signals-marshal.list Makefile
+%-signals-marshal.h: %-signals-marshal.list Makefile.in
 	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-signals-marshal.h
 
-%-signals-marshal.c: %-signals-marshal.list Makefile
+%-signals-marshal.c: %-signals-marshal.list Makefile.in
 	glib-genmarshal --body --prefix=$(subst -,_,$*)_marshal $< > $*-signals-marshal.c
 
-%-marshal.h: %-marshal.list Makefile
+%-marshal.h: %-marshal.list Makefile.in
 	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-marshal.h
 
-%-marshal.c: %-marshal.list Makefile
+%-marshal.c: %-marshal.list Makefile.in
 	glib-genmarshal --body --prefix=$(subst -,_,$*)_marshal $< > $*-marshal.c
 

@@ -1,8 +1,10 @@
 # Dbus service file
 servicedir = $(DBUS_SERVICES_DIR)
 service_in_files = org.freedesktop.Telepathy.VoipEngine.service.in
+EXTRA_DIST=$(service_in_files)
 service_DATA = $(service_in_files:.service.in=.service)
+CLEANFILES=$(service_DATA)
 
 # Rule to make the service file with bindir expanded
-$(service_DATA): $(service_in_files) Makefile
+$(service_DATA): $(service_in_files) Makefile.in
 	sed -e "s|\@bindir\@|$(bindir)|" $< > $@

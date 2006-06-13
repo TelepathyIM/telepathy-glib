@@ -7,6 +7,7 @@ CLEANFILES = $(BUILT_SOURCES)
 
 
 CORE_SOURCES = \
+    telepathy-errors.h \
     telepathy-errors.c \
     $(BUILT_SOURCES)
 
