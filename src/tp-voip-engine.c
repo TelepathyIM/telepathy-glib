@@ -30,10 +30,12 @@
 #include <string.h>
 
 #include <libtelepathy/tp-chan.h>
+#include <libtelepathy/tp-conn.h>
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-constants.h>
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
+#include <libtelepathy/tp-props-iface.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-stream.h>
@@ -99,6 +101,25 @@
 #define TP_TYPE_CODEC_LIST (dbus_g_type_get_collection ("GPtrArray", \
       TP_TYPE_CODEC_STRUCT))
 
+
+#define TP_TYPE_PROPERTY_DESCRIPTION (dbus_g_type_get_struct ("GValueArray", \
+      G_TYPE_UINT, \
+      G_TYPE_STRING, \
+      G_TYPE_STRING, \
+      G_TYPE_UINT))
+
+enum
+{
+  CONN_PROP_STUN_SERVER = 0,
+  CONN_PROP_STUN_PORT,
+  CONN_PROP_STUN_RELAY_SERVER,
+  CONN_PROP_STUN_RELAY_UDP_PORT,
+  CONN_PROP_STUN_RELAY_TCP_PORT,
+  CONN_PROP_STUN_RELAY_SSLTCP_PORT,
+  CONN_PROP_STUN_RELAY_USERNAME,
+  CONN_PROP_STUN_RELAY_PASSWORD,
+};
+
 static void
 register_dbus_signal_marshallers()
 {
@@ -158,8 +179,14 @@ struct _TpVoipEnginePrivate
   DBusGProxy *streamed_proxy;
   DBusGProxy *session_proxy;
   DBusGProxy *stream_proxy;
+  DBusGProxy *connection_proxy;
+  TpPropsIface *conn_props;
+
+#ifdef MAEMO_OSSO_SUPPORT
   DBusGProxy *media_engine_proxy;
   DBusGProxy *infoprint_proxy;
+#endif
+
   FarsightSession *fs_session;
   FarsightStream *fs_stream;
 
@@ -169,8 +196,15 @@ struct _TpVoipEnginePrivate
 
   gboolean stream_started;
 
+#ifdef MAEMO_OSSO_SUPPORT
   gboolean media_engine_disabled;
+#endif
   gboolean stream_start_scheduled;
+
+  gboolean got_connection_properties;
+  gboolean candidate_preparation_required;
+  gchar *stun_server;
+  guint stun_port;
 };
 
 #define TP_VOIP_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_VOIP_ENGINE, TpVoipEnginePrivate))
@@ -344,17 +378,19 @@ session_error (FarsightSession *stream,
 static void
 check_start_stream (TpVoipEnginePrivate *priv)
 {
+#ifdef MAEMO_OSSO_SUPPORT
+  if (!priv->media_engine_disabled)
+    return;
+#endif
+
   if (priv->stream_start_scheduled && !priv->stream_started)
-  {
-    if (priv->media_engine_disabled)
-      {
-        if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED)
-          {
-            farsight_stream_start (priv->fs_stream);
-            priv->stream_started = TRUE;
-          }
-      }
-   }
+    {
+      if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED)
+        {
+          farsight_stream_start (priv->fs_stream);
+          priv->stream_started = TRUE;
+        }
+     }
 }
 
 void
@@ -834,6 +870,9 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
     }
 }
 
+static void prepare_transports (TpVoipEngine *priv);
+static void set_stun_and_turn (TpVoipEngine *priv);
+
 static void
 new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                           guint media_type, guint direction, gpointer user_data)
@@ -842,7 +881,6 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
   FarsightStream *stream;
   gchar *bus_name;
-  GPtrArray *codecs;
   GstElement *src, *sink;
 
   g_debug ("Adding stream, media_type=%d, direction=%d",
@@ -911,6 +949,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 
 
   priv->fs_stream = stream;
+  set_stun_and_turn (self);
 
   g_signal_connect (G_OBJECT (stream), "error",
                     G_CALLBACK (stream_error), self);
@@ -925,7 +964,6 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   g_signal_connect (G_OBJECT (stream), "new-native-candidate",
                     G_CALLBACK (new_native_candidate), self);
 
-  farsight_stream_prepare_transports (priv->fs_stream);
 
   /*OMG, Can we make dbus-binding-tool do this stuff for us??*/
   /* tell the gproxy about the AddRemoteCandidate signal*/
@@ -970,12 +1008,27 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   dbus_g_proxy_connect_signal (priv->stream_proxy, "SetStreamPlaying",
       G_CALLBACK (set_stream_playing), self, NULL);
 
+  priv->candidate_preparation_required = TRUE;
+  prepare_transports (self);
+}
 
-  codecs = fs_codecs_to_tp (farsight_stream_get_local_codecs (stream));
+static void
+prepare_transports (TpVoipEngine *self)
+{
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  GPtrArray *codecs;
 
-  g_debug ("Calling MediaStreamHandler::Ready");
-  org_freedesktop_Telepathy_Media_StreamHandler_ready_async
-    (priv->stream_proxy, codecs, dummy_callback, self);
+  if (priv->got_connection_properties && priv->candidate_preparation_required)
+    {
+      farsight_stream_prepare_transports (priv->fs_stream);
+
+      codecs = fs_codecs_to_tp (
+                 farsight_stream_get_local_codecs (priv->fs_stream));
+
+      g_debug ("Calling MediaStreamHandler::Ready");
+      org_freedesktop_Telepathy_Media_StreamHandler_ready_async
+        (priv->stream_proxy, codecs, dummy_callback, self);
+    }
 }
 
 void
@@ -1148,12 +1201,14 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
       priv->stream_proxy = NULL;
     }
 
+# ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_engine_proxy)
     {
       g_debug ("priv->media_engine_proxy->ref_count before unref == %d", G_OBJECT (priv->media_engine_proxy)->ref_count);
       g_object_unref (priv->media_engine_proxy);
       priv->media_engine_proxy = NULL;
     }
+#endif
 
   if (priv->chan)
     {
@@ -1172,6 +1227,52 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
   g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
 }
 
+static void
+set_stun_and_turn (TpVoipEngine *self)
+{
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  if (priv->fs_stream)
+    {
+      if (priv->stun_server && priv->stun_port)
+       {
+         g_debug (" >>> setting STUN server: %s", priv->stun_server);
+         g_debug (" >>> setting STUN port: %d", priv->stun_port);
+         g_object_set (priv->fs_stream,
+                       "stun-ip", priv->stun_server,
+                       "stun-port", priv->stun_port,
+                       NULL);
+       }
+    }
+}
+
+static void
+properties_ready_cb (TpPropsIface *iface, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  GValue server= {0,}, port = {0,};
+
+  g_value_init (&server, G_TYPE_STRING);
+  g_value_init (&port, G_TYPE_UINT);
+
+  priv->got_connection_properties = TRUE;
+
+  if (tp_props_iface_get_value (iface, CONN_PROP_STUN_SERVER, &server))
+    {
+      if (tp_props_iface_get_value (iface, CONN_PROP_STUN_PORT, &port))
+        {
+          priv->stun_server = g_value_dup_string (&server);
+          priv->stun_port = g_value_get_uint (&port);
+          set_stun_and_turn (self);
+        }
+    }
+
+  /* this here in case properties_ready_cb gets called after we have
+   * recieved all the streams
+   */
+  prepare_transports (self);
+}
+
 /**
  * tp_voip_engine_handle_channel
  *
@@ -1187,6 +1288,7 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
+  TpConn *conn;
 
   g_debug("HandleChannel called");
   if (priv->chan)
@@ -1213,33 +1315,28 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
                                MEDIA_SERVER_SERVICE_OBJECT,
                                MEDIA_SERVER_INTERFACE_NAME);
 
-  if (priv->media_engine_proxy)
-    {
-      GError *me_error = NULL;
-      g_message ("pausing media engine");
-      com_nokia_osso_media_server_disable (
-          DBUS_G_PROXY (priv->media_engine_proxy),
-          &me_error);
+  {
+    GError *me_error = NULL;
+    g_message ("pausing media engine");
+    com_nokia_osso_media_server_disable (
+        DBUS_G_PROXY (priv->media_engine_proxy),
+        &me_error);
 
-      if (!me_error)
-        {
-          priv->media_engine_disabled = TRUE;
-        }
-      else
-        {
-          g_message("Unable to disable media-engine: %s", me_error->message);
-          priv->media_engine_disabled = FALSE;
-          *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-                                "DSP in use");
-          g_error_free (me_error);
-          return FALSE;
-        }
-    }
-  else
+    if (!me_error)
+      {
+        priv->media_engine_disabled = TRUE;
+      }
+    else
+      {
+        g_message("Unable to disable media-engine: %s", me_error->message);
+        priv->media_engine_disabled = FALSE;
+        *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+                              "DSP in use");
+        g_error_free (me_error);
+        return FALSE;
+      }
+  }
 #endif
-    {
-      priv->media_engine_disabled = TRUE;
-    }
 
   priv->chan =  tp_chan_new (tp_get_bus(),                              /* connection  */
                              bus_name,                                  /* bus_name    */
@@ -1252,12 +1349,33 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
                             "Unable to bind to channel");
+      return FALSE;
+    }
 
+  conn = tp_conn_new (tp_get_bus(),
+                      bus_name,
+                      connection);
+
+  if (!priv->chan)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+                            "Unable to bind to connection");
       return FALSE;
     }
 
   priv->streamed_proxy = tp_chan_get_interface (priv->chan, TELEPATHY_CHAN_IFACE_STREAMED_QUARK);
-  g_assert (priv->streamed_proxy != NULL);
+
+  if (!priv->streamed_proxy)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+                            "Channel is of wrong type");
+      return FALSE;
+    }
+
+  /* NB: we should behave nicely if the connection doesnt have properties:
+   * sure, its unlikely, but its not the end of the world if it doesn't ;)
+   */
+  priv->conn_props = TELEPATHY_PROPS_IFACE (tp_conn_get_interface (conn, TELEPATHY_PROPS_IFACE_QUARK));
 
 
 /* TODO check for group interface
@@ -1279,6 +1397,19 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
+  g_signal_connect (priv->conn_props, "properties-ready",
+                    G_CALLBACK(properties_ready_cb), obj);
+
+  tp_props_iface_set_mapping (priv->conn_props,
+      "stun-server", CONN_PROP_STUN_SERVER,
+      "stun-port", CONN_PROP_STUN_PORT,
+      "stun-relay-server", CONN_PROP_STUN_RELAY_SERVER,
+      "stun-relay-udp-port", CONN_PROP_STUN_RELAY_UDP_PORT,
+      "stun-relay-tcp-port", CONN_PROP_STUN_RELAY_TCP_PORT,
+      "stun-relay-ssltcp-port", CONN_PROP_STUN_RELAY_SSLTCP_PORT,
+      "stun-relay-username", CONN_PROP_STUN_RELAY_USERNAME,
+      "stun-relay-password", CONN_PROP_STUN_RELAY_PASSWORD,
+      NULL);
   tp_chan_type_streamed_media_get_session_handlers_async
          (DBUS_G_PROXY (priv->streamed_proxy), get_session_handlers_reply, obj);
 
