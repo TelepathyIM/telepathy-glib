@@ -40,6 +40,7 @@ GMainLoop *mainloop = NULL;
 TpVoipEngine *voip_engine = NULL;
 gboolean connections_exist = FALSE;
 guint timeout_id;
+gboolean forced_exit_in_progress = FALSE;
 
 #define DIE_TIME 5000
 
@@ -123,9 +124,8 @@ no_more_channels (TpVoipEngine *voip_engine)
 }
 
 static void
-got_sigbus (int i)
+quit_all (gpointer dummy)
 {
-  g_warning ("DSP Crashed");
   if (voip_engine)
   {
     _tp_voip_engine_stop_stream(voip_engine);
@@ -136,8 +136,20 @@ got_sigbus (int i)
 }
 
 static void
+got_sigbus (int i)
+{
+  g_warning ("DSP Crashed");
+  if (!forced_exit_in_progress)
+    {
+      forced_exit_in_progress =TRUE;
+      g_idle_add ((GSourceFunc)quit_all, NULL);
+    }
+}
+
+static void
 got_segv (int id)
 {
+  signal (SIGSEGV, SIG_IGN);
   g_warning ("VoIP Engine caught SIGSEGV!");
   _tp_voip_engine_stop_stream(voip_engine);
   g_object_unref (voip_engine);
