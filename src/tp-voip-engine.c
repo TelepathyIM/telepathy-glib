@@ -1224,6 +1224,9 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
   priv->media_engine_disabled = FALSE;
   priv->stream_start_scheduled = FALSE;
 
+  priv->got_connection_properties = FALSE;
+  priv->candidate_preparation_required = FALSE;
+
   g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
 }
 
