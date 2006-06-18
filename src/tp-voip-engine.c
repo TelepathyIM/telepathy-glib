@@ -397,6 +397,11 @@ void
 _tp_voip_engine_stop_stream (TpVoipEngine *self)
 {
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  if (!priv->fs_stream)
+  {
+    return;
+  }
+
   if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_PLAYING)
     {
       g_debug ("%s: calling stop on farsight stream %p\n", __FUNCTION__, priv->fs_stream);
