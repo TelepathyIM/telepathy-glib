@@ -102,6 +102,10 @@ fi
 
 AM_CONDITIONAL(USE_INFOPRINT, test x$USE_INFOPRINT = xyes)
 
+dnl glibc backtrace functions
+AC_CHECK_FUNCS(backtrace backtrace_symbols_fd)
+AC_CHECK_HEADERS(execinfo.h)
+
 AC_OUTPUT( Makefile \
           common/Makefile \
           data/Makefile \
