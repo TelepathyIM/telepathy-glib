@@ -755,7 +755,7 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
       g_assert(G_VALUE_TYPE (g_value_array_get_nth (candidate, 1)) ==
                                TP_TYPE_TRANSPORT_LIST);
 
-      /*TODO: mmm, candidate_id should be const in farsight api*/
+      /* TODO: mmm, candidate_id should be const in Farsight API */
       candidate_id =
         (gchar*) g_value_get_string (g_value_array_get_nth (candidate, 0));
       transports =
@@ -809,7 +809,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
       fs_codec->id =
         g_value_get_uint (g_value_array_get_nth (codec, 0));
-      /* TODO, farsight api shoudl take const strings*/
+      /* TODO: Farsight API should take const strings */
       fs_codec->encoding_name =
         (gchar*)g_value_get_string (g_value_array_get_nth (codec, 1));
       fs_codec->media_type =
@@ -910,7 +910,6 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
       g_critical ("couldn't get proxy for stream");
       return;
     }
-
 
   stream = farsight_session_create_stream (priv->fs_session,
                                            media_type, direction);
@@ -1067,7 +1066,7 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
       return;
     }
 
-  priv->fs_session = farsight_session_factory_make(type);
+  priv->fs_session = farsight_session_factory_make (type);
 
   if (!priv->fs_session)
     {
@@ -1089,9 +1088,10 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
   dbus_g_proxy_connect_signal (priv->session_proxy, "NewMediaStreamHandler",
       G_CALLBACK (new_media_stream_handler), self, NULL);
 
-  g_debug ("Calling MediaSessionHandler::Ready");
+  g_debug ("Calling MediaSessionHandler::Ready -->");
   org_freedesktop_Telepathy_Media_SessionHandler_ready_async
     (priv->session_proxy, dummy_callback, "Media.SessionHandler::Ready");
+  g_debug ("<-- Returned from MediaSessionHandler::Ready");
 }
 
 static void
@@ -1131,7 +1131,7 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
   TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
 
-  g_debug ("Channel closed, cleaning up");
+  g_debug ("Channel closed, shutting it down");
 
 #ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_engine_disabled)
