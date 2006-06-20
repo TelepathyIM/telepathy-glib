@@ -18,12 +18,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "config.h"
+
 #include <signal.h>
 #define USE_REALTIME
 #ifdef USE_REALTIME
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef HAVE_EXECINFO_H
+#include <execinfo.h>
+#endif /* HAVE_EXECINFO_H */
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
@@ -156,6 +161,32 @@ got_segv (int id)
   g_main_loop_quit (mainloop);
 }
 
+static void
+print_backtrace (void)
+{
+#if defined (HAVE_BACKTRACE) && defined (HAVE_BACKTRACE_SYMBOLS_FD)
+  void *array[20];
+  size_t size;
+
+#define MSG "\n########## Backtrace (version " VERSION ") ##########\n"
+  write (STDERR_FILENO, MSG, strlen (MSG));
+#undef MSG
+
+  size = backtrace (array, 20);
+  backtrace_symbols_fd (array, size, STDERR_FILENO);
+#endif /* HAVE_BACKTRACE && HAVE_BACKTRACE_SYMBOLS_FD */
+}
+
+static void
+critical_handler (const gchar *log_domain,
+                  GLogLevelFlags log_level,
+                  const gchar *message,
+                  gpointer user_data)
+{
+  g_log_default_handler (log_domain, log_level, message, user_data);
+  print_backtrace ();
+}
+
 int main(int argc, char **argv) {
   int rt_mode;
   char *rt_env;
@@ -171,6 +202,19 @@ int main(int argc, char **argv) {
     fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
     fatal_mask |= G_LOG_LEVEL_CRITICAL;
     g_log_set_always_fatal (fatal_mask);
+
+    g_log_set_handler ("GLib-GObject",
+        G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
+        G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+        critical_handler, NULL);
+    g_log_set_handler ("GLib",
+        G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
+        G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+        critical_handler, NULL);
+    g_log_set_handler (NULL,
+        G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
+        G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+        critical_handler, NULL);
   }
 
   g_set_prgname("telepathy-voip-engine");

@@ -494,8 +494,12 @@ state_changed (FarsightStream *stream,
           g_message ("%s: %p playing\n", __FUNCTION__, stream);
           break;
   }
-  org_freedesktop_Telepathy_Media_StreamHandler_stream_state_async
-    (priv->stream_proxy, state, dummy_callback,"Media.StreamHandler::StreamState");
+
+  if (priv->stream_proxy)
+    {
+      org_freedesktop_Telepathy_Media_StreamHandler_stream_state_async
+        (priv->stream_proxy, state, dummy_callback,"Media.StreamHandler::StreamState");
+    }
 }
 
 static void
@@ -1125,46 +1129,61 @@ get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GErr
     }
 }
 
+static void shutdown_channel (TpVoipEngine *self, gboolean destroying);
+
 static void
 channel_closed (DBusGProxy *proxy, gpointer user_data)
 {
   TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
 
   g_debug ("Channel closed, shutting it down");
 
-#ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_engine_disabled)
-    {
-      GError *error = NULL;
+  shutdown_channel (self, FALSE);
+}
 
-      com_nokia_osso_media_server_enable(
-          DBUS_G_PROXY (priv->media_engine_proxy), &error);
-      if (error)
-      {
-        g_message ("Unable to enable media-engine: %s", error->message);
-        g_error_free (error);
-      }
+static void
+channel_destroyed (DBusGProxy *proxy, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+
+  g_debug ("Channel destroyed, shutting it down");
+
+  shutdown_channel (self, TRUE);
+}
+
+#ifdef MAEMO_OSSO_SUPPORT
+static void
+me_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
+{
+  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+
+  if (priv->media_engine_proxy)
+    {
+      DBusGProxy *proxy = priv->media_engine_proxy;
+
+      g_debug ("MediaEngine proxy destroyed, unreffing it");
+
+      priv->media_engine_proxy = NULL;
+      g_object_unref (proxy);
     }
+}
 #endif
 
-  if (priv->fs_stream)
-    {
-      g_object_unref (priv->fs_stream);
-      priv->fs_stream = NULL;
-    }
-
-  if (priv->fs_session)
-    {
-      g_object_unref (priv->fs_session);
-      priv->fs_session = NULL;
-    }
-
-  g_debug ("priv->chan->ref_count before any unrefs == %d", G_OBJECT (priv->chan)->ref_count);
+static void
+shutdown_channel (TpVoipEngine *self, gboolean destroyed)
+{
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
 
   if (priv->streamed_proxy)
     {
-      dbus_g_proxy_disconnect_signal (DBUS_G_PROXY (priv->streamed_proxy), "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), self);
+      if (!destroyed)
+        {
+          g_debug ("%s: disconnecting signals from streamed_proxy", G_STRFUNC);
+          dbus_g_proxy_disconnect_signal (DBUS_G_PROXY (priv->streamed_proxy),
+              "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler),
+              self);
+        }
 
       g_debug ("priv->streamed_proxy->ref_count before unref == %d", G_OBJECT (priv->streamed_proxy)->ref_count);
       g_object_unref (priv->streamed_proxy);
@@ -1173,8 +1192,12 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   if (priv->session_proxy)
     {
-      dbus_g_proxy_disconnect_signal (priv->session_proxy, "NewMediaStreamHandler",
-          G_CALLBACK (new_media_stream_handler), self);
+      if (!destroyed)
+        {
+          g_debug ("%s: disconnecting signals from session_proxy", G_STRFUNC);
+          dbus_g_proxy_disconnect_signal (priv->session_proxy, "NewMediaStreamHandler",
+              G_CALLBACK (new_media_stream_handler), self);
+        }
 
       g_debug ("priv->session_proxy->ref_count before unref == %d", G_OBJECT (priv->session_proxy)->ref_count);
       g_object_unref (priv->session_proxy);
@@ -1183,23 +1206,28 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   if (priv->stream_proxy)
     {
-      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "AddRemoteCandidate",
-          G_CALLBACK (add_remote_candidate), self);
+      if (!destroyed)
+        {
+          g_debug ("%s: disconnecting signals from stream_proxy", G_STRFUNC);
 
-      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "RemoveRemoteCandidate",
-          G_CALLBACK (remove_remote_candidate), self);
+          dbus_g_proxy_disconnect_signal (priv->stream_proxy, "AddRemoteCandidate",
+              G_CALLBACK (add_remote_candidate), self);
 
-      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetActiveCandidatePair",
-          G_CALLBACK (set_active_candidate_pair), self);
+          dbus_g_proxy_disconnect_signal (priv->stream_proxy, "RemoveRemoteCandidate",
+              G_CALLBACK (remove_remote_candidate), self);
 
-      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetRemoteCandidateList",
-          G_CALLBACK (set_remote_candidate_list), self);
+          dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetActiveCandidatePair",
+              G_CALLBACK (set_active_candidate_pair), self);
 
-      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetRemoteCodecs",
-          G_CALLBACK (set_remote_codecs), self);
+          dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetRemoteCandidateList",
+              G_CALLBACK (set_remote_candidate_list), self);
 
-      dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetStreamPlaying",
-          G_CALLBACK (set_stream_playing), self);
+          dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetRemoteCodecs",
+              G_CALLBACK (set_remote_codecs), self);
+
+          dbus_g_proxy_disconnect_signal (priv->stream_proxy, "SetStreamPlaying",
+              G_CALLBACK (set_stream_playing), self);
+        }
 
       g_debug ("priv->stream_proxy->ref_count before unref == %d", G_OBJECT (priv->stream_proxy)->ref_count);
       g_object_unref (priv->stream_proxy);
@@ -1209,21 +1237,64 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 # ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_engine_proxy)
     {
-      g_debug ("priv->media_engine_proxy->ref_count before unref == %d", G_OBJECT (priv->media_engine_proxy)->ref_count);
-      g_object_unref (priv->media_engine_proxy);
+      DBusGProxy *proxy = priv->media_engine_proxy;
+      g_debug ("priv->media_engine_proxy->ref_count before unref == %d",
+          G_OBJECT (priv->media_engine_proxy)->ref_count);
       priv->media_engine_proxy = NULL;
+      g_object_unref (proxy);
     }
 #endif
 
+  if (priv->conn_props)
+    {
+      g_object_unref (priv->conn_props);
+      priv->conn_props = NULL;
+    }
+
   if (priv->chan)
     {
-      /*connect up channel closed signal*/
-      dbus_g_proxy_disconnect_signal (DBUS_G_PROXY (priv->chan), "Closed", G_CALLBACK (channel_closed), self);
+      if (!destroyed)
+        {
+          /*disconnect channel closed signal*/
+          dbus_g_proxy_disconnect_signal (DBUS_G_PROXY (priv->chan), "Closed", G_CALLBACK (channel_closed), self);
 
+        }
       g_debug ("priv->chan->ref_count before unref == %d", G_OBJECT (priv->chan)->ref_count);
       g_object_unref (priv->chan);
       priv->chan = NULL;
     }
+
+  if (priv->fs_stream)
+    {
+      g_debug ("%s: unreffing fs_stream", G_STRFUNC);
+      g_object_unref (priv->fs_stream);
+      priv->fs_stream = NULL;
+    }
+
+  if (priv->fs_session)
+    {
+      g_debug ("%s: unreffing fs_session", G_STRFUNC);
+      g_object_unref (priv->fs_session);
+      priv->fs_session = NULL;
+    }
+
+#ifdef MAEMO_OSSO_SUPPORT
+  if (priv->media_engine_disabled && priv->media_engine_proxy)
+    {
+      GError *error = NULL;
+
+      g_debug ("%s: enabling media server", G_STRFUNC);
+
+      com_nokia_osso_media_server_enable (
+          DBUS_G_PROXY (priv->media_engine_proxy), &error);
+      if (error)
+      {
+        g_message ("Unable to enable media-engine: %s", error->message);
+        g_error_free (error);
+      }
+    }
+#endif
+
 
   priv->stream_started = FALSE;
   priv->media_engine_disabled = FALSE;
@@ -1231,6 +1302,8 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   priv->got_connection_properties = FALSE;
   priv->candidate_preparation_required = FALSE;
+
+  g_debug ("%s: emitting no more channels", G_STRFUNC);
 
   g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
 }
@@ -1305,7 +1378,7 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
                             "VoIP Engine is already handling a channel");
       g_message ("VoIP Engine is already handling a channel!");
 
-      return FALSE;
+      goto ERROR;
     }
   if (strcmp (channel_type, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA)!=0)
     {
@@ -1313,7 +1386,8 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
                             "VoIP Engine was passed a channel that was not a "
                             TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
       g_message ("VoIP Engine was passed a channel that was not of type " TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
-      return FALSE;
+
+      goto ERROR;
      }
 
 #ifdef MAEMO_OSSO_SUPPORT
@@ -1323,27 +1397,32 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
                                MEDIA_SERVER_SERVICE_OBJECT,
                                MEDIA_SERVER_INTERFACE_NAME);
 
-  {
-    GError *me_error = NULL;
-    g_message ("pausing media engine");
-    com_nokia_osso_media_server_disable (
-        DBUS_G_PROXY (priv->media_engine_proxy),
-        &me_error);
+    {
+      GError *me_error = NULL;
 
-    if (!me_error)
-      {
-        priv->media_engine_disabled = TRUE;
-      }
-    else
-      {
-        g_message("Unable to disable media-engine: %s", me_error->message);
-        priv->media_engine_disabled = FALSE;
-        *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-                              "DSP in use");
-        g_error_free (me_error);
-        return FALSE;
-      }
-  }
+      g_signal_connect (priv->media_engine_proxy, "destroy",
+                        G_CALLBACK (me_proxy_destroyed), obj);
+
+      g_message ("pausing media engine");
+      com_nokia_osso_media_server_disable (
+          DBUS_G_PROXY (priv->media_engine_proxy),
+          &me_error);
+
+      if (!me_error)
+        {
+          priv->media_engine_disabled = TRUE;
+        }
+      else
+        {
+          g_message("Unable to disable media-engine: %s", me_error->message);
+          priv->media_engine_disabled = FALSE;
+          *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+                                "DSP in use");
+          g_error_free (me_error);
+
+          goto ERROR;
+        }
+    }
 #endif
 
   priv->chan =  tp_chan_new (tp_get_bus(),                              /* connection  */
@@ -1371,19 +1450,19 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
       return FALSE;
     }
 
-  priv->streamed_proxy = tp_chan_get_interface (priv->chan, TELEPATHY_CHAN_IFACE_STREAMED_QUARK);
+  g_signal_connect (priv->chan, "destroy",
+                    G_CALLBACK (channel_destroyed), obj);
 
-  if (!priv->streamed_proxy)
-    {
-      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-                            "Channel is of wrong type");
-      return FALSE;
-    }
+  /* connect up channel closed signal */
+  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->chan), "Closed",
+                               G_CALLBACK (channel_closed),
+                               obj, NULL);
 
   /* NB: we should behave nicely if the connection doesnt have properties:
    * sure, its unlikely, but its not the end of the world if it doesn't ;)
    */
-  priv->conn_props = TELEPATHY_PROPS_IFACE (tp_conn_get_interface (conn, TELEPATHY_PROPS_IFACE_QUARK));
+  priv->conn_props = TELEPATHY_PROPS_IFACE (tp_conn_get_interface (conn,
+        TELEPATHY_PROPS_IFACE_QUARK));
 
 
 /* TODO check for group interface
@@ -1395,13 +1474,23 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
   }
   */
 
+  priv->streamed_proxy = tp_chan_get_interface (priv->chan,
+      TELEPATHY_CHAN_IFACE_STREAMED_QUARK);
+  if (!priv->streamed_proxy)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+                            "Channel is of wrong type");
+      goto ERROR;
+    }
+
   /* tell the gproxy about the NewMediaSessionHandler signal*/
-  dbus_g_proxy_add_signal (DBUS_G_PROXY (priv->streamed_proxy), "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (DBUS_G_PROXY (priv->streamed_proxy),
+      "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH,
+      G_TYPE_STRING, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->streamed_proxy), "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
-
-  /*connect up channel closed signal*/
-  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->chan), "Closed", G_CALLBACK (channel_closed), obj, NULL);
+  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->streamed_proxy),
+      "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler),
+      obj, NULL);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
@@ -1418,10 +1507,32 @@ gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_nam
       "stun-relay-username", CONN_PROP_STUN_RELAY_USERNAME,
       "stun-relay-password", CONN_PROP_STUN_RELAY_PASSWORD,
       NULL);
+
   tp_chan_type_streamed_media_get_session_handlers_async
          (DBUS_G_PROXY (priv->streamed_proxy), get_session_handlers_reply, obj);
 
   return TRUE;
+
+ERROR:
+  if (priv->streamed_proxy)
+    {
+      g_object_unref (priv->streamed_proxy);
+      priv->streamed_proxy = NULL;
+    }
+
+  if (priv->chan)
+    {
+      g_object_unref (priv->chan);
+      priv->chan = NULL;
+    }
+
+  if (priv->media_engine_proxy)
+    {
+      g_object_unref (priv->media_engine_proxy);
+      priv->media_engine_proxy = NULL;
+    }
+
+  return FALSE;
 }
 
 void
