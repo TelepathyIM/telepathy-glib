@@ -18,8 +18,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#define MAEMO_OSSO_SUPPORT
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -319,10 +317,10 @@ tp_voip_engine_dispose (GObject *object)
 void
 tp_voip_engine_finalize (GObject *object)
 {
+#ifdef MAEMO_OSSO_SUPPORT
   TpVoipEngine *self = TP_VOIP_ENGINE (object);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
 
-  /* free any data held directly by the object here */
+  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
 
   if (priv->infoprint_proxy)
     {
@@ -330,6 +328,7 @@ tp_voip_engine_finalize (GObject *object)
       g_object_unref (priv->infoprint_proxy);
       priv->infoprint_proxy = NULL;
     }
+#endif
 
   G_OBJECT_CLASS (tp_voip_engine_parent_class)->finalize (object);
 }
@@ -1293,11 +1292,11 @@ shutdown_channel (TpVoipEngine *self, gboolean destroyed)
         g_error_free (error);
       }
     }
+
+  priv->media_engine_disabled = FALSE;
 #endif
 
-
   priv->stream_started = FALSE;
-  priv->media_engine_disabled = FALSE;
   priv->stream_start_scheduled = FALSE;
 
   priv->got_connection_properties = FALSE;
@@ -1526,11 +1525,13 @@ ERROR:
       priv->chan = NULL;
     }
 
+#ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_engine_proxy)
     {
       g_object_unref (priv->media_engine_proxy);
       priv->media_engine_proxy = NULL;
     }
+#endif
 
   return FALSE;
 }

@@ -83,7 +83,7 @@ fi
 dnl maemo support
 AC_ARG_ENABLE( maemo-support,
   AC_HELP_STRING([--enable-maemo-support],[compile with Maemo support]),
-  maemo_support=$enableval, memo_support=no )
+  maemo_support=$enableval, maemo_support=no )
 
 if test x$maemo_support = xyes; then
   AC_DEFINE(MAEMO_OSSO_SUPPORT, , [Enable Maemo support])
