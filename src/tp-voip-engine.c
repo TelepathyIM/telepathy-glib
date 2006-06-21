@@ -305,7 +305,11 @@ tp_voip_engine_dispose (GObject *object)
     return;
 
   if (priv->chan)
-    g_object_unref (priv->chan);
+    {
+      g_object_unref (priv->chan);
+      priv->chan = NULL;
+    }
+
   priv->dispose_has_run = TRUE;
 
   /* release any references held by the object here */
