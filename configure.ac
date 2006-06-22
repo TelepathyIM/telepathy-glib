@@ -61,14 +61,10 @@ AC_SUBST(DBUS_SERVICES_DIR)
 AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [DBus services directory])
 
 dnl Check for libtelepathy
-PKG_CHECK_MODULES(LIBTELEPATHY, [libtelepathy], have_libtelepathy=yes, have_libtelepathy=no)
+PKG_CHECK_MODULES(LIBTELEPATHY, libtelepathy >= 0.0.14)
 
 AC_SUBST(LIBTELEPATHY_CFLAGS)
 AC_SUBST(LIBTELEPATHY_LIBS)
-
-if test x$have_libtelepathy = xno ; then
-    AC_MSG_ERROR([libtelepathy development libraries not found])
-fi
 
 dnl Check for farsight 
 PKG_CHECK_MODULES(FARSIGHT, [farsight-0.1], have_farsight=yes, have_farsight=no)
