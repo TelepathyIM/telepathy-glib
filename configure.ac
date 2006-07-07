@@ -1,6 +1,6 @@
 AC_INIT(Makefile.am)
 
-AS_VERSION(telepathy-voip-engine, TELEPATHY_VOIP_ENGINE_VERSION, 0, 1, 13, 0, WERROR="no", WERROR="yes")
+AS_VERSION(telepathy-media-engine, TELEPATHY_MEDIA_ENGINE_VERSION, 0, 1, 13, 0, WERROR="no", WERROR="yes")
 
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
 
