@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# test-voip-engine.py - test the functionaity of the voip engine
+# test-media-engine.py - test the functionaity of the media engine
 #
 # Copyright (C) 2005 Collabora Limited
 # Copyright (C) 2005 Nokia Corporation
@@ -98,9 +98,9 @@ if __name__ == '__main__':
     except:
         print "failed to activate org.freedesktop.Telepathy.VoipEngine, continuing anyway..."
 
-    voip_engine = bus.get_object("org.freedesktop.Telepathy.VoipEngine",
+    media_engine = bus.get_object("org.freedesktop.Telepathy.VoipEngine",
             "/org/freedesktop/Telepathy/VoipEngine")
-    channel_handler = dbus.Interface(voip_engine,
+    channel_handler = dbus.Interface(media_engine,
         "org.freedesktop.Telepathy.ChannelHandler")
     channel_handler.HandleChannel(TEST_APP_NAME, TEST_CONNECTION_PATH,
         CHANNEL_TYPE_STREAMED_MEDIA, TEST_CHANNEL_PATH, 0, 0)

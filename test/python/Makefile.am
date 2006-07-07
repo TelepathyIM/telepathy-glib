@@ -1,1 +1,1 @@
-EXTRA_DIST = test-voip-engine.py
+EXTRA_DIST = test-media-engine.py

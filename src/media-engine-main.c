@@ -1,5 +1,5 @@
 /*
- * voip-engine-main.c - startup and shutdown of voip-engine
+ * media-engine-main.c - startup and shutdown of media-engine
  * Copyright (C) 2005 Collabora Ltd.
  * Copyright (C) 2005 Nokia Corporation
  *
@@ -36,13 +36,13 @@
 #endif /* USE_REALTIME */
 #include <dbus/dbus-glib.h>
 #include <gst/gst.h>
-#include "tp-voip-engine.h"
+#include "tp-media-engine.h"
 #include "common/telepathy-errors.h"
 #include "common/telepathy-errors-enumtypes.h"
 
 GSource *timeout = NULL;
 GMainLoop *mainloop = NULL;
-TpVoipEngine *voip_engine = NULL;
+TpMediaEngine *media_engine = NULL;
 gboolean connections_exist = FALSE;
 guint timeout_id;
 gboolean forced_exit_in_progress = FALSE;
@@ -97,12 +97,12 @@ set_realtime (const char *argv0, int policy) {
 #endif /* USE_REALTIME */
 
 static gboolean
-kill_voip_engine (gpointer data)
+kill_media_engine (gpointer data)
 {
-  if (!g_getenv ("VOIP_ENGINE_PERSIST") && !connections_exist)
+  if (!g_getenv ("MEDIA_ENGINE_PERSIST") && !connections_exist)
     {
       g_debug("no channels are being handled, and timed out");
-      g_object_unref (voip_engine);
+      g_object_unref (media_engine);
       g_main_loop_quit (mainloop);
     }
 
@@ -110,14 +110,14 @@ kill_voip_engine (gpointer data)
 }
 
 static void
-handling_channel (TpVoipEngine *voip_engine)
+handling_channel (TpMediaEngine *media_engine)
 {
   connections_exist = TRUE;
   g_source_remove (timeout_id);
 }
 
 static void
-no_more_channels (TpVoipEngine *voip_engine)
+no_more_channels (TpMediaEngine *media_engine)
 {
   if (g_main_context_find_source_by_id (g_main_loop_get_context (mainloop),
                                         timeout_id))
@@ -125,17 +125,17 @@ no_more_channels (TpVoipEngine *voip_engine)
       g_source_remove (timeout_id);
     }
   connections_exist = FALSE;
-  timeout_id = g_timeout_add(DIE_TIME, kill_voip_engine, NULL);
+  timeout_id = g_timeout_add(DIE_TIME, kill_media_engine, NULL);
 }
 
 static void
 quit_all (gpointer dummy)
 {
-  if (voip_engine)
+  if (media_engine)
   {
-    _tp_voip_engine_stop_stream(voip_engine);
-    _tp_voip_engine_signal_stream_error (voip_engine, 0, "DSP Crash");
-    g_object_unref (voip_engine);
+    _tp_media_engine_stop_stream(media_engine);
+    _tp_media_engine_signal_stream_error (media_engine, 0, "DSP Crash");
+    g_object_unref (media_engine);
     g_main_loop_quit (mainloop);
   }
 }
@@ -155,9 +155,9 @@ static void
 got_segv (int id)
 {
   signal (SIGSEGV, SIG_IGN);
-  g_warning ("VoIP Engine caught SIGSEGV!");
-  _tp_voip_engine_stop_stream(voip_engine);
-  g_object_unref (voip_engine);
+  g_warning ("Media Engine caught SIGSEGV!");
+  _tp_media_engine_stop_stream(media_engine);
+  g_object_unref (media_engine);
   g_main_loop_quit (mainloop);
 }
 
@@ -217,29 +217,29 @@ int main(int argc, char **argv) {
         critical_handler, NULL);
   }
 
-  g_set_prgname("telepathy-voip-engine");
+  g_set_prgname("telepathy-media-engine");
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
   dbus_g_error_domain_register (TELEPATHY_ERRORS, "org.freedesktop.Telepathy.Error", TELEPATHY_TYPE_ERRORS);
 
-  voip_engine = g_object_new (TP_TYPE_VOIP_ENGINE, NULL);
+  media_engine = g_object_new (TP_TYPE_MEDIA_ENGINE, NULL);
 
-  g_signal_connect (voip_engine, "handling-channel", 
+  g_signal_connect (media_engine, "handling-channel", 
                     (GCallback) handling_channel, NULL);
 
-  g_signal_connect (voip_engine, "no-more-channels", 
+  g_signal_connect (media_engine, "no-more-channels", 
                     (GCallback) no_more_channels, NULL);
 
-  _tp_voip_engine_register (voip_engine);
+  _tp_media_engine_register (media_engine);
 
-  timeout_id = g_timeout_add(DIE_TIME, kill_voip_engine, NULL);
+  timeout_id = g_timeout_add(DIE_TIME, kill_media_engine, NULL);
 
 #ifdef USE_REALTIME
   /* Here we don't yet have any media threads running, so the to-be-created
    * threads will inherit the scheduling parameters, as glib doesn't know
    * anything about that... */
-  rt_env = getenv("VOIP_ENGINE_REALTIME");
+  rt_env = getenv("MEDIA_ENGINE_REALTIME");
   if (rt_env != NULL) {
     if ((rt_mode = atoi(rt_env))) {
       g_debug("realtime scheduling enabled");
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
       g_debug("realtime scheduling disabled");
     }
   } else {
-    g_debug("not using realtime scheduling, enable through VOIP_ENGINE_REALTIME env");
+    g_debug("not using realtime scheduling, enable through MEDIA_ENGINE_REALTIME env");
   }
 #endif /* USE_REALTIME */
   g_debug("started");

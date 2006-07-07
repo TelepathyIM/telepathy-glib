@@ -11,6 +11,6 @@ export PYTHONPATH=$TP:$PYTHONPATH
 test -d generate && cd generate
 cd src
 
-echo Generating VoipEngine files ...
-python $TP/tools/gengobject.py ../xml-modified/tp-voip-engine.xml TpVoipEngine
+echo Generating MediaEngine files ...
+python $TP/tools/gengobject.py ../xml-modified/tp-media-engine.xml TpMediaEngine
 

@@ -12,4 +12,4 @@ test -d generate && cd generate
 cd xml-pristine
 
 echo "Generating pristine XML in generate/xml-pristine..."
-python $TP/tools/genxml.py ../voip-engine.def
+python $TP/tools/genxml.py ../media-engine.def

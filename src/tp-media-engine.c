@@ -1,5 +1,5 @@
 /*
- * tp-voip-engine.c - Source for TpVoipEngine
+ * tp-media-engine.c - Source for TpMediaEngine
  * Copyright (C) 2005 Collabora Ltd.
  * Copyright (C) 2005 Nokia Corporation
  *
@@ -40,8 +40,8 @@
 #include <farsight/farsight-codec.h>
 #include <farsight/farsight-transport.h>
 
-#include "tp-voip-engine.h"
-#include "tp-voip-engine-signals-marshal.h"
+#include "tp-media-engine.h"
+#include "tp-media-engine-signals-marshal.h"
 #include "misc-signals-marshal.h"
 #include "tp-media-session-handler-gen.h"
 #include "tp-media-stream-handler-gen.h"
@@ -51,7 +51,7 @@
 #include "statusbar-gen.h"
 #endif
 
-#include "tp-voip-engine-glue.h"
+#include "tp-media-engine-glue.h"
 
 #include "common/telepathy-errors.h"
 #include "common/telepathy-errors-enumtypes.h"
@@ -155,7 +155,7 @@ register_dbus_signal_marshallers()
 
 
 
-G_DEFINE_TYPE(TpVoipEngine, tp_voip_engine, G_TYPE_OBJECT)
+G_DEFINE_TYPE(TpMediaEngine, tp_media_engine, G_TYPE_OBJECT)
 
 /* signal enum */
 enum
@@ -168,8 +168,8 @@ enum
 static guint signals[LAST_SIGNAL] = {0};
 
 /* private structure */
-typedef struct _TpVoipEnginePrivate TpVoipEnginePrivate;
-struct _TpVoipEnginePrivate
+typedef struct _TpMediaEnginePrivate TpMediaEnginePrivate;
+struct _TpMediaEnginePrivate
 {
   gboolean dispose_has_run;
 
@@ -205,15 +205,15 @@ struct _TpVoipEnginePrivate
   guint stun_port;
 };
 
-#define TP_VOIP_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_VOIP_ENGINE, TpVoipEnginePrivate))
+#define TP_MEDIA_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_MEDIA_ENGINE, TpMediaEnginePrivate))
 
 #ifdef USE_INFOPRINT
-static void tp_voip_engine_infoprint (const gchar *log_domain,
+static void tp_media_engine_infoprint (const gchar *log_domain,
     GLogLevelFlags log_level,
     const gchar *message,
     gpointer user_data)
 {
-  TpVoipEnginePrivate *priv = (TpVoipEnginePrivate *)user_data;
+  TpMediaEnginePrivate *priv = (TpMediaEnginePrivate *)user_data;
   com_nokia_statusbar_system_note_infoprint (
           DBUS_G_PROXY (priv->infoprint_proxy),
           message, NULL);
@@ -222,9 +222,9 @@ static void tp_voip_engine_infoprint (const gchar *log_domain,
 #endif
 
 static void
-tp_voip_engine_init (TpVoipEngine *obj)
+tp_media_engine_init (TpMediaEngine *obj)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
 
   /*sensible default*/
   priv->output_volume = (65535*7)/10;
@@ -237,40 +237,40 @@ tp_voip_engine_init (TpVoipEngine *obj)
         STATUS_BAR_INTERFACE_NAME);
 
   g_debug ("Using infoprint %p", priv->infoprint_proxy);
-  /* handler for voip-engine messages */
+  /* handler for media-engine messages */
   g_log_set_handler (NULL, G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL |
-      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_voip_engine_infoprint, priv);
+      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_media_engine_infoprint, priv);
 
   /* handler for farsight messages */
   /*
   g_log_set_handler ("Farsight", G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_CRITICAL |
-      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_voip_engine_infoprint, NULL);
+      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_media_engine_infoprint, NULL);
       */
 
 #endif
 }
 
-static void tp_voip_engine_dispose (GObject *object);
-static void tp_voip_engine_finalize (GObject *object);
+static void tp_media_engine_dispose (GObject *object);
+static void tp_media_engine_finalize (GObject *object);
 
 static void
-tp_voip_engine_class_init (TpVoipEngineClass *tp_voip_engine_class)
+tp_media_engine_class_init (TpMediaEngineClass *tp_media_engine_class)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (tp_voip_engine_class);
+  GObjectClass *object_class = G_OBJECT_CLASS (tp_media_engine_class);
 
-  g_type_class_add_private (tp_voip_engine_class, sizeof (TpVoipEnginePrivate));
+  g_type_class_add_private (tp_media_engine_class, sizeof (TpMediaEnginePrivate));
 
-  object_class->dispose = tp_voip_engine_dispose;
-  object_class->finalize = tp_voip_engine_finalize;
+  object_class->dispose = tp_media_engine_dispose;
+  object_class->finalize = tp_media_engine_finalize;
 
   /**
-   * TpVoipEngine::handling-channel:
+   * TpMediaEngine::handling-channel:
    *
    * Emitted whenever this object starts handling a channel
    */
   signals[HANDLING_CHANNEL] =
   g_signal_new ("handling-channel",
-                G_OBJECT_CLASS_TYPE (tp_voip_engine_class),
+                G_OBJECT_CLASS_TYPE (tp_media_engine_class),
                 G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                 0,
                 NULL, NULL,
@@ -278,13 +278,13 @@ tp_voip_engine_class_init (TpVoipEngineClass *tp_voip_engine_class)
                 G_TYPE_NONE, 0);
 
   /**
-   * TpVoipEngine::no-more-channels:
+   * TpMediaEngine::no-more-channels:
    *
    * Emitted whenever this object is handling no channels
    */
   signals[NO_MORE_CHANNELS] =
   g_signal_new ("no-more-channels",
-                G_OBJECT_CLASS_TYPE (tp_voip_engine_class),
+                G_OBJECT_CLASS_TYPE (tp_media_engine_class),
                 G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                 0,
                 NULL, NULL,
@@ -292,14 +292,14 @@ tp_voip_engine_class_init (TpVoipEngineClass *tp_voip_engine_class)
                 G_TYPE_NONE, 0);
 
 
-  dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_voip_engine_class), &dbus_glib_tp_voip_engine_object_info);
+  dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_media_engine_class), &dbus_glib_tp_media_engine_object_info);
 }
 
 void
-tp_voip_engine_dispose (GObject *object)
+tp_media_engine_dispose (GObject *object)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (object);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (object);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
 
  if (priv->dispose_has_run)
     return;
@@ -314,17 +314,17 @@ tp_voip_engine_dispose (GObject *object)
 
   /* release any references held by the object here */
 
-  if (G_OBJECT_CLASS (tp_voip_engine_parent_class)->dispose)
-    G_OBJECT_CLASS (tp_voip_engine_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tp_media_engine_parent_class)->dispose)
+    G_OBJECT_CLASS (tp_media_engine_parent_class)->dispose (object);
 }
 
 void
-tp_voip_engine_finalize (GObject *object)
+tp_media_engine_finalize (GObject *object)
 {
 #ifdef MAEMO_OSSO_SUPPORT
-  TpVoipEngine *self = TP_VOIP_ENGINE (object);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (object);
 
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
 
   if (priv->infoprint_proxy)
     {
@@ -334,7 +334,7 @@ tp_voip_engine_finalize (GObject *object)
     }
 #endif
 
-  G_OBJECT_CLASS (tp_voip_engine_parent_class)->finalize (object);
+  G_OBJECT_CLASS (tp_media_engine_parent_class)->finalize (object);
 }
 
 /* dummy callback handler for async calling calls with no return values */
@@ -346,10 +346,10 @@ dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
 }
 
 void
-_tp_voip_engine_signal_stream_error (TpVoipEngine *self, int error,
+_tp_media_engine_signal_stream_error (TpMediaEngine *self, int error,
                                      const char *debug)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   org_freedesktop_Telepathy_Media_StreamHandler_error_async
     (priv->stream_proxy, error, debug, dummy_callback, "Media.StreamHandler::Error");
 }
@@ -359,9 +359,9 @@ stream_error (FarsightStream *stream,
        const gchar *debug,
        gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
   g_message ("%s: stream error: stream=%p error=%s\n", __FUNCTION__, stream, debug);
-  _tp_voip_engine_signal_stream_error (self, (int) error, debug);
+  _tp_media_engine_signal_stream_error (self, (int) error, debug);
 }
 
 static void
@@ -370,8 +370,8 @@ session_error (FarsightSession *stream,
        const gchar *debug,
        gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   g_message ("%s: session error: session=%p error=%s\n", __FUNCTION__, stream, debug);
 
   org_freedesktop_Telepathy_Media_SessionHandler_error_async
@@ -379,7 +379,7 @@ session_error (FarsightSession *stream,
 }
 
 static void
-check_start_stream (TpVoipEnginePrivate *priv)
+check_start_stream (TpMediaEnginePrivate *priv)
 {
 #ifdef MAEMO_OSSO_SUPPORT
   if (!priv->media_engine_disabled)
@@ -397,9 +397,9 @@ check_start_stream (TpVoipEnginePrivate *priv)
 }
 
 void
-_tp_voip_engine_stop_stream (TpVoipEngine *self)
+_tp_media_engine_stop_stream (TpMediaEngine *self)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   if (!priv->fs_stream)
   {
     return;
@@ -416,8 +416,8 @@ _tp_voip_engine_stop_stream (TpVoipEngine *self)
 static void
 new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate, const gchar *remote_candidate, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   g_debug ("%s: new-active-candidate-pair: stream=%p\n", __FUNCTION__, stream);
 
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
@@ -427,8 +427,8 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
 static void
 codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
 
   GstElement *sink = farsight_stream_get_sink (stream);
   GstElement *source = farsight_stream_get_source (stream);
@@ -454,8 +454,8 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
 static void
 native_candidates_prepared (FarsightStream *stream, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   const GList *transport_candidates, *lp;
   FarsightTransportInfo *info;
 
@@ -479,8 +479,8 @@ state_changed (FarsightStream *stream,
                FarsightStreamDirection dir,
                gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   switch (state) {
     case FARSIGHT_STREAM_STATE_STOPPED:
           g_message ("%s: %p stopped\n", __FUNCTION__, stream);
@@ -510,8 +510,8 @@ new_native_candidate (FarsightStream *stream,
                       gchar *candidate_id,
                       gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   const GList *fs_candidates, *lp;
   GPtrArray *transports;
 
@@ -710,8 +710,8 @@ static void
 add_remote_candidate (DBusGProxy *proxy, gchar* candidate,
                       GPtrArray *transports, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   GList *fs_transports;
 
   fs_transports = tp_transports_to_fs (candidate, transports);
@@ -725,8 +725,8 @@ add_remote_candidate (DBusGProxy *proxy, gchar* candidate,
 static void
 remove_remote_candidate (DBusGProxy *proxy, gchar* candidate, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
 
   g_message ("%s: removing remote candidate %s", G_STRFUNC, candidate);
   farsight_stream_remove_remote_candidate (priv->fs_stream, candidate);
@@ -736,8 +736,8 @@ static void
 set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
                            gchar* remote_candidate, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   farsight_stream_set_active_candidate_pair (priv->fs_stream,
                                              native_candidate,
                                              remote_candidate);
@@ -747,8 +747,8 @@ static void
 set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
                            gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   GList *fs_transports = NULL;
   GValueArray *candidate = NULL;
   GPtrArray *transports = NULL;
@@ -789,8 +789,8 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 void
 set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   GList *fs_codecs =NULL, *lp, *lp2;
   GValueArray *codec;
   GHashTable *params = NULL;
@@ -867,8 +867,8 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 void
 set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
 
   g_debug ("%s: %d", G_STRFUNC, play);
   if (play)
@@ -878,19 +878,19 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
     }
   else
     {
-      _tp_voip_engine_stop_stream (self);
+      _tp_media_engine_stop_stream (self);
     }
 }
 
-static void prepare_transports (TpVoipEngine *priv);
-static void set_stun_and_turn (TpVoipEngine *priv);
+static void prepare_transports (TpMediaEngine *priv);
+static void set_stun_and_turn (TpMediaEngine *priv);
 
 static void
 new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                           guint media_type, guint direction, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   FarsightStream *stream;
   gchar *bus_name;
   GstElement *src, *sink;
@@ -1024,9 +1024,9 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 }
 
 static void
-prepare_transports (TpVoipEngine *self)
+prepare_transports (TpMediaEngine *self)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   GPtrArray *codecs;
 
   if (priv->got_connection_properties && priv->candidate_preparation_required)
@@ -1043,11 +1043,11 @@ prepare_transports (TpVoipEngine *self)
 }
 
 void
-tp_voip_engine_add_session (TpVoipEngine *self, guint member,
+tp_media_engine_add_session (TpMediaEngine *self, guint member,
                             const char *session_handler_path,
                             const gchar* type)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   gchar *bus_name;
 
   g_debug("adding session for member %d, %s, %s", member, session_handler_path, type);
@@ -1104,14 +1104,14 @@ tp_voip_engine_add_session (TpVoipEngine *self, guint member,
 static void
 new_media_session_handler (DBusGProxy *proxy, guint member, const char *session_handler_path, const gchar* type, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  tp_voip_engine_add_session (self, member, session_handler_path, type);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  tp_media_engine_add_session (self, member, session_handler_path, type);
 }
 
 void
 get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GError *error, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
   GValueArray *session;
   int i;
   if (error)
@@ -1125,19 +1125,19 @@ get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GErr
       g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 1)) == DBUS_TYPE_G_OBJECT_PATH);
       g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session, 2)));
 
-      tp_voip_engine_add_session (self,
+      tp_media_engine_add_session (self,
           g_value_get_uint (g_value_array_get_nth (session, 0)),
           g_value_get_boxed (g_value_array_get_nth (session, 1)),
           g_value_get_string (g_value_array_get_nth (session, 2)));
     }
 }
 
-static void shutdown_channel (TpVoipEngine *self, gboolean destroying);
+static void shutdown_channel (TpMediaEngine *self, gboolean destroying);
 
 static void
 channel_closed (DBusGProxy *proxy, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
 
   g_debug ("Channel closed, shutting it down");
 
@@ -1147,7 +1147,7 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 static void
 channel_destroyed (DBusGProxy *proxy, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
 
   g_debug ("Channel destroyed, shutting it down");
 
@@ -1158,8 +1158,8 @@ channel_destroyed (DBusGProxy *proxy, gpointer user_data)
 static void
 me_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
 
   if (priv->media_engine_proxy)
     {
@@ -1174,9 +1174,9 @@ me_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
 #endif
 
 static void
-shutdown_channel (TpVoipEngine *self, gboolean destroyed)
+shutdown_channel (TpMediaEngine *self, gboolean destroyed)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
 
   if (priv->streamed_proxy)
     {
@@ -1312,9 +1312,9 @@ shutdown_channel (TpVoipEngine *self, gboolean destroyed)
 }
 
 static void
-set_stun_and_turn (TpVoipEngine *self)
+set_stun_and_turn (TpMediaEngine *self)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   if (priv->fs_stream)
     {
       if (priv->stun_server && priv->stun_port)
@@ -1332,8 +1332,8 @@ set_stun_and_turn (TpVoipEngine *self)
 static void
 properties_ready_cb (TpPropsIface *iface, gpointer user_data)
 {
-  TpVoipEngine *self = TP_VOIP_ENGINE (user_data);
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (self);
+  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
   GValue server= {0,}, port = {0,};
 
   g_value_init (&server, G_TYPE_STRING);
@@ -1358,7 +1358,7 @@ properties_ready_cb (TpPropsIface *iface, gpointer user_data)
 }
 
 /**
- * tp_voip_engine_handle_channel
+ * tp_media_engine_handle_channel
  *
  * Implements DBus method HandleChannel
  * on interface org.freedesktop.Telepathy.ChannelHandler
@@ -1369,26 +1369,26 @@ properties_ready_cb (TpPropsIface *iface, gpointer user_data)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_voip_engine_handle_channel (TpVoipEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
+gboolean tp_media_engine_handle_channel (TpMediaEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
   TpConn *conn;
 
   g_debug("HandleChannel called");
   if (priv->chan)
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-                            "VoIP Engine is already handling a channel");
-      g_message ("VoIP Engine is already handling a channel!");
+                            "Media Engine is already handling a channel");
+      g_message ("Media Engine is already handling a channel!");
 
       goto ERROR;
     }
   if (strcmp (channel_type, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA)!=0)
     {
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
-                            "VoIP Engine was passed a channel that was not a "
+                            "Media Engine was passed a channel that was not a "
                             TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
-      g_message ("VoIP Engine was passed a channel that was not of type " TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
+      g_message ("Media Engine was passed a channel that was not of type " TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
 
       goto ERROR;
      }
@@ -1541,14 +1541,14 @@ ERROR:
 }
 
 void
-_tp_voip_engine_register (TpVoipEngine *self)
+_tp_media_engine_register (TpMediaEngine *self)
 {
   DBusGConnection *bus;
   DBusGProxy *bus_proxy;
   GError *error = NULL;
   guint request_name_result;
 
-  g_assert (TP_IS_VOIP_ENGINE (self));
+  g_assert (TP_IS_MEDIA_ENGINE (self));
 
   bus = tp_get_bus ();
   bus_proxy = tp_get_bus_proxy ();
@@ -1564,9 +1564,9 @@ _tp_voip_engine_register (TpVoipEngine *self)
     g_error ("Failed to request bus name: %s", error->message);
 
   if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
-    g_error ("Failed to acquire bus name, voip engine already running?");
+    g_error ("Failed to acquire bus name, media engine already running?");
 
-  g_debug("registering VoipEngine at " OBJECT_PATH);
+  g_debug("registering MediaEngine at " OBJECT_PATH);
   dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
 
   register_dbus_signal_marshallers();
@@ -1576,7 +1576,7 @@ _tp_voip_engine_register (TpVoipEngine *self)
 
 
 /**
- * tp_voip_engine_mute_input
+ * tp_media_engine_mute_input
  *
  * Implements DBus method MuteInput
  * on interface org.freedesktop.Telepathy.StreamingEngine
@@ -1587,9 +1587,9 @@ _tp_voip_engine_register (TpVoipEngine *self)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GError **error)
+gboolean tp_media_engine_mute_input (TpMediaEngine *obj, gboolean mute_state, GError **error)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
   GstElement *source;
   priv->input_mute = mute_state;
 
@@ -1608,7 +1608,7 @@ gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GErr
 
 
 /**
- * tp_voip_engine_mute_output
+ * tp_media_engine_mute_output
  *
  * Implements DBus method MuteOutput
  * on interface org.freedesktop.Telepathy.StreamingEngine
@@ -1619,9 +1619,9 @@ gboolean tp_voip_engine_mute_input (TpVoipEngine *obj, gboolean mute_state, GErr
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GError **error)
+gboolean tp_media_engine_mute_output (TpMediaEngine *obj, gboolean mute_state, GError **error)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
   GstElement *sink;
   priv->output_mute = mute_state;
 
@@ -1640,7 +1640,7 @@ gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GEr
 
 
 /**
- * tp_voip_engine_set_output_volume
+ * tp_media_engine_set_output_volume
  *
  * Implements DBus method SetOutputVolume
  * on interface org.freedesktop.Telepathy.StreamingEngine
@@ -1651,9 +1651,9 @@ gboolean tp_voip_engine_mute_output (TpVoipEngine *obj, gboolean mute_state, GEr
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_voip_engine_set_output_volume (TpVoipEngine *obj, guint volume, GError **error)
+gboolean tp_media_engine_set_output_volume (TpMediaEngine *obj, guint volume, GError **error)
 {
-  TpVoipEnginePrivate *priv = TP_VOIP_ENGINE_GET_PRIVATE (obj);
+  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
   GstElement *sink;
 
   if (volume > 100) volume=100;

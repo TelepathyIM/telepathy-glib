@@ -1,12 +1,12 @@
 BUILT_SOURCES = \
-    tp-voip-engine-glue.h \
-    tp-voip-engine-signals-marshal.h \
-    tp-voip-engine-signals-marshal.c \
+    tp-media-engine-glue.h \
+    tp-media-engine-signals-marshal.h \
+    tp-media-engine-signals-marshal.c \
     tp-media-session-handler-gen.h \
     tp-media-stream-handler-gen.h \
     media-engine-gen.h \
-    tp-voip-engine-signals-marshal.h \
-    tp-voip-engine-signals-marshal.c \
+    tp-media-engine-signals-marshal.h \
+    tp-media-engine-signals-marshal.c \
     misc-signals-marshal.h \
     misc-signals-marshal.c
 
@@ -17,7 +17,7 @@ endif
 # Correctly clean the generated headers, but keep the xml description
 CLEANFILES = $(BUILT_SOURCES)
 
-bin_PROGRAMS = telepathy-voip-engine
+bin_PROGRAMS = telepathy-media-engine
 
 CORE_SOURCES = \
 	$(BUILT_SOURCES)
@@ -25,19 +25,19 @@ CORE_SOURCES = \
 #tp-media-session-handler.h 
 #tp-media-stream-handler.c 
 
-libvoipengine_convenience_la_SOURCES = \
+libmediaengine_convenience_la_SOURCES = \
 	$(CORE_SOURCES)
 
-telepathy_voip_engine_SOURCES = \
-	tp-voip-engine.h \
-	tp-voip-engine.c \
-	voip-engine-main.c
+telepathy_media_engine_SOURCES = \
+	tp-media-engine.h \
+	tp-media-engine.c \
+	media-engine-main.c
 
-telepathy_voip_engine_LDADD = \
-	libvoipengine-convenience.la \
+telepathy_media_engine_LDADD = \
+	libmediaengine-convenience.la \
 	$(top_builddir)/common/libcommon-convenience.la
 
-noinst_LTLIBRARIES = libvoipengine-convenience.la
+noinst_LTLIBRARIES = libmediaengine-convenience.la
 
 AM_CFLAGS = $(ERROR_CFLAGS) \
 	@DBUS_CFLAGS@ @GLIB_CFLAGS@ @LIBTELEPATHY_CFLAGS@ @FARSIGHT_CFLAGS@ \
