@@ -1,5 +1,5 @@
 /*
- * media-engine-main.c - startup and shutdown of media-engine
+ * stream-engine-main.c - startup and shutdown of stream-engine
  * Copyright (C) 2005 Collabora Ltd.
  * Copyright (C) 2005 Nokia Corporation
  *
@@ -36,13 +36,13 @@
 #endif /* USE_REALTIME */
 #include <dbus/dbus-glib.h>
 #include <gst/gst.h>
-#include "tp-media-engine.h"
+#include "tp-stream-engine.h"
 #include "common/telepathy-errors.h"
 #include "common/telepathy-errors-enumtypes.h"
 
 GSource *timeout = NULL;
 GMainLoop *mainloop = NULL;
-TpMediaEngine *media_engine = NULL;
+TpStreamEngine *stream_engine = NULL;
 gboolean connections_exist = FALSE;
 guint timeout_id;
 gboolean forced_exit_in_progress = FALSE;
@@ -97,12 +97,12 @@ set_realtime (const char *argv0, int policy) {
 #endif /* USE_REALTIME */
 
 static gboolean
-kill_media_engine (gpointer data)
+kill_stream_engine (gpointer data)
 {
-  if (!g_getenv ("MEDIA_ENGINE_PERSIST") && !connections_exist)
+  if (!g_getenv ("STREAM_ENGINE_PERSIST") && !connections_exist)
     {
       g_debug("no channels are being handled, and timed out");
-      g_object_unref (media_engine);
+      g_object_unref (stream_engine);
       g_main_loop_quit (mainloop);
     }
 
@@ -110,14 +110,14 @@ kill_media_engine (gpointer data)
 }
 
 static void
-handling_channel (TpMediaEngine *media_engine)
+handling_channel (TpStreamEngine *stream_engine)
 {
   connections_exist = TRUE;
   g_source_remove (timeout_id);
 }
 
 static void
-no_more_channels (TpMediaEngine *media_engine)
+no_more_channels (TpStreamEngine *stream_engine)
 {
   if (g_main_context_find_source_by_id (g_main_loop_get_context (mainloop),
                                         timeout_id))
@@ -125,17 +125,17 @@ no_more_channels (TpMediaEngine *media_engine)
       g_source_remove (timeout_id);
     }
   connections_exist = FALSE;
-  timeout_id = g_timeout_add(DIE_TIME, kill_media_engine, NULL);
+  timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
 }
 
 static void
 quit_all (gpointer dummy)
 {
-  if (media_engine)
+  if (stream_engine)
   {
-    _tp_media_engine_stop_stream(media_engine);
-    _tp_media_engine_signal_stream_error (media_engine, 0, "DSP Crash");
-    g_object_unref (media_engine);
+    _tp_stream_engine_stop_stream(stream_engine);
+    _tp_stream_engine_signal_stream_error (stream_engine, 0, "DSP Crash");
+    g_object_unref (stream_engine);
     g_main_loop_quit (mainloop);
   }
 }
@@ -156,8 +156,8 @@ got_segv (int id)
 {
   signal (SIGSEGV, SIG_IGN);
   g_warning ("Media Engine caught SIGSEGV!");
-  _tp_media_engine_stop_stream(media_engine);
-  g_object_unref (media_engine);
+  _tp_stream_engine_stop_stream(stream_engine);
+  g_object_unref (stream_engine);
   g_main_loop_quit (mainloop);
 }
 
@@ -217,29 +217,29 @@ int main(int argc, char **argv) {
         critical_handler, NULL);
   }
 
-  g_set_prgname("telepathy-media-engine");
+  g_set_prgname("telepathy-stream-engine");
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
   dbus_g_error_domain_register (TELEPATHY_ERRORS, "org.freedesktop.Telepathy.Error", TELEPATHY_TYPE_ERRORS);
 
-  media_engine = g_object_new (TP_TYPE_MEDIA_ENGINE, NULL);
+  stream_engine = g_object_new (TP_TYPE_STREAM_ENGINE, NULL);
 
-  g_signal_connect (media_engine, "handling-channel", 
+  g_signal_connect (stream_engine, "handling-channel", 
                     (GCallback) handling_channel, NULL);
 
-  g_signal_connect (media_engine, "no-more-channels", 
+  g_signal_connect (stream_engine, "no-more-channels", 
                     (GCallback) no_more_channels, NULL);
 
-  _tp_media_engine_register (media_engine);
+  _tp_stream_engine_register (stream_engine);
 
-  timeout_id = g_timeout_add(DIE_TIME, kill_media_engine, NULL);
+  timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
 
 #ifdef USE_REALTIME
   /* Here we don't yet have any media threads running, so the to-be-created
    * threads will inherit the scheduling parameters, as glib doesn't know
    * anything about that... */
-  rt_env = getenv("MEDIA_ENGINE_REALTIME");
+  rt_env = getenv("STREAM_ENGINE_REALTIME");
   if (rt_env != NULL) {
     if ((rt_mode = atoi(rt_env))) {
       g_debug("realtime scheduling enabled");
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
       g_debug("realtime scheduling disabled");
     }
   } else {
-    g_debug("not using realtime scheduling, enable through MEDIA_ENGINE_REALTIME env");
+    g_debug("not using realtime scheduling, enable through STREAM_ENGINE_REALTIME env");
   }
 #endif /* USE_REALTIME */
   g_debug("started");

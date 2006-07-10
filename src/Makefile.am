@@ -1,12 +1,12 @@
 BUILT_SOURCES = \
-    tp-media-engine-glue.h \
-    tp-media-engine-signals-marshal.h \
-    tp-media-engine-signals-marshal.c \
+    tp-stream-engine-glue.h \
+    tp-stream-engine-signals-marshal.h \
+    tp-stream-engine-signals-marshal.c \
     tp-media-session-handler-gen.h \
     tp-media-stream-handler-gen.h \
-    media-engine-gen.h \
-    tp-media-engine-signals-marshal.h \
-    tp-media-engine-signals-marshal.c \
+    stream-engine-gen.h \
+    tp-stream-engine-signals-marshal.h \
+    tp-stream-engine-signals-marshal.c \
     misc-signals-marshal.h \
     misc-signals-marshal.c
 
@@ -17,7 +17,7 @@ endif
 # Correctly clean the generated headers, but keep the xml description
 CLEANFILES = $(BUILT_SOURCES)
 
-bin_PROGRAMS = telepathy-media-engine
+bin_PROGRAMS = telepathy-stream-engine
 
 CORE_SOURCES = \
 	$(BUILT_SOURCES)
@@ -25,19 +25,19 @@ CORE_SOURCES = \
 #tp-media-session-handler.h 
 #tp-media-stream-handler.c 
 
-libmediaengine_convenience_la_SOURCES = \
+libstreamengine_convenience_la_SOURCES = \
 	$(CORE_SOURCES)
 
-telepathy_media_engine_SOURCES = \
-	tp-media-engine.h \
-	tp-media-engine.c \
-	media-engine-main.c
+telepathy_stream_engine_SOURCES = \
+	tp-stream-engine.h \
+	tp-stream-engine.c \
+	stream-engine-main.c
 
-telepathy_media_engine_LDADD = \
-	libmediaengine-convenience.la \
+telepathy_stream_engine_LDADD = \
+	libstreamengine-convenience.la \
 	$(top_builddir)/common/libcommon-convenience.la
 
-noinst_LTLIBRARIES = libmediaengine-convenience.la
+noinst_LTLIBRARIES = libstreamengine-convenience.la
 
 AM_CFLAGS = $(ERROR_CFLAGS) \
 	@DBUS_CFLAGS@ @GLIB_CFLAGS@ @LIBTELEPATHY_CFLAGS@ @FARSIGHT_CFLAGS@ \

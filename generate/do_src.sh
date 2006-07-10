@@ -11,6 +11,6 @@ export PYTHONPATH=$TP:$PYTHONPATH
 test -d generate && cd generate
 cd src
 
-echo Generating MediaEngine files ...
-python $TP/tools/gengobject.py ../xml-modified/tp-media-engine.xml TpMediaEngine
+echo Generating StreamEngine files ...
+python $TP/tools/gengobject.py ../xml-modified/tp-stream-engine.xml TpStreamEngine
 

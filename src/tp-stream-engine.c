@@ -1,5 +1,5 @@
 /*
- * tp-media-engine.c - Source for TpMediaEngine
+ * tp-stream-engine.c - Source for TpStreamEngine
  * Copyright (C) 2005 Collabora Ltd.
  * Copyright (C) 2005 Nokia Corporation
  *
@@ -40,18 +40,18 @@
 #include <farsight/farsight-codec.h>
 #include <farsight/farsight-transport.h>
 
-#include "tp-media-engine.h"
-#include "tp-media-engine-signals-marshal.h"
+#include "tp-stream-engine.h"
+#include "tp-stream-engine-signals-marshal.h"
 #include "misc-signals-marshal.h"
 #include "tp-media-session-handler-gen.h"
 #include "tp-media-stream-handler-gen.h"
-#include "media-engine-gen.h"
+#include "stream-engine-gen.h"
 
 #ifdef USE_INFOPRINT
 #include "statusbar-gen.h"
 #endif
 
-#include "tp-media-engine-glue.h"
+#include "tp-stream-engine-glue.h"
 
 #include "common/telepathy-errors.h"
 #include "common/telepathy-errors-enumtypes.h"
@@ -155,7 +155,7 @@ register_dbus_signal_marshallers()
 
 
 
-G_DEFINE_TYPE(TpMediaEngine, tp_media_engine, G_TYPE_OBJECT)
+G_DEFINE_TYPE(TpStreamEngine, tp_stream_engine, G_TYPE_OBJECT)
 
 /* signal enum */
 enum
@@ -168,8 +168,8 @@ enum
 static guint signals[LAST_SIGNAL] = {0};
 
 /* private structure */
-typedef struct _TpMediaEnginePrivate TpMediaEnginePrivate;
-struct _TpMediaEnginePrivate
+typedef struct _TpStreamEnginePrivate TpStreamEnginePrivate;
+struct _TpStreamEnginePrivate
 {
   gboolean dispose_has_run;
 
@@ -181,7 +181,7 @@ struct _TpMediaEnginePrivate
   TpPropsIface *conn_props;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  DBusGProxy *media_engine_proxy;
+  DBusGProxy *stream_engine_proxy;
   DBusGProxy *infoprint_proxy;
 #endif
 
@@ -195,7 +195,7 @@ struct _TpMediaEnginePrivate
   gboolean stream_started;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  gboolean media_engine_disabled;
+  gboolean stream_engine_disabled;
 #endif
   gboolean stream_start_scheduled;
 
@@ -205,15 +205,15 @@ struct _TpMediaEnginePrivate
   guint stun_port;
 };
 
-#define TP_MEDIA_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_MEDIA_ENGINE, TpMediaEnginePrivate))
+#define TP_STREAM_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_STREAM_ENGINE, TpStreamEnginePrivate))
 
 #ifdef USE_INFOPRINT
-static void tp_media_engine_infoprint (const gchar *log_domain,
+static void tp_stream_engine_infoprint (const gchar *log_domain,
     GLogLevelFlags log_level,
     const gchar *message,
     gpointer user_data)
 {
-  TpMediaEnginePrivate *priv = (TpMediaEnginePrivate *)user_data;
+  TpStreamEnginePrivate *priv = (TpStreamEnginePrivate *)user_data;
   com_nokia_statusbar_system_note_infoprint (
           DBUS_G_PROXY (priv->infoprint_proxy),
           message, NULL);
@@ -222,9 +222,9 @@ static void tp_media_engine_infoprint (const gchar *log_domain,
 #endif
 
 static void
-tp_media_engine_init (TpMediaEngine *obj)
+tp_stream_engine_init (TpStreamEngine *obj)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
 
   /*sensible default*/
   priv->output_volume = (65535*7)/10;
@@ -237,40 +237,40 @@ tp_media_engine_init (TpMediaEngine *obj)
         STATUS_BAR_INTERFACE_NAME);
 
   g_debug ("Using infoprint %p", priv->infoprint_proxy);
-  /* handler for media-engine messages */
+  /* handler for stream-engine messages */
   g_log_set_handler (NULL, G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL |
-      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_media_engine_infoprint, priv);
+      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_stream_engine_infoprint, priv);
 
   /* handler for farsight messages */
   /*
   g_log_set_handler ("Farsight", G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_CRITICAL |
-      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_media_engine_infoprint, NULL);
+      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_stream_engine_infoprint, NULL);
       */
 
 #endif
 }
 
-static void tp_media_engine_dispose (GObject *object);
-static void tp_media_engine_finalize (GObject *object);
+static void tp_stream_engine_dispose (GObject *object);
+static void tp_stream_engine_finalize (GObject *object);
 
 static void
-tp_media_engine_class_init (TpMediaEngineClass *tp_media_engine_class)
+tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (tp_media_engine_class);
+  GObjectClass *object_class = G_OBJECT_CLASS (tp_stream_engine_class);
 
-  g_type_class_add_private (tp_media_engine_class, sizeof (TpMediaEnginePrivate));
+  g_type_class_add_private (tp_stream_engine_class, sizeof (TpStreamEnginePrivate));
 
-  object_class->dispose = tp_media_engine_dispose;
-  object_class->finalize = tp_media_engine_finalize;
+  object_class->dispose = tp_stream_engine_dispose;
+  object_class->finalize = tp_stream_engine_finalize;
 
   /**
-   * TpMediaEngine::handling-channel:
+   * TpStreamEngine::handling-channel:
    *
    * Emitted whenever this object starts handling a channel
    */
   signals[HANDLING_CHANNEL] =
   g_signal_new ("handling-channel",
-                G_OBJECT_CLASS_TYPE (tp_media_engine_class),
+                G_OBJECT_CLASS_TYPE (tp_stream_engine_class),
                 G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                 0,
                 NULL, NULL,
@@ -278,13 +278,13 @@ tp_media_engine_class_init (TpMediaEngineClass *tp_media_engine_class)
                 G_TYPE_NONE, 0);
 
   /**
-   * TpMediaEngine::no-more-channels:
+   * TpStreamEngine::no-more-channels:
    *
    * Emitted whenever this object is handling no channels
    */
   signals[NO_MORE_CHANNELS] =
   g_signal_new ("no-more-channels",
-                G_OBJECT_CLASS_TYPE (tp_media_engine_class),
+                G_OBJECT_CLASS_TYPE (tp_stream_engine_class),
                 G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                 0,
                 NULL, NULL,
@@ -292,14 +292,14 @@ tp_media_engine_class_init (TpMediaEngineClass *tp_media_engine_class)
                 G_TYPE_NONE, 0);
 
 
-  dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_media_engine_class), &dbus_glib_tp_media_engine_object_info);
+  dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_stream_engine_class), &dbus_glib_tp_stream_engine_object_info);
 }
 
 void
-tp_media_engine_dispose (GObject *object)
+tp_stream_engine_dispose (GObject *object)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (object);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (object);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
  if (priv->dispose_has_run)
     return;
@@ -314,17 +314,17 @@ tp_media_engine_dispose (GObject *object)
 
   /* release any references held by the object here */
 
-  if (G_OBJECT_CLASS (tp_media_engine_parent_class)->dispose)
-    G_OBJECT_CLASS (tp_media_engine_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tp_stream_engine_parent_class)->dispose)
+    G_OBJECT_CLASS (tp_stream_engine_parent_class)->dispose (object);
 }
 
 void
-tp_media_engine_finalize (GObject *object)
+tp_stream_engine_finalize (GObject *object)
 {
 #ifdef MAEMO_OSSO_SUPPORT
-  TpMediaEngine *self = TP_MEDIA_ENGINE (object);
+  TpStreamEngine *self = TP_STREAM_ENGINE (object);
 
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
   if (priv->infoprint_proxy)
     {
@@ -334,7 +334,7 @@ tp_media_engine_finalize (GObject *object)
     }
 #endif
 
-  G_OBJECT_CLASS (tp_media_engine_parent_class)->finalize (object);
+  G_OBJECT_CLASS (tp_stream_engine_parent_class)->finalize (object);
 }
 
 /* dummy callback handler for async calling calls with no return values */
@@ -346,10 +346,10 @@ dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
 }
 
 void
-_tp_media_engine_signal_stream_error (TpMediaEngine *self, int error,
+_tp_stream_engine_signal_stream_error (TpStreamEngine *self, int error,
                                      const char *debug)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   org_freedesktop_Telepathy_Media_StreamHandler_error_async
     (priv->stream_proxy, error, debug, dummy_callback, "Media.StreamHandler::Error");
 }
@@ -359,9 +359,9 @@ stream_error (FarsightStream *stream,
        const gchar *debug,
        gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   g_message ("%s: stream error: stream=%p error=%s\n", __FUNCTION__, stream, debug);
-  _tp_media_engine_signal_stream_error (self, (int) error, debug);
+  _tp_stream_engine_signal_stream_error (self, (int) error, debug);
 }
 
 static void
@@ -370,8 +370,8 @@ session_error (FarsightSession *stream,
        const gchar *debug,
        gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   g_message ("%s: session error: session=%p error=%s\n", __FUNCTION__, stream, debug);
 
   org_freedesktop_Telepathy_Media_SessionHandler_error_async
@@ -379,10 +379,10 @@ session_error (FarsightSession *stream,
 }
 
 static void
-check_start_stream (TpMediaEnginePrivate *priv)
+check_start_stream (TpStreamEnginePrivate *priv)
 {
 #ifdef MAEMO_OSSO_SUPPORT
-  if (!priv->media_engine_disabled)
+  if (!priv->stream_engine_disabled)
     return;
 #endif
 
@@ -397,9 +397,9 @@ check_start_stream (TpMediaEnginePrivate *priv)
 }
 
 void
-_tp_media_engine_stop_stream (TpMediaEngine *self)
+_tp_stream_engine_stop_stream (TpStreamEngine *self)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   if (!priv->fs_stream)
   {
     return;
@@ -416,8 +416,8 @@ _tp_media_engine_stop_stream (TpMediaEngine *self)
 static void
 new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate, const gchar *remote_candidate, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   g_debug ("%s: new-active-candidate-pair: stream=%p\n", __FUNCTION__, stream);
 
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
@@ -427,8 +427,8 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
 static void
 codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
   GstElement *sink = farsight_stream_get_sink (stream);
   GstElement *source = farsight_stream_get_source (stream);
@@ -454,8 +454,8 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
 static void
 native_candidates_prepared (FarsightStream *stream, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   const GList *transport_candidates, *lp;
   FarsightTransportInfo *info;
 
@@ -479,8 +479,8 @@ state_changed (FarsightStream *stream,
                FarsightStreamDirection dir,
                gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   switch (state) {
     case FARSIGHT_STREAM_STATE_STOPPED:
           g_message ("%s: %p stopped\n", __FUNCTION__, stream);
@@ -510,8 +510,8 @@ new_native_candidate (FarsightStream *stream,
                       gchar *candidate_id,
                       gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   const GList *fs_candidates, *lp;
   GPtrArray *transports;
 
@@ -710,8 +710,8 @@ static void
 add_remote_candidate (DBusGProxy *proxy, gchar* candidate,
                       GPtrArray *transports, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   GList *fs_transports;
 
   fs_transports = tp_transports_to_fs (candidate, transports);
@@ -725,8 +725,8 @@ add_remote_candidate (DBusGProxy *proxy, gchar* candidate,
 static void
 remove_remote_candidate (DBusGProxy *proxy, gchar* candidate, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
   g_message ("%s: removing remote candidate %s", G_STRFUNC, candidate);
   farsight_stream_remove_remote_candidate (priv->fs_stream, candidate);
@@ -736,8 +736,8 @@ static void
 set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
                            gchar* remote_candidate, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   farsight_stream_set_active_candidate_pair (priv->fs_stream,
                                              native_candidate,
                                              remote_candidate);
@@ -747,8 +747,8 @@ static void
 set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
                            gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   GList *fs_transports = NULL;
   GValueArray *candidate = NULL;
   GPtrArray *transports = NULL;
@@ -789,8 +789,8 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 void
 set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   GList *fs_codecs =NULL, *lp, *lp2;
   GValueArray *codec;
   GHashTable *params = NULL;
@@ -867,8 +867,8 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 void
 set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
   g_debug ("%s: %d", G_STRFUNC, play);
   if (play)
@@ -878,19 +878,19 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
     }
   else
     {
-      _tp_media_engine_stop_stream (self);
+      _tp_stream_engine_stop_stream (self);
     }
 }
 
-static void prepare_transports (TpMediaEngine *priv);
-static void set_stun_and_turn (TpMediaEngine *priv);
+static void prepare_transports (TpStreamEngine *priv);
+static void set_stun_and_turn (TpStreamEngine *priv);
 
 static void
 new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                           guint media_type, guint direction, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   FarsightStream *stream;
   gchar *bus_name;
   GstElement *src, *sink;
@@ -1024,9 +1024,9 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 }
 
 static void
-prepare_transports (TpMediaEngine *self)
+prepare_transports (TpStreamEngine *self)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   GPtrArray *codecs;
 
   if (priv->got_connection_properties && priv->candidate_preparation_required)
@@ -1043,11 +1043,11 @@ prepare_transports (TpMediaEngine *self)
 }
 
 void
-tp_media_engine_add_session (TpMediaEngine *self, guint member,
+tp_stream_engine_add_session (TpStreamEngine *self, guint member,
                             const char *session_handler_path,
                             const gchar* type)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   gchar *bus_name;
 
   g_debug("adding session for member %d, %s, %s", member, session_handler_path, type);
@@ -1104,14 +1104,14 @@ tp_media_engine_add_session (TpMediaEngine *self, guint member,
 static void
 new_media_session_handler (DBusGProxy *proxy, guint member, const char *session_handler_path, const gchar* type, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  tp_media_engine_add_session (self, member, session_handler_path, type);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  tp_stream_engine_add_session (self, member, session_handler_path, type);
 }
 
 void
 get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GError *error, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   GValueArray *session;
   int i;
   if (error)
@@ -1125,19 +1125,19 @@ get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GErr
       g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 1)) == DBUS_TYPE_G_OBJECT_PATH);
       g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session, 2)));
 
-      tp_media_engine_add_session (self,
+      tp_stream_engine_add_session (self,
           g_value_get_uint (g_value_array_get_nth (session, 0)),
           g_value_get_boxed (g_value_array_get_nth (session, 1)),
           g_value_get_string (g_value_array_get_nth (session, 2)));
     }
 }
 
-static void shutdown_channel (TpMediaEngine *self, gboolean destroying);
+static void shutdown_channel (TpStreamEngine *self, gboolean destroying);
 
 static void
 channel_closed (DBusGProxy *proxy, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
 
   g_debug ("Channel closed, shutting it down");
 
@@ -1147,7 +1147,7 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 static void
 channel_destroyed (DBusGProxy *proxy, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
 
   g_debug ("Channel destroyed, shutting it down");
 
@@ -1158,25 +1158,25 @@ channel_destroyed (DBusGProxy *proxy, gpointer user_data)
 static void
 me_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
-  if (priv->media_engine_proxy)
+  if (priv->stream_engine_proxy)
     {
-      DBusGProxy *proxy = priv->media_engine_proxy;
+      DBusGProxy *proxy = priv->stream_engine_proxy;
 
-      g_debug ("MediaEngine proxy destroyed, unreffing it");
+      g_debug ("StreamEngine proxy destroyed, unreffing it");
 
-      priv->media_engine_proxy = NULL;
+      priv->stream_engine_proxy = NULL;
       g_object_unref (proxy);
     }
 }
 #endif
 
 static void
-shutdown_channel (TpMediaEngine *self, gboolean destroyed)
+shutdown_channel (TpStreamEngine *self, gboolean destroyed)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
   if (priv->streamed_proxy)
     {
@@ -1238,12 +1238,12 @@ shutdown_channel (TpMediaEngine *self, gboolean destroyed)
     }
 
 # ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_engine_proxy)
+  if (priv->stream_engine_proxy)
     {
-      DBusGProxy *proxy = priv->media_engine_proxy;
-      g_debug ("priv->media_engine_proxy->ref_count before unref == %d",
-          G_OBJECT (priv->media_engine_proxy)->ref_count);
-      priv->media_engine_proxy = NULL;
+      DBusGProxy *proxy = priv->stream_engine_proxy;
+      g_debug ("priv->stream_engine_proxy->ref_count before unref == %d",
+          G_OBJECT (priv->stream_engine_proxy)->ref_count);
+      priv->stream_engine_proxy = NULL;
       g_object_unref (proxy);
     }
 #endif
@@ -1282,22 +1282,22 @@ shutdown_channel (TpMediaEngine *self, gboolean destroyed)
     }
 
 #ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_engine_disabled && priv->media_engine_proxy)
+  if (priv->stream_engine_disabled && priv->stream_engine_proxy)
     {
       GError *error = NULL;
 
       g_debug ("%s: enabling media server", G_STRFUNC);
 
       com_nokia_osso_media_server_enable (
-          DBUS_G_PROXY (priv->media_engine_proxy), &error);
+          DBUS_G_PROXY (priv->stream_engine_proxy), &error);
       if (error)
       {
-        g_message ("Unable to enable media-engine: %s", error->message);
+        g_message ("Unable to enable stream-engine: %s", error->message);
         g_error_free (error);
       }
     }
 
-  priv->media_engine_disabled = FALSE;
+  priv->stream_engine_disabled = FALSE;
 #endif
 
   priv->stream_started = FALSE;
@@ -1312,9 +1312,9 @@ shutdown_channel (TpMediaEngine *self, gboolean destroyed)
 }
 
 static void
-set_stun_and_turn (TpMediaEngine *self)
+set_stun_and_turn (TpStreamEngine *self)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   if (priv->fs_stream)
     {
       if (priv->stun_server && priv->stun_port)
@@ -1332,8 +1332,8 @@ set_stun_and_turn (TpMediaEngine *self)
 static void
 properties_ready_cb (TpPropsIface *iface, gpointer user_data)
 {
-  TpMediaEngine *self = TP_MEDIA_ENGINE (user_data);
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (self);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   GValue server= {0,}, port = {0,};
 
   g_value_init (&server, G_TYPE_STRING);
@@ -1358,7 +1358,7 @@ properties_ready_cb (TpPropsIface *iface, gpointer user_data)
 }
 
 /**
- * tp_media_engine_handle_channel
+ * tp_stream_engine_handle_channel
  *
  * Implements DBus method HandleChannel
  * on interface org.freedesktop.Telepathy.ChannelHandler
@@ -1369,9 +1369,9 @@ properties_ready_cb (TpPropsIface *iface, gpointer user_data)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_engine_handle_channel (TpMediaEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
+gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   TpConn *conn;
 
   g_debug("HandleChannel called");
@@ -1394,7 +1394,7 @@ gboolean tp_media_engine_handle_channel (TpMediaEngine *obj, const gchar * bus_n
      }
 
 #ifdef MAEMO_OSSO_SUPPORT
-  priv->media_engine_proxy =
+  priv->stream_engine_proxy =
     dbus_g_proxy_new_for_name (tp_get_bus(),
                                MEDIA_SERVER_SERVICE_NAME,
                                MEDIA_SERVER_SERVICE_OBJECT,
@@ -1403,22 +1403,22 @@ gboolean tp_media_engine_handle_channel (TpMediaEngine *obj, const gchar * bus_n
     {
       GError *me_error = NULL;
 
-      g_signal_connect (priv->media_engine_proxy, "destroy",
+      g_signal_connect (priv->stream_engine_proxy, "destroy",
                         G_CALLBACK (me_proxy_destroyed), obj);
 
       g_message ("pausing media engine");
       com_nokia_osso_media_server_disable (
-          DBUS_G_PROXY (priv->media_engine_proxy),
+          DBUS_G_PROXY (priv->stream_engine_proxy),
           &me_error);
 
       if (!me_error)
         {
-          priv->media_engine_disabled = TRUE;
+          priv->stream_engine_disabled = TRUE;
         }
       else
         {
-          g_message("Unable to disable media-engine: %s", me_error->message);
-          priv->media_engine_disabled = FALSE;
+          g_message("Unable to disable stream-engine: %s", me_error->message);
+          priv->stream_engine_disabled = FALSE;
           *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
                                 "DSP in use");
           g_error_free (me_error);
@@ -1530,10 +1530,10 @@ ERROR:
     }
 
 #ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_engine_proxy)
+  if (priv->stream_engine_proxy)
     {
-      g_object_unref (priv->media_engine_proxy);
-      priv->media_engine_proxy = NULL;
+      g_object_unref (priv->stream_engine_proxy);
+      priv->stream_engine_proxy = NULL;
     }
 #endif
 
@@ -1541,14 +1541,14 @@ ERROR:
 }
 
 void
-_tp_media_engine_register (TpMediaEngine *self)
+_tp_stream_engine_register (TpStreamEngine *self)
 {
   DBusGConnection *bus;
   DBusGProxy *bus_proxy;
   GError *error = NULL;
   guint request_name_result;
 
-  g_assert (TP_IS_MEDIA_ENGINE (self));
+  g_assert (TP_IS_STREAM_ENGINE (self));
 
   bus = tp_get_bus ();
   bus_proxy = tp_get_bus_proxy ();
@@ -1566,7 +1566,7 @@ _tp_media_engine_register (TpMediaEngine *self)
   if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
     g_error ("Failed to acquire bus name, media engine already running?");
 
-  g_debug("registering MediaEngine at " OBJECT_PATH);
+  g_debug("registering StreamEngine at " OBJECT_PATH);
   dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
 
   register_dbus_signal_marshallers();
@@ -1576,7 +1576,7 @@ _tp_media_engine_register (TpMediaEngine *self)
 
 
 /**
- * tp_media_engine_mute_input
+ * tp_stream_engine_mute_input
  *
  * Implements DBus method MuteInput
  * on interface org.freedesktop.Telepathy.StreamingEngine
@@ -1587,9 +1587,9 @@ _tp_media_engine_register (TpMediaEngine *self)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_engine_mute_input (TpMediaEngine *obj, gboolean mute_state, GError **error)
+gboolean tp_stream_engine_mute_input (TpStreamEngine *obj, gboolean mute_state, GError **error)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *source;
   priv->input_mute = mute_state;
 
@@ -1608,7 +1608,7 @@ gboolean tp_media_engine_mute_input (TpMediaEngine *obj, gboolean mute_state, GE
 
 
 /**
- * tp_media_engine_mute_output
+ * tp_stream_engine_mute_output
  *
  * Implements DBus method MuteOutput
  * on interface org.freedesktop.Telepathy.StreamingEngine
@@ -1619,9 +1619,9 @@ gboolean tp_media_engine_mute_input (TpMediaEngine *obj, gboolean mute_state, GE
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_engine_mute_output (TpMediaEngine *obj, gboolean mute_state, GError **error)
+gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, gboolean mute_state, GError **error)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *sink;
   priv->output_mute = mute_state;
 
@@ -1640,7 +1640,7 @@ gboolean tp_media_engine_mute_output (TpMediaEngine *obj, gboolean mute_state, G
 
 
 /**
- * tp_media_engine_set_output_volume
+ * tp_stream_engine_set_output_volume
  *
  * Implements DBus method SetOutputVolume
  * on interface org.freedesktop.Telepathy.StreamingEngine
@@ -1651,9 +1651,9 @@ gboolean tp_media_engine_mute_output (TpMediaEngine *obj, gboolean mute_state, G
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_media_engine_set_output_volume (TpMediaEngine *obj, guint volume, GError **error)
+gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, guint volume, GError **error)
 {
-  TpMediaEnginePrivate *priv = TP_MEDIA_ENGINE_GET_PRIVATE (obj);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *sink;
 
   if (volume > 100) volume=100;

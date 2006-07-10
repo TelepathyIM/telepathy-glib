@@ -62,6 +62,7 @@
 ^tests/farsight_test$
 ^tests/sip_test$
 ^po/POTFILES$
+^data/.*.service$
 ^docs/core/farsight-decl-list.txt$
 ^docs/core/farsight-decl.txt$
 ^docs/core/farsight-overrides.txt$
@@ -75,6 +76,6 @@
 ^doc/.sequence.temp
 ^doc/log.sh
 \.png$
-^src/telepathy-media-engine$
+^src/telepathy-stream-engine$
 (^|/).svn$|/)
 ^debian($|/)
