@@ -1,0 +1,5 @@
+[ChannelHandler]
+Name=stream-engine
+BusName=org.freedesktop.Telepathy.VoipEngine
+ObjectPath=/org/freedesktop/Telepathy/VoipEngine
+ChannelType=org.freedesktop.Telepathy.Channel.Type.StreamedMedia
