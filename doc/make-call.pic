@@ -8,7 +8,7 @@ placeholder_object(Channel,"StreamedMediaChannel");move;
 placeholder_object(SessionHandler,"SessionHandler");move;
 placeholder_object(StreamHandler,"StreamHandler");
 move;move;
-placeholder_object(Client,"Media engine");
+placeholder_object(Client,"Stream engine");
 move;
 placeholder_object(Session);
 move;
@@ -23,7 +23,7 @@ message(Remote,Connmgr,"jingle initiate")
 message(Connmgr,Remote,"prelim accept")
 create_message(Connmgr,Channel,"StreamedMediaChannel");
 active(Channel)
-create_message(Channel,Client, "MediaEngine");
+create_message(Channel,Client, "StreamEngine");
 create_message(Channel,SessionHandler, "SessionHandler");
 active(Client);
 message(Channel,Client,"NewMediaSessionHandler(member,StreamHandler)");
