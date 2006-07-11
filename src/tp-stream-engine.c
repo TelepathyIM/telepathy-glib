@@ -1378,17 +1378,17 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
   if (priv->chan)
     {
       *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-                            "Media Engine is already handling a channel");
-      g_message ("Media Engine is already handling a channel!");
+                            "Stream Engine is already handling a channel");
+      g_message ("Stream Engine is already handling a channel!");
 
       goto ERROR;
     }
   if (strcmp (channel_type, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA)!=0)
     {
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
-                            "Media Engine was passed a channel that was not a "
+                            "Stream Engine was passed a channel that was not a "
                             TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
-      g_message ("Media Engine was passed a channel that was not of type " TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
+      g_message ("Stream Engine was passed a channel that was not of type " TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
 
       goto ERROR;
      }
@@ -1406,7 +1406,7 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
       g_signal_connect (priv->stream_engine_proxy, "destroy",
                         G_CALLBACK (me_proxy_destroyed), obj);
 
-      g_message ("pausing media engine");
+      g_message ("pausing stream engine");
       com_nokia_osso_media_server_disable (
           DBUS_G_PROXY (priv->stream_engine_proxy),
           &me_error);
@@ -1564,7 +1564,7 @@ _tp_stream_engine_register (TpStreamEngine *self)
     g_error ("Failed to request bus name: %s", error->message);
 
   if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
-    g_error ("Failed to acquire bus name, media engine already running?");
+    g_error ("Failed to acquire bus name, stream engine already running?");
 
   g_debug("registering StreamEngine at " OBJECT_PATH);
   dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));

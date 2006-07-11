@@ -155,7 +155,7 @@ static void
 got_segv (int id)
 {
   signal (SIGSEGV, SIG_IGN);
-  g_warning ("Media Engine caught SIGSEGV!");
+  g_warning ("Stream Engine caught SIGSEGV!");
   _tp_stream_engine_stop_stream(stream_engine);
   g_object_unref (stream_engine);
   g_main_loop_quit (mainloop);

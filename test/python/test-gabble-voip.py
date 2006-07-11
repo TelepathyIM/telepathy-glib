@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# test-gabble-voip.py - test the functionality of gabble hooked up to the media engine
+# test-gabble-voip.py - test the functionality of gabble hooked up to the stream engine
 #
 # Copyright (C) 2005 Collabora Limited
 # Copyright (C) 2005 Nokia Corporation
@@ -57,15 +57,15 @@ def connection_handle_new_channel(channel_path, channel_type, handle_type, handl
 
 if __name__ == '__main__':
     global bus
-    global media_obj
+    global stream_obj
     global chandler
     
     bus = dbus.Bus()
     bus_name = dbus.service.BusName(TEST_APP_NAME, bus=bus)
 
-    media_obj = bus.get_object("org.freedesktop.Telepathy.VoipEngine",
+    stream_obj = bus.get_object("org.freedesktop.Telepathy.VoipEngine",
                                "/org/freedesktop/Telepathy/VoipEngine")
-    chandler = dbus.Interface(media_obj, "org.freedesktop.Telepathy.ChannelHandler")
+    chandler = dbus.Interface(stream_obj, "org.freedesktop.Telepathy.ChannelHandler")
 
     bus.add_signal_receiver(connection_handle_new_channel,
                             "NewChannel",
