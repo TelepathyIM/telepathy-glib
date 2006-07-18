@@ -370,12 +370,11 @@ session_error (FarsightSession *stream,
        const gchar *debug,
        gpointer user_data)
 {
-  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
-  g_message ("%s: session error: session=%p error=%s\n", __FUNCTION__, stream, debug);
+  DBusGProxy *session_proxy = (DBusGProxy *) user_data;
 
+  g_message ("%s: session error: session=%p error=%s\n", __FUNCTION__, stream, debug);
   org_freedesktop_Telepathy_Media_SessionHandler_error_async
-    (priv->session_proxy, error, debug, dummy_callback, "Media.SessionHandler::Error");
+    (session_proxy, error, debug, dummy_callback, "Media.SessionHandler::Error");
 }
 
 static void
@@ -1085,7 +1084,7 @@ tp_stream_engine_add_session (TpStreamEngine *self, guint member,
            farsight_plugin_get_description (priv->fs_session->plugin),
            farsight_plugin_get_author (priv->fs_session->plugin));
   g_signal_connect (G_OBJECT (priv->fs_session), "error",
-                    G_CALLBACK (session_error), self);
+                    G_CALLBACK (session_error), priv->session_proxy);
 
 
    /* tell the gproxy about the NewMediaSessionHandler signal*/
