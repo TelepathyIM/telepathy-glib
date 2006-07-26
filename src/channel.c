@@ -1324,8 +1324,6 @@ void tp_stream_engine_channel_mute_input (
       if (source)
         g_object_set (G_OBJECT (source), "mute", mute_state, NULL);
     }
-
-  return TRUE;
 }
 
 void tp_stream_engine_channel_mute_output (
