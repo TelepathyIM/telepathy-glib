@@ -60,8 +60,7 @@ gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, guint volume, 
 
 
 void _tp_stream_engine_register (TpStreamEngine *self);
-void _tp_stream_engine_stop_stream (TpStreamEngine *self);
-void _tp_stream_engine_signal_stream_error (TpStreamEngine *self, int error, const char *debug);
+void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug);
 
 G_END_DECLS
 
