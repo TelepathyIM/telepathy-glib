@@ -129,12 +129,11 @@ no_more_channels (TpStreamEngine *stream_engine)
 }
 
 static void
-quit_all (gpointer dummy)
+dsp_crashed (gpointer dummy)
 {
   if (stream_engine)
   {
-    _tp_stream_engine_stop_stream(stream_engine);
-    _tp_stream_engine_signal_stream_error (stream_engine, 0, "DSP Crash");
+    tp_stream_engine_error (stream_engine, 0, "DSP Crash");
     g_object_unref (stream_engine);
     g_main_loop_quit (mainloop);
   }
@@ -147,7 +146,7 @@ got_sigbus (int i)
   if (!forced_exit_in_progress)
     {
       forced_exit_in_progress =TRUE;
-      g_idle_add ((GSourceFunc)quit_all, NULL);
+      g_idle_add ((GSourceFunc) dsp_crashed, NULL);
     }
 }
 
@@ -156,7 +155,9 @@ got_segv (int id)
 {
   signal (SIGSEGV, SIG_IGN);
   g_warning ("Stream Engine caught SIGSEGV!");
+  /* FIXME
   _tp_stream_engine_stop_stream(stream_engine);
+  */
   g_object_unref (stream_engine);
   g_main_loop_quit (mainloop);
 }
