@@ -333,7 +333,7 @@ ERROR:
 }
 
 void
-_tp_stream_engine_register (TpStreamEngine *self)
+tp_stream_engine_register (TpStreamEngine *self)
 {
   DBusGConnection *bus;
   DBusGProxy *bus_proxy;

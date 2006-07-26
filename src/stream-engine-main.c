@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
   g_signal_connect (stream_engine, "no-more-channels", 
                     (GCallback) no_more_channels, NULL);
 
-  _tp_stream_engine_register (stream_engine);
+  tp_stream_engine_register (stream_engine);
 
   timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
 

@@ -59,7 +59,7 @@ gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, gboolean mute_state,
 gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, guint volume, GError **error);
 
 
-void _tp_stream_engine_register (TpStreamEngine *self);
+void tp_stream_engine_register (TpStreamEngine *self);
 void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug);
 
 G_END_DECLS
