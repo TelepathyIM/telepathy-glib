@@ -273,7 +273,7 @@ stream_error (
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
   g_message ("%s: stream error: stream=%p error=%s\n", G_STRFUNC, stream, debug);
-  g_signal_emit (self, STREAM_ERROR, 0);
+  g_signal_emit (self, signals[STREAM_ERROR], 0);
 }
 
 /* dummy callback handler for async calling calls with no return values */
