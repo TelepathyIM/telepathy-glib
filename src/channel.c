@@ -341,8 +341,9 @@ state_changed (FarsightStream *stream,
 
   if (priv->stream_proxy)
     {
-      org_freedesktop_Telepathy_Media_StreamHandler_stream_state_async
-        (priv->stream_proxy, state, dummy_callback,"Media.StreamHandler::StreamState");
+      org_freedesktop_Telepathy_Media_StreamHandler_stream_state_async (
+        priv->stream_proxy, state, dummy_callback,
+        "Media.StreamHandler::StreamState");
     }
 }
 
@@ -763,8 +764,9 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
     }
 
   g_debug ("%s: codec-changed: codec_id=%d, stream=%p\n", G_STRFUNC, codec_id, stream);
-   org_freedesktop_Telepathy_Media_StreamHandler_codec_choice_async
-     (priv->stream_proxy, codec_id, dummy_callback,"Media.StreamHandler::CodecChoice");
+  org_freedesktop_Telepathy_Media_StreamHandler_codec_choice_async (
+    priv->stream_proxy, codec_id, dummy_callback,
+    "Media.StreamHandler::CodecChoice");
 }
 
 static void
@@ -785,8 +787,9 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
         info->candidate_id, info->component, (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP)?"TCP":"UDP",
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
-  org_freedesktop_Telepathy_Media_StreamHandler_native_candidates_prepared_async
-     (priv->stream_proxy, dummy_callback,"Media.StreamHandler::NativeCandidatesPrepared");
+  org_freedesktop_Telepathy_Media_StreamHandler_native_candidates_prepared_async (
+    priv->stream_proxy, dummy_callback,
+    "Media.StreamHandler::NativeCandidatesPrepared");
 }
 
 static void
@@ -803,8 +806,8 @@ prepare_transports (TpStreamEngineChannel *self)
                  farsight_stream_get_local_codecs (priv->fs_stream));
 
       g_debug ("Calling MediaStreamHandler::Ready");
-      org_freedesktop_Telepathy_Media_StreamHandler_ready_async
-        (priv->stream_proxy, codecs, dummy_callback, self);
+      org_freedesktop_Telepathy_Media_StreamHandler_ready_async (
+        priv->stream_proxy, codecs, dummy_callback, self);
     }
 }
 
