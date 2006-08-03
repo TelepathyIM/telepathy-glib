@@ -283,7 +283,7 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
   if (priv->channels->len == 0)
     {
       g_debug ("no channels remaining; emitting no-more-channels");
-      g_signal_emit (chan, signals[NO_MORE_CHANNELS], 0);
+      g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
     }
   else
     {
