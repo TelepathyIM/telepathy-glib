@@ -259,6 +259,15 @@ tp_stream_engine_finalize (GObject *object)
   G_OBJECT_CLASS (tp_stream_engine_parent_class)->finalize (object);
 }
 
+/**
+ * tp_stream_engine_error
+ *
+ * Used to inform the stream engine than an exceptional situation has ocurred.
+ *
+ * @error:   The error ID, as per the
+ *           org.freedesktop.Telepathy.Media.StreamHandler::Error signal.
+ * @message: The human-readable error message.
+ */
 void
 tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
 {
