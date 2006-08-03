@@ -276,9 +276,20 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
-  g_debug ("Channel closed, %p", chan);
+  g_debug ("channel closed: %p", chan);
 
   g_ptr_array_remove_fast (priv->channels, chan);
+
+  if (priv->channels->len == 0)
+    {
+      g_debug ("no channels remaining; emitting no-more-channels");
+      g_signal_emit (chan, signals[NO_MORE_CHANNELS], 0);
+    }
+  else
+    {
+      g_debug ("channels remaining: %d", priv->channels->len);
+    }
+
   g_object_unref (chan);
 }
 
@@ -363,8 +374,6 @@ tp_stream_engine_register (TpStreamEngine *self)
 
   register_dbus_signal_marshallers();
 }
-
-
 
 
 /**
