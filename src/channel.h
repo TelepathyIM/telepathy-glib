@@ -36,7 +36,7 @@ typedef struct {
 GType tp_stream_engine_channel_get_type (void);
 
 TpStreamEngineChannel* tp_stream_engine_channel_new (void);
-gboolean tp_stream_engine_channel_handle_channel (
+gboolean tp_stream_engine_channel_go (
   TpStreamEngineChannel *chan,
   const gchar *bus_name,
   const gchar *connection_path,

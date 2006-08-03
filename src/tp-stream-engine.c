@@ -333,8 +333,8 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
 
   chan = tp_stream_engine_channel_new ();
 
-  if (!tp_stream_engine_channel_handle_channel (chan, bus_name, connection,
-      channel, handle_type, handle, error))
+  if (!tp_stream_engine_channel_go (chan, bus_name, connection, channel,
+      handle_type, handle, error))
     goto ERROR;
 
   g_ptr_array_add (priv->channels, chan);
@@ -384,7 +384,6 @@ tp_stream_engine_register (TpStreamEngine *self)
   register_dbus_signal_marshallers();
 }
 
-
 /**
  * tp_stream_engine_mute_input
  *
@@ -409,7 +408,6 @@ gboolean tp_stream_engine_mute_input (TpStreamEngine *obj, gboolean mute_state, 
   return TRUE;
 }
 
-
 /**
  * tp_stream_engine_mute_output
  *
@@ -433,7 +431,6 @@ gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, gboolean mute_state,
 
   return TRUE;
 }
-
 
 /**
  * tp_stream_engine_set_output_volume

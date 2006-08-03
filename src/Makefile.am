@@ -31,6 +31,8 @@ libstreamengine_convenience_la_SOURCES = \
 telepathy_stream_engine_SOURCES = \
 	channel.h \
 	channel.c \
+	session.h \
+	session.c \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
 	stream-engine-main.c
