@@ -33,6 +33,8 @@ telepathy_stream_engine_SOURCES = \
 	channel.c \
 	session.h \
 	session.c \
+	stream.h \
+	stream.c \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
 	stream-engine-main.c
