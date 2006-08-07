@@ -619,6 +619,8 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
+  g_assert (priv->fs_stream != NULL);
+
   g_debug ("%s: %d", G_STRFUNC, play);
 
   if (play)
