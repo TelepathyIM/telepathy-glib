@@ -148,6 +148,16 @@ tp_stream_engine_session_init (TpStreamEngineSession *self)
 }
 
 static void
+cb_stream_error (TpStreamEngineStream *stream, gpointer user_data)
+{
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
+  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+
+  g_object_unef (stream);
+  g_ptr_array_remove_fast (priv->streams, stream);
+}
+
+static void
 new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                           guint media_type, guint direction,
                           gpointer user_data)
@@ -164,7 +174,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 
   stream = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
 
-  /* FIXME: connect to stream-error signal here */
+  g_signal_connect (stream, "stream-error", G_CALLBACK (cb_stream_error), self);
 
   if (tp_stream_engine_stream_go (
         stream,
