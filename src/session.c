@@ -44,7 +44,8 @@ typedef struct _TpStreamEngineSessionPrivate TpStreamEngineSessionPrivate;
 struct _TpStreamEngineSessionPrivate
 {
   DBusGProxy *session_handler_proxy;
-  TpStreamEngineStream *stream;
+
+  GPtrArray *streams;
 
   FarsightSession *fs_session;
 
@@ -88,10 +89,15 @@ tp_stream_engine_session_dispose (GObject *object)
 
   g_debug (G_STRFUNC);
 
-  if (priv->stream)
+  if (priv->streams)
     {
-      g_object_unref (priv->stream);
-      priv->stream = NULL;
+      guint i;
+
+      for (i = 0; i < priv->streams->len; i++)
+        g_object_unref (g_ptr_array_index (priv->streams, i));
+
+      g_ptr_array_free (priv->streams, TRUE);
+      priv->streams = NULL;
     }
 
   if (priv->connection_path)
@@ -136,6 +142,9 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
 static void
 tp_stream_engine_session_init (TpStreamEngineSession *self)
 {
+  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+
+  priv->streams = g_ptr_array_new ();
 }
 
 static void
@@ -145,31 +154,28 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+  TpStreamEngineStream *stream;
   gchar *bus_name;
 
   g_debug ("Adding stream, media_type=%d, direction=%d",
       media_type, direction);
 
-  if (priv->stream)
-    {
-      g_warning("already allocated the one supported stream.");
-      return;
-    }
-
   g_object_get (priv->session_handler_proxy, "name", &bus_name, NULL);
 
-  priv->stream = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
+  stream = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
 
   /* FIXME: connect to stream-error signal here */
 
   tp_stream_engine_stream_go (
-    priv->stream,
+    stream,
     bus_name,
     priv->connection_path,
     stream_handler_path,
     priv->fs_session,
     media_type,
     direction);
+
+  g_ptr_array_add (priv->streams, stream);
 
   g_free (bus_name);
 }
