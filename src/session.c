@@ -166,16 +166,21 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
 
   /* FIXME: connect to stream-error signal here */
 
-  tp_stream_engine_stream_go (
-    stream,
-    bus_name,
-    priv->connection_path,
-    stream_handler_path,
-    priv->fs_session,
-    media_type,
-    direction);
-
-  g_ptr_array_add (priv->streams, stream);
+  if (tp_stream_engine_stream_go (
+        stream,
+        bus_name,
+        priv->connection_path,
+        stream_handler_path,
+        priv->fs_session,
+        media_type,
+        direction))
+    {
+      g_ptr_array_add (priv->streams, stream);
+    }
+  else
+    {
+      g_object_unref (stream);
+    }
 
   g_free (bus_name);
 }
