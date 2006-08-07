@@ -38,7 +38,8 @@
 G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
 #define STREAM_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamPrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_STREAM_ENGINE_TYPE_STREAM, \
+   TpStreamEngineStreamPrivate))
 
 typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
 
@@ -116,7 +117,8 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->stream_handler_proxy)
     {
-      g_debug ("%s: disconnecting signals from stream_handler_proxy", G_STRFUNC);
+      g_debug ("%s: disconnecting signals from stream_handler_proxy",
+          G_STRFUNC);
 
       dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
           "AddRemoteCandidate", G_CALLBACK (add_remote_candidate), stream);
@@ -839,7 +841,8 @@ tp_stream_engine_stream_go (
       if (src)
         {
           g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
-          g_object_set(G_OBJECT(src), "latency-time", G_GINT64_CONSTANT (20000), NULL);
+          g_object_set(G_OBJECT(src), "latency-time",
+            G_GINT64_CONSTANT (20000), NULL);
           g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
           farsight_stream_set_source (priv->fs_stream, src);
         }
