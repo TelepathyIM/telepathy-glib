@@ -43,7 +43,7 @@ typedef struct _TpStreamEngineSessionPrivate TpStreamEngineSessionPrivate;
 
 struct _TpStreamEngineSessionPrivate
 {
-  DBusGProxy *session_proxy;
+  DBusGProxy *session_handler_proxy;
   TpStreamEngineStream *stream;
 
   FarsightSession *fs_session;
@@ -66,11 +66,11 @@ cb_fs_session_error (
   const gchar *debug,
   gpointer user_data)
 {
-  DBusGProxy *session_proxy = (DBusGProxy *) user_data;
+  DBusGProxy *session_handler_proxy = (DBusGProxy *) user_data;
 
   g_message ("%s: session error: session=%p error=%s\n", G_STRFUNC, stream, debug);
   org_freedesktop_Telepathy_Media_SessionHandler_error_async
-    (session_proxy, error, debug, dummy_callback, "Media.SessionHandler::Error");
+    (session_handler_proxy, error, debug, dummy_callback, "Media.SessionHandler::Error");
 }
 
 static void
@@ -98,16 +98,16 @@ tp_stream_engine_session_dispose (GObject *object)
       priv->connection_path = NULL;
     }
 
-  if (priv->session_proxy)
+  if (priv->session_handler_proxy)
     {
-      g_debug ("%s: disconnecting signals from session proxy", G_STRFUNC);
+      g_debug ("%s: disconnecting signals from session handler proxy", G_STRFUNC);
 
-      dbus_g_proxy_disconnect_signal (priv->session_proxy,
+      dbus_g_proxy_disconnect_signal (priv->session_handler_proxy,
           "NewMediaStreamHandler", G_CALLBACK (new_media_stream_handler),
           self);
 
-      g_object_unref (priv->session_proxy);
-      priv->session_proxy = NULL;
+      g_object_unref (priv->session_handler_proxy);
+      priv->session_handler_proxy = NULL;
     }
 
   if (priv->fs_session)
@@ -153,7 +153,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
       return;
     }
 
-  g_object_get (priv->session_proxy, "name", &bus_name, NULL);
+  g_object_get (priv->session_handler_proxy, "name", &bus_name, NULL);
 
   priv->stream = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
 
@@ -183,22 +183,22 @@ tp_stream_engine_session_go (
 
   priv->connection_path = g_strdup (connection_path);
 
-  priv->session_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
+  priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
     bus_name,
     session_handler_path,
     TP_IFACE_MEDIA_SESSION_HANDLER);
 
-  if (!priv->session_proxy)
+  if (!priv->session_handler_proxy)
     {
       g_critical ("couldn't get proxy for session");
       return FALSE;
     }
 
   /* tell the proxy about the NewMediaStreamHandler signal*/
-  dbus_g_proxy_add_signal (priv->session_proxy, "NewMediaStreamHandler",
+  dbus_g_proxy_add_signal (priv->session_handler_proxy, "NewMediaStreamHandler",
       DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->session_proxy, "NewMediaStreamHandler",
+  dbus_g_proxy_connect_signal (priv->session_handler_proxy, "NewMediaStreamHandler",
       G_CALLBACK (new_media_stream_handler), self, NULL);
 
   priv->fs_session = farsight_session_factory_make (type);
@@ -215,11 +215,11 @@ tp_stream_engine_session_go (
            farsight_plugin_get_author (priv->fs_session->plugin));
 
   g_signal_connect (G_OBJECT (priv->fs_session), "error",
-                    G_CALLBACK (cb_fs_session_error), priv->session_proxy);
+                    G_CALLBACK (cb_fs_session_error), priv->session_handler_proxy);
 
   g_debug ("Calling MediaSessionHandler::Ready -->");
   org_freedesktop_Telepathy_Media_SessionHandler_ready_async
-    (priv->session_proxy, dummy_callback, "Media.SessionHandler::Ready");
+    (priv->session_handler_proxy, dummy_callback, "Media.SessionHandler::Ready");
   g_debug ("<-- Returned from MediaSessionHandler::Ready");
 
   return TRUE;
