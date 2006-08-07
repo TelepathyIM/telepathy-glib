@@ -687,10 +687,10 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
 
 static void
 stream_error (
-       FarsightStream *stream,
-       FarsightStreamError error,
-       const gchar *debug,
-       gpointer user_data)
+  FarsightStream *stream,
+  FarsightStreamError error,
+  const gchar *debug,
+  gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   g_message ("%s: stream error: stream=%p error=%s\n", G_STRFUNC, stream, debug);
