@@ -7,6 +7,7 @@
     </method>
     <signal name="NewMediaStreamHandler">
       <arg name="stream_handler" type="o"/>
+      <arg name="id" type="u"/>
       <arg name="media_type" type="u"/>
       <arg name="direction" type="u"/>
     </signal>
