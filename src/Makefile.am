@@ -4,7 +4,7 @@ BUILT_SOURCES = \
     tp-stream-engine-signals-marshal.c \
     tp-media-session-handler-gen.h \
     tp-media-stream-handler-gen.h \
-    stream-engine-gen.h \
+    media-engine-gen.h \
     tp-stream-engine-signals-marshal.h \
     tp-stream-engine-signals-marshal.c \
     misc-signals-marshal.h \
