@@ -153,7 +153,7 @@ cb_stream_error (TpStreamEngineStream *stream, gpointer user_data)
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
-  g_object_unef (stream);
+  g_object_unref (stream);
   g_ptr_array_remove_fast (priv->streams, stream);
 }
 
