@@ -12,5 +12,5 @@ test -d generate && cd generate
 cd src
 
 echo Generating StreamEngine files ...
-python $TP/tools/gengobject.py ../xml-modified/tp-stream-engine.xml TpStreamEngine
+python2.4 $TP/tools/gengobject.py ../xml-modified/tp-stream-engine.xml TpStreamEngine
 
