@@ -252,6 +252,11 @@ int main(int argc, char **argv) {
     g_debug("not using realtime scheduling, enable through STREAM_ENGINE_REALTIME env");
   }
 #endif /* USE_REALTIME */
+
+#ifdef MAEMO_OSSO_SUPPORT
+  g_debug ("maemo support enabled");
+#endif
+
   g_debug("started");
   g_main_loop_run (mainloop);
   g_debug("finished");

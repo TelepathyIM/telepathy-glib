@@ -31,7 +31,16 @@
 
 #include "common/telepathy-errors.h"
 
+#include "config.h"
 #include "types.h"
+
+#ifdef MAEMO_OSSO_SUPPORT
+#include "media-engine-gen.h"
+
+#define MEDIA_SERVER_SERVICE_NAME "com.nokia.osso_media_server"
+#define MEDIA_SERVER_INTERFACE_NAME "com.nokia.osso_media_server"
+#define MEDIA_SERVER_SERVICE_OBJECT "/com/nokia/osso_media_server"
+#endif
 
 #include "stream.h"
 
@@ -58,6 +67,11 @@ struct _TpStreamEngineStreamPrivate
   gboolean stream_start_scheduled;
   gboolean got_connection_properties;
   gboolean candidate_preparation_required;
+
+#ifdef MAEMO_OSSO_SUPPORT
+  gboolean media_engine_disabled;
+  DBusGProxy *media_engine_proxy;
+#endif
 };
 
 enum
@@ -102,6 +116,14 @@ tp_stream_engine_stream_dispose (GObject *object)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+#ifdef MAEMO_OSSO_SUPPORT
+  if (priv->media_engine_proxy)
+    {
+      g_object_unref (priv->media_engine_proxy);
+      priv->media_engine_proxy = NULL;
+    }
+#endif
 
   if (priv->stun_server)
     {
@@ -183,7 +205,7 @@ static void
 check_start_stream (TpStreamEngineStreamPrivate *priv)
 {
 #ifdef MAEMO_OSSO_SUPPORT
-  if (!priv->stream_engine_disabled)
+  if (!priv->media_engine_disabled)
     return;
 #endif
 
@@ -613,6 +635,26 @@ stop_stream (TpStreamEngineStream *self)
       farsight_stream_stop (priv->fs_stream);
       priv->stream_started = FALSE;
     }
+
+#ifdef MAEMO_OSSO_SUPPORT
+  if (priv->media_engine_disabled && priv->media_engine_proxy)
+    {
+      GError *error = NULL;
+
+      g_debug ("%s: enabling media server", G_STRFUNC);
+
+      com_nokia_osso_media_server_enable (
+          DBUS_G_PROXY (priv->media_engine_proxy), &error);
+      if (error)
+      {
+        g_message ("Unable to enable stream-engine: %s", error->message);
+        g_error_free (error);
+      }
+    }
+
+  priv->media_engine_disabled = FALSE;
+#endif
+
 }
 
 static void
@@ -778,6 +820,60 @@ cb_properties_ready (TpPropsIface *iface, gpointer user_data)
   prepare_transports (self);
 }
 
+#ifdef MAEMO_OSSO_SUPPORT
+static void
+media_engine_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
+  if (priv->media_engine_proxy)
+    {
+      DBusGProxy *proxy = priv->media_engine_proxy;
+
+      g_debug ("MediaEngine proxy destroyed, unreffing it");
+
+      priv->media_engine_proxy = NULL;
+      g_object_unref (proxy);
+    }
+}
+
+static gboolean
+media_engine_proxy_init (TpStreamEngineStream *self)
+{
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  GError *me_error;
+
+  g_debug ("initialising media engine proxy");
+
+  priv->media_engine_proxy =
+    dbus_g_proxy_new_for_name (tp_get_bus(),
+                               MEDIA_SERVER_SERVICE_NAME,
+                               MEDIA_SERVER_SERVICE_OBJECT,
+                               MEDIA_SERVER_INTERFACE_NAME);
+
+  g_signal_connect (priv->media_engine_proxy, "destroy",
+                    G_CALLBACK (media_engine_proxy_destroyed), self);
+
+  g_message ("pausing media engine");
+  com_nokia_osso_media_server_disable (
+      DBUS_G_PROXY (priv->media_engine_proxy),
+      &me_error);
+
+  if (!me_error)
+    {
+      priv->media_engine_disabled = TRUE;
+      return TRUE;
+    }
+  else
+    {
+      g_message ("Unable to disable media engine: %s", me_error->message);
+      priv->media_engine_disabled = FALSE;
+      return FALSE;
+    }
+}
+#endif
+
 gboolean
 tp_stream_engine_stream_go (
   TpStreamEngineStream *stream,
@@ -791,6 +887,11 @@ tp_stream_engine_stream_go (
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   gchar *conn_timeout_str;
   GstElement *src, *sink;
+
+#ifdef MAEMO_OSSO_SUPPORT
+  if (!media_engine_proxy_init (stream))
+    return FALSE;
+#endif
 
   priv->stream_handler_proxy = dbus_g_proxy_new_for_name (
     tp_get_bus(),

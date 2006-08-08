@@ -56,10 +56,6 @@
 #define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
 
-#define MEDIA_SERVER_SERVICE_NAME "com.nokia.osso_media_server"
-#define MEDIA_SERVER_INTERFACE_NAME "com.nokia.osso_media_server"
-#define MEDIA_SERVER_SERVICE_OBJECT "/com/nokia/osso_media_server"
-
 #define STATUS_BAR_SERVICE_NAME "com.nokia.statusbar"
 #define STATUS_BAR_INTERFACE_NAME "com.nokia.statusbar"
 #define STATUS_BAR_OBJECT_PATH "/com/nokia/statusbar"
