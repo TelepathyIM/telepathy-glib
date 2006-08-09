@@ -241,18 +241,18 @@ state_changed (FarsightStream *stream,
 
   switch (state) {
     case FARSIGHT_STREAM_STATE_STOPPED:
-          g_message ("%s: %p stopped\n", G_STRFUNC, stream);
+          g_message ("%s: stream %p stopped", G_STRFUNC, stream);
           break;
     case FARSIGHT_STREAM_STATE_CONNECTING:
-          g_message ("%s: %p connecting\n", G_STRFUNC, stream);
+          g_message ("%s: stream %p connecting", G_STRFUNC, stream);
           break;
     case FARSIGHT_STREAM_STATE_CONNECTED:
-          g_message ("%s: %p connected\n", G_STRFUNC, stream);
+          g_message ("%s: stream %p connected", G_STRFUNC, stream);
           /* start the stream if its supposed to be playing already*/
           check_start_stream(priv);
           break;
     case FARSIGHT_STREAM_STATE_PLAYING:
-          g_message ("%s: %p playing\n", G_STRFUNC, stream);
+          g_message ("%s: stream %p playing", G_STRFUNC, stream);
           break;
   }
 
@@ -475,7 +475,7 @@ add_remote_candidate (DBusGProxy *proxy, gchar *candidate,
 
   fs_transports = tp_transports_to_fs (candidate, transports);
 
-  g_message ("%s:adding remote candidate %s", G_STRFUNC, candidate);
+  g_message ("%s: adding remote candidate %s", G_STRFUNC, candidate);
   farsight_stream_add_remote_candidate (priv->fs_stream, fs_transports);
 
   free_fs_transports (fs_transports);
@@ -592,7 +592,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
       fs_codec->optional_params = fs_params;
 
-      g_message ("%s: adding remote codec %s [%d]'",
+      g_message ("%s: adding remote codec %s [%d]",
           G_STRFUNC, fs_codec->encoding_name, fs_codec->id);
 
       fs_codecs = g_list_prepend (fs_codecs, fs_codec);
@@ -740,7 +740,7 @@ stream_error (
   gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  g_message ("%s: stream error: stream=%p error=%s\n", G_STRFUNC, stream, debug);
+  g_message ("%s: stream error: stream=%p error=%s", G_STRFUNC, stream, debug);
   g_signal_emit (self, signals[STREAM_ERROR], 0);
 }
 
