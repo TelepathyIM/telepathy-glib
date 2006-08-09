@@ -18,6 +18,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <libtelepathy/tp-conn.h>
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
@@ -31,7 +35,6 @@
 
 #include "common/telepathy-errors.h"
 
-#include "config.h"
 #include "types.h"
 
 #ifdef MAEMO_OSSO_SUPPORT
