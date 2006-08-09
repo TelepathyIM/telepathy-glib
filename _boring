@@ -77,5 +77,6 @@
 ^doc/log.sh
 \.png$
 ^src/telepathy-stream-engine$
-(^|/).svn$|/)
+(^|/).svn($|/)
 ^debian($|/)
+^tags$
