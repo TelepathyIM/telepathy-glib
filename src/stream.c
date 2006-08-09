@@ -855,19 +855,22 @@ media_engine_proxy_init (TpStreamEngineStream *self)
   g_signal_connect (priv->media_engine_proxy, "destroy",
                     G_CALLBACK (media_engine_proxy_destroyed), self);
 
-  g_message ("pausing media engine");
-  com_nokia_osso_media_server_disable (
-      DBUS_G_PROXY (priv->media_engine_proxy),
-      &me_error);
+  g_message ("disabling media engine");
 
-  if (!me_error)
+  if (com_nokia_osso_media_server_disable (
+        DBUS_G_PROXY (priv->media_engine_proxy),
+        &me_error))
     {
       priv->media_engine_disabled = TRUE;
       return TRUE;
     }
   else
     {
-      g_message ("Unable to disable media engine: %s", me_error->message);
+      if (me_error)
+        g_message ("failed to disable media engine: %s", me_error->message);
+      else
+        g_message ("failed to disable media engine");
+
       priv->media_engine_disabled = FALSE;
       return FALSE;
     }
