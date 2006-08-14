@@ -456,7 +456,7 @@ fs_codecs_to_tp (const GList *codecs)
           5, g_hash_table_new (g_str_hash, g_str_equal), /* FIXME: parse fsc->optional_params */
           G_MAXUINT);
 
-      g_debug ("%s: adding codec %s [%d]'",
+      g_debug ("%s: adding codec %s [%d]",
           G_STRFUNC, fsc->encoding_name, fsc->id);
 
       g_ptr_array_add (tp_codecs, g_value_get_boxed (&codec));
@@ -559,7 +559,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   int i;
   GPtrArray *supp_codecs;
 
-  g_debug ("%s called", G_STRFUNC);
+  g_debug ("%s: called", G_STRFUNC);
 
   for (i = 0; i < codecs->len; i++)
     {
@@ -634,7 +634,7 @@ stop_stream (TpStreamEngineStream *self)
 
   if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_PLAYING)
     {
-      g_debug ("%s: calling stop on farsight stream %p\n", G_STRFUNC, priv->fs_stream);
+      g_debug ("%s: calling stop on farsight stream %p", G_STRFUNC, priv->fs_stream);
       farsight_stream_stop (priv->fs_stream);
       priv->stream_started = FALSE;
     }
@@ -694,7 +694,7 @@ prepare_transports (TpStreamEngineStream *self)
       codecs = fs_codecs_to_tp (
                  farsight_stream_get_local_codecs (priv->fs_stream));
 
-      g_debug ("Calling MediaStreamHandler::Ready");
+      g_debug ("calling MediaStreamHandler::Ready");
       org_freedesktop_Telepathy_Media_StreamHandler_ready_async (
         priv->stream_handler_proxy, codecs, dummy_callback, self);
     }
@@ -726,7 +726,7 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
       */
     }
 
-  g_debug ("%s: codec-changed: codec_id=%d, stream=%p\n", G_STRFUNC, codec_id, stream);
+  g_debug ("%s: codec_id=%d, stream=%p", G_STRFUNC, codec_id, stream);
   org_freedesktop_Telepathy_Media_StreamHandler_codec_choice_async (
     priv->stream_handler_proxy, codec_id, dummy_callback,
     "Media.StreamHandler::CodecChoice");
@@ -749,7 +749,7 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  g_debug ("%s: new-active-candidate-pair: stream=%p\n", G_STRFUNC, stream);
+  g_debug ("%s: stream=%p", G_STRFUNC, stream);
 
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
     (priv->stream_handler_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
@@ -763,14 +763,15 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
   const GList *transport_candidates, *lp;
   FarsightTransportInfo *info;
 
-  g_debug ("%s: preparation-complete: stream=%p\n", G_STRFUNC, stream);
+  g_debug ("%s: stream=%p", G_STRFUNC, stream);
 
   transport_candidates = farsight_stream_get_native_candidate_list (stream);
   for (lp = transport_candidates; lp; lp = g_list_next (lp))
   {
     info = (FarsightTransportInfo*)lp->data;
-    g_debug ("Local transport candidate: %s %d %s %s %s:%d, pref %f",
-        info->candidate_id, info->component, (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP)?"TCP":"UDP",
+    g_debug ("%s: local transport candidate: %s %d %s %s %s:%d, pref %f",
+        G_STRFUNC, info->candidate_id, info->component,
+        (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP) ? "TCP" : "UDP",
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
   org_freedesktop_Telepathy_Media_StreamHandler_native_candidates_prepared_async (
@@ -919,7 +920,7 @@ tp_stream_engine_stream_go (
   if (conn_timeout_str)
     {
       gint conn_timeout = (int) g_ascii_strtod (conn_timeout_str, NULL);
-      g_debug ("Setting connection timeout to %d", conn_timeout);
+      g_debug ("setting connection timeout to %d", conn_timeout);
       g_object_set (G_OBJECT(stream), "conn_timeout", conn_timeout, NULL);
     }
 
