@@ -86,6 +86,12 @@ tp_stream_engine_channel_dispose (GObject *object)
       priv->sessions = NULL;
     }
 
+  if (self->channel_path)
+    {
+      g_free (self->channel_path);
+      self->channel_path = NULL;
+    }
+
   if (priv->connection_path)
     {
       g_free (priv->connection_path);
@@ -259,6 +265,8 @@ tp_stream_engine_channel_go (
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   g_assert (NULL == priv->channel_proxy);
+
+  self->channel_path = g_strdup (channel_path);
 
   priv->connection_path = g_strdup (connection_path);
 
