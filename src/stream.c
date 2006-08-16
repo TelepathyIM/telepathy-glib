@@ -933,34 +933,41 @@ tp_stream_engine_stream_go (
   if (getenv("FS_FAKESTREAM"))
     {
       src = gst_element_factory_make ("fakesrc", NULL);
-      sink = gst_element_factory_make ("fakesink", NULL);
-
-      if (src)
-        {
-          g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
-          farsight_stream_set_source (priv->fs_stream, src);
-        }
-
-      if (sink)
-        farsight_stream_set_sink (priv->fs_stream, sink);
+    }
+  else if (getenv("FS_TESTSTREAM"))
+    {
+      src = gst_element_factory_make ("audiotestsrc", NULL);
     }
   else
     {
       src = gst_element_factory_make ("alsasrc", NULL);
-      sink = gst_element_factory_make ("alsasink", NULL);
 
       if (src)
         {
           g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
           g_object_set(G_OBJECT(src), "latency-time",
             G_GINT64_CONSTANT (20000), NULL);
-          g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
-          farsight_stream_set_source (priv->fs_stream, src);
         }
-
-      if (sink)
-        farsight_stream_set_sink (priv->fs_stream, sink);
     }
+
+  if (src)
+    {
+      /* TODO: check for property before setting it */
+      g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
+      farsight_stream_set_source (priv->fs_stream, src);
+    }
+
+  if (getenv("FS_FAKESTREAM"))
+    {
+      sink = gst_element_factory_make ("fakesink", NULL);
+    }
+  else
+    {
+      sink = gst_element_factory_make ("alsasink", NULL);
+    }
+
+  if (sink)
+    farsight_stream_set_sink (priv->fs_stream, sink);
 
   g_signal_connect (G_OBJECT (priv->fs_stream), "error",
                     G_CALLBACK (stream_error), stream);
