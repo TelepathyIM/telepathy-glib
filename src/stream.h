@@ -27,6 +27,8 @@ G_BEGIN_DECLS
 
 typedef struct {
   GObject parent;
+
+  guint stream_id;
 } TpStreamEngineStream;
 
 typedef struct {
