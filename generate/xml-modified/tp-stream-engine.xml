@@ -12,27 +12,27 @@
   </interface>
   <interface name="org.freedesktop.Telepathy.StreamEngine">
     <method name="HoldStream">
-      <arg direction="in" type="o" name="channel" />
+      <arg direction="in" type="o" name="channel_path" />
       <arg direction="in" type="u" name="stream_id" />
-      <arg direction="in" type="b" name="mute_state" />
+      <arg direction="in" type="b" name="hold_state" />
     </method>
     <method name="SetOutputVolume">
-      <arg direction="in" type="o" name="channel" />
+      <arg direction="in" type="o" name="channel_path" />
       <arg direction="in" type="u" name="stream_id" />
       <arg direction="in" type="u" name="volume" />
     </method>
     <method name="MuteOutput">
-      <arg direction="in" type="o" name="channel" />
+      <arg direction="in" type="o" name="channel_path" />
       <arg direction="in" type="u" name="stream_id" />
       <arg direction="in" type="b" name="mute_state" />
     </method>
     <method name="SetOutputWindow">
-      <arg direction="in" type="o" name="channel" />
+      <arg direction="in" type="o" name="channel_path" />
       <arg direction="in" type="u" name="stream_id" />
       <arg direction="in" type="u" name="window" />
     </method>
     <method name="SetPreviewWindow">
-      <arg direction="in" type="o" name="channel" />
+      <arg direction="in" type="o" name="channel_path" />
       <arg direction="in" type="u" name="stream_id" />
       <arg direction="in" type="u" name="window" />
     </method>
