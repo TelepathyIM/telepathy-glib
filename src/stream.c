@@ -62,6 +62,7 @@ struct _TpStreamEngineStreamPrivate
   TpConn *connection_proxy;
 
   FarsightStream *fs_stream;
+  guint state_changed_handler_id;
 
   gchar *stun_server;
   guint stun_port;
@@ -172,6 +173,8 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->fs_stream)
     {
+      g_signal_handler_disconnect (priv->fs_stream,
+        priv->state_changed_handler_id);
       g_object_unref (priv->fs_stream);
       priv->fs_stream = NULL;
     }
@@ -967,8 +970,9 @@ tp_stream_engine_stream_go (
                     G_CALLBACK (codec_changed), stream);
   g_signal_connect (G_OBJECT (priv->fs_stream), "native-candidates-prepared",
                     G_CALLBACK (native_candidates_prepared), stream);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "state-changed",
-                    G_CALLBACK (state_changed), stream);
+  priv->state_changed_handler_id =
+    g_signal_connect (G_OBJECT (priv->fs_stream), "state-changed",
+                      G_CALLBACK (state_changed), stream);
   g_signal_connect (G_OBJECT (priv->fs_stream), "new-native-candidate",
                     G_CALLBACK (new_native_candidate), stream);
 
