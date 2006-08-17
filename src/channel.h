@@ -47,15 +47,6 @@ gboolean tp_stream_engine_channel_go (
   guint handle_type,
   guint handle,
   GError **error);
-void tp_stream_engine_channel_mute_input (
-  TpStreamEngineChannel *chan,
-  gboolean mute);
-void tp_stream_engine_channel_mute_output (
-  TpStreamEngineChannel *chan,
-  gboolean mute);
-void tp_stream_engine_channel_set_output_volume (
-  TpStreamEngineChannel *chan,
-  guint volume);
 void tp_stream_engine_channel_error (
   TpStreamEngineChannel *self,
   guint error,
