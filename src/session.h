@@ -27,6 +27,8 @@ G_BEGIN_DECLS
 
 typedef struct {
   GObject parent;
+
+  GPtrArray *streams;
 } TpStreamEngineSession;
 
 typedef struct {

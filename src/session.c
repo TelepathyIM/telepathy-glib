@@ -45,8 +45,6 @@ struct _TpStreamEngineSessionPrivate
 {
   DBusGProxy *session_handler_proxy;
 
-  GPtrArray *streams;
-
   FarsightSession *fs_session;
 
   gchar *connection_path;
@@ -89,15 +87,15 @@ tp_stream_engine_session_dispose (GObject *object)
 
   g_debug (G_STRFUNC);
 
-  if (priv->streams)
+  if (self->streams)
     {
       guint i;
 
-      for (i = 0; i < priv->streams->len; i++)
-        g_object_unref (g_ptr_array_index (priv->streams, i));
+      for (i = 0; i < self->streams->len; i++)
+        g_object_unref (g_ptr_array_index (self->streams, i));
 
-      g_ptr_array_free (priv->streams, TRUE);
-      priv->streams = NULL;
+      g_ptr_array_free (self->streams, TRUE);
+      self->streams = NULL;
     }
 
   if (priv->connection_path)
@@ -142,19 +140,16 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
 static void
 tp_stream_engine_session_init (TpStreamEngineSession *self)
 {
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
-
-  priv->streams = g_ptr_array_new ();
+  self->streams = g_ptr_array_new ();
 }
 
 static void
 cb_stream_error (TpStreamEngineStream *stream, gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
   g_object_unref (stream);
-  g_ptr_array_remove_fast (priv->streams, stream);
+  g_ptr_array_remove_fast (self->streams, stream);
 }
 
 static void
@@ -185,7 +180,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
         media_type,
         direction))
     {
-      g_ptr_array_add (priv->streams, stream);
+      g_ptr_array_add (self->streams, stream);
     }
   else
     {
