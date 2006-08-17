@@ -45,8 +45,6 @@ typedef struct _TpStreamEngineChannelPrivate TpStreamEngineChannelPrivate;
 
 struct _TpStreamEngineChannelPrivate
 {
-  GPtrArray *sessions;
-
   TpChan *channel_proxy;
   DBusGProxy *streamed_media_proxy;
 
@@ -75,15 +73,15 @@ tp_stream_engine_channel_dispose (GObject *object)
 
   g_debug (G_STRFUNC);
 
-  if (priv->sessions)
+  if (self->sessions)
     {
       guint i;
 
-      for (i = 0; i < priv->sessions->len; i++)
-        g_object_unref (g_ptr_array_index (priv->sessions, i));
+      for (i = 0; i < self->sessions->len; i++)
+        g_object_unref (g_ptr_array_index (self->sessions, i));
 
-      g_ptr_array_free (priv->sessions, TRUE);
-      priv->sessions = NULL;
+      g_ptr_array_free (self->sessions, TRUE);
+      self->sessions = NULL;
     }
 
   if (self->channel_path)
@@ -132,7 +130,7 @@ tp_stream_engine_channel_init (TpStreamEngineChannel *self)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
-  priv->sessions = g_ptr_array_new ();
+  self->sessions = g_ptr_array_new ();
 
   /* sensible default */
   priv->output_volume = (65535 * 7) / 10;
@@ -161,7 +159,7 @@ add_session (TpStreamEngineChannel *self,
       g_critical ("couldn't create session");
     }
 
-  g_ptr_array_add (priv->sessions, session);
+  g_ptr_array_add (self->sessions, session);
 
   g_free (bus_name);
 }
