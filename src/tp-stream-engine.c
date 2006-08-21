@@ -424,10 +424,10 @@ _lookup_stream (TpStreamEngine *obj, const gchar *path, guint stream_id,
 
 
 /**
- * tp_stream_engine_mute_input
+ * tp_stream_engine_hold_stream
  *
- * Implements DBus method MuteInput
- * on interface org.freedesktop.Telepathy.StreamingEngine
+ * Implements DBus method HoldStream
+ * on interface org.freedesktop.Telepathy.StreamEngine
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occured, DBus will throw the error only if this
@@ -435,23 +435,23 @@ _lookup_stream (TpStreamEngine *obj, const gchar *path, guint stream_id,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_mute_input (TpStreamEngine *obj, gboolean mute_state, GError **error)
+gboolean tp_stream_engine_hold_stream (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean hold_state, GError **error)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  guint i;
+  TpStreamEngineStream *stream;
 
-  for (i = 0; i < priv->channels->len; i++)
-    tp_stream_engine_channel_mute_input (
-      g_ptr_array_index (priv->channels, i), mute_state);
+  stream = _lookup_stream (obj, channel_path, stream_id, error);
 
-  return TRUE;
+  if (!stream)
+    return FALSE;
+
+  return tp_stream_engine_stream_hold_stream (stream, hold_state, error);
 }
 
 /**
  * tp_stream_engine_mute_output
  *
  * Implements DBus method MuteOutput
- * on interface org.freedesktop.Telepathy.StreamingEngine
+ * on interface org.freedesktop.Telepathy.StreamEngine
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occured, DBus will throw the error only if this
@@ -459,23 +459,23 @@ gboolean tp_stream_engine_mute_input (TpStreamEngine *obj, gboolean mute_state, 
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, gboolean mute_state, GError **error)
+gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean mute_state, GError **error)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  guint i;
+  TpStreamEngineStream *stream;
 
-  for (i = 0; i < priv->channels->len; i++)
-    tp_stream_engine_channel_mute_output (
-      g_ptr_array_index (priv->channels, i), mute_state);
+  stream = _lookup_stream (obj, channel_path, stream_id, error);
 
-  return TRUE;
+  if (!stream)
+    return FALSE;
+
+  return tp_stream_engine_stream_mute_output (stream, mute_state, error);
 }
 
 /**
  * tp_stream_engine_set_output_volume
  *
  * Implements DBus method SetOutputVolume
- * on interface org.freedesktop.Telepathy.StreamingEngine
+ * on interface org.freedesktop.Telepathy.StreamEngine
  *
  * @error: Used to return a pointer to a GError detailing any error
  *         that occured, DBus will throw the error only if this
@@ -483,15 +483,64 @@ gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, gboolean mute_state,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, guint volume, GError **error)
+gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint volume, GError **error)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  guint i;
+  TpStreamEngineStream *stream;
 
-  for (i = 0; i < priv->channels->len; i++)
-    tp_stream_engine_channel_set_output_volume (
-      g_ptr_array_index (priv->channels, i), volume);
+  stream = _lookup_stream (obj, channel_path, stream_id, error);
 
-  return TRUE;
+  if (!stream)
+    return FALSE;
+
+  return tp_stream_engine_stream_set_output_volume (stream, volume, error);
+}
+
+/**
+ * tp_stream_engine_set_output_window
+ *
+ * Implements DBus method SetOutputWindow
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window, GError **error)
+{
+  TpStreamEngineStream *stream;
+
+  stream = _lookup_stream (obj, channel_path, stream_id, error);
+
+  if (!stream)
+    return FALSE;
+
+  return tp_stream_engine_stream_set_output_window (stream, window, error);
+}
+
+
+/**
+ * tp_stream_engine_set_preview_window
+ *
+ * Implements DBus method SetPreviewWindow
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_set_preview_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window, GError **error)
+{
+  TpStreamEngineStream *stream;
+
+  stream = _lookup_stream (obj, channel_path, stream_id, error);
+
+  if (!stream)
+    return FALSE;
+
+  return tp_stream_engine_stream_set_preview_window (stream, window, error);
 }
 
