@@ -51,6 +51,8 @@
 #include "common/telepathy-errors-enumtypes.h"
 
 #include "channel.h"
+#include "session.h"
+#include "stream.h"
 #include "types.h"
 
 #define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
@@ -379,6 +381,47 @@ tp_stream_engine_register (TpStreamEngine *self)
 
   register_dbus_signal_marshallers();
 }
+
+static TpStreamEngineStream *
+_lookup_stream (TpStreamEngine *obj, const gchar *path, guint stream_id,
+  GError **error)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  guint i, j, k;
+
+  for (i = 0; i < priv->channels->len; i++)
+    {
+      TpStreamEngineChannel *channel = TP_STREAM_ENGINE_CHANNEL (
+        priv->channels->pdata[i]);
+
+      if (0 == strcmp (path, channel->channel_path))
+        {
+          for (j = 0; j < channel->sessions->len; j++)
+            {
+              TpStreamEngineSession *session = TP_STREAM_ENGINE_SESSION (
+                channel->sessions->pdata[j]);
+
+              for (k = 0; k < session->streams->len; k++)
+                {
+                  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (
+                    session->streams->pdata[k]);
+
+                  if (stream_id == stream->stream_id)
+                    return stream;
+                }
+            }
+
+          *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+            "the channel %s has no stream with id %d", path, stream_id);
+          return NULL;
+        }
+    }
+
+  *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+    "stream-engine is not handling the channel %s", path);
+  return NULL;
+}
+
 
 /**
  * tp_stream_engine_mute_input
