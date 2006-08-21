@@ -61,6 +61,7 @@ struct _TpStreamEngineStreamPrivate
   TpPropsIface *conn_props;
   TpConn *connection_proxy;
 
+  guint media_type;
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
 
@@ -974,6 +975,7 @@ tp_stream_engine_stream_go (
     return FALSE;
 #endif
 
+  priv->media_type = media_type;
   priv->stream_handler_proxy = dbus_g_proxy_new_for_name (
     tp_get_bus(),
     bus_name,
