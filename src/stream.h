@@ -46,6 +46,26 @@ gboolean tp_stream_engine_stream_go (
   FarsightSession *fs_session,
   guint media_type,
   guint direction);
+gboolean tp_stream_engine_stream_hold_stream (
+  TpStreamEngineStream *chan,
+  gboolean hold_state,
+  GError **error);
+gboolean tp_stream_engine_stream_mute_output (
+  TpStreamEngineStream *chan,
+  gboolean mute_state,
+  GError **error);
+gboolean tp_stream_engine_stream_set_output_volume (
+  TpStreamEngineStream *chan,
+  guint volume,
+  GError **error);
+gboolean tp_stream_engine_stream_set_output_window (
+  TpStreamEngineStream *chan,
+  guint window_id,
+  GError **error);
+gboolean tp_stream_engine_stream_set_preview_window (
+  TpStreamEngineStream *chan,
+  guint window_id,
+  GError **error);
 
 G_END_DECLS
 
