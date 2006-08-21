@@ -76,6 +76,11 @@ if test x$have_farsight = xno ; then
     AC_MSG_ERROR([Farsight development libraries not found])
 fi
 
+dnl Check for gst-plugins-base
+PKG_CHECK_MODULES(GST_PLUGINS_BASE, [gstreamer-plugins-base-0.10])
+AC_SUBST(GST_PLUGINS_BASE_CFLAGS)
+AC_SUBST(GST_PLUGINS_BASE_LIBS)
+
 dnl maemo support
 AC_ARG_ENABLE( maemo-support,
   AC_HELP_STRING([--enable-maemo-support],[compile with Maemo support]),
