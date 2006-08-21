@@ -885,6 +885,76 @@ media_engine_proxy_init (TpStreamEngineStream *self)
 }
 #endif
 
+static GstElement *
+make_src (guint media_type)
+{
+  GstElement *src = NULL;
+
+  if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
+    {
+      if (getenv ("FS_AUDIOSRC"))
+        {
+          src = gst_element_factory_make (getenv ("FS_AUDIOSRC"), NULL);
+        }
+      else
+        {
+          src = gst_element_factory_make ("alsasrc", NULL);
+
+          if (src)
+            {
+              g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
+              g_object_set(G_OBJECT(src), "latency-time",
+                G_GINT64_CONSTANT (20000), NULL);
+            }
+        }
+    }
+  else
+    {
+      GstElement *videosrc;
+      GstElement *tee;
+
+      if (getenv ("FS_VIDEOSRC"))
+        {
+          videosrc = gst_element_factory_make (getenv ("FS_VIDEOSRC"), NULL);
+        }
+      else
+        {
+          videosrc = gst_element_factory_make ("v4lsrc", NULL);
+        }
+
+      src = gst_pipeline_new ("videosrcbin");
+      tee = gst_element_factory_make ("tee", NULL);
+      gst_bin_add_many (GST_BIN (src), videosrc, tee, NULL);
+      gst_element_link_many (videosrc, tee, NULL);
+    }
+
+  if (src)
+    /* TODO: check for property before setting it */
+    g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
+
+  return src;
+}
+
+static GstElement *
+make_sink (guint media_type)
+{
+  GstElement *sink = NULL;
+
+  if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
+    {
+      sink = gst_element_factory_make ("alsasink", NULL);
+    }
+  else
+    {
+      /* this element later gets replaced with a real sink at the point
+       * where we have a window ID */
+
+      sink = gst_element_factory_make ("fakesink", NULL);
+    }
+
+  return sink;
+}
+
 gboolean
 tp_stream_engine_stream_go (
   TpStreamEngineStream *stream,
@@ -930,42 +1000,11 @@ tp_stream_engine_stream_go (
 
   /* TODO Make this smarter, we should only create those sources and sinks if
    * they exist. */
-
-  if (getenv("FS_FAKESTREAM"))
-    {
-      src = gst_element_factory_make ("fakesrc", NULL);
-    }
-  else if (getenv("FS_TESTSTREAM"))
-    {
-      src = gst_element_factory_make ("audiotestsrc", NULL);
-    }
-  else
-    {
-      src = gst_element_factory_make ("alsasrc", NULL);
-
-      if (src)
-        {
-          g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
-          g_object_set(G_OBJECT(src), "latency-time",
-            G_GINT64_CONSTANT (20000), NULL);
-        }
-    }
+  src = make_src (media_type);
+  sink = make_sink (media_type);
 
   if (src)
-    {
-      /* TODO: check for property before setting it */
-      g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
-      farsight_stream_set_source (priv->fs_stream, src);
-    }
-
-  if (getenv("FS_FAKESTREAM"))
-    {
-      sink = gst_element_factory_make ("fakesink", NULL);
-    }
-  else
-    {
-      sink = gst_element_factory_make ("alsasink", NULL);
-    }
+    farsight_stream_set_source (priv->fs_stream, src);
 
   if (sink)
     farsight_stream_set_sink (priv->fs_stream, sink);
