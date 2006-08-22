@@ -218,7 +218,7 @@ tp_stream_engine_dispose (GObject *object)
   TpStreamEngine *self = TP_STREAM_ENGINE (object);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
- if (priv->dispose_has_run)
+  if (priv->dispose_has_run)
     return;
 
   if (priv->channels)
