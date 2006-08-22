@@ -102,6 +102,24 @@ tp_stream_engine_finalize (GObject *object)
 
 
 /**
+ * tp_stream_engine_add_preview_window
+ *
+ * Implements DBus method AddPreviewWindow
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
  * tp_stream_engine_handle_channel
  *
  * Implements DBus method HandleChannel
@@ -156,6 +174,24 @@ gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channe
 
 
 /**
+ * tp_stream_engine_remove_preview_window
+ *
+ * Implements DBus method RemovePreviewWindow
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
  * tp_stream_engine_set_output_volume
  *
  * Implements DBus method SetOutputVolume
@@ -186,24 +222,6 @@ gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, const gchar * 
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
 gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window, GError **error)
-{
-  return TRUE;
-}
-
-
-/**
- * tp_stream_engine_set_preview_window
- *
- * Implements DBus method SetPreviewWindow
- * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_stream_engine_set_preview_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window, GError **error)
 {
   return TRUE;
 }
