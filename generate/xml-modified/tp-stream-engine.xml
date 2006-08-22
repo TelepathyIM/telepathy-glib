@@ -31,9 +31,10 @@
       <arg direction="in" type="u" name="stream_id" />
       <arg direction="in" type="u" name="window" />
     </method>
-    <method name="SetPreviewWindow">
-      <arg direction="in" type="o" name="channel_path" />
-      <arg direction="in" type="u" name="stream_id" />
+    <method name="AddPreviewWindow">
+      <arg direction="in" type="u" name="window" />
+    </method>
+    <method name="RemovePreviewWindow">
       <arg direction="in" type="u" name="window" />
     </method>
   </interface>
