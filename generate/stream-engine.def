@@ -1,2 +1,2 @@
-tp-media-session-handler.xml	TpMediaSessionHandler	MediaSessionHandler
-tp-media-stream-handler.xml	TpMediaStreamHandler	MediaStreamHandler
+tp-media-session-handler.xml	TpMediaSessionHandler	IceSessionHandler
+tp-media-stream-handler.xml	TpMediaStreamHandler	IceStreamHandler
