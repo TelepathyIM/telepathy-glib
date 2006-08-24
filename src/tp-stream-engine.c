@@ -67,13 +67,14 @@ register_dbus_signal_marshallers()
 {
   /*register a marshaller for the NewMediaStreamHandler signal*/
   dbus_g_object_register_marshaller
-    (misc_marshal_VOID__BOXED_UINT_UINT, G_TYPE_NONE,
-     DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
+    (misc_marshal_VOID__BOXED_UINT_UINT_UINT, G_TYPE_NONE,
+     DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
+     G_TYPE_INVALID);
 
   /*register a marshaller for the NewMediaSessionHandler signal*/
   dbus_g_object_register_marshaller
-    (misc_marshal_VOID__UINT_BOXED_STRING, G_TYPE_NONE,
-     G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
+    (misc_marshal_VOID__BOXED_STRING, G_TYPE_NONE,
+     DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
 
   /*register a marshaller for the AddRemoteCandidate signal*/
   dbus_g_object_register_marshaller

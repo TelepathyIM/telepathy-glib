@@ -28,6 +28,8 @@
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-props-iface.h>
+#include <libtelepathy/tp-props-iface.h>
+#include <libtelepathy/tp-ice-stream-handler-gen.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-stream.h>
@@ -225,6 +227,9 @@ check_start_stream (TpStreamEngineStreamPrivate *priv)
     return;
 #endif
 
+  g_debug ("%s: stream_start_scheduled = %d; stream_started = %d",
+    G_STRFUNC, priv->stream_start_scheduled, priv->stream_started);
+
   if (priv->stream_start_scheduled && !priv->stream_started)
     {
       if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED)
@@ -271,9 +276,9 @@ state_changed (FarsightStream *stream,
 
   if (priv->stream_handler_proxy)
     {
-      org_freedesktop_Telepathy_Media_StreamHandler_stream_state_async (
+      tp_ice_stream_handler_stream_state_async (
         priv->stream_handler_proxy, state, dummy_callback,
-        "Media.StreamHandler::StreamState");
+        "Ice.StreamHandler::StreamState");
     }
 }
 
@@ -350,7 +355,7 @@ new_native_candidate (FarsightStream *stream,
 
   org_freedesktop_Telepathy_Media_StreamHandler_new_native_candidate_async (
       priv->stream_handler_proxy, candidate_id, transports, dummy_callback,
-      "Media.StreamHandler::NativeCandidatesPrepared");
+      "Ice.StreamHandler::NativeCandidatesPrepared");
 }
 
 /**
@@ -619,7 +624,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
 
   org_freedesktop_Telepathy_Media_StreamHandler_supported_codecs_async
     (priv->stream_handler_proxy, supp_codecs, dummy_callback,
-     "Media.StreamHandler::SupportedCodecs");
+     "Ice.StreamHandler::SupportedCodecs");
 
   for (lp = g_list_first (fs_codecs); lp; lp = g_list_next (lp))
     {
@@ -742,7 +747,7 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
   g_debug ("%s: codec_id=%d, stream=%p", G_STRFUNC, codec_id, stream);
   org_freedesktop_Telepathy_Media_StreamHandler_codec_choice_async (
     priv->stream_handler_proxy, codec_id, dummy_callback,
-    "Media.StreamHandler::CodecChoice");
+    "Ice.StreamHandler::CodecChoice");
 }
 
 static void
@@ -765,7 +770,7 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
   g_debug ("%s: stream=%p", G_STRFUNC, stream);
 
   org_freedesktop_Telepathy_Media_StreamHandler_new_active_candidate_pair_async
-    (priv->stream_handler_proxy, native_candidate, remote_candidate, dummy_callback,"Media.StreamHandler::NewActiveCandidatePair");
+    (priv->stream_handler_proxy, native_candidate, remote_candidate, dummy_callback,"Ice.StreamHandler::NewActiveCandidatePair");
 }
 
 static void
@@ -789,7 +794,7 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
   }
   org_freedesktop_Telepathy_Media_StreamHandler_native_candidates_prepared_async (
     priv->stream_handler_proxy, dummy_callback,
-    "Media.StreamHandler::NativeCandidatesPrepared");
+    "Ice.StreamHandler::NativeCandidatesPrepared");
 }
 
 static void
@@ -988,7 +993,7 @@ tp_stream_engine_stream_go (
     tp_get_bus(),
     bus_name,
     stream_handler_path,
-    TP_IFACE_MEDIA_STREAM_HANDLER);
+    TP_IFACE_ICE_STREAM_HANDLER);
 
   if (!priv->stream_handler_proxy)
     {
@@ -1085,6 +1090,7 @@ tp_stream_engine_stream_go (
    */
   priv->conn_props = TELEPATHY_PROPS_IFACE (tp_conn_get_interface (
         priv->connection_proxy, TELEPATHY_PROPS_IFACE_QUARK));
+  g_assert (priv->conn_props);
 
   /* surely we don't need all of these properties */
   tp_props_iface_set_mapping (priv->conn_props,

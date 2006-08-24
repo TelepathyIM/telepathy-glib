@@ -23,11 +23,10 @@
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
+#include <libtelepathy/tp-ice-session-handler-gen.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-codec.h>
-
-#include "tp-media-session-handler-gen.h"
 
 #include "stream.h"
 #include "types.h"
@@ -69,7 +68,7 @@ cb_fs_session_error (
 
   g_message (
     "%s: session error: session=%p error=%s\n", G_STRFUNC, stream, debug);
-  org_freedesktop_Telepathy_Media_SessionHandler_error_async (
+  tp_ice_session_handler_error_async (
     session_handler_proxy, error, debug, dummy_callback,
     "Media.SessionHandler::Error");
 }
@@ -205,7 +204,7 @@ tp_stream_engine_session_go (
   priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
     bus_name,
     session_handler_path,
-    TP_IFACE_MEDIA_SESSION_HANDLER);
+    TP_IFACE_ICE_SESSION_HANDLER);
 
   if (!priv->session_handler_proxy)
     {
@@ -239,11 +238,11 @@ tp_stream_engine_session_go (
                     G_CALLBACK (cb_fs_session_error),
                     priv->session_handler_proxy);
 
-  g_debug ("Calling MediaSessionHandler::Ready -->");
-  org_freedesktop_Telepathy_Media_SessionHandler_ready_async (
+  g_debug ("Calling IceSessionHandler::Ready -->");
+  tp_ice_session_handler_ready_async (
     priv->session_handler_proxy, dummy_callback,
-    "Media.SessionHandler::Ready");
-  g_debug ("<-- Returned from MediaSessionHandler::Ready");
+    "Ice.SessionHandler::Ready");
+  g_debug ("<-- Returned from IceSessionHandler::Ready");
 
   return TRUE;
 }

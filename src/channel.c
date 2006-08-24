@@ -24,6 +24,7 @@
 #include <libtelepathy/tp-constants.h>
 #include <libtelepathy/tp-chan.h>
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
+#include <libtelepathy/tp-chan-iface-ice-signalling-gen.h>
 #include <libtelepathy/tp-helpers.h>
 
 #include "common/telepathy-errors.h"
@@ -138,7 +139,6 @@ tp_stream_engine_channel_init (TpStreamEngineChannel *self)
 
 static void
 add_session (TpStreamEngineChannel *self,
-             guint member,
              const gchar *session_handler_path,
              const gchar *type)
 {
@@ -146,7 +146,7 @@ add_session (TpStreamEngineChannel *self,
   TpStreamEngineSession *session;
   gchar *bus_name;
 
-  g_debug("adding session for member %d, %s, %s", member, session_handler_path,
+  g_debug("adding session handler %s, type %s", session_handler_path,
     type);
 
   g_object_get (priv->channel_proxy, "name", &bus_name, NULL);
@@ -165,10 +165,10 @@ add_session (TpStreamEngineChannel *self,
 }
 
 static void
-new_media_session_handler (DBusGProxy *proxy, guint member, const char *session_handler_path, const gchar* type, gpointer user_data)
+new_ice_session_handler (DBusGProxy *proxy, guint member, const char *session_handler_path, const gchar* type, gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  add_session (self, member, session_handler_path, type);
+  add_session (self, session_handler_path, type);
 }
 
 static void channel_closed (DBusGProxy *proxy, gpointer user_data);
@@ -190,7 +190,7 @@ shutdown_channel (TpStreamEngineChannel *self, gboolean destroyed)
 
           dbus_g_proxy_disconnect_signal (
               DBUS_G_PROXY (priv->streamed_media_proxy),
-              "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler),
+              "NewIceSessionHandler", G_CALLBACK (new_ice_session_handler),
               self);
         }
 
@@ -239,14 +239,13 @@ get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GErr
   for (i = 0; i < session_handlers->len; i++)
     {
       session = g_ptr_array_index (session_handlers, i);
-      g_assert(G_VALUE_HOLDS_UINT (g_value_array_get_nth (session, 0)));
-      g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 1)) == DBUS_TYPE_G_OBJECT_PATH);
-      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session, 2)));
+      g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 0)) ==
+        DBUS_TYPE_G_OBJECT_PATH);
+      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session, 1)));
 
       add_session (self,
-          g_value_get_uint (g_value_array_get_nth (session, 0)),
-          g_value_get_boxed (g_value_array_get_nth (session, 1)),
-          g_value_get_string (g_value_array_get_nth (session, 2)));
+          g_value_get_boxed (g_value_array_get_nth (session, 0)),
+          g_value_get_string (g_value_array_get_nth (session, 1)));
     }
 }
 
@@ -261,6 +260,7 @@ tp_stream_engine_channel_go (
   GError **error)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  DBusGProxy *ice_signalling;
 
   g_assert (NULL == priv->channel_proxy);
 
@@ -311,15 +311,19 @@ tp_stream_engine_channel_go (
     }
 
   dbus_g_proxy_add_signal (DBUS_G_PROXY (priv->streamed_media_proxy),
-      "NewMediaSessionHandler", G_TYPE_UINT, DBUS_TYPE_G_OBJECT_PATH,
+      "NewIceSessionHandler", DBUS_TYPE_G_OBJECT_PATH,
       G_TYPE_STRING, G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->streamed_media_proxy),
-      "NewMediaSessionHandler", G_CALLBACK (new_media_session_handler),
+      "NewIceSessionHandler", G_CALLBACK (new_ice_session_handler),
       self, NULL);
 
-  tp_chan_type_streamed_media_get_session_handlers_async (
-        DBUS_G_PROXY (priv->streamed_media_proxy),
+  ice_signalling = tp_chan_get_interface (priv->channel_proxy,
+    TELEPATHY_CHAN_IFACE_ICE_SIGNALLING_QUARK);
+  g_assert (ice_signalling);
+
+  tp_chan_iface_ice_signalling_get_session_handlers_async (
+        DBUS_G_PROXY (ice_signalling),
         get_session_handlers_reply, self);
 
   return TRUE;
