@@ -75,9 +75,9 @@ cb_fs_session_error (
 }
 
 static void
-new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
-                          guint media_type, guint direction,
-                          gpointer user_data);
+new_ice_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
+                        guint id, guint media_type, guint direction,
+                        gpointer user_data);
 
 static void
 tp_stream_engine_session_dispose (GObject *object)
@@ -110,8 +110,8 @@ tp_stream_engine_session_dispose (GObject *object)
         G_STRFUNC);
 
       dbus_g_proxy_disconnect_signal (
-          priv->session_handler_proxy, "NewMediaStreamHandler",
-          G_CALLBACK (new_media_stream_handler), self);
+          priv->session_handler_proxy, "NewIceStreamHandler",
+          G_CALLBACK (new_ice_stream_handler), self);
 
       g_object_unref (priv->session_handler_proxy);
       priv->session_handler_proxy = NULL;
@@ -153,9 +153,9 @@ cb_stream_error (TpStreamEngineStream *stream, gpointer user_data)
 }
 
 static void
-new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
-                          guint media_type, guint direction,
-                          gpointer user_data)
+new_ice_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
+                        guint id, guint media_type, guint direction,
+                        gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
@@ -213,13 +213,13 @@ tp_stream_engine_session_go (
       return FALSE;
     }
 
-  /* tell the proxy about the NewMediaStreamHandler signal*/
+  /* tell the proxy about the NewIceStreamHandler signal*/
   dbus_g_proxy_add_signal (priv->session_handler_proxy,
-      "NewMediaStreamHandler", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT,
-      G_TYPE_UINT, G_TYPE_INVALID);
+      "NewIceStreamHandler", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT,
+      G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (priv->session_handler_proxy,
-      "NewMediaStreamHandler", G_CALLBACK (new_media_stream_handler), self,
+      "NewIceStreamHandler", G_CALLBACK (new_ice_stream_handler), self,
       NULL);
 
   priv->fs_session = farsight_session_factory_make (type);
