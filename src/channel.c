@@ -25,6 +25,7 @@
 #include <libtelepathy/tp-chan.h>
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 #include <libtelepathy/tp-chan-iface-ice-signalling-gen.h>
+#include <libtelepathy/tp-ice-session-handler-gen.h>
 #include <libtelepathy/tp-helpers.h>
 
 #include "common/telepathy-errors.h"
@@ -65,6 +66,14 @@ enum
 };
 
 static guint signals[SIGNAL_COUNT] = {0};
+
+/* dummy callback handler for async calling calls with no return values */
+static void
+dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
+{
+  if (error)
+    g_critical ("%s calling %s", error->message, (char*)user_data);
+}
 
 static void
 tp_stream_engine_channel_dispose (GObject *object)
@@ -340,13 +349,15 @@ void tp_stream_engine_channel_error (
   guint error,
   const gchar *message)
 {
-  /*
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  guint i;
 
-  org_freedesktop_Telepathy_Media_StreamHandler_error_async (
-    priv->stream_proxy, error, message, dummy_callback,
-    "Media.StreamHandler::Error");
+  for (i = 0; i < self->sessions->len; i++)
+    {
+      tp_ice_session_handler_error_async (
+        g_ptr_array_index (self->sessions, i), error, message, dummy_callback,
+        "Ice.StreamHandler::Error");
+    }
+
   shutdown_channel (self, FALSE);
-  */
 }
 
