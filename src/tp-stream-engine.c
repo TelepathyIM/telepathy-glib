@@ -39,7 +39,6 @@
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
 #include "misc-signals-marshal.h"
-#include "stream-engine-gen.h"
 
 #ifdef USE_INFOPRINT
 #include "statusbar-gen.h"
