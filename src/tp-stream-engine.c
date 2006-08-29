@@ -54,8 +54,8 @@
 #include "stream.h"
 #include "types.h"
 
-#define BUS_NAME        "org.freedesktop.Telepathy.VoipEngine"
-#define OBJECT_PATH     "/org/freedesktop/Telepathy/VoipEngine"
+#define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"
+#define OBJECT_PATH     "/org/freedesktop/Telepathy/StreamEngine"
 
 #define STATUS_BAR_SERVICE_NAME "com.nokia.statusbar"
 #define STATUS_BAR_INTERFACE_NAME "com.nokia.statusbar"
