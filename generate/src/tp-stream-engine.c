@@ -138,9 +138,9 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
 
 
 /**
- * tp_stream_engine_hold_stream
+ * tp_stream_engine_mute_input
  *
- * Implements DBus method HoldStream
+ * Implements DBus method MuteInput
  * on interface org.freedesktop.Telepathy.StreamEngine
  *
  * @error: Used to return a pointer to a GError detailing any error
@@ -149,7 +149,7 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_hold_stream (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean hold_state, GError **error)
+gboolean tp_stream_engine_mute_input (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean mute_state, GError **error)
 {
   return TRUE;
 }
