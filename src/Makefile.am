@@ -3,8 +3,6 @@ BUILT_SOURCES = \
     tp-stream-engine-signals-marshal.h \
     tp-stream-engine-signals-marshal.c \
     media-engine-gen.h \
-    tp-stream-engine-signals-marshal.h \
-    tp-stream-engine-signals-marshal.c \
     misc-signals-marshal.h \
     misc-signals-marshal.c
 
