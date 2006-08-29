@@ -30,9 +30,6 @@
 
 #include "common/telepathy-errors.h"
 
-#include "tp-media-session-handler-gen.h"
-#include "tp-media-stream-handler-gen.h"
-
 #include "types.h"
 #include "session.h"
 

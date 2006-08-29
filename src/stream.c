@@ -35,8 +35,6 @@
 #include <farsight/farsight-stream.h>
 #include <farsight/farsight-transport.h>
 
-#include "tp-media-stream-handler-gen.h"
-
 #include "common/telepathy-errors.h"
 
 #include "types.h"
