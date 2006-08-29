@@ -37,6 +37,7 @@ telepathy_stream_engine_SOURCES = \
 	stream.c \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
+	types.h \
 	stream-engine-main.c
 
 telepathy_stream_engine_LDADD = \
