@@ -53,12 +53,13 @@ GType tp_stream_engine_get_type(void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_STREAM_ENGINE, TpStreamEngineClass))
 
 
+gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window, GError **error);
 gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error);
-gboolean tp_stream_engine_hold_stream (TpStreamEngine *obj, const gchar * channel, guint stream_id, gboolean mute_state, GError **error);
-gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channel, guint stream_id, gboolean mute_state, GError **error);
-gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, const gchar * channel, guint stream_id, guint volume, GError **error);
-gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * channel, guint stream_id, guint window, GError **error);
-gboolean tp_stream_engine_set_preview_window (TpStreamEngine *obj, const gchar * channel, guint stream_id, guint window, GError **error);
+gboolean tp_stream_engine_hold_stream (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean hold_state, GError **error);
+gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean mute_state, GError **error);
+gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error);
+gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint volume, GError **error);
+gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window, GError **error);
 
 
 void tp_stream_engine_register (TpStreamEngine *self);

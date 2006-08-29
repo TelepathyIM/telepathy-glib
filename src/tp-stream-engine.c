@@ -302,6 +302,24 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 }
 
 /**
+ * tp_stream_engine_add_preview_window
+ *
+ * Implements DBus method AddPreviewWindow
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window, GError **error)
+{
+  return TRUE;
+}
+
+
+/**
  * tp_stream_engine_handle_channel
  *
  * Implements DBus method HandleChannel
@@ -472,6 +490,25 @@ gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channe
   return tp_stream_engine_stream_mute_output (stream, mute_state, error);
 }
 
+
+/**
+ * tp_stream_engine_remove_preview_window
+ *
+ * Implements DBus method RemovePreviewWindow
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error)
+{
+  return TRUE;
+}
+
+
 /**
  * tp_stream_engine_set_output_volume
  *
@@ -518,30 +555,5 @@ gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * 
     return FALSE;
 
   return tp_stream_engine_stream_set_output_window (stream, window, error);
-}
-
-
-/**
- * tp_stream_engine_set_preview_window
- *
- * Implements DBus method SetPreviewWindow
- * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_stream_engine_set_preview_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window, GError **error)
-{
-  TpStreamEngineStream *stream;
-
-  stream = _lookup_stream (obj, channel_path, stream_id, error);
-
-  if (!stream)
-    return FALSE;
-
-  return tp_stream_engine_stream_set_preview_window (stream, window, error);
 }
 
