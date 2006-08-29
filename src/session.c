@@ -70,7 +70,7 @@ cb_fs_session_error (
     "%s: session error: session=%p error=%s\n", G_STRFUNC, stream, debug);
   tp_ice_session_handler_error_async (
     session_handler_proxy, error, debug, dummy_callback,
-    "Media.SessionHandler::Error");
+    "Ice.SessionHandler::Error");
 }
 
 static void
