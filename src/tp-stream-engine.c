@@ -442,9 +442,9 @@ _lookup_stream (TpStreamEngine *obj, const gchar *path, guint stream_id,
 
 
 /**
- * tp_stream_engine_hold_stream
+ * tp_stream_engine_mute_input
  *
- * Implements DBus method HoldStream
+ * Implements DBus method MuteInput
  * on interface org.freedesktop.Telepathy.StreamEngine
  *
  * @error: Used to return a pointer to a GError detailing any error
@@ -453,7 +453,7 @@ _lookup_stream (TpStreamEngine *obj, const gchar *path, guint stream_id,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_hold_stream (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean hold_state, GError **error)
+gboolean tp_stream_engine_mute_input (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean mute_state, GError **error)
 {
   TpStreamEngineStream *stream;
 
@@ -462,7 +462,7 @@ gboolean tp_stream_engine_hold_stream (TpStreamEngine *obj, const gchar * channe
   if (!stream)
     return FALSE;
 
-  return tp_stream_engine_stream_hold_stream (stream, hold_state, error);
+  return tp_stream_engine_stream_mute_input (stream, mute_state, error);
 }
 
 /**

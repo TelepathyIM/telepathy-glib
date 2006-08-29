@@ -46,9 +46,9 @@ gboolean tp_stream_engine_stream_go (
   FarsightSession *fs_session,
   guint media_type,
   guint direction);
-gboolean tp_stream_engine_stream_hold_stream (
+gboolean tp_stream_engine_stream_mute_input (
   TpStreamEngineStream *chan,
-  gboolean hold_state,
+  gboolean mute_state,
   GError **error);
 gboolean tp_stream_engine_stream_mute_output (
   TpStreamEngineStream *chan,

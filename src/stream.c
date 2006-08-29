@@ -1128,10 +1128,18 @@ gboolean tp_stream_engine_stream_mute_output (
   g_return_val_if_fail (farsight_stream_get_state (priv->fs_stream) ==
     FARSIGHT_STREAM_STATE_PLAYING, FALSE);
 
-  g_message ("%s: output mute set to %s", G_STRFUNC, mute_state ? "on" : "off");
+  if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+        "MuteInput can only be called on audio streams");
+      return FALSE;
+    }
 
   priv->output_mute = mute_state;
   sink = farsight_stream_get_sink (priv->fs_stream);
+
+  g_message ("%s: output mute set to %s", G_STRFUNC,
+    mute_state ? "on" : "off");
 
   if (sink)
     g_object_set (G_OBJECT (sink), "mute", mute_state, NULL);
@@ -1171,9 +1179,9 @@ gboolean tp_stream_engine_stream_set_output_volume (
   return TRUE;
 }
 
-gboolean tp_stream_engine_stream_hold_stream (
+gboolean tp_stream_engine_stream_mute_input (
   TpStreamEngineStream *stream,
-  gboolean hold_state,
+  gboolean mute_state,
   GError **error)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
@@ -1183,27 +1191,21 @@ gboolean tp_stream_engine_stream_hold_stream (
   g_return_val_if_fail (farsight_stream_get_state (priv->fs_stream) ==
     FARSIGHT_STREAM_STATE_PLAYING, FALSE);
 
-  if (!priv->fs_stream)
-    return FALSE;
-
-  source = farsight_stream_get_source (priv->fs_stream);
-
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      priv->input_mute = hold_state;
-      g_message ("%s: input mute set to %s", G_STRFUNC,
-        hold_state ? " on" : "off");
-
-      if (source)
-        g_object_set (G_OBJECT (source), "mute", hold_state, NULL);
-    }
-  else
-    {
-      /* FIXME */
-      *error = g_error_new (TELEPATHY_ERRORS, NotImplemented,
-        "HoldStream not implemented for video streams");
+      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+        "MuteInput can only be called on audio streams");
       return FALSE;
     }
+
+  priv->input_mute = mute_state;
+  source = farsight_stream_get_source (priv->fs_stream);
+
+  g_message ("%s: input mute set to %s", G_STRFUNC,
+    mute_state ? " on" : "off");
+
+  if (source)
+    g_object_set (G_OBJECT (source), "mute", mute_state, NULL);
 
   return TRUE;
 }
