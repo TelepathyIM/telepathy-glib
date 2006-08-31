@@ -445,6 +445,8 @@ fs_codecs_to_tp (const GList *codecs)
       FarsightCodec *fsc = el->data;
       GValue codec = { 0, };
       TelepathyMediaStreamType type;
+      GHashTable *params;
+      GList *cur;
 
       switch (fsc->media_type) {
         case FARSIGHT_MEDIA_TYPE_AUDIO:
@@ -459,6 +461,17 @@ fs_codecs_to_tp (const GList *codecs)
           return NULL;
       }
 
+      /* fill in optional parameters */
+      params = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+      for (cur = fsc->optional_params; cur != NULL; cur = cur->next)
+        {
+          FarsightCodecParameter *param = (FarsightCodecParameter *) cur->data;
+
+          g_hash_table_insert (params, g_strdup (param->name),
+                               g_strdup (param->value));
+        }
+
       g_value_init (&codec, TP_TYPE_CODEC_STRUCT);
       g_value_set_static_boxed (&codec,
           dbus_g_type_specialized_construct (TP_TYPE_CODEC_STRUCT));
@@ -469,7 +482,7 @@ fs_codecs_to_tp (const GList *codecs)
           2, type,
           3, fsc->clock_rate,
           4, fsc->channels,
-          5, g_hash_table_new (g_str_hash, g_str_equal), /* FIXME: parse fsc->optional_params */
+          5, params,
           G_MAXUINT);
 
       g_debug ("%s: adding codec %s [%d]",
