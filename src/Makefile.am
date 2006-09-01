@@ -34,7 +34,9 @@ telepathy_stream_engine_SOURCES = \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
 	types.h \
-	stream-engine-main.c
+	stream-engine-main.c \
+	xerrorhandler.h \
+	xerrorhandler.c
 
 telepathy_stream_engine_LDADD = \
 	libstreamengine-convenience.la \
