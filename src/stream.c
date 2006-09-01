@@ -737,24 +737,12 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  GstElement *sink = farsight_stream_get_sink (stream);
-  GstElement *source = farsight_stream_get_source (stream);
-  if (sink)
+  if (priv->media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      /* FIXME
-      g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
-      g_debug("%s output volume set to %d",G_STRFUNC, priv->output_volume);
-      g_object_set (G_OBJECT (sink), "mute", priv->output_mute, NULL);
-      g_debug ("%s: output mute set to %s", G_STRFUNC, priv->output_mute?"on":"off");
-      */
-    }
-
-  if (source)
-    {
-      /*
-      g_debug ("%s: input mute set to %s", G_STRFUNC, priv->input_mute?"on":"off");
-      g_object_set (G_OBJECT (source), "mute", priv->input_mute, NULL);
-      */
+      tp_stream_engine_stream_mute_output (self, priv->output_mute, NULL);
+      tp_stream_engine_stream_mute_input (self, priv->input_mute, NULL);
+      tp_stream_engine_stream_set_output_volume (self, priv->output_volume,
+        NULL);
     }
 
   g_debug ("%s: codec_id=%d, stream=%p", G_STRFUNC, codec_id, stream);
