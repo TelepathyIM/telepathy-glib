@@ -485,6 +485,8 @@ fs_codecs_to_tp (const GList *codecs)
           5, params,
           G_MAXUINT);
 
+      g_hash_table_unref (params);
+
       g_debug ("%s: adding codec %s [%d]",
           G_STRFUNC, fsc->encoding_name, fsc->id);
 
