@@ -35,11 +35,12 @@
 #include <farsight/farsight-stream.h>
 #include <farsight/farsight-transport.h>
 
+#include <gst/interfaces/xoverlay.h>
+
 #include "common/telepathy-errors.h"
 
+#include "xerrorhandler.h"
 #include "types.h"
-
-#include <gst/interfaces/xoverlay.h>
 
 #ifdef MAEMO_OSSO_SUPPORT
 #include "media-engine-gen.h"
@@ -68,6 +69,7 @@ struct _TpStreamEngineStreamPrivate
   guint media_type;
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
+  guint bad_window_handler_id;
 
   gchar *stun_server;
   guint stun_port;
@@ -75,6 +77,7 @@ struct _TpStreamEngineStreamPrivate
   guint output_volume;
   gboolean output_mute;
   gboolean input_mute;
+  guint output_window_id;
 
   gboolean stream_started;
   gboolean stream_start_scheduled;
@@ -186,6 +189,15 @@ tp_stream_engine_stream_dispose (GObject *object)
         priv->state_changed_handler_id);
       g_object_unref (priv->fs_stream);
       priv->fs_stream = NULL;
+    }
+
+  if (priv->bad_window_handler_id)
+    {
+      TpStreamEngineXErrorHandler *handler =
+        tp_stream_engine_x_error_handler_get ();
+
+      g_signal_handler_disconnect (handler, priv->bad_window_handler_id);
+      priv->bad_window_handler_id = 0;
     }
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
@@ -973,6 +985,20 @@ make_sink (guint media_type)
   return sink;
 }
 
+static void
+bad_window (TpStreamEngineXErrorHandler *handler, guint window_id,
+  gpointer user_data)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+  if (window_id == priv->output_window_id)
+    {
+      g_debug ("embedding window %d went away", window_id);
+      g_signal_emit (stream, signals[STREAM_ERROR], 0);
+    }
+}
+
 gboolean
 tp_stream_engine_stream_go (
   TpStreamEngineStream *stream,
@@ -1003,6 +1029,16 @@ tp_stream_engine_stream_go (
     {
       g_critical ("couldn't get proxy for stream");
       return FALSE;
+    }
+
+  if (media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+    {
+      TpStreamEngineXErrorHandler *handler =
+        tp_stream_engine_x_error_handler_get ();
+
+      priv->bad_window_handler_id =
+        g_signal_connect (handler, "bad-window", (GCallback) bad_window,
+          stream);
     }
 
   priv->fs_stream = farsight_session_create_stream (
@@ -1266,6 +1302,7 @@ gboolean tp_stream_engine_stream_set_output_window (
       return FALSE;
     }
 
+  priv->output_window_id = window_id;
   sink = farsight_stream_get_sink (priv->fs_stream);
   name = gst_element_get_name (sink);
 
