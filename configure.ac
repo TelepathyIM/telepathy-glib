@@ -81,6 +81,11 @@ PKG_CHECK_MODULES(GST_PLUGINS_BASE, [gstreamer-plugins-base-0.10])
 AC_SUBST(GST_PLUGINS_BASE_CFLAGS)
 AC_SUBST(GST_PLUGINS_BASE_LIBS)
 
+dnl libx11
+PKG_CHECK_MODULES(X11, [x11])
+AC_SUBST(X11_CFLAGS)
+AC_SUBST(X11_LIBS)
+
 dnl maemo support
 AC_ARG_ENABLE( maemo-support,
   AC_HELP_STRING([--enable-maemo-support],[compile with Maemo support]),

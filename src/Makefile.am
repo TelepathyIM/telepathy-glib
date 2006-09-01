@@ -44,10 +44,10 @@ noinst_LTLIBRARIES = libstreamengine-convenience.la
 
 AM_CFLAGS = $(ERROR_CFLAGS) \
 	@DBUS_CFLAGS@ @GLIB_CFLAGS@ @LIBTELEPATHY_CFLAGS@ @FARSIGHT_CFLAGS@ \
-	@GST_PLUGINS_BASE_CFLAGS@ -I $(top_srcdir)
+	@GST_PLUGINS_BASE_CFLAGS@ @X11_CFLAGS@ -I $(top_srcdir)
 
 AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@ @FARSIGHT_LIBS@ \
-	@GST_PLUGINS_BASE_LIBS@ -lgstinterfaces-0.10
+	@GST_PLUGINS_BASE_LIBS@ @X11_LIBS@ -lgstinterfaces-0.10
 
 
 #Rule to generate the binding headers
