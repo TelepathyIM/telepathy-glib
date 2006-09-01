@@ -970,6 +970,9 @@ make_sink (guint media_type)
   if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
       sink = gst_element_factory_make ("alsasink", NULL);
+
+      if (sink)
+        g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
     }
   else
     {
