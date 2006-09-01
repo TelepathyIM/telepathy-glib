@@ -985,7 +985,7 @@ make_sink (guint media_type)
   return sink;
 }
 
-static void
+static gboolean
 bad_window (TpStreamEngineXErrorHandler *handler, guint window_id,
   gpointer user_data)
 {
@@ -996,7 +996,13 @@ bad_window (TpStreamEngineXErrorHandler *handler, guint window_id,
     {
       g_debug ("embedding window %d went away", window_id);
       g_signal_emit (stream, signals[STREAM_ERROR], 0);
+      farsight_stream_set_sink (
+        priv->fs_stream, gst_element_factory_make ("fakesink", "fakesink0"));
+
+      return TRUE;
     }
+
+  return FALSE;
 }
 
 gboolean
@@ -1306,6 +1312,7 @@ gboolean tp_stream_engine_stream_set_output_window (
   sink = farsight_stream_get_sink (priv->fs_stream);
   name = gst_element_get_name (sink);
 
+  /* FIXME: check element factory class rather than element name */
   if (0 == strcmp (name, "fakesink0"))
     {
       sink = gst_element_factory_make ("xvimagesink", NULL);

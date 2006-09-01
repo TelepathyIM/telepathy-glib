@@ -29,8 +29,15 @@ error_handler (Display *display, XErrorEvent *event)
 {
   TpStreamEngineXErrorHandler *handler =
     tp_stream_engine_x_error_handler_get ();
+  TpStreamEngineXErrorHandlerPrivate *priv = X_ERROR_HANDLER_PRIVATE (handler);
+  gboolean handled = FALSE;
 
-  g_signal_emit (handler, signals[SIGNAL_BAD_WINDOW], 0, event->resourceid);
+  if (event->error_code == BadWindow)
+    g_signal_emit (handler, signals[SIGNAL_BAD_WINDOW], 0,
+      event->resourceid, &handled);
+
+  if (!handled)
+    priv->old_error_handler (display, event);
 
   return 0;
 }
@@ -61,9 +68,10 @@ tp_stream_engine_x_error_handler_class_init (TpStreamEngineXErrorHandlerClass *k
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__UINT,
-                  G_TYPE_NONE, 1, G_TYPE_UINT);
+                  g_signal_accumulator_true_handled, NULL,
+                  /* FIXME: should be _BOOLEAN__UINT really */
+                  g_cclosure_marshal_BOOLEAN__FLAGS,
+                  G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 }
 
 static void
