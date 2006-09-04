@@ -1354,7 +1354,8 @@ gboolean tp_stream_engine_stream_set_output_window (
     }
   else
     {
-      gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window_id);
+      if (GST_IS_X_OVERLAY (sink))
+        gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window_id);
     }
 
   return TRUE;
