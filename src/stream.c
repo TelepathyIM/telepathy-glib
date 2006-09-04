@@ -967,8 +967,8 @@ make_src (guint media_type)
       gst_element_link_many (videosrc, tee, NULL);
     }
 
-  if (src)
-    /* TODO: check for property before setting it */
+  if (src &&
+    NULL != g_object_class_find_property (G_OBJECT_GET_CLASS (src), "is-live"))
     g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
 
   return src;
@@ -1013,7 +1013,8 @@ make_sink (guint media_type)
         }
     }
 
-  if (sink)
+  if (sink && NULL !=
+    g_object_class_find_property (G_OBJECT_GET_CLASS (sink), "sync"))
     g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
 
   return sink;
