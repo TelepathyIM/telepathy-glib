@@ -1009,7 +1009,7 @@ make_sink (guint media_type)
           /* this element later gets replaced with a real sink at the point
            * where we have a window ID */
 
-          sink = gst_element_factory_make ("fakesink", NULL);
+          sink = gst_element_factory_make ("fakesink", "tmpsink");
         }
     }
 
@@ -1031,7 +1031,7 @@ bad_window (TpStreamEngineXErrorHandler *handler, guint window_id,
       g_debug ("embedding window %d went away", window_id);
       g_signal_emit (stream, signals[STREAM_ERROR], 0);
       farsight_stream_set_sink (
-        priv->fs_stream, gst_element_factory_make ("fakesink", "fakesink0"));
+        priv->fs_stream, gst_element_factory_make ("fakesink", "tmpsink"));
 
       return TRUE;
     }
@@ -1346,8 +1346,7 @@ gboolean tp_stream_engine_stream_set_output_window (
   sink = farsight_stream_get_sink (priv->fs_stream);
   name = gst_element_get_name (sink);
 
-  /* FIXME: check element factory class rather than element name */
-  if (0 == strcmp (name, "fakesink0"))
+  if (0 == strcmp (name, "tmpsink"))
     {
       sink = gst_element_factory_make ("xvimagesink", NULL);
       gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window_id);
