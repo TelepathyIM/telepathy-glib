@@ -923,7 +923,11 @@ make_src (guint media_type)
 
   if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      if (getenv ("FS_AUDIOSRC"))
+      if (getenv ("FS_AUDIO_SRC"))
+        {
+          src = gst_element_factory_make (getenv ("FS_AUDIO_SRC"), NULL);
+        }
+      else if (getenv ("FS_AUDIOSRC"))
         {
           src = gst_element_factory_make (getenv ("FS_AUDIOSRC"), NULL);
         }
@@ -944,7 +948,11 @@ make_src (guint media_type)
       GstElement *videosrc;
       GstElement *tee;
 
-      if (getenv ("FS_VIDEOSRC"))
+      if (getenv ("FS_VIDEO_SRC"))
+        {
+          videosrc = gst_element_factory_make (getenv ("FS_VIDEO_SRC"), NULL);
+        }
+      else if (getenv ("FS_VIDEOSRC"))
         {
           videosrc = gst_element_factory_make (getenv ("FS_VIDEOSRC"), NULL);
         }
@@ -973,15 +981,36 @@ make_sink (guint media_type)
 
   if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      sink = gst_element_factory_make ("alsasink", NULL);
-
+      if (getenv ("FS_AUDIO_SINK"))
+        {
+          sink = gst_element_factory_make (getenv ("FS_AUDIO_SINK"), NULL);
+        }
+      else if (getenv ("FS_AUDIOSINK"))
+        {
+          sink = gst_element_factory_make (getenv ("FS_AUDIOSINK"), NULL);
+        }
+      else
+        {
+          sink = gst_element_factory_make ("alsasink", NULL);
+        }
     }
   else
     {
-      /* this element later gets replaced with a real sink at the point
-       * where we have a window ID */
+      if (getenv ("FS_VIDEO_SINK"))
+        {
+          sink = gst_element_factory_make (getenv ("FS_VIDEO_SINK"), NULL);
+        }
+      else if (getenv ("FS_VIDEOSINK"))
+        {
+          sink = gst_element_factory_make (getenv ("FS_VIDEOSINK"), NULL);
+        }
+      else
+        {
+          /* this element later gets replaced with a real sink at the point
+           * where we have a window ID */
 
-      sink = gst_element_factory_make ("fakesink", NULL);
+          sink = gst_element_factory_make ("fakesink", NULL);
+        }
     }
 
   if (sink)
