@@ -975,8 +975,6 @@ make_sink (guint media_type)
     {
       sink = gst_element_factory_make ("alsasink", NULL);
 
-      if (sink)
-        g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
     }
   else
     {
@@ -985,6 +983,9 @@ make_sink (guint media_type)
 
       sink = gst_element_factory_make ("fakesink", NULL);
     }
+
+  if (sink)
+    g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
 
   return sink;
 }
