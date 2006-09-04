@@ -771,7 +771,11 @@ stream_error (
   gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
   g_message ("%s: stream error: stream=%p error=%s", G_STRFUNC, stream, debug);
+  /* FIXME: check if error is EOS */
+  tp_ice_stream_handler_error (priv->stream_handler_proxy, 0, debug, NULL);
   g_signal_emit (self, signals[STREAM_ERROR], 0);
 }
 
