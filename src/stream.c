@@ -919,17 +919,14 @@ media_engine_proxy_init (TpStreamEngineStream *self)
 static GstElement *
 make_src (guint media_type)
 {
+  const gchar *elem;
   GstElement *src = NULL;
 
   if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      if (getenv ("FS_AUDIO_SRC"))
+      if ((elem = getenv ("FS_AUDIO_SRC")) || (elem = getenv ("FS_AUDIOSRC")))
         {
-          src = gst_element_factory_make (getenv ("FS_AUDIO_SRC"), NULL);
-        }
-      else if (getenv ("FS_AUDIOSRC"))
-        {
-          src = gst_element_factory_make (getenv ("FS_AUDIOSRC"), NULL);
+          src = gst_element_factory_make (elem, NULL);
         }
       else
         {
@@ -948,13 +945,9 @@ make_src (guint media_type)
       GstElement *videosrc;
       GstElement *tee;
 
-      if (getenv ("FS_VIDEO_SRC"))
+      if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
         {
-          videosrc = gst_element_factory_make (getenv ("FS_VIDEO_SRC"), NULL);
-        }
-      else if (getenv ("FS_VIDEOSRC"))
-        {
-          videosrc = gst_element_factory_make (getenv ("FS_VIDEOSRC"), NULL);
+          videosrc = gst_element_factory_make (elem, NULL);
         }
       else
         {
@@ -977,17 +970,14 @@ make_src (guint media_type)
 static GstElement *
 make_sink (guint media_type)
 {
+  const gchar *elem;
   GstElement *sink = NULL;
 
   if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      if (getenv ("FS_AUDIO_SINK"))
+      if ((elem = getenv ("FS_AUDIO_SINK")) || (elem = getenv("FS_AUDIOSINK")))
         {
-          sink = gst_element_factory_make (getenv ("FS_AUDIO_SINK"), NULL);
-        }
-      else if (getenv ("FS_AUDIOSINK"))
-        {
-          sink = gst_element_factory_make (getenv ("FS_AUDIOSINK"), NULL);
+          sink = gst_element_factory_make (elem, NULL);
         }
       else
         {
@@ -996,13 +986,9 @@ make_sink (guint media_type)
     }
   else
     {
-      if (getenv ("FS_VIDEO_SINK"))
+      if ((elem = getenv ("FS_VIDEO_SINK")) || (elem = getenv("FS_VIDEOSINK")))
         {
-          sink = gst_element_factory_make (getenv ("FS_VIDEO_SINK"), NULL);
-        }
-      else if (getenv ("FS_VIDEOSINK"))
-        {
-          sink = gst_element_factory_make (getenv ("FS_VIDEOSINK"), NULL);
+          sink = gst_element_factory_make (elem, NULL);
         }
       else
         {
