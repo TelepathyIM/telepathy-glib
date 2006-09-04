@@ -36,6 +36,8 @@
 #include <farsight/farsight-codec.h>
 #include <farsight/farsight-transport.h>
 
+#include <gst/interfaces/xoverlay.h>
+
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
 #include "misc-signals-marshal.h"
@@ -115,6 +117,9 @@ struct _TpStreamEnginePrivate
   gboolean dispose_has_run;
 
   GPtrArray *channels;
+  GHashTable *preview_windows;
+  GstElement *pipeline;
+  GstElement *videosrcbin;
 
 #ifdef MAEMO_OSSO_SUPPORT
   DBusGProxy *infoprint_proxy;
@@ -145,6 +150,9 @@ tp_stream_engine_init (TpStreamEngine *obj)
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
 
   priv->channels = g_ptr_array_new ();
+  priv->preview_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+    NULL, g_object_unref);
+  priv->pipeline = gst_pipeline_new (NULL);
 
 #ifdef USE_INFOPRINT
   priv->infoprint_proxy =
@@ -232,6 +240,24 @@ tp_stream_engine_dispose (GObject *object)
       priv->channels = NULL;
     }
 
+  if (priv->videosrcbin)
+    {
+      priv->videosrcbin = NULL;
+    }
+
+  if (priv->pipeline)
+    {
+      gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
+      g_object_unref (priv->pipeline);
+      priv->pipeline = NULL;
+    }
+
+  if (priv->preview_windows)
+    {
+      g_hash_table_unref (priv->preview_windows);
+      priv->preview_windows = NULL;
+    }
+
   priv->dispose_has_run = TRUE;
 
   if (G_OBJECT_CLASS (tp_stream_engine_parent_class)->dispose)
@@ -314,6 +340,94 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
  */
 gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window, GError **error)
 {
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  GstElement *tee, *sink;
+
+  sink = g_hash_table_lookup (
+    priv->preview_windows, GUINT_TO_POINTER (window));
+
+  if (NULL != sink)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+        "window %d already has a preview", window);
+      return FALSE;
+    }
+
+  g_debug ("adding preview in window %d", window);
+
+  if (NULL == priv->videosrcbin)
+    {
+      GstElement *videosrc;
+
+      priv->videosrcbin = gst_bin_new ("videosrcbin");
+      gst_bin_add (GST_BIN (priv->pipeline), priv->videosrcbin);
+      tee = gst_element_factory_make ("tee", "tee");
+
+      if (g_getenv ("FS_VIDEOSRC"))
+        videosrc = gst_element_factory_make (g_getenv ("FS_VIDEOSRC"), NULL);
+      else
+        videosrc = gst_element_factory_make ("v4l2src", NULL);
+
+      gst_bin_add_many (GST_BIN (priv->videosrcbin), videosrc, tee, NULL);
+      gst_element_link (videosrc, tee);
+    }
+  else
+    {
+      tee = gst_bin_get_by_name (GST_BIN (priv->videosrcbin), "tee");
+    }
+
+  sink = gst_element_factory_make ("xvimagesink", NULL);
+  gst_bin_add (GST_BIN (priv->pipeline), sink);
+  /* FIXME: do this when the imagesink tells us it's ready for a window ID */
+  gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window);
+  gst_element_link (tee, sink);
+  g_hash_table_insert (priv->preview_windows, GUINT_TO_POINTER (window), sink);
+  gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
+
+  return TRUE;
+}
+
+
+/**
+ * tp_stream_engine_remove_preview_window
+ *
+ * Implements DBus method RemovePreviewWindow
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  GstElement *tee;
+  GstElement *sink;
+  guint num_src_pads;
+
+  sink = g_hash_table_lookup (
+    priv->preview_windows, GUINT_TO_POINTER (window));
+
+  if (NULL == sink)
+    {
+      /* set *error here */
+      return FALSE;
+    }
+
+  g_debug ("removing preview in window %d", window);
+  tee = gst_bin_get_by_name (GST_BIN (priv->videosrcbin), "tee");
+  g_object_get (tee, "num-src-pads", &num_src_pads, NULL);
+
+  if (num_src_pads == 1)
+    /* only one element left: the pipeline doesn't need to do anything any
+     * more because we're taking the last element out */
+    gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
+
+  gst_bin_remove (GST_BIN (priv->pipeline), sink);
+  g_hash_table_remove (priv->preview_windows, GUINT_TO_POINTER (window));
+
   return TRUE;
 }
 
@@ -487,24 +601,6 @@ gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channe
     return FALSE;
 
   return tp_stream_engine_stream_mute_output (stream, mute_state, error);
-}
-
-
-/**
- * tp_stream_engine_remove_preview_window
- *
- * Implements DBus method RemovePreviewWindow
- * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
-gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error)
-{
-  return TRUE;
 }
 
 
