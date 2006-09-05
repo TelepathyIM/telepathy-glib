@@ -65,6 +65,9 @@ gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * 
 void tp_stream_engine_register (TpStreamEngine *self);
 void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug);
 
+gboolean tp_stream_engine_add_fdsink (TpStreamEngine *obj, guint fd);
+gboolean tp_stream_engine_remove_fdsink (TpStreamEngine *obj, guint fd);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_STREAM_ENGINE_H__*/

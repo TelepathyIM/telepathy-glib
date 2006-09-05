@@ -118,8 +118,8 @@ struct _TpStreamEnginePrivate
 
   GPtrArray *channels;
   GHashTable *preview_windows;
+  GHashTable *fdsinks;
   GstElement *pipeline;
-  GstElement *videosrcbin;
 
 #ifdef MAEMO_OSSO_SUPPORT
   DBusGProxy *infoprint_proxy;
@@ -152,7 +152,8 @@ tp_stream_engine_init (TpStreamEngine *obj)
   priv->channels = g_ptr_array_new ();
   priv->preview_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
     NULL, g_object_unref);
-  priv->pipeline = gst_pipeline_new (NULL);
+  priv->fdsinks = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+    NULL, g_object_unref);
 
 #ifdef USE_INFOPRINT
   priv->infoprint_proxy =
@@ -240,11 +241,6 @@ tp_stream_engine_dispose (GObject *object)
       priv->channels = NULL;
     }
 
-  if (priv->videosrcbin)
-    {
-      priv->videosrcbin = NULL;
-    }
-
   if (priv->pipeline)
     {
       gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
@@ -256,6 +252,12 @@ tp_stream_engine_dispose (GObject *object)
     {
       g_hash_table_unref (priv->preview_windows);
       priv->preview_windows = NULL;
+    }
+
+  if (priv->fdsinks)
+    {
+      g_hash_table_unref (priv->fdsinks);
+      priv->fdsinks = NULL;
     }
 
   priv->dispose_has_run = TRUE;
@@ -326,6 +328,33 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
   g_object_unref (chan);
 }
 
+static GstElement *
+make_video_pipeline()
+{
+  GstElement *pipeline;
+  GstElement *videosrc;
+  GstElement *tee;
+  GstCaps *filter;
+
+  pipeline = gst_pipeline_new (NULL);
+  tee = gst_element_factory_make ("tee", "tee");
+
+  videosrc = gst_element_factory_make ("v4l2src", NULL);
+  filter = gst_caps_new_simple(
+    "video/x-raw-yuv",
+    "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
+    "width", G_TYPE_INT, 176,
+    "height", G_TYPE_INT, 144,
+    "framerate", GST_TYPE_FRACTION, 15, 1,
+    NULL);
+
+  gst_bin_add_many (GST_BIN (pipeline), videosrc, tee, NULL);
+  gst_element_link_filtered (videosrc, tee, filter);
+  gst_caps_unref (filter);
+  gst_element_set_state (pipeline, GST_STATE_PLAYING);
+  return pipeline;
+}
+
 /**
  * tp_stream_engine_add_preview_window
  *
@@ -355,38 +384,57 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
 
   g_debug ("adding preview in window %d", window);
 
-  if (NULL == priv->videosrcbin)
-    {
-      GstElement *videosrc;
+  if (NULL == priv->pipeline)
+    priv->pipeline = make_video_pipeline ();
 
-      priv->videosrcbin = gst_bin_new ("videosrcbin");
-      gst_bin_add (GST_BIN (priv->pipeline), priv->videosrcbin);
-      tee = gst_element_factory_make ("tee", "tee");
-
-      if (g_getenv ("FS_VIDEOSRC"))
-        videosrc = gst_element_factory_make (g_getenv ("FS_VIDEOSRC"), NULL);
-      else
-        videosrc = gst_element_factory_make ("v4l2src", NULL);
-
-      gst_bin_add_many (GST_BIN (priv->videosrcbin), videosrc, tee, NULL);
-      gst_element_link (videosrc, tee);
-    }
-  else
-    {
-      tee = gst_bin_get_by_name (GST_BIN (priv->videosrcbin), "tee");
-    }
-
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   sink = gst_element_factory_make ("xvimagesink", NULL);
   gst_bin_add (GST_BIN (priv->pipeline), sink);
   /* FIXME: do this when the imagesink tells us it's ready for a window ID */
   gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window);
   gst_element_link (tee, sink);
   g_hash_table_insert (priv->preview_windows, GUINT_TO_POINTER (window), sink);
-  gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
 
   return TRUE;
 }
 
+gboolean
+tp_stream_engine_add_fdsink (TpStreamEngine *obj, guint fd)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  GstElement *sink, *tee;
+
+  sink = g_hash_table_lookup (priv->fdsinks, GUINT_TO_POINTER (fd));
+
+  if (sink != NULL)
+    return FALSE;
+
+  if (NULL == priv->pipeline)
+    priv->pipeline = make_video_pipeline ();
+
+  sink = gst_element_factory_make ("fdsink", NULL);
+  g_object_set (sink, "fd", fd, NULL);
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+  gst_bin_add (GST_BIN (priv->pipeline), sink);
+  gst_element_link (tee, sink);
+
+  return TRUE;
+}
+
+gboolean
+tp_stream_engine_remove_fdsink (TpStreamEngine *obj, guint fd)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  GstElement *sink;
+
+  sink = g_hash_table_lookup (priv->fdsinks, GUINT_TO_POINTER (fd));
+
+  if (sink == NULL)
+    return FALSE;
+
+  gst_bin_remove (GST_BIN (priv->pipeline), sink);
+  return TRUE;
+}
 
 /**
  * tp_stream_engine_remove_preview_window
@@ -405,7 +453,6 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *tee;
   GstElement *sink;
-  guint num_src_pads;
 
   sink = g_hash_table_lookup (
     priv->preview_windows, GUINT_TO_POINTER (window));
@@ -417,14 +464,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
     }
 
   g_debug ("removing preview in window %d", window);
-  tee = gst_bin_get_by_name (GST_BIN (priv->videosrcbin), "tee");
-  g_object_get (tee, "num-src-pads", &num_src_pads, NULL);
-
-  if (num_src_pads == 1)
-    /* only one element left: the pipeline doesn't need to do anything any
-     * more because we're taking the last element out */
-    gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
-
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   gst_bin_remove (GST_BIN (priv->pipeline), sink);
   g_hash_table_remove (priv->preview_windows, GUINT_TO_POINTER (window));
 
