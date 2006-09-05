@@ -926,10 +926,14 @@ make_src (guint media_type)
     {
       if ((elem = getenv ("FS_AUDIO_SRC")) || (elem = getenv ("FS_AUDIOSRC")))
         {
-          src = gst_element_factory_make (elem, NULL);
+          g_debug ("%s: making audio src with pipeline \"%s\"",
+            G_STRFUNC, elem);
+          src = gst_parse_bin_from_description (elem, TRUE, NULL);
+          g_assert (src);
         }
       else
         {
+          g_debug ("%s: making audio src with alsasrc element", G_STRFUNC);
           src = gst_element_factory_make ("alsasrc", NULL);
 
           if (src)
@@ -942,12 +946,12 @@ make_src (guint media_type)
     }
   else
     {
-      GstElement *videosrc;
-      GstElement *tee;
-
       if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
         {
-          videosrc = gst_element_factory_make (elem, NULL);
+          g_debug ("%s: making video src with pipeline \"%s\"",
+            G_STRFUNC, elem);
+          src = gst_parse_bin_from_description (elem, TRUE, NULL);
+          g_assert (src);
         }
       else
         {
@@ -977,10 +981,14 @@ make_sink (guint media_type)
     {
       if ((elem = getenv ("FS_AUDIO_SINK")) || (elem = getenv("FS_AUDIOSINK")))
         {
-          sink = gst_element_factory_make (elem, NULL);
+          g_debug ("%s: making audio sink with pipeline \"%s\"",
+            G_STRFUNC, elem);
+          sink = gst_parse_bin_from_description (elem, TRUE, NULL);
+          g_assert (sink);
         }
       else
         {
+          g_debug ("%s: making audio sink with alsasink element", G_STRFUNC);
           sink = gst_element_factory_make ("alsasink", NULL);
         }
     }
@@ -988,13 +996,17 @@ make_sink (guint media_type)
     {
       if ((elem = getenv ("FS_VIDEO_SINK")) || (elem = getenv("FS_VIDEOSINK")))
         {
-          sink = gst_element_factory_make (elem, NULL);
+          g_debug ("%s: making video sink with pipeline \"%s\"",
+            G_STRFUNC, elem);
+          sink = gst_parse_bin_from_description (elem, TRUE, NULL);
+          g_assert (sink);
         }
       else
         {
           /* this element later gets replaced with a real sink at the point
            * where we have a window ID */
 
+          g_debug ("%s: making video sink with temporary fakesink", G_STRFUNC);
           sink = gst_element_factory_make ("fakesink", "tmpsink");
         }
     }
@@ -1086,10 +1098,24 @@ tp_stream_engine_stream_go (
   sink = make_sink (media_type);
 
   if (src)
-    farsight_stream_set_source (priv->fs_stream, src);
+    {
+      g_debug ("setting source on Farsight stream");
+      farsight_stream_set_source (priv->fs_stream, src);
+    }
+  else
+    {
+      g_debug ("not setting source on Farsight stream");
+    }
 
   if (sink)
-    farsight_stream_set_sink (priv->fs_stream, sink);
+    {
+      g_debug ("setting sink on Farsight stream");
+      farsight_stream_set_sink (priv->fs_stream, sink);
+    }
+  else
+    {
+      g_debug ("not setting sink on Farsight stream");
+    }
 
   g_signal_connect (G_OBJECT (priv->fs_stream), "error",
                     G_CALLBACK (stream_error), stream);
