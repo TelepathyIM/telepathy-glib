@@ -692,3 +692,17 @@ gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * 
   return tp_stream_engine_stream_set_output_window (stream, window, error);
 }
 
+TpStreamEngine *
+tp_stream_engine_get ()
+{
+  static TpStreamEngine *engine = NULL;
+
+  if (NULL == engine)
+    {
+      engine = g_object_new (TP_TYPE_STREAM_ENGINE, NULL);
+      g_object_add_weak_pointer (G_OBJECT (engine), (gpointer) &engine);
+    }
+
+  return engine;
+}
+

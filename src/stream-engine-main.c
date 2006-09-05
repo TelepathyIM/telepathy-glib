@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
 
   dbus_g_error_domain_register (TELEPATHY_ERRORS, "org.freedesktop.Telepathy.Error", TELEPATHY_TYPE_ERRORS);
 
-  stream_engine = g_object_new (TP_TYPE_STREAM_ENGINE, NULL);
+  stream_engine = tp_stream_engine_get ();
 
   g_signal_connect (stream_engine, "handling-channel", 
                     (GCallback) handling_channel, NULL);

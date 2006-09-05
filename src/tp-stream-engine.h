@@ -67,6 +67,7 @@ void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug)
 
 gboolean tp_stream_engine_add_fdsink (TpStreamEngine *obj, guint fd);
 gboolean tp_stream_engine_remove_fdsink (TpStreamEngine *obj, guint fd);
+TpStreamEngine *tp_stream_engine_get ();
 
 G_END_DECLS
 
