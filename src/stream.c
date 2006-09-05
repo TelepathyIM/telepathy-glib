@@ -1277,42 +1277,6 @@ gboolean tp_stream_engine_stream_mute_input (
   return TRUE;
 }
 
-gboolean tp_stream_engine_stream_set_preview_window (
-  TpStreamEngineStream *stream,
-  guint window_id,
-  GError **error)
-{
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-  GstElement *src, *previewsink;
-
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
-    {
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
-        "SetPreviewWindow can only be called on video streams");
-      return FALSE;
-    }
-
-  src = farsight_stream_get_source (priv->fs_stream);
-  previewsink = gst_bin_get_by_name (GST_BIN (src), "previewsink");
-
-  if (previewsink)
-    {
-      gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (previewsink), window_id);
-    }
-  else
-    {
-      GstElement *tee;
-
-      tee = gst_bin_get_by_name (GST_BIN (src), "tee0");
-      g_assert (tee);
-      previewsink = gst_element_factory_make ("xvimagesink", NULL);
-      gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (previewsink), window_id);
-      gst_element_link (tee, previewsink);
-    }
-
-  return TRUE;
-}
-
 gboolean tp_stream_engine_stream_set_output_window (
   TpStreamEngineStream *stream,
   guint window_id,
