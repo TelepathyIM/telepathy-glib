@@ -469,6 +469,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   g_debug ("removing preview in window %d", window);
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   gst_bin_remove (GST_BIN (priv->pipeline), sink);
+  gst_element_set_state (sink, GST_STATE_NULL);
   g_hash_table_remove (priv->preview_windows, GUINT_TO_POINTER (window));
 
   return TRUE;
