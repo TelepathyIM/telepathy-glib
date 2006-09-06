@@ -152,6 +152,15 @@ cb_stream_error (TpStreamEngineStream *stream, gpointer user_data)
 }
 
 static void
+cb_stream_closed (TpStreamEngineStream *stream, gpointer user_data)
+{
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
+
+  g_object_unref (stream);
+  g_ptr_array_remove_fast (self->streams, stream);
+}
+
+static void
 new_ice_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                         guint id, guint media_type, guint direction,
                         gpointer user_data)
@@ -169,6 +178,7 @@ new_ice_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   stream = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
 
   g_signal_connect (stream, "stream-error", G_CALLBACK (cb_stream_error), self);
+  g_signal_connect (stream, "stream-closed", G_CALLBACK (cb_stream_closed), self);
 
   if (tp_stream_engine_stream_go (
         stream,

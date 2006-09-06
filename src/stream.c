@@ -104,6 +104,7 @@ enum
 
 enum
 {
+  STREAM_CLOSED,
   STREAM_ERROR,
   SIGNAL_COUNT
 };
@@ -221,6 +222,15 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   g_type_class_add_private (klass, sizeof (TpStreamEngineStreamPrivate));
 
   object_class->dispose = tp_stream_engine_stream_dispose;
+
+  signals[STREAM_CLOSED] =
+    g_signal_new ("stream-closed",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
 
   signals[STREAM_ERROR] =
     g_signal_new ("stream-error",
@@ -735,6 +745,15 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 }
 
 static void
+close (DBusGProxy *proxy, gpointer user_data)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+
+  stop_stream (self);
+  g_signal_emit (self, signals[STREAM_CLOSED], 0);
+}
+
+static void
 prepare_transports (TpStreamEngineStream *self)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
@@ -1149,6 +1168,8 @@ tp_stream_engine_stream_go (
       TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamPlaying",
       G_TYPE_BOOLEAN, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "Close",
+      G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "AddRemoteCandidate",
       G_CALLBACK (add_remote_candidate), stream, NULL);
@@ -1162,6 +1183,8 @@ tp_stream_engine_stream_go (
       G_CALLBACK (set_remote_codecs), stream, NULL);
   dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamPlaying",
       G_CALLBACK (set_stream_playing), stream, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "Close",
+      G_CALLBACK (close), stream, NULL);
 
   priv->candidate_preparation_required = TRUE;
 
