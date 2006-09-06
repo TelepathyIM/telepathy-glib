@@ -964,13 +964,10 @@ make_src (guint media_type)
         }
       else
         {
-          videosrc = gst_element_factory_make ("v4lsrc", NULL);
+          g_debug ("%s: making video src with %s element",
+            G_STRFUNC, "v4lsrc");
+          src = gst_element_factory_make ("v4lsrc", NULL);
         }
-
-      src = gst_pipeline_new ("videosrcbin");
-      tee = gst_element_factory_make ("tee", NULL);
-      gst_bin_add_many (GST_BIN (src), videosrc, tee, NULL);
-      gst_element_link_many (videosrc, tee, NULL);
     }
 
   if (src && g_object_has_property (G_OBJECT (src), "is-live"))
