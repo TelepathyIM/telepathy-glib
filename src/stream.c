@@ -986,7 +986,7 @@ make_src (guint media_type)
         {
           g_debug ("%s: making video src with %s element",
             G_STRFUNC, "v4lsrc");
-          src = gst_element_factory_make ("v4lsrc", NULL);
+          src = gst_element_factory_make ("v4l2src", NULL);
         }
     }
 
