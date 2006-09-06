@@ -235,6 +235,7 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 static void
 tp_stream_engine_stream_init (TpStreamEngineStream *self)
 {
+  /* FIXME */
   self->stream_id = 1;
 }
 
