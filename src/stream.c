@@ -127,6 +127,15 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data);
 static void
 set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data);
 
+static gboolean
+g_object_has_property (GObject *object, const gchar *property)
+{
+  GObjectClass *klass;
+
+  klass = G_OBJECT_GET_CLASS (object);
+  return NULL != g_object_class_find_property (klass, property);
+}
+
 static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
@@ -964,8 +973,7 @@ make_src (guint media_type)
       gst_element_link_many (videosrc, tee, NULL);
     }
 
-  if (src &&
-    NULL != g_object_class_find_property (G_OBJECT_GET_CLASS (src), "is-live"))
+  if (src && g_object_has_property (G_OBJECT (src), "is-live"))
     g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
 
   return src;
@@ -1011,8 +1019,7 @@ make_sink (guint media_type)
         }
     }
 
-  if (sink && NULL !=
-    g_object_class_find_property (G_OBJECT_GET_CLASS (sink), "sync"))
+  if (sink && g_object_has_property (G_OBJECT (sink), "sync"))
     g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
 
   return sink;
@@ -1234,7 +1241,7 @@ gboolean tp_stream_engine_stream_mute_output (
   g_message ("%s: output mute set to %s", G_STRFUNC,
     mute_state ? "on" : "off");
 
-  if (sink)
+  if (sink && g_object_has_property (G_OBJECT(sink), "mute"))
     g_object_set (G_OBJECT (sink), "mute", mute_state, NULL);
 
   return TRUE;
@@ -1266,7 +1273,7 @@ gboolean tp_stream_engine_stream_set_output_volume (
   g_debug ("%s: setting output volume to %d", G_STRFUNC, priv->output_volume);
   sink = farsight_stream_get_sink (priv->fs_stream);
 
-  if (sink)
+  if (sink && g_object_has_property (G_OBJECT (sink), "volume"))
     g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
 
   return TRUE;
@@ -1297,7 +1304,7 @@ gboolean tp_stream_engine_stream_mute_input (
   g_message ("%s: input mute set to %s", G_STRFUNC,
     mute_state ? " on" : "off");
 
-  if (source)
+  if (source && g_object_has_property (G_OBJECT (source), "mute"))
     g_object_set (G_OBJECT (source), "mute", mute_state, NULL);
 
   return TRUE;
