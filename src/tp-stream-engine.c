@@ -306,26 +306,35 @@ tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
 }
 
 static void
+check_if_busy (TpStreamEngine *self)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
+  guint num_previews = g_hash_table_size (priv->preview_windows);
+
+  if (priv->channels->len == 0 && num_previews == 0)
+    {
+      g_assert (0 == g_hash_table_size (priv->fdsinks));
+      g_debug ("no channels or previews remaining; emitting no-more-channels");
+      g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
+    }
+  else
+    {
+      g_debug ("channels remaining: %d", priv->channels->len);
+      g_debug ("preview windows remaining: %d", num_previews);
+    }
+}
+
+
+static void
 channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
   g_debug ("channel closed: %p", chan);
-
   g_ptr_array_remove_fast (priv->channels, chan);
-
-  if (priv->channels->len == 0)
-    {
-      g_debug ("no channels remaining; emitting no-more-channels");
-      g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
-    }
-  else
-    {
-      g_debug ("channels remaining: %d", priv->channels->len);
-    }
-
   g_object_unref (chan);
+  check_if_busy (self);
 }
 
 static GstElement *
@@ -396,6 +405,8 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
   gst_element_sync_state_with_parent (sink);
 
   g_hash_table_insert (priv->preview_windows, GUINT_TO_POINTER (window), sink);
+
+  g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
   return TRUE;
 }
@@ -471,6 +482,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   gst_bin_remove (GST_BIN (priv->pipeline), sink);
   gst_element_set_state (sink, GST_STATE_NULL);
   g_hash_table_remove (priv->preview_windows, GUINT_TO_POINTER (window));
+  check_if_busy (obj);
 
   return TRUE;
 }
