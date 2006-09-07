@@ -250,13 +250,13 @@ tp_stream_engine_dispose (GObject *object)
 
   if (priv->preview_windows)
     {
-      g_hash_table_unref (priv->preview_windows);
+      g_hash_table_destroy (priv->preview_windows);
       priv->preview_windows = NULL;
     }
 
   if (priv->fdsinks)
     {
-      g_hash_table_unref (priv->fdsinks);
+      g_hash_table_destroy (priv->fdsinks);
       priv->fdsinks = NULL;
     }
 
