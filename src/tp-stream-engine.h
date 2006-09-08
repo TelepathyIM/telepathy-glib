@@ -67,6 +67,10 @@ void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug)
 
 TpStreamEngine *tp_stream_engine_get ();
 GstElement *tp_stream_engine_get_pipeline (TpStreamEngine *obj);
+gboolean
+tp_stream_engine_add_output_window (TpStreamEngine *obj,
+                                    GstElement *sink,
+                                    guint window);
 
 G_END_DECLS
 

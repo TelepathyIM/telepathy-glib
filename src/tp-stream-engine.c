@@ -118,6 +118,7 @@ struct _TpStreamEnginePrivate
 
   GPtrArray *channels;
   GHashTable *preview_windows;
+  GHashTable *output_windows;
   GstElement *pipeline;
 
 #ifdef MAEMO_OSSO_SUPPORT
@@ -150,6 +151,8 @@ tp_stream_engine_init (TpStreamEngine *obj)
 
   priv->channels = g_ptr_array_new ();
   priv->preview_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+    NULL, g_object_unref);
+  priv->output_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
     NULL, g_object_unref);
 
 #ifdef USE_INFOPRINT
@@ -251,6 +254,12 @@ tp_stream_engine_dispose (GObject *object)
       priv->preview_windows = NULL;
     }
 
+  if (priv->output_windows)
+    {
+      g_hash_table_destroy (priv->output_windows);
+      priv->output_windows = NULL;
+    }
+
   priv->dispose_has_run = TRUE;
 
   if (G_OBJECT_CLASS (tp_stream_engine_parent_class)->dispose)
@@ -327,6 +336,44 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
   check_if_busy (self);
 }
 
+static GstBusSyncReply
+bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
+{
+  TpStreamEngine *engine = TP_STREAM_ENGINE (data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  guint window_id;
+
+  if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
+    {
+      /* FIXME: raise the error signal here? */
+      g_debug ("got error");
+      //g_assert_not_reached ();
+    }
+
+  if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
+    return GST_BUS_PASS;
+
+  if (!gst_structure_has_name (message->structure, "prepare-xwindow-id"))
+    return GST_BUS_PASS;
+
+  g_debug ("got prepare-xwindow-id message");
+
+  window_id = GPOINTER_TO_UINT (
+    g_hash_table_lookup (priv->output_windows, GST_MESSAGE_SRC (message)));
+
+  if (!window_id)
+    {
+      window_id = GPOINTER_TO_UINT (
+        g_hash_table_lookup (priv->preview_windows, GST_MESSAGE_SRC (message)));
+    }
+
+  g_assert (window_id);
+  gst_x_overlay_set_xwindow_id (
+    GST_X_OVERLAY (GST_MESSAGE_SRC (message)), window_id);
+  return GST_BUS_DROP;
+}
+
+
 /*
  * tp_stream_engine_get_pipeline
  *
@@ -340,6 +387,7 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *videosrc;
   GstElement *tee;
+  GstBus *bus;
   GstCaps *filter;
 
   if (NULL == priv->pipeline)
@@ -359,6 +407,12 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
       gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, NULL);
       gst_element_link_filtered (videosrc, tee, filter);
       gst_caps_unref (filter);
+
+      /* connect a callback to the stream bus so that we can set X window IDs
+       * at the right time */
+      bus = gst_element_get_bus (priv->pipeline);
+      gst_bus_set_sync_handler (bus, bus_sync_handler, obj);
+      gst_object_unref (bus);
     }
 
   return priv->pipeline;
@@ -379,7 +433,7 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *tee, *sink, *pipeline;
+  GstElement *tee, *sink, *filter, *pipeline;
 
   sink = g_hash_table_lookup (
     priv->preview_windows, GUINT_TO_POINTER (window));
@@ -398,15 +452,16 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   sink = gst_element_factory_make ("xvimagesink", NULL);
   g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+  filter = gst_element_factory_make ("ffmpegcolorspace", NULL);
+  gst_bin_add (GST_BIN (priv->pipeline), filter);
   gst_bin_add (GST_BIN (priv->pipeline), sink);
-  /* FIXME: do this when the imagesink tells us it's ready for a window ID */
-  gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window);
-  gst_element_link (tee, sink);
-  gst_element_sync_state_with_parent (sink);
+  gst_element_link_many (tee, filter, sink, NULL);
+  //gst_element_sync_state_with_parent (sink);
   gst_object_unref (tee);
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
-  g_hash_table_insert (priv->preview_windows, GUINT_TO_POINTER (window), sink);
+  g_hash_table_insert (priv->preview_windows, GUINT_TO_POINTER (window),
+    sink);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
@@ -448,6 +503,18 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   g_hash_table_remove (priv->preview_windows, GUINT_TO_POINTER (window));
   check_if_busy (obj);
 
+  return TRUE;
+}
+
+/* FIXME: add corresponding _remove_output_window */
+gboolean
+tp_stream_engine_add_output_window (TpStreamEngine *obj,
+                                    GstElement *sink,
+                                    guint window)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+
+  g_hash_table_insert (priv->output_windows, sink, GUINT_TO_POINTER (window));
   return TRUE;
 }
 
