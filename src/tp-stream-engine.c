@@ -397,6 +397,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   sink = gst_element_factory_make ("xvimagesink", NULL);
+  g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
   gst_bin_add (GST_BIN (priv->pipeline), sink);
   /* FIXME: do this when the imagesink tells us it's ready for a window ID */
   gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window);
