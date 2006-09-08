@@ -55,6 +55,14 @@
 
 G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
+#define DEBUG(stream, format, ...) \
+  g_debug ("stream %d (%s) %s: " format, \
+    stream->stream_id, \
+    STREAM_PRIVATE (stream)->media_type == FARSIGHT_MEDIA_TYPE_AUDIO ? \
+      "audio" : "video", \
+    G_STRFUNC, \
+    ##__VA_ARGS__)
+
 #define STREAM_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_STREAM_ENGINE_TYPE_STREAM, \
    TpStreamEngineStreamPrivate))
@@ -166,9 +174,6 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->stream_handler_proxy)
     {
-      g_debug ("%s: disconnecting signals from stream_handler_proxy",
-          G_STRFUNC);
-
       dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
           "AddRemoteCandidate", G_CALLBACK (add_remote_candidate), stream);
 
@@ -249,15 +254,17 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
 }
 
 static void
-check_start_stream (TpStreamEngineStreamPrivate *priv)
+check_start_stream (TpStreamEngineStream *stream)
 {
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
 #ifdef MAEMO_OSSO_SUPPORT
   if (!priv->media_engine_disabled)
     return;
 #endif
 
-  g_debug ("%s: stream_start_scheduled = %d; stream_started = %d",
-    G_STRFUNC, priv->stream_start_scheduled, priv->stream_started);
+  DEBUG (stream, "stream_start_scheduled = %d; stream_started = %d",
+    priv->stream_start_scheduled, priv->stream_started);
 
   if (priv->stream_start_scheduled && !priv->stream_started)
     {
@@ -296,18 +303,18 @@ state_changed (FarsightStream *stream,
 
   switch (state) {
     case FARSIGHT_STREAM_STATE_STOPPED:
-          g_message ("%s: stream %p stopped", G_STRFUNC, stream);
+          DEBUG (self, "stream %p stopped", stream);
           break;
     case FARSIGHT_STREAM_STATE_CONNECTING:
-          g_message ("%s: stream %p connecting", G_STRFUNC, stream);
+          DEBUG (self, "stream %p connecting", stream);
           break;
     case FARSIGHT_STREAM_STATE_CONNECTED:
-          g_message ("%s: stream %p connected", G_STRFUNC, stream);
+          DEBUG (self, "stream %p connected", stream);
           /* start the stream if its supposed to be playing already*/
-          check_start_stream(priv);
+          check_start_stream (self);
           break;
     case FARSIGHT_STREAM_STATE_PLAYING:
-          g_message ("%s: stream %p playing", G_STRFUNC, stream);
+          DEBUG (self, "stream %p playing", stream);
           break;
   }
 
@@ -372,7 +379,7 @@ new_native_candidate (FarsightStream *stream,
           return;
       }
 
-      g_debug ("%s: fs_transport->ip = '%s'", G_STRFUNC, fs_transport->ip);
+      DEBUG (self, "fs_transport->ip = '%s'", fs_transport->ip);
 
       dbus_g_type_struct_set (&transport,
           0, fs_transport->component,
@@ -545,7 +552,7 @@ add_remote_candidate (DBusGProxy *proxy, gchar *candidate,
 
   fs_transports = tp_transports_to_fs (candidate, transports);
 
-  g_message ("%s: adding remote candidate %s", G_STRFUNC, candidate);
+  DEBUG (self, "adding remote candidate %s", candidate);
   farsight_stream_add_remote_candidate (priv->fs_stream, fs_transports);
 
   free_fs_transports (fs_transports);
@@ -558,7 +565,7 @@ remove_remote_candidate (DBusGProxy *proxy, gchar *candidate,
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  g_message ("%s: removing remote candidate %s", G_STRFUNC, candidate);
+  DEBUG (self, "removing remote candidate %s", candidate);
   farsight_stream_remove_remote_candidate (priv->fs_stream, candidate);
 }
 
@@ -629,7 +636,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   int i;
   GPtrArray *supp_codecs;
 
-  g_debug ("%s: called", G_STRFUNC);
+  DEBUG (self, "called");
 
   for (i = 0; i < codecs->len; i++)
     {
@@ -704,7 +711,7 @@ stop_stream (TpStreamEngineStream *self)
 
   if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_PLAYING)
     {
-      g_debug ("%s: calling stop on farsight stream %p", G_STRFUNC, priv->fs_stream);
+      DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
       farsight_stream_stop (priv->fs_stream);
       priv->stream_started = FALSE;
     }
@@ -714,7 +721,7 @@ stop_stream (TpStreamEngineStream *self)
     {
       GError *error = NULL;
 
-      g_debug ("%s: enabling media server", G_STRFUNC);
+      DEBUG (self, "enabling media server");
 
       com_nokia_osso_media_server_enable (
           DBUS_G_PROXY (priv->media_engine_proxy), &error);
@@ -738,12 +745,12 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 
   g_assert (priv->fs_stream != NULL);
 
-  g_debug ("%s: %d", G_STRFUNC, play);
+  DEBUG (self, "%d", play);
 
   if (play)
     {
       priv->stream_start_scheduled = TRUE;
-      check_start_stream (priv);
+      check_start_stream (self);
     }
   else
     {
@@ -769,7 +776,8 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
     {
       /* FIXME: raise the error signal here? */
-      g_debug ("got error");
+      DEBUG (stream, "got error");
+      g_assert_not_reached ();
     }
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
@@ -778,7 +786,7 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   if (!gst_structure_has_name (message->structure, "prepare-xwindow-id"))
     return GST_BUS_PASS;
 
-  g_debug ("got prepare-xwindow-id message");
+  DEBUG (stream, "got prepare-xwindow-id message");
 
   gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (GST_MESSAGE_SRC (message)),
     priv->output_window_id);
@@ -805,7 +813,7 @@ prepare_transports (TpStreamEngineStream *self)
       codecs = fs_codecs_to_tp (
                  farsight_stream_get_local_codecs (priv->fs_stream));
 
-      g_debug ("calling IceStreamHandler::Ready");
+      DEBUG (self, "calling IceStreamHandler::Ready");
       tp_ice_stream_handler_ready_async (
         priv->stream_handler_proxy, codecs, dummy_callback, self);
     }
@@ -825,7 +833,7 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
         NULL);
     }
 
-  g_debug ("%s: codec_id=%d, stream=%p", G_STRFUNC, codec_id, stream);
+  DEBUG (self, "codec_id=%d, stream=%p", codec_id, stream);
   tp_ice_stream_handler_codec_choice_async (
     priv->stream_handler_proxy, codec_id, dummy_callback,
     "Ice.StreamHandler::CodecChoice");
@@ -852,7 +860,7 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  g_debug ("%s: stream=%p", G_STRFUNC, stream);
+  DEBUG (self, "stream=%p", stream);
 
   tp_ice_stream_handler_new_active_candidate_pair_async
     (priv->stream_handler_proxy, native_candidate, remote_candidate, dummy_callback,"Ice.StreamHandler::NewActiveCandidatePair");
@@ -866,14 +874,14 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
   const GList *transport_candidates, *lp;
   FarsightTransportInfo *info;
 
-  g_debug ("%s: stream=%p", G_STRFUNC, stream);
+  DEBUG (self, "stream=%p", stream);
 
   transport_candidates = farsight_stream_get_native_candidate_list (stream);
   for (lp = transport_candidates; lp; lp = g_list_next (lp))
   {
     info = (FarsightTransportInfo*)lp->data;
-    g_debug ("%s: local transport candidate: %s %d %s %s %s:%d, pref %f",
-        G_STRFUNC, info->candidate_id, info->component,
+    DEBUG (self, "local transport candidate: %s %d %s %s %s:%d, pref %f",
+        info->candidate_id, info->component,
         (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP) ? "TCP" : "UDP",
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
@@ -938,7 +946,7 @@ media_engine_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
     {
       DBusGProxy *proxy = priv->media_engine_proxy;
 
-      g_debug ("MediaEngine proxy destroyed, unreffing it");
+      DEBUG (self, "MediaEngine proxy destroyed, unreffing it");
 
       priv->media_engine_proxy = NULL;
       g_object_unref (proxy);
@@ -951,7 +959,7 @@ media_engine_proxy_init (TpStreamEngineStream *self)
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GError *me_error;
 
-  g_debug ("initialising media engine proxy");
+  DEBUG (self, "initialising media engine proxy");
 
   priv->media_engine_proxy =
     dbus_g_proxy_new_for_name (tp_get_bus(),
@@ -985,7 +993,7 @@ media_engine_proxy_init (TpStreamEngineStream *self)
 #endif
 
 static GstElement *
-make_src (guint media_type)
+make_src (TpStreamEngineStream *stream, guint media_type)
 {
   const gchar *elem;
   GstElement *src = NULL;
@@ -994,14 +1002,13 @@ make_src (guint media_type)
     {
       if ((elem = getenv ("FS_AUDIO_SRC")) || (elem = getenv ("FS_AUDIOSRC")))
         {
-          g_debug ("%s: making audio src with pipeline \"%s\"",
-            G_STRFUNC, elem);
+          DEBUG (stream, "making audio src with pipeline \"%s\"", elem);
           src = gst_parse_bin_from_description (elem, TRUE, NULL);
           g_assert (src);
         }
       else
         {
-          g_debug ("%s: making audio src with alsasrc element", G_STRFUNC);
+          DEBUG (stream, "making audio src with alsasrc element");
           src = gst_element_factory_make ("alsasrc", NULL);
 
           if (src)
@@ -1016,8 +1023,7 @@ make_src (guint media_type)
     {
       if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
         {
-          g_debug ("%s: making video src with pipeline \"%s\"",
-            G_STRFUNC, elem);
+          DEBUG (stream, "making video src with pipeline \"%s\"", elem);
           src = gst_parse_bin_from_description (elem, TRUE, NULL);
           g_assert (src);
         }
@@ -1039,7 +1045,7 @@ make_src (guint media_type)
 }
 
 static GstElement *
-make_sink (guint media_type)
+make_sink (TpStreamEngineStream *stream, guint media_type)
 {
   const gchar *elem;
   GstElement *sink = NULL;
@@ -1048,14 +1054,13 @@ make_sink (guint media_type)
     {
       if ((elem = getenv ("FS_AUDIO_SINK")) || (elem = getenv("FS_AUDIOSINK")))
         {
-          g_debug ("%s: making audio sink with pipeline \"%s\"",
-            G_STRFUNC, elem);
+          DEBUG (stream, "making audio sink with pipeline \"%s\"", elem);
           sink = gst_parse_bin_from_description (elem, TRUE, NULL);
           g_assert (sink);
         }
       else
         {
-          g_debug ("%s: making audio sink with alsasink element", G_STRFUNC);
+          DEBUG (stream, "making audio sink with alsasink element");
           sink = gst_element_factory_make ("alsasink", NULL);
         }
     }
@@ -1063,8 +1068,7 @@ make_sink (guint media_type)
     {
       if ((elem = getenv ("FS_VIDEO_SINK")) || (elem = getenv("FS_VIDEOSINK")))
         {
-          g_debug ("%s: making video sink with pipeline \"%s\"",
-            G_STRFUNC, elem);
+          DEBUG (stream, "making video sink with pipeline \"%s\"", elem);
           sink = gst_parse_bin_from_description (elem, TRUE, NULL);
           g_assert (sink);
         }
@@ -1073,7 +1077,7 @@ make_sink (guint media_type)
           /* do nothing: we set a sink when we get a window ID to send video
            * to */
 
-          g_debug ("%s: not making a video sink", G_STRFUNC);
+          DEBUG (stream, "not making a video sink");
         }
     }
 
@@ -1092,7 +1096,7 @@ bad_window (TpStreamEngineXErrorHandler *handler, guint window_id,
 
   if (window_id == priv->output_window_id)
     {
-      g_debug ("embedding window %d went away", window_id);
+      DEBUG (stream, "embedding window %d went away", window_id);
       farsight_stream_set_sink (
         priv->fs_stream, gst_element_factory_make ("fakesink", "tmpsink"));
 
@@ -1164,33 +1168,33 @@ tp_stream_engine_stream_go (
   if (conn_timeout_str)
     {
       gint conn_timeout = (int) g_ascii_strtod (conn_timeout_str, NULL);
-      g_debug ("setting connection timeout to %d", conn_timeout);
+      DEBUG (stream, "setting connection timeout to %d", conn_timeout);
       g_object_set (G_OBJECT(stream), "conn_timeout", conn_timeout, NULL);
     }
 
   /* TODO Make this smarter, we should only create those sources and sinks if
    * they exist. */
-  src = make_src (media_type);
-  sink = make_sink (media_type);
+  src = make_src (stream, media_type);
+  sink = make_sink (stream, media_type);
 
   if (src)
     {
-      g_debug ("setting source on Farsight stream");
+      DEBUG (stream, "setting source on Farsight stream");
       farsight_stream_set_source (priv->fs_stream, src);
     }
   else
     {
-      g_debug ("not setting source on Farsight stream");
+      DEBUG (stream, "not setting source on Farsight stream");
     }
 
   if (sink)
     {
-      g_debug ("setting sink on Farsight stream");
+      DEBUG (stream, "setting sink on Farsight stream");
       farsight_stream_set_sink (priv->fs_stream, sink);
     }
   else
     {
-      g_debug ("not setting sink on Farsight stream");
+      DEBUG (stream, "not setting sink on Farsight stream");
     }
 
   g_signal_connect (G_OBJECT (priv->fs_stream), "error",
@@ -1343,7 +1347,7 @@ gboolean tp_stream_engine_stream_set_output_volume (
     volume = 100;
 
   priv->output_volume = (volume * 65535)/100;
-  g_debug ("%s: setting output volume to %d", G_STRFUNC, priv->output_volume);
+  DEBUG (stream, "setting output volume to %d", priv->output_volume);
   sink = farsight_stream_get_sink (priv->fs_stream);
 
   if (sink && g_object_has_property (G_OBJECT (sink), "volume"))
@@ -1416,6 +1420,8 @@ tp_stream_engine_stream_set_output_window (
         "SetOutputWindow can only be called on video streams");
       return FALSE;
     }
+
+  DEBUG (stream, "putting video output in window %d", window_id);
 
   priv->output_window_id = window_id;
 
