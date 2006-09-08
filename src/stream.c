@@ -1107,7 +1107,8 @@ tp_stream_engine_stream_go (
   guint direction)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-  GstElement *src, *sink;
+  TpStreamEngine *engine;
+  GstElement *pipeline, *src, *sink;
   gchar *conn_timeout_str;
 
 #ifdef MAEMO_OSSO_SUPPORT
@@ -1138,8 +1139,17 @@ tp_stream_engine_stream_go (
           stream);
     }
 
+
   priv->fs_stream = farsight_session_create_stream (
     fs_session, media_type, direction);
+
+  if (media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+    {
+      /* tell the Farsight stream to use the stream engine pipeline */
+      engine = tp_stream_engine_get ();
+      pipeline = tp_stream_engine_get_pipeline (engine);
+      farsight_stream_set_pipeline (priv->fs_stream, pipeline);
+    }
 
   conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
 
