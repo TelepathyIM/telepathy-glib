@@ -240,7 +240,7 @@ tp_stream_engine_dispose (GObject *object)
 
   if (priv->pipeline)
     {
-      gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
+      gst_element_set_state (priv->pipeline, GST_STATE_NULL);
       g_object_unref (priv->pipeline);
       priv->pipeline = NULL;
     }
