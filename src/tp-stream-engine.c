@@ -118,7 +118,6 @@ struct _TpStreamEnginePrivate
 
   GPtrArray *channels;
   GHashTable *preview_windows;
-  GHashTable *fdsinks;
   GstElement *pipeline;
 
 #ifdef MAEMO_OSSO_SUPPORT
@@ -151,8 +150,6 @@ tp_stream_engine_init (TpStreamEngine *obj)
 
   priv->channels = g_ptr_array_new ();
   priv->preview_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-    NULL, g_object_unref);
-  priv->fdsinks = g_hash_table_new_full (g_direct_hash, g_direct_equal,
     NULL, g_object_unref);
 
 #ifdef USE_INFOPRINT
@@ -254,12 +251,6 @@ tp_stream_engine_dispose (GObject *object)
       priv->preview_windows = NULL;
     }
 
-  if (priv->fdsinks)
-    {
-      g_hash_table_destroy (priv->fdsinks);
-      priv->fdsinks = NULL;
-    }
-
   priv->dispose_has_run = TRUE;
 
   if (G_OBJECT_CLASS (tp_stream_engine_parent_class)->dispose)
@@ -313,7 +304,6 @@ check_if_busy (TpStreamEngine *self)
 
   if (priv->channels->len == 0 && num_previews == 0)
     {
-      g_assert (0 == g_hash_table_size (priv->fdsinks));
       g_debug ("no channels or previews remaining; emitting no-more-channels");
       g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
     }
@@ -409,45 +399,6 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
-  return TRUE;
-}
-
-gboolean
-tp_stream_engine_add_fdsink (TpStreamEngine *obj, guint fd)
-{
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *sink, *tee;
-
-  sink = g_hash_table_lookup (priv->fdsinks, GUINT_TO_POINTER (fd));
-
-  if (sink != NULL)
-    return FALSE;
-
-  if (NULL == priv->pipeline)
-    priv->pipeline = make_video_pipeline ();
-
-  sink = gst_element_factory_make ("fdsink", NULL);
-  g_object_set (sink, "fd", fd, NULL);
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  gst_bin_add (GST_BIN (priv->pipeline), sink);
-  gst_element_link (tee, sink);
-  gst_element_sync_state_with_parent (sink);
-
-  return TRUE;
-}
-
-gboolean
-tp_stream_engine_remove_fdsink (TpStreamEngine *obj, guint fd)
-{
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *sink;
-
-  sink = g_hash_table_lookup (priv->fdsinks, GUINT_TO_POINTER (fd));
-
-  if (sink == NULL)
-    return FALSE;
-
-  gst_bin_remove (GST_BIN (priv->pipeline), sink);
   return TRUE;
 }
 
