@@ -358,7 +358,6 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
       gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, NULL);
       gst_element_link_filtered (videosrc, tee, filter);
       gst_caps_unref (filter);
-      gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
     }
 
   return priv->pipeline;
