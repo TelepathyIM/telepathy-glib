@@ -66,6 +66,7 @@ void tp_stream_engine_register (TpStreamEngine *self);
 void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug);
 
 TpStreamEngine *tp_stream_engine_get ();
+GstElement *tp_stream_engine_get_pipeline (TpStreamEngine *obj);
 
 G_END_DECLS
 

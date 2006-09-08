@@ -327,31 +327,42 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
   check_if_busy (self);
 }
 
-static GstElement *
-make_video_pipeline()
+/*
+ * tp_stream_engine_get_pipeline
+ *
+ * Return the GStreamer pipeline belonging to the stream engine. Caller does
+ * not own a reference to the pipeline.
+ */
+
+GstElement *
+tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 {
-  GstElement *pipeline;
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *videosrc;
   GstElement *tee;
   GstCaps *filter;
 
-  pipeline = gst_pipeline_new (NULL);
-  tee = gst_element_factory_make ("tee", "tee");
+  if (NULL == priv->pipeline)
+    {
+      priv->pipeline = gst_pipeline_new (NULL);
+      tee = gst_element_factory_make ("tee", "tee");
 
-  videosrc = gst_element_factory_make ("v4l2src", NULL);
-  filter = gst_caps_new_simple(
-    "video/x-raw-yuv",
-    "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
-    "width", G_TYPE_INT, 176,
-    "height", G_TYPE_INT, 144,
-    "framerate", GST_TYPE_FRACTION, 15, 1,
-    NULL);
+      videosrc = gst_element_factory_make ("v4l2src", NULL);
+      filter = gst_caps_new_simple(
+        "video/x-raw-yuv",
+        "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
+        "width", G_TYPE_INT, 176,
+        "height", G_TYPE_INT, 144,
+        "framerate", GST_TYPE_FRACTION, 15, 1,
+        NULL);
 
-  gst_bin_add_many (GST_BIN (pipeline), videosrc, tee, NULL);
-  gst_element_link_filtered (videosrc, tee, filter);
-  gst_caps_unref (filter);
-  gst_element_set_state (pipeline, GST_STATE_PLAYING);
-  return pipeline;
+      gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, NULL);
+      gst_element_link_filtered (videosrc, tee, filter);
+      gst_caps_unref (filter);
+      gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
+    }
+
+  return priv->pipeline;
 }
 
 /**
@@ -369,7 +380,7 @@ make_video_pipeline()
 gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *tee, *sink;
+  GstElement *tee, *sink, *pipeline;
 
   sink = g_hash_table_lookup (
     priv->preview_windows, GUINT_TO_POINTER (window));
@@ -381,10 +392,9 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
       return FALSE;
     }
 
-  g_debug ("adding preview in window %d", window);
+  pipeline = tp_stream_engine_get_pipeline (obj);
 
-  if (NULL == priv->pipeline)
-    priv->pipeline = make_video_pipeline ();
+  g_debug ("adding preview in window %d", window);
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   sink = gst_element_factory_make ("xvimagesink", NULL);
