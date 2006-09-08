@@ -402,6 +402,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
   gst_element_link (tee, sink);
   gst_element_sync_state_with_parent (sink);
   gst_object_unref (tee);
+  gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
   g_hash_table_insert (priv->preview_windows, GUINT_TO_POINTER (window), sink);
 
