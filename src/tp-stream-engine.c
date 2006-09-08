@@ -403,6 +403,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
   gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window);
   gst_element_link (tee, sink);
   gst_element_sync_state_with_parent (sink);
+  gst_object_unref (tee);
 
   g_hash_table_insert (priv->preview_windows, GUINT_TO_POINTER (window), sink);
 
@@ -480,6 +481,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   g_debug ("removing preview in window %d", window);
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   gst_bin_remove (GST_BIN (priv->pipeline), sink);
+  gst_object_unref (tee);
   gst_element_set_state (sink, GST_STATE_NULL);
   g_hash_table_remove (priv->preview_windows, GUINT_TO_POINTER (window));
   check_if_busy (obj);
