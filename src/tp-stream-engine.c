@@ -350,7 +350,6 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
       videosrc = gst_element_factory_make ("v4l2src", NULL);
       filter = gst_caps_new_simple(
         "video/x-raw-yuv",
-        "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
         "width", G_TYPE_INT, 176,
         "height", G_TYPE_INT, 144,
         "framerate", GST_TYPE_FRACTION, 15, 1,
