@@ -266,6 +266,14 @@ check_start_stream (TpStreamEngineStreamPrivate *priv)
       if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED)
         {
           farsight_stream_start (priv->fs_stream);
+
+          if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+            {
+              TpStreamEngine *engine = tp_stream_engine_get ();
+              GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
+              gst_element_set_state (pipeline, GST_STATE_PLAYING);
+            }
+
           priv->stream_started = TRUE;
         }
      }
