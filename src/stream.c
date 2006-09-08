@@ -40,6 +40,7 @@
 #include "common/telepathy-errors.h"
 
 #include "xerrorhandler.h"
+#include "tp-stream-engine.h"
 #include "types.h"
 
 #ifdef MAEMO_OSSO_SUPPORT
@@ -1016,9 +1017,12 @@ make_src (guint media_type)
         }
       else
         {
-          g_debug ("%s: making video src with %s element",
-            G_STRFUNC, "v4lsrc");
-          src = gst_element_factory_make ("v4l2src", NULL);
+          TpStreamEngine *engine = tp_stream_engine_get ();
+          GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
+          GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
+
+          src = tee;
+          gst_object_unref (tee);
         }
     }
 
