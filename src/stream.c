@@ -1097,8 +1097,7 @@ bad_window (TpStreamEngineXErrorHandler *handler, guint window_id,
   if (window_id == priv->output_window_id)
     {
       DEBUG (stream, "embedding window %d went away", window_id);
-      farsight_stream_set_sink (
-        priv->fs_stream, gst_element_factory_make ("fakesink", "tmpsink"));
+      farsight_stream_set_sink (priv->fs_stream, NULL);
 
       return TRUE;
     }
