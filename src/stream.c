@@ -1064,11 +1064,10 @@ make_sink (guint media_type)
         }
       else
         {
-          /* this element later gets replaced with a real sink at the point
-           * where we have a window ID */
+          /* do nothing: we set a sink when we get a window ID to send video
+           * to */
 
-          g_debug ("%s: making video sink with temporary fakesink", G_STRFUNC);
-          sink = gst_element_factory_make ("fakesink", "tmpsink");
+          g_debug ("%s: not making a video sink", G_STRFUNC);
         }
     }
 
