@@ -1375,14 +1375,32 @@ gboolean tp_stream_engine_stream_mute_input (
   return TRUE;
 }
 
-gboolean tp_stream_engine_stream_set_output_window (
+static gboolean
+bad_window_cb (TpStreamEngineXErrorHandler *handler,
+               guint window_id,
+               gpointer data)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+  if (window_id == priv->output_window_id)
+    {
+      farsight_stream_set_sink (priv->fs_stream, NULL);
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
+gboolean
+tp_stream_engine_stream_set_output_window (
   TpStreamEngineStream *stream,
   guint window_id,
   GError **error)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+  TpStreamEngineXErrorHandler *handler;
   GstElement *sink;
-  gchar *name;
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
@@ -1392,21 +1410,12 @@ gboolean tp_stream_engine_stream_set_output_window (
     }
 
   priv->output_window_id = window_id;
-  sink = farsight_stream_get_sink (priv->fs_stream);
-  name = gst_element_get_name (sink);
 
-  if (0 == strcmp (name, "tmpsink"))
-    {
-      sink = gst_element_factory_make ("xvimagesink", NULL);
-      gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window_id);
-      farsight_stream_set_sink (priv->fs_stream, sink);
-    }
-  else
-    {
-      if (GST_IS_X_OVERLAY (sink))
-        gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (sink), window_id);
-    }
+  handler = tp_stream_engine_x_error_handler_get ();
+  g_signal_connect (handler, "bad-window", (GCallback) bad_window_cb, stream);
+  sink = gst_element_factory_make ("xvimagesink", NULL);
 
+  farsight_stream_set_sink (priv->fs_stream, sink);
   return TRUE;
 }
 
