@@ -44,6 +44,7 @@ gboolean tp_stream_engine_stream_go (
   const gchar *connection_path,
   const gchar *stream_handler_path,
   FarsightSession *fs_session,
+  guint id,
   guint media_type,
   guint direction);
 gboolean tp_stream_engine_stream_mute_input (

@@ -186,6 +186,7 @@ new_ice_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
         priv->connection_path,
         stream_handler_path,
         priv->fs_session,
+        id,
         media_type,
         direction))
     {

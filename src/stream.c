@@ -246,8 +246,6 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 static void
 tp_stream_engine_stream_init (TpStreamEngineStream *self)
 {
-  /* FIXME */
-  self->stream_id = 1;
 }
 
 static void
@@ -1111,6 +1109,7 @@ tp_stream_engine_stream_go (
   const gchar *connection_path,
   const gchar *stream_handler_path,
   FarsightSession *fs_session,
+  guint id,
   guint media_type,
   guint direction)
 {
@@ -1124,6 +1123,7 @@ tp_stream_engine_stream_go (
     return FALSE;
 #endif
 
+  stream->stream_id = id;
   priv->media_type = media_type;
   priv->stream_handler_proxy = dbus_g_proxy_new_for_name (
     tp_get_bus(),
