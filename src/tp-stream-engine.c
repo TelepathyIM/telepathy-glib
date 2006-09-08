@@ -348,6 +348,7 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
       tee = gst_element_factory_make ("tee", "tee");
 
       videosrc = gst_element_factory_make ("videotestsrc", NULL);
+      g_object_set (videosrc, "is-live", TRUE, NULL);
       filter = gst_caps_new_simple(
         "video/x-raw-yuv",
         "width", G_TYPE_INT, 176,
