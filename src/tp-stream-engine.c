@@ -671,6 +671,13 @@ gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * 
   return tp_stream_engine_stream_set_output_window (stream, window, error);
 }
 
+/*
+ * tp_stream_engine_get
+ *
+ * Return the stream engine singleton. Caller does not own a reference to the
+ * stream engine.
+ */
+
 TpStreamEngine *
 tp_stream_engine_get ()
 {
