@@ -753,6 +753,31 @@ close (DBusGProxy *proxy, gpointer user_data)
   g_signal_emit (self, signals[STREAM_CLOSED], 0);
 }
 
+static GstBusSyncReply
+bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+  if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
+    {
+      /* FIXME: raise the error signal here? */
+      g_debug ("got error");
+    }
+
+  if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
+    return GST_BUS_PASS;
+
+  if (!gst_structure_has_name (message->structure, "prepare-xwindow-id"))
+    return GST_BUS_PASS;
+
+  g_debug ("got prepare-xwindow-id message");
+
+  gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (GST_MESSAGE_SRC (message)),
+    priv->output_window_id);
+  return GST_BUS_DROP;
+}
+
 static void
 prepare_transports (TpStreamEngineStream *self)
 {
@@ -761,7 +786,14 @@ prepare_transports (TpStreamEngineStream *self)
 
   if (priv->got_connection_properties && priv->candidate_preparation_required)
     {
+      GstBus *bus;
       farsight_stream_prepare_transports (priv->fs_stream);
+
+      /* connect a callback to the stream bus so that we can set X window IDs
+       * at the right time */
+      bus = farsight_stream_get_bus (priv->fs_stream);
+      gst_bus_set_sync_handler (bus, bus_sync_handler, self);
+      gst_object_unref (bus);
 
       codecs = fs_codecs_to_tp (
                  farsight_stream_get_local_codecs (priv->fs_stream));
