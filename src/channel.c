@@ -171,7 +171,10 @@ add_session (TpStreamEngineChannel *self,
 }
 
 static void
-new_ice_session_handler (DBusGProxy *proxy, guint member, const char *session_handler_path, const gchar* type, gpointer user_data)
+new_ice_session_handler (DBusGProxy *proxy,
+                         const char *session_handler_path,
+                         const gchar* type,
+                         gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
   add_session (self, session_handler_path, type);
