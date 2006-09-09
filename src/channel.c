@@ -233,25 +233,40 @@ channel_destroyed (DBusGProxy *proxy, gpointer user_data)
 }
 
 void
-get_session_handlers_reply (DBusGProxy *proxy, GPtrArray *session_handlers, GError *error, gpointer user_data)
+get_session_handlers_reply (DBusGProxy *proxy,
+                            GPtrArray *session_handlers,
+                            GError *error,
+                            gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  GValueArray *session;
   int i;
+
   if (error)
     g_critical ("Error calling GetSessionHandlers: %s", error->message);
 
-  g_debug ("GetSessionHandlers replied: ");
-  for (i = 0; i < session_handlers->len; i++)
+  if (session_handlers->len == 0)
     {
-      session = g_ptr_array_index (session_handlers, i);
-      g_assert(G_VALUE_TYPE (g_value_array_get_nth (session, 0)) ==
-        DBUS_TYPE_G_OBJECT_PATH);
-      g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (session, 1)));
+      g_debug ("GetSessionHandlers returned 0 sessions");
+    }
+  else
+    {
+      g_debug ("GetSessionHandlers replied: ");
 
-      add_session (self,
-          g_value_get_boxed (g_value_array_get_nth (session, 0)),
-          g_value_get_string (g_value_array_get_nth (session, 1)));
+      for (i = 0; i < session_handlers->len; i++)
+        {
+          GValueArray *session = g_ptr_array_index (session_handlers, i);
+          GValue *obj = g_value_array_get_nth (session, 0);
+          GValue *type = g_value_array_get_nth (session, 1);
+
+          g_assert (G_VALUE_TYPE (obj) == DBUS_TYPE_G_OBJECT_PATH);
+          g_assert (G_VALUE_HOLDS_STRING (type));
+
+          g_debug ("  - session %s", (char *)g_value_get_boxed (obj));
+          g_debug ("    type %s", g_value_get_string (type));
+
+          add_session (self,
+              g_value_get_boxed (obj), g_value_get_string (type));
+        }
     }
 }
 
