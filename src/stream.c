@@ -29,7 +29,7 @@
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-props-iface.h>
 #include <libtelepathy/tp-props-iface.h>
-#include <libtelepathy/tp-ice-stream-handler-gen.h>
+#include <libtelepathy/tp-media-stream-handler-gen.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-stream.h>
@@ -320,9 +320,9 @@ state_changed (FarsightStream *stream,
 
   if (priv->stream_handler_proxy)
     {
-      tp_ice_stream_handler_stream_state_async (
+      tp_media_stream_handler_stream_state_async (
         priv->stream_handler_proxy, state, dummy_callback,
-        "Ice.StreamHandler::StreamState");
+        "Media.StreamHandler::StreamState");
     }
 }
 
@@ -397,9 +397,9 @@ new_native_candidate (FarsightStream *stream,
       g_ptr_array_add (transports, g_value_get_boxed (&transport));
     }
 
-  tp_ice_stream_handler_new_native_candidate_async (
+  tp_media_stream_handler_new_native_candidate_async (
       priv->stream_handler_proxy, candidate_id, transports, dummy_callback,
-      "Ice.StreamHandler::NativeCandidatesPrepared");
+      "Media.StreamHandler::NativeCandidatesPrepared");
 }
 
 /**
@@ -681,9 +681,9 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
 
-  tp_ice_stream_handler_supported_codecs_async
+  tp_media_stream_handler_supported_codecs_async
     (priv->stream_handler_proxy, supp_codecs, dummy_callback,
-     "Ice.StreamHandler::SupportedCodecs");
+     "Media.StreamHandler::SupportedCodecs");
 
   for (lp = g_list_first (fs_codecs); lp; lp = g_list_next (lp))
     {
@@ -780,8 +780,8 @@ prepare_transports (TpStreamEngineStream *self)
       codecs = fs_codecs_to_tp (
                  farsight_stream_get_local_codecs (priv->fs_stream));
 
-      DEBUG (self, "calling IceStreamHandler::Ready");
-      tp_ice_stream_handler_ready_async (
+      DEBUG (self, "calling MediaStreamHandler::Ready");
+      tp_media_stream_handler_ready_async (
         priv->stream_handler_proxy, codecs, dummy_callback, self);
     }
 }
@@ -801,9 +801,9 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
     }
 
   DEBUG (self, "codec_id=%d, stream=%p", codec_id, stream);
-  tp_ice_stream_handler_codec_choice_async (
+  tp_media_stream_handler_codec_choice_async (
     priv->stream_handler_proxy, codec_id, dummy_callback,
-    "Ice.StreamHandler::CodecChoice");
+    "Media.StreamHandler::CodecChoice");
 }
 
 static void
@@ -818,7 +818,7 @@ stream_error (
 
   g_message ("%s: stream error: stream=%p error=%s", G_STRFUNC, stream, debug);
   /* FIXME: check if error is EOS */
-  tp_ice_stream_handler_error (priv->stream_handler_proxy, 0, debug, NULL);
+  tp_media_stream_handler_error (priv->stream_handler_proxy, 0, debug, NULL);
   g_signal_emit (self, signals[STREAM_ERROR], 0);
 }
 
@@ -827,10 +827,11 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
   DEBUG (self, "stream=%p", stream);
 
-  tp_ice_stream_handler_new_active_candidate_pair_async
-    (priv->stream_handler_proxy, native_candidate, remote_candidate, dummy_callback,"Ice.StreamHandler::NewActiveCandidatePair");
+  tp_media_stream_handler_new_active_candidate_pair_async
+    (priv->stream_handler_proxy, native_candidate, remote_candidate, dummy_callback, "Media.StreamHandler::NewActiveCandidatePair");
 }
 
 static void
@@ -852,9 +853,9 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
         (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP) ? "TCP" : "UDP",
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
-  tp_ice_stream_handler_native_candidates_prepared_async (
+  tp_media_stream_handler_native_candidates_prepared_async (
     priv->stream_handler_proxy, dummy_callback,
-    "Ice.StreamHandler::NativeCandidatesPrepared");
+    "Media.StreamHandler::NativeCandidatesPrepared");
 }
 
 static void
@@ -1099,7 +1100,7 @@ tp_stream_engine_stream_go (
     tp_get_bus(),
     bus_name,
     stream_handler_path,
-    TP_IFACE_ICE_STREAM_HANDLER);
+    TP_IFACE_MEDIA_STREAM_HANDLER);
 
   if (!priv->stream_handler_proxy)
     {

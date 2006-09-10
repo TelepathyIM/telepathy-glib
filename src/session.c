@@ -23,7 +23,7 @@
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
-#include <libtelepathy/tp-ice-session-handler-gen.h>
+#include <libtelepathy/tp-media-session-handler-gen.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-codec.h>
@@ -68,15 +68,15 @@ cb_fs_session_error (
 
   g_message (
     "%s: session error: session=%p error=%s\n", G_STRFUNC, stream, debug);
-  tp_ice_session_handler_error_async (
+  tp_media_session_handler_error_async (
     session_handler_proxy, error, debug, dummy_callback,
-    "Ice.SessionHandler::Error");
+    "Media.SessionHandler::Error");
 }
 
 static void
-new_ice_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
-                        guint id, guint media_type, guint direction,
-                        gpointer user_data);
+new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
+                          guint id, guint media_type, guint direction,
+                          gpointer user_data);
 
 static void
 tp_stream_engine_session_dispose (GObject *object)
@@ -109,8 +109,8 @@ tp_stream_engine_session_dispose (GObject *object)
         G_STRFUNC);
 
       dbus_g_proxy_disconnect_signal (
-          priv->session_handler_proxy, "NewIceStreamHandler",
-          G_CALLBACK (new_ice_stream_handler), self);
+          priv->session_handler_proxy, "NewStreamHandler",
+          G_CALLBACK (new_media_stream_handler), self);
 
       g_object_unref (priv->session_handler_proxy);
       priv->session_handler_proxy = NULL;
@@ -161,9 +161,9 @@ cb_stream_closed (TpStreamEngineStream *stream, gpointer user_data)
 }
 
 static void
-new_ice_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
-                        guint id, guint media_type, guint direction,
-                        gpointer user_data)
+new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
+                          guint id, guint media_type, guint direction,
+                          gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
@@ -215,7 +215,7 @@ tp_stream_engine_session_go (
   priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
     bus_name,
     session_handler_path,
-    TP_IFACE_ICE_SESSION_HANDLER);
+    TP_IFACE_MEDIA_SESSION_HANDLER);
 
   if (!priv->session_handler_proxy)
     {
@@ -223,13 +223,13 @@ tp_stream_engine_session_go (
       return FALSE;
     }
 
-  /* tell the proxy about the NewIceStreamHandler signal*/
+  /* tell the proxy about the NewStreamHandler signal*/
   dbus_g_proxy_add_signal (priv->session_handler_proxy,
-      "NewIceStreamHandler", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT,
+      "NewStreamHandler", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT,
       G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (priv->session_handler_proxy,
-      "NewIceStreamHandler", G_CALLBACK (new_ice_stream_handler), self,
+      "NewStreamHandler", G_CALLBACK (new_media_stream_handler), self,
       NULL);
 
   priv->fs_session = farsight_session_factory_make (type);
@@ -249,11 +249,11 @@ tp_stream_engine_session_go (
                     G_CALLBACK (cb_fs_session_error),
                     priv->session_handler_proxy);
 
-  g_debug ("Calling IceSessionHandler::Ready -->");
-  tp_ice_session_handler_ready_async (
+  g_debug ("Calling MediaSessionHandler::Ready -->");
+  tp_media_session_handler_ready_async (
     priv->session_handler_proxy, dummy_callback,
-    "Ice.SessionHandler::Ready");
-  g_debug ("<-- Returned from IceSessionHandler::Ready");
+    "Media.SessionHandler::Ready");
+  g_debug ("<-- Returned from MediaSessionHandler::Ready");
 
   return TRUE;
 }
