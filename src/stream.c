@@ -302,8 +302,8 @@ state_changed (FarsightStream *stream,
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   switch (state) {
-    case FARSIGHT_STREAM_STATE_STOPPED:
-          DEBUG (self, "stream %p stopped", stream);
+    case FARSIGHT_STREAM_STATE_DISCONNECTED:
+          DEBUG (self, "stream %p disconnected", stream);
           break;
     case FARSIGHT_STREAM_STATE_CONNECTING:
           DEBUG (self, "stream %p connecting", stream);
@@ -312,9 +312,6 @@ state_changed (FarsightStream *stream,
           DEBUG (self, "stream %p connected", stream);
           /* start the stream if its supposed to be playing already*/
           check_start_stream (self);
-          break;
-    case FARSIGHT_STREAM_STATE_PLAYING:
-          DEBUG (self, "stream %p playing", stream);
           break;
   }
 
@@ -709,12 +706,11 @@ stop_stream (TpStreamEngineStream *self)
   if (!priv->fs_stream)
     return;
 
-  if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_PLAYING)
-    {
-      DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
-      farsight_stream_stop (priv->fs_stream);
-      priv->stream_started = FALSE;
-    }
+  DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
+
+  farsight_stream_stop (priv->fs_stream);
+
+  priv->stream_started = FALSE;
 
 #ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_engine_disabled && priv->media_engine_proxy)
@@ -1269,8 +1265,6 @@ gboolean tp_stream_engine_stream_mute_output (
   GstElement *sink;
 
   g_return_val_if_fail (priv->fs_stream, FALSE);
-  g_return_val_if_fail (farsight_stream_get_state (priv->fs_stream) ==
-    FARSIGHT_STREAM_STATE_PLAYING, FALSE);
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
@@ -1300,8 +1294,6 @@ gboolean tp_stream_engine_stream_set_output_volume (
   GstElement *sink;
 
   g_return_val_if_fail (priv->fs_stream, FALSE);
-  g_return_val_if_fail (farsight_stream_get_state (priv->fs_stream) ==
-    FARSIGHT_STREAM_STATE_PLAYING, FALSE);
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
@@ -1332,8 +1324,6 @@ gboolean tp_stream_engine_stream_mute_input (
   GstElement *source;
 
   g_return_val_if_fail (priv->fs_stream, FALSE);
-  g_return_val_if_fail (farsight_stream_get_state (priv->fs_stream) ==
-    FARSIGHT_STREAM_STATE_PLAYING, FALSE);
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
