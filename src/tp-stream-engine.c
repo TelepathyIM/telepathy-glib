@@ -345,8 +345,10 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
     {
+      gchar *error = gst_structure_to_string (message->structure);
       /* FIXME: raise the error signal here? */
-      g_debug ("got error");
+      g_debug ("got error:\n%s", error);
+      g_free (error);
       //g_assert_not_reached ();
     }
 
