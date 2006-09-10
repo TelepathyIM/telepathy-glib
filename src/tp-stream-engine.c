@@ -401,8 +401,8 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
       g_object_set (videosrc, "is-live", TRUE, NULL);
       filter = gst_caps_new_simple(
         "video/x-raw-yuv",
-        "width", G_TYPE_INT, 176,
-        "height", G_TYPE_INT, 144,
+        "width", G_TYPE_INT, 352,
+        "height", G_TYPE_INT, 288,
         "framerate", GST_TYPE_FRACTION, 15, 1,
         NULL);
 
