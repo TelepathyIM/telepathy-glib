@@ -159,10 +159,8 @@ tp_stream_engine_init (TpStreamEngine *obj)
     tp_stream_engine_x_error_handler_get ();
 
   priv->channels = g_ptr_array_new ();
-  priv->preview_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-    NULL, g_object_unref);
-  priv->output_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-    NULL, g_object_unref);
+  priv->preview_windows = g_hash_table_new (g_direct_hash, g_direct_equal);
+  priv->output_windows = g_hash_table_new (g_direct_hash, g_direct_equal);
 
   priv->bad_window_handler_id =
     g_signal_connect (handler, "bad-window", (GCallback) bad_window_cb,
