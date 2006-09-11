@@ -216,6 +216,12 @@ tp_stream_engine_stream_dispose (GObject *object)
       priv->bad_window_handler_id = 0;
     }
 
+  if (priv->output_window_id)
+    {
+      TpStreamEngine *engine = tp_stream_engine_get ();
+      tp_stream_engine_remove_output_window (engine, sink, window_id);
+    }
+
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
 }
@@ -1373,6 +1379,11 @@ tp_stream_engine_stream_set_output_window (
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
         "SetOutputWindow can only be called on video streams");
       return FALSE;
+    }
+
+  if (priv->output_window_id)
+    {
+      tp_stream_engine_remove_output_window (engine, sink, window_id);
     }
 
   DEBUG (stream, "putting video output in window %d", window_id);

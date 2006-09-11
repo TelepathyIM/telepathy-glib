@@ -614,6 +614,15 @@ tp_stream_engine_add_output_window (TpStreamEngine *obj,
   return TRUE;
 }
 
+gboolean
+tp_stream_engine_remove_output_window (TpStreamEngine *obj,
+                                    guint window)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+
+  g_hash_table_foreach_remove (
+    priv->output_windows, g_direct_equal, window);
+}
 
 /**
  * tp_stream_engine_handle_channel

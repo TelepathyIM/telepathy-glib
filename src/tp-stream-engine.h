@@ -71,6 +71,9 @@ gboolean
 tp_stream_engine_add_output_window (TpStreamEngine *obj,
                                     GstElement *sink,
                                     guint window);
+gboolean
+tp_stream_engine_remove_output_window (TpStreamEngine *obj,
+                                    guint window);
 
 G_END_DECLS
 
