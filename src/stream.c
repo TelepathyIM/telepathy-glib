@@ -1338,6 +1338,7 @@ gboolean tp_stream_engine_stream_mute_input (
   return TRUE;
 }
 
+#if 0
 static gboolean
 bad_window_cb (TpStreamEngineXErrorHandler *handler,
                guint window_id,
@@ -1354,6 +1355,7 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 
   return FALSE;
 }
+#endif
 
 gboolean
 tp_stream_engine_stream_set_output_window (
@@ -1362,7 +1364,7 @@ tp_stream_engine_stream_set_output_window (
   GError **error)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-  TpStreamEngineXErrorHandler *handler;
+//  TpStreamEngineXErrorHandler *handler;
   TpStreamEngine *engine;
   GstElement *pipeline, *sink;
 
@@ -1377,8 +1379,10 @@ tp_stream_engine_stream_set_output_window (
 
   priv->output_window_id = window_id;
 
+#if 0
   handler = tp_stream_engine_x_error_handler_get ();
   g_signal_connect (handler, "bad-window", (GCallback) bad_window_cb, stream);
+#endif
   sink = gst_element_factory_make ("xvimagesink", NULL);
   g_object_set (sink, "sync", FALSE, NULL);
 
