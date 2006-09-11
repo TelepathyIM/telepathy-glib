@@ -394,11 +394,21 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 
   if (NULL == priv->pipeline)
     {
+      const gchar *elem;
+
       priv->pipeline = gst_pipeline_new (NULL);
       tee = gst_element_factory_make ("tee", "tee");
 
-      videosrc = gst_element_factory_make ("v4l2src", NULL);
-      g_object_set (videosrc, "is-live", TRUE, NULL);
+      if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
+        {
+          g_debug ("making video src with pipeline \"%s\"", elem);
+          videosrc = gst_parse_bin_from_description (elem, TRUE, NULL);
+          g_assert (videosrc);
+        }
+      else
+        {
+          videosrc = gst_element_factory_make ("v4l2src", NULL);
+        }
       filter = gst_caps_new_simple(
         "video/x-raw-yuv",
         "width", G_TYPE_INT, 352,

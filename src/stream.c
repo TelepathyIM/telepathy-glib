@@ -982,30 +982,21 @@ make_src (TpStreamEngineStream *stream, guint media_type)
                 G_GINT64_CONSTANT (20000), NULL);
             }
         }
+
+      if (src && g_object_has_property (G_OBJECT (src), "is-live"))
+        g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
     }
   else
     {
-      if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
-        {
-          DEBUG (stream, "making video src with pipeline \"%s\"", elem);
-          src = gst_parse_bin_from_description (elem, TRUE, NULL);
-          g_assert (src);
-        }
-      else
-        {
-          TpStreamEngine *engine = tp_stream_engine_get ();
-          GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
-          GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
+      TpStreamEngine *engine = tp_stream_engine_get ();
+      GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
+      GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
 
-          src = tee;
-          gst_object_unref (tee);
-        }
+      src = tee;
+      gst_object_unref (tee);
     }
 
-  if (src && g_object_has_property (G_OBJECT (src), "is-live"))
-    g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
-
-  return src;
+    return src;
 }
 
 static GstElement *
