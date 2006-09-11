@@ -369,9 +369,14 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
         g_hash_table_lookup (priv->preview_windows, GST_MESSAGE_SRC (message)));
     }
 
-  g_assert (window_id);
+  if (!window_id)
+    {
+      return GST_BUS_PASS;
+    }
+
   gst_x_overlay_set_xwindow_id (
-    GST_X_OVERLAY (GST_MESSAGE_SRC (message)), window_id);
+      GST_X_OVERLAY (GST_MESSAGE_SRC (message)), window_id);
+
   return GST_BUS_DROP;
 }
 
