@@ -515,6 +515,22 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 }
 
 
+typedef struct {
+  guint window_id;
+  GstElement *sink;
+} ReverseLookup;
+
+static gboolean
+_find_preview_sink_by_window_id (GstElement *sink,
+                                 guint window_id,
+                                 ReverseLookup *reverse)
+{
+  if (window_id == reverse->window_id)
+    reverse->sink = sink;
+
+  return TRUE;
+}
+
 /**
  * tp_stream_engine_remove_preview_window
  *
@@ -530,11 +546,16 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  ReverseLookup reverse = { 0, };
   GstElement *tee;
   GstElement *sink;
 
-  sink = g_hash_table_lookup (
-    priv->preview_windows, GUINT_TO_POINTER (window));
+  /* use the window ID to find the sink, even though
+   * the hash table is of sinks to window IDs */
+  reverse.window_id = window;
+  g_hash_table_find (priv->preview_windows,
+      (GHRFunc) _find_preview_sink_by_window_id, &reverse);
+  sink = reverse.sink;
 
   if (NULL == sink)
     {
