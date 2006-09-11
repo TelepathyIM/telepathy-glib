@@ -55,6 +55,7 @@
 #include "session.h"
 #include "stream.h"
 #include "types.h"
+#include "xerrorhandler.h"
 
 #define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/StreamEngine"
@@ -120,6 +121,7 @@ struct _TpStreamEnginePrivate
   GHashTable *preview_windows;
   GHashTable *output_windows;
   GstElement *pipeline;
+  guint bad_window_handler_id;
 
 #ifdef MAEMO_OSSO_SUPPORT
   DBusGProxy *infoprint_proxy;
@@ -144,16 +146,27 @@ tp_stream_engine_infoprint (const gchar *log_domain,
 }
 #endif
 
+static gboolean
+bad_window_cb (TpStreamEngineXErrorHandler *handler,
+               guint window_id,
+               gpointer data);
+
 static void
 tp_stream_engine_init (TpStreamEngine *obj)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  TpStreamEngineXErrorHandler *handler =
+    tp_stream_engine_x_error_handler_get ();
 
   priv->channels = g_ptr_array_new ();
   priv->preview_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
     NULL, g_object_unref);
   priv->output_windows = g_hash_table_new_full (g_direct_hash, g_direct_equal,
     NULL, g_object_unref);
+
+  priv->bad_window_handler_id =
+    g_signal_connect (handler, "bad-window", (GCallback) bad_window_cb,
+      obj);
 
 #ifdef USE_INFOPRINT
   priv->infoprint_proxy =
@@ -258,6 +271,15 @@ tp_stream_engine_dispose (GObject *object)
     {
       g_hash_table_destroy (priv->output_windows);
       priv->output_windows = NULL;
+    }
+
+  if (priv->bad_window_handler_id)
+    {
+      TpStreamEngineXErrorHandler *handler =
+        tp_stream_engine_x_error_handler_get ();
+
+      g_signal_handler_disconnect (handler, priv->bad_window_handler_id);
+      priv->bad_window_handler_id = 0;
     }
 
   priv->dispose_has_run = TRUE;
@@ -484,6 +506,17 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
   return TRUE;
 }
 
+
+static gboolean
+bad_window_cb (TpStreamEngineXErrorHandler *handler,
+               guint window_id,
+               gpointer data)
+{
+  return tp_stream_engine_remove_preview_window (TP_STREAM_ENGINE (data),
+      window_id, NULL);
+}
+
+
 /**
  * tp_stream_engine_remove_preview_window
  *
@@ -507,7 +540,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
 
   if (NULL == sink)
     {
-      /* set *error here */
+      /* set *error here if error is set (bad_window does not care) */
       return FALSE;
     }
 
