@@ -121,6 +121,7 @@ struct _TpStreamEnginePrivate
   GHashTable *preview_windows;
   GHashTable *output_windows;
   GstElement *pipeline;
+  guint bad_drawable_handler_id;
   guint bad_window_handler_id;
 
   gint tee_counter;
@@ -149,6 +150,11 @@ tp_stream_engine_infoprint (const gchar *log_domain,
 #endif
 
 static gboolean
+bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
+                 guint window_id,
+                 gpointer data);
+
+static gboolean
 bad_window_cb (TpStreamEngineXErrorHandler *handler,
                guint window_id,
                gpointer data);
@@ -164,6 +170,9 @@ tp_stream_engine_init (TpStreamEngine *obj)
   priv->preview_windows = g_hash_table_new (g_direct_hash, g_direct_equal);
   priv->output_windows = g_hash_table_new (g_direct_hash, g_direct_equal);
 
+  priv->bad_drawable_handler_id =
+    g_signal_connect (handler, "bad-drawable", (GCallback) bad_drawable_cb,
+      obj);
   priv->bad_window_handler_id =
     g_signal_connect (handler, "bad-window", (GCallback) bad_window_cb,
       obj);
@@ -273,6 +282,15 @@ tp_stream_engine_dispose (GObject *object)
     {
       g_hash_table_destroy (priv->output_windows);
       priv->output_windows = NULL;
+    }
+
+  if (priv->bad_drawable_handler_id)
+    {
+      TpStreamEngineXErrorHandler *handler =
+        tp_stream_engine_x_error_handler_get ();
+
+      g_signal_handler_disconnect (handler, priv->bad_drawable_handler_id);
+      priv->bad_drawable_handler_id = 0;
     }
 
   if (priv->bad_window_handler_id)
