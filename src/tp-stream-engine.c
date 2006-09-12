@@ -124,8 +124,6 @@ struct _TpStreamEnginePrivate
   guint bad_drawable_handler_id;
   guint bad_window_handler_id;
 
-  gint tee_counter;
-
 #ifdef MAEMO_OSSO_SUPPORT
   DBusGProxy *infoprint_proxy;
 #endif
@@ -194,8 +192,6 @@ tp_stream_engine_init (TpStreamEngine *obj)
   g_log_set_handler ("Farsight", G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_CRITICAL |
       G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_stream_engine_infoprint, NULL);
       */
-
-  priv->tee_counter = 0;
 
 #endif
 }
@@ -422,34 +418,6 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   return GST_BUS_DROP;
 }
 
-static
-void tee_linked (GstPad  *pad,
-    GstPad  *peer,
-    gpointer user_data)
-{
-  TpStreamEnginePrivate *priv = (TpStreamEnginePrivate *)user_data;
-
-  if (gst_pad_get_direction (pad) == GST_PAD_SRC)
-  {
-    g_debug ("Element linked to tee src pad, incrementing counter");
-    priv->tee_counter++;
-  }
-}
-
-static
-void tee_unlinked (GstPad  *pad,
-    GstPad  *peer,
-    gpointer user_data)
-{
-  TpStreamEnginePrivate *priv = (TpStreamEnginePrivate *)user_data;
-
-  if (gst_pad_get_direction (pad) == GST_PAD_SRC)
-  {
-    g_debug ("Element unlinked to tee src pad, decrementing counter");
-    priv->tee_counter--;
-  }
-}
-
 /*
  * tp_stream_engine_get_pipeline
  *
@@ -465,6 +433,7 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
   GstElement *tee;
   GstBus *bus;
   GstCaps *filter;
+  GstElement *fakesink;
 
   if (NULL == priv->pipeline)
     {
@@ -472,9 +441,7 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 
       priv->pipeline = gst_pipeline_new (NULL);
       tee = gst_element_factory_make ("tee", "tee");
-
-      g_signal_connect (tee, "linked", G_CALLBACK (tee_linked), priv);
-      g_signal_connect (tee, "unlinked", G_CALLBACK (tee_unlinked), priv);
+      fakesink = gst_element_factory_make ("fakesink", NULL);
 
       if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
         {
@@ -493,9 +460,13 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
         "framerate", GST_TYPE_FRACTION, 15, 1,
         NULL);
 
-      gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, NULL);
-      gst_element_link_filtered (videosrc, tee, filter);
+      gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, fakesink,
+          NULL);
+      gst_element_link (videosrc, tee);
+      gst_element_link_filtered (tee, fakesink, filter);
       gst_caps_unref (filter);
+
+      gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
 
       /* connect a callback to the stream bus so that we can set X window IDs
        * at the right time */
@@ -536,6 +507,8 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
 
   pipeline = tp_stream_engine_get_pipeline (obj);
 
+  gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
+
   g_debug ("adding preview in window %d", window);
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
@@ -547,6 +520,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
   gst_element_link_many (tee, filter, sink, NULL);
   //gst_element_sync_state_with_parent (sink);
   gst_object_unref (tee);
+
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
   g_hash_table_insert (priv->preview_windows, sink, GUINT_TO_POINTER (window));
@@ -614,18 +588,10 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
       return FALSE;
     }
 
-  g_debug ("removing preview in window %d, tee counter is %d", window,
-      priv->tee_counter);
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+  g_debug ("removing preview in window %d", window);
 
-  /* let's check if this is the last sink connected to tee, if so PAUSE */
-  if (priv->tee_counter == 1)
-    {
-      g_debug ("This preview window is the last one, "
-          "pausing pipeline before disconnecting");
-      gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
-    }
-
+  gst_element_unlink (tee, sink);
   gst_element_set_state (sink, GST_STATE_NULL);
   gst_bin_remove (GST_BIN (priv->pipeline), sink);
   gst_object_unref (GST_OBJECT (tee));
