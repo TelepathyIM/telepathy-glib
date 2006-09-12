@@ -1154,6 +1154,7 @@ tp_stream_engine_stream_go (
     {
       DEBUG (stream, "setting sink on Farsight stream");
       farsight_stream_set_sink (priv->fs_stream, sink);
+      g_object_unref (sink);
     }
   else
     {
@@ -1403,6 +1404,8 @@ tp_stream_engine_stream_set_output_window (
   tp_stream_engine_add_output_window (engine, sink, window_id);
 
   farsight_stream_set_sink (priv->fs_stream, sink);
+  g_object_unref (sink);
+
   return TRUE;
 }
 
