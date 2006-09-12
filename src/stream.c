@@ -1387,6 +1387,13 @@ tp_stream_engine_stream_set_output_window (
       tp_stream_engine_remove_output_window (engine, sink, window_id);
     }
 
+  if (priv->output_window_id == window_id)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
+        "output is already sent to window id %u", window_id);
+      return FALSE;
+    }
+
   DEBUG (stream, "putting video output in window %d", window_id);
 
   priv->output_window_id = window_id;
