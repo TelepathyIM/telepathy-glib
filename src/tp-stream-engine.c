@@ -123,6 +123,8 @@ struct _TpStreamEnginePrivate
   GstElement *pipeline;
   guint bad_window_handler_id;
 
+  gint tee_counter;
+
 #ifdef MAEMO_OSSO_SUPPORT
   DBusGProxy *infoprint_proxy;
 #endif
@@ -183,6 +185,8 @@ tp_stream_engine_init (TpStreamEngine *obj)
   g_log_set_handler ("Farsight", G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_CRITICAL |
       G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_stream_engine_infoprint, NULL);
       */
+
+  priv->tee_counter = 0;
 
 #endif
 }
@@ -400,6 +404,33 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   return GST_BUS_DROP;
 }
 
+static
+void tee_linked (GstPad  *pad,
+    GstPad  *peer,
+    gpointer user_data)
+{
+  TpStreamEnginePrivate *priv = (TpStreamEnginePrivate *)user_data;
+
+  if (gst_pad_get_direction (pad) == GST_PAD_SRC)
+  {
+    g_debug ("Element linked to tee src pad, incrementing counter");
+    priv->tee_counter++;
+  }
+}
+
+static
+void tee_unlinked (GstPad  *pad,
+    GstPad  *peer,
+    gpointer user_data)
+{
+  TpStreamEnginePrivate *priv = (TpStreamEnginePrivate *)user_data;
+
+  if (gst_pad_get_direction (pad) == GST_PAD_SRC)
+  {
+    g_debug ("Element unlinked to tee src pad, decrementing counter");
+    priv->tee_counter--;
+  }
+}
 
 /*
  * tp_stream_engine_get_pipeline
@@ -423,6 +454,9 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 
       priv->pipeline = gst_pipeline_new (NULL);
       tee = gst_element_factory_make ("tee", "tee");
+
+      g_signal_connect (tee, "linked", G_CALLBACK (tee_linked), priv);
+      g_signal_connect (tee, "unlinked", G_CALLBACK (tee_unlinked), priv);
 
       if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
         {
@@ -530,14 +564,6 @@ _find_preview_sink_by_window_id (GstElement *sink,
   return TRUE;
 }
 
-static void
-count_pads (GstPad *pad, gint *count)
-{
-  *count++;
-
-  gst_object_unref (GST_OBJECT (pad));
-}
-
 /**
  * tp_stream_engine_remove_preview_window
  *
@@ -556,8 +582,6 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   ReverseLookup reverse = { 0, };
   GstElement *tee;
   GstElement *sink;
-  GstIterator *it = NULL;
-  gint count = 0;
 
   /* use the window ID to find the sink, even though
    * the hash table is of sinks to window IDs */
@@ -572,14 +596,12 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
       return FALSE;
     }
 
-  g_debug ("removing preview in window %d", window);
+  g_debug ("removing preview in window %d, tee counter is %d", window,
+      priv->tee_counter);
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
 
   /* let's check if this is the last sink connected to tee, if so PAUSE */
-  it = gst_element_iterate_src_pads (tee);
-  gst_iterator_foreach (it, (GFunc) count_pads, &count);
-  gst_iterator_free (it);
-  if (count == 1)
+  if (priv->tee_counter == 1)
     {
       g_debug ("This preview window is the last one, "
           "pausing pipeline before disconnecting");
