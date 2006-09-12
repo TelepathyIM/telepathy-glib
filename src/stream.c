@@ -218,8 +218,11 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->output_window_id)
     {
+      gboolean ret;
       TpStreamEngine *engine = tp_stream_engine_get ();
-      tp_stream_engine_remove_output_window (engine, sink, window_id);
+      ret = tp_stream_engine_remove_output_window (engine,
+          priv->output_window_id);
+      g_assert (ret);
     }
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
@@ -1382,9 +1385,11 @@ tp_stream_engine_stream_set_output_window (
       return FALSE;
     }
 
+  engine = tp_stream_engine_get ();
+
   if (priv->output_window_id)
     {
-      tp_stream_engine_remove_output_window (engine, sink, window_id);
+      tp_stream_engine_remove_output_window (engine, priv->output_window_id);
     }
 
   if (priv->output_window_id == window_id)
@@ -1405,7 +1410,6 @@ tp_stream_engine_stream_set_output_window (
   sink = gst_element_factory_make ("xvimagesink", NULL);
   g_object_set (sink, "sync", FALSE, NULL);
 
-  engine = tp_stream_engine_get ();
   pipeline = tp_stream_engine_get_pipeline (engine);
   gst_bin_add (GST_BIN (pipeline), sink);
   tp_stream_engine_add_output_window (engine, sink, window_id);

@@ -117,20 +117,101 @@ struct _TpStreamEnginePrivate
 {
   gboolean dispose_has_run;
 
-  GPtrArray *channels;
-  GHashTable *preview_windows;
-  GHashTable *output_windows;
   GstElement *pipeline;
+
+  GPtrArray *channels;
+
+  GSList *output_windows;
+  GSList *preview_windows;
+
   guint bad_drawable_handler_id;
   guint bad_window_handler_id;
 
 #ifdef MAEMO_OSSO_SUPPORT
   DBusGProxy *infoprint_proxy;
 #endif
-
 };
 
 #define TP_STREAM_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_STREAM_ENGINE, TpStreamEnginePrivate))
+
+
+typedef struct _WindowPair WindowPair;
+struct _WindowPair
+{
+  GstElement *sink;
+  guint window_id;
+};
+
+static void
+_window_pairs_free (GSList **list)
+{
+  GSList *tmp;
+
+  for (tmp = *list;
+       tmp != NULL;
+       tmp = tmp->next)
+    g_slice_free (WindowPair, tmp->data);
+
+  g_slist_free (*list);
+  *list = NULL;
+}
+
+static void
+_window_pairs_add (GSList **list, GstElement *sink, guint window_id)
+{
+  WindowPair *wp;
+
+  wp = g_slice_new (WindowPair);
+  wp->sink = sink;
+  wp->window_id = window_id;
+
+  *list = g_slist_prepend (*list, wp);
+}
+
+static void
+_window_pairs_remove (GSList **list, WindowPair *pair)
+{
+  g_assert (g_slist_find (*list, pair));
+
+  *list = g_slist_remove (*list, pair);
+
+  g_slice_free (WindowPair, pair);
+}
+
+static WindowPair *
+_window_pairs_find_by_sink (GSList *list, GstElement *sink)
+{
+  GSList *tmp;
+
+  for (tmp = list;
+       tmp != NULL;
+       tmp = tmp->next)
+    {
+      WindowPair *wp = tmp->data;
+      if (wp->sink == sink)
+        return wp;
+    }
+
+  return NULL;
+}
+
+static WindowPair *
+_window_pairs_find_by_window_id (GSList *list, guint window_id)
+{
+  GSList *tmp;
+
+  for (tmp = list;
+       tmp != NULL;
+       tmp = tmp->next)
+    {
+      WindowPair *wp = tmp->data;
+      if (wp->window_id == window_id)
+        return wp;
+    }
+
+  return NULL;
+}
+
 
 #ifdef USE_INFOPRINT
 static void
@@ -165,8 +246,6 @@ tp_stream_engine_init (TpStreamEngine *obj)
     tp_stream_engine_x_error_handler_get ();
 
   priv->channels = g_ptr_array_new ();
-  priv->preview_windows = g_hash_table_new (g_direct_hash, g_direct_equal);
-  priv->output_windows = g_hash_table_new (g_direct_hash, g_direct_equal);
 
   priv->bad_drawable_handler_id =
     g_signal_connect (handler, "bad-drawable", (GCallback) bad_drawable_cb,
@@ -268,16 +347,14 @@ tp_stream_engine_dispose (GObject *object)
       priv->pipeline = NULL;
     }
 
-  if (priv->preview_windows)
+  if (priv->preview_windows != NULL)
     {
-      g_hash_table_destroy (priv->preview_windows);
-      priv->preview_windows = NULL;
+      _window_pairs_free (&(priv->preview_windows));
     }
 
-  if (priv->output_windows)
+  if (priv->output_windows != NULL)
     {
-      g_hash_table_destroy (priv->output_windows);
-      priv->output_windows = NULL;
+      _window_pairs_free (&(priv->output_windows));
     }
 
   if (priv->bad_drawable_handler_id)
@@ -347,7 +424,7 @@ static void
 check_if_busy (TpStreamEngine *self)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
-  guint num_previews = g_hash_table_size (priv->preview_windows);
+  guint num_previews = g_slist_length (priv->preview_windows);
 
   if (priv->channels->len == 0 && num_previews == 0)
     {
@@ -379,7 +456,7 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 {
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-  guint window_id;
+  WindowPair *wp;
 
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
     {
@@ -398,22 +475,18 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 
   g_debug ("got prepare-xwindow-id message");
 
-  window_id = GPOINTER_TO_UINT (
-    g_hash_table_lookup (priv->output_windows, GST_MESSAGE_SRC (message)));
+  wp = _window_pairs_find_by_sink (priv->output_windows,
+      GST_ELEMENT (GST_MESSAGE_SRC (message)));
 
-  if (!window_id)
-    {
-      window_id = GPOINTER_TO_UINT (
-        g_hash_table_lookup (priv->preview_windows, GST_MESSAGE_SRC (message)));
-    }
+  if (wp == NULL)
+    wp = _window_pairs_find_by_sink (priv->preview_windows,
+        GST_ELEMENT (GST_MESSAGE_SRC (message)));
 
-  if (!window_id)
-    {
-      return GST_BUS_PASS;
-    }
+  if (wp == NULL)
+    return GST_BUS_PASS;
 
   gst_x_overlay_set_xwindow_id (
-      GST_X_OVERLAY (GST_MESSAGE_SRC (message)), window_id);
+      GST_X_OVERLAY (GST_MESSAGE_SRC (message)), wp->window_id);
 
   return GST_BUS_DROP;
 }
@@ -490,18 +563,18 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window, GError **error)
+gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *tee, *sink, *filter, *pipeline;
+  WindowPair *wp;
 
-  sink = g_hash_table_lookup (
-    priv->preview_windows, GUINT_TO_POINTER (window));
+  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
-  if (NULL != sink)
+  if (wp != NULL)
     {
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
-        "window %d already has a preview", window);
+        "window ID %u is already a preview window", window_id);
       return FALSE;
     }
 
@@ -509,21 +582,22 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
 
   gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
 
-  g_debug ("adding preview in window %d", window);
+  g_debug ("adding preview in window %u", window_id);
 
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   sink = gst_element_factory_make ("xvimagesink", NULL);
   g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+  gst_bin_add (GST_BIN (priv->pipeline), sink);
+
   filter = gst_element_factory_make ("ffmpegcolorspace", NULL);
   gst_bin_add (GST_BIN (priv->pipeline), filter);
-  gst_bin_add (GST_BIN (priv->pipeline), sink);
+
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   gst_element_link_many (tee, filter, sink, NULL);
-  //gst_element_sync_state_with_parent (sink);
   gst_object_unref (tee);
 
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
-  g_hash_table_insert (priv->preview_windows, sink, GUINT_TO_POINTER (window));
+  _window_pairs_add (&(priv->preview_windows), sink, window_id);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
@@ -531,45 +605,14 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
 }
 
 
-typedef struct {
-  guint window_id;
-  GstElement *sink;
-} ReverseLookup;
-
-static gboolean
-_find_preview_sink_by_window_id_one (GstElement *sink,
-                                     guint window_id,
-                                     ReverseLookup *reverse)
-{
-  if (window_id == reverse->window_id)
-    reverse->sink = sink;
-
-  return TRUE;
-}
-
-static GstElement *
-_find_preview_sink_by_window_id (GHashTable *hash,
-		                 guint window_id)
-{
-  ReverseLookup reverse = { 0, };
-
-  /* use the window ID to find the sink, even though
-   * the hash table is of sinks to window IDs */
-  reverse.window_id = window_id;
-  g_hash_table_find (hash,
-      (GHRFunc) _find_preview_sink_by_window_id_one, &reverse);
-
-  return reverse.sink;
-}
-
-
 static void
-_remove_preview_sink (TpStreamEngine *engine, GstElement *sink)
+_remove_preview_sink (TpStreamEngine *engine, WindowPair *wp, GstElement *sink)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   GstElement *tee;
 
-  g_debug ("%s: removing sink element %p", G_STRFUNC, sink);
+  g_debug ("%s: removing sink for preview window ID %u", G_STRFUNC,
+      wp->window_id);
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   gst_element_unlink (tee, sink);
@@ -578,7 +621,7 @@ _remove_preview_sink (TpStreamEngine *engine, GstElement *sink)
   gst_element_set_state (sink, GST_STATE_NULL);
   gst_bin_remove (GST_BIN (priv->pipeline), sink);
 
-  g_hash_table_remove (priv->preview_windows, sink);
+  _window_pairs_remove (&(priv->preview_windows), wp);
 
   check_if_busy (engine);
 }
@@ -588,12 +631,13 @@ typedef struct
 {
   TpStreamEngine *engine;
   GstElement *sink;
+  WindowPair *wp;
 } BadWindowIdleData;
 
 static gboolean
 bad_window_idle_cb (BadWindowIdleData *data)
 {
-  _remove_preview_sink (data->engine, data->sink);
+  _remove_preview_sink (data->engine, data->wp, data->sink);
 
   g_free (data);
 
@@ -607,18 +651,25 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 {
   TpStreamEngine *engine = data;
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-  GstElement *sink;
+  WindowPair *wp;
   BadWindowIdleData *idle_data;
 
   /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
 
-  sink = _find_preview_sink_by_window_id (priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
-  if (sink == NULL)
+  if (wp == NULL)
     {
       g_debug ("%s: BadWindow(%u) not for a preview window, not handling",
         G_STRFUNC, window_id);
       return FALSE;
+    }
+
+  if (wp->sink == NULL)
+    {
+      g_debug ("%s: BadWindow(%u) for a preview window being removed, "
+        "ignoring", G_STRFUNC, window_id);
+      return TRUE;
     }
 
   g_debug ("%s: BadWindow(%u) for a preview window, scheduling sink removal",
@@ -626,7 +677,12 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 
   idle_data = g_new0 (BadWindowIdleData, 1);
   idle_data->engine = engine;
-  idle_data->sink = sink;
+  idle_data->sink = wp->sink;
+  idle_data->wp = wp;
+
+  /* NULL the sink so that we know this window ID is being removed and X errors
+   * can be ignored */
+  wp->sink = NULL;
 
   g_idle_add ((GSourceFunc) bad_window_idle_cb, idle_data);
 
@@ -641,21 +697,28 @@ bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
 {
   TpStreamEngine *engine = data;
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-  GstElement *sink;
+  WindowPair *wp;
 
   /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
 
-  sink = _find_preview_sink_by_window_id (priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
-  if (sink == NULL)
+  if (wp == NULL)
     {
       g_debug ("%s: BadDrawable(%u) not for a preview window, not handling",
         G_STRFUNC, window_id);
       return FALSE;
     }
 
-  g_debug ("%s: BadDrawable(%u) for a preview window, ignoring", G_STRFUNC,
-    window_id);
+  if (wp->sink != NULL)
+    {
+      g_debug ("%s: BadDrawable(%u) for a preview window not being removed, "
+          "not handling", G_STRFUNC, window_id);
+      return FALSE;
+    }
+
+  g_debug ("%s: BadDrawable(%u) for a preview window being removed, ignoring",
+      G_STRFUNC, window_id);
 
   return TRUE;
 }
@@ -673,46 +736,62 @@ bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error)
+gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *sink;
+  WindowPair *wp;
 
-  sink = _find_preview_sink_by_window_id (priv->preview_windows, window);
+  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
-  if (NULL == sink)
+  if (wp == NULL)
     {
       /* FIXME: set *error here, or just remove this entire method... its kinda
        * useless */
       return FALSE;
     }
 
-  _remove_preview_sink (obj, sink);
+  if (wp->sink == NULL)
+    {
+      /* already being removed, nothing to do */
+      return TRUE;
+    }
+
+  _remove_preview_sink (obj, wp, wp->sink);
 
   return TRUE;
 }
 
-/* FIXME: add corresponding _remove_output_window */
+
 gboolean
 tp_stream_engine_add_output_window (TpStreamEngine *obj,
                                     GstElement *sink,
-                                    guint window)
+                                    guint window_id)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
 
-  g_hash_table_insert (priv->output_windows, sink, GUINT_TO_POINTER (window));
+  _window_pairs_add (&(priv->output_windows), sink, window_id);
+
   return TRUE;
 }
 
+
 gboolean
 tp_stream_engine_remove_output_window (TpStreamEngine *obj,
-                                    guint window)
+                                       guint window_id)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  WindowPair *wp;
 
-  g_hash_table_foreach_remove (
-    priv->output_windows, g_direct_equal, window);
+  wp = _window_pairs_find_by_window_id (priv->output_windows, window_id);
+
+  if (wp == NULL)
+    return FALSE;
+
+  _window_pairs_remove (&(priv->output_windows), wp);
+
+  return TRUE;
 }
+
 
 /**
  * tp_stream_engine_handle_channel
