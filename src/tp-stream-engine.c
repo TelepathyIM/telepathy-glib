@@ -530,15 +530,6 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
   return TRUE;
 }
 
-static gboolean
-bad_window_cb (TpStreamEngineXErrorHandler *handler,
-               guint window_id,
-               gpointer data)
-{
-  return tp_stream_engine_remove_preview_window (TP_STREAM_ENGINE (data),
-      window_id, NULL);
-}
-
 
 typedef struct {
   guint window_id;
@@ -546,15 +537,129 @@ typedef struct {
 } ReverseLookup;
 
 static gboolean
-_find_preview_sink_by_window_id (GstElement *sink,
-                                 guint window_id,
-                                 ReverseLookup *reverse)
+_find_preview_sink_by_window_id_one (GstElement *sink,
+                                     guint window_id,
+                                     ReverseLookup *reverse)
 {
   if (window_id == reverse->window_id)
     reverse->sink = sink;
 
   return TRUE;
 }
+
+static GstElement *
+_find_preview_sink_by_window_id (GHashTable *hash,
+		                 guint window_id)
+{
+  ReverseLookup reverse = { 0, };
+
+  /* use the window ID to find the sink, even though
+   * the hash table is of sinks to window IDs */
+  reverse.window_id = window_id;
+  g_hash_table_find (hash,
+      (GHRFunc) _find_preview_sink_by_window_id_one, &reverse);
+
+  return reverse.sink;
+}
+
+
+static void
+_remove_preview_sink (TpStreamEngine *engine, GstElement *sink)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  GstElement *tee;
+
+  g_debug ("%s: removing sink element %p", G_STRFUNC, sink);
+
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+  gst_element_unlink (tee, sink);
+  gst_object_unref (GST_OBJECT (tee));
+
+  gst_element_set_state (sink, GST_STATE_NULL);
+  gst_bin_remove (GST_BIN (priv->pipeline), sink);
+
+  g_hash_table_remove (priv->preview_windows, sink);
+
+  check_if_busy (engine);
+}
+
+
+typedef struct
+{
+  TpStreamEngine *engine;
+  GstElement *sink;
+} BadWindowIdleData;
+
+static gboolean
+bad_window_idle_cb (BadWindowIdleData *data)
+{
+  _remove_preview_sink (data->engine, data->sink);
+
+  g_free (data);
+
+  return FALSE;
+}
+
+static gboolean
+bad_window_cb (TpStreamEngineXErrorHandler *handler,
+               guint window_id,
+               gpointer data)
+{
+  TpStreamEngine *engine = data;
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  GstElement *sink;
+  BadWindowIdleData *idle_data;
+
+  /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
+
+  sink = _find_preview_sink_by_window_id (priv->preview_windows, window_id);
+
+  if (sink == NULL)
+    {
+      g_debug ("%s: BadWindow(%u) not for a preview window, not handling",
+        G_STRFUNC, window_id);
+      return FALSE;
+    }
+
+  g_debug ("%s: BadWindow(%u) for a preview window, scheduling sink removal",
+    G_STRFUNC, window_id);
+
+  idle_data = g_new0 (BadWindowIdleData, 1);
+  idle_data->engine = engine;
+  idle_data->sink = sink;
+
+  g_idle_add ((GSourceFunc) bad_window_idle_cb, idle_data);
+
+  return TRUE;
+}
+
+
+static gboolean
+bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
+                 guint window_id,
+                 gpointer data)
+{
+  TpStreamEngine *engine = data;
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  GstElement *sink;
+
+  /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
+
+  sink = _find_preview_sink_by_window_id (priv->preview_windows, window_id);
+
+  if (sink == NULL)
+    {
+      g_debug ("%s: BadDrawable(%u) not for a preview window, not handling",
+        G_STRFUNC, window_id);
+      return FALSE;
+    }
+
+  g_debug ("%s: BadDrawable(%u) for a preview window, ignoring", G_STRFUNC,
+    window_id);
+
+  return TRUE;
+}
+
 
 /**
  * tp_stream_engine_remove_preview_window
@@ -571,33 +676,18 @@ _find_preview_sink_by_window_id (GstElement *sink,
 gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  ReverseLookup reverse = { 0, };
-  GstElement *tee;
   GstElement *sink;
 
-  /* use the window ID to find the sink, even though
-   * the hash table is of sinks to window IDs */
-  reverse.window_id = window;
-  g_hash_table_find (priv->preview_windows,
-      (GHRFunc) _find_preview_sink_by_window_id, &reverse);
-  sink = reverse.sink;
+  sink = _find_preview_sink_by_window_id (priv->preview_windows, window);
 
   if (NULL == sink)
     {
-      /* set *error here if error is set (bad_window does not care) */
+      /* FIXME: set *error here, or just remove this entire method... its kinda
+       * useless */
       return FALSE;
     }
 
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  g_debug ("removing preview in window %d", window);
-
-  gst_element_unlink (tee, sink);
-  gst_element_set_state (sink, GST_STATE_NULL);
-  gst_bin_remove (GST_BIN (priv->pipeline), sink);
-  gst_object_unref (GST_OBJECT (tee));
-
-  g_hash_table_remove (priv->preview_windows, sink);
-  check_if_busy (obj);
+  _remove_preview_sink (obj, sink);
 
   return TRUE;
 }
