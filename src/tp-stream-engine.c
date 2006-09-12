@@ -504,7 +504,6 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window,
   return TRUE;
 }
 
-
 static gboolean
 bad_window_cb (TpStreamEngineXErrorHandler *handler,
                guint window_id,
@@ -531,6 +530,14 @@ _find_preview_sink_by_window_id (GstElement *sink,
   return TRUE;
 }
 
+static void
+count_pads (GstPad *pad, gint *count)
+{
+  *count++;
+
+  gst_object_unref (GST_OBJECT (pad));
+}
+
 /**
  * tp_stream_engine_remove_preview_window
  *
@@ -549,6 +556,8 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   ReverseLookup reverse = { 0, };
   GstElement *tee;
   GstElement *sink;
+  GstIterator *it = NULL;
+  gint count = 0;
 
   /* use the window ID to find the sink, even though
    * the hash table is of sinks to window IDs */
@@ -565,10 +574,23 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
 
   g_debug ("removing preview in window %d", window);
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  gst_bin_remove (GST_BIN (priv->pipeline), sink);
-  gst_object_unref (tee);
+
+  /* let's check if this is the last sink connected to tee, if so PAUSE */
+  it = gst_element_iterate_src_pads (tee);
+  gst_iterator_foreach (it, (GFunc) count_pads, &count);
+  gst_iterator_free (it);
+  if (count == 1)
+    {
+      g_debug ("This preview window is the last one, "
+          "pausing pipeline before disconnecting");
+      gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
+    }
+
   gst_element_set_state (sink, GST_STATE_NULL);
-  g_hash_table_remove (priv->preview_windows, GUINT_TO_POINTER (window));
+  gst_bin_remove (GST_BIN (priv->pipeline), sink);
+  gst_object_unref (GST_OBJECT (tee));
+
+  g_hash_table_remove (priv->preview_windows, sink);
   check_if_busy (obj);
 
   return TRUE;
