@@ -27,8 +27,6 @@ G_DEFINE_TYPE (TpStreamEngineXErrorHandler, tp_stream_engine_x_error_handler, G_
 #define X_ERROR_HANDLER_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_STREAM_ENGINE_TYPE_X_ERROR_HANDLER, TpStreamEngineXErrorHandlerPrivate))
 
-static TpStreamEngineXErrorHandler *singleton;
-
 typedef struct _TpStreamEngineXErrorHandlerPrivate TpStreamEngineXErrorHandlerPrivate;
 
 struct _TpStreamEngineXErrorHandlerPrivate
@@ -115,12 +113,21 @@ tp_stream_engine_x_error_handler_init (TpStreamEngineXErrorHandler *self)
   priv->old_error_handler = XSetErrorHandler (error_handler);
 }
 
-TpStreamEngineXErrorHandler*
+TpStreamEngineXErrorHandler *
 tp_stream_engine_x_error_handler_get (void)
 {
-  if (NULL == singleton)
-    singleton = g_object_new (TP_STREAM_ENGINE_TYPE_X_ERROR_HANDLER, NULL);
+  static TpStreamEngineXErrorHandler *handler = NULL;
 
-  return singleton;
+  if (NULL == handler)
+    {
+      handler = g_object_new (TP_STREAM_ENGINE_TYPE_X_ERROR_HANDLER, NULL);
+      g_object_add_weak_pointer (G_OBJECT (handler), (gpointer) &handler);
+    }
+  else
+    {
+      g_object_ref (handler);
+    }
+
+  return handler;
 }
 
