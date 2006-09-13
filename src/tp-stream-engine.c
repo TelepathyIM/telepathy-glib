@@ -124,6 +124,8 @@ struct _TpStreamEnginePrivate
   GSList *output_windows;
   GSList *preview_windows;
 
+  guint bus_async_source_id;
+
   guint bad_drawable_handler_id;
   guint bad_window_handler_id;
 
@@ -375,6 +377,12 @@ tp_stream_engine_dispose (GObject *object)
       _window_pairs_free (&(priv->output_windows));
     }
 
+  if (priv->bus_async_source_id)
+    {
+      g_source_remove (priv->bus_async_source_id);
+      priv->bus_async_source_id = 0;
+    }
+
   if (priv->bad_drawable_handler_id)
     {
       TpStreamEngineXErrorHandler *handler =
@@ -497,6 +505,42 @@ _remove_preview_sinks (TpStreamEngine *engine)
   check_if_busy (engine);
 }
 
+static gboolean
+bus_async_handler (GstBus *bus,
+                   GstMessage *message,
+                   gpointer data)
+{
+  TpStreamEngine *engine = TP_STREAM_ENGINE (data);
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  GError *error = NULL;
+  WindowPair *wp;
+
+  if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ERROR)
+    return TRUE;
+
+  gst_message_parse_error (message, &error, NULL);
+
+  g_debug ("%s: got error: %s", G_STRFUNC, error->message);
+
+  if (error->domain == GST_RESOURCE_ERROR)
+    {
+      if (error->code == GST_RESOURCE_ERROR_WRITE)
+        {
+          wp = _window_pairs_find_by_sink (priv->output_windows,
+              GST_ELEMENT (GST_MESSAGE_SRC (message)));
+
+          if (wp != NULL)
+            {
+              g_debug ("ximagesink has gone, removing");
+
+              wp->removing = TRUE;
+              _remove_preview_sinks (engine);
+            }
+        }
+    }
+
+  return TRUE;
+}
 
 static GstBusSyncReply
 bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
@@ -505,34 +549,7 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp;
 
-  if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
-    {
-      GError *error = NULL;
-
-      gst_message_parse_error (message, &error, NULL);
-
-      g_debug ("%s: got error: %s", G_STRFUNC, error->message);
-
-      if (error->domain == GST_RESOURCE_ERROR)
-        {
-          if (error->code == GST_RESOURCE_ERROR_WRITE)
-            {
-              wp = _window_pairs_find_by_sink (priv->output_windows,
-                  GST_ELEMENT (GST_MESSAGE_SRC (message)));
-
-              if (wp != NULL)
-                {
-                  g_debug ("ximagesink has gone, removing");
-
-                  wp->removing = TRUE;
-                  _remove_preview_sinks (engine);
-                  return GST_BUS_DROP;
-                }
-            }
-        }
-    }
-
-  if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
+ if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return GST_BUS_PASS;
 
   if (!gst_structure_has_name (message->structure, "prepare-xwindow-id"))
@@ -607,9 +624,11 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
       gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
 
       /* connect a callback to the stream bus so that we can set X window IDs
-       * at the right time */
+       * at the right time, and detect when sinks have gone away */
       bus = gst_element_get_bus (priv->pipeline);
       gst_bus_set_sync_handler (bus, bus_sync_handler, obj);
+      priv->bus_async_source_id =
+        gst_bus_add_watch (bus, bus_async_handler, obj);
       gst_object_unref (bus);
     }
 
