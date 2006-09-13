@@ -134,7 +134,6 @@ struct _TpStreamEnginePrivate
 
 #define TP_STREAM_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_STREAM_ENGINE, TpStreamEnginePrivate))
 
-
 typedef struct _WindowPair WindowPair;
 struct _WindowPair
 {
@@ -470,6 +469,35 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
   check_if_busy (self);
 }
 
+
+static void
+_remove_preview_sinks (TpStreamEngine *engine)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  WindowPair *wp = NULL;
+
+  while ((wp = _window_pairs_find_by_removing (priv->preview_windows, TRUE)) !=
+      NULL)
+    {
+      GstElement *tee;
+
+      g_debug ("%s: removing sink for preview window ID %u", G_STRFUNC,
+          wp->window_id);
+
+      tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+      gst_element_unlink (tee, wp->sink);
+      gst_object_unref (GST_OBJECT (tee));
+
+      gst_element_set_state (wp->sink, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
+
+      _window_pairs_remove (&(priv->preview_windows), wp);
+    }
+
+  check_if_busy (engine);
+}
+
+
 static GstBusSyncReply
 bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 {
@@ -479,11 +507,29 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
     {
-      gchar *error = gst_structure_to_string (message->structure);
-      /* FIXME: raise the error signal here? */
-      g_debug ("got error:\n%s", error);
-      g_free (error);
-      //g_assert_not_reached ();
+      GError *error = NULL;
+
+      gst_message_parse_error (message, &error, NULL);
+
+      g_debug ("%s: got error: %s", G_STRFUNC, error->message);
+
+      if (error->domain == GST_RESOURCE_ERROR)
+        {
+          if (error->code == GST_RESOURCE_ERROR_WRITE)
+            {
+              wp = _window_pairs_find_by_sink (priv->output_windows,
+                  GST_ELEMENT (GST_MESSAGE_SRC (message)));
+
+              if (wp != NULL)
+                {
+                  g_debug ("ximagesink has gone, removing");
+
+                  wp->removing = TRUE;
+                  _remove_preview_sinks (engine);
+                  return GST_BUS_DROP;
+                }
+            }
+        }
     }
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
@@ -568,34 +614,6 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
     }
 
   return priv->pipeline;
-}
-
-
-static void
-_remove_preview_sinks (TpStreamEngine *engine)
-{
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-  WindowPair *wp = NULL;
-
-  while ((wp = _window_pairs_find_by_removing (priv->preview_windows, TRUE)) !=
-      NULL)
-    {
-      GstElement *tee;
-
-      g_debug ("%s: removing sink for preview window ID %u", G_STRFUNC,
-          wp->window_id);
-
-      tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-      gst_element_unlink (tee, wp->sink);
-      gst_object_unref (GST_OBJECT (tee));
-
-      gst_element_set_state (wp->sink, GST_STATE_NULL);
-      gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
-
-      _window_pairs_remove (&(priv->preview_windows), wp);
-    }
-
-  check_if_busy (engine);
 }
 
 
