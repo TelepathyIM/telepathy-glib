@@ -60,7 +60,7 @@ error_handler (Display *display, XErrorEvent *event)
       event->resourceid, &handled);
 
   if (!handled)
-    priv->old_error_handler (display, event);
+    return priv->old_error_handler (display, event);
 
   return 0;
 }
