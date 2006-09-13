@@ -140,6 +140,7 @@ struct _WindowPair
 {
   GstElement *sink;
   guint window_id;
+  gboolean removing;
 };
 
 static void
@@ -164,6 +165,7 @@ _window_pairs_add (GSList **list, GstElement *sink, guint window_id)
   wp = g_slice_new (WindowPair);
   wp->sink = sink;
   wp->window_id = window_id;
+  wp->removing = FALSE;
 
   *list = g_slist_prepend (*list, wp);
 }
@@ -176,6 +178,23 @@ _window_pairs_remove (GSList **list, WindowPair *pair)
   *list = g_slist_remove (*list, pair);
 
   g_slice_free (WindowPair, pair);
+}
+
+static WindowPair *
+_window_pairs_find_by_removing (GSList *list, gboolean removing)
+{
+  GSList *tmp;
+
+  for (tmp = list;
+       tmp != NULL;
+       tmp = tmp->next)
+    {
+      WindowPair *wp = tmp->data;
+      if (wp->removing == removing)
+        return wp;
+    }
+
+  return NULL;
 }
 
 static WindowPair *
@@ -551,6 +570,44 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
   return priv->pipeline;
 }
 
+
+static void
+_remove_preview_sinks (TpStreamEngine *engine)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  WindowPair *wp = NULL;
+
+  while ((wp = _window_pairs_find_by_removing (priv->preview_windows, TRUE)) !=
+      NULL)
+    {
+      GstElement *tee;
+
+      g_debug ("%s: removing sink for preview window ID %u", G_STRFUNC,
+          wp->window_id);
+
+      tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+      gst_element_unlink (tee, wp->sink);
+      gst_object_unref (GST_OBJECT (tee));
+
+      gst_element_set_state (wp->sink, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
+
+      _window_pairs_remove (&(priv->preview_windows), wp);
+    }
+
+  check_if_busy (engine);
+}
+
+
+static gboolean
+_remove_preview_sinks_idle_cb (TpStreamEngine *engine)
+{
+  _remove_preview_sinks (engine);
+
+  return FALSE;
+}
+
+
 /**
  * tp_stream_engine_add_preview_window
  *
@@ -568,6 +625,9 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *tee, *sink, *filter, *pipeline;
   WindowPair *wp;
+
+  /* try and remove any sinks which have removing = TRUE to free up Xv ports */
+  _remove_preview_sinks (obj);
 
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
@@ -605,45 +665,6 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
 }
 
 
-static void
-_remove_preview_sink (TpStreamEngine *engine, WindowPair *wp, GstElement *sink)
-{
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-  GstElement *tee;
-
-  g_debug ("%s: removing sink for preview window ID %u", G_STRFUNC,
-      wp->window_id);
-
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  gst_element_unlink (tee, sink);
-  gst_object_unref (GST_OBJECT (tee));
-
-  gst_element_set_state (sink, GST_STATE_NULL);
-  gst_bin_remove (GST_BIN (priv->pipeline), sink);
-
-  _window_pairs_remove (&(priv->preview_windows), wp);
-
-  check_if_busy (engine);
-}
-
-
-typedef struct
-{
-  TpStreamEngine *engine;
-  GstElement *sink;
-  WindowPair *wp;
-} BadWindowIdleData;
-
-static gboolean
-bad_window_idle_cb (BadWindowIdleData *data)
-{
-  _remove_preview_sink (data->engine, data->wp, data->sink);
-
-  g_free (data);
-
-  return FALSE;
-}
-
 static gboolean
 bad_window_cb (TpStreamEngineXErrorHandler *handler,
                guint window_id,
@@ -652,7 +673,6 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
   TpStreamEngine *engine = data;
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp;
-  BadWindowIdleData *idle_data;
 
   /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
 
@@ -665,7 +685,7 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
       return FALSE;
     }
 
-  if (wp->sink == NULL)
+  if (wp->removing)
     {
       g_debug ("%s: BadWindow(%u) for a preview window being removed, "
         "ignoring", G_STRFUNC, window_id);
@@ -675,16 +695,11 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
   g_debug ("%s: BadWindow(%u) for a preview window, scheduling sink removal",
     G_STRFUNC, window_id);
 
-  idle_data = g_new0 (BadWindowIdleData, 1);
-  idle_data->engine = engine;
-  idle_data->sink = wp->sink;
-  idle_data->wp = wp;
+  /* set removing to TRUE so that we know this window ID is being removed and X
+   * errors can be ignored */
+  wp->removing = TRUE;
 
-  /* NULL the sink so that we know this window ID is being removed and X errors
-   * can be ignored */
-  wp->sink = NULL;
-
-  g_idle_add ((GSourceFunc) bad_window_idle_cb, idle_data);
+  g_idle_add ((GSourceFunc) _remove_preview_sinks_idle_cb, engine);
 
   return TRUE;
 }
@@ -710,7 +725,7 @@ bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
       return FALSE;
     }
 
-  if (wp->sink != NULL)
+  if (!wp->removing)
     {
       g_debug ("%s: BadDrawable(%u) for a preview window not being removed, "
           "not handling", G_STRFUNC, window_id);
@@ -750,13 +765,15 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
       return FALSE;
     }
 
-  if (wp->sink == NULL)
+  if (wp->removing)
     {
       /* already being removed, nothing to do */
       return TRUE;
     }
 
-  _remove_preview_sink (obj, wp, wp->sink);
+  wp->removing = TRUE;
+
+  _remove_preview_sinks (obj);
 
   return TRUE;
 }
