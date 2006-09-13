@@ -55,7 +55,6 @@ typedef struct {
 GType tp_stream_engine_x_error_handler_get_type (void);
 
 TpStreamEngineXErrorHandler* tp_stream_engine_x_error_handler_get (void);
-void tp_stream_engine_x_error_handler_cleanup (void);
 
 G_END_DECLS
 

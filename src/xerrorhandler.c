@@ -124,13 +124,3 @@ tp_stream_engine_x_error_handler_get (void)
   return singleton;
 }
 
-void
-tp_stream_engine_x_error_handler_cleanup (void)
-{
-  if (NULL != singleton)
-    {
-      g_object_unref (singleton);
-      singleton = NULL;
-    }
-}
-
