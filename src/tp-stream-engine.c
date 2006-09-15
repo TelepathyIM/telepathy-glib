@@ -143,7 +143,7 @@ struct _WindowPair
 {
   GstElement *sink;
   guint window_id;
-  gboolean removing;
+  volatile gboolean removing;
 };
 
 static void
@@ -193,7 +193,7 @@ _window_pairs_find_by_removing (GSList *list, gboolean removing)
        tmp = tmp->next)
     {
       WindowPair *wp = tmp->data;
-      if (g_atomic_int_get (&(wp->removing)) == removing)
+      if (wp->removing == removing)
         return wp;
     }
 
@@ -734,7 +734,7 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
       return FALSE;
     }
 
-  if (g_atomic_int_get (&(wp->removing)))
+  if (wp->removing)
     {
       g_debug ("%s: BadWindow(%u) for a preview window being removed, "
         "ignoring", G_STRFUNC, window_id);
@@ -746,7 +746,7 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 
   /* set removing to TRUE so that we know this window ID is being removed and X
    * errors can be ignored */
-  g_atomic_int_compare_and_exchange (&(wp->removing), FALSE, TRUE);
+  wp->removing = TRUE;
 
   g_idle_add ((GSourceFunc) _remove_preview_sinks_idle_cb, engine);
 
@@ -774,7 +774,7 @@ bad_misc_cb (TpStreamEngineXErrorHandler *handler,
       return FALSE;
     }
 
-  if (g_atomic_int_get (&(wp->removing)))
+  if (!wp->removing)
     {
       g_debug ("%s: BadDrawable(%u) for a preview window not being "
           "removed, not handling", G_STRFUNC, window_id);
@@ -841,13 +841,13 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
       return FALSE;
     }
 
-  if (g_atomic_int_get (&(wp->removing)))
+  if (wp->removing)
     {
       /* already being removed, nothing to do */
       return TRUE;
     }
 
-  g_atomic_int_compare_and_exchange (&(wp->removing), FALSE, TRUE);
+  wp->removing = TRUE;
 
   _remove_preview_sinks (obj);
 
