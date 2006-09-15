@@ -39,7 +39,6 @@
 
 #include "common/telepathy-errors.h"
 
-#include "xerrorhandler.h"
 #include "tp-stream-engine.h"
 #include "types.h"
 
@@ -78,7 +77,6 @@ struct _TpStreamEngineStreamPrivate
   guint media_type;
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
-  guint bad_window_handler_id;
 
   gchar *stun_server;
   guint stun_port;
@@ -205,15 +203,6 @@ tp_stream_engine_stream_dispose (GObject *object)
         priv->state_changed_handler_id);
       g_object_unref (priv->fs_stream);
       priv->fs_stream = NULL;
-    }
-
-  if (priv->bad_window_handler_id)
-    {
-      TpStreamEngineXErrorHandler *handler =
-        tp_stream_engine_x_error_handler_get ();
-
-      g_signal_handler_disconnect (handler, priv->bad_window_handler_id);
-      priv->bad_window_handler_id = 0;
     }
 
   if (priv->output_window_id)
@@ -1054,23 +1043,6 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
   return sink;
 }
 
-static gboolean
-bad_window (TpStreamEngineXErrorHandler *handler, guint window_id,
-  gpointer user_data)
-{
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-
-  if (window_id == priv->output_window_id)
-    {
-      DEBUG (stream, "embedding window %d went away", window_id);
-      farsight_stream_set_sink (priv->fs_stream, NULL);
-
-      return TRUE;
-    }
-
-  return FALSE;
-}
 
 gboolean
 tp_stream_engine_stream_go (
@@ -1106,17 +1078,6 @@ tp_stream_engine_stream_go (
       g_critical ("couldn't get proxy for stream");
       return FALSE;
     }
-
-  if (media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    {
-      TpStreamEngineXErrorHandler *handler =
-        tp_stream_engine_x_error_handler_get ();
-
-      priv->bad_window_handler_id =
-        g_signal_connect (handler, "bad-window", (GCallback) bad_window,
-          stream);
-    }
-
 
   priv->fs_stream = farsight_session_create_stream (
     fs_session, media_type, direction);
@@ -1348,25 +1309,6 @@ gboolean tp_stream_engine_stream_mute_input (
   return TRUE;
 }
 
-#if 0
-static gboolean
-bad_window_cb (TpStreamEngineXErrorHandler *handler,
-               guint window_id,
-               gpointer data)
-{
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-
-  if (window_id == priv->output_window_id)
-    {
-      farsight_stream_set_sink (priv->fs_stream, NULL);
-      return TRUE;
-    }
-
-  return FALSE;
-}
-#endif
-
 gboolean
 tp_stream_engine_stream_set_output_window (
   TpStreamEngineStream *stream,
@@ -1374,7 +1316,6 @@ tp_stream_engine_stream_set_output_window (
   GError **error)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-//  TpStreamEngineXErrorHandler *handler;
   TpStreamEngine *engine;
   GstElement *pipeline, *sink;
 
@@ -1403,10 +1344,6 @@ tp_stream_engine_stream_set_output_window (
 
   priv->output_window_id = window_id;
 
-#if 0
-  handler = tp_stream_engine_x_error_handler_get ();
-  g_signal_connect (handler, "bad-window", (GCallback) bad_window_cb, stream);
-#endif
   sink = gst_element_factory_make ("xvimagesink", NULL);
   g_object_set (sink, "sync", FALSE, NULL);
 
