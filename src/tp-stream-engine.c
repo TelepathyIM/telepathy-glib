@@ -127,6 +127,7 @@ struct _TpStreamEnginePrivate
   guint bus_async_source_id;
 
   guint bad_drawable_handler_id;
+  guint bad_gc_handler_id;
   guint bad_window_handler_id;
 
 #ifdef MAEMO_OSSO_SUPPORT
@@ -249,9 +250,9 @@ tp_stream_engine_infoprint (const gchar *log_domain,
 #endif
 
 static gboolean
-bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
-                 guint window_id,
-                 gpointer data);
+bad_other_cb (TpStreamEngineXErrorHandler *handler,
+              guint window_id,
+              gpointer data);
 
 static gboolean
 bad_window_cb (TpStreamEngineXErrorHandler *handler,
@@ -268,7 +269,10 @@ tp_stream_engine_init (TpStreamEngine *obj)
   priv->channels = g_ptr_array_new ();
 
   priv->bad_drawable_handler_id =
-    g_signal_connect (handler, "bad-drawable", (GCallback) bad_drawable_cb,
+    g_signal_connect (handler, "bad-drawable", (GCallback) bad_other_cb,
+      obj);
+  priv->bad_gc_handler_id =
+    g_signal_connect (handler, "bad-gc", (GCallback) bad_other_cb,
       obj);
   priv->bad_window_handler_id =
     g_signal_connect (handler, "bad-window", (GCallback) bad_window_cb,
@@ -390,6 +394,15 @@ tp_stream_engine_dispose (GObject *object)
 
       g_signal_handler_disconnect (handler, priv->bad_drawable_handler_id);
       priv->bad_drawable_handler_id = 0;
+    }
+
+  if (priv->bad_gc_handler_id)
+    {
+      TpStreamEngineXErrorHandler *handler =
+        tp_stream_engine_x_error_handler_get ();
+
+      g_signal_handler_disconnect (handler, priv->bad_gc_handler_id);
+      priv->bad_gc_handler_id = 0;
     }
 
   if (priv->bad_window_handler_id)
@@ -743,9 +756,9 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 
 
 static gboolean
-bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
-                 guint window_id,
-                 gpointer data)
+bad_other_cb (TpStreamEngineXErrorHandler *handler,
+              guint window_id,
+              gpointer data)
 {
   TpStreamEngine *engine = data;
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
@@ -757,20 +770,20 @@ bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
 
   if (wp == NULL)
     {
-      g_debug ("%s: BadDrawable(%u) not for a preview window, not handling",
-        G_STRFUNC, window_id);
+      g_debug ("%s: BadDrawable/BadGC(%u) not for a preview window, not "
+          "handling", G_STRFUNC, window_id);
       return FALSE;
     }
 
   if (g_atomic_int_get (&(wp->removing)))
     {
-      g_debug ("%s: BadDrawable(%u) for a preview window not being removed, "
-          "not handling", G_STRFUNC, window_id);
+      g_debug ("%s: BadDrawable/BadGC(%u) for a preview window not being "
+          "removed, not handling", G_STRFUNC, window_id);
       return FALSE;
     }
 
-  g_debug ("%s: BadDrawable(%u) for a preview window being removed, ignoring",
-      G_STRFUNC, window_id);
+  g_debug ("%s: BadDrawable/BadGC(%u) for a preview window being removed, "
+      "ignoring", G_STRFUNC, window_id);
 
   return TRUE;
 }
