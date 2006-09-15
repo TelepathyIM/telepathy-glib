@@ -1321,8 +1321,18 @@ tp_stream_engine_stream_set_output_window (
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
+      DEBUG (stream, "can only be called on video streams");
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
         "SetOutputWindow can only be called on video streams");
+      return FALSE;
+    }
+
+  if (priv->output_window_id == window_id)
+    {
+      DEBUG (stream, "not doing anything, output window is already set to "
+          "window ID %u", window_id);
+      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable, "not doing "
+          "anything, output window is already set window ID %u", window_id);
       return FALSE;
     }
 
@@ -1331,13 +1341,6 @@ tp_stream_engine_stream_set_output_window (
   if (priv->output_window_id != 0)
     {
       tp_stream_engine_remove_output_window (engine, priv->output_window_id);
-    }
-
-  if (priv->output_window_id == window_id)
-    {
-      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-        "output is already sent to window id %u", window_id);
-      return FALSE;
     }
 
   priv->output_window_id = window_id;

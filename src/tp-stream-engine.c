@@ -1097,16 +1097,24 @@ gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, const gchar * 
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window, GError **error)
+gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window_id, GError **error)
 {
   TpStreamEngineStream *stream;
+
+  g_debug ("%s: channel_path=%s, stream_id=%u, window_id=%u", G_STRFUNC,
+      channel_path, stream_id, window_id);
 
   stream = _lookup_stream (obj, channel_path, stream_id, error);
 
   if (!stream)
-    return FALSE;
+    {
+      g_debug ("%s: stream not found, not doing anything!", G_STRFUNC);
+      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument, "stream not "
+          "found, not doing anything");
+      return FALSE;
+    }
 
-  return tp_stream_engine_stream_set_output_window (stream, window, error);
+  return tp_stream_engine_stream_set_output_window (stream, window_id, error);
 }
 
 /*
