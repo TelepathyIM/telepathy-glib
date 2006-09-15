@@ -1,5 +1,8 @@
+#ifndef __TP_STREAM_ENGINE_STREAM_H__
+#define __TP_STREAM_ENGINE_STREAM_H__
 
 #include <glib-object.h>
+#include <farsight/farsight-session.h>
 
 G_BEGIN_DECLS
 
@@ -70,3 +73,4 @@ gboolean tp_stream_engine_stream_set_preview_window (
 
 G_END_DECLS
 
+#endif /* __TP_STREAM_ENGINE_STREAM_H__ */
