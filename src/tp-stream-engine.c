@@ -143,7 +143,7 @@ struct _WindowPair
 {
   GstElement *sink;
   guint window_id;
-  volatile gboolean removing;
+  gboolean removing;
 };
 
 static void
