@@ -61,6 +61,8 @@ error_handler (Display *display, XErrorEvent *event)
     g_signal_emit (handler, signals[SIGNAL_BAD_WINDOW], 0,
       event->resourceid, &handled);
 
+  g_object_unref (handler);
+
   if (!handled)
     return priv->old_error_handler (display, event);
 
