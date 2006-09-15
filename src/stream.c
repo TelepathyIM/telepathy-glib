@@ -1328,7 +1328,7 @@ tp_stream_engine_stream_set_output_window (
 
   engine = tp_stream_engine_get ();
 
-  if (priv->output_window_id)
+  if (priv->output_window_id != 0)
     {
       tp_stream_engine_remove_output_window (engine, priv->output_window_id);
     }
@@ -1340,9 +1340,18 @@ tp_stream_engine_stream_set_output_window (
       return FALSE;
     }
 
-  DEBUG (stream, "putting video output in window %d", window_id);
-
   priv->output_window_id = window_id;
+
+  if (priv->output_window_id == 0)
+    {
+      DEBUG (stream, "removing output window");
+
+      farsight_stream_set_sink (priv->fs_stream, NULL);
+
+      return TRUE;
+    }
+
+  DEBUG (stream, "putting video output in window %d", window_id);
 
   sink = gst_element_factory_make ("xvimagesink", NULL);
   g_object_set (sink, "sync", FALSE, NULL);
