@@ -533,7 +533,7 @@ bus_async_handler (GstBus *bus,
     {
       if (error->code == GST_RESOURCE_ERROR_WRITE)
         {
-          wp = _window_pairs_find_by_sink (priv->output_windows,
+          wp = _window_pairs_find_by_sink (priv->preview_windows,
               GST_ELEMENT (GST_MESSAGE_SRC (message)));
 
           if (wp != NULL)
