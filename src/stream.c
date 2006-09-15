@@ -1349,7 +1349,7 @@ tp_stream_engine_stream_set_output_window (
 
   pipeline = tp_stream_engine_get_pipeline (engine);
   gst_bin_add (GST_BIN (pipeline), sink);
-  tp_stream_engine_add_output_window (engine, sink, window_id);
+  tp_stream_engine_add_output_window (engine, stream, sink, window_id);
 
   farsight_stream_set_sink (priv->fs_stream, sink);
   g_object_unref (sink);

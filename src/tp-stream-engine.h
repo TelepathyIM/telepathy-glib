@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include "stream.h"
+
 G_BEGIN_DECLS
 
 typedef struct _TpStreamEngine TpStreamEngine;
@@ -70,6 +72,7 @@ GstElement *tp_stream_engine_get_pipeline (TpStreamEngine *obj);
 
 gboolean
 tp_stream_engine_add_output_window (TpStreamEngine *obj,
+                                    TpStreamEngineStream *stream,
                                     GstElement *sink,
                                     guint window_id);
 

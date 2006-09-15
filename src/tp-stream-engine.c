@@ -141,6 +141,7 @@ struct _TpStreamEnginePrivate
 typedef struct _WindowPair WindowPair;
 struct _WindowPair
 {
+  TpStreamEngineStream *stream;
   GstElement *sink;
   guint window_id;
   volatile gboolean removing;
@@ -161,11 +162,12 @@ _window_pairs_free (GSList **list)
 }
 
 static void
-_window_pairs_add (GSList **list, GstElement *sink, guint window_id)
+_window_pairs_add (GSList **list, TpStreamEngineStream *stream, GstElement *sink, guint window_id)
 {
   WindowPair *wp;
 
   wp = g_slice_new (WindowPair);
+  wp->stream = stream;
   wp->sink = sink;
   wp->window_id = window_id;
   wp->removing = FALSE;
@@ -706,7 +708,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
 
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
-  _window_pairs_add (&(priv->preview_windows), sink, window_id);
+  _window_pairs_add (&(priv->preview_windows), NULL, sink, window_id);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
@@ -857,12 +859,13 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
 
 gboolean
 tp_stream_engine_add_output_window (TpStreamEngine *obj,
+                                    TpStreamEngineStream *stream,
                                     GstElement *sink,
                                     guint window_id)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
 
-  _window_pairs_add (&(priv->output_windows), sink, window_id);
+  _window_pairs_add (&(priv->output_windows), stream, sink, window_id);
 
   return TRUE;
 }
