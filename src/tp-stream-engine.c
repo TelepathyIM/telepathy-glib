@@ -126,6 +126,7 @@ struct _TpStreamEnginePrivate
 
   guint bus_async_source_id;
 
+  TpStreamEngineXErrorHandler *handler;
   guint bad_drawable_handler_id;
   guint bad_gc_handler_id;
   guint bad_window_handler_id;
@@ -263,19 +264,19 @@ static void
 tp_stream_engine_init (TpStreamEngine *obj)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  TpStreamEngineXErrorHandler *handler =
-    tp_stream_engine_x_error_handler_get ();
 
   priv->channels = g_ptr_array_new ();
 
+  priv->handler = tp_stream_engine_x_error_handler_get ();
+
   priv->bad_drawable_handler_id =
-    g_signal_connect (handler, "bad-drawable", (GCallback) bad_other_cb,
+    g_signal_connect (priv->handler, "bad-drawable", (GCallback) bad_other_cb,
       obj);
   priv->bad_gc_handler_id =
-    g_signal_connect (handler, "bad-gc", (GCallback) bad_other_cb,
+    g_signal_connect (priv->handler, "bad-gc", (GCallback) bad_other_cb,
       obj);
   priv->bad_window_handler_id =
-    g_signal_connect (handler, "bad-window", (GCallback) bad_window_cb,
+    g_signal_connect (priv->handler, "bad-window", (GCallback) bad_window_cb,
       obj);
 
 #ifdef USE_INFOPRINT
@@ -389,30 +390,23 @@ tp_stream_engine_dispose (GObject *object)
 
   if (priv->bad_drawable_handler_id)
     {
-      TpStreamEngineXErrorHandler *handler =
-        tp_stream_engine_x_error_handler_get ();
-
-      g_signal_handler_disconnect (handler, priv->bad_drawable_handler_id);
+      g_signal_handler_disconnect (priv->handler, priv->bad_drawable_handler_id);
       priv->bad_drawable_handler_id = 0;
     }
 
   if (priv->bad_gc_handler_id)
     {
-      TpStreamEngineXErrorHandler *handler =
-        tp_stream_engine_x_error_handler_get ();
-
-      g_signal_handler_disconnect (handler, priv->bad_gc_handler_id);
+      g_signal_handler_disconnect (priv->handler, priv->bad_gc_handler_id);
       priv->bad_gc_handler_id = 0;
     }
 
   if (priv->bad_window_handler_id)
     {
-      TpStreamEngineXErrorHandler *handler =
-        tp_stream_engine_x_error_handler_get ();
-
-      g_signal_handler_disconnect (handler, priv->bad_window_handler_id);
+      g_signal_handler_disconnect (priv->handler, priv->bad_window_handler_id);
       priv->bad_window_handler_id = 0;
     }
+
+  g_object_unref (priv->handler);
 
   priv->dispose_has_run = TRUE;
 
