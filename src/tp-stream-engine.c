@@ -564,9 +564,9 @@ bus_async_handler (GstBus *bus,
 
           if (wp != NULL)
             {
-              g_debug ("%s: ximagesink for %s window (id %u) has gone, "
-                  "removing", G_STRFUNC,
-                  wp->stream == NULL ? "preview" : "output", wp->window_id);
+              g_debug ("%s: sink for %s window (id %u) has gone, removing",
+                  G_STRFUNC, wp->stream == NULL ? "preview" : "output",
+                  wp->window_id);
 
               wp->removing = TRUE;
               _remove_defunct_sinks (engine);
