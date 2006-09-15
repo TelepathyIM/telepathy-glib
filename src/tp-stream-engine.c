@@ -493,7 +493,7 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 
 
 static void
-_remove_preview_sinks (TpStreamEngine *engine)
+_remove_defunct_sinks (TpStreamEngine *engine)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp = NULL;
@@ -514,6 +514,21 @@ _remove_preview_sinks (TpStreamEngine *engine)
       gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
 
       _window_pairs_remove (&(priv->preview_windows), wp);
+    }
+
+  while ((wp = _window_pairs_find_by_removing (priv->output_windows, TRUE)) !=
+      NULL)
+    {
+      GError *error;
+
+      g_debug ("%s: removing sink for output window ID %u", G_STRFUNC,
+          wp->window_id);
+
+      if (!tp_stream_engine_stream_set_output_window (wp->stream, 0, &error))
+        {
+          g_debug ("%s: got error: %s", G_STRFUNC, error->message);
+          g_error_free (error);
+        }
     }
 
   check_if_busy (engine);
@@ -543,12 +558,18 @@ bus_async_handler (GstBus *bus,
           wp = _window_pairs_find_by_sink (priv->preview_windows,
               GST_ELEMENT (GST_MESSAGE_SRC (message)));
 
+          if (wp == NULL)
+            wp = _window_pairs_find_by_sink (priv->output_windows,
+                GST_ELEMENT (GST_MESSAGE_SRC (message)));
+
           if (wp != NULL)
             {
-              g_debug ("ximagesink has gone, removing");
+              g_debug ("%s: ximagesink for %s window (id %u) has gone, "
+                  "removing", G_STRFUNC,
+                  wp->stream == NULL ? "preview" : "output", wp->window_id);
 
               wp->removing = TRUE;
-              _remove_preview_sinks (engine);
+              _remove_defunct_sinks (engine);
             }
         }
     }
@@ -651,9 +672,9 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 
 
 static gboolean
-_remove_preview_sinks_idle_cb (TpStreamEngine *engine)
+_remove_defunct_sinks_idle_cb (TpStreamEngine *engine)
 {
-  _remove_preview_sinks (engine);
+  _remove_defunct_sinks (engine);
 
   return FALSE;
 }
@@ -678,7 +699,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
   WindowPair *wp;
 
   /* try and remove any sinks which have removing = TRUE to free up Xv ports */
-  _remove_preview_sinks (obj);
+  _remove_defunct_sinks (obj);
 
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
@@ -730,27 +751,30 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
   if (wp == NULL)
+    wp = _window_pairs_find_by_window_id (priv->output_windows, window_id);
+
+  if (wp == NULL)
     {
-      g_debug ("%s: BadWindow(%u) not for a preview window, not handling",
-        G_STRFUNC, window_id);
+      g_debug ("%s: BadWindow(%u) not for a preview or output window, not "
+          "handling", G_STRFUNC, window_id);
       return FALSE;
     }
 
   if (wp->removing)
     {
-      g_debug ("%s: BadWindow(%u) for a preview window being removed, "
-        "ignoring", G_STRFUNC, window_id);
+      g_debug ("%s: BadWindow(%u) for a %s window being removed, ignoring",
+          G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
       return TRUE;
     }
 
-  g_debug ("%s: BadWindow(%u) for a preview window, scheduling sink removal",
-    G_STRFUNC, window_id);
+  g_debug ("%s: BadWindow(%u) for a %s window, scheduling sink removal",
+      G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
 
   /* set removing to TRUE so that we know this window ID is being removed and X
    * errors can be ignored */
   wp->removing = TRUE;
 
-  g_idle_add ((GSourceFunc) _remove_preview_sinks_idle_cb, engine);
+  g_idle_add ((GSourceFunc) _remove_defunct_sinks_idle_cb, engine);
 
   return TRUE;
 }
@@ -770,21 +794,25 @@ bad_misc_cb (TpStreamEngineXErrorHandler *handler,
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
   if (wp == NULL)
+    wp = _window_pairs_find_by_window_id (priv->output_windows, window_id);
+
+  if (wp == NULL)
     {
-      g_debug ("%s: BadDrawable(%u) not for a preview window, not "
+      g_debug ("%s: BadDrawable(%u) not for a preview or output window, not "
           "handling", G_STRFUNC, window_id);
       return FALSE;
     }
 
   if (!wp->removing)
     {
-      g_debug ("%s: BadDrawable(%u) for a preview window not being "
-          "removed, not handling", G_STRFUNC, window_id);
+      g_debug ("%s: BadDrawable(%u) for a %s window not being removed, not "
+          "handling", G_STRFUNC, window_id,
+          wp->stream == NULL ? "preview" : "output");
       return FALSE;
     }
 
-  g_debug ("%s: BadDrawable(%u) for a preview window being removed, "
-      "ignoring", G_STRFUNC, window_id);
+  g_debug ("%s: BadDrawable(%u) for a %s window being removed, ignoring",
+      G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
 
   return TRUE;
 }
@@ -804,14 +832,17 @@ bad_other_cb (TpStreamEngineXErrorHandler *handler,
   wp = _window_pairs_find_by_removing (priv->preview_windows, TRUE);
 
   if (wp == NULL)
+    wp = _window_pairs_find_by_removing (priv->output_windows, TRUE);
+
+  if (wp == NULL)
     {
-      g_debug ("%s: BadGC(%u) when no preview windows are being removed, not "
-          "handling", G_STRFUNC, gc_id);
+      g_debug ("%s: BadGC(%u) when no preview or output windows are being "
+          "removed, not handling", G_STRFUNC, gc_id);
       return FALSE;
     }
 
-  g_debug ("%s: BadGC(%u) when a preview window is being removed, ignoring",
-      G_STRFUNC, gc_id);
+  g_debug ("%s: BadGC(%u) when a preview or output window is being removed, "
+      "ignoring", G_STRFUNC, gc_id);
 
   return TRUE;
 }
@@ -851,7 +882,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
 
   wp->removing = TRUE;
 
-  _remove_preview_sinks (obj);
+  _remove_defunct_sinks (obj);
 
   return TRUE;
 }
@@ -864,6 +895,8 @@ tp_stream_engine_add_output_window (TpStreamEngine *obj,
                                     guint window_id)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+
+  _remove_defunct_sinks (obj);
 
   _window_pairs_add (&(priv->output_windows), stream, sink, window_id);
 
