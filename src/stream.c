@@ -92,8 +92,8 @@ struct _TpStreamEngineStreamPrivate
   gboolean candidate_preparation_required;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  gboolean media_engine_disabled;
-  DBusGProxy *media_engine_proxy;
+  gboolean media_server_disabled;
+  DBusGProxy *media_server_proxy;
 #endif
 };
 
@@ -151,10 +151,10 @@ tp_stream_engine_stream_dispose (GObject *object)
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
 
 #ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_engine_proxy)
+  if (priv->media_server_proxy)
     {
-      g_object_unref (priv->media_engine_proxy);
-      priv->media_engine_proxy = NULL;
+      g_object_unref (priv->media_server_proxy);
+      priv->media_server_proxy = NULL;
     }
 #endif
 
@@ -257,7 +257,7 @@ check_start_stream (TpStreamEngineStream *stream)
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
 
 #ifdef MAEMO_OSSO_SUPPORT
-  if (!priv->media_engine_disabled)
+  if (!priv->media_server_disabled)
     return;
 #endif
 
@@ -711,22 +711,22 @@ stop_stream (TpStreamEngineStream *self)
   priv->stream_started = FALSE;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_engine_disabled && priv->media_engine_proxy)
+  if (priv->media_server_disabled && priv->media_server_proxy)
     {
       GError *error = NULL;
 
-      DEBUG (self, "enabling media server");
+      DEBUG (self, "re-enabling media server");
 
       com_nokia_osso_media_server_enable (
-          DBUS_G_PROXY (priv->media_engine_proxy), &error);
+          DBUS_G_PROXY (priv->media_server_proxy), &error);
       if (error)
       {
-        g_message ("Unable to enable stream-engine: %s", error->message);
+        g_message ("unable to re-enable media server: %s", error->message);
         g_error_free (error);
       }
     }
 
-  priv->media_engine_disabled = FALSE;
+  priv->media_server_disabled = FALSE;
 #endif
 
 }
@@ -899,56 +899,56 @@ cb_properties_ready (TpPropsIface *iface, gpointer user_data)
 
 #ifdef MAEMO_OSSO_SUPPORT
 static void
-media_engine_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
+media_server_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  if (priv->media_engine_proxy)
+  if (priv->media_server_proxy)
     {
-      DBusGProxy *proxy = priv->media_engine_proxy;
+      DBusGProxy *proxy = priv->media_server_proxy;
 
-      DEBUG (self, "MediaEngine proxy destroyed, unreffing it");
+      DEBUG (self, "media server proxy destroyed");
 
-      priv->media_engine_proxy = NULL;
+      priv->media_server_proxy = NULL;
       g_object_unref (proxy);
     }
 }
 
 static gboolean
-media_engine_proxy_init (TpStreamEngineStream *self)
+media_server_proxy_init (TpStreamEngineStream *self)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GError *me_error;
 
-  DEBUG (self, "initialising media engine proxy");
+  DEBUG (self, "initialising media server proxy");
 
-  priv->media_engine_proxy =
+  priv->media_server_proxy =
     dbus_g_proxy_new_for_name (tp_get_bus(),
                                MEDIA_SERVER_SERVICE_NAME,
                                MEDIA_SERVER_SERVICE_OBJECT,
                                MEDIA_SERVER_INTERFACE_NAME);
 
-  g_signal_connect (priv->media_engine_proxy, "destroy",
-                    G_CALLBACK (media_engine_proxy_destroyed), self);
+  g_signal_connect (priv->media_server_proxy, "destroy",
+                    G_CALLBACK (media_server_proxy_destroyed), self);
 
-  g_message ("disabling media engine");
+  g_message ("disabling media server");
 
   if (com_nokia_osso_media_server_disable (
-        DBUS_G_PROXY (priv->media_engine_proxy),
+        DBUS_G_PROXY (priv->media_server_proxy),
         &me_error))
     {
-      priv->media_engine_disabled = TRUE;
+      priv->media_server_disabled = TRUE;
       return TRUE;
     }
   else
     {
       if (me_error)
-        g_message ("failed to disable media engine: %s", me_error->message);
+        g_message ("failed to disable media server: %s", me_error->message);
       else
-        g_message ("failed to disable media engine");
+        g_message ("failed to disable media server");
 
-      priv->media_engine_disabled = FALSE;
+      priv->media_server_disabled = FALSE;
       return FALSE;
     }
 }
@@ -1061,7 +1061,7 @@ tp_stream_engine_stream_go (
   gchar *conn_timeout_str;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  if (!media_engine_proxy_init (stream))
+  if (!media_server_proxy_init (stream))
     return FALSE;
 #endif
 
