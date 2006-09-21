@@ -2,7 +2,9 @@
 \.hi$
 \.o$
 \.o\.cmd$
-\.ko$
+# *.ko files aren't boring by default because they might
+# be Korean translations rather than kernel modules.
+# \.ko$
 \.ko\.cmd$
 \.mod\.c$
 (^|/)\.tmp_versions($|/)
@@ -31,6 +33,7 @@
 \#
 \.cvsignore$
 (^|/)Thumbs\.db$
+(^|/)autom4te\.cache($|/)
 (^|/)Makefile$
 (^|/)Makefile.in$
 ^aclocal.m4$
@@ -63,20 +66,8 @@
 ^tests/sip_test$
 ^po/POTFILES$
 ^data/.*.service$
-^docs/core/farsight-decl-list.txt$
-^docs/core/farsight-decl.txt$
-^docs/core/farsight-overrides.txt$
-^docs/core/farsight-undocumented.txt$
-^docs/core/html($|/)
-^docs/core/tmpl($|/)
-^docs/core/xml($|/)
-^debian/files$
-^debian/stamp-autotools-files$
-^debian/stamp-makefile-build$
-^doc/.sequence.temp
-^doc/log.sh
-\.png$
+^debian($|/)
 ^src/telepathy-stream-engine$
 (^|/).svn($|/)
-^debian($|/)
 ^tags$
+./core\..*$
