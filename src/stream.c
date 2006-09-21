@@ -153,8 +153,10 @@ tp_stream_engine_stream_dispose (GObject *object)
 #ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_server_proxy)
     {
-      g_object_unref (priv->media_server_proxy);
+      DBusGProxy *proxy = priv->media_server_proxy;
+
       priv->media_server_proxy = NULL;
+      g_object_unref (proxy);
     }
 #endif
 
