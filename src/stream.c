@@ -227,9 +227,6 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->fs_stream)
     {
-      if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-        _remove_video_sink (stream);
-
       g_signal_handler_disconnect (priv->fs_stream,
         priv->state_changed_handler_id);
       g_object_unref (priv->fs_stream);
@@ -736,6 +733,9 @@ stop_stream (TpStreamEngineStream *self)
     return;
 
   DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
+
+  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+    _remove_video_sink (stream);
 
   farsight_stream_stop (priv->fs_stream);
 
