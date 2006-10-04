@@ -1339,6 +1339,7 @@ tp_stream_engine_stream_set_output_window (
     }
 
   engine = tp_stream_engine_get ();
+  pipeline = tp_stream_engine_get_pipeline (engine);
 
   if (priv->output_window_id != 0)
     {
@@ -1349,7 +1350,16 @@ tp_stream_engine_stream_set_output_window (
 
   if (priv->output_window_id == 0)
     {
+      GstElement *sink;
+
       DEBUG (stream, "removing output window");
+
+      sink = farsight_stream_get_sink (priv->fs_stream);
+      gst_object_ref (sink);
+      gst_bin_remove (GST_BIN (pipeline), sink);
+      gst_element_set_state (sink, GST_STATE_NULL);
+      DEBUG ("sink refcount: %d", GST_OBJECT_REFCOUNT_VALUE(sink));
+      gst_object_unref (sink);
 
       farsight_stream_set_sink (priv->fs_stream, NULL);
 
@@ -1361,7 +1371,6 @@ tp_stream_engine_stream_set_output_window (
   sink = gst_element_factory_make ("xvimagesink", NULL);
   g_object_set (sink, "sync", FALSE, NULL);
 
-  pipeline = tp_stream_engine_get_pipeline (engine);
   gst_bin_add (GST_BIN (pipeline), sink);
   tp_stream_engine_add_output_window (engine, stream, sink, window_id);
 
