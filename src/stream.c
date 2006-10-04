@@ -150,6 +150,9 @@ tp_stream_engine_stream_dispose (GObject *object)
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
 
+  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+    tp_stream_engine_stream_set_output_window (stream, 0, NULL);
+
 #ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_server_proxy)
     {
@@ -215,9 +218,6 @@ tp_stream_engine_stream_dispose (GObject *object)
           priv->output_window_id);
       g_assert (ret);
     }
-
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    tp_stream_engine_stream_set_output_window (stream, 0);
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
@@ -1359,12 +1359,11 @@ tp_stream_engine_stream_set_output_window (
 
       sink = farsight_stream_get_sink (priv->fs_stream);
       gst_object_ref (sink);
+      farsight_stream_set_sink (priv->fs_stream, NULL);
       gst_bin_remove (GST_BIN (pipeline), sink);
       gst_element_set_state (sink, GST_STATE_NULL);
-      DEBUG ("sink refcount: %d", GST_OBJECT_REFCOUNT_VALUE(sink));
+      DEBUG (stream, "sink refcount: %d", GST_OBJECT_REFCOUNT_VALUE(sink));
       gst_object_unref (sink);
-
-      farsight_stream_set_sink (priv->fs_stream, NULL);
 
       return TRUE;
     }
