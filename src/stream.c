@@ -735,7 +735,7 @@ stop_stream (TpStreamEngineStream *self)
   DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
 
   if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    _remove_video_sink (stream);
+    _remove_video_sink (self);
 
   farsight_stream_stop (priv->fs_stream);
 
