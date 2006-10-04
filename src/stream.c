@@ -216,6 +216,9 @@ tp_stream_engine_stream_dispose (GObject *object)
       g_assert (ret);
     }
 
+  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+    tp_stream_engine_stream_set_output_window (stream, 0);
+
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
 }
