@@ -135,6 +135,9 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data);
 static void
 set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data);
 
+static void
+stop_stream (TpStreamEngineStream *self);
+
 static gboolean
 g_object_has_property (GObject *object, const gchar *property)
 {
@@ -145,27 +148,28 @@ g_object_has_property (GObject *object, const gchar *property)
 }
 
 static void
-_remove_video_sink (TpStreamEngineStream *stream)
+_remove_video_sink (TpStreamEngineStream *stream, GstElement *sink, gboolean null_sink)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   TpStreamEngine *engine;
-  GstElement *sink, *pipeline;
+  GstElement *pipeline;
 
   DEBUG (stream, "removing video sink");
 
-  sink = farsight_stream_get_sink (priv->fs_stream);
+  gst_object_ref (sink);
+  if (null_sink)
+    {
+      farsight_stream_set_sink (priv->fs_stream, NULL);
+    }
 
   if (sink == NULL)
     return;
 
-  gst_object_ref (sink);
-  farsight_stream_set_sink (priv->fs_stream, NULL);
-
   engine = tp_stream_engine_get ();
   pipeline = tp_stream_engine_get_pipeline (engine);
+  gst_element_set_state (sink, GST_STATE_NULL);
   gst_bin_remove (GST_BIN (pipeline), sink);
 
-  gst_element_set_state (sink, GST_STATE_NULL);
   DEBUG (stream, "sink refcount: %d", GST_OBJECT_REFCOUNT_VALUE(sink));
   gst_object_unref (sink);
 }
@@ -227,6 +231,9 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->fs_stream)
     {
+      if (priv->stream_started)
+        stop_stream (stream);
+
       g_signal_handler_disconnect (priv->fs_stream,
         priv->state_changed_handler_id);
       g_object_unref (priv->fs_stream);
@@ -728,16 +735,18 @@ static void
 stop_stream (TpStreamEngineStream *self)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  GstElement *sink = NULL;
 
   if (!priv->fs_stream)
     return;
 
   DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
 
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    _remove_video_sink (self);
-
+  sink = farsight_stream_get_sink (priv->fs_stream);
   farsight_stream_stop (priv->fs_stream);
+
+  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+    _remove_video_sink (self, sink, FALSE);
 
   priv->stream_started = FALSE;
 
@@ -1149,7 +1158,7 @@ tp_stream_engine_stream_go (
     {
       DEBUG (stream, "setting sink on Farsight stream");
       farsight_stream_set_sink (priv->fs_stream, sink);
-      g_object_unref (sink);
+      gst_object_unref (sink);
     }
   else
     {
@@ -1378,7 +1387,8 @@ tp_stream_engine_stream_set_output_window (
 
   if (priv->output_window_id == 0)
     {
-      _remove_video_sink (stream);
+      GstElement *stream_sink = farsight_stream_get_sink (priv->fs_stream);
+      _remove_video_sink (stream, stream_sink, TRUE);
 
       return TRUE;
     }
@@ -1393,7 +1403,7 @@ tp_stream_engine_stream_set_output_window (
   tp_stream_engine_add_output_window (engine, stream, sink, window_id);
 
   farsight_stream_set_sink (priv->fs_stream, sink);
-  g_object_unref (sink);
+  gst_object_unref (sink);
 
   return TRUE;
 }

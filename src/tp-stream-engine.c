@@ -605,6 +605,7 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   gst_x_overlay_set_xwindow_id (
       GST_X_OVERLAY (GST_MESSAGE_SRC (message)), wp->window_id);
 
+  gst_message_unref (message);
   return GST_BUS_DROP;
 }
 
