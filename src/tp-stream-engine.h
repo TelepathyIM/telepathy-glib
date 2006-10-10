@@ -68,6 +68,10 @@ void tp_stream_engine_register (TpStreamEngine *self);
 void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug);
 
 TpStreamEngine *tp_stream_engine_get ();
+
+void tp_stream_engine_emit_receiving (TpStreamEngine *obj, gchar *channel_path,
+    guint stream_id, gboolean state);
+
 GstElement *tp_stream_engine_get_pipeline (TpStreamEngine *obj);
 
 gboolean

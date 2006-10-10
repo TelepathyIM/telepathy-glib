@@ -32,6 +32,7 @@ G_DEFINE_TYPE(TpStreamEngine, tp_stream_engine, G_TYPE_OBJECT)
 /* signal enum */
 enum
 {
+    RECEIVING,
     LAST_SIGNAL
 };
 
@@ -67,6 +68,15 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
 
   object_class->dispose = tp_stream_engine_dispose;
   object_class->finalize = tp_stream_engine_finalize;
+
+  signals[RECEIVING] =
+    g_signal_new ("receiving",
+                  G_OBJECT_CLASS_TYPE (tp_stream_engine_class),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  tp_stream_engine_marshal_VOID__STRING_INT_BOOLEAN,
+                  G_TYPE_NONE, 3, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_BOOLEAN);
 
   dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_stream_engine_class), &dbus_glib_tp_stream_engine_object_info);
 }

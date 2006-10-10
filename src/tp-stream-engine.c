@@ -106,6 +106,7 @@ enum
 {
   HANDLING_CHANNEL,
   NO_MORE_CHANNELS,
+  RECEIVING,
   LAST_SIGNAL
 };
 
@@ -348,6 +349,19 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
                 g_cclosure_marshal_VOID__VOID,
                 G_TYPE_NONE, 0);
 
+   /**
+   * TpStreamEngine::receiving:
+   *
+   * Emitted whenever a stream is received
+   */
+  signals[RECEIVING] =
+    g_signal_new ("receiving",
+        G_OBJECT_CLASS_TYPE (tp_stream_engine_class),
+        G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+        0,
+        NULL, NULL,
+        tp_stream_engine_marshal_VOID__STRING_INT_BOOLEAN,
+        G_TYPE_NONE, 3, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_BOOLEAN);
 
   dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_stream_engine_class), &dbus_glib_tp_stream_engine_object_info);
 }
@@ -1172,3 +1186,16 @@ tp_stream_engine_get ()
   return engine;
 }
 
+/*
+ * tp_stream_engine_emit_received
+ *
+ * Triggers stream engine to emit the TpStreamEngine::receiving signal
+ *
+ */
+void
+tp_stream_engine_emit_receiving (TpStreamEngine *obj, gchar *channel_path, guint
+    stream_id, gboolean state)
+{
+  g_signal_emit (G_OBJECT (obj), signals[RECEIVING], 0, channel_path,
+      stream_id, TRUE);
+}

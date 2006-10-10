@@ -70,6 +70,8 @@ typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
 
 struct _TpStreamEngineStreamPrivate
 {
+  gchar *channel_path;
+
   DBusGProxy *stream_handler_proxy;
   TpPropsIface *conn_props;
   TpConn *connection_proxy;
@@ -189,6 +191,12 @@ tp_stream_engine_stream_dispose (GObject *object)
       g_object_unref (proxy);
     }
 #endif
+
+  if (priv->channel_path)
+    {
+      g_free (priv->channel_path);
+      priv->channel_path = NULL;
+    }
 
   if (priv->stun_server)
     {
@@ -834,6 +842,9 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
         NULL);
     }
 
+  tp_stream_engine_emit_receiving (tp_stream_engine_get(), priv->channel_path,
+      self->stream_id, TRUE);
+
   DEBUG (self, "codec_id=%d, stream=%p", codec_id, stream);
   tp_media_stream_handler_codec_choice_async (
     priv->stream_handler_proxy, codec_id, dummy_callback,
@@ -1090,6 +1101,7 @@ tp_stream_engine_stream_go (
   const gchar *bus_name,
   const gchar *connection_path,
   const gchar *stream_handler_path,
+  const gchar *channel_path,
   FarsightSession *fs_session,
   guint id,
   guint media_type,
@@ -1104,6 +1116,8 @@ tp_stream_engine_stream_go (
   if (!media_server_proxy_init (stream))
     return FALSE;
 #endif
+
+  priv->channel_path = g_strdup (channel_path);
 
   stream->stream_id = id;
   priv->media_type = media_type;

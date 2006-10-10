@@ -37,5 +37,10 @@
     <method name="RemovePreviewWindow">
       <arg direction="in" type="u" name="window" />
     </method>
+    <signal name="Receiving">
+      <arg type="o" name="channel_path" />
+      <arg type="u" name="stream_id" />
+      <arg type="b" name="state" />
+    </signal>
   </interface>
 </node>

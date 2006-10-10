@@ -47,6 +47,7 @@ struct _TpStreamEngineSessionPrivate
   FarsightSession *fs_session;
 
   gchar *connection_path;
+  gchar *channel_path;
 };
 
 /* dummy callback handler for async calling calls with no return values */
@@ -95,6 +96,12 @@ tp_stream_engine_session_dispose (GObject *object)
 
       g_ptr_array_free (self->streams, TRUE);
       self->streams = NULL;
+    }
+
+  if (priv->channel_path)
+    {
+      g_free (priv->channel_path);
+      priv->channel_path = NULL;
     }
 
   if (priv->connection_path)
@@ -185,6 +192,7 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
         bus_name,
         priv->connection_path,
         stream_handler_path,
+        priv->channel_path,
         priv->fs_session,
         id,
         media_type,
@@ -206,11 +214,14 @@ tp_stream_engine_session_go (
   const gchar *bus_name,
   const gchar *connection_path,
   const gchar *session_handler_path,
+  const gchar *channel_path,
   const gchar *type)
 {
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
   priv->connection_path = g_strdup (connection_path);
+
+  priv->channel_path = g_strdup (channel_path);
 
   priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
     bus_name,
