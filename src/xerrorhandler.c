@@ -37,6 +37,7 @@ struct _TpStreamEngineXErrorHandlerPrivate
 enum {
   SIGNAL_BAD_DRAWABLE,
   SIGNAL_BAD_GC,
+  SIGNAL_BAD_VALUE,
   SIGNAL_BAD_WINDOW,
   SIGNAL_COUNT
 };
@@ -56,6 +57,9 @@ error_handler (Display *display, XErrorEvent *event)
       event->resourceid, &handled);
   else if (event->error_code == BadGC)
     g_signal_emit (handler, signals[SIGNAL_BAD_GC], 0,
+      event->resourceid, &handled);
+  else if (event->error_code == BadValue)
+    g_signal_emit (handler, signals[SIGNAL_BAD_VALUE], 0,
       event->resourceid, &handled);
   else if (event->error_code == BadWindow)
     g_signal_emit (handler, signals[SIGNAL_BAD_WINDOW], 0,
@@ -102,6 +106,16 @@ tp_stream_engine_x_error_handler_class_init (TpStreamEngineXErrorHandlerClass *k
 
   signals[SIGNAL_BAD_GC] =
     g_signal_new ("bad-gc",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  g_signal_accumulator_true_handled, NULL,
+                  /* FIXME: should be _BOOLEAN__UINT really */
+                  g_cclosure_marshal_BOOLEAN__FLAGS,
+                  G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
+
+  signals[SIGNAL_BAD_VALUE] =
+    g_signal_new ("bad-value",
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
