@@ -1370,6 +1370,7 @@ tp_stream_engine_stream_set_output_window (
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   TpStreamEngine *engine;
   GstElement *pipeline, *sink;
+  const gchar *videosink_name;
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
@@ -1408,8 +1409,17 @@ tp_stream_engine_stream_set_output_window (
 
   DEBUG (stream, "putting video output in window %d", window_id);
 
-  sink = gst_element_factory_make ("xvimagesink", NULL);
-  g_object_set (sink, "sync", FALSE, NULL);
+  if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
+    {
+      DEBUG (stream, "making video sink with pipeline \"%s\"", videosink_name);
+      sink = gst_parse_bin_from_description (videosink_name, TRUE, NULL);
+    }
+  else
+    {
+      DEBUG (stream, "using xvimagesink");
+      sink = gst_element_factory_make ("xvimagesink", NULL);
+      g_object_set (sink, "sync", FALSE, NULL);
+    }
 
   pipeline = tp_stream_engine_get_pipeline (engine);
   gst_bin_add (GST_BIN (pipeline), sink);

@@ -712,6 +712,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *tee, *sink, *filter, *pipeline;
   WindowPair *wp;
+  const gchar *videosink_name;
 
   /* try and remove any sinks which have removing = TRUE to free up Xv ports */
   _remove_defunct_sinks (obj);
@@ -731,8 +732,18 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
 
   g_debug ("adding preview in window %u", window_id);
 
-  sink = gst_element_factory_make ("xvimagesink", NULL);
-  g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+  if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
+    {
+      g_debug ("making video sink with pipeline \"%s\"", videosink_name);
+      sink = gst_parse_bin_from_description (videosink_name, TRUE, NULL);
+    }
+  else
+    {
+      g_debug ("using xvimagesink");
+      sink = gst_element_factory_make ("xvimagesink", NULL);
+      g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+    }
+
   gst_bin_add (GST_BIN (priv->pipeline), sink);
 
   filter = gst_element_factory_make ("ffmpegcolorspace", NULL);
