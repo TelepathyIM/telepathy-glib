@@ -1297,6 +1297,7 @@ gboolean tp_stream_engine_stream_set_output_volume (
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   GstElement *sink;
+  guint scaled_volume;
 
   g_return_val_if_fail (priv->fs_stream, FALSE);
 
@@ -1310,12 +1311,13 @@ gboolean tp_stream_engine_stream_set_output_volume (
   if (volume > 100)
     volume = 100;
 
-  priv->output_volume = (volume * 65535)/100;
+  priv->output_volume = volume;
+  scaled_volume = (volume * 65535)/100;
   DEBUG (stream, "setting output volume to %d", priv->output_volume);
   sink = farsight_stream_get_sink (priv->fs_stream);
 
   if (sink && g_object_has_property (G_OBJECT (sink), "volume"))
-    g_object_set (G_OBJECT (sink), "volume", priv->output_volume, NULL);
+    g_object_set (G_OBJECT (sink), "volume", scaled_volume, NULL);
 
   return TRUE;
 }
