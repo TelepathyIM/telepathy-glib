@@ -130,6 +130,7 @@ struct _TpStreamEnginePrivate
   TpStreamEngineXErrorHandler *handler;
   guint bad_drawable_handler_id;
   guint bad_gc_handler_id;
+  guint bad_value_handler_id;
   guint bad_window_handler_id;
 
 #ifdef MAEMO_OSSO_SUPPORT
@@ -264,6 +265,11 @@ bad_other_cb (TpStreamEngineXErrorHandler *handler,
               gpointer data);
 
 static gboolean
+bad_value_cb (TpStreamEngineXErrorHandler *handler,
+              guint window_id,
+              gpointer data);
+
+static gboolean
 bad_window_cb (TpStreamEngineXErrorHandler *handler,
                guint window_id,
                gpointer data);
@@ -282,6 +288,9 @@ tp_stream_engine_init (TpStreamEngine *obj)
       obj);
   priv->bad_gc_handler_id =
     g_signal_connect (priv->handler, "bad-gc", (GCallback) bad_other_cb,
+      obj);
+  priv->bad_value_handler_id =
+    g_signal_connect (priv->handler, "bad-value", (GCallback) bad_value_cb,
       obj);
   priv->bad_window_handler_id =
     g_signal_connect (priv->handler, "bad-window", (GCallback) bad_window_cb,
@@ -419,6 +428,12 @@ tp_stream_engine_dispose (GObject *object)
     {
       g_signal_handler_disconnect (priv->handler, priv->bad_gc_handler_id);
       priv->bad_gc_handler_id = 0;
+    }
+
+  if (priv->bad_value_handler_id)
+    {
+      g_signal_handler_disconnect (priv->handler, priv->bad_value_handler_id);
+      priv->bad_value_handler_id = 0;
     }
 
   if (priv->bad_window_handler_id)
@@ -869,6 +884,36 @@ bad_other_cb (TpStreamEngineXErrorHandler *handler,
 
   g_debug ("%s: BadGC(%u) when a preview or output window is being removed, "
       "ignoring", G_STRFUNC, gc_id);
+
+  return TRUE;
+}
+
+
+static gboolean
+bad_value_cb (TpStreamEngineXErrorHandler *handler,
+              guint window_id,
+              gpointer data)
+{
+  TpStreamEngine *engine = data;
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  WindowPair *wp;
+
+  /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
+
+  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
+
+  if (wp == NULL)
+    wp = _window_pairs_find_by_window_id (priv->output_windows, window_id);
+
+  if (wp == NULL)
+    {
+      g_debug ("%s: BadValue(%u) not for a preview or output window, not "
+          "handling", G_STRFUNC, window_id);
+      return FALSE;
+    }
+
+  g_debug ("%s: BadValue(%u) for a %s window being removed, ignoring",
+      G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
 
   return TRUE;
 }
