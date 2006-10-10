@@ -794,7 +794,7 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
       priv->stream_start_scheduled = TRUE;
       check_start_stream (self);
     }
-  else
+  else if (priv->stream_started)
     {
       stop_stream (self);
     }
