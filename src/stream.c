@@ -150,18 +150,12 @@ g_object_has_property (GObject *object, const gchar *property)
 }
 
 static void
-_remove_video_sink (TpStreamEngineStream *stream, GstElement *sink, gboolean null_sink)
+_remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   TpStreamEngine *engine;
   GstElement *pipeline;
 
   DEBUG (stream, "removing video sink");
-
-  if (null_sink)
-    {
-      farsight_stream_set_sink (priv->fs_stream, NULL);
-    }
 
   if (sink == NULL)
     return;
@@ -741,18 +735,22 @@ static void
 stop_stream (TpStreamEngineStream *self)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  GstElement *sink = NULL;
 
   if (!priv->fs_stream)
     return;
 
   DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
 
-  sink = farsight_stream_get_sink (priv->fs_stream);
-  farsight_stream_stop (priv->fs_stream);
-
   if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    _remove_video_sink (self, sink, FALSE);
+    {
+      GstElement *sink = farsight_stream_get_sink (priv->fs_stream);
+      farsight_stream_stop (priv->fs_stream);
+      _remove_video_sink (self, sink);
+    }
+  else
+    {
+      farsight_stream_stop (priv->fs_stream);
+    }
 
   priv->stream_started = FALSE;
 
@@ -1402,7 +1400,8 @@ tp_stream_engine_stream_set_output_window (
   if (priv->output_window_id == 0)
     {
       GstElement *stream_sink = farsight_stream_get_sink (priv->fs_stream);
-      _remove_video_sink (stream, stream_sink, TRUE);
+      farsight_stream_set_sink (priv->fs_stream, NULL);
+      _remove_video_sink (stream, stream_sink);
 
       return TRUE;
     }
