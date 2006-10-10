@@ -158,7 +158,6 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink, gboolean nul
 
   DEBUG (stream, "removing video sink");
 
-  gst_object_ref (sink);
   if (null_sink)
     {
       farsight_stream_set_sink (priv->fs_stream, NULL);
@@ -170,10 +169,9 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink, gboolean nul
   engine = tp_stream_engine_get ();
   pipeline = tp_stream_engine_get_pipeline (engine);
   gst_element_set_state (sink, GST_STATE_NULL);
-  gst_bin_remove (GST_BIN (pipeline), sink);
 
   DEBUG (stream, "sink refcount: %d", GST_OBJECT_REFCOUNT_VALUE(sink));
-  gst_object_unref (sink);
+  gst_bin_remove (GST_BIN (pipeline), sink);
 }
 
 static void
