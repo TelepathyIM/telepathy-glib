@@ -656,7 +656,7 @@ GstElement *
 tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *videosrc;
+  GstElement *videosrc = NULL;
   GstElement *tee;
   GstBus *bus;
   GstCaps *filter;
@@ -678,8 +678,13 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
         }
       else
         {
-          videosrc = gst_element_factory_make ("v4l2src", NULL);
+#ifdef MAEMO_OSSO_SUPPORT
+          videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
+#endif
+          if (videosrc == NULL)
+            videosrc = gst_element_factory_make ("v4l2src", NULL);
         }
+
       filter = gst_caps_new_simple(
         "video/x-raw-yuv",
         "width", G_TYPE_INT, 352,
