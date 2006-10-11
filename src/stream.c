@@ -136,6 +136,8 @@ static void
 set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data);
 static void
 set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data);
+static void
+set_stream_sending (DBusGProxy *proxy, gboolean play, gpointer user_data);
 
 static void
 stop_stream (TpStreamEngineStream *self);
@@ -224,6 +226,9 @@ tp_stream_engine_stream_dispose (GObject *object)
 
       dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
           "SetStreamPlaying", G_CALLBACK (set_stream_playing), stream);
+
+      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
+          "SetStreamSending", G_CALLBACK (set_stream_sending), stream);
 
       g_object_unref (priv->stream_handler_proxy);
       priv->stream_handler_proxy = NULL;
@@ -797,6 +802,19 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 }
 
 static void
+set_stream_sending (DBusGProxy *proxy, gboolean send, gpointer user_data)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
+  g_assert (priv->fs_stream != NULL);
+
+  DEBUG (self, "%d", send);
+
+  farsight_stream_set_sending (priv->fs_stream, send);
+}
+
+static void
 close (DBusGProxy *proxy, gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
@@ -1217,6 +1235,8 @@ tp_stream_engine_stream_go (
       TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamPlaying",
       G_TYPE_BOOLEAN, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamSending",
+      G_TYPE_BOOLEAN, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "Close",
       G_TYPE_INVALID);
 
@@ -1232,6 +1252,8 @@ tp_stream_engine_stream_go (
       G_CALLBACK (set_remote_codecs), stream, NULL);
   dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamPlaying",
       G_CALLBACK (set_stream_playing), stream, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamSending",
+      G_CALLBACK (set_stream_sending), stream, NULL);
   dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "Close",
       G_CALLBACK (close), stream, NULL);
 
