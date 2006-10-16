@@ -580,27 +580,34 @@ bus_async_handler (GstBus *bus,
 
   g_debug ("%s: got error: %s", G_STRFUNC, error->message);
 
-  if (error->domain == GST_RESOURCE_ERROR)
+  if (error->domain == GST_RESOURCE_ERROR &&
+      error->code == GST_RESOURCE_ERROR_WRITE)
     {
-      if (error->code == GST_RESOURCE_ERROR_WRITE)
+      wp = _window_pairs_find_by_sink (priv->preview_windows,
+          GST_ELEMENT (GST_MESSAGE_SRC (message)));
+
+      if (wp == NULL)
+        wp = _window_pairs_find_by_sink (priv->output_windows,
+            GST_ELEMENT (GST_MESSAGE_SRC (message)));
+
+      if (wp != NULL)
         {
-          wp = _window_pairs_find_by_sink (priv->preview_windows,
-              GST_ELEMENT (GST_MESSAGE_SRC (message)));
+          g_debug ("%s: sink for %s window (id %u) has gone, removing",
+              G_STRFUNC, wp->stream == NULL ? "preview" : "output",
+              wp->window_id);
 
-          if (wp == NULL)
-            wp = _window_pairs_find_by_sink (priv->output_windows,
-                GST_ELEMENT (GST_MESSAGE_SRC (message)));
-
-          if (wp != NULL)
-            {
-              g_debug ("%s: sink for %s window (id %u) has gone, removing",
-                  G_STRFUNC, wp->stream == NULL ? "preview" : "output",
-                  wp->window_id);
-
-              wp->removing = TRUE;
-              _remove_defunct_sinks (engine);
-            }
+          wp->removing = TRUE;
+          _remove_defunct_sinks (engine);
         }
+    }
+  else
+    {
+      g_debug ("%s: Sending tp stream engine error", G_STRFUNC);
+      tp_stream_engine_error (engine, 0, error->message);
+      g_debug ("%s: unreffing stream-engine", G_STRFUNC);
+      g_object_unref (engine);
+      g_debug ("%s: exiting stream-engine", G_STRFUNC);
+      exit(0);
     }
 
   return TRUE;
