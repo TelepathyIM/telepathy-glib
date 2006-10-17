@@ -72,6 +72,11 @@ gboolean tp_stream_engine_stream_set_preview_window (
   guint window_id,
   GError **error);
 
+void tp_stream_engine_stream_error (
+  TpStreamEngineStream *self,
+  guint error,
+  const gchar *message);
+
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_STREAM_H__ */

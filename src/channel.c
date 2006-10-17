@@ -25,12 +25,13 @@
 #include <libtelepathy/tp-chan.h>
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 #include <libtelepathy/tp-chan-iface-media-signalling-gen.h>
-#include <libtelepathy/tp-media-session-handler-gen.h>
+#include <libtelepathy/tp-media-stream-handler-gen.h>
 #include <libtelepathy/tp-helpers.h>
 
 #include "common/telepathy-errors.h"
 
 #include "types.h"
+#include "stream.h"
 #include "session.h"
 
 #include "channel.h"
@@ -364,13 +365,17 @@ void tp_stream_engine_channel_error (
   guint error,
   const gchar *message)
 {
-  guint i;
+  guint i, j;
 
   for (i = 0; i < self->sessions->len; i++)
     {
-      tp_media_session_handler_error_async (
-        g_ptr_array_index (self->sessions, i), error, message, dummy_callback,
-        "Media.StreamHandler::Error");
+      TpStreamEngineSession *session = g_ptr_array_index (self->sessions, i);
+      for (j = 0; j < session->streams->len; j++)
+        {
+          tp_stream_engine_stream_error (
+              g_ptr_array_index (session->streams, j),
+              TP_MEDIA_STREAM_ERROR_UNKNOWN, message);
+        }
     }
 
   shutdown_channel (self, FALSE);

@@ -847,6 +847,20 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
     "Media.StreamHandler::CodecChoice");
 }
 
+void
+tp_stream_engine_stream_error (
+  TpStreamEngineStream *self,
+  guint error,
+  const gchar *message)
+{
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
+  g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
+
+  tp_media_stream_handler_error_async (priv->stream_handler_proxy, error,
+      message, dummy_callback, NULL);
+}
+
 static void
 stream_error (
   FarsightStream *stream,
