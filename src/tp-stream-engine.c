@@ -650,7 +650,8 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   if (!gst_structure_has_name (message->structure, "prepare-xwindow-id"))
     return GST_BUS_PASS;
 
-  g_debug ("got prepare-xwindow-id message");
+  g_debug ("got prepare-xwindow-id message from %s",
+           gst_element_get_name (GST_MESSAGE_SRC (message)));
 
   wp = _window_pairs_find_by_sink (priv->output_windows,
       GST_ELEMENT (GST_MESSAGE_SRC (message)));
