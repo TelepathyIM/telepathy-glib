@@ -805,9 +805,9 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
   gst_element_link_many (tee, filter, sink, NULL);
   gst_object_unref (tee);
 
-  gst_element_set_state (pipeline, GST_STATE_PLAYING);
-
   _window_pairs_add (&(priv->preview_windows), NULL, sink, window_id);
+
+  gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
