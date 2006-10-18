@@ -204,6 +204,27 @@ _window_pairs_find_by_removing (GSList *list, gboolean removing)
   return NULL;
 }
 
+static gboolean
+_gst_bin_find_element (GstBin *bin, GstElement *element)
+{
+  GstIterator *iter;
+  GstElement *child;
+  gboolean found = FALSE;
+
+  iter = gst_bin_iterate_elements (bin);
+
+  while (!found && gst_iterator_next (iter, (gpointer *) &child) == GST_ITERATOR_OK)
+    {
+      if (child == element)
+        found = TRUE;
+
+      gst_object_unref (child);
+    }
+
+  gst_iterator_free (iter);
+  return found;
+}
+
 static WindowPair *
 _window_pairs_find_by_sink (GSList *list, GstElement *sink)
 {
@@ -216,6 +237,9 @@ _window_pairs_find_by_sink (GSList *list, GstElement *sink)
       WindowPair *wp = tmp->data;
       if (wp->sink == sink)
         return wp;
+      else if (GST_IS_BIN (wp->sink))
+        if (_gst_bin_find_element (GST_BIN (wp->sink), GST_ELEMENT (sink)))
+          return wp;
     }
 
   return NULL;
