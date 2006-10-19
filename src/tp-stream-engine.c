@@ -107,6 +107,7 @@ enum
   HANDLING_CHANNEL,
   NO_MORE_CHANNELS,
   RECEIVING,
+  SHUTDOWN_REQUESTED,
   LAST_SIGNAL
 };
 
@@ -396,6 +397,20 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
         tp_stream_engine_marshal_VOID__STRING_INT_BOOLEAN,
         G_TYPE_NONE, 3, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_BOOLEAN);
 
+  /**
+   * TpStreamEngine::shutdown:
+   *
+   * Emitted whenever stream engine needs to be shutdown
+   */
+  signals[SHUTDOWN_REQUESTED] =
+    g_signal_new ("shutdown-requested",
+        G_OBJECT_CLASS_TYPE (tp_stream_engine_class),
+        G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+        0,
+        NULL, NULL,
+        g_cclosure_marshal_VOID__VOID,
+        G_TYPE_NONE, 0);
+
   dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (tp_stream_engine_class), &dbus_glib_tp_stream_engine_object_info);
 }
 
@@ -628,10 +643,8 @@ bus_async_handler (GstBus *bus,
     {
       g_debug ("%s: Sending tp stream engine error", G_STRFUNC);
       tp_stream_engine_error (engine, 0, error->message);
-      g_debug ("%s: unreffing stream-engine", G_STRFUNC);
-      g_object_unref (engine);
-      g_debug ("%s: exiting stream-engine", G_STRFUNC);
-      exit(0);
+      g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
+      g_signal_emit (engine, signals[SHUTDOWN_REQUESTED], 0);
     }
 
   return TRUE;
@@ -1292,3 +1305,23 @@ tp_stream_engine_emit_receiving (TpStreamEngine *obj, gchar *channel_path, guint
   g_signal_emit (G_OBJECT (obj), signals[RECEIVING], 0, channel_path,
       stream_id, TRUE);
 }
+
+/**
+ * tp_stream_engine_shutdown
+ *
+ * Implements DBus method Shutdown
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_shutdown (TpStreamEngine *obj, GError **error)
+{
+  g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
+  g_signal_emit (obj, signals[SHUTDOWN_REQUESTED], 0);
+  return TRUE;
+}
+

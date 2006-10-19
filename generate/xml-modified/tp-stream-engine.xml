@@ -42,5 +42,7 @@
       <arg type="u" name="stream_id" />
       <arg type="b" name="state" />
     </signal>
+    <method name="Shutdown">
+    </method>
   </interface>
 </node>

@@ -236,3 +236,21 @@ gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * 
   return TRUE;
 }
 
+
+/**
+ * tp_stream_engine_shutdown
+ *
+ * Implements DBus method Shutdown
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ *
+ * @error: Used to return a pointer to a GError detailing any error
+ *         that occured, DBus will throw the error only if this
+ *         function returns false.
+ *
+ * Returns: TRUE if successful, FALSE if an error was thrown.
+ */
+gboolean tp_stream_engine_shutdown (TpStreamEngine *obj, GError **error)
+{
+  return TRUE;
+}
+

@@ -62,6 +62,7 @@ gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channe
 gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window, GError **error);
 gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint volume, GError **error);
 gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window, GError **error);
+gboolean tp_stream_engine_shutdown (TpStreamEngine *obj, GError **error);
 
 
 void tp_stream_engine_register (TpStreamEngine *self);

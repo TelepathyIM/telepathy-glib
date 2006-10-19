@@ -129,6 +129,14 @@ no_more_channels (TpStreamEngine *stream_engine)
 }
 
 static void
+shutdown (TpStreamEngine *stream_engine)
+{
+  g_debug ("Unrefing stream_engine and quitting");
+  g_object_unref (stream_engine);
+  g_main_loop_quit (mainloop);
+}
+
+static void
 dsp_crashed (gpointer dummy)
 {
   if (stream_engine)
@@ -231,6 +239,9 @@ int main(int argc, char **argv) {
 
   g_signal_connect (stream_engine, "no-more-channels", 
                     (GCallback) no_more_channels, NULL);
+
+  g_signal_connect (stream_engine, "shutdown-requested",
+                    (GCallback) shutdown, NULL);
 
   tp_stream_engine_register (stream_engine);
 
