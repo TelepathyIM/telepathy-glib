@@ -209,13 +209,15 @@ static gboolean
 _gst_bin_find_element (GstBin *bin, GstElement *element)
 {
   GstIterator *iter;
-  GstElement *child;
+  gpointer item;
   gboolean found = FALSE;
 
   iter = gst_bin_iterate_elements (bin);
 
-  while (!found && gst_iterator_next (iter, (gpointer *) &child) == GST_ITERATOR_OK)
+  while (!found && gst_iterator_next (iter, &item) == GST_ITERATOR_OK)
     {
+      GstElement *child = (GstElement *) item;
+
       if (child == element)
         found = TRUE;
 
