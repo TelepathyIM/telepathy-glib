@@ -65,14 +65,6 @@ enum
 
 static guint signals[SIGNAL_COUNT] = {0};
 
-/* dummy callback handler for async calling calls with no return values */
-static void
-dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
-{
-  if (error)
-    g_critical ("%s calling %s", error->message, (char*)user_data);
-}
-
 static void
 tp_stream_engine_channel_dispose (GObject *object)
 {
