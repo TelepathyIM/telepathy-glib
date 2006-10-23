@@ -94,7 +94,6 @@ struct _TpStreamEngineStreamPrivate
   gboolean candidate_preparation_required;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  gboolean media_server_disabled;
   DBusGProxy *media_server_proxy;
 #endif
 };
@@ -295,11 +294,6 @@ static void
 check_start_stream (TpStreamEngineStream *stream)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-
-#ifdef MAEMO_OSSO_SUPPORT
-  if (!priv->media_server_disabled)
-    return;
-#endif
 
   DEBUG (stream, "stream_start_scheduled = %d; stream_started = %d",
     priv->stream_start_scheduled, priv->stream_started);
@@ -760,7 +754,7 @@ stop_stream (TpStreamEngineStream *self)
   priv->stream_started = FALSE;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_server_disabled && priv->media_server_proxy)
+  if (priv->media_server_proxy != NULL)
     {
       GError *error = NULL;
 
@@ -773,9 +767,10 @@ stop_stream (TpStreamEngineStream *self)
         g_message ("unable to re-enable media server: %s", error->message);
         g_error_free (error);
       }
-    }
 
-  priv->media_server_disabled = FALSE;
+      g_object_unref (priv->media_server_proxy);
+      priv->media_server_proxy = NULL;
+    }
 #endif
 
 }
@@ -994,7 +989,7 @@ media_server_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
     }
 }
 
-static gboolean
+static void
 media_server_proxy_init (TpStreamEngineStream *self)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
@@ -1013,22 +1008,18 @@ media_server_proxy_init (TpStreamEngineStream *self)
 
   g_message ("disabling media server");
 
-  if (com_nokia_osso_media_server_disable (
+  if (!com_nokia_osso_media_server_disable (
         DBUS_G_PROXY (priv->media_server_proxy),
         &me_error))
-    {
-      priv->media_server_disabled = TRUE;
-      return TRUE;
-    }
-  else
     {
       if (me_error)
         g_message ("failed to disable media server: %s", me_error->message);
       else
         g_message ("failed to disable media server");
 
-      priv->media_server_disabled = FALSE;
-      return FALSE;
+      g_error_free (me_error);
+      g_object_unref (priv->media_server_proxy);
+      priv->media_server_proxy = NULL;
     }
 }
 #endif
@@ -1141,8 +1132,7 @@ tp_stream_engine_stream_go (
   gchar *conn_timeout_str;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  if (!media_server_proxy_init (stream))
-    return FALSE;
+  media_server_proxy_init (stream);
 #endif
 
   priv->channel_path = g_strdup (channel_path);
