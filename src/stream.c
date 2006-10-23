@@ -814,6 +814,8 @@ close (DBusGProxy *proxy, gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
 
+  DEBUG (self, "close requested by connection manager");
+
   stop_stream (self);
   g_signal_emit (self, signals[STREAM_CLOSED], 0);
 }
