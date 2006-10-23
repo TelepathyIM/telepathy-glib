@@ -1015,11 +1015,15 @@ media_server_proxy_init (TpStreamEngineStream *self)
         &me_error))
     {
       if (me_error)
-        g_message ("failed to disable media server: %s", me_error->message);
+        {
+          g_message ("failed to disable media server: %s", me_error->message);
+          g_error_free (me_error);
+        }
       else
-        g_message ("failed to disable media server");
+        {
+          g_message ("failed to disable media server");
+        }
 
-      g_error_free (me_error);
       g_object_unref (priv->media_server_proxy);
       priv->media_server_proxy = NULL;
     }
