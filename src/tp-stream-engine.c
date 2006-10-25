@@ -573,6 +573,7 @@ _remove_defunct_sinks (TpStreamEngine *engine)
     {
       GstElement *tee;
       GstPad *sink_sink_pad;
+      GstPad *tee_src_pad;
 
       g_debug ("%s: removing sink for preview window ID %u", G_STRFUNC,
           wp->window_id);
@@ -580,9 +581,11 @@ _remove_defunct_sinks (TpStreamEngine *engine)
       tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
       g_assert (tee);
       sink_sink_pad = gst_element_get_pad (wp->sink, "sink");
+      tee_src_pad = gst_pad_get_peer (sink_sink_pad);
       gst_element_unlink (tee, wp->sink);
       gst_object_unref (GST_OBJECT (tee));
       gst_object_unref (sink_sink_pad);
+      gst_object_unref (tee_src_pad);
 
       gst_element_set_state (wp->sink, GST_STATE_NULL);
       gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
@@ -689,69 +692,6 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   return GST_BUS_DROP;
 }
 
-void pad_blocked_cb (GstPad *pad, gboolean blocked, gpointer user_data)
-{
-  g_debug ("%s: Successfully set blocking to %d for pad %p", G_STRFUNC, blocked,
-      pad);
-  gst_object_unref (pad);
-}
-
-void
-block_tee (GstElement *tee, TpStreamEngine *obj)
-{
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-
-  guint tee_num_src_pads;
-  GstPad *source_src_pad;
-  GstElement *videosrc = NULL;
-
-  videosrc = gst_bin_get_by_name (GST_BIN (priv->pipeline), "videosrc");
-  g_assert (videosrc);
-
-  /* let's block the sink pad of the tee if no one is linked anymore */
-  g_object_get (G_OBJECT (tee), "num-src-pads",
-      &tee_num_src_pads, NULL);
-  g_debug ("got %d pads now", tee_num_src_pads);
-  source_src_pad = gst_element_get_pad (videosrc, "src");
-  if (tee_num_src_pads <= 1)
-    {
-      g_debug ("%s: Blocking source src pad", G_STRFUNC);
-      gst_pad_set_blocked_async (source_src_pad, TRUE, pad_blocked_cb, NULL);
-    }
-  else if (gst_pad_is_blocked (source_src_pad))
-    {
-      g_debug ("%s: Unblocking source src pad", G_STRFUNC);
-      gst_pad_set_blocked_async (source_src_pad, FALSE, pad_blocked_cb, NULL);
-    }
-  else
-    {
-      gst_object_unref (source_src_pad);
-    }
-}
-
-void
-tee_pad_unlinked (GstPad  *pad, GstPad *peer, GstElement *tee)
-{
-  g_debug ("%s: releasing/removing pad", G_STRFUNC);
-  gst_element_release_request_pad (tee, pad);
-}
-
-void
-tee_pad_added (GstElement *tee, GObject *pad, TpStreamEngine *obj)
-{
-  g_debug ("%s: connecting to its unlink handler", G_STRFUNC);
-  g_signal_connect (G_OBJECT (pad), "unlinked",
-                    G_CALLBACK (tee_pad_unlinked), tee);
-
-  block_tee (tee, obj);
-}
-
-void
-tee_pad_removed (GstElement *tee, GObject *pad, TpStreamEngine *obj)
-{
-  block_tee (tee, obj);
-}
-
 /*
  * tp_stream_engine_get_pipeline
  *
@@ -774,15 +714,8 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
       const gchar *elem;
 
       priv->pipeline = gst_pipeline_new (NULL);
-      g_assert (priv->pipeline);
       tee = gst_element_factory_make ("tee", "tee");
-      g_assert (tee);
-      g_signal_connect (G_OBJECT (tee), "pad-added",
-          G_CALLBACK (tee_pad_added), obj);
-      g_signal_connect (G_OBJECT (tee), "pad-removed",
-          G_CALLBACK (tee_pad_removed), obj);
       fakesink = gst_element_factory_make ("fakesink", NULL);
-      g_assert (fakesink);
 
       if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
         {
@@ -794,10 +727,10 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
       else
         {
 #ifdef MAEMO_OSSO_SUPPORT
-          videosrc = gst_element_factory_make ("gconfv4l2src", "videosrc");
+          videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
 #endif
           if (videosrc == NULL)
-            videosrc = gst_element_factory_make ("v4l2src", "videosrc");
+            videosrc = gst_element_factory_make ("v4l2src", NULL);
         }
 
       filter = gst_caps_new_simple(
@@ -852,7 +785,7 @@ _remove_defunct_sinks_idle_cb (TpStreamEngine *engine)
 gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *tee, *sink, *pipeline;
+  GstElement *tee, *sink, *filter, *pipeline;
   WindowPair *wp;
   const gchar *videosink_name;
 
@@ -870,6 +803,8 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
 
   pipeline = tp_stream_engine_get_pipeline (obj);
 
+  gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
+
   g_debug ("adding preview in window %u", window_id);
 
   if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
@@ -885,14 +820,17 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
     }
 
   gst_bin_add (GST_BIN (priv->pipeline), sink);
-  gst_element_set_state (sink, GST_STATE_READY);
+
+  filter = gst_element_factory_make ("ffmpegcolorspace", NULL);
+  gst_bin_add (GST_BIN (priv->pipeline), filter);
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  gst_element_link (tee, sink);
-  gst_element_set_state (sink, GST_STATE_PLAYING);
+  gst_element_link_many (tee, filter, sink, NULL);
   gst_object_unref (tee);
 
   _window_pairs_add (&(priv->preview_windows), NULL, sink, window_id);
+
+  gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
