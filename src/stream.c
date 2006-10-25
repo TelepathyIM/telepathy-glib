@@ -806,28 +806,7 @@ set_stream_sending (DBusGProxy *proxy, gboolean send, gpointer user_data)
 
   DEBUG (self, "%d", send);
 
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    {
-      GstElement *fs_stream_bin;
-      GstElement *source;
-      fs_stream_bin = farsight_stream_get_pipeline (priv->fs_stream);
-
-      source = farsight_stream_get_source (priv->fs_stream);
-      g_assert (source);
-
-      if (send)
-        {
-          gst_element_link (source, fs_stream_bin);
-        }
-      else
-        {
-          gst_element_unlink (source, fs_stream_bin);
-        }
-    }
-  else
-    {
-      farsight_stream_set_sending (priv->fs_stream, send);
-    }
+  farsight_stream_set_sending (priv->fs_stream, send);
 }
 
 static void

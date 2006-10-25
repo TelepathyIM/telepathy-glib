@@ -572,20 +572,13 @@ _remove_defunct_sinks (TpStreamEngine *engine)
       NULL)
     {
       GstElement *tee;
-      GstPad *sink_sink_pad;
-      GstPad *tee_src_pad;
 
       g_debug ("%s: removing sink for preview window ID %u", G_STRFUNC,
           wp->window_id);
 
       tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-      g_assert (tee);
-      sink_sink_pad = gst_element_get_pad (wp->sink, "sink");
-      tee_src_pad = gst_pad_get_peer (sink_sink_pad);
       gst_element_unlink (tee, wp->sink);
       gst_object_unref (GST_OBJECT (tee));
-      gst_object_unref (sink_sink_pad);
-      gst_object_unref (tee_src_pad);
 
       gst_element_set_state (wp->sink, GST_STATE_NULL);
       gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
