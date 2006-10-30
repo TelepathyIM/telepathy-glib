@@ -177,12 +177,7 @@ tp_stream_engine_stream_dispose (GObject *object)
 
 #ifdef MAEMO_OSSO_SUPPORT
   if (priv->media_server_proxy)
-    {
-      DBusGProxy *proxy = priv->media_server_proxy;
-
-      priv->media_server_proxy = NULL;
-      g_object_unref (proxy);
-    }
+    media_server_proxy_cleanup (stream);
 #endif
 
   if (priv->channel_path)
@@ -768,8 +763,7 @@ stop_stream (TpStreamEngineStream *self)
         g_error_free (error);
       }
 
-      g_object_unref (priv->media_server_proxy);
-      priv->media_server_proxy = NULL;
+      media_server_proxy_cleanup (self);
     }
 #endif
 
@@ -975,20 +969,27 @@ cb_properties_ready (TpPropsIface *iface, gpointer user_data)
 
 #ifdef MAEMO_OSSO_SUPPORT
 static void
+media_server_proxy_cleanup (TpStreamEngineStream *self)
+{
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+  DBusGProxy *proxy;
+
+  if (priv->media_server_proxy == NULL)
+    return;
+
+  proxy = priv->media_server_proxy;
+  priv->media_server_proxy = NULL;
+  g_object_unref (proxy):
+}
+
+static void
 media_server_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  if (priv->media_server_proxy)
-    {
-      DBusGProxy *proxy = priv->media_server_proxy;
-
-      DEBUG (self, "media server proxy destroyed");
-
-      priv->media_server_proxy = NULL;
-      g_object_unref (proxy);
-    }
+  DEBUG (self, "media server proxy destroyed");
+  media_server_proxy_cleanup (self);
 }
 
 static void
@@ -1014,6 +1015,8 @@ media_server_proxy_init (TpStreamEngineStream *self)
         DBUS_G_PROXY (priv->media_server_proxy),
         &me_error))
     {
+      DBusGProxy *tmp;
+
       if (me_error)
         {
           g_message ("failed to disable media server: %s", me_error->message);
@@ -1024,8 +1027,7 @@ media_server_proxy_init (TpStreamEngineStream *self)
           g_message ("failed to disable media server");
         }
 
-      g_object_unref (priv->media_server_proxy);
-      priv->media_server_proxy = NULL;
+      media_server_proxy_cleanup (self);
     }
 }
 #endif
