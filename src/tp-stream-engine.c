@@ -715,7 +715,6 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
           g_debug ("making video src with pipeline \"%s\"", elem);
           videosrc = gst_parse_bin_from_description (elem, TRUE, NULL);
           g_assert (videosrc);
-          gst_element_set_name (videosrc, "videosrc");
         }
       else
         {

@@ -169,6 +169,11 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
   gst_bin_remove (GST_BIN (pipeline), sink);
 }
 
+#ifdef MAEMO_OSSO_SUPPORT
+static void
+media_server_proxy_cleanup (TpStreamEngineStream *self);
+#endif
+
 static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
@@ -971,7 +976,7 @@ cb_properties_ready (TpPropsIface *iface, gpointer user_data)
 static void
 media_server_proxy_cleanup (TpStreamEngineStream *self)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   DBusGProxy *proxy;
 
   if (priv->media_server_proxy == NULL)
@@ -979,14 +984,13 @@ media_server_proxy_cleanup (TpStreamEngineStream *self)
 
   proxy = priv->media_server_proxy;
   priv->media_server_proxy = NULL;
-  g_object_unref (proxy):
+  g_object_unref (proxy);
 }
 
 static void
 media_server_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   DEBUG (self, "media server proxy destroyed");
   media_server_proxy_cleanup (self);
@@ -1015,8 +1019,6 @@ media_server_proxy_init (TpStreamEngineStream *self)
         DBUS_G_PROXY (priv->media_server_proxy),
         &me_error))
     {
-      DBusGProxy *tmp;
-
       if (me_error)
         {
           g_message ("failed to disable media server: %s", me_error->message);
