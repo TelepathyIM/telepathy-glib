@@ -71,3 +71,4 @@
 (^|/).svn($|/)
 ^tags$
 ./core\..*$
+^ChangeLog$
