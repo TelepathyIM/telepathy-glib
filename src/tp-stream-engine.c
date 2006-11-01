@@ -64,6 +64,8 @@
 #define STATUS_BAR_INTERFACE_NAME "com.nokia.statusbar"
 #define STATUS_BAR_OBJECT_PATH "/com/nokia/statusbar"
 
+#define DEFAULT_FPS 15
+
 static void
 register_dbus_signal_marshallers()
 {
@@ -705,6 +707,8 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
   if (NULL == priv->pipeline)
     {
       const gchar *elem;
+      const gchar *fps_str;
+      gint fps;
 
       priv->pipeline = gst_pipeline_new (NULL);
       tee = gst_element_factory_make ("tee", "tee");
@@ -726,11 +730,21 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
             videosrc = gst_element_factory_make ("v4l2src", NULL);
         }
 
+      if ((fps_str = getenv ("FS_VIDEO_FPS")))
+        {
+          fps = strtol (fps_str, NULL, 0);
+          g_assert (fps > 0);
+        }
+      else
+        {
+          fps = DEFAULT_FPS;
+        }
+
       filter = gst_caps_new_simple(
         "video/x-raw-yuv",
         "width", G_TYPE_INT, 352,
         "height", G_TYPE_INT, 288,
-        "framerate", GST_TYPE_FRACTION, 15, 1,
+        "framerate", GST_TYPE_FRACTION, fps, 1,
         NULL);
 
       gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, fakesink,
@@ -781,6 +795,8 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
   GstElement *tee, *sink, *filter, *pipeline;
   WindowPair *wp;
   const gchar *videosink_name;
+
+  g_debug ("%s called", G_STRFUNC);
 
   /* try and remove any sinks which have removing = TRUE to free up Xv ports */
   _remove_defunct_sinks (obj);
