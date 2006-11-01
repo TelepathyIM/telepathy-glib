@@ -581,11 +581,15 @@ _remove_defunct_sinks (TpStreamEngine *engine)
       tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
       gst_element_unlink (tee, wp->sink);
       gst_object_unref (GST_OBJECT (tee));
+      g_debug ("unlinked sink from tee, now setting state to NULL");
 
       gst_element_set_state (wp->sink, GST_STATE_NULL);
+      g_debug ("Done setting state to NULL, now removing from bin");
       gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
+      g_debug ("Done removing from bin, calling _window_pairs_remove");
 
       _window_pairs_remove (&(priv->preview_windows), wp);
+      g_debug ("Done _window_pairs_remove");
     }
 
   while ((wp = _window_pairs_find_by_removing (priv->output_windows, TRUE)) !=
