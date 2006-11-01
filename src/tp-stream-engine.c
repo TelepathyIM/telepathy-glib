@@ -796,7 +796,7 @@ _remove_defunct_sinks_idle_cb (TpStreamEngine *engine)
 gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *tee, *sink, *filter, *pipeline;
+  GstElement *tee, *sink, *pipeline;
   WindowPair *wp;
   const gchar *videosink_name;
 
@@ -816,8 +816,6 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
 
   pipeline = tp_stream_engine_get_pipeline (obj);
 
-  gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
-
   g_debug ("adding preview in window %u", window_id);
 
   if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
@@ -834,16 +832,14 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
 
   gst_bin_add (GST_BIN (priv->pipeline), sink);
 
-  filter = gst_element_factory_make ("ffmpegcolorspace", NULL);
-  gst_bin_add (GST_BIN (priv->pipeline), filter);
+  gst_element_set_state (sink, GST_STATE_READY);
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  gst_element_link_many (tee, filter, sink, NULL);
+  gst_element_link (tee, sink);
+  gst_element_set_state (sink, GST_STATE_PLAYING);
   gst_object_unref (tee);
 
   _window_pairs_add (&(priv->preview_windows), NULL, sink, window_id);
-
-  gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
