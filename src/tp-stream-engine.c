@@ -830,6 +830,8 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
       g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
     }
 
+  _window_pairs_add (&(priv->preview_windows), NULL, sink, window_id);
+
   gst_bin_add (GST_BIN (priv->pipeline), sink);
 
   gst_element_set_state (sink, GST_STATE_READY);
@@ -838,8 +840,6 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
   gst_element_link (tee, sink);
   gst_element_set_state (sink, GST_STATE_PLAYING);
   gst_object_unref (tee);
-
-  _window_pairs_add (&(priv->preview_windows), NULL, sink, window_id);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
