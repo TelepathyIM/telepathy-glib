@@ -199,9 +199,6 @@ critical_handler (const gchar *log_domain,
 }
 
 int main(int argc, char **argv) {
-  int rt_mode;
-  char *rt_env;
-
   signal (SIGBUS, got_sigbus);
   signal (SIGSEGV, got_segv);
   g_type_init();
@@ -250,19 +247,24 @@ int main(int argc, char **argv) {
   timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
 
 #ifdef USE_REALTIME
-  /* Here we don't yet have any media threads running, so the to-be-created
-   * threads will inherit the scheduling parameters, as glib doesn't know
-   * anything about that... */
-  rt_env = getenv("STREAM_ENGINE_REALTIME");
-  if (rt_env != NULL) {
-    if ((rt_mode = atoi(rt_env))) {
-      g_debug("realtime scheduling enabled");
-      set_realtime(argv[0], rt_mode);
+  {
+    int rt_mode;
+    char *rt_env;
+
+    /* Here we don't yet have any media threads running, so the to-be-created
+     * threads will inherit the scheduling parameters, as glib doesn't know
+     * anything about that... */
+    rt_env = getenv("STREAM_ENGINE_REALTIME");
+    if (rt_env != NULL) {
+      if ((rt_mode = atoi(rt_env))) {
+        g_debug("realtime scheduling enabled");
+        set_realtime(argv[0], rt_mode);
+      } else {
+        g_debug("realtime scheduling disabled");
+      }
     } else {
-      g_debug("realtime scheduling disabled");
+      g_debug("not using realtime scheduling, enable through STREAM_ENGINE_REALTIME env");
     }
-  } else {
-    g_debug("not using realtime scheduling, enable through STREAM_ENGINE_REALTIME env");
   }
 #endif /* USE_REALTIME */
 
