@@ -20,20 +20,22 @@
 
 #include "config.h"
 
-#include <signal.h>
 #define USE_REALTIME
 #ifdef USE_REALTIME
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
-#endif /* HAVE_EXECINFO_H */
-#include <signal.h>
-#include <unistd.h>
 #include <sched.h>
 #include <sys/mman.h>
 #endif /* USE_REALTIME */
+
+#ifdef HAVE_EXECINFO_H
+#include <execinfo.h>
+#endif /* HAVE_EXECINFO_H */
+
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+
 #include <dbus/dbus-glib.h>
 #include <gst/gst.h>
 #include "tp-stream-engine.h"
