@@ -1260,9 +1260,6 @@ tp_stream_engine_stream_go (
 
   priv->candidate_preparation_required = TRUE;
 
-  set_stun (stream);
-  prepare_transports (stream);
-
   priv->connection_proxy = tp_conn_new (
     tp_get_bus(),
     bus_name,
@@ -1282,22 +1279,31 @@ tp_stream_engine_stream_go (
    */
   priv->conn_props = TELEPATHY_PROPS_IFACE (tp_conn_get_interface (
         priv->connection_proxy, TELEPATHY_PROPS_IFACE_QUARK));
-  g_assert (priv->conn_props);
 
-  /* surely we don't need all of these properties */
-  tp_props_iface_set_mapping (priv->conn_props,
-      "stun-server", CONN_PROP_STUN_SERVER,
-      "stun-port", CONN_PROP_STUN_PORT,
-      "stun-relay-server", CONN_PROP_STUN_RELAY_SERVER,
-      "stun-relay-udp-port", CONN_PROP_STUN_RELAY_UDP_PORT,
-      "stun-relay-tcp-port", CONN_PROP_STUN_RELAY_TCP_PORT,
-      "stun-relay-ssltcp-port", CONN_PROP_STUN_RELAY_SSLTCP_PORT,
-      "stun-relay-username", CONN_PROP_STUN_RELAY_USERNAME,
-      "stun-relay-password", CONN_PROP_STUN_RELAY_PASSWORD,
-      NULL);
+  if (priv->conn_props != NULL)
+    {
+      /* surely we don't need all of these properties */
+      tp_props_iface_set_mapping (priv->conn_props,
+          "stun-server", CONN_PROP_STUN_SERVER,
+          "stun-port", CONN_PROP_STUN_PORT,
+          "stun-relay-server", CONN_PROP_STUN_RELAY_SERVER,
+          "stun-relay-udp-port", CONN_PROP_STUN_RELAY_UDP_PORT,
+          "stun-relay-tcp-port", CONN_PROP_STUN_RELAY_TCP_PORT,
+          "stun-relay-ssltcp-port", CONN_PROP_STUN_RELAY_SSLTCP_PORT,
+          "stun-relay-username", CONN_PROP_STUN_RELAY_USERNAME,
+          "stun-relay-password", CONN_PROP_STUN_RELAY_PASSWORD,
+          NULL);
 
-  g_signal_connect (priv->conn_props, "properties-ready",
-                    G_CALLBACK (cb_properties_ready), stream);
+      g_signal_connect (priv->conn_props, "properties-ready",
+                        G_CALLBACK (cb_properties_ready), stream);
+    }
+  else
+    {
+      priv->got_connection_properties = TRUE;
+    }
+
+  set_stun (stream);
+  prepare_transports (stream);
 
   return TRUE;
 }
