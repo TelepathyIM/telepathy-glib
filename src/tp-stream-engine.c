@@ -279,7 +279,6 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
   GstElement *tee, *sink, *pipeline;
   GstStateChangeReturn state_change_ret;
   const gchar *videosink_name;
-  gchar *error_msg;
 
   g_debug ("%s: called for window id %d", G_STRFUNC, window_id);
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
@@ -316,9 +315,9 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 
   if (!gst_bin_add (GST_BIN (priv->pipeline), sink))
     {
-      error_msg = g_strdup_printf ("Failed to add element %s to pipeline %s",
-          GST_ELEMENT_NAME (sink), GST_ELEMENT_NAME (priv->pipeline));
-      gst_object_unref (sink);
+      g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED,
+          "Failed to add element %s to pipeline %s", GST_ELEMENT_NAME (sink),
+          GST_ELEMENT_NAME (priv->pipeline));
       goto bin_add_failure;
     }
 
@@ -329,16 +328,17 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
       state_change_ret != GST_STATE_CHANGE_NO_PREROLL &&
       state_change_ret != GST_STATE_CHANGE_ASYNC)
     {
-      error_msg = g_strdup_printf ("Failed to set element %s to PLAYING",
-          GST_ELEMENT_NAME (sink));
+      g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED,
+          "Failed to set element %s to PLAYING", GST_ELEMENT_NAME (sink));
       goto link_failure;
     }
 
   g_debug ("trying to link tee and sink");
   if (!gst_element_link (tee, sink))
     {
-      error_msg = g_strdup_printf ("Failed to link element %s to %s",
-               GST_ELEMENT_NAME (tee), GST_ELEMENT_NAME (sink));
+      g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED,
+          "Failed to link element %s to %s", GST_ELEMENT_NAME (tee),
+          GST_ELEMENT_NAME (sink));
       goto link_failure;
     }
 
@@ -352,10 +352,9 @@ link_failure:
 bin_add_failure:
   gst_object_unref (tee);
 
-  g_warning (error_msg);
-  g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED, error_msg);
+  if (error != NULL)
+    g_warning ((*error)->message);
 
-  g_free (error_msg);
   _window_pairs_remove (&(priv->preview_windows), wp);
   return FALSE;
 }
