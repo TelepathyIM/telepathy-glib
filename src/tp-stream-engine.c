@@ -122,6 +122,7 @@ struct _TpStreamEnginePrivate
   gboolean dispose_has_run;
 
   GstElement *pipeline;
+  gboolean pipeline_playing;
 
   GPtrArray *channels;
 
@@ -150,6 +151,7 @@ struct _WindowPair
   GstElement *sink;
   guint window_id;
   volatile gboolean removing;
+  gboolean created;
 };
 
 static void
@@ -169,6 +171,7 @@ _window_pairs_free (GSList **list)
 static void
 _window_pairs_add (GSList **list, TpStreamEngineStream *stream, GstElement *sink, guint window_id)
 {
+  g_debug ("Adding to windowpair list sink %p window_id %d", sink, window_id);
   WindowPair *wp;
 
   wp = g_slice_new (WindowPair);
@@ -176,6 +179,7 @@ _window_pairs_add (GSList **list, TpStreamEngineStream *stream, GstElement *sink
   wp->sink = sink;
   wp->window_id = window_id;
   wp->removing = FALSE;
+  wp->created = FALSE;
 
   *list = g_slist_prepend (*list, wp);
 }
@@ -267,6 +271,123 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
   return NULL;
 }
 
+static gboolean
+_add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  WindowPair *wp;
+  GstElement *tee, *sink, *pipeline;
+  GstStateChangeReturn state_change_ret;
+  const gchar *videosink_name;
+  gchar error_msg[128];
+
+  g_debug ("%s: called for window id %d", G_STRFUNC, window_id);
+  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
+
+  if (wp == NULL)
+    {
+      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+          "Given window id %d not in windowID list", window_id);
+      g_debug ("%s: Couldn't find xwindow id in window pair list", G_STRFUNC);
+      return FALSE;
+    }
+
+  pipeline = tp_stream_engine_get_pipeline (obj);
+
+  g_debug ("adding preview in window %u", window_id);
+
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+
+  if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
+    {
+      g_debug ("making video sink with pipeline \"%s\"", videosink_name);
+      sink = gst_parse_bin_from_description (videosink_name, TRUE, NULL);
+    }
+  else
+    {
+      g_debug ("using xvimagesink");
+      sink = gst_element_factory_make ("xvimagesink", NULL);
+      g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+    }
+
+  wp->created = TRUE;
+  wp->sink = sink;
+  g_debug ("Setting sink create for %p", sink);
+
+  if (!gst_bin_add (GST_BIN (priv->pipeline), sink))
+    {
+      sprintf (error_msg,
+          "Failed to add element %s to pipeline %s",
+          GST_ELEMENT_NAME (sink),
+          GST_ELEMENT_NAME (priv->pipeline));
+      gst_object_unref (sink);
+      goto bin_add_failure;
+    }
+
+  g_debug ("trying to set sink to PAUSED");
+  state_change_ret = gst_element_set_state (sink, GST_STATE_PAUSED);
+
+  if (state_change_ret != GST_STATE_CHANGE_SUCCESS &&
+      state_change_ret != GST_STATE_CHANGE_NO_PREROLL &&
+      state_change_ret != GST_STATE_CHANGE_ASYNC)
+    {
+      sprintf (error_msg, "Failed to set element %s to PLAYING",
+          GST_ELEMENT_NAME (sink));
+      goto link_failure;
+    }
+
+  g_debug ("trying to link tee and sink");
+  if (!gst_element_link (tee, sink))
+    {
+      sprintf (error_msg, "Failed to link element %s to %s",
+               GST_ELEMENT_NAME (tee),
+               GST_ELEMENT_NAME (sink));
+      goto link_failure;
+    }
+
+  state_change_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
+
+  gst_object_unref (tee);
+  g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
+  return TRUE;
+
+link_failure:
+  gst_element_set_state (sink, GST_STATE_NULL);
+  gst_bin_remove (GST_BIN (priv->pipeline), sink);
+bin_add_failure:
+  gst_object_unref (tee);
+
+  g_warning (error_msg);
+  if (*error != NULL)
+    {
+      *error = g_error_new (GST_STREAM_ERROR,
+          GST_STREAM_ERROR_FAILED,
+          error_msg);
+    }
+  _window_pairs_remove (&(priv->preview_windows), wp);
+  return FALSE;
+}
+
+static void
+_add_pending_preview_windows (TpStreamEngine *engine)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+
+  g_debug ("%s: called", G_STRFUNC);
+
+  GSList *tmp;
+
+  for (tmp = priv->preview_windows;
+       tmp != NULL;
+       tmp = tmp->next)
+    {
+      WindowPair *wp = tmp->data;
+      if (wp->created == FALSE)
+        {
+          _add_preview_window (engine, wp->window_id, NULL);
+        }
+    }
+}
 
 #ifdef USE_INFOPRINT
 static void
@@ -656,7 +777,26 @@ bus_async_handler (GstBus *bus,
           }
         break;
       case GST_MESSAGE_WARNING:
+        gst_message_parse_warning (message, &error, NULL);
         g_warning ("%s: got warning: %s", G_STRFUNC, error->message);
+        break;
+      case GST_MESSAGE_STATE_CHANGED:
+        if ((GstElement *)GST_MESSAGE_SRC (message) == priv->pipeline)
+          {
+            GstState new_state;
+            gst_message_parse_state_changed (message, NULL, &new_state, NULL);
+            if (new_state == GST_STATE_PLAYING)
+              {
+                g_debug ("Pipeline is playing, setting to TRUE");
+                priv->pipeline_playing = TRUE;
+                _add_pending_preview_windows (engine);
+              }
+            else
+              {
+                g_debug ("Pipeline is not playing, setting to FALSE");
+                priv->pipeline_playing = FALSE;
+              }
+          }
         break;
       default:
         break;
@@ -691,11 +831,80 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   if (wp == NULL)
     return GST_BUS_PASS;
 
+  g_debug ("Giving xvimagesink %p window id %d", wp->sink, wp->window_id);
   gst_x_overlay_set_xwindow_id (
       GST_X_OVERLAY (GST_MESSAGE_SRC (message)), wp->window_id);
 
   gst_message_unref (message);
   return GST_BUS_DROP;
+}
+
+static void
+_create_pipeline (TpStreamEngine *obj)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  GstElement *videosrc = NULL;
+  GstElement *tee;
+  GstBus *bus;
+  GstCaps *filter;
+  GstElement *fakesink;
+  const gchar *elem;
+  const gchar *fps_str;
+  gint fps;
+
+  priv->pipeline = gst_pipeline_new (NULL);
+  tee = gst_element_factory_make ("tee", "tee");
+  fakesink = gst_element_factory_make ("fakesink", NULL);
+
+  if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
+  {
+    g_debug ("making video src with pipeline \"%s\"", elem);
+    videosrc = gst_parse_bin_from_description (elem, TRUE, NULL);
+    g_assert (videosrc);
+    gst_element_set_name (videosrc, "videosrc");
+  }
+  else
+  {
+#ifdef MAEMO_OSSO_SUPPORT
+    videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
+#endif
+    if (videosrc == NULL)
+      videosrc = gst_element_factory_make ("v4l2src", NULL);
+  }
+
+  if ((fps_str = getenv ("FS_VIDEO_FPS")))
+  {
+    fps = strtol (fps_str, NULL, 0);
+    g_assert (fps > 0);
+  }
+  else
+  {
+    fps = DEFAULT_FPS;
+  }
+
+  filter = gst_caps_new_simple(
+      "video/x-raw-yuv",
+      "width", G_TYPE_INT, 352,
+      "height", G_TYPE_INT, 288,
+      "framerate", GST_TYPE_FRACTION, fps, 1,
+      NULL);
+
+  gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, fakesink,
+      NULL);
+  gst_element_link (videosrc, tee);
+  gst_element_link_filtered (tee, fakesink, filter);
+  gst_caps_unref (filter);
+
+  g_debug ("Setting pipeline to playing");
+  gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
+
+  /* connect a callback to the stream bus so that we can set X window IDs
+   * at the right time, and detect when sinks have gone away */
+  bus = gst_element_get_bus (priv->pipeline);
+  gst_bus_set_sync_handler (bus, bus_sync_handler, obj);
+  priv->bus_async_source_id =
+    gst_bus_add_watch (bus, bus_async_handler, obj);
+  gst_object_unref (bus);
 }
 
 /*
@@ -709,70 +918,10 @@ GstElement *
 tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *videosrc = NULL;
-  GstElement *tee;
-  GstBus *bus;
-  GstCaps *filter;
-  GstElement *fakesink;
-
+  
   if (NULL == priv->pipeline)
     {
-      const gchar *elem;
-      const gchar *fps_str;
-      gint fps;
-
-      priv->pipeline = gst_pipeline_new (NULL);
-      tee = gst_element_factory_make ("tee", "tee");
-      fakesink = gst_element_factory_make ("fakesink", NULL);
-
-      if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
-        {
-          g_debug ("making video src with pipeline \"%s\"", elem);
-          videosrc = gst_parse_bin_from_description (elem, TRUE, NULL);
-          g_assert (videosrc);
-          gst_element_set_name (videosrc, "videosrc");
-        }
-      else
-        {
-#ifdef MAEMO_OSSO_SUPPORT
-          videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
-#endif
-          if (videosrc == NULL)
-            videosrc = gst_element_factory_make ("v4l2src", NULL);
-        }
-
-      if ((fps_str = getenv ("FS_VIDEO_FPS")))
-        {
-          fps = strtol (fps_str, NULL, 0);
-          g_assert (fps > 0);
-        }
-      else
-        {
-          fps = DEFAULT_FPS;
-        }
-
-      filter = gst_caps_new_simple(
-        "video/x-raw-yuv",
-        "width", G_TYPE_INT, 352,
-        "height", G_TYPE_INT, 288,
-        "framerate", GST_TYPE_FRACTION, fps, 1,
-        NULL);
-
-      gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, fakesink,
-          NULL);
-      gst_element_link (videosrc, tee);
-      gst_element_link_filtered (tee, fakesink, filter);
-      gst_caps_unref (filter);
-
-      gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
-
-      /* connect a callback to the stream bus so that we can set X window IDs
-       * at the right time, and detect when sinks have gone away */
-      bus = gst_element_get_bus (priv->pipeline);
-      gst_bus_set_sync_handler (bus, bus_sync_handler, obj);
-      priv->bus_async_source_id =
-        gst_bus_add_watch (bus, bus_async_handler, obj);
-      gst_object_unref (bus);
+      _create_pipeline (obj);
     }
 
   return priv->pipeline;
@@ -787,7 +936,6 @@ _remove_defunct_sinks_idle_cb (TpStreamEngine *engine)
   return FALSE;
 }
 
-
 /**
  * tp_stream_engine_add_preview_window
  *
@@ -800,14 +948,18 @@ _remove_defunct_sinks_idle_cb (TpStreamEngine *engine)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
+gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
+    guint window_id, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  GstElement *tee, *sink, *pipeline;
   WindowPair *wp;
-  GstStateChangeReturn state_change_ret;
-  const gchar *videosink_name;
-  gchar error_msg[128];
+
+  g_debug ("%s: called", G_STRFUNC);
+
+  if (!priv->pipeline)
+    {
+    _create_pipeline (obj);
+    }
 
   /* try and remove any sinks which have removing = TRUE to free up Xv ports */
   _remove_defunct_sinks (obj);
@@ -821,73 +973,19 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
       return FALSE;
     }
 
-  pipeline = tp_stream_engine_get_pipeline (obj);
-
-  g_debug ("adding preview in window %u", window_id);
-
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-
-  if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
+  if (!priv->pipeline_playing)
     {
-      g_debug ("making video sink with pipeline \"%s\"", videosink_name);
-      sink = gst_parse_bin_from_description (videosink_name, TRUE, NULL);
+      g_debug ("%s: pipeline not playing, adding later", G_STRFUNC);
+      _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
+      return FALSE;
     }
   else
     {
-      g_debug ("using xvimagesink");
-      sink = gst_element_factory_make ("xvimagesink", NULL);
-      g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+      g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
+      _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
+      return _add_preview_window (obj, window_id, error);
     }
-
-  if (!gst_bin_add (GST_BIN (priv->pipeline), sink))
-    {
-      sprintf (error_msg,
-          "Failed to add element %s to pipeline %s",
-          GST_ELEMENT_NAME (sink),
-          GST_ELEMENT_NAME (priv->pipeline));
-      gst_object_unref (sink);
-      goto bin_add_failure;
-    }
-
-  g_debug ("trying to set sink to PLAYING");
-  state_change_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
-
-  if (state_change_ret != GST_STATE_CHANGE_SUCCESS &&
-      state_change_ret != GST_STATE_CHANGE_NO_PREROLL &&
-      state_change_ret != GST_STATE_CHANGE_ASYNC)
-    {
-      sprintf (error_msg, "Failed to set element %s to PLAYING",
-          GST_ELEMENT_NAME (sink));
-      goto link_failure;
-    }
-
-  g_debug ("trying to link tee and sink");
-  if (!gst_element_link (tee, sink))
-    {
-      sprintf (error_msg, "Failed to link element %s to %s",
-               GST_ELEMENT_NAME (tee),
-               GST_ELEMENT_NAME (sink));
-      goto link_failure;
-    }
-
-  _window_pairs_add (&(priv->preview_windows), NULL, sink, window_id);
-
-  gst_object_unref (tee);
-  g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
-  return TRUE;
-
-link_failure:
-  gst_bin_remove (GST_BIN (priv->pipeline), sink);
-bin_add_failure:
-  gst_object_unref (tee);
-
-  g_warning (error_msg);
-  *error = g_error_new (GST_STREAM_ERROR,
-                        GST_STREAM_ERROR_FAILED,
-                        error_msg);
-  return FALSE;
 }
-
 
 static gboolean
 bad_window_cb (TpStreamEngineXErrorHandler *handler,
