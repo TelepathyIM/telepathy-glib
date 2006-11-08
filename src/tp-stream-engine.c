@@ -620,39 +620,46 @@ bus_async_handler (GstBus *bus,
   GError *error = NULL;
   WindowPair *wp;
 
-  if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ERROR)
-    return TRUE;
-
-  gst_message_parse_error (message, &error, NULL);
-
-  g_debug ("%s: got error: %s", G_STRFUNC, error->message);
-
-  if (error->domain == GST_RESOURCE_ERROR &&
-      error->code == GST_RESOURCE_ERROR_WRITE)
+  switch (GST_MESSAGE_TYPE (message))
     {
-      wp = _window_pairs_find_by_sink (priv->preview_windows,
-          GST_ELEMENT (GST_MESSAGE_SRC (message)));
+      case GST_MESSAGE_ERROR:
+        gst_message_parse_error (message, &error, NULL);
 
-      if (wp == NULL)
-        wp = _window_pairs_find_by_sink (priv->output_windows,
-            GST_ELEMENT (GST_MESSAGE_SRC (message)));
+        g_debug ("%s: got error: %s", G_STRFUNC, error->message);
 
-      if (wp != NULL)
-        {
-          g_debug ("%s: sink for %s window (id %u) has gone, removing",
-              G_STRFUNC, wp->stream == NULL ? "preview" : "output",
-              wp->window_id);
+        if (error->domain == GST_RESOURCE_ERROR &&
+                error->code == GST_RESOURCE_ERROR_WRITE)
+          {
+            wp = _window_pairs_find_by_sink (priv->preview_windows,
+                    GST_ELEMENT (GST_MESSAGE_SRC (message)));
 
-          wp->removing = TRUE;
-          _remove_defunct_sinks (engine);
-        }
-    }
-  else
-    {
-      g_debug ("%s: Sending tp stream engine error", G_STRFUNC);
-      tp_stream_engine_error (engine, 0, error->message);
-      g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
-      g_signal_emit (engine, signals[SHUTDOWN_REQUESTED], 0);
+            if (wp == NULL)
+              wp = _window_pairs_find_by_sink (priv->output_windows,
+                  GST_ELEMENT (GST_MESSAGE_SRC (message)));
+
+            if (wp != NULL)
+              {
+                g_debug ("%s: sink for %s window (id %u) has gone, removing",
+                        G_STRFUNC, wp->stream == NULL ? "preview" : "output",
+                        wp->window_id);
+
+                wp->removing = TRUE;
+                _remove_defunct_sinks (engine);
+              }
+          }
+        else
+          {
+            g_debug ("%s: Sending tp stream engine error", G_STRFUNC);
+            tp_stream_engine_error (engine, 0, error->message);
+            g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
+            g_signal_emit (engine, signals[SHUTDOWN_REQUESTED], 0);
+          }
+        break;
+      case GST_MESSAGE_WARNING:
+        g_warning ("%s: got warning: %s", G_STRFUNC, error->message);
+        break;
+      default:
+        break;
     }
 
   return TRUE;
@@ -665,7 +672,7 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp;
 
- if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
+  if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return GST_BUS_PASS;
 
   if (!gst_structure_has_name (message->structure, "prepare-xwindow-id"))
@@ -798,9 +805,9 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *tee, *sink, *pipeline;
   WindowPair *wp;
+  GstStateChangeReturn state_change_ret;
   const gchar *videosink_name;
-
-  g_debug ("%s called", G_STRFUNC);
+  gchar error_msg[128];
 
   /* try and remove any sinks which have removing = TRUE to free up Xv ports */
   _remove_defunct_sinks (obj);
@@ -818,6 +825,8 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
 
   g_debug ("adding preview in window %u", window_id);
 
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+
   if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
     {
       g_debug ("making video sink with pipeline \"%s\"", videosink_name);
@@ -830,20 +839,53 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj, guint window_
       g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
     }
 
+  if (!gst_bin_add (GST_BIN (priv->pipeline), sink))
+    {
+      sprintf (error_msg,
+          "Failed to add element %s to pipeline %s",
+          GST_ELEMENT_NAME (sink),
+          GST_ELEMENT_NAME (priv->pipeline));
+      gst_object_unref (sink);
+      goto bin_add_failure;
+    }
+
+  g_debug ("trying to set sink to PLAYING");
+  state_change_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
+
+  if (state_change_ret != GST_STATE_CHANGE_SUCCESS &&
+      state_change_ret != GST_STATE_CHANGE_NO_PREROLL &&
+      state_change_ret != GST_STATE_CHANGE_ASYNC)
+    {
+      sprintf (error_msg, "Failed to set element %s to PLAYING",
+          GST_ELEMENT_NAME (sink));
+      goto link_failure;
+    }
+
+  g_debug ("trying to link tee and sink");
+  if (!gst_element_link (tee, sink))
+    {
+      sprintf (error_msg, "Failed to link element %s to %s",
+               GST_ELEMENT_NAME (tee),
+               GST_ELEMENT_NAME (sink));
+      goto link_failure;
+    }
+
   _window_pairs_add (&(priv->preview_windows), NULL, sink, window_id);
 
-  gst_bin_add (GST_BIN (priv->pipeline), sink);
+  gst_object_unref (tee);
+  g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
+  return TRUE;
 
-  gst_element_set_state (sink, GST_STATE_READY);
-
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  gst_element_link (tee, sink);
-  gst_element_set_state (sink, GST_STATE_PLAYING);
+link_failure:
+  gst_bin_remove (GST_BIN (priv->pipeline), sink);
+bin_add_failure:
   gst_object_unref (tee);
 
-  g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
-
-  return TRUE;
+  g_warning (error_msg);
+  *error = g_error_new (GST_STREAM_ERROR,
+                        GST_STREAM_ERROR_FAILED,
+                        error_msg);
+  return FALSE;
 }
 
 
