@@ -767,10 +767,12 @@ bus_async_handler (GstBus *bus,
             g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
             g_signal_emit (engine, signals[SHUTDOWN_REQUESTED], 0);
           }
+        g_error_free (error);
         break;
       case GST_MESSAGE_WARNING:
         gst_message_parse_warning (message, &error, NULL);
         g_warning ("%s: got warning: %s", G_STRFUNC, error->message);
+        g_error_free (error);
         break;
       case GST_MESSAGE_STATE_CHANGED:
         if ((GstElement *)GST_MESSAGE_SRC (message) == priv->pipeline)
