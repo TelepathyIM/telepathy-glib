@@ -279,7 +279,7 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
   GstElement *tee, *sink, *pipeline;
   GstStateChangeReturn state_change_ret;
   const gchar *videosink_name;
-  gchar error_msg[128];
+  gchar *error_msg;
 
   g_debug ("%s: called for window id %d", G_STRFUNC, window_id);
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
@@ -316,22 +316,20 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 
   if (!gst_bin_add (GST_BIN (priv->pipeline), sink))
     {
-      sprintf (error_msg,
-          "Failed to add element %s to pipeline %s",
-          GST_ELEMENT_NAME (sink),
-          GST_ELEMENT_NAME (priv->pipeline));
+      error_msg = g_strdup_printf ("Failed to add element %s to pipeline %s",
+          GST_ELEMENT_NAME (sink), GST_ELEMENT_NAME (priv->pipeline));
       gst_object_unref (sink);
       goto bin_add_failure;
     }
 
   g_debug ("trying to set sink to PAUSED");
-  state_change_ret = gst_element_set_state (sink, GST_STATE_PAUSED);
+  state_change_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
 
   if (state_change_ret != GST_STATE_CHANGE_SUCCESS &&
       state_change_ret != GST_STATE_CHANGE_NO_PREROLL &&
       state_change_ret != GST_STATE_CHANGE_ASYNC)
     {
-      sprintf (error_msg, "Failed to set element %s to PLAYING",
+      error_msg = g_strdup_printf ("Failed to set element %s to PLAYING",
           GST_ELEMENT_NAME (sink));
       goto link_failure;
     }
@@ -339,13 +337,10 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
   g_debug ("trying to link tee and sink");
   if (!gst_element_link (tee, sink))
     {
-      sprintf (error_msg, "Failed to link element %s to %s",
-               GST_ELEMENT_NAME (tee),
-               GST_ELEMENT_NAME (sink));
+      error_msg = g_strdup_printf ("Failed to link element %s to %s",
+               GST_ELEMENT_NAME (tee), GST_ELEMENT_NAME (sink));
       goto link_failure;
     }
-
-  state_change_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
 
   gst_object_unref (tee);
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
@@ -358,12 +353,9 @@ bin_add_failure:
   gst_object_unref (tee);
 
   g_warning (error_msg);
-  if (*error != NULL)
-    {
-      *error = g_error_new (GST_STREAM_ERROR,
-          GST_STREAM_ERROR_FAILED,
-          error_msg);
-    }
+  g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED, error_msg);
+
+  g_free (error_msg);
   _window_pairs_remove (&(priv->preview_windows), wp);
   return FALSE;
 }
