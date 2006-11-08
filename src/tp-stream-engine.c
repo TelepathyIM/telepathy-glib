@@ -375,7 +375,9 @@ _add_pending_preview_windows (TpStreamEngine *engine)
       WindowPair *wp = tmp->data;
       if (wp->created == FALSE)
         {
-          _add_preview_window (engine, wp->window_id, NULL);
+          GError **error = NULL;
+          _add_preview_window (engine, wp->window_id, error);
+          g_error_free (*error);
         }
     }
 }
