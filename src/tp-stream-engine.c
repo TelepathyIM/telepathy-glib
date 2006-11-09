@@ -378,8 +378,8 @@ _add_pending_preview_windows (TpStreamEngine *engine)
           GError *error = NULL;
           _add_preview_window (engine, wp->window_id, &error);
 
-          if (*error != NULL)
-            g_error_free (*error);
+          if (error != NULL)
+            g_error_free (error);
         }
     }
 }
