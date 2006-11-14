@@ -735,13 +735,15 @@ bus_async_handler (GstBus *bus,
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   GError *error = NULL;
   WindowPair *wp;
+  gchar *error_string;
 
   switch (GST_MESSAGE_TYPE (message))
     {
       case GST_MESSAGE_ERROR:
-        gst_message_parse_error (message, &error, NULL);
+        gst_message_parse_error (message, &error, &error_string);
 
-        g_debug ("%s: got error: %s", G_STRFUNC, error->message);
+        g_debug ("%s: got error: %s %s", G_STRFUNC, error->message, error_string);
+        g_free (error_string);
 
         if (error->domain == GST_RESOURCE_ERROR &&
                 error->code == GST_RESOURCE_ERROR_WRITE)
