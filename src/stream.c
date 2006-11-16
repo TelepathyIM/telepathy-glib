@@ -321,7 +321,10 @@ static void
 dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
 {
   if (error)
-    g_critical ("%s calling %s", error->message, (char*)user_data);
+    {
+      g_warning ("Error calling %s: %s", (gchar *) user_data, error->message);
+      g_error_free (error);
+    }
 }
 
 static void
