@@ -57,8 +57,7 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 #define DEBUG(stream, format, ...) \
   g_debug ("stream %d (%s) %s: " format, \
     stream->stream_id, \
-    STREAM_PRIVATE (stream)->media_type == FARSIGHT_MEDIA_TYPE_AUDIO ? \
-      "audio" : "video", \
+    (stream)->media_type == FARSIGHT_MEDIA_TYPE_AUDIO ? "audio" : "video", \
     G_STRFUNC, \
     ##__VA_ARGS__)
 
@@ -76,7 +75,6 @@ struct _TpStreamEngineStreamPrivate
   TpPropsIface *conn_props;
   TpConn *connection_proxy;
 
-  guint media_type;
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
 
@@ -304,7 +302,7 @@ check_start_stream (TpStreamEngineStream *stream)
         {
           farsight_stream_start (priv->fs_stream);
 
-          if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+          if (stream->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
             {
               TpStreamEngine *engine = tp_stream_engine_get ();
               GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
@@ -743,7 +741,7 @@ stop_stream (TpStreamEngineStream *self)
 
   DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
 
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+  if (self->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
     {
       GstElement *sink = farsight_stream_get_sink (priv->fs_stream);
       farsight_stream_stop (priv->fs_stream);
@@ -847,7 +845,7 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (self->media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
       tp_stream_engine_stream_mute_output (self, priv->output_mute, NULL);
       tp_stream_engine_stream_mute_input (self, priv->input_mute, NULL);
@@ -1152,7 +1150,7 @@ tp_stream_engine_stream_go (
   priv->channel_path = g_strdup (channel_path);
 
   stream->stream_id = id;
-  priv->media_type = media_type;
+  stream->media_type = media_type;
   priv->stream_handler_proxy = dbus_g_proxy_new_for_name (
     tp_get_bus(),
     bus_name,
@@ -1327,7 +1325,7 @@ gboolean tp_stream_engine_stream_mute_output (
 
   g_return_val_if_fail (priv->fs_stream, FALSE);
 
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (stream->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
         "MuteInput can only be called on audio streams");
@@ -1357,7 +1355,7 @@ gboolean tp_stream_engine_stream_set_output_volume (
 
   g_return_val_if_fail (priv->fs_stream, FALSE);
 
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (stream->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
         "SetOutputVolume can only be called on audio streams");
@@ -1388,7 +1386,7 @@ gboolean tp_stream_engine_stream_mute_input (
 
   g_return_val_if_fail (priv->fs_stream, FALSE);
 
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (stream->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
         "MuteInput can only be called on audio streams");
@@ -1418,7 +1416,7 @@ tp_stream_engine_stream_set_output_window (
   GstElement *pipeline, *sink;
   const gchar *videosink_name;
 
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
+  if (stream->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
       DEBUG (stream, "can only be called on video streams");
       *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,

@@ -32,6 +32,7 @@ typedef struct {
   GObject parent;
 
   guint stream_id;
+  guint media_type;
 } TpStreamEngineStream;
 
 typedef struct {
