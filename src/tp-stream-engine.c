@@ -736,6 +736,37 @@ _remove_defunct_sinks (TpStreamEngine *engine)
   check_if_busy (engine);
 }
 
+
+static void
+close_all_video_streams (TpStreamEngine *self, const gchar *message)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
+  guint i, j, k;
+
+  for (i = 0; i < priv->channels->len; i++)
+    {
+      TpStreamEngineChannel *channel = g_ptr_array_index (
+            priv->channels, i);
+
+      for (j = 0; j < channel->sessions->len; j++)
+        {
+          TpStreamEngineSession *session = g_ptr_array_index (
+              channel->sessions, j);
+
+          for (k = 0; k < session->streams->len; k++)
+            {
+              TpStreamEngineStream *stream = g_ptr_array_index (
+                session->streams, k);
+
+              if (stream->media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+                tp_stream_engine_stream_error (stream,
+                    TP_MEDIA_STREAM_ERROR_UNKNOWN, message);
+            }
+        }
+    }
+}
+
+
 static gboolean
 bus_async_handler (GstBus *bus,
                    GstMessage *message,
@@ -777,8 +808,9 @@ bus_async_handler (GstBus *bus,
           }
         else
           {
-            g_debug ("%s: Sending tp stream engine error", G_STRFUNC);
-            tp_stream_engine_error (engine, 0, error->message);
+            g_debug ("%s: got an error on the video pipeline: %s", G_STRFUNC,
+                error->message);
+            close_all_video_streams (engine, error->message);
             g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
             g_signal_emit (engine, signals[SHUTDOWN_REQUESTED], 0);
           }
