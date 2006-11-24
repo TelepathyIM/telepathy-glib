@@ -51,6 +51,10 @@ gboolean forced_exit_in_progress = FALSE;
 
 #define DIE_TIME 5000
 
+/* watchdog barks every 3 seconds, and if we're unresponsive, bites us in 5 */
+#define WATCHDOG_BARK 3
+#define WATCHDOG_BITE 5
+
 #ifdef USE_REALTIME
 #define DEF_PRIORITY_POLICY SCHED_RR
 #define PRIORITY_DELTA 1
@@ -198,6 +202,22 @@ critical_handler (const gchar *log_domain,
   print_backtrace ();
 }
 
+/* every time the watchdog barks, schedule a bite */
+static gboolean
+watchdog_bark (gpointer data)
+{
+  alarm (WATCHDOG_BITE);
+  return TRUE;
+}
+
+/* if it ever catches us, we're gone */
+static void
+watchdog_bite (int sig)
+{
+  printf ("bitten by the watchdog, aborting!\n");
+  abort ();
+}
+
 int main(int argc, char **argv) {
   signal (SIGBUS, got_sigbus);
   signal (SIGSEGV, got_segv);
@@ -271,6 +291,9 @@ int main(int argc, char **argv) {
   tp_stream_engine_register (stream_engine);
 
   timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
+
+  g_timeout_add (WATCHDOG_BARK * 1000, watchdog_bark, NULL);
+  signal (SIGALRM, watchdog_bite);
 
 #ifdef MAEMO_OSSO_SUPPORT
   g_debug ("maemo support enabled");
