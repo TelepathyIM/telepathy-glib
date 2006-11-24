@@ -815,7 +815,6 @@ bus_async_handler (GstBus *bus,
                 error->message);
             close_all_video_streams (engine, error->message);
             g_debug ("%s: destroying video pipeline", G_STRFUNC);
-            gst_element_set_state (priv->pipeline, GST_STATE_NULL);
 
             for (i = priv->output_windows; i; i = i->next)
               ((WindowPair *) i->data)->removing = TRUE;
@@ -824,6 +823,7 @@ bus_async_handler (GstBus *bus,
               ((WindowPair *) i->data)->removing = TRUE;
 
             _remove_defunct_sinks (engine);
+            gst_element_set_state (priv->pipeline, GST_STATE_NULL);
             gst_object_unref (priv->pipeline);
             g_debug ("%s: pipeline refcount = %d", G_STRFUNC,
                 GST_OBJECT_REFCOUNT_VALUE (priv->pipeline));
