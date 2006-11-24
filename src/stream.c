@@ -872,6 +872,7 @@ tp_stream_engine_stream_error (
 
   g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
 
+  stop_stream (self);
   tp_media_stream_handler_error_async (priv->stream_handler_proxy, error,
       message, dummy_callback, NULL);
 }
