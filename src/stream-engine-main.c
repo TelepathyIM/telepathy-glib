@@ -164,6 +164,7 @@ got_sigbus (int i)
     }
 }
 
+#ifdef ENABLE_BACKTRACE
 static void
 got_segv (int id)
 {
@@ -201,6 +202,7 @@ critical_handler (const gchar *log_domain,
   g_log_default_handler (log_domain, log_level, message, user_data);
   print_backtrace ();
 }
+#endif /* ENABLE_BACKTRACE */
 
 /* every time the watchdog barks, schedule a bite */
 static gboolean
@@ -220,7 +222,9 @@ watchdog_bite (int sig)
 
 int main(int argc, char **argv) {
   signal (SIGBUS, got_sigbus);
+#ifdef ENABLE_BACKTRACE
   signal (SIGSEGV, got_segv);
+#endif /* ENABLE_BACKTRACE */
 
 #ifdef USE_REALTIME
   {
@@ -257,6 +261,7 @@ int main(int argc, char **argv) {
     fatal_mask |= G_LOG_LEVEL_CRITICAL;
     g_log_set_always_fatal (fatal_mask);
 
+#ifdef ENABLE_BACKTRACE
     g_log_set_handler ("GLib-GObject",
         G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
         G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
@@ -269,6 +274,7 @@ int main(int argc, char **argv) {
         G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
         G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
         critical_handler, NULL);
+#endif /* ENABLE_BACKTRACE */
   }
 
   g_set_prgname("telepathy-stream-engine");
