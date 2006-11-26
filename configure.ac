@@ -1,35 +1,70 @@
-AC_INIT(Makefile.am)
+AC_PREREQ([2.59])
 
-AS_VERSION(telepathy-stream-engine, TELEPATHY_STREAM_ENGINE_VERSION, 0, 3, 15, 1, WERROR="no", WERROR="yes")
+# Making releases:
+#   set the new version number:
+#     odd minor -> development series
+#     even minor -> stable series
+#     increment micro for each release within a series
+#   set stream_engine_release to 1.
 
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+m4_define([stream_engine_major_version], [0])
+m4_define([stream_engine_minor_version], [3])
+m4_define([stream_engine_micro_version], [15])
+m4_define([stream_engine_nano_version], [1])
 
-AM_CONFIG_HEADER(config.h)
-AC_CANONICAL_HOST
+# Some magic
+m4_define([stream_engine_base_version],
+          [stream_engine_major_version.stream_engine_minor_version.stream_engine_micro_version])
+m4_define([stream_engine_version],
+          [m4_if(stream_engine_nano_version, 0, [stream_engine_base_version],
+              [stream_engine_base_version].[stream_engine_nano_version])])
+
+AC_INIT([Telepathy Stream Engine], [stream_engine_version],
+        [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy])
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_PROG_LIBTOOL
+AM_INIT_AUTOMAKE([1.8])
+AM_CONFIG_HEADER(config.h)
+
+dnl check for tools
 AC_PROG_CC
 AC_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
-dnl decide on error flags
-AS_COMPILER_FLAG(-Wall, WALL="yes", WALL="no")
+dnl decide error flags
+AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
+AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
+AS_COMPILER_FLAG(-Wextra, wextra=yes, wextra=no)
+AS_COMPILER_FLAG(-Wno-missing-field-initializers,
+        wno_missing_field_initializers=yes,
+        wno_missing_field_initializers=no)
+AS_COMPILER_FLAG(-Wno-unused-parameter,
+        wno_unused_parameter=yes,
+        wno_unused_parameter=no)
 
-if test "x$WALL" = "xyes"; then
-  ERROR_CFLAGS="-Wall"
-
-  if test "x$WERROR" = "xyes"; then
-    AS_COMPILER_FLAG(-Werror,ERROR_CFLAGS="$ERROR_CFLAGS -Werror",ERROR_CFLAGS="$ERROR_CFLAGS")
-  fi
-fi
+ifelse(stream_engine_nano_version, 0, [],
+    [
+        if test x$werror = xyes; then
+            ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
+        fi
+        if test x$wextra = xyes -a \
+            x$wno_missing_field_initializers = xyes -a \
+            x$wno_unused_parameter = xyes; then
+            ERROR_CFLAGS="$ERROR_CFLAGS -Wextra -Wno-missing-field-initializers -Wno-unused-parameter"
+        fi
+    ])
 
 AC_SUBST(ERROR_CFLAGS)
 
-AC_HEADER_STDC([])
-AC_C_INLINE
+AC_ARG_ENABLE(backtrace,
+  AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash]),
+    enable_backtrace=$enableval, enable_backtrace=no )
+
+if test x$enable_backtrace = xyes; then
+  AC_DEFINE(ENABLE_BACKTRACE, [], [Enable backtrace output on crashes])
+fi
 
 dnl options for building sequence diagrams
 SEQ_DIAS
