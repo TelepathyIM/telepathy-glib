@@ -20,7 +20,7 @@
 
 #include "config.h"
 
-/*#define USE_REALTIME*/
+#define USE_REALTIME
 #ifdef USE_REALTIME
 #include <sched.h>
 #include <sys/mman.h>
