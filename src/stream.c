@@ -446,7 +446,7 @@ tp_transports_to_fs (gchar* candidate, GPtrArray *transports)
   GList *fs_trans_list = NULL;
   GValueArray *transport;
   FarsightTransportInfo *fs_transport;
-  int i;
+  guint i;
 
   for (i=0; i< transports->len; i++)
     {
@@ -620,7 +620,7 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
   GValueArray *candidate = NULL;
   GPtrArray *transports = NULL;
   gchar *candidate_id = NULL;
-  int i;
+  guint i;
 
   for (i = 0; i < candidates->len; i++)
     {
@@ -663,7 +663,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   GHashTable *params = NULL;
   FarsightCodec *fs_codec;
   GList *fs_params = NULL;
-  int i;
+  guint i;
   GPtrArray *supp_codecs;
 
   DEBUG (self, "called");
