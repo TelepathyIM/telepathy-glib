@@ -51,9 +51,9 @@ gboolean forced_exit_in_progress = FALSE;
 
 #define DIE_TIME 5000
 
-/* watchdog barks every 3 seconds, and if we're unresponsive, bites us in 5 */
-#define WATCHDOG_BARK 3
-#define WATCHDOG_BITE 5
+/* watchdog barks every 5 seconds, and if we're unresponsive, bites us in 30 */
+#define WATCHDOG_BARK 5
+#define WATCHDOG_BITE 30
 
 #ifdef USE_REALTIME
 #define DEF_PRIORITY_POLICY SCHED_RR
