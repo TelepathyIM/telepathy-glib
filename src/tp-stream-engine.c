@@ -64,8 +64,6 @@
 #define STATUS_BAR_INTERFACE_NAME "com.nokia.statusbar"
 #define STATUS_BAR_OBJECT_PATH "/com/nokia/statusbar"
 
-#define DEFAULT_FPS 15
-
 static void
 register_dbus_signal_marshallers()
 {
@@ -809,7 +807,6 @@ bus_async_handler (GstBus *bus,
         else
           {
             GSList *i;
-            WindowPair *wp;
 
             g_debug ("%s: got an error on the video pipeline: %s", G_STRFUNC,
                 error->message);
@@ -902,11 +899,10 @@ _create_pipeline (TpStreamEngine *obj)
   GstElement *videosrc = NULL;
   GstElement *tee;
   GstBus *bus;
-  GstCaps *filter;
+  GstCaps *filter = NULL;
   GstElement *fakesink;
   const gchar *elem;
-  const gchar *fps_str;
-  gint fps;
+  const gchar *caps_str;
 
   priv->pipeline = gst_pipeline_new (NULL);
   tee = gst_element_factory_make ("tee", "tee");
@@ -928,22 +924,24 @@ _create_pipeline (TpStreamEngine *obj)
         videosrc = gst_element_factory_make ("v4l2src", NULL);
     }
 
-  if ((fps_str = getenv ("FS_VIDEO_FPS")))
+  if ((caps_str = getenv ("FS_VIDEO_SRC_CAPS")) || (caps_str = getenv ("FS_VIDEOSRC_CAPS")))
     {
-      fps = strtol (fps_str, NULL, 0);
-      g_assert (fps > 0);
+      filter = gst_caps_from_string (caps_str);
+    }
+ 
+  if (!filter) 
+    {
+      filter = gst_caps_new_simple(
+              "video/x-raw-yuv",
+              "width", G_TYPE_INT, 352,
+              "height", G_TYPE_INT, 288,
+              "framerate", GST_TYPE_FRACTION, 15, 1,
+              NULL);
     }
   else
     {
-      fps = DEFAULT_FPS;
+      g_debug ("applying custom caps '%s' on the video source\n", caps_str);
     }
-
-  filter = gst_caps_new_simple(
-      "video/x-raw-yuv",
-      "width", G_TYPE_INT, 352,
-      "height", G_TYPE_INT, 288,
-      "framerate", GST_TYPE_FRACTION, fps, 1,
-      NULL);
 
   gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, fakesink,
       NULL);
