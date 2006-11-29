@@ -339,10 +339,10 @@ async_method_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
 }
 
 static void
-state_changed (FarsightStream *stream,
-               FarsightStreamState state,
-               FarsightStreamDirection dir,
-               gpointer user_data)
+cb_fs_state_changed (FarsightStream *stream,
+                     FarsightStreamState state,
+                     FarsightStreamDirection dir,
+                     gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
@@ -374,9 +374,9 @@ state_changed (FarsightStream *stream,
 }
 
 static void
-new_native_candidate (FarsightStream *stream,
-                      gchar *candidate_id,
-                      gpointer user_data)
+cb_fs_new_native_candidate (FarsightStream *stream,
+                            gchar *candidate_id,
+                            gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
@@ -873,7 +873,9 @@ prepare_transports (TpStreamEngineStream *self)
 }
 
 static void
-codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
+cb_fs_codec_changed (FarsightStream *stream,
+                     gint codec_id,
+                     gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
@@ -922,11 +924,10 @@ tp_stream_engine_stream_error (
 }
 
 static void
-stream_error (
-  FarsightStream *stream,
-  FarsightStreamError error,
-  const gchar *debug,
-  gpointer user_data)
+cb_fs_stream_error (FarsightStream *stream,
+                    FarsightStreamError error,
+                    const gchar *debug,
+                    gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
@@ -938,10 +939,10 @@ stream_error (
 }
 
 static void
-new_active_candidate_pair (FarsightStream *stream,
-                           const gchar* native_candidate,
-                           const gchar *remote_candidate,
-                           gpointer user_data)
+cb_fs_new_active_candidate_pair (FarsightStream *stream,
+                                 const gchar* native_candidate,
+                                 const gchar *remote_candidate,
+                                 gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
@@ -959,7 +960,8 @@ new_active_candidate_pair (FarsightStream *stream,
 }
 
 static void
-native_candidates_prepared (FarsightStream *stream, gpointer user_data)
+cb_fs_native_candidates_prepared (FarsightStream *stream,
+                                  gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
@@ -1269,18 +1271,18 @@ tp_stream_engine_stream_go (
     }
 
   g_signal_connect (G_OBJECT (priv->fs_stream), "error",
-                    G_CALLBACK (stream_error), stream);
+                    G_CALLBACK (cb_fs_stream_error), stream);
   g_signal_connect (G_OBJECT (priv->fs_stream), "new-active-candidate-pair",
-                    G_CALLBACK (new_active_candidate_pair), stream);
+                    G_CALLBACK (cb_fs_new_active_candidate_pair), stream);
   g_signal_connect (G_OBJECT (priv->fs_stream), "codec-changed",
-                    G_CALLBACK (codec_changed), stream);
+                    G_CALLBACK (cb_fs_codec_changed), stream);
   g_signal_connect (G_OBJECT (priv->fs_stream), "native-candidates-prepared",
-                    G_CALLBACK (native_candidates_prepared), stream);
+                    G_CALLBACK (cb_fs_native_candidates_prepared), stream);
   priv->state_changed_handler_id =
     g_signal_connect (G_OBJECT (priv->fs_stream), "state-changed",
-                      G_CALLBACK (state_changed), stream);
+                      G_CALLBACK (cb_fs_state_changed), stream);
   g_signal_connect (G_OBJECT (priv->fs_stream), "new-native-candidate",
-                    G_CALLBACK (new_native_candidate), stream);
+                    G_CALLBACK (cb_fs_new_native_candidate), stream);
 
   /* OMG, Can we make dbus-binding-tool do this stuff for us?? */
 
