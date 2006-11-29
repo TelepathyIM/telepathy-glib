@@ -314,15 +314,28 @@ check_start_stream (TpStreamEngineStream *stream)
      }
 }
 
+typedef struct _method_call_ctx method_call_ctx;
+
+struct _method_call_ctx
+{
+  TpStreamEngineStream *stream;
+  const gchar *method;
+};
+
 /* dummy callback handler for async calling calls with no return values */
 static void
-dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
+async_method_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
 {
+  method_call_ctx *ctx = (method_call_ctx *) user_data;
+
   if (error)
     {
-      g_warning ("Error calling %s: %s", (gchar *) user_data, error->message);
+      g_warning ("Error calling %s: %s", ctx->method, error->message);
+      g_signal_emit (ctx->stream, signals[STREAM_ERROR], 0);
       g_error_free (error);
     }
+
+  g_free (ctx);
 }
 
 static void
@@ -350,9 +363,13 @@ state_changed (FarsightStream *stream,
 
   if (priv->stream_handler_proxy)
     {
+      method_call_ctx *ctx = g_new0 (method_call_ctx, 1);
+
+      ctx->stream = self;
+      ctx->method = "Media.StreamHandler::StreamState";
+
       tp_media_stream_handler_stream_state_async (
-        priv->stream_handler_proxy, state, dummy_callback,
-        "Media.StreamHandler::StreamState");
+        priv->stream_handler_proxy, state, async_method_callback, ctx);
     }
 }
 
@@ -365,6 +382,7 @@ new_native_candidate (FarsightStream *stream,
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   const GList *fs_candidates, *lp;
   GPtrArray *transports;
+  method_call_ctx *ctx;
 
   fs_candidates = farsight_stream_get_native_candidate (stream, candidate_id);
   transports = g_ptr_array_new ();
@@ -427,9 +445,13 @@ new_native_candidate (FarsightStream *stream,
       g_ptr_array_add (transports, g_value_get_boxed (&transport));
     }
 
+  ctx = g_new0 (method_call_ctx, 1);
+  ctx->stream = self;
+  ctx->method = "Media.StreamHandler::NativeCandidatesPrepared";
+
   tp_media_stream_handler_new_native_candidate_async (
-      priv->stream_handler_proxy, candidate_id, transports, dummy_callback,
-      "Media.StreamHandler::NativeCandidatesPrepared");
+      priv->stream_handler_proxy, candidate_id, transports,
+      async_method_callback, ctx);
 }
 
 /**
@@ -665,6 +687,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   GList *fs_params = NULL;
   guint i;
   GPtrArray *supp_codecs;
+  method_call_ctx *ctx;
 
   DEBUG (self, "called");
 
@@ -711,9 +734,12 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
 
+  ctx = g_new0 (method_call_ctx, 1);
+  ctx->stream = self;
+  ctx->method = "Media.StreamHandler::SupportedCodecs";
+
   tp_media_stream_handler_supported_codecs_async
-    (priv->stream_handler_proxy, supp_codecs, dummy_callback,
-     "Media.StreamHandler::SupportedCodecs");
+    (priv->stream_handler_proxy, supp_codecs, async_method_callback, ctx);
 
   for (lp = g_list_first (fs_codecs); lp; lp = g_list_next (lp))
     {
@@ -829,13 +855,20 @@ prepare_transports (TpStreamEngineStream *self)
   if (priv->got_connection_properties && priv->candidate_preparation_required)
     {
       farsight_stream_prepare_transports (priv->fs_stream);
+      method_call_ctx *ctx;
+
 
       codecs = fs_codecs_to_tp (
                  farsight_stream_get_local_codecs (priv->fs_stream));
 
       DEBUG (self, "calling MediaStreamHandler::Ready");
+
+      ctx = g_new0 (method_call_ctx, 1);
+      ctx->stream = self;
+      ctx->method = "Media.StreamHandler::Ready";
+
       tp_media_stream_handler_ready_async (
-        priv->stream_handler_proxy, codecs, dummy_callback, self);
+        priv->stream_handler_proxy, codecs, async_method_callback, ctx);
     }
 }
 
@@ -844,6 +877,7 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  method_call_ctx *ctx;
 
   if (self->media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
@@ -857,9 +891,13 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
       self->stream_id, TRUE);
 
   DEBUG (self, "codec_id=%d, stream=%p", codec_id, stream);
+
+  ctx = g_new0 (method_call_ctx, 1);
+  ctx->stream = self;
+  ctx->method = "Media.StreamHandler::CodecChoice";
+
   tp_media_stream_handler_codec_choice_async (
-    priv->stream_handler_proxy, codec_id, dummy_callback,
-    "Media.StreamHandler::CodecChoice");
+    priv->stream_handler_proxy, codec_id, async_method_callback, ctx);
 }
 
 void
@@ -869,12 +907,12 @@ tp_stream_engine_stream_error (
   const gchar *message)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  method_call_ctx *ctx;
 
   g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
 
-  stop_stream (self);
   tp_media_stream_handler_error_async (priv->stream_handler_proxy, error,
-      message, dummy_callback, NULL);
+      message, async_method_callback, ctx);
 }
 
 static void
@@ -898,11 +936,17 @@ new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  method_call_ctx *ctx;
 
   DEBUG (self, "stream=%p", stream);
 
-  tp_media_stream_handler_new_active_candidate_pair_async
-    (priv->stream_handler_proxy, native_candidate, remote_candidate, dummy_callback, "Media.StreamHandler::NewActiveCandidatePair");
+  ctx = g_new0 (method_call_ctx, 1);
+  ctx->stream = self;
+  ctx->method = "Media.StreamHandler::NewActiveCandidatePair";
+
+  tp_media_stream_handler_new_active_candidate_pair_async (
+    priv->stream_handler_proxy, native_candidate, remote_candidate,
+    async_method_callback, ctx);
 }
 
 static void
@@ -912,6 +956,7 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   const GList *transport_candidates, *lp;
   FarsightTransportInfo *info;
+  method_call_ctx *ctx;
 
   DEBUG (self, "stream=%p", stream);
 
@@ -924,9 +969,13 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
         (info->proto == FARSIGHT_NETWORK_PROTOCOL_TCP) ? "TCP" : "UDP",
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
+
+  ctx = g_new0 (method_call_ctx, 1);
+  ctx->stream = self;
+  ctx->method = "Media.StreamHandler::NativeCandidatesPrepared";
+
   tp_media_stream_handler_native_candidates_prepared_async (
-    priv->stream_handler_proxy, dummy_callback,
-    "Media.StreamHandler::NativeCandidatesPrepared");
+    priv->stream_handler_proxy, async_method_callback, ctx);
 }
 
 static void
