@@ -924,12 +924,9 @@ cb_fs_stream_error (FarsightStream *stream,
                     gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  g_message ("%s: stream error: stream=%p error=%s", G_STRFUNC, stream, debug);
-  /* FIXME: check if error is EOS */
-  tp_media_stream_handler_error (priv->stream_handler_proxy, 0, debug, NULL);
-  g_signal_emit (self, signals[STREAM_ERROR], 0);
+  /* FIXME: map Farsight errors to Telepathy errors */
+  tp_stream_engine_stream_error (self, 0, debug);
 }
 
 static void
