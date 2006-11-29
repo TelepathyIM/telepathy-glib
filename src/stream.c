@@ -911,6 +911,12 @@ tp_stream_engine_stream_error (
 
   g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
 
+  stop_stream (self);
+
+  ctx = g_new0 (method_call_ctx, 1);
+  ctx->stream = self;
+  ctx->method = "Media.StreamHandler::Error";
+
   tp_media_stream_handler_error_async (priv->stream_handler_proxy, error,
       message, async_method_callback, ctx);
 }
