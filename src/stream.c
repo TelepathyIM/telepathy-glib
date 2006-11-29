@@ -909,18 +909,12 @@ tp_stream_engine_stream_error (
   const gchar *message)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  method_call_ctx *ctx;
 
   g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
 
-  stop_stream (self);
-
-  ctx = g_slice_new0 (method_call_ctx);
-  ctx->stream = self;
-  ctx->method = "Media.StreamHandler::Error";
-
-  tp_media_stream_handler_error_async (priv->stream_handler_proxy, error,
-      message, async_method_callback, ctx);
+  tp_media_stream_handler_error (priv->stream_handler_proxy, error,
+      message, NULL);
+  g_signal_emit (self, signals[STREAM_ERROR], 0);
 }
 
 static void
