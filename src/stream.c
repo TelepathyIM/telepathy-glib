@@ -938,7 +938,10 @@ stream_error (
 }
 
 static void
-new_active_candidate_pair (FarsightStream *stream, const gchar* native_candidate, const gchar *remote_candidate, gpointer user_data)
+new_active_candidate_pair (FarsightStream *stream,
+                           const gchar* native_candidate,
+                           const gchar *remote_candidate,
+                           gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
