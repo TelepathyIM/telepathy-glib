@@ -335,7 +335,7 @@ async_method_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
       g_error_free (error);
     }
 
-  g_free (ctx);
+  g_slice_free (method_call_ctx, ctx);
 }
 
 static void
@@ -363,7 +363,7 @@ state_changed (FarsightStream *stream,
 
   if (priv->stream_handler_proxy)
     {
-      method_call_ctx *ctx = g_new0 (method_call_ctx, 1);
+      method_call_ctx *ctx = g_slice_new0 (method_call_ctx);
 
       ctx->stream = self;
       ctx->method = "Media.StreamHandler::StreamState";
@@ -445,7 +445,7 @@ new_native_candidate (FarsightStream *stream,
       g_ptr_array_add (transports, g_value_get_boxed (&transport));
     }
 
-  ctx = g_new0 (method_call_ctx, 1);
+  ctx = g_slice_new0 (method_call_ctx);
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::NativeCandidatesPrepared";
 
@@ -734,7 +734,7 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
 
-  ctx = g_new0 (method_call_ctx, 1);
+  ctx = g_slice_new0 (method_call_ctx);
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::SupportedCodecs";
 
@@ -863,7 +863,7 @@ prepare_transports (TpStreamEngineStream *self)
 
       DEBUG (self, "calling MediaStreamHandler::Ready");
 
-      ctx = g_new0 (method_call_ctx, 1);
+      ctx = g_slice_new0 (method_call_ctx);
       ctx->stream = self;
       ctx->method = "Media.StreamHandler::Ready";
 
@@ -892,7 +892,7 @@ codec_changed (FarsightStream *stream, gint codec_id, gpointer user_data)
 
   DEBUG (self, "codec_id=%d, stream=%p", codec_id, stream);
 
-  ctx = g_new0 (method_call_ctx, 1);
+  ctx = g_slice_new0 (method_call_ctx);
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::CodecChoice";
 
@@ -913,7 +913,7 @@ tp_stream_engine_stream_error (
 
   stop_stream (self);
 
-  ctx = g_new0 (method_call_ctx, 1);
+  ctx = g_slice_new0 (method_call_ctx);
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::Error";
 
@@ -949,7 +949,7 @@ new_active_candidate_pair (FarsightStream *stream,
 
   DEBUG (self, "stream=%p", stream);
 
-  ctx = g_new0 (method_call_ctx, 1);
+  ctx = g_slice_new0 (method_call_ctx);
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::NewActiveCandidatePair";
 
@@ -979,7 +979,7 @@ native_candidates_prepared (FarsightStream *stream, gpointer user_data)
         info->proto_subtype, info->ip, info->port, (double) info->preference);
   }
 
-  ctx = g_new0 (method_call_ctx, 1);
+  ctx = g_slice_new0 (method_call_ctx);
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::NativeCandidatesPrepared";
 
