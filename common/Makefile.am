@@ -2,17 +2,14 @@ BUILT_SOURCES = \
     telepathy-errors-enumtypes.h \
     telepathy-errors-enumtypes.c
 
-# correctly clean the generated source files
 CLEANFILES = $(BUILT_SOURCES)
 
-
-CORE_SOURCES = \
-    telepathy-errors.h \
-    telepathy-errors.c \
-    $(BUILT_SOURCES)
-
 libcommon_convenience_la_SOURCES = \
-	$(CORE_SOURCES)
+	telepathy-errors.h \
+	telepathy-errors.c
+
+nodist_libcommon_convenience_la_SOURCES = \
+	$(BUILT_SOURCES)
 
 noinst_LTLIBRARIES = libcommon-convenience.la
 

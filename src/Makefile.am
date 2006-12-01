@@ -10,21 +10,11 @@ if USE_INFOPRINT
 BUILT_SOURCES += statusbar-gen.h
 endif
 
-# Correctly clean the generated headers, but keep the xml description
 CLEANFILES = $(BUILT_SOURCES)
 
 bin_PROGRAMS = telepathy-stream-engine
 
-CORE_SOURCES = \
-	$(BUILT_SOURCES)
-
-#tp-media-session-handler.h 
-#tp-media-stream-handler.c 
-
 libstreamengine_convenience_la_SOURCES = \
-	$(CORE_SOURCES)
-
-telepathy_stream_engine_SOURCES = \
 	channel.h \
 	channel.c \
 	session.h \
@@ -34,9 +24,16 @@ telepathy_stream_engine_SOURCES = \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
 	types.h \
-	stream-engine-main.c \
 	xerrorhandler.h \
-	xerrorhandler.c
+	xerrorhandler.c \
+	misc-signals-marshal.list \
+	tp-stream-engine-signals-marshal.list
+
+nodist_libstreamengine_convenience_la_SOURCES = \
+	$(BUILT_SOURCES)
+
+telepathy_stream_engine_SOURCES = \
+	stream-engine-main.c
 
 telepathy_stream_engine_LDADD = \
 	libstreamengine-convenience.la \
