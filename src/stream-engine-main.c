@@ -166,18 +166,6 @@ got_sigbus (int i)
 
 #ifdef ENABLE_BACKTRACE
 static void
-got_segv (int id)
-{
-  signal (SIGSEGV, SIG_IGN);
-  g_warning ("Stream Engine caught SIGSEGV!");
-  /* FIXME
-  _tp_stream_engine_stop_stream(stream_engine);
-  */
-  g_object_unref (stream_engine);
-  g_main_loop_quit (mainloop);
-}
-
-static void
 print_backtrace (void)
 {
 #if defined (HAVE_BACKTRACE) && defined (HAVE_BACKTRACE_SYMBOLS_FD)
@@ -191,6 +179,19 @@ print_backtrace (void)
   size = backtrace (array, 20);
   backtrace_symbols_fd (array, size, STDERR_FILENO);
 #endif /* HAVE_BACKTRACE && HAVE_BACKTRACE_SYMBOLS_FD */
+}
+
+static void
+got_segv (int id)
+{
+  signal (SIGSEGV, SIG_IGN);
+
+#define MSG "telepathy-stream-engine caught SIGSEGV\n"
+  write (STDERR_FILENO, MSG, strlen (MSG));
+#undef MSG
+
+  print_backtrace ();
+  abort ();
 }
 
 static void
