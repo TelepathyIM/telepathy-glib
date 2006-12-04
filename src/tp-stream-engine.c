@@ -679,7 +679,7 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 
 
 static void
-_remove_defunct_sinks (TpStreamEngine *engine)
+_remove_defunct_preview_sinks (TpStreamEngine *engine, gboolean clear_wp_list)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp = NULL;
@@ -693,28 +693,46 @@ _remove_defunct_sinks (TpStreamEngine *engine)
           wp->window_id);
 
       if (wp->created)
-      {
-        g_assert (wp->sink != NULL);
-        tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-        g_assert (tee != NULL);
-        gst_element_unlink (tee, wp->sink);
-        gst_object_unref (GST_OBJECT (tee));
-        g_debug ("unlinked sink from tee, now setting state to NULL");
+        {
+          g_assert (wp->sink != NULL);
+          tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+          g_assert (tee != NULL);
+          gst_element_unlink (tee, wp->sink);
+          gst_object_unref (GST_OBJECT (tee));
+          g_debug ("unlinked sink from tee, now setting state to NULL");
 
-        gst_element_set_state (wp->sink, GST_STATE_NULL);
-        g_debug ("Done setting state to NULL, now removing from bin");
-        gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
-        g_debug ("Done removing from bin, calling _window_pairs_remove");
-      }
+          gst_element_set_state (wp->sink, GST_STATE_NULL);
+          g_debug ("Done setting state to NULL, now removing from bin");
+          gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
+          g_debug ("Done removing from bin, calling _window_pairs_remove"
+              "refcount %d", GST_OBJECT_REFCOUNT_VALUE (wp->sink));
+        }
       else
-      {
-        g_debug ("No sink created yet, removing window_pair");
-        g_assert (wp->sink == NULL);
-      }
+        {
+          g_debug ("No sink created yet, removing window_pair");
+          g_assert (wp->sink == NULL);
+        }
 
-      _window_pairs_remove (&(priv->preview_windows), wp);
+      if (clear_wp_list)
+        {
+          _window_pairs_remove (&(priv->preview_windows), wp);
+        }
+      else
+        {
+          wp->sink = NULL;
+          wp->created = FALSE;
+          wp->stream = NULL;
+          wp->removing = FALSE;
+        }
       g_debug ("Done _window_pairs_remove");
     }
+}
+
+static void
+_remove_defunct_output_sinks (TpStreamEngine *engine)
+{
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  WindowPair *wp = NULL;
 
   while ((wp = _window_pairs_find_by_removing (priv->output_windows, TRUE)) !=
       NULL)
@@ -738,6 +756,7 @@ _remove_defunct_sinks (TpStreamEngine *engine)
 static void
 close_all_video_streams (TpStreamEngine *self, const gchar *message)
 {
+  g_debug ("Closing all video streams");
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   guint i, j, k;
 
@@ -776,23 +795,40 @@ bus_async_handler (GstBus *bus,
   WindowPair *wp;
   gchar *error_string;
 
+  GstElement *source = GST_ELEMENT (GST_MESSAGE_SRC (message));
+  gchar *name = gst_element_get_name (source);
+  g_debug ("%s: got msg from %s", G_STRFUNC, name);
+
   switch (GST_MESSAGE_TYPE (message))
     {
       case GST_MESSAGE_ERROR:
         gst_message_parse_error (message, &error, &error_string);
 
-        g_debug ("%s: got error: %s %s", G_STRFUNC, error->message, error_string);
+        g_debug ("%s: got error: %s %s %d %d", G_STRFUNC, error->message,
+            error_string, error->domain, error->code);
         g_free (error_string);
 
-        if (error->domain == GST_RESOURCE_ERROR &&
-                error->code == GST_RESOURCE_ERROR_WRITE)
+        /*
+        TpStreamEngineStream *stream = NULL;
+        guint xid;
+        gboolean is_preview = TRUE;
+        */
+        if (g_strrstr (name, "xvimagesink") &&
+            error->domain == GST_RESOURCE_ERROR &&
+            (error->code == GST_RESOURCE_ERROR_WRITE ||
+             error->code == GST_RESOURCE_ERROR_BUSY))
           {
+            g_debug ("%s: error from xvimagesink, shutting down video streams",
+                G_STRFUNC);
             wp = _window_pairs_find_by_sink (priv->preview_windows,
-                    GST_ELEMENT (GST_MESSAGE_SRC (message)));
+                source);
 
             if (wp == NULL)
+            {
+              /* is_preview = FALSE; */
               wp = _window_pairs_find_by_sink (priv->output_windows,
-                  GST_ELEMENT (GST_MESSAGE_SRC (message)));
+                  source);
+            }
 
             if (wp != NULL)
               {
@@ -801,7 +837,28 @@ bus_async_handler (GstBus *bus,
                         wp->window_id);
 
                 wp->removing = TRUE;
-                _remove_defunct_sinks (engine);
+                /*
+                xid = wp->window_id;
+                stream = wp->stream;
+                */
+                _remove_defunct_preview_sinks (engine, TRUE);
+                _remove_defunct_output_sinks (engine);
+
+                /* let's try recreating a new xvimagesink */
+                /*
+                if (is_preview)
+                  {
+                    tp_stream_engine_add_preview_window (engine, xid, &error);
+                  }
+                else
+                  {
+                    g_debug ("adding new output window with xid %d and stream %p", xid, stream);
+                    tp_stream_engine_stream_set_output_window (stream, xid,
+                        &error);
+                  }
+                */
+                /* let's shutdown the video stream */
+                close_all_video_streams (engine, error->message);
               }
           }
         else
@@ -810,7 +867,11 @@ bus_async_handler (GstBus *bus,
 
             g_debug ("%s: got an error on the video pipeline: %s", G_STRFUNC,
                 error->message);
+            g_debug ("%s: will teardown video pipeline and try a new one",
+                G_STRFUNC);
+
             close_all_video_streams (engine, error->message);
+
             g_debug ("%s: destroying video pipeline", G_STRFUNC);
 
             for (i = priv->output_windows; i; i = i->next)
@@ -819,12 +880,15 @@ bus_async_handler (GstBus *bus,
             for (i = priv->preview_windows; i; i = i->next)
               ((WindowPair *) i->data)->removing = TRUE;
 
-            _remove_defunct_sinks (engine);
+            _remove_defunct_preview_sinks (engine, FALSE);
+            _remove_defunct_output_sinks (engine);
+            gst_element_set_state (priv->pipeline, GST_STATE_NULL);
             gst_element_set_state (priv->pipeline, GST_STATE_NULL);
             gst_object_unref (priv->pipeline);
-            g_debug ("%s: pipeline refcount = %d", G_STRFUNC,
-                GST_OBJECT_REFCOUNT_VALUE (priv->pipeline));
             priv->pipeline = NULL;
+
+            g_debug ("%s: Creating new pipeline", G_STRFUNC);
+            priv->pipeline = tp_stream_engine_get_pipeline (engine);
           }
         g_error_free (error);
         break;
@@ -834,27 +898,41 @@ bus_async_handler (GstBus *bus,
         g_error_free (error);
         break;
       case GST_MESSAGE_STATE_CHANGED:
-        if ((GstElement *)GST_MESSAGE_SRC (message) == priv->pipeline)
-          {
-            GstState new_state;
-            gst_message_parse_state_changed (message, NULL, &new_state, NULL);
-            if (new_state == GST_STATE_PLAYING)
-              {
-                g_debug ("Pipeline is playing, setting to TRUE");
-                priv->pipeline_playing = TRUE;
-                _add_pending_preview_windows (engine);
-              }
-            else
-              {
-                g_debug ("Pipeline is not playing, setting to FALSE");
-                priv->pipeline_playing = FALSE;
-              }
-          }
-        break;
+        {
+          GstState new_state;
+          GstState old_state;
+          GstState pending_state;
+          gst_message_parse_state_changed (message, &old_state, &new_state,
+              &pending_state);
+          /*
+          g_debug ("State changed for %s refcount %d old:%s new:%s pending:%s",
+              name,
+              GST_OBJECT_REFCOUNT_VALUE (source),
+              gst_element_state_get_name (old_state),
+              gst_element_state_get_name (new_state),
+              gst_element_state_get_name (pending_state));
+          */
+          if (source == priv->pipeline)
+            {
+              if (new_state == GST_STATE_PLAYING)
+                {
+                  g_debug ("Pipeline is playing, setting to TRUE");
+                  priv->pipeline_playing = TRUE;
+                  _add_pending_preview_windows (engine);
+                }
+              else
+                {
+                  g_debug ("Pipeline is not playing, setting to FALSE");
+                  priv->pipeline_playing = FALSE;
+                }
+            }
+          break;
+        }
       default:
         break;
     }
 
+  g_free (name);
   return TRUE;
 }
 
@@ -985,7 +1063,8 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 static gboolean
 _remove_defunct_sinks_idle_cb (TpStreamEngine *engine)
 {
-  _remove_defunct_sinks (engine);
+  _remove_defunct_preview_sinks (engine, TRUE);
+  _remove_defunct_output_sinks (engine);
 
   return FALSE;
 }
@@ -1016,7 +1095,8 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
     }
 
   /* try and remove any sinks which have removing = TRUE to free up Xv ports */
-  _remove_defunct_sinks (obj);
+  _remove_defunct_preview_sinks (obj, TRUE);
+  _remove_defunct_output_sinks (obj);
 
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
@@ -1216,7 +1296,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
 
   wp->removing = TRUE;
 
-  _remove_defunct_sinks (obj);
+  _remove_defunct_preview_sinks (obj, TRUE);
 
   return TRUE;
 }
@@ -1230,7 +1310,8 @@ tp_stream_engine_add_output_window (TpStreamEngine *obj,
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
 
-  _remove_defunct_sinks (obj);
+  _remove_defunct_preview_sinks (obj, TRUE);
+  _remove_defunct_output_sinks (obj);
 
   _window_pairs_add (&(priv->output_windows), stream, sink, window_id);
 
