@@ -933,8 +933,8 @@ _create_pipeline (TpStreamEngine *obj)
     {
       filter = gst_caps_new_simple(
               "video/x-raw-yuv",
-              "width", G_TYPE_INT, 352,
-              "height", G_TYPE_INT, 288,
+              "width", G_TYPE_INT, 176,
+              "height", G_TYPE_INT, 144,
               "framerate", GST_TYPE_FRACTION, 15, 1,
               NULL);
     }
