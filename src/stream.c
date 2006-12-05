@@ -1196,7 +1196,8 @@ tp_stream_engine_stream_go (
   gchar *conn_timeout_str;
 
 #ifdef MAEMO_OSSO_SUPPORT
-  media_server_proxy_init (stream);
+  if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
+    media_server_proxy_init (stream);
 #endif
 
   priv->channel_path = g_strdup (channel_path);
