@@ -797,13 +797,13 @@ bus_async_handler (GstBus *bus,
 
   GstElement *source = GST_ELEMENT (GST_MESSAGE_SRC (message));
   gchar *name = gst_element_get_name (source);
-  g_debug ("%s: got msg from %s", G_STRFUNC, name);
 
   switch (GST_MESSAGE_TYPE (message))
     {
       case GST_MESSAGE_ERROR:
         gst_message_parse_error (message, &error, &error_string);
 
+        g_debug ("%s: got error from %s", G_STRFUNC, name);
         g_debug ("%s: got error: %s %s %d %d", G_STRFUNC, error->message,
             error_string, error->domain, error->code);
         g_free (error_string);
@@ -882,7 +882,6 @@ bus_async_handler (GstBus *bus,
 
             _remove_defunct_preview_sinks (engine, FALSE);
             _remove_defunct_output_sinks (engine);
-            gst_element_set_state (priv->pipeline, GST_STATE_NULL);
             gst_element_set_state (priv->pipeline, GST_STATE_NULL);
             gst_object_unref (priv->pipeline);
             priv->pipeline = NULL;
