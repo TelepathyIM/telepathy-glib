@@ -726,6 +726,8 @@ _remove_defunct_preview_sinks (TpStreamEngine *engine, gboolean clear_wp_list)
         }
       g_debug ("Done _window_pairs_remove");
     }
+
+  check_if_busy (self);
 }
 
 static void
