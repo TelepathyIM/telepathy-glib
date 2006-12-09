@@ -762,8 +762,8 @@ stop_stream (TpStreamEngineStream *self)
   if (self->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
     {
       GstElement *sink = farsight_stream_get_sink (priv->fs_stream);
-      farsight_stream_stop (priv->fs_stream);
       _remove_video_sink (self, sink);
+      farsight_stream_stop (priv->fs_stream);
     }
   else
     {
