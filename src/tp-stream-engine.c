@@ -1000,6 +1000,9 @@ _create_pipeline (TpStreamEngine *obj)
       videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
 #endif
       if (videosrc == NULL)
+        videosrc = gst_element_factory_make ("gconfvideosrc", NULL);
+
+      if (videosrc == NULL)
         videosrc = gst_element_factory_make ("v4l2src", NULL);
     }
 
