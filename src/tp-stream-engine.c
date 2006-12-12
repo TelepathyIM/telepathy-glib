@@ -977,6 +977,9 @@ _create_pipeline (TpStreamEngine *obj)
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstElement *videosrc = NULL;
   GstElement *tee;
+#ifndef MAEMO_OSSO_SUPPORT
+  GstElement *tmp;
+#endif
   GstBus *bus;
   GstCaps *filter = NULL;
   GstElement *fakesink;
@@ -1029,6 +1032,27 @@ _create_pipeline (TpStreamEngine *obj)
 
   gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, fakesink,
       NULL);
+
+#ifndef MAEMO_OSSO_SUPPORT
+  tmp = gst_element_factory_make ("videorate", NULL);
+  if (tmp != NULL)
+    {
+      g_debug ("linking videorate");
+      gst_bin_add (GST_BIN (priv->pipeline), tmp);
+      gst_element_link (videosrc, tmp);
+      videosrc = tmp;
+    }
+
+  tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
+  if (tmp != NULL);
+    {
+      g_debug ("linking ffmpegcolorspace");
+      gst_bin_add (GST_BIN (priv->pipeline), tmp);
+      gst_element_link (videosrc, tmp);
+      videosrc = tmp;
+    }
+#endif
+
   gst_element_link (videosrc, tee);
   gst_element_link_filtered (tee, fakesink, filter);
   gst_caps_unref (filter);
