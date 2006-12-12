@@ -1010,15 +1010,17 @@ _create_pipeline (TpStreamEngine *obj)
     {
       filter = gst_caps_from_string (caps_str);
     }
- 
-  if (!filter) 
+
+  if (!filter)
     {
-      filter = gst_caps_new_simple(
-              "video/x-raw-yuv",
-              "width", G_TYPE_INT, 176,
-              "height", G_TYPE_INT, 144,
-              "framerate", GST_TYPE_FRACTION, 15, 1,
-              NULL);
+      filter = gst_caps_new_simple ("video/x-raw-yuv",
+           "width", G_TYPE_INT, 176,
+           "height", G_TYPE_INT, 144,
+           "framerate", GST_TYPE_FRACTION, 15, 1,
+#ifndef MAEMO_OSSO_SUPPORT
+           "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
+#endif
+           NULL);
     }
   else
     {
