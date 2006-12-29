@@ -78,6 +78,8 @@ void tp_stream_engine_stream_error (
   guint error,
   const gchar *message);
 
+gboolean g_object_has_property (GObject *object, const gchar *property);
+
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_STREAM_H__ */

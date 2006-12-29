@@ -139,7 +139,7 @@ set_stream_sending (DBusGProxy *proxy, gboolean play, gpointer user_data);
 static void
 stop_stream (TpStreamEngineStream *self);
 
-static gboolean
+gboolean
 g_object_has_property (GObject *object, const gchar *property)
 {
   GObjectClass *klass;
