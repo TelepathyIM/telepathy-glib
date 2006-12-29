@@ -1225,7 +1225,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
     {
       g_debug ("%s: pipeline not playing, adding later", G_STRFUNC);
       _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      return FALSE;
+      return TRUE;
     }
   else
     {
