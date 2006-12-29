@@ -942,7 +942,8 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 {
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-  WindowPair *wp;
+  GstElement *element;
+  WindowPair *wp = NULL;
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return GST_BUS_PASS;
@@ -950,24 +951,33 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   if (!gst_structure_has_name (message->structure, "prepare-xwindow-id"))
     return GST_BUS_PASS;
 
+  element = GST_ELEMENT (GST_MESSAGE_SRC (message));
+
   g_debug ("got prepare-xwindow-id message from %s",
-           gst_element_get_name (GST_MESSAGE_SRC (message)));
+      gst_element_get_name (element));
 
-  wp = _window_pairs_find_by_sink (priv->output_windows,
-      GST_ELEMENT (GST_MESSAGE_SRC (message)));
+  while (element != NULL)
+    {
+      wp = _window_pairs_find_by_sink (priv->output_windows, element);
 
-  if (wp == NULL)
-    wp = _window_pairs_find_by_sink (priv->preview_windows,
-        GST_ELEMENT (GST_MESSAGE_SRC (message)));
+      if (wp == NULL)
+        wp = _window_pairs_find_by_sink (priv->preview_windows, element);
+
+      if (wp != NULL)
+        break;
+
+      element = GST_ELEMENT_PARENT (element);
+    }
 
   if (wp == NULL)
     return GST_BUS_PASS;
 
-  g_debug ("Giving xvimagesink %p window id %d", wp->sink, wp->window_id);
-  gst_x_overlay_set_xwindow_id (
-      GST_X_OVERLAY (GST_MESSAGE_SRC (message)), wp->window_id);
+  g_debug ("Giving video sink %p window id %d", wp->sink, wp->window_id);
+  gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (GST_MESSAGE_SRC (message)),
+      wp->window_id);
 
   gst_message_unref (message);
+
   return GST_BUS_DROP;
 }
 
