@@ -73,6 +73,7 @@ TpStreamEngine *tp_stream_engine_get ();
 void tp_stream_engine_emit_receiving (TpStreamEngine *obj, gchar *channel_path,
     guint stream_id, gboolean state);
 
+GstElement *tp_stream_engine_make_video_sink ();
 GstElement *tp_stream_engine_get_pipeline (TpStreamEngine *obj);
 
 gboolean

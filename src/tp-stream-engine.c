@@ -269,6 +269,53 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
   return NULL;
 }
 
+GstElement *
+tp_stream_engine_make_video_sink ()
+{
+  const gchar *videosink_name;
+  GstElement *sink = NULL;
+
+  if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
+    {
+      g_debug ("making video sink with pipeline \"%s\"", videosink_name);
+      sink = gst_parse_bin_from_description (videosink_name, TRUE, NULL);
+    }
+  else
+    {
+#ifndef MAEMO_OSSO_SUPPORT
+      sink = gst_element_factory_make ("gconfvideosink", NULL);
+
+      if (sink == NULL)
+        sink = gst_element_factory_make ("autovideosink", NULL);
+#endif
+
+      if (sink == NULL)
+        sink = gst_element_factory_make ("xvimagesink", NULL);
+
+#ifndef MAEMO_OSSO_SUPPORT
+      if (sink == NULL)
+        sink = gst_element_factory_make ("ximagesink", NULL);
+#endif
+
+      if (sink != NULL)
+        {
+          g_debug ("made video sink element %s", GST_ELEMENT_NAME (sink));
+
+          if (g_object_has_property (G_OBJECT (sink), "sync"))
+            {
+              g_debug ("setting sync to FALSE");
+              g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+            }
+        }
+      else
+        {
+          g_debug ("failed to make a video sink");
+        }
+    }
+
+  return sink;
+}
+
 static gboolean
 _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 {
@@ -276,7 +323,6 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
   WindowPair *wp;
   GstElement *tee, *sink, *pipeline;
   GstStateChangeReturn state_change_ret;
-  const gchar *videosink_name;
 
   g_debug ("%s: called for window id %d", G_STRFUNC, window_id);
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
@@ -294,18 +340,7 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
   g_debug ("adding preview in window %u", window_id);
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-
-  if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
-    {
-      g_debug ("making video sink with pipeline \"%s\"", videosink_name);
-      sink = gst_parse_bin_from_description (videosink_name, TRUE, NULL);
-    }
-  else
-    {
-      g_debug ("using xvimagesink");
-      sink = gst_element_factory_make ("xvimagesink", NULL);
-      g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
-    }
+  sink = tp_stream_engine_make_video_sink ();
 
   wp->created = TRUE;
   wp->sink = sink;
