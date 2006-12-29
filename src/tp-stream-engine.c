@@ -1199,6 +1199,7 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
   wp->removing = TRUE;
 
   g_idle_add ((GSourceFunc) _remove_defunct_sinks_idle_cb, engine);
+  g_main_context_wakeup (NULL);
 
   return TRUE;
 }
