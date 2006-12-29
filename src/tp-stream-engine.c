@@ -325,19 +325,19 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
   bin = gst_bin_new (NULL);
   gst_bin_add (GST_BIN (bin), sink);
 
-  tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
-  if (tmp != NULL);
+  tmp = gst_element_factory_make ("videoscale", NULL);
+  if (tmp != NULL)
     {
-      g_debug ("linking ffmpegcolorspace");
+      g_debug ("linking videoscale");
       gst_bin_add (GST_BIN (bin), tmp);
       gst_element_link (tmp, sink);
       sink = tmp;
     }
 
-  tmp = gst_element_factory_make ("videoscale", NULL);
-  if (tmp != NULL)
+  tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
+  if (tmp != NULL);
     {
-      g_debug ("linking videoscale");
+      g_debug ("linking ffmpegcolorspace");
       gst_bin_add (GST_BIN (bin), tmp);
       gst_element_link (tmp, sink);
       sink = tmp;
