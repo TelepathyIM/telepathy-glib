@@ -1203,9 +1203,9 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
 
   g_debug ("%s: called", G_STRFUNC);
 
-  if (!priv->pipeline)
+  if (priv->pipeline == NULL)
     {
-    _create_pipeline (obj);
+      _create_pipeline (obj);
     }
 
   /* try and remove any sinks which have removing = TRUE to free up Xv ports */
