@@ -1077,12 +1077,20 @@ _create_pipeline (TpStreamEngine *obj)
     {
 #ifdef MAEMO_OSSO_SUPPORT
       videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
-#endif
-      if (videosrc == NULL)
-        videosrc = gst_element_factory_make ("gconfvideosrc", NULL);
+#else
+      videosrc = gst_element_factory_make ("gconfvideosrc", NULL);
 
       if (videosrc == NULL)
         videosrc = gst_element_factory_make ("v4l2src", NULL);
+
+      if (videosrc == NULL)
+        videosrc = gst_element_factory_make ("v4lsrc", NULL);
+#endif
+
+      if (videosrc != NULL)
+        g_debug ("using %s as video source", GST_ELEMENT_NAME (videosrc));
+      else
+        g_debug ("failed to create video source");
     }
 
   if ((caps_str = getenv ("FS_VIDEO_SRC_CAPS")) || (caps_str = getenv ("FS_VIDEOSRC_CAPS")))
