@@ -270,10 +270,16 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
 }
 
 GstElement *
-tp_stream_engine_make_video_sink ()
+tp_stream_engine_make_video_sink (TpStreamEngine *obj)
 {
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   const gchar *videosink_name;
   GstElement *sink = NULL;
+#ifndef MAEMO_OSSO_SUPPORT
+  GstElement *tmp;
+#endif
+
+  g_assert (priv->pipeline != NULL);
 
   if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
     {
@@ -296,22 +302,45 @@ tp_stream_engine_make_video_sink ()
       if (sink == NULL)
         sink = gst_element_factory_make ("ximagesink", NULL);
 #endif
-
-      if (sink != NULL)
-        {
-          g_debug ("made video sink element %s", GST_ELEMENT_NAME (sink));
-
-          if (g_object_has_property (G_OBJECT (sink), "sync"))
-            {
-              g_debug ("setting sync to FALSE");
-              g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
-            }
-        }
-      else
-        {
-          g_debug ("failed to make a video sink");
-        }
     }
+
+  if (sink != NULL)
+    {
+      g_debug ("made video sink element %s", GST_ELEMENT_NAME (sink));
+
+      if (g_object_has_property (G_OBJECT (sink), "sync"))
+        {
+          g_debug ("setting sync to FALSE");
+          g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+        }
+
+      gst_bin_add (GST_BIN (priv->pipeline), sink);
+    }
+  else
+    {
+      g_debug ("failed to make a video sink");
+      return NULL;
+    }
+
+#ifndef MAEMO_OSSO_SUPPORT
+  tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
+  if (tmp != NULL);
+    {
+      g_debug ("linking ffmpegcolorspace");
+      gst_bin_add (GST_BIN (priv->pipeline), tmp);
+      gst_element_link (tmp, sink);
+      sink = tmp;
+    }
+
+  tmp = gst_element_factory_make ("videoscale", NULL);
+  if (tmp != NULL)
+    {
+      g_debug ("linking videoscale");
+      gst_bin_add (GST_BIN (priv->pipeline), tmp);
+      gst_element_link (tmp, sink);
+      sink = tmp;
+    }
+#endif
 
   return sink;
 }
@@ -321,8 +350,10 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
-  GstElement *tee, *sink, *pipeline;
+  GstElement *tee, *sink;
   GstStateChangeReturn state_change_ret;
+
+  g_assert (priv->pipeline != NULL);
 
   g_debug ("%s: called for window id %d", G_STRFUNC, window_id);
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
@@ -335,26 +366,18 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
       return FALSE;
     }
 
-  pipeline = tp_stream_engine_get_pipeline (obj);
-
   g_debug ("adding preview in window %u", window_id);
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  sink = tp_stream_engine_make_video_sink ();
+  sink = tp_stream_engine_make_video_sink (obj);
+
+  if (sink == NULL)
+    goto sink_failure;
 
   wp->created = TRUE;
   wp->sink = sink;
-  g_debug ("Setting sink create for %p", sink);
 
-  if (!gst_bin_add (GST_BIN (priv->pipeline), sink))
-    {
-      g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED,
-          "Failed to add element %s to pipeline %s", GST_ELEMENT_NAME (sink),
-          GST_ELEMENT_NAME (priv->pipeline));
-      goto bin_add_failure;
-    }
-
-  g_debug ("trying to set sink to PAUSED");
+  g_debug ("trying to set sink to PLAYING");
   state_change_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
 
   if (state_change_ret != GST_STATE_CHANGE_SUCCESS &&
@@ -382,13 +405,15 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 link_failure:
   gst_element_set_state (sink, GST_STATE_NULL);
   gst_bin_remove (GST_BIN (priv->pipeline), sink);
-bin_add_failure:
+
+sink_failure:
   gst_object_unref (tee);
 
   if (error != NULL)
     g_warning ((*error)->message);
 
   _window_pairs_remove (&(priv->preview_windows), wp);
+
   return FALSE;
 }
 
