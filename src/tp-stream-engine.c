@@ -276,7 +276,8 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
   const gchar *videosink_name;
   GstElement *sink = NULL;
 #ifndef MAEMO_OSSO_SUPPORT
-  GstElement *tmp;
+  GstElement *bin, *tmp;
+  GstPad *pad;
 #endif
 
   g_assert (priv->pipeline != NULL);
@@ -313,8 +314,6 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
           g_debug ("setting sync to FALSE");
           g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
         }
-
-      gst_bin_add (GST_BIN (priv->pipeline), sink);
     }
   else
     {
@@ -323,11 +322,14 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
     }
 
 #ifndef MAEMO_OSSO_SUPPORT
+  bin = gst_bin_new (NULL);
+  gst_bin_add (GST_BIN (bin), sink);
+
   tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
   if (tmp != NULL);
     {
       g_debug ("linking ffmpegcolorspace");
-      gst_bin_add (GST_BIN (priv->pipeline), tmp);
+      gst_bin_add (GST_BIN (bin), tmp);
       gst_element_link (tmp, sink);
       sink = tmp;
     }
@@ -336,11 +338,19 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
   if (tmp != NULL)
     {
       g_debug ("linking videoscale");
-      gst_bin_add (GST_BIN (priv->pipeline), tmp);
+      gst_bin_add (GST_BIN (bin), tmp);
       gst_element_link (tmp, sink);
       sink = tmp;
     }
+
+  pad = gst_bin_find_unconnected_pad (GST_BIN (bin), GST_PAD_SINK);
+  gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad));
+  gst_object_unref (GST_OBJECT (pad));
+
+  sink = bin;
 #endif
+
+  gst_bin_add (GST_BIN (priv->pipeline), sink);
 
   return sink;
 }
