@@ -240,7 +240,7 @@ get_session_handlers_reply (DBusGProxy *proxy,
                             gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  int i;
+  guint i;
 
   if (error)
     g_critical ("Error calling GetSessionHandlers: %s", error->message);

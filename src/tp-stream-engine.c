@@ -335,7 +335,7 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
     }
 
   tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
-  if (tmp != NULL);
+  if (tmp != NULL)
     {
       g_debug ("linking ffmpegcolorspace");
       gst_bin_add (GST_BIN (bin), tmp);
@@ -1138,7 +1138,7 @@ _create_pipeline (TpStreamEngine *obj)
     }
 
   tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
-  if (tmp != NULL);
+  if (tmp != NULL)
     {
       g_debug ("linking ffmpegcolorspace");
       gst_bin_add (GST_BIN (priv->pipeline), tmp);
