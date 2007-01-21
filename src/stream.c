@@ -40,17 +40,8 @@
 #include "common/telepathy-errors.h"
 
 #include "tp-stream-engine.h"
-#include "types.h"
-
-#ifdef MAEMO_OSSO_SUPPORT
-#include "media-engine-gen.h"
-
-#define MEDIA_SERVER_SERVICE_NAME "com.nokia.osso_media_server"
-#define MEDIA_SERVER_INTERFACE_NAME "com.nokia.osso_media_server"
-#define MEDIA_SERVER_SERVICE_OBJECT "/com/nokia/osso_media_server"
-#endif
-
 #include "stream.h"
+#include "types.h"
 #include "util.h"
 
 G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
@@ -91,10 +82,6 @@ struct _TpStreamEngineStreamPrivate
   gboolean stream_start_scheduled;
   gboolean got_connection_properties;
   gboolean candidate_preparation_required;
-
-#ifdef MAEMO_OSSO_SUPPORT
-  DBusGProxy *media_server_proxy;
-#endif
 };
 
 enum
@@ -159,21 +146,11 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
   gst_bin_remove (GST_BIN (pipeline), sink);
 }
 
-#ifdef MAEMO_OSSO_SUPPORT
-static void
-media_server_proxy_cleanup (TpStreamEngineStream *self);
-#endif
-
 static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-
-#ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_server_proxy)
-    media_server_proxy_cleanup (stream);
-#endif
 
   if (priv->channel_path)
     {
@@ -763,26 +740,6 @@ stop_stream (TpStreamEngineStream *self)
     }
 
   priv->stream_started = FALSE;
-
-#ifdef MAEMO_OSSO_SUPPORT
-  if (priv->media_server_proxy != NULL)
-    {
-      GError *error = NULL;
-
-      DEBUG (self, "re-enabling media server");
-
-      com_nokia_osso_media_server_enable (
-          DBUS_G_PROXY (priv->media_server_proxy), &error);
-      if (error)
-      {
-        g_message ("unable to re-enable media server: %s", error->message);
-        g_error_free (error);
-      }
-
-      media_server_proxy_cleanup (self);
-    }
-#endif
-
 }
 
 static void
@@ -1009,68 +966,6 @@ cb_properties_ready (TpPropsIface *iface, gpointer user_data)
   prepare_transports (self);
 }
 
-#ifdef MAEMO_OSSO_SUPPORT
-static void
-media_server_proxy_cleanup (TpStreamEngineStream *self)
-{
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  DBusGProxy *proxy;
-
-  if (priv->media_server_proxy == NULL)
-    return;
-
-  proxy = priv->media_server_proxy;
-  priv->media_server_proxy = NULL;
-  g_object_unref (proxy);
-}
-
-static void
-media_server_proxy_destroyed (DBusGProxy *proxy, gpointer user_data)
-{
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-
-  DEBUG (self, "media server proxy destroyed");
-  media_server_proxy_cleanup (self);
-}
-
-static void
-media_server_proxy_init (TpStreamEngineStream *self)
-{
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  GError *me_error;
-
-  DEBUG (self, "initialising media server proxy");
-
-  priv->media_server_proxy =
-    dbus_g_proxy_new_for_name (tp_get_bus(),
-                               MEDIA_SERVER_SERVICE_NAME,
-                               MEDIA_SERVER_SERVICE_OBJECT,
-                               MEDIA_SERVER_INTERFACE_NAME);
-
-  g_signal_connect (priv->media_server_proxy, "destroy",
-                    G_CALLBACK (media_server_proxy_destroyed), self);
-
-  g_message ("disabling media server");
-
-  if (!com_nokia_osso_media_server_disable (
-        DBUS_G_PROXY (priv->media_server_proxy),
-        &me_error))
-    {
-      if (me_error)
-        {
-          g_message ("failed to disable media server: %s", me_error->message);
-          g_error_free (me_error);
-        }
-      else
-        {
-          g_message ("failed to disable media server");
-        }
-
-      media_server_proxy_cleanup (self);
-    }
-}
-#endif
-
 static GstElement *
 make_src (TpStreamEngineStream *stream, guint media_type)
 {
@@ -1180,11 +1075,6 @@ tp_stream_engine_stream_go (
   TpStreamEngine *engine;
   GstElement *pipeline, *src, *sink;
   gchar *conn_timeout_str;
-
-#ifdef MAEMO_OSSO_SUPPORT
-  if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
-    media_server_proxy_init (stream);
-#endif
 
   priv->channel_path = g_strdup (channel_path);
 
