@@ -50,10 +50,6 @@ struct _TpStreamEngineChannelPrivate
 
   gulong channel_destroy_handler;
 
-  guint output_volume;
-  gboolean output_mute;
-  gboolean input_mute;
-
   gchar *connection_path;
 };
 
@@ -131,9 +127,6 @@ tp_stream_engine_channel_init (TpStreamEngineChannel *self)
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   self->sessions = g_ptr_array_new ();
-
-  /* sensible default */
-  priv->output_volume = (65535 * 7) / 10;
 }
 
 static void
