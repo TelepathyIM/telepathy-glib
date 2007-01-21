@@ -24,6 +24,8 @@ libstreamengine_convenience_la_SOURCES = \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
 	types.h \
+	util.h \
+	util.c \
 	xerrorhandler.h \
 	xerrorhandler.c \
 	misc-signals-marshal.list \

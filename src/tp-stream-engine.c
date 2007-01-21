@@ -55,6 +55,7 @@
 #include "session.h"
 #include "stream.h"
 #include "types.h"
+#include "util.h"
 #include "xerrorhandler.h"
 
 #define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"

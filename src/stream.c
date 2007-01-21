@@ -51,6 +51,7 @@
 #endif
 
 #include "stream.h"
+#include "util.h"
 
 G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
@@ -138,15 +139,6 @@ set_stream_sending (DBusGProxy *proxy, gboolean play, gpointer user_data);
 
 static void
 stop_stream (TpStreamEngineStream *self);
-
-gboolean
-g_object_has_property (GObject *object, const gchar *property)
-{
-  GObjectClass *klass;
-
-  klass = G_OBJECT_GET_CLASS (object);
-  return NULL != g_object_class_find_property (klass, property);
-}
 
 static void
 _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
