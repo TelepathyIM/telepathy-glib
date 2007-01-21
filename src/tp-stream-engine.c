@@ -136,8 +136,11 @@ struct _TpStreamEnginePrivate
   guint bad_value_handler_id;
   guint bad_window_handler_id;
 
-#ifdef MAEMO_OSSO_SUPPORT
+#ifdef USE_INFOPRINT
   DBusGProxy *infoprint_proxy;
+#endif
+#ifdef MAEMO_OSSO_SUPPORT
+  DBusGProxy *media_server_proxy;
 #endif
 };
 
@@ -683,7 +686,7 @@ tp_stream_engine_dispose (GObject *object)
 void
 tp_stream_engine_finalize (GObject *object)
 {
-#ifdef MAEMO_OSSO_SUPPORT
+#ifdef USE_INFOPRINT
   TpStreamEngine *self = TP_STREAM_ENGINE (object);
 
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
@@ -747,6 +750,15 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
   g_debug ("channel closed: %p", chan);
   g_ptr_array_remove_fast (priv->channels, chan);
   g_object_unref (chan);
+
+#ifdef MAEMO_OSSO_SUPPORT
+  if (priv->channels->len == 0)
+    {
+      g_message ("closing last channel; re-enabling media server");
+      media_server_enable (&priv->media_server_proxy);
+    }
+#endif
+
   check_if_busy (self);
 }
 
@@ -1499,6 +1511,14 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
   if (!tp_stream_engine_channel_go (chan, bus_name, connection, channel,
       handle_type, handle, error))
     goto ERROR;
+
+#ifdef MAEMO_OSSO_SUPPORT
+  if (priv->channels->len == 0)
+    {
+      g_message ("creating first channel; disabling media server");
+      media_server_disable (&priv->media_server_proxy);
+    }
+#endif
 
   g_ptr_array_add (priv->channels, chan);
 

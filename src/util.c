@@ -72,8 +72,6 @@ media_server_disable (DBusGProxy **media_server_proxy)
   g_signal_connect (*media_server_proxy, "destroy",
       G_CALLBACK (media_server_proxy_destroyed), media_server_proxy);
 
-  g_message ("disabling media server");
-
   if (!com_nokia_osso_media_server_disable (*media_server_proxy, &error))
     {
       if (error)
@@ -96,8 +94,6 @@ media_server_enable (DBusGProxy **media_server_proxy)
   if (*media_server_proxy != NULL)
     {
       GError *error = NULL;
-
-      g_message ("re-enabling media server");
 
       if (!com_nokia_osso_media_server_enable (*media_server_proxy, &error))
         {
