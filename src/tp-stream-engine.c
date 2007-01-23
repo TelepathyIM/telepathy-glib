@@ -282,9 +282,11 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
 
   g_assert (priv->pipeline != NULL);
 
-  if ((videosink_name = getenv ("FS_VIDEO_SINK")) || (videosink_name = getenv("FS_VIDEOSINK")))
+  if ((videosink_name = getenv ("PREVIEW_VIDEO_SINK")) ||
+      (videosink_name = getenv ("FS_VIDEO_SINK")) ||
+      (videosink_name = getenv ("FS_VIDEOSINK")))
     {
-      g_debug ("making video sink with pipeline \"%s\"", videosink_name);
+      g_debug ("making video sink for local preview with pipeline \"%s\"", videosink_name);
       sink = gst_parse_bin_from_description (videosink_name, TRUE, NULL);
     }
   else

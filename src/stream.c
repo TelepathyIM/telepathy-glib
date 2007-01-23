@@ -1144,7 +1144,9 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
     }
   else
     {
-      if ((elem = getenv ("FS_VIDEO_SINK")) || (elem = getenv("FS_VIDEOSINK")))
+      if ((elem = getenv ("STREAM_VIDEO_SINK")) ||
+          (elem = getenv ("FS_VIDEO_SINK")) ||
+          (elem = getenv ("FS_VIDEOSINK")))
         {
           TpStreamEngine *engine;
           DEBUG (stream, "making video sink with pipeline \"%s\"", elem);
