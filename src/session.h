@@ -1,3 +1,5 @@
+#ifndef __TP_STREAM_ENGINE_SESSION_H__
+#define __TP_STREAM_ENGINE_SESSION_H__
 
 #include <glib-object.h>
 
@@ -45,3 +47,4 @@ gboolean tp_stream_engine_session_go (
 
 G_END_DECLS
 
+#endif /* __TP_STREAM_ENGINE_SESSION_H__ */
