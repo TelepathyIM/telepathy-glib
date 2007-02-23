@@ -123,7 +123,7 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
 static void
 tp_stream_engine_channel_init (TpStreamEngineChannel *self)
 {
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+/*  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self); */
 
   self->sessions = g_ptr_array_new ();
 }
