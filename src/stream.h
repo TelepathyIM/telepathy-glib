@@ -39,6 +39,13 @@ typedef struct {
   GObjectClass parent_class;
 } TpStreamEngineStreamClass;
 
+typedef struct {
+  gchar *nat_traversal;
+  gchar *stun_server;
+  guint16 stun_port;
+  gchar *relay_token;
+} TpStreamEngineStreamProperties;
+
 GType tp_stream_engine_stream_get_type (void);
 
 TpStreamEngineStream* tp_stream_engine_stream_new (void);
@@ -51,7 +58,8 @@ gboolean tp_stream_engine_stream_go (
   FarsightSession *fs_session,
   guint id,
   guint media_type,
-  guint direction);
+  guint direction,
+  TpStreamEngineStreamProperties *props);
 gboolean tp_stream_engine_stream_mute_input (
   TpStreamEngineStream *chan,
   gboolean mute_state,

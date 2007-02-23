@@ -27,8 +27,6 @@
 #include <libtelepathy/tp-conn.h>
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
-#include <libtelepathy/tp-props-iface.h>
-#include <libtelepathy/tp-props-iface.h>
 #include <libtelepathy/tp-media-stream-handler-gen.h>
 
 #include <farsight/farsight-session.h>
@@ -64,14 +62,10 @@ struct _TpStreamEngineStreamPrivate
   gchar *channel_path;
 
   DBusGProxy *stream_handler_proxy;
-  TpPropsIface *conn_props;
   TpConn *connection_proxy;
 
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
-
-  gchar *stun_server;
-  guint stun_port;
 
   guint output_volume;
   gboolean output_mute;
@@ -80,20 +74,6 @@ struct _TpStreamEngineStreamPrivate
 
   gboolean stream_started;
   gboolean stream_start_scheduled;
-  gboolean got_connection_properties;
-  gboolean candidate_preparation_required;
-};
-
-enum
-{
-  CONN_PROP_STUN_SERVER = 0,
-  CONN_PROP_STUN_PORT,
-  CONN_PROP_STUN_RELAY_SERVER,
-  CONN_PROP_STUN_RELAY_UDP_PORT,
-  CONN_PROP_STUN_RELAY_TCP_PORT,
-  CONN_PROP_STUN_RELAY_SSLTCP_PORT,
-  CONN_PROP_STUN_RELAY_USERNAME,
-  CONN_PROP_STUN_RELAY_PASSWORD,
 };
 
 enum
@@ -156,12 +136,6 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       g_free (priv->channel_path);
       priv->channel_path = NULL;
-    }
-
-  if (priv->stun_server)
-    {
-      g_free (priv->stun_server);
-      priv->stun_server = NULL;
     }
 
   if (priv->connection_proxy)
@@ -788,29 +762,58 @@ close (DBusGProxy *proxy, gpointer user_data)
 }
 
 static void
+set_stream_properties (TpStreamEngineStream *self,
+                       TpStreamEngineStreamProperties *props)
+{
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  FarsightStream *stream = priv->fs_stream;
+  const gchar *transmitter = "rawudp";
+
+  if (props->nat_traversal == NULL ||
+      !strcmp (props->nat_traversal, "gtalk-p2p"))
+    {
+      transmitter = "libjingle";
+    }
+
+  if (g_object_has_property ((GObject *) stream, "transmitter"))
+    {
+      DEBUG (self, "setting farsight transmitter to %s", transmitter);
+      g_object_set (stream, "transmitter", transmitter, NULL);
+    }
+
+  if (props->stun_server != NULL)
+    {
+      DEBUG (self, "setting farsight stun-ip to %s", props->stun_server);
+      g_object_set (stream, "stun-ip", props->stun_server, NULL);
+
+      if (props->stun_port != 0)
+        {
+          DEBUG (self, "setting farsight stun-port to %u", props->stun_port);
+          g_object_set (stream, "stun-port", props->stun_port, NULL);
+        }
+    }
+}
+
+static void
 prepare_transports (TpStreamEngineStream *self)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GPtrArray *codecs;
+  method_call_ctx *ctx;
 
-  if (priv->got_connection_properties && priv->candidate_preparation_required)
-    {
-      farsight_stream_prepare_transports (priv->fs_stream);
-      method_call_ctx *ctx;
+  farsight_stream_prepare_transports (priv->fs_stream);
 
+  codecs = fs_codecs_to_tp (
+             farsight_stream_get_local_codecs (priv->fs_stream));
 
-      codecs = fs_codecs_to_tp (
-                 farsight_stream_get_local_codecs (priv->fs_stream));
+  DEBUG (self, "calling MediaStreamHandler::Ready");
 
-      DEBUG (self, "calling MediaStreamHandler::Ready");
+  ctx = g_slice_new0 (method_call_ctx);
+  ctx->stream = self;
+  ctx->method = "Media.StreamHandler::Ready";
 
-      ctx = g_slice_new0 (method_call_ctx);
-      ctx->stream = self;
-      ctx->method = "Media.StreamHandler::Ready";
-
-      tp_media_stream_handler_ready_async (
-        priv->stream_handler_proxy, codecs, async_method_callback, ctx);
-    }
+  tp_media_stream_handler_ready_async (
+    priv->stream_handler_proxy, codecs, async_method_callback, ctx);
 }
 
 static void
@@ -921,51 +924,6 @@ cb_fs_native_candidates_prepared (FarsightStream *stream,
     priv->stream_handler_proxy, async_method_callback, ctx);
 }
 
-static void
-set_stun (TpStreamEngineStream *self)
-{
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-
-  if (priv->fs_stream)
-    {
-      if (priv->stun_server && priv->stun_port)
-       {
-         g_object_set (priv->fs_stream,
-                       "stun-ip", priv->stun_server,
-                       "stun-port", priv->stun_port,
-                       NULL);
-       }
-    }
-}
-
-static void
-cb_properties_ready (TpPropsIface *iface, gpointer user_data)
-{
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  GValue server = {0,}, port = {0,};
-
-  g_value_init (&server, G_TYPE_STRING);
-  g_value_init (&port, G_TYPE_UINT);
-
-  priv->got_connection_properties = TRUE;
-
-  if (tp_props_iface_get_value (iface, CONN_PROP_STUN_SERVER, &server))
-    {
-      if (tp_props_iface_get_value (iface, CONN_PROP_STUN_PORT, &port))
-        {
-          priv->stun_server = g_value_dup_string (&server);
-          priv->stun_port = g_value_get_uint (&port);
-          set_stun (self);
-        }
-    }
-
-  /* this here in case properties_ready_cb gets called after we have
-   * recieved all the streams
-   */
-  prepare_transports (self);
-}
-
 static GstElement *
 make_src (TpStreamEngineStream *stream, guint media_type)
 {
@@ -1069,7 +1027,8 @@ tp_stream_engine_stream_go (
   FarsightSession *fs_session,
   guint id,
   guint media_type,
-  guint direction)
+  guint direction,
+  TpStreamEngineStreamProperties *props)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   TpStreamEngine *engine;
@@ -1188,8 +1147,6 @@ tp_stream_engine_stream_go (
   dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "Close",
       G_CALLBACK (close), stream, NULL);
 
-  priv->candidate_preparation_required = TRUE;
-
   priv->connection_proxy = tp_conn_new (
     tp_get_bus(),
     bus_name,
@@ -1204,35 +1161,8 @@ tp_stream_engine_stream_go (
       return FALSE;
     }
 
-  /* NB: we should behave nicely if the connection doesnt have properties:
-   * sure, it's unlikely, but it's not the end of the world if it doesn't ;)
-   */
-  priv->conn_props = TELEPATHY_PROPS_IFACE (tp_conn_get_interface (
-        priv->connection_proxy, TELEPATHY_PROPS_IFACE_QUARK));
+  set_stream_properties (stream, props);
 
-  if (priv->conn_props != NULL)
-    {
-      /* surely we don't need all of these properties */
-      tp_props_iface_set_mapping (priv->conn_props,
-          "stun-server", CONN_PROP_STUN_SERVER,
-          "stun-port", CONN_PROP_STUN_PORT,
-          "stun-relay-server", CONN_PROP_STUN_RELAY_SERVER,
-          "stun-relay-udp-port", CONN_PROP_STUN_RELAY_UDP_PORT,
-          "stun-relay-tcp-port", CONN_PROP_STUN_RELAY_TCP_PORT,
-          "stun-relay-ssltcp-port", CONN_PROP_STUN_RELAY_SSLTCP_PORT,
-          "stun-relay-username", CONN_PROP_STUN_RELAY_USERNAME,
-          "stun-relay-password", CONN_PROP_STUN_RELAY_PASSWORD,
-          NULL);
-
-      g_signal_connect (priv->conn_props, "properties-ready",
-                        G_CALLBACK (cb_properties_ready), stream);
-    }
-  else
-    {
-      priv->got_connection_properties = TRUE;
-    }
-
-  set_stun (stream);
   prepare_transports (stream);
 
   return TRUE;
