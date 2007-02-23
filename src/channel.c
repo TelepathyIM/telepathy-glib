@@ -27,6 +27,7 @@
 #include <libtelepathy/tp-chan-iface-media-signalling-gen.h>
 #include <libtelepathy/tp-media-stream-handler-gen.h>
 #include <libtelepathy/tp-helpers.h>
+#include <libtelepathy/tp-props-iface.h>
 
 #include "common/telepathy-errors.h"
 
@@ -47,9 +48,19 @@ struct _TpStreamEngineChannelPrivate
   TpChan *channel_proxy;
   DBusGProxy *streamed_media_proxy;
 
+  TpStreamEngineStreamProperties props;
+
   gulong channel_destroy_handler;
 
   gchar *connection_path;
+};
+
+enum
+{
+  PROP_NAT_TRAVERSAL = 0,
+  PROP_STUN_SERVER = 0,
+  PROP_STUN_PORT,
+  PROP_GTALK_P2P_RELAY_TOKEN,
 };
 
 enum
@@ -96,6 +107,15 @@ tp_stream_engine_channel_dispose (GObject *object)
       g_object_unref (priv->channel_proxy);
       priv->channel_proxy = NULL;
     }
+
+  g_free (priv->props.nat_traversal);
+  priv->props.nat_traversal = NULL;
+
+  g_free (priv->props.stun_server);
+  priv->props.stun_server = NULL;
+
+  g_free (priv->props.relay_token);
+  priv->props.relay_token = NULL;
 
   if (G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->dispose (object);
@@ -145,7 +165,7 @@ add_session (TpStreamEngineChannel *self,
   session = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION, NULL);
 
   if (!tp_stream_engine_session_go (session, bus_name, priv->connection_path,
-      session_handler_path, self->channel_path, type))
+      session_handler_path, self->channel_path, type, &(priv->props)))
     {
       g_critical ("couldn't create session");
     }
@@ -263,6 +283,74 @@ get_session_handlers_reply (DBusGProxy *proxy,
     }
 }
 
+static void
+cb_properties_ready (TpPropsIface *iface, gpointer user_data)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpStreamEngineStreamProperties *props = &(priv->props);
+  GValue tmp = {0, };
+
+  if (tp_props_iface_property_flags (iface, PROP_NAT_TRAVERSAL) &
+      TP_PROPERTY_FLAG_READ)
+    {
+      g_value_init (&tmp, G_TYPE_STRING);
+
+      if (tp_props_iface_get_value (iface, PROP_NAT_TRAVERSAL, &tmp))
+        {
+          props->nat_traversal = g_value_dup_string (&tmp);
+          g_debug ("got nat-traversal = %s", props->nat_traversal);
+        }
+
+      g_value_unset (&tmp);
+    }
+
+  if (tp_props_iface_property_flags (iface, PROP_STUN_SERVER) &
+      TP_PROPERTY_FLAG_READ)
+    {
+      g_value_init (&tmp, G_TYPE_STRING);
+
+      if (tp_props_iface_get_value (iface, PROP_STUN_SERVER, &tmp))
+        {
+          props->stun_server = g_value_dup_string (&tmp);
+          g_debug ("got stun-server = %s", props->stun_server);
+        }
+
+      g_value_unset (&tmp);
+    }
+
+  if (tp_props_iface_property_flags (iface, PROP_STUN_PORT) &
+      TP_PROPERTY_FLAG_READ)
+    {
+      g_value_init (&tmp, G_TYPE_UINT);
+
+      if (tp_props_iface_get_value (iface, PROP_STUN_PORT, &tmp))
+        {
+          props->stun_port = g_value_get_uint (&tmp);
+          g_debug ("got stun-port = %u", props->stun_port);
+        }
+
+      g_value_unset (&tmp);
+    }
+
+  if (tp_props_iface_property_flags (iface, PROP_GTALK_P2P_RELAY_TOKEN) &
+      TP_PROPERTY_FLAG_READ)
+    {
+      g_value_init (&tmp, G_TYPE_STRING);
+
+      if (tp_props_iface_get_value (iface, PROP_GTALK_P2P_RELAY_TOKEN, &tmp))
+        {
+          props->relay_token = g_value_dup_string (&tmp);
+          g_debug ("got gtalk-p2p-relay-token = %s", props->relay_token);
+        }
+
+      g_value_unset (&tmp);
+    }
+
+  g_signal_handlers_disconnect_by_func (iface,
+      G_CALLBACK (cb_properties_ready), self);
+}
+
 gboolean
 tp_stream_engine_channel_go (
   TpStreamEngineChannel *self,
@@ -274,6 +362,7 @@ tp_stream_engine_channel_go (
   GError **error)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpPropsIface *props;
   DBusGProxy *media_signalling;
 
   g_assert (NULL == priv->channel_proxy);
@@ -297,22 +386,29 @@ tp_stream_engine_channel_go (
       return FALSE;
     }
 
-  /* TODO: check for group interface
-  chan_interfaces = (GSList *) tp_chan_local_get_interface_objs(priv->chan);
-
-  if (chan_interfaces == NULL)
-  {
-    g_error("Channel does not have interfaces.");
-    exit(1);
-  }
-  */
-
   priv->channel_destroy_handler = g_signal_connect (
     priv->channel_proxy, "destroy", G_CALLBACK (channel_destroyed), self);
 
   dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->channel_proxy), "Closed",
                                G_CALLBACK (channel_closed),
                                self, NULL);
+
+  props = (TpPropsIface *) tp_chan_get_interface (priv->channel_proxy,
+      TELEPATHY_PROPS_IFACE_QUARK);
+
+  /* fail gracefully if there's no properties interface */
+  if (props != NULL)
+    {
+      tp_props_iface_set_mapping (props,
+          "nat-traversal", PROP_NAT_TRAVERSAL,
+          "stun-server", PROP_STUN_SERVER,
+          "stun-port", PROP_STUN_PORT,
+          "gtalk-p2p-relay-token", PROP_GTALK_P2P_RELAY_TOKEN,
+          NULL);
+
+      g_signal_connect (props, "properties-ready",
+          G_CALLBACK (cb_properties_ready), self);
+    }
 
   priv->streamed_media_proxy = tp_chan_get_interface (priv->channel_proxy,
       TELEPATHY_CHAN_IFACE_STREAMED_QUARK);

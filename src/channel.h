@@ -57,3 +57,4 @@ void tp_stream_engine_channel_error (
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_CHANNEL_H__ */
+
