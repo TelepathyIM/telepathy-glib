@@ -3,6 +3,8 @@
 
 #include <glib-object.h>
 
+#include "stream.h"
+
 G_BEGIN_DECLS
 
 #define TP_STREAM_ENGINE_TYPE_SESSION tp_stream_engine_session_get_type()
@@ -43,8 +45,10 @@ TpStreamEngineSession* tp_stream_engine_session_new (void);
 gboolean tp_stream_engine_session_go (
   TpStreamEngineSession *self, const gchar *bus_name,
   const gchar *connection_path, const gchar *session_handler_path,
-  const gchar *channel_path, const gchar *type);
+  const gchar *channel_path, const gchar *type,
+  TpStreamEngineStreamProperties *props);
 
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_SESSION_H__ */
+

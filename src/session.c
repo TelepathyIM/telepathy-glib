@@ -46,6 +46,8 @@ struct _TpStreamEngineSessionPrivate
 
   FarsightSession *fs_session;
 
+  TpStreamEngineStreamProperties *props;
+
   gchar *connection_path;
   gchar *channel_path;
 };
@@ -199,7 +201,8 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
         priv->fs_session,
         id,
         media_type,
-        direction))
+        direction,
+        priv->props))
     {
       g_ptr_array_add (self->streams, stream);
     }
@@ -218,13 +221,16 @@ tp_stream_engine_session_go (
   const gchar *connection_path,
   const gchar *session_handler_path,
   const gchar *channel_path,
-  const gchar *type)
+  const gchar *type,
+  TpStreamEngineStreamProperties *props)
 {
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
   priv->connection_path = g_strdup (connection_path);
 
   priv->channel_path = g_strdup (channel_path);
+
+  priv->props = props;
 
   priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
     bus_name,
