@@ -58,7 +58,7 @@ struct _TpStreamEngineChannelPrivate
 enum
 {
   PROP_NAT_TRAVERSAL = 0,
-  PROP_STUN_SERVER = 0,
+  PROP_STUN_SERVER,
   PROP_STUN_PORT,
   PROP_GTALK_P2P_RELAY_TOKEN,
 };
