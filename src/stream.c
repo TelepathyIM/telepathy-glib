@@ -818,6 +818,14 @@ set_stream_properties (TpStreamEngineStream *self,
     {
       DEBUG (self, "setting farsight transmitter to %s", transmitter);
       g_object_set (stream, "transmitter", transmitter, NULL);
+
+      {
+        GObject *xmit = NULL;
+        g_object_get (priv->fs_stream, "transmitter-object", &xmit, NULL);
+        if ((props->relay_token != NULL) && g_object_has_property (xmit, "relay-token"))
+            g_object_set (xmit, "relay-token", props->relay_token, NULL);
+      }
+
     }
 
   if (props->stun_server != NULL)
