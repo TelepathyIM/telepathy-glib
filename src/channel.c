@@ -61,6 +61,8 @@ enum
   PROP_STUN_SERVER,
   PROP_STUN_PORT,
   PROP_GTALK_P2P_RELAY_TOKEN,
+  PROP_TURN_SERVER,
+  PROP_TURN_PORT,
 };
 
 enum
@@ -116,6 +118,9 @@ tp_stream_engine_channel_dispose (GObject *object)
 
   g_free (priv->props.relay_token);
   priv->props.relay_token = NULL;
+
+  g_free (priv->props.turn_server);
+  priv->props.turn_server = NULL;
 
   if (G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->dispose (object);
@@ -347,6 +352,34 @@ cb_properties_ready (TpPropsIface *iface, gpointer user_data)
       g_value_unset (&tmp);
     }
 
+  if (tp_props_iface_property_flags (iface, PROP_TURN_SERVER) &
+      TP_PROPERTY_FLAG_READ)
+    {
+      g_value_init (&tmp, G_TYPE_STRING);
+
+      if (tp_props_iface_get_value (iface, PROP_TURN_SERVER, &tmp))
+        {
+          props->turn_server = g_value_dup_string (&tmp);
+          g_debug ("got turn-server = %s", props->turn_server);
+        }
+
+      g_value_unset (&tmp);
+    }
+
+  if (tp_props_iface_property_flags (iface, PROP_TURN_PORT) &
+      TP_PROPERTY_FLAG_READ)
+    {
+      g_value_init (&tmp, G_TYPE_UINT);
+
+      if (tp_props_iface_get_value (iface, PROP_TURN_PORT, &tmp))
+        {
+          props->stun_port = g_value_get_uint (&tmp);
+          g_debug ("got turn-port = %u", props->turn_port);
+        }
+
+      g_value_unset (&tmp);
+    }
+
   g_signal_handlers_disconnect_by_func (iface,
       G_CALLBACK (cb_properties_ready), self);
 }
@@ -404,6 +437,8 @@ tp_stream_engine_channel_go (
           "stun-server", PROP_STUN_SERVER,
           "stun-port", PROP_STUN_PORT,
           "gtalk-p2p-relay-token", PROP_GTALK_P2P_RELAY_TOKEN,
+          "turn-server", PROP_TURN_SERVER,
+          "turn-port", PROP_TURN_PORT,
           NULL);
 
       g_signal_connect (props, "properties-ready",

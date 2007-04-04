@@ -838,6 +838,18 @@ set_stream_properties (TpStreamEngineStream *self,
           g_object_set (stream, "stun-port", props->stun_port, NULL);
         }
     }
+
+  if (props->turn_server != NULL)
+    {
+      DEBUG (self, "setting farsight turn-ip to %s", props->turn_server);
+      g_object_set (stream, "turn-ip", props->turn_server, NULL);
+
+      if (props->turn_port != 0)
+        {
+          DEBUG (self, "setting farsight turn-port to %u", props->turn_port);
+          g_object_set (stream, "turn-port", props->turn_port, NULL);
+        }
+    }
 }
 
 static void
