@@ -814,42 +814,52 @@ set_stream_properties (TpStreamEngineStream *self,
       transmitter = "libjingle";
     }
 
-  if (g_object_has_property ((GObject *) stream, "transmitter"))
+  if (g_object_has_property ((GObject *) stream, "transmitter-name"))
     {
       DEBUG (self, "setting farsight transmitter to %s", transmitter);
-      g_object_set (stream, "transmitter", transmitter, NULL);
+      g_object_set (stream, "transmitter-name", transmitter, NULL);
     }
 
-  if ((props->relay_token != NULL) &&
-      g_object_has_property ((GObject *) stream, "relay-token"))
+  /* transmitter should have been created as a result of setting transmitter-name */
+  if (g_object_has_property ((GObject *) stream, "transmitter"))
     {
-      DEBUG (self, "setting farsight relay-token to %s", transmitter);
-      g_object_set (stream, "relay-token", props->relay_token, NULL);
-    }
-
-  if (props->stun_server != NULL)
-    {
-      DEBUG (self, "setting farsight stun-ip to %s", props->stun_server);
-      g_object_set (stream, "stun-ip", props->stun_server, NULL);
-
-      if (props->stun_port != 0)
+      GObject *xmit = NULL;
+      g_object_get (stream, "transmitter", &xmit, NULL);
+      if (xmit != NULL)
         {
-          DEBUG (self, "setting farsight stun-port to %u", props->stun_port);
-          g_object_set (stream, "stun-port", props->stun_port, NULL);
+          if ((props->relay_token != NULL) && g_object_has_property (xmit, "relay-token"))
+            {
+              DEBUG (self, "setting farsight relay-token to %s", props->relay_token);
+              g_object_set (xmit, "relay-token", props->relay_token, NULL);
+            }
+
+          if ((props->stun_server != NULL) && g_object_has_property (xmit, "stun-ip"))
+            {
+              DEBUG (self, "setting farsight stun-ip to %s", props->stun_server);
+              g_object_set (xmit, "stun-ip", props->stun_server, NULL);
+
+              if (props->stun_port != 0)
+                {
+                  DEBUG (self, "setting farsight stun-port to %u", props->stun_port);
+                  g_object_set (xmit, "stun-port", props->stun_port, NULL);
+                }
+            }
+
+          if ((props->turn_server != NULL) && g_object_has_property (xmit, "stun-ip"))
+            {
+              DEBUG (self, "setting farsight turn-ip to %s", props->turn_server);
+              g_object_set (xmit, "turn-ip", props->turn_server, NULL);
+
+              if (props->turn_port != 0)
+                {
+                  DEBUG (self, "setting farsight turn-port to %u", props->turn_port);
+                  g_object_set (xmit, "turn-port", props->turn_port, NULL);
+                }
+            }
+
         }
     }
 
-  if (props->turn_server != NULL)
-    {
-      DEBUG (self, "setting farsight turn-ip to %s", props->turn_server);
-      g_object_set (stream, "turn-ip", props->turn_server, NULL);
-
-      if (props->turn_port != 0)
-        {
-          DEBUG (self, "setting farsight turn-port to %u", props->turn_port);
-          g_object_set (stream, "turn-port", props->turn_port, NULL);
-        }
-    }
 }
 
 static void
