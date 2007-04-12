@@ -814,17 +814,17 @@ set_stream_properties (TpStreamEngineStream *self,
       transmitter = "libjingle";
     }
 
-  if (g_object_has_property ((GObject *) stream, "transmitter-name"))
+  if (g_object_has_property ((GObject *) stream, "transmitter"))
     {
       DEBUG (self, "setting farsight transmitter to %s", transmitter);
-      g_object_set (stream, "transmitter-name", transmitter, NULL);
+      g_object_set (stream, "transmitter", transmitter, NULL);
     }
 
   /* transmitter should have been created as a result of setting transmitter-name */
-  if (g_object_has_property ((GObject *) stream, "transmitter"))
+  if (g_object_has_property ((GObject *) stream, "transmitter-object"))
     {
       GObject *xmit = NULL;
-      g_object_get (stream, "transmitter", &xmit, NULL);
+      g_object_get (stream, "transmitter-object", &xmit, NULL);
       if (xmit != NULL)
         {
           if ((props->relay_token != NULL) && g_object_has_property (xmit, "relay-token"))
@@ -857,6 +857,7 @@ set_stream_properties (TpStreamEngineStream *self,
                 }
             }
 
+          g_object_unref (xmit);
         }
     }
 
