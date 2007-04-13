@@ -751,6 +751,33 @@ set_stream_sending (DBusGProxy *proxy, gboolean send, gpointer user_data)
 }
 
 static void
+start_telephony_event (DBusGProxy *proxy, guchar event, gpointer user_data)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
+  g_assert (priv->fs_stream != NULL);
+
+  DEBUG (self, "%u", event);
+
+  /* this week, volume is 8, for the sake of argument... */
+  farsight_stream_start_telephony_event (priv->fs_stream, event, 8);
+}
+
+static void
+stop_telephony_event (DBusGProxy *proxy, gpointer user_data)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
+  g_assert (priv->fs_stream != NULL);
+
+  DEBUG (self, "%u", event);
+
+  farsight_stream_stop_telephony_event (priv->fs_stream);
+}
+
+static void
 close (DBusGProxy *proxy, gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
@@ -1127,6 +1154,10 @@ tp_stream_engine_stream_go (
       G_TYPE_BOOLEAN, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamSending",
       G_TYPE_BOOLEAN, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "StartTelephonyEvent",
+      G_TYPE_UCHAR, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "StopTelephonyEvent",
+      G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "Close",
       G_TYPE_INVALID);
 
@@ -1144,6 +1175,10 @@ tp_stream_engine_stream_go (
       G_CALLBACK (set_stream_playing), stream, NULL);
   dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamSending",
       G_CALLBACK (set_stream_sending), stream, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy,
+      "StartTelephonyEvent", G_CALLBACK (start_telephony_event), stream, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy,
+      "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), stream, NULL);
   dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "Close",
       G_CALLBACK (close), stream, NULL);
 
