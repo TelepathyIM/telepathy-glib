@@ -44,8 +44,6 @@ typedef struct {
   gchar *stun_server;
   guint16 stun_port;
   gchar *relay_token;
-  gchar *turn_server;
-  guint16 turn_port;
 } TpStreamEngineStreamProperties;
 
 GType tp_stream_engine_stream_get_type (void);

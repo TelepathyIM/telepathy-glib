@@ -845,18 +845,6 @@ set_stream_properties (TpStreamEngineStream *self,
                 }
             }
 
-          if ((props->turn_server != NULL) && g_object_has_property (xmit, "stun-ip"))
-            {
-              DEBUG (self, "setting farsight turn-ip to %s", props->turn_server);
-              g_object_set (xmit, "turn-ip", props->turn_server, NULL);
-
-              if (props->turn_port != 0)
-                {
-                  DEBUG (self, "setting farsight turn-port to %u", props->turn_port);
-                  g_object_set (xmit, "turn-port", props->turn_port, NULL);
-                }
-            }
-
           g_object_unref (xmit);
         }
     }
