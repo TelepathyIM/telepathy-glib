@@ -772,7 +772,7 @@ stop_telephony_event (DBusGProxy *proxy, gpointer user_data)
 
   g_assert (priv->fs_stream != NULL);
 
-  DEBUG (self, "%u", event);
+  DEBUG (self, "");
 
   farsight_stream_stop_telephony_event (priv->fs_stream);
 }
