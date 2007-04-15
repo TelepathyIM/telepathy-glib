@@ -758,10 +758,11 @@ start_telephony_event (DBusGProxy *proxy, guchar event, gpointer user_data)
 
   g_assert (priv->fs_stream != NULL);
 
-  DEBUG (self, "%u", event);
+  DEBUG (self, "called with event %u", event);
 
   /* this week, volume is 8, for the sake of argument... */
-  farsight_stream_start_telephony_event (priv->fs_stream, event, 8);
+  if (!farsight_stream_start_telephony_event (priv->fs_stream, event, 8))
+    DEBUG (self, "sending event %u failed", event);
 }
 
 static void
@@ -772,9 +773,10 @@ stop_telephony_event (DBusGProxy *proxy, gpointer user_data)
 
   g_assert (priv->fs_stream != NULL);
 
-  DEBUG (self, "");
+  DEBUG (self, "called");
 
-  farsight_stream_stop_telephony_event (priv->fs_stream);
+  if (!farsight_stream_stop_telephony_event (priv->fs_stream))
+    DEBUG (self, "stopping event failed");
 }
 
 static void
