@@ -103,6 +103,10 @@ static void
 set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data);
 static void
 set_stream_sending (DBusGProxy *proxy, gboolean play, gpointer user_data);
+static void
+start_telephony_event (DBusGProxy *proxy, guchar event, gpointer user_data);
+static void
+stop_telephony_event (DBusGProxy *proxy, gpointer user_data);
 
 static void
 stop_stream (TpStreamEngineStream *self);
@@ -169,6 +173,12 @@ tp_stream_engine_stream_dispose (GObject *object)
 
       dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
           "SetStreamSending", G_CALLBACK (set_stream_sending), stream);
+
+      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
+          "StartTelephonyEvent", G_CALLBACK (start_telephony_event), stream);
+
+      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
+          "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), stream);
 
       g_object_unref (priv->stream_handler_proxy);
       priv->stream_handler_proxy = NULL;
