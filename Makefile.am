@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = lib src data m4 tests
+SUBDIRS = lib m4
 
 EXTRA_DIST = \
     check-coding-style.mk \
@@ -13,6 +13,3 @@ DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-debug
 dist-hook:
 	chmod u+w ${distdir}/ChangeLog
 	if test -d _darcs; then darcs changes >${distdir}/ChangeLog; fi
-
-check-extra: check
-	$(MAKE) -C tests check-extra

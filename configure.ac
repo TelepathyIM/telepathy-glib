@@ -5,12 +5,14 @@ AC_PREREQ([2.59])
 #     odd minor -> development series
 #     even minor -> stable series
 #     increment micro for each release within a series
-#   set gabble_release to 1.
+#   set nano_version to 0
+#   make the release, tag it
+#   set nano_version to 1
 
-m4_define([gabble_major_version], [0])
-m4_define([gabble_minor_version], [5])
-m4_define([gabble_micro_version], [9])
-m4_define([gabble_nano_version], [1])
+m4_define([tp_glib_major_version], [0])
+m4_define([tp_glib_minor_version], [5])
+m4_define([tp_glib_micro_version], [9])
+m4_define([tp_glib_nano_version], [1])
 
 # If library source has changed since last release, increment revision
 # If interfaces have been added, removed or changed since last release,
@@ -23,13 +25,13 @@ m4_define([tp_glib_lt_revision], [0])
 m4_define([tp_glib_lt_age], [0])
 
 # Some magic
-m4_define([gabble_base_version],
-          [gabble_major_version.gabble_minor_version.gabble_micro_version])
-m4_define([gabble_version],
-          [m4_if(gabble_nano_version, 0, [gabble_base_version],
-              [gabble_base_version].[gabble_nano_version])])
+m4_define([tp_glib_base_version],
+          [tp_glib_major_version.tp_glib_minor_version.tp_glib_micro_version])
+m4_define([tp_glib_version],
+          [m4_if(tp_glib_nano_version, 0, [tp_glib_base_version],
+              [tp_glib_base_version].[tp_glib_nano_version])])
 
-AC_INIT([Telepathy Gabble], [gabble_version],
+AC_INIT([Telepathy-GLib], [tp_glib_version],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy])
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -64,7 +66,7 @@ AS_COMPILER_FLAG(-Wno-unused-parameter,
         wno_unused_parameter=yes,
         wno_unused_parameter=no)
 
-ifelse(gabble_nano_version, 0, [],
+ifelse(tp_glib_nano_version, 0, [],
     [
         if test x$werror = xyes; then
             ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
@@ -79,29 +81,29 @@ ifelse(gabble_nano_version, 0, [],
 AC_SUBST(ERROR_CFLAGS)
 
 AC_ARG_ENABLE(debug,
-  AC_HELP_STRING([--disable-debug],[compile without debug code]),
+  AC_HELP_STRING([--disable-debug],[compile without debug code (note that this will disable much of the debug code in all GLib connection managers)]),
     enable_debug=$enableval, enable_debug=yes )
 
 AC_ARG_ENABLE(handle-leak-debug,
-  AC_HELP_STRING([--enable-handle-leak-debug],[compile with handle leak debugging code]),
+  AC_HELP_STRING([--enable-handle-leak-debug],[compile with handle leak debugging code (the CM should be built with -rdynamic)]),
     enable_handle_leak_debug=$enableval, enable_handle_leak_debug=no )
 
 AC_ARG_ENABLE(backtrace,
-  AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash]),
+  AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash (in most GLib connection managers)]),
     enable_backtrace=$enableval, enable_backtrace=no )
 
 AC_ARG_ENABLE(coverage,
   AC_HELP_STRING([--enable-coverage],[compile with coverage info]),
     enable_coverage=$enableval, enable_coverage=no )
 
-ifelse(gabble_nano_version, 0,
-    [ # Gabble is version x.y.z - disable coding style checks by default
+ifelse(tp_glib_nano_version, 0,
+    [ # tp-glib is version x.y.z - disable coding style checks by default
 AC_ARG_ENABLE(coding-style-checks,
   AC_HELP_STRING([--enable-coding-style-checks],
                  [check coding style using grep]),
     [ENABLE_CODING_STYLE_CHECKS=$enableval], [ENABLE_CODING_STYLE_CHECKS=no] )
     ],
-    [ # Gabble is version x.y.z.1 - enable coding style checks by default
+    [ # tp-glib is version x.y.z.1 - enable coding style checks by default
 AC_ARG_ENABLE(coding-style-checks,
   AC_HELP_STRING([--disable-coding-style-checks],
                  [don't check coding style using grep]),
@@ -130,14 +132,11 @@ AC_SUBST(COVERAGE_CFLAGS)
 
 AC_SUBST([ENABLE_CODING_STYLE_CHECKS])
 
-dnl lib/docs/Makefile.am needs to know whether it's an out of tree build
+dnl docs/Makefile.am needs to know whether it's an out of tree build
 dnl (srcdir != builddir)
 AM_CONDITIONAL([OUT_OF_TREE_BUILD], [test "z$ac_srcdir" != z.])
 
-dnl Endianness (for the sha1 implementation)
-AC_C_BIGENDIAN
-
-dnl Check for Glib 
+dnl Check for Glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.4, gobject-2.0 >= 2.4])
 
 AC_SUBST(GLIB_CFLAGS)
@@ -151,11 +150,6 @@ PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.61, dbus-glib-1 >= 0.72])
 
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
-
-AS_AC_EXPAND(DATADIR, $datadir)
-DBUS_SERVICES_DIR="$DATADIR/dbus-1/services"
-AC_SUBST(DBUS_SERVICES_DIR)
-AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [DBus services directory])
 
 dnl Check for code generation tools
 XSLTPROC=
@@ -173,24 +167,6 @@ AC_CHECK_PROGS([PYTHON], [python2.3 python2.4 python2.5 python])
 if test -z "$PYTHON"; then
   AC_MSG_ERROR([Python is required to compile this package])
 fi
-
-dnl Check for Loudmouth
-AC_ARG_ENABLE(loudmouth-versioning,
-  AC_HELP_STRING([--disable-loudmouth-versioning],
-                 [Stops configure checking the version of loudmouth to use.]),
-                 enable_loudmouth_versioning=$enableval,
-                 enable_loudmouth_versioning=yes)
-
-if test x$enable_loudmouth_versioning = xyes; then
-  LOUDMOUTH_VERSION_STR=" >= 1.1.1"
-else
-  LOUDMOUTH_VERSION_STR=""
-fi
-
-PKG_CHECK_MODULES(LOUDMOUTH, loudmouth-1.0$LOUDMOUTH_VERSION_STR)
-
-AC_SUBST(LOUDMOUTH_CFLAGS)
-AC_SUBST(LOUDMOUTH_LIBS)
 
 dnl glibc backtrace functions
 AC_CHECK_FUNCS(backtrace backtrace_symbols_fd)
@@ -211,8 +187,5 @@ AC_OUTPUT( Makefile \
 	   lib/tests/Makefile \
 	   lib/tools/Makefile \
 	   lib/tools/update-spec-gen-am.sh \
-           src/Makefile \
-           m4/Makefile \
-           data/Makefile \
-           tests/Makefile
+	   m4/Makefile \
 )
