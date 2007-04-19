@@ -8,4 +8,4 @@ EXTRA_DIST = \
     ls-interfaces.xsl \
     make-all-async.xsl \
     spec-to-introspect.xsl \
-    update-spec-gen-am.sh.in
+    update-spec-gen-am.sh

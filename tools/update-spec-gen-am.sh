@@ -1,13 +1,13 @@
 #!/bin/sh
 
-mk_specdir="lib/spec"
-mk_toolsdir="lib/tools"
+mk_specdir="spec"
+mk_toolsdir="tools"
 
-XSLTPROC=@XSLTPROC@
-top_srcdir=@abs_top_srcdir@
+test -n "$XSLTPROC" || XSLTPROC=xsltproc
+test -n "$TOP_SRCDIR" || TOP_SRCDIR=..
 
-toolsdir="${top_srcdir}/${mk_toolsdir}"
-specdir="${top_srcdir}/${mk_specdir}"
+toolsdir="${TOP_SRCDIR}/${mk_toolsdir}"
+specdir="${TOP_SRCDIR}/${mk_specdir}"
 
 outfile="$1"
 gendir="$2"
@@ -24,7 +24,7 @@ printf "\\t\\t\$(top_srcdir)/$mk_specdir/all.xml \\\\\\n"
 printf "\\t\\t\$(SPEC_INTERFACE_XMLS) \\\\\\n"
 printf "\\t\\t\$(top_srcdir)/$mk_toolsdir/ls-interfaces.xsl \\\\\\n"
 printf "\\t\\t\$(top_builddir)/$mk_toolsdir/update-spec-gen-am.sh\\n"
-printf "\\t\$(SHELL) \$(top_builddir)/$mk_toolsdir/update-spec-gen-am.sh $outfile $gendir $whitelist\\n"
+printf "\\tXSLTPROC=xsltproc TOP_SRCDIR=\$(top_srcdir) \$(SHELL) \$(top_builddir)/$mk_toolsdir/update-spec-gen-am.sh $outfile $gendir $whitelist\\n"
 echo
 
 for class in INTERFACES INTERFACE_XMLS GENERATED_CS GENERATED_HS \

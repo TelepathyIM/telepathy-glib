@@ -177,15 +177,13 @@ AC_CHECK_FUNCS(signal)
 AC_CHECK_HEADERS(signal.h)
 
 AC_OUTPUT( Makefile \
-	   lib/telepathy-glib.pc \
-	   lib/telepathy-glib-unstable.pc \
-	   lib/Makefile \
-	   lib/docs/Makefile \
-	   lib/docs/reference/Makefile \
-	   lib/spec/Makefile \
-	   lib/telepathy-glib/Makefile \
-	   lib/tests/Makefile \
-	   lib/tools/Makefile \
-	   lib/tools/update-spec-gen-am.sh \
+	   telepathy-glib.pc \
+	   telepathy-glib-unstable.pc \
+	   docs/Makefile \
+	   docs/reference/Makefile \
+	   spec/Makefile \
+	   telepathy-glib/Makefile \
+	   tests/Makefile \
+	   tools/Makefile \
 	   m4/Makefile \
 )

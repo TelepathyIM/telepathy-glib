@@ -1,6 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = lib m4
+SUBDIRS = m4 tools spec telepathy-glib tests docs
+
+DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-debug
+
+pkgconfigdir = ${libdir}/pkgconfig
+pkgconfig_DATA = telepathy-glib.pc telepathy-glib-unstable.pc
 
 EXTRA_DIST = \
     check-coding-style.mk \
@@ -8,7 +13,11 @@ EXTRA_DIST = \
     check-whitespace.sh \
     gtk-doc.make
 
-DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-debug
+CLEANFILES = FIXME.out
+
+check-local::
+	egrep -A 5 '[F]IXME|[T]ODO|[X]XX' $(srcdir)/telepathy-glib/*.[ch] \
+		> FIXME.out || true
 
 dist-hook:
 	chmod u+w ${distdir}/ChangeLog

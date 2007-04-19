@@ -33,14 +33,14 @@ SCAN_OPTIONS=
 # e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml
 MKDB_OPTIONS=--sgml-mode --output-format=xml
 
-# If _gen is a subdirectory of $(top_srcdir)/lib/telepathy-glib then we
+# If _gen is a subdirectory of $(top_srcdir)/telepathy-glib then we
 # already get it scanned by virtue of setting DOC_SOURCE_DIR. If
 # it's not a subdirectory, we'll have to add a second --source-dir
 # so both get scanned (we want the declarations and doc-comments in
 # the generated source to take effect).
 if OUT_OF_TREE_BUILD
-SCAN_OPTIONS += --source-dir=$(abs_top_builddir)/lib/telepathy-glib/_gen
-MKDB_OPTIONS += --source-dir=$(abs_top_builddir)/lib/telepathy-glib/_gen
+SCAN_OPTIONS += --source-dir=$(abs_top_builddir)/telepathy-glib/_gen
+MKDB_OPTIONS += --source-dir=$(abs_top_builddir)/telepathy-glib/_gen
 endif
 
 # Extra options to supply to gtkdoc-mktmpl
@@ -54,8 +54,8 @@ FIXXREF_OPTIONS=
 # Used for dependencies. The docs will be rebuilt if any of these change.
 # e.g. HFILE_GLOB=$(top_srcdir)/gtk/*.h
 # e.g. CFILE_GLOB=$(top_srcdir)/gtk/*.c
-HFILE_GLOB=$(top_srcdir)/lib/telepathy-glib/*.h $(top_builddir)/lib/telepathy-glib/_gen/*.h
-CFILE_GLOB=$(top_srcdir)/lib/telepathy-glib/*.c $(top_builddir)/lib/telepathy-glib/_gen/*.c
+HFILE_GLOB=$(top_srcdir)/telepathy-glib/*.h $(top_builddir)/telepathy-glib/_gen/*.h
+CFILE_GLOB=$(top_srcdir)/telepathy-glib/*.c $(top_builddir)/telepathy-glib/_gen/*.c
 
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
@@ -79,10 +79,10 @@ expand_content_files=
 # signals and properties.
 # e.g. INCLUDES=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-INCLUDES=-I$(top_srcdir)/lib -I$(top_builddir)/lib \
+INCLUDES=-I$(top_srcdir) -I$(top_builddir) \
 	 @DBUS_CFLAGS@ @GLIB_CFLAGS@
 GTKDOC_LIBS=@DBUS_LIBS@ @GLIB_LIBS@ \
-	    $(top_builddir)/lib/telepathy-glib/libtelepathy-glib.la
+	    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
