@@ -107,9 +107,6 @@ CLEANFILES = \
     _gen/unstable-spec.xml \
     _gen/stable-interfaces.txt
 
-clean-local:
-	-rmdir _gen
-
 check_c_sources = \
     $(tpginclude_HEADERS) \
     $(libtelepathy_glib_la_SOURCES)
