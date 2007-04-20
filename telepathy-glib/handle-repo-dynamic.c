@@ -39,6 +39,8 @@
  * except %TP_HANDLE_TYPE_CONTACT_LIST.
  */
 
+#include <config.h>
+
 #include <telepathy-glib/handle-repo-dynamic.h>
 
 #include <dbus/dbus-glib.h>
@@ -52,7 +54,12 @@
 #ifdef ENABLE_HANDLE_LEAK_DEBUG
 #include <stdlib.h>
 #include <stdio.h>
+
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
+#else
+#error "Handle leak debug requires execinfo.h"
+#endif
 
 typedef enum {
     HL_REFFED,
