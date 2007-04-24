@@ -14,4 +14,17 @@ $MAKE -C telepathy-glib -f stable-interfaces.mk _gen/stable-interfaces.txt
 
 autoreconf -i
 
-./configure "$@"
+run_configure=true
+for arg in $*; do
+    case $arg in
+        --no-configure)
+            run_configure=false
+            ;;
+        *)
+            ;;
+    esac
+done
+
+if test $run_configure = true; then
+    ./configure "$@"
+fi
