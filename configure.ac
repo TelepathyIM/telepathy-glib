@@ -10,7 +10,7 @@ AC_PREREQ([2.59])
 m4_define([stream_engine_major_version], [0])
 m4_define([stream_engine_minor_version], [3])
 m4_define([stream_engine_micro_version], [23])
-m4_define([stream_engine_nano_version], [0])
+m4_define([stream_engine_nano_version], [1])
 
 # Some magic
 m4_define([stream_engine_base_version],
