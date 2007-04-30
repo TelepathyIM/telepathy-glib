@@ -315,7 +315,6 @@ void tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
         GError e = { TP_ERRORS, TP_ERROR_DISCONNECTED, \
             "Connection is disconnected" }; \
         \
-        DEBUG ("rejected request as disconnected"); \
         dbus_g_method_return_error ((context), &e); \
         return; \
       } \
