@@ -61,6 +61,7 @@ enum
   PROP_STUN_SERVER,
   PROP_STUN_PORT,
   PROP_GTALK_P2P_RELAY_TOKEN,
+  NUM_TP_PROPERTIES
 };
 
 enum
@@ -283,72 +284,114 @@ get_session_handlers_reply (DBusGProxy *proxy,
     }
 }
 
+static const gchar *prop_names[NUM_TP_PROPERTIES] = {
+    "nat-traversal",
+    "stun-server",
+    "stun-port",
+    "gtalk-p2p-relay-token"
+};
+
 static void
-cb_properties_ready (TpPropsIface *iface, gpointer user_data)
+update_prop_str (TpPropsIface *iface,
+                 guint prop_id,
+                 gchar **value)
+{
+  GValue tmp = {0, };
+
+  g_free (*value);
+  *value = NULL;
+
+  if (tp_props_iface_property_flags (iface, prop_id) & TP_PROPERTY_FLAG_READ)
+    {
+      g_value_init (&tmp, G_TYPE_STRING);
+
+      if (tp_props_iface_get_value (iface, prop_id, &tmp))
+        {
+          *value = g_value_dup_string (&tmp);
+          g_debug ("got %s = %s", prop_names[prop_id], *value);
+        }
+
+      g_value_unset (&tmp);
+    }
+}
+
+static void
+update_prop_uint (TpPropsIface *iface,
+                  guint prop_id,
+                  guint16 *value)
+{
+  GValue tmp = {0, };
+
+  *value = 0;
+
+  if (tp_props_iface_property_flags (iface, prop_id) & TP_PROPERTY_FLAG_READ)
+    {
+      g_value_init (&tmp, G_TYPE_UINT);
+
+      if (tp_props_iface_get_value (iface, prop_id, &tmp))
+        {
+          *value = g_value_get_uint (&tmp);
+          g_debug ("got %s = %u", prop_names[prop_id], *value);
+        }
+
+      g_value_unset (&tmp);
+    }
+}
+
+static void
+update_prop (TpPropsIface *iface,
+             TpStreamEngineStreamProperties *props,
+             guint prop_id)
+{
+  switch (prop_id)
+    {
+    case PROP_NAT_TRAVERSAL:
+      update_prop_str (iface, PROP_NAT_TRAVERSAL, &(props->nat_traversal));
+      break;
+    case PROP_STUN_SERVER:
+      update_prop_str (iface, PROP_STUN_SERVER, &(props->stun_server));
+      break;
+    case PROP_STUN_PORT:
+      update_prop_uint (iface, PROP_STUN_PORT, &(props->stun_port));
+      break;
+    case PROP_GTALK_P2P_RELAY_TOKEN:
+      update_prop_str (iface, PROP_GTALK_P2P_RELAY_TOKEN,
+          &(props->relay_token));
+      break;
+    default:
+      g_debug ("%s: ignoring unknown property id %u", G_STRFUNC, prop_id);
+    }
+}
+
+static void
+cb_property_changed (TpPropsIface *iface,
+                     guint prop_id,
+                     gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpStreamEngineStreamProperties *props = &(priv->props);
-  GValue tmp = {0, };
 
-  if (tp_props_iface_property_flags (iface, PROP_NAT_TRAVERSAL) &
-      TP_PROPERTY_FLAG_READ)
-    {
-      g_value_init (&tmp, G_TYPE_STRING);
+  update_prop (iface, props, prop_id);
+}
 
-      if (tp_props_iface_get_value (iface, PROP_NAT_TRAVERSAL, &tmp))
-        {
-          props->nat_traversal = g_value_dup_string (&tmp);
-          g_debug ("got nat-traversal = %s", props->nat_traversal);
-        }
+static void
+cb_properties_ready (TpPropsIface *iface,
+                     gpointer user_data)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpStreamEngineStreamProperties *props = &(priv->props);
+  guint i;
 
-      g_value_unset (&tmp);
-    }
-
-  if (tp_props_iface_property_flags (iface, PROP_STUN_SERVER) &
-      TP_PROPERTY_FLAG_READ)
-    {
-      g_value_init (&tmp, G_TYPE_STRING);
-
-      if (tp_props_iface_get_value (iface, PROP_STUN_SERVER, &tmp))
-        {
-          props->stun_server = g_value_dup_string (&tmp);
-          g_debug ("got stun-server = %s", props->stun_server);
-        }
-
-      g_value_unset (&tmp);
-    }
-
-  if (tp_props_iface_property_flags (iface, PROP_STUN_PORT) &
-      TP_PROPERTY_FLAG_READ)
-    {
-      g_value_init (&tmp, G_TYPE_UINT);
-
-      if (tp_props_iface_get_value (iface, PROP_STUN_PORT, &tmp))
-        {
-          props->stun_port = g_value_get_uint (&tmp);
-          g_debug ("got stun-port = %u", props->stun_port);
-        }
-
-      g_value_unset (&tmp);
-    }
-
-  if (tp_props_iface_property_flags (iface, PROP_GTALK_P2P_RELAY_TOKEN) &
-      TP_PROPERTY_FLAG_READ)
-    {
-      g_value_init (&tmp, G_TYPE_STRING);
-
-      if (tp_props_iface_get_value (iface, PROP_GTALK_P2P_RELAY_TOKEN, &tmp))
-        {
-          props->relay_token = g_value_dup_string (&tmp);
-          g_debug ("got gtalk-p2p-relay-token = %s", props->relay_token);
-        }
-
-      g_value_unset (&tmp);
-    }
+  for (i = 0; i < NUM_TP_PROPERTIES; i++)
+    update_prop (iface, props, i);
 
   g_signal_handlers_disconnect_by_func (iface,
       G_CALLBACK (cb_properties_ready), self);
+
+  g_signal_connect (iface, "property-changed",
+      G_CALLBACK (cb_property_changed), self);
 }
 
 gboolean
