@@ -1033,13 +1033,13 @@ list_channel_factory_foreach_one (TpChannelIface *chan,
                                   gpointer data)
 {
   GObject *channel = G_OBJECT (chan);
-  GPtrArray *channels = (GPtrArray *) data;
+  GPtrArray *values = (GPtrArray *) data;
   gchar *path, *type;
   guint handle_type, handle;
-  GValue entry = { 0, };
+  GValue *entry = g_slice_new0 (GValue);
 
-  g_value_init (&entry, TP_CHANNEL_LIST_ENTRY_TYPE);
-  g_value_take_boxed (&entry, dbus_g_type_specialized_construct
+  g_value_init (entry, TP_CHANNEL_LIST_ENTRY_TYPE);
+  g_value_take_boxed (entry, dbus_g_type_specialized_construct
       (TP_CHANNEL_LIST_ENTRY_TYPE));
 
   g_object_get (channel,
@@ -1049,14 +1049,14 @@ list_channel_factory_foreach_one (TpChannelIface *chan,
       "handle", &handle,
       NULL);
 
-  dbus_g_type_struct_set (&entry,
+  dbus_g_type_struct_set (entry,
       0, path,
       1, type,
       2, handle_type,
       3, handle,
       G_MAXUINT);
 
-  g_ptr_array_add (channels, g_value_get_boxed (&entry));
+  g_ptr_array_add (values, entry);
 
   g_free (path);
   g_free (type);
@@ -1068,7 +1068,7 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
   TpBaseConnectionPrivate *priv;
-  GPtrArray *channels;
+  GPtrArray *channels, *values;
   guint i;
 
   g_assert (TP_IS_BASE_CONNECTION (self));
@@ -1078,18 +1078,32 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
   /* I think on average, each factory will have 2 channels :D */
-  channels = g_ptr_array_sized_new (priv->channel_factories->len * 2);
+  values = g_ptr_array_sized_new (priv->channel_factories->len * 2);
 
   for (i = 0; i < priv->channel_factories->len; i++)
     {
       TpChannelFactoryIface *factory = g_ptr_array_index
         (priv->channel_factories, i);
       tp_channel_factory_iface_foreach (factory,
-          list_channel_factory_foreach_one, channels);
+          list_channel_factory_foreach_one, values);
+    }
+
+  channels = g_ptr_array_sized_new (values->len);
+
+  for (i = 0; i < values->len; i++)
+    {
+      g_ptr_array_add (channels, g_value_get_boxed (g_ptr_array_index
+            (values, i)));
     }
 
   tp_svc_connection_return_from_list_channels (context, channels);
+
   g_ptr_array_free (channels, TRUE);
+  for (i = 0; i < values->len; i++)
+    {
+      tp_g_value_slice_free (g_ptr_array_index (values, i));
+    }
+  g_ptr_array_free (values, TRUE);
 }
 
 
