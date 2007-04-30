@@ -18,7 +18,7 @@ Library General Public License for more details.</p>
 
 <p>You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection">
     <method name="Connect">
@@ -71,8 +71,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
       </arg>
       <tp:docstring>
         Get the handle which represents the user on this connection, which will
-        remain valid for the lifetime of this connection or until the user's
-        identifier changes. This is always a CONTACT type handle.
+        remain valid for the lifetime of this connection, or until a change
+        in the user's identifier is signalled by the Renamed signal on the
+        Renaming interface (if present). This is always a CONTACT type handle.
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -99,15 +100,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
           A array of integer handles to hold
         </tp:docstring>
       </arg>
-      <tp:docstring>
-        Notify the connection manger that your client is holding a copy
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Notify the connection manger that your client is holding a copy
         of handles which may not be in use in any existing channel or
         list, and were not obtained by using the RequestHandles method. For
         example, a handle observed in an emitted signal, or displayed
         somewhere in the UI that is not associated with a channel. The
         connection manager must not deallocate a handle where any clients
         have used this method to indicate it is in use until the ReleaseHandle
-        method is called, or the clients disappear from the bus.
+        method is called, or the clients disappear from the bus.</p>
+
+        <p>Note that HoldHandles is idempotent - calling it multiple times
+          is equivalent to calling it once. If a handle is "referenced" by
+          several components which share a D-Bus unique name, the client
+          should perform reference counting internally, and only call
+          ReleaseHandles when none of the cooperating components need the
+          handle any longer.</p>
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -216,7 +224,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
         Explicitly notify the connection manager that your client is no
         longer holding any references to the given handles, and that they
         may be deallocated if they are not held by any other clients or
-        referenced by any existing channels.
+        referenced by any existing channels. See HoldHandles for notes.
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -377,7 +385,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
         </tp:error>
       </tp:possible-errors>
     </method>
-    <tp:enum name="Connection_Status" type="u">
+    <tp:enum name="Connection_Status" plural="Connection_Statuses" type="u">
       <tp:enumvalue suffix="Connected" value="0">
         <tp:docstring>
             The connection is alive and all methods are available.

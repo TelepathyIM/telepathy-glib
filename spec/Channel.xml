@@ -16,7 +16,7 @@ Library General Public License for more details.</p>
 
 <p>You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Channel">
     <method name="Close">
@@ -96,12 +96,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
     as a buddy list) or a Channel.Type.Text which represents a channel over
     which textual messages are sent and received.</p>
 
-    <p>Each channel may have an immutable handle associated with it, which may
-    be any handle type, such as a contact, room or list handle, indicating
-    that the channel is for communicating with that handle. If a channel does
-    not have a handle, it means that the channel is defined by some other
-    terms, such as it may be a transient group defined only by its members
-    as visible through the Channel.Interface.Group interface.</p>
+    <p>Each channel may have an immutable handle associated with it, which
+      may be any handle type, such as a contact, room or list handle,
+      indicating that the channel is for communicating with that handle.
+      There can be at most one channel for each combination of
+      (channel type, handle type, handle) with nonzero handle type.</p>
+    
+    <p>If a channel does not have a handle (an "anonymous channel"), it
+      means that the channel is defined by some other terms, such as it
+      may be a transient group defined only by its members as visible
+      through the Channel.Interface.Group interface. There can be any number
+      of anonymous channels of the same channel type.</p>
 
     <p>Other optional interfaces can be implemented to indicate other available
     functionality, such as Channel.Interface.Group if the channel contains

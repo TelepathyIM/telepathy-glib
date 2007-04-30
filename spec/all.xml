@@ -2,7 +2,7 @@
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
-<tp:version>0.15.2</tp:version>
+<tp:version>0.15.3</tp:version>
 
 <tp:copyright>Copyright (C) 2005, 2006, 2007 Collabora Limited</tp:copyright>
 <tp:copyright>Copyright (C) 2005, 2006, 2007 Nokia Corporation</tp:copyright>
@@ -21,7 +21,7 @@ Library General Public License for more details.</p>
 
 <p>You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
 </tp:license>
 
 <xi:include href="Connection_Manager.xml"/>
@@ -57,5 +57,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
 <xi:include href="Properties_Interface.xml"/>
 
 <xi:include href="errors.xml"/>
+
+<xi:include href="extensions.xml">
+	<xi:fallback>
+		<!-- absence of non-spec extensions is OK -->
+	</xi:fallback>
+</xi:include>
 
 </tp:spec>

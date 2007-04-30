@@ -16,7 +16,7 @@ Library General Public License for more details.</p>
 
 <p>You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Aliasing">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
@@ -36,10 +36,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
     </signal>
     <tp:flags name="Connection_Alias_Flags" value-prefix="Connection_Alias_Flag" type="u">
       <tp:flag suffix="User_Set" value="1">
-        <tp:docstring>
-          The aliases of contacts on this connection are specified by the user
-          of the service, not the contacts themselves. This is the case on
-          eg Jabber.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The aliases of contacts on this connection may be changed by the
+            user of the service, not just by the contacts themselves. This is
+            the case on Jabber, for instance.</p>
+          <p>It is possible that aliases can be changed by the contacts too -
+            which alias takes precedence is not defined by this
+            specification, and depends on the server and/or connection manager
+            implementation.</p>
+          <p>This flag only applies to the aliases of "globally valid" contact
+            handles. At this time, clients should not expect to be able to
+            change the aliases corresponding to any channel-specific
+            handles. If this becomes possible in future, a new flag will
+            be defined.</p>
         </tp:docstring>
       </tp:flag>
     </tp:flags>
@@ -103,15 +112,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
     </method>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface on connections to support protocols where contacts have an
-    alias which they can change at will, but their underlying unique identifier
-    remains unchanged. Provides a method for the user to set their own alias,
-    and a signal which should be emitted when a contact's alias is changed
-    or first discovered.</p>
+    alias which they can change at will. Provides a method for the user to set
+    their own alias, and a signal which should be emitted when a contact's
+    alias is changed or first discovered.</p>
 
     <p>On connections where the user is allowed to set aliases for contacts and
     store them on the server, the GetAliasFlags method will have the
     CONNECTION_ALIAS_FLAG_USER_SET flag set, and the SetAliases method
     may be called on contact handles other than the user themselves.</p>
+
+    <p>Aliases are intended to be used as the main displayed name for the
+    contact, where available.</p>
     </tp:docstring>
   </interface>
 </node>

@@ -16,7 +16,7 @@ Library General Public License for more details.</p>
 
 <p>You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Channel.Interface.Group">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
@@ -126,13 +126,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
         </tp:docstring>
       </tp:flag>
       <tp:flag suffix="Channel_Specific_Handles" value="256">
-        <tp:docstring>
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>
             The members of this group have handles which are specific to
             this channel, and are not valid as general-purpose handles on
             the connection. Depending on the channel, it may be possible to
             call GetHandleOwners to find the owners of these handles, which
             should be done if you wish to eg subscribe to the contact's
             presence.
+          </p>
+
+          <p>
+            Connection managers must ensure that any given handle is not
+            simultaneously a general-purpose handle and a channel-specific
+            handle.
+          </p>
         </tp:docstring>
       </tp:flag>
       <tp:flag suffix="Only_One_Group" value="512">
@@ -340,6 +348,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
       <tp:enumvalue suffix="No_Answer" value="8">
         <tp:docstring>
             The change is because the requested contact did not respond.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="Renamed" value="9">
+        <tp:docstring>
+          The change is because a contact's unique identifier changed.
+          There must be exactly one handle in the removed set and exactly
+          one handle in one of the added sets. The Renamed signal on the
+          Renaming interface will have been emitted for the same handles,
+          shortly before this MembersChanged signal is emitted.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>

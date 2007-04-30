@@ -16,7 +16,7 @@ Library General Public License for more details.</p>
 
 <p>You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Renaming">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
@@ -31,8 +31,33 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
           The handle of the new identifier
         </tp:docstring>
       </arg>
-      <tp:docstring>
-        Emitted when the unique identifier of a contact on the server changes.
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Emitted when the unique identifier of a contact on the server
+          changes.</p>
+
+        <p>Any channels associated with the contact's original handle will
+          continue to be to that handle, and so are no longer useful (unless
+          the contact renames back, or another contact connects with that
+          unique ID). Clients may open a similar channel associated with the
+          new handle to continue communicating with the contact.</p>
+
+        <p>For example, if a GUI client associates text
+          channels with chat windows, it should detach the old channel
+          from the chat window, closing it, and associate a channel to the
+          new handle with the same window.</p>
+
+        <p>If the contact's old handle is in any of the member lists of
+          a channel which has the groups interface, it will be removed from
+          the channel and the new handle will be added. The resulting
+          MembersChanged signal must be emitted <em>after</em> the Renamed
+          signal; the reason should be RENAMED.
+        </p>
+
+        <p>The handles may be either general-purpose or channel-specific.
+          If the original handle is general-purpose, the new handle must be
+          general-purpose; if the original handle is channel-specific, the
+          new handle must be channel-specific in the same channel.
+        </p>
       </tp:docstring>
     </signal>
     <method name="RequestRename">
@@ -41,11 +66,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
           The desired identifier
         </tp:docstring>
       </arg>
-      <tp:docstring>
-        Request that the users own identifier is changed on the server. Success
-        is indicated by a Renamed signal being emitted. A new handle will be
-        allocated for the user's new identifier, and remain valid for the
-        lifetime of the connection.
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Request that the user's own identifier is changed on the server.
+          If successful, a Renamed signal will be emitted for the current
+          "self handle" as returned by GetSelfHandle.</p>
+        <p>It is protocol-dependent how the identifier that's actually
+          used will be derived from the supplied identifier; some sort of
+          normalization might take place.</p>
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
