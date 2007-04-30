@@ -366,6 +366,7 @@ update_prop (TpPropsIface *iface,
 static void
 cb_property_changed (TpPropsIface *iface,
                      guint prop_id,
+                     TpPropsChanged changed,
                      gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
