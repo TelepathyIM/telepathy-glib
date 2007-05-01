@@ -391,7 +391,7 @@ cb_properties_ready (TpPropsIface *iface,
   g_signal_handlers_disconnect_by_func (iface,
       G_CALLBACK (cb_properties_ready), self);
 
-  g_signal_connect (iface, "property-changed",
+  g_signal_connect (iface, "properties-changed",
       G_CALLBACK (cb_property_changed), self);
 }
 
