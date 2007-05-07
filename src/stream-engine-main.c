@@ -35,6 +35,12 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#include <glib.h>
+#include <glib/gstdio.h>
 
 #include <dbus/dbus-glib.h>
 #include <gst/gst.h>
@@ -221,7 +227,42 @@ watchdog_bite (int sig)
   abort ();
 }
 
+static void
+set_log_file_from_env (void)
+{
+  const gchar *output_file;
+  int out;
+
+  output_file = g_getenv ("STREAM_ENGINE_LOGFILE");
+  if (output_file == NULL)
+    return;
+
+  out = g_open (output_file, O_WRONLY | O_CREAT, 0644);
+  if (out == -1)
+    {
+      g_warning ("Can't open logfile '%s': %s", output_file,
+          g_strerror (errno));
+      return;
+    }
+
+  if (dup2 (out, STDOUT_FILENO) == -1)
+    {
+      g_warning ("Error when duplicating stdout file descriptor: %s",
+          g_strerror (errno));
+      return;
+    }
+
+  if (dup2 (out, STDERR_FILENO) == -1)
+    {
+      g_warning ("Error when duplicating stderr file descriptor: %s",
+          g_strerror (errno));
+      return;
+    }
+}
+
 int main(int argc, char **argv) {
+  set_log_file_from_env ();
+
   signal (SIGBUS, got_sigbus);
 #ifdef ENABLE_BACKTRACE
   signal (SIGSEGV, got_segv);
