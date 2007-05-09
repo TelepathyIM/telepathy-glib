@@ -1,11 +1,6 @@
 #!/bin/sh
 set -e
 
-if test -z "$MAKE"
-then
-	MAKE=make
-fi
-
 autoreconf -i
 
 run_configure=true
