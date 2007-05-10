@@ -22,3 +22,7 @@ check-local::
 dist-hook:
 	chmod u+w ${distdir}/ChangeLog
 	if test -d _darcs; then darcs changes >${distdir}/ChangeLog; fi
+
+maintainer-upload-docs:
+	rsync -rtvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
+		telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib
