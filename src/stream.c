@@ -1374,7 +1374,7 @@ tp_stream_engine_stream_set_output_window (
       return TRUE;
     }
 
-  sink = tp_stream_engine_make_video_sink (engine);
+  sink = tp_stream_engine_make_video_sink (engine, FALSE);
 
   if (sink == NULL)
     {

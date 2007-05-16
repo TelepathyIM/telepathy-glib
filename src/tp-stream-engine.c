@@ -274,7 +274,7 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
 }
 
 GstElement *
-tp_stream_engine_make_video_sink (TpStreamEngine *obj)
+tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   const gchar *videosink_name;
@@ -296,7 +296,16 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
   else
     {
 #ifndef MAEMO_OSSO_SUPPORT
-      sink = gst_element_factory_make ("gconfvideosink", NULL);
+      if (is_preview) {
+        /* hack to leave an xvimage free for the bigger output.
+         * Most machines only have one xvport, so this helps in the majority of
+         * cases. More intelligent widgets 
+         * */
+        sink = gst_element_factory_make ("ximagesink", NULL);
+      }
+
+      if (sink == NULL)
+        sink = gst_element_factory_make ("gconfvideosink", NULL);
 
       if (sink == NULL)
         sink = gst_element_factory_make ("autovideosink", NULL);
@@ -390,7 +399,7 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
   g_debug ("adding preview in window %u", window_id);
 
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  sink = tp_stream_engine_make_video_sink (obj);
+  sink = tp_stream_engine_make_video_sink (obj, TRUE);
 
   if (sink == NULL)
     goto sink_failure;
