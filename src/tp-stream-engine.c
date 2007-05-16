@@ -1140,10 +1140,13 @@ _create_pipeline (TpStreamEngine *obj)
   if (!filter)
     {
       filter = gst_caps_new_simple ("video/x-raw-yuv",
+           "framerate", GST_TYPE_FRACTION, 15, 1,
+#ifdef MAEMO_OSSO_SUPPORT
            "width", G_TYPE_INT, 176,
            "height", G_TYPE_INT, 144,
-           "framerate", GST_TYPE_FRACTION, 15, 1,
-#ifndef MAEMO_OSSO_SUPPORT
+#else
+           "width", G_TYPE_INT, 352,
+           "height", G_TYPE_INT, 288,
            "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
 #endif
            NULL);
