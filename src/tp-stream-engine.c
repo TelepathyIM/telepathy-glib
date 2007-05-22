@@ -320,6 +320,11 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj)
           g_debug ("setting sync to FALSE");
           g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
         }
+      if (g_object_has_property (G_OBJECT (sink), "qos"))
+        {
+          g_debug ("setting qos to FALSE");
+          g_object_set (G_OBJECT (sink), "qos", FALSE, NULL);
+        }
     }
   else
     {
