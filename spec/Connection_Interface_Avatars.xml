@@ -38,6 +38,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         avatar should be requested with RequestAvatar.
       </tp:docstring>
     </signal>
+    <signal name="AvatarRetrieved">
+      <arg name="contact" type="u" tp:type="Contact_Handle">
+        <tp:docstring>
+          The contact whose avatar has been retrieved
+        </tp:docstring>
+      </arg>
+      <arg name="token" type="s">
+        <tp:docstring>
+          The token corresponding to the avatar
+        </tp:docstring>
+      </arg>
+      <arg name="avatar" type="ay">
+        <tp:docstring>
+          An array of bytes containing the image data
+        </tp:docstring>
+      </arg>
+      <arg name="type" type="s">
+        <tp:docstring>
+          A string containing the image MIME type (eg image/jpeg), or empty if
+          unknown
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Emitted when the avatar for a contact has been retrieved.
+      </tp:docstring>
+    </signal>
     <method name="GetAvatarRequirements">
       <arg direction="out" type="as">
         <tp:docstring>
@@ -132,6 +158,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
       </tp:possible-errors>
+    </method>
+    <method name="RequestAvatars">
+      <arg direction="in" name="contacts" type="au"
+        tp:type="Contact_Handle[]">
+        <tp:docstring>
+          The contacts to retrieve avatars for
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Request avatars for a number of contacts. The AvatarRetrieved signal
+        is emitted for each avatar retrieved. If retrieving an avatar fails,
+        the AvatarRetrieved signal is not emitted.
+      </tp:docstring>
     </method>
     <method name="SetAvatar">
       <arg direction="in" name="avatar" type="ay">
