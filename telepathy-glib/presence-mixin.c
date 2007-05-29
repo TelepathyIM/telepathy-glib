@@ -258,6 +258,23 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
   g_hash_table_destroy (ret);
 }
 
+
+/**
+ * tp_presence_mixin_set_last_activity_time
+ *
+ * Implements D-Bus method SetLastActivityTime
+ * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ */
+static void
+tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *iface,
+                                          guint time,
+                                          DBusGMethodInvocation *context)
+{
+  tp_svc_connection_interface_presence_return_from_set_last_activity_time (
+      context);
+}
+
+
 /**
  * tp_presence_mixin_iface_init:
  * @g_iface: A pointer to the #TpSvcConnectionInterfacePresenceClass in an
@@ -275,5 +292,6 @@ tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 #define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x (klass,\
     tp_presence_mixin_##x)
   IMPLEMENT(get_statuses);
+  IMPLEMENT(set_last_activity_time);
 #undef IMPLEMENT
 }
