@@ -199,30 +199,27 @@ get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
 /**
  * tp_presence_mixin_get_statuses:
  * @obj: An object implementing the presence interface using this mixin
- * @ret: Used to return a GHashTable of string identifiers mapped to a
- *  GValueArray describing the statuses
- * @error: Unused
+ * @context
  *
  * Get the currently available presence statuses for the connection.
  *
  * Returns: %TRUE
  */
-gboolean
-tp_presence_mixin_get_statuses (GObject *obj,
-                                GHashTable **ret,
-                                GError **error)
+static void
+tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
+                                DBusGMethodInvocation *context)
 {
+  GObject *obj = (GObject *) iface;
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  GHashTable *ret;
   GValueArray *status;
   int i;
 
-  g_assert(ret != NULL);
-
   DEBUG ("called.");
 
-  *ret = g_hash_table_new_full (g_str_hash, g_str_equal,
-                                NULL, (GDestroyNotify) g_value_array_free);
+  ret = g_hash_table_new_full (g_str_hash, g_str_equal,
+                               NULL, (GDestroyNotify) g_value_array_free);
 
   for (i=0; mixin_cls->statuses[i].name != NULL; i++)
     {
@@ -257,26 +254,8 @@ tp_presence_mixin_get_statuses (GObject *obj,
           status);
     }
 
-  return TRUE;
-}
-
-static void
-tp_presence_mixin_get_statuses_async (TpSvcConnectionInterfacePresence *iface,
-                                      DBusGMethodInvocation *context) {
-  GHashTable *ret;
-  GError *error = NULL;
-
-  if (tp_presence_mixin_get_statuses (G_OBJECT (iface), &ret, &error))
-    {
-      tp_svc_connection_interface_presence_return_from_get_statuses (context,
-          ret);
-      g_hash_table_destroy (ret);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
+  tp_svc_connection_interface_presence_return_from_get_statuses (context, ret);
+  g_hash_table_destroy (ret);
 }
 
 /**
@@ -294,7 +273,7 @@ tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
     (TpSvcConnectionInterfacePresenceClass *)g_iface;
 
 #define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x (klass,\
-    tp_presence_mixin_##x##_async)
+    tp_presence_mixin_##x)
   IMPLEMENT(get_statuses);
 #undef IMPLEMENT
 }

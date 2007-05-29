@@ -150,9 +150,6 @@ void tp_presence_mixin_class_init (GObjectClass *obj_cls, glong offset,
 void tp_presence_mixin_init (GObject *obj, glong offset);
 void tp_presence_mixin_finalize (GObject *obj);
 
-gboolean tp_presence_mixin_get_statuses (GObject *obj, GHashTable **ret,
-    GError **error);
-
 void tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 
 G_END_DECLS
