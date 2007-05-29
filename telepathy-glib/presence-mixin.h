@@ -45,12 +45,13 @@ struct _TpPresenceStatusOptionalArgumentSpec {
 
 /**
  * TpPresenceStatusSpec
- * @identifier: String identifier of the presence status
+ * @name: String identifier of the presence status
  * @presence_type: A type value, as specified by #TpConnectionPresenceType
  * @self: Indicates if this status may be set on yourself
  * @optional_arguments: An array of #TpPresenceStatusOptionalArgumentSpec
  *  structures representing the optional arguments for this status, terminated
- *  by a NULL name.
+ *  by a NULL name. If there are no optional arguments for a status, this can be
+ *  NULL.
  *
  * Structure representing a presence status.
  *
@@ -59,7 +60,7 @@ struct _TpPresenceStatusOptionalArgumentSpec {
  * version of telepathy-glib.
  */
 struct _TpPresenceStatusSpec {
-    const gchar *identifier;
+    const gchar *name;
     TpConnectionPresenceType presence_type;
     gboolean self;
     const TpPresenceStatusOptionalArgumentSpec *optional_arguments;

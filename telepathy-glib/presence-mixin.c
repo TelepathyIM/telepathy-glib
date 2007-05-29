@@ -100,7 +100,7 @@ tp_presence_mixin_get_offset_quark ()
  * @status_available: A callback to be used to determine if a given presence
  *  status is available. If NULL, all statuses are always considered available.
  * @statuses: An array of #TpPresenceStatusSpec structures representing all
- *  presence statuses supported by the protocol
+ *  presence statuses supported by the protocol, terminated by a NULL name.
  *
  * Initialize the presence mixin. Should be called from the implementation's
  * class_init function like so:
@@ -224,7 +224,7 @@ tp_presence_mixin_get_statuses (GObject *obj,
   *ret = g_hash_table_new_full (g_str_hash, g_str_equal,
                                 NULL, (GDestroyNotify) g_value_array_free);
 
-  for (i=0; mixin_cls->statuses[i].identifier != NULL; i++)
+  for (i=0; mixin_cls->statuses[i].name != NULL; i++)
     {
       if (mixin_cls->status_available && !mixin_cls->status_available(obj, i))
         continue;
@@ -253,7 +253,7 @@ tp_presence_mixin_get_statuses (GObject *obj,
       g_value_set_static_boxed (g_value_array_get_nth (status, 3),
           get_statuses_arguments (mixin_cls->statuses[i].optional_arguments));
 
-      g_hash_table_insert (*ret, (gchar*) mixin_cls->statuses[i].identifier,
+      g_hash_table_insert (ret, (gchar*) mixin_cls->statuses[i].name,
           status);
     }
 
