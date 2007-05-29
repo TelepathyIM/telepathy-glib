@@ -59,6 +59,7 @@ tpginclude_HEADERS = \
     heap.h \
     interfaces.h \
     intset.h \
+    presence-mixin.h \
     properties-mixin.h \
     run.h \
     $(svc_headers) \
@@ -130,6 +131,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     intset.c \
     channel-iface.c \
     channel-factory-iface.c \
+    presence-mixin.c \
     properties-mixin.c \
     run.c \
     signals-marshal.list \

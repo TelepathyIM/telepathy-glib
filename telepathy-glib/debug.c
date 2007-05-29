@@ -91,6 +91,7 @@ static GDebugKey keys[] = {
   { "persist",       TP_DEBUG_PERSIST },
   { "im",            TP_DEBUG_IM },
   { "params",        TP_DEBUG_PARAMS },
+  { "presence",      TP_DEBUG_PRESENCE },
   { 0, },
 };
 

@@ -1034,6 +1034,34 @@ TP_PROPERTIES_MIXIN
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/presence-mixin.h</INCLUDE>
+<FILE>presence-mixin</FILE>
+TpPresenceStatusOptionalArgumentSpec
+TpPresenceStatusSpec
+TpPresenceMixinStatusAvailableFunc
+<TITLE>TpPresenceMixin</TITLE>
+TpPresenceMixin
+TpPresenceMixinClass
+tp_presence_mixin_class_init
+tp_presence_mixin_init
+tp_presence_mixin_finalize
+tp_presence_mixin_get_statuses
+tp_presence_mixin_iface_init
+<SUBSECTION Private>
+TP_PRESENCE_MIXIN_CLASS_OFFSET_QUARK
+TP_PRESENCE_MIXIN_CLASS_OFFSET
+TP_PRESENCE_MIXIN_OFFSET_QUARK
+TP_PRESENCE_MIXIN_OFFSET
+tp_presence_mixin_class_get_offset_quark
+tp_presence_mixin_get_offset_quark
+TpPresenceMixinPrivate
+TpPresenceMixinClassPrivate
+<SUBSECTION Standard>
+TP_PRESENCE_MIXIN_CLASS
+TP_PRESENCE_MIXIN
+</SECTION>
+
+<SECTION>
 <FILE>debug</FILE>
 <TITLE>debug</TITLE>
 <INCLUDE>telepathy-glib/debug.h</INCLUDE>

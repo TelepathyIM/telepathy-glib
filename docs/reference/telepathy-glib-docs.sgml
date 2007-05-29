@@ -27,6 +27,7 @@
   </chapter>
   <chapter id="ch-mixins">
     <title>Implementation mixins</title>
+    <xi:include href="xml/presence-mixin.xml"/>
     <xi:include href="xml/properties-mixin.xml"/>
     <xi:include href="xml/group-mixin.xml"/>
     <xi:include href="xml/text-mixin.xml"/>
