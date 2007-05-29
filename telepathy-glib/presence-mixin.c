@@ -22,10 +22,10 @@
  * SECTION:presence-mixin
  * @title: TpPresenceMixin
  * @short_description: a mixin implementation of the Presence connection
- * interface
+ *  interface
  * @see_also: #TpSvcConnectionInterfacePresence
  *
- * This mixin can be added to a connection GObject class to implement the
+ * This mixin can be added to a #TpBaseConnection subclass to implement the
  * presence interface in a general way. It does not support protocols where it
  * is possible to set multiple statuses on yourself at once, however. Hence all
  * presence statuses will have the exclusive flag set.
@@ -47,6 +47,7 @@
 #include <dbus/dbus-glib.h>
 #include <string.h>
 
+#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 
@@ -190,8 +191,11 @@ tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
                               GHashTable *parms,
                               DBusGMethodInvocation *context)
 {
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
     "Only one status is possible at a time with this protocol!" };
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   dbus_g_method_return_error (context, &error);
 }
@@ -223,7 +227,8 @@ static void
 tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
                                 DBusGMethodInvocation *context)
 {
-  GObject *obj = (GObject *) iface;
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  GObject *obj = (GObject *) conn;
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   GHashTable *ret;
@@ -231,6 +236,8 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
   int i;
 
   DEBUG ("called.");
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   ret = g_hash_table_new_full (g_str_hash, g_str_equal,
                                NULL, (GDestroyNotify) g_value_array_free);
@@ -284,6 +291,10 @@ tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *ifac
                                           guint time,
                                           DBusGMethodInvocation *context)
 {
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
   tp_svc_connection_interface_presence_return_from_set_last_activity_time (
       context);
 }
