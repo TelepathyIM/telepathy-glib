@@ -183,6 +183,102 @@ tp_presence_mixin_finalize (GObject *obj)
   g_slice_free (TpPresenceMixinPrivate, mixin->priv);
 }
 
+static GHashTable *
+get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
+{
+  GHashTable *arguments = g_hash_table_new (g_str_hash, g_str_equal);
+  int i;
+
+  for (i=0; specs != NULL && specs[i].name != NULL; i++)
+    g_hash_table_insert (arguments, (gchar *) specs[i].name,
+        (gchar *) specs[i].dtype);
+
+  return arguments;
+}
+
+/**
+ * tp_presence_mixin_get_statuses:
+ * @obj: An object implementing the presence interface using this mixin
+ * @ret: Used to return a GHashTable of string identifiers mapped to a
+ *  GValueArray describing the statuses
+ * @error: Unused
+ *
+ * Get the currently available presence statuses for the connection.
+ *
+ * Returns: %TRUE
+ */
+gboolean
+tp_presence_mixin_get_statuses (GObject *obj,
+                                GHashTable **ret,
+                                GError **error)
+{
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  GValueArray *status;
+  int i;
+
+  g_assert(ret != NULL);
+
+  DEBUG ("called.");
+
+  *ret = g_hash_table_new_full (g_str_hash, g_str_equal,
+                                NULL, (GDestroyNotify) g_value_array_free);
+
+  for (i=0; mixin_cls->statuses[i].identifier != NULL; i++)
+    {
+      if (mixin_cls->status_available && !mixin_cls->status_available(obj, i))
+        continue;
+
+      status = g_value_array_new (5);
+
+      g_value_array_append (status, NULL);
+      g_value_init (g_value_array_get_nth (status, 0), G_TYPE_UINT);
+      g_value_set_uint (g_value_array_get_nth (status, 0),
+          mixin_cls->statuses[i].presence_type);
+
+      g_value_array_append (status, NULL);
+      g_value_init (g_value_array_get_nth (status, 1), G_TYPE_BOOLEAN);
+      g_value_set_boolean (g_value_array_get_nth (status, 1),
+          mixin_cls->statuses[i].self);
+
+      /* everything is exclusive */
+      g_value_array_append (status, NULL);
+      g_value_init (g_value_array_get_nth (status, 2), G_TYPE_BOOLEAN);
+      g_value_set_boolean (g_value_array_get_nth (status, 2),
+          TRUE);
+
+      g_value_array_append (status, NULL);
+      g_value_init (g_value_array_get_nth (status, 3),
+          DBUS_TYPE_G_STRING_STRING_HASHTABLE);
+      g_value_set_static_boxed (g_value_array_get_nth (status, 3),
+          get_statuses_arguments (mixin_cls->statuses[i].optional_arguments));
+
+      g_hash_table_insert (*ret, (gchar*) mixin_cls->statuses[i].identifier,
+          status);
+    }
+
+  return TRUE;
+}
+
+static void
+tp_presence_mixin_get_statuses_async (TpSvcConnectionInterfacePresence *iface,
+                                      DBusGMethodInvocation *context) {
+  GHashTable *ret;
+  GError *error = NULL;
+
+  if (tp_presence_mixin_get_statuses (G_OBJECT (iface), &ret, &error))
+    {
+      tp_svc_connection_interface_presence_return_from_get_statuses (context,
+          ret);
+      g_hash_table_destroy (ret);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+    }
+}
+
 /**
  * tp_presence_mixin_iface_init:
  * @g_iface: A pointer to the #TpSvcConnectionInterfacePresenceClass in an
@@ -199,5 +295,6 @@ tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 
 #define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x (klass,\
     tp_presence_mixin_##x##_async)
+  IMPLEMENT(get_statuses);
 #undef IMPLEMENT
 }
