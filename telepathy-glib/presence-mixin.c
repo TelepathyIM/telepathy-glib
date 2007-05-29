@@ -183,6 +183,20 @@ tp_presence_mixin_finalize (GObject *obj)
   g_slice_free (TpPresenceMixinPrivate, mixin->priv);
 }
 
+
+static void
+tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
+                              const gchar *status,
+                              GHashTable *parms,
+                              DBusGMethodInvocation *context)
+{
+  GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+    "Only one status is possible at a time with this protocol!" };
+
+  dbus_g_method_return_error (context, &error);
+}
+
+
 static GHashTable *
 get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
 {
@@ -291,6 +305,7 @@ tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 
 #define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x (klass,\
     tp_presence_mixin_##x)
+  IMPLEMENT(add_status);
   IMPLEMENT(get_statuses);
   IMPLEMENT(set_last_activity_time);
 #undef IMPLEMENT
