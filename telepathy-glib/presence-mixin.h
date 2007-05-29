@@ -94,7 +94,6 @@ typedef struct _TpPresenceMixinPrivate TpPresenceMixinPrivate;
  *  tp_presence_mixin_class_init()
  * @statuses: The presence statuses array that was passed to
  *  tp_presence_mixin_class_init()
- * @priv: Pointer to opaque private data
  *
  * Structure to be included in the class structure of objects that
  * use this mixin. Initialize it with tp_presence_mixin_class_init().

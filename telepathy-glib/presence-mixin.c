@@ -198,12 +198,12 @@ get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
 
 /**
  * tp_presence_mixin_get_statuses:
- * @obj: An object implementing the presence interface using this mixin
- * @context
  *
- * Get the currently available presence statuses for the connection.
+ * Implements D-Bus method GetStatuses
+ * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
  *
- * Returns: %TRUE
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
  */
 static void
 tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
