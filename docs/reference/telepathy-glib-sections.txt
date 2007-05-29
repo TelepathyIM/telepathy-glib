@@ -1045,7 +1045,6 @@ TpPresenceMixinClass
 tp_presence_mixin_class_init
 tp_presence_mixin_init
 tp_presence_mixin_finalize
-tp_presence_mixin_get_statuses
 tp_presence_mixin_iface_init
 <SUBSECTION Private>
 TP_PRESENCE_MIXIN_CLASS_OFFSET_QUARK
