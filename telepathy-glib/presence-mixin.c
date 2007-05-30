@@ -141,6 +141,9 @@ tp_presence_mixin_get_offset_quark ()
  * structure
  * @status_available: A callback to be used to determine if a given presence
  *  status is available. If NULL, all statuses are always considered available.
+ * @get_contact_statuses: A callback used to get the current presence status for
+ *  contacts. This is used in implementations of various D-Bus methods and hence
+ *  must be provided.
  * @statuses: An array of #TpPresenceStatusSpec structures representing all
  *  presence statuses supported by the protocol, terminated by a NULL name.
  *
@@ -158,10 +161,12 @@ void
 tp_presence_mixin_class_init (GObjectClass *obj_cls,
                               glong offset,
                               TpPresenceMixinStatusAvailableFunc status_available,
+                              TpPresenceMixinGetContactStatusesFunc get_contact_statuses,
                               const TpPresenceStatusSpec *statuses)
 {
   TpPresenceMixinClass *mixin_cls;
 
+  g_assert (get_contact_statuses != NULL);
   g_assert (statuses != NULL);
 
   g_assert (G_IS_OBJECT_CLASS (obj_cls));
@@ -173,6 +178,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
   mixin_cls = TP_PRESENCE_MIXIN_CLASS (obj_cls);
 
   mixin_cls->status_available = status_available;
+  mixin_cls->get_contact_statuses = get_contact_statuses;
   mixin_cls->statuses = statuses;
 }
 
@@ -360,6 +366,47 @@ tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
 }
 
 
+/**
+ * tp_presence_mixin_get_presence:
+ *
+ * Implements D-Bus method GetPresence
+ * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
+ */
+static void
+tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
+                                const GArray *contacts,
+                                DBusGMethodInvocation *context)
+{
+  GObject *obj = (GObject *) iface;
+  TpBaseConnection *conn = TP_BASE_CONNECTION (obj);
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  GHashTable *contact_statuses;
+  GHashTable *presence_hash;
+  GError *error = NULL;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, &error);
+
+  if (!contact_statuses)
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free(error);
+      return;
+    }
+
+  presence_hash = construct_presence_hash (mixin_cls->statuses,
+      contact_statuses);
+  tp_svc_connection_interface_presence_return_from_get_statuses (context,
+      presence_hash);
+  g_hash_table_destroy (presence_hash);
+}
+
+
 static GHashTable *
 get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
 {
@@ -460,6 +507,42 @@ tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *ifac
 }
 
 
+static void
+tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
+                                    const GArray *contacts,
+                                    DBusGMethodInvocation *context)
+{
+  GObject *obj = (GObject *) iface;
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  GHashTable *contact_statuses;
+  GError *error = NULL;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  if (!contacts->len)
+    {
+      tp_svc_connection_interface_presence_return_from_request_presence (context);
+      return;
+    }
+
+  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, &error);
+
+  if (!contact_statuses)
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free(error);
+      return;
+    }
+
+  tp_presence_mixin_emit_presence_update (obj, contact_statuses);
+  tp_svc_connection_interface_presence_return_from_request_presence (context);
+
+  g_hash_table_destroy (contact_statuses);
+}
+
+
 /**
  * tp_presence_mixin_iface_init:
  * @g_iface: A pointer to the #TpSvcConnectionInterfacePresenceClass in an
@@ -477,7 +560,9 @@ tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 #define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x (klass,\
     tp_presence_mixin_##x)
   IMPLEMENT(add_status);
+  IMPLEMENT(get_presence);
   IMPLEMENT(get_statuses);
+  IMPLEMENT(request_presence);
   IMPLEMENT(set_last_activity_time);
 #undef IMPLEMENT
 }
