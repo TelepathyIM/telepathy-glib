@@ -95,7 +95,7 @@ void tp_presence_status_free(TpPresenceStatus *status) {
   if (!status)
     return;
 
-  g_hash_table_destroy(status->optional_arguments);
+  g_hash_table_unref(status->optional_arguments);
 
   g_slice_free(TpPresenceStatus, status);
 }
@@ -226,6 +226,124 @@ tp_presence_mixin_finalize (GObject *obj)
 }
 
 
+struct _i_absolutely_love_g_hash_table_foreach {
+    const TpPresenceStatusSpec *supported_statuses;
+    GHashTable *contact_statuses;
+    GHashTable *presence_hash;
+};
+
+
+static void
+construct_presence_hash_foreach (gpointer key,
+                                 gpointer value,
+                                 gpointer user_data)
+{
+  TpHandle handle = GPOINTER_TO_UINT (key);
+  TpPresenceStatus *status = (TpPresenceStatus *) value;
+  struct _i_absolutely_love_g_hash_table_foreach *data =
+    (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
+  GHashTable *parameters;
+  GHashTable *contact_status;
+  GValueArray *vals;
+
+  contact_status = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) g_hash_table_unref);
+
+  parameters = status->optional_arguments;
+
+  if (parameters)
+    g_hash_table_ref (parameters);
+  else
+    parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+
+  g_hash_table_insert (contact_status,
+      (gpointer) data->supported_statuses[status->index].name, parameters);
+
+  vals = g_value_array_new (2);
+
+  /* last-activity sucks and will probably be removed soon */
+  g_value_array_append (vals, NULL);
+  g_value_init (g_value_array_get_nth (vals, 0), G_TYPE_UINT);
+  g_value_set_uint (g_value_array_get_nth (vals, 0), 0);
+
+  g_value_array_append (vals, NULL);
+  g_value_init (g_value_array_get_nth (vals, 1),
+      dbus_g_type_get_map ("GHashTable", G_TYPE_STRING,
+        dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)));
+  g_value_take_boxed (g_value_array_get_nth (vals, 1), contact_status);
+
+  g_hash_table_insert (data->presence_hash, GUINT_TO_POINTER (handle), vals);
+}
+
+
+static GHashTable *
+construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
+                         GHashTable *contact_statuses)
+{
+  GHashTable *presence_hash;
+
+  presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) g_value_array_free);
+
+  struct _i_absolutely_love_g_hash_table_foreach data = { supported_statuses,
+    contact_statuses, presence_hash };
+
+  g_hash_table_foreach (contact_statuses, construct_presence_hash_foreach,
+      &data);
+
+  return presence_hash;
+}
+
+
+/**
+ * tp_presence_mixin_emit_presence_update:
+ * @obj: A connection object with this mixin
+ * @contact_presences: A mapping of contact handles to #TpPresenceStatus
+ *  structures with the presence data to emit
+ *
+ * Emit the PresenceUpdate signal for multiple contacts. For emitting
+ * PresenceUpdate for a single contact, there is a convenience wrapper called
+ * #tp_presence_mixin_emit_one_presence_update.
+ */
+void
+tp_presence_mixin_emit_presence_update (GObject *obj, GHashTable *contact_statuses)
+{
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  GHashTable *presence_hash;
+
+  presence_hash = construct_presence_hash (mixin_cls->statuses,
+      contact_statuses);
+  tp_svc_connection_interface_presence_emit_presence_update (obj,
+      presence_hash);
+
+  g_hash_table_destroy (presence_hash);
+}
+
+
+/**
+ * tp_presence_mixin_emit_one_presence_update:
+ * @obj: A connection object with this mixin
+ * @handle: The handle of the contact to emit the signal for
+ * @status: The new status to emit
+ *
+ * Emit the PresenceUpdate signal for a single contact. This method is just a
+ * convenience wrapper around #tp_presence_mixin_emit_presence_update.
+ */
+void
+tp_presence_mixin_emit_one_presence_update (GObject *obj, TpHandle handle, const TpPresenceStatus *status)
+{
+  GHashTable *contact_statuses;
+
+  contact_statuses = g_hash_table_new (NULL, NULL);
+  g_hash_table_insert (contact_statuses, GUINT_TO_POINTER (handle),
+      (gpointer) status);
+  tp_presence_mixin_emit_presence_update (obj, contact_statuses);
+
+  g_hash_table_destroy (contact_statuses);
+}
+
+
 static void
 tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
                               const gchar *status,
@@ -254,6 +372,7 @@ get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
 
   return arguments;
 }
+
 
 /**
  * tp_presence_mixin_get_statuses:

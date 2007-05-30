@@ -22,6 +22,7 @@
 #define __TP_PRESENCE_MIXIN_H__
 
 #include <telepathy-glib/enums.h>
+#include <telepathy-glib/handle.h>
 #include <telepathy-glib/svc-connection.h>
 #include "util.h"
 
@@ -176,6 +177,9 @@ void tp_presence_mixin_class_init (GObjectClass *obj_cls, glong offset,
 
 void tp_presence_mixin_init (GObject *obj, glong offset);
 void tp_presence_mixin_finalize (GObject *obj);
+
+void tp_presence_mixin_emit_presence_update (GObject *obj, GHashTable *contact_presences);
+void tp_presence_mixin_emit_one_presence_update (GObject *obj, TpHandle handle, const TpPresenceStatus *status);
 
 void tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 

@@ -1048,6 +1048,8 @@ TpPresenceMixinClass
 tp_presence_mixin_class_init
 tp_presence_mixin_init
 tp_presence_mixin_finalize
+tp_presence_mixin_emit_presence_update
+tp_presence_mixin_emit_one_presence_update
 tp_presence_mixin_iface_init
 <SUBSECTION Private>
 TP_PRESENCE_MIXIN_CLASS_OFFSET_QUARK
