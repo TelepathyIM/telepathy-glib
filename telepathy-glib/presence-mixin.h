@@ -36,7 +36,7 @@ typedef struct _TpPresenceStatusSpec TpPresenceStatusSpec;
  * @name: Name of the argument as passed over D-Bus
  * @dtype: D-Bus type signature of the argument
  *
- * Structure representing an optional argument for a presence status.
+ * Structure specifying a supported optional argument for a presence status.
  */
 struct _TpPresenceStatusOptionalArgumentSpec {
     const gchar *name;
@@ -53,7 +53,7 @@ struct _TpPresenceStatusOptionalArgumentSpec {
  *  by a NULL name. If there are no optional arguments for a status, this can be
  *  NULL.
  *
- * Structure representing a presence status.
+ * Structure specifying a supported presence status.
  *
  * In addition to the fields documented here, there are two gpointer fields
  * which must currently be %NULL. A meaning may be defined for these in a future
@@ -70,10 +70,38 @@ struct _TpPresenceStatusSpec {
     gpointer _future2;
 };
 
+typedef struct _TpPresenceStatus TpPresenceStatus;
+
+/**
+ * TpPresenceStatus:
+ * @index: Index of the presence status in the provided supported presence
+ *  statuses array
+ * @optional_arguments: A mapping of string identifiers to GValues of the
+ *  optional status arguments
+ *
+ * Structure representing a presence status.
+ *
+ * In addition to the fields documented here, there are two gpointer fields
+ * which must currently be %NULL. A meaning may be defined for these in a future
+ * version of telepathy-glib.
+ */
+struct _TpPresenceStatus {
+    guint index;
+    GHashTable *optional_arguments;
+
+    /*<private>*/
+    gpointer _future1;
+    gpointer _future2;
+};
+
+TpPresenceStatus *tp_presence_status_new (guint index, GHashTable *optional_arguments);
+void tp_presence_status_free (TpPresenceStatus *status);
+
 /**
  * TpPresenceMixinStatusAvailableFunc:
  * @obj: An object implementing the presence interface with this mixin
- * @nth_status: The index of the status in the provided statuses array
+ * @index: The index of the presence status in the provided supported presence
+ *  statuses array
  *
  * Signature of the callback used to determine if a given status is currently
  * available.
@@ -81,7 +109,7 @@ struct _TpPresenceStatusSpec {
  * Returns: %TRUE if the status is available, %FALSE if not.
  */
 typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
-    guint nth_status);
+    guint index);
 
 typedef struct _TpPresenceMixinClass TpPresenceMixinClass;
 typedef struct _TpPresenceMixinClassPrivate TpPresenceMixinClassPrivate;

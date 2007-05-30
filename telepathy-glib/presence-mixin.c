@@ -60,6 +60,47 @@ struct _TpPresenceMixinPrivate
   /* ... */
 };
 
+
+/**
+ * tp_presence_status_new
+ * @index: Index of the presence status in the provided supported presence
+ *  statuses array
+ * @optional_arguments: Optional arguments for the presence statuses. Can be
+ *  NULL if there are no optional arguments. Ownership of the hash table is
+ *  transferred to the presence status object and hence the caller shouldn't
+ *  free it by itself.
+ *
+ * Construct a presence status structure. You should free the returned
+ * structure with #tp_presence_status_free.
+ *
+ * Returns: A pointer to the newly allocated presence status structure.
+ */
+TpPresenceStatus *tp_presence_status_new(guint index, GHashTable *optional_arguments) {
+  TpPresenceStatus *status = g_slice_new(TpPresenceStatus);
+
+  status->index = index;
+  status->optional_arguments = optional_arguments;
+
+  return status;
+}
+
+
+/**
+ * tp_presence_status_free
+ * @status: A pointer to the presence status structure to free.
+ *
+ * Deallocate all resources associated with a presence status structure.
+ */
+void tp_presence_status_free(TpPresenceStatus *status) {
+  if (!status)
+    return;
+
+  g_hash_table_destroy(status->optional_arguments);
+
+  g_slice_free(TpPresenceStatus, status);
+}
+
+
 /**
  * tp_presence_mixin_class_get_offset_quark:
  *

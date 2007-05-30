@@ -1039,6 +1039,9 @@ TP_PROPERTIES_MIXIN
 TpPresenceStatusOptionalArgumentSpec
 TpPresenceStatusSpec
 TpPresenceMixinStatusAvailableFunc
+TpPresenceStatus
+tp_presence_status_new
+tp_presence_status_free
 <TITLE>TpPresenceMixin</TITLE>
 TpPresenceMixin
 TpPresenceMixinClass
