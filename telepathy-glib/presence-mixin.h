@@ -38,10 +38,18 @@ typedef struct _TpPresenceStatusSpec TpPresenceStatusSpec;
  * @dtype: D-Bus type signature of the argument
  *
  * Structure specifying a supported optional argument for a presence status.
+ *
+ * In addition to the fields documented here, there are two gpointer fields
+ * which must currently be %NULL. A meaning may be defined for these in a future
+ * version of telepathy-glib.
  */
 struct _TpPresenceStatusOptionalArgumentSpec {
     const gchar *name;
     const gchar *dtype;
+
+    /*<private>*/
+    gpointer _future1;
+    gpointer _future2;
 };
 
 /**
