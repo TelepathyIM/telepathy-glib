@@ -450,6 +450,8 @@ tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
   GHashTable *presence_hash;
   GError *error = NULL;
 
+  DEBUG ("called.");
+
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, &error);
@@ -463,7 +465,7 @@ tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
 
   presence_hash = construct_presence_hash (mixin_cls->statuses,
       contact_statuses);
-  tp_svc_connection_interface_presence_return_from_get_statuses (context,
+  tp_svc_connection_interface_presence_return_from_get_presence (context,
       presence_hash);
   g_hash_table_destroy (presence_hash);
 }
