@@ -182,6 +182,10 @@ struct _TpPresenceMixinClass {
 
     /*<private>*/
     TpPresenceMixinClassPrivate *priv;
+    gpointer _future1;
+    gpointer _future2;
+    gpointer _future3;
+    gpointer _future4;
 };
 
 /**
