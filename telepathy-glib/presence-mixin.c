@@ -30,6 +30,12 @@
  * is possible to set multiple statuses on yourself at once, however. Hence all
  * presence statuses will have the exclusive flag set.
  *
+ * There are plans to deprecate the notion of last activity time in the D-Bus
+ * presence interface, so #TpPresenceStatus doesn't include it at all.
+ * Consequently, the last activity time field in presence data presented over
+ * D-Bus will always be zero and the SetLastActivityTime method doesn't actually
+ * do anything.
+ *
  * To use the presence mixin, include a #TpPresenceMixinClass somewhere in your
  * class structure and a #TpPresenceMixin somewhere in your instance structure,
  * and call tp_presence_mixin_class_init() from your class_init function,
