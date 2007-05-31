@@ -40,6 +40,14 @@
  * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
  * tp_group_mixin_iface_init)</literal> in the fourth argument to
  * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
+ *
+ * You can also implement the group interface by forwarding all group
+ * operations to the group mixin of an associated object (mainly useful
+ * for Tubes channels). To do this, call tp_external_group_mixin_class_init()
+ * from your class_init function, and call
+ * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
+ * tp_external_group_mixin_iface_init)</literal> in the fourth argument to
+ * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
  */
 
 #include <telepathy-glib/group-mixin.h>
@@ -1449,6 +1457,200 @@ tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 
 #define IMPLEMENT(x) tp_svc_channel_interface_group_implement_##x (klass,\
     tp_group_mixin_##x##_async)
+  IMPLEMENT(add_members);
+  IMPLEMENT(get_all_members);
+  IMPLEMENT(get_group_flags);
+  IMPLEMENT(get_handle_owners);
+  IMPLEMENT(get_local_pending_members);
+  IMPLEMENT(get_local_pending_members_with_info);
+  IMPLEMENT(get_members);
+  IMPLEMENT(get_remote_pending_members);
+  IMPLEMENT(get_self_handle);
+  IMPLEMENT(remove_members);
+  IMPLEMENT(remove_members_with_reason);
+#undef IMPLEMENT
+}
+
+#define TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET_QUARK \
+    (_external_group_mixin_get_obj_offset_quark ())
+#define TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET(o) \
+    (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_TYPE (o),\
+        TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET_QUARK)))
+#define TP_EXTERNAL_GROUP_MIXIN_OBJ(o) \
+    ((GObject *) tp_mixin_offset_cast (o, \
+      TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET (o)))
+
+static GQuark
+_external_group_mixin_get_obj_offset_quark (void)
+{
+  static GQuark offset_quark = 0;
+  if (!offset_quark)
+    offset_quark = g_quark_from_static_string
+        ("TpExternalGroupMixinClassOffsetQuark");
+  return offset_quark;
+}
+
+/**
+ * tp_external_group_mixin_class_init:
+ * @obj_cls: An object class
+ * @offset: The offset of a pointer to a GObject with a group mixin
+ *    within the instance structure of this class
+ *
+ * Fill in the qdata needed to implement the group interface using
+ * the group mixin of another object. This function should usually be called
+ * in the class_init function.
+ */
+void
+tp_external_group_mixin_class_init (GObjectClass *obj_cls,
+                                    glong offset)
+{
+  g_assert (G_IS_OBJECT_CLASS (obj_cls));
+  g_type_set_qdata (G_OBJECT_CLASS_TYPE (obj_cls),
+      TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET_QUARK,
+      GINT_TO_POINTER (offset));
+}
+
+#define EXTERNAL_OR_DIE(var) \
+    GObject *var = TP_EXTERNAL_GROUP_MIXIN_OBJ ((GObject *)obj); \
+    \
+    if (var == NULL) \
+      { \
+        GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "I'm sure I " \
+                      "had a group object around here somewhere?" };\
+        \
+        dbus_g_method_return_error (context, &na); \
+        return; \
+      } \
+
+static void
+tp_external_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
+                                           const GArray *contacts,
+                                           const gchar *message,
+                                           DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_add_members_async ((TpSvcChannelInterfaceGroup *)group,
+      contacts, message, context);
+}
+
+static void
+tp_external_group_mixin_get_self_handle_async (TpSvcChannelInterfaceGroup *obj,
+                                               DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_get_self_handle_async ((TpSvcChannelInterfaceGroup *)group,
+      context);
+}
+
+static void
+tp_external_group_mixin_get_group_flags_async (TpSvcChannelInterfaceGroup *obj,
+                                               DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_get_group_flags_async ((TpSvcChannelInterfaceGroup *)group,
+      context);
+}
+
+static void
+tp_external_group_mixin_get_members_async (TpSvcChannelInterfaceGroup *obj,
+                                               DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_get_members_async ((TpSvcChannelInterfaceGroup *)group,
+      context);
+}
+
+static void
+tp_external_group_mixin_get_local_pending_members_async
+    (TpSvcChannelInterfaceGroup *obj, DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_get_local_pending_members_async
+      ((TpSvcChannelInterfaceGroup *)group, context);
+}
+
+static void
+tp_external_group_mixin_get_local_pending_members_with_info_async
+    (TpSvcChannelInterfaceGroup *obj, DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_get_local_pending_members_with_info_async
+      ((TpSvcChannelInterfaceGroup *)group, context);
+}
+
+static void
+tp_external_group_mixin_get_remote_pending_members_async
+    (TpSvcChannelInterfaceGroup *obj, DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_get_remote_pending_members_async
+      ((TpSvcChannelInterfaceGroup *)group, context);
+}
+
+static void
+tp_external_group_mixin_get_all_members_async (TpSvcChannelInterfaceGroup *obj,
+                                               DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_get_all_members_async ((TpSvcChannelInterfaceGroup *)group,
+      context);
+}
+
+static void
+tp_external_group_mixin_get_handle_owners_async
+    (TpSvcChannelInterfaceGroup *obj,
+     const GArray *handles,
+     DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_get_handle_owners_async ((TpSvcChannelInterfaceGroup *)group,
+      handles, context);
+}
+
+static void
+tp_external_group_mixin_remove_members_async (TpSvcChannelInterfaceGroup *obj,
+                                              const GArray *contacts,
+                                              const gchar *message,
+                                              DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_remove_members_with_reason_async
+      ((TpSvcChannelInterfaceGroup *)group, contacts, message,
+       TP_CHANNEL_GROUP_CHANGE_REASON_NONE, context);
+}
+
+
+static void
+tp_external_group_mixin_remove_members_with_reason_async
+    (TpSvcChannelInterfaceGroup *obj,
+     const GArray *contacts,
+     const gchar *message,
+     guint reason,
+     DBusGMethodInvocation *context)
+{
+  EXTERNAL_OR_DIE (group)
+  tp_group_mixin_remove_members_with_reason_async
+      ((TpSvcChannelInterfaceGroup *)group, contacts, message, reason,
+       context);
+}
+/**
+ * tp_external_group_mixin_iface_init:
+ * @g_iface: A #TpSvcChannelInterfaceGroupClass
+ * @iface_data: Unused
+ *
+ * Fill in the vtable entries needed to implement the group interface using
+ * the group mixin of another object. This function should usually be called
+ * via G_IMPLEMENT_INTERFACE.
+ */
+void
+tp_external_group_mixin_iface_init (gpointer g_iface,
+                                    gpointer iface_data)
+{
+  TpSvcChannelInterfaceGroupClass *klass =
+    (TpSvcChannelInterfaceGroupClass *)g_iface;
+
+#define IMPLEMENT(x) tp_svc_channel_interface_group_implement_##x (klass,\
+    tp_external_group_mixin_##x##_async)
   IMPLEMENT(add_members);
   IMPLEMENT(get_all_members);
   IMPLEMENT(get_group_flags);

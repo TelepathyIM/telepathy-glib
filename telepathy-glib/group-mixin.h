@@ -209,6 +209,10 @@ void tp_group_mixin_add_handle_owner (GObject *obj,
 
 void tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 
+void tp_external_group_mixin_class_init (GObjectClass *obj_cls, glong offset);
+void tp_external_group_mixin_iface_init (gpointer g_iface,
+    gpointer iface_data);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_GROUP_MIXIN_H__ */
