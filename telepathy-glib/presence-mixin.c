@@ -350,6 +350,15 @@ tp_presence_mixin_emit_one_presence_update (GObject *obj, TpHandle handle, const
 }
 
 
+/**
+ * tp_presence_mixin_add_status:
+ *
+ * Implements D-Bus method AddStatus
+ * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
+ */
 static void
 tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
                               const gchar *status,
@@ -507,6 +516,12 @@ tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *ifac
 }
 
 
+/**
+ * tp_presence_mixin_request_presence
+ *
+ * Implements D-Bus method RequestPresence
+ * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ */
 static void
 tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
                                     const GArray *contacts,
