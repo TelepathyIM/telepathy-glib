@@ -47,12 +47,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
   <interface name="org.freedesktop.Telepathy.Channel.Interface.Hold">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
     <method name="GetHoldState">
-      <arg direction="in" name="member" type="u">
+      <arg direction="in" name="member" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The contact handle for a member of the channel
         </tp:docstring>
       </arg>
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Channel_Hold_State">
         <tp:docstring>
           The member's current hold state as one of the values of
           ChannelHoldState
@@ -67,12 +67,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:possible-errors>
     </method>
     <signal name="HoldStateChanged">
-      <arg name="member" type="u">
+      <arg name="member" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The integer handle of a member of the channel
         </tp:docstring>
       </arg>
-      <arg name="state" type="u">
+      <arg name="state" type="u" tp:type="Channel_Hold_State">
         <tp:docstring>
           An integer representing the new hold state
         </tp:docstring>
@@ -86,7 +86,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </signal>
     <method name="RequestHold">
-      <arg direction="in" name="member" type="u">
+      <arg direction="in" name="member" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The contact handle for a member of the channel
         </tp:docstring>

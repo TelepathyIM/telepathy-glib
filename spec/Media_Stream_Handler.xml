@@ -49,7 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
     <method name="Error">
-      <arg direction="in" name="errno" type="u">
+      <arg direction="in" name="errno" type="u" tp:type="Media_Stream_Error">
         <tp:docstring>
           ID of error, from the MediaStreamError enumeration
         </tp:docstring>
@@ -219,7 +219,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <signal name="SetStreamSending">
-      <arg name="playing" type="b"/>
+      <arg name="sending" type="b"/>
       <tp:docstring>
         Signal emitted when the connection manager wishes to set whether or not
         the stream sends to the remote end.
@@ -243,7 +243,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <method name="StreamState">
-      <arg direction="in" name="state" type="u"/>
+      <arg direction="in" name="state" type="u" tp:type="Media_Stream_State"/>
       <tp:docstring>
         Informs the connection manager of the stream's current state, as
         as specified in Channel.Type.StreamedMedia::ListStreams.

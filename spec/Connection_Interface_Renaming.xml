@@ -21,12 +21,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Renaming">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
     <signal name="Renamed">
-      <arg name="original" type="u">
+      <arg name="original" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The handle of the original identifier
         </tp:docstring>
       </arg>
-      <arg name="new" type="u">
+      <arg name="new" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The handle of the new identifier
         </tp:docstring>

@@ -53,7 +53,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:flag>
     </tp:flags>
     <method name="GetAliasFlags">
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Connection_Alias_Flags">
         <tp:docstring>
           An integer with a bitwise OR of flags from ConnectionAliasFlags
         </tp:docstring>
@@ -67,7 +67,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="RequestAliases">
-      <arg direction="in" name="contacts" type="au">
+      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           An array of handles representing contacts
         </tp:docstring>

@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Connection.Interface.ContactInfo">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
     <signal name="GotContactInfo">
-      <arg name="contact" type="u">
+      <arg name="contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer handle of the contact ID on the server
         </tp:docstring>
@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <method name="RequestContactInfo">
-      <arg direction="in" name="contact" type="u">
+      <arg direction="in" name="contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer handle for the contact to request info for
         </tp:docstring>

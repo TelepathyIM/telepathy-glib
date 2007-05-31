@@ -41,7 +41,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
     <method name="GetInterfaces">
-      <arg direction="out" type="as">
+      <arg direction="out" type="as" tp:type="Interface[]">
         <tp:docstring>
           An array of D-Bus interface names
         </tp:docstring>
@@ -80,7 +80,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetStatus">
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Connection_Status">
         <tp:docstring>
           An integer representing the current status
         </tp:docstring>
@@ -90,12 +90,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
     <method name="HoldHandles">
-      <arg direction="in" name="handle_type" type="u">
+      <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer handle type (as defined in HandleType)
         </tp:docstring>
       </arg>
-      <arg direction="in" name="handles" type="au">
+      <arg direction="in" name="handles" type="au" tp:type="Handle[]">
         <tp:docstring>
           A array of integer handles to hold
         </tp:docstring>
@@ -128,12 +128,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="InspectHandles">
-      <arg direction="in" name="handle_type" type="u">
+      <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer handle type (as defined in HandleType)
         </tp:docstring>
       </arg>
-      <arg direction="in" name="handles" type="au">
+      <arg direction="in" name="handles" type="au" tp:type="Handle[]">
         <tp:docstring>
           An array of integer handles of this type
         </tp:docstring>
@@ -182,17 +182,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           A D-Bus object path for the channel object on this service
         </tp:docstring>
       </arg>
-      <arg name="channel_type" type="s">
+      <arg name="channel_type" type="s" tp:type="Interface">
         <tp:docstring>
           A D-Bus interface name representing the channel type
         </tp:docstring>
       </arg>
-      <arg name="handle_type" type="u">
+      <arg name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer representing the type of handle this channel communicates with, which is zero if no handle is specified
         </tp:docstring>
       </arg>
-      <arg name="handle" type="u">
+      <arg name="handle" type="u" tp:type="Handle">
         <tp:docstring>
           A handle indicating the specific contact, room or list this channel communicates with, or zero if it is an anonymous channel
         </tp:docstring>
@@ -210,12 +210,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <method name="ReleaseHandles">
-      <arg direction="in" name="handle_type" type="u">
+      <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer handle type (as defined in RequestHandle)
         </tp:docstring>
       </arg>
-      <arg direction="in" name="handles" type="au">
+      <arg direction="in" name="handles" type="au" tp:type="Handle[]">
         <tp:docstring>
           An array of integer handles being held by the client
         </tp:docstring>
@@ -240,17 +240,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="RequestChannel">
-      <arg direction="in" name="type" type="s">
+      <arg direction="in" name="type" type="s" tp:type="Interface">
         <tp:docstring>
           A D-Bus interface name representing base channel type
         </tp:docstring>
       </arg>
-      <arg direction="in" name="handle_type" type="u">
+      <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer representing the handle type, or zero if no handle is being specified
         </tp:docstring>
       </arg>
-      <arg direction="in" name="handle" type="u">
+      <arg direction="in" name="handle" type="u" tp:type="Handle">
         <tp:docstring>
           A nonzero integer handle representing a contact, room, list etc.
           according to handle_type, or zero if the handle_type is zero
@@ -350,7 +350,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:enumvalue>
     </tp:enum>
     <method name="RequestHandles">
-      <arg direction="in" name="handle_type" type="u">
+      <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer handle type (as defined in HandleType)
         </tp:docstring>
@@ -360,7 +360,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           An array of names of entities to request handles for
         </tp:docstring>
       </arg>
-      <arg direction="out" type="au">
+      <arg direction="out" type="au" tp:type="Handle[]">
         <tp:docstring>
           An array of integer handle numbers in the same order as the given strings
         </tp:docstring>
@@ -482,12 +482,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:enumvalue>
     </tp:enum>
     <signal name="StatusChanged">
-      <arg name="status" type="u">
+      <arg name="status" type="u" tp:type="Connection_Status">
         <tp:docstring>
           An integer indicating the new status, as defined by ConnectionStatus
         </tp:docstring>
       </arg>
-      <arg name="reason" type="u">
+      <arg name="reason" type="u" tp:type="Connection_Status_Reason">
         <tp:docstring>
           An integer indicating the reason for the status change, as defined
           by ConnectionStatusReason

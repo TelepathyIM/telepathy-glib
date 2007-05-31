@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Channel.Interface.Group">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
     <method name="AddMembers">
-      <arg direction="in" name="contacts" type="au">
+      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           An array of contact handles to invite to the channel
         </tp:docstring>
@@ -52,17 +52,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetAllMembers">
-      <arg direction="out" type="au">
+      <arg direction="out" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           array of handles of current members
         </tp:docstring>
       </arg>
-      <arg direction="out" type="au">
+      <arg direction="out" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           array of handles of local pending members
         </tp:docstring>
       </arg>
-      <arg direction="out" type="au">
+      <arg direction="out" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           array of handles of remote pending members
         </tp:docstring>
@@ -151,9 +151,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             this flag).
         </tp:docstring>
       </tp:flag>
+      <tp:flag suffix="Handle_Owners_Not_Available" value="1024">
+        <tp:docstring>
+          In rooms with channel specific handles (ie Channel_Specific_Handles
+          flag is set), this flag indicates that none of the handle owners are
+          available, and that GetHandleOwners method will always return 0 for
+          channel members other than the self handle.
+        </tp:docstring>
+      </tp:flag>
     </tp:flags>
     <method name="GetGroupFlags">
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Channel_Group_Flags">
         <tp:docstring>
           The bitwise OR of zero or more values from ChannelGroupFlags
         </tp:docstring>
@@ -169,12 +177,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetHandleOwners">
-      <arg direction="in" name="handles" type="au">
+      <arg direction="in" name="handles" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           A list of integer handles representing members of the channel
         </tp:docstring>
       </arg>
-      <arg direction="out" type="au">
+      <arg direction="out" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           An array of integer handles representing the owner handles of
           the given room members, in the same order, or 0 if the
@@ -208,7 +216,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetLocalPendingMembers">
-      <arg direction="out" type="au"/>
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
       <tp:docstring>
         Returns an array of handles representing contacts requesting
         channel membership and awaiting local approval with AddMembers.
@@ -223,7 +231,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Returns an array of structs containing handles representing contacts
         requesting channel membership and awaiting local approval with
-        AddMembers.  
+        AddMembers.
       </tp:docstring>
       <arg direction="out" type="a(uuus)">
         <tp:docstring>
@@ -240,7 +248,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
               The reason for the request: one of the values of
               ChannelGroupChangeReason
             </li>
-            <li> 
+            <li>
               A string message containing the reason for the request if any (or
               blank if none)
             </li>
@@ -253,7 +261,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetMembers">
-      <arg direction="out" type="au"/>
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
       <tp:docstring>
         Returns an array of handles for the members of this channel.
       </tp:docstring>
@@ -263,7 +271,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetRemotePendingMembers">
-      <arg direction="out" type="au"/>
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
       <tp:docstring>
         Returns an array of handles representing contacts who have been
         invited to the channel and are awaiting remote approval.
@@ -274,7 +282,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetSelfHandle">
-      <arg direction="out" type="u"/>
+      <arg direction="out" type="u" tp:type="Contact_Handle"/>
       <tp:docstring>
         Returns the handle for the user on this channel (which can also be a
         local or remote pending member) or 0 if the user not a member at all
@@ -289,12 +297,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <signal name="GroupFlagsChanged">
-      <arg name="added" type="u">
+      <arg name="added" type="u" tp:type="Channel_Group_Flags">
         <tp:docstring>
           A bitwise OR of the flags which have been set
         </tp:docstring>
       </arg>
-      <arg name="removed" type="u">
+      <arg name="removed" type="u" tp:type="Channel_Group_Flags">
         <tp:docstring>
           A bitwise OR of the flags which have been cleared
         </tp:docstring>
@@ -359,6 +367,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           shortly before this MembersChanged signal is emitted.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="Permission_Denied" value="10">
+        <tp:docstring>
+            The change is because there was no permission to contact the
+            requested handle.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
     <signal name="MembersChanged">
       <arg name="message" type="s">
@@ -366,33 +380,33 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           A string message from the server, or blank if not
         </tp:docstring>
       </arg>
-      <arg name="added" type="au">
+      <arg name="added" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           A list of members added to the channel
         </tp:docstring>
       </arg>
-      <arg name="removed" type="au">
+      <arg name="removed" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           A list of members removed from the channel
         </tp:docstring>
       </arg>
-      <arg name="local_pending" type="au">
+      <arg name="local_pending" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           A list of members who are pending local approval
         </tp:docstring>
       </arg>
-      <arg name="remote_pending" type="au">
+      <arg name="remote_pending" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           A list of members who are pending remote approval
         </tp:docstring>
       </arg>
-      <arg name="actor" type="u">
+      <arg name="actor" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The contact handle of the person who made the change, or 0
           if not known
         </tp:docstring>
       </arg>
-      <arg name="reason" type="u">
+      <arg name="reason" type="u" tp:type="Channel_Group_Change_Reason">
         <tp:docstring>
           A reason for the change: one of the values of
           ChannelGroupChangeReason
@@ -407,7 +421,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <method name="RemoveMembers">
-      <arg direction="in" name="contacts" type="au">
+      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           An array of contact handles to remove from the channel
         </tp:docstring>
@@ -433,6 +447,42 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
         <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
+      </tp:possible-errors>
+    </method>
+    <method name="RemoveMembersWithReason">
+      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
+        <tp:docstring>
+          An array of contact handles to remove from the channel
+        </tp:docstring>
+      </arg>
+      <arg direction="in" name="message" type="s">
+        <tp:docstring>
+          A string message, which can be blank if desired
+        </tp:docstring>
+      </arg>
+      <arg direction="in" name="reason" type="u"
+           tp:type="Channel_Group_Change_Reason">
+        <tp:docstring>
+          A reason for the change: one of the values of
+          ChannelGroupChangeReason
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        As RemoveMembers, but a reason code may be provided where
+        appropriate. The reason code may be ignored if the underlying
+        protocol is unable to represent the given reason.
+      </tp:docstring>
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+          <tp:docstring>
+            The provided reason code was invalid.
+          </tp:docstring>
+        </tp:error>
       </tp:possible-errors>
     </method>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">

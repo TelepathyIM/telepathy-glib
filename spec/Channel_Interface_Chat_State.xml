@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Channel.Interface.ChatState">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
     <method name="SetChatState">
-      <arg direction="in" name="state" type="u">
+      <arg direction="in" name="state" type="u" tp:type="Channel_Chat_State">
         <tp:docstring>
           The new state: one of the values of ChannelChatState.
         </tp:docstring>
@@ -35,12 +35,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <signal name="ChatStateChanged">
-      <arg name="contact" type="u">
+      <arg name="contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer handle for the contact.
         </tp:docstring>
       </arg>
-      <arg name="state" type="u">
+      <arg name="state" type="u" tp:type="Channel_Chat_State">
         <tp:docstring>
           The new state of this contact: one of the values of ChannelChatState.
         </tp:docstring>
@@ -86,9 +86,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <p>The Channel_Chat_State_Gone state is treated differently to other states:</p>
       <ul>
-        <li>It is not used for multi-user chats</li>
-        <li>It is implictly set when the channel is closed</li>
-        <li>It may not be explicitly set</li>
+        <li>It may not be used for multi-user chats</li>
+        <li>It may not be explicitly sent</li>
+        <li>It should be automatically sent when the channel is closed</li>
+        <li>It must not be sent to the peer if a channel is closed without being used</li>
+        <li>Receiving it must not cause a new channel to be opened</li>
       </ul>
 
       <p>The different states are defined by XEP-0085, but may be applied to any suitable protocol.</p>

@@ -65,7 +65,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:enumvalue>
     </tp:enum>
     <method name="GetSearchState">
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Channel_Contact_Search_State">
         <tp:docstring>The search state represented as one of the values of
           ChannelContactSearchState</tp:docstring>
       </arg>
@@ -91,7 +91,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <signal name="SearchResultReceived">
-      <arg name="contact" type="u">
+      <arg name="contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>An integer handle for the contact</tp:docstring>
       </arg>
       <arg name="values" type="a{sv}">
@@ -102,7 +102,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <signal name="SearchStateChanged">
-      <arg name="state" type="u">
+      <arg name="state" type="u" tp:type="Channel_Contact_Search_State">
         <tp:docstring>An integer representing the new search state</tp:docstring>
       </arg>
       <tp:docstring>

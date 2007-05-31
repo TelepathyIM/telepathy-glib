@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <arg direction="in" name="stream_id" type="u">
         <tp:docstring>A stream ID as defined in the StreamedMedia channel type.</tp:docstring>
       </arg>
-      <arg direction="in" name="event" type="y">
+      <arg direction="in" name="event" type="y" tp:type="DTMF_Event">
         <tp:docstring>A numeric event code from the DTMF_Event enum.</tp:docstring>
       </arg>
       <tp:docstring>

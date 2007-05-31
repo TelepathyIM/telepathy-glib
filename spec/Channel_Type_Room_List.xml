@@ -51,8 +51,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         recommended for use where appropriate:</p>
 
         <dl>
-          <dt>s:name</dt><dd>The name of the room if different from the handle</dd>
-          <dt>s:subject</dt><dd>The subject of the room</dd>
+          <dt>s:handle-name</dt><dd>The string name of the room handle (as would be returned by InspectHandles)</dd>
+          <dt>s:name</dt><dd>The human-readable name of the room if different from the handle</dd>
+          <dt>s:description</dt><dd>A description of the room's overall purpose</dd>
+          <dt>s:subject</dt><dd>The current subject of conversation in the room</dd>
           <dt>u:members</dt><dd>The number of members of the room</dd>
           <dt>b:password</dt><dd>True if the room requires a password to enter</dd>
           <dt>b:invite-only</dt><dd>True if you cannot join the room, but must be invited</dd>

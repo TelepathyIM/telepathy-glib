@@ -111,7 +111,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           The stream identifier (as defined in ListStreams)
         </tp:docstring>
       </arg>
-      <arg direction="in" name="stream_direction" type="u">
+      <arg direction="in" name="stream_direction" type="u" tp:type="Media_Stream_Direction">
         <tp:docstring>
           The desired stream direction (a value of MediaStreamDirection)
         </tp:docstring>
@@ -142,7 +142,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="RequestStreams">
-      <arg direction="in" name="contact_handle" type="u">
+      <arg direction="in" name="contact_handle" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           A contact handle with whom to establish the streams
         </tp:docstring>
@@ -194,13 +194,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           The stream identifier (as defined in ListStreams)
         </tp:docstring>
       </arg>
-      <arg name="contact_handle" type="u">
+      <arg name="contact_handle" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The contact handle who the stream is with (or 0 if it
           represents more than a single member)
         </tp:docstring>
       </arg>
-      <arg name="stream_type" type="u">
+      <arg name="stream_type" type="u" tp:type="Media_Stream_Type">
         <tp:docstring>
           The stream type (a value from MediaStreamType)
         </tp:docstring>
@@ -215,12 +215,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         The stream identifier (as defined in ListStreams)
         </tp:docstring>
       </arg>
-      <arg name="stream_direction" type="u">
+      <arg name="stream_direction" type="u" tp:type="Media_Stream_Direction">
         <tp:docstring>
         The new stream direction (as defined in ListStreams)
         </tp:docstring>
       </arg>
-      <arg name="pending_flags" type="u">
+      <arg name="pending_flags" type="u" tp:type="Media_Stream_Pending_Send">
         <tp:docstring>
         The new pending send flags (as defined in ListStreams)
         </tp:docstring>
@@ -268,7 +268,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           The stream identifier (as defined in ListStreams)
         </tp:docstring>
       </arg>
-      <arg name="stream_state" type="u">
+      <arg name="stream_state" type="u" tp:type="Media_Stream_State">
         <tp:docstring>
           The new stream state (as defined in ListStreams)
         </tp:docstring>

@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           </ul>
         </tp:docstring>
       </arg>
-      <arg direction="in" name="remove" type="as">
+      <arg direction="in" name="remove" type="as" tp:type="Interface[]">
         <tp:docstring>
           An array of D-Bus interface names of channel types to remove
         </tp:docstring>
@@ -88,7 +88,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <method name="GetCapabilities">
-      <arg direction="in" name="handles" type="au">
+      <arg direction="in" name="handles" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           An array of contact handles for this connection, or zero to query capabilities available on the connection itself
         </tp:docstring>

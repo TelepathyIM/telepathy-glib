@@ -72,7 +72,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </tp:enum>
 
     <method name="GetAvailableTubeTypes">
-      <arg direction="out" type="au">
+      <arg direction="out" type="au" tp:type="Tube_Type[]">
         <tp:docstring>
           An array of the available tube types, as defined by the Tube_Type
           enum.
@@ -103,7 +103,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         Offers a tube providing the service specified, over a tube of the
         specified type.
       </tp:docstring>
-      <arg direction="in" name="type" type="u">
+      <arg direction="in" name="type" type="u" tp:type="Tube_Type">
         <tp:docstring>
           The type of tube wanted, one of the values from
           the Tube_Type enum.
@@ -135,12 +135,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           The ID of the new tube.
         </tp:docstring>
       </arg>
-      <arg name="initiator" type="u">
+      <arg name="initiator" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The handle of the contact who initiated the tube.
         </tp:docstring>
       </arg>
-      <arg name="type" type="u">
+      <arg name="type" type="u" tp:type="Tube_Type">
         <tp:docstring>
           The tube type, as defined by the Tube_Type enum.
         </tp:docstring>
@@ -155,7 +155,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           The new tube's properties.
         </tp:docstring>
       </arg>
-      <arg name="state" type="u">
+      <arg name="state" type="u" tp:type="Tube_State">
         <tp:docstring>
           The new tube's state.
         </tp:docstring>
@@ -164,8 +164,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
     <method name="AcceptTube">
       <tp:docstring>
-        Accept a tube that's in the "local pending" state. The tube becomes
-        open after this method is called.
+        Accept a tube that's in the "local pending" state. The connection
+        manager will attempt to open the tube. The tube remains in the
+        "local pending" state until the TubeStateChanged signal is emitted.
       </tp:docstring>
       <arg direction="in" name="id" type="u">
         <tp:docstring>
@@ -183,7 +184,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           The ID of the tube that changed state.
         </tp:docstring>
       </arg>
-      <arg name="state" type="u">
+      <arg name="state" type="u" tp:type="Tube_State">
         <tp:docstring>
           The new state of the tube; see the Tube_State enumeration.
         </tp:docstring>
@@ -278,7 +279,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           Array of handles and D-Bus names of new participants.
         </tp:docstring>
       </arg>
-      <arg name="removed" type="au">
+      <arg name="removed" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           Array of handles of former participants.
         </tp:docstring>

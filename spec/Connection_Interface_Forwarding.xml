@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Forwarding">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
     <signal name="ForwardingChanged">
-      <arg name="forward_to" type="u">
+      <arg name="forward_to" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer contact handle to forward communication to
         </tp:docstring>
@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <method name="GetForwardingHandle">
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer contact handle to whom incoming communication is forwarded
         </tp:docstring>
@@ -47,7 +47,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="SetForwardingHandle">
-      <arg direction="in" name="forward_to" type="u">
+      <arg direction="in" name="forward_to" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer contact handle to forward incoming communications to
         </tp:docstring>

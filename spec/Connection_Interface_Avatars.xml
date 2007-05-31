@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Avatars">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
     <signal name="AvatarUpdated">
-      <arg name="contact" type="u">
+      <arg name="contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer handle for the contact whose avatar has changed
         </tp:docstring>
@@ -106,7 +106,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetAvatarTokens">
-      <arg direction="in" name="contacts" type="au">
+      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
         An array of handles representing contacts
         </tp:docstring>
@@ -132,7 +132,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="RequestAvatar">
-      <arg direction="in" name="contact" type="u">
+      <arg direction="in" name="contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer handle for the contact to request the avatar for
         </tp:docstring>

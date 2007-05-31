@@ -64,7 +64,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetPresence">
-      <arg direction="in" name="contacts" type="au">
+      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           An array of the contacts whose presence should be obtained
         </tp:docstring>
@@ -149,7 +149,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="RequestPresence">
-      <arg direction="in" name="contacts" type="au">
+      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           An array of the contacts whose presence should be obtained
         </tp:docstring>
@@ -174,7 +174,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="SetLastActivityTime">
-      <arg direction="in" name="time" type="u">
+      <arg direction="in" name="time" type="u" tp:type="Timestamp">
         <tp:docstring>
           A UNIX timestamp of the user's last activity time (in UTC)
         </tp:docstring>
