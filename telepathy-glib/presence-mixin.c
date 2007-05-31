@@ -707,6 +707,12 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (data->obj));
   int i;
 
+  /* This function will actually only be invoked once for one SetStatus request,
+   * since we check that the hash table has size 1 in
+   * tp_presence_mixin_set_status(). Therefore there are no problems with
+   * sharing the foreach data like this.
+   */
+
   for (i = 0; mixin_cls->statuses[i].name != NULL; i++)
     {
       if (!tp_strdiff (mixin_cls->statuses[i].name, (const gchar *) key))
@@ -725,6 +731,7 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
               "requested status '%s' is not available on this connection",
               (const gchar *) key);
           data->retval = FALSE;
+          return;
         }
 
       status_to_set = tp_presence_status_new (i, (GHashTable *) value);
