@@ -68,6 +68,28 @@ typedef gboolean (*TpGroupMixinRemMemberFunc) (GObject *obj,
     TpHandle handle, const gchar *message, GError **error);
 
 /**
+ * TpGroupMixinRemMemberWithReasonFunc:
+ * @obj: An object implementing the group interface with this mixin
+ * @handle: The handle of the contact to be removed
+ * @message: A message to be sent if the protocol supports it
+ * @reason: A #TpChannelGroupChangeReason indicating the reason
+ * @error: Used to return a Telepathy D-Bus error if %FALSE is returned
+ *
+ * Signature of the callback used to remove a member from the group.
+ * This should perform the necessary operations in the underlying IM protocol
+ * to cause the member to be removed.
+ *
+ * Set this with tp_group_mixin_class_set_remove_with_reason_func(), .
+ *
+ * Returns: %TRUE on success, %FALSE with @error set on error
+ */
+typedef gboolean (*TpGroupMixinRemMemberWithReasonFunc) (GObject *obj,
+    TpHandle handle, const gchar *message, guint reason, GError **error);
+
+void tp_group_mixin_class_set_remove_with_reason_func (GObjectClass *cls,
+    TpGroupMixinRemMemberWithReasonFunc func);
+
+/**
  * TpGroupMixinClass:
  * @add_member: The add-member function that was passed to
  *  tp_group_mixin_class_init()
@@ -156,6 +178,9 @@ gboolean tp_group_mixin_add_members (GObject *obj,
     const GArray *contacts, const gchar *message, GError **error);
 gboolean tp_group_mixin_remove_members (GObject *obj,
     const GArray *contacts, const gchar *message, GError **error);
+gboolean tp_group_mixin_remove_members_with_reason (GObject *obj,
+    const GArray *contacts, const gchar *message, guint reason,
+    GError **error);
 
 gboolean tp_group_mixin_get_members (GObject *obj,
     GArray **ret, GError **error);

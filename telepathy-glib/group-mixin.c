@@ -116,6 +116,10 @@ local_pending_info_free (LocalPendingInfo *info)
   g_slice_free (LocalPendingInfo, info);
 }
 
+struct _TpGroupMixinClassPrivate {
+    TpGroupMixinRemMemberWithReasonFunc remove_with_reason;
+};
+
 struct _TpGroupMixinPrivate {
     TpHandleSet *actors;
     GHashTable *handle_owners;
@@ -156,13 +160,39 @@ tp_group_mixin_get_offset_quark ()
 }
 
 /**
+ * tp_group_mixin_class_set_remove_with_reason_func:
+ * @cls: The class of an object implementing the group interface using this
+ *  mixin
+ * @func: A callback to be used to remove contacts from this group with a
+ *  specified reason.
+ *
+ * Set a callback to be used to implement RemoveMembers() and
+ * RemoveMembersWithReason(). If this function is called during class
+ * initialization, the given callback will be used instead of the remove
+ * callback passed to tp_group_mixin_class_init() (which must be %NULL
+ * in this case).
+ */
+void
+tp_group_mixin_class_set_remove_with_reason_func (GObjectClass *cls,
+                                      TpGroupMixinRemMemberWithReasonFunc func)
+{
+  TpGroupMixinClass *mixin_cls = TP_GROUP_MIXIN_CLASS (cls);
+
+  g_return_if_fail (mixin_cls->remove_member == NULL);
+  g_return_if_fail (mixin_cls->priv->remove_with_reason == NULL);
+  mixin_cls->priv->remove_with_reason = func;
+}
+
+/**
  * tp_group_mixin_class_init:
  * @obj_cls: The class of an object implementing the group interface using this
  *  mixin
  * @offset: The offset of the TpGroupMixinClass structure within the class
  *  structure
  * @add_func: A callback to be used to add contacts to this group
- * @rem_func: A callback to be used to remove contacts from this group
+ * @rem_func: A callback to be used to remove contacts from this group.
+ *  This must be %NULL if you will subsequently call
+ *  tp_group_mixin_class_set_remove_with_reason_func().
  *
  * Configure the mixin for use with the given class.
  */
@@ -184,6 +214,8 @@ tp_group_mixin_class_init (GObjectClass *obj_cls,
 
   mixin_cls->add_member = add_func;
   mixin_cls->remove_member = rem_func;
+
+  mixin_cls->priv = g_slice_new0 (TpGroupMixinClassPrivate);
 }
 
 /**
@@ -470,6 +502,34 @@ tp_group_mixin_remove_members (GObject *obj,
                                const gchar *message,
                                GError **error)
 {
+  return tp_group_mixin_remove_members_with_reason (obj, contacts, message,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE, error);
+}
+
+/**
+ * tp_group_mixin_remove_members_with_reason:
+ * @obj: An object implementing the group interface using this mixin
+ * @contacts: A GArray of guint representing contacts
+ * @message: A message to be sent to those contacts, if supported
+ * @reason: A #TpChannelGroupChangeReason
+ * @error: Used to return an error if %FALSE is returned
+ *
+ * Request that the given contacts be removed from the group as if in response
+ * to user action. If the group's flags prohibit this, raise
+ * PermissionDenied. If any of the handles is invalid, raise InvalidHandle.
+ * If any of the handles is absent from the group, raise NotAvailable.
+ * Otherwise attempt to remove the contacts by calling the callbacks provided
+ * by the channel implementation.
+ *
+ * Returns: %TRUE on success
+ */
+gboolean
+tp_group_mixin_remove_members_with_reason (GObject *obj,
+                               const GArray *contacts,
+                               const gchar *message,
+                               guint reason,
+                               GError **error)
+{
   TpGroupMixinClass *mixin_cls = TP_GROUP_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   guint i;
@@ -529,13 +589,47 @@ tp_group_mixin_remove_members (GObject *obj,
     {
       handle = g_array_index (contacts, TpHandle, i);
 
-      if (!mixin_cls->remove_member (obj, handle, message, error))
+      if (mixin_cls->priv->remove_with_reason)
         {
-          return FALSE;
+          if (!mixin_cls->priv->remove_with_reason (obj, handle, message,
+                                                    reason, error))
+            {
+              return FALSE;
+            }
+        }
+      else
+        {
+          if (!mixin_cls->remove_member (obj, handle, message, error))
+            {
+              return FALSE;
+            }
         }
     }
 
   return TRUE;
+}
+
+static void
+tp_group_mixin_remove_members_with_reason_async
+    (TpSvcChannelInterfaceGroup *obj,
+     const GArray *contacts,
+     const gchar *message,
+     guint reason,
+     DBusGMethodInvocation *context)
+{
+  GError *error = NULL;
+
+  if (tp_group_mixin_remove_members_with_reason ((GObject *)obj, contacts,
+        message, reason, &error))
+    {
+      tp_svc_channel_interface_group_return_from_remove_members_with_reason
+        (context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+    }
 }
 
 static void
@@ -546,8 +640,8 @@ tp_group_mixin_remove_members_async (TpSvcChannelInterfaceGroup *obj,
 {
   GError *error = NULL;
 
-  if (tp_group_mixin_remove_members ((GObject *)obj, contacts, message,
-        &error))
+  if (tp_group_mixin_remove_members_with_reason ((GObject *)obj, contacts,
+        message, TP_CHANNEL_GROUP_CHANGE_REASON_NONE, &error))
     {
       tp_svc_channel_interface_group_return_from_remove_members (context);
     }
@@ -1365,5 +1459,6 @@ tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(get_remote_pending_members);
   IMPLEMENT(get_self_handle);
   IMPLEMENT(remove_members);
+  IMPLEMENT(remove_members_with_reason);
 #undef IMPLEMENT
 }
