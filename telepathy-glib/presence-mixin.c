@@ -76,8 +76,10 @@ struct _TpPresenceMixinPrivate
  * Returns: A pointer to the newly allocated presence status structure.
  */
 TpPresenceStatus *
-tp_presence_status_new(guint index, GHashTable *optional_arguments) {
-  TpPresenceStatus *status = g_slice_new(TpPresenceStatus);
+tp_presence_status_new (guint index,
+                        GHashTable *optional_arguments)
+{
+  TpPresenceStatus *status = g_slice_new (TpPresenceStatus);
 
   status->index = index;
   status->optional_arguments = optional_arguments;
@@ -96,7 +98,8 @@ tp_presence_status_new(guint index, GHashTable *optional_arguments) {
  * Deallocate all resources associated with a presence status structure.
  */
 void
-tp_presence_status_free(TpPresenceStatus *status) {
+tp_presence_status_free (TpPresenceStatus *status)
+{
   if (!status)
     return;
 
