@@ -1040,6 +1040,7 @@ TpPresenceStatusOptionalArgumentSpec
 TpPresenceStatusSpec
 TpPresenceMixinStatusAvailableFunc
 TpPresenceMixinGetContactStatusesFunc
+TpPresenceMixinSetOwnStatusFunc
 TpPresenceStatus
 tp_presence_status_new
 tp_presence_status_free

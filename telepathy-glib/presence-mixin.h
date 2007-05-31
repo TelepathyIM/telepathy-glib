@@ -115,18 +115,34 @@ typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
 /**
  * TpPresenceMixinGetContactStatusesFunc:
  * @obj: An object with this mixin.
- * @contacts: A zero-terminated array of #TpHandle for the contacts to get
- *  presence status for
- * @error: Used to return a Telepathy D-Bus error if NULL is returned
+ * @contacts: An array of #TpHandle for the contacts to get presence status for
+ * @error: Used to return a Telepathy D-Bus error if %NULL is returned
  *
  * Signature of the callback used to get the stored presence status of
  * contacts. The returned hash table should have contact handles mapped to their
  * respective presence statuses in #TpPresenceStatus structs.
  *
- * Returns: The contact presence on success, NULL with error set on error
+ * Returns: The contact presence on success, %NULL with error set on error
  */
 typedef GHashTable *(*TpPresenceMixinGetContactStatusesFunc) (GObject *obj,
     const GArray *contacts, GError **error);
+
+/**
+ * TpPresenceMixinSetOwnStatusFunc:
+ * @obj: An object with this mixin.
+ * @status: The status to set, or NULL for whatever the protocol defines as a
+ *  "default" status
+ * @error: Used to return a Telepathy D-Bus error if %FALSE is returned
+ *
+ * Signature of the callback used to commit changes to the user's own presence
+ * status in SetStatuses. It is also used in ClearStatus and RemoveStatus to
+ * reset the user's own status back to the "default" one with a %NULL status
+ * argument.
+ *
+ * Returns: %TRUE if the operation was successful, %FALSE if not.
+ */
+typedef gboolean (*TpPresenceMixinSetOwnStatusFunc) (GObject *obj,
+    const TpPresenceStatus *status, GError **error);
 
 typedef struct _TpPresenceMixinClass TpPresenceMixinClass;
 typedef struct _TpPresenceMixinClassPrivate TpPresenceMixinClassPrivate;
@@ -136,6 +152,10 @@ typedef struct _TpPresenceMixinPrivate TpPresenceMixinPrivate;
 /**
  * TpPresenceMixinClass:
  * @status_available: The status-available function that was passed to
+ *  tp_presence_mixin_class_init()
+ * @get_contact_statuses: The get-contact-statuses function that was passed to
+ *  tp_presence_mixin_class_init()
+ * @set_own_status: The set-own-status function that was passed to
  *  tp_presence_mixin_class_init()
  * @statuses: The presence statuses array that was passed to
  *  tp_presence_mixin_class_init()
@@ -148,6 +168,7 @@ typedef struct _TpPresenceMixinPrivate TpPresenceMixinPrivate;
 struct _TpPresenceMixinClass {
     TpPresenceMixinStatusAvailableFunc status_available;
     TpPresenceMixinGetContactStatusesFunc get_contact_statuses;
+    TpPresenceMixinSetOwnStatusFunc set_own_status;
 
     const TpPresenceStatusSpec *statuses;
 
@@ -191,6 +212,7 @@ GQuark tp_presence_mixin_get_offset_quark (void);
 void tp_presence_mixin_class_init (GObjectClass *obj_cls, glong offset,
     TpPresenceMixinStatusAvailableFunc status_available,
     TpPresenceMixinGetContactStatusesFunc get_contact_statuses,
+    TpPresenceMixinSetOwnStatusFunc set_own_status,
     const TpPresenceStatusSpec *statuses);
 
 void tp_presence_mixin_init (GObject *obj, glong offset);

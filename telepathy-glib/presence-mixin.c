@@ -38,8 +38,9 @@
  *
  * To use the presence mixin as the implementation of
  * #TpSvcConnectionInterfacePresence, in the function you pass to
- * G_IMPLEMENT_INTERFACE, you should first call tp_presence_mixin_iface_init(),
- * then call ...
+ * G_IMPLEMENT_INTERFACE, you should call tp_presence_mixin_iface_init.
+ * TpPresenceMixin implements all of the D-Bus methods in the Presence
+ * interface.
  */
 
 #include <telepathy-glib/presence-mixin.h>
@@ -144,9 +145,12 @@ tp_presence_mixin_get_offset_quark ()
  * structure
  * @status_available: A callback to be used to determine if a given presence
  *  status is available. If NULL, all statuses are always considered available.
- * @get_contact_statuses: A callback used to get the current presence status for
- *  contacts. This is used in implementations of various D-Bus methods and hence
- *  must be provided.
+ * @get_contact_statuses: A callback to be used get the current presence status
+ *  for contacts. This is used in implementations of various D-Bus methods and
+ *  hence must be provided.
+ * @set_own_status: A callback to be used to commit changes to the user's own
+ *  presence status to the server. This is used in implementations of various
+ *  D-Bus methods and hence must be provided.
  * @statuses: An array of #TpPresenceStatusSpec structures representing all
  *  presence statuses supported by the protocol, terminated by a NULL name.
  *
@@ -165,11 +169,13 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
                               glong offset,
                               TpPresenceMixinStatusAvailableFunc status_available,
                               TpPresenceMixinGetContactStatusesFunc get_contact_statuses,
+                              TpPresenceMixinSetOwnStatusFunc set_own_status,
                               const TpPresenceStatusSpec *statuses)
 {
   TpPresenceMixinClass *mixin_cls;
 
   g_assert (get_contact_statuses != NULL);
+  g_assert (set_own_status != NULL);
   g_assert (statuses != NULL);
 
   g_assert (G_IS_OBJECT_CLASS (obj_cls));
@@ -182,6 +188,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
 
   mixin_cls->status_available = status_available;
   mixin_cls->get_contact_statuses = get_contact_statuses;
+  mixin_cls->set_own_status = set_own_status;
   mixin_cls->statuses = statuses;
 }
 
@@ -379,6 +386,38 @@ tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
 
 
 /**
+ * tp_presence_mixin_clear_status:
+ *
+ * Implements D-Bus method ClearStatus
+ * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
+ */
+static void
+tp_presence_mixin_clear_status (TpSvcConnectionInterfacePresence *iface,
+                                DBusGMethodInvocation *context)
+{
+  GObject *obj = (GObject *) iface;
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  GError *error = NULL;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  if (!mixin_cls->set_own_status (obj, NULL, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  tp_svc_connection_interface_presence_return_from_clear_status (context);
+}
+
+
+/**
  * tp_presence_mixin_get_presence:
  *
  * Implements D-Bus method GetPresence
@@ -504,6 +543,9 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
  *
  * Implements D-Bus method SetLastActivityTime
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
  */
 static void
 tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *iface,
@@ -520,10 +562,87 @@ tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *ifac
 
 
 /**
+ * tp_presence_mixin_remove_status:
+ *
+ * Implements D-Bus method GetStatuses
+ * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
+ */
+static void
+tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
+                                 const gchar *status,
+                                 DBusGMethodInvocation *context)
+{
+  GObject *obj = (GObject *) iface;
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_CLASS (iface));
+  GArray *self_contacts;
+  GError *error = NULL;
+  GHashTable *self_contact_statuses;
+  TpPresenceStatus *self_status;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  self_contacts = g_array_sized_new (TRUE, TRUE, sizeof(TpHandle), 1);
+  g_array_append_val (self_contacts, conn->self_handle);
+  self_contact_statuses = mixin_cls->get_contact_statuses (obj, self_contacts,
+      &error);
+
+  if (!self_contact_statuses)
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      g_array_free (self_contacts, TRUE);
+      return;
+    }
+
+  self_status = (TpPresenceStatus *) g_hash_table_lookup (self_contact_statuses,
+      GUINT_TO_POINTER (conn->self_handle));
+
+  if (!self_status)
+    {
+      DEBUG ("Got no self status, assuming we already have default status");
+      g_array_free (self_contacts, TRUE);
+      g_hash_table_destroy (self_contact_statuses);
+      tp_svc_connection_interface_presence_return_from_remove_status (context);
+      return;
+    }
+
+  if (!tp_strdiff (status, mixin_cls->statuses[self_status->index].name))
+    {
+      if (mixin_cls->set_own_status (obj, NULL, &error))
+        {
+          tp_svc_connection_interface_presence_return_from_remove_status (context);
+        }
+      else
+        {
+          dbus_g_method_return_error (context, error);
+          g_error_free (error);
+        }
+    }
+  else
+    {
+      GError nonexistent = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Attempting to remove non-existent presence." };
+      dbus_g_method_return_error (context, &nonexistent);
+    }
+
+  g_array_free (self_contacts, TRUE);
+  g_hash_table_destroy (self_contact_statuses);
+}
+
+
+/**
  * tp_presence_mixin_request_presence
  *
  * Implements D-Bus method RequestPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
  */
 static void
 tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
@@ -561,13 +680,117 @@ tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
 }
 
 
+struct _i_hate_g_hash_table_foreach {
+  GObject *obj;
+  GError **error;
+  gboolean retval;
+};
+
+
+static void
+set_status_foreach (gpointer key, gpointer value, gpointer user_data)
+{
+  struct _i_hate_g_hash_table_foreach *data =
+    (struct _i_hate_g_hash_table_foreach*) user_data;
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (data->obj));
+  int i;
+
+  for (i = 0; mixin_cls->statuses[i].name != NULL; i++)
+    {
+      if (!tp_strdiff (mixin_cls->statuses[i].name, (const gchar *) key))
+        break;
+    }
+
+  if (mixin_cls->statuses[i].name != NULL)
+    {
+      TpPresenceStatus *status_to_set;
+
+      if (mixin_cls->status_available
+          && !mixin_cls->status_available (data->obj, i))
+        {
+          DEBUG ("requested status %s is not available", (const gchar *) key);
+          g_set_error (data->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "requested status '%s' is not available on this connection",
+              (const gchar *) key);
+          data->retval = FALSE;
+        }
+
+      status_to_set = tp_presence_status_new (i, (GHashTable *) value);
+
+      if (!mixin_cls->set_own_status (data->obj, status_to_set, data->error))
+        {
+          DEBUG ("failed to set status");
+          data->retval = FALSE;
+        }
+
+      tp_presence_status_free (status_to_set);
+    }
+  else
+    {
+      DEBUG ("got unknown status identifier %s", (const gchar *) key);
+      g_set_error (data->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "unknown status identifier: %s", (const gchar *) key);
+      data->retval = FALSE;
+    }
+}
+
+
+/**
+ * tp_presence_mixin_set_status
+ *
+ * Implements D-Bus method SetStatus
+ * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
+ */
+static void
+tp_presence_mixin_set_status (TpSvcConnectionInterfacePresence *iface,
+                              GHashTable *statuses,
+                              DBusGMethodInvocation *context)
+{
+  GObject *obj = (GObject *) iface;
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  struct _i_hate_g_hash_table_foreach data = { NULL, NULL, TRUE };
+  GError *error = NULL;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  if (g_hash_table_size (statuses) != 1)
+    {
+      GError invalid = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Only one status may be set at a time in this protocol" };
+      DEBUG ("got more than one status");
+      dbus_g_method_return_error (context, &invalid);
+      return;
+    }
+
+  data.obj = obj;
+  data.error = &error;
+  g_hash_table_foreach (statuses, set_status_foreach, &data);
+
+  if (data.retval)
+    {
+      tp_svc_connection_interface_presence_return_from_set_status (
+          context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+    }
+}
+
+
 /**
  * tp_presence_mixin_iface_init:
  * @g_iface: A pointer to the #TpSvcConnectionInterfacePresenceClass in an
- * object class
+ *  object class
  * @iface_data: Ignored
  *
- * ...
+ * Fill in the vtable entries needed to implement the presence interface using
+ * this mixin. This function should usually be called via G_IMPLEMENT_INTERFACE.
  */
 void
 tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
@@ -578,9 +801,12 @@ tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 #define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x (klass,\
     tp_presence_mixin_##x)
   IMPLEMENT(add_status);
+  IMPLEMENT(clear_status);
   IMPLEMENT(get_presence);
   IMPLEMENT(get_statuses);
+  IMPLEMENT(remove_status);
   IMPLEMENT(request_presence);
   IMPLEMENT(set_last_activity_time);
+  IMPLEMENT(set_status);
 #undef IMPLEMENT
 }
