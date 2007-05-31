@@ -66,9 +66,8 @@ struct _TpPresenceMixinPrivate
  * @index: Index of the presence status in the provided supported presence
  *  statuses array
  * @optional_arguments: Optional arguments for the presence statuses. Can be
- *  NULL if there are no optional arguments. Ownership of the hash table is
- *  transferred to the presence status object and hence the caller shouldn't
- *  free it by itself.
+ *  NULL if there are no optional arguments. The presence status object gets a
+ *  new reference to the hashtable.
  *
  * Construct a presence status structure. You should free the returned
  * structure with #tp_presence_status_free.
@@ -80,6 +79,9 @@ TpPresenceStatus *tp_presence_status_new(guint index, GHashTable *optional_argum
 
   status->index = index;
   status->optional_arguments = optional_arguments;
+
+  if (optional_arguments)
+    g_hash_table_ref (optional_arguments);
 
   return status;
 }
@@ -95,7 +97,8 @@ void tp_presence_status_free(TpPresenceStatus *status) {
   if (!status)
     return;
 
-  g_hash_table_unref(status->optional_arguments);
+  if (status->optional_arguments)
+    g_hash_table_unref(status->optional_arguments);
 
   g_slice_free(TpPresenceStatus, status);
 }
