@@ -11,7 +11,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [5])
-m4_define([tp_glib_micro_version], [12])
+m4_define([tp_glib_micro_version], [13])
 m4_define([tp_glib_nano_version], [0])
 
 # When deciding the following, only consider the shared library, not the
@@ -23,9 +23,9 @@ m4_define([tp_glib_nano_version], [0])
 # If interfaces have been added since last release, increment age
 # If interfaces have been removed since last release, set age to 0
 
-m4_define([tp_glib_lt_current], [1])
+m4_define([tp_glib_lt_current], [2])
 m4_define([tp_glib_lt_revision], [0])
-m4_define([tp_glib_lt_age], [1])
+m4_define([tp_glib_lt_age], [2])
 
 # Some magic
 m4_define([tp_glib_base_version],
