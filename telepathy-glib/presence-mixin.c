@@ -774,7 +774,7 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
           const TpPresenceStatusOptionalArgumentSpec *specs =
             mixin_cls->statuses[i].optional_arguments;
 
-          for (j=0; specs[j].name != NULL; j++)
+          for (j=0; specs != NULL && specs[j].name != NULL; j++)
             {
               GValue *provided_value =
                 g_hash_table_lookup (provided_arguments, specs[j].name);
