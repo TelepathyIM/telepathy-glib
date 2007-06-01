@@ -28,6 +28,14 @@
 
 G_BEGIN_DECLS
 
+#if ((GLIB_MAJOR_VERSION == 2) && (GLIB_MINOR_VERSION < 10))
+#define g_hash_table_ref tp_gash_table_ref
+#define g_hash_table_unref tp_gash_table_unref
+
+void tp_gash_table_ref(GHashTable *hash_table);
+void tp_gash_table_unref(GHashTable *hash_table);
+#endif
+
 typedef struct _TpPresenceStatusOptionalArgumentSpec
     TpPresenceStatusOptionalArgumentSpec;
 typedef struct _TpPresenceStatusSpec TpPresenceStatusSpec;

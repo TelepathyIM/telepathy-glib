@@ -62,6 +62,76 @@
 
 #include "internal-debug.h"
 
+
+#if ((GLIB_MAJOR_VERSION == 2) && (GLIB_MINOR_VERSION < 10))
+
+
+static GQuark
+gash_table_refcount_quark ()
+{
+  static GQuark quark = 0;
+
+  if (!quark)
+    quark = g_quark_from_static_string ("tp_presence_mixin_gash_table_refcount");
+
+  return quark;
+}
+
+
+void
+tp_gash_table_ref (GHashTable *hash_table)
+{
+  guint refcount;
+
+  DEBUG ("called.");
+
+  refcount = GPOINTER_TO_UINT (g_dataset_id_get_data ((hash_table),
+      gash_table_refcount_quark ()));
+
+  if (!refcount)
+    refcount = 1;
+
+  refcount++;
+  g_dataset_id_set_data (hash_table, gash_table_refcount_quark (),
+      GUINT_TO_POINTER (refcount));
+
+  DEBUG ("Refcount for %p now %u", hash_table, refcount);
+}
+
+
+void
+tp_gash_table_unref (GHashTable *hash_table)
+{
+  guint refcount;
+
+  DEBUG ("called.");
+
+  refcount = GPOINTER_TO_UINT (g_dataset_id_get_data ((hash_table),
+      gash_table_refcount_quark ()));
+
+  g_assert (refcount != G_MAXUINT);
+
+  if (!refcount)
+    refcount = 1;
+
+  if (!--refcount)
+    {
+      g_hash_table_destroy (hash_table);
+      g_dataset_destroy (hash_table);
+    }
+  else
+    {
+      g_dataset_id_set_data (hash_table, gash_table_refcount_quark (),
+          GUINT_TO_POINTER (refcount));
+    }
+
+  DEBUG ("Refcount for %p now %u", hash_table, refcount);
+}
+
+
+#endif
+
+
 struct _TpPresenceMixinPrivate
 {
   /* ... */
