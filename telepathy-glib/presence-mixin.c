@@ -749,6 +749,9 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
     {
       TpPresenceStatus *status_to_set;
 
+      DEBUG ("Found status \"%s\", checking if it's available...",
+          (const gchar *) key);
+
       if (mixin_cls->status_available
           && !mixin_cls->status_available (data->obj, i))
         {
@@ -759,6 +762,8 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
           data->retval = FALSE;
           return;
         }
+
+      DEBUG ("The status is available.");
 
       GHashTable *optional_arguments = NULL;
 
