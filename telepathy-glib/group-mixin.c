@@ -43,8 +43,9 @@
  *
  * You can also implement the group interface by forwarding all group
  * operations to the group mixin of an associated object (mainly useful
- * for Tubes channels). To do this, call tp_external_group_mixin_class_init()
- * from your class_init function, and call
+ * for Tubes channels). To do this, call tp_external_group_mixin_init()
+ * in the constructor after the associated object has been set,
+ * tp_external_group_mixin_finalize() in the dispose or finalize function, and
  * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
  * tp_external_group_mixin_iface_init)</literal> in the fourth argument to
  * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
@@ -132,6 +133,7 @@ struct _TpGroupMixinPrivate {
     TpHandleSet *actors;
     GHashTable *handle_owners;
     GHashTable *local_pending_info;
+    GPtrArray *externals;
 };
 
 
@@ -266,6 +268,27 @@ tp_group_mixin_init (GObject *obj,
   mixin->priv->local_pending_info = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify)local_pending_info_free);
   mixin->priv->actors = tp_handle_set_new (handle_repo);
+  mixin->priv->externals = NULL;
+}
+
+static void
+tp_group_mixin_add_external (GObject *obj, GObject *external)
+{
+  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
+
+  if (mixin->priv->externals == NULL)
+    mixin->priv->externals = g_ptr_array_new ();
+  g_ptr_array_add (mixin->priv->externals, external);
+}
+
+static void
+tp_group_mixin_remove_external (GObject *obj, GObject *external)
+{
+  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
+
+  /* we can't have added it if we have no array to add it to... */
+  g_return_if_fail (mixin->priv->externals != NULL);
+  g_ptr_array_remove_fast (mixin->priv->externals, external);
 }
 
 static void
@@ -1103,6 +1126,17 @@ tp_group_mixin_change_flags (GObject *obj,
 
       tp_svc_channel_interface_group_emit_group_flags_changed (obj, added,
           removed);
+      if (mixin->priv->externals != NULL)
+        {
+          guint i;
+
+          for (i = 0; i < mixin->priv->externals->len; i++)
+            {
+              tp_svc_channel_interface_group_emit_group_flags_changed
+                ((GObject *) g_ptr_array_index (mixin->priv->externals, i),
+                 added, removed);
+            }
+        }
     }
 }
 
@@ -1359,6 +1393,19 @@ tp_group_mixin_change_members (GObject *obj,
       tp_svc_channel_interface_group_emit_members_changed (obj, message,
           arr_add, arr_remove, arr_local, arr_remote, actor, reason);
 
+      if (mixin->priv->externals != NULL)
+        {
+          guint i;
+
+          for (i = 0; i < mixin->priv->externals->len; i++)
+            {
+              tp_svc_channel_interface_group_emit_members_changed
+                ((GObject *) g_ptr_array_index (mixin->priv->externals, i),
+                 message, arr_add, arr_remove, arr_local, arr_remote,
+                 actor, reason);
+            }
+        }
+
       /* free arrays */
       g_array_free (arr_add, TRUE);
       g_array_free (arr_remove, TRUE);
@@ -1471,43 +1518,55 @@ tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
-#define TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET_QUARK \
-    (_external_group_mixin_get_obj_offset_quark ())
-#define TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET(o) \
-    (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_TYPE (o),\
-        TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET_QUARK)))
 #define TP_EXTERNAL_GROUP_MIXIN_OBJ(o) \
-    ((GObject *) tp_mixin_offset_cast (o, \
-      TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET (o)))
+    ((GObject *) g_object_get_qdata (o, \
+      _external_group_mixin_get_obj_quark ()))
 
 static GQuark
-_external_group_mixin_get_obj_offset_quark (void)
+_external_group_mixin_get_obj_quark (void)
 {
-  static GQuark offset_quark = 0;
-  if (!offset_quark)
-    offset_quark = g_quark_from_static_string
-        ("TpExternalGroupMixinClassOffsetQuark");
-  return offset_quark;
+  static GQuark quark = 0;
+  if (!quark)
+    quark = g_quark_from_static_string
+        ("TpExternalGroupMixinQuark");
+  return quark;
 }
 
 /**
- * tp_external_group_mixin_class_init:
- * @obj_cls: An object class
- * @offset: The offset of a pointer to a GObject with a group mixin
- *    within the instance structure of this class
+ * tp_external_group_mixin_init:
+ * @obj: An object implementing the groups interface using an external group
+ *    mixin
+ * @obj_with_mixin: A GObject with the group mixin
  *
  * Fill in the qdata needed to implement the group interface using
  * the group mixin of another object. This function should usually be called
- * in the class_init function.
+ * in the instance constructor.
  */
 void
-tp_external_group_mixin_class_init (GObjectClass *obj_cls,
-                                    glong offset)
+tp_external_group_mixin_init (GObject *obj, GObject *obj_with_mixin)
 {
-  g_assert (G_IS_OBJECT_CLASS (obj_cls));
-  g_type_set_qdata (G_OBJECT_CLASS_TYPE (obj_cls),
-      TP_EXTERNAL_GROUP_MIXIN_OBJ_OFFSET_QUARK,
-      GINT_TO_POINTER (offset));
+  g_object_ref (obj_with_mixin);
+  g_object_set_qdata (obj, _external_group_mixin_get_obj_quark (),
+      obj_with_mixin);
+  tp_group_mixin_add_external (obj_with_mixin, obj);
+}
+
+/**
+ * tp_external_group_mixin_finalize:
+ * @obj: An object implementing the groups interface using an external group
+ *    mixin
+ *
+ * Remove the external group mixin. This function should usually be called
+ * in the dispose or finalize function.
+ */
+void
+tp_external_group_mixin_finalize (GObject *obj)
+{
+  GObject *obj_with_mixin = g_object_steal_qdata (obj,
+      _external_group_mixin_get_obj_quark ());
+
+  tp_group_mixin_remove_external (obj_with_mixin, obj);
+  g_object_unref (obj_with_mixin);
 }
 
 #define EXTERNAL_OR_DIE(var) \
