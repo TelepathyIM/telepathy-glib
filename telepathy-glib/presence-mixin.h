@@ -1,5 +1,5 @@
 /*
- * presence-mixin.h - Header for GabblePresenceMixin
+ * presence-mixin.h - Header for TpPresenceMixin
  * Copyright (C) 2007 Collabora Ltd.
  * Copyright (C) 2007 Nokia Corporation
  *
