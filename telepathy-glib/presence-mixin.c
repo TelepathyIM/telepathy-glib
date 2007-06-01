@@ -760,7 +760,49 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
           return;
         }
 
-      status_to_set = tp_presence_status_new (i, (GHashTable *) value);
+      GHashTable *optional_arguments = NULL;
+
+      if (value)
+        {
+          GHashTable *provided_arguments = (GHashTable *) value;
+          int j;
+          const TpPresenceStatusOptionalArgumentSpec *specs =
+            mixin_cls->statuses[i].optional_arguments;
+
+          for (j=0; specs[j].name != NULL; j++)
+            {
+              GValue *provided_value =
+                g_hash_table_lookup (provided_arguments, specs[j].name);
+              GValue *new_value;
+
+              if (!provided_value)
+                continue;
+
+              new_value = g_slice_new0 (GValue);
+              g_value_init (new_value, G_VALUE_TYPE (provided_value));
+              g_value_copy (provided_value, new_value);
+
+              if (!optional_arguments)
+                optional_arguments =
+                  g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+                      (GDestroyNotify) tp_g_value_slice_free);
+
+              if (DEBUGGING)
+                {
+                  gchar *value_contents = g_strdup_value_contents (new_value);
+                  DEBUG ("Got optional argument (\"%s\", %s)", specs[j].name,
+                      value_contents);
+                  g_free (value_contents);
+                }
+
+              g_hash_table_insert (optional_arguments,
+                  (gpointer) specs[j].name, new_value);
+            }
+        }
+
+      status_to_set = tp_presence_status_new (i, optional_arguments);
+
+      DEBUG ("About to try setting status \"%s\"", mixin_cls->statuses[i].name);
 
       if (!mixin_cls->set_own_status (data->obj, status_to_set, data->error))
         {
@@ -769,6 +811,9 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
         }
 
       tp_presence_status_free (status_to_set);
+
+      if (optional_arguments)
+        g_hash_table_unref (optional_arguments);
     }
   else
     {
