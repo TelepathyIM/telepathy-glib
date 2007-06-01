@@ -63,75 +63,6 @@
 #include "internal-debug.h"
 
 
-#if ((GLIB_MAJOR_VERSION == 2) && (GLIB_MINOR_VERSION < 10))
-
-
-static GQuark
-gash_table_refcount_quark ()
-{
-  static GQuark quark = 0;
-
-  if (!quark)
-    quark = g_quark_from_static_string ("tp_presence_mixin_gash_table_refcount");
-
-  return quark;
-}
-
-
-void
-tp_gash_table_ref (GHashTable *hash_table)
-{
-  guint refcount;
-
-  DEBUG ("called.");
-
-  refcount = GPOINTER_TO_UINT (g_dataset_id_get_data ((hash_table),
-      gash_table_refcount_quark ()));
-
-  if (!refcount)
-    refcount = 1;
-
-  refcount++;
-  g_dataset_id_set_data (hash_table, gash_table_refcount_quark (),
-      GUINT_TO_POINTER (refcount));
-
-  DEBUG ("Refcount for %p now %u", hash_table, refcount);
-}
-
-
-void
-tp_gash_table_unref (GHashTable *hash_table)
-{
-  guint refcount;
-
-  DEBUG ("called.");
-
-  refcount = GPOINTER_TO_UINT (g_dataset_id_get_data ((hash_table),
-      gash_table_refcount_quark ()));
-
-  g_assert (refcount != G_MAXUINT);
-
-  if (!refcount)
-    refcount = 1;
-
-  if (!--refcount)
-    {
-      g_hash_table_destroy (hash_table);
-      g_dataset_destroy (hash_table);
-    }
-  else
-    {
-      g_dataset_id_set_data (hash_table, gash_table_refcount_quark (),
-          GUINT_TO_POINTER (refcount));
-    }
-
-  DEBUG ("Refcount for %p now %u", hash_table, refcount);
-}
-
-
-#endif
-
-
 struct _TpPresenceMixinPrivate
 {
   /* ... */
@@ -139,12 +70,32 @@ struct _TpPresenceMixinPrivate
 
 
 /**
+ * deep_copy_hashtable
+ *
+ * Make a deep copy of a GHashTable.
+ */
+static GHashTable *
+deep_copy_hashtable (GHashTable *hash_table)
+{
+  GValue value = {0, };
+
+  if (!hash_table)
+    return NULL;
+
+  g_value_init (&value,
+      dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
+  g_value_take_boxed (&value, hash_table);
+  return g_value_dup_boxed (&value);
+}
+
+
+/**
  * tp_presence_status_new
  * @index: Index of the presence status in the provided supported presence
  *  statuses array
  * @optional_arguments: Optional arguments for the presence statuses. Can be
- *  NULL if there are no optional arguments. The presence status object gets a
- *  new reference to the hashtable.
+ *  NULL if there are no optional arguments. The presence status object makes a
+ *  copy of the hashtable, so you should free the original.
  *
  * Construct a presence status structure. You should free the returned
  * structure with #tp_presence_status_free.
@@ -158,10 +109,7 @@ tp_presence_status_new (guint index,
   TpPresenceStatus *status = g_slice_new (TpPresenceStatus);
 
   status->index = index;
-  status->optional_arguments = optional_arguments;
-
-  if (optional_arguments)
-    g_hash_table_ref (optional_arguments);
+  status->optional_arguments = deep_copy_hashtable (optional_arguments);
 
   return status;
 }
@@ -180,7 +128,7 @@ tp_presence_status_free (TpPresenceStatus *status)
     return;
 
   if (status->optional_arguments)
-    g_hash_table_unref (status->optional_arguments);
+    g_hash_table_destroy (status->optional_arguments);
 
   g_slice_free(TpPresenceStatus, status);
 }
@@ -350,13 +298,11 @@ construct_presence_hash_foreach (gpointer key,
   DEBUG ("called.");
 
   contact_status = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-      (GDestroyNotify) g_hash_table_unref);
+      (GDestroyNotify) g_hash_table_destroy);
 
-  parameters = status->optional_arguments;
+  parameters = deep_copy_hashtable (status->optional_arguments);
 
-  if (parameters)
-    g_hash_table_ref (parameters);
-  else
+  if (!parameters)
     parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
 
   g_hash_table_insert (contact_status,
@@ -888,7 +834,7 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
       tp_presence_status_free (status_to_set);
 
       if (optional_arguments)
-        g_hash_table_unref (optional_arguments);
+        g_hash_table_destroy (optional_arguments);
     }
   else
     {
