@@ -110,7 +110,7 @@ tp_presence_status_free (TpPresenceStatus *status)
     return;
 
   if (status->optional_arguments)
-    g_hash_table_unref(status->optional_arguments);
+    g_hash_table_unref (status->optional_arguments);
 
   g_slice_free(TpPresenceStatus, status);
 }
