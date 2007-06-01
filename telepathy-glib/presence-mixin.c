@@ -185,6 +185,8 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
 {
   TpPresenceMixinClass *mixin_cls;
 
+  DEBUG ("called.");
+
   g_assert (get_contact_statuses != NULL);
   g_assert (set_own_status != NULL);
   g_assert (statuses != NULL);
@@ -222,6 +224,8 @@ tp_presence_mixin_init (GObject *obj,
                         glong offset)
 {
   TpPresenceMixin *mixin;
+
+  DEBUG ("called.");
 
   g_assert (G_IS_OBJECT (obj));
 
@@ -273,6 +277,8 @@ construct_presence_hash_foreach (gpointer key,
   GHashTable *contact_status;
   GValueArray *vals;
 
+  DEBUG ("called.");
+
   contact_status = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) g_hash_table_unref);
 
@@ -309,6 +315,8 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
 {
   GHashTable *presence_hash;
 
+  DEBUG ("called.");
+
   presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_value_array_free);
 
@@ -339,6 +347,8 @@ tp_presence_mixin_emit_presence_update (GObject *obj, GHashTable *contact_status
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   GHashTable *presence_hash;
 
+  DEBUG ("called.");
+
   presence_hash = construct_presence_hash (mixin_cls->statuses,
       contact_statuses);
   tp_svc_connection_interface_presence_emit_presence_update (obj,
@@ -361,6 +371,8 @@ void
 tp_presence_mixin_emit_one_presence_update (GObject *obj, TpHandle handle, const TpPresenceStatus *status)
 {
   GHashTable *contact_statuses;
+
+  DEBUG ("called.");
 
   contact_statuses = g_hash_table_new (NULL, NULL);
   g_hash_table_insert (contact_statuses, GUINT_TO_POINTER (handle),
@@ -390,6 +402,8 @@ tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
   GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
     "Only one status is possible at a time with this protocol!" };
 
+  DEBUG ("called.");
+
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   dbus_g_method_return_error (context, &error);
@@ -414,6 +428,8 @@ tp_presence_mixin_clear_status (TpSvcConnectionInterfacePresence *iface,
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   GError *error = NULL;
+
+  DEBUG ("called.");
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
@@ -476,6 +492,8 @@ get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
 {
   GHashTable *arguments = g_hash_table_new (g_str_hash, g_str_equal);
   int i;
+
+  DEBUG ("called.");
 
   for (i=0; specs != NULL && specs[i].name != NULL; i++)
     g_hash_table_insert (arguments, (gchar *) specs[i].name,
@@ -597,6 +615,8 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
   GHashTable *self_contact_statuses;
   TpPresenceStatus *self_status;
 
+  DEBUG ("called.");
+
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   self_contacts = g_array_sized_new (TRUE, TRUE, sizeof(TpHandle), 1);
@@ -669,6 +689,8 @@ tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
   GHashTable *contact_statuses;
   GError *error = NULL;
 
+  DEBUG ("called.");
+
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
   if (!contacts->len)
@@ -708,6 +730,8 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (data->obj));
   int i;
+
+  DEBUG ("called.");
 
   /* This function will actually only be invoked once for one SetStatus request,
    * since we check that the hash table has size 1 in
@@ -774,6 +798,8 @@ tp_presence_mixin_set_status (TpSvcConnectionInterfacePresence *iface,
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   struct _i_hate_g_hash_table_foreach data = { NULL, NULL, TRUE };
   GError *error = NULL;
+
+  DEBUG ("called.");
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
