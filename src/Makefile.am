@@ -2,7 +2,6 @@ BUILT_SOURCES = \
     tp-stream-engine-glue.h \
     tp-stream-engine-signals-marshal.h \
     tp-stream-engine-signals-marshal.c \
-    media-engine-gen.h \
     misc-signals-marshal.h \
     misc-signals-marshal.c
 
