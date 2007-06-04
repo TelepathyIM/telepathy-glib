@@ -716,12 +716,9 @@ stop_stream (TpStreamEngineStream *self)
     {
       GstElement *sink = farsight_stream_get_sink (priv->fs_stream);
       _remove_video_sink (self, sink);
-      farsight_stream_stop (priv->fs_stream);
     }
-  else
-    {
-      farsight_stream_stop (priv->fs_stream);
-    }
+
+  farsight_stream_stop (priv->fs_stream);
 
   priv->stream_started = FALSE;
 }
