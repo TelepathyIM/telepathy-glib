@@ -71,9 +71,6 @@ struct _TpStreamEngineStreamPrivate
   gboolean output_mute;
   gboolean input_mute;
   guint output_window_id;
-
-  gboolean stream_started;
-  gboolean stream_start_scheduled;
 };
 
 enum
@@ -186,8 +183,7 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->fs_stream)
     {
-      if (priv->stream_started)
-        stop_stream (stream);
+      stop_stream (stream);
 
       g_signal_handler_disconnect (priv->fs_stream,
         priv->state_changed_handler_id);
@@ -241,24 +237,6 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
 {
 }
 
-static void
-check_start_stream (TpStreamEngineStream *stream)
-{
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-
-  DEBUG (stream, "stream_start_scheduled = %d; stream_started = %d",
-    priv->stream_start_scheduled, priv->stream_started);
-
-  if (priv->stream_start_scheduled && !priv->stream_started)
-    {
-      if (farsight_stream_get_state (priv->fs_stream) == FARSIGHT_STREAM_STATE_CONNECTED)
-        {
-          farsight_stream_start (priv->fs_stream);
-          priv->stream_started = TRUE;
-        }
-     }
-}
-
 typedef struct _method_call_ctx method_call_ctx;
 
 struct _method_call_ctx
@@ -301,8 +279,6 @@ cb_fs_state_changed (FarsightStream *stream,
           break;
     case FARSIGHT_STREAM_STATE_CONNECTED:
           DEBUG (self, "stream %p connected", stream);
-          /* start the stream if its supposed to be playing already*/
-          check_start_stream (self);
           break;
   }
 
@@ -719,8 +695,6 @@ stop_stream (TpStreamEngineStream *self)
     }
 
   farsight_stream_stop (priv->fs_stream);
-
-  priv->stream_started = FALSE;
 }
 
 static void
@@ -735,10 +709,9 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 
   if (play)
     {
-      priv->stream_start_scheduled = TRUE;
-      check_start_stream (self);
+      farsight_stream_start (priv->fs_stream);
     }
-  else if (priv->stream_started)
+  else
     {
       stop_stream (self);
     }
