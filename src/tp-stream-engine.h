@@ -22,6 +22,7 @@
 #define __TP_STREAM_ENGINE_H__
 
 #include <glib-object.h>
+#include <libtelepathy/tp-constants.h>
 
 #include "stream.h"
 
@@ -71,7 +72,12 @@ void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug)
 TpStreamEngine *tp_stream_engine_get ();
 
 void tp_stream_engine_emit_receiving (TpStreamEngine *obj, gchar *channel_path,
-    guint stream_id, gboolean state);
+    guint stream_id, gboolean receiving);
+
+void tp_stream_engine_emit_stream_state_changed (TpStreamEngine *obj,
+    gchar *channel_path, guint stream_id,
+    TelepathyMediaStreamState state,
+    TelepathyMediaStreamDirection direction);
 
 GstElement *tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview);
 GstElement *tp_stream_engine_get_pipeline (TpStreamEngine *obj);

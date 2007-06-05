@@ -108,6 +108,7 @@ enum
   HANDLING_CHANNEL,
   NO_MORE_CHANNELS,
   RECEIVING,
+  STREAM_STATE_CHANGED,
   SHUTDOWN_REQUESTED,
   LAST_SIGNAL
 };
@@ -596,7 +597,7 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
    /**
    * TpStreamEngine::receiving:
    *
-   * Emitted whenever a stream is received
+   * Emitted whenever a stream is receiving data
    */
   signals[RECEIVING] =
     g_signal_new ("receiving",
@@ -604,8 +605,24 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
         G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
         0,
         NULL, NULL,
-        tp_stream_engine_marshal_VOID__STRING_INT_BOOLEAN,
+        tp_stream_engine_marshal_VOID__STRING_UINT_BOOLEAN,
         G_TYPE_NONE, 3, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_BOOLEAN);
+
+  /**
+   * TpStreamEngine::stream-state-changed:
+   *
+   * Emitted whenever a stream's state (connectivity, or current direction)
+   * changes
+   */
+  signals[STREAM_STATE_CHANGED] =
+    g_signal_new ("stream-state-changed",
+        G_OBJECT_CLASS_TYPE (tp_stream_engine_class),
+        G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+        0,
+        NULL, NULL,
+        tp_stream_engine_marshal_VOID__STRING_UINT_UINT_UINT,
+        G_TYPE_NONE, 4, DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT,
+        G_TYPE_UINT);
 
   /**
    * TpStreamEngine::shutdown:
@@ -1745,17 +1762,35 @@ tp_stream_engine_get ()
 }
 
 /*
- * tp_stream_engine_emit_received
+ * tp_stream_engine_emit_receiving
  *
  * Triggers stream engine to emit the TpStreamEngine::receiving signal
- *
  */
 void
-tp_stream_engine_emit_receiving (TpStreamEngine *obj, gchar *channel_path, guint
-    stream_id, gboolean state)
+tp_stream_engine_emit_receiving (TpStreamEngine *obj,
+                                 gchar *channel_path,
+                                 guint stream_id,
+                                 gboolean receiving)
 {
   g_signal_emit (G_OBJECT (obj), signals[RECEIVING], 0, channel_path,
-      stream_id, TRUE);
+      stream_id, receiving);
+}
+
+/*
+ * tp_stream_engine_emit_stream_state_changed
+ *
+ * Triggers stream engine to emit the TpStreamEngine::stream-state-changed
+ * signal
+ */
+void
+tp_stream_engine_emit_stream_state_changed (TpStreamEngine *obj,
+                                            gchar *channel_path,
+                                            guint stream_id,
+                                            TelepathyMediaStreamState state,
+                                            TelepathyMediaStreamDirection direction)
+{
+  g_signal_emit (G_OBJECT (obj), signals[STREAM_STATE_CHANGED], 0,
+      channel_path, stream_id, state, direction);
 }
 
 /**

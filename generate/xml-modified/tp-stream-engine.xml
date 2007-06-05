@@ -42,6 +42,12 @@
       <arg type="u" name="stream_id" />
       <arg type="b" name="state" />
     </signal>
+    <signal name="StreamStateChanged">
+      <arg type="o" name="channel_path" />
+      <arg type="u" name="stream_id" />
+      <arg type="u" name="state" />
+      <arg type="u" name="direction" />
+    </signal>
     <method name="Shutdown">
     </method>
   </interface>
