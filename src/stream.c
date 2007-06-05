@@ -67,6 +67,7 @@ struct _TpStreamEngineStreamPrivate
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
 
+  gboolean playing;
   FarsightStreamState state;
   FarsightStreamDirection dir;
 
@@ -771,9 +772,10 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 
   if (play)
     {
+      priv->playing = TRUE;
       farsight_stream_start (priv->fs_stream);
     }
-  else
+  else if (priv->playing)
     {
       stop_stream (self);
     }
