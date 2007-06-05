@@ -133,12 +133,6 @@ tp_stream_engine_stream_dispose (GObject *object)
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
 
-  if (priv->channel_path)
-    {
-      g_free (priv->channel_path);
-      priv->channel_path = NULL;
-    }
-
   if (priv->connection_proxy)
     {
       g_object_unref (priv->connection_proxy);
@@ -205,6 +199,21 @@ tp_stream_engine_stream_dispose (GObject *object)
 }
 
 static void
+tp_stream_engine_stream_finalize (GObject *object)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+  if (priv->channel_path)
+    {
+      g_free (priv->channel_path);
+      priv->channel_path = NULL;
+    }
+
+  G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->finalize (object);
+}
+
+static void
 tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -212,6 +221,7 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   g_type_class_add_private (klass, sizeof (TpStreamEngineStreamPrivate));
 
   object_class->dispose = tp_stream_engine_stream_dispose;
+  object_class->finalize = tp_stream_engine_stream_finalize;
 
   signals[STREAM_CLOSED] =
     g_signal_new ("stream-closed",
