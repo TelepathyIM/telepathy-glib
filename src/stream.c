@@ -67,6 +67,9 @@ struct _TpStreamEngineStreamPrivate
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
 
+  FarsightStreamState state;
+  FarsightStreamDirection dir;
+
   guint output_volume;
   gboolean output_mute;
   gboolean input_mute;
@@ -279,28 +282,77 @@ cb_fs_state_changed (FarsightStream *stream,
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  const gchar *state_str = "invalid!", *dir_str = "invalid!";
 
-  switch (state) {
-    case FARSIGHT_STREAM_STATE_DISCONNECTED:
-          DEBUG (self, "stream %p disconnected", stream);
-          break;
-    case FARSIGHT_STREAM_STATE_CONNECTING:
-          DEBUG (self, "stream %p connecting", stream);
-          break;
-    case FARSIGHT_STREAM_STATE_CONNECTED:
-          DEBUG (self, "stream %p connected", stream);
-          break;
-  }
-
-  if (priv->stream_handler_proxy)
+  switch (state)
     {
-      method_call_ctx *ctx = g_slice_new0 (method_call_ctx);
+    case FARSIGHT_STREAM_STATE_DISCONNECTED:
+      state_str = "disconnected";
+      break;
+    case FARSIGHT_STREAM_STATE_CONNECTING:
+      state_str = "connecting";
+      break;
+    case FARSIGHT_STREAM_STATE_CONNECTED:
+      state_str = "connected";
+      break;
+    }
 
-      ctx->stream = self;
-      ctx->method = "Media.StreamHandler::StreamState";
+  switch (dir)
+    {
+    case FARSIGHT_STREAM_DIRECTION_NONE:
+      dir_str = "none";
+      break;
+    case FARSIGHT_STREAM_DIRECTION_SENDONLY:
+      dir_str = "send";
+      break;
+    case FARSIGHT_STREAM_DIRECTION_RECEIVEONLY:
+      dir_str = "receive";
+      break;
+    case FARSIGHT_STREAM_DIRECTION_BOTH:
+      dir_str = "both";
+      break;
+    case FARSIGHT_STREAM_DIRECTION_LAST:
+      break;
+    }
 
-      tp_media_stream_handler_stream_state_async (
-        priv->stream_handler_proxy, state, async_method_callback, ctx);
+  DEBUG (self, "stream %p, state: %s, direction: %s", stream, state_str,
+      dir_str);
+
+  if (priv->state != state || priv->dir != dir)
+    {
+      tp_stream_engine_emit_stream_state_changed (tp_stream_engine_get (),
+        priv->channel_path, self->stream_id, state, dir);
+    }
+
+  if (priv->state != state)
+    {
+      if (priv->stream_handler_proxy)
+        {
+          method_call_ctx *ctx = g_slice_new0 (method_call_ctx);
+
+          ctx->stream = self;
+          ctx->method = "Media.StreamHandler::StreamState";
+
+          tp_media_stream_handler_stream_state_async (
+            priv->stream_handler_proxy, state, async_method_callback, ctx);
+        }
+
+      priv->state = state;
+    }
+
+  if (priv->dir != dir)
+    {
+      if ((priv->dir & FARSIGHT_STREAM_DIRECTION_RECEIVEONLY) !=
+          (dir & FARSIGHT_STREAM_DIRECTION_RECEIVEONLY))
+        {
+          gboolean receiving =
+            ((dir & FARSIGHT_STREAM_DIRECTION_RECEIVEONLY) ==
+             FARSIGHT_STREAM_DIRECTION_RECEIVEONLY);
+          tp_stream_engine_emit_receiving (tp_stream_engine_get (),
+              priv->channel_path, self->stream_id, receiving);
+        }
+
+      priv->dir = dir;
     }
 }
 
@@ -869,9 +921,6 @@ cb_fs_codec_changed (FarsightStream *stream,
       tp_stream_engine_stream_set_output_volume (self, priv->output_volume,
         NULL);
     }
-
-  tp_stream_engine_emit_receiving (tp_stream_engine_get(), priv->channel_path,
-      self->stream_id, TRUE);
 
   DEBUG (self, "codec_id=%d, stream=%p", codec_id, stream);
 
