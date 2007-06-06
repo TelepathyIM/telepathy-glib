@@ -406,8 +406,6 @@ tp_properties_mixin_set_properties (GObject *obj,
       return;
     }
 
-  DEBUG ("set properties called (len == %d), dbus context is %p", properties->len, context);
-
   /* Check input property identifiers */
   for (i = 0; i < properties->len; i++)
     {
