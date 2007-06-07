@@ -23,11 +23,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
   <xsl:output method="text" indent="no" encoding="ascii"/>
 
-  <xsl:param name="mixed-case-prefix" select="'Tp'"/>
-  <xsl:param name="upper-case-prefix" select="'TP_'"/>
+  <xsl:param name="mixed-case-prefix" select="''"/>
 
   <xsl:variable name="upper" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'"/>
   <xsl:variable name="lower" select="'abcdefghijklmnopqrstuvwxyz'"/>
+
+  <xsl:variable name="upper-case-prefix" select="concat(translate($mixed-case-prefix, $lower, $upper), '_')"/>
+  <xsl:variable name="lower-case-prefix" select="concat(translate($mixed-case-prefix, $upper, $lower), '_')"/>
+
 
   <xsl:template match="tp:flags">
     <xsl:variable name="name">
@@ -213,7 +216,12 @@ but <xsl:value-of select="$name"/> is less than the previous value
 
   <xsl:template match="text()"/>
 
-  <xsl:template match="/tp:spec">/* Generated from the Telepathy spec, version <xsl:value-of select="tp:version"/><xsl:text>
+  <xsl:template match="/tp:spec">
+    <xsl:if test="$mixed-case-prefix = ''">
+      <xsl:message terminate="yes">
+        <xsl:text>mixed-case-prefix param must be set&#10;</xsl:text>
+      </xsl:message>
+    </xsl:if>
 
 </xsl:text><xsl:for-each select="tp:copyright">
       <xsl:value-of select="."/><xsl:text>
