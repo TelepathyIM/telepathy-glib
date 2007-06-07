@@ -122,10 +122,6 @@ typedef enum {
         <xsl:when test="@plural">
           <xsl:value-of select="@plural"/>
         </xsl:when>
-        <!-- hack, remove these next 3 lines when the spec gets plurals -->
-        <xsl:when test="@name = 'Connection_Status'">
-          <xsl:text>Connection_Statuses</xsl:text>
-        </xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="@name"/><xsl:text>s</xsl:text>
         </xsl:otherwise>
