@@ -203,12 +203,14 @@ _gen/unstable-enums.h: _gen/unstable-spec.xml \
 _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
 	../tools/c-interfaces-generator.xsl
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
+		--stringparam mixed-case-prefix Tp \
 		$(srcdir)/../tools/c-interfaces-generator.xsl \
 		_gen/stable-spec.xml > $@
 
 _gen/unstable-interfaces.h: _gen/unstable-spec.xml \
 	../tools/c-interfaces-generator.xsl
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
+		--stringparam mixed-case-prefix Tp \
 		$(srcdir)/../tools/c-interfaces-generator.xsl \
 		_gen/unstable-spec.xml > $@
 
