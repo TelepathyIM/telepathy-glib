@@ -219,25 +219,36 @@ but <xsl:value-of select="$name"/> is less than the previous value
       </xsl:message>
     </xsl:if>
 
-</xsl:text><xsl:for-each select="tp:copyright">
-      <xsl:value-of select="."/><xsl:text>
-</xsl:text>
-</xsl:for-each>
-    <xsl:value-of select="tp:license"/><xsl:text>
-</xsl:text><xsl:value-of select="tp:docstring"/>
-*/
+    <xsl:text>/* Generated from </xsl:text>
+    <xsl:value-of select="tp:title"/>
+    <xsl:if test="tp:version">
+      <xsl:text>, version </xsl:text>
+      <xsl:value-of select="tp:version"/>
+    </xsl:if>
+    <xsl:text>&#10;&#10;</xsl:text>
+    <xsl:for-each select="tp:copyright">
+      <xsl:value-of select="."/>
+      <xsl:text>&#10;</xsl:text>
+    </xsl:for-each>
+    <xsl:value-of select="tp:license"/>
+    <xsl:text>&#10;</xsl:text>
+    <xsl:value-of select="tp:docstring"/>
+    <xsl:text>&#10; */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-<xsl:apply-templates select="node"/>
+</xsl:text>
+    <xsl:apply-templates select="node"/>
+    <xsl:text>
 
 #ifdef __cplusplus
 }
 #endif
 
-</xsl:template>
+</xsl:text>
+  </xsl:template>
 
 </xsl:stylesheet>
 
