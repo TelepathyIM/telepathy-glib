@@ -1081,8 +1081,21 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       TpStreamEngine *engine = tp_stream_engine_get ();
       GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
       GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
+      GstElement *queue = gst_element_factory_make ("queue", NULL);
 
-      src = tee;
+      if (!queue)
+        g_error("Could not create queue element");
+
+      g_object_set(G_OBJECT(queue), "leaky", 2,
+          "max-size-time", 50*GST_MSECOND, NULL);
+
+      gst_bin_add(GST_BIN(pipeline), queue);
+
+      gst_element_set_state(queue, GST_STATE_PLAYING);
+
+      gst_element_link(tee, queue);
+      src = queue;
+
       gst_object_unref (tee);
     }
 
