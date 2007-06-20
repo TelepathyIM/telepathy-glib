@@ -85,8 +85,9 @@ typedef struct _TpPresenceStatus TpPresenceStatus;
  * TpPresenceStatus:
  * @index: Index of the presence status in the provided supported presence
  *  statuses array
- * @optional_arguments: A mapping of string identifiers to GValues of the
- *  optional status arguments, if any
+ * @optional_arguments: A GHashTable mapping of string identifiers to GValues
+ *  of the optional status arguments, if any. If there are no optional
+ *  arguments, this pointer may be NULL.
  *
  * Structure representing a presence status.
  *
