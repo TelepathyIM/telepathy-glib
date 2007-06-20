@@ -745,6 +745,7 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
     (struct _i_hate_g_hash_table_foreach*) user_data;
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (data->obj));
+  TpPresenceStatus status_to_set = { 0, };
   int i;
 
   DEBUG ("called.");
@@ -763,7 +764,7 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
 
   if (mixin_cls->statuses[i].name != NULL)
     {
-      TpPresenceStatus *status_to_set;
+      GHashTable *optional_arguments = NULL;
 
       DEBUG ("Found status \"%s\", checking if it's available...",
           (const gchar *) key);
@@ -780,8 +781,6 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
         }
 
       DEBUG ("The status is available.");
-
-      GHashTable *optional_arguments = NULL;
 
       if (value)
         {
@@ -821,17 +820,16 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
             }
         }
 
-      status_to_set = tp_presence_status_new (i, optional_arguments);
+      status_to_set.index = i;
+      status_to_set.optional_arguments = optional_arguments;
 
       DEBUG ("About to try setting status \"%s\"", mixin_cls->statuses[i].name);
 
-      if (!mixin_cls->set_own_status (data->obj, status_to_set, data->error))
+      if (!mixin_cls->set_own_status (data->obj, &status_to_set, data->error))
         {
           DEBUG ("failed to set status");
           data->retval = FALSE;
         }
-
-      tp_presence_status_free (status_to_set);
 
       if (optional_arguments)
         g_hash_table_destroy (optional_arguments);
