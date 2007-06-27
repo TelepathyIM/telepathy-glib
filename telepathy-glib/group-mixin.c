@@ -322,6 +322,9 @@ tp_group_mixin_finalize (GObject *obj)
   g_hash_table_destroy (mixin->priv->handle_owners);
   g_hash_table_destroy (mixin->priv->local_pending_info);
 
+  if (mixin->priv->externals)
+    g_ptr_array_free (mixin->priv->externals, TRUE);
+
   g_slice_free (TpGroupMixinPrivate, mixin->priv);
 
   tp_handle_set_destroy (mixin->members);
