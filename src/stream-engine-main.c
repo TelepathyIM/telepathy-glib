@@ -260,7 +260,11 @@ set_log_file_from_env (void)
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
+
+  gst_init (&argc, &argv);
+
   set_log_file_from_env ();
 
   signal (SIGBUS, got_sigbus);
@@ -292,9 +296,6 @@ int main(int argc, char **argv) {
     }
   }
 #endif /* USE_REALTIME */
-
-  g_type_init();
-  gst_init (&argc, &argv);
 
   {
     GLogLevelFlags fatal_mask;
