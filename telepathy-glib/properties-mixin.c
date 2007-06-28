@@ -786,8 +786,7 @@ tp_properties_mixin_change_value (GObject *obj,
     }
   else
     {
-      prop->value = g_slice_new0 (GValue);
-      g_value_init (prop->value, mixin_cls->signatures[prop_id].type);
+      prop->value = tp_g_value_slice_new (mixin_cls->signatures[prop_id].type);
     }
 
   g_value_copy (new_value, prop->value);

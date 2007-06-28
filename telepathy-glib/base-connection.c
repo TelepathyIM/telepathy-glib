@@ -1036,9 +1036,8 @@ list_channel_factory_foreach_one (TpChannelIface *chan,
   GPtrArray *values = (GPtrArray *) data;
   gchar *path, *type;
   guint handle_type, handle;
-  GValue *entry = g_slice_new0 (GValue);
+  GValue *entry = tp_g_value_slice_new (TP_CHANNEL_LIST_ENTRY_TYPE);
 
-  g_value_init (entry, TP_CHANNEL_LIST_ENTRY_TYPE);
   g_value_take_boxed (entry, dbus_g_type_specialized_construct
       (TP_CHANNEL_LIST_ENTRY_TYPE));
 
