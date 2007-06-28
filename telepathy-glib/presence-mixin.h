@@ -129,8 +129,12 @@ typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
  * @error: Used to return a Telepathy D-Bus error if %NULL is returned
  *
  * Signature of the callback used to get the stored presence status of
- * contacts. The returned hash table should have contact handles mapped to their
- * respective presence statuses in #TpPresenceStatus structs.
+ * contacts. The returned hash table should have contact handles mapped to
+ * their respective presence statuses in #TpPresenceStatus structs.
+ *
+ * The returned hash table will be freed with g_hash_table_destroy. The
+ * callback is responsible for ensuring that this does any cleanup that
+ * may be necessary.
  *
  * Returns: The contact presence on success, %NULL with error set on error
  */
@@ -148,6 +152,15 @@ typedef GHashTable *(*TpPresenceMixinGetContactStatusesFunc) (GObject *obj,
  * status in SetStatuses. It is also used in ClearStatus and RemoveStatus to
  * reset the user's own status back to the "default" one with a %NULL status
  * argument.
+ *
+ * The optional_arguments hash table in @status, if not NULL, will have been
+ * filtered so it only contains recognised parameters, so the callback
+ * need not (and cannot) check for unrecognised parameters. However, the
+ * types of the parameters are not currently checked, so the callback is
+ * responsible for doing so.
+ *
+ * The callback is responsible for emitting PresenceUpdate, if appropriate,
+ * by calling tp_presence_mixin_emit_presence_update().
  *
  * Returns: %TRUE if the operation was successful, %FALSE if not.
  */
