@@ -295,8 +295,6 @@ construct_presence_hash_foreach (gpointer key,
   GHashTable *contact_status;
   GValueArray *vals;
 
-  DEBUG ("called.");
-
   contact_status = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) g_hash_table_destroy);
 
@@ -512,8 +510,6 @@ get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
 {
   GHashTable *arguments = g_hash_table_new (g_str_hash, g_str_equal);
   int i;
-
-  DEBUG ("called.");
 
   for (i=0; specs != NULL && specs[i].name != NULL; i++)
     g_hash_table_insert (arguments, (gchar *) specs[i].name,
