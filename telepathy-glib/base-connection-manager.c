@@ -38,6 +38,8 @@
 #include <dbus/dbus-protocol.h>
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/util.h>
+
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "internal-debug.h"
 
