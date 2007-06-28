@@ -503,6 +503,7 @@ tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
   tp_svc_connection_interface_presence_return_from_get_presence (context,
       presence_hash);
   g_hash_table_destroy (presence_hash);
+  g_hash_table_destroy (contact_statuses);
 }
 
 
