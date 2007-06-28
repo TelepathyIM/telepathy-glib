@@ -31,6 +31,8 @@ GValue *tp_g_value_slice_new (GType type);
 
 void tp_g_value_slice_free (GValue *value);
 
+GValue *tp_g_value_slice_dup (const GValue *value);
+
 gboolean tp_strdiff (const gchar *left, const gchar *right);
 
 gpointer tp_mixin_offset_cast (gpointer instance, guint offset);

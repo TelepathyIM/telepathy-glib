@@ -93,6 +93,25 @@ tp_g_value_slice_free (GValue *value)
 
 
 /**
+ * tp_g_value_slice_dup:
+ * @value: A GValue
+ *
+ * <!-- 'Returns' says it all -->
+ *
+ * Returns: a newly allocated copy of @value, to be freed with
+ * tp_g_value_slice_free() or g_slice_free().
+ */
+GValue *
+tp_g_value_slice_dup (const GValue *value)
+{
+  GValue *ret = tp_g_value_slice_new (G_VALUE_TYPE (value));
+
+  g_value_copy (value, ret);
+  return ret;
+}
+
+
+/**
  * tp_strdiff:
  * @left: The first string to compare (may be NULL)
  * @right: The second string to compare (may be NULL)

@@ -955,6 +955,7 @@ TP_SVC_CONNECTION_INTERFACE_FORWARDING_GET_CLASS
 tp_g_ptr_array_contains
 tp_g_value_slice_new
 tp_g_value_slice_free
+tp_g_value_slice_dup
 tp_strdiff
 tp_mixin_offset_cast
 tp_escape_as_identifier
