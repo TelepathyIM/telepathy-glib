@@ -40,8 +40,8 @@ typedef struct _TpPresenceStatusSpec TpPresenceStatusSpec;
  * Structure specifying a supported optional argument for a presence status.
  *
  * In addition to the fields documented here, there are two gpointer fields
- * which must currently be %NULL. A meaning may be defined for these in a future
- * version of telepathy-glib.
+ * which must currently be %NULL. A meaning may be defined for these in a
+ * future version of telepathy-glib.
  */
 struct _TpPresenceStatusOptionalArgumentSpec {
     const gchar *name;
@@ -59,14 +59,14 @@ struct _TpPresenceStatusOptionalArgumentSpec {
  * @self: Indicates if this status may be set on yourself
  * @optional_arguments: An array of #TpPresenceStatusOptionalArgumentSpec
  *  structures representing the optional arguments for this status, terminated
- *  by a NULL name. If there are no optional arguments for a status, this can be
- *  NULL.
+ *  by a NULL name. If there are no optional arguments for a status, this can
+ *  be NULL.
  *
  * Structure specifying a supported presence status.
  *
  * In addition to the fields documented here, there are two gpointer fields
- * which must currently be %NULL. A meaning may be defined for these in a future
- * version of telepathy-glib.
+ * which must currently be %NULL. A meaning may be defined for these in a
+ * future version of telepathy-glib.
  */
 struct _TpPresenceStatusSpec {
     const gchar *name;
@@ -92,8 +92,8 @@ typedef struct _TpPresenceStatus TpPresenceStatus;
  * Structure representing a presence status.
  *
  * In addition to the fields documented here, there are two gpointer fields
- * which must currently be %NULL. A meaning may be defined for these in a future
- * version of telepathy-glib.
+ * which must currently be %NULL. A meaning may be defined for these in a
+ * future version of telepathy-glib.
  */
 struct _TpPresenceStatus {
     guint index;
@@ -104,7 +104,8 @@ struct _TpPresenceStatus {
     gpointer _future2;
 };
 
-TpPresenceStatus *tp_presence_status_new (guint index, GHashTable *optional_arguments);
+TpPresenceStatus *tp_presence_status_new (guint index,
+    GHashTable *optional_arguments);
 void tp_presence_status_free (TpPresenceStatus *status);
 
 /**
@@ -231,8 +232,10 @@ void tp_presence_mixin_class_init (GObjectClass *obj_cls, glong offset,
 void tp_presence_mixin_init (GObject *obj, glong offset);
 void tp_presence_mixin_finalize (GObject *obj);
 
-void tp_presence_mixin_emit_presence_update (GObject *obj, GHashTable *contact_presences);
-void tp_presence_mixin_emit_one_presence_update (GObject *obj, TpHandle handle, const TpPresenceStatus *status);
+void tp_presence_mixin_emit_presence_update (GObject *obj,
+    GHashTable *contact_presences);
+void tp_presence_mixin_emit_one_presence_update (GObject *obj,
+    TpHandle handle, const TpPresenceStatus *status);
 
 void tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 
