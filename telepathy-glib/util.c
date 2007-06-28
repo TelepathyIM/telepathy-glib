@@ -59,6 +59,25 @@ tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
 
 
 /**
+ * tp_g_value_slice_new:
+ * @type: The type desired for the new GValue
+ *
+ * <!-- 'Returns' says it all -->
+ *
+ * Returns: a newly allocated, newly initialized #GValue, to be freed with
+ * tp_g_value_slice_free() or g_slice_free().
+ */
+GValue *
+tp_g_value_slice_new (GType type)
+{
+  GValue *ret = g_slice_new0 (GValue);
+
+  g_value_init (ret, type);
+  return ret;
+}
+
+
+/**
  * tp_g_value_slice_free:
  * @value: A GValue which was allocated with the g_slice API
  *
