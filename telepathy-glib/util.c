@@ -113,6 +113,55 @@ tp_g_value_slice_dup (const GValue *value)
 }
 
 
+struct _tp_g_hash_table_update
+{
+  GHashTable *target;
+  GBoxedCopyFunc key_dup, value_dup;
+};
+
+static void
+_tp_g_hash_table_update_helper (gpointer key,
+                                gpointer value,
+                                gpointer user_data)
+{
+  struct _tp_g_hash_table_update *data = user_data;
+  gpointer new_key = (data->key_dup) (key);
+  gpointer new_value = (data->value_dup) (value);
+
+  g_hash_table_replace (data->target, new_key, new_value);
+}
+
+/**
+ * tp_g_hash_table_update:
+ * @target: The hash table to be updated
+ * @source: The hash table to update it with (read-only)
+ * @key_dup: function to duplicate a key from @source so it can be be stored
+ *           in @target
+ * @value_dup: function to duplicate a value from @source so it can be stored
+ *             in @target
+ *
+ * Add each item in @source to @target, replacing any existing item with the
+ * same key. @key_dup and @value_dup are used to duplicate the items; in
+ * principle they could also be used to convert between types.
+ */
+void
+tp_g_hash_table_update (GHashTable *target,
+                        GHashTable *source,
+                        GBoxedCopyFunc key_dup,
+                        GBoxedCopyFunc value_dup)
+{
+  struct _tp_g_hash_table_update data = { target, key_dup,
+      value_dup };
+
+  g_return_if_fail (target != NULL);
+  g_return_if_fail (source != NULL);
+  g_return_if_fail (key_dup != NULL);
+  g_return_if_fail (value_dup != NULL);
+
+  g_hash_table_foreach (source, _tp_g_hash_table_update_helper, &data);
+}
+
+
 /**
  * tp_strdiff:
  * @left: The first string to compare (may be NULL)

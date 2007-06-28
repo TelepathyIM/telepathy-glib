@@ -35,6 +35,9 @@ void tp_g_value_slice_free (GValue *value);
 
 GValue *tp_g_value_slice_dup (const GValue *value);
 
+void tp_g_hash_table_update (GHashTable *target, GHashTable *source,
+    GBoxedCopyFunc key_dup, GBoxedCopyFunc value_dup);
+
 gboolean tp_strdiff (const gchar *left, const gchar *right);
 
 gpointer tp_mixin_offset_cast (gpointer instance, guint offset);
