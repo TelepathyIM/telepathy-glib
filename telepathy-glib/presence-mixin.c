@@ -357,7 +357,8 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
  * #tp_presence_mixin_emit_one_presence_update.
  */
 void
-tp_presence_mixin_emit_presence_update (GObject *obj, GHashTable *contact_statuses)
+tp_presence_mixin_emit_presence_update (GObject *obj,
+                                        GHashTable *contact_statuses)
 {
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
@@ -384,7 +385,9 @@ tp_presence_mixin_emit_presence_update (GObject *obj, GHashTable *contact_status
  * convenience wrapper around #tp_presence_mixin_emit_presence_update.
  */
 void
-tp_presence_mixin_emit_one_presence_update (GObject *obj, TpHandle handle, const TpPresenceStatus *status)
+tp_presence_mixin_emit_one_presence_update (GObject *obj,
+                                            TpHandle handle,
+                                            const TpPresenceStatus *status)
 {
   GHashTable *contact_statuses;
 
