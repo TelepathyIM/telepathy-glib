@@ -800,10 +800,7 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
 
               if (!provided_value)
                 continue;
-
-              new_value = g_slice_new0 (GValue);
-              g_value_init (new_value, G_VALUE_TYPE (provided_value));
-              g_value_copy (provided_value, new_value);
+              new_value = tp_g_value_slice_dup (provided_value);
 
               if (!optional_arguments)
                 optional_arguments =
