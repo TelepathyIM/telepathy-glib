@@ -152,6 +152,7 @@ struct _WindowPair
   guint window_id;
   volatile gboolean removing;
   gboolean created;
+  void (*post_remove) (WindowPair *wp);
 };
 
 static void
@@ -180,6 +181,7 @@ _window_pairs_add (GSList **list, TpStreamEngineStream *stream, GstElement *sink
   wp->window_id = window_id;
   wp->removing = FALSE;
   wp->created = FALSE;
+  wp->post_remove = NULL;
 
   *list = g_slist_prepend (*list, wp);
 }
@@ -787,6 +789,86 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
   check_if_busy (self);
 }
 
+static void
+_window_pairs_remove_cb (WindowPair *wp)
+{
+  TpStreamEngine *self = tp_stream_engine_get ();
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
+
+  _window_pairs_remove (&(priv->preview_windows), wp);
+}
+
+static void
+_window_pairs_empty_cb (WindowPair *wp)
+{
+  wp->sink = NULL;
+  wp->created = FALSE;
+  wp->stream = NULL;
+  wp->removing = FALSE;
+}
+
+static void
+_remove_defunct_preview_sink_callback (GstPad *pad, gboolean blocked,
+						  gpointer user_data)
+{
+  TpStreamEngine *self = tp_stream_engine_get ();
+
+  WindowPair *wp = user_data;
+  g_assert (wp);
+  GstPad *peerpad = gst_pad_get_peer (pad);
+  g_assert (peerpad);
+  GstElement *peerelem = GST_ELEMENT (gst_pad_get_parent (peerpad));
+  g_assert (peerelem);
+  GstElement *peerparent =  GST_ELEMENT (gst_element_get_parent (peerelem));
+  g_assert (peerparent);
+  GstElement *tee =  GST_ELEMENT (gst_pad_get_parent (pad));
+  g_assert (tee);
+
+  g_assert (wp->sink == peerelem);
+
+  if(!gst_pad_unlink (pad, peerpad)) {
+    g_error ("Can't unlink pad from tee");
+    return;
+  }
+
+  gst_element_release_request_pad (tee, pad);
+  gst_object_unref (pad);
+  gst_object_unref (tee);
+
+  gst_element_set_state (peerelem, GST_STATE_NULL);
+
+  gst_element_get_state (peerelem, NULL, NULL, GST_CLOCK_TIME_NONE);
+
+  gst_bin_remove (GST_BIN (peerparent), peerelem);
+
+  gst_object_unref (peerelem);
+  gst_object_unref (peerparent);
+
+  if (wp->post_remove)
+    wp->post_remove (wp);
+
+
+  check_if_busy (self);
+}
+
+
+static void
+_remove_defunct_preview_sink (TpStreamEngine *engine, WindowPair *wp)
+{
+  GstPad *pad = NULL;
+  GstPad *peerpad = NULL;
+
+  g_assert (wp->sink != NULL);
+
+  pad = gst_element_get_pad (wp->sink, "sink");
+  g_assert (pad);
+
+  peerpad = gst_pad_get_peer (pad);
+  g_assert (peerpad);
+
+  gst_pad_set_blocked_async (peerpad, TRUE,
+      _remove_defunct_preview_sink_callback, wp);
+}
 
 static void
 _remove_defunct_preview_sinks (TpStreamEngine *engine, gboolean clear_wp_list)
@@ -904,7 +986,7 @@ bus_async_handler (GstBus *bus,
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   GError *error = NULL;
-  WindowPair *wp;
+  WindowPair *wp = NULL;
   gchar *error_string;
 
   GstElement *source = GST_ELEMENT (GST_MESSAGE_SRC (message));
@@ -949,11 +1031,12 @@ bus_async_handler (GstBus *bus,
                         wp->window_id);
 
                 wp->removing = TRUE;
+                wp->post_remove = _window_pairs_remove_cb;
                 /*
                 xid = wp->window_id;
                 stream = wp->stream;
                 */
-                _remove_defunct_preview_sinks (engine, TRUE);
+                _remove_defunct_preview_sink (engine, wp);
                 _remove_defunct_output_sinks (engine);
 
                 /* let's try recreating a new xvimagesink */
@@ -992,7 +1075,8 @@ bus_async_handler (GstBus *bus,
             for (i = priv->preview_windows; i; i = i->next)
               ((WindowPair *) i->data)->removing = TRUE;
 
-            _remove_defunct_preview_sinks (engine, FALSE);
+            wp->post_remove = _window_pairs_empty_cb;
+            _remove_defunct_preview_sink (engine, wp);
             _remove_defunct_output_sinks (engine);
             gst_element_set_state (priv->pipeline, GST_STATE_NULL);
             gst_object_unref (priv->pipeline);
@@ -1237,7 +1321,6 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 static gboolean
 _remove_defunct_sinks_idle_cb (TpStreamEngine *engine)
 {
-  _remove_defunct_preview_sinks (engine, TRUE);
   _remove_defunct_output_sinks (engine);
 
   return FALSE;
@@ -1269,7 +1352,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
     }
 
   /* try and remove any sinks which have removing = TRUE to free up Xv ports */
-  _remove_defunct_preview_sinks (obj, TRUE);
+  //_remove_defunct_preview_sinks (obj, TRUE);
   _remove_defunct_output_sinks (obj);
 
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
@@ -1331,7 +1414,9 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
   /* set removing to TRUE so that we know this window ID is being removed and X
    * errors can be ignored */
   wp->removing = TRUE;
+  wp->post_remove = _window_pairs_remove_cb;
 
+  _remove_defunct_preview_sink (engine, wp);
   g_idle_add ((GSourceFunc) _remove_defunct_sinks_idle_cb, engine);
   g_main_context_wakeup (NULL);
 
@@ -1470,8 +1555,9 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
     }
 
   wp->removing = TRUE;
+  wp->post_remove = _window_pairs_remove_cb;
 
-  _remove_defunct_preview_sinks (obj, TRUE);
+  _remove_defunct_preview_sink (obj, wp);
 
   return TRUE;
 }
@@ -1485,7 +1571,7 @@ tp_stream_engine_add_output_window (TpStreamEngine *obj,
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
 
-  _remove_defunct_preview_sinks (obj, TRUE);
+  //  _remove_defunct_preview_sinks (obj, TRUE);
   _remove_defunct_output_sinks (obj);
 
   _window_pairs_add (&(priv->output_windows), stream, sink, window_id);
