@@ -871,58 +871,6 @@ _remove_defunct_preview_sink (TpStreamEngine *engine, WindowPair *wp)
 }
 
 static void
-_remove_defunct_preview_sinks (TpStreamEngine *engine, gboolean clear_wp_list)
-{
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-  WindowPair *wp = NULL;
-
-  while ((wp = _window_pairs_find_by_removing (priv->preview_windows, TRUE)) !=
-      NULL)
-    {
-      GstElement *tee;
-
-      g_debug ("%s: removing sink for preview window ID %u", G_STRFUNC,
-          wp->window_id);
-
-      if (wp->created)
-        {
-          g_assert (wp->sink != NULL);
-          tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-          g_assert (tee != NULL);
-          gst_element_unlink (tee, wp->sink);
-          gst_object_unref (GST_OBJECT (tee));
-          g_debug ("unlinked sink from tee, now setting state to NULL");
-
-          gst_element_set_state (wp->sink, GST_STATE_NULL);
-          g_debug ("Done setting state to NULL, now removing from bin");
-          gst_bin_remove (GST_BIN (priv->pipeline), wp->sink);
-          g_debug ("Done removing from bin, calling _window_pairs_remove"
-              "refcount %d", GST_OBJECT_REFCOUNT_VALUE (wp->sink));
-        }
-      else
-        {
-          g_debug ("No sink created yet, removing window_pair");
-          g_assert (wp->sink == NULL);
-        }
-
-      if (clear_wp_list)
-        {
-          _window_pairs_remove (&(priv->preview_windows), wp);
-        }
-      else
-        {
-          wp->sink = NULL;
-          wp->created = FALSE;
-          wp->stream = NULL;
-          wp->removing = FALSE;
-        }
-      g_debug ("Done _window_pairs_remove");
-    }
-
-    check_if_busy (engine);
-}
-
-static void
 _remove_defunct_output_sinks (TpStreamEngine *engine)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
