@@ -809,7 +809,7 @@ _window_pairs_empty_cb (WindowPair *wp)
 
 static void
 _remove_defunct_preview_sink_callback (GstPad *pad, gboolean blocked,
-						  gpointer user_data)
+    gpointer user_data)
 {
   TpStreamEngine *self = tp_stream_engine_get ();
   GstStateChangeReturn ret;
