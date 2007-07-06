@@ -828,6 +828,12 @@ _remove_defunct_preview_sink_callback (GstPad *pad, gboolean blocked,
 
   if(!gst_pad_unlink (pad, peerpad)) {
     g_error ("Can't unlink pad from tee");
+
+    gst_object_unref (pad);
+    gst_object_unref (tee);
+    gst_object_unref (peerelem);
+    gst_object_unref (peerparent);
+    gst_object_unref (peerpad);
     return;
   }
 
@@ -843,6 +849,7 @@ _remove_defunct_preview_sink_callback (GstPad *pad, gboolean blocked,
 
   gst_object_unref (peerelem);
   gst_object_unref (peerparent);
+  gst_object_unref (peerpad);
 
   if (wp->post_remove)
     wp->post_remove (wp);
@@ -865,6 +872,8 @@ _remove_defunct_preview_sink (TpStreamEngine *engine, WindowPair *wp)
 
   peerpad = gst_pad_get_peer (pad);
   g_assert (peerpad);
+
+  gst_object_unref (pad);
 
   gst_pad_set_blocked_async (peerpad, TRUE,
       _remove_defunct_preview_sink_callback, wp);
