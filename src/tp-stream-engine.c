@@ -812,6 +812,7 @@ _remove_defunct_preview_sink_callback (GstPad *pad, gboolean blocked,
 						  gpointer user_data)
 {
   TpStreamEngine *self = tp_stream_engine_get ();
+  GstStateChangeReturn ret;
 
   WindowPair *wp = user_data;
   g_assert (wp);
@@ -841,9 +842,15 @@ _remove_defunct_preview_sink_callback (GstPad *pad, gboolean blocked,
   gst_object_unref (pad);
   gst_object_unref (tee);
 
-  gst_element_set_state (peerelem, GST_STATE_NULL);
+  ret = gst_element_set_state (peerelem, GST_STATE_NULL);
 
-  gst_element_get_state (peerelem, NULL, NULL, GST_CLOCK_TIME_NONE);
+  g_assert (ret != GST_STATE_CHANGE_FAILURE);
+
+  if (ret == GST_STATE_CHANGE_ASYNC) {
+    ret = gst_element_get_state (peerelem, NULL, NULL, 5*GST_SECOND);
+    g_assert (ret == GST_STATE_CHANGE_SUCCESS ||
+        ret == GST_STATE_CHANGE_NO_PREROLL);
+  }
 
   gst_bin_remove (GST_BIN (peerparent), peerelem);
 
