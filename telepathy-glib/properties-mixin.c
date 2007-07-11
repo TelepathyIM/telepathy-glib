@@ -1109,6 +1109,8 @@ list_properties (TpSvcPropertiesInterface *iface,
   GError *error = NULL;
   gboolean ok = tp_properties_mixin_list_properties (G_OBJECT (iface), &ret,
       &error);
+  guint i;
+
   if (!ok)
     {
       dbus_g_method_return_error (context, error);
@@ -1116,6 +1118,10 @@ list_properties (TpSvcPropertiesInterface *iface,
     }
   tp_svc_properties_interface_return_from_list_properties (
       context, ret);
+
+  for (i = 0; i < ret; i++)
+    g_boxed_free (TP_TYPE_PROPERTY_INFO_STRUCT, ret->pdata[i]);
+
   g_ptr_array_free (ret, TRUE);
 }
 
