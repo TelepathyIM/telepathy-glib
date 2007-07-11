@@ -1119,7 +1119,7 @@ list_properties (TpSvcPropertiesInterface *iface,
   tp_svc_properties_interface_return_from_list_properties (
       context, ret);
 
-  for (i = 0; i < ret; i++)
+  for (i = 0; i < ret->len; i++)
     g_boxed_free (TP_TYPE_PROPERTY_INFO_STRUCT, ret->pdata[i]);
 
   g_ptr_array_free (ret, TRUE);
