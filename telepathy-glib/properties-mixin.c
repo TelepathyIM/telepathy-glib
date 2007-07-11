@@ -392,7 +392,9 @@ tp_properties_mixin_set_properties (GObject *obj,
     {
       error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
                            "A SetProperties request is already in progress");
-      goto ERROR;
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
     }
 
   ctx->dbus_ctx = context;
