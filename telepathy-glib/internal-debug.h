@@ -28,6 +28,7 @@ gboolean _tp_debug_flag_is_set (TpDebugFlags flag);
 void _tp_debug_set_flags (TpDebugFlags flags);
 void _tp_debug (TpDebugFlags flag, const gchar *format, ...)
     G_GNUC_PRINTF (2, 3);
+gboolean _tp_debug_is_persistent (void);
 
 G_END_DECLS
 

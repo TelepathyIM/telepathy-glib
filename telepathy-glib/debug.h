@@ -8,6 +8,7 @@ G_BEGIN_DECLS
 void tp_debug_set_flags_from_string (const gchar *flags_string);
 void tp_debug_set_flags_from_env (const gchar *var);
 void tp_debug_set_all_flags (void);
+void tp_debug_set_persistent (gboolean persistent);
 
 G_END_DECLS
 
