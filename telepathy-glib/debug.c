@@ -90,6 +90,7 @@ static GDebugKey keys[] = {
   { "groups",        TP_DEBUG_GROUPS },
   { "properties",    TP_DEBUG_PROPERTIES },
   { "connection",    TP_DEBUG_CONNECTION },
+  { "persist",       TP_DEBUG_PERSIST },
   { "im",            TP_DEBUG_IM },
   { "params",        TP_DEBUG_PARAMS },
   { "presence",      TP_DEBUG_PRESENCE },
