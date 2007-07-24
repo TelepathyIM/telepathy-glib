@@ -63,7 +63,9 @@ static gboolean
 kill_connection_manager (gpointer data)
 {
 #ifdef ENABLE_DEBUG
-  if (!_tp_debug_is_persistent () && !connections_exist)
+  if (!_tp_debug_is_persistent ()
+      && !_tp_debug_flag_is_set (TP_DEBUG_PERSIST)
+      && !connections_exist)
 #else
   if (!connections_exist)
 #endif
