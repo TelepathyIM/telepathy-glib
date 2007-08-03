@@ -1464,16 +1464,23 @@ bad_misc_cb (TpStreamEngineXErrorHandler *handler,
       return FALSE;
     }
 
-  if (!wp->removing)
+  if (wp->removing)
     {
-      g_debug ("%s: BadDrawable(%u) for a %s window not being removed, not "
-          "handling", G_STRFUNC, window_id,
-          wp->stream == NULL ? "preview" : "output");
-      return FALSE;
+      g_debug ("%s: BadDrawable(%u) for a %s window being removed, ignoring",
+          G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
+      return TRUE;
     }
 
-  g_debug ("%s: BadDrawable(%u) for a %s window being removed, ignoring",
+  g_debug ("%s: BadDrawable(%u) for a %s window, scheduling sink removal",
       G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
+
+  /* set removing to TRUE so that we know this window ID is being removed and X
+   * errors can be ignored */
+  wp->removing = TRUE;
+  wp->post_remove = _window_pairs_remove_cb;
+
+  g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_sinks_idle_cb, wp, NULL);
+  g_main_context_wakeup (NULL);
 
   return TRUE;
 }
