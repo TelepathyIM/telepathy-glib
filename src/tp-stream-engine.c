@@ -817,69 +817,97 @@ _window_pairs_empty_cb (WindowPair *wp)
 }
 
 static void
-_remove_defunct_preview_sink_callback (GstPad *pad, gboolean blocked,
+unblock_cb (GstPad *pad, gboolean blocked,
     gpointer user_data)
 {
+  gst_object_unref (pad);
+}
+
+static gboolean
+_remove_defunct_preview_sink_idle_callback (gpointer user_data)
+{
+  WindowPair *wp = user_data;
+  g_assert (wp);
   TpStreamEngine *self = tp_stream_engine_get ();
   GstStateChangeReturn ret;
 
-  WindowPair *wp = user_data;
-  g_assert (wp);
-  GstPad *peerpad = gst_pad_get_peer (pad);
-  g_assert (peerpad);
-  GstElement *peerelem = GST_ELEMENT (gst_pad_get_parent (peerpad));
-  g_assert (peerelem);
-  GstElement *peerparent =  GST_ELEMENT (gst_element_get_parent (peerelem));
-  g_assert (peerparent);
-  GstElement *tee =  GST_ELEMENT (gst_pad_get_parent (pad));
+  g_debug ("Removing defunct preview sink for window %u", wp->window_id);
+
+  GstPad *sinkpad = gst_element_get_pad (wp->sink, "sink");
+  g_assert (sinkpad);
+  GstPad *teesrcpad = gst_pad_get_peer (sinkpad);
+  g_assert (teesrcpad);
+  GstElement *tee =  GST_ELEMENT (gst_pad_get_parent (teesrcpad));
   g_assert (tee);
+  GstElement *sinkelem = GST_ELEMENT (gst_pad_get_parent (sinkpad));
+  g_assert (sinkelem);
+  GstElement *sinkparent = GST_ELEMENT (gst_element_get_parent (sinkelem));
+  g_assert (sinkparent);
 
-  g_assert (wp->sink == peerelem);
+  GstPad *teesinkpad = gst_element_get_pad (tee, "sink");
+  g_assert (teesinkpad);
 
-  if(!gst_pad_unlink (pad, peerpad)) {
+  GstPad *teepeersrcpad = gst_pad_get_peer (teesinkpad);
+  g_assert (teepeersrcpad);
+  gst_object_unref (teesinkpad);
+
+
+  if(!gst_pad_unlink (teesrcpad, sinkpad)) {
     g_error ("Can't unlink pad from tee");
 
-    gst_object_unref (pad);
+    gst_object_unref (sinkpad);
+    gst_object_unref (teesrcpad);
     gst_object_unref (tee);
-    gst_object_unref (peerelem);
-    gst_object_unref (peerparent);
-    gst_object_unref (peerpad);
-    return;
+    gst_object_unref (sinkelem);
+    gst_object_unref (sinkparent);
+    return FALSE;
   }
+  gst_element_release_request_pad (tee, teesrcpad);
 
-  gst_element_release_request_pad (tee, pad);
-  gst_object_unref (pad);
-  gst_object_unref (tee);
+  gst_object_unref (teepeersrcpad);
+  gst_pad_set_blocked_async (teepeersrcpad, FALSE, unblock_cb, NULL);
 
-  ret = gst_element_set_state (peerelem, GST_STATE_NULL);
+  ret = gst_element_set_state (sinkelem, GST_STATE_NULL);
 
   g_assert (ret != GST_STATE_CHANGE_FAILURE);
 
   if (ret == GST_STATE_CHANGE_ASYNC) {
-    ret = gst_element_get_state (peerelem, NULL, NULL, 5*GST_SECOND);
+    ret = gst_element_get_state (sinkelem, NULL, NULL, 5*GST_SECOND);
     g_assert (ret == GST_STATE_CHANGE_SUCCESS ||
         ret == GST_STATE_CHANGE_NO_PREROLL);
   }
 
-  gst_bin_remove (GST_BIN (peerparent), peerelem);
+  gst_object_unref (sinkpad);
+  gst_bin_remove (GST_BIN (sinkparent), sinkelem);
 
-  gst_object_unref (peerelem);
-  gst_object_unref (peerparent);
-  gst_object_unref (peerpad);
+  gst_object_unref (sinkelem);
+  gst_object_unref (sinkparent);
+  gst_object_unref (tee);
 
   if (wp->post_remove)
     wp->post_remove (wp);
 
-
   check_if_busy (self);
+
+  return FALSE;
 }
 
+static void
+_remove_defunct_preview_sink_callback (GstPad *teepeersrcpad, gboolean blocked,
+    gpointer user_data)
+{
+  g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_preview_sink_idle_callback, user_data, NULL);
+  g_main_context_wakeup (NULL);
+}
 
 static void
-_remove_defunct_preview_sink (TpStreamEngine *engine, WindowPair *wp)
+_remove_defunct_preview_sink (WindowPair *wp)
 {
   GstPad *pad = NULL;
   GstPad *peerpad = NULL;
+  GstElement *tee = NULL;
+  GstPad *teesinkpad = NULL;
+  GstPad *teepeersrcpad = NULL;
 
   g_assert (wp->sink != NULL);
 
@@ -891,7 +919,20 @@ _remove_defunct_preview_sink (TpStreamEngine *engine, WindowPair *wp)
 
   gst_object_unref (pad);
 
-  gst_pad_set_blocked_async (peerpad, TRUE,
+  tee = GST_ELEMENT (gst_pad_get_parent (peerpad));
+  g_assert (tee);
+
+  gst_object_unref (peerpad);
+
+  teesinkpad = gst_element_get_pad (tee, "sink");
+  g_assert (teesinkpad);
+
+  teepeersrcpad = gst_pad_get_peer (teesinkpad);
+  g_assert (teepeersrcpad);
+
+  gst_object_unref (teesinkpad);
+
+  gst_pad_set_blocked_async (teepeersrcpad, TRUE,
       _remove_defunct_preview_sink_callback, wp);
 }
 
