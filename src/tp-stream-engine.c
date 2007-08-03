@@ -937,25 +937,19 @@ _remove_defunct_preview_sink (WindowPair *wp)
 }
 
 static void
-_remove_defunct_output_sinks (TpStreamEngine *engine)
+_remove_defunct_output_sink (WindowPair *wp)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-  WindowPair *wp = NULL;
+  TpStreamEngine *engine = tp_stream_engine_get ();
+  GError *error;
 
-  while ((wp = _window_pairs_find_by_removing (priv->output_windows, TRUE)) !=
-      NULL)
-    {
-      GError *error;
+  g_debug ("%s: removing sink for output window ID %u", G_STRFUNC,
+      wp->window_id);
 
-      g_debug ("%s: removing sink for output window ID %u", G_STRFUNC,
-          wp->window_id);
-
-      if (!tp_stream_engine_stream_set_output_window (wp->stream, 0, &error))
-        {
-          g_debug ("%s: got error: %s", G_STRFUNC, error->message);
-          g_error_free (error);
-        }
-    }
+  if (!tp_stream_engine_stream_set_output_window (wp->stream, 0, &error))
+  {
+    g_debug ("%s: got error: %s", G_STRFUNC, error->message);
+    g_error_free (error);
+  }
 
   check_if_busy (engine);
 }
@@ -1050,8 +1044,10 @@ bus_async_handler (GstBus *bus,
                 xid = wp->window_id;
                 stream = wp->stream;
                 */
-                _remove_defunct_preview_sink (engine, wp);
-                _remove_defunct_output_sinks (engine);
+                if (wp->stream)
+                  _remove_defunct_output_sink (wp);
+                else
+                  _remove_defunct_preview_sink (wp);
 
                 /* let's try recreating a new xvimagesink */
                 /*
@@ -1083,15 +1079,20 @@ bus_async_handler (GstBus *bus,
 
             g_debug ("%s: destroying video pipeline", G_STRFUNC);
 
-            for (i = priv->output_windows; i; i = i->next)
-              ((WindowPair *) i->data)->removing = TRUE;
+            for (i = priv->output_windows; i; i = i->next) {
+              WindowPair *wp = (WindowPair *) i->data;
+              wp->removing = TRUE;
+              wp->post_remove = _window_pairs_empty_cb;
+              _remove_defunct_output_sink (wp);
+            }
 
-            for (i = priv->preview_windows; i; i = i->next)
-              ((WindowPair *) i->data)->removing = TRUE;
+            for (i = priv->preview_windows; i; i = i->next){
+              WindowPair *wp = (WindowPair *) i->data;
+              wp->removing = TRUE;
+              wp->post_remove = _window_pairs_empty_cb;
+              _remove_defunct_preview_sink (wp);
+            }
 
-            wp->post_remove = _window_pairs_empty_cb;
-            _remove_defunct_preview_sink (engine, wp);
-            _remove_defunct_output_sinks (engine);
             gst_element_set_state (priv->pipeline, GST_STATE_NULL);
             gst_object_unref (priv->pipeline);
             priv->pipeline = NULL;
@@ -1333,9 +1334,12 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 
 
 static gboolean
-_remove_defunct_sinks_idle_cb (TpStreamEngine *engine)
+_remove_defunct_sinks_idle_cb (WindowPair *wp)
 {
-  _remove_defunct_output_sinks (engine);
+  if (wp->stream)
+    _remove_defunct_output_sink (wp);
+  else
+    _remove_defunct_preview_sink (wp);
 
   return FALSE;
 }
@@ -1365,9 +1369,9 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
       _create_pipeline (obj);
     }
 
-  /* try and remove any sinks which have removing = TRUE to free up Xv ports */
-  //_remove_defunct_preview_sinks (obj, TRUE);
-  _remove_defunct_output_sinks (obj);
+  /* Try and remove any sinks which have removing = TRUE to free up Xv ports */
+  /* We do this by running the main loop until its empty */
+  while ( g_main_context_iteration (NULL, FALSE));
 
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
@@ -1430,8 +1434,7 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
   wp->removing = TRUE;
   wp->post_remove = _window_pairs_remove_cb;
 
-  _remove_defunct_preview_sink (engine, wp);
-  g_idle_add ((GSourceFunc) _remove_defunct_sinks_idle_cb, engine);
+  g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_sinks_idle_cb, wp, NULL);
   g_main_context_wakeup (NULL);
 
   return TRUE;
@@ -1571,7 +1574,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   wp->removing = TRUE;
   wp->post_remove = _window_pairs_remove_cb;
 
-  _remove_defunct_preview_sink (obj, wp);
+  _remove_defunct_preview_sink (wp);
 
   return TRUE;
 }
@@ -1585,8 +1588,9 @@ tp_stream_engine_add_output_window (TpStreamEngine *obj,
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
 
-  //  _remove_defunct_preview_sinks (obj, TRUE);
-  _remove_defunct_output_sinks (obj);
+  /* Try and remove any sinks which have removing = TRUE to free up Xv ports */
+  /* We do this by running the main loop until its empty */
+  while ( g_main_context_iteration (NULL, FALSE));
 
   _window_pairs_add (&(priv->output_windows), stream, sink, window_id);
 
