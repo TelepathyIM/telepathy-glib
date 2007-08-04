@@ -442,6 +442,8 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
       goto link_failure;
     }
 
+  g_debug ("linked tee and sink");
+
   gst_object_unref (tee);
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
   return TRUE;
@@ -814,6 +816,31 @@ _window_pairs_empty_cb (WindowPair *wp)
   wp->created = FALSE;
   wp->stream = NULL;
   wp->removing = FALSE;
+  wp->post_remove = NULL;
+}
+
+static void
+_window_pairs_readd_cb (WindowPair *wp)
+{
+  TpStreamEngine *engine = tp_stream_engine_get ();
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+
+  wp->sink = NULL;
+  wp->created = FALSE;
+  wp->stream = NULL;
+  wp->removing = FALSE;
+  wp->post_remove = NULL;
+
+  if (priv->pipeline_playing)
+    {
+      GError *error = NULL;
+      _add_preview_window (engine, wp->window_id, &error);
+      if (error) {
+        g_debug ("Error creating preview window: %s", error->message);
+        g_error_free (error);
+      }
+    }
+
 }
 
 static void
@@ -826,61 +853,63 @@ unblock_cb (GstPad *pad, gboolean blocked,
 static gboolean
 _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 {
+  gboolean retval;
+
   WindowPair *wp = user_data;
   g_assert (wp);
   TpStreamEngine *self = tp_stream_engine_get ();
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   GstStateChangeReturn ret;
 
   g_debug ("Removing defunct preview sink for window %u", wp->window_id);
 
   GstPad *sinkpad = gst_element_get_pad (wp->sink, "sink");
   g_assert (sinkpad);
+
   GstPad *teesrcpad = gst_pad_get_peer (sinkpad);
   g_assert (teesrcpad);
-  GstElement *tee =  GST_ELEMENT (gst_pad_get_parent (teesrcpad));
-  g_assert (tee);
-  GstElement *sinkelem = GST_ELEMENT (gst_pad_get_parent (sinkpad));
+
+  GstElement *sinkelem = gst_pad_get_parent_element (sinkpad);
   g_assert (sinkelem);
+
+  gst_object_unref (sinkpad);
+
   GstElement *sinkparent = GST_ELEMENT (gst_element_get_parent (sinkelem));
   g_assert (sinkparent);
+
+  GstElement *tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+  g_assert (tee);
 
   GstPad *teesinkpad = gst_element_get_pad (tee, "sink");
   g_assert (teesinkpad);
 
   GstPad *teepeersrcpad = gst_pad_get_peer (teesinkpad);
   g_assert (teepeersrcpad);
-  gst_object_unref (teesinkpad);
 
 
-  if(!gst_pad_unlink (teesrcpad, sinkpad)) {
-    g_error ("Can't unlink pad from tee");
+  /*
+   * We can remove the element from the bin without setting it to NULL first
+   * because we still hold a ref to it
+   * Setting it to NULL while its still in the bin causes all kind of
+   * nastiness
+   */
 
-    gst_object_unref (sinkpad);
-    gst_object_unref (teesrcpad);
-    gst_object_unref (tee);
-    gst_object_unref (sinkelem);
-    gst_object_unref (sinkparent);
-    return FALSE;
-  }
-  gst_element_release_request_pad (tee, teesrcpad);
-
-  gst_object_unref (teepeersrcpad);
-  gst_pad_set_blocked_async (teepeersrcpad, FALSE, unblock_cb, NULL);
+  retval = gst_bin_remove (GST_BIN (sinkparent), sinkelem);
+  g_assert (retval == TRUE);
 
   ret = gst_element_set_state (sinkelem, GST_STATE_NULL);
-
   g_assert (ret != GST_STATE_CHANGE_FAILURE);
 
   if (ret == GST_STATE_CHANGE_ASYNC) {
     ret = gst_element_get_state (sinkelem, NULL, NULL, 5*GST_SECOND);
-    g_assert (ret == GST_STATE_CHANGE_SUCCESS ||
-        ret == GST_STATE_CHANGE_NO_PREROLL);
   }
-
-  gst_object_unref (sinkpad);
-  gst_bin_remove (GST_BIN (sinkparent), sinkelem);
+  g_assert (ret == GST_STATE_CHANGE_SUCCESS ||
+      ret == GST_STATE_CHANGE_NO_PREROLL);
 
   gst_object_unref (sinkelem);
+
+  gst_element_release_request_pad (tee, teesrcpad);
+
   gst_object_unref (sinkparent);
   gst_object_unref (tee);
 
@@ -888,6 +917,10 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
     wp->post_remove (wp);
 
   check_if_busy (self);
+
+  gst_pad_set_blocked_async (teepeersrcpad, FALSE, unblock_cb, NULL);
+
+  gst_object_unref (teepeersrcpad);
 
   return FALSE;
 }
@@ -903,29 +936,22 @@ _remove_defunct_preview_sink_callback (GstPad *teepeersrcpad, gboolean blocked,
 static void
 _remove_defunct_preview_sink (WindowPair *wp)
 {
-  GstPad *pad = NULL;
-  GstPad *peerpad = NULL;
   GstElement *tee = NULL;
   GstPad *teesinkpad = NULL;
   GstPad *teepeersrcpad = NULL;
+  TpStreamEngine *self = tp_stream_engine_get ();
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
-  g_assert (wp->sink != NULL);
+  if (wp->sink == NULL)
+    return;
 
-  pad = gst_element_get_pad (wp->sink, "sink");
-  g_assert (pad);
-
-  peerpad = gst_pad_get_peer (pad);
-  g_assert (peerpad);
-
-  gst_object_unref (pad);
-
-  tee = GST_ELEMENT (gst_pad_get_parent (peerpad));
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   g_assert (tee);
-
-  gst_object_unref (peerpad);
 
   teesinkpad = gst_element_get_pad (tee, "sink");
   g_assert (teesinkpad);
+
+  gst_object_unref (tee);
 
   teepeersrcpad = gst_pad_get_peer (teesinkpad);
   g_assert (teepeersrcpad);
@@ -1034,6 +1060,15 @@ bus_async_handler (GstBus *bus,
 
             if (wp != NULL)
               {
+                if (wp->removing)
+                  {
+                    g_debug ("%s: sink for %s window (id %u) has gone,"
+                        " and is already being removed",
+                        G_STRFUNC, wp->stream == NULL ? "preview" : "output",
+                        wp->window_id);
+                    break;
+                  }
+
                 g_debug ("%s: sink for %s window (id %u) has gone, removing",
                         G_STRFUNC, wp->stream == NULL ? "preview" : "output",
                         wp->window_id);
@@ -1079,19 +1114,27 @@ bus_async_handler (GstBus *bus,
 
             g_debug ("%s: destroying video pipeline", G_STRFUNC);
 
-            for (i = priv->output_windows; i; i = i->next) {
-              WindowPair *wp = (WindowPair *) i->data;
-              wp->removing = TRUE;
-              wp->post_remove = _window_pairs_empty_cb;
-              _remove_defunct_output_sink (wp);
-            }
+            for (i = priv->output_windows; i; i = i->next)
+              {
+                WindowPair *wp = (WindowPair *) i->data;
+                if (wp->removing == FALSE)
+                  {
+                    wp->removing = TRUE;
+                    wp->post_remove = _window_pairs_empty_cb;
+                    _remove_defunct_output_sink (wp);
+                  }
+              }
 
-            for (i = priv->preview_windows; i; i = i->next){
-              WindowPair *wp = (WindowPair *) i->data;
-              wp->removing = TRUE;
-              wp->post_remove = _window_pairs_empty_cb;
-              _remove_defunct_preview_sink (wp);
-            }
+            for (i = priv->preview_windows; i; i = i->next)
+              {
+                WindowPair *wp = (WindowPair *) i->data;
+                if (wp->removing == FALSE)
+                  {
+                    wp->removing = TRUE;
+                    wp->post_remove = _window_pairs_empty_cb;
+                    _remove_defunct_preview_sink (wp);
+                  }
+              }
 
             gst_element_set_state (priv->pipeline, GST_STATE_NULL);
             gst_object_unref (priv->pipeline);
@@ -1362,7 +1405,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
 
-  g_debug ("%s: called", G_STRFUNC);
+  g_debug ("%s: called for %u", G_STRFUNC, window_id);
 
   if (priv->pipeline == NULL)
     {
@@ -1377,9 +1420,17 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
 
   if (wp != NULL)
     {
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
-        "window ID %u is already a preview window", window_id);
-      return FALSE;
+      if (wp->removing && wp->post_remove == _window_pairs_remove_cb)
+        {
+          wp->post_remove = _window_pairs_readd_cb;
+          return TRUE;
+        }
+      else
+        {
+          *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+              "window ID %u is already a preview window", window_id);
+          return FALSE;
+        }
     }
 
   if (!priv->pipeline_playing)
@@ -1563,6 +1614,8 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
 
+  g_debug ("%s: called for %u", G_STRFUNC, window_id);
+
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
   if (wp == NULL)
@@ -1575,6 +1628,13 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   if (wp->removing)
     {
       /* already being removed, nothing to do */
+      return TRUE;
+    }
+
+  if (wp->created == FALSE)
+    {
+      g_debug ("Window not created yet, can remove right away");
+      _window_pairs_remove (&(priv->preview_windows), wp);
       return TRUE;
     }
 
