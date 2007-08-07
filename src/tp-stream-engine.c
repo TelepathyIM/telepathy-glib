@@ -339,6 +339,15 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
           g_debug ("setting force-aspect-ratio to TRUE");
           g_object_set (G_OBJECT (sink), "force-aspect-ratio", TRUE, NULL);
         }
+      /* Setting this will make sure we can have several preview windows using
+       * the tee without any queue elements */
+      /* Without this, elements linked to the tee just block on prerolling and
+       * wait for each other to finish */
+      if (g_object_has_property (G_OBJECT (sink), "preroll-queue-len"))
+        {
+          g_debug ("setting preroll-queue-len to 1");
+          g_object_set (G_OBJECT (sink), "preroll-queue-len", TRUE, NULL);
+        }
     }
   else
     {
