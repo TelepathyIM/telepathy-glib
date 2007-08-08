@@ -713,7 +713,14 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   }
   fs_codecs = g_list_reverse (fs_codecs);
 
-  farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs);
+  if (!farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs)) {
+    /*
+     * Call the error method with the proper thing here
+     */
+    g_warning("Negotiation failed");
+    tp_stream_engine_stream_error (self, 0, "Codec negotiation failed");
+    return;
+  }
 
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
