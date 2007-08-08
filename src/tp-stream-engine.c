@@ -847,19 +847,20 @@ static void
 unblock_cb (GstPad *pad, gboolean blocked,
     gpointer user_data)
 {
+  g_debug ("Pad unblocked successfully after removing preview sink");
   gst_object_unref (pad);
 }
 
 static gboolean
 _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 {
+  TpStreamEngine *self = tp_stream_engine_get ();
+  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   gboolean retval;
+  GstStateChangeReturn ret;
 
   WindowPair *wp = user_data;
   g_assert (wp);
-  TpStreamEngine *self = tp_stream_engine_get ();
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
-  GstStateChangeReturn ret;
 
   g_debug ("Removing defunct preview sink for window %u", wp->window_id);
 
@@ -871,8 +872,6 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 
   GstElement *sinkelem = gst_pad_get_parent_element (sinkpad);
   g_assert (sinkelem);
-
-  gst_object_unref (sinkpad);
 
   GstElement *sinkparent = GST_ELEMENT (gst_element_get_parent (sinkelem));
   g_assert (sinkparent);
@@ -887,13 +886,6 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
   g_assert (teepeersrcpad);
 
 
-  /*
-   * We can remove the element from the bin without setting it to NULL first
-   * because we still hold a ref to it
-   * Setting it to NULL while its still in the bin causes all kind of
-   * nastiness
-   */
-
   retval = gst_bin_remove (GST_BIN (sinkparent), sinkelem);
   g_assert (retval == TRUE);
 
@@ -902,16 +894,16 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 
   if (ret == GST_STATE_CHANGE_ASYNC) {
     ret = gst_element_get_state (sinkelem, NULL, NULL, 5*GST_SECOND);
+    g_assert (ret != GST_STATE_CHANGE_FAILURE);
   }
-  g_assert (ret == GST_STATE_CHANGE_SUCCESS ||
-      ret == GST_STATE_CHANGE_NO_PREROLL);
 
-  gst_object_unref (sinkelem);
-
-  gst_element_release_request_pad (tee, teesrcpad);
-
-  gst_object_unref (sinkparent);
+  gst_object_unref (teepeersrcpad);
+  gst_object_unref (teesinkpad);
   gst_object_unref (tee);
+  gst_object_unref (sinkparent);
+  gst_object_unref (sinkelem);
+  gst_element_release_request_pad (tee, teesrcpad);
+  gst_object_unref (sinkpad);
 
   if (wp->post_remove)
     wp->post_remove (wp);
@@ -920,8 +912,6 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 
   gst_pad_set_blocked_async (teepeersrcpad, FALSE, unblock_cb, NULL);
 
-  gst_object_unref (teepeersrcpad);
-
   return FALSE;
 }
 
@@ -929,6 +919,7 @@ static void
 _remove_defunct_preview_sink_callback (GstPad *teepeersrcpad, gboolean blocked,
     gpointer user_data)
 {
+  g_debug("Pad blocked, scheduling preview sink removal");
   g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_preview_sink_idle_callback, user_data, NULL);
   g_main_context_wakeup (NULL);
 }
@@ -1412,21 +1403,19 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
       _create_pipeline (obj);
     }
 
-  /* Try and remove any sinks which have removing = TRUE to free up Xv ports */
-  /* We do this by running the main loop until its empty */
-  while ( g_main_context_iteration (NULL, FALSE));
-
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
   if (wp != NULL)
     {
       if (wp->removing && wp->post_remove == _window_pairs_remove_cb)
         {
+          g_debug ("window ID %u is already a preview window being removed, will be re-added", window_id);
           wp->post_remove = _window_pairs_readd_cb;
           return TRUE;
         }
       else
         {
+          g_debug ("window ID %u is already a preview window", window_id);
           *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
               "window ID %u is already a preview window", window_id);
           return FALSE;
@@ -1627,6 +1616,9 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
 
   if (wp->removing)
     {
+      if (wp->post_remove == _window_pairs_readd_cb)
+	wp->post_remove = _window_pairs_remove_cb;
+
       /* already being removed, nothing to do */
       return TRUE;
     }
@@ -1654,10 +1646,6 @@ tp_stream_engine_add_output_window (TpStreamEngine *obj,
                                     guint window_id)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-
-  /* Try and remove any sinks which have removing = TRUE to free up Xv ports */
-  /* We do this by running the main loop until its empty */
-  while ( g_main_context_iteration (NULL, FALSE));
 
   _window_pairs_add (&(priv->output_windows), stream, sink, window_id);
 
