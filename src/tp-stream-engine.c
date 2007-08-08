@@ -1617,7 +1617,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   if (wp->removing)
     {
       if (wp->post_remove == _window_pairs_readd_cb)
-	wp->post_remove = _window_pairs_remove_cb;
+        wp->post_remove = _window_pairs_remove_cb;
 
       /* already being removed, nothing to do */
       return TRUE;
