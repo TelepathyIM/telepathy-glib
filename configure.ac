@@ -9,8 +9,8 @@ AC_PREREQ([2.59])
 
 m4_define([stream_engine_major_version], [0])
 m4_define([stream_engine_minor_version], [3])
-m4_define([stream_engine_micro_version], [23])
-m4_define([stream_engine_nano_version], [1])
+m4_define([stream_engine_micro_version], [25])
+m4_define([stream_engine_nano_version], [0])
 
 # Some magic
 m4_define([stream_engine_base_version],
@@ -95,7 +95,7 @@ AC_SUBST(LIBTELEPATHY_CFLAGS)
 AC_SUBST(LIBTELEPATHY_LIBS)
 
 dnl Check for farsight 
-PKG_CHECK_MODULES(FARSIGHT, [farsight-0.1 >= 0.1.21])
+PKG_CHECK_MODULES(FARSIGHT, [farsight-0.1 >= 0.1.23])
 
 AC_SUBST(FARSIGHT_CFLAGS)
 AC_SUBST(FARSIGHT_LIBS)
