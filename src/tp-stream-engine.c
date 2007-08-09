@@ -864,59 +864,59 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 
   g_debug ("Removing defunct preview sink for window %u", wp->window_id);
 
-  GstPad *sinkpad = gst_element_get_pad (wp->sink, "sink");
-  g_assert (sinkpad);
+  GstPad *sink_pad = gst_element_get_pad (wp->sink, "sink");
+  g_assert (sink_pad);
 
-  GstPad *teesrcpad = gst_pad_get_peer (sinkpad);
-  g_assert (teesrcpad);
+  GstPad *tee_src_pad = gst_pad_get_peer (sink_pad);
+  g_assert (tee_src_pad);
 
-  GstElement *sinkelem = gst_pad_get_parent_element (sinkpad);
-  g_assert (sinkelem);
+  GstElement *sink_element = gst_pad_get_parent_element (sink_pad);
+  g_assert (sink_element);
 
-  GstElement *sinkparent = GST_ELEMENT (gst_element_get_parent (sinkelem));
-  g_assert (sinkparent);
+  GstElement *sink_parent = GST_ELEMENT (gst_element_get_parent (sink_element));
+  g_assert (sink_parent);
 
   GstElement *tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   g_assert (tee);
 
-  GstPad *teesinkpad = gst_element_get_pad (tee, "sink");
-  g_assert (teesinkpad);
+  GstPad *tee_sink_pad = gst_element_get_pad (tee, "sink");
+  g_assert (tee_sink_pad);
 
-  GstPad *teepeersrcpad = gst_pad_get_peer (teesinkpad);
-  g_assert (teepeersrcpad);
+  GstPad *tee_peer_src_pad = gst_pad_get_peer (tee_sink_pad);
+  g_assert (tee_peer_src_pad);
 
 
-  retval = gst_bin_remove (GST_BIN (sinkparent), sinkelem);
+  retval = gst_bin_remove (GST_BIN (sink_parent), sink_element);
   g_assert (retval == TRUE);
 
-  ret = gst_element_set_state (sinkelem, GST_STATE_NULL);
+  ret = gst_element_set_state (sink_element, GST_STATE_NULL);
   g_assert (ret != GST_STATE_CHANGE_FAILURE);
 
   if (ret == GST_STATE_CHANGE_ASYNC) {
-    ret = gst_element_get_state (sinkelem, NULL, NULL, 5*GST_SECOND);
+    ret = gst_element_get_state (sink_element, NULL, NULL, 5*GST_SECOND);
     g_assert (ret != GST_STATE_CHANGE_FAILURE);
   }
 
-  gst_object_unref (teepeersrcpad);
-  gst_object_unref (teesinkpad);
+  gst_object_unref (tee_peer_src_pad);
+  gst_object_unref (tee_sink_pad);
   gst_object_unref (tee);
-  gst_object_unref (sinkparent);
-  gst_object_unref (sinkelem);
-  gst_element_release_request_pad (tee, teesrcpad);
-  gst_object_unref (sinkpad);
+  gst_object_unref (sink_parent);
+  gst_object_unref (sink_element);
+  gst_element_release_request_pad (tee, tee_src_pad);
+  gst_object_unref (sink_pad);
 
   if (wp->post_remove)
     wp->post_remove (wp);
 
   check_if_busy (self);
 
-  gst_pad_set_blocked_async (teepeersrcpad, FALSE, unblock_cb, NULL);
+  gst_pad_set_blocked_async (tee_peer_src_pad, FALSE, unblock_cb, NULL);
 
   return FALSE;
 }
 
 static void
-_remove_defunct_preview_sink_callback (GstPad *teepeersrcpad, gboolean blocked,
+_remove_defunct_preview_sink_callback (GstPad *tee_peer_src_pad, gboolean blocked,
     gpointer user_data)
 {
   g_debug("Pad blocked, scheduling preview sink removal");
@@ -928,8 +928,8 @@ static void
 _remove_defunct_preview_sink (WindowPair *wp)
 {
   GstElement *tee = NULL;
-  GstPad *teesinkpad = NULL;
-  GstPad *teepeersrcpad = NULL;
+  GstPad *tee_sink_pad = NULL;
+  GstPad *tee_peer_src_pad = NULL;
   TpStreamEngine *self = tp_stream_engine_get ();
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
@@ -939,17 +939,17 @@ _remove_defunct_preview_sink (WindowPair *wp)
   tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
   g_assert (tee);
 
-  teesinkpad = gst_element_get_pad (tee, "sink");
-  g_assert (teesinkpad);
+  tee_sink_pad = gst_element_get_pad (tee, "sink");
+  g_assert (tee_sink_pad);
 
   gst_object_unref (tee);
 
-  teepeersrcpad = gst_pad_get_peer (teesinkpad);
-  g_assert (teepeersrcpad);
+  tee_peer_src_pad = gst_pad_get_peer (tee_sink_pad);
+  g_assert (tee_peer_src_pad);
 
-  gst_object_unref (teesinkpad);
+  gst_object_unref (tee_sink_pad);
 
-  gst_pad_set_blocked_async (teepeersrcpad, TRUE,
+  gst_pad_set_blocked_async (tee_peer_src_pad, TRUE,
       _remove_defunct_preview_sink_callback, wp);
 }
 
