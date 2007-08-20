@@ -189,7 +189,7 @@ new_media_session_handler (DBusGProxy *proxy,
 static void channel_closed (DBusGProxy *proxy, gpointer user_data);
 
 static void
-shutdown_channel (TpStreamEngineChannel *self, gboolean destroyed)
+shutdown_channel (TpStreamEngineChannel *self)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
@@ -237,7 +237,7 @@ channel_closed (DBusGProxy *proxy, gpointer user_data)
 
   g_debug ("connection manager channel closed");
 
-  shutdown_channel (self, FALSE);
+  shutdown_channel (self);
 }
 
 static void
@@ -252,7 +252,7 @@ channel_destroyed (DBusGProxy *proxy, gpointer user_data)
   g_object_unref (priv->channel_proxy);
   priv->channel_proxy = NULL;
 
-  shutdown_channel (self, TRUE);
+  shutdown_channel (self);
 }
 
 void
@@ -511,6 +511,6 @@ void tp_stream_engine_channel_error (
         }
     }
 
-  shutdown_channel (self, FALSE);
+  shutdown_channel (self);
 }
 
