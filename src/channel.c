@@ -193,15 +193,15 @@ shutdown_channel (TpStreamEngineChannel *self)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
-  if (priv->channel_destroy_handler)
-    {
-      g_signal_handler_disconnect (
-        priv->channel_proxy, priv->channel_destroy_handler);
-      priv->channel_destroy_handler = 0;
-    }
-
   if (priv->channel_proxy)
     {
+      if (priv->channel_destroy_handler)
+        {
+          g_signal_handler_disconnect (
+            priv->channel_proxy, priv->channel_destroy_handler);
+          priv->channel_destroy_handler = 0;
+        }
+
       if (priv->streamed_media_proxy)
         {
           DBusGProxy *media_signalling;
