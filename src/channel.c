@@ -193,8 +193,12 @@ shutdown_channel (TpStreamEngineChannel *self, gboolean destroyed)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
-  g_signal_handler_disconnect (
-    priv->channel_proxy, priv->channel_destroy_handler);
+  if (priv->channel_destroy_handler)
+    {
+      g_signal_handler_disconnect (
+        priv->channel_proxy, priv->channel_destroy_handler);
+      priv->channel_destroy_handler = 0;
+    }
 
   if (!destroyed)
     {
