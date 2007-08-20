@@ -200,7 +200,7 @@ shutdown_channel (TpStreamEngineChannel *self, gboolean destroyed)
       priv->channel_destroy_handler = 0;
     }
 
-  if (!destroyed)
+  if (!priv->channel_proxy)
     {
       if (priv->streamed_media_proxy)
         {
