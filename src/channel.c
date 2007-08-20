@@ -244,8 +244,13 @@ static void
 channel_destroyed (DBusGProxy *proxy, gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   g_debug ("connection manager channel destroyed");
+
+  /* We shouldn't try to use the channel proxy any more. */
+  g_object_unref (priv->channel_proxy);
+  priv->channel_proxy = NULL;
 
   shutdown_channel (self, TRUE);
 }
