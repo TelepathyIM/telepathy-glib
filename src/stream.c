@@ -1115,6 +1115,22 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 }
 
 
+static void
+destroy_cb (DBusGProxy *proxy, gpointer user_data)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+  if (priv->stream_handler_proxy)
+    {
+      DBusGProxy *tmp = priv->stream_handler_proxy;
+
+      priv->stream_handler_proxy = NULL;
+      g_object_unref (tmp);
+    }
+}
+
+
 gboolean
 tp_stream_engine_stream_go (
   TpStreamEngineStream *stream,
@@ -1148,6 +1164,9 @@ tp_stream_engine_stream_go (
       g_critical ("couldn't get proxy for stream");
       return FALSE;
     }
+
+  g_signal_connect (priv->stream_handler_proxy, "destroy",
+      G_CALLBACK (destroy_cb), stream);
 
   priv->fs_stream = farsight_session_create_stream (
     fs_session, media_type, direction);
