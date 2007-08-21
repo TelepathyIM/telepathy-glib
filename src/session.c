@@ -217,6 +217,22 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   g_free (bus_name);
 }
 
+static void
+destroy_cb (DBusGProxy *proxy, gpointer user_data)
+{
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
+  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+
+  if (priv->session_handler_proxy)
+    {
+      DBusGProxy *tmp;
+
+      tmp = priv->session_handler_proxy;
+      priv->session_handler_proxy = NULL;
+      g_object_unref (tmp);
+    }
+}
+
 gboolean
 tp_stream_engine_session_go (
   TpStreamEngineSession *self,
@@ -239,6 +255,9 @@ tp_stream_engine_session_go (
     bus_name,
     session_handler_path,
     TP_IFACE_MEDIA_SESSION_HANDLER);
+
+  g_signal_connect (priv->session_handler_proxy, "destroy",
+      G_CALLBACK (destroy_cb), self);
 
   if (!priv->session_handler_proxy)
     {
