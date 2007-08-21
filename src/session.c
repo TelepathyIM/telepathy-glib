@@ -117,6 +117,8 @@ tp_stream_engine_session_dispose (GObject *object)
 
   if (priv->session_handler_proxy)
     {
+      DBusGProxy *tmp;
+
       g_debug ("%s: disconnecting signals from session handler proxy",
         G_STRFUNC);
 
@@ -124,8 +126,9 @@ tp_stream_engine_session_dispose (GObject *object)
           priv->session_handler_proxy, "NewStreamHandler",
           G_CALLBACK (new_media_stream_handler), self);
 
-      g_object_unref (priv->session_handler_proxy);
+      tmp = priv->session_handler_proxy;
       priv->session_handler_proxy = NULL;
+      g_object_unref (tmp);
     }
 
   if (priv->fs_session)
