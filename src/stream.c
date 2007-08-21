@@ -145,6 +145,8 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->stream_handler_proxy)
     {
+      DBusGProxy *tmp;
+
       dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
           "AddRemoteCandidate", G_CALLBACK (add_remote_candidate), stream);
 
@@ -175,8 +177,9 @@ tp_stream_engine_stream_dispose (GObject *object)
       dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
           "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), stream);
 
-      g_object_unref (priv->stream_handler_proxy);
+      tmp = priv->stream_handler_proxy;
       priv->stream_handler_proxy = NULL;
+      g_object_unref (tmp);
     }
 
   if (priv->fs_stream)
