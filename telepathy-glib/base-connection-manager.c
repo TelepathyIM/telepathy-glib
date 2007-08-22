@@ -318,53 +318,9 @@ static void
 set_param_from_default (const TpCMParamSpec *paramspec,
                         gpointer params)
 {
-  switch (paramspec->dtype[0])
-    {
-    case DBUS_TYPE_STRING:
-      {
-        gchar **save_to = (gchar **) (params + paramspec->offset);
-        g_assert (paramspec->gtype == G_TYPE_STRING);
-        g_assert (paramspec->def != NULL);
-
-        *save_to = g_strdup ((const gchar *) (paramspec->def));
-        DEBUG ("%s = \"%s\"", paramspec->name, *save_to);
-      }
-      break;
-    case DBUS_TYPE_INT16:
-    case DBUS_TYPE_INT32:
-      {
-        gint *save_to = (gint *) (params + paramspec->offset);
-        g_assert (paramspec->gtype == G_TYPE_INT);
-
-        *save_to = GPOINTER_TO_INT (paramspec->def);
-        DEBUG ("%s = %d = 0x%x", paramspec->name, *save_to, *save_to);
-      }
-      break;
-    case DBUS_TYPE_UINT16:
-    case DBUS_TYPE_UINT32:
-      {
-        guint *save_to = (guint *) (params + paramspec->offset);
-        g_assert (paramspec->gtype == G_TYPE_UINT);
-
-        *save_to = GPOINTER_TO_UINT (paramspec->def);
-        DEBUG ("%s = %u = 0x%x", paramspec->name, *save_to, *save_to);
-      }
-      break;
-    case DBUS_TYPE_BOOLEAN:
-      {
-        gboolean *save_to = (gboolean *) (params + paramspec->offset);
-        g_assert (paramspec->gtype == G_TYPE_BOOLEAN);
-        g_assert (paramspec->def == GINT_TO_POINTER (TRUE) || paramspec->def == GINT_TO_POINTER (FALSE));
-
-        *save_to = GPOINTER_TO_INT (paramspec->def);
-        DEBUG ("%s = %s", paramspec->name, *save_to ? "TRUE" : "FALSE");
-      }
-      break;
-    default:
-      g_error ("%s: encountered unhandled D-Bus type %s "
-               "on argument %s", G_STRFUNC, paramspec->dtype, paramspec->name);
-      g_assert_not_reached ();
-    }
+  GValue *value = param_default_value (paramspec);
+  set_param_by_offset (paramspec, value, params);
+  tp_g_value_slice_free (value);
 }
 
 static gboolean
@@ -398,70 +354,7 @@ set_param_from_value (const TpCMParamSpec *paramspec,
       g_return_val_if_fail (G_VALUE_TYPE (value) == paramspec->gtype, FALSE);
     }
 
-  switch (paramspec->dtype[0])
-    {
-      case DBUS_TYPE_STRING:
-        {
-          gchar **save_to = (gchar **) (params + paramspec->offset);
-          const gchar *str;
-
-          g_assert (paramspec->gtype == G_TYPE_STRING);
-          str = g_value_get_string (value);
-          g_free (*save_to);
-          if (str == NULL)
-            {
-              *save_to = g_strdup ("");
-            }
-          else
-            {
-              *save_to = g_value_dup_string (value);
-            }
-          if (DEBUGGING)
-            {
-              if (strstr (paramspec->name, "password") != NULL)
-                DEBUG ("%s = <hidden>", paramspec->name);
-              else
-                DEBUG ("%s = \"%s\"", paramspec->name, *save_to);
-            }
-        }
-        break;
-      case DBUS_TYPE_INT16:
-      case DBUS_TYPE_INT32:
-        {
-          gint i = g_value_get_int (value);
-
-          g_assert (paramspec->gtype == G_TYPE_INT);
-          *((gint *) (params + paramspec->offset)) = i;
-          DEBUG ("%s = %d = 0x%x", paramspec->name, i, i);
-        }
-        break;
-      case DBUS_TYPE_UINT16:
-      case DBUS_TYPE_UINT32:
-        {
-          guint i = g_value_get_uint (value);
-
-          g_assert (paramspec->gtype == G_TYPE_UINT);
-          *((guint *) (params + paramspec->offset)) = i;
-          DEBUG ("%s = %u = 0x%x", paramspec->name, i, i);
-        }
-        break;
-      case DBUS_TYPE_BOOLEAN:
-        {
-          gboolean b = g_value_get_boolean (value);
-
-          g_assert (paramspec->gtype == G_TYPE_BOOLEAN);
-          *((gboolean *) (params + paramspec->offset)) = b;
-          DEBUG ("%s = %s", paramspec->name, b ? "TRUE" : "FALSE");
-        }
-        break;
-      default:
-        g_error ("set_param_from_value: encountered unhandled D-Bus type %s "
-                 "on argument %s", paramspec->dtype, paramspec->name);
-        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "encountered unhandled D-Bus type %s for account parameter %s",
-            paramspec->dtype, paramspec->name);
-        return FALSE;
-    }
+  set_param_by_offset (paramspec, value, params);
 
   return TRUE;
 }
