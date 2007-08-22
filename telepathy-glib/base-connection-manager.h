@@ -63,12 +63,14 @@ G_BEGIN_DECLS
  * @filter: A callback which is used to validate or normalize the user-provided
  *          value before it is written into the opaque data structure
  * @filter_data: Arbitrary opaque data intended for use by the filter function
+ * @setter_data: Arbitrary opaque data intended for use by the setter function
+ *               instead of or in addition to @offset.
  *
  * Structure representing a connection manager parameter, as accepted by
  * RequestConnection.
  *
- * In addition to the fields documented here, there are two gpointer fields
- * which must currently be %NULL. A meaning may be defined for these in a
+ * In addition to the fields documented here, there is one gpointer field
+ * which must currently be %NULL. A meaning may be defined for it in a
  * future version of telepathy-glib.
  */
 
@@ -119,9 +121,10 @@ struct _TpCMParamSpec {
     TpCMParamFilter filter;
     gconstpointer filter_data;
 
+    const gpointer setter_data;
+
     /*<private>*/
     gpointer _future1;
-    gpointer _future2;
 };
 
 /**
