@@ -201,42 +201,42 @@ get_parameters (const TpCMProtocolSpec *protos,
 }
 
 static GValue *
-param_default_value (const TpCMParamSpec *params, int i)
+param_default_value (const TpCMParamSpec *param)
 {
   GValue *value;
 
-  value = tp_g_value_slice_new (params[i].gtype);
+  value = tp_g_value_slice_new (param->gtype);
 
   /* If HAS_DEFAULT is false, we don't really care what the value is, so we'll
    * just use whatever's in the user-supplied param spec. As long as we're
    * careful to accept NULL, that should be fine. */
 
-  switch (params[i].dtype[0])
+  switch (param->dtype[0])
     {
       case DBUS_TYPE_STRING:
-        g_assert (params[i].gtype == G_TYPE_STRING);
-        if (params[i].def == NULL)
+        g_assert (param->gtype == G_TYPE_STRING);
+        if (param->def == NULL)
           g_value_set_static_string (value, "");
         else
-          g_value_set_static_string (value, (const gchar *) params[i].def);
+          g_value_set_static_string (value, (const gchar *) param->def);
         break;
       case DBUS_TYPE_INT16:
       case DBUS_TYPE_INT32:
-        g_assert (params[i].gtype == G_TYPE_INT);
-        g_value_set_int (value, GPOINTER_TO_INT (params[i].def));
+        g_assert (param->gtype == G_TYPE_INT);
+        g_value_set_int (value, GPOINTER_TO_INT (param->def));
         break;
       case DBUS_TYPE_UINT16:
       case DBUS_TYPE_UINT32:
-        g_assert (params[i].gtype == G_TYPE_UINT);
-        g_value_set_uint (value, GPOINTER_TO_UINT (params[i].def));
+        g_assert (param->gtype == G_TYPE_UINT);
+        g_value_set_uint (value, GPOINTER_TO_UINT (param->def));
         break;
       case DBUS_TYPE_BOOLEAN:
-        g_assert (params[i].gtype == G_TYPE_BOOLEAN);
-        g_value_set_boolean (value, GPOINTER_TO_INT (params[i].def));
+        g_assert (param->gtype == G_TYPE_BOOLEAN);
+        g_value_set_boolean (value, GPOINTER_TO_INT (param->def));
         break;
       default:
         g_error ("parameter_defaults: encountered unknown type %s on "
-            "argument %s", params[i].dtype, params[i].name);
+            "argument %s", param->dtype, param->name);
     }
 
   return value;
@@ -524,7 +524,7 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
       g_value_set_static_boxed (&param,
         dbus_g_type_specialized_construct (TP_TYPE_PARAM));
 
-      def_value = param_default_value (protospec->parameters, i);
+      def_value = param_default_value (protospec->parameters + i);
       dbus_g_type_struct_set (&param,
         0, protospec->parameters[i].name,
         1, protospec->parameters[i].flags,
