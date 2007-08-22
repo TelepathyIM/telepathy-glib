@@ -242,10 +242,10 @@ param_default_value (const TpCMParamSpec *param)
   return value;
 }
 
-static void
-set_param_by_offset (const TpCMParamSpec *paramspec,
-                     const GValue *value,
-                     gpointer params)
+void
+tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
+                           const GValue *value,
+                           gpointer params)
 {
   switch (paramspec->dtype[0])
     {
@@ -319,7 +319,7 @@ set_param_from_default (const TpCMParamSpec *paramspec,
                         gpointer params)
 {
   GValue *value = param_default_value (paramspec);
-  set_param_by_offset (paramspec, value, params);
+  tp_cm_param_setter_offset (paramspec, value, params);
   tp_g_value_slice_free (value);
 }
 
@@ -354,7 +354,7 @@ set_param_from_value (const TpCMParamSpec *paramspec,
       g_return_val_if_fail (G_VALUE_TYPE (value) == paramspec->gtype, FALSE);
     }
 
-  set_param_by_offset (paramspec, value, params);
+  tp_cm_param_setter_offset (paramspec, value, params);
 
   return TRUE;
 }
