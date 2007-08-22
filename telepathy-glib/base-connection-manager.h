@@ -128,6 +128,21 @@ struct _TpCMParamSpec {
 };
 
 /**
+ * TpCMParamSetter:
+ * @paramspec: The parameter specification.  The setter is likely to use
+ *  some combination of the name, offset and setter_data fields.
+ * @value: The value for that parameter provided by the user.
+ * @params: An opaque data structure, created by
+ *  #TpCMProtocolSpec.params_new.
+ *
+ * The signature of a callback used to set a parameter within the opaque
+ * data structure used for a protocol.
+ */
+
+typedef void (*TpCMParamSetter) (const TpCMParamSpec *paramspec,
+    const GValue *value, gpointer params);
+
+/**
  * TpCMProtocolSpec:
  * @name: The name which should be passed to RequestConnection for this
  *        protocol.
