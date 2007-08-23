@@ -55,11 +55,10 @@ G_BEGIN_DECLS
  * @flags: Some combination of TP_CONN_MGR_PARAM_FLAG_foo
  * @def: Default value, as a (const gchar *) for string parameters, or
          using #GINT_TO_POINTER or #GUINT_TO_POINTER for integer parameters
- * @offset: Offset of the parameter in the opaque data structure. The member
- *          at that offset is expected to be a gint, guint, (gchar *) or
- *          gboolean, depending on @gtype. Alternatively, this may be
- *          G_MAXSIZE, which means the parameter is obsolete, and is
- *          accepted but ignored.
+ * @offset: Offset of the parameter in the opaque data structure, if
+ *          appropriate. The member at that offset is expected to be a gint,
+ *          guint, (gchar *) or gboolean, depending on @gtype. The default
+ *          parameter setter, #tp_cm_param_setter_offset, uses this field.
  * @filter: A callback which is used to validate or normalize the user-provided
  *          value before it is written into the opaque data structure
  * @filter_data: Arbitrary opaque data intended for use by the filter function

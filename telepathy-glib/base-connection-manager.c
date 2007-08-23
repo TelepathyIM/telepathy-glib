@@ -253,13 +253,20 @@ param_default_value (const TpCMParamSpec *param)
  *  appropriate type.
  *
  * A #TpCMParamSetter which sets parameters by dereferencing an offset
- * from @params.
+ * from @params.  If @paramspec->offset is G_MAXSIZE, the parameter is
+ * deemed obsolete, and is accepted but ignored.
  */
 void
 tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
                            const GValue *value,
                            gpointer params)
 {
+  if (paramspec->offset == G_MAXSIZE)
+    {
+      /* quietly ignore any obsolete params provided */
+      return;
+    }
+
   switch (paramspec->dtype[0])
     {
       case DBUS_TYPE_STRING:
