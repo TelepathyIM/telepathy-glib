@@ -329,16 +329,18 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
 
 static void
 set_param_from_default (const TpCMParamSpec *paramspec,
+                        const TpCMParamSetter set_param,
                         gpointer params)
 {
   GValue *value = param_default_value (paramspec);
-  tp_cm_param_setter_offset (paramspec, value, params);
+  set_param (paramspec, value, params);
   tp_g_value_slice_free (value);
 }
 
 static gboolean
 set_param_from_value (const TpCMParamSpec *paramspec,
                       GValue *value,
+                      const TpCMParamSetter set_param,
                       void *params,
                       GError **error)
 {
@@ -367,7 +369,7 @@ set_param_from_value (const TpCMParamSpec *paramspec,
       g_return_val_if_fail (G_VALUE_TYPE (value) == paramspec->gtype, FALSE);
     }
 
-  tp_cm_param_setter_offset (paramspec, value, params);
+  set_param (paramspec, value, params);
 
   return TRUE;
 }
@@ -385,6 +387,7 @@ static gboolean
 parse_parameters (const TpCMParamSpec *paramspec,
                   GHashTable *provided,
                   TpIntSet *params_present,
+                  const TpCMParamSetter set_param,
                   void *params,
                   GError **error)
 {
@@ -422,7 +425,7 @@ parse_parameters (const TpCMParamSpec *paramspec,
           else if (paramspec[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT)
             {
               /* FIXME: Should we add it to params_present? */
-              set_param_from_default (&paramspec[i], params);
+              set_param_from_default (&paramspec[i], set_param, params);
             }
           else
             {
@@ -432,7 +435,8 @@ parse_parameters (const TpCMParamSpec *paramspec,
         }
       else
         {
-          if (!set_param_from_value (&paramspec[i], value, params, error))
+          if (!set_param_from_value (&paramspec[i], value, set_param, params,
+                error))
             {
               return FALSE;
             }
@@ -582,6 +586,7 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   void *params = NULL;
   TpIntSet *params_present = NULL;
   const TpCMProtocolSpec *protospec = NULL;
+  TpCMParamSetter set_param;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
   g_assert (cls->new_connection != NULL);
@@ -599,8 +604,10 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   params_present = tp_intset_new ();
   params = protospec->params_new ();
 
+  set_param = tp_cm_param_setter_offset;
+
   if (!parse_parameters (protospec->parameters, parameters, params_present,
-        params, &error))
+        set_param, params, &error))
     {
       goto ERROR;
     }
