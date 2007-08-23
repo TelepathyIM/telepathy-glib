@@ -160,10 +160,13 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec, const GValue *value,
  * @params_free: A function which deallocates the opaque data structure
  *               provided by #params_new, including deallocating its
  *               data members (currently, only strings) if necessary.
+ * @set_param: A function which sets a parameter within the opaque data
+ *             structure provided by #params_new. If %NULL,
+ *             #tp_cm_param_setter_offset will be used.
  *
  * Structure representing a connection manager protocol.
  *
- * In addition to the fields documented here, there are four gpointer fields
+ * In addition to the fields documented here, there are three gpointer fields
  * which must currently be %NULL. A meaning may be defined for these in a
  * future version of telepathy-glib.
  */
@@ -172,12 +175,12 @@ typedef struct {
     const TpCMParamSpec *parameters;
     gpointer (*params_new) (void);
     void (*params_free) (gpointer);
+    TpCMParamSetter set_param;
 
     /*<private>*/
     gpointer _future1;
     gpointer _future2;
     gpointer _future3;
-    gpointer _future4;
 } TpCMProtocolSpec;
 
 /**

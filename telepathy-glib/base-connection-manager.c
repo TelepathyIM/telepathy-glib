@@ -604,7 +604,9 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   params_present = tp_intset_new ();
   params = protospec->params_new ();
 
-  set_param = tp_cm_param_setter_offset;
+  set_param = protospec->set_param;
+  if (!set_param)
+    set_param = tp_cm_param_setter_offset;
 
   if (!parse_parameters (protospec->parameters, parameters, params_present,
         set_param, params, &error))
