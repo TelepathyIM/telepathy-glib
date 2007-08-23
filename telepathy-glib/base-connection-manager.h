@@ -142,19 +142,6 @@ struct _TpCMParamSpec {
 typedef void (*TpCMParamSetter) (const TpCMParamSpec *paramspec,
     const GValue *value, gpointer params);
 
-/**
- * tp_cm_param_setter_offset:
- * @paramspec: A parameter specification with offset set to some
- *  meaningful value.
- * @value: The value for that parameter, either provided by the user or
- *  constructed from the parameter's default.
- * @params: An opaque data structure such that the address at (@params +
- *  @paramspec->offset) is a valid pointer to a variable of the
- *  appropriate type.
- *
- * A #TpCMParamSetter which sets parameters by dereferencing an offset
- * from @params.
- */
 void
 tp_cm_param_setter_offset (const TpCMParamSpec *paramspec, const GValue *value,
     gpointer params);
