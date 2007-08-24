@@ -176,7 +176,7 @@ got_sigbus (int i)
     }
 #endif
 
-  exit (1);
+  _exit (1);
 }
 
 #ifdef ENABLE_BACKTRACE
