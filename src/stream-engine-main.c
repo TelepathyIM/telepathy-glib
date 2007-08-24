@@ -148,6 +148,7 @@ shutdown (TpStreamEngine *stream_engine)
   g_main_loop_quit (mainloop);
 }
 
+#if 0
 static void
 dsp_crashed (gpointer dummy)
 {
@@ -158,16 +159,22 @@ dsp_crashed (gpointer dummy)
     g_main_loop_quit (mainloop);
   }
 }
+#endif
 
 static void
 got_sigbus (int i)
 {
   g_warning ("DSP Crashed");
+
+#if 0
   if (!forced_exit_in_progress)
     {
       forced_exit_in_progress =TRUE;
       g_idle_add ((GSourceFunc) dsp_crashed, NULL);
     }
+#endif
+
+  exit (1);
 }
 
 #ifdef ENABLE_BACKTRACE
