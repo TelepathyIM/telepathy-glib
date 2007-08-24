@@ -164,7 +164,9 @@ dsp_crashed (gpointer dummy)
 static void
 got_sigbus (int i)
 {
-  g_warning ("DSP Crashed");
+  const char *msg = "stream engine: DSP crashed\n";
+
+  write (STDERR_FILENO, msg, strlen (msg));
 
 #if 0
   if (!forced_exit_in_progress)
