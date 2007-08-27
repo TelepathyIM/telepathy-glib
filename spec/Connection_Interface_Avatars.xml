@@ -118,6 +118,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
       <tp:docstring>
+        Get the unique tokens for all of the given contacts' avatars.
+
+        Using this method in new Telepathy clients is deprecated; use
+        GetKnownAvatarTokens instead.
+      </tp:docstring>
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
+      </tp:possible-errors>
+    </method>
+    <method name="GetKnownAvatarTokens">
+      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
+        <tp:docstring>
+        An array of handles representing contacts
+        </tp:docstring>
+      </arg>
+      <arg direction="out" type="a{us}">
+        <tp:docstring>
+          A dictionary of handles mapped to avatar tokens, containing only
+          the known avatar tokens.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
         Get the unique tokens for the given contacts' avatars. These tokens
         can be persisted across connections, and should be used by the client
         to check whether the avatars have been updated. A empty token means
@@ -149,7 +175,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Request the avatar for a given contact.
+        Request the avatar for a given contact. Using this method in new
+        Telepathy clients is deprecated; use RequestAvatars instead.
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
