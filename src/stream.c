@@ -113,6 +113,9 @@ static void
 stop_stream (TpStreamEngineStream *self);
 
 static void
+destroy_cb (DBusGProxy *proxy, gpointer user_data);
+
+static void
 _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
 {
   TpStreamEngine *engine;
@@ -176,6 +179,10 @@ tp_stream_engine_stream_dispose (GObject *object)
 
       dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
           "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), stream);
+
+      g_signal_handlers_disconnect_by_func (priv->stream_handler_proxy,
+          G_CALLBACK (destroy_cb), stream);
+
 
       tmp = priv->stream_handler_proxy;
       priv->stream_handler_proxy = NULL;
