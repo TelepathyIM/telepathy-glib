@@ -622,7 +622,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           The ID of the tube
         </tp:docstring>
       </arg>
-      <arg name="handle" type="u" tp_type="Contact_Handle">
+      <arg name="handle" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The handle of the participant who opened the new connection
         </tp:docstring>
