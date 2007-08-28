@@ -784,7 +784,7 @@ dbus_glib_marshal_tp_svc_connection_manager_VOID__STRING_POINTER
 <SECTION>
 <FILE>svc-unstable</FILE>
 <INCLUDE>telepathy-glib/svc-unstable.h</INCLUDE>
-<TITLE>svc-unstable</TITLE>
+<TITLE>svc-unstable (deprecated)</TITLE>
 <SUBSECTION>
 TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO
 TP_IFACE_CONNECTION_INTERFACE_FORWARDING
