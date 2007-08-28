@@ -3,7 +3,7 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>Telepathy D-Bus Interface Specification</tp:title>
-<tp:version>0.15.5.1</tp:version>
+<tp:version>0.15.5</tp:version>
 
 <tp:copyright>Copyright (C) 2005, 2006, 2007 Collabora Limited</tp:copyright>
 <tp:copyright>Copyright (C) 2005, 2006, 2007 Nokia Corporation</tp:copyright>
