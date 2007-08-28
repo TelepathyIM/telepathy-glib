@@ -318,7 +318,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </tp:property>
     <tp:property name="subject-contact" type="u" tp:type="Contact_Handle">
       <tp:docstring>
-      A contact handle representing who last modified the subject.
+      A contact handle representing who last modified the subject, or 0
+      if it isn't known.
       </tp:docstring>
     </tp:property>
     <tp:property name="subject-timestamp" type="u" tp:type="Timestamp">
@@ -347,6 +348,29 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <p>Sending messages can be requested using the Send method, which will return
       and cause the Sent signal to be emitted when the message has been delivered
       to the server, or SendError if there is a failure.</p>
+
+      <p>On protocols where additional contacts cannot be invited into
+        a one-to-one chat, or where a one-to-one chat is just a series of
+        individual personal messages rather than being represented by some
+        object on the server (i.e. most protocols), one-to-one chats should be
+        represented by a Text channel with handle type CONTACT.</p>
+
+      <p>Named chat rooms whose identity can be saved and used again later
+        (IRC channels, Jabber MUCs) are expected to be represented by Text
+        channels with handle type ROOM and the Group interface; they should
+        usually also have the Properties interface.</p>
+
+      <p>Unnamed, transient chat rooms defined only by their members (e.g. on
+        MSN) are expected to be represented by Text channels with handle type
+        0, handle 0, the Group interface, and optionally the Properties
+        interface.</p>
+
+      <p>On protocols where a conversation with a user is actually just
+        a nameless chat room starting with exactly two members, to which
+        more members can be invited, calling RequestChannel with type Text
+        and handle type CONTACT should continue to succeed, but may return
+        a channel with handle type 0, handle 0, the group interface,
+        and the local and remote contacts in its members.</p>
     </tp:docstring>
   </interface>
 </node>

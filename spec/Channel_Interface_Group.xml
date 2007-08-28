@@ -373,6 +373,30 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             requested handle.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="Separated" value="11">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>If members are removed with this reason code, the change is
+            because the group has split into unconnected parts which can only
+            communicate within themselves (e.g. netsplits on IRC use this
+            reason code).
+          </p>
+          <p>
+            If members are added with this reason code, the change is because
+            unconnected parts of the group have rejoined. If this channel
+            carries messages (e.g. Text or Tubes channels) applications must
+            assume that the contacts being added are likely to have missed some
+            messages as a result of the separation, and that the contacts
+            in the group are likely to have missed some messages from the
+            contacts being added.
+          </p>
+          <p>Note that from the added contacts' perspective, they have been
+            in the group all along, and the contacts we indicate to be in
+            the group (including the local user) have just rejoined
+            the group with reason Separated. Application protocols in Tubes
+            should be prepared to cope with this situation.
+          </p>
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
     <signal name="MembersChanged">
       <arg name="message" type="s">

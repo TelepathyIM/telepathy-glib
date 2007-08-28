@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <node name="/Connection_Interface_Avatars" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright> Copyright (C) 2005, 2006 Collabora Limited </tp:copyright>
-  <tp:copyright> Copyright (C) 2005, 2006 Nokia Corporation </tp:copyright>
-  <tp:copyright> Copyright (C) 2006 INdT </tp:copyright>
+  <tp:copyright>Copyright (C) 2005-2007 Collabora Limited</tp:copyright>
+  <tp:copyright>Copyright (C) 2005, 2006 Nokia Corporation</tp:copyright>
+  <tp:copyright>Copyright (C) 2006 INdT</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
     <p>This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -82,17 +82,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
       <arg direction="out" type="q">
         <tp:docstring>
-          The maximum image width in pixels
+          The maximum image width in pixels, or 0 if there is no limit
         </tp:docstring>
       </arg>
       <arg direction="out" type="q">
         <tp:docstring>
-          The maximum image height in pixels
+          The maximum image height in pixels, or 0 if there is no limit
         </tp:docstring>
       </arg>
       <arg direction="out" type="u">
         <tp:docstring>
-          The maximum image size in bytes
+          The maximum image size in bytes, or 0 if there is no limit
         </tp:docstring>
       </arg>
       <tp:docstring>
@@ -183,7 +183,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
         <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+          <tp:docstring>
+            The contact does not currently have an avatar.
+          </tp:docstring>
+        </tp:error>
       </tp:possible-errors>
     </method>
     <method name="RequestAvatars">
@@ -195,9 +199,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
       <tp:docstring>
         Request avatars for a number of contacts. The AvatarRetrieved signal
-        is emitted for each avatar retrieved. If retrieving an avatar fails,
-        the AvatarRetrieved signal is not emitted.
+        is emitted for each avatar retrieved. If the handles are valid but
+        retrieving an avatar fails (for any reason, including the contact not
+        having an avatar) the AvatarRetrieved signal is not emitted for that
+        contact.
       </tp:docstring>
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
+      </tp:possible-errors>
     </method>
     <method name="SetAvatar">
       <arg direction="in" name="avatar" type="ay">

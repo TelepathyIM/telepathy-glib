@@ -86,6 +86,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <li>icq - ICQ</li>
           <li>irc - Internet Relay Chat</li>
           <li>jabber - Jabber (XMPP)</li>
+          <li>local-xmpp - Link-local XMPP (XEP-0174, Bonjour, Salut)</li>
           <li>msn - MSN Messenger</li>
           <li>napster - Napster</li>
           <li>silc - SILC</li>

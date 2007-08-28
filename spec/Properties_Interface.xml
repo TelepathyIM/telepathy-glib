@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <node name="/Properties_Interface" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright> Copyright (C) 2005, 2006 Collabora Limited </tp:copyright>
+  <tp:copyright> Copyright (C) 2005-2007 Collabora Limited </tp:copyright>
   <tp:copyright> Copyright (C) 2005, 2006 Nokia Corporation </tp:copyright>
   <tp:copyright> Copyright (C) 2006 INdT </tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
@@ -21,16 +21,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Properties">
     <method name="GetProperties">
       <tp:docstring>
-        Returns a dictionary of variants containing the current values of the
-        given properties.
+        Returns an array of (identifier, value) pairs containing the current
+        values of the given properties.
       </tp:docstring>
       <arg direction="in" name="properties" type="au">
         <tp:docstring>An array of property identifiers</tp:docstring>
       </arg>
       <arg direction="out" type="a(uv)">
-        <tp:docstring>An array of structs containing:
-          - integer identifiers
-          - variant boxed values
+        <!-- XXX: if we're ever breaking API compatibility, make this a{uv} -->
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>An array of structs containing:</p>
+          <ul>
+            <li>integer identifiers</li>
+            <li>variant boxed values</li>
+          </ul>
         </tp:docstring>
       </arg>
       <tp:possible-errors>
@@ -52,6 +56,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Returns a dictionary of the properties available on this channel.
       </tp:docstring>
       <arg direction="out" type="a(ussu)">
+        <!-- XXX: if we're ever breaking API compatibility, make this
+        a{u(ssu)} ? -->
         <tp:docstring>
           An array of structs containing:
           <ul>
@@ -68,13 +74,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Emitted when the value of readable properties has changed.
       </tp:docstring>
       <arg name="properties" type="a(uv)">
-      <tp:docstring>
-        An array of structs containing:
-        <ul>
-          <li>integer identifiers</li>
-          <li>variant boxed values</li>
-        </ul>
-      </tp:docstring>
+        <!-- XXX: if we're ever breaking API compatibility, make this a{uv} -->
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>An array of structs containing:</p>
+          <ul>
+            <li>integer identifiers</li>
+            <li>variant boxed values</li>
+          </ul>
+          <p>The array should contain only properties whose values have
+            actually changed.</p>
+        </tp:docstring>
       </arg>
     </signal>
     <signal name="PropertyFlagsChanged">
@@ -82,21 +91,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Emitted when the flags of some room properties have changed.
       </tp:docstring>
       <arg name="properties" type="a(uu)">
-        <tp:docstring>
-          An array of structs containing:
+        <!-- XXX: if we're ever breaking API compatibility, make this a{uu} -->
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>An array of structs containing:</p>
           <ul>
             <li>integer identifiers</li>
             <li>a bitwise OR of the current flags</li>
           </ul>
+          <p>The array should contain only properties whose flags have actually
+            changed.</p>
         </tp:docstring>
       </arg>
     </signal>
     <method name="SetProperties">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>Takes a dictionary of variants containing desired values to set the given
-        properties. In the case of any errors, no properties will be changed.
-        When the changes have been acknowledged by the server, the
-        PropertiesChanged signal will be emitted.</p>
+        <p>Takes an array of (identifier, value) pairs containing desired
+          values to set the given properties. In the case of any errors, no
+          properties will be changed. When the changes have been acknowledged
+          by the server, the PropertiesChanged signal will be emitted.</p>
 
         <p>All properties given must have the PROPERTY_FLAG_WRITE flag, or
         PermissionDenied will be returned. If any variants are of the wrong
@@ -105,6 +117,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
 
       <arg direction="in" name="properties" type="a(uv)">
+        <!-- XXX: if we're ever breaking API compatibility, make this a{uv} -->
       <tp:docstring>
         A dictionary mapping integer identifiers to boxed values
       </tp:docstring>

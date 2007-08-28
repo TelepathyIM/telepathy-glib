@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Channel.Type.StreamedMedia">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+    <tp:requires interface="org.freedesktop.Telepathy.Channel.Interface.Group"/>
     <tp:enum name="Media_Stream_Type" type="u">
       <tp:enumvalue suffix="Audio" value="0">
         <tp:docstring>An audio stream</tp:docstring>
@@ -283,7 +284,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     signals to indicate when streams have been added, removed and changed
     status.</p>
 
-    <p>In general this should always be used in conjunction with the IceSignalling
+      <p>Channels of this type are expected to provide the Group interface
+        and be "anonymous" (have no associated handle). To make a media call
+        to a contact, clients should request a new, empty streamed media
+        channel, then call AddMembers to add the contact to the channel.
+        The local user should be in the group's members, while the contact
+        should be in "remote pending" until the call is accepted, then
+        move to the group's members.</p>
+
+      <p>Similarly, incoming calls should be signalled as having handle type 0
+        and handle 0. The remote contact should be in the group's members,
+        with the local user in the "local pending" members; to accept the
+        call, AddMembers can be used to move the local user to the
+        group's members.</p>
+
+    <p>In general this should be used in conjunction with the MediaSignalling
     interface to exchange connection candidates and codec choices with
     whichever component is responsible for the streams. However, in certain
     applications where no candidate exchange is necessary (eg the streams are
