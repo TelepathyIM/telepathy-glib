@@ -10,6 +10,7 @@
 #include <telepathy-glib/_gen/svc-Channel_Type_Room_List.h>
 #include <telepathy-glib/_gen/svc-Channel_Type_Streamed_Media.h>
 #include <telepathy-glib/_gen/svc-Channel_Type_Text.h>
+#include <telepathy-glib/_gen/svc-Channel_Type_Tubes.h>
 #include <telepathy-glib/_gen/svc-Channel.h>
 
 #endif
