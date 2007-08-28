@@ -8,6 +8,7 @@ pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-glib.pc telepathy-glib-unstable.pc
 
 EXTRA_DIST = \
+    autogen.sh \
     check-coding-style.mk \
     check-c-style.sh \
     check-whitespace.sh \
