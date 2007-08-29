@@ -19,7 +19,7 @@ install -d ./`dirname "$outfile"`
 exec > "$outfile.tmp"
 
 echo "# Rules to re-generate this file"
-printf "$outfile: \$(top_srcdir)/$mk_specdir/all.xml \\\\\\n"
+printf "$outfile: \$(top_srcdir)/$mk_specdir/all.xml $whitelist \\\\\\n"
 printf "\\t\\t\$(top_srcdir)/$mk_specdir/all.xml \\\\\\n"
 printf "\\t\\t\$(SPEC_INTERFACE_XMLS) \\\\\\n"
 printf "\\t\\t\$(top_srcdir)/$mk_toolsdir/ls-interfaces.xsl \\\\\\n"
