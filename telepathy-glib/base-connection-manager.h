@@ -120,7 +120,7 @@ struct _TpCMParamSpec {
     TpCMParamFilter filter;
     gconstpointer filter_data;
 
-    const gpointer setter_data;
+    gconstpointer setter_data;
 
     /*<private>*/
     gpointer _future1;
