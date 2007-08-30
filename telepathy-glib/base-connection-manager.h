@@ -111,13 +111,13 @@ gboolean tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
 struct _TpCMParamSpec {
     const gchar *name;
     const gchar *dtype;
-    const GType gtype;
+    GType gtype;
     guint flags;
-    const gpointer def;
-    const gsize offset;
+    gconstpointer def;
+    gsize offset;
 
     TpCMParamFilter filter;
-    const gpointer filter_data;
+    gconstpointer filter_data;
 
     /*<private>*/
     gpointer _future1;
