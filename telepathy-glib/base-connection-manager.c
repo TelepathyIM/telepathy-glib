@@ -732,6 +732,16 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
+/**
+ * tp_cm_param_filter_uint_nonzero:
+ * @paramspec: The parameter specification for a guint parameter
+ * @value: A GValue containing a guint, which will not be altered
+ * @error: Used to return an error if the guint is 0
+ *
+ * A #TpCMParamFilter which rejects zero, useful for server port numbers.
+ *
+ * Returns: %TRUE to accept, %FALSE (with @error set) to reject
+ */
 gboolean
 tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
                                  GValue *value,
@@ -747,6 +757,16 @@ tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
   return TRUE;
 }
 
+/**
+ * tp_cm_param_filter_string_nonempty:
+ * @paramspec: The parameter specification for a string parameter
+ * @value: A GValue containing a string, which will not be altered
+ * @error: Used to return an error if the string is empty
+ *
+ * A #TpCMParamFilter which rejects empty strings.
+ *
+ * Returns: %TRUE to accept, %FALSE (with @error set) to reject
+ */
 gboolean
 tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
                                     GValue *value,
