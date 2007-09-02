@@ -411,13 +411,6 @@ parse_parameters (const TpCMParamSpec *paramspec,
 
   for (i = 0; paramspec[i].name; i++)
     {
-      if (paramspec->offset == G_MAXSIZE)
-        {
-          /* quietly ignore any obsolete params provided */
-          g_hash_table_remove (provided, paramspec[i].name);
-          continue;
-        }
-
       value = g_hash_table_lookup (provided, paramspec[i].name);
 
       if (value == NULL)
