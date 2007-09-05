@@ -120,6 +120,8 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
 {
   TpStreamEngine *engine;
   GstElement *pipeline;
+  gboolean retval;
+  GstStateChangeReturn ret;
 
   DEBUG (stream, "removing video sink");
 
@@ -128,10 +130,23 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
 
   engine = tp_stream_engine_get ();
   pipeline = tp_stream_engine_get_pipeline (engine);
-  gst_element_set_state (sink, GST_STATE_NULL);
+
+  gst_object_ref (sink);
+
+  retval = gst_bin_remove (GST_BIN (pipeline), sink);
+  g_assert (retval == TRUE);
+
+  ret = gst_element_set_state (sink, GST_STATE_NULL);
+  g_assert (ret != GST_STATE_CHANGE_FAILURE);
+
+  if (ret == GST_STATE_CHANGE_ASYNC) {
+    ret = gst_element_get_state (sink, NULL, NULL, 5*GST_SECOND);
+    g_assert (ret != GST_STATE_CHANGE_FAILURE);
+  }
 
   DEBUG (stream, "sink refcount: %d", GST_OBJECT_REFCOUNT_VALUE(sink));
-  gst_bin_remove (GST_BIN (pipeline), sink);
+
+  gst_object_unref (sink);
 }
 
 static void
@@ -762,6 +777,7 @@ static void
 stop_stream (TpStreamEngineStream *self)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  GstElement *sink = NULL;
 
   if (!priv->fs_stream)
     return;
@@ -769,12 +785,13 @@ stop_stream (TpStreamEngineStream *self)
   DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
 
   if (self->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    {
-      GstElement *sink = farsight_stream_get_sink (priv->fs_stream);
-      _remove_video_sink (self, sink);
-    }
+    sink = farsight_stream_get_sink (priv->fs_stream);
 
   farsight_stream_stop (priv->fs_stream);
+
+  if (sink)
+    _remove_video_sink (self, sink);
+
 }
 
 static void
