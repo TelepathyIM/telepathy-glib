@@ -66,6 +66,7 @@ tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
  *
  * Returns: a newly allocated, newly initialized #GValue, to be freed with
  * tp_g_value_slice_free() or g_slice_free().
+ * Since: 0.5.14
  */
 GValue *
 tp_g_value_slice_new (GType type)
@@ -100,6 +101,7 @@ tp_g_value_slice_free (GValue *value)
  *
  * Returns: a newly allocated copy of @value, to be freed with
  * tp_g_value_slice_free() or g_slice_free().
+ * Since: 0.5.14
  */
 GValue *
 tp_g_value_slice_dup (const GValue *value)

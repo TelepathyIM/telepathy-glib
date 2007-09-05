@@ -41,8 +41,8 @@
  * tp_group_mixin_iface_init)</literal> in the fourth argument to
  * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
  *
- * You can also implement the group interface by forwarding all group
- * operations to the group mixin of an associated object (mainly useful
+ * Since 0.5.13 you can also implement the group interface by forwarding all
+ * group operations to the group mixin of an associated object (mainly useful
  * for Tubes channels). To do this, call tp_external_group_mixin_init()
  * in the constructor after the associated object has been set,
  * tp_external_group_mixin_finalize() in the dispose or finalize function, and
@@ -181,6 +181,8 @@ tp_group_mixin_get_offset_quark ()
  * initialization, the given callback will be used instead of the remove
  * callback passed to tp_group_mixin_class_init() (which must be %NULL
  * in this case).
+ *
+ * Since: 0.5.13
  */
 void
 tp_group_mixin_class_set_remove_with_reason_func (GObjectClass *cls,
@@ -1546,6 +1548,8 @@ _external_group_mixin_get_obj_quark (void)
  * Fill in the qdata needed to implement the group interface using
  * the group mixin of another object. This function should usually be called
  * in the instance constructor.
+ *
+ * Since: 0.5.13
  */
 void
 tp_external_group_mixin_init (GObject *obj, GObject *obj_with_mixin)
@@ -1563,6 +1567,8 @@ tp_external_group_mixin_init (GObject *obj, GObject *obj_with_mixin)
  *
  * Remove the external group mixin. This function should usually be called
  * in the dispose or finalize function.
+ *
+ * Since: 0.5.13
  */
 void
 tp_external_group_mixin_finalize (GObject *obj)
@@ -1705,6 +1711,8 @@ tp_external_group_mixin_remove_members_with_reason_async
  * Fill in the vtable entries needed to implement the group interface using
  * the group mixin of another object. This function should usually be called
  * via G_IMPLEMENT_INTERFACE.
+ *
+ * Since: 0.5.13
  */
 void
 tp_external_group_mixin_iface_init (gpointer g_iface,

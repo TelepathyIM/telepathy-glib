@@ -47,6 +47,8 @@
  * G_IMPLEMENT_INTERFACE, you should call tp_presence_mixin_iface_init.
  * TpPresenceMixin implements all of the D-Bus methods in the Presence
  * interface.
+ *
+ * Since: 0.5.13
  */
 
 #include <telepathy-glib/presence-mixin.h>
