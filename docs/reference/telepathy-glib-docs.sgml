@@ -43,6 +43,7 @@
     <xi:include href="xml/dbus.xml"/>
     <xi:include href="xml/errors.xml"/>
     <xi:include href="xml/heap.xml"/>
+    <xi:include href="xml/gtypes.xml"/>
   </chapter>
   <chapter id="ch-handle-management">
     <title>Handle management</title>
