@@ -2,23 +2,25 @@
 <tp:spec
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
 
-  <!-- Connection.Interface.Aliasing.AliasesChanged has Alias_Pair[] -->
   <tp:struct name="Alias_Pair">
+    <tp:docstring>A pair (contact handle, alias) as seen in the AliasesChanged
+      signal on the Aliasing interface.</tp:docstring>
     <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
     <tp:member type="s" name="Alias"/>
   </tp:struct>
 
-  <!-- Connection.Interface.Capabilities.AdvertiseCapabilities takes
-  CapabilityPair[] -->
   <tp:struct name="Capability_Pair">
+    <tp:docstring>A pair (channel type, type-specific flags) as passed to
+      AdvertiseCapabilities on the Capabilities interface.</tp:docstring>
     <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
     <tp:member type="u" name="Type_Specific_Flags"/>
   </tp:struct>
 
-  <!-- Connection.Interface.Capabilities.GetCapabilities returns
-  Contact_Capability[]
-  -->
   <tp:struct name="Contact_Capability">
+    <tp:docstring>A struct (contact handle, channel type, generic flags,
+      type-specific flags) representing a capability posessed by a contact,
+      as returned by GetCapabilities on the Capabilities
+      interface.</tp:docstring>
     <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
     <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
     <tp:member type="u" tp:type="Connection_Capability_Flags"
@@ -26,9 +28,11 @@
     <tp:member type="u" name="Type_Specific_Flags"/>
   </tp:struct>
 
-  <!-- Connection.Interface.Capabilities.CapabilitiesChanged has
-  Capability_Change[] -->
   <tp:struct name="Capability_Change">
+    <tp:docstring>A struct (contact handle, channel type, old generic flags,
+      new generic flags, old type-specific flags, new type-specific flags)
+      representing a change to one of a contact's capabilities, as seen in the
+      CapabilitiesChanged signal on the Capabilities interface.</tp:docstring>
     <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
     <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
     <tp:member type="u" tp:type="Connection_Capability_Flags"
@@ -39,16 +43,17 @@
     <tp:member type="u" name="New_Type_Specific_Flags"/>
   </tp:struct>
 
-  <!-- ConnectionManager.GetParameters returns Param_Spec[] -->
   <tp:struct name="Param_Spec">
+    <tp:docstring>A struct (parameter name, flags, signature, default value)
+      representing an allowed parameter, as returned by GetParameters
+      on the ConnectionManager interface.</tp:docstring>
     <tp:member type="s" name="Name"/>
     <tp:member type="u" tp:type="Conn_Mgr_Param_Flags" name="Flags"/>
     <tp:member type="s" tp:type="DBus_Signature" name="Signature"/>
     <tp:member type="v" name="Default_Value"/>
   </tp:struct>
 
-  <!-- Connection.ListChannels returns Channel_List_Entry[] -->
-  <tp:struct name="Channel_List_Entry">
+  <tp:struct name="Channel_List_Entry" array-name="Channel_List">
     <tp:member type="o" name="Channel"/>
     <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
     <tp:member type="u" tp:type="Handle_Type" name="Handle_Type"/>
@@ -98,7 +103,7 @@
   </tp:struct>
 
   <!-- Channel.Type.Tubes.ListTubes returns Tube_List_Entry[]. -->
-  <tp:struct name="Tube_List_Entry">
+  <tp:struct name="Tube_List_Entry" array-name="Tube_List">
     <tp:member type="u" name="ID"/>
     <tp:member type="u" tp:type="Contact_Handle" name="Initiator"/>
     <tp:member type="u" tp:type="Tube_Type" name="Type"/>
@@ -127,3 +132,4 @@
   </tp:mapping>
 
 </tp:spec>
+<!-- vim:set sw=2 sts=2 et: -->
