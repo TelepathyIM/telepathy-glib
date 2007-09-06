@@ -19,9 +19,6 @@
 
 #include <telepathy-glib/gtypes.h>
 
-#include <glib-object.h>
-#include <dbus/dbus-glib.h>
-
 #include <telepathy-glib/util.h>
 
 /**
