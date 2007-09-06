@@ -51,6 +51,7 @@ tpginclude_HEADERS = \
     enums.h \
     errors.h \
     group-mixin.h \
+    gtypes.h \
     handle.h \
     handle-repo.h \
     handle-repo-static.h \
@@ -70,12 +71,14 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/signals-marshal.h \
     _gen/signals-marshal.list \
     _gen/telepathy-errors.c \
+    _gen/gtypes-body.h \
     $(STABLE_SPEC_GENERATED_SOURCES)
 
 nodist_geninclude_HEADERS = \
     _gen/telepathy-enums.h \
     _gen/telepathy-interfaces.h \
     _gen/telepathy-errors.h \
+    _gen/gtypes.h \
     $(STABLE_SPEC_GENERATED_HS)
 
 nodist_libtelepathy_glib_unstable_la_SOURCES = \
@@ -120,6 +123,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     internal-debug.h \
     errors.c \
     group-mixin.c \
+    gtypes.c \
     handle.c \
     internal-handle-repo.h \
     handle-repo.c \
@@ -186,6 +190,13 @@ _gen/unstable-spec.xml: ../spec/all.xml \
 	$(SPEC_INTERFACE_XMLS) _gen/spec-only-unstable.xsl
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
 		_gen/spec-only-unstable.xsl $(srcdir)/../spec/all.xml > $@
+
+# when the structs land in the spec, this should be from _gen/stable-spec.xml
+_gen/gtypes.h _gen/gtypes-body.h: gtypes-input.xml \
+	../tools/glib-gtypes-generator.py
+	$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
+		$(srcdir)/gtypes-input.xml \
+		_gen/gtypes Tp
 
 _gen/telepathy-enums.h: _gen/stable-spec.xml \
 	../tools/c-constants-generator.xsl

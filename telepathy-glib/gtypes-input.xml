@@ -1,0 +1,129 @@
+<!-- This information will be incorporated into the spec eventually -->
+<tp:spec
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+
+  <!-- Connection.Interface.Aliasing.AliasesChanged has Alias_Pair[] -->
+  <tp:struct name="Alias_Pair">
+    <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+    <tp:member type="s" name="Alias"/>
+  </tp:struct>
+
+  <!-- Connection.Interface.Capabilities.AdvertiseCapabilities takes
+  CapabilityPair[] -->
+  <tp:struct name="Capability_Pair">
+    <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+    <tp:member type="u" name="Type_Specific_Flags"/>
+  </tp:struct>
+
+  <!-- Connection.Interface.Capabilities.GetCapabilities returns
+  Contact_Capability[]
+  -->
+  <tp:struct name="Contact_Capability">
+    <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+    <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+    <tp:member type="u" tp:type="Connection_Capability_Flags"
+               name="Generic_Flags"/>
+    <tp:member type="u" name="Type_Specific_Flags"/>
+  </tp:struct>
+
+  <!-- Connection.Interface.Capabilities.CapabilitiesChanged has
+  Capability_Change[] -->
+  <tp:struct name="Capability_Change">
+    <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+    <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+    <tp:member type="u" tp:type="Connection_Capability_Flags"
+               name="Old_Generic_Flags"/>
+    <tp:member type="u" tp:type="Connection_Capability_Flags"
+               name="New_Generic_Flags"/>
+    <tp:member type="u" name="Old_Type_Specific_Flags"/>
+    <tp:member type="u" name="New_Type_Specific_Flags"/>
+  </tp:struct>
+
+  <!-- ConnectionManager.GetParameters returns Param_Spec[] -->
+  <tp:struct name="Param_Spec">
+    <tp:member type="s" name="Name"/>
+    <tp:member type="u" tp:type="Conn_Mgr_Param_Flags" name="Flags"/>
+    <tp:member type="s" tp:type="DBus_Signature" name="Signature"/>
+    <tp:member type="v" name="Default_Value"/>
+  </tp:struct>
+
+  <!-- Connection.ListChannels returns Channel_List_Entry[] -->
+  <tp:struct name="Channel_List_Entry">
+    <tp:member type="o" name="Channel"/>
+    <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+    <tp:member type="u" tp:type="Handle_Type" name="Handle_Type"/>
+    <tp:member type="u" tp:type="Handle" name="Handle"/>
+  </tp:struct>
+
+  <!-- Channel.Interface.Group.GetLocalPendingMembersWithInfo returns
+  Local_Pending_Info[] -->
+  <tp:struct name="Local_Pending_Info">
+    <tp:member type="u" tp:type="Contact_Handle" name="To_Be_Added"/>
+    <tp:member type="u" tp:type="Contact_Handle" name="Actor"/>
+    <tp:member type="u" tp:type="Channel_Group_Change_Reason" name="Reason"/>
+    <tp:member type="s" name="Message"/>
+  </tp:struct>
+
+  <!-- Channel.Type.Text.ListPendingMessages returns Pending_Text_Message[].
+  Received's arguments match this format too -->
+  <tp:struct name="Pending_Text_Message">
+    <tp:member type="u" name="Message_ID"/>
+    <tp:member type="u" name="Unix_Timestamp"/>
+    <tp:member type="u" tp:type="Contact_Handle" name="Sender"/>
+    <tp:member type="u" tp:type="Channel_Text_Message_Type"
+               name="Message_Type"/>
+    <tp:member type="u" tp:type="Channel_Text_Message_Flags" name="Flags"/>
+    <tp:member type="s" name="Text"/>
+  </tp:struct>
+
+  <!-- Properties.ListProperties returns a Property_Spec[] -->
+  <tp:struct name="Property_Spec">
+    <tp:member type="u" name="Property_ID"/>
+    <tp:member type="s" name="name"/>
+    <tp:member type="s" tp:type="DBus_Signature" name="signature"/>
+    <tp:member type="u" tp:type="Property_Flags" name="Flags"/>
+  </tp:struct>
+
+  <!-- Properties.PropertyFlagsChanged has a Property_Flags_Change[] -->
+  <tp:struct name="Property_Flags_Change">
+    <tp:member type="u" name="ID"/>
+    <tp:member type="u" name="New_Flags"/>
+  </tp:struct>
+
+  <!-- Properties.GetProperties returns Property_Value[]. PropertiesChanged
+  has a Property_Value[]. SetProperties takes a Property_Value[] -->
+  <tp:struct name="Property_Value">
+    <tp:member type="u" name="ID"/>
+    <tp:member type="v" name="Value"/>
+  </tp:struct>
+
+  <!-- Channel.Type.Tubes.ListTubes returns Tube_List_Entry[]. -->
+  <tp:struct name="Tube_List_Entry">
+    <tp:member type="u" name="ID"/>
+    <tp:member type="u" tp:type="Contact_Handle" name="Initiator"/>
+    <tp:member type="u" tp:type="Tube_Type" name="Type"/>
+    <tp:member type="s" tp:type="DBus_Well_Known_Name" name="Service"/>
+    <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Parameters"/>
+    <tp:member type="u" tp:type="Tube_State" name="State"/>
+  </tp:struct>
+
+  <!-- Channel.Type.Tubes.DBusNamesChanged has a DBus_Tube_Member[]
+  and GetDBusNames returns an array of them -->
+  <tp:struct name="DBus_Tube_Member">
+    <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+    <tp:member type="s" tp:type="DBus_Unique_Name" name="Unique_Name"/>
+  </tp:struct>
+
+  <!-- Just about everything uses a{sv}... -->
+  <tp:mapping name="String_Variant_Map">
+    <tp:member type="s"/>
+    <tp:member type="v"/>
+  </tp:mapping>
+
+  <!-- ... or a{ss} -->
+  <tp:mapping name="String_String_Map">
+    <tp:member type="s"/>
+    <tp:member type="s"/>
+  </tp:mapping>
+
+</tp:spec>
