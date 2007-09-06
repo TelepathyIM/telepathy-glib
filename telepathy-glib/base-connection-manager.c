@@ -38,6 +38,7 @@
 #include <dbus/dbus-protocol.h>
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
@@ -70,13 +71,6 @@ enum
 };
 
 static guint signals[N_SIGNALS] = {0};
-
-#define TP_TYPE_PARAM (dbus_g_type_get_struct ("GValueArray", \
-      G_TYPE_STRING, \
-      G_TYPE_UINT, \
-      G_TYPE_STRING, \
-      G_TYPE_VALUE, \
-      G_TYPE_INVALID))
 
 static void
 tp_base_connection_manager_dispose (GObject *object)
@@ -483,6 +477,7 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
   TpBaseConnectionManagerClass *cls =
     TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
+  GType param_type = TP_STRUCT_TYPE_PARAM_SPEC;
   int i;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
@@ -502,9 +497,9 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
       GValue *def_value;
       GValue param = { 0, };
 
-      g_value_init (&param, TP_TYPE_PARAM);
+      g_value_init (&param, param_type);
       g_value_set_static_boxed (&param,
-        dbus_g_type_specialized_construct (TP_TYPE_PARAM));
+        dbus_g_type_specialized_construct (param_type));
 
       def_value = param_default_value (protospec->parameters + i);
       dbus_g_type_struct_set (&param,

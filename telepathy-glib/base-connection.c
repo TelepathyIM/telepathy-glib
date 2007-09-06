@@ -43,6 +43,7 @@
 
 #include <telepathy-glib/channel-factory-iface.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
@@ -73,10 +74,6 @@ static guint signals[N_SIGNALS] = {0};
 
 #define TP_BASE_CONNECTION_GET_PRIVATE(obj) \
     ((TpBaseConnectionPrivate *)obj->priv)
-
-#define TP_CHANNEL_LIST_ENTRY_TYPE (dbus_g_type_get_struct ("GValueArray", \
-      DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_UINT, \
-      G_TYPE_INVALID))
 
 typedef struct _ChannelRequest ChannelRequest;
 
@@ -1036,10 +1033,8 @@ list_channel_factory_foreach_one (TpChannelIface *chan,
   GPtrArray *values = (GPtrArray *) data;
   gchar *path, *type;
   guint handle_type, handle;
-  GValue *entry = tp_g_value_slice_new (TP_CHANNEL_LIST_ENTRY_TYPE);
-
-  g_value_take_boxed (entry, dbus_g_type_specialized_construct
-      (TP_CHANNEL_LIST_ENTRY_TYPE));
+  GValue *entry = tp_dbus_specialized_value_slice_new
+      (TP_STRUCT_TYPE_CHANNEL_LIST_ENTRY);
 
   g_object_get (channel,
       "object-path", &path,

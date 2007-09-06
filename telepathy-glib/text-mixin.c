@@ -52,20 +52,11 @@
 
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/gtypes.h>
 
 #define DEBUG_FLAG TP_DEBUG_IM
 
 #include "internal-debug.h"
-
-#define TP_TYPE_PENDING_MESSAGE_STRUCT \
-  (dbus_g_type_get_struct ("GValueArray", \
-      G_TYPE_UINT, \
-      G_TYPE_UINT, \
-      G_TYPE_UINT, \
-      G_TYPE_UINT, \
-      G_TYPE_UINT, \
-      G_TYPE_STRING, \
-      G_TYPE_INVALID))
 
 /* allocator */
 
@@ -553,6 +544,7 @@ tp_text_mixin_list_pending_messages (GObject *obj,
                                      GError **error)
 {
   TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
+  GType pending_type = TP_STRUCT_TYPE_PENDING_TEXT_MESSAGE;
   guint count;
   GPtrArray *messages;
   GList *cur;
@@ -567,9 +559,9 @@ tp_text_mixin_list_pending_messages (GObject *obj,
       _PendingMessage *msg = (_PendingMessage *) cur->data;
       GValue val = { 0, };
 
-      g_value_init (&val, TP_TYPE_PENDING_MESSAGE_STRUCT);
+      g_value_init (&val, pending_type);
       g_value_take_boxed (&val,
-          dbus_g_type_specialized_construct (TP_TYPE_PENDING_MESSAGE_STRUCT));
+          dbus_g_type_specialized_construct (pending_type));
       dbus_g_type_struct_set (&val,
           0, msg->id,
           1, msg->timestamp,

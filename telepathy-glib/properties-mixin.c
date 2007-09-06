@@ -277,9 +277,9 @@ tp_properties_mixin_list_properties (GObject *obj,
           continue;
       };
 
-      g_value_init (&val, TP_TYPE_PROPERTY_INFO_STRUCT);
+      g_value_init (&val, TP_STRUCT_TYPE_PROPERTY_SPEC);
       g_value_take_boxed (&val,
-          dbus_g_type_specialized_construct (TP_TYPE_PROPERTY_INFO_STRUCT));
+          dbus_g_type_specialized_construct (TP_STRUCT_TYPE_PROPERTY_SPEC));
 
       dbus_g_type_struct_set (&val,
           0, i,
@@ -351,9 +351,9 @@ tp_properties_mixin_get_properties (GObject *obj,
       GValue val_struct = { 0, };
 
       /* id/value struct */
-      g_value_init (&val_struct, TP_TYPE_PROPERTY_VALUE_STRUCT);
+      g_value_init (&val_struct, TP_STRUCT_TYPE_PROPERTY_VALUE);
       g_value_take_boxed (&val_struct,
-          dbus_g_type_specialized_construct (TP_TYPE_PROPERTY_VALUE_STRUCT));
+          dbus_g_type_specialized_construct (TP_STRUCT_TYPE_PROPERTY_VALUE));
 
       dbus_g_type_struct_set (&val_struct,
           0, prop_id,
@@ -415,7 +415,7 @@ tp_properties_mixin_set_properties (GObject *obj,
       guint prop_id;
       GValue *prop_val;
 
-      g_value_init (&val_struct, TP_TYPE_PROPERTY_VALUE_STRUCT);
+      g_value_init (&val_struct, TP_STRUCT_TYPE_PROPERTY_VALUE);
       g_value_set_static_boxed (&val_struct,
           g_ptr_array_index (properties, i));
 
@@ -905,9 +905,9 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntSet *props)
       GValue prop_val = { 0, };
       guint prop_id = iter.element;
 
-      g_value_init (&prop_val, TP_TYPE_PROPERTY_VALUE_STRUCT);
+      g_value_init (&prop_val, TP_STRUCT_TYPE_PROPERTY_VALUE);
       g_value_take_boxed (&prop_val,
-          dbus_g_type_specialized_construct (TP_TYPE_PROPERTY_VALUE_STRUCT));
+          dbus_g_type_specialized_construct (TP_STRUCT_TYPE_PROPERTY_VALUE));
 
       dbus_g_type_struct_set (&prop_val,
           0, prop_id,
@@ -929,7 +929,7 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntSet *props)
   tp_svc_properties_interface_emit_properties_changed (
       (TpSvcPropertiesInterface *)obj, prop_arr);
 
-  g_value_init (&prop_list, TP_TYPE_PROPERTY_VALUE_LIST);
+  g_value_init (&prop_list, TP_ARRAY_TYPE_PROPERTY_VALUE);
   g_value_take_boxed (&prop_list, prop_arr);
   g_value_unset (&prop_list);
 }
@@ -975,9 +975,10 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntSet *props)
 
       prop_flags = mixin->properties[prop_id].flags;
 
-      g_value_init (&prop_val, TP_TYPE_PROPERTY_FLAGS_STRUCT);
+      g_value_init (&prop_val, TP_STRUCT_TYPE_PROPERTY_FLAGS_CHANGE);
       g_value_take_boxed (&prop_val,
-          dbus_g_type_specialized_construct (TP_TYPE_PROPERTY_FLAGS_STRUCT));
+          dbus_g_type_specialized_construct
+              (TP_STRUCT_TYPE_PROPERTY_FLAGS_CHANGE));
 
       dbus_g_type_struct_set (&prop_val,
           0, prop_id,
@@ -1006,7 +1007,7 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntSet *props)
   tp_svc_properties_interface_emit_property_flags_changed (
       (TpSvcPropertiesInterface *)obj, prop_arr);
 
-  g_value_init (&prop_list, TP_TYPE_PROPERTY_FLAGS_LIST);
+  g_value_init (&prop_list, TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE);
   g_value_take_boxed (&prop_list, prop_arr);
   g_value_unset (&prop_list);
 }
@@ -1122,7 +1123,7 @@ list_properties (TpSvcPropertiesInterface *iface,
       context, ret);
 
   for (i = 0; i < ret->len; i++)
-    g_boxed_free (TP_TYPE_PROPERTY_INFO_STRUCT, ret->pdata[i]);
+    g_boxed_free (TP_STRUCT_TYPE_PROPERTY_SPEC, ret->pdata[i]);
 
   g_ptr_array_free (ret, TRUE);
 }

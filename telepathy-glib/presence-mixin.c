@@ -59,6 +59,7 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/gtypes.h>
 
 #define DEBUG_FLAG TP_DEBUG_PRESENCE
 
@@ -84,9 +85,7 @@ deep_copy_hashtable (GHashTable *hash_table)
   if (!hash_table)
     return NULL;
 
-  g_value_init (&value,
-      dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
-  g_value_take_boxed (&value, hash_table);
+  g_value_init (&value, TP_HASH_TYPE_STRING_VARIANT_MAP);
   return g_value_dup_boxed (&value);
 }
 
@@ -319,7 +318,7 @@ construct_presence_hash_foreach (gpointer key,
   g_value_array_append (vals, NULL);
   g_value_init (g_value_array_get_nth (vals, 1),
       dbus_g_type_get_map ("GHashTable", G_TYPE_STRING,
-        dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)));
+        TP_HASH_TYPE_STRING_VARIANT_MAP));
   g_value_take_boxed (g_value_array_get_nth (vals, 1), contact_status);
 
   g_hash_table_insert (data->presence_hash, GUINT_TO_POINTER (handle), vals);
