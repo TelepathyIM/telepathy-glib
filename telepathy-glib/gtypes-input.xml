@@ -54,24 +54,33 @@
   </tp:struct>
 
   <tp:struct name="Channel_List_Entry" array-name="Channel_List">
+    <tp:docstring>A struct (channel path, channel type, handle type,
+      handle) representing a channel, as returned by ListChannels
+      on the Connection interface.</tp:docstring>
     <tp:member type="o" name="Channel"/>
     <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
     <tp:member type="u" tp:type="Handle_Type" name="Handle_Type"/>
     <tp:member type="u" tp:type="Handle" name="Handle"/>
   </tp:struct>
 
-  <!-- Channel.Interface.Group.GetLocalPendingMembersWithInfo returns
-  Local_Pending_Info[] -->
   <tp:struct name="Local_Pending_Info">
+    <tp:docstring>A struct (handle to be added, handle of contact
+      requesting the change, reason code, optional message)
+      representing a contact whose attempt to join a group is to be confirmed
+      by the local user, as returned by GetLocalPendingMembersWithInfo
+      on the Group interface.</tp:docstring>
     <tp:member type="u" tp:type="Contact_Handle" name="To_Be_Added"/>
     <tp:member type="u" tp:type="Contact_Handle" name="Actor"/>
     <tp:member type="u" tp:type="Channel_Group_Change_Reason" name="Reason"/>
     <tp:member type="s" name="Message"/>
   </tp:struct>
 
-  <!-- Channel.Type.Text.ListPendingMessages returns Pending_Text_Message[].
-  Received's arguments match this format too -->
   <tp:struct name="Pending_Text_Message">
+    <tp:docstring>A struct (message ID, timestamp in seconds since
+      1970-01-01 00:00 UTC, sender's handle, message type, flags, text)
+      representing a pending text message, as returned by ListPendingMessages
+      on the Text channel type. The arguments of the Received signal
+      also match this struct's signature.</tp:docstring>
     <tp:member type="u" name="Message_ID"/>
     <tp:member type="u" name="Unix_Timestamp"/>
     <tp:member type="u" tp:type="Contact_Handle" name="Sender"/>
@@ -81,33 +90,41 @@
     <tp:member type="s" name="Text"/>
   </tp:struct>
 
-  <!-- Properties.ListProperties returns a Property_Spec[] -->
   <tp:struct name="Property_Spec">
+    <tp:docstring>A struct (property ID, property name, D-Bus signature,
+      flags) representing a property, as returned by ListProperties on the
+      Properties interface.</tp:docstring>
     <tp:member type="u" name="Property_ID"/>
     <tp:member type="s" name="name"/>
     <tp:member type="s" tp:type="DBus_Signature" name="signature"/>
     <tp:member type="u" tp:type="Property_Flags" name="Flags"/>
   </tp:struct>
 
-  <!-- Properties.PropertyFlagsChanged has a Property_Flags_Change[] -->
   <tp:struct name="Property_Flags_Change">
-    <tp:member type="u" name="ID"/>
+    <tp:docstring>A struct (property ID, flags) representing a change to
+      a property's flags, as seen in the PropertyFlagsChanged signal on
+      the Properties interface.</tp:docstring>
+    <tp:member type="u" name="Property_ID"/>
     <tp:member type="u" name="New_Flags"/>
   </tp:struct>
 
-  <!-- Properties.GetProperties returns Property_Value[]. PropertiesChanged
-  has a Property_Value[]. SetProperties takes a Property_Value[] -->
   <tp:struct name="Property_Value">
-    <tp:member type="u" name="ID"/>
+    <tp:docstring>A struct (property ID, value) representing a
+      property's value, as seen in the PropertiesChanged signal on
+      the Properties interface, returned by the GetProperties method
+      and passed to the SetProperties method.</tp:docstring>
+    <tp:member type="u" name="Property_ID"/>
     <tp:member type="v" name="Value"/>
   </tp:struct>
 
-  <!-- Channel.Type.Tubes.ListTubes returns Tube_List_Entry[]. -->
   <tp:struct name="Tube_List_Entry" array-name="Tube_List">
-    <tp:member type="u" name="ID"/>
+    <tp:docstring>A struct (tube ID, initiator handle, tube type,
+      service name, parameters, state) representing a tube, as returned
+      by ListTubes on the Tubes channel type.</tp:docstring>
+    <tp:member type="u" name="Tube_ID"/>
     <tp:member type="u" tp:type="Contact_Handle" name="Initiator"/>
     <tp:member type="u" tp:type="Tube_Type" name="Type"/>
-    <tp:member type="s" tp:type="DBus_Well_Known_Name" name="Service"/>
+    <tp:member type="s" name="Service"/>
     <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Parameters"/>
     <tp:member type="u" tp:type="Tube_State" name="State"/>
   </tp:struct>
@@ -115,18 +132,25 @@
   <!-- Channel.Type.Tubes.DBusNamesChanged has a DBus_Tube_Member[]
   and GetDBusNames returns an array of them -->
   <tp:struct name="DBus_Tube_Member">
+    <tp:docstring>A struct (handle, unique name) representing a participant
+      in a D-Bus tube, as returned by GetDBusNames on the Tubes channel
+      type, and as seen in the DBusNamesChanged signal.</tp:docstring>
     <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
     <tp:member type="s" tp:type="DBus_Unique_Name" name="Unique_Name"/>
   </tp:struct>
 
   <!-- Just about everything uses a{sv}... -->
   <tp:mapping name="String_Variant_Map">
+    <tp:docstring>A mapping from strings to variants representing extra
+      key-value pairs.</tp:docstring>
     <tp:member type="s"/>
     <tp:member type="v"/>
   </tp:mapping>
 
   <!-- ... or a{ss} -->
   <tp:mapping name="String_String_Map">
+    <tp:docstring>A mapping from strings to strings representing extra
+      key-value pairs.</tp:docstring>
     <tp:member type="s"/>
     <tp:member type="s"/>
   </tp:mapping>
