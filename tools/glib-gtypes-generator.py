@@ -96,8 +96,9 @@ class GTypesGenerator(object):
         impl = self.prefix_ + 'type_dbus_struct_' + esc_impl_sig
         self.header.write('#define %s (%s ())\n\n' % (name, impl))
 
-        name = (self.PREFIX_ + 'ARRAY_TYPE_' +
-                struct.getAttribute('name').upper())
+        name = (struct.getAttribute('array-name')
+                or (struct.getAttribute('name') + '_LIST'))
+        name = (self.PREFIX_ + 'ARRAY_TYPE_' + name.upper())
         impl = self.prefix_ + 'type_dbus_array_' + esc_impl_sig
         self.header.write('#define %s (%s ())\n\n' % (name, impl))
 
