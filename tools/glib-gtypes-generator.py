@@ -82,6 +82,20 @@ class GTypesGenerator(object):
         name = (self.PREFIX_ + 'HASH_TYPE_' +
                 mapping.getAttribute('name').upper())
         impl = self.prefix_ + 'type_dbus_hash_' + esc_impl_sig
+
+        docstring = mapping.getElementsByTagNameNS(NS_TP, 'docstring')
+        if docstring:
+            docstring = docstring[0].toprettyxml()
+            if docstring.startswith('<tp:docstring>'):
+                docstring = docstring[14:]
+            if docstring.endswith('</tp:docstring>\n'):
+                docstring = docstring[:-16]
+        self.header.write('/**\n * %s:\n\n' % name)
+        self.header.write(' * <![CDATA[%s]]>\n' % docstring)
+        self.header.write(' * This macro expands to a call to a function\n')
+        self.header.write(' * that returns a GType.\n')
+        self.header.write(' */\n')
+
         self.header.write('#define %s (%s ())\n\n' % (name, impl))
         self.need_mappings[impl_sig] = esc_impl_sig
 
@@ -94,13 +108,30 @@ class GTypesGenerator(object):
         name = (self.PREFIX_ + 'STRUCT_TYPE_' +
                 struct.getAttribute('name').upper())
         impl = self.prefix_ + 'type_dbus_struct_' + esc_impl_sig
+        docstring = struct.getElementsByTagNameNS(NS_TP, 'docstring')
+        if docstring:
+            docstring = docstring[0].toprettyxml()
+            if docstring.startswith('<tp:docstring>'):
+                docstring = docstring[14:]
+            if docstring.endswith('</tp:docstring>\n'):
+                docstring = docstring[:-16]
+        self.header.write('/**\n * %s:\n\n' % name)
+        self.header.write(' * <![CDATA[%s]]>\n' % docstring)
+        self.header.write(' * This macro expands to a call to a function\n')
+        self.header.write(' * that returns a GType.\n')
+        self.header.write(' */\n')
         self.header.write('#define %s (%s ())\n\n' % (name, impl))
 
-        name = (struct.getAttribute('array-name')
+        array_name = (struct.getAttribute('array-name')
                 or (struct.getAttribute('name') + '_LIST'))
-        name = (self.PREFIX_ + 'ARRAY_TYPE_' + name.upper())
+        array_name = (self.PREFIX_ + 'ARRAY_TYPE_' + array_name.upper())
         impl = self.prefix_ + 'type_dbus_array_' + esc_impl_sig
-        self.header.write('#define %s (%s ())\n\n' % (name, impl))
+        self.header.write('/**\n * %s:\n\n' % array_name)
+        self.header.write(' * An array of #%s.\n' % name)
+        self.header.write(' * This macro expands to a call to a function\n')
+        self.header.write(' * that returns a GType.\n')
+        self.header.write(' */\n')
+        self.header.write('#define %s (%s ())\n\n' % (array_name, impl))
 
         self.need_structs[impl_sig] = esc_impl_sig
 
