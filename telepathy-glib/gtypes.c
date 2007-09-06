@@ -22,6 +22,20 @@
 #include <telepathy-glib/util.h>
 
 /**
+ * SECTION:gtypes
+ * @title: GType factory functions
+ * @short_description: Macros using caching factory functions to get
+ *    dbus-glib specialized GTypes
+ *
+ * dbus-glib's built-in factory functions for specialized GTypes need to do
+ * a fair amount of parsing on their arguments, so these macros are provided
+ * to avoid that. Each macro expands to a call to a function which caches
+ * the GType, so it only ever has to call into dbus-glib once.
+ *
+ * tp_dbus_specialized_value_slice_new() is also provided.
+ */
+
+/**
  * tp_dbus_specialized_value_slice_new:
  * @type: A D-Bus specialized type (i.e. probably a specialized GValueArray
  * representing a D-Bus struct)
