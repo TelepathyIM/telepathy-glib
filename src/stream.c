@@ -1121,6 +1121,7 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           g_assert (GST_IS_BIN (sink));
           engine = tp_stream_engine_get ();
           gst_bin_add (GST_BIN (tp_stream_engine_get_pipeline (engine)), sink);
+          gst_element_set_state (sink, GST_STATE_PLAYING);
           g_assert (sink);
         }
       else
