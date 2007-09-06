@@ -176,10 +176,9 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * of structures of type TP_TYPE_PROPERTY_INFO_STRUCT), corresponding to
  * D-Bus signature 'a(ussu)'.
  *
- * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_SPEC instead.
+ * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_SPEC_LIST instead.
  */
-#define TP_TYPE_PROPERTY_INFO_LIST (dbus_g_type_get_collection ("GPtrArray", \
-      TP_TYPE_PROPERTY_INFO_STRUCT))
+#define TP_TYPE_PROPERTY_INFO_LIST TP_ARRAY_TYPE_PROPERTY_SPEC_LIST
 
 /**
  * TP_TYPE_PROPERTY_VALUE_STRUCT:
@@ -198,9 +197,9 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * PropertiesChanged (i.e. a GPtrArray of structures of type
  * TP_TYPE_PROPERTY_VALUE_STRUCT), corresponding to D-Bus signature 'a(uv)'.
  *
- * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_VALUE instead.
+ * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_VALUE_LIST instead.
  */
-#define TP_TYPE_PROPERTY_VALUE_LIST TP_ARRAY_TYPE_PROPERTY_VALUE
+#define TP_TYPE_PROPERTY_VALUE_LIST TP_ARRAY_TYPE_PROPERTY_VALUE_LIST
 
 /**
  * TP_TYPE_PROPERTY_FLAGS_STRUCT:
@@ -219,9 +218,10 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * structures of type TP_TYPE_PROPERTY_FLAGS_STRUCT), corresponding to
  * D-Bus signature 'a(uu)'.
  *
- * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE instead.
+ * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE_LIST
+ *  instead.
  */
-#define TP_TYPE_PROPERTY_FLAGS_LIST TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE
+#define TP_TYPE_PROPERTY_FLAGS_LIST TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE_LIST
 
 GQuark tp_properties_mixin_class_get_offset_quark (void);
 GQuark tp_properties_mixin_get_offset_quark (void);

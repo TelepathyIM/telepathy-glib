@@ -929,7 +929,7 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntSet *props)
   tp_svc_properties_interface_emit_properties_changed (
       (TpSvcPropertiesInterface *)obj, prop_arr);
 
-  g_value_init (&prop_list, TP_ARRAY_TYPE_PROPERTY_VALUE);
+  g_value_init (&prop_list, TP_ARRAY_TYPE_PROPERTY_VALUE_LIST);
   g_value_take_boxed (&prop_list, prop_arr);
   g_value_unset (&prop_list);
 }
@@ -1007,7 +1007,7 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntSet *props)
   tp_svc_properties_interface_emit_property_flags_changed (
       (TpSvcPropertiesInterface *)obj, prop_arr);
 
-  g_value_init (&prop_list, TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE);
+  g_value_init (&prop_list, TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE_LIST);
   g_value_take_boxed (&prop_list, prop_arr);
   g_value_unset (&prop_list);
 }
