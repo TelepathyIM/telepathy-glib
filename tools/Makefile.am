@@ -9,3 +9,5 @@ EXTRA_DIST = \
     make-all-async.xsl \
     spec-to-introspect.xsl \
     update-spec-gen-am.sh
+
+CLEANFILES = genginterface.pyc genginterface.pyo
