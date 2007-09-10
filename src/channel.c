@@ -105,8 +105,11 @@ tp_stream_engine_channel_dispose (GObject *object)
 
   if (priv->channel_proxy)
     {
-      g_object_unref (priv->channel_proxy);
+      TpChan *tmp;
+
+      tmp = priv->channel_proxy;
       priv->channel_proxy = NULL;
+      g_object_unref (tmp);
     }
 
   g_free (priv->props.nat_traversal);
