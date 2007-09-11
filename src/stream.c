@@ -1081,6 +1081,8 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       TpStreamEngine *engine = tp_stream_engine_get ();
       GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
       GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
+
+#ifndef MAEMO_OSSO_SUPPORT
       GstElement *queue = gst_element_factory_make ("queue", NULL);
 
       if (!queue)
@@ -1095,7 +1097,9 @@ make_src (TpStreamEngineStream *stream, guint media_type)
 
       gst_element_link(tee, queue);
       src = queue;
-
+#else
+      src = tee;
+#endif
       gst_object_unref (tee);
     }
 
