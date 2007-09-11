@@ -80,6 +80,22 @@ cb_fs_session_error (
 }
 
 static void
+destroy_cb (DBusGProxy *proxy, gpointer user_data)
+{
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
+  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+
+  if (priv->session_handler_proxy)
+    {
+      DBusGProxy *tmp;
+
+      tmp = priv->session_handler_proxy;
+      priv->session_handler_proxy = NULL;
+      g_object_unref (tmp);
+    }
+}
+
+static void
 new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
                           guint id, guint media_type, guint direction,
                           gpointer user_data);
@@ -125,6 +141,9 @@ tp_stream_engine_session_dispose (GObject *object)
       dbus_g_proxy_disconnect_signal (
           priv->session_handler_proxy, "NewStreamHandler",
           G_CALLBACK (new_media_stream_handler), self);
+
+      g_signal_handlers_disconnect_by_func (
+          priv->session_handler_proxy, destroy_cb, self);
 
       tmp = priv->session_handler_proxy;
       priv->session_handler_proxy = NULL;
@@ -215,22 +234,6 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
     }
 
   g_free (bus_name);
-}
-
-static void
-destroy_cb (DBusGProxy *proxy, gpointer user_data)
-{
-  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
-
-  if (priv->session_handler_proxy)
-    {
-      DBusGProxy *tmp;
-
-      tmp = priv->session_handler_proxy;
-      priv->session_handler_proxy = NULL;
-      g_object_unref (tmp);
-    }
 }
 
 gboolean
