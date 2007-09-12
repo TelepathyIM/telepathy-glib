@@ -16,8 +16,8 @@ fi
 # The fourth ignores cpp so you can
 #   #define foo(bar) (_real_foo (__FUNC__, bar)) (cpp insists on foo() style).
 if grep -n '^[^"]*[[:lower:]](' "$@" \
-  | grep -v '^[-[:alnum:]_./]*:[[:digit:]]*:  *\*' \
-  | grep -v '^[-[:alnum:]_./]*:[[:digit:]]*:  */\*' \
+  | grep -v '^[-[:alnum:]_./]*:[[:digit:]]*: *\*' \
+  | grep -v '^[-[:alnum:]_./]*:[[:digit:]]*: */\*' \
   | grep -v '^[-[:alnum:]_./]*:[[:digit:]]*: *#'
 then
   echo "^^^ Our coding style is to use function calls like foo (), not foo()"
