@@ -237,7 +237,7 @@ _gen/async-%.xml: _gen/%.xml ../tools/make-all-async.xsl
 
 _gen/svc-%-glue.h: _gen/async-%.xml
 	$(DBUS_BINDING_TOOL) --mode=glib-server --output=$@ \
-		--prefix=tp_svc_`echo $* | tr A-Z a-z` $<
+		--prefix=tp_svc_`echo $* | tr '[:upper:]' '[:lower:]'` $<
 
 _gen/svc-%.c _gen/svc-%.h _gen/svc-%-signals-marshal.list: ../spec/%.xml ../tools/genginterface.py _gen/stable-interfaces.txt Makefile.am
 	if grep '^$*$$' _gen/stable-interfaces.txt; \
