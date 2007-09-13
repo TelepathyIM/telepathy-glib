@@ -115,7 +115,7 @@ void tp_presence_status_free (TpPresenceStatus *status);
  *  statuses array
  *
  * Signature of the callback used to determine if a given status is currently
- * available.
+ * available to be set on the connection.
  *
  * Returns: %TRUE if the status is available, %FALSE if not.
  */

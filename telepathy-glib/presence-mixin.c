@@ -175,7 +175,8 @@ tp_presence_mixin_get_offset_quark ()
  * @offset: The byte offset of the TpPresenceMixinClass within the class
  * structure
  * @status_available: A callback to be used to determine if a given presence
- *  status is available. If NULL, all statuses are always considered available.
+ *  status is available to be set on the connection. If NULL, all statuses are
+ *  always considered available.
  * @get_contact_statuses: A callback to be used get the current presence status
  *  for contacts. This is used in implementations of various D-Bus methods and
  *  hence must be provided.
