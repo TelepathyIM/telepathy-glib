@@ -334,11 +334,13 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
           g_debug ("setting qos to FALSE");
           g_object_set (G_OBJECT (sink), "qos", FALSE, NULL);
         }
+#ifndef MAEMO_OSSO_SUPPORT
       if (g_object_has_property (G_OBJECT (sink), "force-aspect-ratio"))
         {
           g_debug ("setting force-aspect-ratio to TRUE");
           g_object_set (G_OBJECT (sink), "force-aspect-ratio", TRUE, NULL);
         }
+#endif
       /* Setting this will make sure we can have several preview windows using
        * the tee without any queue elements */
       /* Without this, elements linked to the tee just block on prerolling and
@@ -1224,6 +1226,7 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
       g_debug ("setting sync to FALSE");
       g_object_set (G_OBJECT (GST_MESSAGE_SRC (message)), "sync", FALSE, NULL);
     }
+#ifndef MAEMO_OSSO_SUPPORT
   if (g_object_has_property (G_OBJECT (GST_MESSAGE_SRC (message)),
           "force-aspect-ratio"))
     {
@@ -1231,6 +1234,7 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
       g_object_set (G_OBJECT (GST_MESSAGE_SRC (message)), 
           "force-aspect-ratio", TRUE, NULL);
     }
+#endif
 
   gst_message_unref (message);
 
