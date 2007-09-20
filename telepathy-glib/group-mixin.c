@@ -691,7 +691,7 @@ tp_group_mixin_remove_members_async (TpSvcChannelInterfaceGroup *obj,
 /**
  * tp_group_mixin_get_members:
  * @obj: An object implementing the group interface using this mixin
- * @ret: Used to return a GArray of guint contact handles
+ * @ret: Used to return a newly-allocated GArray of guint contact handles
  * @error: Unused
  *
  * Get the group's current members
@@ -733,7 +733,7 @@ tp_group_mixin_get_members_async (TpSvcChannelInterfaceGroup *obj,
 /**
  * tp_group_mixin_get_local_pending_members:
  * @obj: An object implementing the group interface using this mixin
- * @ret: Used to return a GArray of guint contact handles
+ * @ret: Used to return a newly-allocated GArray of guint contact handles
  * @error: Unused
  *
  * Get the group's local-pending members.
@@ -807,8 +807,8 @@ local_pending_members_with_info_foreach (TpHandleSet *set,
 /**
  * tp_group_mixin_get_local_pending_members_with_info:
  * @obj: An object implementing the group interface using this mixin
- * @ret: Used to return a GPtrArray of D-Bus structures each containing
- *  the handle of a local-pending contact, the handle of a contact
+ * @ret: Used to return a newly-allocated GPtrArray of D-Bus structures each
+ * containing the handle of a local-pending contact, the handle of a contact
  *  responsible for adding them to the group (or 0), the reason code
  *  and a related message (e.g. their request to join the group)
  * @error: Unused
@@ -865,8 +865,8 @@ tp_group_mixin_get_local_pending_members_with_info_async (
 /**
  * tp_group_mixin_get_remote_pending_members:
  * @obj: An object implementing the group interface using this mixin
- * @ret: Used to return a GArray of guint representing the handles
- *  of the group's remote pending members
+ * @ret: Used to return a newly-allocated GArray of guint representing the
+ * handles of the group's remote pending members
  * @error: Unused
  *
  * Get the group's remote-pending members.
@@ -908,12 +908,12 @@ tp_group_mixin_get_remote_pending_members_async (TpSvcChannelInterfaceGroup *obj
 /**
  * tp_group_mixin_get_all_members:
  * @obj: An object implementing the group interface using this mixin
- * @members: Used to return a GArray of guint representing the handles
- *  of the group's members
- * @local_pending: Used to return a GArray of guint representing the handles
- *  of the group's local pending members
- * @remote_pending: Used to return a GArray of guint representing the handles
- *  of the group's remote pending members
+ * @members: Used to return a newly-allocated GArray of guint representing
+ * the handles of the group's members
+ * @local_pending: Used to return a newly-allocated GArray of guint
+ * representing the handles of the group's local pending members
+ * @remote_pending: Used to return a newly-allocated GArray of guint
+ * representing the handles of the group's remote pending members
  * @error: Unused
  *
  * Get the group's current and pending members.
