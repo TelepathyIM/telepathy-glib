@@ -209,7 +209,8 @@ tp_handle_set_size (TpHandleSet *set)
  *
  * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
  *
- * Returns: a GArray of guint representing the handles in the set
+ * Returns: a newly-allocated GArray of guint representing the handles
+ * in the set
  */
 GArray *
 tp_handle_set_to_array (TpHandleSet *set)
