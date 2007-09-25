@@ -166,7 +166,7 @@ connection_shutdown_finished_cb (TpBaseConnection *conn,
 
   g_object_unref (conn);
 
-  DEBUG ("%s: dereferenced connection", G_STRFUNC);
+  DEBUG ("dereferenced connection");
   if (g_hash_table_size (priv->connections) == 0)
     {
       g_signal_emit (self, signals[NO_MORE_CONNECTIONS], 0);
@@ -624,7 +624,7 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   if (!tp_base_connection_register ((TpBaseConnection *)conn,
         cls->cm_dbus_name, &bus_name, &object_path, &error))
     {
-      DEBUG ("%s failed: %s", G_STRFUNC, error->message);
+      DEBUG ("failed: %s", error->message);
 
       g_object_unref (G_OBJECT (conn));
       goto ERROR;
