@@ -239,6 +239,7 @@ tp_run_connection_manager (const char *prog_name,
   timeout_id = g_timeout_add (DIE_TIME, kill_connection_manager, NULL);
 
   g_main_loop_run (mainloop);
+  g_main_loop_unref (mainloop);
 
   return 0;
 }
