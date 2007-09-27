@@ -218,7 +218,7 @@ param_default_value (const TpCMParamSpec *param)
         if (param->def == NULL)
           g_value_set_static_string (value, "");
         else
-          g_value_set_static_string (value, (const gchar *) param->def);
+          g_value_set_static_string (value, param->def);
         break;
       case DBUS_TYPE_INT16:
       case DBUS_TYPE_INT32:
