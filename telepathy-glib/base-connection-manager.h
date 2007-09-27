@@ -141,9 +141,8 @@ struct _TpCMParamSpec {
 typedef void (*TpCMParamSetter) (const TpCMParamSpec *paramspec,
     const GValue *value, gpointer params);
 
-void
-tp_cm_param_setter_offset (const TpCMParamSpec *paramspec, const GValue *value,
-    gpointer params);
+void tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
+    const GValue *value, gpointer params);
 
 /**
  * TpCMProtocolSpec:
