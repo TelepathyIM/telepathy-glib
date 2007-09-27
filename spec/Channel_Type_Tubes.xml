@@ -54,6 +54,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
             objects/interfaces that would be exported by a service of that name
             on a bus, or all participants are expected to export those
             objects/interfaces.</p>
+
+          <p>In a multi-user context (Handle_Type_Room) the tube behaves
+            like the D-Bus bus daemon, so participants can send each other
+            private messages, or can send broadcast messages which are
+            received by everyone in the tube (including themselves).
+            Each participant has a D-Bus unique name; connection managers
+            must prevent participants from sending messages with the wrong
+            sender unique name, and should attempt to avoid participants
+            receiving messages not intended for them.</p>
+
+          <p>In a 1-1 context (Handle_Type_Contact) the tube behaves like
+            a peer-to-peer D-Bus connection - arbitrary D-Bus messages with
+            any sender and/or destination can be sent by each participant,
+            and each participant receives all messages sent by the other
+            participant.</p>
         </tp:docstring>
       </tp:enumvalue>
 
@@ -527,8 +542,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
     <method name="GetDBusNames">
       <tp:docstring>
-        For a D-Bus tube, obtain a mapping between contact handles and their
-        unique bus names on this tube.
+        For a multi-user (i.e. Handle_Type_Room) D-Bus tube, obtain a mapping
+        between contact handles and their unique bus names on this tube.
       </tp:docstring>
       <arg direction="in" name="id" type="u">
         <tp:docstring>
@@ -544,7 +559,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
           <tp:docstring>
-            The tube is not a D-Bus tube.
+            The tube is not a multi-user D-Bus tube.
           </tp:docstring>
         </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
@@ -557,7 +572,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
     <signal name="DBusNamesChanged">
       <tp:docstring>
-        Emitted on a D-Bus tube when a participant opens or closes the tube.
+        Emitted on a multi-user (i.e. Handle_Type_Room) D-Bus tube when a
+        participant opens or closes the tube.
       </tp:docstring>
       <arg name="id" type="u">
         <tp:docstring>

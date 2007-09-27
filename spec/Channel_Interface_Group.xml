@@ -320,7 +320,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:enumvalue>
       <tp:enumvalue suffix="Offline" value="1">
         <tp:docstring>
-            The change is due to a user going offline.
+            The change is due to a user going offline. Also used when
+            user is already offline, but this wasn't known previously.
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Kicked" value="2">
@@ -543,6 +544,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     member at all, unless they appear in the list. They may, for instance,
     be placed into the remote pending list until a connection has been
     established or the request acknowledged remotely.</p>
+
+  <p>If the local user joins a Group channel whose members or other state
+    cannot be discovered until the user joins (e.g. many chat room
+    implementations), the connection manager should ensure that the channel
+    is, as far as possible, in a consistent state before adding the local
+    contact to the members set; until this happens, the local contact should
+    be in the remote-pending set. For instance, if the connection manager
+    queries the server to find out the initial members list for the
+    channel, it should leave the local contact in the remote-pending set
+    until it has finished receiving the initial members list.
+  </p>
+
+  <p>If the protocol provides no reliable way to tell whether the complete
+    initial members list has been received yet, the connection manager
+    should make a best-effort attempt to wait for the full list
+    (in the worst case, waiting for a suitable arbitrary timeout)
+    rather than requiring user interfaces to do so on its behalf.</p>
     </tp:docstring>
   </interface>
 </node>
