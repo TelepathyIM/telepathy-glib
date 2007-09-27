@@ -1,9 +1,7 @@
 BUILT_SOURCES = \
     tp-stream-engine-glue.h \
     tp-stream-engine-signals-marshal.h \
-    tp-stream-engine-signals-marshal.c \
-    misc-signals-marshal.h \
-    misc-signals-marshal.c
+    tp-stream-engine-signals-marshal.c
 
 if USE_INFOPRINT
 BUILT_SOURCES += statusbar-gen.h
@@ -27,7 +25,6 @@ libstreamengine_convenience_la_SOURCES = \
 	util.c \
 	xerrorhandler.h \
 	xerrorhandler.c \
-	misc-signals-marshal.list \
 	tp-stream-engine-signals-marshal.list
 
 nodist_libstreamengine_convenience_la_SOURCES = \

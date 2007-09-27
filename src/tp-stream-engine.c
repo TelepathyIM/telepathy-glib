@@ -40,7 +40,6 @@
 
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
-#include "misc-signals-marshal.h"
 
 #ifdef USE_INFOPRINT
 #include "statusbar-gen.h"
@@ -70,33 +69,33 @@ register_dbus_signal_marshallers()
 {
   /*register a marshaller for the NewMediaStreamHandler signal*/
   dbus_g_object_register_marshaller
-    (misc_marshal_VOID__BOXED_UINT_UINT_UINT, G_TYPE_NONE,
+    (tp_stream_engine_marshal_VOID__BOXED_UINT_UINT_UINT, G_TYPE_NONE,
      DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
      G_TYPE_INVALID);
 
   /*register a marshaller for the NewMediaSessionHandler signal*/
   dbus_g_object_register_marshaller
-    (misc_marshal_VOID__BOXED_STRING, G_TYPE_NONE,
+    (tp_stream_engine_marshal_VOID__BOXED_STRING, G_TYPE_NONE,
      DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_INVALID);
 
   /*register a marshaller for the AddRemoteCandidate signal*/
   dbus_g_object_register_marshaller
-    (misc_marshal_VOID__STRING_BOXED, G_TYPE_NONE,
+    (tp_stream_engine_marshal_VOID__STRING_BOXED, G_TYPE_NONE,
      G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
 
   /*register a marshaller for the SetActiveCandidatePair signal*/
   dbus_g_object_register_marshaller
-    (misc_marshal_VOID__STRING_STRING, G_TYPE_NONE,
+    (tp_stream_engine_marshal_VOID__STRING_STRING, G_TYPE_NONE,
      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
 
   /*register a marshaller for the SetRemoteCandidateList signal*/
   dbus_g_object_register_marshaller
-    (misc_marshal_VOID__BOXED, G_TYPE_NONE,
+    (g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE,
      TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
 
   /*register a marshaller for the SetRemoteCodecs signal*/
   dbus_g_object_register_marshaller
-    (misc_marshal_VOID__BOXED, G_TYPE_NONE,
+    (g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE,
      TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
 }
 
