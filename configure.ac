@@ -8,9 +8,9 @@ AC_PREREQ([2.59])
 #   set stream_engine_release to 1.
 
 m4_define([stream_engine_major_version], [0])
-m4_define([stream_engine_minor_version], [3])
-m4_define([stream_engine_micro_version], [25])
-m4_define([stream_engine_nano_version], [1])
+m4_define([stream_engine_minor_version], [4])
+m4_define([stream_engine_micro_version], [0])
+m4_define([stream_engine_nano_version], [0])
 
 # Some magic
 m4_define([stream_engine_base_version],
