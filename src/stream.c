@@ -60,6 +60,7 @@ typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
 struct _TpStreamEngineStreamPrivate
 {
   gchar *channel_path;
+  const TpStreamEngineNatProperties *nat_props;
 
   DBusGProxy *stream_handler_proxy;
   TpConn *connection_proxy;
@@ -869,14 +870,16 @@ close (DBusGProxy *proxy, gpointer user_data)
 }
 
 static void
-set_stream_properties (TpStreamEngineStream *self,
-                       TpStreamEngineStreamProperties *props)
+set_nat_properties (TpStreamEngineStream *self)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+  const TpStreamEngineNatProperties *props = priv->nat_props;
   FarsightStream *stream = priv->fs_stream;
   const gchar *transmitter = "rawudp";
+  GObject *xmit = NULL;
 
-  if (props->nat_traversal == NULL ||
+  if (props == NULL ||
+      props->nat_traversal == NULL ||
       !strcmp (props->nat_traversal, "gtalk-p2p"))
     {
       transmitter = "libjingle";
@@ -888,35 +891,34 @@ set_stream_properties (TpStreamEngineStream *self,
       g_object_set (stream, "transmitter", transmitter, NULL);
     }
 
-  /* transmitter should have been created as a result of setting transmitter-name */
-  if (g_object_has_property ((GObject *) stream, "transmitter-object"))
+  if (props == NULL)
     {
-      GObject *xmit = NULL;
-      g_object_get (stream, "transmitter-object", &xmit, NULL);
-      if (xmit != NULL)
+      return;
+    }
+
+  /* transmitter should have been created as a result of setting transmitter-name */
+  g_object_get (stream, "transmitter-object", &xmit, NULL);
+  g_return_if_fail (xmit != NULL);
+
+  if ((props->stun_server != NULL) && g_object_has_property (xmit, "stun-ip"))
+    {
+      DEBUG (self, "setting farsight stun-ip to %s", props->stun_server);
+      g_object_set (xmit, "stun-ip", props->stun_server, NULL);
+
+      if (props->stun_port != 0)
         {
-          if ((props->relay_token != NULL) && g_object_has_property (xmit, "relay-token"))
-            {
-              DEBUG (self, "setting farsight relay-token to %s", props->relay_token);
-              g_object_set (xmit, "relay-token", props->relay_token, NULL);
-            }
-
-          if ((props->stun_server != NULL) && g_object_has_property (xmit, "stun-ip"))
-            {
-              DEBUG (self, "setting farsight stun-ip to %s", props->stun_server);
-              g_object_set (xmit, "stun-ip", props->stun_server, NULL);
-
-              if (props->stun_port != 0)
-                {
-                  DEBUG (self, "setting farsight stun-port to %u", props->stun_port);
-                  g_object_set (xmit, "stun-port", props->stun_port, NULL);
-                }
-            }
-
-          g_object_unref (xmit);
+          DEBUG (self, "setting farsight stun-port to %u", props->stun_port);
+          g_object_set (xmit, "stun-port", props->stun_port, NULL);
         }
     }
 
+  if ((props->relay_token != NULL) && g_object_has_property (xmit, "relay-token"))
+    {
+      DEBUG (self, "setting farsight relay-token to %s", props->relay_token);
+      g_object_set (xmit, "relay-token", props->relay_token, NULL);
+    }
+
+  g_object_unref (xmit);
 }
 
 static void
@@ -1184,7 +1186,7 @@ tp_stream_engine_stream_go (
   guint id,
   guint media_type,
   guint direction,
-  TpStreamEngineStreamProperties *props)
+  const TpStreamEngineNatProperties *nat_props)
 {
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   TpStreamEngine *engine;
@@ -1328,7 +1330,8 @@ tp_stream_engine_stream_go (
       return FALSE;
     }
 
-  set_stream_properties (stream, props);
+  priv->nat_props = nat_props;
+  set_nat_properties (stream);
 
   prepare_transports (stream);
 

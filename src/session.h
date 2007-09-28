@@ -46,7 +46,7 @@ gboolean tp_stream_engine_session_go (
   TpStreamEngineSession *self, const gchar *bus_name,
   const gchar *connection_path, const gchar *session_handler_path,
   const gchar *channel_path, const gchar *type,
-  TpStreamEngineStreamProperties *props);
+  const TpStreamEngineNatProperties *nat_props);
 
 G_END_DECLS
 

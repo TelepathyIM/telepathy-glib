@@ -44,7 +44,7 @@ typedef struct {
   gchar *stun_server;
   guint16 stun_port;
   gchar *relay_token;
-} TpStreamEngineStreamProperties;
+} TpStreamEngineNatProperties;
 
 GType tp_stream_engine_stream_get_type (void);
 
@@ -59,7 +59,7 @@ gboolean tp_stream_engine_stream_go (
   guint id,
   guint media_type,
   guint direction,
-  TpStreamEngineStreamProperties *props);
+  const TpStreamEngineNatProperties *nat_props);
 gboolean tp_stream_engine_stream_mute_input (
   TpStreamEngineStream *chan,
   gboolean mute_state,

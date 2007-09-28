@@ -48,7 +48,7 @@ struct _TpStreamEngineChannelPrivate
   TpChan *channel_proxy;
   DBusGProxy *streamed_media_proxy;
 
-  TpStreamEngineStreamProperties props;
+  TpStreamEngineNatProperties nat_props;
 
   gulong channel_destroy_handler;
 
@@ -57,10 +57,10 @@ struct _TpStreamEngineChannelPrivate
 
 enum
 {
-  PROP_NAT_TRAVERSAL = 0,
-  PROP_STUN_SERVER,
-  PROP_STUN_PORT,
-  PROP_GTALK_P2P_RELAY_TOKEN,
+  TP_PROP_NAT_TRAVERSAL = 0,
+  TP_PROP_STUN_SERVER,
+  TP_PROP_STUN_PORT,
+  TP_PROP_GTALK_P2P_RELAY_TOKEN,
   NUM_TP_PROPERTIES
 };
 
@@ -112,14 +112,14 @@ tp_stream_engine_channel_dispose (GObject *object)
       g_object_unref (tmp);
     }
 
-  g_free (priv->props.nat_traversal);
-  priv->props.nat_traversal = NULL;
+  g_free (priv->nat_props.nat_traversal);
+  priv->nat_props.nat_traversal = NULL;
 
-  g_free (priv->props.stun_server);
-  priv->props.stun_server = NULL;
+  g_free (priv->nat_props.stun_server);
+  priv->nat_props.stun_server = NULL;
 
-  g_free (priv->props.relay_token);
-  priv->props.relay_token = NULL;
+  g_free (priv->nat_props.relay_token);
+  priv->nat_props.relay_token = NULL;
 
   if (G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->dispose (object);
@@ -169,7 +169,7 @@ add_session (TpStreamEngineChannel *self,
   session = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION, NULL);
 
   if (!tp_stream_engine_session_go (session, bus_name, priv->connection_path,
-      session_handler_path, self->channel_path, type, &(priv->props)))
+      session_handler_path, self->channel_path, type, &(priv->nat_props)))
     {
       g_critical ("couldn't create session");
     }
@@ -358,23 +358,23 @@ update_prop_uint (TpPropsIface *iface,
 
 static void
 update_prop (TpPropsIface *iface,
-             TpStreamEngineStreamProperties *props,
+             TpStreamEngineNatProperties *nat_props,
              guint prop_id)
 {
   switch (prop_id)
     {
-    case PROP_NAT_TRAVERSAL:
-      update_prop_str (iface, PROP_NAT_TRAVERSAL, &(props->nat_traversal));
+    case TP_PROP_NAT_TRAVERSAL:
+      update_prop_str (iface, TP_PROP_NAT_TRAVERSAL, &(nat_props->nat_traversal));
       break;
-    case PROP_STUN_SERVER:
-      update_prop_str (iface, PROP_STUN_SERVER, &(props->stun_server));
+    case TP_PROP_STUN_SERVER:
+      update_prop_str (iface, TP_PROP_STUN_SERVER, &(nat_props->stun_server));
       break;
-    case PROP_STUN_PORT:
-      update_prop_uint (iface, PROP_STUN_PORT, &(props->stun_port));
+    case TP_PROP_STUN_PORT:
+      update_prop_uint (iface, TP_PROP_STUN_PORT, &(nat_props->stun_port));
       break;
-    case PROP_GTALK_P2P_RELAY_TOKEN:
-      update_prop_str (iface, PROP_GTALK_P2P_RELAY_TOKEN,
-          &(props->relay_token));
+    case TP_PROP_GTALK_P2P_RELAY_TOKEN:
+      update_prop_str (iface, TP_PROP_GTALK_P2P_RELAY_TOKEN,
+          &(nat_props->relay_token));
       break;
     default:
       g_debug ("%s: ignoring unknown property id %u", G_STRFUNC, prop_id);
@@ -389,9 +389,9 @@ cb_property_changed (TpPropsIface *iface,
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpStreamEngineStreamProperties *props = &(priv->props);
+  TpStreamEngineNatProperties *nat_props = &(priv->nat_props);
 
-  update_prop (iface, props, prop_id);
+  update_prop (iface, nat_props, prop_id);
 }
 
 static void
@@ -400,11 +400,11 @@ cb_properties_ready (TpPropsIface *iface,
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpStreamEngineStreamProperties *props = &(priv->props);
+  TpStreamEngineNatProperties *nat_props = &(priv->nat_props);
   guint i;
 
   for (i = 0; i < NUM_TP_PROPERTIES; i++)
-    update_prop (iface, props, i);
+    update_prop (iface, nat_props, i);
 
   g_signal_handlers_disconnect_by_func (iface,
       G_CALLBACK (cb_properties_ready), self);
@@ -462,10 +462,10 @@ tp_stream_engine_channel_go (
   if (props != NULL)
     {
       tp_props_iface_set_mapping (props,
-          "nat-traversal", PROP_NAT_TRAVERSAL,
-          "stun-server", PROP_STUN_SERVER,
-          "stun-port", PROP_STUN_PORT,
-          "gtalk-p2p-relay-token", PROP_GTALK_P2P_RELAY_TOKEN,
+          "nat-traversal", TP_PROP_NAT_TRAVERSAL,
+          "stun-server", TP_PROP_STUN_SERVER,
+          "stun-port", TP_PROP_STUN_PORT,
+          "gtalk-p2p-relay-token", TP_PROP_GTALK_P2P_RELAY_TOKEN,
           NULL);
 
       g_signal_connect (props, "properties-ready",
