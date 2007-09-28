@@ -1138,10 +1138,15 @@ bus_async_handler (GstBus *bus,
         g_error_free (error);
         break;
       case GST_MESSAGE_WARNING:
-        gst_message_parse_warning (message, &error, NULL);
-        g_warning ("%s: got warning: %s", G_STRFUNC, error->message);
-        g_error_free (error);
-        break;
+        {
+          gchar *debug_msg;
+          gst_message_parse_warning (message, &error, &debug_msg);
+          g_warning ("%s: got warning: %s (%s)", G_STRFUNC, error->message,
+              debug_msg);
+          g_free (debug_msg);
+          g_error_free (error);
+          break;
+        }
       case GST_MESSAGE_STATE_CHANGED:
         {
           GstState new_state;
