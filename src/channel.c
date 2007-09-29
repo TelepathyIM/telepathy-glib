@@ -50,6 +50,8 @@ struct _TpStreamEngineChannelPrivate
 
   TpStreamEngineNatProperties nat_props;
 
+  GPtrArray *sessions;
+
   gulong channel_destroy_handler;
 };
 
@@ -78,9 +80,9 @@ enum
 static void
 tp_stream_engine_channel_init (TpStreamEngineChannel *self)
 {
-/*  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self); */
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
-  self->sessions = g_ptr_array_new ();
+  priv->sessions = g_ptr_array_new ();
 }
 
 static void
@@ -197,15 +199,15 @@ tp_stream_engine_channel_dispose (GObject *object)
 
   g_debug (G_STRFUNC);
 
-  if (self->sessions)
+  if (priv->sessions)
     {
       guint i;
 
-      for (i = 0; i < self->sessions->len; i++)
-        g_object_unref (g_ptr_array_index (self->sessions, i));
+      for (i = 0; i < priv->sessions->len; i++)
+        g_object_unref (g_ptr_array_index (priv->sessions, i));
 
-      g_ptr_array_free (self->sessions, TRUE);
-      self->sessions = NULL;
+      g_ptr_array_free (priv->sessions, TRUE);
+      priv->sessions = NULL;
     }
 
   if (self->channel_path)
@@ -293,9 +295,9 @@ add_session (TpStreamEngineChannel *self,
       g_critical ("couldn't create session");
     }
 
-  g_ptr_array_add (self->sessions, session);
-
   g_free (bus_name);
+
+  g_ptr_array_add (priv->sessions, session);
 }
 
 static void
@@ -572,16 +574,18 @@ tp_stream_engine_channel_new (const gchar *bus_name,
   return ret;
 }
 
-void tp_stream_engine_channel_error (
-  TpStreamEngineChannel *self,
-  guint error,
-  const gchar *message)
+void
+tp_stream_engine_channel_error (TpStreamEngineChannel *self,
+                                guint error,
+                                const gchar *message)
 {
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   guint i, j;
 
-  for (i = 0; i < self->sessions->len; i++)
+  for (i = 0; i < priv->sessions->len; i++)
     {
-      TpStreamEngineSession *session = g_ptr_array_index (self->sessions, i);
+      TpStreamEngineSession *session = g_ptr_array_index (priv->sessions, i);
+
       for (j = 0; j < session->streams->len; j++)
         {
           tp_stream_engine_stream_error (
@@ -597,11 +601,12 @@ TpStreamEngineStream *
 tp_stream_engine_channel_lookup_stream (TpStreamEngineChannel *self,
                                         guint stream_id)
 {
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   guint j, k;
 
-  for (j = 0; j < self->sessions->len; j++)
+  for (j = 0; j < priv->sessions->len; j++)
     {
-      TpStreamEngineSession *session = g_ptr_array_index (self->sessions, j);
+      TpStreamEngineSession *session = g_ptr_array_index (priv->sessions, j);
 
       for (k = 0; k < session->streams->len; k++)
         {
@@ -621,11 +626,12 @@ tp_stream_engine_channel_foreach_stream (TpStreamEngineChannel *self,
                                          TpStreamEngineChannelStreamFunc func,
                                          gpointer user_data)
 {
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   guint j, k;
 
-  for (j = 0; j < self->sessions->len; j++)
+  for (j = 0; j < priv->sessions->len; j++)
     {
-      TpStreamEngineSession *session = g_ptr_array_index (self->sessions, j);
+      TpStreamEngineSession *session = g_ptr_array_index (priv->sessions, j);
 
       for (k = 0; k < session->streams->len; k++)
         {

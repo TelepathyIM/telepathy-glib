@@ -32,7 +32,6 @@ typedef struct {
   GObject parent;
 
   gchar *channel_path;
-  GPtrArray *sessions;
 } TpStreamEngineChannel;
 
 typedef struct {
