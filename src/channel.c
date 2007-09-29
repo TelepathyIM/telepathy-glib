@@ -70,6 +70,57 @@ enum
 
 static guint signals[SIGNAL_COUNT] = {0};
 
+enum
+{
+  PROP_CHANNEL = 1
+};
+
+static void
+tp_stream_engine_channel_init (TpStreamEngineChannel *self)
+{
+/*  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self); */
+
+  self->sessions = g_ptr_array_new ();
+}
+
+static void
+tp_stream_engine_channel_get_property (GObject    *object,
+                                       guint       property_id,
+                                       GValue     *value,
+                                       GParamSpec *pspec)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+
+  switch (property_id) {
+    case PROP_CHANNEL:
+      g_value_set_object (value, priv->channel_proxy);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
+}
+
+static void
+tp_stream_engine_channel_set_property (GObject      *object,
+                                       guint         property_id,
+                                       const GValue *value,
+                                       GParamSpec   *pspec)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+
+  switch (property_id) {
+    case PROP_CHANNEL:
+      priv->channel_proxy = TELEPATHY_CHAN (g_value_dup_object (value));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
+}
+
 static void
 tp_stream_engine_channel_dispose (GObject *object)
 {
@@ -121,10 +172,24 @@ static void
 tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineChannelPrivate));
 
+  object_class->set_property = tp_stream_engine_channel_set_property;
+  object_class->get_property = tp_stream_engine_channel_get_property;
+
   object_class->dispose = tp_stream_engine_channel_dispose;
+
+  param_spec = g_param_spec_object ("channel", "TpChan object",
+                                    "Telepathy channel object which this media "
+                                    "channel should operate on.",
+                                    TELEPATHY_CHAN_TYPE,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
 
   signals[CLOSED] =
     g_signal_new ("closed",
@@ -134,14 +199,6 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
-}
-
-static void
-tp_stream_engine_channel_init (TpStreamEngineChannel *self)
-{
-/*  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self); */
-
-  self->sessions = g_ptr_array_new ();
 }
 
 static void
