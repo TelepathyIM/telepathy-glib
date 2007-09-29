@@ -121,6 +121,74 @@ tp_stream_engine_channel_set_property (GObject      *object,
   }
 }
 
+static void channel_destroyed (DBusGProxy *proxy, gpointer user_data);
+
+static void channel_closed (DBusGProxy *proxy, gpointer user_data);
+
+static void cb_properties_ready (TpPropsIface *iface, gpointer user_data);
+
+static void new_media_session_handler (DBusGProxy *proxy,
+    const gchar *session_handler_path, const gchar *type, gpointer user_data);
+
+static void get_session_handlers_reply (DBusGProxy *proxy,
+    GPtrArray *session_handlers, GError *error, gpointer user_data);
+
+static GObject *
+tp_stream_engine_channel_constructor (GType type,
+                                      guint n_props,
+                                      GObjectConstructParam *props)
+{
+  GObject *obj;
+  TpStreamEngineChannel *self;
+  TpStreamEngineChannelPrivate *priv;
+  TpPropsIface *props_proxy;
+
+  obj = G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->
+           constructor (type, n_props, props);
+  self = (TpStreamEngineChannel *) obj;
+  priv = CHANNEL_PRIVATE (obj);
+
+  g_object_get (priv->channel_proxy,
+      "path", &self->channel_path,
+      NULL);
+
+  priv->channel_destroy_handler = g_signal_connect (priv->channel_proxy,
+      "destroy", G_CALLBACK (channel_destroyed), obj);
+
+  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->channel_proxy), "Closed",
+      G_CALLBACK (channel_closed), obj, NULL);
+
+  props_proxy = (TpPropsIface *) tp_chan_get_interface (priv->channel_proxy,
+      TELEPATHY_PROPS_IFACE_QUARK);
+
+  /* fail gracefully if there's no properties interface */
+  if (props_proxy != NULL)
+    {
+      tp_props_iface_set_mapping (props_proxy,
+          "nat-traversal", TP_PROP_NAT_TRAVERSAL,
+          "stun-server", TP_PROP_STUN_SERVER,
+          "stun-port", TP_PROP_STUN_PORT,
+          "gtalk-p2p-relay-token", TP_PROP_GTALK_P2P_RELAY_TOKEN,
+          NULL);
+
+      g_signal_connect (props_proxy, "properties-ready",
+          G_CALLBACK (cb_properties_ready), obj);
+    }
+
+  priv->media_signalling_proxy = tp_chan_get_interface (priv->channel_proxy,
+      TELEPATHY_CHAN_IFACE_MEDIA_SIGNALLING_QUARK);
+
+  g_assert (priv->media_signalling_proxy != NULL);
+
+  dbus_g_proxy_connect_signal (priv->media_signalling_proxy,
+      "NewSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
+
+  tp_chan_iface_media_signalling_get_session_handlers_async (
+      priv->media_signalling_proxy, get_session_handlers_reply, obj);
+
+  return obj;
+}
+
 static void
 tp_stream_engine_channel_dispose (GObject *object)
 {
@@ -178,6 +246,8 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
 
   object_class->set_property = tp_stream_engine_channel_set_property;
   object_class->get_property = tp_stream_engine_channel_get_property;
+
+  object_class->constructor = tp_stream_engine_channel_constructor;
 
   object_class->dispose = tp_stream_engine_channel_dispose;
 
@@ -237,8 +307,6 @@ new_media_session_handler (DBusGProxy *proxy,
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
   add_session (self, session_handler_path, type);
 }
-
-static void channel_closed (DBusGProxy *proxy, gpointer user_data);
 
 static void
 shutdown_channel (TpStreamEngineChannel *self)
@@ -456,23 +524,21 @@ cb_properties_ready (TpPropsIface *iface,
       G_CALLBACK (cb_property_changed), self);
 }
 
-gboolean
-tp_stream_engine_channel_go (
-  TpStreamEngineChannel *self,
-  const gchar *bus_name,
-  const gchar *channel_path,
-  guint handle_type,
-  guint handle,
-  GError **error)
+TpStreamEngineChannel *
+tp_stream_engine_channel_new (const gchar *bus_name,
+                              const gchar *channel_path,
+                              guint handle_type,
+                              guint handle,
+                              GError **error)
 {
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpPropsIface *props;
+  TpChan *channel_proxy;
+  DBusGProxy *media_signalling_proxy;
+  TpStreamEngineChannel *ret;
 
-  g_assert (NULL == priv->channel_proxy);
+  g_return_val_if_fail (bus_name != NULL, NULL);
+  g_return_val_if_fail (channel_path != NULL, NULL);
 
-  self->channel_path = g_strdup (channel_path);
-
-  priv->channel_proxy = tp_chan_new (
+  channel_proxy = tp_chan_new (
     tp_get_bus(),                              /* connection  */
     bus_name,                                  /* bus_name    */
     channel_path,                              /* object_name */
@@ -480,61 +546,30 @@ tp_stream_engine_channel_go (
     handle_type,                               /* handle_type */
     handle);                                   /* handle      */
 
-  if (!priv->channel_proxy)
-    {
-      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-                            "Unable to bind to channel");
-      return FALSE;
-    }
-
-  priv->channel_destroy_handler = g_signal_connect (
-    priv->channel_proxy, "destroy", G_CALLBACK (channel_destroyed), self);
-
-  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->channel_proxy), "Closed",
-                               G_CALLBACK (channel_closed),
-                               self, NULL);
-
-  props = (TpPropsIface *) tp_chan_get_interface (priv->channel_proxy,
-      TELEPATHY_PROPS_IFACE_QUARK);
-
-  /* fail gracefully if there's no properties interface */
-  if (props != NULL)
-    {
-      tp_props_iface_set_mapping (props,
-          "nat-traversal", TP_PROP_NAT_TRAVERSAL,
-          "stun-server", TP_PROP_STUN_SERVER,
-          "stun-port", TP_PROP_STUN_PORT,
-          "gtalk-p2p-relay-token", TP_PROP_GTALK_P2P_RELAY_TOKEN,
-          NULL);
-
-      g_signal_connect (props, "properties-ready",
-          G_CALLBACK (cb_properties_ready), self);
-    }
-
-  priv->media_signalling_proxy = tp_chan_get_interface (priv->channel_proxy,
-      TELEPATHY_CHAN_IFACE_MEDIA_SIGNALLING_QUARK);
-
-  if (priv->media_signalling_proxy == NULL)
+  if (channel_proxy == NULL)
     {
       g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
-           "Channel doesn't have the media signalling interface");
-      return FALSE;
+          "Unable to create channel proxy");
+      return NULL;
     }
 
-  dbus_g_proxy_connect_signal (priv->media_signalling_proxy,
-      "NewSessionHandler", G_CALLBACK (new_media_session_handler),
-      self, NULL);
+  media_signalling_proxy = tp_chan_get_interface (channel_proxy,
+      TELEPATHY_CHAN_IFACE_MEDIA_SIGNALLING_QUARK);
 
-  tp_chan_iface_media_signalling_get_session_handlers_async (
-        priv->media_signalling_proxy, get_session_handlers_reply, self);
+  if (media_signalling_proxy == NULL)
+    {
+      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+          "Channel doesn't have the media signalling interface");
+      return NULL;
+    }
 
-  return TRUE;
-}
+  ret = g_object_new (TP_STREAM_ENGINE_TYPE_CHANNEL,
+      "channel", channel_proxy,
+      NULL);
 
-TpStreamEngineChannel*
-tp_stream_engine_channel_new (void)
-{
-  return g_object_new (TP_STREAM_ENGINE_TYPE_CHANNEL, NULL);
+  g_object_unref (channel_proxy);
+
+  return ret;
 }
 
 void tp_stream_engine_channel_error (

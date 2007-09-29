@@ -40,13 +40,12 @@ typedef struct {
 
 GType tp_stream_engine_channel_get_type (void);
 
-TpStreamEngineChannel* tp_stream_engine_channel_new (void);
-gboolean tp_stream_engine_channel_go (
-  TpStreamEngineChannel *chan,
+TpStreamEngineChannel *tp_stream_engine_channel_new (
   const gchar *bus_name,
   const gchar *channel_path,
   guint handle_type,
   guint handle,
+
   GError **error);
 void tp_stream_engine_channel_error (
   TpStreamEngineChannel *self,
