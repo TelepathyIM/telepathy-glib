@@ -57,6 +57,14 @@ TpStreamEngineStream *tp_stream_engine_channel_lookup_stream (
   TpStreamEngineChannel *chan,
   guint stream_id);
 
+typedef void (* TpStreamEngineChannelStreamFunc) (TpStreamEngineChannel *chan,
+  guint stream_id, TpStreamEngineStream *stream, gpointer user_data);
+
+void tp_stream_engine_channel_foreach_stream (
+  TpStreamEngineChannel *chan,
+  TpStreamEngineChannelStreamFunc func,
+  gpointer user_data);
+
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_CHANNEL_H__ */

@@ -615,3 +615,25 @@ tp_stream_engine_channel_lookup_stream (TpStreamEngineChannel *self,
 
   return NULL;
 }
+
+void
+tp_stream_engine_channel_foreach_stream (TpStreamEngineChannel *self,
+                                         TpStreamEngineChannelStreamFunc func,
+                                         gpointer user_data)
+{
+  guint j, k;
+
+  for (j = 0; j < self->sessions->len; j++)
+    {
+      TpStreamEngineSession *session = g_ptr_array_index (self->sessions, j);
+
+      for (k = 0; k < session->streams->len; k++)
+        {
+          TpStreamEngineStream *stream = g_ptr_array_index (
+              session->streams, k);
+
+          func (self, stream->stream_id, stream, user_data);
+         }
+    }
+}
+
