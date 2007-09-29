@@ -2,6 +2,7 @@
 #define __TP_STREAM_ENGINE_CHANNEL_H__
 
 #include <glib-object.h>
+#include "stream.h"
 
 G_BEGIN_DECLS
 
@@ -45,12 +46,16 @@ TpStreamEngineChannel *tp_stream_engine_channel_new (
   const gchar *channel_path,
   guint handle_type,
   guint handle,
-
   GError **error);
+
 void tp_stream_engine_channel_error (
   TpStreamEngineChannel *self,
   guint error,
   const gchar *message);
+
+TpStreamEngineStream *tp_stream_engine_channel_lookup_stream (
+  TpStreamEngineChannel *chan,
+  guint stream_id);
 
 G_END_DECLS
 

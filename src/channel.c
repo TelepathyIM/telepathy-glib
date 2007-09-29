@@ -593,3 +593,25 @@ void tp_stream_engine_channel_error (
   shutdown_channel (self);
 }
 
+TpStreamEngineStream *
+tp_stream_engine_channel_lookup_stream (TpStreamEngineChannel *self,
+                                        guint stream_id)
+{
+  guint j, k;
+
+  for (j = 0; j < self->sessions->len; j++)
+    {
+      TpStreamEngineSession *session = g_ptr_array_index (self->sessions, j);
+
+      for (k = 0; k < session->streams->len; k++)
+        {
+          TpStreamEngineStream *stream = g_ptr_array_index (
+              session->streams, k);
+
+          if (stream_id == stream->stream_id)
+            return stream;
+         }
+    }
+
+  return NULL;
+}
