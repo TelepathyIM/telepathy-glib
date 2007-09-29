@@ -1766,38 +1766,30 @@ _lookup_stream (TpStreamEngine *obj, const gchar *path, guint stream_id,
   GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  guint i, j, k;
+  guint i;
 
   for (i = 0; i < priv->channels->len; i++)
     {
-      TpStreamEngineChannel *channel = TP_STREAM_ENGINE_CHANNEL (
-        priv->channels->pdata[i]);
+      TpStreamEngineChannel *channel = g_ptr_array_index (priv->channels, i);
+      TpStreamEngineStream *stream;
 
-      if (0 == strcmp (path, channel->channel_path))
-        {
-          for (j = 0; j < channel->sessions->len; j++)
-            {
-              TpStreamEngineSession *session = TP_STREAM_ENGINE_SESSION (
-                channel->sessions->pdata[j]);
+      if (0 != strcmp (path, channel->channel_path))
+        continue;
 
-              for (k = 0; k < session->streams->len; k++)
-                {
-                  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (
-                    session->streams->pdata[k]);
+      stream = tp_stream_engine_channel_lookup_stream (channel, stream_id);
 
-                  if (stream_id == stream->stream_id)
-                    return stream;
-                }
-            }
+      if (stream != NULL)
+        return stream;
 
-          *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-            "the channel %s has no stream with id %d", path, stream_id);
-          return NULL;
-        }
+      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+          "the channel %s has no stream with id %d", path, stream_id);
+
+      return NULL;
     }
 
-  *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-    "stream-engine is not handling the channel %s", path);
+  g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+      "stream-engine is not handling the channel %s", path);
+
   return NULL;
 }
 
