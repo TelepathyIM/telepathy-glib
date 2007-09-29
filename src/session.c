@@ -217,7 +217,6 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   if (tp_stream_engine_stream_go (
         stream,
         bus_name,
-        priv->connection_path,
         stream_handler_path,
         priv->channel_path,
         priv->fs_session,

@@ -1172,7 +1172,6 @@ gboolean
 tp_stream_engine_stream_go (
   TpStreamEngineStream *stream,
   const gchar *bus_name,
-  const gchar *connection_path,
   const gchar *stream_handler_path,
   const gchar *channel_path,
   FarsightSession *fs_session,
