@@ -44,7 +44,6 @@ TpStreamEngineChannel* tp_stream_engine_channel_new (void);
 gboolean tp_stream_engine_channel_go (
   TpStreamEngineChannel *chan,
   const gchar *bus_name,
-  const gchar *connection_path,
   const gchar *channel_path,
   guint handle_type,
   guint handle,

@@ -51,8 +51,6 @@ struct _TpStreamEngineChannelPrivate
   TpStreamEngineNatProperties nat_props;
 
   gulong channel_destroy_handler;
-
-  gchar *connection_path;
 };
 
 enum
@@ -95,12 +93,6 @@ tp_stream_engine_channel_dispose (GObject *object)
     {
       g_free (self->channel_path);
       self->channel_path = NULL;
-    }
-
-  if (priv->connection_path)
-    {
-      g_free (priv->connection_path);
-      priv->connection_path = NULL;
     }
 
   if (priv->channel_proxy)
@@ -411,7 +403,6 @@ gboolean
 tp_stream_engine_channel_go (
   TpStreamEngineChannel *self,
   const gchar *bus_name,
-  const gchar *connection_path,
   const gchar *channel_path,
   guint handle_type,
   guint handle,
@@ -423,8 +414,6 @@ tp_stream_engine_channel_go (
   g_assert (NULL == priv->channel_proxy);
 
   self->channel_path = g_strdup (channel_path);
-
-  priv->connection_path = g_strdup (connection_path);
 
   priv->channel_proxy = tp_chan_new (
     tp_get_bus(),                              /* connection  */

@@ -1710,8 +1710,8 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
 
   chan = tp_stream_engine_channel_new ();
 
-  if (!tp_stream_engine_channel_go (chan, bus_name, connection, channel,
-      handle_type, handle, error))
+  if (!tp_stream_engine_channel_go (chan, bus_name, channel, handle_type,
+        handle, error))
     goto ERROR;
 
   g_ptr_array_add (priv->channels, chan);
