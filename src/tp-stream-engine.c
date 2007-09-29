@@ -972,34 +972,33 @@ _remove_defunct_output_sink (WindowPair *wp)
   check_if_busy (engine);
 }
 
+static void
+close_one_video_stream (TpStreamEngineChannel *chan,
+                        guint stream_id,
+                        TpStreamEngineStream *stream,
+                        gpointer user_data)
+{
+  const gchar *message = (const gchar *) user_data;
+
+  if (stream->media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+    tp_stream_engine_stream_error (stream, TP_MEDIA_STREAM_ERROR_UNKNOWN,
+        message);
+}
 
 static void
 close_all_video_streams (TpStreamEngine *self, const gchar *message)
 {
-  g_debug ("Closing all video streams");
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
-  guint i, j, k;
+  guint i;
+
+  g_debug ("Closing all video streams");
 
   for (i = 0; i < priv->channels->len; i++)
     {
-      TpStreamEngineChannel *channel = g_ptr_array_index (
-            priv->channels, i);
+      TpStreamEngineChannel *channel = g_ptr_array_index (priv->channels, i);
 
-      for (j = 0; j < channel->sessions->len; j++)
-        {
-          TpStreamEngineSession *session = g_ptr_array_index (
-              channel->sessions, j);
-
-          for (k = 0; k < session->streams->len; k++)
-            {
-              TpStreamEngineStream *stream = g_ptr_array_index (
-                session->streams, k);
-
-              if (stream->media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-                tp_stream_engine_stream_error (stream,
-                    TP_MEDIA_STREAM_ERROR_UNKNOWN, message);
-            }
-        }
+      tp_stream_engine_channel_foreach_stream (channel,
+          close_one_video_stream, (gpointer) message);
     }
 }
 
