@@ -46,7 +46,7 @@ typedef struct _TpStreamEngineChannelPrivate TpStreamEngineChannelPrivate;
 struct _TpStreamEngineChannelPrivate
 {
   TpChan *channel_proxy;
-  DBusGProxy *streamed_media_proxy;
+  DBusGProxy *media_signalling_proxy;
 
   TpStreamEngineNatProperties nat_props;
 
@@ -205,18 +205,12 @@ shutdown_channel (TpStreamEngineChannel *self)
           priv->channel_destroy_handler = 0;
         }
 
-      if (priv->streamed_media_proxy)
+      if (priv->media_signalling_proxy)
         {
-          DBusGProxy *media_signalling;
-
-          media_signalling = tp_chan_get_interface (priv->channel_proxy,
-              TELEPATHY_CHAN_IFACE_MEDIA_SIGNALLING_QUARK);
-          g_assert (media_signalling);
-
-          g_debug ("%s: disconnecting signals from media_signalling proxy",
+          g_debug ("%s: disconnecting signals from media signalling proxy",
               G_STRFUNC);
 
-          dbus_g_proxy_disconnect_signal (media_signalling,
+          dbus_g_proxy_disconnect_signal (priv->media_signalling_proxy,
               "NewSessionHandler", G_CALLBACK (new_media_session_handler),
               self);
         }
@@ -425,7 +419,6 @@ tp_stream_engine_channel_go (
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpPropsIface *props;
-  DBusGProxy *media_signalling;
 
   g_assert (NULL == priv->channel_proxy);
 
@@ -472,26 +465,22 @@ tp_stream_engine_channel_go (
           G_CALLBACK (cb_properties_ready), self);
     }
 
-  priv->streamed_media_proxy = tp_chan_get_interface (priv->channel_proxy,
-      TELEPATHY_CHAN_IFACE_STREAMED_QUARK);
+  priv->media_signalling_proxy = tp_chan_get_interface (priv->channel_proxy,
+      TELEPATHY_CHAN_IFACE_MEDIA_SIGNALLING_QUARK);
 
-  if (!priv->streamed_media_proxy)
+  if (priv->media_signalling_proxy == NULL)
     {
-      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-                            "Channel doesn't have StreamedMedia interface");
+      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+           "Channel doesn't have the media signalling interface");
       return FALSE;
     }
 
-  media_signalling = tp_chan_get_interface (priv->channel_proxy,
-    TELEPATHY_CHAN_IFACE_MEDIA_SIGNALLING_QUARK);
-  g_assert (media_signalling);
-
-  dbus_g_proxy_connect_signal (media_signalling,
+  dbus_g_proxy_connect_signal (priv->media_signalling_proxy,
       "NewSessionHandler", G_CALLBACK (new_media_session_handler),
       self, NULL);
 
   tp_chan_iface_media_signalling_get_session_handlers_async (
-        media_signalling, get_session_handlers_reply, self);
+        priv->media_signalling_proxy, get_session_handlers_reply, self);
 
   return TRUE;
 }
