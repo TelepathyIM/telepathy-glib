@@ -63,7 +63,6 @@ struct _TpStreamEngineStreamPrivate
   const TpStreamEngineNatProperties *nat_props;
 
   DBusGProxy *stream_handler_proxy;
-  TpConn *connection_proxy;
 
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
@@ -155,12 +154,6 @@ tp_stream_engine_stream_dispose (GObject *object)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-
-  if (priv->connection_proxy)
-    {
-      g_object_unref (priv->connection_proxy);
-      priv->connection_proxy = NULL;
-    }
 
   if (priv->stream_handler_proxy)
     {
@@ -1315,20 +1308,6 @@ tp_stream_engine_stream_go (
       "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), stream, NULL);
   dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "Close",
       G_CALLBACK (close), stream, NULL);
-
-  priv->connection_proxy = tp_conn_new (
-    tp_get_bus(),
-    bus_name,
-    connection_path);
-
-  if (!priv->connection_proxy)
-    {
-      /* FIXME
-      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable,
-                            "Unable to bind to connection");
-      */
-      return FALSE;
-    }
 
   priv->nat_props = nat_props;
   set_nat_properties (stream);
