@@ -230,8 +230,8 @@ add_session (TpStreamEngineChannel *self,
 
 static void
 new_media_session_handler (DBusGProxy *proxy,
-                           const char *session_handler_path,
-                           const gchar* type,
+                           const gchar *session_handler_path,
+                           const gchar *type,
                            gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
@@ -307,7 +307,7 @@ channel_destroyed (DBusGProxy *proxy, gpointer user_data)
     }
 }
 
-void
+static void
 get_session_handlers_reply (DBusGProxy *proxy,
                             GPtrArray *session_handlers,
                             GError *error,
