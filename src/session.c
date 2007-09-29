@@ -48,7 +48,6 @@ struct _TpStreamEngineSessionPrivate
 
   const TpStreamEngineNatProperties *nat_props;
 
-  gchar *connection_path;
   gchar *channel_path;
 };
 
@@ -123,12 +122,6 @@ tp_stream_engine_session_dispose (GObject *object)
     {
       g_free (priv->channel_path);
       priv->channel_path = NULL;
-    }
-
-  if (priv->connection_path)
-    {
-      g_free (priv->connection_path);
-      priv->connection_path = NULL;
     }
 
   if (priv->session_handler_proxy)
@@ -239,15 +232,12 @@ gboolean
 tp_stream_engine_session_go (
   TpStreamEngineSession *self,
   const gchar *bus_name,
-  const gchar *connection_path,
   const gchar *session_handler_path,
   const gchar *channel_path,
   const gchar *type,
   const TpStreamEngineNatProperties *nat_props)
 {
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
-
-  priv->connection_path = g_strdup (connection_path);
 
   priv->channel_path = g_strdup (channel_path);
 

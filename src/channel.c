@@ -168,8 +168,8 @@ add_session (TpStreamEngineChannel *self,
 
   session = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION, NULL);
 
-  if (!tp_stream_engine_session_go (session, bus_name, priv->connection_path,
-      session_handler_path, self->channel_path, type, &(priv->nat_props)))
+  if (!tp_stream_engine_session_go (session, bus_name, session_handler_path,
+        self->channel_path, type, &(priv->nat_props)))
     {
       g_critical ("couldn't create session");
     }
