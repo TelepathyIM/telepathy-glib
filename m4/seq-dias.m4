@@ -2,7 +2,7 @@ AC_DEFUN([SEQ_DIAS],
 [
 dnl check for tools for drawing sequence diagrams
 AC_ARG_ENABLE(seq-dias,
-      AC_HELP_STRING([--enable-sequence-diagrams],
+      AC_HELP_STRING([--enable-seq-dias],
                          [use plotutils to draw sequence diagrams [default=yes]]),,
           enable_seq_dias=yes)
 
