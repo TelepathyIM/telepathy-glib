@@ -5,7 +5,7 @@ if MAKE_SEQ_DIAS
 
 SEQ_DIA_PICS = make-call.pic
 SEQ_DIA_PNGS = $(patsubst %.pic,%.png,$(SEQ_DIA_PICS))
-CLEANFILES += $(SEQ_DIA_FILES)
+CLEANFILES += $(SEQ_DIA_PNGS) log.sh test
 
 all-local: $(SEQ_DIA_PNGS)
 

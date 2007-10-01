@@ -71,3 +71,5 @@
 (^|/).svn($|/)
 ^tags$
 ./core\..*$
+^doc/log\.sh$
+^doc/test$
