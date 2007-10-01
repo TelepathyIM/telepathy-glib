@@ -68,6 +68,7 @@
 ^data/.*.service$
 ^debian($|/)
 ^src/telepathy-stream-engine$
+^telepathy-stream-engine-0\.
 (^|/).svn($|/)
 ^tags$
 ./core\..*$
