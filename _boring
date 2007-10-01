@@ -74,3 +74,4 @@
 ./core\..*$
 ^doc/log\.sh$
 ^doc/test$
+^doc/.*\.png$
