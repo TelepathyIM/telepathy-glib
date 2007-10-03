@@ -368,23 +368,23 @@ add_session (TpStreamEngineChannel *self,
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpStreamEngineSession *session;
   gchar *bus_name;
+  GError *error = NULL;
 
   g_debug ("adding session handler %s, type %s", object_path, session_type);
 
   g_object_get (priv->channel_proxy, "name", &bus_name, NULL);
 
-  session = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION, NULL);
-
-  if (!tp_stream_engine_session_go (session, bus_name, object_path,
-        session_type))
-    {
-      g_warning ("failed to create session");
-      g_object_unref (session);
-      g_free (bus_name);
-      return;
-    }
+  session = tp_stream_engine_session_new (bus_name, object_path,
+      session_type, &error);
 
   g_free (bus_name);
+
+  if (session == NULL)
+    {
+      g_warning ("failed to create session: %s", error->message);
+      g_error_free (error);
+      return;
+    }
 
   g_signal_connect (session, "new-stream", G_CALLBACK (new_stream_cb), self);
 

@@ -25,6 +25,8 @@
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-codec.h>
 
+#include "common/telepathy-errors.h"
+
 #include "session.h"
 #include "tp-stream-engine-signals-marshal.h"
 
@@ -125,7 +127,66 @@ static void new_media_stream_handler (DBusGProxy *proxy,
     gchar *stream_handler_path, guint id, guint media_type, guint direction,
     gpointer user_data);
 
+static void cb_fs_session_error (FarsightSession *stream,
+    FarsightSessionError error, const gchar *debug, gpointer user_data);
+
+static void dummy_callback (DBusGProxy *proxy, GError *error,
+    gpointer user_data);
+
 static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
+
+static GObject *
+tp_stream_engine_session_constructor (GType type,
+                                      guint n_props,
+                                      GObjectConstructParam *props)
+{
+  GObject *obj;
+  TpStreamEngineSessionPrivate *priv;
+
+  obj = G_OBJECT_CLASS (tp_stream_engine_session_parent_class)->
+           constructor (type, n_props, props);
+  priv = SESSION_PRIVATE (obj);
+
+  priv->fs_session = farsight_session_factory_make (priv->session_type);
+
+  /* TODO: signal an error back to the connection manager */
+  if (priv->fs_session == NULL)
+    {
+      g_warning ("requested session type was not found, session is unusable!");
+      return obj;
+    }
+
+  g_debug ("plugin details:\n name: %s\n description: %s\n author: %s",
+      farsight_plugin_get_name (priv->fs_session->plugin),
+      farsight_plugin_get_description (priv->fs_session->plugin),
+      farsight_plugin_get_author (priv->fs_session->plugin));
+
+  priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus (),
+      priv->bus_name,
+      priv->object_path,
+      TP_IFACE_MEDIA_SESSION_HANDLER);
+
+  g_signal_connect (priv->session_handler_proxy, "destroy",
+      G_CALLBACK (destroy_cb), obj);
+
+  g_signal_connect (G_OBJECT (priv->fs_session), "error",
+      G_CALLBACK (cb_fs_session_error), priv->session_handler_proxy);
+
+  /* tell the proxy about the NewStreamHandler signal*/
+  dbus_g_proxy_add_signal (priv->session_handler_proxy, "NewStreamHandler",
+      DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
+      G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->session_handler_proxy, "NewStreamHandler",
+      G_CALLBACK (new_media_stream_handler), obj, NULL);
+
+  g_debug ("calling MediaSessionHandler::Ready");
+
+  tp_media_session_handler_ready_async (priv->session_handler_proxy,
+      dummy_callback, "Media.SessionHandler::Ready");
+
+  return obj;
+}
 
 static void
 tp_stream_engine_session_dispose (GObject *object)
@@ -183,6 +244,8 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
 
   object_class->set_property = tp_stream_engine_session_set_property;
   object_class->get_property = tp_stream_engine_session_get_property;
+
+  object_class->constructor = tp_stream_engine_session_constructor;
 
   object_class->dispose = tp_stream_engine_session_dispose;
 
@@ -301,67 +364,35 @@ new_media_stream_handler (DBusGProxy *proxy,
       media_type, direction);
 }
 
-gboolean
-tp_stream_engine_session_go (
-  TpStreamEngineSession *self,
-  const gchar *bus_name,
-  const gchar *session_handler_path,
-  const gchar *type)
+TpStreamEngineSession *
+tp_stream_engine_session_new (const gchar *bus_name,
+                              const gchar *object_path,
+                              const gchar *session_type,
+                              GError **error)
 {
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+  TpStreamEngineSession *ret;
+  TpStreamEngineSessionPrivate *priv;
 
-  priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
-    bus_name,
-    session_handler_path,
-    TP_IFACE_MEDIA_SESSION_HANDLER);
+  g_return_val_if_fail (bus_name != NULL, NULL);
+  g_return_val_if_fail (object_path != NULL, NULL);
+  g_return_val_if_fail (session_type != NULL, NULL);
 
-  g_signal_connect (priv->session_handler_proxy, "destroy",
-      G_CALLBACK (destroy_cb), self);
-
-  if (!priv->session_handler_proxy)
-    {
-      g_critical ("couldn't get proxy for session");
-      return FALSE;
-    }
-
-  /* tell the proxy about the NewStreamHandler signal*/
-  dbus_g_proxy_add_signal (priv->session_handler_proxy,
-      "NewStreamHandler", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT,
-      G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
-
-  dbus_g_proxy_connect_signal (priv->session_handler_proxy,
-      "NewStreamHandler", G_CALLBACK (new_media_stream_handler), self,
+  ret = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION,
+      "bus-name", bus_name,
+      "object-path", object_path,
+      "session-type", session_type,
       NULL);
 
-  priv->fs_session = farsight_session_factory_make (type);
+  priv = SESSION_PRIVATE (ret);
 
-  if (!priv->fs_session)
+  if (priv->fs_session == NULL)
     {
-      g_error ("RTP plugin not found");
-      return FALSE;
+      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+          "requested session type not found");
+      g_object_unref (ret);
+      return NULL;
     }
 
-  g_debug ("plugin details:\n name: %s\n description: %s\n author: %s\n",
-           farsight_plugin_get_name (priv->fs_session->plugin),
-           farsight_plugin_get_description (priv->fs_session->plugin),
-           farsight_plugin_get_author (priv->fs_session->plugin));
-
-  g_signal_connect (G_OBJECT (priv->fs_session), "error",
-                    G_CALLBACK (cb_fs_session_error),
-                    priv->session_handler_proxy);
-
-  g_debug ("Calling MediaSessionHandler::Ready -->");
-  tp_media_session_handler_ready_async (
-    priv->session_handler_proxy, dummy_callback,
-    "Media.SessionHandler::Ready");
-  g_debug ("<-- Returned from MediaSessionHandler::Ready");
-
-  return TRUE;
-}
-
-TpStreamEngineSession*
-tp_stream_engine_session_new (void)
-{
-  return g_object_new (TP_STREAM_ENGINE_TYPE_SESSION, NULL);
+  return ret;
 }
 

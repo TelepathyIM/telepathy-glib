@@ -37,10 +37,11 @@ typedef struct {
 
 GType tp_stream_engine_session_get_type (void);
 
-TpStreamEngineSession* tp_stream_engine_session_new (void);
-gboolean tp_stream_engine_session_go (
-  TpStreamEngineSession *self, const gchar *bus_name,
-  const gchar *session_handler_path, const gchar *type);
+TpStreamEngineSession *
+tp_stream_engine_session_new (const gchar *bus_name,
+                              const gchar *object_path,
+                              const gchar *session_type,
+                              GError **error);
 
 G_END_DECLS
 
