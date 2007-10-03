@@ -79,8 +79,8 @@ struct _TpStreamEngineStreamPrivate
 
 enum
 {
-  STREAM_CLOSED,
-  STREAM_ERROR,
+  CLOSED,
+  ERROR,
   SIGNAL_COUNT
 };
 
@@ -246,8 +246,8 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   object_class->dispose = tp_stream_engine_stream_dispose;
   object_class->finalize = tp_stream_engine_stream_finalize;
 
-  signals[STREAM_CLOSED] =
-    g_signal_new ("stream-closed",
+  signals[CLOSED] =
+    g_signal_new ("closed",
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
@@ -255,8 +255,8 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
 
-  signals[STREAM_ERROR] =
-    g_signal_new ("stream-error",
+  signals[ERROR] =
+    g_signal_new ("error",
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
@@ -287,7 +287,7 @@ async_method_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
   if (error)
     {
       g_warning ("Error calling %s: %s", ctx->method, error->message);
-      g_signal_emit (ctx->stream, signals[STREAM_ERROR], 0);
+      g_signal_emit (ctx->stream, signals[ERROR], 0);
       g_error_free (error);
     }
 
@@ -859,7 +859,7 @@ close (DBusGProxy *proxy, gpointer user_data)
   DEBUG (self, "close requested by connection manager");
 
   stop_stream (self);
-  g_signal_emit (self, signals[STREAM_CLOSED], 0);
+  g_signal_emit (self, signals[CLOSED], 0);
 }
 
 static void
@@ -975,7 +975,7 @@ tp_stream_engine_stream_error (
 
   tp_media_stream_handler_error (priv->stream_handler_proxy, error,
       message, NULL);
-  g_signal_emit (self, signals[STREAM_ERROR], 0);
+  g_signal_emit (self, signals[ERROR], 0);
 }
 
 static void

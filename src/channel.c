@@ -364,9 +364,9 @@ new_stream_cb (TpStreamEngineSession *session,
   g_free (bus_name);
   g_object_unref (fs_session);
 
-  g_signal_connect (stream, "stream-error", G_CALLBACK (stream_closed_cb),
+  g_signal_connect (stream, "error", G_CALLBACK (stream_closed_cb),
       self);
-  g_signal_connect (stream, "stream-closed", G_CALLBACK (stream_closed_cb),
+  g_signal_connect (stream, "closed", G_CALLBACK (stream_closed_cb),
       self);
 
   if (priv->streams->len <= stream_id)
