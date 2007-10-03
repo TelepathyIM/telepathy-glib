@@ -975,21 +975,6 @@ cb_fs_codec_changed (FarsightStream *stream,
     priv->stream_handler_proxy, codec_id, async_method_callback, ctx);
 }
 
-void
-tp_stream_engine_stream_error (
-  TpStreamEngineStream *self,
-  guint error,
-  const gchar *message)
-{
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-
-  g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
-
-  tp_media_stream_handler_error (priv->stream_handler_proxy, error,
-      message, NULL);
-  g_signal_emit (self, signals[ERROR], 0);
-}
-
 static void
 cb_fs_stream_error (FarsightStream *stream,
                     FarsightStreamError error,
@@ -1484,5 +1469,19 @@ tp_stream_engine_stream_set_output_window (
   gst_object_unref (sink);
 
   return TRUE;
+}
+
+void
+tp_stream_engine_stream_error (TpStreamEngineStream *self,
+                               guint error,
+                               const gchar *message)
+{
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
+  g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
+
+  tp_media_stream_handler_error (priv->stream_handler_proxy, error,
+      message, NULL);
+  g_signal_emit (self, signals[ERROR], 0);
 }
 
