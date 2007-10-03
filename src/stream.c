@@ -397,7 +397,7 @@ tp_stream_engine_stream_constructor (GType type,
     {
       gint conn_timeout = (int) g_ascii_strtod (conn_timeout_str, NULL);
       DEBUG (stream, "setting connection timeout to %d", conn_timeout);
-      g_object_set (G_OBJECT(stream), "conn_timeout", conn_timeout, NULL);
+      g_object_set (G_OBJECT(priv->fs_stream), "conn_timeout", conn_timeout, NULL);
     }
 
   /* TODO Make this smarter, we should only create those sources and sinks if
