@@ -8,6 +8,8 @@ EXTRA_DIST = \
     genginterface.py \
     glib-errors-enum-body.xsl \
     glib-errors-enum-header.xsl \
+    glib-interfaces-generator.xsl \
+    glib-interfaces-body-generator.xsl \
     identity.xsl \
     ls-interfaces.xsl \
     make-all-async.xsl \
