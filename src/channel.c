@@ -75,7 +75,8 @@ static guint signals[SIGNAL_COUNT] = {0};
 
 enum
 {
-  PROP_CHANNEL = 1
+  PROP_CHANNEL = 1,
+  PROP_OBJECT_PATH
 };
 
 static void
@@ -101,6 +102,13 @@ tp_stream_engine_channel_get_property (GObject    *object,
     case PROP_CHANNEL:
       g_value_set_object (value, priv->channel_proxy);
       break;
+    case PROP_OBJECT_PATH:
+      {
+        gchar *object_path;
+        g_object_get (priv->channel_proxy, "path", &object_path, NULL);
+        g_value_take_string (value, object_path);
+        break;
+      }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -278,6 +286,16 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                                     G_PARAM_STATIC_NICK |
                                     G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
+
+  param_spec = g_param_spec_string ("object-path",
+                                    "channel object path",
+                                    "D-Bus object path of the media channel "
+                                    "which this session interacts with.",
+                                    NULL,
+                                    G_PARAM_READABLE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
   signals[CLOSED] =
     g_signal_new ("closed",
