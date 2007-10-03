@@ -11,6 +11,7 @@ EXTRA_DIST = \
     autogen.sh \
     check-coding-style.mk \
     check-c-style.sh \
+    check-misc.sh \
     check-whitespace.sh \
     gtk-doc.make
 
