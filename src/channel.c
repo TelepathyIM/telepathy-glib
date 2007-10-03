@@ -39,8 +39,7 @@
 
 G_DEFINE_TYPE (TpStreamEngineChannel, tp_stream_engine_channel, G_TYPE_OBJECT);
 
-#define CHANNEL_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_STREAM_ENGINE_TYPE_CHANNEL, TpStreamEngineChannelPrivate))
+#define CHANNEL_PRIVATE(o) ((TpStreamEngineChannelPrivate *)((o)->priv))
 
 typedef struct _TpStreamEngineChannelPrivate TpStreamEngineChannelPrivate;
 
@@ -85,7 +84,10 @@ enum
 static void
 tp_stream_engine_channel_init (TpStreamEngineChannel *self)
 {
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpStreamEngineChannelPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TP_STREAM_ENGINE_TYPE_CHANNEL, TpStreamEngineChannelPrivate);
+
+  self->priv = priv;
 
   priv->sessions = g_ptr_array_new ();
   priv->streams = g_ptr_array_new ();
@@ -163,7 +165,7 @@ tp_stream_engine_channel_constructor (GType type,
   obj = G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->
            constructor (type, n_props, props);
   self = (TpStreamEngineChannel *) obj;
-  priv = CHANNEL_PRIVATE (obj);
+  priv = CHANNEL_PRIVATE (self);
 
   priv->channel_destroy_handler = g_signal_connect (priv->channel_proxy,
       "destroy", G_CALLBACK (channel_destroyed), obj);
