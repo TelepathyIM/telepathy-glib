@@ -63,7 +63,6 @@ static guint signals[SIGNAL_COUNT] = { 0 };
 static void
 tp_stream_engine_session_init (TpStreamEngineSession *self)
 {
-  self->streams = g_ptr_array_new ();
 }
 
 static void new_media_stream_handler (DBusGProxy *proxy,
@@ -79,17 +78,6 @@ tp_stream_engine_session_dispose (GObject *object)
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
   g_debug (G_STRFUNC);
-
-  if (self->streams)
-    {
-      guint i;
-
-      for (i = 0; i < self->streams->len; i++)
-        g_object_unref (g_ptr_array_index (self->streams, i));
-
-      g_ptr_array_free (self->streams, TRUE);
-      self->streams = NULL;
-    }
 
   if (priv->channel_path)
     {
@@ -189,24 +177,6 @@ destroy_cb (DBusGProxy *proxy, gpointer user_data)
 }
 
 static void
-cb_stream_error (TpStreamEngineStream *stream, gpointer user_data)
-{
-  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
-
-  g_object_unref (stream);
-  g_ptr_array_remove_fast (self->streams, stream);
-}
-
-static void
-cb_stream_closed (TpStreamEngineStream *stream, gpointer user_data)
-{
-  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
-
-  g_object_unref (stream);
-  g_ptr_array_remove_fast (self->streams, stream);
-}
-
-static void
 new_media_stream_handler (DBusGProxy *proxy,
                           gchar *object_path,
                           guint stream_id,
@@ -215,42 +185,12 @@ new_media_stream_handler (DBusGProxy *proxy,
                           gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
-  TpStreamEngineStream *stream;
-  gchar *bus_name;
 
   g_debug ("New stream, stream_id=%d, media_type=%d, direction=%d",
       stream_id, media_type, direction);
 
   g_signal_emit (self, signals[NEW_STREAM], 0, object_path, stream_id,
       media_type, direction);
-
-  g_object_get (priv->session_handler_proxy, "name", &bus_name, NULL);
-
-  stream = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
-
-  g_signal_connect (stream, "stream-error", G_CALLBACK (cb_stream_error), self);
-  g_signal_connect (stream, "stream-closed", G_CALLBACK (cb_stream_closed), self);
-
-  if (tp_stream_engine_stream_go (
-        stream,
-        bus_name,
-        object_path,
-        priv->channel_path,
-        priv->fs_session,
-        stream_id,
-        media_type,
-        direction,
-        priv->nat_props))
-    {
-      g_ptr_array_add (self->streams, stream);
-    }
-  else
-    {
-      g_object_unref (stream);
-    }
-
-  g_free (bus_name);
 }
 
 gboolean

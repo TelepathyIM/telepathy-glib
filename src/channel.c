@@ -51,6 +51,7 @@ struct _TpStreamEngineChannelPrivate
   TpStreamEngineNatProperties nat_props;
 
   GPtrArray *sessions;
+  GPtrArray *streams;
 
   gulong channel_destroy_handler;
 };
@@ -83,6 +84,7 @@ tp_stream_engine_channel_init (TpStreamEngineChannel *self)
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   priv->sessions = g_ptr_array_new ();
+  priv->streams = g_ptr_array_new ();
 }
 
 static void
@@ -212,6 +214,18 @@ tp_stream_engine_channel_dispose (GObject *object)
       priv->sessions = NULL;
     }
 
+  if (priv->streams)
+    {
+      guint i;
+
+      for (i = 0; i < priv->streams->len; i++)
+        if (g_ptr_array_index (priv->streams, i) != NULL)
+          g_object_unref (g_ptr_array_index (priv->streams, i));
+
+      g_ptr_array_free (priv->streams, TRUE);
+      priv->streams = NULL;
+    }
+
   if (self->channel_path)
     {
       g_free (self->channel_path);
@@ -276,28 +290,103 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
 }
 
 static void
+stream_closed_cb (TpStreamEngineStream *stream,
+                  gpointer user_data)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  guint stream_id;
+
+  g_object_get (stream, "stream-id", &stream_id, NULL);
+
+  g_assert (stream == g_ptr_array_index (priv->streams, stream_id));
+
+  g_object_unref (stream);
+  g_ptr_array_index (priv->streams, stream_id) = NULL;
+}
+
+static void
+new_stream_cb (TpStreamEngineSession *session,
+               gchar *object_path,
+               guint stream_id,
+               guint media_type,
+               guint direction,
+               gpointer user_data)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpStreamEngineStream *stream;
+  FarsightSession *fs_session;
+  gchar *bus_name;
+
+  g_object_get (priv->channel_proxy, "name", &bus_name, NULL);
+  g_object_get (session, "farsight-session", &fs_session, NULL);
+
+  stream = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
+
+  if (!tp_stream_engine_stream_go (
+        stream,
+        bus_name,
+        object_path,
+        self->channel_path,
+        fs_session,
+        stream_id,
+        media_type,
+        direction,
+        &(priv->nat_props)))
+    {
+      g_warning ("failed to create stream");
+      g_free (bus_name);
+      g_object_unref (fs_session);
+      g_object_unref (stream);
+      return;
+    }
+
+  g_free (bus_name);
+  g_object_unref (fs_session);
+
+  g_signal_connect (stream, "stream-error", G_CALLBACK (stream_closed_cb),
+      self);
+  g_signal_connect (stream, "stream-closed", G_CALLBACK (stream_closed_cb),
+      self);
+
+  if (priv->streams->len <= stream_id)
+    g_ptr_array_set_size (priv->streams, stream_id + 1);
+
+  /* FIXME */
+  if (g_ptr_array_index (priv->streams, stream_id) != NULL)
+    g_warning ("replacing stream, argh!");
+
+  g_ptr_array_index (priv->streams, stream_id) = stream;
+}
+
+static void
 add_session (TpStreamEngineChannel *self,
-             const gchar *session_handler_path,
-             const gchar *type)
+             const gchar *object_path,
+             const gchar *session_type)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpStreamEngineSession *session;
   gchar *bus_name;
 
-  g_debug("adding session handler %s, type %s", session_handler_path,
-    type);
+  g_debug ("adding session handler %s, type %s", object_path, session_type);
 
   g_object_get (priv->channel_proxy, "name", &bus_name, NULL);
 
   session = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION, NULL);
 
-  if (!tp_stream_engine_session_go (session, bus_name, session_handler_path,
-        self->channel_path, type, &(priv->nat_props)))
+  if (!tp_stream_engine_session_go (session, bus_name, object_path,
+        self->channel_path, session_type, &(priv->nat_props)))
     {
-      g_critical ("couldn't create session");
+      g_warning ("failed to create session");
+      g_object_unref (session);
+      g_free (bus_name);
+      return;
     }
 
   g_free (bus_name);
+
+  g_signal_connect (session, "new-stream", G_CALLBACK (new_stream_cb), self);
 
   g_ptr_array_add (priv->sessions, session);
 }
@@ -582,19 +671,12 @@ tp_stream_engine_channel_error (TpStreamEngineChannel *self,
                                 const gchar *message)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  guint i, j;
+  guint i;
 
-  for (i = 0; i < priv->sessions->len; i++)
-    {
-      TpStreamEngineSession *session = g_ptr_array_index (priv->sessions, i);
-
-      for (j = 0; j < session->streams->len; j++)
-        {
-          tp_stream_engine_stream_error (
-              g_ptr_array_index (session->streams, j),
-              TP_MEDIA_STREAM_ERROR_UNKNOWN, message);
-        }
-    }
+  for (i = 0; i < priv->streams->len; i++)
+    if (g_ptr_array_index (priv->streams, i) != NULL)
+      tp_stream_engine_stream_error (g_ptr_array_index (priv->streams, i),
+          error, message);
 
   shutdown_channel (self);
 }
@@ -604,24 +686,13 @@ tp_stream_engine_channel_lookup_stream (TpStreamEngineChannel *self,
                                         guint stream_id)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  guint j, k;
 
-  for (j = 0; j < priv->sessions->len; j++)
-    {
-      TpStreamEngineSession *session = g_ptr_array_index (priv->sessions, j);
+  if (stream_id >= priv->streams->len)
+    return NULL;
 
-      for (k = 0; k < session->streams->len; k++)
-        {
-          TpStreamEngineStream *stream = g_ptr_array_index (
-              session->streams, k);
-
-          if (stream_id == stream->stream_id)
-            return stream;
-         }
-    }
-
-  return NULL;
+  return g_ptr_array_index (priv->streams, stream_id);
 }
+
 
 void
 tp_stream_engine_channel_foreach_stream (TpStreamEngineChannel *self,
@@ -629,19 +700,13 @@ tp_stream_engine_channel_foreach_stream (TpStreamEngineChannel *self,
                                          gpointer user_data)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  guint j, k;
+  guint i;
 
-  for (j = 0; j < priv->sessions->len; j++)
+  for (i = 0; i < priv->streams->len; i++)
     {
-      TpStreamEngineSession *session = g_ptr_array_index (priv->sessions, j);
+      TpStreamEngineStream *stream = g_ptr_array_index (priv->streams, i);
 
-      for (k = 0; k < session->streams->len; k++)
-        {
-          TpStreamEngineStream *stream = g_ptr_array_index (
-              session->streams, k);
-
-          func (self, stream->stream_id, stream, user_data);
-         }
+      if (stream != NULL)
+        func (self, i, stream, user_data);
     }
 }
-
