@@ -155,5 +155,80 @@
     <tp:member type="s"/>
   </tp:mapping>
 
+  <!-- We hope to simplify these eventually -->
+  <tp:mapping name="Multiple_Status_Map">
+    <tp:docstring>Mapping used in Last_Activity_And_Statuses and passed to
+      SetStatus, representing a collection of statuses. Use of this mapping
+      with more than one member is deprecated.</tp:docstring>
+    <tp:member type="s" name="Status"/>
+    <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Parameters"/>
+  </tp:mapping>
+  <tp:struct name="Last_Activity_And_Statuses" array-name="">
+    <tp:docstring>Structure representing a contact's presence, containing
+      a last-activity time (deprecated) and a Multiple_Status_Map.
+    </tp:docstring>
+    <tp:member type="u" tp:type="Unix_Timestamp" name="Last_Activity"/>
+    <tp:member type="a{sa{sv}}" tp:type="Multiple_Presence_Map"
+      name="Statuses"/>
+  </tp:struct>
+  <tp:mapping name="Contact_Presences">
+    <tp:docstring>Mapping returned by GetPresence and signalled by
+      PresenceUpdate, where the keys are contacts and the values represent
+      their presences.</tp:docstring>
+    <tp:member type="u" tp:type="Contact_Handle" name="Contact"/>
+    <tp:member type="(ua{sa{sv}})" tp:type="Last_Activity_And_Statuses"
+      name="Presence"/>
+  </tp:mapping>
+  <tp:struct name="Status_Spec" array-name="">
+    <tp:member type="u" tp:type="Connection_Presence_Type" name="Type"/>
+    <tp:member type="b" name="May_Set_On_Self"/>
+    <tp:member type="b" name="Exclusive"/>
+    <tp:member type="a{ss}" tp:type="String_String_Map"
+      name="Parameter_Types"/>
+  </tp:struct>
+  <tp:mapping name="Status_Spec_Map">
+    <tp:member type="s" name="Identifier"/>
+    <tp:member type="(ubba{ss})" tp:type="Status_Spec" name="Spec"/>
+  </tp:mapping>
+
+  <tp:struct name="Stream_List_Entry" array-name="Stream_List">
+    <tp:member type="u" name="Identifier"/>
+    <tp:member type="u" tp:type="Contact_Handle?" name="Contact"/>
+    <tp:member type="u" tp:type="Media_Stream_Type" name="Type"/>
+    <tp:member type="u" tp:type="Media_Stream_State" name="State"/>
+    <tp:member type="u" tp:type="Media_Stream_Direction" name="Direction"/>
+    <tp:member type="u" tp:type="Media_Stream_Pending_Send"
+      name="Pending_Send_Flags"/>
+  </tp:struct>
+
+  <tp:struct name="Room_List_Entry" array-name="Room_List">
+    <tp:member type="u" tp:type="Room_Handle" name="Handle"/>
+    <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+    <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Info"/>
+  </tp:struct>
+
+  <tp:struct name="Media_Signalling_Candidate">
+    <tp:member type="u" name="Component_Number"/>
+    <tp:member type="s" name="IP_Address"/>
+    <tp:member type="u" name="Port"/>
+    <tp:member type="u" tp:type="Media_Stream_Base_Proto" name="Protocol"/>
+    <tp:member type="s" name="Subtype"/>
+    <tp:member type="s" name="Profile"/>
+    <tp:member type="d" name="Preference_Value"/>
+    <tp:member type="u" tp:type="Media_Stream_Transport_Type"
+      name="Transport_Type"/>
+    <tp:member type="s" name="Username"/>
+    <tp:member type="s" name="Password"/>
+  </tp:struct>
+
+  <tp:struct name="Media_Signalling_Codec">
+    <tp:member type="u" name="Codec_ID"/>
+    <tp:member type="s" name="Name"/>
+    <tp:member type="u" tp:type="Media_Stream_Type" name="Media_Type"/>
+    <tp:member type="u" name="Clock_Rate"/>
+    <tp:member type="u" name="Number_Of_Channels"/>
+    <tp:member type="a{ss}" name="Parameters"/>
+  </tp:struct>
+
 </tp:spec>
 <!-- vim:set sw=2 sts=2 et: -->
