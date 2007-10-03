@@ -341,9 +341,12 @@ stream_state_changed_cb (TpStreamEngineStream *stream,
                          gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  guint stream_id;
 
-  g_signal_emit (self, signals[STREAM_STATE_CHANGED], 0, stream->stream_id,
-      state, direction);
+  g_object_get (stream, "stream-id", &stream_id, NULL);
+
+  g_signal_emit (self, signals[STREAM_STATE_CHANGED], 0, stream_id, state,
+      direction);
 }
 
 static void
@@ -352,9 +355,11 @@ stream_receiving_cb (TpStreamEngineStream *stream,
                      gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  guint stream_id;
 
-  g_signal_emit (self, signals[STREAM_RECEIVING], 0, stream->stream_id,
-      receiving);
+  g_object_get (stream, "stream-id", &stream_id, NULL);
+
+  g_signal_emit (self, signals[STREAM_RECEIVING], 0, stream_id, receiving);
 }
 
 static void

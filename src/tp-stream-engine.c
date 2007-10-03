@@ -1031,8 +1031,11 @@ close_one_video_stream (TpStreamEngineChannel *chan,
                         gpointer user_data)
 {
   const gchar *message = (const gchar *) user_data;
+  TelepathyMediaStreamType media_type;
 
-  if (stream->media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+  g_object_get (stream, "media-type", &media_type, NULL);
+
+  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
     tp_stream_engine_stream_error (stream, TP_MEDIA_STREAM_ERROR_UNKNOWN,
         message);
 }
