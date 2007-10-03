@@ -58,6 +58,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/signals-marshal.h \
     _gen/signals-marshal.list \
     _gen/telepathy-errors.c \
+    _gen/interfaces-body.h \
     _gen/gtypes-body.h \
     $(STABLE_SPEC_GENERATED_SOURCES)
 
@@ -88,6 +89,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-connection-manager.c \
     dbus.c \
     debug.c \
+    interfaces.c \
     internal-debug.h \
     errors.c \
     group-mixin.c \
@@ -154,10 +156,19 @@ _gen/telepathy-enums.h: _gen/stable-spec.xml \
 		_gen/stable-spec.xml > $@
 
 _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
+	../tools/glib-interfaces-generator.xsl \
 	../tools/c-interfaces-generator.xsl
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
 		--stringparam mixed-case-prefix Tp \
-		$(srcdir)/../tools/c-interfaces-generator.xsl \
+		$(srcdir)/../tools/glib-interfaces-generator.xsl \
+		_gen/stable-spec.xml > $@
+
+_gen/interfaces-body.h: _gen/stable-spec.xml \
+	../tools/glib-interfaces-body-generator.xsl \
+	../tools/c-interfaces-generator.xsl
+	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
+		--stringparam mixed-case-prefix Tp \
+		$(srcdir)/../tools/glib-interfaces-body-generator.xsl \
 		_gen/stable-spec.xml > $@
 
 _gen/telepathy-errors.c: ../spec/errors.xml \
