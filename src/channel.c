@@ -94,14 +94,15 @@ tp_stream_engine_channel_get_property (GObject    *object,
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
-  switch (property_id) {
+  switch (property_id)
+    {
     case PROP_CHANNEL:
       g_value_set_object (value, priv->channel_proxy);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
-  }
+    }
 }
 
 static void
@@ -113,14 +114,15 @@ tp_stream_engine_channel_set_property (GObject      *object,
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
-  switch (property_id) {
+  switch (property_id)
+    {
     case PROP_CHANNEL:
       priv->channel_proxy = TELEPATHY_CHAN (g_value_dup_object (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
-  }
+   }
 }
 
 static void channel_destroyed (DBusGProxy *proxy, gpointer user_data);
