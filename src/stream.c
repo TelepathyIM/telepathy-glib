@@ -60,6 +60,10 @@ typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
 
 struct _TpStreamEngineStreamPrivate
 {
+  FarsightSession *fs_session;
+  gchar *bus_name;
+  gchar *object_path;
+  TelepathyMediaStreamDirection direction;
   const TpStreamEngineNatProperties *nat_props;
 
   DBusGProxy *stream_handler_proxy;
@@ -87,6 +91,21 @@ enum
 };
 
 static guint signals[SIGNAL_COUNT] = {0};
+
+/* properties */
+enum
+{
+  PROP_FARSIGHT_SESSION = 1,
+  PROP_BUS_NAME,
+  PROP_OBJECT_PATH,
+  PROP_STREAM_ID,
+  PROP_MEDIA_TYPE,
+  PROP_DIRECTION,
+  PROP_NAT_PROPERTIES,
+  PROP_PIPELINE,
+  PROP_SOURCE,
+  PROP_SINK
+};
 
 static void
 add_remote_candidate (DBusGProxy *proxy, gchar *candidate,
@@ -157,10 +176,123 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
 }
 
 static void
+tp_stream_engine_stream_get_property (GObject    *object,
+                                      guint       property_id,
+                                      GValue     *value,
+                                      GParamSpec *pspec)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
+  switch (property_id)
+    {
+    case PROP_FARSIGHT_SESSION:
+      g_value_set_object (value, priv->fs_session);
+      break;
+    case PROP_BUS_NAME:
+      g_value_set_string (value, priv->bus_name);
+      break;
+    case PROP_OBJECT_PATH:
+      g_value_set_string (value, priv->object_path);
+      break;
+    case PROP_STREAM_ID:
+      g_value_set_uint (value, self->stream_id);
+      break;
+    case PROP_MEDIA_TYPE:
+      g_value_set_uint (value, self->media_type);
+      break;
+    case PROP_DIRECTION:
+      g_value_set_uint (value, priv->direction);
+      break;
+    case PROP_NAT_PROPERTIES:
+      g_value_set_pointer (value,
+          (TpStreamEngineNatProperties *) priv->nat_props);
+      break;
+    case PROP_PIPELINE:
+      g_value_set_object (value,
+          farsight_stream_get_pipeline (priv->fs_stream));
+      break;
+    case PROP_SOURCE:
+      g_value_set_object (value,
+          farsight_stream_get_source (priv->fs_stream));
+      break;
+    case PROP_SINK:
+      g_value_set_object (value,
+          farsight_stream_get_sink (priv->fs_stream));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+tp_stream_engine_stream_set_property (GObject      *object,
+                                      guint         property_id,
+                                      const GValue *value,
+                                      GParamSpec   *pspec)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
+
+  switch (property_id)
+    {
+    case PROP_FARSIGHT_SESSION:
+      priv->fs_session = FARSIGHT_SESSION (g_value_dup_object (value));
+      break;
+    case PROP_BUS_NAME:
+      priv->bus_name = g_value_dup_string (value);
+      break;
+    case PROP_OBJECT_PATH:
+      priv->object_path = g_value_dup_string (value);
+      break;
+    case PROP_STREAM_ID:
+      self->stream_id = g_value_get_uint (value);
+      break;
+    case PROP_MEDIA_TYPE:
+      self->media_type = g_value_get_uint (value);
+      break;
+    case PROP_DIRECTION:
+      priv->direction = g_value_get_uint (value);
+      break;
+    case PROP_NAT_PROPERTIES:
+      priv->nat_props = g_value_get_pointer (value);
+      break;
+    case PROP_PIPELINE:
+      farsight_stream_set_pipeline (priv->fs_stream,
+          g_value_get_object (value));
+      break;
+    case PROP_SOURCE:
+      farsight_stream_set_source (priv->fs_stream,
+          g_value_get_object (value));
+      break;
+    case PROP_SINK:
+      farsight_stream_set_sink (priv->fs_stream,
+          g_value_get_object (value));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+  if (priv->fs_session)
+    {
+      g_object_unref (priv->fs_session);
+      priv->fs_session = NULL;
+    }
+
+  g_free (priv->bus_name);
+  priv->bus_name = NULL;
+
+  g_free (priv->object_path);
+  priv->object_path = NULL;
 
   if (priv->stream_handler_proxy)
     {
@@ -241,11 +373,129 @@ static void
 tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineStreamPrivate));
 
+  object_class->set_property = tp_stream_engine_stream_set_property;
+  object_class->get_property = tp_stream_engine_stream_get_property;
+
   object_class->dispose = tp_stream_engine_stream_dispose;
   object_class->finalize = tp_stream_engine_stream_finalize;
+
+  param_spec = g_param_spec_object ("farsight-session",
+                                    "Farsight session",
+                                    "The Farsight session this stream will "
+                                    "create streams within.",
+                                    FARSIGHT_TYPE_SESSION,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_FARSIGHT_SESSION,
+      param_spec);
+
+  param_spec = g_param_spec_string ("bus-name",
+                                    "session handler bus name",
+                                    "D-Bus bus name for the session handler "
+                                    "which this session interacts with.",
+                                    NULL,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_BUS_NAME, param_spec);
+
+  param_spec = g_param_spec_string ("object-path",
+                                    "session handler object path",
+                                    "D-Bus object path of the session handler "
+                                    "which this session interacts with.",
+                                    NULL,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
+
+  param_spec = g_param_spec_uint ("stream-id",
+                                  "stream ID",
+                                  "A number identifying this stream within "
+                                  "its channel.",
+                                  0, G_MAXUINT, 0,
+                                  G_PARAM_CONSTRUCT_ONLY |
+                                  G_PARAM_READWRITE |
+                                  G_PARAM_STATIC_NICK |
+                                  G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_STREAM_ID, param_spec);
+
+  param_spec = g_param_spec_uint ("media-type",
+                                  "stream media type",
+                                  "The Telepathy stream media type (ie audio "
+                                  "or video)",
+                                  TP_MEDIA_STREAM_TYPE_AUDIO,
+                                  TP_MEDIA_STREAM_TYPE_VIDEO,
+                                  TP_MEDIA_STREAM_TYPE_AUDIO,
+                                  G_PARAM_CONSTRUCT_ONLY |
+                                  G_PARAM_READWRITE |
+                                  G_PARAM_STATIC_NICK |
+                                  G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_MEDIA_TYPE, param_spec);
+
+  param_spec = g_param_spec_uint ("direction",
+                                  "stream direction",
+                                  "The Telepathy stream direction",
+                                  TP_MEDIA_STREAM_DIRECTION_NONE,
+                                  TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+                                  TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+                                  G_PARAM_CONSTRUCT_ONLY |
+                                  G_PARAM_READWRITE |
+                                  G_PARAM_STATIC_NICK |
+                                  G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_DIRECTION, param_spec);
+
+  param_spec = g_param_spec_pointer ("nat-properties",
+                                     "NAT properties",
+                                     "A pointer to a "
+                                     "TpStreamEngineNatProperties structure "
+                                     "detailing which NAT traversal method "
+                                     "and parameters to use for this stream.",
+                                     G_PARAM_CONSTRUCT_ONLY |
+                                     G_PARAM_READWRITE |
+                                     G_PARAM_STATIC_NICK |
+                                     G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_NAT_PROPERTIES,
+      param_spec);
+
+  param_spec = g_param_spec_object ("pipeline",
+                                    "GStreamer pipeline",
+                                    "The GStreamer pipeline this stream will "
+                                    "use.",
+                                    GST_TYPE_ELEMENT,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_PIPELINE, param_spec);
+
+  param_spec = g_param_spec_object ("source",
+                                    "GStreamer source",
+                                    "The GStreamer source element this stream "
+                                    "will use.",
+                                    GST_TYPE_ELEMENT,
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_SOURCE, param_spec);
+
+  param_spec = g_param_spec_object ("sink",
+                                    "GStreamer sink",
+                                    "The GStreamer sink element this stream "
+                                    "will use.",
+                                    GST_TYPE_ELEMENT,
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_SINK, param_spec);
 
   signals[CLOSED] =
     g_signal_new ("closed",
