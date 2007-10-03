@@ -18,18 +18,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libtelepathy/tp-conn.h>
-#include <libtelepathy/tp-chan.h>
-#include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-media-session-handler-gen.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-codec.h>
-
-#include "stream.h"
-#include "types.h"
 
 #include "session.h"
 #include "tp-stream-engine-signals-marshal.h"
@@ -46,10 +40,6 @@ struct _TpStreamEngineSessionPrivate
   DBusGProxy *session_handler_proxy;
 
   FarsightSession *fs_session;
-
-  const TpStreamEngineNatProperties *nat_props;
-
-  gchar *channel_path;
 };
 
 enum
@@ -78,12 +68,6 @@ tp_stream_engine_session_dispose (GObject *object)
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
   g_debug (G_STRFUNC);
-
-  if (priv->channel_path)
-    {
-      g_free (priv->channel_path);
-      priv->channel_path = NULL;
-    }
 
   if (priv->session_handler_proxy)
     {
@@ -198,15 +182,9 @@ tp_stream_engine_session_go (
   TpStreamEngineSession *self,
   const gchar *bus_name,
   const gchar *session_handler_path,
-  const gchar *channel_path,
-  const gchar *type,
-  const TpStreamEngineNatProperties *nat_props)
+  const gchar *type)
 {
   TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
-
-  priv->channel_path = g_strdup (channel_path);
-
-  priv->nat_props = nat_props;
 
   priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus(),
     bus_name,
