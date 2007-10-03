@@ -1975,34 +1975,6 @@ tp_stream_engine_get ()
   return engine;
 }
 
-/*
- * tp_stream_engine_emit_receiving
- *
- * Triggers stream engine to emit the TpStreamEngine::receiving signal
- */
-void
-tp_stream_engine_emit_receiving (TpStreamEngine *obj,
-                                 gchar *channel_path,
-                                 guint stream_id,
-                                 gboolean receiving)
-{
-}
-
-/*
- * tp_stream_engine_emit_stream_state_changed
- *
- * Triggers stream engine to emit the TpStreamEngine::stream-state-changed
- * signal
- */
-void
-tp_stream_engine_emit_stream_state_changed (TpStreamEngine *obj,
-                                            gchar *channel_path,
-                                            guint stream_id,
-                                            TelepathyMediaStreamState state,
-                                            TelepathyMediaStreamDirection direction)
-{
-}
-
 /**
  * tp_stream_engine_shutdown
  *

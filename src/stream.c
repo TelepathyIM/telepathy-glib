@@ -361,8 +361,6 @@ cb_fs_state_changed (FarsightStream *stream,
 
   if (priv->state != state || priv->dir != dir)
     {
-      tp_stream_engine_emit_stream_state_changed (tp_stream_engine_get (),
-        priv->channel_path, self->stream_id, state, dir);
       g_signal_emit (self, signals[STATE_CHANGED], 0, state, dir);
     }
 
@@ -390,8 +388,6 @@ cb_fs_state_changed (FarsightStream *stream,
           gboolean receiving =
             ((dir & FARSIGHT_STREAM_DIRECTION_RECEIVEONLY) ==
              FARSIGHT_STREAM_DIRECTION_RECEIVEONLY);
-          tp_stream_engine_emit_receiving (tp_stream_engine_get (),
-              priv->channel_path, self->stream_id, receiving);
           g_signal_emit (self, signals[RECEIVING], 0, receiving);
         }
 
