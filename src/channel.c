@@ -34,6 +34,7 @@
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
+#include "tp-stream-engine-signals-marshal.h"
 #include "types.h"
 
 G_DEFINE_TYPE (TpStreamEngineChannel, tp_stream_engine_channel, G_TYPE_OBJECT);
@@ -69,6 +70,8 @@ enum
 enum
 {
   CLOSED,
+  STREAM_STATE_CHANGED,
+  STREAM_RECEIVING,
   SIGNAL_COUNT
 };
 
@@ -306,6 +309,24 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  signals[STREAM_STATE_CHANGED] =
+    g_signal_new ("stream-state-changed",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  tp_stream_engine_marshal_VOID__UINT_UINT_UINT,
+                  G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+
+  signals[STREAM_RECEIVING] =
+    g_signal_new ("receiving",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  tp_stream_engine_marshal_VOID__UINT_BOOLEAN,
+                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_BOOLEAN);
 }
 
 static void
@@ -322,6 +343,29 @@ stream_closed_cb (TpStreamEngineStream *stream,
 
   g_object_unref (stream);
   g_ptr_array_index (priv->streams, stream_id) = NULL;
+}
+
+static void
+stream_state_changed_cb (TpStreamEngineStream *stream,
+                         TelepathyMediaStreamState state,
+                         TelepathyMediaStreamDirection direction,
+                         gpointer user_data)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+
+  g_signal_emit (self, signals[STREAM_STATE_CHANGED], 0, stream->stream_id,
+      state, direction);
+}
+
+static void
+stream_receiving_cb (TpStreamEngineStream *stream,
+                     gboolean receiving,
+                     gpointer user_data)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+
+  g_signal_emit (self, signals[STREAM_RECEIVING], 0, stream->stream_id,
+      receiving);
 }
 
 static void
@@ -368,6 +412,10 @@ new_stream_cb (TpStreamEngineSession *session,
       self);
   g_signal_connect (stream, "closed", G_CALLBACK (stream_closed_cb),
       self);
+  g_signal_connect (stream, "state-changed",
+      G_CALLBACK (stream_state_changed_cb), self);
+  g_signal_connect (stream, "receiving",
+      G_CALLBACK (stream_receiving_cb), self);
 
   if (priv->streams->len <= stream_id)
     g_ptr_array_set_size (priv->streams, stream_id + 1);
