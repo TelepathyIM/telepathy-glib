@@ -110,34 +110,69 @@ enum
   PROP_SINK
 };
 
-static void
-add_remote_candidate (DBusGProxy *proxy, gchar *candidate,
-                      GPtrArray *transports, gpointer user_data);
-static void
-remove_remote_candidate (DBusGProxy *proxy, gchar *candidate,
-                         gpointer user_data);
-static void
-set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
-                           gchar* remote_candidate, gpointer user_data);
-static void
-set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
-                           gpointer user_data);
-static void
-set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data);
-static void
-set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data);
-static void
-set_stream_sending (DBusGProxy *proxy, gboolean play, gpointer user_data);
-static void
-start_telephony_event (DBusGProxy *proxy, guchar event, gpointer user_data);
-static void
-stop_telephony_event (DBusGProxy *proxy, gpointer user_data);
+static void add_remote_candidate (DBusGProxy *proxy, gchar *candidate,
+    GPtrArray *transports, gpointer user_data);
 
-static void
-stop_stream (TpStreamEngineStream *self);
+static void remove_remote_candidate (DBusGProxy *proxy, gchar *candidate,
+    gpointer user_data);
 
-static void
-destroy_cb (DBusGProxy *proxy, gpointer user_data);
+static void set_active_candidate_pair (DBusGProxy *proxy,
+    gchar *native_candidate, gchar *remote_candidate, gpointer user_data);
+
+static void set_remote_candidate_list (DBusGProxy *proxy,
+    GPtrArray *candidates, gpointer user_data);
+
+static void set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs,
+    gpointer user_data);
+
+static void set_stream_playing (DBusGProxy *proxy, gboolean play,
+    gpointer user_data);
+
+static void set_stream_sending (DBusGProxy *proxy, gboolean play,
+    gpointer user_data);
+
+static void start_telephony_event (DBusGProxy *proxy, guchar event,
+    gpointer user_data);
+
+static void stop_telephony_event (DBusGProxy *proxy, gpointer user_data);
+
+static void close (DBusGProxy *proxy, gpointer user_data);
+
+static GstElement *make_src (TpStreamEngineStream *stream, guint media_type);
+
+static GstElement *make_sink (TpStreamEngineStream *stream, guint media_type);
+
+static void cb_fs_stream_error (FarsightStream *stream,
+    FarsightStreamError error, const gchar *debug, gpointer user_data);
+
+static void cb_fs_new_active_candidate_pair (FarsightStream *stream,
+    const gchar *native_candidate, const gchar *remote_candidate,
+    gpointer user_data);
+
+static void cb_fs_codec_changed (FarsightStream *stream, gint codec_id,
+    gpointer user_data);
+
+static void cb_fs_new_active_candidate_pair (FarsightStream *stream,
+    const gchar *native_candidate, const gchar *remote_candidate,
+    gpointer user_data);
+
+static void cb_fs_native_candidates_prepared (FarsightStream *stream,
+    gpointer user_data);
+
+static void cb_fs_state_changed (FarsightStream *stream,
+    FarsightStreamState state, FarsightStreamDirection dir,
+    gpointer user_data);
+
+static void cb_fs_new_native_candidate (FarsightStream *stream,
+    gchar *candidate_id, gpointer user_data);
+
+static void set_nat_properties (TpStreamEngineStream *self);
+
+static void prepare_transports (TpStreamEngineStream *self);
+
+static void stop_stream (TpStreamEngineStream *self);
+
+static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
 
 static void
 _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
@@ -279,6 +314,139 @@ tp_stream_engine_stream_set_property (GObject      *object,
     }
 }
 
+static GObject *
+tp_stream_engine_stream_constructor (GType type,
+                                     guint n_props,
+                                     GObjectConstructParam *props)
+{
+  GObject *obj;
+  TpStreamEngineStream *stream;
+  TpStreamEngineStreamPrivate *priv;
+  const gchar *conn_timeout_str;
+  GstElement *src, *sink;
+
+  obj = G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->
+            constructor (type, n_props, props);
+  stream = (TpStreamEngineStream *) obj;
+  priv = STREAM_PRIVATE (obj);
+
+  priv->stream_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus (),
+      priv->bus_name, priv->object_path, TP_IFACE_MEDIA_STREAM_HANDLER);
+
+  g_signal_connect (priv->stream_handler_proxy, "destroy",
+      G_CALLBACK (destroy_cb), obj);
+
+  /* TODO: make dbus-binding-tool do this for us... */
+
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "AddRemoteCandidate",
+      G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "RemoveRemoteCandidate",
+      G_TYPE_STRING, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetActiveCandidatePair",
+      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetRemoteCandidateList",
+      TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetRemoteCodecs",
+      TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamPlaying",
+      G_TYPE_BOOLEAN, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamSending",
+      G_TYPE_BOOLEAN, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "StartTelephonyEvent",
+      G_TYPE_UCHAR, G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "StopTelephonyEvent",
+      G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "Close",
+      G_TYPE_INVALID);
+
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "AddRemoteCandidate",
+      G_CALLBACK (add_remote_candidate), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "RemoveRemoteCandidate",
+      G_CALLBACK (remove_remote_candidate), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetActiveCandidatePair",
+      G_CALLBACK (set_active_candidate_pair), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetRemoteCandidateList",
+      G_CALLBACK (set_remote_candidate_list), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetRemoteCodecs",
+      G_CALLBACK (set_remote_codecs), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamPlaying",
+      G_CALLBACK (set_stream_playing), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamSending",
+      G_CALLBACK (set_stream_sending), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy,
+      "StartTelephonyEvent", G_CALLBACK (start_telephony_event), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy,
+      "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), obj, NULL);
+  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "Close",
+      G_CALLBACK (close), obj, NULL);
+
+  priv->fs_stream = farsight_session_create_stream (priv->fs_session,
+      priv->media_type, priv->direction);
+
+  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+    {
+      /* tell the Farsight stream to use the stream engine pipeline */
+      TpStreamEngine *engine = tp_stream_engine_get ();
+      GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
+      farsight_stream_set_pipeline (priv->fs_stream, pipeline);
+    }
+
+  conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
+
+  if (conn_timeout_str)
+    {
+      gint conn_timeout = (int) g_ascii_strtod (conn_timeout_str, NULL);
+      DEBUG (stream, "setting connection timeout to %d", conn_timeout);
+      g_object_set (G_OBJECT(stream), "conn_timeout", conn_timeout, NULL);
+    }
+
+  /* TODO Make this smarter, we should only create those sources and sinks if
+   * they exist. */
+  src = make_src (stream, priv->media_type);
+  sink = make_sink (stream, priv->media_type);
+
+  if (src)
+    {
+      DEBUG (stream, "setting source on Farsight stream");
+      farsight_stream_set_source (priv->fs_stream, src);
+    }
+  else
+    {
+      DEBUG (stream, "not setting source on Farsight stream");
+    }
+
+  if (sink)
+    {
+      DEBUG (stream, "setting sink on Farsight stream");
+      farsight_stream_set_sink (priv->fs_stream, sink);
+      gst_object_unref (sink);
+    }
+  else
+    {
+      DEBUG (stream, "not setting sink on Farsight stream");
+    }
+
+  g_signal_connect (G_OBJECT (priv->fs_stream), "error",
+      G_CALLBACK (cb_fs_stream_error), obj);
+  g_signal_connect (G_OBJECT (priv->fs_stream), "new-active-candidate-pair",
+      G_CALLBACK (cb_fs_new_active_candidate_pair), obj);
+  g_signal_connect (G_OBJECT (priv->fs_stream), "codec-changed",
+      G_CALLBACK (cb_fs_codec_changed), obj);
+  g_signal_connect (G_OBJECT (priv->fs_stream), "native-candidates-prepared",
+      G_CALLBACK (cb_fs_native_candidates_prepared), obj);
+  priv->state_changed_handler_id =
+    g_signal_connect (G_OBJECT (priv->fs_stream), "state-changed",
+        G_CALLBACK (cb_fs_state_changed), obj);
+  g_signal_connect (G_OBJECT (priv->fs_stream), "new-native-candidate",
+      G_CALLBACK (cb_fs_new_native_candidate), obj);
+
+  set_nat_properties (stream);
+
+  prepare_transports (stream);
+
+  return obj;
+}
+
 static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
@@ -382,6 +550,8 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 
   object_class->set_property = tp_stream_engine_stream_set_property;
   object_class->get_property = tp_stream_engine_stream_get_property;
+
+  object_class->constructor = tp_stream_engine_stream_constructor;
 
   object_class->dispose = tp_stream_engine_stream_dispose;
   object_class->finalize = tp_stream_engine_stream_finalize;
@@ -1417,156 +1587,36 @@ destroy_cb (DBusGProxy *proxy, gpointer user_data)
     }
 }
 
-
-gboolean
-tp_stream_engine_stream_go (
-  TpStreamEngineStream *stream,
-  const gchar *bus_name,
-  const gchar *stream_handler_path,
-  FarsightSession *fs_session,
-  guint id,
-  guint media_type,
-  guint direction,
-  const TpStreamEngineNatProperties *nat_props)
+TpStreamEngineStream *
+tp_stream_engine_stream_new (FarsightSession *fs_session,
+                             const gchar *bus_name,
+                             const gchar *object_path,
+                             guint stream_id,
+                             TelepathyMediaStreamType media_type,
+                             TelepathyMediaStreamDirection direction,
+                             const TpStreamEngineNatProperties *nat_props)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-  TpStreamEngine *engine;
-  GstElement *pipeline, *src, *sink;
-  gchar *conn_timeout_str;
+  TpStreamEngineStream *ret;
 
-  priv->stream_id = id;
-  priv->media_type = media_type;
-  priv->stream_handler_proxy = dbus_g_proxy_new_for_name (
-    tp_get_bus(),
-    bus_name,
-    stream_handler_path,
-    TP_IFACE_MEDIA_STREAM_HANDLER);
+  g_return_val_if_fail (fs_session != NULL, NULL);
+  g_return_val_if_fail (FARSIGHT_IS_SESSION (fs_session), NULL);
+  g_return_val_if_fail (bus_name != NULL, NULL);
+  g_return_val_if_fail (object_path != NULL, NULL);
+  g_return_val_if_fail (media_type > TP_MEDIA_STREAM_TYPE_VIDEO, NULL);
+  g_return_val_if_fail (direction > TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+      NULL);
 
-  if (!priv->stream_handler_proxy)
-    {
-      g_critical ("couldn't get proxy for stream");
-      return FALSE;
-    }
+  ret = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM,
+      "farsight-session", fs_session,
+      "bus-name", bus_name,
+      "object-path", object_path,
+      "stream-id", stream_id,
+      "media-type", media_type,
+      "direction", direction,
+      "nat-properties", nat_props,
+      NULL);
 
-  g_signal_connect (priv->stream_handler_proxy, "destroy",
-      G_CALLBACK (destroy_cb), stream);
-
-  priv->fs_stream = farsight_session_create_stream (
-    fs_session, media_type, direction);
-
-  if (media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    {
-      /* tell the Farsight stream to use the stream engine pipeline */
-      engine = tp_stream_engine_get ();
-      pipeline = tp_stream_engine_get_pipeline (engine);
-      farsight_stream_set_pipeline (priv->fs_stream, pipeline);
-    }
-
-  conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
-
-  if (conn_timeout_str)
-    {
-      gint conn_timeout = (int) g_ascii_strtod (conn_timeout_str, NULL);
-      DEBUG (stream, "setting connection timeout to %d", conn_timeout);
-      g_object_set (G_OBJECT(stream), "conn_timeout", conn_timeout, NULL);
-    }
-
-  /* TODO Make this smarter, we should only create those sources and sinks if
-   * they exist. */
-  src = make_src (stream, media_type);
-  sink = make_sink (stream, media_type);
-
-  if (src)
-    {
-      DEBUG (stream, "setting source on Farsight stream");
-      farsight_stream_set_source (priv->fs_stream, src);
-    }
-  else
-    {
-      DEBUG (stream, "not setting source on Farsight stream");
-    }
-
-  if (sink)
-    {
-      DEBUG (stream, "setting sink on Farsight stream");
-      farsight_stream_set_sink (priv->fs_stream, sink);
-      gst_object_unref (sink);
-    }
-  else
-    {
-      DEBUG (stream, "not setting sink on Farsight stream");
-    }
-
-  g_signal_connect (G_OBJECT (priv->fs_stream), "error",
-                    G_CALLBACK (cb_fs_stream_error), stream);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "new-active-candidate-pair",
-                    G_CALLBACK (cb_fs_new_active_candidate_pair), stream);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "codec-changed",
-                    G_CALLBACK (cb_fs_codec_changed), stream);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "native-candidates-prepared",
-                    G_CALLBACK (cb_fs_native_candidates_prepared), stream);
-  priv->state_changed_handler_id =
-    g_signal_connect (G_OBJECT (priv->fs_stream), "state-changed",
-                      G_CALLBACK (cb_fs_state_changed), stream);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "new-native-candidate",
-                    G_CALLBACK (cb_fs_new_native_candidate), stream);
-
-  /* OMG, Can we make dbus-binding-tool do this stuff for us?? */
-
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "AddRemoteCandidate",
-      G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "RemoveRemoteCandidate",
-      G_TYPE_STRING, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetActiveCandidatePair",
-      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetRemoteCandidateList",
-      TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetRemoteCodecs",
-      TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamPlaying",
-      G_TYPE_BOOLEAN, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamSending",
-      G_TYPE_BOOLEAN, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "StartTelephonyEvent",
-      G_TYPE_UCHAR, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "StopTelephonyEvent",
-      G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "Close",
-      G_TYPE_INVALID);
-
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "AddRemoteCandidate",
-      G_CALLBACK (add_remote_candidate), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "RemoveRemoteCandidate",
-      G_CALLBACK (remove_remote_candidate), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetActiveCandidatePair",
-      G_CALLBACK (set_active_candidate_pair), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetRemoteCandidateList",
-      G_CALLBACK (set_remote_candidate_list), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetRemoteCodecs",
-      G_CALLBACK (set_remote_codecs), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamPlaying",
-      G_CALLBACK (set_stream_playing), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamSending",
-      G_CALLBACK (set_stream_sending), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy,
-      "StartTelephonyEvent", G_CALLBACK (start_telephony_event), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy,
-      "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), stream, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "Close",
-      G_CALLBACK (close), stream, NULL);
-
-  priv->nat_props = nat_props;
-  set_nat_properties (stream);
-
-  prepare_transports (stream);
-
-  return TRUE;
-}
-
-TpStreamEngineStream*
-tp_stream_engine_stream_new (void)
-{
-  return g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
+  return ret;
 }
 
 gboolean tp_stream_engine_stream_mute_output (

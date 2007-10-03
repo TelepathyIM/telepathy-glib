@@ -366,8 +366,8 @@ static void
 new_stream_cb (TpStreamEngineSession *session,
                gchar *object_path,
                guint stream_id,
-               guint media_type,
-               guint direction,
+               TelepathyMediaStreamType media_type,
+               TelepathyMediaStreamDirection direction,
                gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
@@ -379,24 +379,8 @@ new_stream_cb (TpStreamEngineSession *session,
   g_object_get (priv->channel_proxy, "name", &bus_name, NULL);
   g_object_get (session, "farsight-session", &fs_session, NULL);
 
-  stream = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM, NULL);
-
-  if (!tp_stream_engine_stream_go (
-        stream,
-        bus_name,
-        object_path,
-        fs_session,
-        stream_id,
-        media_type,
-        direction,
-        &(priv->nat_props)))
-    {
-      g_warning ("failed to create stream");
-      g_free (bus_name);
-      g_object_unref (fs_session);
-      g_object_unref (stream);
-      return;
-    }
+  stream = tp_stream_engine_stream_new (fs_session, bus_name,
+      object_path, stream_id, media_type, direction, &(priv->nat_props));
 
   g_free (bus_name);
   g_object_unref (fs_session);

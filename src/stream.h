@@ -3,6 +3,7 @@
 
 #include <glib-object.h>
 #include <farsight/farsight-session.h>
+#include <libtelepathy/tp-constants.h>
 
 G_BEGIN_DECLS
 
@@ -45,16 +46,11 @@ typedef struct {
 
 GType tp_stream_engine_stream_get_type (void);
 
-TpStreamEngineStream* tp_stream_engine_stream_new (void);
-gboolean tp_stream_engine_stream_go (
-  TpStreamEngineStream *self,
-  const gchar *bus_name,
-  const gchar *stream_handler_path,
-  FarsightSession *fs_session,
-  guint id,
-  guint media_type,
-  guint direction,
-  const TpStreamEngineNatProperties *nat_props);
+TpStreamEngineStream *tp_stream_engine_stream_new (FarsightSession *fs_session,
+    const gchar *bus_name, const gchar *object_path, guint stream_id,
+    TelepathyMediaStreamType media_type, TelepathyMediaStreamDirection direction,
+    const TpStreamEngineNatProperties *nat_props);
+
 gboolean tp_stream_engine_stream_mute_input (
   TpStreamEngineStream *chan,
   gboolean mute_state,
