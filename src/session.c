@@ -63,16 +63,15 @@ dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
 }
 
 static void
-cb_fs_session_error (
-  FarsightSession *stream,
-  FarsightSessionError error,
-  const gchar *debug,
-  gpointer user_data)
+cb_fs_session_error (FarsightSession *session,
+                     FarsightSessionError error,
+                     const gchar *debug,
+                     gpointer user_data)
 {
   DBusGProxy *session_handler_proxy = (DBusGProxy *) user_data;
 
   g_message (
-    "%s: session error: session=%p error=%s\n", G_STRFUNC, stream, debug);
+    "%s: session error: session=%p error=%s\n", G_STRFUNC, session, debug);
   tp_media_session_handler_error_async (
     session_handler_proxy, error, debug, dummy_callback,
     "Media.SessionHandler::Error");
