@@ -60,7 +60,6 @@ typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
 
 struct _TpStreamEngineStreamPrivate
 {
-  gchar *channel_path;
   const TpStreamEngineNatProperties *nat_props;
 
   DBusGProxy *stream_handler_proxy;
@@ -227,14 +226,8 @@ tp_stream_engine_stream_dispose (GObject *object)
 static void
 tp_stream_engine_stream_finalize (GObject *object)
 {
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-
-  if (priv->channel_path)
-    {
-      g_free (priv->channel_path);
-      priv->channel_path = NULL;
-    }
+/*  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream); */
 
   G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->finalize (object);
 }
@@ -1192,7 +1185,6 @@ tp_stream_engine_stream_go (
   TpStreamEngineStream *stream,
   const gchar *bus_name,
   const gchar *stream_handler_path,
-  const gchar *channel_path,
   FarsightSession *fs_session,
   guint id,
   guint media_type,
@@ -1203,8 +1195,6 @@ tp_stream_engine_stream_go (
   TpStreamEngine *engine;
   GstElement *pipeline, *src, *sink;
   gchar *conn_timeout_str;
-
-  priv->channel_path = g_strdup (channel_path);
 
   stream->stream_id = id;
   stream->media_type = media_type;

@@ -53,7 +53,6 @@ gboolean tp_stream_engine_stream_go (
   TpStreamEngineStream *self,
   const gchar *bus_name,
   const gchar *stream_handler_path,
-  const gchar *channel_path,
   FarsightSession *fs_session,
   guint id,
   guint media_type,
