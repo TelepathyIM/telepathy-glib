@@ -32,27 +32,6 @@
  */
 
 /**
- * SECTION:svc-unstable
- * @title: Interfaces in libtelepathy-glib-unstable
- * @short_description: Deprecated module
- *
- * Use of this module is deprecated. If you must implement these interfaces,
- * you should copy the relevant XML file from the spec into your source
- * package, and also copy in the code generation tools from telepathy-glib
- * (see the extensions/ directory in Gabble or Salut source for the structure
- * to use). Generate the code with a namespacing prefix other than Tp/tp_/TP_,
- * e.g. Gabble uses Gabble/gabble_/GABBLE_.
- *
- * The static library telepathy-glib-unstable exists to support interfaces
- * in the Telepathy specification which do not yet have a stable API,
- * in order to avoid changing the API and ABI of telepathy-glib too often.
- *
- * To use these interfaces you must use the pkg-config module
- * 'telepathy-glib-unstable', or link against -ltelepathy-glib-unstable
- * and add /usr/include/telepathy-unstable to your header search path.
- */
-
-/**
  * SECTION:svc-channel
  * @title: Service-side Channel types and interfaces
  * @short_description: GInterfaces for Telepathy Channel objects

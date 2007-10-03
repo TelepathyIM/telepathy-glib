@@ -1,9 +1,6 @@
 tpgincludedir=$(includedir)/telepathy-1.0/telepathy-glib
 genincludedir=$(tpgincludedir)/_gen
 
-unstableincludedir=$(includedir)/telepathy-unstable/telepathy-glib
-unstablegenincludedir=$(unstableincludedir)/_gen
-
 EXTRA_DIST = extra-gtkdoc.h
 
 # Also used to generate stable-interfaces.txt, which generates spec-gen.am
@@ -18,13 +15,7 @@ STABLE_SPEC_GENERATED_SOURCES = \
     $(STABLE_SPEC_GENERATED_LISTS) \
     $(STABLE_SPEC_GLUE_HS)
 
-UNSTABLE_SPEC_GENERATED_SOURCES = \
-    $(UNSTABLE_SPEC_GENERATED_CS) \
-    $(UNSTABLE_SPEC_GENERATED_HS) \
-    $(UNSTABLE_SPEC_GENERATED_LISTS) \
-    $(UNSTABLE_SPEC_GLUE_HS)
-
-lib_LTLIBRARIES = libtelepathy-glib.la libtelepathy-glib-unstable.la
+lib_LTLIBRARIES = libtelepathy-glib.la
 noinst_LTLIBRARIES = libtelepathy-glib-internal.la
 
 # libtelepathy-glib is just a shared version of libtelepathy-glib-internal.
@@ -35,10 +26,6 @@ libtelepathy_glib_la_LDFLAGS = \
     -export-symbols-regex '^tp_'
 libtelepathy_glib_la_LIBADD = libtelepathy-glib-internal.la
 libtelepathy_glib_la_SOURCES =
-
-# interfaces which aren't stable enough for the shared library anyway
-libtelepathy_glib_unstable_la_LDFLAGS = -static
-libtelepathy_glib_unstable_la_LIBADD = libtelepathy-glib.la
 
 tpginclude_HEADERS = \
     base-connection.h \
@@ -81,33 +68,14 @@ nodist_geninclude_HEADERS = \
     _gen/gtypes.h \
     $(STABLE_SPEC_GENERATED_HS)
 
-nodist_libtelepathy_glib_unstable_la_SOURCES = \
-    _gen/unstable-signals-marshal.c \
-    _gen/unstable-signals-marshal.h \
-    _gen/unstable-signals-marshal.list \
-    $(UNSTABLE_SPEC_GENERATED_SOURCES)
-
-nodist_unstablegeninclude_HEADERS = \
-    $(UNSTABLE_SPEC_GENERATED_HS) \
-    _gen/unstable-svc.h \
-    _gen/unstable-interfaces.h \
-    _gen/unstable-enums.h
-unstableinclude_HEADERS = \
-    svc-unstable.h
-
 BUILT_SOURCES = \
     $(nodist_libtelepathy_glib_internal_la_SOURCES) \
-    $(nodist_geninclude_HEADERS) \
-    $(nodist_libtelepathy_glib_unstable_la_SOURCES) \
-    $(nodist_unstablegeninclude_HEADERS) \
-    $(nodist_unstableinclude_HEADERS)
+    $(nodist_geninclude_HEADERS)
 
 CLEANFILES = \
     $(BUILT_SOURCES) \
-    _gen/spec-only-unstable.xsl \
     _gen/spec-only-stable.xsl \
     _gen/stable-spec.xml \
-    _gen/unstable-spec.xml \
     _gen/stable-interfaces.txt
 
 check_c_sources = \
@@ -149,12 +117,6 @@ AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@
 DROP_NAMESPACE = sed -e 's@xmlns:tp="http://telepathy\.freedesktop\.org/wiki/DbusSpec.extensions-v0"@@g'
 XSLTPROCFLAGS = --nonet --novalid
 
-_gen/unstable-svc.h: Makefile.in
-	for i in $(UNSTABLE_SPEC_INTERFACES); \
-	do \
-		echo "#include <telepathy-glib/_gen/svc-$$i.h>"; \
-	done > $@
-
 _gen/spec-only-stable.xsl: ../tools/identity.xsl _gen/stable-interfaces.txt \
 		Makefile.am
 	(\
@@ -172,24 +134,10 @@ _gen/spec-only-stable.xsl: ../tools/identity.xsl _gen/stable-interfaces.txt \
 	echo "</xsl:stylesheet>"; \
 	) > $@
 
-_gen/spec-only-unstable.xsl: ../tools/identity.xsl _gen/stable-interfaces.txt
-	(\
-	sed -e 's@</xsl:stylesheet>@@' $(srcdir)/../tools/identity.xsl; \
-	while read input; \
-	do \
-		echo '  <xsl:template match="node[@name='"'/$$input'"']" priority="1"/>'; \
-	done < _gen/stable-interfaces.txt; \
-	echo "</xsl:stylesheet>"; \
-	) > $@
-
 _gen/stable-spec.xml: ../spec/all.xml \
 	$(SPEC_INTERFACE_XMLS) _gen/spec-only-stable.xsl
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
 		_gen/spec-only-stable.xsl $(srcdir)/../spec/all.xml > $@
-_gen/unstable-spec.xml: ../spec/all.xml \
-	$(SPEC_INTERFACE_XMLS) _gen/spec-only-unstable.xsl
-	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
-		_gen/spec-only-unstable.xsl $(srcdir)/../spec/all.xml > $@
 
 # when the structs land in the spec, this should be from _gen/stable-spec.xml
 _gen/gtypes.h _gen/gtypes-body.h: gtypes-input.xml \
@@ -205,26 +153,12 @@ _gen/telepathy-enums.h: _gen/stable-spec.xml \
 		$(srcdir)/../tools/c-constants-generator.xsl \
 		_gen/stable-spec.xml > $@
 
-_gen/unstable-enums.h: _gen/unstable-spec.xml \
-	../tools/c-constants-generator.xsl
-	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
-		--stringparam mixed-case-prefix Tp \
-		$(srcdir)/../tools/c-constants-generator.xsl \
-		_gen/unstable-spec.xml > $@
-
 _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
 	../tools/c-interfaces-generator.xsl
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
 		--stringparam mixed-case-prefix Tp \
 		$(srcdir)/../tools/c-interfaces-generator.xsl \
 		_gen/stable-spec.xml > $@
-
-_gen/unstable-interfaces.h: _gen/unstable-spec.xml \
-	../tools/c-interfaces-generator.xsl
-	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
-		--stringparam mixed-case-prefix Tp \
-		$(srcdir)/../tools/c-interfaces-generator.xsl \
-		_gen/unstable-spec.xml > $@
 
 _gen/telepathy-errors.c: ../spec/errors.xml \
 	../tools/glib-errors-enum-body.xsl
@@ -256,8 +190,7 @@ _gen/svc-%.c _gen/svc-%.h _gen/svc-%-signals-marshal.list: ../spec/%.xml ../tool
 		sigprefix=_tp; \
 		sigheader=signals-marshal.h; \
 	else \
-		sigprefix=_tp_unst; \
-		sigheader=unstable-signals-marshal.h; \
+		exit 1; \
 	fi; \
 	$(PYTHON) $(srcdir)/../tools/genginterface.py \
 		--filename=_gen/svc-$* --signal-marshal-prefix=$$sigprefix \
@@ -274,12 +207,3 @@ _gen/signals-marshal.h: _gen/signals-marshal.list
 
 _gen/signals-marshal.c: _gen/signals-marshal.list
 	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< > $@
-
-_gen/unstable-signals-marshal.list: $(UNSTABLE_SPEC_GENERATED_LISTS)
-	sort $^ | uniq > $@
-
-_gen/unstable-signals-marshal.h: _gen/unstable-signals-marshal.list
-	$(GLIB_GENMARSHAL) --header --prefix=_tp_unst_marshal $< > $@
-
-_gen/unstable-signals-marshal.c: _gen/unstable-signals-marshal.list
-	$(GLIB_GENMARSHAL) --body --prefix=_tp_unst_marshal $< > $@
