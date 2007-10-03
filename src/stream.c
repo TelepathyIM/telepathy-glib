@@ -502,7 +502,6 @@ tp_stream_engine_stream_dispose (GObject *object)
       g_signal_handlers_disconnect_by_func (priv->stream_handler_proxy,
           G_CALLBACK (destroy_cb), stream);
 
-
       tmp = priv->stream_handler_proxy;
       priv->stream_handler_proxy = NULL;
       g_object_unref (tmp);
@@ -513,7 +512,7 @@ tp_stream_engine_stream_dispose (GObject *object)
       stop_stream (stream);
 
       g_signal_handler_disconnect (priv->fs_stream,
-        priv->state_changed_handler_id);
+          priv->state_changed_handler_id);
       g_object_unref (priv->fs_stream);
       priv->fs_stream = NULL;
     }
@@ -1220,7 +1219,6 @@ stop_stream (TpStreamEngineStream *self)
 
   if (sink)
     _remove_video_sink (self, sink);
-
 }
 
 static void
@@ -1570,7 +1568,6 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 
   return sink;
 }
-
 
 static void
 destroy_cb (DBusGProxy *proxy, gpointer user_data)
