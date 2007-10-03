@@ -94,6 +94,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     errors.c \
     group-mixin.c \
     gtypes.c \
+    gtypes-input.xml \
     handle.c \
     internal-handle-repo.h \
     handle-repo.c \
