@@ -35,7 +35,7 @@ test_internal_debug_LDADD = \
     ../telepathy-glib/libtelepathy-glib-internal.la
 
 check_c_sources = *.c
-include $(top_srcdir)/check-coding-style.mk
+include $(top_srcdir)/tools/check-coding-style.mk
 
 AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @COVERAGE_CFLAGS@ -I.. -I$(srcdir)/..
 AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@

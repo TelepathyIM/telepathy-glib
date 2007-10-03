@@ -1,7 +1,7 @@
 #!/bin/sh
 fail=0
 
-( . "${top_srcdir}"/check-misc.sh ) || fail=$?
+( . "${tools_dir}"/check-misc.sh ) || fail=$?
 
 if grep -n '^ *GError *\*[[:alpha:]_][[:alnum:]_]* *;' "$@"
 then

@@ -1,5 +1,9 @@
 EXTRA_DIST = \
     c-constants-generator.xsl \
+    check-coding-style.mk \
+    check-c-style.sh \
+    check-misc.sh \
+    check-whitespace.sh \
     c-interfaces-generator.xsl \
     genginterface.py \
     glib-errors-enum-body.xsl \

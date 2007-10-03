@@ -2,7 +2,7 @@
 
 fail=0
 
-( . "${top_srcdir}"/check-whitespace.sh ) || fail=$?
+( . "${tools_dir}"/check-whitespace.sh ) || fail=$?
 
 if egrep '(Free\s*Software\s*Foundation.*02139|02111-1307)' "$@"
 then

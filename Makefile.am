@@ -9,10 +9,6 @@ pkgconfig_DATA = telepathy-glib.pc telepathy-glib-unstable.pc
 
 EXTRA_DIST = \
     autogen.sh \
-    check-coding-style.mk \
-    check-c-style.sh \
-    check-misc.sh \
-    check-whitespace.sh \
     gtk-doc.make
 
 CLEANFILES = FIXME.out

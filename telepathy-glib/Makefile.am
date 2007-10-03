@@ -113,7 +113,7 @@ CLEANFILES = \
 check_c_sources = \
     $(tpginclude_HEADERS) \
     $(libtelepathy_glib_la_SOURCES)
-include $(top_srcdir)/check-coding-style.mk
+include $(top_srcdir)/tools/check-coding-style.mk
 
 libtelepathy_glib_internal_la_SOURCES = \
     base-connection.c \
