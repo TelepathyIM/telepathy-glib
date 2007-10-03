@@ -142,7 +142,7 @@ struct _TpStreamEnginePrivate
 #endif
 };
 
-#define TP_STREAM_ENGINE_GET_PRIVATE(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_TYPE_STREAM_ENGINE, TpStreamEnginePrivate))
+#define TP_STREAM_ENGINE_GET_PRIVATE(o) ((TpStreamEnginePrivate *)((o)->priv))
 
 typedef struct _WindowPair WindowPair;
 struct _WindowPair
@@ -528,7 +528,10 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 static void
 tp_stream_engine_init (TpStreamEngine *obj)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  TpStreamEnginePrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (obj,
+      TP_TYPE_STREAM_ENGINE, TpStreamEnginePrivate);
+
+  obj->priv = priv;
 
   priv->channels = g_ptr_array_new ();
 

@@ -32,11 +32,14 @@ typedef struct _TpStreamEngine TpStreamEngine;
 typedef struct _TpStreamEngineClass TpStreamEngineClass;
 
 struct _TpStreamEngineClass {
-    GObjectClass parent_class;
+  GObjectClass parent_class;
+
 };
 
 struct _TpStreamEngine {
-    GObject parent;
+  GObject parent;
+
+  gpointer priv;
 };
 
 GType tp_stream_engine_get_type(void);
