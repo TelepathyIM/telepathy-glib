@@ -2,6 +2,7 @@
 #define __TP_STREAM_ENGINE_CHANNEL_H__
 
 #include <glib-object.h>
+
 #include "stream.h"
 
 G_BEGIN_DECLS
