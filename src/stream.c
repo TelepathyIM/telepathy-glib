@@ -53,9 +53,7 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
     G_STRFUNC, \
     ##__VA_ARGS__)
 
-#define STREAM_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_STREAM_ENGINE_TYPE_STREAM, \
-   TpStreamEngineStreamPrivate))
+#define STREAM_PRIVATE(o) ((TpStreamEngineStreamPrivate *)((o)->priv))
 
 typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
 
@@ -211,6 +209,10 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
 static void
 tp_stream_engine_stream_init (TpStreamEngineStream *self)
 {
+  TpStreamEngineStreamPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamPrivate);
+
+  self->priv = priv;
 }
 
 static void
@@ -328,7 +330,7 @@ tp_stream_engine_stream_constructor (GType type,
   obj = G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->
             constructor (type, n_props, props);
   stream = (TpStreamEngineStream *) obj;
-  priv = STREAM_PRIVATE (obj);
+  priv = STREAM_PRIVATE (stream);
 
   priv->stream_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus (),
       priv->bus_name, priv->object_path, TP_IFACE_MEDIA_STREAM_HANDLER);

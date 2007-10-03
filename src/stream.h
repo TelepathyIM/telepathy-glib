@@ -31,6 +31,8 @@ G_BEGIN_DECLS
 
 typedef struct {
   GObject parent;
+
+  gpointer priv;
 } TpStreamEngineStream;
 
 typedef struct {
