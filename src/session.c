@@ -51,52 +51,17 @@ struct _TpStreamEngineSessionPrivate
   gchar *channel_path;
 };
 
-/* dummy callback handler for async calling calls with no return values */
 static void
-dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
+tp_stream_engine_session_init (TpStreamEngineSession *self)
 {
-  if (error)
-    {
-      g_warning ("Error calling %s: %s", (gchar *) user_data, error->message);
-      g_error_free (error);
-    }
+  self->streams = g_ptr_array_new ();
 }
 
-static void
-cb_fs_session_error (FarsightSession *session,
-                     FarsightSessionError error,
-                     const gchar *debug,
-                     gpointer user_data)
-{
-  DBusGProxy *session_handler_proxy = (DBusGProxy *) user_data;
+static void new_media_stream_handler (DBusGProxy *proxy,
+    gchar *stream_handler_path, guint id, guint media_type, guint direction,
+    gpointer user_data);
 
-  g_message (
-    "%s: session error: session=%p error=%s\n", G_STRFUNC, session, debug);
-  tp_media_session_handler_error_async (
-    session_handler_proxy, error, debug, dummy_callback,
-    "Media.SessionHandler::Error");
-}
-
-static void
-destroy_cb (DBusGProxy *proxy, gpointer user_data)
-{
-  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
-
-  if (priv->session_handler_proxy)
-    {
-      DBusGProxy *tmp;
-
-      tmp = priv->session_handler_proxy;
-      priv->session_handler_proxy = NULL;
-      g_object_unref (tmp);
-    }
-}
-
-static void
-new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
-                          guint id, guint media_type, guint direction,
-                          gpointer user_data);
+static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
 
 static void
 tp_stream_engine_session_dispose (GObject *object)
@@ -162,10 +127,46 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
   object_class->dispose = tp_stream_engine_session_dispose;
 }
 
+/* dummy callback handler for async calling calls with no return values */
 static void
-tp_stream_engine_session_init (TpStreamEngineSession *self)
+dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
 {
-  self->streams = g_ptr_array_new ();
+  if (error)
+    {
+      g_warning ("Error calling %s: %s", (gchar *) user_data, error->message);
+      g_error_free (error);
+    }
+}
+
+static void
+cb_fs_session_error (FarsightSession *session,
+                     FarsightSessionError error,
+                     const gchar *debug,
+                     gpointer user_data)
+{
+  DBusGProxy *session_handler_proxy = (DBusGProxy *) user_data;
+
+  g_message (
+    "%s: session error: session=%p error=%s\n", G_STRFUNC, session, debug);
+  tp_media_session_handler_error_async (
+    session_handler_proxy, error, debug, dummy_callback,
+    "Media.SessionHandler::Error");
+}
+
+static void
+destroy_cb (DBusGProxy *proxy, gpointer user_data)
+{
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
+  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+
+  if (priv->session_handler_proxy)
+    {
+      DBusGProxy *tmp;
+
+      tmp = priv->session_handler_proxy;
+      priv->session_handler_proxy = NULL;
+      g_object_unref (tmp);
+    }
 }
 
 static void
