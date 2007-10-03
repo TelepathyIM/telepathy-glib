@@ -10,6 +10,7 @@ EXTRA_DIST = \
     glib-errors-enum-header.xsl \
     glib-interfaces-generator.xsl \
     glib-interfaces-body-generator.xsl \
+    glib-gtypes-generator.py \
     identity.xsl \
     ls-interfaces.xsl \
     make-all-async.xsl \
