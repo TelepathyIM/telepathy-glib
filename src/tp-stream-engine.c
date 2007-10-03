@@ -819,6 +819,41 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 }
 
 static void
+channel_stream_state_changed (TpStreamEngineChannel *chan,
+                              guint stream_id,
+                              TelepathyMediaStreamState state,
+                              TelepathyMediaStreamDirection direction,
+                              gpointer user_data)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  gchar *channel_path;
+
+  g_object_get (chan, "object-path", &channel_path, NULL);
+
+  g_signal_emit (self, signals[STREAM_STATE_CHANGED], 0, channel_path,
+      stream_id, state, direction);
+
+  g_free (channel_path);
+}
+
+static void
+channel_stream_receiving (TpStreamEngineChannel *chan,
+                          guint stream_id,
+                          gboolean receiving,
+                          gpointer user_data)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  gchar *channel_path;
+
+  g_object_get (chan, "object-path", &channel_path, NULL);
+
+  g_signal_emit (self, signals[RECEIVING], 0, channel_path,
+      stream_id, receiving);
+
+  g_free (channel_path);
+}
+
+static void
 _window_pairs_remove_cb (WindowPair *wp)
 {
   TpStreamEngine *self = tp_stream_engine_get ();
@@ -1734,6 +1769,10 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
   g_hash_table_insert (priv->channels_by_path, g_strdup (channel), chan);
 
   g_signal_connect (chan, "closed", G_CALLBACK (channel_closed), obj);
+  g_signal_connect (chan, "stream-state-changed",
+      G_CALLBACK (channel_stream_state_changed), obj);
+  g_signal_connect (chan, "stream-receiving",
+      G_CALLBACK (channel_stream_receiving), obj);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
@@ -1947,8 +1986,6 @@ tp_stream_engine_emit_receiving (TpStreamEngine *obj,
                                  guint stream_id,
                                  gboolean receiving)
 {
-  g_signal_emit (G_OBJECT (obj), signals[RECEIVING], 0, channel_path,
-      stream_id, receiving);
 }
 
 /*
@@ -1964,8 +2001,6 @@ tp_stream_engine_emit_stream_state_changed (TpStreamEngine *obj,
                                             TelepathyMediaStreamState state,
                                             TelepathyMediaStreamDirection direction)
 {
-  g_signal_emit (G_OBJECT (obj), signals[STREAM_STATE_CHANGED], 0,
-      channel_path, stream_id, state, direction);
 }
 
 /**
