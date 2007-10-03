@@ -37,9 +37,20 @@ typedef struct _TpStreamEngineSessionPrivate TpStreamEngineSessionPrivate;
 
 struct _TpStreamEngineSessionPrivate
 {
-  DBusGProxy *session_handler_proxy;
-
+  gchar *bus_name;
+  gchar *object_path;
+  gchar *session_type;
   FarsightSession *fs_session;
+
+  DBusGProxy *session_handler_proxy;
+};
+
+enum
+{
+  PROP_BUS_NAME = 1,
+  PROP_OBJECT_PATH,
+  PROP_SESSION_TYPE,
+  PROP_FARSIGHT_SESSION
 };
 
 enum
@@ -53,6 +64,61 @@ static guint signals[SIGNAL_COUNT] = { 0 };
 static void
 tp_stream_engine_session_init (TpStreamEngineSession *self)
 {
+}
+
+static void
+tp_stream_engine_session_get_property (GObject    *object,
+                                       guint       property_id,
+                                       GValue     *value,
+                                       GParamSpec *pspec)
+{
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (object);
+  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+
+  switch (property_id)
+    {
+    case PROP_BUS_NAME:
+      g_value_set_string (value, priv->bus_name);
+      break;
+    case PROP_OBJECT_PATH:
+      g_value_set_string (value, priv->object_path);
+      break;
+    case PROP_SESSION_TYPE:
+      g_value_set_string (value, priv->session_type);
+      break;
+    case PROP_FARSIGHT_SESSION:
+      g_value_set_object (value, priv->fs_session);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+tp_stream_engine_session_set_property (GObject      *object,
+                                       guint         property_id,
+                                       const GValue *value,
+                                       GParamSpec   *pspec)
+{
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (object);
+  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
+
+  switch (property_id)
+    {
+    case PROP_BUS_NAME:
+      priv->bus_name = g_value_dup_string (value);
+      break;
+    case PROP_OBJECT_PATH:
+      priv->object_path = g_value_dup_string (value);
+      break;
+    case PROP_SESSION_TYPE:
+      priv->session_type = g_value_dup_string (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
 }
 
 static void new_media_stream_handler (DBusGProxy *proxy,
@@ -94,6 +160,15 @@ tp_stream_engine_session_dispose (GObject *object)
       priv->fs_session = NULL;
     }
 
+  g_free (priv->bus_name);
+  priv->bus_name = NULL;
+
+  g_free (priv->object_path);
+  priv->object_path = NULL;
+
+  g_free (priv->session_type);
+  priv->session_type = NULL;
+
   if (G_OBJECT_CLASS (tp_stream_engine_session_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_session_parent_class)->dispose (object);
 }
@@ -102,10 +177,59 @@ static void
 tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineSessionPrivate));
 
+  object_class->set_property = tp_stream_engine_session_set_property;
+  object_class->get_property = tp_stream_engine_session_get_property;
+
   object_class->dispose = tp_stream_engine_session_dispose;
+
+  param_spec = g_param_spec_string ("bus-name",
+                                    "session handler bus name",
+                                    "D-Bus bus name for the session handler "
+                                    "which this session interacts with.",
+                                    NULL,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_BUS_NAME, param_spec);
+
+  param_spec = g_param_spec_string ("object-path",
+                                    "session handler object path",
+                                    "D-Bus object path of the session handler "
+                                    "which this session interacts with.",
+                                    NULL,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
+
+  param_spec = g_param_spec_string ("session-type",
+                                    "Farsight session type",
+                                    "Name of the Farsight session type this "
+                                    "session will create.",
+                                    NULL,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_SESSION_TYPE,
+      param_spec);
+
+  param_spec = g_param_spec_object ("farsight-session",
+                                    "Farsight session",
+                                    "The Farsight session which streams "
+                                    "should be created within.",
+                                    FARSIGHT_TYPE_SESSION,
+                                    G_PARAM_READABLE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_FARSIGHT_SESSION,
+      param_spec);
 
   signals[NEW_STREAM] =
     g_signal_new ("new-stream",
