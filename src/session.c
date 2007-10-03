@@ -32,8 +32,7 @@
 
 G_DEFINE_TYPE (TpStreamEngineSession, tp_stream_engine_session, G_TYPE_OBJECT);
 
-#define SESSION_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), TP_STREAM_ENGINE_TYPE_SESSION, TpStreamEngineSessionPrivate))
+#define SESSION_PRIVATE(o) ((TpStreamEngineSessionPrivate *)((o)->priv))
 
 typedef struct _TpStreamEngineSessionPrivate TpStreamEngineSessionPrivate;
 
@@ -66,6 +65,10 @@ static guint signals[SIGNAL_COUNT] = { 0 };
 static void
 tp_stream_engine_session_init (TpStreamEngineSession *self)
 {
+  TpStreamEngineSessionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TP_STREAM_ENGINE_TYPE_SESSION, TpStreamEngineSessionPrivate);
+
+  self->priv = priv;
 }
 
 static void
@@ -141,11 +144,13 @@ tp_stream_engine_session_constructor (GType type,
                                       GObjectConstructParam *props)
 {
   GObject *obj;
+  TpStreamEngineSession *self;
   TpStreamEngineSessionPrivate *priv;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_session_parent_class)->
            constructor (type, n_props, props);
-  priv = SESSION_PRIVATE (obj);
+  self = (TpStreamEngineSession *) obj;
+  priv = SESSION_PRIVATE (self);
 
   priv->fs_session = farsight_session_factory_make (priv->session_type);
 
