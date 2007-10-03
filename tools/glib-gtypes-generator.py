@@ -122,16 +122,19 @@ class GTypesGenerator(object):
         self.header.write(' */\n')
         self.header.write('#define %s (%s ())\n\n' % (name, impl))
 
-        array_name = (struct.getAttribute('array-name')
-                or (struct.getAttribute('name') + '_LIST'))
-        array_name = (self.PREFIX_ + 'ARRAY_TYPE_' + array_name.upper())
-        impl = self.prefix_ + 'type_dbus_array_' + esc_impl_sig
-        self.header.write('/**\n * %s:\n\n' % array_name)
-        self.header.write(' * An array of #%s.\n' % name)
-        self.header.write(' * This macro expands to a call to a function\n')
-        self.header.write(' * that returns a GType.\n')
-        self.header.write(' */\n')
-        self.header.write('#define %s (%s ())\n\n' % (array_name, impl))
+        if struct.hasAttribute('array-name'):
+            array_name = struct.getAttribute('array-name')
+        else:
+            array_name = struct.getAttribute('name') + '_LIST'
+        if array_name != '':
+            array_name = (self.PREFIX_ + 'ARRAY_TYPE_' + array_name.upper())
+            impl = self.prefix_ + 'type_dbus_array_' + esc_impl_sig
+            self.header.write('/**\n * %s:\n\n' % array_name)
+            self.header.write(' * An array of #%s.\n' % name)
+            self.header.write(' * This macro expands to a call to a function\n')
+            self.header.write(' * that returns a GType.\n')
+            self.header.write(' */\n')
+            self.header.write('#define %s (%s ())\n\n' % (array_name, impl))
 
         self.need_structs[impl_sig] = esc_impl_sig
 
