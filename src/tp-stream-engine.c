@@ -1779,35 +1779,34 @@ tp_stream_engine_register (TpStreamEngine *self)
 }
 
 static TpStreamEngineStream *
-_lookup_stream (TpStreamEngine *obj, const gchar *path, guint stream_id,
-  GError **error)
+_lookup_stream (TpStreamEngine *obj,
+                const gchar *path,
+                guint stream_id,
+                GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-  guint i;
+  TpStreamEngineChannel *channel;
+  TpStreamEngineStream *stream;
 
-  for (i = 0; i < priv->channels->len; i++)
+  channel = g_hash_table_lookup (priv->channels_by_path, path);
+  if (channel == NULL)
     {
-      TpStreamEngineChannel *channel = g_ptr_array_index (priv->channels, i);
-      TpStreamEngineStream *stream;
+      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+        "stream-engine is not handling the channel %s", path);
 
-      if (0 != strcmp (path, channel->channel_path))
-        continue;
+      return NULL;
+    }
 
-      stream = tp_stream_engine_channel_lookup_stream (channel, stream_id);
-
-      if (stream != NULL)
-        return stream;
-
+  stream = tp_stream_engine_channel_lookup_stream (channel, stream_id);
+  if (stream == NULL)
+    {
       g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
           "the channel %s has no stream with id %d", path, stream_id);
 
       return NULL;
     }
 
-  g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
-      "stream-engine is not handling the channel %s", path);
-
-  return NULL;
+  return stream;
 }
 
 
