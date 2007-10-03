@@ -124,6 +124,7 @@ struct _TpStreamEnginePrivate
   gboolean pipeline_playing;
 
   GPtrArray *channels;
+  GHashTable *channels_by_path;
 
   GSList *output_windows;
   GSList *preview_windows;
@@ -531,6 +532,9 @@ tp_stream_engine_init (TpStreamEngine *obj)
 
   priv->channels = g_ptr_array_new ();
 
+  priv->channels_by_path = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, NULL);
+
   priv->handler = tp_stream_engine_x_error_handler_get ();
 
   priv->bad_drawable_handler_id =
@@ -675,6 +679,12 @@ tp_stream_engine_dispose (GObject *object)
       priv->channels = NULL;
     }
 
+  if (priv->channels_by_path)
+    {
+      g_hash_table_destroy (priv->channels_by_path);
+      priv->channels_by_path = NULL;
+    }
+
   if (priv->pipeline)
     {
       gst_element_set_state (priv->pipeline, GST_STATE_NULL);
@@ -793,10 +803,17 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
+  gchar *object_path;
 
-  g_debug ("channel closed: %p", chan);
+  g_object_get (chan, "object-path", &object_path, NULL);
+
+  g_debug ("channel %s (%p) closed", object_path, chan);
+
   g_ptr_array_remove_fast (priv->channels, chan);
   g_object_unref (chan);
+
+  g_hash_table_remove (priv->channels_by_path, object_path);
+  g_free (object_path);
 
   check_if_busy (self);
 }
@@ -1714,6 +1731,7 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
     goto ERROR;
 
   g_ptr_array_add (priv->channels, chan);
+  g_hash_table_insert (priv->channels_by_path, g_strdup (channel), chan);
 
   g_signal_connect (chan, "closed", G_CALLBACK (channel_closed), obj);
 
