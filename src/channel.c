@@ -385,6 +385,23 @@ new_stream_cb (TpStreamEngineSession *session,
   g_free (bus_name);
   g_object_unref (fs_session);
 
+  if (priv->streams->len <= stream_id)
+    g_ptr_array_set_size (priv->streams, stream_id + 1);
+
+  if (g_ptr_array_index (priv->streams, stream_id) != NULL)
+    {
+      g_warning ("connection manager gave us a new stream with existing id "
+          "%u, sending error!", stream_id);
+
+      tp_stream_engine_stream_error (stream, 0,
+          "already have a stream with this ID");
+
+      g_object_unref (stream);
+
+      return;
+    }
+
+  g_ptr_array_index (priv->streams, stream_id) = stream;
   g_signal_connect (stream, "error", G_CALLBACK (stream_closed_cb),
       self);
   g_signal_connect (stream, "closed", G_CALLBACK (stream_closed_cb),
@@ -393,15 +410,6 @@ new_stream_cb (TpStreamEngineSession *session,
       G_CALLBACK (stream_state_changed_cb), self);
   g_signal_connect (stream, "receiving",
       G_CALLBACK (stream_receiving_cb), self);
-
-  if (priv->streams->len <= stream_id)
-    g_ptr_array_set_size (priv->streams, stream_id + 1);
-
-  /* FIXME */
-  if (g_ptr_array_index (priv->streams, stream_id) != NULL)
-    g_warning ("replacing stream, argh!");
-
-  g_ptr_array_index (priv->streams, stream_id) = stream;
 }
 
 static void
