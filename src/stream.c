@@ -152,6 +152,11 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
 }
 
 static void
+tp_stream_engine_stream_init (TpStreamEngineStream *self)
+{
+}
+
+static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
@@ -277,11 +282,6 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__BOOLEAN,
                   G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
-}
-
-static void
-tp_stream_engine_stream_init (TpStreamEngineStream *self)
-{
 }
 
 typedef struct _method_call_ctx method_call_ctx;
