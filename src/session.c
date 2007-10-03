@@ -32,6 +32,7 @@
 #include "types.h"
 
 #include "session.h"
+#include "tp-stream-engine-signals-marshal.h"
 
 G_DEFINE_TYPE (TpStreamEngineSession, tp_stream_engine_session, G_TYPE_OBJECT);
 
@@ -50,6 +51,14 @@ struct _TpStreamEngineSessionPrivate
 
   gchar *channel_path;
 };
+
+enum
+{
+  NEW_STREAM,
+  SIGNAL_COUNT
+};
+
+static guint signals[SIGNAL_COUNT] = { 0 };
 
 static void
 tp_stream_engine_session_init (TpStreamEngineSession *self)
@@ -125,6 +134,16 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
   g_type_class_add_private (klass, sizeof (TpStreamEngineSessionPrivate));
 
   object_class->dispose = tp_stream_engine_session_dispose;
+
+  signals[NEW_STREAM] =
+    g_signal_new ("new-stream",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  tp_stream_engine_marshal_VOID__BOXED_UINT_UINT_UINT,
+                  G_TYPE_NONE, 4,
+                  DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 /* dummy callback handler for async calling calls with no return values */
@@ -188,8 +207,11 @@ cb_stream_closed (TpStreamEngineStream *stream, gpointer user_data)
 }
 
 static void
-new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
-                          guint id, guint media_type, guint direction,
+new_media_stream_handler (DBusGProxy *proxy,
+                          gchar *object_path,
+                          guint stream_id,
+                          guint media_type,
+                          guint direction,
                           gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
@@ -197,7 +219,10 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   TpStreamEngineStream *stream;
   gchar *bus_name;
 
-  g_debug ("Adding stream, media_type=%d, direction=%d",
+  g_debug ("New stream, stream_id=%d, media_type=%d, direction=%d",
+      stream_id, media_type, direction);
+
+  g_signal_emit (self, signals[NEW_STREAM], 0, object_path, stream_id,
       media_type, direction);
 
   g_object_get (priv->session_handler_proxy, "name", &bus_name, NULL);
@@ -210,10 +235,10 @@ new_media_stream_handler (DBusGProxy *proxy, gchar *stream_handler_path,
   if (tp_stream_engine_stream_go (
         stream,
         bus_name,
-        stream_handler_path,
+        object_path,
         priv->channel_path,
         priv->fs_session,
-        id,
+        stream_id,
         media_type,
         direction,
         priv->nat_props))
