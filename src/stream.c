@@ -37,8 +37,9 @@
 
 #include "common/telepathy-errors.h"
 
-#include "tp-stream-engine.h"
 #include "stream.h"
+#include "tp-stream-engine.h"
+#include "tp-stream-engine-signals-marshal.h"
 #include "types.h"
 #include "util.h"
 
@@ -81,6 +82,8 @@ enum
 {
   CLOSED,
   ERROR,
+  STATE_CHANGED,
+  RECEIVING,
   SIGNAL_COUNT
 };
 
@@ -263,6 +266,24 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  signals[STATE_CHANGED] =
+    g_signal_new ("state-changed",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  tp_stream_engine_marshal_VOID__UINT_UINT,
+                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+
+  signals[RECEIVING] =
+    g_signal_new ("receiving",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__BOOLEAN,
+                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 }
 
 static void
@@ -342,6 +363,7 @@ cb_fs_state_changed (FarsightStream *stream,
     {
       tp_stream_engine_emit_stream_state_changed (tp_stream_engine_get (),
         priv->channel_path, self->stream_id, state, dir);
+      g_signal_emit (self, signals[STATE_CHANGED], 0, state, dir);
     }
 
   if (priv->state != state)
@@ -370,6 +392,7 @@ cb_fs_state_changed (FarsightStream *stream,
              FARSIGHT_STREAM_DIRECTION_RECEIVEONLY);
           tp_stream_engine_emit_receiving (tp_stream_engine_get (),
               priv->channel_path, self->stream_id, receiving);
+          g_signal_emit (self, signals[RECEIVING], 0, receiving);
         }
 
       priv->dir = dir;
