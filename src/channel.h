@@ -30,8 +30,6 @@ G_BEGIN_DECLS
 
 typedef struct {
   GObject parent;
-
-  gchar *channel_path;
 } TpStreamEngineChannel;
 
 typedef struct {

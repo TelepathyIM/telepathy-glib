@@ -45,6 +45,7 @@ typedef struct _TpStreamEngineChannelPrivate TpStreamEngineChannelPrivate;
 
 struct _TpStreamEngineChannelPrivate
 {
+  gchar *channel_path;
   TpChan *channel_proxy;
   DBusGProxy *media_signalling_proxy;
 
@@ -163,7 +164,7 @@ tp_stream_engine_channel_constructor (GType type,
   priv = CHANNEL_PRIVATE (obj);
 
   g_object_get (priv->channel_proxy,
-      "path", &self->channel_path,
+      "path", &priv->channel_path,
       NULL);
 
   priv->channel_destroy_handler = g_signal_connect (priv->channel_proxy,
@@ -234,10 +235,10 @@ tp_stream_engine_channel_dispose (GObject *object)
       priv->streams = NULL;
     }
 
-  if (self->channel_path)
+  if (priv->channel_path)
     {
-      g_free (self->channel_path);
-      self->channel_path = NULL;
+      g_free (priv->channel_path);
+      priv->channel_path = NULL;
     }
 
   if (priv->channel_proxy)
@@ -346,7 +347,7 @@ new_stream_cb (TpStreamEngineSession *session,
         stream,
         bus_name,
         object_path,
-        self->channel_path,
+        priv->channel_path,
         fs_session,
         stream_id,
         media_type,
