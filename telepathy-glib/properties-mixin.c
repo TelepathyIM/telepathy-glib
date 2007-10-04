@@ -248,6 +248,7 @@ tp_properties_mixin_list_properties (GObject *obj,
   TpPropertiesMixin *mixin = TP_PROPERTIES_MIXIN (obj);
   TpPropertiesMixinClass *mixin_cls = TP_PROPERTIES_MIXIN_CLASS (
                                             G_OBJECT_GET_CLASS (obj));
+  GType spec_type = TP_STRUCT_TYPE_PROPERTY_SPEC;
   guint i;
 
   *ret = g_ptr_array_sized_new (mixin_cls->num_props);
@@ -277,9 +278,8 @@ tp_properties_mixin_list_properties (GObject *obj,
           continue;
       };
 
-      g_value_init (&val, TP_STRUCT_TYPE_PROPERTY_SPEC);
-      g_value_take_boxed (&val,
-          dbus_g_type_specialized_construct (TP_STRUCT_TYPE_PROPERTY_SPEC));
+      g_value_init (&val, spec_type);
+      g_value_take_boxed (&val, dbus_g_type_specialized_construct (spec_type));
 
       dbus_g_type_struct_set (&val,
           0, i,
@@ -316,6 +316,7 @@ tp_properties_mixin_get_properties (GObject *obj,
   TpPropertiesMixin *mixin = TP_PROPERTIES_MIXIN (obj);
   TpPropertiesMixinClass *mixin_cls = TP_PROPERTIES_MIXIN_CLASS (
                                             G_OBJECT_GET_CLASS (obj));
+  GType value_type = TP_STRUCT_TYPE_PROPERTY_VALUE;
   guint i;
 
   /* Check input property identifiers */
@@ -351,9 +352,9 @@ tp_properties_mixin_get_properties (GObject *obj,
       GValue val_struct = { 0, };
 
       /* id/value struct */
-      g_value_init (&val_struct, TP_STRUCT_TYPE_PROPERTY_VALUE);
+      g_value_init (&val_struct, value_type);
       g_value_take_boxed (&val_struct,
-          dbus_g_type_specialized_construct (TP_STRUCT_TYPE_PROPERTY_VALUE));
+          dbus_g_type_specialized_construct (value_type));
 
       dbus_g_type_struct_set (&val_struct,
           0, prop_id,
@@ -385,6 +386,7 @@ tp_properties_mixin_set_properties (GObject *obj,
                                             G_OBJECT_GET_CLASS (obj));
   TpPropertiesContext *ctx = &mixin->priv->context;
   GError *error = NULL;
+  GType value_type = TP_STRUCT_TYPE_PROPERTY_VALUE;
   guint i;
 
   /* Is another SetProperties request already in progress? */
@@ -415,7 +417,7 @@ tp_properties_mixin_set_properties (GObject *obj,
       guint prop_id;
       GValue *prop_val;
 
-      g_value_init (&val_struct, TP_STRUCT_TYPE_PROPERTY_VALUE);
+      g_value_init (&val_struct, value_type);
       g_value_set_static_boxed (&val_struct,
           g_ptr_array_index (properties, i));
 

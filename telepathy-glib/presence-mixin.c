@@ -317,8 +317,7 @@ construct_presence_hash_foreach (gpointer key,
 
   g_value_array_append (vals, NULL);
   g_value_init (g_value_array_get_nth (vals, 1),
-      dbus_g_type_get_map ("GHashTable", G_TYPE_STRING,
-        TP_HASH_TYPE_STRING_VARIANT_MAP));
+      TP_HASH_TYPE_MULTIPLE_STATUS_MAP);
   g_value_take_boxed (g_value_array_get_nth (vals, 1), contact_status);
 
   g_hash_table_insert (data->presence_hash, GUINT_TO_POINTER (handle), vals);
