@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # Generate GLib GInterfaces from the Telepathy specification.
-# The master copy of this stylesheet is in the telepathy-glib repository -
+# The master copy of this program is in the telepathy-glib repository -
 # please make any changes there.
 #
 # Copyright (C) 2006, 2007 Collabora Limited
