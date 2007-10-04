@@ -137,7 +137,7 @@ tp_stream_engine_channel_set_property (GObject      *object,
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
-   }
+    }
 }
 
 static void channel_destroyed (DBusGProxy *proxy, gpointer user_data);
