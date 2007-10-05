@@ -172,7 +172,7 @@ def type_to_gtype(s):
     elif s == 'g': #signature - FIXME
         return ("gchar *", "DBUS_TYPE_G_SIGNATURE", "STRING", True)
     elif s == 'o': #object path
-        return ("gchar *", "DBUS_TYPE_G_OBJECT_PATH", "STRING", True)
+        return ("gchar *", "DBUS_TYPE_G_OBJECT_PATH", "BOXED", True)
     elif s == 'v':  #variant
         return ("GValue *", "G_TYPE_VALUE", "BOXED", True)
     elif s == 'as':  #array of strings
