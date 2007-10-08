@@ -303,9 +303,9 @@ tp_text_mixin_finalize (GObject *obj)
 }
 
 /**
- * _pending_get_alloc
+ * _pending_get_alloc:
  *
- * Returns an Allocator for creating up to 256 pending messages, but no
+ * Returns: an Allocator for creating up to 256 pending messages, but no
  * more.
  */
 static _Allocator *
