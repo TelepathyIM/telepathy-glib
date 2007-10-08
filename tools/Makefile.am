@@ -6,7 +6,7 @@ EXTRA_DIST = \
     check-whitespace.sh \
     c-interfaces-generator.xsl \
     genginterface.py \
-    glib-client-marshaller-gen.xsl \
+    glib-client-marshaller-gen.py \
     glib-errors-enum-body.xsl \
     glib-errors-enum-header.xsl \
     glib-interfaces-generator.xsl \
