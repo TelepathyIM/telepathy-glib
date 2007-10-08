@@ -57,7 +57,7 @@ tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context)
  * Returns: a connection to the starter or session D-Bus daemon.
  */
 DBusGConnection *
-tp_get_bus ()
+tp_get_bus (void)
 {
   static DBusGConnection *bus = NULL;
 
@@ -85,7 +85,7 @@ tp_get_bus ()
  * Returns: a proxy for the bus daemon object on the starter or session bus.
  */
 DBusGProxy *
-tp_get_bus_proxy ()
+tp_get_bus_proxy (void)
 {
   static DBusGProxy *bus_proxy = NULL;
 
