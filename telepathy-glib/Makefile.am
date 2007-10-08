@@ -60,6 +60,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/telepathy-errors.c \
     _gen/interfaces-body.h \
     _gen/gtypes-body.h \
+    _gen/register-dbus-glib-marshallers-body.h \
     $(STABLE_SPEC_GENERATED_SOURCES)
 
 nodist_geninclude_HEADERS = \
@@ -88,6 +89,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-connection.c \
     base-connection-manager.c \
     dbus.c \
+    internal-dbus-glib.h \
     debug.c \
     interfaces.c \
     internal-debug.h \
@@ -183,6 +185,10 @@ _gen/telepathy-errors.h: ../spec/errors.xml \
 	$(XSLTPROC) $(XSLTPROCFLAGS) \
 		$(srcdir)/../tools/glib-errors-enum-header.xsl \
 		$< > $@
+
+_gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \
+	../tools/glib-client-marshaller-gen.py
+	$(PYTHON) $(srcdir)/../tools/glib-client-marshaller-gen.py $< > $@
 
 _gen/%.xml: ../spec/%.xml ../tools/spec-to-introspect.xsl
 	$(XSLTPROC) $(XSLTPROCFLAGS) \

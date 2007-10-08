@@ -32,6 +32,8 @@
 
 #include <telepathy-glib/errors.h>
 
+#include "_gen/signals-marshal.h"
+
 /**
  * tp_dbus_g_method_return_not_implemented:
  * @context: The D-Bus method invocation context
@@ -102,3 +104,6 @@ tp_get_bus_proxy ()
 
   return bus_proxy;
 }
+
+/* Auto-generated implementation of _tp_register_dbus_glib_marshallers */
+#include "_gen/register-dbus-glib-marshallers-body.h"
