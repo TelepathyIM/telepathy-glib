@@ -386,14 +386,7 @@ tp_stream_engine_stream_constructor (GType type,
   priv->fs_stream = farsight_session_create_stream (priv->fs_session,
       priv->media_type, priv->direction);
 
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    {
-      /* tell the Farsight stream to use the stream engine pipeline */
-      TpStreamEngine *engine = tp_stream_engine_get ();
-      GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
-      farsight_stream_set_pipeline (priv->fs_stream, pipeline);
-    }
-  else if (priv->pipeline != NULL)
+  if (priv->pipeline != NULL)
     {
       farsight_stream_set_pipeline (priv->fs_stream,
           (GstElement *) priv->pipeline);
