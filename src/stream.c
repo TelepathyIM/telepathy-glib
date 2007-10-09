@@ -471,12 +471,6 @@ tp_stream_engine_stream_dispose (GObject *object)
       priv->fs_session = NULL;
     }
 
-  g_free (priv->bus_name);
-  priv->bus_name = NULL;
-
-  g_free (priv->object_path);
-  priv->object_path = NULL;
-
   if (priv->stream_handler_proxy)
     {
       DBusGProxy *tmp;
@@ -545,8 +539,14 @@ tp_stream_engine_stream_dispose (GObject *object)
 static void
 tp_stream_engine_stream_finalize (GObject *object)
 {
-/*  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream); */
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+  g_free (priv->bus_name);
+  priv->bus_name = NULL;
+
+  g_free (priv->object_path);
+  priv->object_path = NULL;
 
   G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->finalize (object);
 }
