@@ -1777,6 +1777,10 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
   if (chan == NULL)
     goto ERROR;
 
+  g_object_set ((GObject *) chan,
+      "video-pipeline", tp_stream_engine_get_pipeline (obj),
+      NULL);
+
   g_ptr_array_add (priv->channels, chan);
   g_hash_table_insert (priv->channels_by_path, g_strdup (channel), chan);
 
