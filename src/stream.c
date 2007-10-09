@@ -1611,8 +1611,8 @@ tp_stream_engine_stream_new (FarsightSession *fs_session,
   g_return_val_if_fail (FARSIGHT_IS_SESSION (fs_session), NULL);
   g_return_val_if_fail (bus_name != NULL, NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
-  g_return_val_if_fail (media_type > TP_MEDIA_STREAM_TYPE_VIDEO, NULL);
-  g_return_val_if_fail (direction > TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+  g_return_val_if_fail (media_type <= TP_MEDIA_STREAM_TYPE_VIDEO, NULL);
+  g_return_val_if_fail (direction <= TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
       NULL);
 
   ret = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM,
