@@ -47,6 +47,10 @@ struct _TpStreamEngineChannelPrivate
 {
   TpChan *channel_proxy;
   DBusGProxy *media_signalling_proxy;
+  GType audio_stream_gtype;
+  GstBin *audio_pipeline;
+  GType video_stream_gtype;
+  GstBin *video_pipeline;
 
   TpStreamEngineNatProperties nat_props;
 
@@ -78,7 +82,11 @@ static guint signals[SIGNAL_COUNT] = {0};
 enum
 {
   PROP_CHANNEL = 1,
-  PROP_OBJECT_PATH
+  PROP_OBJECT_PATH,
+  PROP_AUDIO_STREAM_GTYPE,
+  PROP_AUDIO_PIPELINE,
+  PROP_VIDEO_STREAM_GTYPE,
+  PROP_VIDEO_PIPELINE
 };
 
 static void
@@ -88,6 +96,9 @@ tp_stream_engine_channel_init (TpStreamEngineChannel *self)
       TP_STREAM_ENGINE_TYPE_CHANNEL, TpStreamEngineChannelPrivate);
 
   self->priv = priv;
+
+  priv->audio_stream_gtype = TP_STREAM_ENGINE_TYPE_STREAM;
+  priv->video_stream_gtype = TP_STREAM_ENGINE_TYPE_STREAM;
 
   priv->sessions = g_ptr_array_new ();
   priv->streams = g_ptr_array_new ();
@@ -114,6 +125,18 @@ tp_stream_engine_channel_get_property (GObject    *object,
         g_value_take_string (value, object_path);
         break;
       }
+    case PROP_AUDIO_STREAM_GTYPE:
+      g_value_set_gtype (value, priv->audio_stream_gtype);
+      break;
+    case PROP_AUDIO_PIPELINE:
+      g_value_set_object (value, (GObject *) priv->audio_pipeline);
+      break;
+    case PROP_VIDEO_STREAM_GTYPE:
+      g_value_set_gtype (value, priv->video_stream_gtype);
+      break;
+    case PROP_VIDEO_PIPELINE:
+      g_value_set_object (value, (GObject *) priv->video_pipeline);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -133,6 +156,22 @@ tp_stream_engine_channel_set_property (GObject      *object,
     {
     case PROP_CHANNEL:
       priv->channel_proxy = TELEPATHY_CHAN (g_value_dup_object (value));
+      break;
+    case PROP_AUDIO_STREAM_GTYPE:
+      priv->audio_stream_gtype = g_value_get_gtype (value);
+      break;
+    case PROP_AUDIO_PIPELINE:
+      if (priv->audio_pipeline != NULL)
+        g_object_unref ((GObject *) priv->audio_pipeline);
+      priv->audio_pipeline = (GstBin *) g_value_dup_object (value);
+      break;
+    case PROP_VIDEO_STREAM_GTYPE:
+      priv->video_stream_gtype = g_value_get_gtype (value);
+      break;
+    case PROP_VIDEO_PIPELINE:
+      if (priv->video_pipeline != NULL)
+        g_object_unref ((GObject *) priv->video_pipeline);
+      priv->video_pipeline = (GstBin *) g_value_dup_object (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -235,6 +274,18 @@ tp_stream_engine_channel_dispose (GObject *object)
       priv->streams = NULL;
     }
 
+  if (priv->audio_pipeline)
+    {
+      g_object_unref ((GObject *) priv->audio_pipeline);
+      priv->audio_pipeline = NULL;
+    }
+
+  if (priv->video_pipeline)
+    {
+      g_object_unref ((GObject *) priv->video_pipeline);
+      priv->video_pipeline = NULL;
+    }
+
   if (priv->channel_proxy)
     {
       TpChan *tmp;
@@ -291,6 +342,34 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                                     G_PARAM_STATIC_NICK |
                                     G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
+
+  param_spec = g_param_spec_gtype ("audio-stream-gtype",
+      "GType of audio streams",
+      "GType which will be instantiated for audio streams.",
+      TP_STREAM_ENGINE_TYPE_STREAM,
+      G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_AUDIO_STREAM_GTYPE, param_spec);
+
+  param_spec = g_param_spec_object ("audio-pipeline",
+      "GStreamer pipeline for audio streams",
+      "The GStreamer pipeline which audio streams will be created in.",
+      GST_TYPE_BIN,
+      G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_AUDIO_PIPELINE, param_spec);
+
+  param_spec = g_param_spec_gtype ("video-stream-gtype",
+      "GType of video streams",
+      "GType which will be instantiated for video streams.",
+      TP_STREAM_ENGINE_TYPE_STREAM,
+      G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_VIDEO_STREAM_GTYPE, param_spec);
+
+  param_spec = g_param_spec_object ("video-pipeline",
+      "GStreamer pipeline for video streams",
+      "The GStreamer pipeline which videostreams will be created in.",
+      GST_TYPE_BIN,
+      G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_VIDEO_PIPELINE, param_spec);
 
   signals[CLOSED] =
     g_signal_new ("closed",
