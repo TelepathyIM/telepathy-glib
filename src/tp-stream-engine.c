@@ -1314,12 +1314,14 @@ _create_pipeline (TpStreamEngine *obj)
   GstBus *bus;
   GstCaps *filter = NULL;
   GstElement *fakesink;
+  GstElement *queue;
   const gchar *elem;
   const gchar *caps_str;
 
   priv->pipeline = gst_pipeline_new (NULL);
   tee = gst_element_factory_make ("tee", "tee");
   fakesink = gst_element_factory_make ("fakesink", NULL);
+  queue = gst_element_factory_make ("queue", NULL);
 
   if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
     {
@@ -1372,7 +1374,7 @@ _create_pipeline (TpStreamEngine *obj)
       g_debug ("applying custom caps '%s' on the video source\n", caps_str);
     }
 
-  gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, fakesink,
+  gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, fakesink, queue,
       NULL);
 
 #ifndef MAEMO_OSSO_SUPPORT
@@ -1395,8 +1397,12 @@ _create_pipeline (TpStreamEngine *obj)
     }
 #endif
 
+  g_object_set(G_OBJECT(queue), "leaky", 2,
+      "max-size-time", 50*GST_MSECOND, NULL);
+
   gst_element_link (videosrc, tee);
-  gst_element_link_filtered (tee, fakesink, filter);
+  gst_element_link_filtered (tee, queue, filter);
+  gst_element_link (queue, fakesink);
   gst_caps_unref (filter);
 
   g_debug ("Setting pipeline to playing");
