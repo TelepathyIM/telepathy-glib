@@ -66,6 +66,7 @@ struct _TpStreamEngineStreamPrivate
   TelepathyMediaStreamType media_type;
   TelepathyMediaStreamDirection direction;
   const TpStreamEngineNatProperties *nat_props;
+  GstBin *pipeline;
 
   DBusGProxy *stream_handler_proxy;
 
@@ -299,8 +300,8 @@ tp_stream_engine_stream_set_property (GObject      *object,
       priv->nat_props = g_value_get_pointer (value);
       break;
     case PROP_PIPELINE:
-      farsight_stream_set_pipeline (priv->fs_stream,
-          g_value_get_object (value));
+      g_assert (priv->pipeline == NULL);
+      priv->pipeline = (GstBin *) g_value_dup_object (value);
       break;
     case PROP_SOURCE:
       farsight_stream_set_source (priv->fs_stream,
@@ -392,6 +393,13 @@ tp_stream_engine_stream_constructor (GType type,
       GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
       farsight_stream_set_pipeline (priv->fs_stream, pipeline);
     }
+  else if (priv->pipeline != NULL)
+    {
+      farsight_stream_set_pipeline (priv->fs_stream,
+          (GstElement *) priv->pipeline);
+      g_object_unref ((GObject *) priv->pipeline);
+      priv->pipeline = NULL;
+    }
 
   conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
 
@@ -454,6 +462,8 @@ tp_stream_engine_stream_dispose (GObject *object)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+
+  g_assert (priv->pipeline == NULL);
 
   if (priv->fs_session)
     {
@@ -644,7 +654,7 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                                     "GStreamer pipeline",
                                     "The GStreamer pipeline this stream will "
                                     "use.",
-                                    GST_TYPE_ELEMENT,
+                                    GST_TYPE_BIN,
                                     G_PARAM_CONSTRUCT_ONLY |
                                     G_PARAM_READWRITE |
                                     G_PARAM_STATIC_NICK |
