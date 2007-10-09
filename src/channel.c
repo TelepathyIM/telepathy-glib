@@ -456,12 +456,33 @@ new_stream_cb (TpStreamEngineSession *session,
   TpStreamEngineStream *stream;
   FarsightSession *fs_session;
   gchar *bus_name;
+  GType stream_gtype;
+  GstBin *pipeline;
 
   g_object_get (priv->channel_proxy, "name", &bus_name, NULL);
   g_object_get (session, "farsight-session", &fs_session, NULL);
 
-  stream = tp_stream_engine_stream_new (fs_session, bus_name,
-      object_path, stream_id, media_type, direction, &(priv->nat_props));
+  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+    {
+      stream_gtype = priv->video_stream_gtype;
+      pipeline = priv->video_pipeline;
+    }
+  else
+    {
+      stream_gtype = priv->audio_stream_gtype;
+      pipeline = priv->audio_pipeline;
+    }
+
+  stream = g_object_new (stream_gtype,
+      "farsight-session", fs_session,
+      "bus-name", bus_name,
+      "object-path", object_path,
+      "stream-id", stream_id,
+      "media-type", media_type,
+      "direction", direction,
+      "nat-properties", &(priv->nat_props),
+      "pipeline", pipeline,
+      NULL);
 
   g_free (bus_name);
   g_object_unref (fs_session);
