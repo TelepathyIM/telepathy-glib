@@ -325,23 +325,17 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
   object_class->dispose = tp_stream_engine_channel_dispose;
 
   param_spec = g_param_spec_object ("channel", "TpChan object",
-                                    "Telepathy channel object which this media "
-                                    "channel should operate on.",
-                                    TELEPATHY_CHAN_TYPE,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
+      "Telepathy channel object which this media channel should operate on.",
+      TELEPATHY_CHAN_TYPE,
+      (G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NICK |
+        G_PARAM_STATIC_BLURB));
   g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
 
-  param_spec = g_param_spec_string ("object-path",
-                                    "channel object path",
-                                    "D-Bus object path of the media channel "
-                                    "which this session interacts with.",
-                                    NULL,
-                                    G_PARAM_READABLE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
+  param_spec = g_param_spec_string ("object-path", "channel object path",
+      "D-Bus object path of the Telepathy channel which this channel operates "
+      "on.",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
   param_spec = g_param_spec_gtype ("audio-stream-gtype",
@@ -349,28 +343,32 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
       "GType which will be instantiated for audio streams.",
       TP_STREAM_ENGINE_TYPE_STREAM,
       G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_AUDIO_STREAM_GTYPE, param_spec);
+  g_object_class_install_property (object_class, PROP_AUDIO_STREAM_GTYPE,
+      param_spec);
 
   param_spec = g_param_spec_object ("audio-pipeline",
       "GStreamer pipeline for audio streams",
       "The GStreamer pipeline which audio streams will be created in.",
       GST_TYPE_BIN,
       G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_AUDIO_PIPELINE, param_spec);
+  g_object_class_install_property (object_class, PROP_AUDIO_PIPELINE,
+      param_spec);
 
   param_spec = g_param_spec_gtype ("video-stream-gtype",
       "GType of video streams",
       "GType which will be instantiated for video streams.",
       TP_STREAM_ENGINE_TYPE_STREAM,
       G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_VIDEO_STREAM_GTYPE, param_spec);
+  g_object_class_install_property (object_class, PROP_VIDEO_STREAM_GTYPE,
+      param_spec);
 
   param_spec = g_param_spec_object ("video-pipeline",
       "GStreamer pipeline for video streams",
       "The GStreamer pipeline which videostreams will be created in.",
       GST_TYPE_BIN,
       G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_VIDEO_PIPELINE, param_spec);
+  g_object_class_install_property (object_class, PROP_VIDEO_PIPELINE,
+      param_spec);
 
   signals[CLOSED] =
     g_signal_new ("closed",
