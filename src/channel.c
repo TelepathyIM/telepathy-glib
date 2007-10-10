@@ -400,7 +400,7 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                   G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
   signals[STREAM_RECEIVING] =
-    g_signal_new ("receiving",
+    g_signal_new ("stream-receiving",
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
