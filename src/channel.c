@@ -72,6 +72,7 @@ enum
 enum
 {
   CLOSED,
+  STREAM_CREATED,
   STREAM_STATE_CHANGED,
   STREAM_RECEIVING,
   SIGNAL_COUNT
@@ -380,6 +381,15 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
 
+  signals[STREAM_CREATED] =
+    g_signal_new ("stream-created",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1, TP_STREAM_ENGINE_TYPE_STREAM);
+
   signals[STREAM_STATE_CHANGED] =
     g_signal_new ("stream-state-changed",
                   G_OBJECT_CLASS_TYPE (klass),
@@ -512,6 +522,8 @@ new_stream_cb (TpStreamEngineSession *session,
       G_CALLBACK (stream_state_changed_cb), self);
   g_signal_connect (stream, "receiving",
       G_CALLBACK (stream_receiving_cb), self);
+
+  g_signal_emit (self, signals[STREAM_CREATED], 0, stream);
 }
 
 static void
