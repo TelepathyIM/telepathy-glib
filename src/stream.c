@@ -82,6 +82,7 @@ enum
   ERROR,
   STATE_CHANGED,
   RECEIVING,
+  LINKED,
   SIGNAL_COUNT
 };
 
@@ -615,6 +616,15 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__BOOLEAN,
                   G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+
+  signals[LINKED] =
+    g_signal_new ("linked",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
 }
 
 /* dummy callback handler for async calling calls with no return values */
@@ -1351,6 +1361,14 @@ cb_fs_native_candidates_prepared (FarsightStream *stream,
     NULL, (GObject *) self);
 }
 
+static void
+queue_linked (GstPad *pad, GstPad *peer, gpointer user_data)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
+
+  g_signal_emit (stream, signals[LINKED], 0);
+}
+
 static GstElement *
 make_src (TpStreamEngineStream *stream, guint media_type)
 {
@@ -1386,9 +1404,8 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       TpStreamEngine *engine = tp_stream_engine_get ();
       GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
       GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-
-#ifndef MAEMO_OSSO_SUPPORT
       GstElement *queue = gst_element_factory_make ("queue", NULL);
+      GstPad *pad = NULL;
 
       if (!queue)
         g_error("Could not create queue element");
@@ -1396,15 +1413,16 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       g_object_set(G_OBJECT(queue), "leaky", 2,
           "max-size-time", 50*GST_MSECOND, NULL);
 
+      pad = gst_element_get_static_pad (queue, "src");
+
+      g_signal_connect (pad, "linked", G_CALLBACK (queue_linked), stream);
+
       gst_bin_add(GST_BIN(pipeline), queue);
 
       gst_element_set_state(queue, GST_STATE_PLAYING);
 
       gst_element_link(tee, queue);
       src = queue;
-#else
-      src = tee;
-#endif
       gst_object_unref (tee);
     }
 
