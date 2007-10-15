@@ -74,6 +74,8 @@ struct _TpStreamEngineStreamPrivate
   gboolean output_mute;
   gboolean input_mute;
   guint output_window_id;
+
+  GstElement *queue;
 };
 
 enum
@@ -422,6 +424,41 @@ tp_stream_engine_stream_constructor (GType type,
   return obj;
 }
 
+
+static void
+tee_src_pad_unblocked (GstPad *pad, gboolean blocked, gpointer user_data)
+{
+}
+
+static void
+tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+  TpStreamEngine *engine = tp_stream_engine_get ();
+  GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
+  GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
+  GstPad *queuesinkpad = gst_element_get_pad (priv->queue, "sink");
+  GstPad *teesrcpad = gst_pad_get_peer (queuesinkpad);
+
+  gst_object_unref (queuesinkpad);
+
+  gst_bin_remove (GST_BIN (pipeline), priv->queue);
+
+  gst_element_set_state (priv->queue, GST_STATE_NULL);
+
+  gst_object_unref (priv->queue);
+  priv->queue = NULL;
+
+  gst_element_release_request_pad (tee, teesrcpad);
+
+  gst_object_unref (tee);
+
+  gst_object_unref (stream);
+
+  gst_pad_set_blocked_async (pad, FALSE, tee_src_pad_unblocked, NULL);
+}
+
 static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
@@ -462,6 +499,21 @@ tp_stream_engine_stream_dispose (GObject *object)
           priv->output_window_id);
       g_assert (ret);
     }
+
+  if (priv->queue)
+  {
+    TpStreamEngine *engine = tp_stream_engine_get ();
+    GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
+    GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
+    GstPad *pad = NULL;
+
+    pad = gst_element_get_static_pad (tee, "sink");
+
+    gst_pad_set_blocked_async (pad, TRUE, tee_src_pad_blocked, object);
+
+    /* Lets keep a ref around until we've blocked the pad and removed the queue */
+    g_object_ref (object);
+  }
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
@@ -1374,6 +1426,7 @@ make_src (TpStreamEngineStream *stream, guint media_type)
 {
   const gchar *elem;
   GstElement *src = NULL;
+  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
 
   if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
@@ -1416,6 +1469,9 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       pad = gst_element_get_static_pad (queue, "src");
 
       g_signal_connect (pad, "linked", G_CALLBACK (queue_linked), stream);
+
+      priv->queue = queue;
+      gst_object_ref (queue);
 
       gst_bin_add(GST_BIN(pipeline), queue);
 
