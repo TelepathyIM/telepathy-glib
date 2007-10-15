@@ -261,8 +261,10 @@ int main(int argc, char **argv)
 
   timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
 
-  g_timeout_add (WATCHDOG_BARK * 1000, watchdog_bark, NULL);
-  signal (SIGALRM, watchdog_bite);
+  if (g_getenv ("STREAM_ENGINE_NO_DOG") == NULL) {
+    g_timeout_add (WATCHDOG_BARK * 1000, watchdog_bark, NULL);
+    signal (SIGALRM, watchdog_bite);
+  }
 
 #ifdef MAEMO_OSSO_SUPPORT
   g_debug ("maemo support enabled");
