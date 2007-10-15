@@ -1478,6 +1478,13 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       gst_element_set_state(queue, GST_STATE_PLAYING);
 
       gst_element_link(tee, queue);
+
+      /*
+       * We need to keep a second ref
+       * one will be given to farsight and the second one is kept by s-e
+       */
+      gst_object_ref (queue);
+
       src = queue;
       gst_object_unref (tee);
     }
