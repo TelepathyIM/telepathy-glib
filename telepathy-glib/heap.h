@@ -25,6 +25,8 @@
 
 #include <glib.h>
 
+G_BEGIN_DECLS
+
 typedef struct _TpHeap TpHeap;
 
 TpHeap *tp_heap_new (GCompareFunc comparator, GDestroyNotify destructor);
@@ -37,5 +39,7 @@ gpointer tp_heap_peek_first (TpHeap *heap);
 gpointer tp_heap_extract_first (TpHeap *heap);
 
 guint tp_heap_size (TpHeap *heap);
+
+G_END_DECLS
 
 #endif

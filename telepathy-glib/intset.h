@@ -25,6 +25,8 @@
 
 #include <glib-object.h>
 
+G_BEGIN_DECLS
+
 /**
  * TpIntSet:
  *
@@ -134,5 +136,7 @@ tp_intset_iter_reset (TpIntSetIter *iter)
 }
 
 gboolean tp_intset_iter_next (TpIntSetIter *iter);
+
+G_END_DECLS
 
 #endif /*__TP_INTSET_H__*/

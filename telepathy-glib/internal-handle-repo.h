@@ -76,4 +76,6 @@ struct _TpHandleRepoIfaceClass {
         GQuark key_id);
 };
 
+G_END_DECLS
+
 #endif /*__TP_INTERNAL_HANDLE_REPO_H__ */

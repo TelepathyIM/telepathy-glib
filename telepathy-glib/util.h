@@ -25,6 +25,8 @@
 #ifndef __TP_UTIL_H__
 #define __TP_UTIL_H__
 
+G_BEGIN_DECLS
+
 gboolean tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle);
 
 GValue *tp_g_value_slice_new (GType type);
@@ -39,4 +41,6 @@ gpointer tp_mixin_offset_cast (gpointer instance, guint offset);
 
 gchar *tp_escape_as_identifier (const gchar *name);
 
-#endif /* __GABBLE_UTIL_H__ */
+G_END_DECLS
+
+#endif /* __TP_UTIL_H__ */
