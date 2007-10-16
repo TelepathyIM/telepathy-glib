@@ -1073,6 +1073,7 @@ TP_PRESENCE_MIXIN
 tp_debug_set_flags_from_string
 tp_debug_set_flags_from_env
 tp_debug_set_all_flags
+tp_debug_set_persistent
 </SECTION>
 
 <SECTION>
