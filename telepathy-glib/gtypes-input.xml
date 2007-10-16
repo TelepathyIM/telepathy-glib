@@ -207,7 +207,8 @@
     <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Info"/>
   </tp:struct>
 
-  <tp:struct name="Media_Signalling_Candidate">
+  <tp:struct name="Media_Stream_Handler_Transport"
+    array-name="Media_Stream_Handler_Transport_List">
     <tp:member type="u" name="Component_Number"/>
     <tp:member type="s" name="IP_Address"/>
     <tp:member type="u" name="Port"/>
@@ -221,13 +222,14 @@
     <tp:member type="s" name="Password"/>
   </tp:struct>
 
-  <tp:struct name="Media_Signalling_Codec">
+  <tp:struct name="Media_Stream_Handler_Codec"
+    array-name="Media_Stream_Handler_Codec_List">
     <tp:member type="u" name="Codec_ID"/>
     <tp:member type="s" name="Name"/>
     <tp:member type="u" tp:type="Media_Stream_Type" name="Media_Type"/>
     <tp:member type="u" name="Clock_Rate"/>
     <tp:member type="u" name="Number_Of_Channels"/>
-    <tp:member type="a{ss}" name="Parameters"/>
+    <tp:member type="a{ss}" name="Parameters" tp:type="String_String_Map"/>
   </tp:struct>
 
 </tp:spec>
