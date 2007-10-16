@@ -51,6 +51,8 @@ TP_BASE_CONNECTION_GET_CLASS
 TpCMParamFilter
 tp_cm_param_filter_string_nonempty
 tp_cm_param_filter_uint_nonzero
+TpCMParamSetter
+tp_cm_param_setter_offset
 TpCMParamSpec
 TpCMProtocolSpec
 TpBaseConnectionManager
