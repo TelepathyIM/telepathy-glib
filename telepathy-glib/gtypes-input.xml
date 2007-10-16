@@ -2,21 +2,28 @@
 <tp:spec
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
 
-  <tp:struct name="Alias_Pair">
+  <tp:mapping name="Alias_Map" array-name="">
+    <tp:docstring>A dictionary whose keys are contact handles and whose
+      values are aliases.</tp:docstring>
+    <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+    <tp:member type="s" name="Alias"/>
+  </tp:mapping>
+
+  <tp:struct name="Alias_Pair" array-name="Alias_Pair_List">
     <tp:docstring>A pair (contact handle, alias) as seen in the AliasesChanged
-      signal on the Aliasing interface.</tp:docstring>
+      signal.</tp:docstring>
     <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
     <tp:member type="s" name="Alias"/>
   </tp:struct>
 
-  <tp:struct name="Capability_Pair">
+  <tp:struct name="Capability_Pair" array-name="Capability_Pair_List">
     <tp:docstring>A pair (channel type, type-specific flags) as passed to
       AdvertiseCapabilities on the Capabilities interface.</tp:docstring>
     <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
     <tp:member type="u" name="Type_Specific_Flags"/>
   </tp:struct>
 
-  <tp:struct name="Contact_Capability">
+  <tp:struct name="Contact_Capability" array-name="Contact_Capability_List">
     <tp:docstring>A struct (contact handle, channel type, generic flags,
       type-specific flags) representing a capability posessed by a contact,
       as returned by GetCapabilities on the Capabilities
@@ -28,7 +35,7 @@
     <tp:member type="u" name="Type_Specific_Flags"/>
   </tp:struct>
 
-  <tp:struct name="Capability_Change">
+  <tp:struct name="Capability_Change" array-name="Capability_Change_List">
     <tp:docstring>A struct (contact handle, channel type, old generic flags,
       new generic flags, old type-specific flags, new type-specific flags)
       representing a change to one of a contact's capabilities, as seen in the
@@ -43,27 +50,47 @@
     <tp:member type="u" name="New_Type_Specific_Flags"/>
   </tp:struct>
 
-  <tp:struct name="Param_Spec">
-    <tp:docstring>A struct (parameter name, flags, signature, default value)
-      representing an allowed parameter, as returned by GetParameters
-      on the ConnectionManager interface.</tp:docstring>
-    <tp:member type="s" name="Name"/>
-    <tp:member type="u" tp:type="Conn_Mgr_Param_Flags" name="Flags"/>
-    <tp:member type="s" tp:type="DBus_Signature" name="Signature"/>
-    <tp:member type="v" name="Default_Value"/>
+  <tp:struct name="Param_Spec" array-name="Param_Spec_List">
+    <tp:docstring>A struct representing an allowed parameter, as returned
+      by GetParameters on the ConnectionManager interface.</tp:docstring>
+    <tp:member type="s" name="Name">
+      <tp:docstring>A string parameter name</tp:docstring>
+    </tp:member>
+    <tp:member type="u" tp:type="Conn_Mgr_Param_Flags" name="Flags">
+      <tp:docstring>A bitwise OR of the parameter flags</tp:docstring>
+    </tp:member>
+    <tp:member type="s" tp:type="DBus_Signature" name="Signature">
+      <tp:docstring>A string containing the D-Bus type signature
+        for this parameter</tp:docstring>
+    </tp:member>
+    <tp:member type="v" name="Default_Value">
+      <tp:docstring>The default value (if the Has_Default flag is not
+        present, there is no default and this takes some dummy value,
+        which SHOULD be of the appropriate D-Bus type)</tp:docstring>
+    </tp:member>
   </tp:struct>
 
   <tp:struct name="Channel_List_Entry" array-name="Channel_List">
-    <tp:docstring>A struct (channel path, channel type, handle type,
-      handle) representing a channel, as returned by ListChannels
-      on the Connection interface.</tp:docstring>
-    <tp:member type="o" name="Channel"/>
-    <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
-    <tp:member type="u" tp:type="Handle_Type" name="Handle_Type"/>
-    <tp:member type="u" tp:type="Handle" name="Handle"/>
+    <tp:docstring>A struct representing a channel, as returned by
+      ListChannels on the Connection interface.</tp:docstring>
+    <tp:member type="o" name="Channel">
+      <tp:docstring>The object path of the channel, which is on the
+        same bus name as the connection</tp:docstring>
+    </tp:member>
+    <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type">
+      <tp:docstring>The channel's type</tp:docstring>
+    </tp:member>
+    <tp:member type="u" tp:type="Handle_Type" name="Handle_Type">
+      <tp:docstring>The type of the handle that the channel communicates
+        with, or 0 if there is no associated handle</tp:docstring>
+    </tp:member>
+    <tp:member type="u" tp:type="Handle" name="Handle">
+      <tp:docstring>The handle that the channel communicates with,
+        or 0 if there is no associated handle</tp:docstring>
+    </tp:member>
   </tp:struct>
 
-  <tp:struct name="Local_Pending_Info">
+  <tp:struct name="Local_Pending_Info" array-name="Local_Pending_Info_List">
     <tp:docstring>A struct (handle to be added, handle of contact
       requesting the change, reason code, optional message)
       representing a contact whose attempt to join a group is to be confirmed
@@ -75,7 +102,7 @@
     <tp:member type="s" name="Message"/>
   </tp:struct>
 
-  <tp:struct name="Pending_Text_Message">
+  <tp:struct name="Pending_Text_Message" array-name="Pending_Text_Message_List">
     <tp:docstring>A struct (message ID, timestamp in seconds since
       1970-01-01 00:00 UTC, sender's handle, message type, flags, text)
       representing a pending text message, as returned by ListPendingMessages
@@ -90,7 +117,7 @@
     <tp:member type="s" name="Text"/>
   </tp:struct>
 
-  <tp:struct name="Property_Spec">
+  <tp:struct name="Property_Spec" array-name="Property_Spec_List">
     <tp:docstring>A struct (property ID, property name, D-Bus signature,
       flags) representing a property, as returned by ListProperties on the
       Properties interface.</tp:docstring>
@@ -100,7 +127,8 @@
     <tp:member type="u" tp:type="Property_Flags" name="Flags"/>
   </tp:struct>
 
-  <tp:struct name="Property_Flags_Change">
+  <tp:struct name="Property_Flags_Change"
+    array-name="Property_Flags_Change_List">
     <tp:docstring>A struct (property ID, flags) representing a change to
       a property's flags, as seen in the PropertyFlagsChanged signal on
       the Properties interface.</tp:docstring>
@@ -108,7 +136,7 @@
     <tp:member type="u" name="New_Flags"/>
   </tp:struct>
 
-  <tp:struct name="Property_Value">
+  <tp:struct name="Property_Value" array-name="Property_Value_List">
     <tp:docstring>A struct (property ID, value) representing a
       property's value, as seen in the PropertiesChanged signal on
       the Properties interface, returned by the GetProperties method
@@ -129,9 +157,7 @@
     <tp:member type="u" tp:type="Tube_State" name="State"/>
   </tp:struct>
 
-  <!-- Channel.Type.Tubes.DBusNamesChanged has a DBus_Tube_Member[]
-  and GetDBusNames returns an array of them -->
-  <tp:struct name="DBus_Tube_Member">
+  <tp:struct name="DBus_Tube_Member" array-name="DBus_Tube_Member_List">
     <tp:docstring>A struct (handle, unique name) representing a participant
       in a D-Bus tube, as returned by GetDBusNames on the Tubes channel
       type, and as seen in the DBusNamesChanged signal.</tp:docstring>
@@ -139,20 +165,18 @@
     <tp:member type="s" tp:type="DBus_Unique_Name" name="Unique_Name"/>
   </tp:struct>
 
-  <!-- Just about everything uses a{sv}... -->
   <tp:mapping name="String_Variant_Map">
     <tp:docstring>A mapping from strings to variants representing extra
       key-value pairs.</tp:docstring>
-    <tp:member type="s"/>
-    <tp:member type="v"/>
+    <tp:member type="s" name="Key"/>
+    <tp:member type="v" name="Value"/>
   </tp:mapping>
 
-  <!-- ... or a{ss} -->
   <tp:mapping name="String_String_Map">
     <tp:docstring>A mapping from strings to strings representing extra
       key-value pairs.</tp:docstring>
-    <tp:member type="s"/>
-    <tp:member type="s"/>
+    <tp:member type="s" name="Key"/>
+    <tp:member type="s" name="Value"/>
   </tp:mapping>
 
   <!-- We hope to simplify these eventually -->
@@ -168,7 +192,7 @@
       a last-activity time (deprecated) and a Multiple_Status_Map.
     </tp:docstring>
     <tp:member type="u" tp:type="Unix_Timestamp" name="Last_Activity"/>
-    <tp:member type="a{sa{sv}}" tp:type="Multiple_Presence_Map"
+    <tp:member type="a{sa{sv}}" tp:type="Multiple_Status_Map"
       name="Statuses"/>
   </tp:struct>
   <tp:mapping name="Contact_Presences">
@@ -193,7 +217,7 @@
 
   <tp:struct name="Stream_List_Entry" array-name="Stream_List">
     <tp:member type="u" name="Identifier"/>
-    <tp:member type="u" tp:type="Contact_Handle?" name="Contact"/>
+    <tp:member type="u" tp:type="Contact_Handle" name="Contact"/>
     <tp:member type="u" tp:type="Media_Stream_Type" name="Type"/>
     <tp:member type="u" tp:type="Media_Stream_State" name="State"/>
     <tp:member type="u" tp:type="Media_Stream_Direction" name="Direction"/>
@@ -205,6 +229,13 @@
     <tp:member type="u" tp:type="Room_Handle" name="Handle"/>
     <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
     <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Info"/>
+  </tp:struct>
+
+  <tp:struct name="Media_Stream_Handler_Candidate"
+    array-name="Media_Stream_Handler_Candidate_List">
+    <tp:member type="s" name="Name"/>
+    <tp:member type="a(usuussduss)" name="Transports"
+      tp:type="Media_Stream_Handler_Transport[]"/>
   </tp:struct>
 
   <tp:struct name="Media_Stream_Handler_Transport"
