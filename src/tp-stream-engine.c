@@ -1023,12 +1023,14 @@ bus_sync_message (GstBus *bus, GstMessage *message, gpointer data)
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   GError *error = NULL;
+  gchar *error_string = NULL;
 
   switch (GST_MESSAGE_TYPE (message)) {
     case GST_MESSAGE_ERROR:
-      gst_message_parse_error (message, &error, NULL);
+      gst_message_parse_error (message, &error, &error_string);
       if (error->domain == GST_STREAM_ERROR &&
-          error->code == GST_STREAM_ERROR_FAILED) {
+          error->code == GST_STREAM_ERROR_FAILED &&
+          strstr (error_string, "not-linked")) {
 
         priv->linked = FALSE;
         priv->restart_source = TRUE;
@@ -1036,6 +1038,7 @@ bus_sync_message (GstBus *bus, GstMessage *message, gpointer data)
         g_debug ("Stream error, lets unlink the source to stop the EOS");
         gst_element_unlink (priv->videosrc, priv->videosrc_next);
       }
+      g_free (error_string);
       g_error_free (error);
       break;
     default:
