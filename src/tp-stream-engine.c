@@ -135,6 +135,10 @@ struct _TpStreamEnginePrivate
   guint bad_gc_handler_id;
   guint bad_value_handler_id;
   guint bad_window_handler_id;
+
+#ifdef USE_INFOPRINT
+  DBusGProxy *infoprint_proxy;
+#endif
 };
 
 typedef struct _WindowPair WindowPair;
@@ -526,6 +530,9 @@ tp_stream_engine_init (TpStreamEngine *self)
       TP_TYPE_STREAM_ENGINE, TpStreamEnginePrivate);
 
   self->priv = priv;
+
+  priv->linked = FALSE;
+  priv->restart_source = FALSE;
 
   priv->channels = g_ptr_array_new ();
 
@@ -1018,6 +1025,9 @@ bus_sync_message (GstBus *bus, GstMessage *message, gpointer data)
       if (error->domain == GST_STREAM_ERROR &&
           error->code == GST_STREAM_ERROR_FAILED) {
 
+        priv->linked = FALSE;
+        priv->restart_source = TRUE;
+
         g_debug ("Stream error, lets unlink the source to stop the EOS");
         gst_element_unlink (priv->videosrc, priv->videosrc_next);
       }
@@ -1221,6 +1231,7 @@ _create_pipeline (TpStreamEngine *self)
   GstCaps *filter = NULL;
   const gchar *elem;
   const gchar *caps_str;
+  GstStateChangeReturn state_ret;
 
   priv->pipeline = gst_pipeline_new (NULL);
   tee = gst_element_factory_make ("tee", "tee");
@@ -1330,7 +1341,9 @@ _create_pipeline (TpStreamEngine *self)
   gst_element_link (capsfilter, tee);
 
 
-  gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
+  state_ret = gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
+
+  g_assert (state_ret != GST_STATE_CHANGE_FAILURE);
 
   /* connect a callback to the stream bus so that we can set X window IDs
    * at the right time, and detect when sinks have gone away */
@@ -1346,11 +1359,42 @@ static void
 tp_stream_engine_start_source (TpStreamEngine *obj)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  GstStateChangeReturn state_ret;
 
-  g_debug ("STARTING SOURCE");
+  g_debug ("Starting source");
 
+  priv->linked = TRUE;
+
+  /*
+   * FIXME: We should instead get the pads, and check if they are already
+   * linked, then we'd be able to check properly for errors
+   */
   gst_element_link (priv->videosrc, priv->videosrc_next);
-  gst_element_set_state (priv->videosrc, GST_STATE_PLAYING);
+
+  if (priv->restart_source) {
+    priv->restart_source = FALSE;
+
+    state_ret = gst_element_set_state (priv->videosrc, GST_STATE_NULL);
+    if (state_ret == GST_STATE_CHANGE_ASYNC) {
+      g_warning ("The video source tries to change state async to NULL");
+
+      state_ret = gst_element_get_state (priv->videosrc, NULL, NULL,
+          GST_SECOND);
+    }
+
+    if (state_ret == GST_STATE_CHANGE_ASYNC)
+      g_warning ("Could not change the video source to NULL in a reasonable"
+          " delay (1 second)");
+    else if (state_ret == GST_STATE_CHANGE_FAILURE)
+      g_warning ("Failure while stopping the video source");
+
+  }
+
+  state_ret = gst_element_set_state (priv->videosrc, GST_STATE_PLAYING);
+
+  if (state_ret == GST_STATE_CHANGE_FAILURE) {
+    g_error ("Error starting the video source");
+  }
 }
 
 /*
