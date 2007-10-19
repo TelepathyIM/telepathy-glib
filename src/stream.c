@@ -441,13 +441,40 @@ tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
   GstPad *queuesinkpad = gst_element_get_pad (priv->queue, "sink");
   GstPad *teesrcpad = gst_pad_get_peer (queuesinkpad);
 
-  gst_object_unref (queuesinkpad);
+  GstStateChangeReturn ret;
 
-  gst_bin_remove (GST_BIN (pipeline), priv->queue);
+  g_assert (pipeline);
+  g_assert (tee);
+  g_assert (teesrcpad);
 
-  gst_element_set_state (priv->queue, GST_STATE_NULL);
+  if (queuesinkpad)
+    gst_object_unref (queuesinkpad);
 
-  gst_object_unref (priv->queue);
+  if (!priv->queue)
+    return;
+
+  if (!gst_bin_remove (GST_BIN (pipeline), priv->queue)) {
+    g_warning ("Could not remove the queue from the bin");
+  }
+
+  ret = gst_element_set_state (priv->queue, GST_STATE_NULL);
+
+  if (ret == GST_STATE_CHANGE_ASYNC) {
+    g_warning ("%s is going to NULL async, lets wait 2 seconds",
+        GST_OBJECT_NAME (priv->queue));
+    ret = gst_element_get_state (priv->queue, NULL, NULL, 2*GST_SECOND);
+  }
+
+  if (ret == GST_STATE_CHANGE_ASYNC) {
+    g_warning ("%s still hasn't going NULL, we have to leak it",
+        GST_OBJECT_NAME (priv->queue));
+  } else if (ret == GST_STATE_CHANGE_FAILURE) {
+    g_warning ("There was an error bringing %s to the NULL state",
+        GST_OBJECT_NAME (priv->queue));
+  } else {
+    gst_object_unref (priv->queue);
+  }
+
   priv->queue = NULL;
 
   gst_element_release_request_pad (tee, teesrcpad);
@@ -1178,7 +1205,7 @@ stop_stream (TpStreamEngineStream *self)
   if (self->priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
     sink = farsight_stream_get_sink (self->priv->fs_stream);
 
-  farsight_stream_stop (self->priv->fs_stream);
+  farsight_stream_stop (priv->fs_stream);
 
   if (sink)
     _remove_video_sink (self, sink);
