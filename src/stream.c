@@ -1190,6 +1190,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy,
     }
   g_list_free (fs_codecs);
 
+  farsight_stream_set_source (priv->fs_stream, NULL);
 }
 
 static void
