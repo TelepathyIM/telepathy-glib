@@ -174,38 +174,65 @@ static void stop_stream (TpStreamEngineStream *self);
 static void invalidated_cb (TpMediaStreamHandler *proxy,
     guint domain, gint code, gchar *message, gpointer user_data);
 
+
+static gboolean
+video_sink_unlinked_idle_cb (gpointer user_data)
+{
+  GstElement *sink = GST_ELEMENT (user_data);
+  GstElement *binparent = NULL;
+  gboolean retval;
+  GstStateChangeReturn ret;
+
+  binparent = GST_ELEMENT (gst_element_get_parent (sink));
+
+  if (!binparent)
+    goto out;
+
+  retval = gst_bin_remove (GST_BIN (binparent), sink);
+  if (retval != TRUE)
+    return FALSE;
+
+  ret = gst_element_set_state (sink, GST_STATE_NULL);
+
+  if (ret == GST_STATE_CHANGE_ASYNC) {
+    ret = gst_element_get_state (sink, NULL, NULL, 5*GST_SECOND);
+  }
+  g_assert (ret != GST_STATE_CHANGE_FAILURE);
+
+ out:
+  gst_object_unref (sink);
+
+  return FALSE;
+}
+
+
+static void
+video_sink_unlinked_cb (GstPad  *pad, GstPad  *peer, gpointer user_data)
+{
+  g_idle_add (video_sink_unlinked_idle_cb, user_data);
+
+  gst_object_unref (pad);
+}
+
 static void
 _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
 {
-  TpStreamEngine *engine;
-  GstElement *pipeline;
-  gboolean retval;
-  GstStateChangeReturn ret;
+  GstPad *sink_pad;
 
   DEBUG (stream, "removing video sink");
 
   if (sink == NULL)
     return;
 
-  engine = tp_stream_engine_get ();
-  pipeline = tp_stream_engine_get_pipeline (engine);
+  sink_pad = gst_element_get_static_pad (sink, "sink");
+
+  if (!sink_pad)
+    return;
 
   gst_object_ref (sink);
 
-  retval = gst_bin_remove (GST_BIN (pipeline), sink);
-  g_assert (retval == TRUE);
-
-  ret = gst_element_set_state (sink, GST_STATE_NULL);
-  g_assert (ret != GST_STATE_CHANGE_FAILURE);
-
-  if (ret == GST_STATE_CHANGE_ASYNC) {
-    ret = gst_element_get_state (sink, NULL, NULL, 5*GST_SECOND);
-    g_assert (ret != GST_STATE_CHANGE_FAILURE);
-  }
-
-  DEBUG (stream, "sink refcount: %d", GST_OBJECT_REFCOUNT_VALUE(sink));
-
-  gst_object_unref (sink);
+  g_signal_connect (sink_pad, "unlinked", G_CALLBACK (video_sink_unlinked_cb),
+      sink);
 }
 
 static void
@@ -396,7 +423,6 @@ tp_stream_engine_stream_constructor (GType type,
     {
       DEBUG (stream, "setting sink on Farsight stream");
       farsight_stream_set_sink (priv->fs_stream, sink);
-      gst_object_unref (sink);
     }
   else
     {
@@ -1551,6 +1577,7 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           sink = gst_parse_bin_from_description (elem, TRUE, NULL);
           g_assert (GST_IS_BIN (sink));
           engine = tp_stream_engine_get ();
+          gst_object_ref (sink);
           gst_bin_add (GST_BIN (tp_stream_engine_get_pipeline (engine)), sink);
           gst_element_set_state (sink, GST_STATE_PLAYING);
           g_assert (sink);
@@ -1721,6 +1748,7 @@ tp_stream_engine_stream_set_output_window (
 {
   TpStreamEngine *engine;
   GstElement *sink;
+  GstElement *old_sink = NULL;
 
   if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
@@ -1772,8 +1800,13 @@ tp_stream_engine_stream_set_output_window (
 
   DEBUG (stream, "putting video output in window %d", window_id);
 
+  old_sink = farsight_stream_get_sink (priv->fs_stream);
+
+  if (old_sink)
+      _remove_video_sink (stream, old_sink);
+
   tp_stream_engine_add_output_window (engine, stream, sink, window_id);
-  farsight_stream_set_sink (stream->priv->fs_stream, sink);
+  farsight_stream_set_sink (priv->fs_stream, sink);
   gst_object_unref (sink);
 
   return TRUE;

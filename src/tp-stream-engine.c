@@ -382,7 +382,7 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
   sink = bin;
 #endif
 
-  gst_bin_add (GST_BIN (self->priv->pipeline), sink);
+  gst_bin_add (GST_BIN (priv->pipeline), sink);
 
   return sink;
 }
@@ -415,6 +415,11 @@ _add_preview_window (TpStreamEngine *self, guint window_id, GError **error)
 
   if (sink == NULL)
     goto sink_failure;
+
+  /* We dont keep a ref, this means we can potentially point to a
+   * dead object
+   */
+  gst_object_unref (sink);
 
   wp->created = TRUE;
   wp->sink = sink;
