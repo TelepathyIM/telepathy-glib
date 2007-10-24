@@ -216,17 +216,51 @@ _gst_bin_find_element (GstBin *bin, GstElement *element)
   GstIterator *iter;
   gpointer item;
   gboolean found = FALSE;
+  gboolean done = FALSE;
 
   iter = gst_bin_iterate_elements (bin);
 
-  while (!found && gst_iterator_next (iter, &item) == GST_ITERATOR_OK)
+  if (!iter)
     {
-      GstElement *child = (GstElement *) item;
+      gchar *bin_name = gst_element_get_name (GST_ELEMENT (bin));
+      g_warning ("Could not get iterator for bin %s", bin_name);
+      g_free (bin_name);
+      return FALSE;
+    }
 
-      if (child == element)
-        found = TRUE;
+  while (!done)
+    {
+      GstIteratorResult ret;
 
-      gst_object_unref (child);
+      ret = gst_iterator_next (iter, &item);
+      switch (ret)
+        {
+          case GST_ITERATOR_OK:
+            {
+              GstElement *child = (GstElement *) item;
+              if (child == element) {
+                found = TRUE;
+                done = TRUE;
+              }
+              gst_object_unref (child);
+            }
+            break;
+          case GST_ITERATOR_RESYNC:
+            found = FALSE;
+            gst_iterator_resync (iter);
+            break;
+          case GST_ITERATOR_ERROR:
+            {
+              gchar *bin_name = gst_element_get_name (GST_ELEMENT (bin));
+              g_warning ("Error iterating %s", bin_name);
+              g_free (bin_name);
+            }
+            done = TRUE;
+            break;
+          case GST_ITERATOR_DONE:
+            done = TRUE;
+            break;
+        }
     }
 
   gst_iterator_free (iter);
