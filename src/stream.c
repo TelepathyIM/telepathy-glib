@@ -454,6 +454,7 @@ tp_stream_engine_stream_constructor (GType type,
 static void
 tee_src_pad_unblocked (GstPad *pad, gboolean blocked, gpointer user_data)
 {
+  gst_object_unref (pad);
 }
 
 static void
@@ -476,8 +477,10 @@ tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
   if (queuesinkpad)
     gst_object_unref (queuesinkpad);
 
-  if (!priv->queue)
+  if (!priv->queue) {
+    gst_object_unref (pad);
     return;
+  }
 
   if (!gst_bin_remove (GST_BIN (pipeline), priv->queue)) {
     g_warning ("Could not remove the queue from the bin");
@@ -509,7 +512,9 @@ tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
 
   gst_object_unref (stream);
 
-  gst_pad_set_blocked_async (pad, FALSE, tee_src_pad_unblocked, NULL);
+  if (!gst_pad_set_blocked_async (pad, FALSE, tee_src_pad_unblocked, NULL)) {
+    gst_object_unref (pad);
+  }
 }
 
 static void
@@ -562,11 +567,14 @@ tp_stream_engine_stream_dispose (GObject *object)
 
     pad = gst_element_get_static_pad (tee, "sink");
 
-    gst_pad_set_blocked_async (pad, TRUE, tee_src_pad_blocked, object);
-
-    /* Lets keep a ref around until we've blocked the pad and removed the queue */
     g_object_ref (object);
-  }
+
+    if (!gst_pad_set_blocked_async (pad, TRUE, tee_src_pad_blocked, object)) {
+      g_warning ("tee source pad already blocked, lets try to dispose of it already");
+      tee_src_pad_blocked (pad, TRUE, object);
+    }
+
+    /* Lets keep a ref around until we've blocked the pad and removed the queue */  }
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
@@ -1511,6 +1519,9 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
       GstElement *queue = gst_element_factory_make ("queue", NULL);
       GstPad *pad = NULL;
+      GstStateChangeReturn state_ret;
+
+      g_return_val_if_fail (tee, NULL);
 
       if (!queue)
         g_error("Could not create queue element");
@@ -1520,16 +1531,31 @@ make_src (TpStreamEngineStream *stream, guint media_type)
 
       pad = gst_element_get_static_pad (queue, "src");
 
+      g_return_val_if_fail (pad, NULL);
+
       g_signal_connect (pad, "linked", G_CALLBACK (queue_linked), stream);
 
       priv->queue = queue;
       gst_object_ref (queue);
 
-      gst_bin_add(GST_BIN(pipeline), queue);
+      if (!gst_bin_add(GST_BIN(pipeline), queue)) {
+        g_warning ("Culd not add queue to pipeline");
+        gst_object_unref (queue);
+        return NULL;
+      }
 
-      gst_element_set_state(queue, GST_STATE_PLAYING);
+      state_ret = gst_element_set_state(queue, GST_STATE_PLAYING);
+      if (state_ret == GST_STATE_CHANGE_FAILURE) {
+        g_warning ("Could not set the queue to playing");
+        gst_bin_remove (GST_BIN(pipeline), queue);
+        return NULL;
+      }
 
-      gst_element_link(tee, queue);
+      if (!gst_element_link(tee, queue)) {
+        g_warning ("Could not link the tee to its queue");
+        gst_bin_remove (GST_BIN(pipeline), queue);
+        return NULL;
+      }
 
       /*
        * We need to keep a second ref
@@ -1571,14 +1597,27 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           (elem = getenv ("FS_VIDEOSINK")))
         {
           TpStreamEngine *engine;
+          GstStateChangeReturn state_ret;
+
           DEBUG (stream, "making video sink with pipeline \"%s\"", elem);
           sink = gst_parse_bin_from_description (elem, TRUE, NULL);
           g_assert (GST_IS_BIN (sink));
           engine = tp_stream_engine_get ();
           gst_object_ref (sink);
-          gst_bin_add (GST_BIN (tp_stream_engine_get_pipeline (engine)), sink);
-          gst_element_set_state (sink, GST_STATE_PLAYING);
-          g_assert (sink);
+          if (!gst_bin_add (GST_BIN (tp_stream_engine_get_pipeline (engine)),
+                  sink)) {
+            g_warning ("Could not add sink bin to the pipeline");
+            gst_object_unref (sink);
+            gst_object_unref (sink);
+            return NULL;
+          }
+          state_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
+          if (state_ret == GST_STATE_CHANGE_FAILURE) {
+            g_warning ("Could not set sink to PLAYING");
+            gst_object_unref (sink);
+            gst_object_unref (sink);
+            return NULL;
+          }
         }
       else
         {

@@ -389,14 +389,29 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
 
 #ifndef MAEMO_OSSO_SUPPORT
   bin = gst_bin_new (NULL);
-  gst_bin_add (GST_BIN (bin), sink);
+
+  if (!gst_bin_add (GST_BIN (bin), sink)) {
+    g_warning ("Could not add source bin to the pipeline");
+    gst_object_unref (bin);
+    gst_object_unref (sink);
+    return NULL;
+  }
 
   tmp = gst_element_factory_make ("videoscale", NULL);
   if (tmp != NULL)
     {
       g_debug ("linking videoscale");
-      gst_bin_add (GST_BIN (bin), tmp);
-      gst_element_link (tmp, sink);
+      if (!gst_bin_add (GST_BIN (bin), tmp)) {
+        g_warning ("Could not add videoscale to the source bin");
+        gst_object_unref (tmp);
+        gst_object_unref (sink);
+        return NULL;
+      }
+      if (!gst_element_link (tmp, sink)) {
+        g_warning ("Could not link sink and videoscale elements");
+        gst_object_unref (sink);
+        return NULL;
+      }
       sink = tmp;
     }
 
@@ -404,13 +419,33 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
   if (tmp != NULL)
     {
       g_debug ("linking ffmpegcolorspace");
-      gst_bin_add (GST_BIN (bin), tmp);
-      gst_element_link (tmp, sink);
+     if (!gst_bin_add (GST_BIN (bin), tmp)) {
+        g_warning ("Could not add ffmpegcolorspace to the source bin");
+        gst_object_unref (tmp);
+        gst_object_unref (sink);
+        return NULL;
+      }
+      if (!gst_element_link (tmp, sink)) {
+        g_warning ("Could not link sink and ffmpegcolorspace elements");
+        gst_object_unref (sink);
+        return NULL;
+      }
       sink = tmp;
     }
 
   pad = gst_bin_find_unconnected_pad (GST_BIN (bin), GST_PAD_SINK);
-  gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad));
+
+  if (!pad) {
+    g_warning ("Could not find unconnected sink pad in the source bin");
+    gst_object_unref (sink);
+    return NULL;
+  }
+
+  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad))) {
+    g_warning ("Could not add sink ghostpad to the source bin");
+    gst_object_unref (sink);
+    return NULL;
+  }
   gst_object_unref (GST_OBJECT (pad));
 
   sink = bin;
@@ -444,13 +479,14 @@ _add_preview_window (TpStreamEngine *self, guint window_id, GError **error)
 
   g_debug ("adding preview in window %u", window_id);
 
-  tee = gst_bin_get_by_name (GST_BIN (self->priv->pipeline), "tee");
-  sink = tp_stream_engine_make_video_sink (self, TRUE);
+  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+  sink = tp_stream_engine_make_video_sink (obj, TRUE);
 
   if (sink == NULL)
     goto sink_failure;
 
-  /* We dont keep a ref, this means we can potentially point to a
+  /* FIXME:
+   * We dont keep a ref, this means we can potentially point to a
    * dead object
    */
   gst_object_unref (sink);
@@ -493,6 +529,8 @@ link_failure:
 
 sink_failure:
   gst_object_unref (tee);
+
+tee_failure:
 
   if (error != NULL)
     g_warning ((*error)->message);
@@ -679,6 +717,11 @@ tp_stream_engine_dispose (GObject *object)
 
   if (priv->pipeline)
     {
+      /*
+       * Lets not check the return values
+       * if it fails or is async, it will crash on the following
+       * unref anyways
+       */
       gst_element_set_state (priv->videosrc, GST_STATE_NULL);
       gst_element_set_state (priv->pipeline, GST_STATE_NULL);
       g_object_unref (priv->pipeline);
@@ -996,8 +1039,12 @@ _remove_defunct_preview_sink (WindowPair *wp)
 
   gst_object_unref (tee_sink_pad);
 
-  gst_pad_set_blocked_async (tee_peer_src_pad, TRUE,
-      _remove_defunct_preview_sink_callback, wp);
+  if (!gst_pad_set_blocked_async (tee_peer_src_pad, TRUE,
+          _remove_defunct_preview_sink_callback, wp)) {
+    g_warning ("Pad already blocked, "
+        "we will try calling the remove function directly");
+    _remove_defunct_preview_sink_idle_callback (wp);
+  }
 }
 
 static void
@@ -1274,9 +1321,12 @@ _create_pipeline (TpStreamEngine *self)
   const gchar *elem;
   const gchar *caps_str;
   GstStateChangeReturn state_ret;
+  gboolean ret;
 
   priv->pipeline = gst_pipeline_new (NULL);
   tee = gst_element_factory_make ("tee", "tee");
+
+  g_assert (tee);
 
   if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
     {
@@ -1302,7 +1352,7 @@ _create_pipeline (TpStreamEngine *self)
       if (videosrc != NULL)
         g_debug ("using %s as video source", GST_ELEMENT_NAME (videosrc));
       else
-        g_debug ("failed to create video source");
+        g_error ("failed to create video source");
     }
 
   if ((caps_str = getenv ("FS_VIDEO_SRC_CAPS")) || (caps_str = getenv ("FS_VIDEOSRC_CAPS")))
@@ -1371,7 +1421,9 @@ _create_pipeline (TpStreamEngine *self)
 #endif
 
   capsfilter = gst_element_factory_make ("capsfilter", NULL);
-  gst_bin_add (GST_BIN (priv->pipeline), capsfilter);
+  g_assert (capsfilter);
+  ret = gst_bin_add (GST_BIN (priv->pipeline), capsfilter);
+  g_assert (ret);
 
   if (priv->videosrc_next == NULL)
     priv->videosrc_next = capsfilter;
@@ -1379,8 +1431,10 @@ _create_pipeline (TpStreamEngine *self)
   g_object_set (capsfilter, "caps", filter, NULL);
   gst_caps_unref (filter);
 
-  gst_element_link (videosrc, capsfilter);
-  gst_element_link (capsfilter, tee);
+  ret = gst_element_link (videosrc, capsfilter);
+  g_assert (ret);
+  ret = gst_element_link (capsfilter, tee);
+  g_assert (ret);
 
 
   state_ret = gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
