@@ -142,10 +142,7 @@ class GTypesGenerator(object):
         self.header.write(' */\n')
         self.header.write('#define %s (%s ())\n\n' % (name, impl))
 
-        if struct.hasAttribute('array-name'):
-            array_name = struct.getAttribute('array-name')
-        else:
-            array_name = struct.getAttribute('name') + '_LIST'
+        array_name = struct.getAttribute('array-name')
         if array_name != '':
             array_name = (self.PREFIX_ + 'ARRAY_TYPE_' + array_name.upper())
             impl = self.prefix_ + 'type_dbus_array_' + esc_impl_sig
