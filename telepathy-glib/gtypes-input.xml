@@ -70,7 +70,7 @@
     </tp:member>
   </tp:struct>
 
-  <tp:struct name="Channel_List_Entry" array-name="Channel_List">
+  <tp:struct name="Channel_Info" array-name="Channel_Info_List">
     <tp:docstring>A struct representing a channel, as returned by
       ListChannels on the Connection interface.</tp:docstring>
     <tp:member type="o" name="Channel">
@@ -145,7 +145,7 @@
     <tp:member type="v" name="Value"/>
   </tp:struct>
 
-  <tp:struct name="Tube_List_Entry" array-name="Tube_List">
+  <tp:struct name="Tube_Info" array-name="Tube_Info_List">
     <tp:docstring>A struct (tube ID, initiator handle, tube type,
       service name, parameters, state) representing a tube, as returned
       by ListTubes on the Tubes channel type.</tp:docstring>
@@ -215,7 +215,7 @@
     <tp:member type="(ubba{ss})" tp:type="Status_Spec" name="Spec"/>
   </tp:mapping>
 
-  <tp:struct name="Stream_List_Entry" array-name="Stream_List">
+  <tp:struct name="Media_Stream_Info" array-name="Media_Stream_Info_List">
     <tp:member type="u" name="Identifier"/>
     <tp:member type="u" tp:type="Contact_Handle" name="Contact"/>
     <tp:member type="u" tp:type="Media_Stream_Type" name="Type"/>
@@ -225,7 +225,7 @@
       name="Pending_Send_Flags"/>
   </tp:struct>
 
-  <tp:struct name="Room_List_Entry" array-name="Room_List">
+  <tp:struct name="Room_Info" array-name="Room_Info_List">
     <tp:member type="u" tp:type="Room_Handle" name="Handle"/>
     <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
     <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Info"/>
