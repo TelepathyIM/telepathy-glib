@@ -1034,7 +1034,7 @@ list_channel_factory_foreach_one (TpChannelIface *chan,
   gchar *path, *type;
   guint handle_type, handle;
   GValue *entry = tp_dbus_specialized_value_slice_new
-      (TP_STRUCT_TYPE_CHANNEL_LIST_ENTRY);
+      (TP_STRUCT_TYPE_CHANNEL_INFO);
 
   g_object_get (channel,
       "object-path", &path,
