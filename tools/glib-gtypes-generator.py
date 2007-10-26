@@ -92,6 +92,7 @@ class GTypesGenerator(object):
 
         self.need_mappings = {}
         self.need_structs = {}
+        self.need_arrays = {}
 
     def do_mapping_header(self, mapping):
         impl_sig = ''.join([elt.getAttribute('type')
@@ -152,6 +153,7 @@ class GTypesGenerator(object):
             self.header.write(' * that returns a GType.\n')
             self.header.write(' */\n')
             self.header.write('#define %s (%s ())\n\n' % (array_name, impl))
+            self.need_arrays[impl_sig] = esc_impl_sig
 
         self.need_structs[impl_sig] = esc_impl_sig
 
@@ -196,6 +198,7 @@ class GTypesGenerator(object):
             self.body.write('  return t;\n')
             self.body.write('}\n\n')
 
+        for sig in self.need_arrays:
             self.header.write('GType %stype_dbus_array_%s (void);\n\n' %
                               (self.prefix_, self.need_structs[sig]))
             self.body.write('GType\n%stype_dbus_array_%s (void)\n{\n' %
