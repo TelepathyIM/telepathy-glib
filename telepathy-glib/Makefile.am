@@ -188,7 +188,7 @@ _gen/telepathy-errors.h: ../spec/errors.xml \
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \
 	../tools/glib-client-marshaller-gen.py
-	$(PYTHON) $(srcdir)/../tools/glib-client-marshaller-gen.py $< > $@
+	$(PYTHON) $(srcdir)/../tools/glib-client-marshaller-gen.py $< _tp > $@
 
 _gen/%.xml: ../spec/%.xml ../tools/spec-to-introspect.xsl
 	$(XSLTPROC) $(XSLTPROCFLAGS) \

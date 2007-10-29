@@ -12,10 +12,10 @@ NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 
 class Generator(object):
 
-    def __init__(self, dom):
+    def __init__(self, dom, prefix):
         self.dom = dom
         self.marshallers = {}
-        self.prefix = '_tp'     # FIXME
+        self.prefix = prefix
 
     def do_signal(self, signal):
         marshaller = signal_to_marshal_name(signal, self.prefix)
@@ -56,4 +56,4 @@ if __name__ == '__main__':
     argv = sys.argv[1:]
     dom = xml.dom.minidom.parse(argv[0])
 
-    Generator(dom)()
+    Generator(dom, argv[1])()
