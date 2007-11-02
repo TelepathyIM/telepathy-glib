@@ -189,8 +189,7 @@ video_sink_unlinked_idle_cb (gpointer user_data)
     goto out;
 
   retval = gst_bin_remove (GST_BIN (binparent), sink);
-  if (retval != TRUE)
-    return FALSE;
+  g_assert (retval);
 
   ret = gst_element_set_state (sink, GST_STATE_NULL);
 
