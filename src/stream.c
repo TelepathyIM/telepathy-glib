@@ -479,32 +479,34 @@ tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
   if (queuesinkpad)
     gst_object_unref (queuesinkpad);
 
-  if (!priv->queue) {
-    gst_object_unref (pad);
-    return;
-  }
+  if (!priv->queue)
+    {
+      gst_object_unref (pad);
+      return;
+    }
 
-  if (!gst_bin_remove (GST_BIN (pipeline), priv->queue)) {
-    g_warning ("Could not remove the queue from the bin");
-  }
+  if (!gst_bin_remove (GST_BIN (pipeline), priv->queue))
+    {
+      g_warning ("Could not remove the queue from the bin");
+    }
 
   ret = gst_element_set_state (priv->queue, GST_STATE_NULL);
 
-  if (ret == GST_STATE_CHANGE_ASYNC) {
-    g_warning ("%s is going to NULL async, lets wait 2 seconds",
-        GST_OBJECT_NAME (priv->queue));
-    ret = gst_element_get_state (priv->queue, NULL, NULL, 2*GST_SECOND);
-  }
+  if (ret == GST_STATE_CHANGE_ASYNC)
+    {
+      g_warning ("%s is going to NULL async, lets wait 2 seconds",
+          GST_OBJECT_NAME (priv->queue));
+      ret = gst_element_get_state (priv->queue, NULL, NULL, 2*GST_SECOND);
+    }
 
-  if (ret == GST_STATE_CHANGE_ASYNC) {
+  if (ret == GST_STATE_CHANGE_ASYNC)
     g_warning ("%s still hasn't going NULL, we have to leak it",
         GST_OBJECT_NAME (priv->queue));
-  } else if (ret == GST_STATE_CHANGE_FAILURE) {
+  else if (ret == GST_STATE_CHANGE_FAILURE)
     g_warning ("There was an error bringing %s to the NULL state",
         GST_OBJECT_NAME (priv->queue));
-  } else {
+  else
     gst_object_unref (priv->queue);
-  }
 
   priv->queue = NULL;
 
@@ -514,9 +516,8 @@ tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
 
   gst_object_unref (stream);
 
-  if (!gst_pad_set_blocked_async (pad, FALSE, tee_src_pad_unblocked, NULL)) {
+  if (!gst_pad_set_blocked_async (pad, FALSE, tee_src_pad_unblocked, NULL))
     gst_object_unref (pad);
-  }
 }
 
 static void
@@ -561,22 +562,24 @@ tp_stream_engine_stream_dispose (GObject *object)
     }
 
   if (priv->queue)
-  {
-    TpStreamEngine *engine = tp_stream_engine_get ();
-    GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
-    GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-    GstPad *pad = NULL;
+    {
+      TpStreamEngine *engine = tp_stream_engine_get ();
+      GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
+      GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
+      GstPad *pad = NULL;
 
-    pad = gst_element_get_static_pad (tee, "sink");
+      pad = gst_element_get_static_pad (tee, "sink");
 
-    g_object_ref (object);
+      g_object_ref (object);
 
-    if (!gst_pad_set_blocked_async (pad, TRUE, tee_src_pad_blocked, object)) {
-      g_warning ("tee source pad already blocked, lets try to dispose of it already");
-      tee_src_pad_blocked (pad, TRUE, object);
-    }
+      if (!gst_pad_set_blocked_async (pad, TRUE, tee_src_pad_blocked, object))
+        {
+          g_warning ("tee source pad already blocked, lets try to dispose"
+              " of it already");
+          tee_src_pad_blocked (pad, TRUE, object);
+        }
 
-    /* Lets keep a ref around until we've blocked the pad and removed the queue */  }
+      /* Lets keep a ref around until we've blocked the pad and removed the queue */  }
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
@@ -1540,24 +1543,27 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       priv->queue = queue;
       gst_object_ref (queue);
 
-      if (!gst_bin_add(GST_BIN(pipeline), queue)) {
-        g_warning ("Culd not add queue to pipeline");
-        gst_object_unref (queue);
-        return NULL;
-      }
+      if (!gst_bin_add(GST_BIN(pipeline), queue))
+        {
+          g_warning ("Culd not add queue to pipeline");
+          gst_object_unref (queue);
+          return NULL;
+        }
 
       state_ret = gst_element_set_state(queue, GST_STATE_PLAYING);
-      if (state_ret == GST_STATE_CHANGE_FAILURE) {
-        g_warning ("Could not set the queue to playing");
-        gst_bin_remove (GST_BIN(pipeline), queue);
-        return NULL;
-      }
+      if (state_ret == GST_STATE_CHANGE_FAILURE)
+        {
+          g_warning ("Could not set the queue to playing");
+          gst_bin_remove (GST_BIN(pipeline), queue);
+          return NULL;
+        }
 
-      if (!gst_element_link(tee, queue)) {
-        g_warning ("Could not link the tee to its queue");
-        gst_bin_remove (GST_BIN(pipeline), queue);
-        return NULL;
-      }
+      if (!gst_element_link(tee, queue))
+        {
+          g_warning ("Could not link the tee to its queue");
+          gst_bin_remove (GST_BIN(pipeline), queue);
+          return NULL;
+        }
 
       /*
        * We need to keep a second ref
@@ -1607,19 +1613,21 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           engine = tp_stream_engine_get ();
           gst_object_ref (sink);
           if (!gst_bin_add (GST_BIN (tp_stream_engine_get_pipeline (engine)),
-                  sink)) {
-            g_warning ("Could not add sink bin to the pipeline");
-            gst_object_unref (sink);
-            gst_object_unref (sink);
-            return NULL;
-          }
+                  sink))
+            {
+              g_warning ("Could not add sink bin to the pipeline");
+              gst_object_unref (sink);
+              gst_object_unref (sink);
+              return NULL;
+            }
           state_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
-          if (state_ret == GST_STATE_CHANGE_FAILURE) {
-            g_warning ("Could not set sink to PLAYING");
-            gst_object_unref (sink);
-            gst_object_unref (sink);
-            return NULL;
-          }
+          if (state_ret == GST_STATE_CHANGE_FAILURE)
+            {
+              g_warning ("Could not set sink to PLAYING");
+              gst_object_unref (sink);
+              gst_object_unref (sink);
+              return NULL;
+            }
         }
       else
         {

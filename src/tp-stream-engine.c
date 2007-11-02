@@ -238,10 +238,11 @@ _gst_bin_find_element (GstBin *bin, GstElement *element)
           case GST_ITERATOR_OK:
             {
               GstElement *child = (GstElement *) item;
-              if (child == element) {
-                found = TRUE;
-                done = TRUE;
-              }
+              if (child == element)
+                {
+                  found = TRUE;
+                  done = TRUE;
+                }
               gst_object_unref (child);
             }
             break;
@@ -390,28 +391,31 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
 #ifndef MAEMO_OSSO_SUPPORT
   bin = gst_bin_new (NULL);
 
-  if (!gst_bin_add (GST_BIN (bin), sink)) {
-    g_warning ("Could not add source bin to the pipeline");
-    gst_object_unref (bin);
-    gst_object_unref (sink);
-    return NULL;
-  }
+  if (!gst_bin_add (GST_BIN (bin), sink))
+    {
+      g_warning ("Could not add source bin to the pipeline");
+      gst_object_unref (bin);
+      gst_object_unref (sink);
+      return NULL;
+    }
 
   tmp = gst_element_factory_make ("videoscale", NULL);
   if (tmp != NULL)
     {
       g_debug ("linking videoscale");
-      if (!gst_bin_add (GST_BIN (bin), tmp)) {
-        g_warning ("Could not add videoscale to the source bin");
-        gst_object_unref (tmp);
-        gst_object_unref (sink);
-        return NULL;
-      }
-      if (!gst_element_link (tmp, sink)) {
-        g_warning ("Could not link sink and videoscale elements");
-        gst_object_unref (sink);
-        return NULL;
-      }
+      if (!gst_bin_add (GST_BIN (bin), tmp))
+        {
+          g_warning ("Could not add videoscale to the source bin");
+          gst_object_unref (tmp);
+          gst_object_unref (sink);
+          return NULL;
+        }
+      if (!gst_element_link (tmp, sink))
+        {
+          g_warning ("Could not link sink and videoscale elements");
+          gst_object_unref (sink);
+          return NULL;
+        }
       sink = tmp;
     }
 
@@ -419,33 +423,37 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
   if (tmp != NULL)
     {
       g_debug ("linking ffmpegcolorspace");
-     if (!gst_bin_add (GST_BIN (bin), tmp)) {
-        g_warning ("Could not add ffmpegcolorspace to the source bin");
-        gst_object_unref (tmp);
-        gst_object_unref (sink);
-        return NULL;
-      }
-      if (!gst_element_link (tmp, sink)) {
-        g_warning ("Could not link sink and ffmpegcolorspace elements");
-        gst_object_unref (sink);
-        return NULL;
-      }
+     if (!gst_bin_add (GST_BIN (bin), tmp))
+       {
+         g_warning ("Could not add ffmpegcolorspace to the source bin");
+         gst_object_unref (tmp);
+         gst_object_unref (sink);
+         return NULL;
+       }
+      if (!gst_element_link (tmp, sink))
+        {
+          g_warning ("Could not link sink and ffmpegcolorspace elements");
+          gst_object_unref (sink);
+          return NULL;
+        }
       sink = tmp;
     }
 
   pad = gst_bin_find_unconnected_pad (GST_BIN (bin), GST_PAD_SINK);
 
-  if (!pad) {
-    g_warning ("Could not find unconnected sink pad in the source bin");
-    gst_object_unref (sink);
-    return NULL;
-  }
+  if (!pad)
+    {
+      g_warning ("Could not find unconnected sink pad in the source bin");
+      gst_object_unref (sink);
+      return NULL;
+    }
 
-  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad))) {
-    g_warning ("Could not add sink ghostpad to the source bin");
-    gst_object_unref (sink);
-    return NULL;
-  }
+  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
+    {
+      g_warning ("Could not add sink ghostpad to the source bin");
+      gst_object_unref (sink);
+      return NULL;
+    }
   gst_object_unref (GST_OBJECT (pad));
 
   sink = bin;
@@ -825,9 +833,10 @@ channel_stream_created (TpStreamEngineChannel *chan,
 
   g_object_get (G_OBJECT (stream), "media-type", &mediatype, NULL);
 
-  if (mediatype == TP_MEDIA_STREAM_TYPE_VIDEO) {
-    g_signal_connect (stream, "linked", G_CALLBACK (stream_linked), user_data);
-  }
+  if (mediatype == TP_MEDIA_STREAM_TYPE_VIDEO)
+    {
+      g_signal_connect (stream, "linked", G_CALLBACK (stream_linked), user_data);
+    }
 }
 
 
@@ -1042,11 +1051,12 @@ _remove_defunct_preview_sink (WindowPair *wp)
   gst_object_unref (tee_sink_pad);
 
   if (!gst_pad_set_blocked_async (tee_peer_src_pad, TRUE,
-          _remove_defunct_preview_sink_callback, wp)) {
-    g_warning ("Pad already blocked, "
-        "we will try calling the remove function directly");
-    _remove_defunct_preview_sink_idle_callback (wp);
-  }
+          _remove_defunct_preview_sink_callback, wp))
+    {
+      g_warning ("Pad already blocked, "
+          "we will try calling the remove function directly");
+      _remove_defunct_preview_sink_idle_callback (wp);
+    }
 }
 
 static void
@@ -1108,25 +1118,27 @@ bus_sync_message (GstBus *bus, GstMessage *message, gpointer data)
   GError *error = NULL;
   gchar *error_string = NULL;
 
-  switch (GST_MESSAGE_TYPE (message)) {
+  switch (GST_MESSAGE_TYPE (message))
+    {
     case GST_MESSAGE_ERROR:
       gst_message_parse_error (message, &error, &error_string);
       if (error->domain == GST_STREAM_ERROR &&
           error->code == GST_STREAM_ERROR_FAILED &&
-          strstr (error_string, "not-linked")) {
+          strstr (error_string, "not-linked"))
+        {
 
-        priv->linked = FALSE;
-        priv->restart_source = TRUE;
+          priv->linked = FALSE;
+          priv->restart_source = TRUE;
 
-        g_debug ("Stream error, lets unlink the source to stop the EOS");
-        gst_element_unlink (priv->videosrc, priv->videosrc_next);
-      }
+          g_debug ("Stream error, lets unlink the source to stop the EOS");
+          gst_element_unlink (priv->videosrc, priv->videosrc_next);
+        }
       g_free (error_string);
       g_error_free (error);
       break;
     default:
       break;
-  }
+    }
 
 }
 
@@ -1469,30 +1481,31 @@ tp_stream_engine_start_source (TpStreamEngine *obj)
    */
   gst_element_link (priv->videosrc, priv->videosrc_next);
 
-  if (priv->restart_source) {
-    priv->restart_source = FALSE;
+  if (priv->restart_source)
+    {
+      priv->restart_source = FALSE;
 
-    state_ret = gst_element_set_state (priv->videosrc, GST_STATE_NULL);
-    if (state_ret == GST_STATE_CHANGE_ASYNC) {
-      g_warning ("The video source tries to change state async to NULL");
+      state_ret = gst_element_set_state (priv->videosrc, GST_STATE_NULL);
+      if (state_ret == GST_STATE_CHANGE_ASYNC)
+        {
+          g_warning ("The video source tries to change state async to NULL");
 
-      state_ret = gst_element_get_state (priv->videosrc, NULL, NULL,
-          GST_SECOND);
+          state_ret = gst_element_get_state (priv->videosrc, NULL, NULL,
+              GST_SECOND);
+        }
+
+      if (state_ret == GST_STATE_CHANGE_ASYNC)
+        g_warning ("Could not change the video source to NULL in a reasonable"
+            " delay (1 second)");
+      else if (state_ret == GST_STATE_CHANGE_FAILURE)
+        g_warning ("Failure while stopping the video source");
+
     }
-
-    if (state_ret == GST_STATE_CHANGE_ASYNC)
-      g_warning ("Could not change the video source to NULL in a reasonable"
-          " delay (1 second)");
-    else if (state_ret == GST_STATE_CHANGE_FAILURE)
-      g_warning ("Failure while stopping the video source");
-
-  }
 
   state_ret = gst_element_set_state (priv->videosrc, GST_STATE_PLAYING);
 
-  if (state_ret == GST_STATE_CHANGE_FAILURE) {
+  if (state_ret == GST_STATE_CHANGE_FAILURE)
     g_error ("Error starting the video source");
-  }
 }
 
 /*
