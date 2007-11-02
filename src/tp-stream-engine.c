@@ -1001,7 +1001,9 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 
   check_if_busy (self);
 
-  gst_pad_set_blocked_async (tee_peer_src_pad, FALSE, unblock_cb, NULL);
+  if (!gst_pad_set_blocked_async (tee_peer_src_pad, FALSE, unblock_cb, NULL)) {
+    gst_object_unref (tee_peer_src_pad);
+  }
 
   return FALSE;
 }
