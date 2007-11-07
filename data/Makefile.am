@@ -5,6 +5,6 @@ EXTRA_DIST=$(service_in_files)
 service_DATA = $(service_in_files:.service.in=.service)
 CLEANFILES=$(service_DATA)
 
-# Rule to make the service file with bindir expanded
+# Rule to make the service file with libexecdir expanded
 $(service_DATA): $(service_in_files) Makefile.in
-	sed -e "s|\@bindir\@|$(bindir)|" $< > $@
+	sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@

@@ -9,7 +9,7 @@ endif
 
 CLEANFILES = $(BUILT_SOURCES)
 
-bin_PROGRAMS = telepathy-stream-engine
+libexec_PROGRAMS = telepathy-stream-engine
 
 libstreamengine_convenience_la_SOURCES = \
 	channel.h \

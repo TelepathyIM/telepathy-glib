@@ -1,3 +1,3 @@
 [D-BUS Service]
 Name=org.freedesktop.Telepathy.StreamEngine
-Exec=@bindir@/telepathy-stream-engine
+Exec=@libexecdir@/telepathy-stream-engine
