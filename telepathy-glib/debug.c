@@ -241,6 +241,11 @@ tp_debug_set_all_flags (void)
 }
 
 void
+tp_debug_set_flags (const gchar *flags_string)
+{
+}
+
+void
 tp_debug_set_flags_from_string (const gchar *flags_string)
 {
 }
