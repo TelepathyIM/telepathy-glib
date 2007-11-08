@@ -62,13 +62,7 @@ static guint timeout_id = 0;
 static gboolean
 kill_connection_manager (gpointer data)
 {
-#ifdef ENABLE_DEBUG
-  if (!_tp_debug_is_persistent ()
-      && !_tp_debug_flag_is_set (TP_DEBUG_PERSIST)
-      && !connections_exist)
-#else
-  if (!connections_exist)
-#endif
+  if (!_TP_DEBUG_IS_PERSISTENT && !connections_exist)
     {
       g_debug ("no connections, and timed out");
       g_object_unref (manager);

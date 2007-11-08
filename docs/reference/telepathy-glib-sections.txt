@@ -1070,10 +1070,12 @@ TP_PRESENCE_MIXIN
 <FILE>debug</FILE>
 <TITLE>debug</TITLE>
 <INCLUDE>telepathy-glib/debug.h</INCLUDE>
+tp_debug_set_flags
+tp_debug_set_persistent
+<SUBSECTION>
 tp_debug_set_flags_from_string
 tp_debug_set_flags_from_env
 tp_debug_set_all_flags
-tp_debug_set_persistent
 </SECTION>
 
 <SECTION>

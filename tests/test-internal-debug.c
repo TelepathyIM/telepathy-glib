@@ -71,7 +71,7 @@ int
 main (int argc, char **argv)
 {
   /* We enable debugging for IM, but not for the connection. */
-  tp_debug_set_flags_from_string ("im");
+  tp_debug_set_flags ("im");
   test_debugging ();
   test_not_debugging ();
   test_debugging_again ();
