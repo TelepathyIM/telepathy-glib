@@ -193,6 +193,8 @@ def type_to_gtype(s):
         return ("GArray *", "DBUS_TYPE_G_DOUBLE_ARRAY", "BOXED", True)
     elif s == 'ab': #boolean array
         return ("GArray *", "DBUS_TYPE_G_BOOLEAN_ARRAY", "BOXED", True)
+    elif s == 'ao': #object path array
+        return ("GArray *", "DBUS_TYPE_G_OBJECT_ARRAY", "BOXED", True)
     elif s[:2] == 'a(': #array of structs, recurse
         gtype = type_to_gtype(s[1:])[1]
         return ("GPtrArray *", "(dbus_g_type_get_collection (\"GPtrArray\", "+gtype+"))", "BOXED", True)
