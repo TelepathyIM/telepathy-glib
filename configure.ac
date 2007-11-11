@@ -121,17 +121,6 @@ fi
 
 AM_CONDITIONAL(MAEMO_OSSO_SUPPORT, test x$MAEMO_OSSO_SUPPORT = xyes)
 
-dnl use infoprint 
-AC_ARG_ENABLE( infoprint,
-  AC_HELP_STRING([--enable-infoprint],[compile with infoprint support]),
-  use_infoprint=$enableval, use_infoprint=no )
-
-if test x$MAEMO_OSSO_SUPPORT = xyes -a x$use_infoprint = xyes; then
-  AC_DEFINE(USE_INFOPRINT, , [Use infoprint])
-fi
-
-AM_CONDITIONAL(USE_INFOPRINT, test x$USE_INFOPRINT = xyes)
-
 dnl glibc backtrace functions
 AC_CHECK_FUNCS(backtrace backtrace_symbols_fd)
 AC_CHECK_HEADERS(execinfo.h)

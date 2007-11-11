@@ -3,10 +3,6 @@ BUILT_SOURCES = \
     tp-stream-engine-signals-marshal.h \
     tp-stream-engine-signals-marshal.c
 
-if USE_INFOPRINT
-BUILT_SOURCES += statusbar-gen.h
-endif
-
 CLEANFILES = $(BUILT_SOURCES)
 
 libexec_PROGRAMS = telepathy-stream-engine

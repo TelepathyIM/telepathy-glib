@@ -41,10 +41,6 @@
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
 
-#ifdef USE_INFOPRINT
-#include "statusbar-gen.h"
-#endif
-
 #include "tp-stream-engine-glue.h"
 
 #include "common/telepathy-errors.h"
@@ -59,10 +55,6 @@
 
 #define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/StreamEngine"
-
-#define STATUS_BAR_SERVICE_NAME "com.nokia.statusbar"
-#define STATUS_BAR_INTERFACE_NAME "com.nokia.statusbar"
-#define STATUS_BAR_OBJECT_PATH "/com/nokia/statusbar"
 
 static void
 register_dbus_signal_marshallers()
@@ -136,10 +128,6 @@ struct _TpStreamEnginePrivate
   guint bad_gc_handler_id;
   guint bad_value_handler_id;
   guint bad_window_handler_id;
-
-#ifdef USE_INFOPRINT
-  DBusGProxy *infoprint_proxy;
-#endif
 };
 
 #define TP_STREAM_ENGINE_GET_PRIVATE(o) ((TpStreamEnginePrivate *)((o)->priv))
@@ -490,21 +478,6 @@ _add_pending_preview_windows (TpStreamEngine *engine)
     }
 }
 
-#ifdef USE_INFOPRINT
-static void
-tp_stream_engine_infoprint (const gchar *log_domain,
-    GLogLevelFlags log_level,
-    const gchar *message,
-    gpointer user_data)
-{
-  TpStreamEnginePrivate *priv = (TpStreamEnginePrivate *)user_data;
-  com_nokia_statusbar_system_note_infoprint (
-          DBUS_G_PROXY (priv->infoprint_proxy),
-          message, NULL);
-  g_log_default_handler (log_domain, log_level, message, user_data);
-}
-#endif
-
 static gboolean
 bad_misc_cb (TpStreamEngineXErrorHandler *handler,
              guint window_id,
@@ -552,26 +525,6 @@ tp_stream_engine_init (TpStreamEngine *obj)
   priv->bad_window_handler_id =
     g_signal_connect (priv->handler, "bad-window", (GCallback) bad_window_cb,
       obj);
-
-#ifdef USE_INFOPRINT
-  priv->infoprint_proxy =
-    dbus_g_proxy_new_for_name (tp_get_bus(),
-        STATUS_BAR_SERVICE_NAME,
-        STATUS_BAR_OBJECT_PATH,
-        STATUS_BAR_INTERFACE_NAME);
-
-  g_debug ("Using infoprint %p", priv->infoprint_proxy);
-  /* handler for stream-engine messages */
-  g_log_set_handler (NULL, G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL |
-      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_stream_engine_infoprint, priv);
-
-  /* handler for farsight messages */
-  /*
-  g_log_set_handler ("Farsight", G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_CRITICAL |
-      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION, tp_stream_engine_infoprint, NULL);
-      */
-
-#endif
 }
 
 static void tp_stream_engine_dispose (GObject *object);
@@ -746,19 +699,6 @@ tp_stream_engine_dispose (GObject *object)
 void
 tp_stream_engine_finalize (GObject *object)
 {
-#ifdef USE_INFOPRINT
-  TpStreamEngine *self = TP_STREAM_ENGINE (object);
-
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
-
-  if (priv->infoprint_proxy)
-    {
-      g_debug ("priv->infoprint_proxy->ref_count before unref == %d", G_OBJECT (priv->infoprint_proxy)->ref_count);
-      g_object_unref (priv->infoprint_proxy);
-      priv->infoprint_proxy = NULL;
-    }
-#endif
-
   G_OBJECT_CLASS (tp_stream_engine_parent_class)->finalize (object);
 }
 
