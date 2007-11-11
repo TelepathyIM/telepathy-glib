@@ -58,14 +58,6 @@ ifelse(stream_engine_nano_version, 0, [],
 
 AC_SUBST(ERROR_CFLAGS)
 
-AC_ARG_ENABLE(backtrace,
-  AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash]),
-    enable_backtrace=$enableval, enable_backtrace=no )
-
-if test x$enable_backtrace = xyes; then
-  AC_DEFINE(ENABLE_BACKTRACE, [], [Enable backtrace output on crashes])
-fi
-
 dnl options for building sequence diagrams
 SEQ_DIAS
 
@@ -120,10 +112,6 @@ if test x$maemo_support = xyes; then
 fi
 
 AM_CONDITIONAL(MAEMO_OSSO_SUPPORT, test x$MAEMO_OSSO_SUPPORT = xyes)
-
-dnl glibc backtrace functions
-AC_CHECK_FUNCS(backtrace backtrace_symbols_fd)
-AC_CHECK_HEADERS(execinfo.h)
 
 AC_OUTPUT( Makefile \
           common/Makefile \

@@ -26,10 +26,6 @@
 #include <sys/mman.h>
 #endif /* USE_REALTIME */
 
-#ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
-#endif /* HAVE_EXECINFO_H */
-
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -179,47 +175,6 @@ got_sigbus (int i)
   _exit (1);
 }
 
-#ifdef ENABLE_BACKTRACE
-static void
-print_backtrace (void)
-{
-#if defined (HAVE_BACKTRACE) && defined (HAVE_BACKTRACE_SYMBOLS_FD)
-  void *array[20];
-  size_t size;
-
-#define MSG "\n########## Backtrace (version " VERSION ") ##########\n"
-  write (STDERR_FILENO, MSG, strlen (MSG));
-#undef MSG
-
-  size = backtrace (array, 20);
-  backtrace_symbols_fd (array, size, STDERR_FILENO);
-#endif /* HAVE_BACKTRACE && HAVE_BACKTRACE_SYMBOLS_FD */
-}
-
-static void
-got_segv (int id)
-{
-  signal (SIGSEGV, SIG_IGN);
-
-#define MSG "telepathy-stream-engine caught SIGSEGV\n"
-  write (STDERR_FILENO, MSG, strlen (MSG));
-#undef MSG
-
-  print_backtrace ();
-  abort ();
-}
-
-static void
-critical_handler (const gchar *log_domain,
-                  GLogLevelFlags log_level,
-                  const gchar *message,
-                  gpointer user_data)
-{
-  g_log_default_handler (log_domain, log_level, message, user_data);
-  print_backtrace ();
-}
-#endif /* ENABLE_BACKTRACE */
-
 /* every time the watchdog barks, schedule a bite */
 static gboolean
 watchdog_bark (gpointer data)
@@ -277,9 +232,6 @@ int main(int argc, char **argv)
   set_log_file_from_env ();
 
   signal (SIGBUS, got_sigbus);
-#ifdef ENABLE_BACKTRACE
-  signal (SIGSEGV, got_segv);
-#endif /* ENABLE_BACKTRACE */
 
 #ifdef USE_REALTIME
   {
@@ -312,21 +264,6 @@ int main(int argc, char **argv)
     fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
     fatal_mask |= G_LOG_LEVEL_CRITICAL;
     g_log_set_always_fatal (fatal_mask);
-
-#ifdef ENABLE_BACKTRACE
-    g_log_set_handler ("GLib-GObject",
-        G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
-        G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
-        critical_handler, NULL);
-    g_log_set_handler ("GLib",
-        G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
-        G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
-        critical_handler, NULL);
-    g_log_set_handler (NULL,
-        G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
-        G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
-        critical_handler, NULL);
-#endif /* ENABLE_BACKTRACE */
   }
 
   g_set_prgname("telepathy-stream-engine");
