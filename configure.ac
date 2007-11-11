@@ -117,7 +117,6 @@ AC_OUTPUT( Makefile \
           common/Makefile \
           data/Makefile \
           doc/Makefile \
-          generate/Makefile \
           src/Makefile  \
           test/Makefile \
           test/python/Makefile

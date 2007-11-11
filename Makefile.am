@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = common src test doc data generate
+SUBDIRS = common src test doc data
 
 dist-hook:
 	chmod a+w ${distdir}/ChangeLog
