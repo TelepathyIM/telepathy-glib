@@ -69,10 +69,6 @@ gboolean tp_stream_engine_stream_set_output_window (
   TpStreamEngineStream *chan,
   guint window_id,
   GError **error);
-gboolean tp_stream_engine_stream_set_preview_window (
-  TpStreamEngineStream *chan,
-  guint window_id,
-  GError **error);
 
 void tp_stream_engine_stream_error (
   TpStreamEngineStream *self,
