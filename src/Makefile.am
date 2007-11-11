@@ -1,6 +1,3 @@
-EXTRA_DIST = \
-    tp-stream-engine.xml
-
 BUILT_SOURCES = \
     telepathy-errors-enum-types.h \
     telepathy-errors-enum-types.c \
@@ -23,6 +20,7 @@ libstreamengine_convenience_la_SOURCES = \
 	telepathy-errors.c \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
+	tp-stream-engine.xml \
 	types.h \
 	util.h \
 	util.c \
