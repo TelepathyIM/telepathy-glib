@@ -46,22 +46,16 @@ AM_CFLAGS = $(ERROR_CFLAGS) \
 AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@ @FARSIGHT_LIBS@ \
 	@GST_PLUGINS_BASE_LIBS@ @X11_LIBS@ -lgstinterfaces-0.10
 
-
-#Rule to generate the binding headers
+# rule to generate the dbus-glib binding glue
 %-glue.h: %.xml Makefile.in
 	dbus-binding-tool --mode=glib-server --output=$@ --prefix=$(subst -,_,$*) $<
 
+# rules to generate signal marshallers
 %-signals-marshal.h: %-signals-marshal.list Makefile.in
 	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-signals-marshal.h
 
 %-signals-marshal.c: %-signals-marshal.list Makefile.in
 	glib-genmarshal --body --prefix=$(subst -,_,$*)_marshal $< > $*-signals-marshal.c
-
-%-marshal.h: %-marshal.list Makefile.in
-	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-marshal.h
-
-%-marshal.c: %-marshal.list Makefile.in
-	glib-genmarshal --body --prefix=$(subst -,_,$*)_marshal $< > $*-marshal.c
 
 # rules for making the glib enum types
 %-enum-types.h: %.h Makefile.in
