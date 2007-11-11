@@ -43,14 +43,12 @@
 
 #include "tp-stream-engine-glue.h"
 
-#include "common/telepathy-errors.h"
-#include "common/telepathy-errors-enumtypes.h"
-
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
 #include "types.h"
 #include "util.h"
+#include "telepathy-errors.h"
 #include "xerrorhandler.h"
 
 #define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"

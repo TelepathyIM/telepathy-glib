@@ -40,9 +40,10 @@
 
 #include <dbus/dbus-glib.h>
 #include <gst/gst.h>
+
+#include "telepathy-errors.h"
+#include "telepathy-errors-enum-types.h"
 #include "tp-stream-engine.h"
-#include "common/telepathy-errors.h"
-#include "common/telepathy-errors-enumtypes.h"
 
 GSource *timeout = NULL;
 GMainLoop *mainloop = NULL;

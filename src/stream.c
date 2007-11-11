@@ -35,9 +35,8 @@
 
 #include <gst/interfaces/xoverlay.h>
 
-#include "common/telepathy-errors.h"
-
 #include "stream.h"
+#include "telepathy-errors.h"
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
 #include "types.h"

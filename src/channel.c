@@ -29,11 +29,10 @@
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-props-iface.h>
 
-#include "common/telepathy-errors.h"
-
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
+#include "telepathy-errors.h"
 #include "tp-stream-engine-signals-marshal.h"
 #include "types.h"
 

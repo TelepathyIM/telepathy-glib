@@ -25,9 +25,8 @@
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-codec.h>
 
-#include "common/telepathy-errors.h"
-
 #include "session.h"
+#include "telepathy-errors.h"
 #include "tp-stream-engine-signals-marshal.h"
 
 G_DEFINE_TYPE (TpStreamEngineSession, tp_stream_engine_session, G_TYPE_OBJECT);

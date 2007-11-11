@@ -114,7 +114,6 @@ fi
 AM_CONDITIONAL(MAEMO_OSSO_SUPPORT, test x$MAEMO_OSSO_SUPPORT = xyes)
 
 AC_OUTPUT( Makefile \
-          common/Makefile \
           data/Makefile \
           doc/Makefile \
           src/Makefile  \
