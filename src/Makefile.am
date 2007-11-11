@@ -1,3 +1,6 @@
+EXTRA_DIST = \
+    tp-stream-engine.xml
+
 BUILT_SOURCES = \
     tp-stream-engine-glue.h \
     tp-stream-engine-signals-marshal.h \
@@ -44,10 +47,7 @@ AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@ @FARSIGHT_LIBS@ \
 
 
 #Rule to generate the binding headers
-%-gen.h: ../generate/xml-modified/%.xml Makefile.in
-	dbus-binding-tool --prefix=$(subst -,_,$*) --mode=glib-client $< > $*-gen.h
-
-%-glue.h: ../generate/xml-modified/%.xml Makefile.in
+%-glue.h: %.xml Makefile.in
 	dbus-binding-tool --mode=glib-server --output=$@ --prefix=$(subst -,_,$*) $<
 
 %-signals-marshal.h: %-signals-marshal.list Makefile.in
