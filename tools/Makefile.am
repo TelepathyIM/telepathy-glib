@@ -19,7 +19,7 @@ EXTRA_DIST = \
     spec-to-introspect.xsl \
     update-spec-gen-am.sh
 
-CLEANFILES = genginterface.pyc genginterface.pyo
+CLEANFILES = libglibcodegen.pyc libglibcodegen.pyo
 
 all: $(EXTRA_DIST)
 
