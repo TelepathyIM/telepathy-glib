@@ -12,6 +12,7 @@ EXTRA_DIST = \
     glib-interfaces-generator.xsl \
     glib-interfaces-body-generator.xsl \
     glib-gtypes-generator.py \
+    glib-signals-marshal-gen.py \
     identity.xsl \
     libglibcodegen.py \
     ls-interfaces.xsl \
@@ -28,4 +29,6 @@ genginterface.py: libglibcodegen.py
 glib-gtypes-generator.py: libglibcodegen.py
 	touch $@
 glib-client-marshaller-gen.py: libglibcodegen.py
+	touch $@
+glib-signals-marshal-gen.py: libglibcodegen.py
 	touch $@

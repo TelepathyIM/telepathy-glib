@@ -58,6 +58,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/signals-marshal.h \
     _gen/signals-marshal.list \
     _gen/telepathy-errors.c \
+    _gen/tp-signals-marshal.list \
     _gen/interfaces-body.h \
     _gen/gtypes-body.h \
     _gen/register-dbus-glib-marshallers-body.h \
@@ -217,7 +218,12 @@ _gen/svc-%.c _gen/svc-%.h _gen/svc-%-signals-marshal.list: ../spec/%.xml ../tool
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< TpSvc`echo $* | tr -d _`
 
-_gen/signals-marshal.list: signals-marshal.list $(STABLE_SPEC_GENERATED_LISTS)
+_gen/tp-signals-marshal.list: ../tools/glib-signals-marshal-gen.py \
+	_gen/stable-spec.xml
+	$(PYTHON) $(srcdir)/../tools/glib-signals-marshal-gen.py \
+		_gen/stable-spec.xml > $@
+
+_gen/signals-marshal.list: signals-marshal.list _gen/tp-signals-marshal.list
 	sort $^ | uniq > $@
 
 _gen/signals-marshal.h: _gen/signals-marshal.list
