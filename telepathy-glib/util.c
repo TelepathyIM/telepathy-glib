@@ -235,7 +235,8 @@ _esc_ident_bad (gchar c, gboolean is_first)
  *    "0123abc_xyz\x01\xff" -> _30123abc_5fxyz_01_ff
  *
  * i.e. similar to URI encoding, but with _ taking the role of %, and a
- * smaller allowed set.
+ * smaller allowed set. As a special case, "" is escaped to "_" (just for
+ * completeness, really).
  *
  * Returns: the escaped string, which must be freed by the caller with #g_free
  */
@@ -248,6 +249,10 @@ tp_escape_as_identifier (const gchar *name)
   const gchar *ptr, *first_ok;
 
   g_return_val_if_fail (name != NULL, NULL);
+
+  /* fast path for empty name */
+  if (name[0] == '\0')
+    return g_strdup ("_");
 
   for (ptr = name; *ptr; ptr++)
     {
