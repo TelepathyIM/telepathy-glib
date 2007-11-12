@@ -68,27 +68,6 @@ def signal_to_gtype_list(signal):
     return gtype
 
 
-def print_license(stream, filename, description, dom):
-    stream.write(
-"""/*
- * %s - %s
- *
-""" % (filename, description))
-
-    for c in dom.getElementsByTagName('tp:copyright'):
-        # assume all child nodes are text
-        stream.write(' * %s\n' % ''.join([n.data for n in c.childNodes
-                                            if n.nodeType in (n.TEXT_NODE,
-                                                n.CDATA_SECTION_NODE)]))
-
-    stream.write("""\
- *
- * This file may be distributed under the same terms as the specification
- * from which it is generated.
- */
-
-""")
-
 def print_header_begin(stream, prefix):
     guardname = '__'+prefix.upper()+'_H__'
     stream.write ("#ifndef "+guardname+"\n")
@@ -395,8 +374,6 @@ if __name__ == '__main__':
     methods = dom.getElementsByTagName("method")
     methods.sort(cmp_by_name)
 
-    print_license(header, outname_header, "Header for " + classname, dom)
-    print_license(body, outname_body, "Source for " + classname, dom)
     print_header_begin(header,prefix)
 
     print_class_declaration(header, prefix, classname, methods)
