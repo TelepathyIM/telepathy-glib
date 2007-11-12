@@ -24,7 +24,9 @@ import sys
 import os.path
 import xml.dom.minidom
 
-from libglibcodegen import cmp_by_name, \
+from libglibcodegen import camelcase_to_lower, \
+                           camelcase_to_upper, \
+                           cmp_by_name, \
                            dbus_gutils_wincaps_to_uscore, \
                            signal_to_marshal_type, \
                            signal_to_marshal_name, \
@@ -55,30 +57,6 @@ options:
             dbus_g_method_return_error (context, ...)
 """
     sys.exit(1)
-
-def camelcase_to_lower(s):
-    out ="";
-    out += s[0].lower()
-    last_upper=False
-    if s[0].isupper():
-        last_upper=True
-    for i in range(1,len(s)):
-        if s[i].isupper():
-            if last_upper:
-                if (i+1) < len(s) and  s[i+1].islower():
-                    out += "_" + s[i].lower()
-                else:
-                    out += s[i].lower()
-            else:
-                out += "_" + s[i].lower()
-            last_upper=True
-        else:
-            out += s[i]
-            last_upper=False
-    return out
-
-def camelcase_to_upper(s):
-    return camelcase_to_lower(s).upper()
 
 
 def signal_to_gtype_list(signal):
