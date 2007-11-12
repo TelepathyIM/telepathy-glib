@@ -203,18 +203,11 @@ _gen/svc-%-glue.h: _gen/async-%.xml
 	$(DBUS_BINDING_TOOL) --mode=glib-server --output=$@ \
 		--prefix=tp_svc_`echo $* | tr '[:upper:]' '[:lower:]'` $<
 
-_gen/svc-%.c _gen/svc-%.h _gen/svc-%-signals-marshal.list: ../spec/%.xml ../tools/genginterface.py _gen/stable-interfaces.txt Makefile.am
-	if grep '^$*$$' _gen/stable-interfaces.txt; \
-	then \
-		sigprefix=_tp; \
-		sigheader=signals-marshal.h; \
-	else \
-		exit 1; \
-	fi; \
+_gen/svc-%.c _gen/svc-%.h: ../spec/%.xml ../tools/genginterface.py _gen/stable-interfaces.txt Makefile.am
 	$(PYTHON) $(srcdir)/../tools/genginterface.py \
-		--filename=_gen/svc-$* --signal-marshal-prefix=$$sigprefix \
+		--filename=_gen/svc-$* --signal-marshal-prefix=_tp \
 		--include='<telepathy-glib/dbus.h>' \
-		--include="\"$$sigheader\"" \
+		--include="\"signals-marshal.h\"" \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< TpSvc`echo $* | tr -d _`
 

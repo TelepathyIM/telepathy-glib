@@ -44,8 +44,7 @@ options:
         Include extra headers in the generated .c file
     --signal-marshal-prefix='prefix'
         Use the given prefix on generated signal marshallers (default is
-        derived from class name). If this is given, classname-signals-marshal.h
-        is not automatically included.
+        derived from class name).
     --filename='BASENAME'
         Set the basename for the output files (default is derived from class
         name)
@@ -382,12 +381,9 @@ if __name__ == '__main__':
 
     outname_header = basename + ".h"
     outname_body = basename + ".c"
-    outname_signal_marshal = basename + "-signals-marshal.list"
 
     header=open(outname_header,'w')
     body=open(outname_body, 'w')
-
-    signal_marshal=open(outname_signal_marshal, 'w')
 
     try:
         dom = xml.dom.minidom.parse(argv[0])
@@ -479,9 +475,6 @@ static void
             mtype = signal_to_marshal_type(signal)
             assert(len(mtype))
             marshallers[','.join(mtype)] = True
-
-    for marshaller in marshallers:
-        signal_marshal.write("VOID:"+marshaller+"\n")
 
     body.write(
 """
