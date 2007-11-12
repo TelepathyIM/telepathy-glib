@@ -159,6 +159,13 @@ PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.61, dbus-glib-1 >= 0.72])
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
+dnl We want the examples to be able to use TP_GLIB_CFLAGS, TP_GLIB_LIBS
+dnl as though they were independent programs
+TP_GLIB_CFLAGS=''
+TP_GLIB_LIBS='-L${top_srcdir}/telepathy-glib -ltelepathy-glib'
+AC_SUBST(TP_GLIB_CFLAGS)
+AC_SUBST(TP_GLIB_LIBS)
+
 dnl Check for code generation tools
 XSLTPROC=
 AC_CHECK_PROGS([XSLTPROC], [xsltproc])
