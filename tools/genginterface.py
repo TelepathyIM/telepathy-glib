@@ -24,7 +24,10 @@ import sys
 import os.path
 import xml.dom.minidom
 
-from libglibcodegen import dbus_gutils_wincaps_to_uscore, \
+from libglibcodegen import cmp_by_name, \
+                           dbus_gutils_wincaps_to_uscore, \
+                           signal_to_marshal_type, \
+                           signal_to_marshal_name, \
                            Signature, \
                            type_to_gtype
 
@@ -77,36 +80,6 @@ def camelcase_to_lower(s):
 def camelcase_to_upper(s):
     return camelcase_to_lower(s).upper()
 
-
-def signal_to_marshal_type(signal):
-    """
-    return a list of strings indicating the marshalling type for this signal.
-    """
-
-    mtype=[]
-    for i in signal.getElementsByTagName("arg"):
-        name =i.getAttribute("name")
-        type = i.getAttribute("type")
-        mtype.append(type_to_gtype(type)[2])
-
-    return mtype
-
-def signal_to_marshal_name(signal, prefix):
-    glib_marshallers = ['VOID', 'BOOLEAN', 'CHAR', 'UCHAR', 'INT',
-            'STRING', 'UINT', 'LONG', 'ULONG', 'ENUM', 'FLAGS', 'FLOAT',
-            'DOUBLE', 'STRING', 'PARAM', 'BOXED', 'POINTER', 'OBJECT',
-            'UINT_POINTER']
-
-    mtype = signal_to_marshal_type(signal)
-    if len(mtype):
-        name = '_'.join(mtype)
-    else:
-        name = 'VOID'
-
-    if name in glib_marshallers:
-        return 'g_cclosure_marshal_VOID__' + name
-    else:
-        return prefix + '_marshal_VOID__' + name
 
 def signal_to_gtype_list(signal):
     gtype=[]
@@ -250,11 +223,6 @@ def print_class_definition(stream, prefix, classname, methods):
         stream.write('    %s %s;\n' % (c_impl_name, lc_method_name))
 
     stream.write ("};\n\n")
-
-
-def cmp_by_name(node1, node2):
-    return cmp(node1.getAttributeNode("name").nodeValue,
-               node2.getAttributeNode("name").nodeValue)
 
 
 def do_method(method):

@@ -27,3 +27,5 @@ genginterface.py: libglibcodegen.py
 	touch $@
 glib-gtypes-generator.py: libglibcodegen.py
 	touch $@
+glib-client-marshaller-gen.py: libglibcodegen.py
+	touch $@

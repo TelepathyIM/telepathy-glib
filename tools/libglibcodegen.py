@@ -29,6 +29,11 @@ NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 _ASCII_ALNUM = ascii_letters + digits
 
 
+def cmp_by_name(node1, node2):
+    return cmp(node1.getAttributeNode("name").nodeValue,
+               node2.getAttributeNode("name").nodeValue)
+
+
 def dbus_gutils_wincaps_to_uscore(s):
     """Bug-for-bug compatible Python port of _dbus_gutils_wincaps_to_uscore
     which gets sequences of capital letters wrong in the same way.
@@ -82,6 +87,38 @@ def escape_as_identifier(identifier):
             ret.append('_%02x' % ord(c))
 
     return ''.join(ret)
+
+
+def signal_to_marshal_type(signal):
+    """
+    return a list of strings indicating the marshalling type for this signal.
+    """
+
+    mtype=[]
+    for i in signal.getElementsByTagName("arg"):
+        name =i.getAttribute("name")
+        type = i.getAttribute("type")
+        mtype.append(type_to_gtype(type)[2])
+
+    return mtype
+
+
+def signal_to_marshal_name(signal, prefix):
+    glib_marshallers = ['VOID', 'BOOLEAN', 'CHAR', 'UCHAR', 'INT',
+            'STRING', 'UINT', 'LONG', 'ULONG', 'ENUM', 'FLAGS', 'FLOAT',
+            'DOUBLE', 'STRING', 'PARAM', 'BOXED', 'POINTER', 'OBJECT',
+            'UINT_POINTER']
+
+    mtype = signal_to_marshal_type(signal)
+    if len(mtype):
+        name = '_'.join(mtype)
+    else:
+        name = 'VOID'
+
+    if name in glib_marshallers:
+        return 'g_cclosure_marshal_VOID__' + name
+    else:
+        return prefix + '_marshal_VOID__' + name
 
 
 class _SignatureIter:

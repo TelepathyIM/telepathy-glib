@@ -5,7 +5,7 @@ import xml.dom.minidom
 from string import ascii_letters, digits
 
 
-from genginterface import signal_to_marshal_name
+from libglibcodegen import signal_to_marshal_name
 
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
