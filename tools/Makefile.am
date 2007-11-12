@@ -20,3 +20,10 @@ EXTRA_DIST = \
     update-spec-gen-am.sh
 
 CLEANFILES = genginterface.pyc genginterface.pyo
+
+all: $(EXTRA_DIST)
+
+genginterface.py: libglibcodegen.py
+	touch $@
+glib-gtypes-generator.py: libglibcodegen.py
+	touch $@
