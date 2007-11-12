@@ -61,6 +61,11 @@ AC_SUBST([LT_AGE])
 dnl decide error flags
 AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
 AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
+
+AC_ARG_ENABLE(Werror,
+  AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
+    enable_debug=$enableval, :)
+
 AS_COMPILER_FLAG(-Wextra, wextra=yes, wextra=no)
 AS_COMPILER_FLAG(-Wno-missing-field-initializers,
         wno_missing_field_initializers=yes,
