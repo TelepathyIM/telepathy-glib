@@ -189,6 +189,7 @@ AC_OUTPUT( Makefile \
 	   telepathy-glib-unstable.pc \
 	   docs/Makefile \
 	   docs/reference/Makefile \
+	   examples/Makefile \
 	   inspector/Makefile \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
