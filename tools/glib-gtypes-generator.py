@@ -22,52 +22,11 @@
 
 import sys
 import xml.dom.minidom
-from string import ascii_letters, digits
 
-
-from genginterface import Signature, type_to_gtype
-
-
-NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
-_ASCII_ALNUM = ascii_letters + digits
-
-
-def escape_identifier(identifier):
-    """Escape the given string to be a valid D-Bus object path or service
-    name component, using a reversible encoding to ensure uniqueness.
-
-    The reversible encoding is as follows:
-
-    * The empty string becomes '_'
-    * Otherwise, each non-alphanumeric character is replaced by '_' plus
-      two lower-case hex digits; the same replacement is carried out on
-      the first character, if it's a digit
-    """
-    # '' -> '_'
-    if not identifier:
-        return '_'
-
-    # A bit of a fast path for strings which are already OK.
-    # We deliberately omit '_' because, for reversibility, that must also
-    # be escaped.
-    if (identifier.strip(_ASCII_ALNUM) == '' and
-        identifier[0] in ascii_letters):
-        return identifier
-
-    # The first character may not be a digit
-    if identifier[0] not in ascii_letters:
-        ret = ['_%02x' % ord(identifier[0])]
-    else:
-        ret = [identifier[0]]
-
-    # Subsequent characters may be digits or ASCII letters
-    for c in identifier[1:]:
-        if c in _ASCII_ALNUM:
-            ret.append(c)
-        else:
-            ret.append('_%02x' % ord(c))
-
-    return ''.join(ret)
+from libglibcodegen import escape_as_identifier, \
+                           NS_TP, \
+                           Signature, \
+                           type_to_gtype
 
 
 def types_to_gtypes(types):
@@ -98,7 +57,7 @@ class GTypesGenerator(object):
         impl_sig = ''.join([elt.getAttribute('type')
                             for elt in mapping.getElementsByTagNameNS(NS_TP,
                                 'member')])
-        esc_impl_sig = escape_identifier(impl_sig)
+        esc_impl_sig = escape_as_identifier(impl_sig)
 
         name = (self.PREFIX_ + 'HASH_TYPE_' +
                 mapping.getAttribute('name').upper())
@@ -124,7 +83,7 @@ class GTypesGenerator(object):
         impl_sig = ''.join([elt.getAttribute('type')
                             for elt in struct.getElementsByTagNameNS(NS_TP,
                                 'member')])
-        esc_impl_sig = escape_identifier(impl_sig)
+        esc_impl_sig = escape_as_identifier(impl_sig)
 
         name = (self.PREFIX_ + 'STRUCT_TYPE_' +
                 struct.getAttribute('name').upper())

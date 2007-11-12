@@ -13,6 +13,7 @@ EXTRA_DIST = \
     glib-interfaces-body-generator.xsl \
     glib-gtypes-generator.py \
     identity.xsl \
+    libglibcodegen.py \
     ls-interfaces.xsl \
     make-all-async.xsl \
     spec-to-introspect.xsl \

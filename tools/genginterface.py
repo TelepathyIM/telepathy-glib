@@ -24,6 +24,11 @@ import sys
 import os.path
 import xml.dom.minidom
 
+from libglibcodegen import dbus_gutils_wincaps_to_uscore, \
+                           Signature, \
+                           type_to_gtype
+
+
 def cmdline_error():
     print """\
 usage:
@@ -48,22 +53,6 @@ options:
 """
     sys.exit(1)
 
-def dbus_gutils_wincaps_to_uscore(s):
-    """Bug-for-bug compatible Python port of _dbus_gutils_wincaps_to_uscore
-    which gets sequences of capital letters wrong in the same way.
-    (e.g. in Telepathy, SendDTMF -> send_dt_mf)
-    """
-    ret = ''
-    for c in s:
-        if c >= 'A' and c <= 'Z':
-            length = len(ret)
-            if length > 0 and (length < 2 or ret[length-2] != '_'):
-                ret += '_'
-            ret += c.lower()
-        else:
-            ret += c
-    return ret
-
 def camelcase_to_lower(s):
     out ="";
     out += s[0].lower()
@@ -87,134 +76,6 @@ def camelcase_to_lower(s):
 
 def camelcase_to_upper(s):
     return camelcase_to_lower(s).upper()
-
-class SignatureIter:
-    """Iterator over a D-Bus signature. Copied from dbus-python 0.71 so we
-    can run genginterface in a limited environment with only Python
-    (like Scratchbox).
-    """
-    def __init__(self, string):
-        self.remaining = string
-
-    def next(self):
-        if self.remaining == '':
-            raise StopIteration
-
-        signature = self.remaining
-        block_depth = 0
-        block_type = None
-        end = len(signature)
-
-        for marker in range(0, end):
-            cur_sig = signature[marker]
-
-            if cur_sig == 'a':
-                pass
-            elif cur_sig == '{' or cur_sig == '(':
-                if block_type == None:
-                    block_type = cur_sig
-
-                if block_type == cur_sig:
-                    block_depth = block_depth + 1
-
-            elif cur_sig == '}':
-                if block_type == '{':
-                    block_depth = block_depth - 1
-
-                if block_depth == 0:
-                    end = marker
-                    break
-
-            elif cur_sig == ')':
-                if block_type == '(':
-                    block_depth = block_depth - 1
-
-                if block_depth == 0:
-                    end = marker
-                    break
-
-            else:
-                if block_depth == 0:
-                    end = marker
-                    break
-
-        end = end + 1
-        self.remaining = signature[end:]
-        return Signature(signature[0:end])
-
-
-class Signature(str):
-    def __iter__(self):
-        return SignatureIter(self)
-
-
-def type_to_gtype(s):
-    if s == 'y': #byte
-        return ("guchar ", "G_TYPE_UCHAR","UCHAR", False)
-    elif s == 'b': #boolean
-        return ("gboolean ", "G_TYPE_BOOLEAN","BOOLEAN", False)
-    elif s == 'n': #int16
-        return ("gint ", "G_TYPE_INT","INT", False)
-    elif s == 'q': #uint16
-        return ("guint ", "G_TYPE_UINT","UINT", False)
-    elif s == 'i': #int32
-        return ("gint ", "G_TYPE_INT","INT", False)
-    elif s == 'u': #uint32
-        return ("guint ", "G_TYPE_UINT","UINT", False)
-    elif s == 'x': #int64
-        return ("gint ", "G_TYPE_INT64","INT64", False)
-    elif s == 't': #uint32
-        return ("guint ", "G_TYPE_UINT64","UINT64", False)
-    elif s == 'd': #double
-        return ("gdouble ", "G_TYPE_DOUBLE","DOUBLE", False)
-    elif s == 's': #string
-        return ("gchar *", "G_TYPE_STRING", "STRING", True)
-    elif s == 'g': #signature - FIXME
-        return ("gchar *", "DBUS_TYPE_G_SIGNATURE", "STRING", True)
-    elif s == 'o': #object path
-        return ("gchar *", "DBUS_TYPE_G_OBJECT_PATH", "BOXED", True)
-    elif s == 'v':  #variant
-        return ("GValue *", "G_TYPE_VALUE", "BOXED", True)
-    elif s == 'as':  #array of strings
-        return ("gchar **", "G_TYPE_STRV", "BOXED", True)
-    elif s == 'ay': #byte array
-        return ("GArray *",
-            "dbus_g_type_get_collection (\"GArray\", G_TYPE_UCHAR)", "BOXED",
-            True)
-    elif s == 'au': #uint array
-        return ("GArray *", "DBUS_TYPE_G_UINT_ARRAY", "BOXED", True)
-    elif s == 'ai': #int array
-        return ("GArray *", "DBUS_TYPE_G_INT_ARRAY", "BOXED", True)
-    elif s == 'ax': #int64 array
-        return ("GArray *", "DBUS_TYPE_G_INT64_ARRAY", "BOXED", True)
-    elif s == 'at': #uint64 array
-        return ("GArray *", "DBUS_TYPE_G_UINT64_ARRAY", "BOXED", True)
-    elif s == 'ad': #double array
-        return ("GArray *", "DBUS_TYPE_G_DOUBLE_ARRAY", "BOXED", True)
-    elif s == 'ab': #boolean array
-        return ("GArray *", "DBUS_TYPE_G_BOOLEAN_ARRAY", "BOXED", True)
-    elif s == 'ao': #object path array
-        return ("GArray *", "DBUS_TYPE_G_OBJECT_ARRAY", "BOXED", True)
-    elif s[:2] == 'a(': #array of structs, recurse
-        gtype = type_to_gtype(s[1:])[1]
-        return ("GPtrArray *", "(dbus_g_type_get_collection (\"GPtrArray\", "+gtype+"))", "BOXED", True)
-    elif s == 'a{ss}': #hash table of string to string
-        return ("GHashTable *", "DBUS_TYPE_G_STRING_STRING_HASHTABLE", "BOXED", False)
-    elif s[:2] == 'a{':  #some arbitrary hash tables
-        if s[2] not in ('y', 'b', 'n', 'q', 'i', 'u', 's', 'o', 'g'):
-            raise Exception, "can't index a hashtable off non-basic type " + s
-        first = type_to_gtype(s[2])
-        second = type_to_gtype(s[3:-1])
-        return ("GHashTable *", "(dbus_g_type_get_map (\"GHashTable\", " + first[1] + ", " + second[1] + "))", "BOXED", False)
-    elif s[:1] == '(': #struct
-        gtype = "(dbus_g_type_get_struct (\"GValueArray\", "
-        for subsig in Signature(s[1:-1]):
-            gtype = gtype + type_to_gtype(subsig)[1] + ", "
-        gtype = gtype + "G_TYPE_INVALID))"
-        return ("GValueArray *", gtype, "BOXED", True)
-
-    # we just don't know ..
-    raise Exception, "don't know the GType for " + s
 
 
 def signal_to_marshal_type(signal):
