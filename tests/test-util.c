@@ -29,7 +29,7 @@ int main (int argc, char **argv)
 
   puts ("Testing tp_escape_as_identifier...");
   string = tp_escape_as_identifier ("");
-  g_assert (!tp_strdiff (string, ""));
+  g_assert (!tp_strdiff (string, "_"));
   g_free (string);
   string = tp_escape_as_identifier ("badger");
   g_assert (!tp_strdiff (string, "badger"));
