@@ -12,7 +12,6 @@ include _gen/spec-gen.am
 STABLE_SPEC_GENERATED_SOURCES = \
     $(STABLE_SPEC_GENERATED_CS) \
     $(STABLE_SPEC_GENERATED_HS) \
-    $(STABLE_SPEC_GENERATED_LISTS) \
     $(STABLE_SPEC_GLUE_HS)
 
 lib_LTLIBRARIES = libtelepathy-glib.la
