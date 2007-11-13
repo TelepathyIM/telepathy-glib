@@ -97,7 +97,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     errors.c \
     group-mixin.c \
     gtypes.c \
-    gtypes-input.xml \
     handle.c \
     internal-handle-repo.h \
     handle-repo.c \
@@ -145,11 +144,10 @@ _gen/stable-spec.xml: ../spec/all.xml \
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
 		_gen/spec-only-stable.xsl $(srcdir)/../spec/all.xml > $@
 
-# when the structs land in the spec, this should be from _gen/stable-spec.xml
-_gen/gtypes.h _gen/gtypes-body.h: gtypes-input.xml \
+_gen/gtypes.h _gen/gtypes-body.h: _gen/stable-spec.xml \
 	../tools/glib-gtypes-generator.py
 	$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
-		$(srcdir)/gtypes-input.xml \
+		_gen/stable-spec.xml \
 		_gen/gtypes Tp
 
 _gen/telepathy-enums.h: _gen/stable-spec.xml \
