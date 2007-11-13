@@ -12,6 +12,7 @@ telepathy_example_no_protocols_LDADD = \
 
 AM_CFLAGS = \
     -I$(top_srcdir) -I$(top_builddir) \
+    $(ERROR_CFLAGS) \
     @DBUS_CFLAGS@ \
     @GLIB_CFLAGS@ \
     @TP_GLIB_CFLAGS@
