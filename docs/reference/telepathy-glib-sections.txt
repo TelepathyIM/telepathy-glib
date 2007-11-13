@@ -918,8 +918,6 @@ tp_type_dbus_struct_sa_28usuussduss_29
 tp_type_dbus_array_osuu
 tp_type_dbus_array_su
 tp_type_dbus_array_susv
-tp_type_dbus_array_ua_7bsa_7bsv_7d_7d
-tp_type_dbus_array_ubba_7bss_7d
 tp_type_dbus_array_us
 tp_type_dbus_array_usa_7bsv_7d
 tp_type_dbus_array_ussu
