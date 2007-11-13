@@ -20,6 +20,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Channel.Type.Text">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+
+    <tp:struct name="Pending_Text_Message" array-name="Pending_Text_Message_List">
+      <tp:docstring>A struct (message ID, timestamp in seconds since
+        1970-01-01 00:00 UTC, sender's handle, message type, flags, text)
+        representing a pending text message, as returned by ListPendingMessages
+        on the Text channel type. The arguments of the Received signal
+        also match this struct's signature.</tp:docstring>
+      <tp:member type="u" name="Message_ID"/>
+      <tp:member type="u" name="Unix_Timestamp"/>
+      <tp:member type="u" tp:type="Contact_Handle" name="Sender"/>
+      <tp:member type="u" tp:type="Channel_Text_Message_Type"
+                 name="Message_Type"/>
+      <tp:member type="u" tp:type="Channel_Text_Message_Flags" name="Flags"/>
+      <tp:member type="s" name="Text"/>
+    </tp:struct>
+
     <method name="AcknowledgePendingMessages">
       <arg direction="in" name="ids" type="au">
         <tp:docstring>
@@ -53,7 +69,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           If true, remove all messages from the queue
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a(uuuuus)">
+      <arg direction="out" type="a(uuuuus)" tp:type="Pending_Text_Message[]">
         <tp:docstring>
           An array of structs representing the pending queue. Each contains:
           <ul>
@@ -84,7 +100,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           A numeric identifier for acknowledging the message
         </tp:docstring>
       </arg>
-      <arg name="timestamp" type="u" tp:type="Timestamp">
+      <arg name="timestamp" type="u" tp:type="Unix_Timestamp">
         <tp:docstring>
           A Unix timestamp indicating when the message was received
         </tp:docstring>
@@ -180,7 +196,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           One of the values of ChannelTextSendError
         </tp:docstring>
       </arg>
-      <arg name="timestamp" type="u" tp:type="Timestamp">
+      <arg name="timestamp" type="u" tp:type="Unix_Timestamp">
         <tp:docstring>
           The Unix timestamp indicating when the message was sent
         </tp:docstring>
@@ -201,7 +217,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <signal name="Sent">
-      <arg name="timestamp" type="u" tp:type="Timestamp">
+      <arg name="timestamp" type="u" tp:type="Unix_Timestamp">
         <tp:docstring>
           Unix timestamp indicating when the message was sent
         </tp:docstring>
@@ -322,7 +338,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       if it isn't known.
       </tp:docstring>
     </tp:property>
-    <tp:property name="subject-timestamp" type="u" tp:type="Timestamp">
+    <tp:property name="subject-timestamp" type="u" tp:type="Unix_Timestamp">
       <tp:docstring>
       A unix timestamp indicating when the subject was last modified.
       </tp:docstring>

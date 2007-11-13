@@ -52,7 +52,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <method name="GetChannelType">
-      <arg direction="out" type="s" tp:type="Interface">
+      <arg direction="out" type="s" tp:type="DBus_Interface">
         <tp:docstring>The interface name</tp:docstring>
       </arg>
       <tp:docstring>
@@ -79,7 +79,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
     <method name="GetInterfaces">
-      <arg direction="out" type="as" tp:type="Interface[]">
+      <arg direction="out" type="as" tp:type="DBus_Interface[]">
         <tp:docstring>
           An array of the D-Bus interface names
         </tp:docstring>

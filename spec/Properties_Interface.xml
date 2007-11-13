@@ -19,6 +19,35 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Properties">
+
+    <tp:struct name="Property_Spec" array-name="Property_Spec_List">
+      <tp:docstring>A struct (property ID, property name, D-Bus signature,
+        flags) representing a property, as returned by ListProperties on the
+        Properties interface.</tp:docstring>
+      <tp:member type="u" name="Property_ID"/>
+      <tp:member type="s" name="name"/>
+      <tp:member type="s" tp:type="DBus_Signature" name="signature"/>
+      <tp:member type="u" tp:type="Property_Flags" name="Flags"/>
+    </tp:struct>
+
+    <tp:struct name="Property_Flags_Change"
+      array-name="Property_Flags_Change_List">
+      <tp:docstring>A struct (property ID, flags) representing a change to
+        a property's flags, as seen in the PropertyFlagsChanged signal on
+        the Properties interface.</tp:docstring>
+      <tp:member type="u" name="Property_ID"/>
+      <tp:member type="u" name="New_Flags"/>
+    </tp:struct>
+
+    <tp:struct name="Property_Value" array-name="Property_Value_List">
+      <tp:docstring>A struct (property ID, value) representing a
+        property's value, as seen in the PropertiesChanged signal on
+        the Properties interface, returned by the GetProperties method
+        and passed to the SetProperties method.</tp:docstring>
+      <tp:member type="u" name="Property_ID"/>
+      <tp:member type="v" name="Value"/>
+    </tp:struct>
+
     <method name="GetProperties">
       <tp:docstring>
         Returns an array of (identifier, value) pairs containing the current
@@ -27,7 +56,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <arg direction="in" name="properties" type="au">
         <tp:docstring>An array of property identifiers</tp:docstring>
       </arg>
-      <arg direction="out" type="a(uv)">
+      <arg direction="out" type="a(uv)" tp:type="Property_Value[]">
         <!-- XXX: if we're ever breaking API compatibility, make this a{uv} -->
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>An array of structs containing:</p>
@@ -55,7 +84,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Returns a dictionary of the properties available on this channel.
       </tp:docstring>
-      <arg direction="out" type="a(ussu)">
+      <arg direction="out" type="a(ussu)" tp:type="Property_Spec[]">
         <!-- XXX: if we're ever breaking API compatibility, make this
         a{u(ssu)} ? -->
         <tp:docstring>
@@ -73,7 +102,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Emitted when the value of readable properties has changed.
       </tp:docstring>
-      <arg name="properties" type="a(uv)">
+      <arg name="properties" type="a(uv)" tp:type="Property_Value[]">
         <!-- XXX: if we're ever breaking API compatibility, make this a{uv} -->
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>An array of structs containing:</p>
@@ -90,7 +119,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Emitted when the flags of some room properties have changed.
       </tp:docstring>
-      <arg name="properties" type="a(uu)">
+      <arg name="properties" type="a(uu)" tp:type="Property_Flags_Change[]">
         <!-- XXX: if we're ever breaking API compatibility, make this a{uu} -->
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>An array of structs containing:</p>
@@ -116,7 +145,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         are invalid, InvalidArgument will be returned.</p>
       </tp:docstring>
 
-      <arg direction="in" name="properties" type="a(uv)">
+      <arg direction="in" name="properties" type="a(uv)"
+        tp:type="Property_Value[]">
         <!-- XXX: if we're ever breaking API compatibility, make this a{uv} -->
       <tp:docstring>
         A dictionary mapping integer identifiers to boxed values

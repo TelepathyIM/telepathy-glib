@@ -20,6 +20,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Channel.Type.RoomList">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+
+    <tp:struct name="Room_Info" array-name="Room_Info_List">
+      <tp:member type="u" tp:type="Room_Handle" name="Handle"/>
+      <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+      <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Info"/>
+    </tp:struct>
+
     <method name="GetListingRooms">
       <arg direction="out" type="b">
         <tp:docstring>
@@ -32,7 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
     <signal name="GotRooms">
-      <arg name="rooms" type="a(usa{sv})">
+      <arg name="rooms" type="a(usa{sv})" tp:type="Room_Info[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structs containing:
           <ul>

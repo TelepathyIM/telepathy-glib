@@ -20,8 +20,43 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Capabilities">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
+
+    <tp:struct name="Capability_Pair" array-name="Capability_Pair_List">
+      <tp:docstring>A pair (channel type, type-specific flags) as passed to
+        AdvertiseCapabilities on the Capabilities interface.</tp:docstring>
+      <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+      <tp:member type="u" name="Type_Specific_Flags"/>
+    </tp:struct>
+
+    <tp:struct name="Contact_Capability" array-name="Contact_Capability_List">
+      <tp:docstring>A struct (contact handle, channel type, generic flags,
+        type-specific flags) representing a capability posessed by a contact,
+        as returned by GetCapabilities on the Capabilities
+        interface.</tp:docstring>
+      <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+      <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+      <tp:member type="u" tp:type="Connection_Capability_Flags"
+                 name="Generic_Flags"/>
+      <tp:member type="u" name="Type_Specific_Flags"/>
+    </tp:struct>
+
+    <tp:struct name="Capability_Change" array-name="Capability_Change_List">
+      <tp:docstring>A struct (contact handle, channel type, old generic flags,
+        new generic flags, old type-specific flags, new type-specific flags)
+        representing a change to one of a contact's capabilities, as seen in the
+        CapabilitiesChanged signal on the Capabilities interface.</tp:docstring>
+      <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+      <tp:member type="s" tp:type="DBus_Interface" name="Channel_Type"/>
+      <tp:member type="u" tp:type="Connection_Capability_Flags"
+                 name="Old_Generic_Flags"/>
+      <tp:member type="u" tp:type="Connection_Capability_Flags"
+                 name="New_Generic_Flags"/>
+      <tp:member type="u" name="Old_Type_Specific_Flags"/>
+      <tp:member type="u" name="New_Type_Specific_Flags"/>
+    </tp:struct>
+
     <method name="AdvertiseCapabilities">
-      <arg direction="in" name="add" type="a(su)">
+      <arg direction="in" name="add" type="a(su)" tp:type="Capability_Pair[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structures containing:
           <ul>
@@ -30,12 +65,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           </ul>
         </tp:docstring>
       </arg>
-      <arg direction="in" name="remove" type="as" tp:type="Interface[]">
+      <arg direction="in" name="remove" type="as" tp:type="DBus_Interface[]">
         <tp:docstring>
           An array of D-Bus interface names of channel types to remove
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a(su)">
+      <arg direction="out" type="a(su)" tp:type="Capability_Pair[]">
         <tp:docstring>
           An array of structures describing the current capabilities containing:
           <ul>
@@ -69,7 +104,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <signal name="CapabilitiesChanged">
-      <arg name="caps" type="a(usuuuu)">
+      <arg name="caps" type="a(usuuuu)" tp:type="Capability_Change[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structures containing:
           <ul>
@@ -93,7 +128,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           An array of contact handles for this connection, or zero to query capabilities available on the connection itself
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a(usuu)">
+      <arg direction="out" type="a(usuu)" tp:type="Contact_Capability[]">
         <tp:docstring>
           An array of structures containing:
           <ul>

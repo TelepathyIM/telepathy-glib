@@ -19,6 +19,50 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.ConnectionManager">
+
+    <tp:simple-type name="Protocol" type="s">
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>An instant messaging protocol. Where possible, this SHOULD be
+        chosen from the following well-known values:</p>
+        <ul>
+          <li>aim - AOL Instant Messenger</li>
+          <li>gadugadu - Gadu-Gadu</li>
+          <li>groupwise - Novell Groupwise</li>
+          <li>icq - ICQ</li>
+          <li>irc - Internet Relay Chat</li>
+          <li>jabber - Jabber (XMPP)</li>
+          <li>local-xmpp - Link-local XMPP (XEP-0174, Bonjour, Salut)</li>
+          <li>msn - MSN Messenger</li>
+          <li>napster - Napster</li>
+          <li>silc - SILC</li>
+          <li>sip - Session Initiation Protocol (SIP)</li>
+          <li>trepia - Trepia</li>
+          <li>yahoo - Yahoo! Messenger</li>
+          <li>zephyr - Zephyr</li>
+        </ul>
+      </tp:docstring>
+    </tp:simple-type>
+
+    <tp:struct name="Param_Spec" array-name="Param_Spec_List">
+      <tp:docstring>A struct representing an allowed parameter, as returned
+        by GetParameters on the ConnectionManager interface.</tp:docstring>
+      <tp:member type="s" name="Name">
+        <tp:docstring>A string parameter name</tp:docstring>
+      </tp:member>
+      <tp:member type="u" tp:type="Conn_Mgr_Param_Flags" name="Flags">
+        <tp:docstring>A bitwise OR of the parameter flags</tp:docstring>
+      </tp:member>
+      <tp:member type="s" tp:type="DBus_Signature" name="Signature">
+        <tp:docstring>A string containing the D-Bus type signature
+          for this parameter</tp:docstring>
+      </tp:member>
+      <tp:member type="v" name="Default_Value">
+        <tp:docstring>The default value (if the Has_Default flag is not
+          present, there is no default and this takes some dummy value,
+          which SHOULD be of the appropriate D-Bus type)</tp:docstring>
+      </tp:member>
+    </tp:struct>
+
     <tp:flags name="Conn_Mgr_Param_Flags" value-prefix="Conn_Mgr_Param_Flag" type="u">
       <tp:flag suffix="Required" value="1">
         <tp:docstring>
@@ -40,21 +84,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:flag>
     </tp:flags>
     <method name="GetParameters">
-      <arg direction="in" name="proto" type="s">
+      <arg direction="in" name="proto" type="s" tp:type="Protocol">
         <tp:docstring>
           The required protocol name
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a(susv)">
+      <arg direction="out" type="a(susv)" tp:type="Param_Spec[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          An array of structs containing:
-          <ul>
-            <li>a string parameter name</li>
-            <li>a bitwise OR of the parameter flags (as defined above)</li>
-            <li>a string D-Bus type signature</li>
-            <li>a variant boxed default value (if the HAS_DEFAULT flag is not
-            present, there is no default and this takes some dummy value)</li>
-          </ul>
+          An array of structs representing possible parameters.
         </tp:docstring>
       </arg>
       <tp:docstring>
@@ -70,7 +107,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="ListProtocols">
-      <arg direction="out" type="as">
+      <arg direction="out" type="as" tp:type="Protocol[]">
         <tp:docstring>
           A array of string protocol identifiers supported by this manager
         </tp:docstring>
@@ -79,26 +116,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Get a list of protocol identifiers that are implemented by this
         connection manager. The following well-known values should be used
         when applicable:
-        <ul>
-          <li>aim - AOL Instant Messenger</li>
-          <li>gadugadu - Gadu-Gadu</li>
-          <li>groupwise - Novell Groupwise</li>
-          <li>icq - ICQ</li>
-          <li>irc - Internet Relay Chat</li>
-          <li>jabber - Jabber (XMPP)</li>
-          <li>local-xmpp - Link-local XMPP (XEP-0174, Bonjour, Salut)</li>
-          <li>msn - MSN Messenger</li>
-          <li>napster - Napster</li>
-          <li>silc - SILC</li>
-          <li>sip - Session Initiation Protocol (SIP)</li>
-          <li>trepia - Trepia</li>
-          <li>yahoo - Yahoo! Messenger</li>
-          <li>zephyr - Zephyr</li>
-       </ul>
       </tp:docstring>
     </method>
     <signal name="NewConnection">
-      <arg name="bus_name" type="s">
+      <arg name="bus_name" type="s" tp:type="DBus_Bus_Name">
         <tp:docstring>
           The D-Bus service where the connection object can be found
         </tp:docstring>
@@ -108,7 +129,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           The object path of the Connection object on this service
         </tp:docstring>
       </arg>
-      <arg name="proto" type="s">
+      <arg name="proto" type="s" tp:type="Protocol">
         <tp:docstring>
           The identifier for the protocol this connection uses
         </tp:docstring>
@@ -118,12 +139,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <method name="RequestConnection">
-      <arg direction="in" name="proto" type="s">
+      <arg direction="in" name="proto" type="s" tp:type="Protocol">
         <tp:docstring>
           The protocol identifier
         </tp:docstring>
       </arg>
-      <arg direction="in" name="parameters" type="a{sv}">
+      <arg direction="in" name="parameters" type="a{sv}"
+        tp:type="String_Variant_Map">
         <tp:docstring>
           A dictionary mapping parameter name to the variant boxed value
         </tp:docstring>
@@ -142,7 +164,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <p>Request a Connection object representing a given account on a given
         protocol with the given parameters. The method returns the bus name
         and the object path where the new Connection object can be found, which
-        should have the status of CONNECTION_STATUS_DISCONNECTED, to allow
+        should have the status of Connection_Status_Disconnected, to allow
         signal handlers to be attached before connecting is started with the
         Connect method.</p>
 

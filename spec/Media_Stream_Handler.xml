@@ -19,13 +19,47 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Media.StreamHandler">
+
+    <tp:struct name="Media_Stream_Handler_Candidate"
+      array-name="Media_Stream_Handler_Candidate_List">
+      <tp:member type="s" name="Name"/>
+      <tp:member type="a(usuussduss)" name="Transports"
+        tp:type="Media_Stream_Handler_Transport[]"/>
+    </tp:struct>
+
+    <tp:struct name="Media_Stream_Handler_Transport"
+      array-name="Media_Stream_Handler_Transport_List">
+      <tp:member type="u" name="Component_Number"/>
+      <tp:member type="s" name="IP_Address"/>
+      <tp:member type="u" name="Port"/>
+      <tp:member type="u" tp:type="Media_Stream_Base_Proto" name="Protocol"/>
+      <tp:member type="s" name="Subtype"/>
+      <tp:member type="s" name="Profile"/>
+      <tp:member type="d" name="Preference_Value"/>
+      <tp:member type="u" tp:type="Media_Stream_Transport_Type"
+        name="Transport_Type"/>
+      <tp:member type="s" name="Username"/>
+      <tp:member type="s" name="Password"/>
+    </tp:struct>
+
+    <tp:struct name="Media_Stream_Handler_Codec"
+      array-name="Media_Stream_Handler_Codec_List">
+      <tp:member type="u" name="Codec_ID"/>
+      <tp:member type="s" name="Name"/>
+      <tp:member type="u" tp:type="Media_Stream_Type" name="Media_Type"/>
+      <tp:member type="u" name="Clock_Rate"/>
+      <tp:member type="u" name="Number_Of_Channels"/>
+      <tp:member type="a{ss}" name="Parameters" tp:type="String_String_Map"/>
+    </tp:struct>
+
     <signal name="AddRemoteCandidate">
       <arg name="candidate_id" type="s">
         <tp:docstring>
           String identifier for this candidate
         </tp:docstring>
       </arg>
-      <arg name="transports" type="a(usuussduss)">
+      <arg name="transports" type="a(usuussduss)"
+        tp:type="Media_Stream_Handler_Transport[]">
         <tp:docstring>
           Array of transports for this candidate with fields,
           as defined in NewNativeCandidate
@@ -105,7 +139,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           String identifier for this candidate
         </tp:docstring>
       </arg>
-      <arg direction="in" name="transports" type="a(usuussduss)">
+      <arg direction="in" name="transports" type="a(usuussduss)"
+        tp:type="Media_Stream_Handler_Transport[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           Array of transports for this candidate, with fields:
           <ul>
@@ -191,7 +226,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <signal name="SetRemoteCandidateList">
-      <arg name="remote_candidates" type="a(sa(usuussduss))">
+      <arg name="remote_candidates" type="a(sa(usuussduss))"
+        tp:type="Media_Stream_Handler_Candidate[]">
         <tp:docstring>
         A list of candidate id and a list of transports
         as defined in NewNativeCandidate
@@ -203,7 +239,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
     <signal name="SetRemoteCodecs">
-      <arg name="codecs" type="a(usuuua{ss})">
+      <arg name="codecs" type="a(usuuua{ss})"
+        tp:type="Media_Stream_Handler_Codec[]">
         <tp:docstring>As for SupportedCodecs</tp:docstring>
       </arg>
       <tp:docstring>
@@ -250,7 +287,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
     <method name="SupportedCodecs">
-      <arg direction="in" name="codecs" type="a(usuuua{ss})">
+      <arg direction="in" name="codecs" type="a(usuuua{ss})"
+        tp:type="Media_Stream_Handler_Codec[]">
         <tp:docstring>
           List of codec info structures, each containing:
           <ul>

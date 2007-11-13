@@ -18,7 +18,8 @@ Library General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.ContactInfo">
+  <interface name="org.freedesktop.Telepathy.Connection.Interface.ContactInfo"
+    tp:causes-havoc='obsolete'>
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
     <signal name="GotContactInfo">
       <arg name="contact" type="u" tp:type="Contact_Handle">

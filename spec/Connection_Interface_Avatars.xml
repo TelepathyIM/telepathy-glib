@@ -20,6 +20,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Avatars">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
+
+    <tp:mapping name="Avatar_Token_Map" array-name="">
+      <tp:docstring>A dictionary whose keys are contact handles and whose
+        values are avatar tokens.</tp:docstring>
+      <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+      <tp:member type="s" name="Token"/>
+    </tp:mapping>
+
     <signal name="AvatarUpdated">
       <arg name="contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>
@@ -137,7 +145,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         An array of handles representing contacts
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a{us}">
+      <arg direction="out" type="a{us}" tp:type="Avatar_Token_Map">
         <tp:docstring>
           A dictionary of handles mapped to avatar tokens, containing only
           the known avatar tokens.

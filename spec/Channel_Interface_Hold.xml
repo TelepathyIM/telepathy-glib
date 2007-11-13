@@ -44,7 +44,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </tp:enumvalue>
   </tp:enum>
-  <interface name="org.freedesktop.Telepathy.Channel.Interface.Hold">
+  <interface name="org.freedesktop.Telepathy.Channel.Interface.Hold"
+    tp:causes-havoc='deprecated'>
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
     <method name="GetHoldState">
       <arg direction="in" name="member" type="u" tp:type="Contact_Handle">

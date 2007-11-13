@@ -26,13 +26,50 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Presence">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
+
+    <!-- We hope to simplify these eventually -->
+    <tp:mapping name="Multiple_Status_Map">
+      <tp:docstring>Mapping used in Last_Activity_And_Statuses and passed to
+        SetStatus, representing a collection of statuses. Use of this mapping
+        with more than one member is deprecated.</tp:docstring>
+      <tp:member type="s" name="Status"/>
+      <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Parameters"/>
+    </tp:mapping>
+    <tp:struct name="Last_Activity_And_Statuses" array-name="">
+      <tp:docstring>Structure representing a contact's presence, containing
+        a last-activity time (deprecated) and a Multiple_Status_Map.
+      </tp:docstring>
+      <tp:member type="u" tp:type="Unix_Timestamp" name="Last_Activity"/>
+      <tp:member type="a{sa{sv}}" tp:type="Multiple_Status_Map"
+        name="Statuses"/>
+    </tp:struct>
+    <tp:mapping name="Contact_Presences">
+      <tp:docstring>Mapping returned by GetPresence and signalled by
+        PresenceUpdate, where the keys are contacts and the values represent
+        their presences.</tp:docstring>
+      <tp:member type="u" tp:type="Contact_Handle" name="Contact"/>
+      <tp:member type="(ua{sa{sv}})" tp:type="Last_Activity_And_Statuses"
+        name="Presence"/>
+    </tp:mapping>
+    <tp:struct name="Status_Spec" array-name="">
+      <tp:member type="u" tp:type="Connection_Presence_Type" name="Type"/>
+      <tp:member type="b" name="May_Set_On_Self"/>
+      <tp:member type="b" name="Exclusive"/>
+      <tp:member type="a{ss}" tp:type="String_String_Map"
+        name="Parameter_Types"/>
+    </tp:struct>
+    <tp:mapping name="Status_Spec_Map">
+      <tp:member type="s" name="Identifier"/>
+      <tp:member type="(ubba{ss})" tp:type="Status_Spec" name="Spec"/>
+    </tp:mapping>
+
     <method name="AddStatus">
       <arg direction="in" name="status" type="s">
         <tp:docstring>
           The string identifier of the desired status
         </tp:docstring>
       </arg>
-      <arg direction="in" name="parms" type="a{sv}">
+      <arg direction="in" name="parms" type="a{sv}" tp:type="String_Variant_Map">
         <tp:docstring>
           A dictionary of optional parameter names mapped to their variant-boxed values
         </tp:docstring>
@@ -69,7 +106,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           An array of the contacts whose presence should be obtained
         </tp:docstring>
       </arg>
-      <arg direction="out" name="presence" type="a{u(ua{sa{sv}})}">
+      <arg direction="out" name="presence" type="a{u(ua{sa{sv}})}"
+        tp:type="Contact_Presences">
         <tp:docstring>
           Presence information in the same format as for the PresenceUpdate
           signal
@@ -89,7 +127,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="GetStatuses">
-      <arg direction="out" type="a{s(ubba{ss})}">
+      <arg direction="out" type="a{s(ubba{ss})}" tp:type="Status_Spec_Map">
         <tp:docstring>
         A dictionary of string identifiers mapped to a struct for each status, containing:
         <ul>
@@ -111,7 +149,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <signal name="PresenceUpdate">
-      <arg name="presence" type="a{u(ua{sa{sv}})}">
+      <arg name="presence" type="a{u(ua{sa{sv}})}" tp:type="Contact_Presences">
         <tp:docstring>
         A dictionary of contact handles mapped to a struct containing
         a UNIX timestamp of the last activity time (in UTC), and
@@ -174,7 +212,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="SetLastActivityTime">
-      <arg direction="in" name="time" type="u" tp:type="Timestamp">
+      <arg direction="in" name="time" type="u" tp:type="Unix_Timestamp">
         <tp:docstring>
           A UNIX timestamp of the user's last activity time (in UTC)
         </tp:docstring>
@@ -194,7 +232,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="SetStatus">
-      <arg direction="in" name="statuses" type="a{sa{sv}}">
+      <arg direction="in" name="statuses" type="a{sa{sv}}" tp:type="Multiple_Status_Map">
         <tp:docstring>
           A dictionary mapping status identifiers to dictionaries, which
           map optional parameter names to their variant-boxed values

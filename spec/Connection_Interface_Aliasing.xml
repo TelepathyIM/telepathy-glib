@@ -20,8 +20,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Aliasing">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
+
+    <tp:mapping name="Alias_Map" array-name="">
+      <tp:docstring>A dictionary whose keys are contact handles and whose
+        values are aliases.</tp:docstring>
+      <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+      <tp:member type="s" name="Alias"/>
+    </tp:mapping>
+
+    <tp:struct name="Alias_Pair" array-name="Alias_Pair_List">
+      <tp:docstring>A pair (contact handle, alias) as seen in the AliasesChanged
+        signal.</tp:docstring>
+      <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
+      <tp:member type="s" name="Alias"/>
+    </tp:struct>
+
     <signal name="AliasesChanged">
-      <arg name="aliases" type="a(us)">
+      <arg name="aliases" type="a(us)" tp:type="Alias_Pair[]">
+        <!-- FIXME: if we break API, this could be an Alias_Map, a{us} -->
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array containing structs of:
           <ul>
@@ -88,7 +104,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
     <method name="SetAliases">
-      <arg direction="in" name="aliases" type="a{us}">
+      <arg direction="in" name="aliases" type="a{us}" tp:type="Alias_Map">
         <tp:docstring>
           A dictionary mapping integer handles of contacts
           to strings of the new alias to set.

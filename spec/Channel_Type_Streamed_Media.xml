@@ -71,7 +71,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:flag>
     </tp:flags>
     <method name="ListStreams">
-      <arg direction="out" type="a(uuuuuu)">
+      <arg direction="out" type="a(uuuuuu)" tp:type="Media_Stream_Info[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structs containing:
           <ul>
@@ -153,7 +153,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           An array of stream types (values of MediaStreamType)
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a(uuuuuu)">
+      <arg direction="out" type="a(uuuuuu)" tp:type="Media_Stream_Info[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structs (in the same order as the given stream types)
           containing:
@@ -334,6 +334,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
     </tp:flags>
+
+    <tp:struct name="Media_Stream_Info" array-name="Media_Stream_Info_List">
+      <tp:member type="u" name="Identifier"/>
+      <tp:member type="u" tp:type="Contact_Handle" name="Contact"/>
+      <tp:member type="u" tp:type="Media_Stream_Type" name="Type"/>
+      <tp:member type="u" tp:type="Media_Stream_State" name="State"/>
+      <tp:member type="u" tp:type="Media_Stream_Direction" name="Direction"/>
+      <tp:member type="u" tp:type="Media_Stream_Pending_Send"
+        name="Pending_Send_Flags"/>
+    </tp:struct>
+
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->
