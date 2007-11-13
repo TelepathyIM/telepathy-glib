@@ -36,7 +36,7 @@ NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 class Generator(object):
 
     def __init__(self, dom, prefix, basename, signal_marshal_prefix,
-                 headers, end_headers, not_implemented_func, type_prefix,
+                 headers, end_headers, not_implemented_func,
                  allow_havoc):
         self.dom = dom
         self.__header = []
@@ -44,13 +44,11 @@ class Generator(object):
 
         assert prefix.endswith('_')
         assert not signal_marshal_prefix.endswith('_')
-        assert type_prefix.endswith('_')
 
         self.Prefix_ = prefix
         self.Prefix = prefix.replace('_', '')
         self.prefix_ = prefix.lower()
         self.PREFIX_ = prefix.upper()
-        self.TYPE_PREFIX_ = type_prefix
 
         self.signal_marshal_prefix = signal_marshal_prefix
         self.headers = headers
@@ -418,16 +416,6 @@ class Generator(object):
             if pointer:
                 ctype = 'const ' + ctype
 
-            if tp_type and self.TYPE_PREFIX_:
-                if dtype.startswith('a{'):
-                    gtype = self.TYPE_PREFIX_ + 'HASH_TYPE_' + tp_type.upper()
-                elif dtype.startswith('a(') and tp_type.endswith('[]'):
-                    tp_type = tp_type[:-2] + '_LIST'
-                    gtype = self.TYPE_PREFIX_ + 'ARRAY_TYPE_' + tp_type.upper()
-                elif dtype.startswith('('):
-                    gtype = (self.TYPE_PREFIX_ + 'STRUCT_TYPE_'
-                             + tp_type.upper())
-
             struct = (ctype, name, gtype)
             args.append(struct)
 
@@ -542,7 +530,7 @@ if __name__ == '__main__':
     options, argv = gnu_getopt(sys.argv[1:], '',
                                ['filename=', 'signal-marshal-prefix=',
                                 'include=', 'include-end=',
-                                'type-prefix=', 'allow-unstable',
+                                'allow-unstable',
                                 'not-implemented-func='])
 
     try:
@@ -552,7 +540,6 @@ if __name__ == '__main__':
 
     basename = prefix.lower() + 'ginterfaces'
     signal_marshal_prefix = prefix.lower().rstrip('_')
-    type_prefix = None
     headers = []
     end_headers = []
     not_implemented_func = ''
@@ -563,8 +550,6 @@ if __name__ == '__main__':
             basename = value
         elif option == '--signal-marshal-prefix':
             signal_marshal_prefix = value
-        elif option == '--type-prefix':
-            type_prefix = value
         elif option == '--include':
             if value[0] not in '<"':
                 value = '"%s"' % value
@@ -584,4 +569,4 @@ if __name__ == '__main__':
         cmdline_error()
 
     Generator(dom, prefix, basename, signal_marshal_prefix, headers,
-              end_headers, not_implemented_func, type_prefix, allow_havoc)()
+              end_headers, not_implemented_func, allow_havoc)()
