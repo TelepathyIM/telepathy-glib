@@ -36,7 +36,8 @@ NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 class Generator(object):
 
     def __init__(self, dom, prefix, basename, signal_marshal_prefix,
-                 headers, end_headers, not_implemented_func, type_prefix):
+                 headers, end_headers, not_implemented_func, type_prefix,
+                 allow_havoc):
         self.dom = dom
         self.__header = []
         self.__body = []
@@ -55,6 +56,7 @@ class Generator(object):
         self.headers = headers
         self.end_headers = end_headers
         self.not_implemented_func = not_implemented_func
+        self.allow_havoc = allow_havoc
 
     def h(self, s):
         self.__header.append(s)
@@ -72,6 +74,10 @@ class Generator(object):
         assert len(interfaces) == 1, interfaces
         interface = interfaces[0]
         self.iface_name = interface.getAttribute('name')
+
+        tmp = node.getAttribute('causes-havoc')
+        if tmp and not self.allow_havoc:
+            raise AssertionError('%s is %s' % (self.iface_name, tmp))
 
         self.b('const DBusGObjectInfo dbus_glib_%s%s_object_info;'
                % (self.prefix_, node_name_lc))
@@ -536,7 +542,7 @@ if __name__ == '__main__':
     options, argv = gnu_getopt(sys.argv[1:], '',
                                ['filename=', 'signal-marshal-prefix=',
                                 'include=', 'include-end=',
-                                'type-prefix=',
+                                'type-prefix=', 'allow-unstable',
                                 'not-implemented-func='])
 
     try:
@@ -550,6 +556,7 @@ if __name__ == '__main__':
     headers = []
     end_headers = []
     not_implemented_func = ''
+    allow_havoc = False
 
     for option, value in options:
         if option == '--filename':
@@ -568,6 +575,8 @@ if __name__ == '__main__':
             end_headers.append(value)
         elif option == '--not-implemented-func':
             not_implemented_func = value
+        elif option == '--allow-unstable':
+            allow_havoc = True
 
     try:
         dom = xml.dom.minidom.parse(argv[0])
@@ -575,4 +584,4 @@ if __name__ == '__main__':
         cmdline_error()
 
     Generator(dom, prefix, basename, signal_marshal_prefix, headers,
-              end_headers, not_implemented_func, type_prefix)()
+              end_headers, not_implemented_func, type_prefix, allow_havoc)()
