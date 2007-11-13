@@ -30,13 +30,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  * <xsl:value-of select="translate(tp:docstring, '&#13;&#10;', '')"/>
   </xsl:template>
 
-  <xsl:template match="tp:error">
+  <xsl:template match="tp:error" mode="enum">
 <xsl:text>    TP_ERROR_</xsl:text><xsl:value-of select="translate(@name, 'abcdefghijklmnopqrstuvwxyz .', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ__')"/>,
 </xsl:template>
 
   <xsl:template match="text()"/>
 
-  <xsl:template match="/tp:errors">/* Generated from the Telepathy spec
+  <xsl:template match="//tp:errors">/* Generated from the Telepathy spec
 
 <xsl:for-each select="tp:copyright">
 <xsl:value-of select="."/><xsl:text>
@@ -63,7 +63,7 @@ GType tp_error_get_type (void);
  * Enumerated type representing the Telepathy D-Bus errors.
  */
 typedef enum {
-<xsl:apply-templates select="tp:error"/>} TpError;
+<xsl:apply-templates select="tp:error" mode="enum"/>} TpError;
 
 G_END_DECLS
 </xsl:template>

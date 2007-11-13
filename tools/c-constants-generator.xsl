@@ -242,7 +242,7 @@ extern "C" {
 #endif
 
 </xsl:text>
-    <xsl:apply-templates select="node"/>
+    <xsl:apply-templates/>
     <xsl:text>
 
 #ifdef __cplusplus

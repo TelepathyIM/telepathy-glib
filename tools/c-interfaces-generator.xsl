@@ -76,7 +76,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     <xsl:value-of select="tp:license"/>
     <xsl:value-of select="tp:docstring"/>
     <xsl:text>&#10; */&#10;&#10;</xsl:text>
-    <xsl:apply-templates select="node"/>
+    <xsl:apply-templates/>
   </xsl:template>
 
 </xsl:stylesheet>

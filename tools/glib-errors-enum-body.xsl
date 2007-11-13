@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
   <xsl:variable name="upper" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'"/>
   <xsl:variable name="lower" select="'abcdefghijklmnopqrstuvwxyz'"/>
 
-  <xsl:template match="tp:error">
+  <xsl:template match="tp:error" mode="values">
     <!-- CHANNEL_BANNED -->
     <xsl:variable name="name" select="translate(@name, concat($lower, '. '),
                                                 concat($upper, '__'))"/>
@@ -41,7 +41,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
   <xsl:template match="text()"/>
 
-  <xsl:template match="/tp:errors">/* Generated from the Telepathy spec
+  <xsl:template match="//tp:errors">/* Generated from the Telepathy spec
 
 <xsl:for-each select="tp:copyright">
 <xsl:value-of select="."/><xsl:text>
@@ -58,7 +58,7 @@ tp_error_get_type (void)
   if (G_UNLIKELY (etype == 0))
     {
       static const GEnumValue values[] = {
-<xsl:apply-templates select="tp:error"/>      };
+<xsl:apply-templates select="tp:error" mode="values"/>      };
 
       etype = g_enum_register_static ("TpError", values);
     }
