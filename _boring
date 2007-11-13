@@ -78,5 +78,6 @@
 ^docs/reference/html($|/)
 ^docs/reference/telepathy-glib\.(args|hierarchy|interfaces|prerequisites|signals)$
 ^docs/reference/telepathy-glib-(undocumented|unused|undeclared|decl|decl-list)\.txt$
+^examples/cm/[^/]+/telepathy-example-[a-z-]+$
 ^tools/update-spec-gen-am\.sh$
 ^FIXME\.out$
