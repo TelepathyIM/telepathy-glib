@@ -9,5 +9,5 @@ extract_interfaces_expr = \
   's@^.include <telepathy-glib/_gen/svc-\([[:alpha:]_]*\)\.h>$$@\1@p'
 
 _gen/stable-interfaces.txt: $(svc_headers)
-	test -d _gen || mkdir _gen
+	$(mkdir_p) _gen
 	sed -ne $(extract_interfaces_expr) $^ > $@
