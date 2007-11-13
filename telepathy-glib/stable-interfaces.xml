@@ -1,0 +1,16 @@
+<tp:spec
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
+  xmlns:xi="http://www.w3.org/2001/XInclude">
+
+<tp:title>telepathy-glib</tp:title>
+
+<xi:include href="connection-manager-interfaces.xml"/>
+<xi:include href="connection-interfaces.xml"/>
+<xi:include href="channel-interfaces.xml"/>
+<xi:include href="media-interfaces.xml"/>
+<xi:include href="generic-interfaces.xml"/>
+
+<xi:include href="../spec/generic-types.xml"/>
+<xi:include href="../spec/errors.xml"/>
+
+</tp:spec>
