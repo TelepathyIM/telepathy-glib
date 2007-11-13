@@ -24,10 +24,10 @@
 #include <telepathy-glib/run.h>
 #include "manager.h"
 
-static ExampleConnectionManager *
+static TpBaseConnectionManager *
 construct_cm (void)
 {
-  return (ExampleConnectionManager *) g_object_new (
+  return (TpBaseConnectionManager *) g_object_new (
       EXAMPLE_TYPE_CONNECTION_MANAGER,
       NULL);
 }
