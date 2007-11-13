@@ -85,6 +85,7 @@ check_c_sources = \
     $(libtelepathy_glib_la_SOURCES)
 include $(top_srcdir)/tools/check-coding-style.mk
 
+libtelepathy_glib_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_internal_la_SOURCES = \
     base-connection.c \
     base-connection-manager.c \
@@ -113,8 +114,18 @@ libtelepathy_glib_internal_la_SOURCES = \
     text-mixin.c \
     util.c
 
-AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @HANDLE_LEAK_DEBUG_CFLAGS@ @COVERAGE_CFLAGS@ -I.. -I$(srcdir)/..
-AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@
+AM_CFLAGS = \
+    $(ERROR_CFLAGS) \
+    @DBUS_CFLAGS@ \
+    @GLIB_CFLAGS@ \
+    @HANDLE_LEAK_DEBUG_CFLAGS@ \
+    @COVERAGE_CFLAGS@ \
+    -I$(top_builddir) \
+    -I$(top_srcdir)
+
+ALL_LIBS = \
+    @DBUS_LIBS@ \
+    @GLIB_LIBS@
 
 # Generated stuff
 
