@@ -5,12 +5,12 @@ EXTRA_DIST = \
     check-misc.sh \
     check-whitespace.sh \
     c-interfaces-generator.xsl \
-    genginterface.py \
     glib-client-marshaller-gen.py \
     glib-errors-enum-body.xsl \
     glib-errors-enum-header.xsl \
     glib-interfaces-generator.xsl \
     glib-interfaces-body-generator.xsl \
+    glib-ginterface-gen.py \
     glib-gtypes-generator.py \
     glib-signals-marshal-gen.py \
     identity.xsl \
@@ -24,11 +24,11 @@ CLEANFILES = libglibcodegen.pyc libglibcodegen.pyo
 
 all: $(EXTRA_DIST)
 
-genginterface.py: libglibcodegen.py
+glib-client-marshaller-gen.py: libglibcodegen.py
+	touch $@
+glib-ginterface-gen.py: libglibcodegen.py
 	touch $@
 glib-gtypes-generator.py: libglibcodegen.py
-	touch $@
-glib-client-marshaller-gen.py: libglibcodegen.py
 	touch $@
 glib-signals-marshal-gen.py: libglibcodegen.py
 	touch $@
