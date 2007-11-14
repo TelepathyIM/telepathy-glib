@@ -22,16 +22,6 @@
 
 #include <telepathy-glib/errors.h>
 
-struct _TpProxyClass {
-    DBusGProxyClass parent_class;
-    /*<private>*/
-};
-
-struct _TpProxy {
-    DBusGProxy parent;
-    /*<private>*/
-};
-
 G_DEFINE_TYPE (TpProxy,
     tp_proxy,
     DBUS_TYPE_G_PROXY);

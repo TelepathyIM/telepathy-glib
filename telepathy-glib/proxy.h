@@ -29,6 +29,18 @@ G_BEGIN_DECLS
 typedef struct _TpProxy TpProxy;
 typedef struct _TpProxyClass TpProxyClass;
 
+struct _TpProxyClass {
+    DBusGProxyClass parent_class;
+    /*<private>*/
+    gpointer priv;
+};
+
+struct _TpProxy {
+    DBusGProxy parent;
+    /*<private>*/
+    gpointer priv;
+};
+
 GType tp_proxy_get_type (void);
 
 /* TYPE MACROS */
