@@ -20,11 +20,28 @@
 
 #include "telepathy-glib/connection-manager.h"
 
+/**
+ * SECTION:connection-manager
+ * @title: TpConnectionManager
+ * @short_description: proxy object for a running Telepathy connection manager
+ * @see_also: #TpConnection
+ */
+
+/**
+ * TpConnectionManagerClass:
+ *
+ * The class of a #TpConnectionManager.
+ */
 struct _TpConnectionManagerClass {
     TpProxyClass parent_class;
     /*<private>*/
 };
 
+/**
+ * TpConnectionManager:
+ *
+ * A proxy object for a running Telepathy connection manager.
+ */
 struct _TpConnectionManager {
     TpProxy parent;
     /*<private>*/

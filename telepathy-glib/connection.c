@@ -20,11 +20,28 @@
 
 #include "telepathy-glib/connection.h"
 
+/**
+ * SECTION:connection
+ * @title: TpConnection
+ * @short_description: proxy object for a Telepathy connection
+ * @see_also: #TpConnectionManager, #TpChannel
+ */
+
+/**
+ * TpConnectionClass:
+ *
+ * The class of a #TpConnection.
+ */
 struct _TpConnectionClass {
     TpProxyClass parent_class;
     /*<private>*/
 };
 
+/**
+ * TpConnection:
+ *
+ * A proxy object for a Telepathy connection.
+ */
 struct _TpConnection {
     TpProxy parent;
     /*<private>*/
