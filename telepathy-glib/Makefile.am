@@ -67,6 +67,11 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/interfaces-body.h \
     _gen/gtypes-body.h \
     _gen/register-dbus-glib-marshallers-body.h \
+    _gen/tp-cli-channel-interfaces.c \
+    _gen/tp-cli-connection-interfaces.c \
+    _gen/tp-cli-connection-manager-interfaces.c \
+    _gen/tp-cli-generic-interfaces.c \
+    _gen/tp-cli-media-interfaces.c \
     _gen/tp-svc-channel-interfaces.c \
     _gen/tp-svc-connection-interfaces.c \
     _gen/tp-svc-connection-manager-interfaces.c \
@@ -78,6 +83,11 @@ nodist_geninclude_HEADERS = \
     _gen/telepathy-interfaces.h \
     _gen/telepathy-errors.h \
     _gen/gtypes.h \
+    _gen/tp-cli-channel-interfaces.h \
+    _gen/tp-cli-connection-interfaces.h \
+    _gen/tp-cli-connection-manager-interfaces.h \
+    _gen/tp-cli-generic-interfaces.h \
+    _gen/tp-cli-media-interfaces.h \
     _gen/tp-svc-channel-interfaces.h \
     _gen/tp-svc-connection-interfaces.h \
     _gen/tp-svc-connection-manager-interfaces.h \
@@ -281,3 +291,10 @@ _gen/tp-svc-%-interfaces.c _gen/tp-svc-%-interfaces.h: _gen/%-interfaces.xml \
 		$$flags \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
+
+_gen/tp-cli-%-interfaces.c _gen/tp-cli-%-interfaces.h: _gen/%-interfaces.xml \
+	../tools/glib-client-gen.py \
+	../tools/ls-interfaces.xsl \
+	Makefile.am
+	$(PYTHON) $(srcdir)/../tools/glib-client-gen.py \
+		$< Tp_Cli _gen/tp-cli-$*-interfaces
