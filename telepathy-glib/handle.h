@@ -55,6 +55,14 @@ typedef guint TpHandle;
  */
 
 /**
+ * TP_UNKNOWN_HANDLE_TYPE
+ *
+ * An invalid handle type (-1 cast to TpHandleType) used to represent an
+ * unknown handle type.
+ */
+#define TP_UNKNOWN_HANDLE_TYPE ((TpHandleType) -1)
+
+/**
  * tp_handle_type_is_valid:
  * @type: A handle type, valid or not, to be checked
  * @error: Set if the handle type is invalid

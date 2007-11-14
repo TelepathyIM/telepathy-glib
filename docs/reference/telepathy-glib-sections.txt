@@ -1094,6 +1094,7 @@ tp_debug_set_all_flags
 <TITLE>handle</TITLE>
 TpHandle
 TP_TYPE_HANDLE
+TP_UNKNOWN_HANDLE_TYPE
 tp_handle_type_is_valid
 tp_handle_type_to_string
 </SECTION>
