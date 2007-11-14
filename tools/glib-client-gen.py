@@ -140,6 +140,138 @@ class Generator(object):
         self.b('')
 
         # FIXME: implement asynchronous calls
+        return
+
+        # Async reply callback type
+
+        callback_name = '%s_%s_callback_for_%s' % (self.prefix_lc, iface_lc,
+                                                   member_lc)
+
+        self.h('typedef void (*%s) (TpProxy *proxy,' % callback_name)
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.h('    %s%s,' % (ctype, name))
+
+        self.h('    GError *error, gpointer userdata);')
+        self.h('')
+
+        # Async callback implementation
+
+        callback_impl_name =  '_%s_%s_take_reply_from_%s' % (self.prefix_lc,
+                                                             iface_lc,
+                                                             member_lc)
+
+        self.b('static void')
+        self.b('%s (DBusGProxy *proxy,' % callback_impl_name)
+        self.b('    DBusGProxyCall *call,')
+        self.b('    gpointer user_data)')
+        self.b('{')
+        self.b('  DBusGAsyncData *data = user_data;')
+        self.b('  GError *error = NULL;')
+        self.b('  %s callback = (%s) (data->cb);' % (callback_name,
+                                                    callback_name))
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b('  %s%s;' % (ctype, name))
+
+        self.b('')
+        self.b('  dbus_g_proxy_end_call (proxy, call, &error,')
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b('      %s, &%s,' % (gtype, name))
+
+        self.b('      G_TYPE_INVALID);')
+        self.b('  callback (proxy,')
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b('      %s,' % name)
+
+        self.b('      error, data->userdata);')
+        self.b('}')
+        self.b('')
+
+        # Async stub
+
+        self.h('DBusGProxyCall *%s_%s_call_%s (DBusGProxy *proxy,'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b('DBusGProxyCall *\n%s_%s_call_%s (DBusGProxy *proxy,'
+               % (self.prefix_lc, iface_lc, member_lc))
+
+        for arg in in_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            const = pointer and 'const ' or ''
+
+            self.h('    %s%s%s,' % (const, ctype, name))
+            self.b('    %s%s%s,' % (const, ctype, name))
+
+        self.h('    %s callback,' % callback_name)
+        self.h('    gpointer userdata);')
+        self.h('')
+
+        self.b('    %s callback,' % callback_name)
+        self.b('    gpointer userdata)')
+        self.b('{')
+        self.b('  DBusGProxy *iface = tp_proxy_get_interface (')
+        self.b('      TP_PROXY (proxy),')
+        self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
+        self.b('      NULL);')
+        self.b('')
+        self.b('  if (iface == NULL)')
+        self.b('    return NULL;')
+        self.b('')
+        self.b('  if (callback == NULL)')
+        self.b('    {')
+        self.b('      dbus_g_proxy_call_no_reply (proxy, "%s",' % member)
+
+        for arg in in_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            const = pointer and 'const ' or ''
+
+            self.b('          %s, %s,' % (gtype, name))
+
+        self.b('          G_TYPE_INVALID);')
+        self.b('      return NULL;')
+        self.b('    }')
+        self.b('  else')
+        self.b('    {')
+        self.b('      DBusGAsyncData *stuff;')
+        self.b('')
+        self.b('      stuff = g_new (DBusGAsyncData, 1);')
+        self.b('      stuff->cb = G_CALLBACK (callback);')
+        self.b('      stuff->userdata = userdata;')
+        self.b('      return dbus_g_proxy_begin_call (proxy, "%s",' % member)
+        self.b('          %s,' % callback_impl_name)
+        self.b('          stuff,')
+        self.b('          g_free,')
+
+        for arg in in_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            const = pointer and 'const ' or ''
+
+            self.b('          %s, %s,' % (gtype, name))
+
+        self.b('          G_TYPE_INVALID);')
+        self.b('    }')
+        self.b('}')
+        self.b('')
 
         self.b('')
 
