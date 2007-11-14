@@ -1385,3 +1385,21 @@ tp_iface_quark_media_session_handler
 tp_iface_quark_media_stream_handler
 tp_iface_quark_properties_interface
 </SECTION>
+
+<SECTION>
+<FILE>proxy</FILE>
+<TITLE>proxy</TITLE>
+<INCLUDE>telepathy-glib/proxy.h</INCLUDE>
+TpProxy
+TpProxyClass
+tp_proxy_get_interface
+TP_TYPE_PROXY
+<SUBSECTION Private>
+<SUBSECTION Standard>
+tp_proxy_get_type
+TP_IS_PROXY
+TP_IS_PROXY_CLASS
+TP_PROXY
+TP_PROXY_CLASS
+TP_PROXY_GET_CLASS
+</SECTION>
