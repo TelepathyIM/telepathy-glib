@@ -20,7 +20,7 @@
  */
 
 /**
- * SECTION:svc-properties-interface
+ * SECTION:svc-generic
  * @title: Service-side Properties interface
  * @short_description: GInterface for D-Bus objects exporting Telepathy
  *  properties

@@ -178,9 +178,9 @@ TP_STATIC_HANDLE_REPO_GET_CLASS
 </SECTION>
 
 <SECTION>
-<FILE>svc-properties-interface</FILE>
-<INCLUDE>telepathy-glib/svc-properties-interface.h</INCLUDE>
-<TITLE>svc-properties-interface</TITLE>
+<FILE>svc-generic</FILE>
+<INCLUDE>telepathy-glib/svc-generic.h</INCLUDE>
+<TITLE>svc-generic</TITLE>
 TpSvcPropertiesInterface
 TpSvcPropertiesInterfaceClass
 tp_svc_properties_interface_get_properties_impl
