@@ -47,6 +47,7 @@ tpginclude_HEADERS = \
     svc-channel.h \
     svc-connection.h \
     svc-connection-manager.h \
+    svc-generic.h \
     svc-media-interfaces.h \
     svc-properties-interface.h \
     text-mixin.h \
