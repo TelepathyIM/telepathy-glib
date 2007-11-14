@@ -28,8 +28,13 @@ libtelepathy_glib_la_SOURCES =
 tpginclude_HEADERS = \
     base-connection.h \
     base-connection-manager.h \
+    channel.h \
     channel-iface.h \
     channel-factory-iface.h \
+    cli-generic.h \
+    cli-media-interfaces.h \
+    connection.h \
+    connection-manager.h \
     dbus.h \
     defs.h \
     debug.h \
@@ -118,6 +123,9 @@ libtelepathy_glib_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_internal_la_SOURCES = \
     base-connection.c \
     base-connection-manager.c \
+    channel.c \
+    connection.c \
+    connection-manager.c \
     dbus.c \
     internal-dbus-glib.h \
     debug.c \
