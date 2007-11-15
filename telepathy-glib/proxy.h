@@ -29,16 +29,23 @@ G_BEGIN_DECLS
 typedef struct _TpProxy TpProxy;
 typedef struct _TpProxyClass TpProxyClass;
 
+typedef struct _TpProxyPrivate TpProxyPrivate;
+typedef struct _TpProxyClassPrivate TpProxyClassPrivate;
+
 struct _TpProxyClass {
     DBusGProxyClass parent_class;
+
+    GQuark fixed_interface;
+    gboolean must_have_unique_name:1;
+
     /*<private>*/
-    gpointer priv;
+    TpProxyClassPrivate *priv;
 };
 
 struct _TpProxy {
     DBusGProxy parent;
     /*<private>*/
-    gpointer priv;
+    TpProxyPrivate *priv;
 };
 
 GType tp_proxy_get_type (void);
@@ -60,8 +67,10 @@ GType tp_proxy_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_PROXY, \
                               TpProxyClass))
 
-DBusGProxy *tp_proxy_get_interface (TpProxy *self, GQuark interface,
+DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
     GError **error);
+
+void tp_proxy_add_interface_by_id (TpProxy *self, GQuark interface);
 
 G_END_DECLS
 

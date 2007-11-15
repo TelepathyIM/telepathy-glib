@@ -115,7 +115,7 @@ class Generator(object):
 
         self.b('    GError **error)')
         self.b('{')
-        self.b('  DBusGProxy *iface = tp_proxy_get_interface (')
+        self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
         self.b('      TP_PROXY (proxy),')
         self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
         self.b('      error);')
