@@ -26,6 +26,13 @@
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "internal-debug.h"
 
+/**
+ * SECTION:proxy
+ * @title: TpProxy
+ * @short_description: base class for Telepathy client proxy objects
+ * @see_also: #TpChannel, #TpConnection, #TpConnectionManager
+ */
+
 G_DEFINE_TYPE (TpProxy,
     tp_proxy,
     DBUS_TYPE_G_PROXY);
