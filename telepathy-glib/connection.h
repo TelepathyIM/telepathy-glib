@@ -30,6 +30,8 @@ typedef struct _TpConnectionClass TpConnectionClass;
 
 GType tp_connection_get_type (void);
 
+#define TP_UNKNOWN_CONNECTION_STATUS ((TpConnectionStatus) -1)
+
 /* TYPE MACROS */
 #define TP_TYPE_CONNECTION \
   (tp_connection_get_type ())
