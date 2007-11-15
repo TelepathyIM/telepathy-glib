@@ -91,6 +91,30 @@ class Generator(object):
         self.h('gboolean %s_%s_block_on_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
 
+        self.b('/**')
+        self.b(' * %s_%s_block_on_%s:' % (self.prefix_lc, iface_lc, member_lc))
+        self.b(' * @proxy: A #TpProxy or subclass')
+        self.b(' * @error: Used to return errors')
+
+        for arg in in_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b(' * @%s: Used to pass an \'in\' argument (FIXME: docs)'
+                   % name)
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b(' * @%s: Used to return an \'out\' argument (FIXME: docs)'
+                   % name)
+
+        self.b(' *')
+        self.b(' * Auto-generated synchronous call wrapper.')
+        self.b(' *')
+        self.b(' * Returns: TRUE on success, FALSE and sets @error on error')
+        self.b(' */')
         self.b('gboolean\n%s_%s_block_on_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
 
