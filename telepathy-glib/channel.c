@@ -133,10 +133,14 @@ static void
 tp_channel_class_init (TpChannelClass *klass)
 {
   GParamSpec *param_spec;
+  TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
   object_class->get_property = tp_channel_get_property;
   object_class->set_property = tp_channel_set_property;
+
+  proxy_class->fixed_interface = TP_IFACE_QUARK_CHANNEL;
+  proxy_class->must_have_unique_name = TRUE;
 
   /**
    * TpChannel:channel-type:
@@ -165,7 +169,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * Read-only except during construction. If this is TP_UNKNOWN_HANDLE_TYPE
    * during construction (default), we ask the remote D-Bus object what its
    * handle type is; reading this property will yield TP_UNKNOWN_HANDLE_TYPE
-   * until we get the reply, or if GetHandle() fails.
+   * until we get the reply.
    */
   param_spec = g_param_spec_uint ("handle-type", "Handle type",
       "The TpHandleType of this channel",
