@@ -33,14 +33,18 @@
  * include:
  *
  * <itemizedlist>
+ * <listitem><literal>manager</literal> - output debug messages regarding
+ * #TpConnectionManager (client)</listitem>
  * <listitem><literal>connection</literal> - output debug messages regarding
- * #TpBaseConnection</listitem>
+ * #TpBaseConnection (service) and #TpConnection (client)</listitem>
+ * <listitem><literal>channel</literal> - output debug messages regarding
+ * #TpChannel (client)</listitem>
  * <listitem><literal>im</literal> - output debug messages regarding
- * (text) instant messaging</listitem>
+ * (text) instant messaging (service)</listitem>
  * <listitem><literal>properties</literal> - output debug messages regarding
- * #TpPropertiesMixin</listitem>
+ * #TpPropertiesMixin (service)</listitem>
  * <listitem><literal>params</literal> - output debug messages regarding
- * connection manager parameters</listitem>
+ * connection manager parameters (service)</listitem>
  * <listitem><literal>all</literal> - all of the above</listitem>
  * </itemizedlist>
  */
@@ -86,6 +90,8 @@ static GDebugKey keys[] = {
   { "im",            TP_DEBUG_IM },
   { "params",        TP_DEBUG_PARAMS },
   { "presence",      TP_DEBUG_PRESENCE },
+  { "manager",       TP_DEBUG_MANAGER },
+  { "channel",       TP_DEBUG_CHANNEL },
   { 0, },
 };
 
