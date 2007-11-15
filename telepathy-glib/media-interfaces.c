@@ -64,6 +64,10 @@ tp_media_stream_handler_init (TpMediaStreamHandler *self)
 static void
 tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *klass)
 {
+  TpProxyClass *proxy_class = (TpProxyClass *) klass;
+
+  proxy_class->must_have_unique_name = TRUE;
+  proxy_class->interface = TP_IFACE_QUARK_MEDIA_STREAM_HANDLER;
 }
 
 /**
@@ -98,4 +102,8 @@ tp_media_session_handler_init (TpMediaSessionHandler *self)
 static void
 tp_media_session_handler_class_init (TpMediaSessionHandlerClass *klass)
 {
+  TpProxyClass *proxy_class = (TpProxyClass *) klass;
+
+  proxy_class->must_have_unique_name = TRUE;
+  proxy_class->interface = TP_IFACE_QUARK_MEDIA_SESSION_HANDLER;
 }
