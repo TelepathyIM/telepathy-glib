@@ -61,4 +61,5 @@ tp_connection_manager_init (TpConnectionManager *self)
 static void
 tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 {
+  proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
 }
