@@ -1395,9 +1395,6 @@ TpProxyClass
 tp_proxy_borrow_interface_by_id
 tp_proxy_add_interface_by_id
 TP_TYPE_PROXY
-<SUBSECTION Private>
-TpProxyClassPrivate
-TpProxyPrivate
 <SUBSECTION Standard>
 tp_proxy_get_type
 TP_IS_PROXY
