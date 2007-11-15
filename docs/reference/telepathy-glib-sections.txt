@@ -1396,6 +1396,8 @@ tp_proxy_borrow_interface_by_id
 tp_proxy_add_interface_by_id
 TP_TYPE_PROXY
 <SUBSECTION Private>
+TpProxyClassPrivate
+TpProxyPrivate
 <SUBSECTION Standard>
 tp_proxy_get_type
 TP_IS_PROXY
@@ -1480,6 +1482,7 @@ tp_cli_channel_interface_password_block_on_provide_password
 <INCLUDE>telepathy-glib/connection.h</INCLUDE>
 TpConnection
 TpConnectionClass
+TP_UNKNOWN_CONNECTION_STATUS
 <SUBSECTION Standard>
 tp_connection_get_type
 TP_TYPE_CONNECTION

@@ -21,7 +21,7 @@
     <xi:include href="xml/connection-manager.xml"/>
     <xi:include href="xml/connection.xml"/>
     <xi:include href="xml/channel.xml"/>
-    <xi:include href="xml/cli-generic-interfaces.xml"/>
+    <xi:include href="xml/cli-generic.xml"/>
     <xi:include href="xml/cli-media-interfaces.xml"/>
   </chapter>
   <chapter id="base-classes">
