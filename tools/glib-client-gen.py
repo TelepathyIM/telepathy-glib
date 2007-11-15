@@ -348,11 +348,13 @@ class Generator(object):
     def __call__(self):
 
         self.h('#include <dbus/dbus-glib.h>')
-        self.h('#include <telepathy-glib/proxy.h>')
         self.h('#include <telepathy-glib/interfaces.h>')
+        self.h('#include <telepathy-glib/proxy.h>')
         self.h('')
 
         self.b('#include "%s.h"' % self.basename)
+        self.b('')
+        self.b('#include "telepathy-glib/proxy-internal.h"')
         self.b('')
 
         ifaces = self.dom.getElementsByTagName('node')

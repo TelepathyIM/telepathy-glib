@@ -21,24 +21,39 @@
 #ifndef __TP_PROXY_INTERNAL_H__
 #define __TP_PROXY_INTERNAL_H__
 
+#include <telepathy-glib/proxy.h>
+
 G_BEGIN_DECLS
 
 struct _TpProxyClass {
-    DBusGProxyClass parent_class;
+    GObjectClass parent_class;
 
     /*<protected>*/
     GQuark fixed_interface;
-    gboolean must_have_unique_name:1;
 
-    /*<private>*/
-    TpProxyClassPrivate *priv;
+    gboolean must_have_unique_name:1;
 };
 
 struct _TpProxy {
-    DBusGProxy parent;
+    GObject parent;
+
     /*<private>*/
-    TpProxyPrivate *priv;
+    DBusGConnection *dbus_connection;
+    gchar *bus_name;
+    gchar *object_path;
+    /* GQuark for interface => ref'd DBusGProxy * */
+    GData *interfaces;
+
+    gboolean valid:1;
+    gboolean dispose_has_run:1;
 };
+
+DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
+    GError **error);
+
+DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark interface);
+
+void tp_proxy_invalidated (TpProxy *self);
 
 G_END_DECLS
 

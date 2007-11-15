@@ -97,15 +97,14 @@ main (int argc,
   object_path = argv[2];
 
   channel = TP_CHANNEL (g_object_new (TP_TYPE_CHANNEL,
-        "connection", tp_get_bus (),
-        "name", bus_name,
-        "path", object_path,
-        "interface", TP_IFACE_CHANNEL,
+        "dbus-connection", tp_get_bus (),
+        "bus-name", bus_name,
+        "object-path", object_path,
         NULL));
 
   g_signal_connect (channel, "channel-ready",
       G_CALLBACK (channel_ready), mainloop);
-  g_signal_connect (channel, "destroy", G_CALLBACK (channel_died), mainloop);
+  g_signal_connect (channel, "destroyed", G_CALLBACK (channel_died), mainloop);
 
   g_main_loop_run (mainloop);
 

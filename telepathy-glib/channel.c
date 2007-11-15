@@ -130,27 +130,12 @@ tp_channel_set_property (GObject *object,
   }
 }
 
-static gboolean
-tp_channel_destroy_idle_func (gpointer user_data)
-{
-  DEBUG ("%p", user_data);
-  g_object_run_dispose (user_data);
-  return FALSE;
-}
-
-static void
-tp_channel_closed_cb (gpointer object, gpointer user_data)
-{
-  DEBUG ("%p", object);
-  g_idle_add (tp_channel_destroy_idle_func, object);
-}
-
 static void
 tp_channel_got_interfaces_cb (DBusGProxy *proxy,
                               DBusGProxyCall *call,
                               gpointer user_data)
 {
-  TpChannel *self = TP_CHANNEL (proxy);
+  TpChannel *self = TP_CHANNEL (user_data);
   GError *error = NULL;
   gchar **interfaces;
 
@@ -165,6 +150,7 @@ tp_channel_got_interfaces_cb (DBusGProxy *proxy,
 
           for (iter = interfaces; *iter != NULL; iter++)
             {
+              DEBUG ("\t- %s", *iter);
               tp_proxy_add_interface_by_id ((TpProxy *) self,
                   g_quark_from_string (*iter));
             }
@@ -181,16 +167,16 @@ tp_channel_got_interfaces_cb (DBusGProxy *proxy,
     {
       DEBUG ("%p: GetInterfaces() failed", self);
       g_error_free (error);
-      tp_channel_destroy_idle_func (self);
+      tp_proxy_invalidated ((TpProxy *) self);
     }
 }
 
 static void
 tp_channel_got_channel_type_cb (DBusGProxy *proxy,
-                               DBusGProxyCall *call,
-                               gpointer user_data)
+                                DBusGProxyCall *call,
+                                gpointer user_data)
 {
-  TpChannel *self = TP_CHANNEL (proxy);
+  TpChannel *self = TP_CHANNEL (user_data);
 
   if (call != NULL)
     {
@@ -209,7 +195,7 @@ tp_channel_got_channel_type_cb (DBusGProxy *proxy,
         {
           DEBUG ("%p: GetChannelType() failed, will self-destruct", self);
           g_error_free (error);
-          g_idle_add (tp_channel_destroy_idle_func, self);
+          tp_proxy_invalidated ((TpProxy *) self);
           return;
         }
     }
@@ -218,7 +204,7 @@ tp_channel_got_channel_type_cb (DBusGProxy *proxy,
   tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
 
   dbus_g_proxy_begin_call (proxy, "GetInterfaces",
-      tp_channel_got_interfaces_cb, NULL, NULL, G_TYPE_INVALID);
+      tp_channel_got_interfaces_cb, self, NULL, G_TYPE_INVALID);
 }
 
 static void
@@ -226,7 +212,7 @@ tp_channel_got_handle_cb (DBusGProxy *proxy,
                           DBusGProxyCall *call,
                           gpointer user_data)
 {
-  TpChannel *self = TP_CHANNEL (proxy);
+  TpChannel *self = TP_CHANNEL (user_data);
 
   if (call != NULL)
     {
@@ -247,7 +233,7 @@ tp_channel_got_handle_cb (DBusGProxy *proxy,
         {
           DEBUG ("%p: GetHandle() failed, will self-destruct", self);
           g_error_free (error);
-          g_idle_add (tp_channel_destroy_idle_func, self);
+          tp_proxy_invalidated ((TpProxy *) self);
           return;
         }
     }
@@ -255,12 +241,22 @@ tp_channel_got_handle_cb (DBusGProxy *proxy,
   if (self->channel_type == 0)
     {
       dbus_g_proxy_begin_call (proxy, "GetChannelType",
-          tp_channel_got_channel_type_cb, NULL, NULL, G_TYPE_INVALID);
+          tp_channel_got_channel_type_cb, self, NULL, G_TYPE_INVALID);
     }
   else
     {
-      tp_channel_got_channel_type_cb (proxy, NULL, NULL);
+      tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
+
+      dbus_g_proxy_begin_call (proxy, "GetInterfaces",
+          tp_channel_got_interfaces_cb, self, NULL, G_TYPE_INVALID);
     }
+}
+
+static void
+tp_channel_closed_cb (DBusGProxy *proxy,
+                      TpChannel *self)
+{
+  tp_proxy_invalidated ((TpProxy *) self);
 }
 
 static GObject *
@@ -271,12 +267,13 @@ tp_channel_constructor (GType type,
   GObjectClass *object_class = (GObjectClass *) tp_channel_parent_class;
   TpChannel *self = TP_CHANNEL (object_class->constructor (type,
         n_params, params));
-  DBusGProxy *proxy = (DBusGProxy *) self;
+  DBusGProxy *proxy = tp_proxy_add_interface_by_id ((TpProxy *) self,
+      TP_IFACE_QUARK_CHANNEL);
 
   /* connect to my own Closed signal and self-destruct when it arrives */
   dbus_g_proxy_add_signal (proxy, "Closed", G_TYPE_INVALID);
   dbus_g_proxy_connect_signal (proxy, "Closed",
-      G_CALLBACK (tp_channel_closed_cb), NULL, NULL);
+      G_CALLBACK (tp_channel_closed_cb), self, NULL);
 
   DEBUG ("%p: constructed with channel type \"%s\", handle #%d of type %d",
       self, (self->channel_type != 0) ? g_quark_to_string (self->channel_type)
@@ -287,11 +284,19 @@ tp_channel_constructor (GType type,
       || (self->handle == 0 && self->handle_type != TP_HANDLE_TYPE_NONE))
     {
       dbus_g_proxy_begin_call (proxy, "GetHandle",
-          tp_channel_got_handle_cb, NULL, NULL, G_TYPE_INVALID);
+          tp_channel_got_handle_cb, self, NULL, G_TYPE_INVALID);
+    }
+  else if (self->channel_type == 0)
+    {
+      dbus_g_proxy_begin_call (proxy, "GetChannelType",
+          tp_channel_got_channel_type_cb, self, NULL, G_TYPE_INVALID);
     }
   else
     {
-      tp_channel_got_handle_cb (proxy, NULL, NULL);
+      tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
+
+      dbus_g_proxy_begin_call (proxy, "GetInterfaces",
+          tp_channel_got_interfaces_cb, self, NULL, G_TYPE_INVALID);
     }
 
   return (GObject *) self;

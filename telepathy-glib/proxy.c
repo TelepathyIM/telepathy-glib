@@ -36,17 +36,22 @@
 
 G_DEFINE_TYPE (TpProxy,
     tp_proxy,
-    DBUS_TYPE_G_PROXY);
+    G_TYPE_OBJECT);
 
-struct _TpProxyPrivate
+enum
 {
-  /* The interface represented by this proxy */
-  GQuark main_interface;
-  /* GQuark for interface => ref'd DBusGProxy * */
-  GData *interfaces;
-  /* TRUE if disposed of */
-  gboolean dispose_has_run:1;
+  PROP_DBUS_CONNECTION = 1,
+  PROP_BUS_NAME,
+  PROP_OBJECT_PATH,
+  N_PROPS
 };
+
+enum {
+    SIGNAL_DESTROYED,
+    N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = {0};
 
 /**
  * tp_proxy_borrow_interface_by_id:
@@ -57,7 +62,7 @@ struct _TpProxyPrivate
  *
  * <!-- -->
  *
- * Returns: a borrowed reference to a #DBusGProxy (possibly equal to @self)
+ * Returns: a borrowed reference to a #DBusGProxy
  * for which the bus name and object path are the same as for @self, but the
  * interface is as given (or %NULL if this proxy does not implement it).
  * The reference is only valid as long as @self is.
@@ -69,12 +74,15 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 {
   DBusGProxy *proxy;
 
-  if (interface == self->priv->main_interface)
+  if (!self->valid)
     {
-      return (DBusGProxy *) self;
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Object %s has become invalid", self->object_path);
+
+      return NULL;
     }
 
-  proxy = g_datalist_id_get_data (&(self->priv->interfaces), interface);
+  proxy = g_datalist_id_get_data (&(self->interfaces), interface);
 
   if (proxy != NULL)
     {
@@ -83,10 +91,23 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 
   g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
       "Object %s does not have interface %s",
-      dbus_g_proxy_get_path ((DBusGProxy *) self),
-      g_quark_to_string (interface));
+      self->object_path, g_quark_to_string (interface));
 
   return NULL;
+}
+
+void
+tp_proxy_invalidated (TpProxy *self)
+{
+  self->valid = FALSE;
+  g_signal_emit (self, signals[SIGNAL_DESTROYED], 0);
+}
+
+static void
+tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
+                             TpProxy *self)
+{
+  tp_proxy_invalidated (self);
 }
 
 /**
@@ -103,37 +124,89 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
  *
  * If the interface is the proxy's "main interface", or has already been
  * added, then do nothing.
+ *
+ * Returns: the borrowed DBusGProxy
  */
-void
+DBusGProxy *
 tp_proxy_add_interface_by_id (TpProxy *self,
                               GQuark interface)
 {
-  DBusGProxy *self_gproxy = (DBusGProxy *) self;
-  DBusGProxy *iface_proxy;
+  DBusGProxy *iface_proxy = g_datalist_id_get_data (&(self->interfaces),
+      interface);
 
-  /* Silently do nothing if we're "adding" the main interface */
-  if (interface == self->priv->main_interface)
-    return;
+  if (iface_proxy == NULL)
+    {
+      DEBUG ("%p: %s", self, g_quark_to_string (interface));
+      iface_proxy = dbus_g_proxy_new_for_name (self->dbus_connection,
+          self->bus_name, self->object_path, g_quark_to_string (interface));
 
-  /* Silently do nothing if we're adding an already-added interface */
-  if (g_datalist_id_get_data (&(self->priv->interfaces), interface) != NULL)
-    return;
+      g_signal_connect (iface_proxy, "destroy",
+          G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
 
-  DEBUG ("%p: %s", self, g_quark_to_string (interface));
-  iface_proxy = dbus_g_proxy_new_from_proxy (self_gproxy,
-      g_quark_to_string (interface), dbus_g_proxy_get_path (self_gproxy));
+      g_datalist_id_set_data_full (&(self->interfaces), interface,
+          iface_proxy, g_object_unref);
+    }
 
-  g_datalist_id_set_data_full (&(self->priv->interfaces), interface,
-      iface_proxy, g_object_unref);
+  return iface_proxy;
+}
+
+static void
+tp_proxy_get_property (GObject *object,
+                       guint property_id,
+                       GValue *value,
+                       GParamSpec *pspec)
+{
+  TpProxy *self = TP_PROXY (object);
+
+  switch (property_id)
+    {
+    case PROP_DBUS_CONNECTION:
+      g_value_set_object (value, self->dbus_connection);
+      break;
+    case PROP_BUS_NAME:
+      g_value_set_string (value, self->bus_name);
+      break;
+    case PROP_OBJECT_PATH:
+      g_value_set_string (value, self->object_path);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
+}
+
+static void
+tp_proxy_set_property (GObject *object,
+                       guint property_id,
+                       const GValue *value,
+                       GParamSpec *pspec)
+{
+  TpProxy *self = TP_PROXY (object);
+
+  switch (property_id)
+    {
+    case PROP_DBUS_CONNECTION:
+      g_assert (self->dbus_connection == NULL);
+      self->dbus_connection = g_value_dup_boxed (value);
+      break;
+    case PROP_BUS_NAME:
+      g_assert (self->bus_name == NULL);
+      self->bus_name = g_value_dup_string (value);
+      break;
+    case PROP_OBJECT_PATH:
+      g_assert (self->object_path == NULL);
+      self->object_path = g_value_dup_string (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
 }
 
 static void
 tp_proxy_init (TpProxy *self)
 {
   DEBUG ("%p", self);
-
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_PROXY,
-      TpProxyPrivate);
 }
 
 static GObject *
@@ -145,37 +218,21 @@ tp_proxy_constructor (GType type,
   TpProxy *self = TP_PROXY (object_class->constructor (type,
         n_params, params));
   TpProxyClass *klass = TP_PROXY_GET_CLASS (self);
-  gchar *main_interface, *bus_name;
 
   _tp_register_dbus_glib_marshallers ();
 
-  g_object_get (self,
-      "interface", &main_interface,
-      "name", &bus_name,
-      NULL);
-
-  DEBUG ("%p: bus name %s, interface %s", self, bus_name, main_interface);
-
-  /* We require the interface property; it makes no sense to not have the
-   * main interface. This is e.g. Channel or Connection. */
-  g_return_val_if_fail (main_interface != NULL, NULL);
-  if (klass->fixed_interface != 0)
-    {
-      g_return_val_if_fail (klass->fixed_interface ==
-          g_quark_try_string (main_interface), NULL);
-    }
+  g_return_val_if_fail (self->dbus_connection != NULL, NULL);
+  g_return_val_if_fail (self->object_path != NULL, NULL);
+  g_return_val_if_fail (self->bus_name != NULL, NULL);
 
   /* Some interfaces are stateful, so we only allow binding to a unique
    * name, like in dbus_g_proxy_new_for_name_owner() */
   if (klass->must_have_unique_name)
     {
-      g_return_val_if_fail (bus_name != NULL && bus_name[0] != ':', NULL);
+      g_return_val_if_fail (self->bus_name[0] != ':', NULL);
     }
 
-  self->priv->main_interface = g_quark_from_string (main_interface);
-
-  g_free (main_interface);
-  g_free (bus_name);
+  self->valid = TRUE;
 
   return (GObject *) self;
 }
@@ -185,12 +242,9 @@ tp_proxy_dispose (GObject *object)
 {
   TpProxy *self = TP_PROXY (object);
 
-  if (self->priv->dispose_has_run)
+  if (self->dispose_has_run)
     return;
-  self->priv->dispose_has_run = TRUE;
-
-  /* Discard interface proxies */
-  g_datalist_clear (&(self->priv->interfaces));
+  self->dispose_has_run = TRUE;
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->dispose (object);
 }
@@ -198,10 +252,63 @@ tp_proxy_dispose (GObject *object)
 static void
 tp_proxy_class_init (TpProxyClass *klass)
 {
+  GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (TpProxyPrivate));
-
   object_class->constructor = tp_proxy_constructor;
+  object_class->get_property = tp_proxy_get_property;
+  object_class->set_property = tp_proxy_set_property;
   object_class->dispose = tp_proxy_dispose;
+
+  /**
+   * TpProxy:bus-name:
+   *
+   * The D-Bus bus name for this object. Read-only except during construction.
+   */
+  param_spec = g_param_spec_boxed ("dbus-connection", "D-Bus connection",
+      "The D-Bus connection used by this object", DBUS_TYPE_G_CONNECTION,
+      G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_DBUS_CONNECTION,
+      param_spec);
+
+  /**
+   * TpProxy:bus-name:
+   *
+   * The D-Bus bus name for this object. Read-only except during construction.
+   */
+  param_spec = g_param_spec_string ("bus-name", "D-Bus bus name",
+      "The D-Bus bus name for this object", NULL,
+      G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_BUS_NAME,
+      param_spec);
+
+  /**
+   * TpProxy:object-path:
+   *
+   * The D-Bus object path for this object. Read-only except during
+   * construction.
+   */
+  param_spec = g_param_spec_string ("object-path", "D-Bus object path",
+      "The D-Bus object path for this object", NULL,
+      G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH,
+      param_spec);
+
+  /**
+   * TpProxy::destroyed:
+   * @self: the proxy object
+   *
+   * Emitted when this proxy has been destroyed and become invalid for
+   * whatever reason. Any more specific signal should be emitted first.
+   */
+  signals[SIGNAL_DESTROYED] = g_signal_new ("destroyed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
 }

@@ -29,9 +29,6 @@ G_BEGIN_DECLS
 typedef struct _TpProxy TpProxy;
 typedef struct _TpProxyClass TpProxyClass;
 
-typedef struct _TpProxyPrivate TpProxyPrivate;
-typedef struct _TpProxyClassPrivate TpProxyClassPrivate;
-
 GType tp_proxy_get_type (void);
 
 /* TYPE MACROS */
@@ -50,11 +47,6 @@ GType tp_proxy_get_type (void);
 #define TP_PROXY_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_PROXY, \
                               TpProxyClass))
-
-DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
-    GError **error);
-
-void tp_proxy_add_interface_by_id (TpProxy *self, GQuark interface);
 
 G_END_DECLS
 

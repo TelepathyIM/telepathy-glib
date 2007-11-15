@@ -95,24 +95,16 @@ tp_connection_get_property (GObject *object,
     }
 }
 
-static gboolean
-tp_connection_destroy_idle_func (gpointer user_data)
-{
-  DEBUG ("%p", user_data);
-  g_object_run_dispose (user_data);
-  return FALSE;
-}
-
 static void
 tp_connection_got_interfaces_cb (DBusGProxy *proxy,
                                  DBusGProxyCall *call,
                                  gpointer user_data)
 {
-  TpConnection *self = TP_CONNECTION (proxy);
+  TpConnection *self = TP_CONNECTION (user_data);
   GError *error = NULL;
   gchar **interfaces;
 
-  DEBUG ("%p", proxy);
+  DEBUG ("%p", self);
 
   if (dbus_g_proxy_end_call (proxy, call, &error,
         G_TYPE_STRV, &interfaces,
@@ -139,15 +131,15 @@ tp_connection_got_interfaces_cb (DBusGProxy *proxy,
     {
       DEBUG ("%p: GetInterfaces() failed", self);
       g_error_free (error);
-      tp_connection_destroy_idle_func (self);
+      tp_proxy_invalidated ((TpProxy *) self);
     }
 }
 
 static void
-tp_connection_status_changed_cb (TpConnection *self,
+tp_connection_status_changed_cb (DBusGProxy *proxy,
                                  guint status,
                                  guint reason,
-                                 gpointer user_data)
+                                 TpConnection *self)
 {
   DEBUG ("%p: %d -> %d because %d", self, self->status, status, reason);
 
@@ -157,11 +149,11 @@ tp_connection_status_changed_cb (TpConnection *self,
   switch (status)
     {
     case TP_CONNECTION_STATUS_DISCONNECTED:
-      g_idle_add (tp_connection_destroy_idle_func, self);
+      tp_proxy_invalidated ((TpProxy *) self);
       break;
     case TP_CONNECTION_STATUS_CONNECTED:
-      dbus_g_proxy_begin_call ((DBusGProxy *) self, "GetInterfaces",
-          tp_connection_got_interfaces_cb, NULL, NULL, G_TYPE_INVALID);
+      dbus_g_proxy_begin_call (proxy, "GetInterfaces",
+          tp_connection_got_interfaces_cb, self, NULL, G_TYPE_INVALID);
       break;
     default:
       break;
@@ -173,7 +165,7 @@ tp_connection_got_status_cb (DBusGProxy *proxy,
                              DBusGProxyCall *call,
                              gpointer user_data)
 {
-  TpConnection *self = TP_CONNECTION (proxy);
+  TpConnection *self = TP_CONNECTION (user_data);
   guint status;
   GError *error = NULL;
 
@@ -184,14 +176,14 @@ tp_connection_got_status_cb (DBusGProxy *proxy,
         G_TYPE_INVALID))
     {
       DEBUG ("%p: Initial status is %d", self, status);
-      tp_connection_status_changed_cb (self, status,
-          TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED, NULL);
+      tp_connection_status_changed_cb (proxy, status,
+          TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED, self);
     }
   else
     {
       DEBUG ("%p: GetStatus() failed, will self-destruct", self);
       g_error_free (error);
-      g_idle_add (tp_connection_destroy_idle_func, self);
+      tp_proxy_invalidated ((TpProxy *) self);
       return;
     }
 }
@@ -204,19 +196,20 @@ tp_connection_constructor (GType type,
   GObjectClass *object_class = (GObjectClass *) tp_connection_parent_class;
   TpConnection *self = TP_CONNECTION (object_class->constructor (type,
         n_params, params));
-  DBusGProxy *proxy = (DBusGProxy *) self;
+  DBusGProxy *proxy = tp_proxy_add_interface_by_id ((TpProxy *) self,
+      TP_IFACE_QUARK_CONNECTION);
 
   /* connect to my own StatusChanged signal */
   DEBUG ("Connecting to StatusChanged");
   dbus_g_proxy_add_signal (proxy, "StatusChanged", G_TYPE_UINT, G_TYPE_UINT,
       G_TYPE_INVALID);
   dbus_g_proxy_connect_signal (proxy, "StatusChanged",
-      G_CALLBACK (tp_connection_status_changed_cb), NULL, NULL);
+      G_CALLBACK (tp_connection_status_changed_cb), self, NULL);
 
   /* get my initial status */
   DEBUG ("Calling GetStatus");
   dbus_g_proxy_begin_call (proxy, "GetStatus",
-      tp_connection_got_status_cb, NULL, NULL, G_TYPE_INVALID);
+      tp_connection_got_status_cb, self, NULL, G_TYPE_INVALID);
 
   DEBUG ("Returning %p", self);
   return (GObject *) self;

@@ -85,15 +85,14 @@ main (int argc,
   object_path = argv[2];
 
   connection = TP_CONNECTION (g_object_new (TP_TYPE_CONNECTION,
-        "connection", tp_get_bus (),
-        "name", bus_name,
-        "path", object_path,
-        "interface", TP_IFACE_CONNECTION,
+        "dbus-connection", tp_get_bus (),
+        "bus-name", bus_name,
+        "object-path", object_path,
         NULL));
 
   g_signal_connect (connection, "connection-ready",
       G_CALLBACK (connection_ready), mainloop);
-  g_signal_connect (connection, "destroy", G_CALLBACK (connection_died),
+  g_signal_connect (connection, "destroyed", G_CALLBACK (connection_died),
       mainloop);
 
   g_main_loop_run (mainloop);
