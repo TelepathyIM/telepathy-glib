@@ -23,7 +23,7 @@
 /**
  * SECTION:connection-manager
  * @title: TpConnectionManager
- * @short_description: proxy object for a running Telepathy connection manager
+ * @short_description: proxy object for a Telepathy connection manager
  * @see_also: #TpConnection
  */
 
@@ -40,7 +40,7 @@ struct _TpConnectionManagerClass {
 /**
  * TpConnectionManager:
  *
- * A proxy object for a running Telepathy connection manager.
+ * A proxy object for a Telepathy connection manager.
  */
 struct _TpConnectionManager {
     TpProxy parent;
