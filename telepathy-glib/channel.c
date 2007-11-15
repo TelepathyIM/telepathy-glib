@@ -24,6 +24,9 @@
 
 #include "_gen/signals-marshal.h"
 
+#define DEBUG_FLAG TP_DEBUG_CHANNEL
+#include "internal-debug.h"
+
 /**
  * SECTION:channel
  * @title: TpChannel
@@ -124,16 +127,169 @@ tp_channel_set_property (GObject *object,
   }
 }
 
+static gboolean
+tp_channel_destroy_idle_func (gpointer user_data)
+{
+  DEBUG ("%p", user_data);
+  g_object_run_dispose (user_data);
+  return FALSE;
+}
+
+static void
+tp_channel_closed_cb (gpointer object, gpointer user_data)
+{
+  DEBUG ("%p", object);
+  g_object_run_dispose (object);
+}
+
+static void
+tp_channel_got_interfaces_cb (DBusGProxy *proxy,
+                              DBusGProxyCall *call,
+                              gpointer user_data)
+{
+  TpChannel *self = TP_CHANNEL (proxy);
+  GError *error = NULL;
+  gchar **interfaces;
+
+  if (dbus_g_proxy_end_call (proxy, call, &error,
+        G_TYPE_STRV, &interfaces,
+        G_TYPE_INVALID))
+    {
+      DEBUG ("%p: Introspected interfaces", self);
+      if (interfaces != NULL)
+        {
+          gchar **iter;
+
+          for (iter = interfaces; *iter != NULL; iter++)
+            {
+              tp_proxy_add_interface_by_id ((TpProxy *) self,
+                  g_quark_from_string (*iter));
+            }
+        }
+
+      DEBUG ("%p: emitting introspected", self);
+      g_signal_emit (self, signals[SIGNAL_INTROSPECTED], 0,
+          g_quark_to_string (self->channel_type), self->handle_type,
+          self->handle, interfaces);
+
+      g_strfreev (interfaces);
+    }
+  else
+    {
+      DEBUG ("%p: GetInterfaces() failed", self);
+      g_error_free (error);
+      tp_channel_destroy_idle_func (self);
+    }
+}
+
+static void
+tp_channel_got_channel_type_cb (DBusGProxy *proxy,
+                               DBusGProxyCall *call,
+                               gpointer user_data)
+{
+  TpChannel *self = TP_CHANNEL (proxy);
+
+  if (call != NULL)
+    {
+      GError *error = NULL;
+      gchar *channel_type;
+
+      if (dbus_g_proxy_end_call (proxy, call, &error,
+            G_TYPE_STRING, &channel_type,
+            G_TYPE_INVALID))
+        {
+          DEBUG ("%p: Introspected channel type %s", self, channel_type);
+          self->channel_type = g_quark_from_string (channel_type);
+          g_free (channel_type);
+        }
+      else
+        {
+          DEBUG ("%p: GetChannelType() failed, will self-destruct", self);
+          g_error_free (error);
+          g_idle_add (tp_channel_destroy_idle_func, self);
+          return;
+        }
+    }
+
+  g_assert (self->channel_type != 0);
+  tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
+
+  dbus_g_proxy_begin_call (proxy, "GetInterfaces",
+      tp_channel_got_interfaces_cb, NULL, NULL, G_TYPE_INVALID);
+}
+
+static void
+tp_channel_got_handle_cb (DBusGProxy *proxy,
+                          DBusGProxyCall *call,
+                          gpointer user_data)
+{
+  TpChannel *self = TP_CHANNEL (proxy);
+
+  if (call != NULL)
+    {
+      guint handle_type, handle;
+      GError *error = NULL;
+
+      if (dbus_g_proxy_end_call (proxy, call, &error,
+            G_TYPE_UINT, &handle_type,
+            G_TYPE_UINT, &handle,
+            G_TYPE_INVALID))
+        {
+          DEBUG ("%p: Introspected handle #%d of type %d", self, handle,
+              handle_type);
+          self->handle_type = handle_type;
+          self->handle = handle;
+        }
+      else
+        {
+          DEBUG ("%p: GetHandle() failed, will self-destruct", self);
+          g_error_free (error);
+          g_idle_add (tp_channel_destroy_idle_func, self);
+          return;
+        }
+    }
+
+  if (self->channel_type == 0)
+    {
+      dbus_g_proxy_begin_call (proxy, "GetChannelType",
+          tp_channel_got_channel_type_cb, NULL, NULL, G_TYPE_INVALID);
+    }
+  else
+    {
+      tp_channel_got_channel_type_cb (proxy, NULL, NULL);
+    }
+}
+
 static GObject *
 tp_channel_constructor (GType type,
                         guint n_params,
                         GObjectConstructParam *params)
 {
   GObjectClass *object_class = (GObjectClass *) tp_channel_parent_class;
-  TpProxy *self = TP_PROXY (object_class->constructor (type,
+  TpChannel *self = TP_CHANNEL (object_class->constructor (type,
         n_params, params));
+  DBusGProxy *proxy = (DBusGProxy *) self;
 
-  /* FIXME: start introspection */
+  /* connect to my own Closed signal and self-destruct when it arrives */
+  dbus_g_proxy_add_signal (proxy, "Closed", G_TYPE_INVALID);
+  dbus_g_proxy_connect_signal (proxy, "Closed",
+      G_CALLBACK (tp_channel_closed_cb), NULL, NULL);
+
+  DEBUG ("%p: constructed with channel type \"%s\", handle #%d of type %d",
+      self, (self->channel_type != 0) ? g_quark_to_string (self->channel_type)
+                                      : "(null)",
+      self->handle, self->handle_type);
+
+  if (self->handle_type == TP_UNKNOWN_HANDLE_TYPE
+      || (self->handle == 0 && self->handle_type != TP_HANDLE_TYPE_NONE))
+    {
+      dbus_g_proxy_begin_call (proxy, "GetHandle",
+          tp_channel_got_handle_cb, NULL, NULL, G_TYPE_INVALID);
+    }
+  else
+    {
+      tp_channel_got_handle_cb (proxy, NULL, NULL);
+    }
 
   return (GObject *) self;
 }
@@ -141,6 +297,15 @@ tp_channel_constructor (GType type,
 static void
 tp_channel_init (TpChannel *self)
 {
+  DEBUG ("%p", self);
+}
+
+static void
+tp_channel_dispose (GObject *object)
+{
+  DEBUG ("%p", object);
+
+  ((GObjectClass *) tp_channel_parent_class)->dispose (object);
 }
 
 static void
@@ -153,6 +318,7 @@ tp_channel_class_init (TpChannelClass *klass)
   object_class->constructor = tp_channel_constructor;
   object_class->get_property = tp_channel_get_property;
   object_class->set_property = tp_channel_set_property;
+  object_class->dispose = tp_channel_dispose;
 
   proxy_class->fixed_interface = TP_IFACE_QUARK_CHANNEL;
   proxy_class->must_have_unique_name = TRUE;
