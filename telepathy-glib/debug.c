@@ -92,7 +92,8 @@ static GDebugKey keys[] = {
   { "presence",      TP_DEBUG_PRESENCE },
   { "manager",       TP_DEBUG_MANAGER },
   { "channel",       TP_DEBUG_CHANNEL },
-  { 0, },
+  { "proxy",         TP_DEBUG_PROXY },
+  { 0, }
 };
 
 static GDebugKey persist_keys[] = {
