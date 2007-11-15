@@ -1392,8 +1392,6 @@ tp_iface_quark_properties_interface
 <INCLUDE>telepathy-glib/proxy.h</INCLUDE>
 TpProxy
 TpProxyClass
-tp_proxy_borrow_interface_by_id
-tp_proxy_add_interface_by_id
 TP_TYPE_PROXY
 <SUBSECTION Standard>
 tp_proxy_get_type
