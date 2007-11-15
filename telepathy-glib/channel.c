@@ -25,7 +25,7 @@
 #include "_gen/signals-marshal.h"
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 /**
  * SECTION:channel

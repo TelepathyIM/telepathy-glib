@@ -43,7 +43,7 @@
 
 #include <string.h>
 
-#include <telepathy-glib/internal-handle-repo.h>
+#include <telepathy-glib/handle-repo-internal.h>
 
 enum
 {

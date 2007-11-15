@@ -23,7 +23,7 @@
 #include <telepathy-glib/enums.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 /**
  * SECTION:connection

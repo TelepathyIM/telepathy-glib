@@ -56,7 +56,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_IM
 
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 /* allocator */
 

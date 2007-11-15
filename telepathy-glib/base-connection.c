@@ -47,7 +47,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 static void service_iface_init (gpointer, gpointer);
 

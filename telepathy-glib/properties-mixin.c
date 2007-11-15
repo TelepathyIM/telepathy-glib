@@ -55,7 +55,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_PROPERTIES
 
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 struct _TpPropertiesContext {
     TpPropertiesMixinClass *mixin_cls;

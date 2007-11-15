@@ -127,17 +127,17 @@ libtelepathy_glib_internal_la_SOURCES = \
     connection.c \
     connection-manager.c \
     dbus.c \
-    internal-dbus-glib.h \
+    dbus-internal.h \
     debug.c \
     interfaces.c \
-    internal-debug.h \
+    debug-internal.h \
     errors.c \
     group-mixin.c \
     gtypes.c \
     handle.c \
-    internal-handle-repo.h \
     handle-repo.c \
     handle-repo-dynamic.c \
+    handle-repo-internal.h \
     handle-repo-static.c \
     handle-set.c \
     heap.c \

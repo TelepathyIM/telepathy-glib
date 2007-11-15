@@ -56,7 +56,7 @@
 
 #include <telepathy-glib/debug.h>
 
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 #include <stdarg.h>
 

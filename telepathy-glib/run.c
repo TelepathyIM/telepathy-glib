@@ -41,7 +41,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "internal-debug.h"
+#include "debug-internal.h"
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/errors.h>

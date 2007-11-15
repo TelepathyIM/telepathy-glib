@@ -47,7 +47,7 @@
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/heap.h>
-#include <telepathy-glib/internal-handle-repo.h>
+#include <telepathy-glib/handle-repo-internal.h>
 
 /* Handle leak tracing */
 

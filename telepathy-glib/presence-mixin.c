@@ -63,7 +63,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_PRESENCE
 
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 
 struct _TpPresenceMixinPrivate

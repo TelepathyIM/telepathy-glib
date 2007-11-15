@@ -34,7 +34,7 @@
 
 #include <telepathy-glib/handle-repo.h>
 
-#include <telepathy-glib/internal-handle-repo.h>
+#include <telepathy-glib/handle-repo-internal.h>
 
 static void
 repo_base_init (gpointer klass)

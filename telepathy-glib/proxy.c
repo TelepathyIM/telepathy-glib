@@ -22,9 +22,9 @@
 
 #include <telepathy-glib/errors.h>
 
-#include "internal-dbus-glib.h"
+#include "dbus-internal.h"
 #define DEBUG_FLAG TP_DEBUG_PROXY
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 /**
  * SECTION:proxy

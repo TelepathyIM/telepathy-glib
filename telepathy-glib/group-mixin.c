@@ -62,7 +62,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_GROUPS
 
-#include "internal-debug.h"
+#include "debug-internal.h"
 
 #include "_gen/signals-marshal.h"
 
