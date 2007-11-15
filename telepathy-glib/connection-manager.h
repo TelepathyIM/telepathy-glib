@@ -49,6 +49,9 @@ GType tp_connection_manager_get_type (void);
 
 #include <telepathy-glib/_gen/tp-cli-connection-manager-interfaces.h>
 
+TpConnectionManager *tp_connection_manager_new (DBusGConnection *connection,
+    const gchar *name);
+
 G_END_DECLS
 
 #endif

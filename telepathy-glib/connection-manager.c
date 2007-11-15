@@ -29,6 +29,10 @@
  * @see_also: #TpConnection
  */
 
+/* FIXME: move these from base-connection-manager to a shared header */
+#define TP_CM_BUS_NAME_BASE    "org.freedesktop.Telepathy.ConnectionManager."
+#define TP_CM_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/ConnectionManager/"
+
 /**
  * TpConnectionManagerClass:
  *
@@ -62,4 +66,25 @@ static void
 tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 {
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
+}
+
+TpConnectionManager *
+tp_connection_manager_new (DBusGConnection *connection,
+                           const gchar *name)
+{
+  TpConnectionManager *cm;
+  gchar *object_path = g_strdup_printf ("%s%s", TP_CM_OBJECT_PATH_BASE,
+      name);
+  gchar *bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE,
+      name);
+
+  cm = TP_CONNECTION_MANAGER (g_object_new (TP_TYPE_CONNECTION_MANAGER,
+        "dbus-connection", connection,
+        "bus-name", bus_name,
+        "object-path", object_path,
+        NULL));
+
+  g_free (object_path);
+  g_free (bus_name);
+  return cm;
 }
