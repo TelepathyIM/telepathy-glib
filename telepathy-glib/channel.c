@@ -392,8 +392,9 @@ tp_channel_class_init (TpChannelClass *klass)
    * Emitted once, when the channel's channel type, handle type, handle and
    * extra interfaces have all been retrieved.
    *
-   * After this signal has been emitted, the channel-type, handle-type and
-   * handle properties are guaranteed to be valid.
+   * By the time this signal is emitted, the channel-type, handle-type and
+   * handle properties are guaranteed to be valid, and the interfaces will
+   * have been added in the #TpProxy code.
    */
   signals[SIGNAL_CHANNEL_READY] = g_signal_new ("channel-ready",
       G_OBJECT_CLASS_TYPE (klass),
