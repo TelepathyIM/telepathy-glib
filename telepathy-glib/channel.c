@@ -233,9 +233,9 @@ tp_channel_class_init (TpChannelClass *klass)
       0,
       NULL, NULL,
       _tp_marshal_VOID__STRING_UINT_UINT_BOXED,
-      G_TYPE_NONE, 3,
+      G_TYPE_NONE, 4,
       G_TYPE_STRING,    /* Channel type */
       G_TYPE_UINT,      /* Handle type */
-      TP_TYPE_HANDLE,   /* Handle */
-      G_TYPE_STRV);    /* Extra interfaces */
+      G_TYPE_UINT,      /* Handle */
+      G_TYPE_STRV);     /* Extra interfaces */
 }
