@@ -88,10 +88,10 @@ class Generator(object):
 
         # Synchronous stub
 
-        self.h('gboolean %s_%s_block_on_%s (gpointer *proxy,'
+        self.h('gboolean %s_%s_block_on_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
 
-        self.b('gboolean\n%s_%s_block_on_%s (gpointer *proxy,'
+        self.b('gboolean\n%s_%s_block_on_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
 
         for arg in in_args:
