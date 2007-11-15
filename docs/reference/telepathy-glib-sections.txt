@@ -1546,9 +1546,9 @@ tp_cli_connection_manager_block_on_request_connection
 </SECTION>
 
 <SECTION>
-<FILE>cli-media-interfaces</FILE>
-<TITLE>cli-media-interfaces</TITLE>
-<INCLUDE>telepathy-glib/cli-media-interfaces.h</INCLUDE>
+<FILE>media-interfaces</FILE>
+<TITLE>media-interfaces</TITLE>
+<INCLUDE>telepathy-glib/media-interfaces.h</INCLUDE>
 tp_cli_media_session_handler_block_on_error
 tp_cli_media_session_handler_block_on_ready
 <SUBSECTION>
@@ -1561,13 +1561,4 @@ tp_cli_media_stream_handler_block_on_ready
 tp_cli_media_stream_handler_block_on_set_local_codecs
 tp_cli_media_stream_handler_block_on_stream_state
 tp_cli_media_stream_handler_block_on_supported_codecs
-</SECTION>
-
-<SECTION>
-<FILE>cli-generic</FILE>
-<TITLE>cli-generic</TITLE>
-<INCLUDE>telepathy-glib/cli-generic.h</INCLUDE>
-tp_cli_properties_interface_block_on_get_properties
-tp_cli_properties_interface_block_on_list_properties
-tp_cli_properties_interface_block_on_set_properties
 </SECTION>

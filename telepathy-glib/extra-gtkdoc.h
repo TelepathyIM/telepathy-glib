@@ -20,31 +20,6 @@
  */
 
 /**
- * SECTION:cli-generic
- * @title: Client-side Properties interface
- * @short_description: Auto-generated client code to access objects
- *  implementing Telepathy properties
- * @see_also: #TpProxy
- *
- * The Telepathy Properties interface associates a number of named properties
- * with a channel, connection or other D-Bus object. Signals are emitted
- * when the properties or their flags (readable/writable) change.
- *
- * This module provides low-level access to properties.
- */
-
-/**
- * SECTION:cli-media-interfaces
- * @title: Client-side media streaming interfaces
- * @short_description: Auto-generated client code to access objects
- *  implementing media streaming
- * @see_also: #TpProxy
- *
- * This module provides low-level access to the auxiliary objects used to
- * implement #TpSvcChannelTypeStreamedMedia.
- */
-
-/**
  * SECTION:svc-generic
  * @title: Service-side Properties interface
  * @short_description: GInterface for D-Bus objects exporting Telepathy

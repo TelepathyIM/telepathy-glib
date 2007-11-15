@@ -31,8 +31,7 @@ tpginclude_HEADERS = \
     channel.h \
     channel-iface.h \
     channel-factory-iface.h \
-    cli-generic.h \
-    cli-media-interfaces.h \
+    media-interfaces.h \
     connection.h \
     connection-manager.h \
     dbus.h \
