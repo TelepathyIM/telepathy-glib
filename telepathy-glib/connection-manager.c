@@ -20,6 +20,8 @@
 
 #include "telepathy-glib/connection-manager.h"
 
+#include "telepathy-glib/proxy-internal.h"
+
 /**
  * SECTION:connection-manager
  * @title: TpConnectionManager
