@@ -20,13 +20,11 @@
 
 #include "telepathy-glib/connection-manager.h"
 
-#include <telepathy-glib/_gen/tp-cli-connection-manager-interfaces.h>
-
 /**
  * SECTION:connection-manager
  * @title: TpConnectionManager
- * @short_description: object representing a Telepathy connection manager
- * @see_also: #TpConnection, #TpProxy
+ * @short_description: proxy object for a running Telepathy connection manager
+ * @see_also: #TpConnection
  */
 
 /**
@@ -35,7 +33,7 @@
  * The class of a #TpConnectionManager.
  */
 struct _TpConnectionManagerClass {
-    GObjectClass parent_class;
+    TpProxyClass parent_class;
     /*<private>*/
 };
 
@@ -45,15 +43,13 @@ struct _TpConnectionManagerClass {
  * A proxy object for a running Telepathy connection manager.
  */
 struct _TpConnectionManager {
-    GObject parent;
+    TpProxy parent;
     /*<private>*/
-    TpProxy *proxy;
-    gboolean ready:1;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
     tp_connection_manager,
-    G_TYPE_OBJECT);
+    TP_TYPE_PROXY);
 
 static void
 tp_connection_manager_init (TpConnectionManager *self)
