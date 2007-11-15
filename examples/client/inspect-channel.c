@@ -25,12 +25,12 @@ channel_died (TpChannel *channel,
 }
 
 void
-channel_introspected (TpChannel *channel,
-                      const gchar *channel_type,
-                      guint handle_type,
-                      guint handle,
-                      const gchar * const * interfaces,
-                      GMainLoop *mainloop)
+channel_ready (TpChannel *channel,
+               const gchar *channel_type,
+               guint handle_type,
+               guint handle,
+               const gchar * const * interfaces,
+               GMainLoop *mainloop)
 {
   const gchar * const * iter = interfaces;
   gboolean is_group;
@@ -101,8 +101,8 @@ main (int argc,
         "interface", TP_IFACE_CHANNEL,
         NULL));
 
-  g_signal_connect (channel, "introspected",
-      G_CALLBACK (channel_introspected), mainloop);
+  g_signal_connect (channel, "channel-ready",
+      G_CALLBACK (channel_ready), mainloop);
   g_signal_connect (channel, "destroy", G_CALLBACK (channel_died), mainloop);
 
   g_main_loop_run (mainloop);

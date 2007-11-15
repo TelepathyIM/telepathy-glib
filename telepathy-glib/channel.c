@@ -70,7 +70,7 @@ G_DEFINE_TYPE (TpChannel,
     TP_TYPE_PROXY);
 
 enum {
-    SIGNAL_INTROSPECTED,
+    SIGNAL_CHANNEL_READY,
     N_SIGNALS
 };
 
@@ -167,8 +167,8 @@ tp_channel_got_interfaces_cb (DBusGProxy *proxy,
             }
         }
 
-      DEBUG ("%p: emitting introspected", self);
-      g_signal_emit (self, signals[SIGNAL_INTROSPECTED], 0,
+      DEBUG ("%p: emitting channel-ready", self);
+      g_signal_emit (self, signals[SIGNAL_CHANNEL_READY], 0,
           g_quark_to_string (self->channel_type), self->handle_type,
           self->handle, interfaces);
 
@@ -379,7 +379,7 @@ tp_channel_class_init (TpChannelClass *klass)
       param_spec);
 
   /**
-   * TpChannel::introspected:
+   * TpChannel::channel-ready:
    * @self: the channel proxy
    * @channel_type: the type of the channel (a D-Bus interface name)
    * @handle_type: the type of the handle, or 0 if @handle is 0
@@ -393,7 +393,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * After this signal has been emitted, the channel-type, handle-type and
    * handle properties are guaranteed to be valid.
    */
-  signals[SIGNAL_INTROSPECTED] = g_signal_new ("introspected",
+  signals[SIGNAL_CHANNEL_READY] = g_signal_new ("channel-ready",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
