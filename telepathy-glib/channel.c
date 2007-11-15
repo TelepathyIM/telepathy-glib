@@ -124,6 +124,20 @@ tp_channel_set_property (GObject *object,
   }
 }
 
+static GObject *
+tp_channel_constructor (GType type,
+                        guint n_params,
+                        GObjectConstructParam *params)
+{
+  GObjectClass *object_class = (GObjectClass *) tp_channel_parent_class;
+  TpProxy *self = TP_PROXY (object_class->constructor (type,
+        n_params, params));
+
+  /* FIXME: start introspection */
+
+  return (GObject *) self;
+}
+
 static void
 tp_channel_init (TpChannel *self)
 {
@@ -136,6 +150,7 @@ tp_channel_class_init (TpChannelClass *klass)
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
+  object_class->constructor = tp_channel_constructor;
   object_class->get_property = tp_channel_get_property;
   object_class->set_property = tp_channel_set_property;
 
