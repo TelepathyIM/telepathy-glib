@@ -139,7 +139,7 @@ static void
 tp_channel_closed_cb (gpointer object, gpointer user_data)
 {
   DEBUG ("%p", object);
-  g_object_run_dispose (object);
+  g_idle_add (tp_channel_destroy_idle_func, object);
 }
 
 static void
