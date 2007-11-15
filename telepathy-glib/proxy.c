@@ -25,6 +25,7 @@
 #include "dbus-internal.h"
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "debug-internal.h"
+#include "proxy-internal.h"
 
 /**
  * SECTION:proxy

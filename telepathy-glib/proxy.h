@@ -32,22 +32,6 @@ typedef struct _TpProxyClass TpProxyClass;
 typedef struct _TpProxyPrivate TpProxyPrivate;
 typedef struct _TpProxyClassPrivate TpProxyClassPrivate;
 
-struct _TpProxyClass {
-    DBusGProxyClass parent_class;
-
-    GQuark fixed_interface;
-    gboolean must_have_unique_name:1;
-
-    /*<private>*/
-    TpProxyClassPrivate *priv;
-};
-
-struct _TpProxy {
-    DBusGProxy parent;
-    /*<private>*/
-    TpProxyPrivate *priv;
-};
-
 GType tp_proxy_get_type (void);
 
 /* TYPE MACROS */
