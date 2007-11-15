@@ -198,6 +198,7 @@ AC_OUTPUT( Makefile \
 	   docs/Makefile \
 	   docs/reference/Makefile \
 	   examples/Makefile \
+	   examples/client/Makefile \
 	   examples/cm/Makefile \
 	   examples/cm/no-protocols/Makefile \
 	   inspector/Makefile \

@@ -1,1 +1,1 @@
-SUBDIRS = cm
+SUBDIRS = client cm
