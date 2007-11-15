@@ -22,6 +22,9 @@
 
 #include <telepathy-glib/errors.h>
 
+#define DEBUG_FLAG TP_DEBUG_PROXY
+#include "internal-debug.h"
+
 G_DEFINE_TYPE (TpProxy,
     tp_proxy,
     DBUS_TYPE_G_PROXY);
@@ -107,6 +110,7 @@ tp_proxy_add_interface_by_id (TpProxy *self,
   if (g_datalist_id_get_data (&(self->priv->interfaces), interface) != NULL)
     return;
 
+  DEBUG ("%p: %s", self, g_quark_to_string (interface));
   iface_proxy = dbus_g_proxy_new_from_proxy (self_gproxy,
       g_quark_to_string (interface), dbus_g_proxy_get_path (self_gproxy));
 
@@ -117,6 +121,8 @@ tp_proxy_add_interface_by_id (TpProxy *self,
 static void
 tp_proxy_init (TpProxy *self)
 {
+  DEBUG ("%p", self);
+
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_PROXY,
       TpProxyPrivate);
 }
@@ -129,32 +135,36 @@ tp_proxy_constructor (GType type,
   GObjectClass *object_class = (GObjectClass *) tp_proxy_parent_class;
   TpProxy *self = TP_PROXY (object_class->constructor (type,
         n_params, params));
-  DBusGProxy *self_as_proxy = (DBusGProxy *) self;
   TpProxyClass *klass = TP_PROXY_GET_CLASS (self);
-  const gchar *main_interface = dbus_g_proxy_get_interface (self_as_proxy);
+  gchar *main_interface, *bus_name;
+
+  g_object_get (self,
+      "interface", &main_interface,
+      "name", &bus_name,
+      NULL);
+
+  DEBUG ("%p: bus name %s, interface %s", self, bus_name, main_interface);
 
   /* We require the interface property; it makes no sense to not have the
    * main interface. This is e.g. Channel or Connection. */
+  g_return_val_if_fail (main_interface != NULL, NULL);
   if (klass->fixed_interface != 0)
     {
-      dbus_g_proxy_set_interface (self_as_proxy,
-          g_quark_to_string (klass->fixed_interface));
-    }
-  else
-    {
-      g_return_val_if_fail (main_interface != NULL, NULL);
+      g_return_val_if_fail (klass->fixed_interface ==
+          g_quark_try_string (main_interface), NULL);
     }
 
   /* Some interfaces are stateful, so we only allow binding to a unique
    * name, like in dbus_g_proxy_new_for_name_owner() */
   if (klass->must_have_unique_name)
     {
-      const gchar *bus_name = dbus_g_proxy_get_bus_name (self_as_proxy);
-
       g_return_val_if_fail (bus_name != NULL && bus_name[0] != ':', NULL);
     }
 
   self->priv->main_interface = g_quark_from_string (main_interface);
+
+  g_free (main_interface);
+  g_free (bus_name);
 
   return (GObject *) self;
 }
