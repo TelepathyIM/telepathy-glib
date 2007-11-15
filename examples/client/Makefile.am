@@ -1,3 +1,9 @@
+noinst_PROGRAMS =
+
+noinst_PROGRAMS += telepathy-example-inspect-channel
+telepathy_example_inspect_channel_SOURCES = inspect-channel.c
+telepathy_example_inspect_channel_LDADD = $(ALL_LIBS)
+
 # Sadly there is no AM_LDADD
 ALL_LIBS = \
     @DBUS_LIBS@ \
