@@ -1,5 +1,5 @@
 /*
- * connection-manager.h - proxy for a Telepathy connection manager
+ * connection-manager.h - object representing a Telepathy connection manager
  *
  * Copyright (C) 2007 Collabora Ltd.
  *
@@ -46,8 +46,6 @@ GType tp_connection_manager_get_type (void);
 #define TP_CONNECTION_MANAGER_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONNECTION_MANAGER, \
                               TpConnectionManagerClass))
-
-#include <telepathy-glib/_gen/tp-cli-connection-manager-interfaces.h>
 
 G_END_DECLS
 
