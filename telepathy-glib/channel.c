@@ -84,7 +84,8 @@ tp_channel_get_property (GObject *object,
 {
   TpChannel *self = TP_CHANNEL (object);
 
-  switch (property_id) {
+  switch (property_id)
+    {
     case PROP_CHANNEL_TYPE:
       g_value_set_static_string (value,
           g_quark_to_string (self->channel_type));
@@ -109,7 +110,8 @@ tp_channel_set_property (GObject *object,
 {
   TpChannel *self = TP_CHANNEL (object);
 
-  switch (property_id) {
+  switch (property_id)
+    {
     case PROP_CHANNEL_TYPE:
       /* can only be set in constructor */
       g_assert (self->channel_type == 0);
