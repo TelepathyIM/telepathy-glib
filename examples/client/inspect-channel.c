@@ -64,6 +64,8 @@ channel_ready (TpChannel *channel,
             {
               printf("\tcontact #%u\n", g_array_index (members, guint, i));
             }
+
+          g_array_free (members, TRUE);
         }
       else
         {
