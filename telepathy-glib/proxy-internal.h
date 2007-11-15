@@ -29,8 +29,7 @@ struct _TpProxyClass {
     GObjectClass parent_class;
 
     /*<protected>*/
-    GQuark fixed_interface;
-
+    GQuark interface;
     gboolean must_have_unique_name:1;
 };
 

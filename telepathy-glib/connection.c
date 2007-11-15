@@ -243,7 +243,7 @@ tp_connection_class_init (TpConnectionClass *klass)
   object_class->get_property = tp_connection_get_property;
   object_class->dispose = tp_connection_dispose;
 
-  proxy_class->fixed_interface = TP_IFACE_QUARK_CONNECTION;
+  proxy_class->interface = TP_IFACE_QUARK_CONNECTION;
   proxy_class->must_have_unique_name = TRUE;
 
   /**

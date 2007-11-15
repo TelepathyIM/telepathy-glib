@@ -225,6 +225,11 @@ tp_proxy_constructor (GType type,
   g_return_val_if_fail (self->object_path != NULL, NULL);
   g_return_val_if_fail (self->bus_name != NULL, NULL);
 
+  if (klass->interface != 0)
+    {
+      tp_proxy_add_interface_by_id (self, klass->interface);
+    }
+
   /* Some interfaces are stateful, so we only allow binding to a unique
    * name, like in dbus_g_proxy_new_for_name_owner() */
   if (klass->must_have_unique_name)

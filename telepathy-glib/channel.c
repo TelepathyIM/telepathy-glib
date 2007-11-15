@@ -328,7 +328,7 @@ tp_channel_class_init (TpChannelClass *klass)
   object_class->set_property = tp_channel_set_property;
   object_class->dispose = tp_channel_dispose;
 
-  proxy_class->fixed_interface = TP_IFACE_QUARK_CHANNEL;
+  proxy_class->interface = TP_IFACE_QUARK_CHANNEL;
   proxy_class->must_have_unique_name = TRUE;
 
   /**
