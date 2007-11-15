@@ -22,6 +22,7 @@
 
 #include <telepathy-glib/errors.h>
 
+#include "internal-dbus-glib.h"
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "internal-debug.h"
 
@@ -137,6 +138,8 @@ tp_proxy_constructor (GType type,
         n_params, params));
   TpProxyClass *klass = TP_PROXY_GET_CLASS (self);
   gchar *main_interface, *bus_name;
+
+  _tp_register_dbus_glib_marshallers ();
 
   g_object_get (self,
       "interface", &main_interface,
