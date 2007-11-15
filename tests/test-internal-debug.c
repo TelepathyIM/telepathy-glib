@@ -7,7 +7,7 @@
 
 #undef DEBUG_FLAG
 #define DEBUG_FLAG TP_DEBUG_IM
-#include "telepathy-glib/internal-debug.h"
+#include "telepathy-glib/debug-internal.h"
 
 static void
 test_debugging (void)
@@ -29,7 +29,7 @@ test_debugging (void)
 
 #undef DEBUG_FLAG
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
-#include "telepathy-glib/internal-debug.h"
+#include "telepathy-glib/debug-internal.h"
 
 static void
 test_not_debugging (void)
@@ -47,7 +47,7 @@ test_not_debugging (void)
 
 #undef DEBUG_FLAG
 #define DEBUG_FLAG TP_DEBUG_IM
-#include "telepathy-glib/internal-debug.h"
+#include "telepathy-glib/debug-internal.h"
 
 static void
 test_debugging_again (void)
