@@ -25,16 +25,18 @@ connection_died (TpConnection *connection,
 }
 
 void
-connection_ready (TpConnection *connection,
-                  GMainLoop *mainloop)
+got_channels (TpProxy *proxy,
+              GPtrArray *channels,
+              GError *error,
+              gpointer user_data)
 {
-  GPtrArray *channels;
-  GError *error = NULL;
+  TpConnection *connection = TP_CONNECTION (proxy);
+  GMainLoop *mainloop = user_data;
 
-  printf ("Connection ready\n");
+  /* this is the connection - you can do more with it */
+  (void) connection;
 
-  /* An example blocking call */
-  if (tp_cli_connection_block_on_list_channels (connection, &channels, &error))
+  if (error == NULL)
     {
       guint i;
 
@@ -54,6 +56,7 @@ connection_ready (TpConnection *connection,
           g_value_array_free (channel);
         }
 
+      /* we're responsible for freeing the array */
       g_ptr_array_free (channels, TRUE);
     }
   else
@@ -63,6 +66,27 @@ connection_ready (TpConnection *connection,
     }
 
   g_main_loop_quit (mainloop);
+}
+
+void
+connection_ready (TpConnection *connection,
+                  GMainLoop *mainloop)
+{
+  printf ("Connection ready\n");
+
+  /* An example non-blocking call */
+  if (tp_cli_connection_call_list_channels (connection, -1,
+        got_channels, g_main_loop_ref (mainloop),
+        (GDestroyNotify) g_main_loop_unref) != NULL)
+    {
+      return;
+    }
+  else
+    {
+      /* FIXME: this ought to come out in the callback */
+      printf ("Connection claims to be unable to list channels");
+      g_main_loop_quit (mainloop);
+    }
 }
 
 int
