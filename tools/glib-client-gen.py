@@ -181,15 +181,9 @@ class Generator(object):
         # Example:
         # void (*tp_cli_properties_interface_callback_for_get_properties)
         #   (TpProxy *proxy,
-        #       GPtrArray *out0,
-        #       GError *error,
+        #       const GPtrArray *out0,
+        #       const GError *error,
         #       gpointer user_data);
-        #
-        # FIXME: should we have an explicit gboolean for whether there's an
-        # error, rather than just setting the error or not?
-        #
-        # FIXME: should we give the callback const pointers, and free the
-        # structures ourselves after it's called?
 
         callback_name = '%s_%s_callback_for_%s' % (self.prefix_lc, iface_lc,
                                                    member_lc)
@@ -199,10 +193,11 @@ class Generator(object):
         for arg in out_args:
             name, info, tp_type = arg
             ctype, gtype, marshaller, pointer = info
+            const = pointer and 'const ' or ''
 
-            self.h('    %s%s,' % (ctype, name))
+            self.h('    %s%s%s,' % (const, ctype, name))
 
-        self.h('    GError *error, gpointer user_data);')
+        self.h('    const GError *error, gpointer user_data);')
         self.h('')
 
         # Async callback implementation
@@ -243,9 +238,25 @@ class Generator(object):
             name, info, tp_type = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b('      %s,' % name)
+            if gtype == 'G_TYPE_STRV':
+                self.b('      (const gchar **) %s,' % name)
+            else:
+                self.b('      %s,' % name)
 
         self.b('      error, data->user_data);')
+        self.b('')
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            if not pointer:
+                continue
+            if marshaller == 'STRING':
+                self.b('  g_free (%s);' % name)
+            else:
+                self.b('  g_boxed_free (%s, %s);' % (gtype, name))
+
         self.b('}')
         self.b('')
 
@@ -295,13 +306,29 @@ class Generator(object):
         self.b('    gpointer user_data,')
         self.b('    GDestroyNotify destroy)')
         self.b('{')
+        self.b('  GError *error = NULL;')
         self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
         self.b('      TP_PROXY (proxy),')
         self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
         self.b('      NULL);')
         self.b('')
         self.b('  if (iface == NULL)')
-        self.b('    return NULL;')
+        self.b('    {')
+        self.b('      if (callback != NULL)')
+        self.b('        callback (proxy,')
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            if pointer:
+                self.b('            NULL,')
+            else:
+                self.b('            0,')
+
+        self.b('            error, user_data);')
+        self.b('      return NULL;')
+        self.b('    }')
         self.b('')
         self.b('  if (callback == NULL)')
         self.b('    {')

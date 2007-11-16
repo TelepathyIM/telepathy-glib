@@ -26,8 +26,8 @@ connection_died (TpConnection *connection,
 
 void
 got_channels (TpProxy *proxy,
-              GPtrArray *channels,
-              GError *error,
+              const GPtrArray *channels,
+              const GError *error,
               gpointer user_data)
 {
   TpConnection *connection = TP_CONNECTION (proxy);
@@ -52,17 +52,11 @@ got_channels (TpProxy *proxy,
               g_value_get_uint (channel->values + 2),
               g_value_get_uint (channel->values + 3)
               );
-
-          g_value_array_free (channel);
         }
-
-      /* we're responsible for freeing the array */
-      g_ptr_array_free (channels, TRUE);
     }
   else
     {
       printf ("Error listing channels: %s", error->message);
-      g_error_free (error);
     }
 
   g_main_loop_quit (mainloop);
