@@ -88,13 +88,25 @@ class Generator(object):
 
         # Synchronous stub
 
+        # Example:
+        # gboolean tp_cli_properties_interface_block_on_get_properties
+        #   (gpointer proxy,
+        #       gint timeout_ms,
+        #       const GArray *in_properties,
+        #       GPtrArray **out0,
+        #       GError **error);
+        #
+        # XXX: actually using timeout for anything will mean we need
+        # dbus-glib 0.73
+
         self.h('gboolean %s_%s_block_on_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
+        self.h('    gint timeout_ms,')
 
         self.b('/**')
         self.b(' * %s_%s_block_on_%s:' % (self.prefix_lc, iface_lc, member_lc))
         self.b(' * @proxy: A #TpProxy or subclass')
-        self.b(' * @error: Used to return errors')
+        self.b(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
 
         for arg in in_args:
             name, info, tp_type = arg
@@ -110,6 +122,7 @@ class Generator(object):
             self.b(' * @%s: Used to return an \'out\' argument (FIXME: docs)'
                    % name)
 
+        self.b(' * @error: Used to return errors')
         self.b(' *')
         self.b(' * Auto-generated synchronous call wrapper.')
         self.b(' *')
@@ -117,6 +130,7 @@ class Generator(object):
         self.b(' */')
         self.b('gboolean\n%s_%s_block_on_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
+        self.b('    gint timeout_ms,')
 
         for arg in in_args:
             name, info, tp_type = arg
@@ -147,7 +161,9 @@ class Generator(object):
         self.b('  if (iface == NULL)')
         self.b('    return FALSE;')
         self.b('')
-        self.b('  return dbus_g_proxy_call (iface, "%s", error,' % member)
+        self.b('  return dbus_g_proxy_call_with_timeout (iface, "%s",'
+               % member)
+        self.b('      timeout_ms, error,')
         self.b('      /* in arguments */')
         for arg in in_args:
             gtype = arg[1][1]
@@ -314,10 +330,12 @@ class Generator(object):
         self.b('          G_CALLBACK (callback),')
         self.b('          user_data,')
         self.b('          destroy);')
-        self.b('      return dbus_g_proxy_begin_call (iface, "%s",' % member)
+        self.b('      return dbus_g_proxy_begin_call_with_timeout (iface,')
+        self.b('          "%s",' % member)
         self.b('          %s,' % callback_impl_name)
         self.b('          stuff,')
         self.b('          tp_proxy_call_data_free,')
+        self.b('          timeout_ms,')
 
         for arg in in_args:
             name, info, tp_type = arg
