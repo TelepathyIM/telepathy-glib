@@ -95,9 +95,6 @@ class Generator(object):
         #       const GArray *in_properties,
         #       GPtrArray **out0,
         #       GError **error);
-        #
-        # XXX: actually using timeout for anything will mean we need
-        # dbus-glib 0.73
 
         self.h('gboolean %s_%s_block_on_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
@@ -263,7 +260,6 @@ class Generator(object):
         #   gpointer user_data,
         #   GDestroyNotify *destructor);
         #
-        # XXX: using timeout will mean we need dbus-glib 0.73
         # FIXME: we should call the callback with an error if we
         #   don't have the interface, but we don't know how many args it takes
         # FIXME: should we call the callback with an error if it's cancelled?
