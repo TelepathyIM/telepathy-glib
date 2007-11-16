@@ -163,10 +163,20 @@ class Generator(object):
         self.b('}')
         self.b('')
 
-        # FIXME: implement asynchronous calls
-        return
-
         # Async reply callback type
+
+        # Example:
+        # void (*tp_cli_properties_interface_callback_for_get_properties)
+        #   (TpProxy *proxy,
+        #       GPtrArray *out0,
+        #       GError *error,
+        #       gpointer user_data);
+        #
+        # FIXME: should we have an explicit gboolean for whether there's an
+        # error, rather than just setting the error or not?
+        #
+        # FIXME: should we give the callback const pointers, and free the
+        # structures ourselves after it's called?
 
         callback_name = '%s_%s_callback_for_%s' % (self.prefix_lc, iface_lc,
                                                    member_lc)
@@ -179,7 +189,7 @@ class Generator(object):
 
             self.h('    %s%s,' % (ctype, name))
 
-        self.h('    GError *error, gpointer userdata);')
+        self.h('    GError *error, gpointer user_data);')
         self.h('')
 
         # Async callback implementation
@@ -193,10 +203,10 @@ class Generator(object):
         self.b('    DBusGProxyCall *call,')
         self.b('    gpointer user_data)')
         self.b('{')
-        self.b('  DBusGAsyncData *data = user_data;')
+        self.b('  TpProxyCallData *data = user_data;')
         self.b('  GError *error = NULL;')
-        self.b('  %s callback = (%s) (data->cb);' % (callback_name,
-                                                    callback_name))
+        self.b('  %s callback = (%s) (data->callback);' % (callback_name,
+                                                           callback_name))
 
         for arg in out_args:
             name, info, tp_type = arg
@@ -214,7 +224,7 @@ class Generator(object):
             self.b('      %s, &%s,' % (gtype, name))
 
         self.b('      G_TYPE_INVALID);')
-        self.b('  callback (proxy,')
+        self.b('  callback (data->proxy,')
 
         for arg in out_args:
             name, info, tp_type = arg
@@ -222,16 +232,38 @@ class Generator(object):
 
             self.b('      %s,' % name)
 
-        self.b('      error, data->userdata);')
+        self.b('      error, data->user_data);')
         self.b('}')
         self.b('')
 
         # Async stub
 
-        self.h('DBusGProxyCall *%s_%s_call_%s (DBusGProxy *proxy,'
+        # Example:
+        # TpProxyPendingCall *tp_cli_properties_interface_call_get_properties
+        #   (gpointer proxy,
+        #   gint timeout_ms,
+        #   const GArray *in_properties,
+        #   tp_cli_properties_interface_callback_for_get_properties callback,
+        #   gpointer user_data,
+        #   GDestroyNotify *destructor);
+        #
+        # XXX: using timeout will mean we need dbus-glib 0.73
+        # FIXME: we should call the callback with an error if we
+        #   don't have the interface, but we don't know how many args it takes
+        # FIXME: should we call the callback with an error if it's cancelled?
+
+        # The destructor is called after success, failure or cancellation.
+        # The callback is called after success or failure only.
+
+        # FIXME: make it actually return a TpProxyCall, not a DBusGProxyCall
+
+        self.h('DBusGProxyCall *%s_%s_call_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
-        self.b('DBusGProxyCall *\n%s_%s_call_%s (DBusGProxy *proxy,'
+        self.h('    gint timeout_ms,')
+
+        self.b('DBusGProxyCall *\n%s_%s_call_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
+        self.b('    gint timeout_ms,')
 
         for arg in in_args:
             name, info, tp_type = arg
@@ -243,13 +275,15 @@ class Generator(object):
             self.b('    %s%s%s,' % (const, ctype, name))
 
         self.h('    %s callback,' % callback_name)
-        self.h('    gpointer userdata);')
+        self.h('    gpointer user_data,')
+        self.h('    GDestroyNotify destroy);')
         self.h('')
 
         self.b('    %s callback,' % callback_name)
-        self.b('    gpointer userdata)')
+        self.b('    gpointer user_data,')
+        self.b('    GDestroyNotify destroy)')
         self.b('{')
-        self.b('  DBusGProxy *iface = tp_proxy_get_interface (')
+        self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
         self.b('      TP_PROXY (proxy),')
         self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
         self.b('      NULL);')
@@ -259,7 +293,7 @@ class Generator(object):
         self.b('')
         self.b('  if (callback == NULL)')
         self.b('    {')
-        self.b('      dbus_g_proxy_call_no_reply (proxy, "%s",' % member)
+        self.b('      dbus_g_proxy_call_no_reply (iface, "%s",' % member)
 
         for arg in in_args:
             name, info, tp_type = arg
@@ -274,15 +308,16 @@ class Generator(object):
         self.b('    }')
         self.b('  else')
         self.b('    {')
-        self.b('      DBusGAsyncData *stuff;')
+        self.b('      TpProxyCallData *stuff;')
         self.b('')
-        self.b('      stuff = g_new (DBusGAsyncData, 1);')
-        self.b('      stuff->cb = G_CALLBACK (callback);')
-        self.b('      stuff->userdata = userdata;')
-        self.b('      return dbus_g_proxy_begin_call (proxy, "%s",' % member)
+        self.b('      stuff = tp_proxy_call_data_new (proxy,')
+        self.b('          G_CALLBACK (callback),')
+        self.b('          user_data,')
+        self.b('          destroy);')
+        self.b('      return dbus_g_proxy_begin_call (iface, "%s",' % member)
         self.b('          %s,' % callback_impl_name)
         self.b('          stuff,')
-        self.b('          g_free,')
+        self.b('          tp_proxy_call_data_free,')
 
         for arg in in_args:
             name, info, tp_type = arg

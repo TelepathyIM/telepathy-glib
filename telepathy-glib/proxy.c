@@ -34,6 +34,19 @@
  * @see_also: #TpChannel, #TpConnection, #TpConnectionManager
  */
 
+struct _TpProxySignalConnection
+{
+    TpProxy *tp_proxy;
+    DBusGProxy *dg_proxy;
+    char *signal_name;
+    GCallback handler;
+    gpointer data;
+};
+
+struct _TpProxyPendingCall
+{
+};
+
 G_DEFINE_TYPE (TpProxy,
     tp_proxy,
     G_TYPE_OBJECT);
@@ -148,6 +161,35 @@ tp_proxy_add_interface_by_id (TpProxy *self,
     }
 
   return iface_proxy;
+}
+
+TpProxyCallData *
+tp_proxy_call_data_new (TpProxy *self,
+                        GCallback callback,
+                        gpointer user_data,
+                        GDestroyNotify destroy)
+{
+  TpProxyCallData *ret = g_slice_new (TpProxyCallData);
+
+  ret->proxy = g_object_ref (self);
+  ret->callback = callback;
+  ret->user_data = user_data;
+  ret->destroy = destroy;
+
+  return ret;
+}
+
+void
+tp_proxy_call_data_free (gpointer call_data)
+{
+  TpProxyCallData *data = call_data;
+
+  g_object_unref (TP_PROXY (data->proxy));
+
+  if (data->destroy != NULL)
+    data->destroy (data->user_data);
+
+  g_slice_free (TpProxyCallData, data);
 }
 
 static void
