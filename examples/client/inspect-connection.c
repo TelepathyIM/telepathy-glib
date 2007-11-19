@@ -70,6 +70,7 @@ connection_ready (TpConnection *connection,
 
   /* An example non-blocking call */
   if (tp_cli_connection_call_list_channels (connection, -1,
+        /* If ListChannels() needed any arguments, they'd go here */
         got_channels, g_main_loop_ref (mainloop),
         (GDestroyNotify) g_main_loop_unref) != NULL)
     {

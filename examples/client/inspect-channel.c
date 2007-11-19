@@ -56,6 +56,7 @@ channel_ready (TpChannel *channel,
       printf ("Group members:\n");
       /* An example of a blocking call */
       if (tp_cli_channel_interface_group_block_on_get_members (channel, -1,
+            /* If GetMembers had any "in" arguments they'd go here */
           &members, &error))
         {
           guint i;
