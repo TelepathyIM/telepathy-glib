@@ -1755,6 +1755,7 @@ tp_cli_connection_interface_presence_signal_callback_presence_update
 <INCLUDE>telepathy-glib/connection-manager.h</INCLUDE>
 TpConnectionManager
 TpConnectionManagerClass
+tp_connection_manager_new
 <SUBSECTION Standard>
 tp_connection_manager_get_type
 TP_TYPE_CONNECTION_MANAGER

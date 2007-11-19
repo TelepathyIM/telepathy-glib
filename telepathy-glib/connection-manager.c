@@ -72,6 +72,15 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       (proxy_class->on_interface_added, tp_cli_connection_manager_add_signals);
 }
 
+/**
+ * tp_connection_manager_new:
+ * @connection: A connection to the D-Bus session bus
+ * @name: The connection manager name
+ *
+ * Convenience function to create a new connection manager proxy.
+ *
+ * Returns: a new reference to a connection manager proxy
+ */
 TpConnectionManager *
 tp_connection_manager_new (DBusGConnection *connection,
                            const gchar *name)
