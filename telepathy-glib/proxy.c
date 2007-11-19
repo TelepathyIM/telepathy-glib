@@ -27,6 +27,8 @@
 #include "debug-internal.h"
 #include "proxy-internal.h"
 
+#include "_gen/signals-marshal.h"
+
 /**
  * SECTION:proxy
  * @title: TpProxy
@@ -56,6 +58,7 @@ enum
 };
 
 enum {
+    SIGNAL_INTERFACE_ADDED,
     SIGNAL_DESTROYED,
     N_SIGNALS
 };
@@ -154,6 +157,9 @@ tp_proxy_add_interface_by_id (TpProxy *self,
 
       g_datalist_id_set_data_full (&(self->interfaces), interface,
           iface_proxy, g_object_unref);
+
+      g_signal_emit (self, signals[SIGNAL_INTERFACE_ADDED], 0,
+          (guint) interface);
     }
 
   return iface_proxy;
@@ -339,6 +345,22 @@ tp_proxy_class_init (TpProxyClass *klass)
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH,
       param_spec);
+
+  /**
+   * TpProxy::interface-added:
+   * @self: the proxy object
+   * @id: the GQuark representing the interface
+   * @proxy: the dbus-glib proxy representing the interface
+   *
+   * Emitted when this proxy has gained an interface.
+   */
+  signals[SIGNAL_INTERFACE_ADDED] = g_signal_new ("interface-added",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__UINT_OBJECT,
+      G_TYPE_NONE, 2, G_TYPE_UINT, DBUS_TYPE_G_PROXY);
 
   /**
    * TpProxy::destroyed:
