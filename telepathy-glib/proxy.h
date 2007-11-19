@@ -29,6 +29,8 @@ G_BEGIN_DECLS
 typedef struct _TpProxy TpProxy;
 typedef struct _TpProxyClass TpProxyClass;
 
+typedef struct _TpProxyPendingCall TpProxyPendingCall;
+
 GType tp_proxy_get_type (void);
 
 /* TYPE MACROS */

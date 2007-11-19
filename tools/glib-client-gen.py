@@ -211,7 +211,7 @@ class Generator(object):
         self.b('    DBusGProxyCall *call,')
         self.b('    gpointer user_data)')
         self.b('{')
-        self.b('  TpProxyCallData *data = user_data;')
+        self.b('  TpProxyPendingCall *data = user_data;')
         self.b('  GError *error = NULL;')
         self.b('  %s callback = (%s) (data->callback);' % (callback_name,
                                                            callback_name))
@@ -223,6 +223,7 @@ class Generator(object):
             self.b('  %s%s;' % (ctype, name))
 
         self.b('')
+        self.b('  g_assert (data->pending_call == call);')
         self.b('  dbus_g_proxy_end_call (proxy, call, &error,')
 
         for arg in out_args:
@@ -270,21 +271,15 @@ class Generator(object):
         #   tp_cli_properties_interface_callback_for_get_properties callback,
         #   gpointer user_data,
         #   GDestroyNotify *destructor);
-        #
-        # FIXME: we should call the callback with an error if we
-        #   don't have the interface, but we don't know how many args it takes
-        # FIXME: should we call the callback with an error if it's cancelled?
 
         # The destructor is called after success, failure or cancellation.
         # The callback is called after success or failure only.
 
-        # FIXME: make it actually return a TpProxyCall, not a DBusGProxyCall
-
-        self.h('DBusGProxyCall *%s_%s_call_%s (gpointer proxy,'
+        self.h('TpProxyPendingCall *%s_%s_call_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.h('    gint timeout_ms,')
 
-        self.b('DBusGProxyCall *\n%s_%s_call_%s (gpointer proxy,'
+        self.b('TpProxyPendingCall *\n%s_%s_call_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.b('    gint timeout_ms,')
 
@@ -347,17 +342,18 @@ class Generator(object):
         self.b('    }')
         self.b('  else')
         self.b('    {')
-        self.b('      TpProxyCallData *stuff;')
+        self.b('      TpProxyPendingCall *data;')
         self.b('')
-        self.b('      stuff = tp_proxy_call_data_new (proxy,')
+        self.b('      data = tp_proxy_pending_call_new (proxy,')
         self.b('          G_CALLBACK (callback),')
         self.b('          user_data,')
         self.b('          destroy);')
-        self.b('      return dbus_g_proxy_begin_call_with_timeout (iface,')
+        self.b('      data->pending_call = '
+               'dbus_g_proxy_begin_call_with_timeout (iface,')
         self.b('          "%s",' % member)
         self.b('          %s,' % callback_impl_name)
-        self.b('          stuff,')
-        self.b('          tp_proxy_call_data_free,')
+        self.b('          data,')
+        self.b('          tp_proxy_pending_call_free,')
         self.b('          timeout_ms,')
 
         for arg in in_args:
@@ -369,6 +365,8 @@ class Generator(object):
             self.b('          %s, %s,' % (gtype, name))
 
         self.b('          G_TYPE_INVALID);')
+        self.b('')
+        self.b('      return data;')
         self.b('    }')
         self.b('}')
         self.b('')
