@@ -305,4 +305,5 @@ _gen/tp-cli-%-interfaces.c _gen/tp-cli-%-interfaces.h: _gen/%-interfaces.xml \
 	../tools/ls-interfaces.xsl \
 	Makefile.am
 	$(PYTHON) $(srcdir)/../tools/glib-client-gen.py \
+		--group `echo $* | sed -e s/-/_/` \
 		$< Tp_Cli _gen/tp-cli-$*-interfaces
