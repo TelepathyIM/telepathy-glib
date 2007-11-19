@@ -52,9 +52,139 @@ class Generator(object):
     def b(self, s):
         self.__body.append(s)
 
-    def do_signal(self, signal):
-        # FIXME: implement connect_to_signal
-        pass
+    def do_signal(self, iface, signal):
+        iface_lc = iface.lower()
+
+        member = signal.getAttribute('name')
+        member_lc = camelcase_to_lower(member)
+        member_uc = member_lc.upper()
+
+        arg_count = 0
+        args = []
+        out_args = []
+
+        for arg in signal.getElementsByTagName('arg'):
+            name = arg.getAttribute('name')
+            type = arg.getAttribute('type')
+            tp_type = arg.getAttribute('tp:type')
+
+            if not name:
+                name = 'arg%u' % arg_count
+                arg_count += 1
+            else:
+                name = 'arg_%s' % name
+
+            info = type_to_gtype(type)
+            args.append((name, info, tp_type))
+
+        callback_name = ('%s_%s_signal_callback_%s'
+                         % (self.prefix_lc, iface_lc, member_lc))
+
+        # Example:
+        #
+        # typedef void (*tp_cli_connection_signal_callback_new_channel)
+        #   (DBusGProxy *proxy, const gchar *arg_object_path,
+        #   const gchar *arg_channel_type, guint arg_handle_type,
+        #   guint arg_handle, gboolean arg_suppress_handler,
+        #   TpProxySignalConnection *signal_connection);
+
+        self.b('/**')
+        self.b(' * %s:' % callback_name)
+
+        for arg in args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b(' * @%s: FIXME' % name)
+
+        self.b(' *')
+        self.b(' * Represents the signature of a callback for the signal %s.'
+               % member)
+        self.b(' * The @proxy and the @user_data supplied to')
+        self.b(' * %s_%s_connect_to_%s()'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b(' * can be retrieved via')
+        self.b(' * <literal>signal_connection->proxy</literal> and')
+        self.b(' * <literal>signal_connection->user_data</literal>.')
+        self.b(' */')
+        self.h('typedef void (*%s) (DBusGProxy *proxy,'
+               % callback_name)
+
+        for arg in args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            const = pointer and 'const ' or ''
+
+            self.h('    %s%s%s,' % (const, ctype, name))
+
+        self.h('    TpProxySignalConnection *signal_connection);')
+
+        # Example:
+        #
+        # TpProxySignalConnection *
+        #   tp_cli_connection_connect_to_new_channel
+        #   (TpProxy *proxy,
+        #   tp_cli_connection_signal_callback_new_channel callback,
+        #   gpointer user_data,
+        #   GDestroyNotify destroy);
+        #
+        # destroy is invoked when the signal becomes disconnected. This
+        # is either because the signal has been disconnected explicitly
+        # by the user, or because the TpProxy has become invalid and
+        # emitted the 'destroyed' signal.
+
+        self.b('/**')
+        self.b(' * %s_%s_connect_to_%s:'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b(' * @proxy: The #TpProxy')
+        self.b(' * @callback: Callback to be called when the signal is')
+        self.b(' *   received')
+        self.b(' * @user_data: User-supplied data for the callback')
+        self.b(' * @destroy: Destructor for the user-supplied data')
+        self.b(' *')
+        self.b(' * <!-- -->')
+        self.b(' *')
+        self.b(' * Returns: a #TpProxySignalConnection containing all of the')
+        self.b(' * above, which can be used to disconnect the signal')
+        self.b(' */')
+        self.h('TpProxySignalConnection *%s_%s_connect_to_%s (gpointer proxy,'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.h('    %s callback,' % callback_name)
+        self.h('    gpointer user_data,')
+        self.h('    GDestroyNotify destroy);')
+
+        self.b('TpProxySignalConnection *')
+        self.b('%s_%s_connect_to_%s (gpointer proxy,'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b('    %s callback,' % callback_name)
+        self.b('    gpointer user_data,')
+        self.b('    GDestroyNotify destroy)')
+        self.b('{')
+        self.b('  TpProxySignalConnection *data;')
+        self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
+        self.b('      TP_PROXY (proxy),')
+        self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
+        self.b('      NULL);')
+        self.b('')
+        self.b('  g_return_val_if_fail (callback != NULL, NULL);')
+        self.b('')
+        self.b('  if (iface == NULL)')
+        self.b('    return NULL;')
+        self.b('')
+        self.b('  data = tp_proxy_signal_connection_new (proxy,')
+        self.b('      TP_IFACE_QUARK_%s, \"%s\",' % (iface_lc.upper(), member))
+        self.b('      G_CALLBACK (callback), user_data, destroy);')
+        self.b('')
+        self.b('  dbus_g_proxy_connect_signal (iface, \"%s\",' % member)
+        self.b('      G_CALLBACK (callback), data,')
+        self.b('      tp_proxy_signal_connection_free_closure);')
+        self.b('')
+        self.b('  return data;')
+        self.b('}')
+        self.b('')
+
+        self.h('')
 
     def do_method(self, iface, method):
         iface_lc = iface.lower()
@@ -416,7 +546,7 @@ class Generator(object):
         self.b('')
 
         for signal in signals:
-            self.do_signal(signal)
+            self.do_signal(name, signal)
 
         for method in methods:
             self.do_method(name, method)
