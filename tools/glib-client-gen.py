@@ -25,6 +25,7 @@
 import sys
 import os.path
 import xml.dom.minidom
+from getopt import gnu_getopt
 
 from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
         camelcase_to_lower
@@ -34,7 +35,7 @@ NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 
 class Generator(object):
 
-    def __init__(self, dom, prefix, basename):
+    def __init__(self, dom, prefix, basename, opts):
         self.dom = dom
         self.__header = []
         self.__body = []
@@ -43,6 +44,7 @@ class Generator(object):
         self.prefix_uc = prefix.upper()
         self.prefix_mc = prefix.replace('_', '')
         self.basename = basename
+        self.group = opts.get('--group', None)
 
     def h(self, s):
         self.__header.append(s)
@@ -386,11 +388,11 @@ class Generator(object):
             # type, GType, STRING, is a pointer
             gtypes.append(info[1])
 
-        self.h('  dbus_g_proxy_add_signal (proxy, "%s",'
+        self.b('  dbus_g_proxy_add_signal (proxy, "%s",'
                % signal.getAttribute('name'))
         for gtype in gtypes:
-            self.h('      %s,' % gtype)
-        self.h('      G_TYPE_INVALID);')
+            self.b('      %s,' % gtype)
+        self.b('      G_TYPE_INVALID);')
 
     def do_interface(self, node):
         ifaces = node.getElementsByTagName('interface')
@@ -401,19 +403,17 @@ class Generator(object):
         signals = node.getElementsByTagName('signal')
         methods = node.getElementsByTagName('method')
 
-        self.h('#if 0')
-        self.h('static inline void')
-        self.h('%s_add_signals_for_%s (DBusGProxy *proxy)'
+        self.b('static inline void')
+        self.b('%s_add_signals_for_%s (DBusGProxy *proxy)'
                 % (self.prefix_lc, name.lower()))
-        self.h('{')
+        self.b('{')
 
         for signal in signals:
             self.do_signal_add(signal)
 
-        self.h('}')
-        self.h('#endif')
-        self.h('')
-        self.h('')
+        self.b('}')
+        self.b('')
+        self.b('')
 
         for signal in signals:
             self.do_signal(signal)
@@ -440,6 +440,31 @@ class Generator(object):
         for iface in ifaces:
             self.do_interface(iface)
 
+        if self.group is not None:
+
+            self.h('void %s_%s_add_signals (TpProxy *self, guint quark,'
+                    % (self.prefix_lc, self.group))
+            self.h('    DBusGProxy *proxy, gpointer unused);')
+            self.h('')
+
+            self.b('void')
+            self.b('%s_%s_add_signals (TpProxy *self,'
+                    % (self.prefix_lc, self.group))
+            self.b('    guint quark,')
+            self.b('    DBusGProxy *proxy,')
+            self.b('    gpointer unused)')
+
+            self.b('{')
+
+            for iface in ifaces:
+                name = iface.getAttribute('name').replace('/', '').lower()
+                self.b('  if (quark == TP_IFACE_QUARK_%s)' % name.upper())
+                self.b('    %s_add_signals_for_%s (proxy);'
+                       % (self.prefix_lc, name))
+
+            self.b('}')
+            self.b('')
+
         self.h('G_END_DECLS')
         self.h('')
 
@@ -452,7 +477,14 @@ def types_to_gtypes(types):
 
 
 if __name__ == '__main__':
-    argv = sys.argv[1:]
+    options, argv = gnu_getopt(sys.argv[1:], '',
+                               ['group='])
+
+    opts = {}
+
+    for option, value in options:
+        opts[option] = value
+
     dom = xml.dom.minidom.parse(argv[0])
 
-    Generator(dom, argv[1], argv[2])()
+    Generator(dom, argv[1], argv[2], opts)()
