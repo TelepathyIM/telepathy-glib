@@ -5,7 +5,6 @@ ALL_LIBS = \
     @TP_GLIB_LIBS@
 
 AM_CFLAGS = \
-    -I$(top_srcdir) -I$(top_builddir) \
     $(ERROR_CFLAGS) \
     @DBUS_CFLAGS@ \
     @GLIB_CFLAGS@ \
