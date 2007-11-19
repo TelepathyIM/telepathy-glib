@@ -68,6 +68,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
+  proxy_class->on_interface_added = g_slist_prepend
+      (proxy_class->on_interface_added, tp_cli_connection_manager_add_signals);
 }
 
 TpConnectionManager *

@@ -159,7 +159,7 @@ tp_proxy_add_interface_by_id (TpProxy *self,
           iface_proxy, g_object_unref);
 
       g_signal_emit (self, signals[SIGNAL_INTERFACE_ADDED], 0,
-          (guint) interface);
+          (guint) interface, iface_proxy);
     }
 
   return iface_proxy;
@@ -265,8 +265,16 @@ tp_proxy_constructor (GType type,
 
   _tp_register_dbus_glib_marshallers ();
 
-  g_signal_connect (self, "interface-added",
-      G_CALLBACK (tp_cli_generic_add_signals), NULL);
+  if (klass->on_interface_added != NULL)
+    {
+      GSList *iter;
+
+      for (iter = klass->on_interface_added;
+           iter != NULL;
+           iter = iter->next)
+        g_signal_connect (self, "interface-added", G_CALLBACK (iter->data),
+            NULL);
+    }
 
   g_return_val_if_fail (self->dbus_connection != NULL, NULL);
   g_return_val_if_fail (self->object_path != NULL, NULL);
@@ -311,6 +319,9 @@ tp_proxy_class_init (TpProxyClass *klass)
   object_class->get_property = tp_proxy_get_property;
   object_class->set_property = tp_proxy_set_property;
   object_class->dispose = tp_proxy_dispose;
+
+  klass->on_interface_added = g_slist_prepend (klass->on_interface_added,
+      tp_cli_generic_add_signals);
 
   /**
    * TpProxy:bus-name:

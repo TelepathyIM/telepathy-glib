@@ -271,7 +271,6 @@ tp_channel_constructor (GType type,
       TP_IFACE_QUARK_CHANNEL);
 
   /* connect to my own Closed signal and self-destruct when it arrives */
-  dbus_g_proxy_add_signal (proxy, "Closed", G_TYPE_INVALID);
   dbus_g_proxy_connect_signal (proxy, "Closed",
       G_CALLBACK (tp_channel_closed_cb), self, NULL);
 
@@ -330,6 +329,8 @@ tp_channel_class_init (TpChannelClass *klass)
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL;
   proxy_class->must_have_unique_name = TRUE;
+  proxy_class->on_interface_added = g_slist_prepend
+      (proxy_class->on_interface_added, tp_cli_channel_add_signals);
 
   /**
    * TpChannel:channel-type:

@@ -30,6 +30,7 @@ struct _TpProxyClass {
 
     /*<protected>*/
     GQuark interface;
+    GSList *on_interface_added;
     gboolean must_have_unique_name:1;
 };
 

@@ -201,8 +201,6 @@ tp_connection_constructor (GType type,
 
   /* connect to my own StatusChanged signal */
   DEBUG ("Connecting to StatusChanged");
-  dbus_g_proxy_add_signal (proxy, "StatusChanged", G_TYPE_UINT, G_TYPE_UINT,
-      G_TYPE_INVALID);
   dbus_g_proxy_connect_signal (proxy, "StatusChanged",
       G_CALLBACK (tp_connection_status_changed_cb), self, NULL);
 
@@ -245,6 +243,8 @@ tp_connection_class_init (TpConnectionClass *klass)
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION;
   proxy_class->must_have_unique_name = TRUE;
+  proxy_class->on_interface_added = g_slist_prepend
+      (proxy_class->on_interface_added, tp_cli_connection_add_signals);
 
   /**
    * TpConnection:status:
