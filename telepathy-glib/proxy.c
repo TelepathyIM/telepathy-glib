@@ -109,7 +109,7 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 }
 
 void
-tp_proxy_invalidated (TpProxy *self, GError *error)
+tp_proxy_invalidated (TpProxy *self, const GError *error)
 {
   self->valid = FALSE;
   g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, error);
