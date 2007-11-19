@@ -1,6 +1,9 @@
 tpgincludedir=$(includedir)/telepathy-1.0/telepathy-glib
 genincludedir=$(tpgincludedir)/_gen
 
+pkgconfigdir = ${libdir}/pkgconfig
+pkgconfig_DATA = telepathy-glib.pc
+
 EXTRA_DIST = \
     channel-interfaces.xml \
     connection-interfaces.xml \

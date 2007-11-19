@@ -193,8 +193,6 @@ AC_CHECK_FUNCS(signal)
 AC_CHECK_HEADERS(signal.h)
 
 AC_OUTPUT( Makefile \
-	   telepathy-glib.pc \
-	   telepathy-glib-unstable.pc \
 	   docs/Makefile \
 	   docs/reference/Makefile \
 	   examples/Makefile \
@@ -204,6 +202,7 @@ AC_OUTPUT( Makefile \
 	   inspector/Makefile \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
+	   telepathy-glib/telepathy-glib.pc \
 	   tests/Makefile \
 	   tools/Makefile \
 	   m4/Makefile \

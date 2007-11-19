@@ -4,9 +4,6 @@ SUBDIRS = m4 tools spec telepathy-glib tests examples docs
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-debug
 
-pkgconfigdir = ${libdir}/pkgconfig
-pkgconfig_DATA = telepathy-glib.pc telepathy-glib-unstable.pc
-
 EXTRA_DIST = \
     autogen.sh \
     gtk-doc.make
