@@ -1402,6 +1402,8 @@ TP_IS_PROXY_CLASS
 TP_PROXY
 TP_PROXY_CLASS
 TP_PROXY_GET_CLASS
+<SUBSECTION Private>
+tp_cli_generic_add_signals
 <SUBSECTION>
 tp_cli_properties_interface_block_on_get_properties
 tp_cli_properties_interface_callback_for_get_properties
@@ -1432,6 +1434,8 @@ TP_CHANNEL_CLASS
 TP_CHANNEL_GET_CLASS
 TP_IS_CHANNEL
 TP_IS_CHANNEL_CLASS
+<SUBSECTION Private>
+tp_cli_channel_add_signals
 <SUBSECTION>
 tp_cli_channel_block_on_close
 tp_cli_channel_block_on_get_channel_type
@@ -1624,6 +1628,8 @@ tp_cli_channel_interface_password_signal_callback_password_flags_changed
 TpConnection
 TpConnectionClass
 TP_UNKNOWN_CONNECTION_STATUS
+<SUBSECTION Private>
+tp_cli_connection_add_signals
 <SUBSECTION Standard>
 tp_connection_get_type
 TP_TYPE_CONNECTION
@@ -1756,6 +1762,8 @@ tp_cli_connection_interface_presence_signal_callback_presence_update
 TpConnectionManager
 TpConnectionManagerClass
 tp_connection_manager_new
+<SUBSECTION Private>
+tp_cli_connection_manager_add_signals
 <SUBSECTION Standard>
 tp_connection_manager_get_type
 TP_TYPE_CONNECTION_MANAGER
@@ -1803,6 +1811,9 @@ TpMediaSessionHandlerClass
 <SUBSECTION>
 TpMediaStreamHandler
 TpMediaStreamHandlerClass
+<SUBSECTION Private>
+tp_cli_media_session_handler_add_signals
+tp_cli_media_stream_handler_add_signals
 <SUBSECTION>
 tp_cli_media_session_handler_callback_for_error
 tp_cli_media_session_handler_call_error
