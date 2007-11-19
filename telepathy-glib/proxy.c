@@ -265,6 +265,9 @@ tp_proxy_constructor (GType type,
 
   _tp_register_dbus_glib_marshallers ();
 
+  g_signal_connect (self, "interface-added",
+      G_CALLBACK (tp_cli_generic_add_signals), NULL);
+
   g_return_val_if_fail (self->dbus_connection != NULL, NULL);
   g_return_val_if_fail (self->object_path != NULL, NULL);
   g_return_val_if_fail (self->bus_name != NULL, NULL);
