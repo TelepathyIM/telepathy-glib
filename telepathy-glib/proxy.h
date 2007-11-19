@@ -29,17 +29,6 @@ G_BEGIN_DECLS
 typedef struct _TpProxy TpProxy;
 typedef struct _TpProxyClass TpProxyClass;
 
-/**
- * TpProxyPendingCall:
- * @proxy: the TpProxy
- * @callback: the user-supplied handler
- * @user_data: user-supplied data to be passed to the handler
- * @destroy: function used to free the user-supplied data
- * @pending_call: the underlying dbus-glib pending call
- * @priv: private data used by the TpProxy implementation
- *
- * Structure representing a pending D-Bus call.
- */
 typedef struct _TpProxyPendingCall TpProxyPendingCall;
 
 struct _TpProxyPendingCall {
@@ -53,16 +42,6 @@ struct _TpProxyPendingCall {
 
 typedef struct _TpProxySignalConnection TpProxySignalConnection;
 
-/**
- * TpProxySignalConnection:
- * @proxy: the TpProxy
- * @callback: the user-supplied handler
- * @user_data: user-supplied data to be used by the handler
- * @destroy: function used to free the user-supplied data
- * @priv: private data used by the TpProxy implementation
- *
- * Structure representing a D-Bus signal connection.
- */
 struct _TpProxySignalConnection {
     TpProxy *proxy;
     GQuark interface;

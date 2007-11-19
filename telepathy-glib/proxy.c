@@ -36,6 +36,43 @@
  * @see_also: #TpChannel, #TpConnection, #TpConnectionManager
  */
 
+/**
+ * TpProxy:
+ *
+ * Opaque structure representing a Telepathy client-side proxy.
+ */
+
+/**
+ * TpProxyClass:
+ *
+ * The class of a #TpProxy.
+ */
+
+/**
+ * TpProxyPendingCall:
+ * @proxy: the TpProxy
+ * @callback: the user-supplied handler
+ * @user_data: user-supplied data to be passed to the handler
+ * @destroy: function used to free the user-supplied data
+ * @pending_call: the underlying dbus-glib pending call
+ * @priv: private data used by the TpProxy implementation
+ *
+ * Structure representing a pending D-Bus call.
+ */
+
+/**
+ * TpProxySignalConnection:
+ * @proxy: the TpProxy
+ * @interface: GQuark representing the D-Bus interface
+ * @member: the D-Bus signal name
+ * @callback: the user-supplied handler
+ * @user_data: user-supplied data to be used by the handler
+ * @destroy: function used to free the user-supplied data
+ * @priv: private data used by the TpProxy implementation
+ *
+ * Structure representing a D-Bus signal connection.
+ */
+
 G_DEFINE_TYPE (TpProxy,
     tp_proxy,
     G_TYPE_OBJECT);
