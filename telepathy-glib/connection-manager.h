@@ -52,6 +52,6 @@ TpConnectionManager *tp_connection_manager_new (DBusGConnection *connection,
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-connection-manager-interfaces.h>
+#include <telepathy-glib/_gen/tp-cli-connection-manager.h>
 
 #endif

@@ -68,7 +68,8 @@ GType tp_media_session_handler_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_MEDIA_SESSION_HANDLER, \
                               TpMediaSessionHandlerClass))
 
-#include <telepathy-glib/_gen/tp-cli-media-interfaces.h>
+#include <telepathy-glib/_gen/tp-cli-media-session-handler.h>
+#include <telepathy-glib/_gen/tp-cli-media-stream-handler.h>
 
 G_END_DECLS
 

@@ -49,6 +49,6 @@ GType tp_channel_get_type (void);
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-channel-interfaces.h>
+#include <telepathy-glib/_gen/tp-cli-channel.h>
 
 #endif

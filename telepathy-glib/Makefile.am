@@ -5,12 +5,13 @@ pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-glib.pc
 
 EXTRA_DIST = \
-    channel-interfaces.xml \
-    connection-interfaces.xml \
-    connection-manager-interfaces.xml \
+    channel.xml \
+    connection.xml \
+    connection-manager.xml \
     extra-gtkdoc.h \
-    generic-interfaces.xml \
-    media-interfaces.xml \
+    generic.xml \
+    media-session-handler.xml \
+    media-stream-handler.xml \
     stable-interfaces.xml
 
 lib_LTLIBRARIES = libtelepathy-glib.la
@@ -71,32 +72,36 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/interfaces-body.h \
     _gen/gtypes-body.h \
     _gen/register-dbus-glib-marshallers-body.h \
-    _gen/tp-cli-channel-interfaces.c \
-    _gen/tp-cli-connection-interfaces.c \
-    _gen/tp-cli-connection-manager-interfaces.c \
-    _gen/tp-cli-generic-interfaces.c \
-    _gen/tp-cli-media-interfaces.c \
-    _gen/tp-svc-channel-interfaces.c \
-    _gen/tp-svc-connection-interfaces.c \
-    _gen/tp-svc-connection-manager-interfaces.c \
-    _gen/tp-svc-generic-interfaces.c \
-    _gen/tp-svc-media-interfaces.c
+    _gen/tp-cli-channel.c \
+    _gen/tp-cli-connection.c \
+    _gen/tp-cli-connection-manager.c \
+    _gen/tp-cli-generic.c \
+    _gen/tp-cli-media-session-handler.c \
+    _gen/tp-cli-media-stream-handler.c \
+    _gen/tp-svc-channel.c \
+    _gen/tp-svc-connection.c \
+    _gen/tp-svc-connection-manager.c \
+    _gen/tp-svc-generic.c \
+    _gen/tp-svc-media-session-handler.c \
+    _gen/tp-svc-media-stream-handler.c
 
 nodist_geninclude_HEADERS = \
     _gen/telepathy-enums.h \
     _gen/telepathy-interfaces.h \
     _gen/telepathy-errors.h \
     _gen/gtypes.h \
-    _gen/tp-cli-channel-interfaces.h \
-    _gen/tp-cli-connection-interfaces.h \
-    _gen/tp-cli-connection-manager-interfaces.h \
-    _gen/tp-cli-generic-interfaces.h \
-    _gen/tp-cli-media-interfaces.h \
-    _gen/tp-svc-channel-interfaces.h \
-    _gen/tp-svc-connection-interfaces.h \
-    _gen/tp-svc-connection-manager-interfaces.h \
-    _gen/tp-svc-generic-interfaces.h \
-    _gen/tp-svc-media-interfaces.h
+    _gen/tp-cli-channel.h \
+    _gen/tp-cli-connection.h \
+    _gen/tp-cli-connection-manager.h \
+    _gen/tp-cli-generic.h \
+    _gen/tp-cli-media-session-handler.h \
+    _gen/tp-cli-media-stream-handler.h \
+    _gen/tp-svc-channel.h \
+    _gen/tp-svc-connection.h \
+    _gen/tp-svc-connection-manager.h \
+    _gen/tp-svc-generic.h \
+    _gen/tp-svc-media-session-handler.h \
+    _gen/tp-svc-media-stream-handler.h
 
 BUILT_SOURCES = \
     $(nodist_libtelepathy_glib_internal_la_SOURCES) \
@@ -176,7 +181,7 @@ _gen/spec-stamp: $(wildcard $(top_srcdir)/spec/*.xml)
 	$(mkdir_p) _gen
 	touch $@
 
-_gen/stable-stamp: $(wildcard *-interfaces.xml) _gen/spec-stamp
+_gen/stable-stamp: $(wildcard *.xml) _gen/spec-stamp
 	touch $@
 
 _gen/stable-interfaces: _gen/stable-spec.xml ../tools/ls-interfaces.xsl
@@ -275,24 +280,24 @@ _gen/glue-stamp: _gen/stable-interfaces \
 
 # Things generated per interface
 
-_gen/%-interfaces.xml: %-interfaces.xml ../tools/identity.xsl _gen/spec-stamp
+_gen/tp-spec-%.xml: %.xml ../tools/identity.xsl _gen/spec-stamp
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
 		$(srcdir)/../tools/identity.xsl \
 		$< > $@
 
-_gen/tp-svc-%-interfaces.c _gen/tp-svc-%-interfaces.h: _gen/%-interfaces.xml \
+_gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 	../tools/glib-ginterface-gen.py \
 	../tools/ls-interfaces.xsl \
 	Makefile.am \
 	_gen/glue-stamp
 	$(XSLTPROC) $(XSLTPROCFLAGS) $(srcdir)/../tools/ls-interfaces.xsl \
-		$< > _gen/tp-svc-$*-interfaces.tmp
+		$< > _gen/tp-svc-$*.tmp
 	flags= ; \
-	for x in `cat _gen/tp-svc-$*-interfaces.tmp`; do \
+	for x in `cat _gen/tp-svc-$*.tmp`; do \
 		 flags="$$flags --include-end=\"_gen/svc-$$x-glue.h\""; \
 	done; \
 	$(PYTHON) $(srcdir)/../tools/glib-ginterface-gen.py \
-		--filename=_gen/tp-svc-$*-interfaces \
+		--filename=_gen/tp-svc-$* \
 		--signal-marshal-prefix=_tp \
 		--include='<telepathy-glib/dbus.h>' \
 		--include="\"_gen/signals-marshal.h\"" \
@@ -300,10 +305,10 @@ _gen/tp-svc-%-interfaces.c _gen/tp-svc-%-interfaces.h: _gen/%-interfaces.xml \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
 
-_gen/tp-cli-%-interfaces.c _gen/tp-cli-%-interfaces.h: _gen/%-interfaces.xml \
+_gen/tp-cli-%.c _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	../tools/glib-client-gen.py \
 	../tools/ls-interfaces.xsl \
 	Makefile.am
 	$(PYTHON) $(srcdir)/../tools/glib-client-gen.py \
-		--group `echo $* | sed -e s/-/_/` \
-		$< Tp_Cli _gen/tp-cli-$*-interfaces
+		--group `echo $* | tr - _` \
+		$< Tp_Cli _gen/tp-cli-$*

@@ -4,11 +4,12 @@
 
 <tp:title>telepathy-glib</tp:title>
 
-<xi:include href="connection-manager-interfaces.xml"/>
-<xi:include href="connection-interfaces.xml"/>
-<xi:include href="channel-interfaces.xml"/>
-<xi:include href="media-interfaces.xml"/>
-<xi:include href="generic-interfaces.xml"/>
+<xi:include href="connection-manager.xml"/>
+<xi:include href="connection.xml"/>
+<xi:include href="channel.xml"/>
+<xi:include href="media-session-handler.xml"/>
+<xi:include href="media-stream-handler.xml"/>
+<xi:include href="generic.xml"/>
 
 <xi:include href="../spec/generic-types.xml"/>
 <xi:include href="../spec/errors.xml"/>

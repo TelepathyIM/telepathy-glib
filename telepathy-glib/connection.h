@@ -51,6 +51,6 @@ GType tp_connection_get_type (void);
 
 G_END_DECLS
 
-#include <telepathy-glib/_gen/tp-cli-connection-interfaces.h>
+#include <telepathy-glib/_gen/tp-cli-connection.h>
 
 #endif
