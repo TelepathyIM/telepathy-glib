@@ -317,6 +317,26 @@ class Generator(object):
         #       const GError *error,
         #       gpointer user_data);
 
+        self.b('/**')
+        self.b(' * %s_%s_callback_for_%s:'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b(' * @proxy: the proxy on which the call was made')
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b(' * @%s: Used to return an \'out\' argument if @error is '
+                   'NULL' % name)
+
+        self.b(' * @error: NULL on success, or an error on failure')
+        self.b(' * @user_data: user-supplied data')
+        self.b(' *')
+        self.b(' * Signature of the callback called when a %s method call'
+               % member)
+        self.b(' * succeeds or fails.')
+        self.b(' */')
+
         callback_name = '%s_%s_callback_for_%s' % (self.prefix_lc, iface_lc,
                                                    member_lc)
 
@@ -404,13 +424,36 @@ class Generator(object):
         #   gpointer user_data,
         #   GDestroyNotify *destructor);
 
-        # The destructor is called after success, failure or cancellation.
-        # The callback is called after success or failure only.
-
         self.h('TpProxyPendingCall *%s_%s_call_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.h('    gint timeout_ms,')
 
+        self.b('/**')
+        self.b(' * %s_%s_call_%s:'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b(' * @proxy: the #TpProxy')
+        self.b(' * @timeout_ms: the timeout in milliseconds, or -1 to use the')
+        self.b(' *   default')
+
+        for arg in in_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b(' * @%s: Used to pass an \'in\' argument (FIXME: docs)'
+                   % name)
+
+        self.b(' * @callback: called when the method call succeeds or fails')
+        self.b(' * @user_data: user-supplied data passed to the callback')
+        self.b(' * @destroy: called with the user_data as argument, after the')
+        self.b(' *   call has succeeded, failed or been cancelled')
+        self.b(' *')
+        self.b(' * Start a %s method call.' % member)
+        self.b(' *')
+        self.b(' * Returns: a #TpProxyPendingCall representing the call in')
+        self.b(' *  progress. It is borrowed from the object, and will become')
+        self.b(' *  invalid when the callback is called, the call is')
+        self.b(' *  cancelled or the #TpProxy becomes invalid.')
+        self.b(' */')
         self.b('TpProxyPendingCall *\n%s_%s_call_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.b('    gint timeout_ms,')
