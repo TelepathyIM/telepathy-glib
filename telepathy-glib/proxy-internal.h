@@ -48,21 +48,16 @@ struct _TpProxy {
     gboolean dispose_has_run:1;
 };
 
-typedef struct _TpProxySignalConnection TpProxySignalConnection;
-
-struct _TpProxyPendingCall {
-    /*<protected>*/
-    TpProxy *proxy;
-    GCallback callback;
-    gpointer user_data;
-    GDestroyNotify destroy;
-    DBusGProxyCall *pending_call;
-};
-
 TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
     GCallback callback, gpointer user_data, GDestroyNotify destroy);
 
 void tp_proxy_pending_call_free (gpointer self);
+
+TpProxySignalConnection *tp_proxy_signal_connection_new (TpProxy *self,
+    GQuark interface, const gchar *member, GCallback callback,
+    gpointer user_data, GDestroyNotify destroy);
+
+void tp_proxy_signal_connection_free_closure (gpointer self, GClosure *unused);
 
 DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
     GError **error);

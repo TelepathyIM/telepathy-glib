@@ -36,15 +36,6 @@
  * @see_also: #TpChannel, #TpConnection, #TpConnectionManager
  */
 
-struct _TpProxySignalConnection
-{
-    TpProxy *tp_proxy;
-    DBusGProxy *dg_proxy;
-    char *signal_name;
-    GCallback handler;
-    gpointer data;
-};
-
 G_DEFINE_TYPE (TpProxy,
     tp_proxy,
     G_TYPE_OBJECT);
@@ -168,6 +159,9 @@ tp_proxy_add_interface_by_id (TpProxy *self,
   return iface_proxy;
 }
 
+static const gchar * const pending_call_magic = "TpProxyPendingCall";
+static const gchar * const signal_conn_magic = "TpProxySignalConnection";
+
 TpProxyPendingCall *
 tp_proxy_pending_call_new (TpProxy *self,
                            GCallback callback,
@@ -180,6 +174,8 @@ tp_proxy_pending_call_new (TpProxy *self,
   ret->callback = callback;
   ret->user_data = user_data;
   ret->destroy = destroy;
+  ret->pending_call = NULL;
+  ret->priv = pending_call_magic;
 
   return ret;
 }
@@ -189,12 +185,67 @@ tp_proxy_pending_call_free (gpointer self)
 {
   TpProxyPendingCall *data = self;
 
+  g_return_if_fail (data->priv == pending_call_magic);
+
   g_object_unref (TP_PROXY (data->proxy));
 
   if (data->destroy != NULL)
     data->destroy (data->user_data);
 
   g_slice_free (TpProxyPendingCall, data);
+}
+
+TpProxySignalConnection *
+tp_proxy_signal_connection_new (TpProxy *self,
+                                GQuark interface,
+                                const gchar *member,
+                                GCallback callback,
+                                gpointer user_data,
+                                GDestroyNotify destroy)
+{
+  TpProxySignalConnection *ret = g_slice_new (TpProxySignalConnection);
+
+  ret->proxy = g_object_ref (self);
+  ret->interface = interface;
+  ret->member = g_strdup (member);
+  ret->callback = callback;
+  ret->user_data = user_data;
+  ret->destroy = destroy;
+  ret->priv = signal_conn_magic;
+
+  return ret;
+}
+
+void
+tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
+{
+  DBusGProxy *iface;
+
+  g_return_if_fail (self->priv == pending_call_magic);
+
+  iface = tp_proxy_borrow_interface_by_id (self->proxy, self->interface, NULL);
+
+  if (iface == NULL)
+    return;
+
+  dbus_g_proxy_disconnect_signal (iface, self->member, self->callback,
+      self);
+}
+
+void
+tp_proxy_signal_connection_free_closure (gpointer self,
+                                         GClosure *unused)
+{
+  TpProxySignalConnection *data = self;
+
+  g_return_if_fail (data->priv == signal_conn_magic);
+
+  g_object_unref (TP_PROXY (data->proxy));
+
+  if (data->destroy != NULL)
+    data->destroy (data->user_data);
+
+  g_slice_free (TpProxySignalConnection, data);
 }
 
 static void
