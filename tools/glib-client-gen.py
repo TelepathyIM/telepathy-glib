@@ -307,7 +307,7 @@ class Generator(object):
         self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
         self.b('      TP_PROXY (proxy),')
         self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
-        self.b('      NULL);')
+        self.b('      error);')
         self.b('')
         self.b('  if (iface == NULL)')
         self.b('    {')
