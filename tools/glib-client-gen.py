@@ -403,6 +403,7 @@ class Generator(object):
         signals = node.getElementsByTagName('signal')
         methods = node.getElementsByTagName('method')
 
+        self.h('#if 0')
         self.h('static inline void')
         self.h('%s_add_signals_for_%s (DBusGProxy *proxy)'
                 % (self.prefix_lc, name.lower()))
@@ -412,6 +413,7 @@ class Generator(object):
             self.do_signal_add(signal)
 
         self.h('}')
+        self.h('#endif')
         self.h('')
         self.h('')
 
