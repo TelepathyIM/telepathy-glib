@@ -1392,8 +1392,10 @@ tp_iface_quark_properties_interface
 <INCLUDE>telepathy-glib/proxy.h</INCLUDE>
 TpProxy
 TpProxyClass
-TP_TYPE_PROXY
+TpProxyPendingCall
+TpProxySignalConnection
 <SUBSECTION Standard>
+TP_TYPE_PROXY
 tp_proxy_get_type
 TP_IS_PROXY
 TP_IS_PROXY_CLASS
