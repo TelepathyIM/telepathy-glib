@@ -32,6 +32,9 @@
  * @title: TpConnection
  * @short_description: proxy object for a Telepathy connection
  * @see_also: #TpConnectionManager, #TpChannel
+ *
+ * #TpConnection objects represent Telepathy instant messaging connections
+ * accessed via D-Bus.
  */
 
 /**

@@ -33,6 +33,8 @@
  * @title: TpChannel
  * @short_description: proxy object for a Telepathy channel
  * @see_also: #TpConnection
+ *
+ * #TpChannel objects provide convenient access to Telepathy channels.
  */
 
 /**

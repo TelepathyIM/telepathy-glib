@@ -80,19 +80,6 @@
  */
 
 /**
- * SECTION:defs
- * @title: Miscellaneous definitions
- * @short_description: Definitions useful for working with the Telepathy
- *   protocol
- *
- * This header contains definitions which didn't fit into enums.h,
- * interfaces.h or errors.h.
- *
- * Since: 0.7.0. In older versions, these constants were in base-connection.h
- * and base-connection-manager.h.
- */
-
-/**
  * SECTION:enums
  * @title: Telepathy protocol enumerations
  * @short_description: Enumerated types and bitfields from the Telepathy spec

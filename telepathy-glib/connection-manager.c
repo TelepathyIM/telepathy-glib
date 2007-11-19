@@ -27,6 +27,9 @@
  * @title: TpConnectionManager
  * @short_description: proxy object for a Telepathy connection manager
  * @see_also: #TpConnection
+ *
+ * #TpConnectionManager objects represent Telepathy connection managers. They
+ * can be used to open connections.
  */
 
 /* FIXME: move these from base-connection-manager to a shared header */

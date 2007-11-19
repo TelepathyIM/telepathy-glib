@@ -34,6 +34,12 @@
  * @title: TpProxy
  * @short_description: base class for Telepathy client proxy objects
  * @see_also: #TpChannel, #TpConnection, #TpConnectionManager
+ *
+ * #TpProxy is a base class for Telepathy client-side proxies, which represent
+ * an object accessed via D-Bus and provide access to its methods and signals.
+ *
+ * The header proxy.h also includes auto-generated client wrappers for the
+ * Properties interface, which can be implemented by any type of object.
  */
 
 /**
