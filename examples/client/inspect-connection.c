@@ -18,9 +18,11 @@
 
 void
 connection_died (TpConnection *connection,
+                 GError *error,
                  GMainLoop *mainloop)
 {
-  puts ("Connection was destroyed before introspection finished");
+  printf ("Connection died before introspection finished: %s\n",
+    error->message);
   g_main_loop_quit (mainloop);
 }
 

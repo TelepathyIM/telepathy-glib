@@ -18,9 +18,11 @@
 
 void
 channel_died (TpChannel *channel,
+              GError *error,
               GMainLoop *mainloop)
 {
-  puts ("Channel was destroyed before introspection finished");
+  printf ("Channel died before introspection finished: %s\n",
+      error->message);
   g_main_loop_quit (mainloop);
 }
 

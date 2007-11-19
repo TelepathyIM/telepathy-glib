@@ -21,6 +21,7 @@
 #include "telepathy-glib/connection.h"
 
 #include <telepathy-glib/enums.h>
+#include <telepathy-glib/errors.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "debug-internal.h"
@@ -130,8 +131,8 @@ tp_connection_got_interfaces_cb (DBusGProxy *proxy,
   else
     {
       DEBUG ("%p: GetInterfaces() failed", self);
+      tp_proxy_invalidated ((TpProxy *) self, error);
       g_error_free (error);
-      tp_proxy_invalidated ((TpProxy *) self);
     }
 }
 
@@ -149,8 +150,14 @@ tp_connection_status_changed_cb (DBusGProxy *proxy,
   switch (status)
     {
     case TP_CONNECTION_STATUS_DISCONNECTED:
-      tp_proxy_invalidated ((TpProxy *) self);
-      break;
+        {
+          GError *error = g_error_new (TP_ERRORS, TP_ERROR_DISCONNECTED,
+              "Disconnected: reason %d", reason);
+
+          tp_proxy_invalidated ((TpProxy *) self, error);
+          g_error_free (error);
+          break;
+        }
     case TP_CONNECTION_STATUS_CONNECTED:
       dbus_g_proxy_begin_call (proxy, "GetInterfaces",
           tp_connection_got_interfaces_cb, self, NULL, G_TYPE_INVALID);
@@ -181,9 +188,11 @@ tp_connection_got_status_cb (DBusGProxy *proxy,
     }
   else
     {
-      DEBUG ("%p: GetStatus() failed, will self-destruct", self);
+      DEBUG ("%p: GetStatus() failed with %s %d \"%s\", will self-destruct",
+          self, g_quark_to_string (error->domain), error->code,
+          error->message);
+      tp_proxy_invalidated ((TpProxy *) self, error);
       g_error_free (error);
-      tp_proxy_invalidated ((TpProxy *) self);
       return;
     }
 }

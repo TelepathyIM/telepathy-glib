@@ -166,8 +166,8 @@ tp_channel_got_interfaces_cb (DBusGProxy *proxy,
   else
     {
       DEBUG ("%p: GetInterfaces() failed", self);
+      tp_proxy_invalidated ((TpProxy *) self, error);
       g_error_free (error);
-      tp_proxy_invalidated ((TpProxy *) self);
     }
 }
 
@@ -194,8 +194,8 @@ tp_channel_got_channel_type_cb (DBusGProxy *proxy,
       else
         {
           DEBUG ("%p: GetChannelType() failed, will self-destruct", self);
+          tp_proxy_invalidated ((TpProxy *) self, error);
           g_error_free (error);
-          tp_proxy_invalidated ((TpProxy *) self);
           return;
         }
     }
@@ -232,8 +232,8 @@ tp_channel_got_handle_cb (DBusGProxy *proxy,
       else
         {
           DEBUG ("%p: GetHandle() failed, will self-destruct", self);
+          tp_proxy_invalidated ((TpProxy *) self, error);
           g_error_free (error);
-          tp_proxy_invalidated ((TpProxy *) self);
           return;
         }
     }
@@ -256,7 +256,10 @@ static void
 tp_channel_closed_cb (DBusGProxy *proxy,
                       TpChannel *self)
 {
-  tp_proxy_invalidated ((TpProxy *) self);
+  GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      "Channel was closed" };
+
+  tp_proxy_invalidated ((TpProxy *) self, &e);
 }
 
 static GObject *

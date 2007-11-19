@@ -109,17 +109,20 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 }
 
 void
-tp_proxy_invalidated (TpProxy *self)
+tp_proxy_invalidated (TpProxy *self, GError *error)
 {
   self->valid = FALSE;
-  g_signal_emit (self, signals[SIGNAL_DESTROYED], 0);
+  g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, error);
 }
 
 static void
 tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
                              TpProxy *self)
 {
-  tp_proxy_invalidated (self);
+  GError e = { DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER,
+      "Name owner lost (service crashed?)" };
+
+  tp_proxy_invalidated (self, &e);
 }
 
 /**
@@ -379,6 +382,7 @@ tp_proxy_class_init (TpProxyClass *klass)
   /**
    * TpProxy::destroyed:
    * @self: the proxy object
+   * @error: a GError indicating why this proxy was destroyed
    *
    * Emitted when this proxy has been destroyed and become invalid for
    * whatever reason. Any more specific signal should be emitted first.
@@ -388,6 +392,6 @@ tp_proxy_class_init (TpProxyClass *klass)
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
       NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
+      g_cclosure_marshal_VOID__POINTER,
+      G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
