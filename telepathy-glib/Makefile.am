@@ -28,6 +28,7 @@ tpginclude_HEADERS = \
     channel-iface.h \
     channel-factory-iface.h \
     dbus.h \
+    defs.h \
     debug.h \
     debug-ansi.h \
     enums.h \

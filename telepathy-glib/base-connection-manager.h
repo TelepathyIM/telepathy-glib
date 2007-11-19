@@ -24,26 +24,12 @@
 
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
+
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/svc-connection-manager.h>
 
 G_BEGIN_DECLS
-
-/**
- * TP_CM_BUS_NAME_BASE:
- *
- * The prefix for a connection manager's bus name, to which the CM's name
- * (e.g. "gabble") should be appended.
- */
-#define TP_CM_BUS_NAME_BASE    "org.freedesktop.Telepathy.ConnectionManager."
-
-/**
- * TP_CM_OBJECT_PATH_BASE:
- *
- * The prefix for a connection manager's object path, to which the CM's name
- * (e.g. "gabble") should be appended.
- */
-#define TP_CM_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/ConnectionManager/"
 
 /**
  * TpCMParamSpec:
