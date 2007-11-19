@@ -14,6 +14,16 @@ TP_CHANNEL_IFACE_GET_CLASS
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/defs.h</INCLUDE>
+<FILE>defs</FILE>
+<TITLE>Miscellaneous definitions</TITLE>
+TP_CM_BUS_NAME_BASE
+TP_CM_OBJECT_PATH_BASE
+TP_CONN_BUS_NAME_BASE
+TP_CONN_OBJECT_PATH_BASE
+</SECTION>
+
+<SECTION>
 <INCLUDE>telepathy-glib/base-connection.h</INCLUDE>
 <FILE>base-connection</FILE>
 <TITLE>TpBaseConnection</TITLE>
@@ -31,8 +41,6 @@ tp_base_connection_change_status
 tp_base_connection_finish_shutdown
 tp_base_connection_add_interfaces
 tp_base_connection_dbus_request_handles
-TP_CONN_BUS_NAME_BASE
-TP_CONN_OBJECT_PATH_BASE
 TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED
 <SUBSECTION Standard>
 TP_BASE_CONNECTION
@@ -59,8 +67,6 @@ TpBaseConnectionManager
 TpBaseConnectionManagerClass
 TpBaseConnectionManagerNewConnFunc
 tp_base_connection_manager_register
-TP_CM_BUS_NAME_BASE
-TP_CM_OBJECT_PATH_BASE
 <SUBSECTION Standard>
 TP_BASE_CONNECTION_MANAGER
 TP_IS_BASE_CONNECTION_MANAGER
