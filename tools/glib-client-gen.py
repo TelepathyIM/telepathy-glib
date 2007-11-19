@@ -90,6 +90,7 @@ class Generator(object):
 
         self.b('/**')
         self.b(' * %s:' % callback_name)
+        self.b(' * @proxy: A dbus-glib proxy (avoid using this)')
 
         for arg in args:
             name, info, tp_type = arg
@@ -97,6 +98,9 @@ class Generator(object):
 
             self.b(' * @%s: FIXME' % name)
 
+        self.b(' * @signal_connection: The same object that was returned by')
+        self.b(' *   %s_%s_connect_to_%s()'
+               % (self.prefix_lc, iface_lc, member_lc))
         self.b(' *')
         self.b(' * Represents the signature of a callback for the signal %s.'
                % member)
