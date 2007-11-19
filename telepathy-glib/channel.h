@@ -47,8 +47,8 @@ GType tp_channel_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL, \
                               TpChannelClass))
 
-#include <telepathy-glib/_gen/tp-cli-channel-interfaces.h>
-
 G_END_DECLS
+
+#include <telepathy-glib/_gen/tp-cli-channel-interfaces.h>
 
 #endif

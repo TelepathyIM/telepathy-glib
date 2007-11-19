@@ -425,12 +425,13 @@ class Generator(object):
 
         self.h('#include <dbus/dbus-glib.h>')
         self.h('#include <telepathy-glib/interfaces.h>')
-        self.h('#include <telepathy-glib/proxy.h>')
         self.h('')
+        self.h('G_BEGIN_DECLS')
 
+        self.b('#define TP_PROXY_IN_CLI_IMPLEMENTATION')
+        self.b('#include "telepathy-glib/proxy-internal.h"')
         self.b('#include "%s.h"' % self.basename)
         self.b('')
-        self.b('#include "telepathy-glib/proxy-internal.h"')
         self.b('')
 
         ifaces = self.dom.getElementsByTagName('node')
@@ -438,6 +439,9 @@ class Generator(object):
 
         for iface in ifaces:
             self.do_interface(iface)
+
+        self.h('G_END_DECLS')
+        self.h('')
 
         open(self.basename + '.h', 'w').write('\n'.join(self.__header))
         open(self.basename + '.c', 'w').write('\n'.join(self.__body))

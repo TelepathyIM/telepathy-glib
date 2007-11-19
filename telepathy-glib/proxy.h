@@ -52,4 +52,8 @@ GType tp_proxy_get_type (void);
 
 G_END_DECLS
 
+#ifndef TP_PROXY_IN_CLI_IMPLEMENTATION
+#include <telepathy-glib/_gen/tp-cli-generic-interfaces.h>
+#endif
+
 #endif /* #ifndef __TP_PROXY_H__*/

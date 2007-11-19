@@ -47,11 +47,11 @@ GType tp_connection_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONNECTION_MANAGER, \
                               TpConnectionManagerClass))
 
-#include <telepathy-glib/_gen/tp-cli-connection-manager-interfaces.h>
-
 TpConnectionManager *tp_connection_manager_new (DBusGConnection *connection,
     const gchar *name);
 
 G_END_DECLS
+
+#include <telepathy-glib/_gen/tp-cli-connection-manager-interfaces.h>
 
 #endif
