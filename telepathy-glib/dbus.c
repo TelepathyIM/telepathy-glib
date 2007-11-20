@@ -32,7 +32,8 @@
 
 #include <telepathy-glib/errors.h>
 
-#include "_gen/signals-marshal.h"
+#include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
 /**
  * tp_dbus_g_method_return_not_implemented:
@@ -103,6 +104,45 @@ tp_get_bus_proxy (void)
     }
 
   return bus_proxy;
+}
+
+struct _TpDBusDaemonClass
+{
+  TpProxyClass parent_class;
+};
+
+struct _TpDBusDaemon
+{
+  TpProxy parent;
+};
+
+G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY);
+
+TpDBusDaemon *
+tp_dbus_daemon_new (DBusGConnection *connection)
+{
+  g_return_val_if_fail (connection != NULL, NULL);
+
+  return TP_DBUS_DAEMON (g_object_new (TP_TYPE_DBUS_DAEMON,
+        "dbus-connection", connection,
+        "bus-name", DBUS_SERVICE_DBUS,
+        "object-path", DBUS_PATH_DBUS,
+        NULL));
+}
+
+static void
+tp_dbus_daemon_init (TpDBusDaemon *self)
+{
+}
+
+static void
+tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
+{
+  TpProxyClass *proxy_class = (TpProxyClass *) klass;
+
+  proxy_class->interface = TP_IFACE_QUARK_DBUS_DAEMON;
+  proxy_class->on_interface_added = g_slist_prepend
+    (proxy_class->on_interface_added, tp_cli_dbus_daemon_add_signals);
 }
 
 /* Auto-generated implementation of _tp_register_dbus_glib_marshallers */

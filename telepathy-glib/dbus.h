@@ -21,8 +21,7 @@
 #ifndef __TELEPATHY_DBUS_H__
 #define __TELEPATHY_DBUS_H__
 
-#include <glib.h>
-#include <dbus/dbus-glib.h>
+#include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
 
@@ -30,7 +29,31 @@ void tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context);
 DBusGConnection * tp_get_bus (void);
 DBusGProxy * tp_get_bus_proxy (void);
 
+typedef struct _TpDBusDaemon TpDBusDaemon;
+typedef struct _TpDBusDaemonClass TpDBusDaemonClass;
+GType tp_dbus_daemon_get_type (void);
+
+#define TP_TYPE_DBUS_DAEMON \
+  (tp_dbus_daemon_get_type ())
+#define TP_DBUS_DAEMON(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TYPE_DBUS_DAEMON, \
+                              TpDBusDaemon))
+#define TP_DBUS_DAEMON_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TYPE_DBUS_DAEMON, \
+                           TpDBusDaemonClass))
+#define TP_IS_DBUS_DAEMON(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TYPE_DBUS_DAEMON))
+#define TP_IS_DBUS_DAEMON_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_DBUS_DAEMON))
+#define TP_DBUS_DAEMON_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DBUS_DAEMON, \
+                              TpDBusDaemonClass))
+
+TpDBusDaemon *tp_dbus_daemon_new (DBusGConnection *connection);
+
 G_END_DECLS
+
+#include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
 
 #endif /* __TELEPATHY_DBUS_H__ */
 

@@ -8,6 +8,7 @@ EXTRA_DIST = \
     channel.xml \
     connection.xml \
     connection-manager.xml \
+    dbus-daemon.xml \
     extra-gtkdoc.h \
     generic.xml \
     media-session-handler.xml \
@@ -75,6 +76,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-channel.c \
     _gen/tp-cli-connection.c \
     _gen/tp-cli-connection-manager.c \
+    _gen/tp-cli-dbus-daemon.c \
     _gen/tp-cli-generic.c \
     _gen/tp-cli-media-session-handler.c \
     _gen/tp-cli-media-stream-handler.c \
@@ -93,6 +95,7 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-channel.h \
     _gen/tp-cli-connection.h \
     _gen/tp-cli-connection-manager.h \
+    _gen/tp-cli-dbus-daemon.h \
     _gen/tp-cli-generic.h \
     _gen/tp-cli-media-session-handler.h \
     _gen/tp-cli-media-stream-handler.h \
