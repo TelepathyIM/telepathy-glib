@@ -21,6 +21,10 @@
 #include "telepathy-glib/connection-manager.h"
 
 #include "telepathy-glib/defs.h"
+#include "telepathy-glib/gtypes.h"
+
+#define DEBUG_FLAG TP_DEBUG_MANAGER
+#include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 
 /**
@@ -67,11 +71,169 @@ static guint signals[N_SIGNALS] = {0};
 struct _TpConnectionManager {
     TpProxy parent;
     /*<private>*/
+
+    /* GPtrArray of TpConnectionManagerProtocol * */
+    GPtrArray *protocols;
+
+    gboolean running:1;
+    gboolean listing_protocols:1;
+
+    /* GPtrArray of gchar * */
+    GPtrArray *introspect_pending;
+    /* GPtrArray of TpConnectionManagerProtocol * */
+    GPtrArray *introspect_protocols;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
     tp_connection_manager,
     TP_TYPE_PROXY);
+
+static void tp_connection_manager_continue_introspection
+    (TpConnectionManager *self);
+
+static void
+tp_connection_manager_got_parameters (TpProxy *proxy,
+                                      const GPtrArray *parameters,
+                                      const GError *error,
+                                      gpointer user_data)
+{
+  TpConnectionManager *self = TP_CONNECTION_MANAGER (proxy);
+  gchar *protocol = user_data;
+  GArray *output;
+  guint i;
+  TpConnectionManagerProtocol *proto_struct;
+
+  DEBUG ("Protocol name: %s", protocol);
+
+  if (error != NULL)
+    tp_connection_manager_continue_introspection (self);
+
+   output = g_array_sized_new (TRUE, TRUE,
+      sizeof (TpConnectionManagerParam), parameters->len);
+
+  for (i = 0; i < parameters->len; i++)
+    {
+      GValue structure = { 0 };
+      GValue *tmp;
+      TpConnectionManagerParam *param = &g_array_index (output,
+          TpConnectionManagerParam, output->len + 1);
+
+      g_value_init (&structure, TP_STRUCT_TYPE_PARAM_SPEC);
+      g_value_set_static_boxed (&structure, g_ptr_array_index (parameters, i));
+
+      g_array_set_size (output, output->len + 1);
+
+      if (!dbus_g_type_struct_get (&structure,
+            0, &param->name,
+            1, &param->flags,
+            2, &param->dbus_signature,
+            3, &tmp,
+            G_MAXUINT))
+        {
+          DEBUG ("Bad parameter, ignoring");
+          /* *shrug* that one didn't work, let's skip it */
+          g_array_set_size (output, output->len - 1);
+        }
+
+      g_value_init (&param->default_value,
+          G_VALUE_TYPE (tmp));
+      g_value_copy (tmp, &param->default_value);
+      g_value_unset (tmp);
+      g_free (tmp);
+
+      param->priv = NULL;
+
+      DEBUG ("\tParam name: %s", param->name);
+      DEBUG ("\tParam flags: 0x%x", param->flags);
+      DEBUG ("\tParam sig: %s", param->dbus_signature);
+
+#ifdef ENABLE_DEBUG
+        {
+          gchar *repr = g_strdup_value_contents (&(param->default_value));
+
+          DEBUG ("\tParam default value: %s of type %s", repr,
+              G_VALUE_TYPE_NAME (&(param->default_value)));
+          g_free (repr);
+        }
+#endif
+    }
+
+  proto_struct = g_slice_new (TpConnectionManagerProtocol);
+  proto_struct->name = g_strdup (protocol);
+  proto_struct->params =
+      (TpConnectionManagerParam *) g_array_free (output, FALSE);
+  g_ptr_array_add (self->introspect_protocols, proto_struct);
+
+  tp_connection_manager_continue_introspection (self);
+}
+
+static void
+tp_connection_manager_continue_introspection (TpConnectionManager *self)
+{
+  gchar *next_protocol;
+
+  if (self->introspect_pending->len == 0)
+    {
+      g_ptr_array_free (self->introspect_pending, TRUE);
+
+      if (self->protocols != NULL)
+        {
+          guint i;
+
+          for (i = 0; i < self->protocols->len; i++)
+            {
+              TpConnectionManagerProtocol *proto =
+                  g_ptr_array_index (self->protocols, i);
+
+              g_free (proto->name);
+              g_free (proto->params);
+            }
+        }
+      g_ptr_array_add (self->introspect_protocols, NULL);
+
+      self->protocols = self->introspect_protocols;
+      self->introspect_protocols = NULL;
+
+      g_signal_emit (self, signals[SIGNAL_DISCOVERED], 0, TRUE);
+      return;
+    }
+
+  next_protocol = g_ptr_array_remove_index_fast (self->introspect_pending, 0);
+  tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
+      tp_connection_manager_got_parameters, next_protocol, g_free);
+}
+
+static void
+tp_connection_manager_got_protocols (TpProxy *proxy,
+                                     const gchar **protocols,
+                                     const GError *error,
+                                     gpointer user_data)
+{
+  TpConnectionManager *self = TP_CONNECTION_MANAGER (proxy);
+  guint i = 0;
+  const gchar **iter;
+
+  self->listing_protocols = FALSE;
+
+  if (error != NULL)
+    return;
+
+  g_assert (self->introspect_protocols == NULL);
+  self->introspect_protocols = g_ptr_array_new ();
+
+  for (iter = protocols; *iter != NULL; iter++)
+    i++;
+
+  g_assert (self->introspect_pending == NULL);
+  self->introspect_pending = g_ptr_array_sized_new (i);
+
+  for (iter = protocols; *iter != NULL; iter++)
+    {
+      g_ptr_array_add (self->introspect_pending, g_strdup (*iter));
+    }
+
+  tp_connection_manager_continue_introspection (self);
+}
 
 static void
 tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
@@ -83,14 +245,52 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
 
   if (new_owner[0] == '\0')
     {
+      self->running = FALSE;
+      self->listing_protocols = FALSE;
+
+      if (self->introspect_pending != NULL)
+        {
+          g_strfreev ((gchar **) g_ptr_array_free (self->introspect_pending,
+                FALSE));
+          self->introspect_pending = NULL;
+        }
+
+      if (self->introspect_protocols != NULL)
+        {
+          guint i;
+
+          for (i = 0; i < self->introspect_protocols->len; i++)
+            {
+              TpConnectionManagerProtocol *proto =
+                  g_ptr_array_index (self->introspect_protocols, i);
+
+              g_free (proto->name);
+              g_free (proto->params);
+            }
+
+          g_ptr_array_free (self->introspect_protocols, TRUE);
+          self->introspect_protocols = NULL;
+        }
+
       g_signal_emit (self, signals[SIGNAL_EXITED], 0);
     }
   else
     {
+      /* represent an atomic change of ownership as if it was an exit and
+       * restart */
+      if (self->running)
+        tp_connection_manager_name_owner_changed_cb (bus, name, "", self);
+
+      self->running = TRUE;
       g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
 
-      /* Start introspecting */
-      /* tp_cli_connection_manager_call_list_protocols */
+      /* Start introspecting if we're not already */
+      if (!self->listing_protocols)
+        {
+          tp_cli_connection_manager_call_list_protocols (self, -1,
+              tp_connection_manager_got_protocols, g_object_ref (self),
+              g_object_unref);
+        }
     }
 }
 
@@ -243,7 +443,16 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
  *  if the connection manager was already running and no additional signals
  *  will be emitted.
  */
-void
+gboolean
 tp_connection_manager_activate (TpConnectionManager *self)
 {
+  if (self->running)
+    return FALSE;
+
+  self->listing_protocols = TRUE;
+  tp_cli_connection_manager_call_list_protocols (self, -1,
+      tp_connection_manager_got_protocols,
+      g_object_ref (self), g_object_unref);
+
+  return TRUE;
 }

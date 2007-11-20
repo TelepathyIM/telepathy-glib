@@ -48,10 +48,28 @@ GType tp_connection_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONNECTION_MANAGER, \
                               TpConnectionManagerClass))
 
+typedef struct
+{
+  gchar *name;
+  gchar *dbus_signature;
+  GValue default_value;
+  guint flags;
+
+  gpointer priv;
+} TpConnectionManagerParam;
+
+typedef struct
+{
+  gchar *name;
+  TpConnectionManagerParam *params;
+
+  gpointer priv;
+} TpConnectionManagerProtocol;
+
 TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
     const gchar *name);
 
-void tp_connection_manager_activate (TpConnectionManager *self);
+gboolean tp_connection_manager_activate (TpConnectionManager *self);
 
 G_END_DECLS
 
