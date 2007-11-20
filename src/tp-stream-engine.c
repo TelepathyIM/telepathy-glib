@@ -804,16 +804,6 @@ _window_pairs_remove_cb (WindowPair *wp)
 }
 
 static void
-_window_pairs_empty_cb (WindowPair *wp)
-{
-  wp->sink = NULL;
-  wp->created = FALSE;
-  wp->stream = NULL;
-  wp->removing = FALSE;
-  wp->post_remove = NULL;
-}
-
-static void
 _window_pairs_readd_cb (WindowPair *wp)
 {
   TpStreamEngine *engine = tp_stream_engine_get ();
@@ -1007,8 +997,8 @@ bus_async_handler (GstBus *bus,
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   GError *error = NULL;
-  WindowPair *wp = NULL;
-  gchar *error_string;
+  gchar *error_string, *tmp;
+  GSList *i;
 
   GstElement *source = GST_ELEMENT (GST_MESSAGE_SRC (message));
   gchar *name = gst_element_get_name (source);
@@ -1017,119 +1007,43 @@ bus_async_handler (GstBus *bus,
     {
       case GST_MESSAGE_ERROR:
         gst_message_parse_error (message, &error, &error_string);
+        tmp = g_strdup_printf ("%s: %s", error->message, error_string);
 
-        g_debug ("%s: got error from %s", G_STRFUNC, name);
-        g_debug ("%s: got error: %s %s %d %d", G_STRFUNC, error->message,
-            error_string, error->domain, error->code);
+        g_debug ("%s: got error from %s: %s: %s (%d %d), destroying video "
+            "pipeline", G_STRFUNC, name, error->message, error_string,
+            error->domain, error->code);
+
+        close_all_video_streams (engine, tmp);
+
         g_free (error_string);
+        g_free (tmp);
 
-        /*
-        TpStreamEngineStream *stream = NULL;
-        guint xid;
-        gboolean is_preview = TRUE;
-        */
-        if (g_strrstr (name, "xvimagesink") &&
-            error->domain == GST_RESOURCE_ERROR &&
-            (error->code == GST_RESOURCE_ERROR_WRITE ||
-             error->code == GST_RESOURCE_ERROR_BUSY))
+        for (i = priv->output_windows; i; i = i->next)
           {
-            g_debug ("%s: error from xvimagesink, shutting down video streams",
-                G_STRFUNC);
-            wp = _window_pairs_find_by_sink (priv->preview_windows,
-                source);
-
-            if (wp == NULL)
-            {
-              /* is_preview = FALSE; */
-              wp = _window_pairs_find_by_sink (priv->output_windows,
-                  source);
-            }
-
-            if (wp != NULL)
+            WindowPair *wp = (WindowPair *) i->data;
+            if (wp->removing == FALSE)
               {
-                if (wp->removing)
-                  {
-                    g_debug ("%s: sink for %s window (id %u) has gone,"
-                        " and is already being removed",
-                        G_STRFUNC, wp->stream == NULL ? "preview" : "output",
-                        wp->window_id);
-                    break;
-                  }
-
-                g_debug ("%s: sink for %s window (id %u) has gone, removing",
-                        G_STRFUNC, wp->stream == NULL ? "preview" : "output",
-                        wp->window_id);
-
                 wp->removing = TRUE;
                 wp->post_remove = _window_pairs_remove_cb;
-                /*
-                xid = wp->window_id;
-                stream = wp->stream;
-                */
-                if (wp->stream)
-                  _remove_defunct_output_sink (wp);
-                else
-                  _remove_defunct_preview_sink (wp);
-
-                /* let's try recreating a new xvimagesink */
-                /*
-                if (is_preview)
-                  {
-                    tp_stream_engine_add_preview_window (engine, xid, &error);
-                  }
-                else
-                  {
-                    g_debug ("adding new output window with xid %d and stream %p", xid, stream);
-                    tp_stream_engine_stream_set_output_window (stream, xid,
-                        &error);
-                  }
-                */
-                /* let's shutdown the video stream */
-                close_all_video_streams (engine, error->message);
+                _remove_defunct_output_sink (wp);
               }
           }
-        else
+
+        for (i = priv->preview_windows; i; i = i->next)
           {
-            GSList *i;
-
-            g_debug ("%s: got an error on the video pipeline: %s", G_STRFUNC,
-                error->message);
-            g_debug ("%s: will teardown video pipeline and try a new one",
-                G_STRFUNC);
-
-            close_all_video_streams (engine, error->message);
-
-            g_debug ("%s: destroying video pipeline", G_STRFUNC);
-
-            for (i = priv->output_windows; i; i = i->next)
+            WindowPair *wp = (WindowPair *) i->data;
+            if (wp->removing == FALSE)
               {
-                WindowPair *wp = (WindowPair *) i->data;
-                if (wp->removing == FALSE)
-                  {
-                    wp->removing = TRUE;
-                    wp->post_remove = _window_pairs_empty_cb;
-                    _remove_defunct_output_sink (wp);
-                  }
+                wp->removing = TRUE;
+                wp->post_remove = _window_pairs_remove_cb;
+                _remove_defunct_preview_sink (wp);
               }
-
-            for (i = priv->preview_windows; i; i = i->next)
-              {
-                WindowPair *wp = (WindowPair *) i->data;
-                if (wp->removing == FALSE)
-                  {
-                    wp->removing = TRUE;
-                    wp->post_remove = _window_pairs_empty_cb;
-                    _remove_defunct_preview_sink (wp);
-                  }
-              }
-
-            gst_element_set_state (priv->pipeline, GST_STATE_NULL);
-            gst_object_unref (priv->pipeline);
-            priv->pipeline = NULL;
-
-            g_debug ("%s: Creating new pipeline", G_STRFUNC);
-            priv->pipeline = tp_stream_engine_get_pipeline (engine);
           }
+
+        gst_element_set_state (priv->pipeline, GST_STATE_NULL);
+        gst_object_unref (priv->pipeline);
+        priv->pipeline = NULL;
+
         g_error_free (error);
         break;
       case GST_MESSAGE_WARNING:
