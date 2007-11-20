@@ -18,7 +18,8 @@ EXTRA_DIST = \
     ls-interfaces.xsl \
     make-all-async.xsl \
     spec-to-introspect.xsl \
-    update-spec-gen-am.sh
+    update-spec-gen-am.sh \
+    with-session-bus.sh
 
 CLEANFILES = libglibcodegen.pyc libglibcodegen.pyo
 
