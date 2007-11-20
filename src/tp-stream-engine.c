@@ -51,9 +51,7 @@
 #define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/StreamEngine"
 
-#define STATUS_BAR_SERVICE_NAME "com.nokia.statusbar"
-#define STATUS_BAR_INTERFACE_NAME "com.nokia.statusbar"
-#define STATUS_BAR_OBJECT_PATH "/com/nokia/statusbar"
+static void tp_stream_engine_start_source (TpStreamEngine *obj);
 
 static void
 register_dbus_signal_marshallers()
@@ -136,9 +134,8 @@ struct _TpStreamEnginePrivate
   guint bad_value_handler_id;
   guint bad_window_handler_id;
 
-#ifdef USE_INFOPRINT
-  DBusGProxy *infoprint_proxy;
-#endif
+  gboolean linked;
+  gboolean restart_source;
 };
 
 typedef struct _WindowPair WindowPair;
