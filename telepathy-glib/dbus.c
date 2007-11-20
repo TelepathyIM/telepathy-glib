@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/util.h>
 
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
@@ -114,6 +115,12 @@ struct _TpDBusDaemonClass
 struct _TpDBusDaemon
 {
   TpProxy parent;
+  /* dup'd name => _NameOwnerWatch */
+  GHashTable *name_owner_watches;
+  /* hack hack hack - see _tp_dbus_daemon_name_owner_changed_cb */
+  gchar *last_name;
+  gchar *last_old_owner;
+  gchar *last_new_owner;
 };
 
 G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY);
@@ -130,15 +137,256 @@ tp_dbus_daemon_new (DBusGConnection *connection)
         NULL));
 }
 
+typedef struct
+{
+  TpDBusDaemonNameOwnerChangedCb callback;
+  gpointer user_data;
+  GDestroyNotify destroy;
+} _NameOwnerWatch;
+
+static void
+_tp_dbus_daemon_name_owner_changed_multiple (TpDBusDaemon *self,
+                                             const gchar *name,
+                                             const gchar *old_owner,
+                                             const gchar *new_owner,
+                                             gpointer user_data)
+{
+  GArray *array = user_data;
+  guint i;
+
+  for (i = 0; i < array->len; i++)
+    {
+      _NameOwnerWatch *watch = &g_array_index (array, _NameOwnerWatch, i);
+
+      g_message ("... multiplexing to callback %p", watch->callback);
+      watch->callback (self, name, old_owner, new_owner, watch->user_data);
+    }
+}
+
+static void
+_tp_dbus_daemon_name_owner_changed_multiple_free (gpointer data)
+{
+  GArray *array = data;
+  guint i;
+
+  for (i = 0; i < array->len; i++)
+    {
+      _NameOwnerWatch *watch = &g_array_index (array, _NameOwnerWatch, i);
+
+      if (watch->destroy)
+        watch->destroy (watch->user_data);
+    }
+
+  g_array_free (array, TRUE);
+}
+
+static void
+_tp_dbus_daemon_name_owner_changed_cb (DBusGProxy *proxy,
+                                       const gchar *name,
+                                       const gchar *old_owner,
+                                       const gchar *new_owner,
+                                       TpProxySignalConnection *sig_conn)
+{
+  TpDBusDaemon *self = TP_DBUS_DAEMON (sig_conn->proxy);
+  _NameOwnerWatch *watch = g_hash_table_lookup (self->name_owner_watches,
+      name);
+
+  /* XXX: due to oddness in dbus-gproxy.c (it believes that
+   * org.freedesktop.DBus is both a well-known name and a unique name)
+   * we get each signal twice. For the moment, just suppress the duplicates */
+  if (!tp_strdiff (name, self->last_name) &&
+      !tp_strdiff (old_owner, self->last_old_owner) &&
+      !tp_strdiff (new_owner, self->last_new_owner))
+    return;
+
+  self->last_name = g_strdup (name);
+  self->last_old_owner = g_strdup (old_owner);
+  self->last_new_owner = g_strdup (new_owner);
+
+  g_message ("%p NameOwnerChanged: %s %s -> %s", self, name, old_owner,
+      new_owner);
+
+  if (watch == NULL)
+    {
+      g_message ("%p ... but no callback", self);
+      return;
+    }
+
+  g_message ("%p Calling callback %p", self, watch->callback);
+  watch->callback (self, name, old_owner, new_owner, watch->user_data);
+}
+
+void
+tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
+                                 const gchar *name,
+                                 TpDBusDaemonNameOwnerChangedCb callback,
+                                 gpointer user_data,
+                                 GDestroyNotify destroy)
+{
+  _NameOwnerWatch *watch = g_hash_table_lookup (self->name_owner_watches,
+      name);
+
+  if (watch == NULL)
+    {
+      /* Allocate a single watch (common case) */
+      watch = g_slice_new (_NameOwnerWatch);
+      watch->callback = callback;
+      watch->user_data = user_data;
+      watch->destroy = destroy;
+
+      g_hash_table_insert (self->name_owner_watches, g_strdup (name), watch);
+    }
+  else
+    {
+      _NameOwnerWatch tmp = { callback, user_data, destroy };
+
+      if (watch->callback == _tp_dbus_daemon_name_owner_changed_multiple)
+        {
+          /* The watch is already a "multiplexer", just append to it */
+          GArray *array = watch->user_data;
+
+          g_array_append_val (array, tmp);
+        }
+      else
+        {
+          /* Replace the old contents of the watch with one that dispatches
+           * the signal to more than one watcher */
+          GArray *array = g_array_sized_new (FALSE, FALSE,
+              sizeof (_NameOwnerWatch), 2);
+
+          /* The new watcher */
+          g_array_append_val (array, tmp);
+          /* The old watcher */
+          tmp.callback = watch->callback;
+          tmp.user_data = watch->user_data;
+          tmp.destroy = watch->destroy;
+          g_array_prepend_val (array, tmp);
+
+          watch->callback = _tp_dbus_daemon_name_owner_changed_multiple;
+          watch->user_data = array;
+          watch->destroy = _tp_dbus_daemon_name_owner_changed_multiple_free;
+        }
+    }
+}
+
+gboolean
+tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
+                                        const gchar *name,
+                                        TpDBusDaemonNameOwnerChangedCb callback,
+                                        gpointer user_data)
+{
+  _NameOwnerWatch *watch = g_hash_table_lookup (self->name_owner_watches,
+      name);
+
+  if (watch == NULL)
+    {
+      /* No watch at all */
+      return FALSE;
+    }
+  else if (watch->callback == callback && watch->user_data == user_data)
+    {
+      /* Simple case: there is one name-owner watch and it's what we wanted */
+      if (watch->destroy)
+        watch->destroy (watch->user_data);
+
+      g_slice_free (_NameOwnerWatch, watch);
+      g_hash_table_remove (self->name_owner_watches, name);
+      return TRUE;
+    }
+  else if (watch->callback == _tp_dbus_daemon_name_owner_changed_multiple)
+    {
+      /* Complicated case: this watch is a "multiplexer", we need to check
+       * its contents */
+      GArray *array = watch->user_data;
+      guint i;
+
+      for (i = 0; i < array->len; i++)
+        {
+          _NameOwnerWatch *entry = &g_array_index (array, _NameOwnerWatch, i);
+
+          if (entry->callback == callback && entry->user_data == user_data)
+            {
+              if (entry->destroy)
+                entry->destroy (entry->user_data);
+
+              g_array_remove_index_fast (array, i);
+
+              if (array->len == 0)
+                {
+                  watch->destroy (watch->user_data);
+                  g_slice_free (_NameOwnerWatch, watch);
+                  g_hash_table_remove (self->name_owner_watches, name);
+                }
+
+              return TRUE;
+            }
+        }
+    }
+
+  /* We haven't found it */
+  return FALSE;
+}
+
+static GObject *
+tp_dbus_daemon_constructor (GType type,
+                            guint n_params,
+                            GObjectConstructParam *params)
+{
+  GObjectClass *object_class =
+      (GObjectClass *) tp_dbus_daemon_parent_class;
+  TpDBusDaemon *self = TP_DBUS_DAEMON (object_class->constructor (type,
+        n_params, params));
+
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (self,
+      _tp_dbus_daemon_name_owner_changed_cb, NULL, NULL);
+
+  return (GObject *) self;
+}
+
 static void
 tp_dbus_daemon_init (TpDBusDaemon *self)
 {
+  self->name_owner_watches = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, NULL);
+}
+
+static void
+tp_dbus_daemon_dispose (GObject *object)
+{
+  TpDBusDaemon *self = TP_DBUS_DAEMON (object);
+
+  if (self->name_owner_watches != NULL)
+    {
+      GHashTable *tmp = self->name_owner_watches;
+
+      self->name_owner_watches = NULL;
+      g_hash_table_destroy (tmp);
+    }
+
+  G_OBJECT_CLASS (tp_dbus_daemon_parent_class)->dispose (object);
+}
+
+static void
+tp_dbus_daemon_finalize (GObject *object)
+{
+  TpDBusDaemon *self = TP_DBUS_DAEMON (object);
+
+  g_free (self->last_name);
+  g_free (self->last_old_owner);
+  g_free (self->last_new_owner);
+
+  G_OBJECT_CLASS (tp_dbus_daemon_parent_class)->finalize (object);
 }
 
 static void
 tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
+  GObjectClass *object_class = (GObjectClass *) klass;
+
+  object_class->constructor = tp_dbus_daemon_constructor;
+  object_class->dispose = tp_dbus_daemon_dispose;
+  object_class->finalize = tp_dbus_daemon_finalize;
 
   proxy_class->interface = TP_IFACE_QUARK_DBUS_DAEMON;
   proxy_class->on_interface_added = g_slist_prepend

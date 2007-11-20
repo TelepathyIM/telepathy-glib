@@ -51,6 +51,18 @@ GType tp_dbus_daemon_get_type (void);
 
 TpDBusDaemon *tp_dbus_daemon_new (DBusGConnection *connection);
 
+typedef void (*TpDBusDaemonNameOwnerChangedCb) (TpDBusDaemon *daemon,
+    const gchar *name, const gchar *old_owner, const gchar *new_owner,
+    gpointer user_data);
+
+void tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
+    const gchar *name, TpDBusDaemonNameOwnerChangedCb callback,
+    gpointer user_data, GDestroyNotify destroy);
+
+gboolean tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
+    const gchar *name, TpDBusDaemonNameOwnerChangedCb callback,
+    gpointer user_data);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>

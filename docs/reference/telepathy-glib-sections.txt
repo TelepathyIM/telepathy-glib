@@ -1190,6 +1190,9 @@ tp_get_bus_proxy
 TpDBusDaemon
 TpDBusDaemonClass
 tp_dbus_daemon_new
+TpDBusDaemonNameOwnerChangedCb
+tp_dbus_daemon_watch_name_owner
+tp_dbus_daemon_cancel_name_owner_watch
 <SUBSECTION>
 tp_cli_dbus_daemon_block_on_add_match
 tp_cli_dbus_daemon_block_on_get_connection_se_linux_security_context
