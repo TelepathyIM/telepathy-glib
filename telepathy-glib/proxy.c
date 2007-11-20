@@ -398,10 +398,13 @@ static void
 tp_proxy_dispose (GObject *object)
 {
   TpProxy *self = TP_PROXY (object);
+  GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "Proxy unreferenced" };
 
   if (self->dispose_has_run)
     return;
   self->dispose_has_run = TRUE;
+
+  tp_proxy_invalidated (self, &e);
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->dispose (object);
 }
