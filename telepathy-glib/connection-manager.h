@@ -22,6 +22,7 @@
 #define __TP_CONNECTION_MANAGER_H__
 
 #include <telepathy-glib/proxy.h>
+#include <telepathy-glib/dbus.h>
 
 G_BEGIN_DECLS
 
@@ -47,8 +48,10 @@ GType tp_connection_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONNECTION_MANAGER, \
                               TpConnectionManagerClass))
 
-TpConnectionManager *tp_connection_manager_new (DBusGConnection *connection,
+TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
     const gchar *name);
+
+void tp_connection_manager_activate (TpConnectionManager *self);
 
 G_END_DECLS
 
