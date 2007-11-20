@@ -1187,7 +1187,6 @@ tp_dbus_g_method_return_not_implemented
 tp_get_bus
 tp_get_bus_proxy
 <SUBSECTION Private>
-DBUS_API_SUBJECT_TO_CHANGE
 g_marshal_value_peek_boolean
 g_marshal_value_peek_boxed
 g_marshal_value_peek_char
