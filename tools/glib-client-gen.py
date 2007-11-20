@@ -407,6 +407,12 @@ class Generator(object):
 
         self.b('      error, data->user_data);')
         self.b('')
+        self.b('  if (error != NULL)')
+        self.b('    {')
+        self.b('      g_error_free (error);')
+        self.b('      return;')
+        self.b('    }')
+        self.b('')
 
         for arg in out_args:
             name, info, tp_type = arg
