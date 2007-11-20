@@ -21,10 +21,6 @@
 #ifndef __TELEPATHY_DBUS_H__
 #define __TELEPATHY_DBUS_H__
 
-#ifndef DBUS_API_SUBJECT_TO_CHANGE
-#define DBUS_API_SUBJECT_TO_CHANGE 1
-#endif
-
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
