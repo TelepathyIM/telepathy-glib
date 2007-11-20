@@ -85,7 +85,8 @@ G_DEFINE_TYPE (TpProxy,
 
 enum
 {
-  PROP_DBUS_CONNECTION = 1,
+  PROP_DBUS_DAEMON = 1,
+  PROP_DBUS_CONNECTION,
   PROP_BUS_NAME,
   PROP_OBJECT_PATH,
   N_PROPS
@@ -145,8 +146,24 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 void
 tp_proxy_invalidated (TpProxy *self, const GError *error)
 {
-  self->valid = FALSE;
-  g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, error);
+  if (self->valid)
+    {
+      self->valid = FALSE;
+
+      g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, error);
+    }
+
+  if (self->dbus_daemon != NULL)
+    {
+      g_object_unref (self->dbus_daemon);
+      self->dbus_daemon = NULL;
+    }
+
+  if (self->dbus_connection != NULL)
+    {
+      dbus_g_connection_unref (self->dbus_connection);
+      self->dbus_connection = NULL;
+    }
 }
 
 static void
@@ -301,6 +318,9 @@ tp_proxy_get_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_DBUS_DAEMON:
+      g_value_set_object (value, self->dbus_daemon);
+      break;
     case PROP_DBUS_CONNECTION:
       g_value_set_object (value, self->dbus_connection);
       break;
@@ -326,6 +346,10 @@ tp_proxy_set_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_DBUS_DAEMON:
+      g_assert (self->dbus_daemon == NULL);
+      self->dbus_daemon = g_value_dup_object (value);
+      break;
     case PROP_DBUS_CONNECTION:
       g_assert (self->dbus_connection == NULL);
       self->dbus_connection = g_value_dup_boxed (value);
@@ -410,6 +434,17 @@ tp_proxy_dispose (GObject *object)
 }
 
 static void
+tp_proxy_finalize (GObject *object)
+{
+  TpProxy *self = TP_PROXY (object);
+
+  g_free (self->bus_name);
+  g_free (self->object_path);
+
+  G_OBJECT_CLASS (tp_proxy_parent_class)->finalize (object);
+}
+
+static void
 tp_proxy_class_init (TpProxyClass *klass)
 {
   GParamSpec *param_spec;
@@ -419,14 +454,28 @@ tp_proxy_class_init (TpProxyClass *klass)
   object_class->get_property = tp_proxy_get_property;
   object_class->set_property = tp_proxy_set_property;
   object_class->dispose = tp_proxy_dispose;
+  object_class->finalize = tp_proxy_finalize;
 
   klass->on_interface_added = g_slist_prepend (klass->on_interface_added,
       tp_cli_generic_add_signals);
 
   /**
-   * TpProxy:bus-name:
+   * TpProxy:dbus-daemon:
    *
-   * The D-Bus bus name for this object. Read-only except during construction.
+   * The D-Bus daemon for this object. Read-only except during construction.
+   */
+  param_spec = g_param_spec_boxed ("dbus-daemon", "D-Bus daemon",
+      "The D-Bus daemon used by this object", TP_TYPE_PROXY,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
+      param_spec);
+
+  /**
+   * TpProxy:dbus-connection:
+   *
+   * The D-Bus connection for this object. Read-only except during
+   * construction.
    */
   param_spec = g_param_spec_boxed ("dbus-connection", "D-Bus connection",
       "The D-Bus connection used by this object", DBUS_TYPE_G_CONNECTION,

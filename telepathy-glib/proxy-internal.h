@@ -38,6 +38,7 @@ struct _TpProxy {
     GObject parent;
 
     /*<private>*/
+    TpProxy *dbus_daemon;
     DBusGConnection *dbus_connection;
     gchar *bus_name;
     gchar *object_path;
