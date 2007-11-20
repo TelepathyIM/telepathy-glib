@@ -192,7 +192,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 
 /**
  * tp_connection_manager_new:
- * @connection: A connection to the D-Bus session bus
+ * @dbus: Proxy for the D-Bus daemon
  * @name: The connection manager name
  *
  * Convenience function to create a new connection manager proxy.
