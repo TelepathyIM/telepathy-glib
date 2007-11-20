@@ -464,7 +464,7 @@ tp_proxy_class_init (TpProxyClass *klass)
    *
    * The D-Bus daemon for this object. Read-only except during construction.
    */
-  param_spec = g_param_spec_boxed ("dbus-daemon", "D-Bus daemon",
+  param_spec = g_param_spec_object ("dbus-daemon", "D-Bus daemon",
       "The D-Bus daemon used by this object", TP_TYPE_PROXY,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
