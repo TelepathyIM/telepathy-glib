@@ -20,6 +20,7 @@
 
 #include "telepathy-glib/connection-manager.h"
 
+#include "telepathy-glib/defs.h"
 #include "telepathy-glib/proxy-internal.h"
 
 /**
@@ -31,10 +32,6 @@
  * #TpConnectionManager objects represent Telepathy connection managers. They
  * can be used to open connections.
  */
-
-/* FIXME: move these from base-connection-manager to a shared header */
-#define TP_CM_BUS_NAME_BASE    "org.freedesktop.Telepathy.ConnectionManager."
-#define TP_CM_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/ConnectionManager/"
 
 /**
  * TpConnectionManagerClass:
