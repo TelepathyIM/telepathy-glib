@@ -197,6 +197,7 @@ class Generator(object):
         member_lc = camelcase_to_lower(member)
         member_uc = member_lc.upper()
 
+        in_count = 0
         ret_count = 0
         in_args = []
         out_args = []
@@ -208,7 +209,11 @@ class Generator(object):
             tp_type = arg.getAttribute('tp:type')
 
             if direction != 'out':
-                name = 'in_%s' % name
+                if not name:
+                    name = 'in%u' % in_count
+                    in_count += 1
+                else:
+                    'in_%s' % name
             else:
                 if not name:
                     name = 'out%u' % ret_count
