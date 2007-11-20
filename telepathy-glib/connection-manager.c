@@ -165,7 +165,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    * Emitted when the connection manager's well-known name disappears from
    * the bus or when activation fails.
    */
-  signals[SIGNAL_ACTIVATED] = g_signal_new ("exited",
+  signals[SIGNAL_EXITED] = g_signal_new ("exited",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
@@ -181,7 +181,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    *
    * Emitted when the connection manager's capabilities have been discovered.
    */
-  signals[SIGNAL_ACTIVATED] = g_signal_new ("discovered",
+  signals[SIGNAL_DISCOVERED] = g_signal_new ("discovered",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
