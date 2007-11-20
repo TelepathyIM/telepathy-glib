@@ -73,6 +73,27 @@ G_DEFINE_TYPE (TpConnectionManager,
     tp_connection_manager,
     TP_TYPE_PROXY);
 
+static void
+tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
+                                             const gchar *name,
+                                             const gchar *new_owner,
+                                             gpointer user_data)
+{
+  TpConnectionManager *self = user_data;
+
+  if (new_owner[0] == '\0')
+    {
+      g_signal_emit (self, signals[SIGNAL_EXITED], 0);
+    }
+  else
+    {
+      g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
+
+      /* Start introspecting */
+      /* tp_cli_connection_manager_call_list_protocols */
+    }
+}
+
 static GObject *
 tp_connection_manager_constructor (GType type,
                                    guint n_params,
@@ -83,9 +104,12 @@ tp_connection_manager_constructor (GType type,
   TpConnectionManager *self =
       TP_CONNECTION_MANAGER (object_class->constructor (type, n_params,
             params));
+  TpProxy *as_proxy = (TpProxy *) self;
 
   /* Watch my D-Bus name */
-
+  tp_dbus_daemon_watch_name_owner (TP_DBUS_DAEMON (as_proxy->dbus_daemon),
+      as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
+      NULL);
 
   return (GObject *) self;
 }
@@ -96,12 +120,25 @@ tp_connection_manager_init (TpConnectionManager *self)
 }
 
 static void
+tp_connection_manager_dispose (GObject *object)
+{
+  TpProxy *as_proxy = TP_PROXY (object);
+
+  tp_dbus_daemon_cancel_name_owner_watch (
+      TP_DBUS_DAEMON (as_proxy->dbus_daemon), as_proxy->bus_name,
+      tp_connection_manager_name_owner_changed_cb, object);
+
+  G_OBJECT_CLASS (tp_connection_manager_parent_class)->dispose (object);
+}
+
+static void
 tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
   object_class->constructor = tp_connection_manager_constructor;
+  object_class->dispose = tp_connection_manager_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
   proxy_class->on_interface_added = g_slist_prepend
