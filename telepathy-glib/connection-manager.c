@@ -86,10 +86,13 @@ tp_connection_manager_new (DBusGConnection *connection,
                            const gchar *name)
 {
   TpConnectionManager *cm;
-  gchar *object_path = g_strdup_printf ("%s%s", TP_CM_OBJECT_PATH_BASE,
-      name);
-  gchar *bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE,
-      name);
+  gchar *object_path, *bus_name;
+
+  g_return_val_if_fail (connection != NULL, NULL);
+  g_return_val_if_fail (name != NULL, NULL);
+
+  object_path = g_strdup_printf ("%s%s", TP_CM_OBJECT_PATH_BASE, name);
+  bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE, name);
 
   cm = TP_CONNECTION_MANAGER (g_object_new (TP_TYPE_CONNECTION_MANAGER,
         "dbus-connection", connection,
