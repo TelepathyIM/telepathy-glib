@@ -309,8 +309,8 @@ tp_channel_class_init (TpChannelClass *klass)
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL;
   proxy_class->must_have_unique_name = TRUE;
-  proxy_class->on_interface_added = g_slist_prepend
-      (proxy_class->on_interface_added, tp_cli_channel_add_signals);
+  tp_proxy_class_hook_on_interface_add (proxy_class,
+      tp_cli_channel_add_signals);
 
   /**
    * TpChannel:channel-type:
