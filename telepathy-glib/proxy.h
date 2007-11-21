@@ -66,6 +66,11 @@ struct _TpProxyPendingCall {
     gconstpointer priv;
 };
 
+TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
+    GCallback callback, gpointer user_data, GDestroyNotify destroy);
+
+void tp_proxy_pending_call_free (gpointer self);
+
 typedef struct _TpProxySignalConnection TpProxySignalConnection;
 
 struct _TpProxySignalConnection {
@@ -77,6 +82,12 @@ struct _TpProxySignalConnection {
     GDestroyNotify destroy;
     gconstpointer priv;
 };
+
+TpProxySignalConnection *tp_proxy_signal_connection_new (TpProxy *self,
+    GQuark interface, const gchar *member, GCallback callback,
+    gpointer user_data, GDestroyNotify destroy);
+
+void tp_proxy_signal_connection_free_closure (gpointer self, GClosure *unused);
 
 GType tp_proxy_get_type (void);
 
@@ -102,6 +113,13 @@ typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
 
 void tp_proxy_class_hook_on_interface_add (TpProxyClass *klass,
     TpProxyInterfaceAddedCb callback);
+
+DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
+    GError **error);
+
+DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark interface);
+
+void tp_proxy_invalidated (TpProxy *self, const GError *error);
 
 G_END_DECLS
 
