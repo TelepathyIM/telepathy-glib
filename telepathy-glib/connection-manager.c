@@ -864,8 +864,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   object_class->dispose = tp_connection_manager_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
-  proxy_class->on_interface_added = g_slist_prepend
-      (proxy_class->on_interface_added, tp_cli_connection_manager_add_signals);
+  tp_proxy_class_hook_on_interface_add (proxy_class,
+      tp_cli_connection_manager_add_signals);
 
   /**
    * TpConnectionManager::info-source:
