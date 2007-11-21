@@ -613,13 +613,6 @@ class Generator(object):
 
         self.h('G_BEGIN_DECLS')
 
-        self.b('#include <telepathy-glib/interfaces.h>')
-        self.b('#define TP_PROXY_IN_CLI_IMPLEMENTATION')
-        self.b('#include <telepathy-glib/proxy.h>')
-        self.b('#include "%s.h"' % self.basename)
-        self.b('')
-        self.b('')
-
         ifaces = self.dom.getElementsByTagName('node')
         ifaces.sort(cmp_by_name)
 
@@ -628,12 +621,7 @@ class Generator(object):
 
         if self.group is not None:
 
-            self.h('void %s_%s_add_signals (TpProxy *self, guint quark,'
-                    % (self.prefix_lc, self.group))
-            self.h('    DBusGProxy *proxy, gpointer unused);')
-            self.h('')
-
-            self.b('/**')
+            self.b('/*')
             self.b(' * %s_%s_add_signals:' % (self.prefix_lc, self.group))
             self.b(' * @proxy: the TpProxy')
             self.b(' * @quark: a quark whose string value is the interface')
@@ -646,11 +634,9 @@ class Generator(object):
             self.b(' * support.')
             self.b(' *')
             self.b(' * This function should be used as a signal handler for')
-            self.b(' * #TpProxy::interface-added. Each #TpProxy subclass in')
-            self.b(' * telepathy-glib does this automatically, so you only')
-            self.b(' * need to worry about this if you\'re adding interfaces.')
+            self.b(' * #TpProxy::interface-added.')
             self.b(' */')
-            self.b('void')
+            self.b('static void')
             self.b('%s_%s_add_signals (TpProxy *self,'
                     % (self.prefix_lc, self.group))
             self.b('    guint quark,')
@@ -672,7 +658,7 @@ class Generator(object):
         self.h('')
 
         open(self.basename + '.h', 'w').write('\n'.join(self.__header))
-        open(self.basename + '.c', 'w').write('\n'.join(self.__body))
+        open(self.basename + '-body.h', 'w').write('\n'.join(self.__body))
 
 
 def types_to_gtypes(types):
