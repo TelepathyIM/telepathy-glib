@@ -1,5 +1,17 @@
 /*
- * telepathy-example-observe-cms - inspect running connection managers
+ * telepathy-example-inspect-cm - inspect a connection manager
+ *
+ * Usage:
+ *
+ * telepathy-example-inspect-cm gabble
+ *    Inspect the Gabble connection manager, by reading the installed
+ *    .manager file if available, and introspecting the running CM if not
+ *
+ * telepathy-example-inspect-cm gabble data/gabble.manager
+ *    As above, but assume the given filename is correct
+ *
+ * telepathy-example-inspect-cm gabble ""
+ *    Don't read any .manager file, just introspect the running CM
  *
  * Copyright (C) 2007 Collabora Ltd.
  *
