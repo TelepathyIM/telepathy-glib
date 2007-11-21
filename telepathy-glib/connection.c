@@ -25,7 +25,6 @@
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "debug-internal.h"
-#include "proxy-internal.h"
 
 /**
  * SECTION:connection
