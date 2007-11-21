@@ -253,8 +253,8 @@ tp_connection_class_init (TpConnectionClass *klass)
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION;
   proxy_class->must_have_unique_name = TRUE;
-  proxy_class->on_interface_added = g_slist_prepend
-      (proxy_class->on_interface_added, tp_cli_connection_add_signals);
+  tp_proxy_class_hook_on_interface_add (proxy_class,
+      tp_cli_connection_add_signals);
 
   /**
    * TpConnection:status:
