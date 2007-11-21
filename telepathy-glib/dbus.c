@@ -36,6 +36,8 @@
 
 #include "telepathy-glib/_gen/signals-marshal.h"
 
+#include "telepathy-glib/_gen/tp-cli-dbus-daemon-body.h"
+
 /**
  * tp_dbus_g_method_return_not_implemented:
  * @context: The D-Bus method invocation context
