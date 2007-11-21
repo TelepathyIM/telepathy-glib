@@ -958,6 +958,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
  * tp_connection_manager_new:
  * @dbus: Proxy for the D-Bus daemon
  * @name: The connection manager name
+ * @manager_filename: The #TpConnectionManager::manager-file property
  *
  * Convenience function to create a new connection manager proxy.
  *
