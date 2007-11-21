@@ -73,13 +73,13 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/interfaces-body.h \
     _gen/gtypes-body.h \
     _gen/register-dbus-glib-marshallers-body.h \
-    _gen/tp-cli-channel.c \
-    _gen/tp-cli-connection.c \
-    _gen/tp-cli-connection-manager.c \
-    _gen/tp-cli-dbus-daemon.c \
-    _gen/tp-cli-generic.c \
-    _gen/tp-cli-media-session-handler.c \
-    _gen/tp-cli-media-stream-handler.c \
+    _gen/tp-cli-channel-body.h \
+    _gen/tp-cli-connection-body.h \
+    _gen/tp-cli-connection-manager-body.h \
+    _gen/tp-cli-dbus-daemon-body.h \
+    _gen/tp-cli-generic-body.h \
+    _gen/tp-cli-media-session-handler-body.h \
+    _gen/tp-cli-media-stream-handler-body.h \
     _gen/tp-svc-channel.c \
     _gen/tp-svc-connection.c \
     _gen/tp-svc-connection-manager.c \
@@ -307,7 +307,7 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
 
-_gen/tp-cli-%.c _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
+_gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	../tools/glib-client-gen.py \
 	../tools/ls-interfaces.xsl \
 	Makefile.am
