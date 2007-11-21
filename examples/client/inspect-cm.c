@@ -22,15 +22,24 @@ connection_manager_got_info (TpConnectionManager *cm,
   static int counter = 0;
 
   g_message ("Emitted got-info (source=%d)", source);
-  if (++counter >= 2)
+
+  if (source > 0 || ++counter >= 2)
     g_main_loop_quit (mainloop);
+}
+
+gboolean
+time_out (gpointer mainloop)
+{
+  g_message ("Timed out");
+  g_main_loop_quit (mainloop);
+  return FALSE;
 }
 
 int
 main (int argc,
       char **argv)
 {
-  const gchar *cm_name;
+  const gchar *cm_name, *manager_file;
   TpConnectionManager *cm;
   GMainLoop *mainloop;
 
@@ -43,13 +52,18 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
 
   cm_name = argv[1];
+  manager_file = argv[2];   /* possibly NULL */
 
   cm = tp_connection_manager_new (tp_dbus_daemon_new (tp_get_bus ()),
-      cm_name);
+      cm_name, manager_file);
   g_signal_connect (cm, "got-info",
       G_CALLBACK (connection_manager_got_info), mainloop);
 
+  g_timeout_add (5000, time_out, mainloop);
+
   g_main_loop_run (mainloop);
 
+  g_object_unref (cm);
+  g_main_loop_unref (mainloop);
   return 0;
 }
