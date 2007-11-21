@@ -27,6 +27,8 @@
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "debug-internal.h"
 
+#include "_gen/tp-cli-connection-body.h"
+
 /**
  * SECTION:connection
  * @title: TpConnection
