@@ -1468,6 +1468,8 @@ TpProxy
 TpProxyClass
 TpProxyPendingCall
 TpProxySignalConnection
+TpProxyInterfaceAddedCb
+tp_proxy_class_hook_on_interface_add
 <SUBSECTION Standard>
 TP_TYPE_PROXY
 tp_proxy_get_type

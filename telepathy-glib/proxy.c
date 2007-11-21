@@ -49,10 +49,29 @@
  */
 
 /**
+ * TpProxyInterfaceAddedCb:
+ * @self: the proxy
+ * @quark: a quark whose string value is the interface being added
+ * @proxy: the #DBusGProxy for the added interface
+ * @unused: unused
+ *
+ * The signature of a #TpProxy::interface-added signal callback.
+ */
+
+/**
  * TpProxyClass:
+ * @parent_class: The parent class structure
+ * @interface: If set non-zero by a subclass, #TpProxy will
+ *    automatically add this interface in its constructor
+ * @must_have_unique_name: If set %TRUE by a subclass, the #TpProxy
+ *    constructor will fail if a well-known bus name is given
+ * @_reserved_flags: Reserved for future expansion
+ * @_reserved: Reserved for future expansion
+ * @priv: Opaque pointer for private data
  *
  * The class of a #TpProxy.
  */
+/* priv is actually a GSList of callbacks */
 
 /**
  * TpProxyPendingCall:
@@ -386,11 +405,11 @@ tp_proxy_constructor (GType type,
 
   _tp_register_dbus_glib_marshallers ();
 
-  if (klass->on_interface_added != NULL)
+  if (klass->priv != NULL)
     {
       GSList *iter;
 
-      for (iter = klass->on_interface_added;
+      for (iter = klass->priv;
            iter != NULL;
            iter = iter->next)
         g_signal_connect (self, "interface-added", G_CALLBACK (iter->data),
@@ -444,6 +463,23 @@ tp_proxy_finalize (GObject *object)
   G_OBJECT_CLASS (tp_proxy_parent_class)->finalize (object);
 }
 
+/**
+ * tp_proxy_class_hook_on_interface_add:
+ * @klass: A subclass of TpProxyClass
+ * @callback: A signal handler for #TpProxy::interface-added
+ *
+ * Arrange for @callback to be connected to #TpProxy::interface-added
+ * during the #TpProxy constructor. This is done sufficiently early that
+ * it will see the signal for the default interface (@interface member of
+ * #TpProxyClass), if any, being added.
+ */
+void
+tp_proxy_class_hook_on_interface_add (TpProxyClass *klass,
+                                      TpProxyInterfaceAddedCb callback)
+{
+  klass->priv = g_slist_prepend (klass->priv, callback);
+}
+
 static void
 tp_proxy_class_init (TpProxyClass *klass)
 {
@@ -456,8 +492,7 @@ tp_proxy_class_init (TpProxyClass *klass)
   object_class->dispose = tp_proxy_dispose;
   object_class->finalize = tp_proxy_finalize;
 
-  klass->on_interface_added = g_slist_prepend (klass->on_interface_added,
-      tp_cli_generic_add_signals);
+  tp_proxy_class_hook_on_interface_add (klass, tp_cli_generic_add_signals);
 
   /**
    * TpProxy:dbus-daemon:

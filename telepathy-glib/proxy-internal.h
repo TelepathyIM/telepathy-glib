@@ -25,26 +25,19 @@
 
 G_BEGIN_DECLS
 
-struct _TpProxyClass {
-    GObjectClass parent_class;
-
-    /*<protected>*/
-    GQuark interface;
-    GSList *on_interface_added;
-    gboolean must_have_unique_name:1;
-};
-
 struct _TpProxy {
     GObject parent;
 
-    /*<private>*/
     TpProxy *dbus_daemon;
     DBusGConnection *dbus_connection;
     gchar *bus_name;
     gchar *object_path;
+
+    /*<private>*/
     /* GQuark for interface => ref'd DBusGProxy * */
     GData *interfaces;
 
+    /*<private>*/
     gboolean valid:1;
     gboolean dispose_has_run:1;
 };

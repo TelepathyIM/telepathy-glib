@@ -27,7 +27,20 @@
 G_BEGIN_DECLS
 
 typedef struct _TpProxy TpProxy;
+
 typedef struct _TpProxyClass TpProxyClass;
+
+struct _TpProxyClass {
+    GObjectClass parent_class;
+
+    GQuark interface;
+
+    gboolean must_have_unique_name:1;
+    guint _reserved_flags:31;
+
+    GCallback _reserved[4];
+    gpointer priv;
+};
 
 typedef struct _TpProxyPendingCall TpProxyPendingCall;
 
@@ -70,6 +83,12 @@ GType tp_proxy_get_type (void);
 #define TP_PROXY_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_PROXY, \
                               TpProxyClass))
+
+typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
+    guint quark, DBusGProxy *proxy, gpointer unused);
+
+void tp_proxy_class_hook_on_interface_add (TpProxyClass *klass,
+    TpProxyInterfaceAddedCb callback);
 
 G_END_DECLS
 
