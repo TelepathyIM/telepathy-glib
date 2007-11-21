@@ -33,7 +33,6 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/util.h>
 
-#include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 
 /**
