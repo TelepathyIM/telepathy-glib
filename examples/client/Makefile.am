@@ -8,6 +8,10 @@ noinst_PROGRAMS += telepathy-example-inspect-connection
 telepathy_example_inspect_connection_SOURCES = inspect-connection.c
 telepathy_example_inspect_connection_LDADD = $(ALL_LIBS)
 
+noinst_PROGRAMS += telepathy-example-inspect-cm
+telepathy_example_inspect_cm_SOURCES = inspect-cm.c
+telepathy_example_inspect_cm_LDADD = $(ALL_LIBS)
+
 # Sadly there is no AM_LDADD
 ALL_LIBS = \
     @DBUS_LIBS@ \
