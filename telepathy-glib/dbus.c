@@ -341,6 +341,21 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
     }
 }
 
+/**
+ * tp_dbus_daemon_cancel_name_owner_watch:
+ * @self: the D-Bus daemon
+ * @name: the name that was being watched
+ * @callback: the callback that was called
+ * @user_data: the user data that was provided
+ *
+ * If there was a previous call to tp_dbus_daemon_watch_name_owner()
+ * with exactly the given @name, @callback and @user_data, remove it.
+ *
+ * If more than one watch matching the details provided was active, remove
+ * only the most recently added one.
+ *
+ * Returns: %TRUE if there was such a watch, %FALSE otherwise
+ */
 gboolean
 tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
                                         const gchar *name,
@@ -376,14 +391,14 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
       for (i = 0; i < array->len; i++)
         {
           _NameOwnerSubWatch *entry = &g_array_index (array,
-              _NameOwnerSubWatch, i);
+              _NameOwnerSubWatch, array->len - i);
 
           if (entry->callback == callback && entry->user_data == user_data)
             {
               if (entry->destroy)
                 entry->destroy (entry->user_data);
 
-              g_array_remove_index_fast (array, i);
+              g_array_remove_index_fast (array, array->len - i);
 
               if (array->len == 0)
                 {
