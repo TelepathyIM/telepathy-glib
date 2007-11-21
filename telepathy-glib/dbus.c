@@ -475,8 +475,8 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
   object_class->dispose = tp_dbus_daemon_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_DBUS_DAEMON;
-  proxy_class->on_interface_added = g_slist_prepend
-    (proxy_class->on_interface_added, tp_cli_dbus_daemon_add_signals);
+  tp_proxy_class_hook_on_interface_add (proxy_class,
+      tp_cli_dbus_daemon_add_signals);
 }
 
 /* Auto-generated implementation of _tp_register_dbus_glib_marshallers */
