@@ -28,6 +28,8 @@
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "debug-internal.h"
 
+#include "_gen/tp-cli-channel-body.h"
+
 /**
  * SECTION:channel
  * @title: TpChannel
