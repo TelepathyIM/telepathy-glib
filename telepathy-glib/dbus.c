@@ -107,13 +107,26 @@ tp_get_bus_proxy (void)
   return bus_proxy;
 }
 
+/**
+ * TpDBusDaemonClass:
+ *
+ * The class of #TpDBusDaemon.
+ */
 struct _TpDBusDaemonClass
 {
+  /*<private>*/
   TpProxyClass parent_class;
 };
 
+/**
+ * TpDBusDaemon:
+ *
+ * A subclass of #TpProxy that represents the D-Bus daemon. It mainly provides
+ * functionality to manage well-known names on the bus.
+ */
 struct _TpDBusDaemon
 {
+  /*<private>*/
   TpProxy parent;
   /* dup'd name => _NameOwnerWatch */
   GHashTable *name_owner_watches;
