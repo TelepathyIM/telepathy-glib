@@ -20,6 +20,9 @@
 
 #include "telepathy-glib/media-interfaces.h"
 
+#include "telepathy-glib/_gen/tp-cli-media-session-handler-body.h"
+#include "telepathy-glib/_gen/tp-cli-media-stream-handler-body.h"
+
 /**
  * SECTION:media-interfaces
  * @title: TpMediaSessionHandler, TpMediaStreamHandler
