@@ -1465,12 +1465,20 @@ tp_iface_quark_properties_interface
 <TITLE>proxy</TITLE>
 <INCLUDE>telepathy-glib/proxy.h</INCLUDE>
 TpProxy
+tp_proxy_add_interface_by_id
+tp_proxy_borrow_interface_by_id
+tp_proxy_invalidated
 TpProxyClass
-TpProxyPendingCall
-TpProxySignalConnection
 TpProxyInterfaceAddedCb
 tp_proxy_class_hook_on_interface_add
+TpProxyPendingCall
+tp_proxy_pending_call_new
+tp_proxy_pending_call_free
+TpProxySignalConnection
+tp_proxy_signal_connection_new
+tp_proxy_signal_connection_free_closure
 <SUBSECTION Standard>
+TpProxyPrivate
 TP_TYPE_PROXY
 tp_proxy_get_type
 TP_IS_PROXY
