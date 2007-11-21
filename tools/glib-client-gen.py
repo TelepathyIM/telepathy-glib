@@ -611,11 +611,9 @@ class Generator(object):
 
     def __call__(self):
 
-        self.h('#include <dbus/dbus-glib.h>')
-        self.h('#include <telepathy-glib/interfaces.h>')
-        self.h('')
         self.h('G_BEGIN_DECLS')
 
+        self.b('#include <telepathy-glib/interfaces.h>')
         self.b('#define TP_PROXY_IN_CLI_IMPLEMENTATION')
         self.b('#include <telepathy-glib/proxy.h>')
         self.b('#include "%s.h"' % self.basename)
