@@ -31,6 +31,8 @@
 #define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "telepathy-glib/debug-internal.h"
 
+#include "telepathy-glib/_gen/tp-cli-connection-manager-body.h"
+
 /**
  * SECTION:connection-manager
  * @title: TpConnectionManager
