@@ -26,7 +26,6 @@
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "debug-internal.h"
-#include "proxy-internal.h"
 
 /**
  * SECTION:channel
