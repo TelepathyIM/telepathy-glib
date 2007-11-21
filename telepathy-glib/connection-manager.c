@@ -20,8 +20,12 @@
 
 #include "telepathy-glib/connection-manager.h"
 
+#include <string.h>
+
 #include "telepathy-glib/defs.h"
+#include "telepathy-glib/enums.h"
 #include "telepathy-glib/gtypes.h"
+#include "telepathy-glib/util.h"
 
 #define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "telepathy-glib/debug-internal.h"
@@ -57,6 +61,13 @@ enum
 
 static guint signals[N_SIGNALS] = {0};
 
+enum
+{
+  PROP_INFO_SOURCE = 1,
+  PROP_MANAGER_FILE,
+  N_PROPS
+};
+
 /**
  * TpConnectionManager:
  *
@@ -67,9 +78,7 @@ static guint signals[N_SIGNALS] = {0};
  * capabilities can be read from .manager files in the filesystem).
  * Accordingly, this object never emits #TpProxy::destroyed unless all
  * references to it are discarded.
- */
-
-/*
+ *
  * On initialization, we find and read the .manager file, and emit
  * got-info(FILE) on success, got-info(NONE) if no file
  * or if reading the file failed.
@@ -92,6 +101,8 @@ struct _TpConnectionManager {
 
     /* TRUE if we have introspect info from a file and/or from the CM */
     TpCMInfoSource info_source:2;
+
+    gboolean believe_manager_file:1;
 
     /* TRUE if the CM is currently running */
     gboolean running:1;
@@ -213,6 +224,9 @@ tp_connection_manager_free_protocols (GPtrArray *protocols)
       TpConnectionManagerProtocol *proto = g_ptr_array_index (protocols, i);
       TpConnectionManagerParam *param;
 
+      if (proto == NULL)
+        continue;
+
       g_free (proto->name);
 
       for (param = proto->params; param->name != NULL; param++)
@@ -223,6 +237,8 @@ tp_connection_manager_free_protocols (GPtrArray *protocols)
         }
 
       g_free (proto->params);
+
+      g_slice_free (TpConnectionManagerProtocol, proto);
     }
 
   g_ptr_array_free (protocols, TRUE);
@@ -296,13 +312,17 @@ tp_connection_manager_got_protocols (TpProxy *proxy,
   self->listing_protocols = FALSE;
 
   if (error != NULL)
-    return;
+    {
+      tp_connection_manager_end_introspection (self);
+      return;
+    }
 
   for (iter = protocols; *iter != NULL; iter++)
     i++;
 
   g_assert (self->found_protocols == NULL);
-  self->found_protocols = g_ptr_array_sized_new (i);
+  /* Allocate one more pointer - we're going to append NULL afterwards */
+  self->found_protocols = g_ptr_array_sized_new (i + 1);
 
   g_assert (self->pending_protocols == NULL);
   self->pending_protocols = g_ptr_array_sized_new (i);
@@ -345,6 +365,8 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       /* Start introspecting if we're not already */
       if (!self->listing_protocols)
         {
+          self->listing_protocols = TRUE;
+
           tp_cli_connection_manager_call_list_protocols (self, -1,
               tp_connection_manager_got_protocols, g_object_ref (self),
               g_object_unref);
@@ -353,15 +375,360 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
 }
 
 static gboolean
+init_gvalue_from_dbus_sig (const gchar *sig,
+                           GValue *value)
+{
+  switch (sig[0])
+    {
+    case 'b':
+      g_value_init (value, G_TYPE_BOOLEAN);
+      return TRUE;
+
+    case 's':
+      g_value_init (value, G_TYPE_STRING);
+      return TRUE;
+
+    case 'q':
+    case 'u':
+      g_value_init (value, G_TYPE_UINT);
+      return TRUE;
+
+    case 'y':
+      g_value_init (value, G_TYPE_UCHAR);
+      return TRUE;
+
+    case 'n':
+    case 'i':
+      g_value_init (value, G_TYPE_INT);
+      return TRUE;
+
+    case 'x':
+      g_value_init (value, G_TYPE_INT64);
+      return TRUE;
+
+    case 't':
+      g_value_init (value, G_TYPE_UINT64);
+      return TRUE;
+
+    case 'o':
+      g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
+      g_value_set_static_string (value, "/");
+      return TRUE;
+
+    case 'd':
+      g_value_init (value, G_TYPE_DOUBLE);
+      return TRUE;
+
+    case 'v':
+      g_value_init (value, G_TYPE_VALUE);
+      return TRUE;
+
+    case 'a':
+      switch (sig[1])
+        {
+        case 's':
+          g_value_init (value, G_TYPE_STRV);
+          return TRUE;
+
+        case 'y':
+          g_value_init (value, DBUS_TYPE_G_UCHAR_ARRAY);
+          return TRUE;
+        }
+    }
+
+  g_value_unset (value);
+  return FALSE;
+}
+
+static gboolean
+parse_default_value (GValue *value,
+                     const gchar *sig,
+                     gchar *string)
+{
+  gchar *p;
+  switch (sig[0])
+    {
+    case 'b':
+      for (p = string; *p != '\0'; p++)
+        *p = g_ascii_tolower (*p);
+      if (!tp_strdiff (string, "1") || !tp_strdiff (string, "true"))
+        g_value_set_boolean (value, TRUE);
+      else if (!tp_strdiff (string, "0") || !tp_strdiff (string, "false"))
+        g_value_set_boolean (value, TRUE);
+      else
+        return FALSE;
+      return TRUE;
+
+    case 's':
+      g_value_set_string (value, string);
+      return TRUE;
+
+    case 'q':
+    case 'u':
+    case 't':
+      if (string[0] == '\0')
+        {
+          return FALSE;
+        }
+      else
+        {
+          gchar *end;
+          guint64 v = g_ascii_strtoull (string, &end, 10);
+
+          if (*end != '\0')
+            return FALSE;
+
+          if (sig[0] == 't')
+            {
+              g_value_set_uint64 (value, v);
+              return TRUE;
+            }
+
+          if (v > G_MAXUINT32 || (sig[0] == 'q' && v > G_MAXUINT16))
+            return FALSE;
+
+          g_value_set_uint (value, v);
+          return TRUE;
+        }
+
+    case 'n':
+    case 'i':
+    case 'x':
+      if (string[0] == '\0')
+        {
+          return FALSE;
+        }
+      else
+        {
+          gchar *end;
+          gint64 v = g_ascii_strtoll (string, &end, 10);
+
+          if (*end != '\0')
+            return FALSE;
+
+          if (sig[0] == 'x')
+            {
+              g_value_set_int64 (value, v);
+              return TRUE;
+            }
+
+          if (v > G_MAXINT32 || (sig[0] == 'q' && v > G_MAXINT16))
+            return FALSE;
+
+          if (v < G_MININT32 || (sig[0] == 'n' && v < G_MININT16))
+            return FALSE;
+
+          g_value_set_int (value, v);
+          return TRUE;
+        }
+
+    case 'o':
+      if (string[0] != '/')
+        return FALSE;
+
+      g_value_set_boxed (value, string);
+      return TRUE;
+
+    case 'd':
+        {
+          gchar *end;
+          gdouble v = g_ascii_strtod (string, &end);
+
+          if (*end != '\0')
+            return FALSE;
+
+          g_value_set_double (value, v);
+          return TRUE;
+        }
+    }
+
+  g_value_unset (value);
+  return FALSE;
+}
+
+static void
+tp_connection_manager_read_file (TpConnectionManager *self,
+                                 const gchar *filename)
+{
+  GKeyFile *file;
+  GError *error = NULL;
+  gchar **groups, **group;
+  guint i;
+  TpConnectionManagerProtocol *proto_struct;
+  GPtrArray *protocols;
+
+  file = g_key_file_new ();
+
+  if (!g_key_file_load_from_file (file, filename, G_KEY_FILE_NONE, &error))
+    {
+      DEBUG ("Failed to read %s: %s", filename, error->message);
+      g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
+    }
+
+  groups = g_key_file_get_groups (file, NULL);
+
+  i = 0;
+  for (group = groups; *group != NULL; group++)
+    {
+      if (g_str_has_prefix (*group, "Protocol "))
+        i++;
+    }
+
+  /* We're going to add a NULL at the end, so +1 */
+  protocols = g_ptr_array_sized_new (i + 1);
+
+  for (group = groups; *group != NULL; group++)
+    {
+      gchar **keys, **key;
+      GArray *output;
+
+      if (!g_str_has_prefix (*group, "Protocol "))
+        continue;
+
+      proto_struct = g_slice_new (TpConnectionManagerProtocol);
+
+      keys = g_strsplit (*group, " ", 2);
+      proto_struct->name = g_strdup (keys[1]);
+      g_strfreev (keys);
+
+      keys = g_key_file_get_keys (file, *group, NULL, &error);
+
+      i = 0;
+      for (key = keys; *key != NULL; key++)
+        {
+          if (g_str_has_prefix (*key, "param-"))
+            i++;
+        }
+
+      output = g_array_sized_new (TRUE, TRUE,
+          sizeof (TpConnectionManagerParam), i);
+
+      for (key = keys; *key != NULL; key++)
+        {
+          if (g_str_has_prefix (*key, "param-"))
+            {
+              gchar **strv, **iter;
+              gchar *value, *def;
+              TpConnectionManagerParam *param = &g_array_index (output,
+                  TpConnectionManagerParam, output->len + 1);
+
+              value = g_key_file_get_string (file, *group, *key, NULL);
+              if (value == NULL)
+                continue;
+
+              /* zero_terminated=TRUE and clear_=TRUE */
+              g_assert (param->name == NULL);
+
+              g_array_set_size (output, output->len + 1);
+
+              /* strlen ("param-") == 6 */
+              param->name = g_strdup (*key + 6);
+
+              strv = g_strsplit (value, " ", 0);
+              g_free (value);
+
+              param->dbus_signature = g_strdup (strv[0]);
+
+              for (iter = strv + 1; *iter != NULL; iter++)
+                {
+                  if (!tp_strdiff (*iter, "required"))
+                    param->flags |= TP_CONN_MGR_PARAM_FLAG_REQUIRED;
+                  if (!tp_strdiff (*iter, "register"))
+                    param->flags |= TP_CONN_MGR_PARAM_FLAG_REGISTER;
+                }
+
+              g_strfreev (strv);
+
+              def = g_strdup_printf ("default-%s", param->name);
+              value = g_key_file_get_string (file, *group, def, NULL);
+              g_free (def);
+
+              init_gvalue_from_dbus_sig (param->dbus_signature,
+                  &param->default_value);
+
+              if (value != NULL && parse_default_value (&param->default_value,
+                    param->dbus_signature, value))
+                param->flags |= TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT;
+
+              g_free (value);
+
+              DEBUG ("\tParam name: %s", param->name);
+              DEBUG ("\tParam flags: 0x%x", param->flags);
+              DEBUG ("\tParam sig: %s", param->dbus_signature);
+
+#ifdef ENABLE_DEBUG
+                {
+                  gchar *repr = g_strdup_value_contents
+                      (&(param->default_value));
+
+                  DEBUG ("\tParam default value: %s of type %s", repr,
+                      G_VALUE_TYPE_NAME (&(param->default_value)));
+                  g_free (repr);
+                }
+#endif
+            }
+        }
+
+      g_strfreev (keys);
+
+      proto_struct->params =
+          (TpConnectionManagerParam *) g_array_free (output, FALSE);
+
+      g_ptr_array_add (protocols, proto_struct);
+    }
+
+  g_ptr_array_add (protocols, NULL);
+
+  g_assert (self->protocols == NULL);
+  self->protocols = protocols;
+  self->info_source = TP_CM_INFO_SOURCE_FILE;
+
+  g_strfreev (groups);
+  g_key_file_free (file);
+}
+
+static gboolean
 tp_connection_manager_idle_read_manager_file (gpointer data)
 {
   TpConnectionManager *self = TP_CONNECTION_MANAGER (data);
 
-  /* Stub implementation - pretend we failed */
+  if (self->protocols == NULL && self->manager_file != NULL
+      && self->manager_file[0] != '\0')
+    tp_connection_manager_read_file (self, self->manager_file);
+
   g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
 
-
   return FALSE;
+}
+
+static gchar *
+tp_connection_manager_find_manager_file (const gchar *name)
+{
+  gchar *filename = g_strdup_printf ("%s/telepathy/managers/%s.manager",
+      g_get_user_data_dir (), name);
+  const gchar * const * data_dirs;
+
+  DEBUG ("in XDG_DATA_HOME: trying %s", filename);
+
+  if (g_file_test (filename, G_FILE_TEST_EXISTS))
+    return filename;
+
+  g_free (filename);
+
+  for (data_dirs = g_get_system_data_dirs ();
+       *data_dirs != NULL;
+       data_dirs++)
+    {
+      filename = g_strdup_printf ("%s/telepathy/managers/%s.manager",
+          *data_dirs, name);
+
+      DEBUG ("in XDG_DATA_DIRS: trying %s", filename);
+
+      if (g_file_test (filename, G_FILE_TEST_EXISTS))
+        return filename;
+    }
+
+  return NULL;
 }
 
 static GObject *
@@ -380,9 +747,6 @@ tp_connection_manager_constructor (GType type,
   tp_dbus_daemon_watch_name_owner (TP_DBUS_DAEMON (as_proxy->dbus_daemon),
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
       NULL);
-
-  /* Read from a file */
-  g_idle_add (tp_connection_manager_idle_read_manager_file, self);
 
   return (GObject *) self;
 }
@@ -405,17 +769,111 @@ tp_connection_manager_dispose (GObject *object)
 }
 
 static void
+tp_connection_manager_get_property (GObject *object,
+                                    guint property_id,
+                                    GValue *value,
+                                    GParamSpec *pspec)
+{
+  TpConnectionManager *self = TP_CONNECTION_MANAGER (object);
+
+  switch (property_id)
+    {
+    case PROP_INFO_SOURCE:
+      g_value_set_uint (value, self->info_source);
+      break;
+    case PROP_MANAGER_FILE:
+      g_value_set_string (value, self->manager_file);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+tp_connection_manager_set_property (GObject *object,
+                                    guint property_id,
+                                    const GValue *value,
+                                    GParamSpec *pspec)
+{
+  TpConnectionManager *self = TP_CONNECTION_MANAGER (object);
+  const gchar *tmp;
+
+  switch (property_id)
+    {
+    case PROP_MANAGER_FILE:
+      g_free (self->manager_file);
+
+      tmp = g_value_get_string (value);
+      if (tmp == NULL)
+        {
+          const gchar *name = strrchr (((TpProxy *) self)->object_path, '/');
+
+          name++; /* avoid the '/' */
+
+          self->manager_file =
+              tp_connection_manager_find_manager_file (name);
+        }
+      else if (tmp[0] == '\0')
+        {
+          self->manager_file = g_strdup (tmp);
+        }
+
+      g_idle_add (tp_connection_manager_idle_read_manager_file, self);
+
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
 tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
+  GParamSpec *param_spec;
 
   object_class->constructor = tp_connection_manager_constructor;
+  object_class->get_property = tp_connection_manager_get_property;
+  object_class->set_property = tp_connection_manager_set_property;
   object_class->dispose = tp_connection_manager_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
   proxy_class->on_interface_added = g_slist_prepend
       (proxy_class->on_interface_added, tp_cli_connection_manager_add_signals);
+
+  /**
+   * TpConnectionManager::info-source:
+   *
+   * Where we got the current information on supported protocols
+   * (a #TpCMInfoSource).
+   */
+  param_spec = g_param_spec_uint ("info-source", "CM info source",
+      "Where we got the current information on supported protocols",
+      TP_CM_INFO_SOURCE_NONE, TP_CM_INFO_SOURCE_LIVE, TP_CM_INFO_SOURCE_NONE,
+      G_PARAM_READABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_INFO_SOURCE,
+      param_spec);
+
+  /**
+   * TpConnectionManager::manager-file:
+   *
+   * The absolute path of the .manager file. If set to %NULL (the default),
+   * the XDG data directories will be searched for a .manager file of the
+   * correct name.
+   *
+   * If set to the empty string, no .manager file will be read.
+   */
+  param_spec = g_param_spec_string ("manager-file", ".manager filename",
+      "The .manager filename",
+      NULL,
+      G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_MANAGER_FILE,
+      param_spec);
 
   /**
    * TpConnectionManager::activated:
@@ -473,7 +931,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
  */
 TpConnectionManager *
 tp_connection_manager_new (TpDBusDaemon *dbus,
-                           const gchar *name)
+                           const gchar *name,
+                           const gchar *manager_filename)
 {
   TpConnectionManager *cm;
   gchar *object_path, *bus_name;
@@ -489,6 +948,7 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
         "dbus-connection", ((TpProxy *) dbus)->dbus_connection,
         "bus-name", bus_name,
         "object-path", object_path,
+        "manager-file", manager_filename,
         NULL));
 
   g_free (object_path);

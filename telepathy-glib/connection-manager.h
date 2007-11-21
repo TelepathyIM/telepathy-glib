@@ -66,6 +66,15 @@ typedef struct
   gpointer priv;
 } TpConnectionManagerProtocol;
 
+/**
+ * TpCMInfoSource:
+ * @TP_CM_INFO_SOURCE_NONE: no information available
+ * @TP_CM_INFO_SOURCE_FILE: information came from a .manager file
+ * @TP_CM_INFO_SOURCE_LIVE: information came from the connection manager
+ *
+ * Describes possible sources of information on connection managers'
+ * supported protocols.
+ */
 typedef enum
 {
   TP_CM_INFO_SOURCE_NONE,
@@ -74,7 +83,7 @@ typedef enum
 } TpCMInfoSource;
 
 TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
-    const gchar *name);
+    const gchar *name, const gchar *manager_filename);
 
 gboolean tp_connection_manager_activate (TpConnectionManager *self);
 
