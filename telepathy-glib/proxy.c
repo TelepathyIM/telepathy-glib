@@ -43,8 +43,14 @@
 
 /**
  * TpProxy:
+ * @parent: parent object
+ * @dbus_daemon: the #TpDBusDaemon for this object, if any (read-only)
+ * @dbus_connection: the D-Bus connection used by this object (read-only)
+ * @bus_name: the bus name of the application exporting the object (read-only)
+ * @object_path: the object path of the remote object (read-only)
+ * @priv: private internal data
  *
- * Opaque structure representing a Telepathy client-side proxy.
+ * Structure representing a Telepathy client-side proxy.
  */
 
 /**
