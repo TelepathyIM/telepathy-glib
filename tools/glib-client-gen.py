@@ -617,7 +617,7 @@ class Generator(object):
         self.h('G_BEGIN_DECLS')
 
         self.b('#define TP_PROXY_IN_CLI_IMPLEMENTATION')
-        self.b('#include "telepathy-glib/proxy-internal.h"')
+        self.b('#include <telepathy-glib/proxy.h>')
         self.b('#include "%s.h"' % self.basename)
         self.b('')
         self.b('')
