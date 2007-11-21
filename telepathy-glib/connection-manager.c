@@ -313,6 +313,13 @@ tp_connection_manager_got_protocols (TpProxy *proxy,
 
   if (error != NULL)
     {
+      if (!self->running)
+        {
+          /* ListProtocols failed to start it - we assume this is because
+           * activation failed */
+          g_signal_emit (self, signals[SIGNAL_EXITED], 0);
+        }
+
       tp_connection_manager_end_introspection (self);
       return;
     }
