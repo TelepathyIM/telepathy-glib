@@ -66,6 +66,13 @@ typedef struct
   gpointer priv;
 } TpConnectionManagerProtocol;
 
+typedef enum
+{
+  TP_CM_INFO_SOURCE_NONE,
+  TP_CM_INFO_SOURCE_FILE,
+  TP_CM_INFO_SOURCE_LIVE
+} TpCMInfoSource;
+
 TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
     const gchar *name);
 

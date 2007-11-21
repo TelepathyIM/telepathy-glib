@@ -50,7 +50,7 @@ struct _TpConnectionManagerClass {
 enum
 {
   SIGNAL_ACTIVATED,
-  SIGNAL_DISCOVERED,
+  SIGNAL_GOT_INFO,
   SIGNAL_EXITED,
   N_SIGNALS
 };
@@ -68,20 +68,53 @@ static guint signals[N_SIGNALS] = {0};
  * Accordingly, this object never emits #TpProxy::destroyed unless all
  * references to it are discarded.
  */
+
+/*
+ * On initialization, we find and read the .manager file, and emit
+ * got-info(FILE) on success, got-info(NONE) if no file
+ * or if reading the file failed.
+ *
+ * When the CM runs, we automatically introspect it. On success we emit
+ * got-info(LIVE). On failure, re-emit got-info(NONE) or got-info(FILE) as
+ * appropriate.
+ *
+ * If we're asked to activate the CM, it'll implicitly be introspected.
+ *
+ * If the CM exits, we still consider it to have been "introspected". If it's
+ * re-run, we introspect it again.
+ */
 struct _TpConnectionManager {
     TpProxy parent;
     /*<private>*/
 
-    /* GPtrArray of TpConnectionManagerProtocol * */
-    GPtrArray *protocols;
+    /* absolute path to .manager file */
+    gchar *manager_file;
 
+    /* TRUE if we have introspect info from a file and/or from the CM */
+    TpCMInfoSource info_source:2;
+
+    /* TRUE if the CM is currently running */
     gboolean running:1;
+    /* TRUE if we're waiting for ListProtocols */
     gboolean listing_protocols:1;
 
-    /* GPtrArray of gchar * */
-    GPtrArray *introspect_pending;
-    /* GPtrArray of TpConnectionManagerProtocol * */
-    GPtrArray *introspect_protocols;
+    /* GPtrArray of TpConnectionManagerProtocol *
+     *
+     * NULL if file_info and live_info are both FALSE
+     * Protocols from file, if file_info is TRUE but live_info is FALSE
+     * Protocols from last time introspecting the CM succeeded, if live_info
+     * is TRUE */
+    GPtrArray *protocols;
+
+    /* If we're waiting for a GetParameters, then GPtrArray of g_strdup'd
+     * gchar * representing protocols we haven't yet introspected.
+     * Otherwise NULL */
+    GPtrArray *pending_protocols;
+    /* If we're waiting for a GetParameters, then GPtrArray of
+     * TpConnectionManagerProtocol * for the introspection that is in
+     * progress (will replace ->protocols when finished).
+     * Otherwise NULL */
+    GPtrArray *found_protocols;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
@@ -106,7 +139,10 @@ tp_connection_manager_got_parameters (TpProxy *proxy,
   DEBUG ("Protocol name: %s", protocol);
 
   if (error != NULL)
-    tp_connection_manager_continue_introspection (self);
+    {
+      DEBUG ("Error getting params for %s, skipping it", protocol);
+      tp_connection_manager_continue_introspection (self);
+    }
 
    output = g_array_sized_new (TRUE, TRUE,
       sizeof (TpConnectionManagerParam), parameters->len);
@@ -130,7 +166,7 @@ tp_connection_manager_got_parameters (TpProxy *proxy,
             3, &tmp,
             G_MAXUINT))
         {
-          DEBUG ("Bad parameter, ignoring");
+          DEBUG ("Unparseable parameter #%d for %s, ignoring", i, protocol);
           /* *shrug* that one didn't work, let's skip it */
           g_array_set_size (output, output->len - 1);
         }
@@ -162,9 +198,60 @@ tp_connection_manager_got_parameters (TpProxy *proxy,
   proto_struct->name = g_strdup (protocol);
   proto_struct->params =
       (TpConnectionManagerParam *) g_array_free (output, FALSE);
-  g_ptr_array_add (self->introspect_protocols, proto_struct);
+  g_ptr_array_add (self->found_protocols, proto_struct);
 
   tp_connection_manager_continue_introspection (self);
+}
+
+static void
+tp_connection_manager_free_protocols (GPtrArray *protocols)
+{
+  guint i;
+
+  for (i = 0; i < protocols->len; i++)
+    {
+      TpConnectionManagerProtocol *proto = g_ptr_array_index (protocols, i);
+      TpConnectionManagerParam *param;
+
+      g_free (proto->name);
+
+      for (param = proto->params; param->name != NULL; param++)
+        {
+          g_free (param->name);
+          g_free (param->dbus_signature);
+          g_value_unset (&(param->default_value));
+        }
+
+      g_free (proto->params);
+    }
+
+  g_ptr_array_free (protocols, TRUE);
+}
+
+static void
+tp_connection_manager_end_introspection (TpConnectionManager *self)
+{
+  gboolean emit = self->listing_protocols;
+
+  self->listing_protocols = FALSE;
+
+  if (self->found_protocols != NULL)
+    {
+      tp_connection_manager_free_protocols (self->found_protocols);
+      self->found_protocols = NULL;
+    }
+
+  if (self->pending_protocols != NULL)
+    {
+      emit = TRUE;
+      if (self->pending_protocols->len > 0)
+        g_strfreev ((gchar **) g_ptr_array_free (self->pending_protocols,
+              FALSE));
+      self->pending_protocols = NULL;
+    }
+
+  if (emit)
+    g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
 }
 
 static void
@@ -172,33 +259,26 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 {
   gchar *next_protocol;
 
-  if (self->introspect_pending->len == 0)
+  g_assert (self->pending_protocols != NULL);
+
+  if (self->pending_protocols->len == 0)
     {
-      g_ptr_array_free (self->introspect_pending, TRUE);
+      GPtrArray *tmp;
+      g_ptr_array_add (self->found_protocols, NULL);
 
-      if (self->protocols != NULL)
-        {
-          guint i;
+      /* swap found_protocols and protocols, so we'll free the old protocols
+       * as part of end_introspection */
+      tmp = self->protocols;
+      self->protocols = self->found_protocols;
+      self->found_protocols = tmp;
 
-          for (i = 0; i < self->protocols->len; i++)
-            {
-              TpConnectionManagerProtocol *proto =
-                  g_ptr_array_index (self->protocols, i);
+      self->info_source = TP_CM_INFO_SOURCE_LIVE;
+      tp_connection_manager_end_introspection (self);
 
-              g_free (proto->name);
-              g_free (proto->params);
-            }
-        }
-      g_ptr_array_add (self->introspect_protocols, NULL);
-
-      self->protocols = self->introspect_protocols;
-      self->introspect_protocols = NULL;
-
-      g_signal_emit (self, signals[SIGNAL_DISCOVERED], 0, TRUE);
       return;
     }
 
-  next_protocol = g_ptr_array_remove_index_fast (self->introspect_pending, 0);
+  next_protocol = g_ptr_array_remove_index_fast (self->pending_protocols, 0);
   tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
       tp_connection_manager_got_parameters, next_protocol, g_free);
 }
@@ -218,18 +298,18 @@ tp_connection_manager_got_protocols (TpProxy *proxy,
   if (error != NULL)
     return;
 
-  g_assert (self->introspect_protocols == NULL);
-  self->introspect_protocols = g_ptr_array_new ();
-
   for (iter = protocols; *iter != NULL; iter++)
     i++;
 
-  g_assert (self->introspect_pending == NULL);
-  self->introspect_pending = g_ptr_array_sized_new (i);
+  g_assert (self->found_protocols == NULL);
+  self->found_protocols = g_ptr_array_sized_new (i);
+
+  g_assert (self->pending_protocols == NULL);
+  self->pending_protocols = g_ptr_array_sized_new (i);
 
   for (iter = protocols; *iter != NULL; iter++)
     {
-      g_ptr_array_add (self->introspect_pending, g_strdup (*iter));
+      g_ptr_array_add (self->pending_protocols, g_strdup (*iter));
     }
 
   tp_connection_manager_continue_introspection (self);
@@ -246,31 +326,9 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
   if (new_owner[0] == '\0')
     {
       self->running = FALSE;
-      self->listing_protocols = FALSE;
 
-      if (self->introspect_pending != NULL)
-        {
-          g_strfreev ((gchar **) g_ptr_array_free (self->introspect_pending,
-                FALSE));
-          self->introspect_pending = NULL;
-        }
-
-      if (self->introspect_protocols != NULL)
-        {
-          guint i;
-
-          for (i = 0; i < self->introspect_protocols->len; i++)
-            {
-              TpConnectionManagerProtocol *proto =
-                  g_ptr_array_index (self->introspect_protocols, i);
-
-              g_free (proto->name);
-              g_free (proto->params);
-            }
-
-          g_ptr_array_free (self->introspect_protocols, TRUE);
-          self->introspect_protocols = NULL;
-        }
+      /* cancel pending introspection, if any */
+      tp_connection_manager_end_introspection (self);
 
       g_signal_emit (self, signals[SIGNAL_EXITED], 0);
     }
@@ -294,6 +352,18 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
     }
 }
 
+static gboolean
+tp_connection_manager_idle_read_manager_file (gpointer data)
+{
+  TpConnectionManager *self = TP_CONNECTION_MANAGER (data);
+
+  /* Stub implementation - pretend we failed */
+  g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
+
+
+  return FALSE;
+}
+
 static GObject *
 tp_connection_manager_constructor (GType type,
                                    guint n_params,
@@ -310,6 +380,9 @@ tp_connection_manager_constructor (GType type,
   tp_dbus_daemon_watch_name_owner (TP_DBUS_DAEMON (as_proxy->dbus_daemon),
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
       NULL);
+
+  /* Read from a file */
+  g_idle_add (tp_connection_manager_idle_read_manager_file, self);
 
   return (GObject *) self;
 }
@@ -374,20 +447,19 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       G_TYPE_NONE, 0);
 
   /**
-   * TpConnectionManager::discovered:
+   * TpConnectionManager::got-info:
    * @self: the connection manager proxy
-   * @live: %TRUE if the CM is actually running, %FALSE if its capabilities
-   *  were discovered from a .manager file
+   * @source: a #TpCMInfoSource
    *
    * Emitted when the connection manager's capabilities have been discovered.
    */
-  signals[SIGNAL_DISCOVERED] = g_signal_new ("discovered",
+  signals[SIGNAL_GOT_INFO] = g_signal_new ("got-info",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
       NULL, NULL,
-      g_cclosure_marshal_VOID__BOOLEAN,
-      G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+      g_cclosure_marshal_VOID__UINT,
+      G_TYPE_NONE, 1, G_TYPE_UINT);
 }
 
 /**
@@ -433,7 +505,7 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
  * If the CM was already running, do nothing and return %FALSE.
  *
  * On success, emit #TpConnectionManager::activated when the CM appears
- * on the bus, and #TpConnectionManager::discovered when its capabilities
+ * on the bus, and #TpConnectionManager::got-info when its capabilities
  * have been (re-)discovered.
  *
  * On failure, emit #TpConnectionManager::exited without first emitting
