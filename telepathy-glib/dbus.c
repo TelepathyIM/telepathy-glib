@@ -250,6 +250,33 @@ _tp_dbus_daemon_got_name_owner (TpProxy *proxy,
   _tp_dbus_daemon_name_owner_changed (self, name, owner);
 }
 
+/**
+ * TpDBusDaemonNameOwnerChangedCb:
+ * @daemon: The D-Bus daemon
+ * @name: The name whose ownership has changed or been discovered
+ * @new_owner: The unique name that now owns @name
+ * @user_data: Arbitrary user-supplied data as passed to
+ *  tp_dbus_daemon_watch_name_owner()
+ *
+ * The signature of the callback called by tp_dbus_daemon_watch_name_owner().
+ */
+
+/**
+ * tp_dbus_daemon_watch_name_owner:
+ * @self: The D-Bus daemon
+ * @name: The name whose ownership is to be watched
+ * @callback: Callback to call when the ownership is discovered or changes
+ * @user_data: Arbitrary data to pass to @callback
+ * @destroy: Called to destroy @user_data when the name owner watch is
+ *  cancelled due to tp_dbus_daemon_cancel_name_owner_watch()
+ *
+ * Arrange for @callback to be called with the owner of @name as soon as
+ * possible (which might even be before this function returns!), then
+ * again every time the ownership of @name changes.
+ *
+ * If multiple watches are registered for the same @name, they will be called
+ * in the order they were registered.
+ */
 void
 tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
                                  const gchar *name,
