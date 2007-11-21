@@ -2,10 +2,6 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = m4 tools spec telepathy-glib tests examples docs
 
-if ENABLE_INSPECTOR
-SUBDIRS += inspector
-endif
-
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-debug
 
 EXTRA_DIST = \

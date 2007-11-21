@@ -157,22 +157,6 @@ AC_SUBST(GLIB_GENMARSHAL)
 dnl Check for D-Bus
 PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.95, dbus-glib-1 >= 0.73])
 
-AC_ARG_ENABLE(inspector,
-  AC_HELP_STRING([--enable-inspector],[compile telepathy-inspector GUI]),
-    enable_coverage=$enableval, enable_inspector=auto )
-
-if test "z$enable_inspector" = "zauto"; then
-  PKG_CHECK_EXISTS([gtk+-2.0 >= 2.6.0 libglade-2.0 >= 2.5.0],
-    [enable_inspector=yes],
-    [enable_inspector=no])
-fi
-
-if test "z$enable_inspector" = "zyes"; then
-  PKG_CHECK_MODULES([GLADE],
-    [glib-2.0 >= 2.0.0 gtk+-2.0 >= 2.6.0 libglade-2.0 >= 2.5.0])
-fi
-AM_CONDITIONAL([ENABLE_INSPECTOR], [test "z$enable_inspector" = "zyes"])
-
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
