@@ -21,12 +21,15 @@
 #include "telepathy-glib/proxy.h"
 
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "dbus-internal.h"
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "debug-internal.h"
 
 #include "_gen/signals-marshal.h"
+
+#include "_gen/tp-cli-generic-body.h"
 
 /**
  * SECTION:proxy

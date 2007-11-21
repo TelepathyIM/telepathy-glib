@@ -123,8 +123,6 @@ void tp_proxy_invalidated (TpProxy *self, const GError *error);
 
 G_END_DECLS
 
-#ifndef TP_PROXY_IN_CLI_IMPLEMENTATION
 #include <telepathy-glib/_gen/tp-cli-generic.h>
-#endif
 
 #endif /* #ifndef __TP_PROXY_H__*/
