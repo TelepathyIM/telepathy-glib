@@ -20,8 +20,6 @@
 
 #include "telepathy-glib/media-interfaces.h"
 
-#include "telepathy-glib/proxy-internal.h"
-
 /**
  * SECTION:media-interfaces
  * @title: TpMediaSessionHandler, TpMediaStreamHandler
