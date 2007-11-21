@@ -21,6 +21,7 @@
 #include "telepathy-glib/channel.h"
 
 #include <telepathy-glib/handle.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "_gen/signals-marshal.h"
 
