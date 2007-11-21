@@ -25,6 +25,7 @@
 #include "telepathy-glib/defs.h"
 #include "telepathy-glib/enums.h"
 #include "telepathy-glib/gtypes.h"
+#include <telepathy-glib/interfaces.h>
 #include "telepathy-glib/util.h"
 
 #define DEBUG_FLAG TP_DEBUG_MANAGER
