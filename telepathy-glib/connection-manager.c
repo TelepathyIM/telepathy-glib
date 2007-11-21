@@ -994,6 +994,7 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
 
 /**
  * tp_connection_manager_activate:
+ * @self: a connection manager proxy
  *
  * Attempt to run and introspect the connection manager, asynchronously.
  *
