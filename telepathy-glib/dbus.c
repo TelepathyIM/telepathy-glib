@@ -134,6 +134,15 @@ struct _TpDBusDaemon
 
 G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY);
 
+/**
+ * tp_dbus_daemon_new:
+ * @connection: a connection to D-Bus
+ *
+ * <!-- -->
+ *
+ * Returns: a new proxy for signals and method calls on the bus daemon
+ *  to which @connection is connected
+ */
 TpDBusDaemon *
 tp_dbus_daemon_new (DBusGConnection *connection)
 {
