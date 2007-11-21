@@ -65,6 +65,7 @@ enum
 {
   PROP_INFO_SOURCE = 1,
   PROP_MANAGER_FILE,
+  PROP_ALWAYS_INTROSPECT,
   N_PROPS
 };
 
@@ -102,7 +103,9 @@ struct _TpConnectionManager {
     /* TRUE if we have introspect info from a file and/or from the CM */
     TpCMInfoSource info_source:2;
 
-    gboolean believe_manager_file:1;
+    /* If TRUE, we opportunistically introspect the CM when it comes online,
+     * even if we have its info from the .manager file */
+    gboolean always_introspect:1;
 
     /* TRUE if the CM is currently running */
     gboolean running:1;
@@ -369,8 +372,10 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       self->running = TRUE;
       g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
 
-      /* Start introspecting if we're not already */
-      if (!self->listing_protocols)
+      /* Start introspecting if we want to and we're not already */
+      if (!self->listing_protocols &&
+          (self->always_introspect ||
+           self->info_source == TP_CM_INFO_SOURCE_NONE))
         {
           self->listing_protocols = TRUE;
 
@@ -788,9 +793,15 @@ tp_connection_manager_get_property (GObject *object,
     case PROP_INFO_SOURCE:
       g_value_set_uint (value, self->info_source);
       break;
+
     case PROP_MANAGER_FILE:
       g_value_set_string (value, self->manager_file);
       break;
+
+    case PROP_ALWAYS_INTROSPECT:
+      g_value_set_boolean (value, self->always_introspect);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -828,6 +839,10 @@ tp_connection_manager_set_property (GObject *object,
 
       g_idle_add (tp_connection_manager_idle_read_manager_file, self);
 
+      break;
+
+    case PROP_ALWAYS_INTROSPECT:
+      self->always_introspect = g_value_get_boolean (value);
       break;
 
     default:
@@ -880,6 +895,18 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_MANAGER_FILE,
+      param_spec);
+
+  /**
+   * TpConnectionManager::always-introspect:
+   *
+   * If %TRUE, always introspect the connection manager as it comes online,
+   * even if we already have its info from a .manager file. Default %FALSE.
+   */
+  param_spec = g_param_spec_boolean ("always-introspect", "Always introspect?",
+      "Opportunistically introspect the CM when it's run", FALSE,
+      G_PARAM_READWRITE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_ALWAYS_INTROSPECT,
       param_spec);
 
   /**
