@@ -26,7 +26,20 @@
 
 G_BEGIN_DECLS
 
+typedef struct _TpProxyPrivate TpProxyPrivate;
+
 typedef struct _TpProxy TpProxy;
+
+struct _TpProxy {
+    GObject parent;
+
+    TpProxy *dbus_daemon;
+    DBusGConnection *dbus_connection;
+    gchar *bus_name;
+    gchar *object_path;
+
+    TpProxyPrivate *priv;
+};
 
 typedef struct _TpProxyClass TpProxyClass;
 

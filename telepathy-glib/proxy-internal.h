@@ -25,23 +25,6 @@
 
 G_BEGIN_DECLS
 
-struct _TpProxy {
-    GObject parent;
-
-    TpProxy *dbus_daemon;
-    DBusGConnection *dbus_connection;
-    gchar *bus_name;
-    gchar *object_path;
-
-    /*<private>*/
-    /* GQuark for interface => ref'd DBusGProxy * */
-    GData *interfaces;
-
-    /*<private>*/
-    gboolean valid:1;
-    gboolean dispose_has_run:1;
-};
-
 TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
     GCallback callback, gpointer user_data, GDestroyNotify destroy);
 

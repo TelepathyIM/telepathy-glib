@@ -98,6 +98,14 @@
  * Structure representing a D-Bus signal connection.
  */
 
+struct _TpProxyPrivate {
+    /* GQuark for interface => ref'd DBusGProxy * */
+    GData *interfaces;
+
+    gboolean valid:1;
+    gboolean dispose_has_run:1;
+};
+
 G_DEFINE_TYPE (TpProxy,
     tp_proxy,
     G_TYPE_OBJECT);
@@ -140,7 +148,7 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 {
   DBusGProxy *proxy;
 
-  if (!self->valid)
+  if (!self->priv->valid)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Object %s has become invalid", self->object_path);
@@ -148,7 +156,7 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
       return NULL;
     }
 
-  proxy = g_datalist_id_get_data (&(self->interfaces), interface);
+  proxy = g_datalist_id_get_data (&self->priv->interfaces, interface);
 
   if (proxy != NULL)
     {
@@ -165,9 +173,9 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 void
 tp_proxy_invalidated (TpProxy *self, const GError *error)
 {
-  if (self->valid)
+  if (self->priv->valid)
     {
-      self->valid = FALSE;
+      self->priv->valid = FALSE;
 
       g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, error);
     }
@@ -216,7 +224,7 @@ DBusGProxy *
 tp_proxy_add_interface_by_id (TpProxy *self,
                               GQuark interface)
 {
-  DBusGProxy *iface_proxy = g_datalist_id_get_data (&(self->interfaces),
+  DBusGProxy *iface_proxy = g_datalist_id_get_data (&self->priv->interfaces,
       interface);
 
   if (iface_proxy == NULL)
@@ -228,7 +236,7 @@ tp_proxy_add_interface_by_id (TpProxy *self,
       g_signal_connect (iface_proxy, "destroy",
           G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
 
-      g_datalist_id_set_data_full (&(self->interfaces), interface,
+      g_datalist_id_set_data_full (&self->priv->interfaces, interface,
           iface_proxy, g_object_unref);
 
       g_signal_emit (self, signals[SIGNAL_INTERFACE_ADDED], 0,
@@ -390,7 +398,8 @@ tp_proxy_set_property (GObject *object,
 static void
 tp_proxy_init (TpProxy *self)
 {
-  DEBUG ("%p", self);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_PROXY,
+      TpProxyPrivate);
 }
 
 static GObject *
@@ -432,7 +441,7 @@ tp_proxy_constructor (GType type,
       g_return_val_if_fail (self->bus_name[0] != ':', NULL);
     }
 
-  self->valid = TRUE;
+  self->priv->valid = TRUE;
 
   return (GObject *) self;
 }
@@ -443,9 +452,9 @@ tp_proxy_dispose (GObject *object)
   TpProxy *self = TP_PROXY (object);
   GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "Proxy unreferenced" };
 
-  if (self->dispose_has_run)
+  if (self->priv->dispose_has_run)
     return;
-  self->dispose_has_run = TRUE;
+  self->priv->dispose_has_run = TRUE;
 
   tp_proxy_invalidated (self, &e);
 
@@ -485,6 +494,8 @@ tp_proxy_class_init (TpProxyClass *klass)
 {
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  g_type_class_add_private (klass, sizeof (TpProxyPrivate));
 
   object_class->constructor = tp_proxy_constructor;
   object_class->get_property = tp_proxy_get_property;
