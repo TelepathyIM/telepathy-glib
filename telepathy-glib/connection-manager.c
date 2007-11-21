@@ -29,7 +29,6 @@
 
 #define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "telepathy-glib/debug-internal.h"
-#include "telepathy-glib/proxy-internal.h"
 
 /**
  * SECTION:connection-manager
