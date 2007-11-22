@@ -1474,6 +1474,7 @@ TpProxyPendingCall
 tp_proxy_pending_call_new
 tp_proxy_pending_call_free
 TpProxySignalConnection
+tp_proxy_signal_connection_disconnect
 tp_proxy_signal_connection_new
 tp_proxy_signal_connection_free_closure
 <SUBSECTION Standard>
