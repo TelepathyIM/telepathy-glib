@@ -1249,7 +1249,6 @@ tp_cli_dbus_daemon_signal_callback_name_acquired
 tp_cli_dbus_daemon_signal_callback_name_lost
 tp_cli_dbus_daemon_signal_callback_name_owner_changed
 <SUBSECTION Standard>
-tp_cli_dbus_daemon_add_signals
 tp_dbus_daemon_get_type
 TP_DBUS_DAEMON
 TP_DBUS_DAEMON_CLASS
