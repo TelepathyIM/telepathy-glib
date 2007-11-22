@@ -1707,8 +1707,6 @@ tp_cli_channel_interface_password_signal_callback_password_flags_changed
 TpConnection
 TpConnectionClass
 TP_UNKNOWN_CONNECTION_STATUS
-<SUBSECTION Private>
-tp_cli_connection_add_signals
 <SUBSECTION Standard>
 tp_connection_get_type
 TP_TYPE_CONNECTION
