@@ -371,7 +371,7 @@ gboolean
 tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
                                         const gchar *name,
                                         TpDBusDaemonNameOwnerChangedCb callback,
-                                        gpointer user_data)
+                                        gconstpointer user_data)
 {
   _NameOwnerWatch *watch = g_hash_table_lookup (self->name_owner_watches,
       name);
