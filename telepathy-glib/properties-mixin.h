@@ -165,7 +165,7 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * The GType of the structures with D-Bus signature '(ussu)' returned by
  * ListProperties.
  *
- * @Deprecated: Since 0.5.15. Use TP_STRUCT_TYPE_PROPERTY_SPEC instead.
+ * @Deprecated: Since 0.7.0. Use TP_STRUCT_TYPE_PROPERTY_SPEC instead.
  */
 #define TP_TYPE_PROPERTY_INFO_STRUCT TP_STRUCT_TYPE_PROPERTY_SPEC
 
@@ -176,7 +176,7 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * of structures of type TP_TYPE_PROPERTY_INFO_STRUCT), corresponding to
  * D-Bus signature 'a(ussu)'.
  *
- * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_SPEC_LIST instead.
+ * @Deprecated: Since 0.7.0. Use TP_ARRAY_TYPE_PROPERTY_SPEC_LIST instead.
  */
 #define TP_TYPE_PROPERTY_INFO_LIST TP_ARRAY_TYPE_PROPERTY_SPEC_LIST
 
@@ -186,7 +186,7 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * The GType of the structures with signature '(uv)' returned by
  * GetProperties and emitted in PropertiesChanged.
  *
- * @Deprecated: Since 0.5.15. Use TP_STRUCT_TYPE_PROPERTY_VALUE instead.
+ * @Deprecated: Since 0.7.0. Use TP_STRUCT_TYPE_PROPERTY_VALUE instead.
  */
 #define TP_TYPE_PROPERTY_VALUE_STRUCT TP_STRUCT_TYPE_PROPERTY_VALUE
 
@@ -197,7 +197,7 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * PropertiesChanged (i.e. a GPtrArray of structures of type
  * TP_TYPE_PROPERTY_VALUE_STRUCT), corresponding to D-Bus signature 'a(uv)'.
  *
- * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_VALUE_LIST instead.
+ * @Deprecated: Since 0.7.0. Use TP_ARRAY_TYPE_PROPERTY_VALUE_LIST instead.
  */
 #define TP_TYPE_PROPERTY_VALUE_LIST TP_ARRAY_TYPE_PROPERTY_VALUE_LIST
 
@@ -207,7 +207,7 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * The GType of the structures with D-Bus signature '(uu)' emitted in
  * PropertyFlagsChanged.
  *
- * @Deprecated: Since 0.5.15. Use TP_STRUCT_TYPE_PROPERTY_FLAGS_CHANGE instead.
+ * @Deprecated: Since 0.7.0. Use TP_STRUCT_TYPE_PROPERTY_FLAGS_CHANGE instead.
  */
 #define TP_TYPE_PROPERTY_FLAGS_STRUCT TP_STRUCT_TYPE_PROPERTY_FLAGS_CHANGE
 
@@ -218,7 +218,7 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
  * structures of type TP_TYPE_PROPERTY_FLAGS_STRUCT), corresponding to
  * D-Bus signature 'a(uu)'.
  *
- * @Deprecated: Since 0.5.15. Use TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE_LIST
+ * @Deprecated: Since 0.7.0. Use TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE_LIST
  *  instead.
  */
 #define TP_TYPE_PROPERTY_FLAGS_LIST TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE_LIST
