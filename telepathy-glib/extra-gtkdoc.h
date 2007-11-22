@@ -87,6 +87,9 @@
  *
  * This header contains definitions which didn't fit into enums.h,
  * interfaces.h or errors.h.
+ *
+ * Since: 0.7.0. In older versions, these constants were in base-connection.h
+ * and base-connection-manager.h.
  */
 
 /**
