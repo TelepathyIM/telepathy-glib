@@ -80,6 +80,16 @@
  */
 
 /**
+ * SECTION:defs
+ * @title: Miscellaneous definitions
+ * @short_description: Definitions useful for working with the Telepathy
+ *   protocol
+ *
+ * This header contains definitions which didn't fit into enums.h,
+ * interfaces.h or errors.h.
+ */
+
+/**
  * SECTION:enums
  * @title: Telepathy protocol enumerations
  * @short_description: Enumerated types and bitfields from the Telepathy spec
