@@ -362,7 +362,7 @@ tp_proxy_signal_connection_new (TpProxy *self,
  * explicitly free it either.
  */
 void
-tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
+tp_proxy_signal_connection_disconnect (const TpProxySignalConnection *self)
 {
   DBusGProxy *iface;
 
@@ -374,7 +374,7 @@ tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
     return;
 
   dbus_g_proxy_disconnect_signal (iface, self->member, self->callback,
-      self);
+      (gpointer) self);
 }
 
 /**
