@@ -297,7 +297,7 @@ tp_proxy_pending_call_new (TpProxy *self,
 
 /**
  * tp_proxy_pending_call_free:
- * @self: a #TpProxyPendingCall allocated with tp_proxy_pending_call_free()
+ * @self: a #TpProxyPendingCall allocated with tp_proxy_pending_call_new()
  *
  * Free a pending call. The signature is chosen to match #GDestroyNotify.
  *
