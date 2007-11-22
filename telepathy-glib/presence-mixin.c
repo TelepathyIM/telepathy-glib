@@ -86,6 +86,7 @@ deep_copy_hashtable (GHashTable *hash_table)
     return NULL;
 
   g_value_init (&value, TP_HASH_TYPE_STRING_VARIANT_MAP);
+  g_value_take_boxed (&value, hash_table);
   return g_value_dup_boxed (&value);
 }
 
