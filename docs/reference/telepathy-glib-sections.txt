@@ -1841,8 +1841,6 @@ TpConnectionManagerClass
 TpCMInfoSource
 tp_connection_manager_new
 tp_connection_manager_activate
-<SUBSECTION Private>
-tp_cli_connection_manager_add_signals
 <SUBSECTION Standard>
 tp_connection_manager_get_type
 TP_TYPE_CONNECTION_MANAGER
