@@ -33,6 +33,8 @@
  * the GType, so it only ever has to call into dbus-glib once.
  *
  * tp_dbus_specialized_value_slice_new() is also provided.
+ *
+ * Since: 0.7.0
  */
 
 /**
