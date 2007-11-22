@@ -7,15 +7,15 @@
   </bookinfo>
 
   <chapter id="ch-dbus">
-    <title>D-Bus interfaces</title>
-    <xi:include href="tp-svc.xml"/>
+    <title>The Telepathy protocol</title>
+    <xi:include href="xml/defs.xml"/>
+    <xi:include href="xml/handle.xml"/>
     <xi:include href="xml/interfaces.xml"/>
     <xi:include href="xml/enums.xml"/>
-    <xi:include href="xml/svc-properties-interface.xml"/>
-    <xi:include href="xml/svc-channel.xml"/>
-    <xi:include href="xml/svc-connection.xml"/>
-    <xi:include href="xml/svc-media-interfaces.xml"/>
-    <xi:include href="xml/svc-connection-manager.xml"/>
+    <xi:include href="xml/errors.xml"/>
+  </chapter>
+  <chapter id="ch-client">
+    <title>Client-side D-Bus support</title>
     <xi:include href="xml/proxy.xml"/>
     <xi:include href="xml/connection-manager.xml"/>
     <xi:include href="xml/connection.xml"/>
