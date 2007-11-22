@@ -249,6 +249,8 @@ param_default_value (const TpCMParamSpec *param)
  * A #TpCMParamSetter which sets parameters by dereferencing an offset
  * from @params.  If @paramspec->offset is G_MAXSIZE, the parameter is
  * deemed obsolete, and is accepted but ignored.
+ *
+ * Since: 0.7.0
  */
 void
 tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,

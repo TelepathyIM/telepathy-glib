@@ -122,6 +122,8 @@ struct _TpCMParamSpec {
  *
  * The signature of a callback used to set a parameter within the opaque
  * data structure used for a protocol.
+ *
+ * Since: 0.7.0
  */
 
 typedef void (*TpCMParamSetter) (const TpCMParamSpec *paramspec,
@@ -146,7 +148,9 @@ void tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
  *               data members (currently, only strings) if necessary.
  * @set_param: A function which sets a parameter within the opaque data
  *             structure provided by #params_new. If %NULL,
- *             #tp_cm_param_setter_offset will be used.
+ *             tp_cm_param_setter_offset() will be used. (New in 0.7.0 -
+ *             previously, code equivalent to tp_cm_param_setter_offset() was
+ *             always used.)
  *
  * Structure representing a connection manager protocol.
  *
