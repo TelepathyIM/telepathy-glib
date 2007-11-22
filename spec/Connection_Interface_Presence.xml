@@ -345,6 +345,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           Hidden (invisible)
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="Busy" value="6">
+        <tp:docstring>
+          Busy, Do Not Disturb.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
   </interface>
 </node>
