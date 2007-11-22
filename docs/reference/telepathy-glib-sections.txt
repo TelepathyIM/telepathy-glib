@@ -1888,9 +1888,6 @@ TpMediaSessionHandlerClass
 <SUBSECTION>
 TpMediaStreamHandler
 TpMediaStreamHandlerClass
-<SUBSECTION Private>
-tp_cli_media_session_handler_add_signals
-tp_cli_media_stream_handler_add_signals
 <SUBSECTION>
 tp_cli_media_session_handler_callback_for_error
 tp_cli_media_session_handler_call_error
