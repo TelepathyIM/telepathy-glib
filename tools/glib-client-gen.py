@@ -612,6 +612,12 @@ class Generator(object):
     def __call__(self):
 
         self.h('G_BEGIN_DECLS')
+        self.h('')
+
+        self.b('/* We don\'t want gtkdoc scanning this file, it\'ll get')
+        self.b(' * confused by seeing function definitions, so mark it as: */')
+        self.b('/*<private_header>*/')
+        self.b('')
 
         ifaces = self.dom.getElementsByTagName('node')
         ifaces.sort(cmp_by_name)
