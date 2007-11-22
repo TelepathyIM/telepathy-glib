@@ -178,6 +178,14 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
   return NULL;
 }
 
+/**
+ * tp_proxy_invalidated:
+ * @self: a proxy
+ * @error: an error causing the invalidation
+ *
+ * Mark @self as having been invalidated - no further calls will work, and
+ * the #TpProxy:destroyed signal will be emitted with the given error.
+ */
 void
 tp_proxy_invalidated (TpProxy *self, const GError *error)
 {
@@ -257,6 +265,18 @@ tp_proxy_add_interface_by_id (TpProxy *self,
 static const gchar * const pending_call_magic = "TpProxyPendingCall";
 static const gchar * const signal_conn_magic = "TpProxySignalConnection";
 
+/**
+ * tp_proxy_pending_call_new:
+ * @self: a proxy
+ * @callback: a callback to be called when the call completes
+ * @user_data: user-supplied data for the callback
+ * @destroy: user-supplied destructor for the data
+ *
+ * Allocate a new pending call structure. The @pending_call member is NULL,
+ * and the rest of the public members are set from the arguments.
+ *
+ * This function is for use by #TpProxy subclass implementations only.
+ */
 TpProxyPendingCall *
 tp_proxy_pending_call_new (TpProxy *self,
                            GCallback callback,
@@ -275,6 +295,14 @@ tp_proxy_pending_call_new (TpProxy *self,
   return ret;
 }
 
+/**
+ * tp_proxy_pending_call_free:
+ * @self: a #TpProxyPendingCall allocated with tp_proxy_pending_call_free()
+ *
+ * Free a pending call. The signature is chosen to match #GDestroyNotify.
+ *
+ * This function is for use by #TpProxy subclass implementations only.
+ */
 void
 tp_proxy_pending_call_free (gpointer self)
 {
@@ -290,6 +318,20 @@ tp_proxy_pending_call_free (gpointer self)
   g_slice_free (TpProxyPendingCall, data);
 }
 
+/**
+ * tp_proxy_signal_connection_new:
+ * @self: a proxy
+ * @interface: a quark whose string value is the D-Bus interface
+ * @member: the name of the signal to which we're connecting
+ * @callback: a callback to be called when the signal is received
+ * @user_data: user-supplied data for the callback
+ * @destroy: user-supplied destructor for the data
+ *
+ * Allocate a new structure representing a signal connection. The
+ * public members are set from the arguments.
+ *
+ * This function is for use by #TpProxy subclass implementations only.
+ */
 TpProxySignalConnection *
 tp_proxy_signal_connection_new (TpProxy *self,
                                 GQuark interface,
@@ -311,6 +353,14 @@ tp_proxy_signal_connection_new (TpProxy *self,
   return ret;
 }
 
+/**
+ * tp_proxy_signal_connection_disconnect:
+ * @self: a signal connection
+ *
+ * Disconnect the given signal connection. After this function returns, you
+ * must not assume that the signal connection remains valid, but you must not
+ * explicitly free it either.
+ */
 void
 tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
 {
@@ -327,6 +377,16 @@ tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
       self);
 }
 
+/**
+ * tp_proxy_signal_connection_free_closure:
+ * @self: a #TpProxySignalConnection
+ * @unused: not used
+ *
+ * Free a signal connection allocated with tp_proxy_signal_connection_new().
+ * The signature of this function is chosen to make it match #GClosureNotify.
+ *
+ * This function is for use by #TpProxy subclass implementations only.
+ */
 void
 tp_proxy_signal_connection_free_closure (gpointer self,
                                          GClosure *unused)
