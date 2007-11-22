@@ -1515,8 +1515,6 @@ TP_CHANNEL_CLASS
 TP_CHANNEL_GET_CLASS
 TP_IS_CHANNEL
 TP_IS_CHANNEL_CLASS
-<SUBSECTION Private>
-tp_cli_channel_add_signals
 <SUBSECTION>
 tp_cli_channel_block_on_close
 tp_cli_channel_block_on_get_channel_type
