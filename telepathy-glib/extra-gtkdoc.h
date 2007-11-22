@@ -106,8 +106,12 @@
  * @short_description: D-Bus interface names from the Telepathy spec
  *
  * This header exposes the interface names from the Telepathy specification
- * as cpp defines for strings. It is automatically generated from the
- * specification.
+ * as cpp defines for strings, such as %TP_IFACE_PROPERTIES_INTERFACE.
+ * It is automatically generated from the specification.
+ *
+ * Since 0.7.0 it also provides cpp defines like
+ * %TP_IFACE_QUARK_PROPERTIES_INTERFACE, which expand to function calls that
+ * return GQuarks for the same strings.
  */
 
 /**
