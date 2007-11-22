@@ -89,6 +89,9 @@ TpProxySignalConnection *tp_proxy_signal_connection_new (TpProxy *self,
 
 void tp_proxy_signal_connection_free_closure (gpointer self, GClosure *unused);
 
+void tp_proxy_signal_connection_disconnect
+    (const TpProxySignalConnection *self);
+
 GType tp_proxy_get_type (void);
 
 /* TYPE MACROS */
