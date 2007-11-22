@@ -144,6 +144,8 @@ _tp_g_hash_table_update_helper (gpointer key,
  * Add each item in @source to @target, replacing any existing item with the
  * same key. @key_dup and @value_dup are used to duplicate the items; in
  * principle they could also be used to convert between types.
+ *
+ * Since: 0.7.0
  */
 void
 tp_g_hash_table_update (GHashTable *target,
