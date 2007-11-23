@@ -185,6 +185,7 @@ tp_connection_manager_got_parameters (TpProxy *proxy,
           DEBUG ("Unparseable parameter #%d for %s, ignoring", i, protocol);
           /* *shrug* that one didn't work, let's skip it */
           g_array_set_size (output, output->len - 1);
+          continue;
         }
 
       g_value_init (&param->default_value,
