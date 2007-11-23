@@ -1,14 +1,7 @@
 #!/bin/sh
 set -e
 
-if test -z "$MAKE"
-then
-	MAKE=make
-fi
-
 gtkdocize
-
-( cd spec && TOP_SRCDIR=.. sh ../tools/update-spec-gen-am.sh spec-gen.am )
 
 autoreconf -i
 

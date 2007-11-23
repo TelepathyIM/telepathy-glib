@@ -1,9 +1,32 @@
 EXTRA_DIST = \
     all.xml \
+    Channel_Handler.xml \
+    Channel_Interface_Chat_State.xml \
+    Channel_Interface_DTMF.xml \
+    Channel_Interface_Group.xml \
+    Channel_Interface_Hold.xml \
+    Channel_Interface_Media_Signalling.xml \
+    Channel_Interface_Password.xml \
+    Channel_Interface_Transfer.xml \
+    Channel_Type_Contact_List.xml \
+    Channel_Type_Contact_Search.xml \
+    Channel_Type_Room_List.xml \
+    Channel_Type_Streamed_Media.xml \
+    Channel_Type_Text.xml \
+    Channel_Type_Tubes.xml \
+    Channel.xml \
+    Connection_Interface_Aliasing.xml \
+    Connection_Interface_Avatars.xml \
+    Connection_Interface_Capabilities.xml \
+    Connection_Interface_Contact_Info.xml \
+    Connection_Interface_Forwarding.xml \
+    Connection_Interface_Presence.xml \
+    Connection_Interface_Privacy.xml \
+    Connection_Interface_Renaming.xml \
+    Connection_Manager.xml \
+    Connection.xml \
     errors.xml \
     generic-types.xml \
-    $(SPEC_INTERFACE_XMLS)
-
-# This is a derived file but must be checked-in to Darcs anyway, for
-# bootstrapping.
-include spec-gen.am
+    Media_Session_Handler.xml \
+    Media_Stream_Handler.xml \
+    Properties_Interface.xml
