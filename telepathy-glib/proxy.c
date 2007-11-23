@@ -276,6 +276,9 @@ static const gchar * const signal_conn_magic = "TpProxySignalConnection";
  * and the rest of the public members are set from the arguments.
  *
  * This function is for use by #TpProxy subclass implementations only.
+ *
+ * Returns: a pending call structure to be freed with
+ *  tp_proxy_pending_call_free().
  */
 TpProxyPendingCall *
 tp_proxy_pending_call_new (TpProxy *self,
@@ -331,6 +334,9 @@ tp_proxy_pending_call_free (gpointer self)
  * public members are set from the arguments.
  *
  * This function is for use by #TpProxy subclass implementations only.
+ *
+ * Returns: a signal connection structure to be freed with
+ *  tp_proxy_signal_connection_free_closure().
  */
 TpProxySignalConnection *
 tp_proxy_signal_connection_new (TpProxy *self,
