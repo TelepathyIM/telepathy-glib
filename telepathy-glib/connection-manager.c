@@ -1148,7 +1148,7 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
       list_context->refcount++;
       tp_cli_dbus_daemon_call_list_names (bus_daemon, 2000,
           tp_list_connection_managers_got_names, list_context,
-          (GDestroyNotify) list_context_unref);
+          (GDestroyNotify) list_context_unref, NULL);
     }
 }
 
@@ -1169,5 +1169,5 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
 
   tp_cli_dbus_daemon_call_list_activatable_names (bus_daemon, 2000,
       tp_list_connection_managers_got_names, list_context,
-      (GDestroyNotify) list_context_unref);
+      (GDestroyNotify) list_context_unref, NULL);
 }
