@@ -272,7 +272,7 @@ class Generator(object):
         return ''.join(info) + '\0', offsets
 
     def do_method_glue(self, method, offset):
-        lc_name = dbus_gutils_wincaps_to_uscore(method.getAttribute('name'))
+        lc_name = camelcase_to_lower(method.getAttribute('name'))
 
         marshaller = method_to_glue_marshal_name(method,
                 '_tp')
@@ -398,12 +398,6 @@ class Generator(object):
         self.b('    }')
         self.b('}')
         self.b('')
-
-        # Fixup for dbus-binding-tool crack
-        dbus_glib_name = (self.prefix_ + self.node_name_lc + '_' +
-                          dbus_gutils_wincaps_to_uscore(dbus_method_name))
-        if dbus_glib_name != stub_name:
-            self.b('#define %s %s' % (dbus_glib_name, stub_name))
 
         # Implementation registration (in both header and body)
         self.h('void %s%s_implement_%s (%s%sClass *klass, %s impl);'
