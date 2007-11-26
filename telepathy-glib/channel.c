@@ -193,7 +193,7 @@ tp_channel_got_channel_type_cb (TpProxy *proxy,
   tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
 
   tp_cli_channel_call_get_interfaces (self, -1,
-      tp_channel_got_interfaces_cb, NULL, NULL);
+      tp_channel_got_interfaces_cb, NULL, NULL, NULL);
 }
 
 static void
@@ -222,14 +222,14 @@ tp_channel_got_handle_cb (TpProxy *proxy,
   if (self->channel_type == 0)
     {
       tp_cli_channel_call_get_channel_type (self, -1,
-          tp_channel_got_channel_type_cb, NULL, NULL);
+          tp_channel_got_channel_type_cb, NULL, NULL, NULL);
     }
   else
     {
       tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
 
       tp_cli_channel_call_get_interfaces (self, -1,
-          tp_channel_got_interfaces_cb, NULL, NULL);
+          tp_channel_got_interfaces_cb, NULL, NULL, NULL);
     }
 }
 
@@ -254,7 +254,8 @@ tp_channel_constructor (GType type,
         n_params, params));
 
   /* connect to my own Closed signal and self-destruct when it arrives */
-  tp_cli_channel_connect_to_closed (self, tp_channel_closed_cb, NULL, NULL);
+  tp_cli_channel_connect_to_closed (self, tp_channel_closed_cb, NULL, NULL,
+      NULL);
 
   DEBUG ("%p: constructed with channel type \"%s\", handle #%d of type %d",
       self, (self->channel_type != 0) ? g_quark_to_string (self->channel_type)
@@ -265,19 +266,19 @@ tp_channel_constructor (GType type,
       || (self->handle == 0 && self->handle_type != TP_HANDLE_TYPE_NONE))
     {
       tp_cli_channel_call_get_handle (self, -1,
-          tp_channel_got_handle_cb, NULL, NULL);
+          tp_channel_got_handle_cb, NULL, NULL, NULL);
     }
   else if (self->channel_type == 0)
     {
       tp_cli_channel_call_get_channel_type (self, -1,
-          tp_channel_got_channel_type_cb, NULL, NULL);
+          tp_channel_got_channel_type_cb, NULL, NULL, NULL);
     }
   else
     {
       tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
 
       tp_cli_channel_call_get_interfaces (self, -1,
-          tp_channel_got_interfaces_cb, NULL, NULL);
+          tp_channel_got_interfaces_cb, NULL, NULL, NULL);
     }
 
   return (GObject *) self;
