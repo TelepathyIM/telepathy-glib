@@ -1471,6 +1471,7 @@ TpProxyClass
 TpProxyInterfaceAddedCb
 tp_proxy_class_hook_on_interface_add
 TpProxyPendingCall
+tp_proxy_pending_call_cancel
 tp_proxy_pending_call_new
 tp_proxy_pending_call_free
 TpProxySignalConnection

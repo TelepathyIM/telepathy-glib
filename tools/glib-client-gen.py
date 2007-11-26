@@ -104,12 +104,13 @@ class Generator(object):
         self.b(' *')
         self.b(' * Represents the signature of a callback for the signal %s.'
                % member)
-        self.b(' * The @proxy and the @user_data supplied to')
+        self.b(' * The @proxy, @user_data and @weak_object supplied to')
         self.b(' * %s_%s_connect_to_%s()'
                % (self.prefix_lc, iface_lc, member_lc))
         self.b(' * can be retrieved via')
-        self.b(' * <literal>signal_connection->proxy</literal> and')
-        self.b(' * <literal>signal_connection->user_data</literal>.')
+        self.b(' * <literal>signal_connection->proxy</literal>,')
+        self.b(' * <literal>signal_connection->user_data</literal> and')
+        self.b(' * <literal>signal_connection->weak_object</literal>')
         self.b(' */')
         self.h('typedef void (*%s) (DBusGProxy *proxy,'
                % callback_name)
@@ -135,8 +136,9 @@ class Generator(object):
         #
         # destroy is invoked when the signal becomes disconnected. This
         # is either because the signal has been disconnected explicitly
-        # by the user, or because the TpProxy has become invalid and
-        # emitted the 'destroyed' signal.
+        # by the user, because the TpProxy has become invalid and
+        # emitted the 'destroyed' signal, or because the weakly referenced
+        # object has gone away.
 
         self.b('/**')
         self.b(' * %s_%s_connect_to_%s:'
@@ -146,6 +148,9 @@ class Generator(object):
         self.b(' *   received')
         self.b(' * @user_data: User-supplied data for the callback')
         self.b(' * @destroy: Destructor for the user-supplied data')
+        self.b(' * @weak_object: A #GObject which will be weakly referenced; ')
+        self.b(' *   if it is destroyed, this callback will automatically be')
+        self.b(' *   disconnected')
         self.b(' *')
         self.b(' * <!-- -->')
         self.b(' *')
@@ -157,14 +162,16 @@ class Generator(object):
                % (self.prefix_lc, iface_lc, member_lc))
         self.h('    %s callback,' % callback_name)
         self.h('    gpointer user_data,')
-        self.h('    GDestroyNotify destroy);')
+        self.h('    GDestroyNotify destroy,')
+        self.h('    GObject *weak_object);')
 
         self.b('const TpProxySignalConnection *')
         self.b('%s_%s_connect_to_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.b('    %s callback,' % callback_name)
         self.b('    gpointer user_data,')
-        self.b('    GDestroyNotify destroy)')
+        self.b('    GDestroyNotify destroy,')
+        self.b('    GObject *weak_object)')
         self.b('{')
         self.b('  TpProxySignalConnection *data;')
         self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
@@ -179,7 +186,8 @@ class Generator(object):
         self.b('')
         self.b('  data = tp_proxy_signal_connection_new (proxy,')
         self.b('      TP_IFACE_QUARK_%s, \"%s\",' % (iface_lc.upper(), member))
-        self.b('      G_CALLBACK (callback), user_data, destroy);')
+        self.b('      G_CALLBACK (callback), user_data, destroy,')
+        self.b('      weak_object);')
         self.b('')
         self.b('  dbus_g_proxy_connect_signal (iface, \"%s\",' % member)
         self.b('      G_CALLBACK (callback), data,')
@@ -336,7 +344,7 @@ class Generator(object):
             name, info, tp_type = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to return an \'out\' argument if @error is '
+            self.b(' * @%s: Used to return an \'out\' argument if @error is'
                    'NULL' % name)
 
         self.b(' * @error: NULL on success, or an error on failure')
@@ -463,6 +471,9 @@ class Generator(object):
         self.b(' * @user_data: user-supplied data passed to the callback')
         self.b(' * @destroy: called with the user_data as argument, after the')
         self.b(' *   call has succeeded, failed or been cancelled')
+        self.b(' * @weak_object: A #GObject which will be weakly referenced; ')
+        self.b(' *   if it is destroyed, this callback will automatically be')
+        self.b(' *   disconnected')
         self.b(' *')
         self.b(' * Start a %s method call.' % member)
         self.b(' *')
@@ -486,18 +497,20 @@ class Generator(object):
 
         self.h('    %s callback,' % callback_name)
         self.h('    gpointer user_data,')
-        self.h('    GDestroyNotify destroy);')
+        self.h('    GDestroyNotify destroy,')
+        self.h('    GObject *weak_object);')
         self.h('')
 
         self.b('    %s callback,' % callback_name)
         self.b('    gpointer user_data,')
-        self.b('    GDestroyNotify destroy)')
+        self.b('    GDestroyNotify destroy,')
+        self.b('    GObject *weak_object)')
         self.b('{')
         self.b('  GError *error = NULL;')
+        self.b('  GQuark interface = TP_IFACE_QUARK_%s;' % iface_lc.upper())
         self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
         self.b('      TP_PROXY (proxy),')
-        self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
-        self.b('      &error);')
+        self.b('      interface, &error);')
         self.b('')
         self.b('  if (iface == NULL)')
         self.b('    {')
@@ -537,9 +550,9 @@ class Generator(object):
         self.b('      TpProxyPendingCall *data;')
         self.b('')
         self.b('      data = tp_proxy_pending_call_new (proxy,')
+        self.b('          interface, "%s",' % member)
         self.b('          G_CALLBACK (callback),')
-        self.b('          user_data,')
-        self.b('          destroy);')
+        self.b('          user_data, destroy, weak_object);')
         self.b('      data->pending_call = '
                'dbus_g_proxy_begin_call_with_timeout (iface,')
         self.b('          "%s",' % member)

@@ -84,9 +84,12 @@
 /**
  * TpProxyPendingCall:
  * @proxy: the TpProxy
+ * @interface: GQuark representing the D-Bus interface
+ * @member: the D-Bus member name
  * @callback: the user-supplied handler
  * @user_data: user-supplied data to be passed to the handler
  * @destroy: function used to free the user-supplied data
+ * @weak_object: user-supplied object
  * @pending_call: the underlying dbus-glib pending call
  * @priv: private data used by the TpProxy implementation
  *
@@ -101,6 +104,7 @@
  * @callback: the user-supplied handler
  * @user_data: user-supplied data to be used by the handler
  * @destroy: function used to free the user-supplied data
+ * @weak_object: user-supplied object
  * @priv: private data used by the TpProxy implementation
  *
  * Structure representing a D-Bus signal connection.
@@ -265,12 +269,29 @@ tp_proxy_add_interface_by_id (TpProxy *self,
 static const gchar * const pending_call_magic = "TpProxyPendingCall";
 static const gchar * const signal_conn_magic = "TpProxySignalConnection";
 
+static void
+tp_proxy_pending_call_lost_weak_ref (gpointer data,
+                                     GObject *dead)
+{
+  TpProxyPendingCall *self = data;
+
+  g_return_if_fail (self->priv == pending_call_magic);
+  g_return_if_fail (dead == self->weak_object);
+
+  tp_proxy_pending_call_cancel (self);
+}
+
 /**
  * tp_proxy_pending_call_new:
  * @self: a proxy
+ * @interface: a quark whose string value is the D-Bus interface
+ * @member: the name of the method being called
  * @callback: a callback to be called when the call completes
  * @user_data: user-supplied data for the callback
  * @destroy: user-supplied destructor for the data
+ * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
+ *   the signal connection - if it is destroyed, the signal connection will
+ *   automatically be disconnected
  *
  * Allocate a new pending call structure. The @pending_call member is NULL,
  * and the rest of the public members are set from the arguments.
@@ -282,20 +303,52 @@ static const gchar * const signal_conn_magic = "TpProxySignalConnection";
  */
 TpProxyPendingCall *
 tp_proxy_pending_call_new (TpProxy *self,
+                           GQuark interface,
+                           const gchar *member,
                            GCallback callback,
                            gpointer user_data,
-                           GDestroyNotify destroy)
+                           GDestroyNotify destroy,
+                           GObject *weak_object)
 {
   TpProxyPendingCall *ret = g_slice_new (TpProxyPendingCall);
 
   ret->proxy = g_object_ref (self);
+  ret->interface = interface;
+  ret->member = g_strdup (member);
   ret->callback = callback;
   ret->user_data = user_data;
   ret->destroy = destroy;
+  ret->weak_object = weak_object;
   ret->pending_call = NULL;
   ret->priv = pending_call_magic;
 
+  g_object_weak_ref (weak_object,
+      tp_proxy_pending_call_lost_weak_ref, ret);
+
   return ret;
+}
+
+/**
+ * tp_proxy_pending_call_cancel:
+ * @self: a pending call
+ *
+ * Cancel the given pending call. After this function returns, you
+ * must not assume that the pending call remains valid, but you must not
+ * explicitly free it either.
+ */
+void
+tp_proxy_pending_call_cancel (const TpProxyPendingCall *self)
+{
+  DBusGProxy *iface;
+
+  g_return_if_fail (self->priv == pending_call_magic);
+
+  iface = tp_proxy_borrow_interface_by_id (self->proxy, self->interface, NULL);
+
+  if (iface == NULL || self->pending_call == NULL)
+    return;
+
+  dbus_g_proxy_cancel_call (iface, self->pending_call);
 }
 
 /**
@@ -315,10 +368,28 @@ tp_proxy_pending_call_free (gpointer self)
 
   g_object_unref (TP_PROXY (data->proxy));
 
+  g_free (data->member);
+
   if (data->destroy != NULL)
     data->destroy (data->user_data);
 
+  if (data->weak_object != NULL)
+    g_object_weak_unref (data->weak_object,
+        tp_proxy_pending_call_lost_weak_ref, self);
+
   g_slice_free (TpProxyPendingCall, data);
+}
+
+static void
+tp_proxy_signal_connection_lost_weak_ref (gpointer data,
+                                          GObject *dead)
+{
+  TpProxySignalConnection *self = data;
+
+  g_return_if_fail (self->priv == signal_conn_magic);
+  g_return_if_fail (dead == self->weak_object);
+
+  tp_proxy_signal_connection_disconnect (self);
 }
 
 /**
@@ -329,6 +400,9 @@ tp_proxy_pending_call_free (gpointer self)
  * @callback: a callback to be called when the signal is received
  * @user_data: user-supplied data for the callback
  * @destroy: user-supplied destructor for the data
+ * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
+ *   the signal connection - if it is destroyed, the signal connection will
+ *   automatically be disconnected
  *
  * Allocate a new structure representing a signal connection. The
  * public members are set from the arguments.
@@ -344,7 +418,8 @@ tp_proxy_signal_connection_new (TpProxy *self,
                                 const gchar *member,
                                 GCallback callback,
                                 gpointer user_data,
-                                GDestroyNotify destroy)
+                                GDestroyNotify destroy,
+                                GObject *weak_object)
 {
   TpProxySignalConnection *ret = g_slice_new (TpProxySignalConnection);
 
@@ -354,7 +429,11 @@ tp_proxy_signal_connection_new (TpProxy *self,
   ret->callback = callback;
   ret->user_data = user_data;
   ret->destroy = destroy;
+  ret->weak_object = weak_object;
   ret->priv = signal_conn_magic;
+
+  g_object_weak_ref (weak_object,
+      tp_proxy_signal_connection_lost_weak_ref, ret);
 
   return ret;
 }
@@ -407,6 +486,10 @@ tp_proxy_signal_connection_free_closure (gpointer self,
 
   if (data->destroy != NULL)
     data->destroy (data->user_data);
+
+  if (data->weak_object != NULL)
+    g_object_weak_unref (data->weak_object,
+        tp_proxy_signal_connection_lost_weak_ref, self);
 
   g_slice_free (TpProxySignalConnection, data);
 }
