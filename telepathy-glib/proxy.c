@@ -372,7 +372,7 @@ tp_proxy_signal_connection_disconnect (const TpProxySignalConnection *self)
 {
   DBusGProxy *iface;
 
-  g_return_if_fail (self->priv == pending_call_magic);
+  g_return_if_fail (self->priv == signal_conn_magic);
 
   iface = tp_proxy_borrow_interface_by_id (self->proxy, self->interface, NULL);
 
@@ -402,6 +402,8 @@ tp_proxy_signal_connection_free_closure (gpointer self,
   g_return_if_fail (data->priv == signal_conn_magic);
 
   g_object_unref (TP_PROXY (data->proxy));
+
+  g_free (data->member);
 
   if (data->destroy != NULL)
     data->destroy (data->user_data);
