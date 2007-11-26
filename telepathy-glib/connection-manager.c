@@ -1082,24 +1082,22 @@ typedef struct
   GHashTable *table;
   TpConnectionManagerListCb callback;
   gpointer user_data;
+  GDestroyNotify destroy;
+  TpProxyPendingCall *pending_call;
+  GObject *weak_object;
   size_t base_len;
   gboolean getting_names:1;
   guint refcount:2;
 } _ListContext;
 
-void
+static void
 list_context_unref (_ListContext *list_context)
 {
   if (--list_context->refcount > 0)
     return;
 
-  if (list_context->callback != NULL)
-    {
-      GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Unable to query D-Bus daemon for list of connection managers" };
-
-      list_context->callback (NULL, &error, list_context->user_data);
-    }
+  if (list_context->destroy != NULL)
+    list_context->destroy (list_context->user_data);
 
   g_hash_table_destroy (list_context->table);
   g_slice_free (_ListContext, list_context);
@@ -1117,8 +1115,9 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
 
   if (error != NULL)
     {
-      list_context->callback (NULL, error, list_context->user_data);
-      list_context->callback = NULL;
+      list_context->callback (NULL, error, list_context->user_data,
+          list_context->weak_object);
+      return;
     }
 
   for (iter = names; iter != NULL && *iter != NULL; iter++)
@@ -1148,7 +1147,7 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
           arr);
       list_context->callback ((TpConnectionManager **) g_ptr_array_free (arr,
             FALSE),
-          NULL, list_context->user_data);
+          NULL, list_context->user_data, list_context->weak_object);
       list_context->callback = NULL;
     }
   else
@@ -1157,15 +1156,22 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
       list_context->refcount++;
       tp_cli_dbus_daemon_call_list_names (bus_daemon, 2000,
           tp_list_connection_managers_got_names, list_context,
-          (GDestroyNotify) list_context_unref, NULL);
+          (GDestroyNotify) list_context_unref, list_context->weak_object);
     }
 }
 
 /**
  * tp_list_connection_managers:
  * @bus_daemon: proxy for the D-Bus daemon
- * @callback: callback to be called when listing the CMs succeeds or fails
+ * @callback: callback to be called when listing the CMs succeeds or fails;
+ *   not called if the D-Bus connection fails completely or if the
+ *   @weak_object goes away
  * @user_data: user-supplied data for the callback
+ * @destroy: callback to destroy the user-supplied data, called after
+ *   @callback, but also if the D-Bus connection fails or if the @weak_object
+ *   goes away
+ * @weak_object: if not %NULL, will be weakly referenced; the callback will
+ *   not be called, and the call will be cancelled, if the object has vanished
  *
  * List the available (running or installed) connection managers. Call the
  * callback when done.
@@ -1173,13 +1179,18 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
 void
 tp_list_connection_managers (TpDBusDaemon *bus_daemon,
                              TpConnectionManagerListCb callback,
-                             gpointer user_data)
+                             gpointer user_data,
+                             GDestroyNotify destroy,
+                             GObject *weak_object)
 {
   _ListContext *list_context = g_slice_new0 (_ListContext);
 
   list_context->base_len = strlen (TP_CM_BUS_NAME_BASE);
   list_context->callback = callback;
   list_context->user_data = user_data;
+  list_context->destroy = destroy;
+  list_context->weak_object = weak_object;
+
   list_context->getting_names = FALSE;
   list_context->refcount = 1;
   list_context->table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
@@ -1187,5 +1198,5 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
 
   tp_cli_dbus_daemon_call_list_activatable_names (bus_daemon, 2000,
       tp_list_connection_managers_got_names, list_context,
-      (GDestroyNotify) list_context_unref, NULL);
+      (GDestroyNotify) list_context_unref, weak_object);
 }

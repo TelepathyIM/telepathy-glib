@@ -14,7 +14,8 @@
 void
 got_connection_managers (TpConnectionManager **cms,
                          const GError *error,
-                         gpointer user_data)
+                         gpointer user_data,
+                         GObject *unused)
 {
   GMainLoop *mainloop = user_data;
 
@@ -57,7 +58,7 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
 
   tp_list_connection_managers (tp_dbus_daemon_new (tp_get_bus ()),
-      got_connection_managers, mainloop);
+      got_connection_managers, mainloop, NULL, NULL);
 
   g_main_loop_run (mainloop);
 
