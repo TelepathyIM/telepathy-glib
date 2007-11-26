@@ -28,7 +28,7 @@ import xml.dom.minidom
 
 from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
         camelcase_to_lower, NS_TP, dbus_gutils_wincaps_to_uscore, \
-        signal_to_marshal_name
+        signal_to_marshal_name, method_to_glue_marshal_name
 
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
@@ -207,9 +207,87 @@ class Generator(object):
 
         self.h('')
 
+        self.b('static const DBusGMethodInfo dbus_glib_%s%s_methods[] = {'
+               % (self.prefix_, node_name_lc))
+
+        method_blob, offsets = self.get_method_glue(methods)
+
+        for method, offset in zip(methods, offsets):
+            self.do_method_glue(method, offset)
+
+        self.b('};')
+        self.b('')
+
+        self.b('const DBusGObjectInfo dbus_glib_%s%s_object_info = {'
+               % (self.prefix_, node_name_lc))
+        self.b('  0,')  # version
+        self.b('  dbus_glib_%s%s_methods,' % (self.prefix_, node_name_lc))
+        self.b('  %d,' % len(methods))
+        self.b('"' + method_blob.replace('\0', '\\0') + '",')
+        self.b('"' + self.get_signal_glue(signals).replace('\0', '\\0') + '",')
+        self.b('"\\0"')
+        self.b('};')
+        self.b('')
+
         self.node_name_mixed = None
         self.node_name_lc = None
         self.node_name_uc = None
+
+    def get_method_glue(self, methods):
+        info = []
+        offsets = []
+
+        for method in methods:
+            offsets.append(len(''.join(info)))
+
+            info.append(self.iface_name + '\0')
+            info.append(method.getAttribute('name') + '\0')
+
+            info.append('A\0')    # async
+
+            counter = 0
+            for arg in method.getElementsByTagName('arg'):
+                out = arg.getAttribute('direction') == 'out'
+
+                name = arg.getAttribute('name')
+                if not name:
+                    assert out
+                    name = 'arg%u' % counter
+                counter += 1
+
+                info.append(name + '\0')
+
+                if out:
+                    info.append('O\0')
+                else:
+                    info.append('I\0')
+
+                if out:
+                    info.append('F\0')    # not const
+                    info.append('N\0')    # not error or return
+                info.append(arg.getAttribute('type') + '\0')
+
+            info.append('\0')
+
+        return ''.join(info) + '\0', offsets
+
+    def do_method_glue(self, method, offset):
+        lc_name = dbus_gutils_wincaps_to_uscore(method.getAttribute('name'))
+
+        marshaller = method_to_glue_marshal_name(method,
+                '_tp')
+        wrapper = self.prefix_ + self.node_name_lc + '_' + lc_name
+
+        self.b("  { (GCallback) %s, %s, %d }," % (wrapper, marshaller, offset))
+
+    def get_signal_glue(self, signals):
+        info = []
+
+        for signal in signals:
+            info.append(self.iface_name)
+            info.append(signal.getAttribute('name'))
+
+        return '\0'.join(info) + '\0\0'
 
     def get_method_impl_names(self, method):
         dbus_method_name = method.getAttribute('name')

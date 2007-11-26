@@ -110,7 +110,6 @@ BUILT_SOURCES = \
     $(nodist_libtelepathy_glib_internal_la_SOURCES) \
     $(nodist_geninclude_HEADERS) \
     _gen/stable-spec.xml \
-    _gen/glue-stamp \
     _gen/spec-stamp \
     _gen/stable-stamp \
     _gen/stable-interfaces
@@ -256,30 +255,6 @@ _gen/signals-marshal.h: _gen/signals-marshal.list
 _gen/signals-marshal.c: _gen/signals-marshal.list
 	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< > $@
 
-_gen/glue-stamp: _gen/stable-interfaces \
-	../tools/make-all-async.xsl \
-	../tools/spec-to-introspect.xsl
-	set -e && for x in `cat _gen/stable-interfaces`; do \
-		$(XSLTPROC) $(XSLTPROCFLAGS) \
-			$(srcdir)/../tools/spec-to-introspect.xsl \
-			$(srcdir)/../spec/$$x.xml \
-			> _gen/introspect-$$x.xml.tmp; \
-		$(DROP_NAMESPACE) < _gen/introspect-$$x.xml.tmp \
-			> _gen/introspect-$$x.xml; \
-		$(XSLTPROC) $(XSLTPROCFLAGS) \
-			$(srcdir)/../tools/make-all-async.xsl \
-			_gen/introspect-$$x.xml \
-			> _gen/async-$$x.xml; \
-		$(DBUS_BINDING_TOOL) --mode=glib-server \
-			--output=_gen/svc-$$x-glue.h \
-			--prefix=tp_svc_`echo $$x | tr '[:upper:]' '[:lower:]'`\
-			_gen/async-$$x.xml; \
-		rm -f _gen/introspect-$$x.xml.tmp \
-			_gen/introspect-$$x.xml \
-			_gen/async-$$x.xml; \
-	done; \
-	touch $@
-
 # Things generated per interface
 
 _gen/tp-spec-%.xml: %.xml ../tools/identity.xsl _gen/spec-stamp
@@ -289,21 +264,12 @@ _gen/tp-spec-%.xml: %.xml ../tools/identity.xsl _gen/spec-stamp
 
 _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 	../tools/glib-ginterface-gen.py \
-	../tools/ls-interfaces.xsl \
-	Makefile.am \
-	_gen/glue-stamp
-	$(XSLTPROC) $(XSLTPROCFLAGS) $(srcdir)/../tools/ls-interfaces.xsl \
-		$< > _gen/tp-svc-$*.tmp
-	flags= ; \
-	for x in `cat _gen/tp-svc-$*.tmp`; do \
-		 flags="$$flags --include-end=\"_gen/svc-$$x-glue.h\""; \
-	done; \
+	Makefile.am
 	$(PYTHON) $(srcdir)/../tools/glib-ginterface-gen.py \
 		--filename=_gen/tp-svc-$* \
 		--signal-marshal-prefix=_tp \
 		--include='<telepathy-glib/dbus.h>' \
 		--include="\"_gen/signals-marshal.h\"" \
-		$$flags \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tp_Svc_
 
