@@ -91,7 +91,8 @@ typedef void (*TpConnectionManagerListCb) (TpConnectionManager **cms,
     const GError *error, gpointer user_data);
 
 void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
-    TpConnectionManagerListCb callback, gpointer user_data);
+    TpConnectionManagerListCb callback,
+    gpointer user_data);
 
 G_END_DECLS
 

@@ -45,6 +45,15 @@
  */
 
 /**
+ * TpConnectionManagerListCb:
+ * @cms: %NULL-terminated array of #TpConnectionManager, or %NULL on error
+ * @error: %NULL on success, or an error that occurred
+ * @user_data: user-supplied data
+ *
+ * Signature of the callback supplied to tp_list_connection_managers().
+ */
+
+/**
  * TpConnectionManagerClass:
  *
  * The class of a #TpConnectionManager.
@@ -1152,6 +1161,15 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
     }
 }
 
+/**
+ * tp_list_connection_managers:
+ * @bus_daemon: proxy for the D-Bus daemon
+ * @callback: callback to be called when listing the CMs succeeds or fails
+ * @user_data: user-supplied data for the callback
+ *
+ * List the available (running or installed) connection managers. Call the
+ * callback when done.
+ */
 void
 tp_list_connection_managers (TpDBusDaemon *bus_daemon,
                              TpConnectionManagerListCb callback,
