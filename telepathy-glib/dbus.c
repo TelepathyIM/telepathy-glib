@@ -311,7 +311,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
 
       tp_cli_dbus_daemon_call_get_name_owner (self, -1, name,
           _tp_dbus_daemon_got_name_owner,
-          g_strdup (name), g_free);
+          g_strdup (name), g_free, NULL);
     }
   else
     {
@@ -439,7 +439,7 @@ tp_dbus_daemon_constructor (GType type,
         n_params, params));
 
   tp_cli_dbus_daemon_connect_to_name_owner_changed (self,
-      _tp_dbus_daemon_name_owner_changed_cb, NULL, NULL);
+      _tp_dbus_daemon_name_owner_changed_cb, NULL, NULL, NULL);
 
   return (GObject *) self;
 }
