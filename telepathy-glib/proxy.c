@@ -322,8 +322,8 @@ tp_proxy_pending_call_new (TpProxy *self,
   ret->pending_call = NULL;
   ret->priv = pending_call_magic;
 
-  g_object_weak_ref (weak_object,
-      tp_proxy_pending_call_lost_weak_ref, ret);
+  if (weak_object != NULL)
+    g_object_weak_ref (weak_object, tp_proxy_pending_call_lost_weak_ref, ret);
 
   return ret;
 }
@@ -432,8 +432,9 @@ tp_proxy_signal_connection_new (TpProxy *self,
   ret->weak_object = weak_object;
   ret->priv = signal_conn_magic;
 
-  g_object_weak_ref (weak_object,
-      tp_proxy_signal_connection_lost_weak_ref, ret);
+  if (weak_object != NULL)
+    g_object_weak_ref (weak_object, tp_proxy_signal_connection_lost_weak_ref,
+        ret);
 
   return ret;
 }
