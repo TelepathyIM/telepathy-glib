@@ -158,7 +158,7 @@ tp_connection_status_changed (TpConnection *self,
         }
     case TP_CONNECTION_STATUS_CONNECTED:
       tp_cli_connection_call_get_interfaces (self, -1,
-          tp_connection_got_interfaces_cb, NULL, NULL);
+          tp_connection_got_interfaces_cb, NULL, NULL, NULL);
       break;
     default:
       break;
@@ -214,12 +214,12 @@ tp_connection_constructor (GType type,
   /* connect to my own StatusChanged signal */
   DEBUG ("Connecting to StatusChanged");
   tp_cli_connection_connect_to_status_changed (self,
-      tp_connection_status_changed_cb, NULL, NULL);
+      tp_connection_status_changed_cb, NULL, NULL, NULL);
 
   /* get my initial status */
   DEBUG ("Calling GetStatus");
   tp_cli_connection_call_get_status (self, -1,
-      tp_connection_got_status_cb, NULL, NULL);
+      tp_connection_got_status_cb, NULL, NULL, NULL);
 
   DEBUG ("Returning %p", self);
   return (GObject *) self;
