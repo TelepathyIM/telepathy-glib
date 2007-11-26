@@ -168,8 +168,10 @@ tp_connection_manager_got_parameters (TpProxy *proxy,
     {
       GValue structure = { 0 };
       GValue *tmp;
+      /* Points to the zeroed entry just after the end of the array
+       * - but we're about to extend the array to make it valid */
       TpConnectionManagerParam *param = &g_array_index (output,
-          TpConnectionManagerParam, output->len + 1);
+          TpConnectionManagerParam, output->len);
 
       g_value_init (&structure, TP_STRUCT_TYPE_PARAM_SPEC);
       g_value_set_static_boxed (&structure, g_ptr_array_index (parameters, i));
@@ -625,8 +627,10 @@ tp_connection_manager_read_file (TpConnectionManager *self,
             {
               gchar **strv, **iter;
               gchar *value, *def;
+              /* Points to the zeroed entry just after the end of the array
+               * - but we're about to extend the array to make it valid */
               TpConnectionManagerParam *param = &g_array_index (output,
-                  TpConnectionManagerParam, output->len + 1);
+                  TpConnectionManagerParam, output->len);
 
               value = g_key_file_get_string (file, *group, *key, NULL);
               if (value == NULL)
