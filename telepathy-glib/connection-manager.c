@@ -305,7 +305,8 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 
   next_protocol = g_ptr_array_remove_index_fast (self->pending_protocols, 0);
   tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
-      tp_connection_manager_got_parameters, next_protocol, g_free);
+      tp_connection_manager_got_parameters, next_protocol, g_free,
+      NULL);
 }
 
 static void
@@ -386,8 +387,8 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
           self->listing_protocols = TRUE;
 
           tp_cli_connection_manager_call_list_protocols (self, -1,
-              tp_connection_manager_got_protocols, g_object_ref (self),
-              g_object_unref);
+              tp_connection_manager_got_protocols, NULL, NULL,
+              NULL);
         }
     }
 }
@@ -1048,8 +1049,7 @@ tp_connection_manager_activate (TpConnectionManager *self)
 
   self->listing_protocols = TRUE;
   tp_cli_connection_manager_call_list_protocols (self, -1,
-      tp_connection_manager_got_protocols,
-      g_object_ref (self), g_object_unref);
+      tp_connection_manager_got_protocols, NULL, NULL, NULL);
 
   return TRUE;
 }
