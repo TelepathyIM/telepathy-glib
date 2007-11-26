@@ -24,6 +24,7 @@
 
 #include "telepathy-glib/defs.h"
 #include "telepathy-glib/enums.h"
+#include "telepathy-glib/errors.h"
 #include "telepathy-glib/gtypes.h"
 #include <telepathy-glib/interfaces.h>
 #include "telepathy-glib/util.h"
@@ -1052,4 +1053,121 @@ tp_connection_manager_activate (TpConnectionManager *self)
       tp_connection_manager_got_protocols, NULL, NULL, NULL);
 
   return TRUE;
+}
+
+static gboolean
+steal_into_ptr_array (gpointer key,
+                      gpointer value,
+                      gpointer user_data)
+{
+  if (value != NULL)
+    g_ptr_array_add (user_data, value);
+
+  g_free (key);
+
+  return TRUE;
+}
+
+typedef struct
+{
+  GHashTable *table;
+  TpConnectionManagerListCb callback;
+  gpointer user_data;
+  size_t base_len;
+  gboolean getting_names:1;
+  guint refcount:2;
+} _ListContext;
+
+void
+list_context_unref (_ListContext *list_context)
+{
+  if (--list_context->refcount > 0)
+    return;
+
+  if (list_context->callback != NULL)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Unable to query D-Bus daemon for list of connection managers" };
+
+      list_context->callback (NULL, &error, list_context->user_data);
+    }
+
+  g_hash_table_destroy (list_context->table);
+  g_slice_free (_ListContext, list_context);
+}
+
+void
+tp_list_connection_managers_got_names (TpProxy *proxy,
+                                       const gchar **names,
+                                       const GError *error,
+                                       gpointer user_data)
+{
+  _ListContext *list_context = user_data;
+  TpDBusDaemon *bus_daemon = (TpDBusDaemon *) proxy;
+  const gchar **iter;
+
+  if (error != NULL)
+    {
+      list_context->callback (NULL, error, list_context->user_data);
+      list_context->callback = NULL;
+    }
+
+  for (iter = names; iter != NULL && *iter != NULL; iter++)
+    {
+      const gchar *name;
+      TpConnectionManager *cm;
+
+      if (strncmp (TP_CM_BUS_NAME_BASE, *iter, list_context->base_len) != 0)
+        continue;
+
+      name = *iter + list_context->base_len;
+
+      if (g_hash_table_lookup (list_context->table, name) == NULL)
+        {
+          cm = tp_connection_manager_new (bus_daemon, name, NULL);
+          g_hash_table_insert (list_context->table, g_strdup (name), cm);
+        }
+    }
+
+  if (list_context->getting_names)
+    {
+      /* actually call the callback */
+      GPtrArray *arr = g_ptr_array_sized_new (g_hash_table_size
+              (list_context->table));
+
+      g_hash_table_foreach_steal (list_context->table, steal_into_ptr_array,
+          arr);
+      list_context->callback ((TpConnectionManager **) g_ptr_array_free (arr,
+            FALSE),
+          NULL, list_context->user_data);
+      list_context->callback = NULL;
+    }
+  else
+    {
+      list_context->getting_names = TRUE;
+      list_context->refcount++;
+      tp_cli_dbus_daemon_call_list_names (bus_daemon, 2000,
+          tp_list_connection_managers_got_names, list_context,
+          (GDestroyNotify) list_context_unref);
+    }
+}
+
+void
+tp_list_connection_managers (TpDBusDaemon *bus_daemon,
+                             TpConnectionManagerListCb callback,
+                             gpointer user_data)
+{
+  _ListContext *list_context = g_slice_new0 (_ListContext);
+
+  list_context->base_len = strlen (TP_CM_BUS_NAME_BASE);
+  list_context->callback = callback;
+  list_context->user_data = user_data;
+  list_context->getting_names = FALSE;
+  list_context->refcount = 1;
+  list_context->table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+      g_object_unref);
+
+  tp_cli_dbus_daemon_call_list_activatable_names (bus_daemon, 2000,
+      tp_list_connection_managers_got_names, list_context,
+      (GDestroyNotify) list_context_unref);
 }

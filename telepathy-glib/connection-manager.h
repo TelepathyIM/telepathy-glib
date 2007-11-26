@@ -87,6 +87,12 @@ TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
 
 gboolean tp_connection_manager_activate (TpConnectionManager *self);
 
+typedef void (*TpConnectionManagerListCb) (TpConnectionManager **cms,
+    const GError *error, gpointer user_data);
+
+void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
+    TpConnectionManagerListCb callback, gpointer user_data);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection-manager.h>
