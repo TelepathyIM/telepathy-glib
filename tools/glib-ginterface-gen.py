@@ -77,7 +77,7 @@ class Generator(object):
         if tmp and not self.allow_havoc:
             raise AssertionError('%s is %s' % (self.iface_name, tmp))
 
-        self.b('const DBusGObjectInfo dbus_glib_%s%s_object_info;'
+        self.b('static const DBusGObjectInfo _%s%s_object_info;'
                % (self.prefix_, node_name_lc))
         self.b('')
 
@@ -201,13 +201,13 @@ class Generator(object):
             self.b(s)
         self.b('  dbus_g_object_type_install_info (%s%s_get_type (),'
                % (self.prefix_, node_name_lc))
-        self.b('      &dbus_glib_%s%s_object_info);'
+        self.b('      &_%s%s_object_info);'
                % (self.prefix_, node_name_lc))
         self.b('}')
 
         self.h('')
 
-        self.b('static const DBusGMethodInfo dbus_glib_%s%s_methods[] = {'
+        self.b('static const DBusGMethodInfo _%s%s_methods[] = {'
                % (self.prefix_, node_name_lc))
 
         method_blob, offsets = self.get_method_glue(methods)
@@ -218,10 +218,10 @@ class Generator(object):
         self.b('};')
         self.b('')
 
-        self.b('const DBusGObjectInfo dbus_glib_%s%s_object_info = {'
+        self.b('static const DBusGObjectInfo _%s%s_object_info = {'
                % (self.prefix_, node_name_lc))
         self.b('  0,')  # version
-        self.b('  dbus_glib_%s%s_methods,' % (self.prefix_, node_name_lc))
+        self.b('  _%s%s_methods,' % (self.prefix_, node_name_lc))
         self.b('  %d,' % len(methods))
         self.b('"' + method_blob.replace('\0', '\\0') + '",')
         self.b('"' + self.get_signal_glue(signals).replace('\0', '\\0') + '",')
