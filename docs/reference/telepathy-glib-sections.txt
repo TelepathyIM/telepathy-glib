@@ -1838,6 +1838,8 @@ tp_cli_connection_interface_presence_signal_callback_presence_update
 <FILE>connection-manager</FILE>
 <TITLE>connection-manager</TITLE>
 <INCLUDE>telepathy-glib/connection-manager.h</INCLUDE>
+TpConnectionManagerListCb
+tp_list_connection_managers
 TpConnectionManager
 TpConnectionManagerClass
 TpCMInfoSource
