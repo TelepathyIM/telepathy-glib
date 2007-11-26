@@ -129,11 +129,13 @@ def signal_to_marshal_type(signal):
     return mtype
 
 
+_glib_marshallers = ['VOID', 'BOOLEAN', 'CHAR', 'UCHAR', 'INT',
+        'STRING', 'UINT', 'LONG', 'ULONG', 'ENUM', 'FLAGS', 'FLOAT',
+        'DOUBLE', 'STRING', 'PARAM', 'BOXED', 'POINTER', 'OBJECT',
+        'UINT_POINTER']
+
+
 def signal_to_marshal_name(signal, prefix):
-    glib_marshallers = ['VOID', 'BOOLEAN', 'CHAR', 'UCHAR', 'INT',
-            'STRING', 'UINT', 'LONG', 'ULONG', 'ENUM', 'FLAGS', 'FLOAT',
-            'DOUBLE', 'STRING', 'PARAM', 'BOXED', 'POINTER', 'OBJECT',
-            'UINT_POINTER']
 
     mtype = signal_to_marshal_type(signal)
     if len(mtype):
@@ -141,7 +143,25 @@ def signal_to_marshal_name(signal, prefix):
     else:
         name = 'VOID'
 
-    if name in glib_marshallers:
+    if name in _glib_marshallers:
+        return 'g_cclosure_marshal_VOID__' + name
+    else:
+        return prefix + '_marshal_VOID__' + name
+
+
+def method_to_glue_marshal_name(method, prefix):
+
+    mtype = []
+    for i in method.getElementsByTagName("arg"):
+        if i.getAttribute("direction") != "out":
+            type = i.getAttribute("type")
+            mtype.append(type_to_gtype(type)[2])
+
+    mtype.append('POINTER')
+
+    name = '_'.join(mtype)
+
+    if name in _glib_marshallers:
         return 'g_cclosure_marshal_VOID__' + name
     else:
         return prefix + '_marshal_VOID__' + name
