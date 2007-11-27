@@ -71,15 +71,10 @@ enum
   N_PROPS
 };
 
-static void channel_iface_init (gpointer iface,
-                                gpointer data)
-{
-}
-
 G_DEFINE_TYPE_WITH_CODE (TpChannel,
     tp_channel,
     TP_TYPE_PROXY,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, channel_iface_init));
+    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL));
 
 enum {
     SIGNAL_CHANNEL_READY,
