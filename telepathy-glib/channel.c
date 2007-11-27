@@ -312,7 +312,6 @@ tp_channel_dispose (GObject *object)
 static void
 tp_channel_class_init (TpChannelClass *klass)
 {
-  GParamSpec *param_spec;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
