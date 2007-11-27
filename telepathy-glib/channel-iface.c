@@ -60,15 +60,20 @@ tp_channel_iface_base_init (gpointer klass)
     /**
      * TpChannelIface:channel-type:
      *
-     * The D-Bus interface representing the type of this channel. Read-only.
+     * The D-Bus interface representing the type of this channel. Read-only
+     * except during construction (and in connection managers, attempts to
+     * set it during construction will usually be ignored or treated as an
+     * error).
+     *
+     * This is really only read-write for the benefit of #TpChannel -
+     * GLib considers CONSTRUCT_ONLY|READWRITE to be incompatible with
+     * READONLY, because CONSTRUCT_ONLY is a restriction (arguably a GLib bug)
      */
     param_spec = g_param_spec_string ("channel-type", "Telepathy channel type",
-                                      "The D-Bus interface representing the "
-                                      "type of this channel.",
-                                      NULL,
-                                      G_PARAM_READABLE |
-                                      G_PARAM_STATIC_NAME |
-                                      G_PARAM_STATIC_BLURB);
+        "The D-Bus interface representing the type of this channel.",
+        NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+        G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
     g_object_interface_install_property (klass, param_spec);
 
     /**
