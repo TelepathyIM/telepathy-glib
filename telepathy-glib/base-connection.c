@@ -461,6 +461,10 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   DEBUG("Post-construction: (TpBaseConnection *)%p", self);
 
   g_assert (cls->create_handle_repos != NULL);
+  g_assert (cls->create_channel_factories != NULL);
+  g_assert (cls->shut_down != NULL);
+  g_assert (cls->start_connecting != NULL);
+
   (cls->create_handle_repos) (self, priv->handles);
 
   /* a connection that doesn't support contacts is no use to anyone */
@@ -474,7 +478,6 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
       }
     }
 
-  g_assert (cls->create_channel_factories);
   priv->channel_factories = cls->create_channel_factories (self);
 
   for (i = 0; i < priv->channel_factories->len; i++)
@@ -1563,7 +1566,6 @@ tp_base_connection_change_status (TpBaseConnection *self,
             (klass->disconnected) (self);
           g_ptr_array_foreach (priv->channel_factories, (GFunc)
               tp_channel_factory_iface_disconnected, NULL);
-          g_assert (klass->shut_down);
         }
       (klass->shut_down) (self);
       break;
