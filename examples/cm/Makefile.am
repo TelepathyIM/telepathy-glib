@@ -1,1 +1,3 @@
-SUBDIRS = no-protocols
+SUBDIRS = \
+    echo \
+    no-protocols
