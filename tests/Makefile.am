@@ -1,5 +1,9 @@
+SUBDIRS = \
+    . \
+    dbus \
+    tools
+
 noinst_PROGRAMS = \
-    test-dbus \
     test-handle-set \
     test-heap \
     test-intset \
@@ -7,11 +11,6 @@ noinst_PROGRAMS = \
     test-internal-debug
 
 TESTS = $(noinst_PROGRAMS)
-
-test_dbus_SOURCES = \
-    test-dbus.c
-test_dbus_LDADD = \
-    ../telepathy-glib/libtelepathy-glib-internal.la
 
 test_handle_set_SOURCES = \
     test-intset.c
@@ -43,7 +42,9 @@ test_internal_debug_LDADD = \
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
 
-AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @COVERAGE_CFLAGS@ -I.. -I$(srcdir)/..
-AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@
-
-TESTS_ENVIRONMENT = sh $(top_srcdir)/tools/with-session-bus.sh --session --
+AM_CFLAGS = \
+    $(ERROR_CFLAGS) \
+    $(DBUS_CFLAGS) \
+    $(GLIB_CFLAGS) \
+    $(COVERAGE_CFLAGS) \
+    $(TP_GLIB_CFLAGS)
