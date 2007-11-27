@@ -28,6 +28,7 @@ G_BEGIN_DECLS
 
 typedef struct _TpConnectionManager TpConnectionManager;
 typedef struct _TpConnectionManagerClass TpConnectionManagerClass;
+typedef struct _TpConnectionManagerPrivate TpConnectionManagerPrivate;
 
 GType tp_connection_manager_get_type (void);
 
@@ -81,6 +82,19 @@ typedef enum
   TP_CM_INFO_SOURCE_FILE,
   TP_CM_INFO_SOURCE_LIVE
 } TpCMInfoSource;
+
+struct _TpConnectionManager {
+    TpProxy parent;
+
+    const TpConnectionManagerProtocol * const *protocols;
+
+    gboolean running:1;
+    gboolean always_introspect:1;
+    TpCMInfoSource info_source:2;
+    guint reserved_flags:28;
+
+    TpConnectionManagerPrivate *priv;
+};
 
 TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
     const gchar *name, const gchar *manager_filename, GError **error);

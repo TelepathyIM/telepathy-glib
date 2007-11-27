@@ -85,6 +85,19 @@ enum
 
 /**
  * TpConnectionManager:
+ * @parent: The parent class instance
+ * @protocols: If info_source > %TP_CM_INFO_SOURCE_NONE, a %NULL-terminated
+ *  array of pointers to #TpConnectionManagerProtocol structures; otherwise
+ *  %NULL. Should be considered read-only
+ * @running: %TRUE if the CM is currently known to be running. Should be
+ *  considered read-only
+ * @always_introspect: %TRUE if the CM will be introspected automatically.
+ *  Should be considered read-only: use the
+ *  #TpConnectionManager:always-introspect property if you want to change it
+ * @info_source: The source of @protocols, or %TP_CM_INFO_SOURCE_NONE
+ *  if no info has been discovered yet
+ * @reserved_flags: Reserved for future use
+ * @priv: Pointer to opaque private data
  *
  * A proxy object for a Telepathy connection manager.
  *
@@ -98,35 +111,24 @@ enum
  * got-info(FILE) on success, got-info(NONE) if no file
  * or if reading the file failed.
  *
- * When the CM runs, we automatically introspect it. On success we emit
- * got-info(LIVE). On failure, re-emit got-info(NONE) or got-info(FILE) as
- * appropriate.
+ * When the CM runs, we automatically introspect it if @always_introspect
+ * is %TRUE. On success we emit got-info(LIVE). On failure, re-emit
+ * got-info(NONE) or got-info(FILE) as appropriate.
  *
  * If we're asked to activate the CM, it'll implicitly be introspected.
  *
  * If the CM exits, we still consider it to have been "introspected". If it's
  * re-run, we introspect it again.
  */
-struct _TpConnectionManager {
-    TpProxy parent;
-    /*<private>*/
-
+struct _TpConnectionManagerPrivate {
     /* absolute path to .manager file */
     gchar *manager_file;
 
-    /* TRUE if we have introspect info from a file and/or from the CM */
-    TpCMInfoSource info_source:2;
-
-    /* If TRUE, we opportunistically introspect the CM when it comes online,
-     * even if we have its info from the .manager file */
-    gboolean always_introspect:1;
-
-    /* TRUE if the CM is currently running */
-    gboolean running:1;
     /* TRUE if we're waiting for ListProtocols */
     gboolean listing_protocols:1;
 
-    /* GPtrArray of TpConnectionManagerProtocol *
+    /* GPtrArray of TpConnectionManagerProtocol *. This is the implementation
+     * for self->protocols.
      *
      * NULL if file_info and live_info are both FALSE
      * Protocols from file, if file_info is TRUE but live_info is FALSE
@@ -229,7 +231,7 @@ tp_connection_manager_got_parameters (TpProxy *proxy,
   proto_struct->name = g_strdup (protocol);
   proto_struct->params =
       (TpConnectionManagerParam *) g_array_free (output, FALSE);
-  g_ptr_array_add (self->found_protocols, proto_struct);
+  g_ptr_array_add (self->priv->found_protocols, proto_struct);
 
   tp_connection_manager_continue_introspection (self);
 }
@@ -267,23 +269,23 @@ tp_connection_manager_free_protocols (GPtrArray *protocols)
 static void
 tp_connection_manager_end_introspection (TpConnectionManager *self)
 {
-  gboolean emit = self->listing_protocols;
+  gboolean emit = self->priv->listing_protocols;
 
-  self->listing_protocols = FALSE;
+  self->priv->listing_protocols = FALSE;
 
-  if (self->found_protocols != NULL)
+  if (self->priv->found_protocols != NULL)
     {
-      tp_connection_manager_free_protocols (self->found_protocols);
-      self->found_protocols = NULL;
+      tp_connection_manager_free_protocols (self->priv->found_protocols);
+      self->priv->found_protocols = NULL;
     }
 
-  if (self->pending_protocols != NULL)
+  if (self->priv->pending_protocols != NULL)
     {
       emit = TRUE;
-      if (self->pending_protocols->len > 0)
-        g_strfreev ((gchar **) g_ptr_array_free (self->pending_protocols,
+      if (self->priv->pending_protocols->len > 0)
+        g_strfreev ((gchar **) g_ptr_array_free (self->priv->pending_protocols,
               FALSE));
-      self->pending_protocols = NULL;
+      self->priv->pending_protocols = NULL;
     }
 
   if (emit)
@@ -295,18 +297,21 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 {
   gchar *next_protocol;
 
-  g_assert (self->pending_protocols != NULL);
+  g_assert (self->priv->pending_protocols != NULL);
 
-  if (self->pending_protocols->len == 0)
+  if (self->priv->pending_protocols->len == 0)
     {
       GPtrArray *tmp;
-      g_ptr_array_add (self->found_protocols, NULL);
+      g_ptr_array_add (self->priv->found_protocols, NULL);
 
       /* swap found_protocols and protocols, so we'll free the old protocols
        * as part of end_introspection */
-      tmp = self->protocols;
-      self->protocols = self->found_protocols;
-      self->found_protocols = tmp;
+      tmp = self->priv->protocols;
+      self->priv->protocols = self->priv->found_protocols;
+      self->priv->found_protocols = tmp;
+
+      self->protocols = (const TpConnectionManagerProtocol * const *)
+          self->priv->protocols->pdata;
 
       self->info_source = TP_CM_INFO_SOURCE_LIVE;
       tp_connection_manager_end_introspection (self);
@@ -314,7 +319,8 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
       return;
     }
 
-  next_protocol = g_ptr_array_remove_index_fast (self->pending_protocols, 0);
+  next_protocol = g_ptr_array_remove_index_fast (self->priv->pending_protocols,
+      0);
   tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
       tp_connection_manager_got_parameters, next_protocol, g_free,
       NULL);
@@ -330,7 +336,7 @@ tp_connection_manager_got_protocols (TpProxy *proxy,
   guint i = 0;
   const gchar **iter;
 
-  self->listing_protocols = FALSE;
+  self->priv->listing_protocols = FALSE;
 
   if (error != NULL)
     {
@@ -348,16 +354,16 @@ tp_connection_manager_got_protocols (TpProxy *proxy,
   for (iter = protocols; *iter != NULL; iter++)
     i++;
 
-  g_assert (self->found_protocols == NULL);
+  g_assert (self->priv->found_protocols == NULL);
   /* Allocate one more pointer - we're going to append NULL afterwards */
-  self->found_protocols = g_ptr_array_sized_new (i + 1);
+  self->priv->found_protocols = g_ptr_array_sized_new (i + 1);
 
-  g_assert (self->pending_protocols == NULL);
-  self->pending_protocols = g_ptr_array_sized_new (i);
+  g_assert (self->priv->pending_protocols == NULL);
+  self->priv->pending_protocols = g_ptr_array_sized_new (i);
 
   for (iter = protocols; *iter != NULL; iter++)
     {
-      g_ptr_array_add (self->pending_protocols, g_strdup (*iter));
+      g_ptr_array_add (self->priv->pending_protocols, g_strdup (*iter));
     }
 
   tp_connection_manager_continue_introspection (self);
@@ -391,11 +397,11 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
 
       /* Start introspecting if we want to and we're not already */
-      if (!self->listing_protocols &&
+      if (!self->priv->listing_protocols &&
           (self->always_introspect ||
            self->info_source == TP_CM_INFO_SOURCE_NONE))
         {
-          self->listing_protocols = TRUE;
+          self->priv->listing_protocols = TRUE;
 
           tp_cli_connection_manager_call_list_protocols (self, -1,
               tp_connection_manager_got_protocols, NULL, NULL,
@@ -711,9 +717,11 @@ tp_connection_manager_read_file (TpConnectionManager *self,
 
   g_ptr_array_add (protocols, NULL);
 
-  g_assert (self->protocols == NULL);
-  self->protocols = protocols;
+  g_assert (self->priv->protocols == NULL);
+  self->priv->protocols = protocols;
   self->info_source = TP_CM_INFO_SOURCE_FILE;
+  self->protocols = (const TpConnectionManagerProtocol * const *)
+      self->priv->protocols->pdata;
 
   g_strfreev (groups);
   g_key_file_free (file);
@@ -724,9 +732,9 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 {
   TpConnectionManager *self = TP_CONNECTION_MANAGER (data);
 
-  if (self->protocols == NULL && self->manager_file != NULL
-      && self->manager_file[0] != '\0')
-    tp_connection_manager_read_file (self, self->manager_file);
+  if (self->priv->protocols == NULL && self->priv->manager_file != NULL
+      && self->priv->manager_file[0] != '\0')
+    tp_connection_manager_read_file (self, self->priv->manager_file);
 
   g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
 
@@ -786,6 +794,8 @@ tp_connection_manager_constructor (GType type,
 static void
 tp_connection_manager_init (TpConnectionManager *self)
 {
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONNECTION_MANAGER,
+      TpConnectionManagerPrivate);
 }
 
 static void
@@ -824,7 +834,7 @@ tp_connection_manager_get_property (GObject *object,
       break;
 
     case PROP_MANAGER_FILE:
-      g_value_set_string (value, self->manager_file);
+      g_value_set_string (value, self->priv->manager_file);
       break;
 
     case PROP_ALWAYS_INTROSPECT:
@@ -849,7 +859,7 @@ tp_connection_manager_set_property (GObject *object,
   switch (property_id)
     {
     case PROP_MANAGER_FILE:
-      g_free (self->manager_file);
+      g_free (self->priv->manager_file);
 
       tmp = g_value_get_string (value);
       if (tmp == NULL)
@@ -858,12 +868,12 @@ tp_connection_manager_set_property (GObject *object,
 
           name++; /* avoid the '/' */
 
-          self->manager_file =
+          self->priv->manager_file =
               tp_connection_manager_find_manager_file (name);
         }
       else if (tmp[0] == '\0')
         {
-          self->manager_file = g_strdup (tmp);
+          self->priv->manager_file = g_strdup (tmp);
         }
 
       g_idle_add (tp_connection_manager_idle_read_manager_file, self);
@@ -886,6 +896,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
+
+  g_type_class_add_private (klass, sizeof (TpConnectionManagerPrivate));
 
   object_class->constructor = tp_connection_manager_constructor;
   object_class->get_property = tp_connection_manager_get_property;
@@ -1064,7 +1076,7 @@ tp_connection_manager_activate (TpConnectionManager *self)
   if (self->running)
     return FALSE;
 
-  self->listing_protocols = TRUE;
+  self->priv->listing_protocols = TRUE;
   tp_cli_connection_manager_call_list_protocols (self, -1,
       tp_connection_manager_got_protocols, NULL, NULL, NULL);
 

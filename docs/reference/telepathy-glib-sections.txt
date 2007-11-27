@@ -1856,6 +1856,7 @@ TP_CONNECTION_MANAGER_CLASS
 TP_CONNECTION_MANAGER_GET_CLASS
 TP_IS_CONNECTION_MANAGER
 TP_IS_CONNECTION_MANAGER_CLASS
+TpConnectionManagerPrivate
 <SUBSECTION>
 tp_cli_connection_manager_callback_for_get_parameters
 tp_cli_connection_manager_call_get_parameters
