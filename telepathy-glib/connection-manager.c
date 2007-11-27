@@ -881,7 +881,28 @@ tp_connection_manager_set_property (GObject *object,
       break;
 
     case PROP_ALWAYS_INTROSPECT:
-      self->always_introspect = g_value_get_boolean (value);
+        {
+          gboolean old = self->always_introspect;
+
+          self->always_introspect = g_value_get_boolean (value);
+
+          if (self->running && !self->priv->listing_protocols &&
+              !old && self->always_introspect &&
+              self->priv->found_protocols == NULL &&
+              self->info_source < TP_CM_INFO_SOURCE_LIVE)
+            {
+              /* It's running, we're not in the process of introspecting,
+               * we weren't previously auto-introspecting but we are now,
+               * and we don't have live info - so we should kick off an
+               * introspect attempt.
+               */
+              self->priv->listing_protocols = TRUE;
+
+              tp_cli_connection_manager_call_list_protocols (self, -1,
+                  tp_connection_manager_got_protocols, NULL, NULL,
+                  NULL);
+            }
+        }
       break;
 
     default:
