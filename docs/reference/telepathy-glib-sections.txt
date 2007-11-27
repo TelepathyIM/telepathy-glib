@@ -1845,6 +1845,7 @@ TpConnectionManagerClass
 TpCMInfoSource
 tp_connection_manager_new
 tp_connection_manager_activate
+tp_connection_manager_check_valid_name
 <SUBSECTION Standard>
 tp_connection_manager_get_type
 TP_TYPE_CONNECTION_MANAGER

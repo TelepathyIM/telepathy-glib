@@ -1212,3 +1212,50 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
       tp_list_connection_managers_got_names, list_context,
       (GDestroyNotify) list_context_unref, weak_object);
 }
+
+/**
+ * tp_connection_manager_check_valid_name:
+ * @name: a possible connection manager name
+ * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
+ *
+ * Check that the given string is a valid connection manager name, i.e. that
+ * it consists entirely of ASCII letters, digits and underscores, and starts
+ * with a letter.
+ *
+ * Returns: %TRUE if @name is valid
+ */
+gboolean
+tp_connection_manager_check_valid_name (const gchar *name,
+                                        GError **error)
+{
+  const gchar *name_char;
+
+  if (name == NULL || name[0] == '\0')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The empty string is not a valid connection manager name");
+      return FALSE;
+    }
+
+  if (!g_ascii_isalpha (name[0]))
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Not a valid connection manager name because first character "
+          "is not an ASCII letter: %s", name);
+      return FALSE;
+    }
+
+  for (name_char = name; *name_char != '\0'; name_char++)
+    {
+      if (!g_ascii_isalnum (*name_char) && *name_char != '_')
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "Not a valid connection manager name because character '%c' "
+              "is not an ASCII letter, digit or underscore: %s",
+              *name_char, name);
+          return FALSE;
+        }
+    }
+
+  return TRUE;
+}

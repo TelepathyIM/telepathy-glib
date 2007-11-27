@@ -95,6 +95,9 @@ void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
+gboolean tp_connection_manager_check_valid_name (const gchar *name,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection-manager.h>
