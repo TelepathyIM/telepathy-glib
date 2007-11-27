@@ -32,6 +32,6 @@ main (int argc,
     tp_debug_set_persistent (TRUE);
 #endif
 
-  return tp_run_connection_manager ("example-no-protocols", VERSION,
+  return tp_run_connection_manager ("telepathy-example-no-protocols", VERSION,
       construct_cm, argc, argv);
 }
