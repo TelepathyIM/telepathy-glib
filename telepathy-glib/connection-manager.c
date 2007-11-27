@@ -49,6 +49,7 @@
  * @cms: %NULL-terminated array of #TpConnectionManager, or %NULL on error
  * @error: %NULL on success, or an error that occurred
  * @user_data: user-supplied data
+ * @weak_object: user-supplied weakly referenced object
  *
  * Signature of the callback supplied to tp_list_connection_managers().
  */
