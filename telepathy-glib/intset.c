@@ -599,7 +599,7 @@ tp_intset_dump (const TpIntSet *set)
 
 /**
  * tp_intset_iter_next:
- * @iter: An iterator originally initialized with TP_INT_SET_INITIALIZER(set)
+ * @iter: An iterator originally initialized with TP_INTSET_INIT(set)
  *
  * If there are integers in (@iter->set) higher than (@iter->element), set
  * (iter->element) to the next one and return %TRUE. Otherwise return %FALSE.
@@ -607,7 +607,7 @@ tp_intset_dump (const TpIntSet *set)
  * Usage:
  *
  * <informalexample><programlisting>
- * TpIntSetIter iter = TP_INT_SET_INIT (intset);
+ * TpIntSetIter iter = TP_INTSET_INIT (intset);
  * while (tp_intset_iter_next (&amp;iter;))
  * {
  *   printf ("%u is in the intset\n", iter.element);
