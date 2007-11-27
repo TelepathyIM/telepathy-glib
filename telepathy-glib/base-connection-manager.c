@@ -98,12 +98,33 @@ tp_base_connection_manager_finalize (GObject *object)
   G_OBJECT_CLASS (tp_base_connection_manager_parent_class)->finalize (object);
 }
 
+static GObject *
+tp_base_connection_manager_constructor (GType type,
+                                        guint n_params,
+                                        GObjectConstructParam *params)
+{
+  GObjectClass *object_class =
+      (GObjectClass *) tp_base_connection_manager_parent_class;
+  TpBaseConnectionManager *self =
+      TP_BASE_CONNECTION_MANAGER (object_class->constructor (type, n_params,
+            params));
+  TpBaseConnectionManagerClass *cls =
+      TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
+
+  g_assert (tp_connection_manager_check_valid_name (cls->cm_dbus_name, NULL));
+  g_assert (cls->protocol_params != NULL);
+  g_assert (cls->new_connection != NULL);
+
+  return (GObject *) self;
+}
+
 static void
 tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpBaseConnectionManagerPrivate));
+  object_class->constructor = tp_base_connection_manager_constructor;
   object_class->dispose = tp_base_connection_manager_dispose;
   object_class->finalize = tp_base_connection_manager_finalize;
 
@@ -129,12 +150,6 @@ tp_base_connection_manager_init (TpBaseConnectionManager *self)
 {
   TpBaseConnectionManagerPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_BASE_CONNECTION_MANAGER, TpBaseConnectionManagerPrivate);
-  TpBaseConnectionManagerClass *cls =
-    TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
-
-  g_assert (tp_connection_manager_check_valid_name (cls->cm_dbus_name, NULL));
-  g_assert (cls->protocol_params != NULL);
-  g_assert (cls->new_connection != NULL);
 
   self->priv = priv;
 
