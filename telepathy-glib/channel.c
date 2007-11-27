@@ -20,6 +20,7 @@
 
 #include "telepathy-glib/channel.h"
 
+#include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
 
@@ -70,9 +71,15 @@ enum
   N_PROPS
 };
 
-G_DEFINE_TYPE (TpChannel,
+static void channel_iface_init (gpointer iface,
+                                gpointer data)
+{
+}
+
+G_DEFINE_TYPE_WITH_CODE (TpChannel,
     tp_channel,
-    TP_TYPE_PROXY);
+    TP_TYPE_PROXY,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, channel_iface_init));
 
 enum {
     SIGNAL_CHANNEL_READY,
@@ -288,6 +295,10 @@ static void
 tp_channel_init (TpChannel *self)
 {
   DEBUG ("%p", self);
+
+  self->channel_type = 0;
+  self->handle_type = TP_UNKNOWN_HANDLE_TYPE;
+  self->handle = 0;
 }
 
 static void
@@ -325,13 +336,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * reading this property will yield %NULL until we get the reply, or if
    * GetChannelType() fails.
    */
-  param_spec = g_param_spec_string ("channel-type", "Telepathy channel type",
-      "The D-Bus interface representing the type of this channel",
-      NULL,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NAME |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_CHANNEL_TYPE,
-      param_spec);
+  g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
+      "channel-type");
 
   /**
    * TpChannel:handle-type:
@@ -344,13 +350,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * handle type is; reading this property will yield TP_UNKNOWN_HANDLE_TYPE
    * until we get the reply.
    */
-  param_spec = g_param_spec_uint ("handle-type", "Handle type",
-      "The TpHandleType of this channel",
-      0, G_MAXUINT32, TP_UNKNOWN_HANDLE_TYPE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NAME |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_HANDLE_TYPE,
-      param_spec);
+  g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
+      "handle-type");
 
   /**
    * TpChannel:handle:
@@ -363,12 +364,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * property will yield 0 until we get the reply, or if GetHandle()
    * fails.
    */
-  param_spec = g_param_spec_uint ("handle", "Handle",
-      "The TpHandle of this channel", 0, G_MAXUINT32, 0,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NAME |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_HANDLE,
-      param_spec);
+  g_object_class_override_property (object_class, PROP_HANDLE,
+      "handle");
 
   /**
    * TpChannel::channel-ready:
