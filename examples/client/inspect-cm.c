@@ -54,6 +54,7 @@ main (int argc,
   const gchar *cm_name, *manager_file;
   TpConnectionManager *cm;
   GMainLoop *mainloop;
+  GError *error;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("TP_EXAMPLES_DEBUG"));
@@ -67,7 +68,14 @@ main (int argc,
   manager_file = argv[2];   /* possibly NULL */
 
   cm = tp_connection_manager_new (tp_dbus_daemon_new (tp_get_bus ()),
-      cm_name, manager_file);
+      cm_name, manager_file, &error);
+
+  if (cm == NULL)
+    {
+      g_warning ("%s", error->message);
+      return 1;
+    }
+
   g_signal_connect (cm, "got-info",
       G_CALLBACK (connection_manager_got_info), mainloop);
 
