@@ -27,7 +27,8 @@ main (int argc,
       char **argv)
 {
 #ifdef ENABLE_DEBUG
-  tp_debug_set_flags ("EXAMPLE_DEBUG");
+  tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
+
   if (g_getenv ("EXAMPLE_PERSIST") != NULL)
     tp_debug_set_persistent (TRUE);
 #endif
