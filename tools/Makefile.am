@@ -14,6 +14,7 @@ EXTRA_DIST = \
     glib-ginterface-gen.py \
     glib-gtypes-generator.py \
     glib-signals-marshal-gen.py \
+    gobject-foo.py \
     identity.xsl \
     libglibcodegen.py \
     ls-interfaces.xsl \
