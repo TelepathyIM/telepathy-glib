@@ -586,15 +586,24 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   TpCMParamSetter set_param;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
-  g_assert (cls->new_connection != NULL);
+
   g_assert (cls->cm_dbus_name != NULL);
+  g_assert (g_ascii_isalpha (cls->cm_dbus_name[0]));
+
+  for (p = cls->cm_dbus_name; *p != '\0'; p++)
+    {
+      g_assert (g_ascii_isalnum (*p) || *p == '_');
+    }
+
   g_assert (cls->protocol_params != NULL);
+  g_assert (cls->new_connection != NULL);
 
   if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
     {
       goto ERROR;
     }
 
+  g_assert (protospec->parameters != NULL);
   g_assert (protospec->params_new != NULL);
   g_assert (protospec->params_free != NULL);
 
@@ -666,10 +675,10 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   guint request_name_result;
   TpBaseConnectionManagerClass *cls;
   GString *string;
+  const gchar *p;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (self));
   cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
-  g_assert (cls->cm_dbus_name);
 
   bus = tp_get_bus ();
   bus_proxy = tp_get_bus_proxy ();
