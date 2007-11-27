@@ -608,7 +608,7 @@ tp_intset_dump (const TpIntSet *set)
  *
  * <informalexample><programlisting>
  * TpIntSetIter iter = TP_INTSET_INIT (intset);
- * while (tp_intset_iter_next (&amp;iter;))
+ * while (tp_intset_iter_next (&amp;iter))
  * {
  *   printf ("%u is in the intset\n", iter.element);
  * }
