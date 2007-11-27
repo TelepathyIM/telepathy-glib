@@ -37,6 +37,7 @@
 
 #include <dbus/dbus-protocol.h>
 
+#include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
@@ -131,7 +132,9 @@ tp_base_connection_manager_init (TpBaseConnectionManager *self)
   TpBaseConnectionManagerClass *cls =
     TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
 
-  (void)cls;
+  g_assert (tp_connection_manager_check_valid_name (cls->cm_dbus_name, NULL));
+  g_assert (cls->protocol_params != NULL);
+  g_assert (cls->new_connection != NULL);
 
   self->priv = priv;
 
@@ -584,20 +587,8 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   TpIntSet *params_present = NULL;
   const TpCMProtocolSpec *protospec = NULL;
   TpCMParamSetter set_param;
-  const gchar *name_char;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
-
-  g_assert (cls->cm_dbus_name != NULL);
-  g_assert (g_ascii_isalpha (cls->cm_dbus_name[0]));
-
-  for (name_char = cls->cm_dbus_name; *name_char != '\0'; name_char++)
-    {
-      g_assert (g_ascii_isalnum (*name_char) || *name_char == '_');
-    }
-
-  g_assert (cls->protocol_params != NULL);
-  g_assert (cls->new_connection != NULL);
 
   if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
     {
