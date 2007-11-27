@@ -83,7 +83,7 @@ typedef enum
 } TpCMInfoSource;
 
 TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
-    const gchar *name, const gchar *manager_filename);
+    const gchar *name, const gchar *manager_filename, GError **error);
 
 gboolean tp_connection_manager_activate (TpConnectionManager *self);
 

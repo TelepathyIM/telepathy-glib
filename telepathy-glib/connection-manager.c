@@ -999,6 +999,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
  * @dbus: Proxy for the D-Bus daemon
  * @name: The connection manager name
  * @manager_filename: The #TpConnectionManager::manager-file property
+ * @error: used to return an error if %NULL is returned
  *
  * Convenience function to create a new connection manager proxy.
  *
@@ -1007,23 +1008,18 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 TpConnectionManager *
 tp_connection_manager_new (TpDBusDaemon *dbus,
                            const gchar *name,
-                           const gchar *manager_filename)
+                           const gchar *manager_filename,
+                           GError **error)
 {
   TpConnectionManager *cm;
   gchar *object_path, *bus_name;
-  const gchar *name_char;
 
   g_return_val_if_fail (dbus != NULL, NULL);
   g_return_val_if_fail (name != NULL, NULL);
 
-  /* FIXME: return a GError rather than using assertions? */
-  g_return_val_if_fail (g_ascii_isalpha (name[0]), NULL);
-
-  for (name_char = name; *name_char != '\0'; name_char++)
-    {
-      g_return_val_if_fail (g_ascii_isalnum (*name_char) || *name_char == '_',
-          NULL);
-    }
+  /* FIXME: validate object path and bus name too */
+  if (!tp_connection_manager_check_valid_name (name, error))
+    return NULL;
 
   object_path = g_strdup_printf ("%s%s", TP_CM_OBJECT_PATH_BASE, name);
   bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE, name);
@@ -1142,8 +1138,10 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
 
       if (g_hash_table_lookup (list_context->table, name) == NULL)
         {
-          cm = tp_connection_manager_new (bus_daemon, name, NULL);
-          g_hash_table_insert (list_context->table, g_strdup (name), cm);
+          /* just ignore connection managers with bad names */
+          cm = tp_connection_manager_new (bus_daemon, name, NULL, NULL);
+          if (cm != NULL)
+            g_hash_table_insert (list_context->table, g_strdup (name), cm);
         }
     }
 
