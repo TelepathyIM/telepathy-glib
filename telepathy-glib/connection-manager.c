@@ -1155,6 +1155,8 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
 
       g_hash_table_foreach_steal (list_context->table, steal_into_ptr_array,
           arr);
+      g_ptr_array_add (arr, NULL);
+
       list_context->callback ((TpConnectionManager **) g_ptr_array_free (arr,
             FALSE),
           NULL, list_context->user_data, list_context->weak_object);
