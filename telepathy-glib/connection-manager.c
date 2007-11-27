@@ -59,10 +59,6 @@
  *
  * The class of a #TpConnectionManager.
  */
-struct _TpConnectionManagerClass {
-    TpProxyClass parent_class;
-    /*<private>*/
-};
 
 enum
 {

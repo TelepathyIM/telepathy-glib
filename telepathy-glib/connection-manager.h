@@ -96,6 +96,12 @@ struct _TpConnectionManager {
     TpConnectionManagerPrivate *priv;
 };
 
+struct _TpConnectionManagerClass {
+    /*<private>*/
+    TpProxyClass parent_class;
+    gpointer *priv;
+};
+
 TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
     const gchar *name, const gchar *manager_filename, GError **error);
 
