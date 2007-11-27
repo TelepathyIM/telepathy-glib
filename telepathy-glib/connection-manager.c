@@ -1011,9 +1011,19 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
 {
   TpConnectionManager *cm;
   gchar *object_path, *bus_name;
+  const gchar *name_char;
 
   g_return_val_if_fail (dbus != NULL, NULL);
   g_return_val_if_fail (name != NULL, NULL);
+
+  /* FIXME: return a GError rather than using assertions? */
+  g_return_val_if_fail (g_ascii_isalpha (name[0]), NULL);
+
+  for (name_char = name; *name_char != '\0'; name_char++)
+    {
+      g_return_val_if_fail (g_ascii_isalnum (*name_char) || *name_char == '_',
+          NULL);
+    }
 
   object_path = g_strdup_printf ("%s%s", TP_CM_OBJECT_PATH_BASE, name);
   bus_name = g_strdup_printf ("%s%s", TP_CM_BUS_NAME_BASE, name);
