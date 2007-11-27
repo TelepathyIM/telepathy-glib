@@ -53,7 +53,7 @@ main (int argc,
   GMainLoop *mainloop;
 
   g_type_init ();
-  tp_debug_set_flags (g_getenv ("TP_EXAMPLES_DEBUG"));
+  tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   mainloop = g_main_loop_new (NULL, FALSE);
 

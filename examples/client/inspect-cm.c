@@ -57,7 +57,7 @@ main (int argc,
   GError *error;
 
   g_type_init ();
-  tp_debug_set_flags (g_getenv ("TP_EXAMPLES_DEBUG"));
+  tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   if (argc < 2)
     return 2;
