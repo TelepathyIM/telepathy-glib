@@ -66,6 +66,7 @@
 ^spec/spec-gen\.am$
 ^telepathy-glib/_gen($|/)
 ^tests/test-[-a-z]+$
+^tests/[-a-z]+/test-[-a-z]+$
 (^|/)cscope\.out$
 (^|/)core$
 ^debian($|/)
