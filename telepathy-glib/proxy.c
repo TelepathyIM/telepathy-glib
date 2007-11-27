@@ -685,7 +685,7 @@ tp_proxy_class_init (TpProxyClass *klass)
    */
   param_spec = g_param_spec_boxed ("dbus-connection", "D-Bus connection",
       "The D-Bus connection used by this object", DBUS_TYPE_G_CONNECTION,
-      G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_DBUS_CONNECTION,
       param_spec);
@@ -697,7 +697,7 @@ tp_proxy_class_init (TpProxyClass *klass)
    */
   param_spec = g_param_spec_string ("bus-name", "D-Bus bus name",
       "The D-Bus bus name for this object", NULL,
-      G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_BUS_NAME,
       param_spec);
@@ -710,7 +710,7 @@ tp_proxy_class_init (TpProxyClass *klass)
    */
   param_spec = g_param_spec_string ("object-path", "D-Bus object path",
       "The D-Bus object path for this object", NULL,
-      G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH,
       param_spec);
