@@ -791,9 +791,13 @@ tp_dbus_daemon_constructor (GType type,
       (GObjectClass *) tp_dbus_daemon_parent_class;
   TpDBusDaemon *self = TP_DBUS_DAEMON (object_class->constructor (type,
         n_params, params));
+  TpProxy *as_proxy = (TpProxy *) self;
 
   tp_cli_dbus_daemon_connect_to_name_owner_changed (self,
       _tp_dbus_daemon_name_owner_changed_cb, NULL, NULL, NULL);
+
+  g_assert (!tp_strdiff (as_proxy->bus_name, DBUS_SERVICE_DBUS));
+  g_assert (!tp_strdiff (as_proxy->object_path, DBUS_PATH_DBUS));
 
   return (GObject *) self;
 }
