@@ -85,6 +85,8 @@ enum
 /**
  * TpConnectionManager:
  * @parent: The parent class instance
+ * @name: The identifier of the connection manager (e.g. "gabble").
+ *  Should be considered read-only
  * @protocols: If info_source > %TP_CM_INFO_SOURCE_NONE, a %NULL-terminated
  *  array of pointers to #TpConnectionManagerProtocol structures; otherwise
  *  %NULL. Should be considered read-only
@@ -770,6 +772,19 @@ tp_connection_manager_find_manager_file (const gchar *name)
   return NULL;
 }
 
+static void
+tp_connection_manager_object_path_set_cb (TpConnectionManager *self,
+                                          GParamSpec *arg,
+                                          gpointer unused)
+{
+  const gchar *object_path = ((TpProxy *) self)->object_path;
+
+  if (object_path == NULL || object_path[0] != '/')
+    self->name = NULL;
+  else
+    self->name = strrchr (object_path, '/') + 1;
+}
+
 static GObject *
 tp_connection_manager_constructor (GType type,
                                    guint n_params,
@@ -786,6 +801,9 @@ tp_connection_manager_constructor (GType type,
   tp_dbus_daemon_watch_name_owner (TP_DBUS_DAEMON (as_proxy->dbus_daemon),
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
       NULL);
+
+  g_signal_connect (self, "notify::object-path",
+      G_CALLBACK (tp_connection_manager_object_path_set_cb), NULL);
 
   return (GObject *) self;
 }
@@ -820,12 +838,7 @@ tp_connection_manager_get_property (GObject *object,
   switch (property_id)
     {
     case PROP_CONNECTION_MANAGER:
-        {
-          const gchar *name = strrchr (((TpProxy *) self)->object_path, '/');
-
-          name++; /* avoid the '/' */
-          g_value_set_string (value, name);
-        }
+      g_value_set_string (value, self->name);
       break;
 
     case PROP_INFO_SOURCE:
@@ -863,12 +876,8 @@ tp_connection_manager_set_property (GObject *object,
       tmp = g_value_get_string (value);
       if (tmp == NULL)
         {
-          const gchar *name = strrchr (((TpProxy *) self)->object_path, '/');
-
-          name++; /* avoid the '/' */
-
           self->priv->manager_file =
-              tp_connection_manager_find_manager_file (name);
+              tp_connection_manager_find_manager_file (self->name);
         }
       else if (tmp[0] == '\0')
         {

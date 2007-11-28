@@ -86,6 +86,7 @@ typedef enum
 struct _TpConnectionManager {
     TpProxy parent;
 
+    const gchar *name;
     const TpConnectionManagerProtocol * const *protocols;
 
     gboolean running:1;
