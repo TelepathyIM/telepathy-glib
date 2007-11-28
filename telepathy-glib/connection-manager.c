@@ -724,6 +724,8 @@ tp_connection_manager_read_file (TpConnectionManager *self,
   self->protocols = (const TpConnectionManagerProtocol * const *)
       self->priv->protocols->pdata;
 
+  g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
+
   g_strfreev (groups);
   g_key_file_free (file);
 }
@@ -736,8 +738,6 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
   if (self->priv->protocols == NULL && self->priv->manager_file != NULL
       && self->priv->manager_file[0] != '\0')
     tp_connection_manager_read_file (self, self->priv->manager_file);
-
-  g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
 
   return FALSE;
 }
