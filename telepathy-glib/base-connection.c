@@ -41,6 +41,7 @@
 
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/channel-factory-iface.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
@@ -599,7 +600,16 @@ tp_base_connection_register (TpBaseConnection *self,
   guint request_name_result;
   GError *request_error = NULL;
 
-  safe_proto = tp_escape_as_identifier (priv->protocol);
+  if (tp_connection_manager_check_valid_protocol_name (priv->protocol, NULL))
+    {
+      safe_proto = g_strdelimit (g_strdup (priv->protocol), "-", '_');
+    }
+  else
+    {
+      g_warning ("Protocol name %s is not valid - should match "
+          "[A-Za-z][A-Za-z0-9-]+", priv->protocol);
+      safe_proto = tp_escape_as_identifier (priv->protocol);
+    }
 
   if (cls->get_unique_connection_name)
     {
