@@ -745,9 +745,15 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 static gchar *
 tp_connection_manager_find_manager_file (const gchar *name)
 {
-  gchar *filename = g_strdup_printf ("%s/telepathy/managers/%s.manager",
-      g_get_user_data_dir (), name);
+  gchar *filename;
   const gchar * const * data_dirs;
+
+  /* if no name yet, do nothing */
+  if (name == NULL)
+    return NULL;
+
+  filename = g_strdup_printf ("%s/telepathy/managers/%s.manager",
+      g_get_user_data_dir (), name);
 
   DEBUG ("in XDG_DATA_HOME: trying %s", filename);
 
@@ -783,6 +789,14 @@ tp_connection_manager_object_path_set_cb (TpConnectionManager *self,
     self->name = NULL;
   else
     self->name = strrchr (object_path, '/') + 1;
+
+  if (self->priv->manager_file == NULL && self->name != NULL)
+    {
+      self->priv->manager_file =
+          tp_connection_manager_find_manager_file (self->name);
+
+      g_idle_add (tp_connection_manager_idle_read_manager_file, self);
+    }
 }
 
 static GObject *
@@ -879,7 +893,7 @@ tp_connection_manager_set_property (GObject *object,
           self->priv->manager_file =
               tp_connection_manager_find_manager_file (self->name);
         }
-      else if (tmp[0] == '\0')
+      else
         {
           self->priv->manager_file = g_strdup (tmp);
         }
