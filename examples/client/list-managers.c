@@ -12,7 +12,7 @@
 #include <telepathy-glib/debug.h>
 
 void
-got_connection_managers (TpConnectionManager **cms,
+got_connection_managers (TpConnectionManager * const *cms,
                          const GError *error,
                          gpointer user_data,
                          GObject *unused)
@@ -25,7 +25,7 @@ got_connection_managers (TpConnectionManager **cms,
     }
   else
     {
-      TpConnectionManager **iter = cms;
+      TpConnectionManager * const *iter = cms;
 
       for (iter = cms; *iter != NULL; iter++)
         {
@@ -39,8 +39,6 @@ got_connection_managers (TpConnectionManager **cms,
 
           g_free (name);
         }
-
-      g_free (cms);
     }
 
   g_main_loop_quit (mainloop);
