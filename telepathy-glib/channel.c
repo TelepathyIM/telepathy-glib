@@ -38,6 +38,8 @@
  * @see_also: #TpConnection
  *
  * #TpChannel objects provide convenient access to Telepathy channels.
+ *
+ * Since: 0.7.1
  */
 
 /**
