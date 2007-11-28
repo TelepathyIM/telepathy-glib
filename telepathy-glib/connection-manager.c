@@ -778,12 +778,23 @@ tp_connection_manager_find_manager_file (const gchar *name)
   return NULL;
 }
 
-static void
-tp_connection_manager_object_path_set_cb (TpConnectionManager *self,
-                                          GParamSpec *arg,
-                                          gpointer unused)
+static GObject *
+tp_connection_manager_constructor (GType type,
+                                   guint n_params,
+                                   GObjectConstructParam *params)
 {
-  const gchar *object_path = ((TpProxy *) self)->object_path;
+  GObjectClass *object_class =
+      (GObjectClass *) tp_connection_manager_parent_class;
+  TpConnectionManager *self =
+      TP_CONNECTION_MANAGER (object_class->constructor (type, n_params,
+            params));
+  TpProxy *as_proxy = (TpProxy *) self;
+  const gchar *object_path = as_proxy->object_path;
+
+  /* Watch my D-Bus name */
+  tp_dbus_daemon_watch_name_owner (TP_DBUS_DAEMON (as_proxy->dbus_daemon),
+      as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
+      NULL);
 
   if (object_path == NULL || object_path[0] != '/')
     self->name = NULL;
@@ -797,27 +808,6 @@ tp_connection_manager_object_path_set_cb (TpConnectionManager *self,
 
       g_idle_add (tp_connection_manager_idle_read_manager_file, self);
     }
-}
-
-static GObject *
-tp_connection_manager_constructor (GType type,
-                                   guint n_params,
-                                   GObjectConstructParam *params)
-{
-  GObjectClass *object_class =
-      (GObjectClass *) tp_connection_manager_parent_class;
-  TpConnectionManager *self =
-      TP_CONNECTION_MANAGER (object_class->constructor (type, n_params,
-            params));
-  TpProxy *as_proxy = (TpProxy *) self;
-
-  /* Watch my D-Bus name */
-  tp_dbus_daemon_watch_name_owner (TP_DBUS_DAEMON (as_proxy->dbus_daemon),
-      as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
-      NULL);
-
-  g_signal_connect (self, "notify::object-path",
-      G_CALLBACK (tp_connection_manager_object_path_set_cb), NULL);
 
   return (GObject *) self;
 }
