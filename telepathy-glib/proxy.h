@@ -26,6 +26,9 @@
 
 G_BEGIN_DECLS
 
+/* Forward declaration of a subclass - from dbus.h */
+typedef struct _TpDBusDaemon TpDBusDaemon;
+
 typedef struct _TpProxyPrivate TpProxyPrivate;
 
 typedef struct _TpProxy TpProxy;
@@ -33,7 +36,7 @@ typedef struct _TpProxy TpProxy;
 struct _TpProxy {
     GObject parent;
 
-    TpProxy *dbus_daemon;
+    TpDBusDaemon *dbus_daemon;
     DBusGConnection *dbus_connection;
     gchar *bus_name;
     gchar *object_path;
