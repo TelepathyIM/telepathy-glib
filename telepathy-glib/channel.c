@@ -201,7 +201,7 @@ tp_channel_got_channel_type_cb (TpProxy *proxy,
         }
       else
         {
-          DEBUG ("\t\tChannel type %s not valid: %s", *iter, err2->message);
+          DEBUG ("\t\tChannel type not valid: %s", err2->message);
           tp_proxy_invalidated ((TpProxy *) self, err2);
           return;
         }
