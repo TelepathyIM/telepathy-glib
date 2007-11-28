@@ -839,7 +839,7 @@ tp_connection_manager_constructor (GType type,
   const gchar *object_path = as_proxy->object_path;
 
   /* Watch my D-Bus name */
-  tp_dbus_daemon_watch_name_owner (TP_DBUS_DAEMON (as_proxy->dbus_daemon),
+  tp_dbus_daemon_watch_name_owner (as_proxy->dbus_daemon,
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
       NULL);
 
@@ -871,9 +871,8 @@ tp_connection_manager_dispose (GObject *object)
 {
   TpProxy *as_proxy = TP_PROXY (object);
 
-  tp_dbus_daemon_cancel_name_owner_watch (
-      TP_DBUS_DAEMON (as_proxy->dbus_daemon), as_proxy->bus_name,
-      tp_connection_manager_name_owner_changed_cb, object);
+  tp_dbus_daemon_cancel_name_owner_watch (as_proxy->dbus_daemon,
+      as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, object);
 
   G_OBJECT_CLASS (tp_connection_manager_parent_class)->dispose (object);
 }
