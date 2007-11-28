@@ -605,6 +605,9 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
 
+  if (!tp_connection_manager_check_valid_protocol_name (proto, &error))
+    goto ERROR;
+
   if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
     {
       goto ERROR;
