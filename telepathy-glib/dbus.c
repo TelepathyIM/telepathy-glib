@@ -126,6 +126,8 @@ tp_get_bus_proxy (void)
  * A set of flags indicating which D-Bus bus names are acceptable.
  * They can be combined with the bitwise-or operator to accept multiple
  * types. %TP_DBUS_NAME_TYPE_ANY is the bitwise-or of the other types.
+ *
+ * Since: 0.7.1
  */
 
 /**
@@ -140,6 +142,8 @@ tp_get_bus_proxy (void)
  * type.
  *
  * Returns: %TRUE if @name is valid
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_dbus_check_valid_bus_name (const gchar *name,
@@ -270,6 +274,8 @@ tp_dbus_check_valid_bus_name (const gchar *name,
  * also appropriate to use to check for valid error names.
  *
  * Returns: %TRUE if @name is valid
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_dbus_check_valid_interface_name (const gchar *name,
@@ -361,6 +367,8 @@ tp_dbus_check_valid_interface_name (const gchar *name,
  * Check that the given string is a valid D-Bus member (method or signal) name.
  *
  * Returns: %TRUE if @name is valid
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_dbus_check_valid_member_name (const gchar *name,
@@ -415,6 +423,8 @@ tp_dbus_check_valid_member_name (const gchar *name,
  * Check that the given string is a valid D-Bus object path.
  *
  * Returns: %TRUE if @path is valid
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_dbus_check_valid_object_path (const gchar *path, GError **error)
@@ -479,6 +489,8 @@ struct _TpDBusDaemonClass
  *
  * A subclass of #TpProxy that represents the D-Bus daemon. It mainly provides
  * functionality to manage well-known names on the bus.
+ *
+ * Since: 0.7.1
  */
 struct _TpDBusDaemon
 {
@@ -498,6 +510,8 @@ G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY);
  *
  * Returns: a new proxy for signals and method calls on the bus daemon
  *  to which @connection is connected
+ *
+ * Since: 0.7.1
  */
 TpDBusDaemon *
 tp_dbus_daemon_new (DBusGConnection *connection)
@@ -624,6 +638,8 @@ _tp_dbus_daemon_got_name_owner (TpProxy *proxy,
  *  tp_dbus_daemon_watch_name_owner()
  *
  * The signature of the callback called by tp_dbus_daemon_watch_name_owner().
+ *
+ * Since: 0.7.1
  */
 
 /**
@@ -641,6 +657,8 @@ _tp_dbus_daemon_got_name_owner (TpProxy *proxy,
  *
  * If multiple watches are registered for the same @name, they will be called
  * in the order they were registered.
+ *
+ * Since: 0.7.1
  */
 void
 tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
@@ -720,6 +738,8 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
  * only the most recently added one.
  *
  * Returns: %TRUE if there was such a watch, %FALSE otherwise
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
