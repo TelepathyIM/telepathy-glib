@@ -34,6 +34,7 @@ typedef struct _TpProxyPrivate TpProxyPrivate;
 typedef struct _TpProxy TpProxy;
 
 struct _TpProxy {
+    /*<public>*/
     GObject parent;
 
     TpDBusDaemon *dbus_daemon;
@@ -47,6 +48,7 @@ struct _TpProxy {
 typedef struct _TpProxyClass TpProxyClass;
 
 struct _TpProxyClass {
+    /*<public>*/
     GObjectClass parent_class;
 
     GQuark interface;
@@ -61,6 +63,7 @@ struct _TpProxyClass {
 typedef struct _TpProxyPendingCall TpProxyPendingCall;
 
 struct _TpProxyPendingCall {
+    /*<public>*/
     TpProxy *proxy;
     GQuark interface;
     gchar *member;
@@ -83,6 +86,7 @@ void tp_proxy_pending_call_cancel (const TpProxyPendingCall *self);
 typedef struct _TpProxySignalConnection TpProxySignalConnection;
 
 struct _TpProxySignalConnection {
+    /*<public>*/
     TpProxy *proxy;
     GQuark interface;
     gchar *member;
