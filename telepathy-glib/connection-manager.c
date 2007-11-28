@@ -42,6 +42,8 @@
  *
  * #TpConnectionManager objects represent Telepathy connection managers. They
  * can be used to open connections.
+ *
+ * Since: 0.7.1
  */
 
 /**
