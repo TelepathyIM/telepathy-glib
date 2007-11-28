@@ -453,7 +453,7 @@ tp_dbus_check_valid_object_path (const gchar *path, GError **error)
               return FALSE;
             }
         }
-      else if (!g_ascii_isalnum (*ptr) && *ptr != '/')
+      else if (!g_ascii_isalnum (*ptr) && *ptr != '_')
         {
           g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "Invalid object path '%s': contains invalid character '%c'",
