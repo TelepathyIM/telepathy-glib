@@ -192,7 +192,18 @@ tp_channel_got_channel_type_cb (TpProxy *proxy,
   if (error == NULL)
     {
       DEBUG ("%p: Introspected channel type %s", self, channel_type);
-      self->channel_type = g_quark_from_string (channel_type);
+      GError *err2 = NULL;
+
+      if (tp_dbus_check_valid_interface_name (channel_type, &err2))
+        {
+          self->channel_type = g_quark_from_string (channel_type);
+        }
+      else
+        {
+          DEBUG ("\t\tChannel type %s not valid: %s", *iter, err2->message);
+          tp_proxy_invalidated ((TpProxy *) self, err2);
+          return;
+        }
     }
   else
     {
