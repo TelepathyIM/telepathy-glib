@@ -21,6 +21,7 @@
 #include "telepathy-glib/channel.h"
 
 #include <telepathy-glib/channel-iface.h>
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
 
