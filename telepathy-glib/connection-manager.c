@@ -58,6 +58,16 @@
  */
 
 /**
+ * TpCMInfoSource:
+ * @TP_CM_INFO_SOURCE_NONE: no information available
+ * @TP_CM_INFO_SOURCE_FILE: information came from a .manager file
+ * @TP_CM_INFO_SOURCE_LIVE: information came from the connection manager
+ *
+ * Describes possible sources of information on connection managers'
+ * supported protocols.
+ */
+
+/**
  * TpConnectionManagerClass:
  *
  * The class of a #TpConnectionManager.
@@ -121,6 +131,32 @@ enum
  * If the CM exits, we still consider it to have been "introspected". If it's
  * re-run, we introspect it again.
  */
+
+/**
+ * TpConnectionManagerParam:
+ * @name: The name of this parameter
+ * @dbus_signature: This parameter's D-Bus signature
+ * @default_value: This parameter's default value, or an arbitrary value
+ *  of an appropriate type if %TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT is not
+ *  set on this parameter, or an unset GValue if the signature is not
+ *  recognised by telepathy-glib
+ * @flags: This parameter's flags (a combination of #TpConnMgrParamFlags)
+ * @priv: Pointer to opaque private data
+ *
+ * Structure representing a connection manager parameter.
+ */
+
+/**
+ * TpConnectionManagerProtocol:
+ * @name: The name of this connection manager
+ * @params: Array of #TpConnectionManagerParam structures, terminated by
+ *  a structure whose @name is %NULL
+ *
+ * Structure representing a protocol supported by a connection manager.
+ * Note that the size of this structure may change, so its size must not be
+ * relied on.
+ */
+
 struct _TpConnectionManagerPrivate {
     /* absolute path to .manager file */
     gchar *manager_file;

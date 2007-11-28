@@ -49,33 +49,29 @@ GType tp_connection_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONNECTION_MANAGER, \
                               TpConnectionManagerClass))
 
-typedef struct
+typedef struct _TpConnectionManagerParam TpConnectionManagerParam;
+struct _TpConnectionManagerParam
 {
+  /*<public>*/
   gchar *name;
   gchar *dbus_signature;
   GValue default_value;
   guint flags;
 
   gpointer priv;
-} TpConnectionManagerParam;
+};
 
-typedef struct
+typedef struct _TpConnectionManagerProtocol TpConnectionManagerProtocol;
+struct _TpConnectionManagerProtocol
 {
+  /*<public>*/
   gchar *name;
   TpConnectionManagerParam *params;
 
+  /*<private>*/
   gpointer priv;
-} TpConnectionManagerProtocol;
+};
 
-/**
- * TpCMInfoSource:
- * @TP_CM_INFO_SOURCE_NONE: no information available
- * @TP_CM_INFO_SOURCE_FILE: information came from a .manager file
- * @TP_CM_INFO_SOURCE_LIVE: information came from the connection manager
- *
- * Describes possible sources of information on connection managers'
- * supported protocols.
- */
 typedef enum
 {
   TP_CM_INFO_SOURCE_NONE,
@@ -84,6 +80,7 @@ typedef enum
 } TpCMInfoSource;
 
 struct _TpConnectionManager {
+    /*<public>*/
     TpProxy parent;
 
     const gchar *name;
