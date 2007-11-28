@@ -255,7 +255,7 @@ tp_proxy_add_interface_by_id (TpProxy *self,
       interface);
 
   g_return_val_if_fail
-      (!tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
+      (tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
           NULL),
        NULL);
 
