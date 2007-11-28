@@ -122,8 +122,15 @@ tp_connection_got_interfaces_cb (TpProxy *proxy,
 
           for (iter = interfaces; *iter != NULL; iter++)
             {
-              tp_proxy_add_interface_by_id ((TpProxy *) self,
-                  g_quark_from_string (*iter));
+              if (tp_dbus_check_valid_interface_name (*iter, NULL))
+                {
+                  tp_proxy_add_interface_by_id ((TpProxy *) self,
+                      g_quark_from_string (*iter));
+                }
+              else
+                {
+                  DEBUG ("\t\tInterface %s not valid", *iter);
+                }
             }
         }
 
