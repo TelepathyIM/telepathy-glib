@@ -42,6 +42,8 @@
  *
  * The header proxy.h also includes auto-generated client wrappers for the
  * Properties interface, which can be implemented by any type of object.
+ *
+ * Since: 0.7.1
  */
 
 /**
