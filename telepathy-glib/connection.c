@@ -37,6 +37,8 @@
  *
  * #TpConnection objects represent Telepathy instant messaging connections
  * accessed via D-Bus.
+ *
+ * Since: 0.7.1
  */
 
 /**
