@@ -370,6 +370,27 @@ tp_connection_manager_got_protocols (TpProxy *proxy,
   tp_connection_manager_continue_introspection (self);
 }
 
+static gboolean
+tp_connection_manager_idle_introspect (gpointer data)
+{
+  TpConnectionManager *self = data;
+
+  /* Start introspecting if we want to and we're not already */
+  if (!self->priv->listing_protocols &&
+      self->priv->found_protocols == NULL &&
+      (self->always_introspect ||
+       self->info_source == TP_CM_INFO_SOURCE_NONE))
+    {
+      self->priv->listing_protocols = TRUE;
+
+      tp_cli_connection_manager_call_list_protocols (self, -1,
+          tp_connection_manager_got_protocols, NULL, NULL,
+          NULL);
+    }
+
+  return FALSE;
+}
+
 static void
 tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
                                              const gchar *name,
@@ -397,17 +418,7 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       self->running = TRUE;
       g_signal_emit (self, signals[SIGNAL_ACTIVATED], 0);
 
-      /* Start introspecting if we want to and we're not already */
-      if (!self->priv->listing_protocols &&
-          (self->always_introspect ||
-           self->info_source == TP_CM_INFO_SOURCE_NONE))
-        {
-          self->priv->listing_protocols = TRUE;
-
-          tp_cli_connection_manager_call_list_protocols (self, -1,
-              tp_connection_manager_got_protocols, NULL, NULL,
-              NULL);
-        }
+      g_idle_add (tp_connection_manager_idle_introspect, self);
     }
 }
 
@@ -898,21 +909,12 @@ tp_connection_manager_set_property (GObject *object,
 
           self->always_introspect = g_value_get_boolean (value);
 
-          if (self->running && !self->priv->listing_protocols &&
-              !old && self->always_introspect &&
-              self->priv->found_protocols == NULL &&
-              self->info_source < TP_CM_INFO_SOURCE_LIVE)
+          if (self->running && !old && self->always_introspect)
             {
-              /* It's running, we're not in the process of introspecting,
-               * we weren't previously auto-introspecting but we are now,
-               * and we don't have live info - so we should kick off an
-               * introspect attempt.
+              /* It's running, we weren't previously auto-introspecting,
+               * but we are now. Try it when idle
                */
-              self->priv->listing_protocols = TRUE;
-
-              tp_cli_connection_manager_call_list_protocols (self, -1,
-                  tp_connection_manager_got_protocols, NULL, NULL,
-                  NULL);
+              g_idle_add (tp_connection_manager_idle_introspect, self);
             }
         }
       break;
