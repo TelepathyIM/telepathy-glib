@@ -20,6 +20,7 @@
 
 #include "telepathy-glib/connection.h"
 
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
