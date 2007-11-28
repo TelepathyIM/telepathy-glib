@@ -107,7 +107,7 @@ TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
 
 gboolean tp_connection_manager_activate (TpConnectionManager *self);
 
-typedef void (*TpConnectionManagerListCb) (TpConnectionManager **cms,
+typedef void (*TpConnectionManagerListCb) (TpConnectionManager * const *cms,
     const GError *error, gpointer user_data, GObject *weak_object);
 
 void tp_list_connection_managers (TpDBusDaemon *bus_daemon,

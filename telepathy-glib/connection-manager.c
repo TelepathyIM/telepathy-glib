@@ -46,7 +46,10 @@
 
 /**
  * TpConnectionManagerListCb:
- * @cms: %NULL-terminated array of #TpConnectionManager, or %NULL on error
+ * @cms: %NULL-terminated array of #TpConnectionManager (the objects will
+ *   be unreferenced and the array will be freed after the callback returns,
+ *   so the callback must reference any CMs it stores a pointer to),
+ *   or %NULL on error
  * @error: %NULL on success, or an error that occurred
  * @user_data: user-supplied data
  * @weak_object: user-supplied weakly referenced object
@@ -1180,15 +1183,24 @@ tp_list_connection_managers_got_names (TpProxy *proxy,
       /* actually call the callback */
       GPtrArray *arr = g_ptr_array_sized_new (g_hash_table_size
               (list_context->table));
+      TpConnectionManager **cms;
+      TpConnectionManager * const *iter;
 
       g_hash_table_foreach_steal (list_context->table, steal_into_ptr_array,
           arr);
       g_ptr_array_add (arr, NULL);
 
-      list_context->callback ((TpConnectionManager **) g_ptr_array_free (arr,
-            FALSE),
-          NULL, list_context->user_data, list_context->weak_object);
+      cms = (TpConnectionManager **) g_ptr_array_free (arr, FALSE);
+      list_context->callback (cms, NULL, list_context->user_data,
+          list_context->weak_object);
       list_context->callback = NULL;
+
+      for (iter = cms; *iter != NULL; iter++)
+        {
+          g_object_unref (*iter);
+        }
+
+      g_free (cms);
     }
   else
     {
