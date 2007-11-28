@@ -1102,7 +1102,6 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
   g_return_val_if_fail (dbus != NULL, NULL);
   g_return_val_if_fail (name != NULL, NULL);
 
-  /* FIXME: validate object path and bus name too */
   if (!tp_connection_manager_check_valid_name (name, error))
     return NULL;
 
