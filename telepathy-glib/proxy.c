@@ -162,6 +162,10 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 {
   DBusGProxy *proxy;
 
+  if (!tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
+        error))
+      return NULL;
+
   if (!self->priv->valid)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
