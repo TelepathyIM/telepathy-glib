@@ -119,6 +119,9 @@ void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
 gboolean tp_connection_manager_check_valid_name (const gchar *name,
     GError **error);
 
+gboolean tp_connection_manager_check_valid_protocol_name (const gchar *name,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection-manager.h>
