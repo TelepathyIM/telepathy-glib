@@ -627,9 +627,9 @@ tp_proxy_constructor (GType type,
   g_return_val_if_fail (self->object_path != NULL, NULL);
   g_return_val_if_fail (self->bus_name != NULL, NULL);
 
-  g_return_val_if_fail (!tp_dbus_check_valid_object_path (self->object_path,
+  g_return_val_if_fail (tp_dbus_check_valid_object_path (self->object_path,
         NULL), NULL);
-  g_return_val_if_fail (!tp_dbus_check_valid_bus_name (self->bus_name,
+  g_return_val_if_fail (tp_dbus_check_valid_bus_name (self->bus_name,
         TP_DBUS_NAME_TYPE_ANY, NULL), NULL);
 
   if (klass->interface != 0)
