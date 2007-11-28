@@ -70,7 +70,7 @@ typedef enum
 } TpDBusNameType;
 
 gboolean tp_dbus_check_valid_bus_name (const gchar *name,
-    TpDBusNameType types, GError **error);
+    TpDBusNameType allow_types, GError **error);
 
 gboolean tp_dbus_check_valid_interface_name (const gchar *name,
     GError **error);
