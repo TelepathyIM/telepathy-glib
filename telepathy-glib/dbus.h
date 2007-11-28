@@ -61,6 +61,26 @@ gboolean tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
     const gchar *name, TpDBusDaemonNameOwnerChangedCb callback,
     gconstpointer user_data);
 
+typedef enum
+{
+  TP_DBUS_NAME_TYPE_UNIQUE = 1,
+  TP_DBUS_NAME_TYPE_WELL_KNOWN = 2,
+  TP_DBUS_NAME_TYPE_BUS_DAEMON = 4,
+  TP_DBUS_NAME_TYPE_ANY = 7
+} TpDBusNameType;
+
+gboolean tp_dbus_check_valid_bus_name (const gchar *name,
+    TpDBusNameType types, GError **error);
+
+gboolean tp_dbus_check_valid_interface_name (const gchar *name,
+    GError **error);
+
+gboolean tp_dbus_check_valid_member_name (const gchar *name,
+    GError **error);
+
+gboolean tp_dbus_check_valid_object_path (const gchar *path,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>

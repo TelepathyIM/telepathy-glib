@@ -1188,6 +1188,11 @@ tp_intset_iter_next
 tp_dbus_g_method_return_not_implemented
 tp_get_bus
 tp_get_bus_proxy
+TpDBusNameType
+tp_dbus_check_valid_bus_name
+tp_dbus_check_valid_interface_name
+tp_dbus_check_valid_member_name
+tp_dbus_check_valid_object_path
 <SUBSECTION>
 TpDBusDaemon
 TpDBusDaemonClass

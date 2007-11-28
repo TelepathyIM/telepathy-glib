@@ -29,6 +29,9 @@
 #include <telepathy-glib/dbus.h>
 
 #include <stdlib.h>
+#include <string.h>
+
+#include <dbus/dbus-shared.h>
 
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
@@ -107,6 +110,357 @@ tp_get_bus_proxy (void)
     }
 
   return bus_proxy;
+}
+
+/**
+ * TpDBusNameType:
+ * @TP_DBUS_NAME_TYPE_UNIQUE: accept unique names like :1.123
+ *  (not including the name of the bus daemon itself)
+ * @TP_DBUS_NAME_TYPE_WELL_KNOWN: accept well-known names like
+ *  com.example.Service (not including the name of the bus daemon itself)
+ * @TP_DBUS_NAME_TYPE_BUS_DAEMON: accept the name of the bus daemon
+ *  itself, which has the syntax of a well-known name, but behaves like a
+ *  unique name
+ * @TP_DBUS_NAME_TYPE_ANY: accept any of the above
+ *
+ * A set of flags indicating which D-Bus bus names are acceptable.
+ * They can be combined with the bitwise-or operator to accept multiple
+ * types. %TP_DBUS_NAME_TYPE_ANY is the bitwise-or of the other types.
+ */
+
+/**
+ * tp_dbus_check_valid_bus_name:
+ * @name: a possible bus name
+ * @allow_types: some combination of %TP_DBUS_NAME_TYPE_UNIQUE,
+ *  %TP_DBUS_NAME_TYPE_WELL_KNOWN or %TP_DBUS_NAME_TYPE_BUS_DAEMON,
+ *  or %TP_DBUS_NAME_TYPE_ANY to accept all of these
+ * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
+ *
+ * Check that the given string is a valid D-Bus bus name of an appropriate
+ * type.
+ *
+ * Returns: %TRUE if @name is valid
+ */
+gboolean
+tp_dbus_check_valid_bus_name (const gchar *name,
+                              TpDBusNameType allow_types,
+                              GError **error)
+{
+  gboolean dot = FALSE;
+  gboolean unique;
+  gchar last;
+  const gchar *ptr;
+
+  if (name[0] == '\0')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The empty string is not a valid bus name");
+      return FALSE;
+    }
+
+  if (!tp_strdiff (name, DBUS_SERVICE_DBUS))
+    {
+      if (allow_types & TP_DBUS_NAME_TYPE_BUS_DAEMON)
+        return TRUE;
+
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The D-Bus daemon's bus name is not acceptable here");
+      return FALSE;
+    }
+
+  unique = (name[0] == ':');
+  if (unique && (allow_types & TP_DBUS_NAME_TYPE_UNIQUE) == 0)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "A well-known bus name not starting with ':'%s is required",
+          allow_types & TP_DBUS_NAME_TYPE_BUS_DAEMON
+            ? " (or the bus daemon itself)"
+            : "");
+      return FALSE;
+    }
+
+  if (!unique && (allow_types & TP_DBUS_NAME_TYPE_WELL_KNOWN) == 0)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "A unique bus name starting with ':'%s is required",
+          allow_types & TP_DBUS_NAME_TYPE_BUS_DAEMON
+            ? " (or the bus daemon itself)"
+            : "");
+      return FALSE;
+    }
+
+  if (strlen (name) > 255)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid bus name: too long (> 255 characters)");
+      return FALSE;
+    }
+
+  last = '\0';
+
+  for (ptr = name + (unique ? 1 : 0); *ptr != '\0'; ptr++)
+    {
+      if (*ptr == '.')
+        {
+          dot = TRUE;
+
+          if (last == '.')
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid bus name '%s': contains '..'", name);
+              return FALSE;
+            }
+          else if (last == '\0')
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid bus name '%s': must not start with '.'", name);
+              return FALSE;
+            }
+        }
+      else if (g_ascii_isdigit (*ptr))
+        {
+          if (!unique)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid bus name '%s': a digit may not follow '.' except "
+                  "in a unique name starting with ':'", name);
+              return FALSE;
+            }
+          else if (last == '\0')
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid bus name '%s': must not start with a digit", name);
+              return FALSE;
+            }
+        }
+      else if (!g_ascii_isalpha (*ptr) && *ptr != '_' && *ptr != '-')
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "Invalid bus name '%s': contains invalid character '%c'",
+              name, *ptr);
+          return FALSE;
+        }
+
+      last = *ptr;
+    }
+
+  if (last == '.')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid bus name '%s': must not end with '.'", name);
+      return FALSE;
+    }
+
+  if (!dot)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid bus name '%s': must contain '.'", name);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+/**
+ * tp_dbus_check_valid_interface_name:
+ * @name: a possible interface name
+ * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
+ *
+ * Check that the given string is a valid D-Bus interface name. This is
+ * also appropriate to use to check for valid error names.
+ *
+ * Returns: %TRUE if @name is valid
+ */
+gboolean
+tp_dbus_check_valid_interface_name (const gchar *name,
+                                    GError **error)
+{
+  gboolean dot = FALSE;
+  gchar last;
+  const gchar *ptr;
+
+  if (name[0] == '\0')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The empty string is not a valid interface name");
+      return FALSE;
+    }
+
+  if (strlen (name) > 255)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid interface name: too long (> 255 characters)");
+      return FALSE;
+    }
+
+  last = '\0';
+
+  for (ptr = name; *ptr != '\0'; ptr++)
+    {
+      if (*ptr == '.')
+        {
+          dot = TRUE;
+
+          if (last == '.')
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid interface name '%s': contains '..'", name);
+              return FALSE;
+            }
+          else if (last == '\0')
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid interface name '%s': must not start with '.'",
+                  name);
+              return FALSE;
+            }
+        }
+      else if (g_ascii_isdigit (*ptr))
+        {
+          if (last == '\0')
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid interface name '%s': must not start with a digit",
+                  name);
+              return FALSE;
+            }
+        }
+      else if (!g_ascii_isalpha (*ptr) && *ptr != '_')
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "Invalid interface name '%s': contains invalid character '%c'",
+              name, *ptr);
+          return FALSE;
+        }
+
+      last = *ptr;
+    }
+
+  if (last == '.')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid interface name '%s': must not end with '.'", name);
+      return FALSE;
+    }
+
+  if (!dot)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid interface name '%s': must contain '.'", name);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+/**
+ * tp_dbus_check_valid_member_name:
+ * @name: a possible member name
+ * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
+ *
+ * Check that the given string is a valid D-Bus member (method or signal) name.
+ *
+ * Returns: %TRUE if @name is valid
+ */
+gboolean
+tp_dbus_check_valid_member_name (const gchar *name,
+                                 GError **error)
+{
+  const gchar *ptr;
+
+  if (name[0] == '\0')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "The empty string is not a valid method or signal name");
+      return FALSE;
+    }
+
+  if (strlen (name) > 255)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid method or signal name: too long (> 255 characters)");
+      return FALSE;
+    }
+
+  for (ptr = name; *ptr != '\0'; ptr++)
+    {
+      if (g_ascii_isdigit (*ptr))
+        {
+          if (ptr == name)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid method or signal name '%s': must not start with "
+                  "a digit", name);
+              return FALSE;
+            }
+        }
+      else if (!g_ascii_isalpha (*ptr) && *ptr != '_')
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "Invalid method or signal name '%s': contains invalid "
+              "character '%c'",
+              name, *ptr);
+          return FALSE;
+        }
+    }
+
+  return TRUE;
+}
+
+/**
+ * tp_dbus_check_valid_object_path:
+ * @path: a possible object path
+ * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
+ *
+ * Check that the given string is a valid D-Bus object path.
+ *
+ * Returns: %TRUE if @path is valid
+ */
+gboolean
+tp_dbus_check_valid_object_path (const gchar *path, GError **error)
+{
+  const gchar *ptr;
+
+  if (path[0] != '/')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid object path '%s': must start with '/'",
+          path);
+      return FALSE;
+    }
+
+  if (path[1] == '/')
+    return TRUE;
+
+  for (ptr = path + 1; *ptr != '\0'; ptr++)
+    {
+      if (*ptr == '/')
+        {
+          if (ptr[-1] == '/')
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "Invalid object path '%s': contains '//'", path);
+              return FALSE;
+            }
+        }
+      else if (!g_ascii_isalnum (*ptr) && *ptr != '/')
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "Invalid object path '%s': contains invalid character '%c'",
+              path, *ptr);
+          return FALSE;
+        }
+    }
+
+  if (ptr[-1] == '/')
+    {
+        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "Invalid object path '%s': is not '/' but does end with '/'",
+            path);
+        return FALSE;
+    }
+
+  return TRUE;
 }
 
 /**
