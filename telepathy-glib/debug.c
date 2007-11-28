@@ -50,15 +50,20 @@
  */
 #include "config.h"
 
-#include <glib.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#ifdef ENABLE_DEBUG
+#include <glib.h>
+#include <glib/gstdio.h>
 
 #include <telepathy-glib/debug.h>
 
 #include "debug-internal.h"
 
-#include <stdarg.h>
+#ifdef ENABLE_DEBUG
 
 static TpDebugFlags flags = 0;
 
@@ -283,3 +288,92 @@ tp_debug_set_persistent (gboolean persistent)
 }
 
 #endif /* !ENABLE_DEBUG */
+
+/**
+ * tp_debug_divert_messages:
+ * @filename: A file to which to divert stdout and stderr, or %NULL to
+ *  do nothing
+ *
+ * Passing %NULL to this function is guaranteed to have no effect. This is
+ * so you can call it as
+ * <literal>tp_debug_divert_messages (g_getenv ("MYAPP_LOGFILE"))</literal>
+ * and it won't do anything if the environment variable is not set.
+ *
+ * This function is still present if telepathy-glib was compiled without debug
+ * support.
+ */
+void
+tp_debug_divert_messages (const gchar *filename)
+{
+  int fd;
+
+  if (filename == NULL)
+    return;
+
+  fd = g_open (filename, O_WRONLY | O_CREAT, 0644);
+
+  if (fd == -1)
+    {
+      g_warning ("Can't open logfile '%s': %s", filename,
+          g_strerror (errno));
+      return;
+    }
+
+  if (dup2 (fd, STDOUT_FILENO) == -1)
+    {
+      g_warning ("Error duplicating stdout file descriptor: %s",
+          g_strerror (errno));
+      return;
+    }
+
+  if (dup2 (fd, STDERR_FILENO) == -1)
+    {
+      g_warning ("Error duplicating stderr file descriptor: %s",
+          g_strerror (errno));
+    }
+}
+
+/**
+ * tp_debug_timestamped_log_handler:
+ * @log_domain: the message's log domain
+ * @log_level: the log level of the message
+ * @message: the message to process
+ * @ignored: not used
+ *
+ * A #GLogFunc that prepends the local time (currently in
+ * YYYY-MM-DD HH:MM:SS.SSSSSS format, with microsecond resolution) to the
+ * message, then calls g_log_default_handler.
+ *
+ * Intended usage is:
+ *
+ * <informalexample><programlisting>if (g_getenv ("MYPROG_TIMING") != NULL)
+ *   g_log_set_default_handler (tp_debug_timestamped_log_handler, NULL);
+ * </programlisting></informalexample>
+ */
+void
+tp_debug_timestamped_log_handler (const gchar *log_domain,
+                                  GLogLevelFlags log_level,
+                                  const gchar *message,
+                                  gpointer ignored)
+{
+#ifdef ENABLE_DEBUG
+  GTimeVal now;
+  gchar now_str[32];
+  gchar *tmp;
+  struct tm tm;
+  time_t sec;
+
+  g_get_current_time (&now);
+  sec = now.tv_sec;
+  localtime_r (&sec, &tm);
+  strftime (now_str, 32, "%Y-%m-%d %H:%M:%S", &tm);
+  tmp = g_strdup_printf ("%s.%06ld: %s", now_str, now.tv_usec, message);
+  message = tmp;
+#endif
+
+  g_log_default_handler (log_domain, log_level, message, NULL);
+
+#ifdef ENABLE_DEBUG
+  g_free (tmp);
+#endif
+}

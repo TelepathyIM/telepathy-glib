@@ -9,6 +9,11 @@ void tp_debug_set_flags (const gchar *flags_string);
 
 void tp_debug_set_persistent (gboolean persistent);
 
+void tp_debug_divert_messages (const gchar *filename);
+
+void tp_debug_timestamped_log_handler (const gchar *log_domain,
+    GLogLevelFlags log_level, const gchar *message, gpointer ignored);
+
 void tp_debug_set_flags_from_string (const gchar *flags_string)
   G_GNUC_DEPRECATED;
 void tp_debug_set_flags_from_env (const gchar *var)
