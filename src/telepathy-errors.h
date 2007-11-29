@@ -21,38 +21,17 @@
 #ifndef __TELEPATHY_ERRORS_H__
 #define __TELEPATHY_ERRORS_H__
 
-#include <glib-object.h>
+#include <telepathy-glib/errors.h>
 
-G_BEGIN_DECLS
-
-typedef enum
-{
-  InvalidHandle,    /** The contact name specified is unknown on this channel
-                     *  or connection.
-                     */
-  Disconnected,     /** The connection is not currently connected and cannot be
-                     *  used.
-                     */
-  InvalidArgument,  /** Raised when one of the provided arguments is invalid.
-                     */
-  NetworkError,     /** Raised when there is an error reading from or writing
-                     *  to the network.
-                     */
-  PermissionDenied, /** The user is not permitted to perform the requested
-                     *  operation.
-                     */
-  NotAvailable,     /** Raised when the requested functionality is temporarily
-                     *  unavailable.
-                     */
-  NotImplemented,   /** Raised when the requested method, channel, etc is not
-                     *  available on this connection.
-                     */
-} TelepathyErrors; 
-
-
-  GQuark telepathy_errors_quark (void);
-  #define TELEPATHY_ERRORS telepathy_errors_quark ()
-
-G_END_DECLS
+#define InvalidHandle TP_ERROR_INVALID_HANDLE
+#define Disconnected TP_ERROR_DISCONNECTED
+#define InvalidArgument TP_ERROR_INVALID_ARGUMENT
+#define NetworkError TP_ERROR_NETWORK_ERROR
+#define PermissionDenied TP_ERROR_PERMISSION_DENIED
+#define NotAvailable TP_ERROR_NOT_AVAILABLE
+#define NotImplemented TP_ERROR_NOT_IMPLEMENTED
+#define TelepathyErrors TpError
+#define TELEPATHY_ERRORS TP_ERRORS
+#define TELEPATHY_TYPE_ERRORS TP_TYPE_ERROR
 
 #endif /* #ifndef __TELEPATHY_ERRORS_H__*/
