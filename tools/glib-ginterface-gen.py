@@ -45,6 +45,22 @@ class Generator(object):
         assert prefix.endswith('_')
         assert not signal_marshal_prefix.endswith('_')
 
+        # The main_prefix, sub_prefix thing is to get:
+        # FOO_ -> (FOO_, _)
+        # FOO_SVC_ -> (FOO_, _SVC_)
+        # but
+        # FOO_BAR/ -> (FOO_BAR_, _)
+        # FOO_BAR/SVC_ -> (FOO_BAR_, _SVC_)
+
+        if '/' in prefix:
+            main_prefix, sub_prefix = prefix.upper().split('/', 1)
+            prefix = prefix.replace('/', '_')
+        else:
+            main_prefix, sub_prefix = prefix.upper().split('_', 1)
+
+        self.MAIN_PREFIX_ = main_prefix + '_'
+        self._SUB_PREFIX_ = '_' + sub_prefix
+
         self.Prefix_ = prefix
         self.Prefix = prefix.replace('_', '')
         self.prefix_ = prefix.lower()
@@ -154,14 +170,8 @@ class Generator(object):
         self.h('GType %s%s_get_type (void);'
                % (self.prefix_, node_name_lc))
 
-        main_prefix, sub_prefix = self.PREFIX_.split('_', 1)
-        main_prefix += '_'
-        sub_prefix = '_' + sub_prefix
-        # FOO_ -> (FOO_, _)
-        # FOO_SVC_ -> (FOO_, _SVC_)
-
         gtype = self.current_gtype = \
-                main_prefix + 'TYPE' + sub_prefix + node_name_uc
+                self.MAIN_PREFIX_ + 'TYPE' + self._SUB_PREFIX_ + node_name_uc
         classname = self.Prefix + node_name_mixed
 
         self.h('#define %s \\\n  (%s%s_get_type ())'
@@ -171,7 +181,7 @@ class Generator(object):
                % (self.PREFIX_, node_name_uc, gtype, classname))
         self.h('#define %sIS%s%s(obj) \\\n'
                '  (G_TYPE_CHECK_INSTANCE_TYPE((obj), %s))'
-               % (main_prefix, sub_prefix, node_name_uc, gtype))
+               % (self.MAIN_PREFIX_, self._SUB_PREFIX_, node_name_uc, gtype))
         self.h('#define %s%s_GET_CLASS(obj) \\\n'
                '  (G_TYPE_INSTANCE_GET_INTERFACE((obj), %s, %sClass))'
                % (self.PREFIX_, node_name_uc, gtype, classname))
