@@ -33,6 +33,18 @@ AC_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
+dnl Check for code generation tools
+XSLTPROC=
+AC_CHECK_PROGS([XSLTPROC], [xsltproc])
+if test -z "$XSLTPROC"; then
+  AC_MSG_ERROR([xsltproc (from the libxslt source package) is required])
+fi
+PYTHON=
+AC_CHECK_PROGS([PYTHON], [python2.3 python2.4 python2.5 python])
+if test -z "$PYTHON"; then
+  AC_MSG_ERROR([Python is required to compile this package])
+fi
+
 dnl decide error flags
 AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
 AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
@@ -114,10 +126,12 @@ fi
 AM_CONDITIONAL(MAEMO_OSSO_SUPPORT, test x$MAEMO_OSSO_SUPPORT = xyes)
 
 AC_OUTPUT( Makefile \
+          api/Makefile \
           data/Makefile \
           doc/Makefile \
           src/Makefile  \
           test/Makefile \
-          test/python/Makefile
+          test/python/Makefile \
+          tools/Makefile
 )
 
