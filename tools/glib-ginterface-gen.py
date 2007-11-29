@@ -285,7 +285,7 @@ class Generator(object):
         lc_name = camelcase_to_lower(method.getAttribute('name'))
 
         marshaller = method_to_glue_marshal_name(method,
-                '_tp')
+                self.signal_marshal_prefix)
         wrapper = self.prefix_ + self.node_name_lc + '_' + lc_name
 
         self.b("  { (GCallback) %s, %s, %d }," % (wrapper, marshaller, offset))
