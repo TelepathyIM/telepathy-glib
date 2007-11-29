@@ -585,7 +585,7 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
         G_TYPE_NONE, 0);
 }
 
-void
+static void
 tp_stream_engine_dispose (GObject *object)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (object);
@@ -666,7 +666,7 @@ tp_stream_engine_dispose (GObject *object)
     G_OBJECT_CLASS (tp_stream_engine_parent_class)->dispose (object);
 }
 
-void
+static void
 tp_stream_engine_finalize (GObject *object)
 {
   G_OBJECT_CLASS (tp_stream_engine_parent_class)->finalize (object);
@@ -1331,7 +1331,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
     }
 }
 
-void
+static void
 stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
                                   guint window_id,
                                   DBusGMethodInvocation *context)
@@ -1553,7 +1553,7 @@ gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint wind
   return TRUE;
 }
 
-void
+static void
 stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
                                      guint window_id,
                                      DBusGMethodInvocation *context)
@@ -1665,7 +1665,7 @@ ERROR:
   return FALSE;
 }
 
-void
+static void
 channel_handler_handle_channel (StreamEngineSvcChannelHandler *iface,
                                 const gchar *bus_name,
                                 const gchar *connection,
@@ -1778,7 +1778,7 @@ gboolean tp_stream_engine_mute_input (TpStreamEngine *obj, const gchar * channel
   return tp_stream_engine_stream_mute_input (stream, mute_state, error);
 }
 
-void
+static void
 stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
                           const gchar *channel_path,
                           guint stream_id,
@@ -1823,7 +1823,7 @@ gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channe
   return tp_stream_engine_stream_mute_output (stream, mute_state, error);
 }
 
-void
+static void
 stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
                            const gchar *channel_path,
                            guint stream_id,
@@ -1869,7 +1869,7 @@ gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, const gchar * 
   return tp_stream_engine_stream_set_output_volume (stream, volume, error);
 }
 
-void
+static void
 stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
                                  const gchar *channel_path,
                                  guint stream_id,
@@ -1922,7 +1922,7 @@ gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * 
   return tp_stream_engine_stream_set_output_window (stream, window_id, error);
 }
 
-void
+static void
 stream_engine_set_output_window (StreamEngineSvcStreamEngine *iface,
                                  const gchar *channel_path,
                                  guint stream_id,
@@ -1983,7 +1983,7 @@ gboolean tp_stream_engine_shutdown (TpStreamEngine *obj, GError **error)
   return TRUE;
 }
 
-void
+static void
 stream_engine_shutdown (StreamEngineSvcStreamEngine *iface,
                         DBusGMethodInvocation *context)
 {
