@@ -1,5 +1,4 @@
 BUILT_SOURCES = \
-    tp-stream-engine-glue.h \
     tp-stream-engine-signals-marshal.h \
     tp-stream-engine-signals-marshal.c
 
@@ -16,7 +15,6 @@ libstreamengine_convenience_la_SOURCES = \
 	stream.c \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
-	tp-stream-engine.xml \
 	util.h \
 	util.c \
 	xerrorhandler.h \
@@ -42,10 +40,6 @@ AM_CFLAGS = $(ERROR_CFLAGS) \
 AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@ @FARSIGHT_LIBS@ \
 	@GST_PLUGINS_BASE_LIBS@ @X11_LIBS@ -lgstinterfaces-0.10 \
 	$(top_builddir)/api/libstream-engine-api.la
-
-# rule to generate the dbus-glib binding glue
-%-glue.h: %.xml Makefile.in
-	dbus-binding-tool --mode=glib-server --output=$@ --prefix=$(subst -,_,$*) $<
 
 # rules to generate signal marshallers
 %-signals-marshal.h: %-signals-marshal.list Makefile.in
