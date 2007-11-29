@@ -34,7 +34,6 @@
 #include "session.h"
 #include "stream.h"
 #include "tp-stream-engine-signals-marshal.h"
-#include "types.h"
 
 G_DEFINE_TYPE (TpStreamEngineChannel, tp_stream_engine_channel, G_TYPE_OBJECT);
 

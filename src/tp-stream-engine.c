@@ -31,6 +31,7 @@
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-constants.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/gtypes.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-stream.h>
@@ -47,7 +48,6 @@
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
-#include "types.h"
 #include "util.h"
 #include "xerrorhandler.h"
 
@@ -71,7 +71,7 @@ register_dbus_signal_marshallers()
   /*register a marshaller for the AddRemoteCandidate signal*/
   dbus_g_object_register_marshaller
     (tp_stream_engine_marshal_VOID__STRING_BOXED, G_TYPE_NONE,
-     G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
+     G_TYPE_STRING, TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT_LIST, G_TYPE_INVALID);
 
   /*register a marshaller for the SetActiveCandidatePair signal*/
   dbus_g_object_register_marshaller
@@ -81,12 +81,12 @@ register_dbus_signal_marshallers()
   /*register a marshaller for the SetRemoteCandidateList signal*/
   dbus_g_object_register_marshaller
     (g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE,
-     TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
+     TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CANDIDATE_LIST, G_TYPE_INVALID);
 
   /*register a marshaller for the SetRemoteCodecs signal*/
   dbus_g_object_register_marshaller
     (g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE,
-     TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
+     TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, G_TYPE_INVALID);
 }
 
 G_DEFINE_TYPE(TpStreamEngine, tp_stream_engine, G_TYPE_OBJECT)

@@ -17,7 +17,6 @@ libstreamengine_convenience_la_SOURCES = \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
 	tp-stream-engine.xml \
-	types.h \
 	util.h \
 	util.c \
 	xerrorhandler.h \

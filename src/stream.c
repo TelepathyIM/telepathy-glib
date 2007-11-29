@@ -29,6 +29,7 @@
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-media-stream-handler-gen.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/gtypes.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-stream.h>
@@ -39,7 +40,6 @@
 #include "stream.h"
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
-#include "types.h"
 #include "util.h"
 
 G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
@@ -341,15 +341,15 @@ tp_stream_engine_stream_constructor (GType type,
   /* TODO: make dbus-binding-tool do this for us... */
 
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "AddRemoteCandidate",
-      G_TYPE_STRING, TP_TYPE_TRANSPORT_LIST, G_TYPE_INVALID);
+      G_TYPE_STRING, TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT_LIST, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "RemoveRemoteCandidate",
       G_TYPE_STRING, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetActiveCandidatePair",
       G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetRemoteCandidateList",
-      TP_TYPE_CANDIDATE_LIST, G_TYPE_INVALID);
+      TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CANDIDATE_LIST, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetRemoteCodecs",
-      TP_TYPE_CODEC_LIST, G_TYPE_INVALID);
+      TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamPlaying",
       G_TYPE_BOOLEAN, G_TYPE_INVALID);
   dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamSending",
@@ -835,9 +835,9 @@ cb_fs_new_native_candidate (FarsightStream *stream,
       TelepathyMediaStreamProto proto;
       TelepathyMediaStreamTransportType type;
 
-      g_value_init (&transport, TP_TYPE_TRANSPORT_STRUCT);
+      g_value_init (&transport, TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT);
       g_value_set_static_boxed (&transport,
-          dbus_g_type_specialized_construct (TP_TYPE_TRANSPORT_STRUCT));
+          dbus_g_type_specialized_construct (TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT));
 
       switch (fs_transport->proto) {
         case FARSIGHT_NETWORK_PROTOCOL_UDP:
@@ -1011,9 +1011,9 @@ fs_codecs_to_tp (const GList *codecs)
                                g_strdup (param->value));
         }
 
-      g_value_init (&codec, TP_TYPE_CODEC_STRUCT);
+      g_value_init (&codec, TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_CODEC);
       g_value_set_static_boxed (&codec,
-          dbus_g_type_specialized_construct (TP_TYPE_CODEC_STRUCT));
+          dbus_g_type_specialized_construct (TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_CODEC));
 
       dbus_g_type_struct_set (&codec,
           0, fsc->id,
@@ -1090,7 +1090,7 @@ set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
       candidate = g_ptr_array_index (candidates, i);
       g_assert(G_VALUE_HOLDS_STRING (g_value_array_get_nth (candidate,0)));
       g_assert(G_VALUE_TYPE (g_value_array_get_nth (candidate, 1)) ==
-                               TP_TYPE_TRANSPORT_LIST);
+                               TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT_LIST);
 
       /* TODO: mmm, candidate_id should be const in Farsight API */
       candidate_id =
