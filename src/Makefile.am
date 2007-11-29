@@ -40,7 +40,8 @@ AM_CFLAGS = $(ERROR_CFLAGS) \
 	-I$(top_srcdir) -I$(top_builddir)
 
 AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@ @FARSIGHT_LIBS@ \
-	@GST_PLUGINS_BASE_LIBS@ @X11_LIBS@ -lgstinterfaces-0.10
+	@GST_PLUGINS_BASE_LIBS@ @X11_LIBS@ -lgstinterfaces-0.10 \
+	$(top_builddir)/api/libstream-engine-api.la
 
 # rule to generate the dbus-glib binding glue
 %-glue.h: %.xml Makefile.in
