@@ -1285,8 +1285,10 @@ _remove_defunct_sinks_idle_cb (WindowPair *wp)
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
-    guint window_id, GError **error)
+static gboolean
+tp_stream_engine_add_preview_window (TpStreamEngine *obj,
+                                     guint window_id,
+                                     GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
@@ -1513,7 +1515,10 @@ bad_value_cb (TpStreamEngineXErrorHandler *handler,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_remove_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
+static gboolean
+tp_stream_engine_remove_preview_window (TpStreamEngine *obj,
+                                        guint window_id,
+                                        GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
@@ -1618,7 +1623,15 @@ tp_stream_engine_remove_output_window (TpStreamEngine *obj,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus_name, const gchar * connection, const gchar * channel_type, const gchar * channel, guint handle_type, guint handle, GError **error)
+static gboolean
+tp_stream_engine_handle_channel (TpStreamEngine *obj,
+                                 const gchar *bus_name,
+                                 const gchar *connection,
+                                 const gchar *channel_type,
+                                 const gchar *channel,
+                                 guint handle_type,
+                                 guint handle,
+                                 GError **error)
 {
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   TpStreamEngineChannel *chan = NULL;
@@ -1766,7 +1779,12 @@ _lookup_stream (TpStreamEngine *obj,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_mute_input (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean mute_state, GError **error)
+static gboolean
+tp_stream_engine_mute_input (TpStreamEngine *obj,
+                             const gchar *channel_path,
+                             guint stream_id,
+                             gboolean mute_state,
+                             GError **error)
 {
   TpStreamEngineStream *stream;
 
@@ -1811,7 +1829,12 @@ stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_mute_output (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, gboolean mute_state, GError **error)
+static gboolean
+tp_stream_engine_mute_output (TpStreamEngine *obj,
+                              const gchar *channel_path,
+                              guint stream_id,
+                              gboolean mute_state,
+                              GError **error)
 {
   TpStreamEngineStream *stream;
 
@@ -1857,7 +1880,11 @@ stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint volume, GError **error)
+static gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj,
+                                                    const gchar *channel_path,
+                                                    guint stream_id,
+                                                    guint volume,
+                                                    GError **error)
 {
   TpStreamEngineStream *stream;
 
@@ -1902,7 +1929,12 @@ stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * channel_path, guint stream_id, guint window_id, GError **error)
+static gboolean
+tp_stream_engine_set_output_window (TpStreamEngine *obj,
+                                    const gchar *channel_path,
+                                    guint stream_id,
+                                    guint window_id,
+                                    GError **error)
 {
   TpStreamEngineStream *stream;
 
@@ -1976,7 +2008,9 @@ tp_stream_engine_get ()
  *
  * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-gboolean tp_stream_engine_shutdown (TpStreamEngine *obj, GError **error)
+static gboolean
+tp_stream_engine_shutdown (TpStreamEngine *obj,
+                           GError **error)
 {
   g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
   g_signal_emit (obj, signals[SHUTDOWN_REQUESTED], 0);
