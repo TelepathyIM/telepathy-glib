@@ -30,6 +30,7 @@
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-constants.h>
+#include <telepathy-glib/errors.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-stream.h>
@@ -48,7 +49,6 @@
 #include "stream.h"
 #include "types.h"
 #include "util.h"
-#include "telepathy-errors.h"
 #include "xerrorhandler.h"
 
 #define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"
@@ -392,7 +392,7 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 
   if (wp == NULL)
     {
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Given window id %d not in windowID list", window_id);
       g_debug ("%s: Couldn't find xwindow id in window pair list", G_STRFUNC);
       return FALSE;
@@ -1339,7 +1339,7 @@ gboolean tp_stream_engine_add_preview_window (TpStreamEngine *obj,
       else
         {
           g_debug ("window ID %u is already a preview window", window_id);
-          *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+          *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "window ID %u is already a preview window", window_id);
           return FALSE;
         }
@@ -1618,7 +1618,7 @@ gboolean tp_stream_engine_handle_channel (TpStreamEngine *obj, const gchar * bus
       const gchar *message =
         "Stream Engine was passed a channel that was not a "
         TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA;
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument, message);
+      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, message);
       g_message (message);
       goto ERROR;
      }
@@ -1698,7 +1698,7 @@ _lookup_stream (TpStreamEngine *obj,
   channel = g_hash_table_lookup (priv->channels_by_path, path);
   if (channel == NULL)
     {
-      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
         "stream-engine is not handling the channel %s", path);
 
       return NULL;
@@ -1707,7 +1707,7 @@ _lookup_stream (TpStreamEngine *obj,
   stream = tp_stream_engine_channel_lookup_stream (channel, stream_id);
   if (stream == NULL)
     {
-      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "the channel %s has no stream with id %d", path, stream_id);
 
       return NULL;
@@ -1814,7 +1814,7 @@ gboolean tp_stream_engine_set_output_window (TpStreamEngine *obj, const gchar * 
   if (!stream)
     {
       g_debug ("%s: stream not found, not doing anything!", G_STRFUNC);
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument, "stream not "
+      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "stream not "
           "found, not doing anything");
       return FALSE;
     }

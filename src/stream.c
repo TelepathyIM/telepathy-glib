@@ -28,6 +28,7 @@
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-media-stream-handler-gen.h>
+#include <telepathy-glib/errors.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-stream.h>
@@ -36,7 +37,6 @@
 #include <gst/interfaces/xoverlay.h>
 
 #include "stream.h"
-#include "telepathy-errors.h"
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
 #include "types.h"
@@ -1632,7 +1632,7 @@ gboolean tp_stream_engine_stream_mute_output (
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
         "MuteInput can only be called on audio streams");
       return FALSE;
     }
@@ -1662,7 +1662,7 @@ gboolean tp_stream_engine_stream_set_output_volume (
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
         "SetOutputVolume can only be called on audio streams");
       return FALSE;
     }
@@ -1693,7 +1693,7 @@ gboolean tp_stream_engine_stream_mute_input (
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
         "MuteInput can only be called on audio streams");
       return FALSE;
     }
@@ -1723,7 +1723,7 @@ tp_stream_engine_stream_set_output_window (
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
       DEBUG (stream, "can only be called on video streams");
-      *error = g_error_new (TELEPATHY_ERRORS, InvalidArgument,
+      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
         "SetOutputWindow can only be called on video streams");
       return FALSE;
     }
@@ -1732,7 +1732,7 @@ tp_stream_engine_stream_set_output_window (
     {
       DEBUG (stream, "not doing anything, output window is already set to "
           "window ID %u", window_id);
-      *error = g_error_new (TELEPATHY_ERRORS, NotAvailable, "not doing "
+      *error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "not doing "
           "anything, output window is already set window ID %u", window_id);
       return FALSE;
     }
@@ -1761,7 +1761,7 @@ tp_stream_engine_stream_set_output_window (
     {
       DEBUG (stream, "failed to make video sink, no output for window %d :(",
           window_id);
-      g_set_error (error, TELEPATHY_ERRORS, NotAvailable, "failed to make a "
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "failed to make a "
           "video sink");
       return FALSE;
     }

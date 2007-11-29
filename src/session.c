@@ -21,12 +21,12 @@
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-media-session-handler-gen.h>
+#include <telepathy-glib/errors.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-codec.h>
 
 #include "session.h"
-#include "telepathy-errors.h"
 #include "tp-stream-engine-signals-marshal.h"
 
 G_DEFINE_TYPE (TpStreamEngineSession, tp_stream_engine_session, G_TYPE_OBJECT);
@@ -391,7 +391,7 @@ tp_stream_engine_session_new (const gchar *bus_name,
 
   if (priv->fs_session == NULL)
     {
-      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "requested session type not found");
       g_object_unref (ret);
       return NULL;

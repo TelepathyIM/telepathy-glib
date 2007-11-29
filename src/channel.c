@@ -28,11 +28,11 @@
 #include <libtelepathy/tp-media-stream-handler-gen.h>
 #include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-props-iface.h>
+#include <telepathy-glib/errors.h>
 
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
-#include "telepathy-errors.h"
 #include "tp-stream-engine-signals-marshal.h"
 #include "types.h"
 
@@ -804,7 +804,7 @@ tp_stream_engine_channel_new (const gchar *bus_name,
 
   if (channel_proxy == NULL)
     {
-      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Unable to create channel proxy");
       return NULL;
     }
@@ -814,7 +814,7 @@ tp_stream_engine_channel_new (const gchar *bus_name,
 
   if (media_signalling_proxy == NULL)
     {
-      g_set_error (error, TELEPATHY_ERRORS, NotAvailable,
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Channel doesn't have the media signalling interface");
       return NULL;
     }
