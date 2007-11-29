@@ -1278,18 +1278,13 @@ _remove_defunct_sinks_idle_cb (WindowPair *wp)
  *
  * Implements DBus method AddPreviewWindow
  * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-static gboolean
-tp_stream_engine_add_preview_window (TpStreamEngine *obj,
+static void
+tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
                                      guint window_id,
-                                     GError **error)
+                                     DBusGMethodInvocation *context)
 {
+  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
 
@@ -1306,50 +1301,48 @@ tp_stream_engine_add_preview_window (TpStreamEngine *obj,
     {
       if (wp->removing && wp->post_remove == _window_pairs_remove_cb)
         {
-          g_debug ("window ID %u is already a preview window being removed, will be re-added", window_id);
+          g_debug ("window ID %u is already a preview window being removed, "
+              "will be re-added", window_id);
           wp->post_remove = _window_pairs_readd_cb;
-          return TRUE;
+          stream_engine_svc_stream_engine_return_from_add_preview_window
+            (context);
         }
       else
         {
-          g_debug ("window ID %u is already a preview window", window_id);
-          *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "window ID %u is already a preview window", window_id);
-          return FALSE;
+          g_debug ("%s", error->message);
+
+          dbus_g_method_return_error (context, error);
+          g_error_free (error);
         }
+
+      return;
     }
 
   if (!priv->pipeline_playing)
     {
       g_debug ("%s: pipeline not playing, adding later", G_STRFUNC);
       _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      return TRUE;
-    }
-  else
-    {
-      g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
-      _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      return _add_preview_window (obj, window_id, error);
-    }
-}
-
-static void
-stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
-                                  guint window_id,
-                                  DBusGMethodInvocation *context)
-{
-  GError *error = NULL;
-
-  if (tp_stream_engine_add_preview_window (TP_STREAM_ENGINE (iface),
-        window_id, &error))
-    {
       stream_engine_svc_stream_engine_return_from_add_preview_window
         (context);
     }
   else
     {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
+      GError *error = NULL;
+
+      g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
+      _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
+      if (_add_preview_window (obj, window_id, &error))
+        {
+          stream_engine_svc_stream_engine_return_from_add_preview_window
+            (context);
+        }
+      else
+        {
+          dbus_g_method_return_error (context, error);
+          g_error_free (error);
+        }
     }
 }
 
@@ -1508,18 +1501,13 @@ bad_value_cb (TpStreamEngineXErrorHandler *handler,
  *
  * Implements DBus method RemovePreviewWindow
  * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-static gboolean
-tp_stream_engine_remove_preview_window (TpStreamEngine *obj,
+static void
+tp_stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
                                         guint window_id,
-                                        GError **error)
+                                        DBusGMethodInvocation *context)
 {
+  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
 
@@ -1529,9 +1517,10 @@ tp_stream_engine_remove_preview_window (TpStreamEngine *obj,
 
   if (wp == NULL)
     {
-      /* FIXME: set *error here, or just remove this entire method... its kinda
-       * useless */
-      return FALSE;
+      GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "Window ID not found" };
+
+      dbus_g_method_return_error (context, &e);
+      return;
     }
 
   if (wp->removing)
@@ -1540,14 +1529,14 @@ tp_stream_engine_remove_preview_window (TpStreamEngine *obj,
         wp->post_remove = _window_pairs_remove_cb;
 
       /* already being removed, nothing to do */
-      return TRUE;
+      goto success;
     }
 
   if (wp->created == FALSE)
     {
       g_debug ("Window not created yet, can remove right away");
       _window_pairs_remove (&(priv->preview_windows), wp);
-      return TRUE;
+      goto success;
     }
 
   wp->removing = TRUE;
@@ -1555,27 +1544,8 @@ tp_stream_engine_remove_preview_window (TpStreamEngine *obj,
 
   _remove_defunct_preview_sink (wp);
 
-  return TRUE;
-}
-
-static void
-stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
-                                     guint window_id,
-                                     DBusGMethodInvocation *context)
-{
-  GError *error = NULL;
-
-  if (tp_stream_engine_remove_preview_window (TP_STREAM_ENGINE (iface),
-        window_id, &error))
-    {
-      stream_engine_svc_stream_engine_return_from_remove_preview_window
-        (context);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
+success:
+  stream_engine_svc_stream_engine_return_from_remove_preview_window (context);
 }
 
 
@@ -1616,43 +1586,43 @@ tp_stream_engine_remove_output_window (TpStreamEngine *obj,
  *
  * Implements DBus method HandleChannel
  * on interface org.freedesktop.Telepathy.ChannelHandler
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-static gboolean
-tp_stream_engine_handle_channel (TpStreamEngine *obj,
+static void
+tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
                                  const gchar *bus_name,
                                  const gchar *connection,
                                  const gchar *channel_type,
                                  const gchar *channel,
                                  guint handle_type,
                                  guint handle,
-                                 GError **error)
+                                 DBusGMethodInvocation *context)
 {
+  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
   TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   TpStreamEngineChannel *chan = NULL;
+  GError *error = NULL;
 
   g_debug("HandleChannel called");
 
   if (strcmp (channel_type, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA) != 0)
     {
-      const gchar *message =
+      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
         "Stream Engine was passed a channel that was not a "
-        TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA;
-      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, message);
-      g_message (message);
-      goto ERROR;
+        TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA };
+
+      g_message ("%s", e.message);
+      dbus_g_method_return_error (context, &e);
      }
 
   chan = tp_stream_engine_channel_new (bus_name, channel, handle_type, handle,
-      error);
+      &error);
 
   if (chan == NULL)
-    goto ERROR;
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
 
   g_object_set ((GObject *) chan,
       "video-pipeline", tp_stream_engine_get_pipeline (obj),
@@ -1669,38 +1639,7 @@ tp_stream_engine_handle_channel (TpStreamEngine *obj,
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
 
-  return TRUE;
-
-ERROR:
-  if (chan)
-    g_object_unref (chan);
-
-  return FALSE;
-}
-
-static void
-channel_handler_handle_channel (StreamEngineSvcChannelHandler *iface,
-                                const gchar *bus_name,
-                                const gchar *connection,
-                                const gchar *channel_type,
-                                const gchar *channel,
-                                guint handle_type,
-                                guint handle,
-                                DBusGMethodInvocation *context)
-{
-  GError *error = NULL;
-
-  if (tp_stream_engine_handle_channel (TP_STREAM_ENGINE (iface),
-        bus_name, connection, channel_type, channel, handle_type,
-        handle, &error))
-    {
-      stream_engine_svc_channel_handler_return_from_handle_channel (context);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
+  stream_engine_svc_channel_handler_return_from_handle_channel (context);
 }
 
 void
@@ -1772,41 +1711,23 @@ _lookup_stream (TpStreamEngine *obj,
  *
  * Implements DBus method MuteInput
  * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-static gboolean
-tp_stream_engine_mute_input (TpStreamEngine *obj,
+
+static void
+tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
                              const gchar *channel_path,
                              guint stream_id,
                              gboolean mute_state,
-                             GError **error)
+                             DBusGMethodInvocation *context)
 {
+  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
-
-  stream = _lookup_stream (obj, channel_path, stream_id, error);
-
-  if (!stream)
-    return FALSE;
-
-  return tp_stream_engine_stream_mute_input (stream, mute_state, error);
-}
-
-static void
-stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
-                          const gchar *channel_path,
-                          guint stream_id,
-                          gboolean mute_state,
-                          DBusGMethodInvocation *context)
-{
   GError *error = NULL;
 
-  if (tp_stream_engine_mute_input (TP_STREAM_ENGINE (iface),
-        channel_path, stream_id, mute_state, &error))
+  stream = _lookup_stream (obj, channel_path, stream_id, &error);
+
+  if (stream != NULL &&
+      tp_stream_engine_stream_mute_input (stream, mute_state, &error))
     {
       stream_engine_svc_stream_engine_return_from_mute_input (context);
     }
@@ -1822,41 +1743,22 @@ stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
  *
  * Implements DBus method MuteOutput
  * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-static gboolean
-tp_stream_engine_mute_output (TpStreamEngine *obj,
+static void
+tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
                               const gchar *channel_path,
                               guint stream_id,
                               gboolean mute_state,
-                              GError **error)
+                              DBusGMethodInvocation *context)
 {
+  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
-
-  stream = _lookup_stream (obj, channel_path, stream_id, error);
-
-  if (!stream)
-    return FALSE;
-
-  return tp_stream_engine_stream_mute_output (stream, mute_state, error);
-}
-
-static void
-stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
-                           const gchar *channel_path,
-                           guint stream_id,
-                           gboolean mute_state,
-                           DBusGMethodInvocation *context)
-{
   GError *error = NULL;
 
-  if (tp_stream_engine_mute_output (TP_STREAM_ENGINE (iface),
-        channel_path, stream_id, mute_state, &error))
+  stream = _lookup_stream (obj, channel_path, stream_id, &error);
+
+  if (stream != NULL &&
+      tp_stream_engine_stream_mute_output (stream, mute_state, &error))
     {
       stream_engine_svc_stream_engine_return_from_mute_output (context);
     }
@@ -1873,42 +1775,24 @@ stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
  *
  * Implements DBus method SetOutputVolume
  * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-static gboolean tp_stream_engine_set_output_volume (TpStreamEngine *obj,
-                                                    const gchar *channel_path,
-                                                    guint stream_id,
-                                                    guint volume,
-                                                    GError **error)
-{
-  TpStreamEngineStream *stream;
-
-  stream = _lookup_stream (obj, channel_path, stream_id, error);
-
-  if (!stream)
-    return FALSE;
-
-  return tp_stream_engine_stream_set_output_volume (stream, volume, error);
-}
-
 static void
-stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
-                                 const gchar *channel_path,
-                                 guint stream_id,
-                                 guint volume,
-                                 DBusGMethodInvocation *context)
+tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
+                                    const gchar *channel_path,
+                                    guint stream_id,
+                                    guint volume,
+                                    DBusGMethodInvocation *context)
 {
+  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
+  TpStreamEngineStream *stream;
   GError *error = NULL;
 
-  if (tp_stream_engine_set_output_volume (TP_STREAM_ENGINE (iface),
-        channel_path, stream_id, volume, &error))
+  stream = _lookup_stream (obj, channel_path, stream_id, &error);
+
+  if (stream != NULL &&
+      tp_stream_engine_stream_set_output_volume (stream, volume, &error))
     {
-      stream_engine_svc_stream_engine_return_from_set_output_volume (context);
+      stream_engine_svc_stream_engine_return_from_set_output_window (context);
     }
   else
     {
@@ -1922,49 +1806,25 @@ stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
  *
  * Implements DBus method SetOutputWindow
  * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-static gboolean
-tp_stream_engine_set_output_window (TpStreamEngine *obj,
+static void
+tp_stream_engine_set_output_window (StreamEngineSvcStreamEngine *iface,
                                     const gchar *channel_path,
                                     guint stream_id,
                                     guint window_id,
-                                    GError **error)
+                                    DBusGMethodInvocation *context)
 {
+  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
+  GError *error = NULL;
 
   g_debug ("%s: channel_path=%s, stream_id=%u, window_id=%u", G_STRFUNC,
       channel_path, stream_id, window_id);
 
-  stream = _lookup_stream (obj, channel_path, stream_id, error);
+  stream = _lookup_stream (obj, channel_path, stream_id, &error);
 
-  if (!stream)
-    {
-      g_debug ("%s: stream not found, not doing anything!", G_STRFUNC);
-      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "stream not "
-          "found, not doing anything");
-      return FALSE;
-    }
-
-  return tp_stream_engine_stream_set_output_window (stream, window_id, error);
-}
-
-static void
-stream_engine_set_output_window (StreamEngineSvcStreamEngine *iface,
-                                 const gchar *channel_path,
-                                 guint stream_id,
-                                 guint window_id,
-                                 DBusGMethodInvocation *context)
-{
-  GError *error = NULL;
-
-  if (tp_stream_engine_set_output_window (TP_STREAM_ENGINE (iface),
-        channel_path, stream_id, window_id, &error))
+  if (stream != NULL &&
+      tp_stream_engine_stream_set_output_window (stream, window_id, &error))
     {
       stream_engine_svc_stream_engine_return_from_set_output_window (context);
     }
@@ -2001,28 +1861,13 @@ tp_stream_engine_get ()
  *
  * Implements DBus method Shutdown
  * on interface org.freedesktop.Telepathy.StreamEngine
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occured, DBus will throw the error only if this
- *         function returns false.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
  */
-static gboolean
-tp_stream_engine_shutdown (TpStreamEngine *obj,
-                           GError **error)
+static void
+tp_stream_engine_shutdown (StreamEngineSvcStreamEngine *iface,
+                           DBusGMethodInvocation *context)
 {
   g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
-  g_signal_emit (obj, signals[SHUTDOWN_REQUESTED], 0);
-  return TRUE;
-}
-
-static void
-stream_engine_shutdown (StreamEngineSvcStreamEngine *iface,
-                        DBusGMethodInvocation *context)
-{
-  tp_stream_engine_shutdown (TP_STREAM_ENGINE (iface), NULL);
-
+  g_signal_emit (iface, signals[SHUTDOWN_REQUESTED], 0);
   stream_engine_svc_stream_engine_return_from_shutdown (context);
 }
 
@@ -2032,7 +1877,7 @@ se_iface_init (gpointer iface, gpointer data)
   StreamEngineSvcStreamEngineClass *klass = iface;
 
 #define IMPLEMENT(x) stream_engine_svc_stream_engine_implement_##x (\
-    klass, stream_engine_##x)
+    klass, tp_stream_engine_##x)
   IMPLEMENT (set_output_volume);
   IMPLEMENT (mute_input);
   IMPLEMENT (mute_output);
@@ -2049,7 +1894,7 @@ ch_iface_init (gpointer iface, gpointer data)
   StreamEngineSvcChannelHandlerClass *klass = iface;
 
 #define IMPLEMENT(x) stream_engine_svc_channel_handler_implement_##x (\
-    klass, channel_handler_##x)
+    klass, tp_stream_engine_##x)
   IMPLEMENT (handle_channel);
 #undef IMPLEMENT
 }
