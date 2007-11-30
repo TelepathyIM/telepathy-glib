@@ -370,7 +370,6 @@ tp_connection_new (TpDBusDaemon *dbus,
 
   ret = TP_CONNECTION (g_object_new (TP_TYPE_CONNECTION,
         "dbus-daemon", dbus,
-        "dbus-connection", ((TpProxy *) dbus)->dbus_connection,
         "bus-name", bus_name,
         "object-path", object_path,
         NULL));
