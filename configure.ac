@@ -73,7 +73,7 @@ AC_SUBST(ERROR_CFLAGS)
 dnl options for building sequence diagrams
 SEQ_DIAS
 
-dnl Check for Glib 
+dnl Check for Glib
 PKG_CHECK_MODULES(GLIB, gobject-2.0 >= 2.4)
 
 GLIB_GENMARSHAL=`$PKG_CONFIG --variable=glib_genmarshal glib-2.0`
@@ -98,7 +98,7 @@ PKG_CHECK_MODULES([TELEPATHY], [libtelepathy >= 0.3.1 telepathy-glib >= 0.7.0])
 AC_SUBST(TELEPATHY_CFLAGS)
 AC_SUBST(TELEPATHY_LIBS)
 
-dnl Check for farsight 
+dnl Check for farsight
 PKG_CHECK_MODULES(FARSIGHT, [farsight-0.1 >= 0.1.23])
 
 AC_SUBST(FARSIGHT_CFLAGS)
