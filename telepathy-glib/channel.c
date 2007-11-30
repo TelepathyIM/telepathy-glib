@@ -456,7 +456,6 @@ tp_channel_new (TpDBusDaemon *dbus,
 
   ret = TP_CHANNEL (g_object_new (TP_TYPE_CHANNEL,
         "dbus-daemon", dbus,
-        "dbus-connection", ((TpProxy *) dbus)->dbus_connection,
         "bus-name", unique_name,
         "object-path", object_path,
         "channel-type", optional_channel_type,
