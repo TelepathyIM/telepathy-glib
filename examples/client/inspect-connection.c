@@ -71,19 +71,10 @@ connection_ready (TpConnection *connection,
   printf ("Connection ready\n");
 
   /* An example non-blocking call */
-  if (tp_cli_connection_call_list_channels (connection, -1,
-        /* If ListChannels() needed any arguments, they'd go here */
-        got_channels, g_main_loop_ref (mainloop),
-        (GDestroyNotify) g_main_loop_unref, NULL) != NULL)
-    {
-      return;
-    }
-  else
-    {
-      /* FIXME: this ought to come out in the callback */
-      printf ("Connection claims to be unable to list channels");
-      g_main_loop_quit (mainloop);
-    }
+  tp_cli_connection_call_list_channels (connection, -1,
+      /* If ListChannels() needed any arguments, they'd go here */
+      got_channels, g_main_loop_ref (mainloop),
+      (GDestroyNotify) g_main_loop_unref, NULL);
 }
 
 int
