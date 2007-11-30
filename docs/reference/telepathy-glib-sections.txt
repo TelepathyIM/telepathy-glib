@@ -1509,6 +1509,7 @@ tp_cli_properties_interface_connect_to_property_flags_changed
 <FILE>channel</FILE>
 <TITLE>channel</TITLE>
 <INCLUDE>telepathy-glib/channel.h</INCLUDE>
+tp_channel_new
 TpChannel
 TpChannelClass
 <SUBSECTION Standard>

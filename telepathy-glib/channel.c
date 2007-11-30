@@ -391,3 +391,80 @@ tp_channel_class_init (TpChannelClass *klass)
       G_TYPE_UINT,      /* Handle */
       G_TYPE_STRV);     /* Extra interfaces */
 }
+
+/**
+ * tp_channel_new:
+ * @dbus: a D-Bus daemon; may not be %NULL
+ * @unique_name: the unique name (not the well-known name) of the connection
+ * process; may not be %NULL
+ * @object_path: the object path of the channel; may not be %NULL
+ * @optional_channel_type: the channel type if already known, or %NULL if not
+ * @optional_handle_type: the handle type if already known, or
+ *  %TP_UNKNOWN_HANDLE_TYPE if not
+ * @optional_handle: the handle if already known, or 0 if not
+ *  (if @optional_handle_type is %TP_UNKNOWN_HANDLE_TYPE or
+ *  %TP_HANDLE_TYPE_NONE, this must be 0)
+ * @error: used to indicate the error if %NULL is returned
+ *
+ * <!-- -->
+ *
+ * Returns: a new channel proxy, or %NULL on invalid arguments.
+ */
+TpChannel *
+tp_channel_new (TpDBusDaemon *dbus,
+                const gchar *unique_name,
+                const gchar *object_path,
+                const gchar *optional_channel_type,
+                TpHandleType optional_handle_type,
+                TpHandle optional_handle,
+                GError **error)
+{
+  TpChannel *ret;
+  gchar *dup = NULL;
+
+  g_return_val_if_fail (dbus != NULL, NULL);
+  g_return_val_if_fail (unique_name != NULL, NULL);
+  g_return_val_if_fail (object_path != NULL, NULL);
+
+  if (!tp_dbus_check_valid_bus_name (unique_name,
+        TP_DBUS_NAME_TYPE_UNIQUE, error))
+    return NULL;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return NULL;
+
+  if (optional_channel_type != NULL &&
+      !tp_dbus_check_valid_interface_name (optional_channel_type, error))
+    return NULL;
+
+  if (optional_handle_type == TP_UNKNOWN_HANDLE_TYPE ||
+      optional_handle_type == TP_HANDLE_TYPE_NONE)
+    {
+      if (optional_handle != 0)
+        {
+          /* in the properties, we do actually allow the user to give us an
+           * assumed-valid handle of unknown type - but that'd be silly */
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "Nonzero handle of type NONE or unknown makes no sense");
+          return NULL;
+        }
+    }
+  else if (!tp_handle_type_is_valid (optional_handle_type, error))
+    {
+      return NULL;
+    }
+
+  ret = TP_CHANNEL (g_object_new (TP_TYPE_CHANNEL,
+        "dbus-daemon", dbus,
+        "dbus-connection", ((TpProxy *) dbus)->dbus_connection,
+        "bus-name", unique_name,
+        "object-path", object_path,
+        "channel-type", optional_channel_type,
+        "handle-type", optional_handle_type,
+        "handle", optional_handle,
+        NULL));
+
+  g_free (dup);
+
+  return ret;
+}

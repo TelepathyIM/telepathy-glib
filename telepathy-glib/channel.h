@@ -21,6 +21,7 @@
 #ifndef __TP_CHANNEL_H__
 #define __TP_CHANNEL_H__
 
+#include <telepathy-glib/handle.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -46,6 +47,11 @@ GType tp_channel_get_type (void);
 #define TP_CHANNEL_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL, \
                               TpChannelClass))
+
+TpChannel *tp_channel_new (TpDBusDaemon *dbus, const gchar *unique_name,
+    const gchar *object_path, const gchar *optional_channel_type,
+    TpHandleType optional_handle_type, TpHandle optional_handle,
+    GError **error);
 
 G_END_DECLS
 
