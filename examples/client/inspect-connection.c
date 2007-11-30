@@ -84,23 +84,38 @@ main (int argc,
   const gchar *bus_name, *object_path;
   TpConnection *connection;
   GMainLoop *mainloop;
+  TpDBusDaemon *daemon;
+  GError *error = NULL;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  if (argc < 3)
+  if (argc < 2)
     return 2;
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
   bus_name = argv[1];
-  object_path = argv[2];
+  object_path = argv[2];    /* might be NULL */
 
-  connection = TP_CONNECTION (g_object_new (TP_TYPE_CONNECTION,
-        "dbus-connection", tp_get_bus (),
-        "bus-name", bus_name,
-        "object-path", object_path,
-        NULL));
+  /* Cope with the arguments being a bus name, an object path or both */
+  if (bus_name[0] == '/' && argc == 2)
+    {
+      object_path = bus_name;
+      bus_name = NULL;
+    }
+
+  daemon = tp_dbus_daemon_new (tp_get_bus ());
+
+  connection = tp_connection_new (daemon, bus_name, object_path, &error);
+
+  if (connection == NULL)
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      g_object_unref (daemon);
+      return 1;
+    }
 
   g_signal_connect (connection, "connection-ready",
       G_CALLBACK (connection_ready), mainloop);
@@ -108,6 +123,9 @@ main (int argc,
       mainloop);
 
   g_main_loop_run (mainloop);
+
+  g_main_loop_unref (mainloop);
+  g_object_unref (daemon);
 
   return 0;
 }
