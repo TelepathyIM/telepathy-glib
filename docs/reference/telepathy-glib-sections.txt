@@ -1709,6 +1709,7 @@ tp_cli_channel_interface_password_signal_callback_password_flags_changed
 <FILE>connection</FILE>
 <TITLE>connection</TITLE>
 <INCLUDE>telepathy-glib/connection.h</INCLUDE>
+tp_connection_new
 TpConnection
 TpConnectionClass
 TP_UNKNOWN_CONNECTION_STATUS

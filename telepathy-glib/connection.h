@@ -55,6 +55,9 @@ GType tp_connection_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONNECTION, \
                               TpConnectionClass))
 
+TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
+    const gchar *object_path, GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection.h>

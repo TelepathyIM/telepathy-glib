@@ -307,3 +307,78 @@ tp_connection_class_init (TpConnectionClass *klass)
       g_cclosure_marshal_VOID__VOID,
       G_TYPE_NONE, 0);
 }
+
+/**
+ * tp_connection_new:
+ * @dbus: a D-Bus daemon; may not be %NULL
+ * @bus_name: the well-known or unique name of the connection process;
+ *  if well-known, this function will make a blocking call to the bus daemon
+ *  to resolve the unique name. May be %NULL if @object_path is not, in which
+ *  case a well-known name will be derived from @object_path.
+ * @object_path: the object path of the connection process. May be %NULL
+ *  if @bus_name is a well-known name, in which case the object path will
+ *  be derived from @bus_name.
+ * @error: used to indicate the error if %NULL is returned
+ *
+ * <!-- -->
+ *
+ * Returns: a new connection proxy, or %NULL if unique-name resolution
+ *  fails or on invalid arguments
+ */
+TpConnection *
+tp_connection_new (TpDBusDaemon *dbus,
+                   const gchar *bus_name,
+                   const gchar *object_path,
+                   GError **error)
+{
+  gchar *dup_path = NULL;
+  gchar *dup_name = NULL;
+  gchar *dup_unique_name = NULL;
+  TpConnection *ret = NULL;
+
+  g_return_val_if_fail (dbus != NULL, NULL);
+  g_return_val_if_fail (object_path != NULL ||
+                        (bus_name != NULL && bus_name[0] != ':'), NULL);
+
+  if (object_path == NULL)
+    {
+      dup_path = g_strdelimit (g_strdup_printf ("/%s", bus_name), ".", '/');
+      object_path = dup_path;
+    }
+  else if (bus_name == NULL)
+    {
+      dup_name = g_strdelimit (g_strdup (object_path + 1), "/", '.');
+      bus_name = dup_name;
+    }
+
+  if (!tp_dbus_check_valid_bus_name (bus_name,
+        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, error))
+    goto finally;
+
+  /* Resolve unique name if necessary */
+  if (bus_name[0] != ':')
+    {
+      if (!tp_cli_dbus_daemon_block_on_get_name_owner (dbus, 2000, bus_name,
+          &dup_unique_name, error))
+        goto finally;
+
+      bus_name = dup_unique_name;
+    }
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    goto finally;
+
+  ret = TP_CONNECTION (g_object_new (TP_TYPE_CONNECTION,
+        "dbus-daemon", dbus,
+        "dbus-connection", ((TpProxy *) dbus)->dbus_connection,
+        "bus-name", bus_name,
+        "object-path", object_path,
+        NULL));
+
+finally:
+  g_free (dup_path);
+  g_free (dup_name);
+  g_free (dup_unique_name);
+
+  return ret;
+}
