@@ -22,7 +22,7 @@
 #define __TP_STREAM_ENGINE_H__
 
 #include <glib-object.h>
-#include <libtelepathy/tp-constants.h>
+#include <telepathy-glib/enums.h>
 
 #include "stream.h"
 

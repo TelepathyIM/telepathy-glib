@@ -18,10 +18,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libtelepathy/tp-helpers.h>
-#include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-media-session-handler-gen.h>
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/interfaces.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-codec.h>

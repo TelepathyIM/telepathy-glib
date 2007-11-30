@@ -3,7 +3,7 @@
 
 #include <glib-object.h>
 #include <farsight/farsight-session.h>
-#include <libtelepathy/tp-constants.h>
+#include <telepathy-glib/enums.h>
 
 G_BEGIN_DECLS
 
@@ -50,7 +50,7 @@ GType tp_stream_engine_stream_get_type (void);
 
 TpStreamEngineStream *tp_stream_engine_stream_new (FarsightSession *fs_session,
     const gchar *bus_name, const gchar *object_path, guint stream_id,
-    TelepathyMediaStreamType media_type, TelepathyMediaStreamDirection direction,
+    TpMediaStreamType media_type, TpMediaStreamDirection direction,
     const TpStreamEngineNatProperties *nat_props);
 
 gboolean tp_stream_engine_stream_mute_input (

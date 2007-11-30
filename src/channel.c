@@ -20,14 +20,13 @@
 
 #include <stdlib.h>
 
-#include <libtelepathy/tp-conn.h>
-#include <libtelepathy/tp-constants.h>
 #include <libtelepathy/tp-chan.h>
 #include <libtelepathy/tp-chan-type-streamed-media-gen.h>
 #include <libtelepathy/tp-chan-iface-media-signalling-gen.h>
 #include <libtelepathy/tp-media-stream-handler-gen.h>
-#include <libtelepathy/tp-helpers.h>
 #include <libtelepathy/tp-props-iface.h>
+#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 
 #include "channel.h"

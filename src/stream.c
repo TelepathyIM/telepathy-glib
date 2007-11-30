@@ -25,11 +25,11 @@
 #include <string.h>
 
 #include <libtelepathy/tp-conn.h>
-#include <libtelepathy/tp-helpers.h>
-#include <libtelepathy/tp-interfaces.h>
 #include <libtelepathy/tp-media-stream-handler-gen.h>
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 
 #include <farsight/farsight-session.h>
 #include <farsight/farsight-stream.h>
