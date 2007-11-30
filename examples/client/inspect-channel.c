@@ -87,7 +87,6 @@ main (int argc,
   const gchar *bus_name, *object_path;
   TpChannel *channel;
   GMainLoop *mainloop;
-  gchar *dup = NULL;
   TpDBusDaemon *daemon;
   GError *error = NULL;
 
@@ -104,20 +103,6 @@ main (int argc,
 
   daemon = tp_dbus_daemon_new (tp_get_bus ());
 
-  if (bus_name[0] != ':')
-    {
-      if (!tp_cli_dbus_daemon_block_on_get_name_owner (daemon, 2000,
-            bus_name, &dup, &error))
-        {
-          g_warning ("Unable to resolve unique name: %s", error->message);
-          g_error_free (error);
-          g_object_unref (daemon);
-          return 1;
-        }
-
-      bus_name = dup;
-    }
-
   channel = tp_channel_new (daemon, bus_name, object_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
 
@@ -128,8 +113,6 @@ main (int argc,
       g_object_unref (daemon);
       return 1;
     }
-
-  g_free (dup);
 
   g_signal_connect (channel, "channel-ready",
       G_CALLBACK (channel_ready), mainloop);
