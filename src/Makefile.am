@@ -33,11 +33,11 @@ telepathy_stream_engine_LDADD = \
 noinst_LTLIBRARIES = libstreamengine-convenience.la
 
 AM_CFLAGS = $(ERROR_CFLAGS) \
-	@DBUS_CFLAGS@ @GLIB_CFLAGS@ @LIBTELEPATHY_CFLAGS@ @FARSIGHT_CFLAGS@ \
+	@DBUS_CFLAGS@ @GLIB_CFLAGS@ @TELEPATHY_CFLAGS@ @FARSIGHT_CFLAGS@ \
 	@GST_PLUGINS_BASE_CFLAGS@ @X11_CFLAGS@ \
 	-I$(top_srcdir) -I$(top_builddir)
 
-AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @LIBTELEPATHY_LIBS@ @FARSIGHT_LIBS@ \
+AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @TELEPATHY_LIBS@ @FARSIGHT_LIBS@ \
 	@GST_PLUGINS_BASE_LIBS@ @X11_LIBS@ -lgstinterfaces-0.10 \
 	$(top_builddir)/api/libstream-engine-api.la
 

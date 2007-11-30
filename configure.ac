@@ -92,11 +92,11 @@ DBUS_SERVICES_DIR="$DATADIR/dbus-1/services"
 AC_SUBST(DBUS_SERVICES_DIR)
 AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [DBus services directory])
 
-dnl Check for libtelepathy
-PKG_CHECK_MODULES(LIBTELEPATHY, libtelepathy >= 0.3.1 telepathy-glib >= 0.7.0)
+dnl Check for Telepathy libraries
+PKG_CHECK_MODULES([TELEPATHY], [libtelepathy >= 0.3.1 telepathy-glib >= 0.7.0])
 
-AC_SUBST(LIBTELEPATHY_CFLAGS)
-AC_SUBST(LIBTELEPATHY_LIBS)
+AC_SUBST(TELEPATHY_CFLAGS)
+AC_SUBST(TELEPATHY_LIBS)
 
 dnl Check for farsight 
 PKG_CHECK_MODULES(FARSIGHT, [farsight-0.1 >= 0.1.23])
