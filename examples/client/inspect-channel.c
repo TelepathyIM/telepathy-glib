@@ -118,11 +118,16 @@ main (int argc,
       bus_name = dup;
     }
 
-  channel = TP_CHANNEL (g_object_new (TP_TYPE_CHANNEL,
-        "dbus-daemon", daemon,
-        "bus-name", bus_name,
-        "object-path", object_path,
-        NULL));
+  channel = tp_channel_new (daemon, bus_name, object_path, NULL,
+      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+
+  if (channel == NULL)
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      g_object_unref (daemon);
+      return 1;
+    }
 
   g_free (dup);
 
