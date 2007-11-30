@@ -211,7 +211,7 @@ tp_stream_engine_channel_constructor (GType type,
       G_CALLBACK (channel_closed), obj, NULL);
 
   props_proxy = (TpPropsIface *) tp_chan_get_interface (priv->channel_proxy,
-      TELEPATHY_PROPS_IFACE_QUARK);
+      TP_IFACE_QUARK_PROPERTIES_INTERFACE);
 
   /* fail gracefully if there's no properties interface */
   if (props_proxy != NULL)
@@ -228,7 +228,7 @@ tp_stream_engine_channel_constructor (GType type,
     }
 
   priv->media_signalling_proxy = tp_chan_get_interface (priv->channel_proxy,
-      TELEPATHY_CHAN_IFACE_MEDIA_SIGNALLING_QUARK);
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING);
 
   g_assert (priv->media_signalling_proxy != NULL);
 
@@ -422,8 +422,8 @@ stream_closed_cb (TpStreamEngineStream *stream,
 
 static void
 stream_state_changed_cb (TpStreamEngineStream *stream,
-                         TelepathyMediaStreamState state,
-                         TelepathyMediaStreamDirection direction,
+                         TpMediaStreamState state,
+                         TpMediaStreamDirection direction,
                          gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
@@ -452,8 +452,8 @@ static void
 new_stream_cb (TpStreamEngineSession *session,
                gchar *object_path,
                guint stream_id,
-               TelepathyMediaStreamType media_type,
-               TelepathyMediaStreamDirection direction,
+               TpMediaStreamType media_type,
+               TpMediaStreamDirection direction,
                gpointer user_data)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
@@ -808,7 +808,7 @@ tp_stream_engine_channel_new (const gchar *bus_name,
     }
 
   media_signalling_proxy = tp_chan_get_interface (channel_proxy,
-      TELEPATHY_CHAN_IFACE_MEDIA_SIGNALLING_QUARK);
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING);
 
   if (media_signalling_proxy == NULL)
     {

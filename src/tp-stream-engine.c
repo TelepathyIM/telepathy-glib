@@ -734,8 +734,8 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 static void
 channel_stream_state_changed (TpStreamEngineChannel *chan,
                               guint stream_id,
-                              TelepathyMediaStreamState state,
-                              TelepathyMediaStreamDirection direction,
+                              TpMediaStreamState state,
+                              TpMediaStreamDirection direction,
                               gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
@@ -934,7 +934,7 @@ close_one_video_stream (TpStreamEngineChannel *chan,
                         gpointer user_data)
 {
   const gchar *message = (const gchar *) user_data;
-  TelepathyMediaStreamType media_type;
+  TpMediaStreamType media_type;
 
   g_object_get (stream, "media-type", &media_type, NULL);
 

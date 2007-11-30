@@ -62,8 +62,8 @@ struct _TpStreamEngineStreamPrivate
   gchar *bus_name;
   gchar *object_path;
   guint stream_id;
-  TelepathyMediaStreamType media_type;
-  TelepathyMediaStreamDirection direction;
+  TpMediaStreamType media_type;
+  TpMediaStreamDirection direction;
   const TpStreamEngineNatProperties *nat_props;
   GstBin *pipeline;
 
@@ -832,8 +832,8 @@ cb_fs_new_native_candidate (FarsightStream *stream,
     {
       FarsightTransportInfo *fs_transport = lp->data;
       GValue transport = { 0, };
-      TelepathyMediaStreamProto proto;
-      TelepathyMediaStreamTransportType type;
+      TpMediaStreamBaseProto proto;
+      TpMediaStreamTransportType type;
 
       g_value_init (&transport, TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT);
       g_value_set_static_boxed (&transport,
@@ -841,10 +841,10 @@ cb_fs_new_native_candidate (FarsightStream *stream,
 
       switch (fs_transport->proto) {
         case FARSIGHT_NETWORK_PROTOCOL_UDP:
-          proto = TP_MEDIA_STREAM_PROTO_UDP;
+          proto = TP_MEDIA_STREAM_BASE_PROTO_UDP;
           break;
         case FARSIGHT_NETWORK_PROTOCOL_TCP:
-          proto = TP_MEDIA_STREAM_PROTO_TCP;
+          proto = TP_MEDIA_STREAM_BASE_PROTO_TCP;
           break;
         default:
           g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
@@ -983,7 +983,7 @@ fs_codecs_to_tp (const GList *codecs)
     {
       FarsightCodec *fsc = el->data;
       GValue codec = { 0, };
-      TelepathyMediaStreamType type;
+      TpMediaStreamType type;
       GHashTable *params;
       GList *cur;
 
@@ -1593,8 +1593,8 @@ tp_stream_engine_stream_new (FarsightSession *fs_session,
                              const gchar *bus_name,
                              const gchar *object_path,
                              guint stream_id,
-                             TelepathyMediaStreamType media_type,
-                             TelepathyMediaStreamDirection direction,
+                             TpMediaStreamType media_type,
+                             TpMediaStreamDirection direction,
                              const TpStreamEngineNatProperties *nat_props)
 {
   TpStreamEngineStream *ret;
