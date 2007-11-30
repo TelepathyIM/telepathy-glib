@@ -536,12 +536,38 @@ tp_proxy_set_property (GObject *object,
   switch (property_id)
     {
     case PROP_DBUS_DAEMON:
-      g_assert (self->dbus_daemon == NULL);
-      self->dbus_daemon = g_value_dup_object (value);
+        {
+          TpProxy *daemon_as_proxy = g_value_get_object (value);
+
+          g_assert (self->dbus_daemon == NULL);
+
+          self->dbus_daemon = g_value_dup_object (value);
+
+          if (daemon_as_proxy != NULL)
+            {
+              g_assert (self->dbus_connection == NULL ||
+                  self->dbus_connection == daemon_as_proxy->dbus_connection);
+
+              if (self->dbus_connection == NULL)
+                self->dbus_connection =
+                    dbus_g_connection_ref (daemon_as_proxy->dbus_connection);
+            }
+        }
       break;
     case PROP_DBUS_CONNECTION:
-      g_assert (self->dbus_connection == NULL);
-      self->dbus_connection = g_value_dup_boxed (value);
+        {
+          DBusGConnection *conn = g_value_get_boxed (value);
+
+          /* if we're given a NULL dbus-connection, but we've got a
+           * DBusGConnection from the dbus-daemon, we want to keep it */
+          if (conn == NULL)
+            return;
+
+          g_assert (self->dbus_connection == NULL ||
+              self->dbus_connection == g_value_get_boxed (value));
+
+          self->dbus_connection = g_value_dup_boxed (value);
+        }
       break;
     case PROP_BUS_NAME:
       g_assert (self->bus_name == NULL);
