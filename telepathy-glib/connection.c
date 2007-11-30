@@ -363,6 +363,10 @@ tp_connection_new (TpDBusDaemon *dbus,
         goto finally;
 
       bus_name = dup_unique_name;
+
+      if (!tp_dbus_check_valid_bus_name (bus_name,
+          TP_DBUS_NAME_TYPE_UNIQUE, error))
+        goto finally;
     }
 
   if (!tp_dbus_check_valid_object_path (object_path, error))
