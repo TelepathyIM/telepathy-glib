@@ -121,11 +121,14 @@ tp_get_bus_proxy (void)
  * @TP_DBUS_NAME_TYPE_BUS_DAEMON: accept the name of the bus daemon
  *  itself, which has the syntax of a well-known name, but behaves like a
  *  unique name
+ * @TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON: accept either unique or well-known
+ *  names, but not the bus daemon
  * @TP_DBUS_NAME_TYPE_ANY: accept any of the above
  *
  * A set of flags indicating which D-Bus bus names are acceptable.
  * They can be combined with the bitwise-or operator to accept multiple
- * types. %TP_DBUS_NAME_TYPE_ANY is the bitwise-or of the other types.
+ * types. %TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON and %TP_DBUS_NAME_TYPE_ANY are
+ * the bitwise-or of other appropriate types, for convenience.
  *
  * Since: 0.7.1
  */
@@ -134,8 +137,9 @@ tp_get_bus_proxy (void)
  * tp_dbus_check_valid_bus_name:
  * @name: a possible bus name
  * @allow_types: some combination of %TP_DBUS_NAME_TYPE_UNIQUE,
- *  %TP_DBUS_NAME_TYPE_WELL_KNOWN or %TP_DBUS_NAME_TYPE_BUS_DAEMON,
- *  or %TP_DBUS_NAME_TYPE_ANY to accept all of these
+ *  %TP_DBUS_NAME_TYPE_WELL_KNOWN or %TP_DBUS_NAME_TYPE_BUS_DAEMON
+ *  (often this will be %TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON or
+ *  %TP_DBUS_NAME_TYPE_ANY)
  * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
  *
  * Check that the given string is a valid D-Bus bus name of an appropriate
