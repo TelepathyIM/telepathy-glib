@@ -48,7 +48,7 @@ GType tp_channel_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL, \
                               TpChannelClass))
 
-TpChannel *tp_channel_new (TpDBusDaemon *dbus, const gchar *unique_name,
+TpChannel *tp_channel_new (TpDBusDaemon *dbus, const gchar *bus_name,
     const gchar *object_path, const gchar *optional_channel_type,
     TpHandleType optional_handle_type, TpHandle optional_handle,
     GError **error);
