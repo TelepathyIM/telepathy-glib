@@ -121,6 +121,19 @@ main (int argc,
   g_assert (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
         TP_DBUS_NAME_TYPE_UNIQUE, NULL));
 
+  g_assert (!tp_dbus_check_valid_bus_name ("com.1",
+        TP_DBUS_NAME_TYPE_ANY, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name ("com.e*ample",
+        TP_DBUS_NAME_TYPE_ANY, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name ("com..example",
+        TP_DBUS_NAME_TYPE_ANY, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name (".com.example",
+        TP_DBUS_NAME_TYPE_ANY, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name ("com.example.",
+        TP_DBUS_NAME_TYPE_ANY, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name (":1.1.",
+        TP_DBUS_NAME_TYPE_ANY, NULL));
+
   bus = tp_dbus_daemon_new (tp_get_bus ());
 
   tp_dbus_daemon_watch_name_owner (bus, "com.example", noc, "1", NULL);
