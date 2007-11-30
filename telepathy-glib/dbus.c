@@ -229,16 +229,20 @@ tp_dbus_check_valid_bus_name (const gchar *name,
         {
           if (!unique)
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-                  "Invalid bus name '%s': a digit may not follow '.' except "
-                  "in a unique name starting with ':'", name);
-              return FALSE;
-            }
-          else if (last == '\0')
-            {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-                  "Invalid bus name '%s': must not start with a digit", name);
-              return FALSE;
+              if (last == '.')
+                {
+                  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                      "Invalid bus name '%s': a digit may not follow '.' "
+                      "except in a unique name starting with ':'", name);
+                  return FALSE;
+                }
+              else if (last == '\0')
+                {
+                  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                      "Invalid bus name '%s': must not start with a digit",
+                      name);
+                  return FALSE;
+                }
             }
         }
       else if (!g_ascii_isalpha (*ptr) && *ptr != '_' && *ptr != '-')

@@ -1,3 +1,4 @@
+#include <dbus/dbus-shared.h>
 #include <glib.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/util.h>
@@ -74,6 +75,51 @@ main (int argc,
   events = g_ptr_array_new ();
 
   g_type_init ();
+
+    {
+      GError *error = NULL;
+
+      if (!tp_dbus_check_valid_bus_name (":1.1", TP_DBUS_NAME_TYPE_ANY,
+            &error))
+        {
+          g_message ("%s", error->message);
+        }
+    }
+
+  g_assert (tp_dbus_check_valid_bus_name (":1.1", TP_DBUS_NAME_TYPE_ANY,
+        NULL));
+  g_assert (tp_dbus_check_valid_bus_name ("com.example", TP_DBUS_NAME_TYPE_ANY,
+        NULL));
+  g_assert (tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_ANY, NULL));
+
+  g_assert (tp_dbus_check_valid_bus_name (":1.1",
+        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL));
+  g_assert (tp_dbus_check_valid_bus_name ("com.example",
+        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL));
+
+  g_assert (!tp_dbus_check_valid_bus_name (":1.1",
+        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name ("com.example",
+        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL));
+  g_assert (tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL));
+
+  g_assert (!tp_dbus_check_valid_bus_name (":1.1",
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL));
+  g_assert (tp_dbus_check_valid_bus_name ("com.example",
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL));
+
+  g_assert (tp_dbus_check_valid_bus_name (":1.1",
+        TP_DBUS_NAME_TYPE_UNIQUE, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name ("com.example",
+        TP_DBUS_NAME_TYPE_UNIQUE, NULL));
+  g_assert (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_UNIQUE, NULL));
 
   bus = tp_dbus_daemon_new (tp_get_bus ());
 
