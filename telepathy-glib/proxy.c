@@ -600,7 +600,7 @@ tp_proxy_constructor (GType type,
    * name, like in dbus_g_proxy_new_for_name_owner() */
   if (klass->must_have_unique_name)
     {
-      g_return_val_if_fail (self->bus_name[0] != ':', NULL);
+      g_return_val_if_fail (self->bus_name[0] == ':', NULL);
     }
 
   self->priv->valid = TRUE;
