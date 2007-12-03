@@ -3,7 +3,8 @@
  * contact. Similar code is used for 1-1 IM channels in many protocols
  * (IRC private messages ("/query"), XMPP IM etc.)
  *
- * Copyright (C) 2007 Collabora Ltd.
+ * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2007 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright

@@ -1,6 +1,8 @@
 /*
  * conn.h - header for an example connection
- * Copyright (C) 2007 Collabora Ltd.
+ *
+ * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2007 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
