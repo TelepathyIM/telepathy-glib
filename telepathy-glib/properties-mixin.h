@@ -56,6 +56,8 @@ typedef struct _TpPropertySignature TpPropertySignature;
  * Structure representing the current state of a property.
  */
 struct _TpProperty {
+    /* FIXME: if we ever break ABI, make this a (GValue) rather than a
+     * (GValue *) */
     GValue *value;
     guint flags;
 };
