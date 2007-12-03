@@ -41,10 +41,14 @@ _gen/versioned-abi.txt: version-script.txt Makefile.am
 	sed -n -e "s/^[	 ]*\\(tp_.*\\);/\\1/p" < $< > $@.tmp
 	sort -u < $@.tmp > $@
 
-libtelepathy_glib_la_LDFLAGS += -Wl,--version-script=version-script.txt
-else
+libtelepathy_glib_la_LDFLAGS += \
+    -Wl,--version-script=$(srcdir)/version-script.txt
+
+else # !HAVE_LD_VERSION_SCRIPT
+
 libtelepathy_glib_la_LDFLAGS += -export-symbols-regex '^tp'
-endif
+
+endif # !HAVE_LD_VERSION_SCRIPT
 
 tpginclude_HEADERS = \
     base-connection.h \
