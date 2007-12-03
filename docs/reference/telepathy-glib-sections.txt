@@ -1901,9 +1901,11 @@ TP_TYPE_MEDIA_STREAM_HANDLER
 tp_media_session_handler_get_type
 tp_media_stream_handler_get_type
 <SUBSECTION>
+tp_media_session_handler_new
 TpMediaSessionHandler
 TpMediaSessionHandlerClass
 <SUBSECTION>
+tp_media_stream_handler_new
 TpMediaStreamHandler
 TpMediaStreamHandlerClass
 <SUBSECTION>

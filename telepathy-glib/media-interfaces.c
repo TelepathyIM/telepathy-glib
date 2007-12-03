@@ -72,6 +72,43 @@ tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *klass)
 }
 
 /**
+ * tp_media_stream_handler_new:
+ * @dbus: a D-Bus daemon; may not be %NULL
+ * @unique_name: the unique name of the connection process; may not be %NULL
+ *  or a well-known name
+ * @object_path: the object path of the media stream handler; may not be %NULL
+ * @error: used to indicate the error if %NULL is returned
+ *
+ * <!-- -->
+ *
+ * Returns: a new media stream handler proxy, or %NULL on invalid arguments
+ */
+TpMediaStreamHandler *
+tp_media_stream_handler_new (TpDBusDaemon *dbus,
+                             const gchar *unique_name,
+                             const gchar *object_path,
+                             GError **error)
+{
+  TpMediaStreamHandler *ret = NULL;
+
+  if (!tp_dbus_check_valid_bus_name (bus_name,
+        TP_DBUS_NAME_TYPE_UNIQUE, error))
+    goto finally;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    goto finally;
+
+  ret = TP_MEDIA_STREAM_HANDLER (g_object_new (TP_TYPE_MEDIA_STREAM_HANDLER,
+        "dbus-daemon", dbus,
+        "bus-name", bus_name,
+        "object-path", object_path,
+        NULL));
+
+finally:
+  return ret;
+}
+
+/**
  * TpMediaSessionHandlerClass:
  *
  * The class of a #TpMediaSessionHandler.
@@ -107,4 +144,41 @@ tp_media_session_handler_class_init (TpMediaSessionHandlerClass *klass)
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_SESSION_HANDLER;
+}
+
+/**
+ * tp_media_session_handler_new:
+ * @dbus: a D-Bus daemon; may not be %NULL
+ * @unique_name: the unique name of the connection process; may not be %NULL
+ *  or a well-known name
+ * @object_path: the object path of the media session handler; may not be %NULL
+ * @error: used to indicate the error if %NULL is returned
+ *
+ * <!-- -->
+ *
+ * Returns: a new media session handler proxy, or %NULL on invalid arguments
+ */
+TpMediaSessionHandler *
+tp_media_session_handler_new (TpDBusDaemon *dbus,
+                              const gchar *unique_name,
+                              const gchar *object_path
+                              GError **error)
+{
+  TpMediaSessionHandler *ret = NULL;
+
+  if (!tp_dbus_check_valid_bus_name (bus_name,
+        TP_DBUS_NAME_TYPE_UNIQUE, error))
+    goto finally;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    goto finally;
+
+  ret = TP_MEDIA_SESSION_HANDLER (g_object_new (TP_TYPE_MEDIA_SESSION_HANDLER,
+        "dbus-daemon", dbus,
+        "bus-name", bus_name,
+        "object-path", object_path,
+        NULL));
+
+finally:
+  return ret;
 }
