@@ -192,6 +192,16 @@ dnl signal functions
 AC_CHECK_FUNCS(signal)
 AC_CHECK_HEADERS(signal.h)
 
+HAVE_LD_VERSION_SCRIPT=no
+[if ld --help | grep '[-]-version-script' >/dev/null; then
+	HAVE_LD_VERSION_SCRIPT=yes
+fi]
+AC_CHECK_PROGS([NM], [nm])
+if test -z "$NM"; then
+	HAVE_LD_VERSION_SCRIPT=no
+fi
+AM_CONDITIONAL([HAVE_LD_VERSION_SCRIPT], [test $HAVE_LD_VERSION_SCRIPT = yes])
+
 AC_OUTPUT( Makefile \
 	   docs/Makefile \
 	   docs/reference/Makefile \

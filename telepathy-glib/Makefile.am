@@ -22,10 +22,29 @@ noinst_LTLIBRARIES = libtelepathy-glib-internal.la
 # The static version is necessary because one of the tests wants to use
 # internal symbols (_tp_debug) which are made invisible by GNU ld.
 libtelepathy_glib_la_LDFLAGS = \
-    -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
-    -export-symbols-regex '^tp_'
+    -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
 libtelepathy_glib_la_LIBADD = libtelepathy-glib-internal.la
 libtelepathy_glib_la_SOURCES =
+
+if HAVE_LD_VERSION_SCRIPT
+libtelepathy-glib.la: version-script.txt _gen/abi.txt
+
+_gen/abi.txt: libtelepathy-glib-internal.la _gen/versioned-abi.txt Makefile.am
+	$(NM) .libs/libtelepathy-glib-internal.a > _gen/abi.nm
+	grep " T " < _gen/abi.nm > _gen/abi.funcs
+	cut -d" " -f3 < _gen/abi.funcs > _gen/abi.funcnames
+	grep "^tp" < _gen/abi.funcnames > _gen/abi.tpfuncnames
+	sort -u < _gen/abi.tpfuncnames > $@
+	diff -c $@ _gen/versioned-abi.txt
+
+_gen/versioned-abi.txt: version-script.txt Makefile.am
+	sed -n -e "s/^[	 ]*\\(tp_.*\\);/\\1/p" < $< > $@.tmp
+	sort -u < $@.tmp > $@
+
+libtelepathy_glib_la_LDFLAGS += -Wl,--version-script=version-script.txt
+else
+libtelepathy_glib_la_LDFLAGS += -export-symbols-regex '^tp'
+endif
 
 tpginclude_HEADERS = \
     base-connection.h \
