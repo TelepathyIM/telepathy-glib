@@ -1,7 +1,8 @@
 /*
  * group-mixin.c - Source for TpGroupMixin
- * Copyright (C) 2006 Collabora Ltd.
- * Copyright (C) 2006 Nokia Corporation
+ *
+ * Copyright (C) 2006-2007 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2006-2007 Nokia Corporation
  *   @author Ole Andre Vadla Ravnaas <ole.andre.ravnaas@collabora.co.uk>
  *   @author Robert McQueen <robert.mcqueen@collabora.co.uk>
  *

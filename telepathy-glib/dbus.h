@@ -1,7 +1,8 @@
 /*
- * dbus.h - Header for D-Bus helper functions for telepathy implementation
- * Copyright (C) 2005 Collabora Ltd.
- * Copyright (C) 2005 Nokia Corporation
+ * dbus.h - Header for D-Bus utilities
+ *
+ * Copyright (C) 2005-2007 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2005-2007 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
