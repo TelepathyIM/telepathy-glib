@@ -60,6 +60,7 @@ struct _TpConnectionClass {
  * @status: same as #TpConnection:status, should be considered read-only
  * @status_reason: same as #TpConnection:status-reason, should be considered
  *  read-only
+ * @_reserved_for_self_handle: reserved, currently always 0
  * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy connection.
@@ -69,6 +70,7 @@ struct _TpConnection {
 
     TpConnectionStatus status;
     TpConnectionStatusReason status_reason;
+    TpHandle _reserved_for_self_handle;
 
     gpointer priv;
 };
