@@ -661,4 +661,10 @@ TELEPATHY_GLIB_0.7.1 {
         tp_proxy_signal_connection_new;
 } TELEPATHY_GLIB_0.7.0;
 
+# For every release that adds ABI, add a stanza like:
+# TELEPATHY_GLIB_0.7.2 {
+#     global:
+#         tp_some_new_symbol;
+# } TELEPATHY_GLIB_0.7.1;
+
 # vim:set sw=4 sts=4 et:
