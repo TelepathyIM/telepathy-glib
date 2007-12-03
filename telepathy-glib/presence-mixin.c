@@ -627,7 +627,7 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
   GObject *obj = (GObject *) iface;
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   TpPresenceMixinClass *mixin_cls =
-    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_CLASS (iface));
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   GArray *self_contacts;
   GError *error = NULL;
   GHashTable *self_contact_statuses;
