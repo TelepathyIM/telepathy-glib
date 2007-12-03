@@ -244,9 +244,9 @@ def type_to_gtype(s):
     elif s == 'u': #uint32
         return ("guint ", "G_TYPE_UINT","UINT", False)
     elif s == 'x': #int64
-        return ("gint ", "G_TYPE_INT64","INT64", False)
-    elif s == 't': #uint32
-        return ("guint ", "G_TYPE_UINT64","UINT64", False)
+        return ("gint64 ", "G_TYPE_INT64","INT64", False)
+    elif s == 't': #uint64
+        return ("guint64 ", "G_TYPE_UINT64","UINT64", False)
     elif s == 'd': #double
         return ("gdouble ", "G_TYPE_DOUBLE","DOUBLE", False)
     elif s == 's': #string
@@ -277,9 +277,6 @@ def type_to_gtype(s):
         return ("GArray *", "DBUS_TYPE_G_BOOLEAN_ARRAY", "BOXED", True)
     elif s == 'ao': #object path array
         return ("GArray *", "DBUS_TYPE_G_OBJECT_ARRAY", "BOXED", True)
-    elif s[:2] == 'a(': #array of structs, recurse
-        gtype = type_to_gtype(s[1:])[1]
-        return ("GPtrArray *", "(dbus_g_type_get_collection (\"GPtrArray\", "+gtype+"))", "BOXED", True)
     elif s == 'a{ss}': #hash table of string to string
         return ("GHashTable *", "DBUS_TYPE_G_STRING_STRING_HASHTABLE", "BOXED", False)
     elif s[:2] == 'a{':  #some arbitrary hash tables
@@ -288,6 +285,9 @@ def type_to_gtype(s):
         first = type_to_gtype(s[2])
         second = type_to_gtype(s[3:-1])
         return ("GHashTable *", "(dbus_g_type_get_map (\"GHashTable\", " + first[1] + ", " + second[1] + "))", "BOXED", False)
+    elif s[:2] in ('a(', 'aa'): # array of structs or arrays, recurse
+        gtype = type_to_gtype(s[1:])[1]
+        return ("GPtrArray *", "(dbus_g_type_get_collection (\"GPtrArray\", "+gtype+"))", "BOXED", True)
     elif s[:1] == '(': #struct
         gtype = "(dbus_g_type_get_struct (\"GValueArray\", "
         for subsig in Signature(s[1:-1]):
