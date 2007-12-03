@@ -44,24 +44,33 @@
 
 /**
  * TpConnectionClass:
+ * @parent_class: the parent class
+ * @priv: pointer to opaque private data
  *
  * The class of a #TpConnection.
  */
 struct _TpConnectionClass {
     TpProxyClass parent_class;
-    /*<private>*/
+    gpointer priv;
 };
 
 /**
  * TpConnection:
+ * @parent: the parent class instance
+ * @status: same as #TpConnection:status, should be considered read-only
+ * @status_reason: same as #TpConnection:status-reason, should be considered
+ *  read-only
+ * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy connection.
  */
 struct _TpConnection {
     TpProxy parent;
-    /*<private>*/
+
     TpConnectionStatus status;
     TpConnectionStatusReason status_reason;
+
+    gpointer priv;
 };
 
 enum

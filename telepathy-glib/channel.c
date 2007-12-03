@@ -45,25 +45,38 @@
 
 /**
  * TpChannelClass:
+ * @parent_class: parent class
+ * @priv: pointer to opaque private data
  *
  * The class of a #TpChannel.
  */
 struct _TpChannelClass {
     TpProxyClass parent_class;
-    /*<private>*/
+    gpointer priv;
 };
 
 /**
  * TpChannel:
+ * @parent: parent class instance
+ * @channel_type: quark representing the channel type; should be considered
+ *  read-only
+ * @handle_type: the handle type (%TP_UNKNOWN_HANDLE_TYPE if not yet known);
+ *  should be considered read-only
+ * @handle: the handle with which this channel communicates (0 if
+ *  not yet known or if @handle_type is %TP_HANDLE_TYPE_NONE); should be
+ *  considered read-only
+ * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy channel.
  */
 struct _TpChannel {
     TpProxy parent;
-    /*<private>*/
+
     GQuark channel_type;
     TpHandleType handle_type;
     TpHandle handle;
+
+    gpointer priv;
 };
 
 enum
