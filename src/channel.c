@@ -36,9 +36,7 @@
 
 G_DEFINE_TYPE (TpStreamEngineChannel, tp_stream_engine_channel, G_TYPE_OBJECT);
 
-#define CHANNEL_PRIVATE(o) ((TpStreamEngineChannelPrivate *)((o)->priv))
-
-typedef struct _TpStreamEngineChannelPrivate TpStreamEngineChannelPrivate;
+#define CHANNEL_PRIVATE(o) ((o)->priv)
 
 struct _TpStreamEngineChannelPrivate
 {
