@@ -111,6 +111,8 @@ struct _TpStreamEnginePrivate
 {
   gboolean dispose_has_run;
 
+  TpDBusDaemon *dbus_daemon;
+
   GstElement *pipeline;
   gboolean pipeline_playing;
 
@@ -1635,23 +1637,18 @@ void
 tp_stream_engine_register (TpStreamEngine *self)
 {
   DBusGConnection *bus;
-  DBusGProxy *bus_proxy;
   GError *error = NULL;
   guint request_name_result;
 
   g_assert (TP_IS_STREAM_ENGINE (self));
 
   bus = tp_get_bus ();
-  bus_proxy = tp_get_bus_proxy ();
+  self->priv->dbus_daemon = tp_dbus_daemon_new (bus);
 
   g_debug("Requesting " BUS_NAME);
 
-  if (!dbus_g_proxy_call (bus_proxy, "RequestName", &error,
-                          G_TYPE_STRING, BUS_NAME,
-                          G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                          G_TYPE_INVALID,
-                          G_TYPE_UINT, &request_name_result,
-                          G_TYPE_INVALID))
+  if (!tp_cli_dbus_daemon_block_on_request_name (self->priv->dbus_daemon, -1,
+        BUS_NAME, DBUS_NAME_FLAG_DO_NOT_QUEUE, &request_name_result, &error))
     g_error ("Failed to request bus name: %s", error->message);
 
   if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
