@@ -24,6 +24,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
