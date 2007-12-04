@@ -34,3 +34,12 @@ glib-gtypes-generator.py: libglibcodegen.py
 	touch $@
 glib-signals-marshal-gen.py: libglibcodegen.py
 	touch $@
+
+TELEPATHY_SPEC_SRCDIR = $(top_srcdir)/../telepathy-spec
+maintainer-update-from-telepathy-spec:
+	set -e && cd $(srcdir) && \
+	for x in $(EXTRA_DIST); do \
+		if test -f $(TELEPATHY_SPEC_SRCDIR)/tools/$$x; then \
+			cp $(TELEPATHY_SPEC_SRCDIR)/tools/$$x $$x; \
+		fi; \
+	done
