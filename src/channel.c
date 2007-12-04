@@ -20,14 +20,12 @@
 
 #include <stdlib.h>
 
-#include <libtelepathy/tp-chan.h>
-#include <libtelepathy/tp-chan-type-streamed-media-gen.h>
-#include <libtelepathy/tp-chan-iface-media-signalling-gen.h>
-#include <libtelepathy/tp-media-stream-handler-gen.h>
-#include <libtelepathy/tp-props-iface.h>
+#include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util.h>
 
 #include "channel.h"
 #include "session.h"
@@ -40,7 +38,7 @@ G_DEFINE_TYPE (TpStreamEngineChannel, tp_stream_engine_channel, G_TYPE_OBJECT);
 
 struct _TpStreamEngineChannelPrivate
 {
-  TpChan *channel_proxy;
+  TpChannel *channel_proxy;
   DBusGProxy *media_signalling_proxy;
   GType audio_stream_gtype;
   GstBin *audio_pipeline;
@@ -48,6 +46,10 @@ struct _TpStreamEngineChannelPrivate
   GstBin *video_pipeline;
 
   TpStreamEngineNatProperties nat_props;
+  guint prop_id_nat_traversal;
+  guint prop_id_stun_server;
+  guint prop_id_stun_port;
+  guint prop_id_gtalk_p2p_relay_token;
 
   GPtrArray *sessions;
   GPtrArray *streams;
@@ -115,12 +117,12 @@ tp_stream_engine_channel_get_property (GObject    *object,
       g_value_set_object (value, priv->channel_proxy);
       break;
     case PROP_OBJECT_PATH:
-      {
-        gchar *object_path;
-        g_object_get (priv->channel_proxy, "path", &object_path, NULL);
-        g_value_take_string (value, object_path);
-        break;
-      }
+        {
+          TpProxy *as_proxy = (TpProxy *) priv->channel_proxy;
+
+          g_value_set_string (value, as_proxy->object_path);
+        }
+      break;
     case PROP_AUDIO_STREAM_GTYPE:
       g_value_set_gtype (value, priv->audio_stream_gtype);
       break;
@@ -151,7 +153,7 @@ tp_stream_engine_channel_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_CHANNEL:
-      priv->channel_proxy = TELEPATHY_CHAN (g_value_dup_object (value));
+      priv->channel_proxy = TP_CHANNEL (g_value_dup_object (value));
       break;
     case PROP_AUDIO_STREAM_GTYPE:
       priv->audio_stream_gtype = g_value_get_gtype (value);
@@ -175,17 +177,153 @@ tp_stream_engine_channel_set_property (GObject      *object,
     }
 }
 
-static void channel_destroyed (DBusGProxy *proxy, gpointer user_data);
-
-static void channel_closed (DBusGProxy *proxy, gpointer user_data);
-
-static void cb_properties_ready (TpPropsIface *iface, gpointer user_data);
+static void channel_destroyed (TpChannel *channel_proxy,
+    TpStreamEngineChannel *self);
 
 static void new_media_session_handler (DBusGProxy *proxy,
-    const gchar *session_handler_path, const gchar *type, gpointer user_data);
+    const gchar *session_handler_path, const gchar *type,
+    TpProxySignalConnection *signal_connection);
 
-static void get_session_handlers_reply (DBusGProxy *proxy,
-    GPtrArray *session_handlers, GError *error, gpointer user_data);
+static void get_session_handlers_reply (TpProxy *proxy,
+    const GPtrArray *session_handlers, const GError *error,
+    gpointer user_data, GObject *weak_object);
+
+static void
+cb_properties_got (TpProxy *proxy,
+                   const GPtrArray *structs,
+                   const GError *error,
+                   gpointer user_data,
+                   GObject *object)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
+  guint i;
+
+  if (error != NULL)
+    {
+      g_warning ("GetProperties(): %s", error->message);
+      return;
+    }
+
+  for (i = 0; i < structs->len; i++)
+    {
+      GValueArray *pair = g_ptr_array_index (structs, i);
+      guint id;
+      GValue *value;
+
+      id = g_value_get_uint (g_value_array_get_nth (pair, 0));
+      value = g_value_get_boxed (g_value_array_get_nth (pair, 1));
+
+      if (id == self->priv->prop_id_nat_traversal)
+        {
+          g_free (self->priv->nat_props.nat_traversal);
+          self->priv->nat_props.nat_traversal = NULL;
+
+          if (G_VALUE_HOLDS_STRING (value))
+            self->priv->nat_props.nat_traversal = g_value_dup_string (value);
+        }
+      else if (id == self->priv->prop_id_stun_server)
+        {
+          g_free (self->priv->nat_props.stun_server);
+          self->priv->nat_props.stun_server = NULL;
+
+          if (G_VALUE_HOLDS_STRING (value))
+            self->priv->nat_props.stun_server = g_value_dup_string (value);
+        }
+      else if (id == self->priv->prop_id_gtalk_p2p_relay_token)
+        {
+          g_free (self->priv->nat_props.relay_token);
+          self->priv->nat_props.relay_token = NULL;
+
+          if (G_VALUE_HOLDS_STRING (value))
+            self->priv->nat_props.relay_token = g_value_dup_string (value);
+        }
+      else if (id == self->priv->prop_id_stun_port)
+        {
+          self->priv->nat_props.stun_port = 0;
+
+          if (G_VALUE_HOLDS_UINT (value))
+            self->priv->nat_props.stun_port = g_value_get_uint (value);
+        }
+    }
+}
+
+static void
+cb_properties_changed (DBusGProxy *proxy,
+                       const GPtrArray *structs,
+                       TpProxySignalConnection *signal_connection)
+{
+  cb_properties_got (signal_connection->proxy, structs, NULL, NULL,
+      signal_connection->weak_object);
+}
+
+static void
+cb_properties_listed (TpProxy *proxy,
+                      const GPtrArray *structs,
+                      const GError *error,
+                      gpointer user_data,
+                      GObject *object)
+{
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
+  guint i;
+  GArray *get_properties;
+
+  if (error != NULL)
+    {
+      g_warning ("ListProperties(): %s", error->message);
+      return;
+    }
+
+  get_properties = g_array_sized_new (FALSE, FALSE, sizeof (guint), 4);
+
+  for (i = 0; i < structs->len; i++)
+    {
+      GValueArray *spec = g_ptr_array_index (structs, i);
+      guint id, flags;
+      const gchar *name, *type;
+      gboolean want;
+
+      id = g_value_get_uint (g_value_array_get_nth (spec, 0));
+      name = g_value_get_string (g_value_array_get_nth (spec, 1));
+      type = g_value_get_string (g_value_array_get_nth (spec, 2));
+      flags = g_value_get_uint (g_value_array_get_nth (spec, 3));
+
+      if (!tp_strdiff (name, "nat-traversal") && !tp_strdiff (type, "s"))
+        {
+          self->priv->prop_id_nat_traversal = id;
+          want = TRUE;
+        }
+      else if (!tp_strdiff (name, "stun-server") && !tp_strdiff (type, "s"))
+        {
+          self->priv->prop_id_stun_server = id;
+          want = TRUE;
+        }
+      else if (!tp_strdiff (name, "gtalk-p2p-relay-token") &&
+          !tp_strdiff (type, "s"))
+        {
+          self->priv->prop_id_gtalk_p2p_relay_token = id;
+          want = TRUE;
+        }
+      else if (!tp_strdiff (name, "stun-port") &&
+          (!tp_strdiff (type, "u") || !tp_strdiff (type, "q")))
+        {
+          self->priv->prop_id_stun_port = id;
+          want = TRUE;
+        }
+      else
+        {
+          g_debug ("Ignoring unrecognised property %s of type %s", name, type);
+        }
+
+      if (want && (flags & TP_PROPERTY_FLAG_READ))
+        g_array_append_val (get_properties, id);
+    }
+
+  if (get_properties->len > 0)
+    tp_cli_properties_interface_call_get_properties (proxy, -1,
+        get_properties, cb_properties_got, NULL, NULL, object);
+
+  g_array_free (get_properties, TRUE);
+}
 
 static GObject *
 tp_stream_engine_channel_constructor (GType type,
@@ -195,7 +333,6 @@ tp_stream_engine_channel_constructor (GType type,
   GObject *obj;
   TpStreamEngineChannel *self;
   TpStreamEngineChannelPrivate *priv;
-  TpPropsIface *props_proxy;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->
            constructor (type, n_props, props);
@@ -203,38 +340,22 @@ tp_stream_engine_channel_constructor (GType type,
   priv = CHANNEL_PRIVATE (self);
 
   priv->channel_destroy_handler = g_signal_connect (priv->channel_proxy,
-      "destroy", G_CALLBACK (channel_destroyed), obj);
+      "destroyed", G_CALLBACK (channel_destroyed), obj);
 
-  dbus_g_proxy_connect_signal (DBUS_G_PROXY (priv->channel_proxy), "Closed",
-      G_CALLBACK (channel_closed), obj, NULL);
+  /* FIXME: it'd be good to use the replacement for TpPropsIface, when it
+   * exists */
 
-  props_proxy = (TpPropsIface *) tp_chan_get_interface (priv->channel_proxy,
-      TP_IFACE_QUARK_PROPERTIES_INTERFACE);
+  tp_cli_properties_interface_connect_to_properties_changed
+      (priv->channel_proxy, cb_properties_changed, NULL, NULL, obj);
 
-  /* fail gracefully if there's no properties interface */
-  if (props_proxy != NULL)
-    {
-      tp_props_iface_set_mapping (props_proxy,
-          "nat-traversal", TP_PROP_NAT_TRAVERSAL,
-          "stun-server", TP_PROP_STUN_SERVER,
-          "stun-port", TP_PROP_STUN_PORT,
-          "gtalk-p2p-relay-token", TP_PROP_GTALK_P2P_RELAY_TOKEN,
-          NULL);
+  tp_cli_properties_interface_call_list_properties (priv->channel_proxy,
+      -1, cb_properties_listed, NULL, NULL, obj);
 
-      g_signal_connect (props_proxy, "properties-ready",
-          G_CALLBACK (cb_properties_ready), obj);
-    }
+  tp_cli_channel_interface_media_signalling_connect_to_new_session_handler
+      (priv->channel_proxy, new_media_session_handler, NULL, NULL, obj);
 
-  priv->media_signalling_proxy = tp_chan_get_interface (priv->channel_proxy,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING);
-
-  g_assert (priv->media_signalling_proxy != NULL);
-
-  dbus_g_proxy_connect_signal (priv->media_signalling_proxy,
-      "NewSessionHandler", G_CALLBACK (new_media_session_handler), obj, NULL);
-
-  tp_chan_iface_media_signalling_get_session_handlers_async (
-      priv->media_signalling_proxy, get_session_handlers_reply, obj);
+  tp_cli_channel_interface_media_signalling_call_get_session_handlers
+      (priv->channel_proxy, -1, get_session_handlers_reply, NULL, NULL, obj);
 
   return obj;
 }
@@ -284,7 +405,7 @@ tp_stream_engine_channel_dispose (GObject *object)
 
   if (priv->channel_proxy)
     {
-      TpChan *tmp;
+      TpChannel *tmp;
 
       tmp = priv->channel_proxy;
       priv->channel_proxy = NULL;
@@ -319,9 +440,9 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
 
   object_class->dispose = tp_stream_engine_channel_dispose;
 
-  param_spec = g_param_spec_object ("channel", "TpChan object",
+  param_spec = g_param_spec_object ("channel", "TpChannel object",
       "Telepathy channel object which this media channel should operate on.",
-      TELEPATHY_CHAN_TYPE,
+      TP_TYPE_CHANNEL,
       (G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NICK |
         G_PARAM_STATIC_BLURB));
   g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
@@ -462,7 +583,7 @@ new_stream_cb (TpStreamEngineSession *session,
   GType stream_gtype;
   GstBin *pipeline;
 
-  g_object_get (priv->channel_proxy, "name", &bus_name, NULL);
+  g_object_get (priv->channel_proxy, "bus-name", &bus_name, NULL);
   g_object_get (session, "farsight-session", &fs_session, NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
@@ -531,7 +652,7 @@ add_session (TpStreamEngineChannel *self,
 
   g_debug ("adding session handler %s, type %s", object_path, session_type);
 
-  g_object_get (priv->channel_proxy, "name", &bus_name, NULL);
+  g_object_get (priv->channel_proxy, "bus-name", &bus_name, NULL);
 
   session = tp_stream_engine_session_new (bus_name, object_path,
       session_type, &error);
@@ -554,9 +675,11 @@ static void
 new_media_session_handler (DBusGProxy *proxy,
                            const gchar *session_handler_path,
                            const gchar *type,
-                           gpointer user_data)
+                           TpProxySignalConnection *signal_connection)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  TpStreamEngineChannel *self =
+      TP_STREAM_ENGINE_CHANNEL (signal_connection->weak_object);
+
   add_session (self, session_handler_path, type);
 }
 
@@ -565,8 +688,11 @@ shutdown_channel (TpStreamEngineChannel *self)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
-  if (priv->channel_proxy)
+  /* */
+  if (priv->channel_proxy != NULL)
     {
+      TpChannel *tmp;
+
       if (priv->channel_destroy_handler)
         {
           g_signal_handler_disconnect (
@@ -574,70 +700,38 @@ shutdown_channel (TpStreamEngineChannel *self)
           priv->channel_destroy_handler = 0;
         }
 
-      if (priv->media_signalling_proxy)
-        {
-          g_debug ("%s: disconnecting signals from media signalling proxy",
-              G_STRFUNC);
-
-          dbus_g_proxy_disconnect_signal (priv->media_signalling_proxy,
-              "NewSessionHandler", G_CALLBACK (new_media_session_handler),
-              self);
-        }
-
-      if (priv->channel_proxy)
-        {
-          g_debug ("%s: disconnecting signals from channel_proxy", G_STRFUNC);
-
-          dbus_g_proxy_disconnect_signal (DBUS_G_PROXY (priv->channel_proxy),
-              "Closed", G_CALLBACK (channel_closed), self);
-        }
+      /* We shouldn't try to use the channel proxy any more, although
+       * it won't actually be fatal to use it now. */
+      tmp = priv->channel_proxy;
+      priv->channel_proxy = NULL;
+      g_object_unref (tmp);
     }
 
   g_signal_emit (self, signals[CLOSED], 0);
 }
 
 static void
-channel_closed (DBusGProxy *proxy, gpointer user_data)
+channel_destroyed (TpChannel *channel_proxy,
+                   TpStreamEngineChannel *self)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-
-  g_debug ("connection manager channel closed");
-
   shutdown_channel (self);
 }
 
 static void
-channel_destroyed (DBusGProxy *proxy, gpointer user_data)
-{
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-
-  if (priv->channel_proxy)
-    {
-      TpChan *tmp;
-
-      g_debug ("connection manager channel destroyed");
-
-      /* We shouldn't try to use the channel proxy any more. */
-      tmp = priv->channel_proxy;
-      priv->channel_proxy = NULL;
-      g_object_unref (tmp);
-
-      shutdown_channel (self);
-    }
-}
-
-static void
-get_session_handlers_reply (DBusGProxy *proxy,
-                            GPtrArray *session_handlers,
-                            GError *error,
-                            gpointer user_data)
+get_session_handlers_reply (TpProxy *proxy,
+                            const GPtrArray *session_handlers,
+                            const GError *error,
+                            gpointer user_data,
+                            GObject *weak_object)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
   guint i;
 
   if (error)
-    g_critical ("Error calling GetSessionHandlers: %s", error->message);
+    {
+      g_critical ("Error calling GetSessionHandlers: %s", error->message);
+      return;
+    }
 
   if (session_handlers->len == 0)
     {
@@ -665,117 +759,6 @@ get_session_handlers_reply (DBusGProxy *proxy,
     }
 }
 
-static const gchar *prop_names[NUM_TP_PROPERTIES] = {
-    "nat-traversal",
-    "stun-server",
-    "stun-port",
-    "gtalk-p2p-relay-token"
-};
-
-static void
-update_prop_str (TpPropsIface *iface,
-                 guint prop_id,
-                 gchar **value)
-{
-  GValue tmp = {0, };
-
-  g_free (*value);
-  *value = NULL;
-
-  if (tp_props_iface_property_flags (iface, prop_id) & TP_PROPERTY_FLAG_READ)
-    {
-      g_value_init (&tmp, G_TYPE_STRING);
-
-      if (tp_props_iface_get_value (iface, prop_id, &tmp))
-        {
-          *value = g_value_dup_string (&tmp);
-          g_debug ("got %s = %s", prop_names[prop_id], *value);
-        }
-
-      g_value_unset (&tmp);
-    }
-}
-
-static void
-update_prop_uint (TpPropsIface *iface,
-                  guint prop_id,
-                  guint16 *value)
-{
-  GValue tmp = {0, };
-
-  *value = 0;
-
-  if (tp_props_iface_property_flags (iface, prop_id) & TP_PROPERTY_FLAG_READ)
-    {
-      g_value_init (&tmp, G_TYPE_UINT);
-
-      if (tp_props_iface_get_value (iface, prop_id, &tmp))
-        {
-          *value = g_value_get_uint (&tmp);
-          g_debug ("got %s = %u", prop_names[prop_id], *value);
-        }
-
-      g_value_unset (&tmp);
-    }
-}
-
-static void
-update_prop (TpPropsIface *iface,
-             TpStreamEngineNatProperties *nat_props,
-             guint prop_id)
-{
-  switch (prop_id)
-    {
-    case TP_PROP_NAT_TRAVERSAL:
-      update_prop_str (iface, TP_PROP_NAT_TRAVERSAL, &(nat_props->nat_traversal));
-      break;
-    case TP_PROP_STUN_SERVER:
-      update_prop_str (iface, TP_PROP_STUN_SERVER, &(nat_props->stun_server));
-      break;
-    case TP_PROP_STUN_PORT:
-      update_prop_uint (iface, TP_PROP_STUN_PORT, &(nat_props->stun_port));
-      break;
-    case TP_PROP_GTALK_P2P_RELAY_TOKEN:
-      update_prop_str (iface, TP_PROP_GTALK_P2P_RELAY_TOKEN,
-          &(nat_props->relay_token));
-      break;
-    default:
-      g_debug ("%s: ignoring unknown property id %u", G_STRFUNC, prop_id);
-    }
-}
-
-static void
-cb_property_changed (TpPropsIface *iface,
-                     guint prop_id,
-                     TpPropsChanged changed,
-                     gpointer user_data)
-{
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpStreamEngineNatProperties *nat_props = &(priv->nat_props);
-
-  update_prop (iface, nat_props, prop_id);
-}
-
-static void
-cb_properties_ready (TpPropsIface *iface,
-                     gpointer user_data)
-{
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpStreamEngineNatProperties *nat_props = &(priv->nat_props);
-  guint i;
-
-  for (i = 0; i < NUM_TP_PROPERTIES; i++)
-    update_prop (iface, nat_props, i);
-
-  g_signal_handlers_disconnect_by_func (iface,
-      G_CALLBACK (cb_properties_ready), self);
-
-  g_signal_connect (iface, "properties-changed",
-      G_CALLBACK (cb_property_changed), self);
-}
-
 TpStreamEngineChannel *
 tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
                               const gchar *bus_name,
@@ -784,35 +767,24 @@ tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
                               guint handle,
                               GError **error)
 {
-  TpChan *channel_proxy;
-  DBusGProxy *media_signalling_proxy;
+  TpChannel *channel_proxy;
   TpStreamEngineChannel *ret;
 
   g_return_val_if_fail (bus_name != NULL, NULL);
   g_return_val_if_fail (channel_path != NULL, NULL);
 
-  channel_proxy = tp_chan_new (
-    tp_get_bus(),                              /* connection  */
-    bus_name,                                  /* bus_name    */
-    channel_path,                              /* object_name */
-    TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,      /* type        */
-    handle_type,                               /* handle_type */
-    handle);                                   /* handle      */
+  channel_proxy = tp_channel_new (dbus_daemon,
+      bus_name, channel_path, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
+      handle_type, handle, error);
 
   if (channel_proxy == NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Unable to create channel proxy");
       return NULL;
     }
 
-  media_signalling_proxy = tp_chan_get_interface (channel_proxy,
-      TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING);
-
-  if (media_signalling_proxy == NULL)
+  if (tp_proxy_borrow_interface_by_id ((TpProxy *) channel_proxy,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING, error) == NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Channel doesn't have the media signalling interface");
       return NULL;
     }
 
