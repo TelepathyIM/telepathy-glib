@@ -333,7 +333,8 @@ class Generator(object):
         #   (TpProxy *proxy,
         #       const GPtrArray *out0,
         #       const GError *error,
-        #       gpointer user_data);
+        #       gpointer user_data,
+        #       GObject *weak_object);
 
         self.b('/**')
         self.b(' * %s_%s_callback_for_%s:'
@@ -349,6 +350,7 @@ class Generator(object):
 
         self.b(' * @error: NULL on success, or an error on failure')
         self.b(' * @user_data: user-supplied data')
+        self.b(' * @weak_object: user-supplied object')
         self.b(' *')
         self.b(' * Signature of the callback called when a %s method call'
                % member)
@@ -367,7 +369,8 @@ class Generator(object):
 
             self.h('    %s%s%s,' % (const, ctype, name))
 
-        self.h('    const GError *error, gpointer user_data);')
+        self.h('    const GError *error, gpointer user_data,')
+        self.h('    GObject *weak_object);')
         self.h('')
 
         # Async callback implementation
@@ -414,7 +417,7 @@ class Generator(object):
             else:
                 self.b('      %s,' % name)
 
-        self.b('      error, data->user_data);')
+        self.b('      error, data->user_data, data->weak_object);')
         self.b('')
         self.b('  if (error != NULL)')
         self.b('    {')
@@ -526,7 +529,7 @@ class Generator(object):
             else:
                 self.b('            0,')
 
-        self.b('            error, user_data);')
+        self.b('            error, user_data, weak_object);')
         self.b('      return NULL;')
         self.b('    }')
         self.b('')
