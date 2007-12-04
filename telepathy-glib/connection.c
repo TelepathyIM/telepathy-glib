@@ -121,7 +121,8 @@ static void
 tp_connection_got_interfaces_cb (TpProxy *proxy,
                                  const gchar **interfaces,
                                  const GError *error,
-                                 gpointer user_data)
+                                 gpointer user_data,
+                                 GObject *user_object)
 {
   TpConnection *self = TP_CONNECTION (proxy);
 
@@ -203,7 +204,8 @@ static void
 tp_connection_got_status_cb (TpProxy *proxy,
                              guint status,
                              const GError *error,
-                             gpointer unused)
+                             gpointer unused,
+                             GObject *user_object)
 {
   TpConnection *self = TP_CONNECTION (proxy);
 
