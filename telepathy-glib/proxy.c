@@ -51,7 +51,8 @@
 /**
  * TpProxy:
  * @parent: parent object
- * @dbus_daemon: the #TpDBusDaemon for this object, if any (read-only)
+ * @dbus_daemon: the #TpDBusDaemon for this object, if any; always %NULL
+ *  if this object is a #TpDBusDaemon (read-only)
  * @dbus_connection: the D-Bus connection used by this object (read-only)
  * @bus_name: the bus name of the application exporting the object (read-only)
  * @object_path: the object path of the remote object (read-only)
@@ -519,7 +520,14 @@ tp_proxy_get_property (GObject *object,
   switch (property_id)
     {
     case PROP_DBUS_DAEMON:
-      g_value_set_object (value, self->dbus_daemon);
+      if (TP_IS_DBUS_DAEMON (self))
+        {
+          g_value_set_object (value, self);
+        }
+      else
+        {
+          g_value_set_object (value, self->dbus_daemon);
+        }
       break;
     case PROP_DBUS_CONNECTION:
       g_value_set_object (value, self->dbus_connection);
@@ -547,6 +555,11 @@ tp_proxy_set_property (GObject *object,
   switch (property_id)
     {
     case PROP_DBUS_DAEMON:
+      if (TP_IS_DBUS_DAEMON (self))
+        {
+          g_assert (g_value_get_object (value) == NULL);
+        }
+      else
         {
           TpProxy *daemon_as_proxy = g_value_get_object (value);
 
@@ -712,10 +725,12 @@ tp_proxy_class_init (TpProxyClass *klass)
   /**
    * TpProxy:dbus-daemon:
    *
-   * The D-Bus daemon for this object. Read-only except during construction.
+   * The D-Bus daemon for this object (this object itself, if it is a
+   * TpDBusDaemon). Read-only except during construction.
    */
   param_spec = g_param_spec_object ("dbus-daemon", "D-Bus daemon",
-      "The D-Bus daemon used by this object", TP_TYPE_PROXY,
+      "The D-Bus daemon used by this object, or this object itself if it's "
+      "a TpDBusDaemon", TP_TYPE_DBUS_DAEMON,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
