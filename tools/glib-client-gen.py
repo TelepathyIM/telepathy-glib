@@ -222,7 +222,7 @@ class Generator(object):
                     name = 'in%u' % in_count
                     in_count += 1
                 else:
-                    'in_%s' % name
+                    name = 'in_%s' % name
             else:
                 if not name:
                     name = 'out%u' % ret_count
