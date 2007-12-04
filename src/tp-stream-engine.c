@@ -129,8 +129,6 @@ struct _TpStreamEnginePrivate
   guint bad_window_handler_id;
 };
 
-#define TP_STREAM_ENGINE_GET_PRIVATE(o) (o)->priv
-
 typedef struct _WindowPair WindowPair;
 struct _WindowPair
 {
@@ -263,7 +261,6 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
 GstElement *
 tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   const gchar *videosink_name;
   GstElement *sink = NULL;
 #ifndef MAEMO_OSSO_SUPPORT
@@ -271,7 +268,7 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
   GstPad *pad;
 #endif
 
-  g_assert (priv->pipeline != NULL);
+  g_assert (obj->priv->pipeline != NULL);
 
   if ((videosink_name = getenv ("PREVIEW_VIDEO_SINK")) ||
       (videosink_name = getenv ("FS_VIDEO_SINK")) ||
@@ -373,7 +370,7 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
   sink = bin;
 #endif
 
-  gst_bin_add (GST_BIN (priv->pipeline), sink);
+  gst_bin_add (GST_BIN (obj->priv->pipeline), sink);
 
   return sink;
 }
@@ -381,15 +378,14 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
 static gboolean
 _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
   GstElement *tee, *sink;
   GstStateChangeReturn state_change_ret;
 
-  g_assert (priv->pipeline != NULL);
+  g_assert (obj->priv->pipeline != NULL);
 
   g_debug ("%s: called for window id %d", G_STRFUNC, window_id);
-  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (obj->priv->preview_windows, window_id);
 
   if (wp == NULL)
     {
@@ -401,7 +397,7 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 
   g_debug ("adding preview in window %u", window_id);
 
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+  tee = gst_bin_get_by_name (GST_BIN (obj->priv->pipeline), "tee");
   sink = tp_stream_engine_make_video_sink (obj, TRUE);
 
   if (sink == NULL)
@@ -439,7 +435,7 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 
 link_failure:
   gst_element_set_state (sink, GST_STATE_NULL);
-  gst_bin_remove (GST_BIN (priv->pipeline), sink);
+  gst_bin_remove (GST_BIN (obj->priv->pipeline), sink);
 
 sink_failure:
   gst_object_unref (tee);
@@ -447,7 +443,7 @@ sink_failure:
   if (error != NULL)
     g_warning ((*error)->message);
 
-  _window_pairs_remove (&(priv->preview_windows), wp);
+  _window_pairs_remove (&(obj->priv->preview_windows), wp);
 
   return FALSE;
 }
@@ -455,13 +451,11 @@ sink_failure:
 static void
 _add_pending_preview_windows (TpStreamEngine *engine)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-
   g_debug ("%s: called", G_STRFUNC);
 
   GSList *tmp;
 
-  for (tmp = priv->preview_windows;
+  for (tmp = engine->priv->preview_windows;
        tmp != NULL;
        tmp = tmp->next)
     {
@@ -534,7 +528,8 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (tp_stream_engine_class);
 
-  g_type_class_add_private (tp_stream_engine_class, sizeof (TpStreamEnginePrivate));
+  g_type_class_add_private (tp_stream_engine_class,
+      sizeof (TpStreamEnginePrivate));
 
   object_class->dispose = tp_stream_engine_dispose;
   object_class->finalize = tp_stream_engine_finalize;
@@ -586,7 +581,7 @@ static void
 tp_stream_engine_dispose (GObject *object)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (object);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
+  TpStreamEnginePrivate *priv = self->priv;
 
   if (priv->dispose_has_run)
     return;
@@ -681,28 +676,26 @@ tp_stream_engine_finalize (GObject *object)
 void
 tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   guint i;
 
-  for (i = 0; i < priv->channels->len; i++)
+  for (i = 0; i < self->priv->channels->len; i++)
     tp_stream_engine_channel_error (
-      g_ptr_array_index (priv->channels, i), error, message);
+      g_ptr_array_index (self->priv->channels, i), error, message);
 }
 
 static void
 check_if_busy (TpStreamEngine *self)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
-  guint num_previews = g_slist_length (priv->preview_windows);
+  guint num_previews = g_slist_length (self->priv->preview_windows);
 
-  if (priv->channels->len == 0 && num_previews == 0)
+  if (self->priv->channels->len == 0 && num_previews == 0)
     {
       g_debug ("no channels or previews remaining; emitting no-more-channels");
       g_signal_emit (self, signals[NO_MORE_CHANNELS], 0);
     }
   else
     {
-      g_debug ("channels remaining: %d", priv->channels->len);
+      g_debug ("channels remaining: %d", self->priv->channels->len);
       g_debug ("preview windows remaining: %d", num_previews);
     }
 }
@@ -712,17 +705,16 @@ static void
 channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   gchar *object_path;
 
   g_object_get (chan, "object-path", &object_path, NULL);
 
   g_debug ("channel %s (%p) closed", object_path, chan);
 
-  g_ptr_array_remove_fast (priv->channels, chan);
+  g_ptr_array_remove_fast (self->priv->channels, chan);
   g_object_unref (chan);
 
-  g_hash_table_remove (priv->channels_by_path, object_path);
+  g_hash_table_remove (self->priv->channels_by_path, object_path);
   g_free (object_path);
 
   check_if_busy (self);
@@ -767,16 +759,14 @@ static void
 _window_pairs_remove_cb (WindowPair *wp)
 {
   TpStreamEngine *self = tp_stream_engine_get ();
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
-  _window_pairs_remove (&(priv->preview_windows), wp);
+  _window_pairs_remove (&(self->priv->preview_windows), wp);
 }
 
 static void
 _window_pairs_readd_cb (WindowPair *wp)
 {
   TpStreamEngine *engine = tp_stream_engine_get ();
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
 
   wp->sink = NULL;
   wp->created = FALSE;
@@ -784,7 +774,7 @@ _window_pairs_readd_cb (WindowPair *wp)
   wp->removing = FALSE;
   wp->post_remove = NULL;
 
-  if (priv->pipeline_playing)
+  if (engine->priv->pipeline_playing)
     {
       GError *error = NULL;
       _add_preview_window (engine, wp->window_id, &error);
@@ -808,7 +798,6 @@ static gboolean
 _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 {
   TpStreamEngine *self = tp_stream_engine_get ();
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   gboolean retval;
   GstStateChangeReturn ret;
 
@@ -829,7 +818,7 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
   GstElement *sink_parent = GST_ELEMENT (gst_element_get_parent (sink_element));
   g_assert (sink_parent);
 
-  GstElement *tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+  GstElement *tee = gst_bin_get_by_name (GST_BIN (self->priv->pipeline), "tee");
   g_assert (tee);
 
   GstPad *tee_sink_pad = gst_element_get_pad (tee, "sink");
@@ -884,12 +873,11 @@ _remove_defunct_preview_sink (WindowPair *wp)
   GstPad *tee_sink_pad = NULL;
   GstPad *tee_peer_src_pad = NULL;
   TpStreamEngine *self = tp_stream_engine_get ();
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
 
   if (wp->sink == NULL)
     return;
 
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
+  tee = gst_bin_get_by_name (GST_BIN (self->priv->pipeline), "tee");
   g_assert (tee);
 
   tee_sink_pad = gst_element_get_pad (tee, "sink");
@@ -943,14 +931,14 @@ close_one_video_stream (TpStreamEngineChannel *chan,
 static void
 close_all_video_streams (TpStreamEngine *self, const gchar *message)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (self);
   guint i;
 
   g_debug ("Closing all video streams");
 
-  for (i = 0; i < priv->channels->len; i++)
+  for (i = 0; i < self->priv->channels->len; i++)
     {
-      TpStreamEngineChannel *channel = g_ptr_array_index (priv->channels, i);
+      TpStreamEngineChannel *channel = g_ptr_array_index (self->priv->channels,
+          i);
 
       tp_stream_engine_channel_foreach_stream (channel,
           close_one_video_stream, (gpointer) message);
@@ -964,7 +952,7 @@ bus_async_handler (GstBus *bus,
                    gpointer data)
 {
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  TpStreamEnginePrivate *priv = engine->priv;
   GError *error = NULL;
   gchar *error_string, *tmp;
   GSList *i;
@@ -1068,7 +1056,7 @@ static GstBusSyncReply
 bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 {
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  TpStreamEnginePrivate *priv = engine->priv;
   GstElement *element;
   WindowPair *wp = NULL;
 
@@ -1126,7 +1114,7 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 static void
 _create_pipeline (TpStreamEngine *obj)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  TpStreamEnginePrivate *priv = obj->priv;
   GstElement *videosrc = NULL;
   GstElement *tee;
 #ifndef MAEMO_OSSO_SUPPORT
@@ -1257,14 +1245,12 @@ _create_pipeline (TpStreamEngine *obj)
 GstElement *
 tp_stream_engine_get_pipeline (TpStreamEngine *obj)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-
-  if (NULL == priv->pipeline)
+  if (NULL == obj->priv->pipeline)
     {
       _create_pipeline (obj);
     }
 
-  return priv->pipeline;
+  return obj->priv->pipeline;
 }
 
 
@@ -1291,7 +1277,7 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
                                      DBusGMethodInvocation *context)
 {
   TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
+  TpStreamEnginePrivate *priv = obj->priv;
   WindowPair *wp;
 
   g_debug ("%s: called for %u", G_STRFUNC, window_id);
@@ -1358,15 +1344,16 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
                gpointer data)
 {
   TpStreamEngine *engine = data;
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp;
 
   /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
 
-  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (engine->priv->preview_windows,
+      window_id);
 
   if (wp == NULL)
-    wp = _window_pairs_find_by_window_id (priv->output_windows, window_id);
+    wp = _window_pairs_find_by_window_id (engine->priv->output_windows,
+        window_id);
 
   if (wp == NULL)
     {
@@ -1403,15 +1390,16 @@ bad_misc_cb (TpStreamEngineXErrorHandler *handler,
              gpointer data)
 {
   TpStreamEngine *engine = data;
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp;
 
   /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
 
-  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (engine->priv->preview_windows,
+      window_id);
 
   if (wp == NULL)
-    wp = _window_pairs_find_by_window_id (priv->output_windows, window_id);
+    wp = _window_pairs_find_by_window_id (engine->priv->output_windows,
+        window_id);
 
   if (wp == NULL)
     {
@@ -1448,15 +1436,14 @@ bad_other_cb (TpStreamEngineXErrorHandler *handler,
               gpointer data)
 {
   TpStreamEngine *engine = data;
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp;
 
   /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
 
-  wp = _window_pairs_find_by_removing (priv->preview_windows, TRUE);
+  wp = _window_pairs_find_by_removing (engine->priv->preview_windows, TRUE);
 
   if (wp == NULL)
-    wp = _window_pairs_find_by_removing (priv->output_windows, TRUE);
+    wp = _window_pairs_find_by_removing (engine->priv->output_windows, TRUE);
 
   if (wp == NULL)
     {
@@ -1478,15 +1465,16 @@ bad_value_cb (TpStreamEngineXErrorHandler *handler,
               gpointer data)
 {
   TpStreamEngine *engine = data;
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   WindowPair *wp;
 
   /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
 
-  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (engine->priv->preview_windows,
+      window_id);
 
   if (wp == NULL)
-    wp = _window_pairs_find_by_window_id (priv->output_windows, window_id);
+    wp = _window_pairs_find_by_window_id (engine->priv->output_windows,
+        window_id);
 
   if (wp == NULL)
     {
@@ -1514,12 +1502,11 @@ tp_stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
                                         DBusGMethodInvocation *context)
 {
   TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
 
   g_debug ("%s: called for %u", G_STRFUNC, window_id);
 
-  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (obj->priv->preview_windows, window_id);
 
   if (wp == NULL)
     {
@@ -1541,7 +1528,7 @@ tp_stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
   if (wp->created == FALSE)
     {
       g_debug ("Window not created yet, can remove right away");
-      _window_pairs_remove (&(priv->preview_windows), wp);
+      _window_pairs_remove (&(obj->priv->preview_windows), wp);
       goto success;
     }
 
@@ -1561,9 +1548,7 @@ tp_stream_engine_add_output_window (TpStreamEngine *obj,
                                     GstElement *sink,
                                     guint window_id)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
-
-  _window_pairs_add (&(priv->output_windows), stream, sink, window_id);
+  _window_pairs_add (&(obj->priv->output_windows), stream, sink, window_id);
 
   return TRUE;
 }
@@ -1573,15 +1558,14 @@ gboolean
 tp_stream_engine_remove_output_window (TpStreamEngine *obj,
                                        guint window_id)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   WindowPair *wp;
 
-  wp = _window_pairs_find_by_window_id (priv->output_windows, window_id);
+  wp = _window_pairs_find_by_window_id (obj->priv->output_windows, window_id);
 
   if (wp == NULL)
     return FALSE;
 
-  _window_pairs_remove (&(priv->output_windows), wp);
+  _window_pairs_remove (&(obj->priv->output_windows), wp);
 
   return TRUE;
 }
@@ -1604,7 +1588,6 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
                                  DBusGMethodInvocation *context)
 {
   TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   TpStreamEngineChannel *chan = NULL;
   GError *error = NULL;
 
@@ -1634,8 +1617,8 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
       "video-pipeline", tp_stream_engine_get_pipeline (obj),
       NULL);
 
-  g_ptr_array_add (priv->channels, chan);
-  g_hash_table_insert (priv->channels_by_path, g_strdup (channel), chan);
+  g_ptr_array_add (obj->priv->channels, chan);
+  g_hash_table_insert (obj->priv->channels_by_path, g_strdup (channel), chan);
 
   g_signal_connect (chan, "closed", G_CALLBACK (channel_closed), obj);
   g_signal_connect (chan, "stream-state-changed",
@@ -1686,11 +1669,10 @@ _lookup_stream (TpStreamEngine *obj,
                 guint stream_id,
                 GError **error)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   TpStreamEngineChannel *channel;
   TpStreamEngineStream *stream;
 
-  channel = g_hash_table_lookup (priv->channels_by_path, path);
+  channel = g_hash_table_lookup (obj->priv->channels_by_path, path);
   if (channel == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
