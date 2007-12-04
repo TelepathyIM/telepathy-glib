@@ -627,7 +627,8 @@ static void
 _tp_dbus_daemon_got_name_owner (TpProxy *proxy,
                                 const gchar *owner,
                                 const GError *error,
-                                gpointer user_data)
+                                gpointer user_data,
+                                GObject *user_object)
 {
   TpDBusDaemon *self = TP_DBUS_DAEMON (proxy);
   gchar *name = user_data;
