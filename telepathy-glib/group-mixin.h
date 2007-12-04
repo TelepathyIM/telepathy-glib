@@ -115,7 +115,8 @@ struct _TpGroupMixinClass {
  * @handle_repo: The connection's contact handle repository
  * @self_handle: The local user's handle within this group, or 0 if none.
  *  Set using (FIXME: how do we do self-renaming?)
- * @group_flags: This group's flags. Set using tp_group_mixin_change_flags().
+ * @group_flags: This group's flags. Set using tp_group_mixin_change_flags();
+ *  defaults to 0.
  * @members: The members of the group. Alter using
  *  tp_group_mixin_change_members().
  * @local_pending: Members awaiting the local user's approval to join the
