@@ -37,7 +37,9 @@ G_BEGIN_DECLS
 /**
  * TpPropertySignature:
  * @name: Name of the property as seen in the Telepathy D-Bus protocol
- * @type: GType which the variant value must have
+ * @type: GType which the variant value must have. We currently support
+ *  only %G_TYPE_UINT, %G_TYPE_INT, %G_TYPE_STRING, %G_TYPE_BOOLEAN,
+ *  corresponding to D-Bus signatures 'u', 'i', 's', 'b'.
  *
  * Signature of a property in the Telepathy properties interface.
  */
@@ -100,7 +102,7 @@ typedef struct _TpPropertiesMixinClassPrivate TpPropertiesMixinClassPrivate;
 /**
  * TpPropertiesMixinClass:
  * @signatures: Array of property signatures, as provided via
- *  tp_properties_mixin_class_init().
+ *  tp_properties_mixin_class_init(), of length @num_props.
  * @num_props: Number of properties supported.
  * @set_properties: Properties setting function, as supplied to
  *  tp_properties_mixin_class_init().
@@ -127,7 +129,8 @@ typedef struct _TpPropertiesMixinPrivate TpPropertiesMixinPrivate;
 
 /**
  * TpPropertiesMixin:
- * @properties: Array of property values. Should be considered read-only.
+ * @properties: Array of property values, of length klass->num_props.
+ *  Should be considered read-only.
  * @priv: Pointer to opaque private data.
  *
  * Structure to be placed in a GObject-derived structure containing
