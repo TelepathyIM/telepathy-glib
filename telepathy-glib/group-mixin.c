@@ -1249,6 +1249,9 @@ local_pending_remove (TpGroupMixin *mixin,
  * If any two of add, remove, add_local_pending and add_remote_pending have
  * a non-empty intersection, the result is undefined. Don't do that.
  *
+ * Each of the TpIntSet arguments may be %NULL, which is treated as
+ * equivalent to an empty set.
+ *
  * Returns: %TRUE if the group was changed and the MembersChanged signal
  *  was emitted; %FALSE if nothing actually changed and the signal was
  *  suppressed.
