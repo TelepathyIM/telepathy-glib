@@ -1229,7 +1229,8 @@ local_pending_remove (TpGroupMixin *mixin,
 /**
  * tp_group_mixin_change_members:
  * @obj: An object implementing the group interface using this mixin
- * @message: A message to be sent to the affected contacts if possible
+ * @message: A message to be sent to the affected contacts if possible;
+ *  %NULL is allowed, and is mapped to an empty string
  * @add: A set of contact handles to be added to the members (if not
  *  already present) and removed from local pending and remote pending
  *  (if present)
@@ -1272,6 +1273,9 @@ tp_group_mixin_change_members (GObject *obj,
   gboolean ret;
 
   empty = tp_intset_new ();
+
+  if (message == NULL)
+    message = "";
 
   if (add == NULL)
     add = empty;
