@@ -157,7 +157,8 @@ static void
 tp_channel_got_interfaces_cb (TpProxy *proxy,
                               const gchar **interfaces,
                               const GError *error,
-                              gpointer unused)
+                              gpointer unused,
+                              GObject *unused2)
 {
   TpChannel *self = TP_CHANNEL (proxy);
 
@@ -200,7 +201,8 @@ static void
 tp_channel_got_channel_type_cb (TpProxy *proxy,
                                 const gchar *channel_type,
                                 const GError *error,
-                                gpointer unused)
+                                gpointer unused,
+                                GObject *unused2)
 {
   TpChannel *self = TP_CHANNEL (proxy);
 
@@ -239,7 +241,8 @@ tp_channel_got_handle_cb (TpProxy *proxy,
                           guint handle_type,
                           guint handle,
                           const GError *error,
-                          gpointer unused)
+                          gpointer unused,
+                          GObject *unused2)
 {
   TpChannel *self = TP_CHANNEL (proxy);
 
