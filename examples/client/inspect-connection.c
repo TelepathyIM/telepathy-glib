@@ -31,7 +31,8 @@ void
 got_channels (TpProxy *proxy,
               const GPtrArray *channels,
               const GError *error,
-              gpointer user_data)
+              gpointer user_data,
+              GObject *weak_object)
 {
   TpConnection *connection = TP_CONNECTION (proxy);
   GMainLoop *mainloop = user_data;
