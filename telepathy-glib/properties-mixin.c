@@ -717,25 +717,13 @@ static gboolean
 values_are_equal (const GValue *v1, const GValue *v2)
 {
   GType type = G_VALUE_TYPE (v1);
-  const gchar *s1, *s2;
 
   switch (type) {
     case G_TYPE_BOOLEAN:
       return (g_value_get_boolean (v1) == g_value_get_boolean (v2));
 
     case G_TYPE_STRING:
-      s1 = g_value_get_string (v1);
-      s2 = g_value_get_string (v2);
-
-      /* are they both NULL? */
-      if (s1 == s2)
-        return TRUE;
-
-      /* is one of them NULL? */
-      if (s1 == NULL || s2 == NULL)
-        return FALSE;
-
-      return (strcmp (s1, s2) == 0);
+      return !tp_strdiff (g_value_get_string (v1), g_value_get_string (v2));
 
     case G_TYPE_UINT:
       return (g_value_get_uint (v1) == g_value_get_uint (v2));
