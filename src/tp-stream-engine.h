@@ -29,6 +29,7 @@
 G_BEGIN_DECLS
 
 typedef struct _TpStreamEngine TpStreamEngine;
+typedef struct _TpStreamEnginePrivate TpStreamEnginePrivate;
 typedef struct _TpStreamEngineClass TpStreamEngineClass;
 
 struct _TpStreamEngineClass {
@@ -39,7 +40,7 @@ struct _TpStreamEngineClass {
 struct _TpStreamEngine {
   GObject parent;
 
-  gpointer priv;
+  TpStreamEnginePrivate *priv;
 };
 
 GType tp_stream_engine_get_type(void);

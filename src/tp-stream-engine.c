@@ -107,7 +107,6 @@ enum
 static guint signals[LAST_SIGNAL] = {0};
 
 /* private structure */
-typedef struct _TpStreamEnginePrivate TpStreamEnginePrivate;
 struct _TpStreamEnginePrivate
 {
   gboolean dispose_has_run;
@@ -130,7 +129,7 @@ struct _TpStreamEnginePrivate
   guint bad_window_handler_id;
 };
 
-#define TP_STREAM_ENGINE_GET_PRIVATE(o) ((TpStreamEnginePrivate *)((o)->priv))
+#define TP_STREAM_ENGINE_GET_PRIVATE(o) (o)->priv
 
 typedef struct _WindowPair WindowPair;
 struct _WindowPair
