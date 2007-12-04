@@ -74,6 +74,7 @@ tpginclude_HEADERS = \
     heap.h \
     interfaces.h \
     intset.h \
+    media-interfaces.h \
     presence-mixin.h \
     properties-mixin.h \
     proxy.h \
@@ -173,6 +174,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     intset.c \
     channel-iface.c \
     channel-factory-iface.c \
+    media-interfaces.c \
     presence-mixin.c \
     properties-mixin.c \
     proxy.c \
