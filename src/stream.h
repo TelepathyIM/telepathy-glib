@@ -4,6 +4,7 @@
 #include <glib-object.h>
 #include <farsight/farsight-session.h>
 #include <telepathy-glib/enums.h>
+#include <telepathy-glib/media-interfaces.h>
 
 G_BEGIN_DECLS
 
@@ -49,7 +50,7 @@ typedef struct {
 GType tp_stream_engine_stream_get_type (void);
 
 TpStreamEngineStream *tp_stream_engine_stream_new (FarsightSession *fs_session,
-    const gchar *bus_name, const gchar *object_path, guint stream_id,
+    TpMediaStreamHandler *proxy, guint stream_id,
     TpMediaStreamType media_type, TpMediaStreamDirection direction,
     const TpStreamEngineNatProperties *nat_props);
 

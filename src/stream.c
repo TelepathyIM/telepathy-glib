@@ -24,8 +24,6 @@
 
 #include <string.h>
 
-#include <libtelepathy/tp-conn.h>
-#include <libtelepathy/tp-media-stream-handler-gen.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
@@ -59,15 +57,13 @@ typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
 struct _TpStreamEngineStreamPrivate
 {
   FarsightSession *fs_session;
-  gchar *bus_name;
-  gchar *object_path;
   guint stream_id;
   TpMediaStreamType media_type;
   TpMediaStreamDirection direction;
   const TpStreamEngineNatProperties *nat_props;
   GstBin *pipeline;
 
-  DBusGProxy *stream_handler_proxy;
+  TpMediaStreamHandler *stream_handler_proxy;
 
   FarsightStream *fs_stream;
   guint state_changed_handler_id;
@@ -97,8 +93,7 @@ static guint signals[SIGNAL_COUNT] = {0};
 enum
 {
   PROP_FARSIGHT_SESSION = 1,
-  PROP_BUS_NAME,
-  PROP_OBJECT_PATH,
+  PROP_PROXY,
   PROP_STREAM_ID,
   PROP_MEDIA_TYPE,
   PROP_DIRECTION,
@@ -108,33 +103,35 @@ enum
   PROP_SINK
 };
 
-static void add_remote_candidate (DBusGProxy *proxy, gchar *candidate,
-    GPtrArray *transports, gpointer user_data);
+static void add_remote_candidate (DBusGProxy *proxy, const gchar *candidate,
+    const GPtrArray *transports, TpProxySignalConnection *sig_conn);
 
-static void remove_remote_candidate (DBusGProxy *proxy, gchar *candidate,
-    gpointer user_data);
+static void remove_remote_candidate (DBusGProxy *proxy, const gchar *candidate,
+    TpProxySignalConnection *sig_conn);
 
 static void set_active_candidate_pair (DBusGProxy *proxy,
-    gchar *native_candidate, gchar *remote_candidate, gpointer user_data);
+    const gchar *native_candidate, const gchar *remote_candidate,
+    TpProxySignalConnection *sig_conn);
 
 static void set_remote_candidate_list (DBusGProxy *proxy,
-    GPtrArray *candidates, gpointer user_data);
+    const GPtrArray *candidates, TpProxySignalConnection *sig_conn);
 
-static void set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs,
-    gpointer user_data);
+static void set_remote_codecs (DBusGProxy *proxy, const GPtrArray *codecs,
+    TpProxySignalConnection *sig_conn);
 
 static void set_stream_playing (DBusGProxy *proxy, gboolean play,
-    gpointer user_data);
+    TpProxySignalConnection *sig_conn);
 
 static void set_stream_sending (DBusGProxy *proxy, gboolean play,
-    gpointer user_data);
+    TpProxySignalConnection *sig_conn);
 
 static void start_telephony_event (DBusGProxy *proxy, guchar event,
-    gpointer user_data);
+    TpProxySignalConnection *sig_conn);
 
-static void stop_telephony_event (DBusGProxy *proxy, gpointer user_data);
+static void stop_telephony_event (DBusGProxy *proxy,
+    TpProxySignalConnection *sig_conn);
 
-static void close (DBusGProxy *proxy, gpointer user_data);
+static void close (DBusGProxy *proxy, TpProxySignalConnection *sig_conn);
 
 static GstElement *make_src (TpStreamEngineStream *stream, guint media_type);
 
@@ -229,11 +226,8 @@ tp_stream_engine_stream_get_property (GObject    *object,
     case PROP_FARSIGHT_SESSION:
       g_value_set_object (value, priv->fs_session);
       break;
-    case PROP_BUS_NAME:
-      g_value_set_string (value, priv->bus_name);
-      break;
-    case PROP_OBJECT_PATH:
-      g_value_set_string (value, priv->object_path);
+    case PROP_PROXY:
+      g_value_set_object (value, priv->stream_handler_proxy);
       break;
     case PROP_STREAM_ID:
       g_value_set_uint (value, priv->stream_id);
@@ -280,11 +274,9 @@ tp_stream_engine_stream_set_property (GObject      *object,
     case PROP_FARSIGHT_SESSION:
       priv->fs_session = FARSIGHT_SESSION (g_value_dup_object (value));
       break;
-    case PROP_BUS_NAME:
-      priv->bus_name = g_value_dup_string (value);
-      break;
-    case PROP_OBJECT_PATH:
-      priv->object_path = g_value_dup_string (value);
+    case PROP_PROXY:
+      priv->stream_handler_proxy =
+          TP_MEDIA_STREAM_HANDLER (g_value_dup_object (value));
       break;
     case PROP_STREAM_ID:
       priv->stream_id = g_value_get_uint (value);
@@ -332,55 +324,29 @@ tp_stream_engine_stream_constructor (GType type,
   stream = (TpStreamEngineStream *) obj;
   priv = STREAM_PRIVATE (stream);
 
-  priv->stream_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus (),
-      priv->bus_name, priv->object_path, TP_IFACE_MEDIA_STREAM_HANDLER);
-
-  g_signal_connect (priv->stream_handler_proxy, "destroy",
+  g_signal_connect (priv->stream_handler_proxy, "destroyed",
       G_CALLBACK (destroy_cb), obj);
 
-  /* TODO: make dbus-binding-tool do this for us... */
-
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "AddRemoteCandidate",
-      G_TYPE_STRING, TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT_LIST, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "RemoveRemoteCandidate",
-      G_TYPE_STRING, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetActiveCandidatePair",
-      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetRemoteCandidateList",
-      TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CANDIDATE_LIST, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetRemoteCodecs",
-      TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamPlaying",
-      G_TYPE_BOOLEAN, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "SetStreamSending",
-      G_TYPE_BOOLEAN, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "StartTelephonyEvent",
-      G_TYPE_UCHAR, G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "StopTelephonyEvent",
-      G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->stream_handler_proxy, "Close",
-      G_TYPE_INVALID);
-
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "AddRemoteCandidate",
-      G_CALLBACK (add_remote_candidate), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "RemoveRemoteCandidate",
-      G_CALLBACK (remove_remote_candidate), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetActiveCandidatePair",
-      G_CALLBACK (set_active_candidate_pair), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetRemoteCandidateList",
-      G_CALLBACK (set_remote_candidate_list), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetRemoteCodecs",
-      G_CALLBACK (set_remote_codecs), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamPlaying",
-      G_CALLBACK (set_stream_playing), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "SetStreamSending",
-      G_CALLBACK (set_stream_sending), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy,
-      "StartTelephonyEvent", G_CALLBACK (start_telephony_event), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy,
-      "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), obj, NULL);
-  dbus_g_proxy_connect_signal (priv->stream_handler_proxy, "Close",
-      G_CALLBACK (close), obj, NULL);
+  tp_cli_media_stream_handler_connect_to_add_remote_candidate
+      (priv->stream_handler_proxy, add_remote_candidate, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_remove_remote_candidate
+      (priv->stream_handler_proxy, remove_remote_candidate, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_set_active_candidate_pair
+      (priv->stream_handler_proxy, set_active_candidate_pair, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_set_remote_candidate_list
+      (priv->stream_handler_proxy, set_remote_candidate_list, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_set_remote_codecs
+      (priv->stream_handler_proxy, set_remote_codecs, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_set_stream_playing
+      (priv->stream_handler_proxy, set_stream_playing, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_set_stream_sending
+      (priv->stream_handler_proxy, set_stream_sending, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_start_telephony_event
+      (priv->stream_handler_proxy, start_telephony_event, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_stop_telephony_event
+      (priv->stream_handler_proxy, stop_telephony_event, NULL, NULL, obj);
+  tp_cli_media_stream_handler_connect_to_close
+      (priv->stream_handler_proxy, close, NULL, NULL, obj);
 
   priv->fs_stream = farsight_session_create_stream (priv->fs_session,
       priv->media_type, priv->direction);
@@ -465,42 +431,8 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->stream_handler_proxy)
     {
-      DBusGProxy *tmp;
+      TpMediaStreamHandler *tmp = priv->stream_handler_proxy;
 
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "AddRemoteCandidate", G_CALLBACK (add_remote_candidate), stream);
-
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "RemoveRemoteCandidate", G_CALLBACK (remove_remote_candidate),
-          stream);
-
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "SetActiveCandidatePair",
-          G_CALLBACK (set_active_candidate_pair), stream);
-
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "SetRemoteCandidateList",
-          G_CALLBACK (set_remote_candidate_list), stream);
-
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "SetRemoteCodecs", G_CALLBACK (set_remote_codecs), stream);
-
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "SetStreamPlaying", G_CALLBACK (set_stream_playing), stream);
-
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "SetStreamSending", G_CALLBACK (set_stream_sending), stream);
-
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "StartTelephonyEvent", G_CALLBACK (start_telephony_event), stream);
-
-      dbus_g_proxy_disconnect_signal (priv->stream_handler_proxy,
-          "StopTelephonyEvent", G_CALLBACK (stop_telephony_event), stream);
-
-      g_signal_handlers_disconnect_by_func (priv->stream_handler_proxy,
-          G_CALLBACK (destroy_cb), stream);
-
-      tmp = priv->stream_handler_proxy;
       priv->stream_handler_proxy = NULL;
       g_object_unref (tmp);
     }
@@ -529,21 +461,6 @@ tp_stream_engine_stream_dispose (GObject *object)
 }
 
 static void
-tp_stream_engine_stream_finalize (GObject *object)
-{
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-
-  g_free (priv->bus_name);
-  priv->bus_name = NULL;
-
-  g_free (priv->object_path);
-  priv->object_path = NULL;
-
-  G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->finalize (object);
-}
-
-static void
 tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -557,7 +474,6 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   object_class->constructor = tp_stream_engine_stream_constructor;
 
   object_class->dispose = tp_stream_engine_stream_dispose;
-  object_class->finalize = tp_stream_engine_stream_finalize;
 
   param_spec = g_param_spec_object ("farsight-session",
                                     "Farsight session",
@@ -571,27 +487,12 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   g_object_class_install_property (object_class, PROP_FARSIGHT_SESSION,
       param_spec);
 
-  param_spec = g_param_spec_string ("bus-name",
-                                    "session handler bus name",
-                                    "D-Bus bus name for the session handler "
-                                    "which this session interacts with.",
-                                    NULL,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_BUS_NAME, param_spec);
-
-  param_spec = g_param_spec_string ("object-path",
-                                    "session handler object path",
-                                    "D-Bus object path of the session handler "
-                                    "which this session interacts with.",
-                                    NULL,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
+  param_spec = g_param_spec_object ("proxy", "TpMediaStreamHandler proxy",
+      "The stream handler proxy which this stream interacts with.",
+      TP_TYPE_MEDIA_STREAM_HANDLER,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_PROXY, param_spec);
 
   param_spec = g_param_spec_uint ("stream-id",
                                   "stream ID",
@@ -718,20 +619,26 @@ struct _method_call_ctx
   const gchar *method;
 };
 
+static void
+method_call_ctx_free (gpointer user_data)
+{
+  g_slice_free (method_call_ctx, user_data);
+}
+
 /* dummy callback handler for async calling calls with no return values */
 static void
-async_method_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
+async_method_callback (TpProxy *proxy,
+                       const GError *error,
+                       gpointer user_data,
+                       GObject *weak_object)
 {
   method_call_ctx *ctx = (method_call_ctx *) user_data;
 
-  if (error)
+  if (error != NULL)
     {
       g_warning ("Error calling %s: %s", ctx->method, error->message);
       g_signal_emit (ctx->stream, signals[ERROR], 0);
-      g_error_free (error);
     }
-
-  g_slice_free (method_call_ctx, ctx);
 }
 
 static void
@@ -792,8 +699,9 @@ cb_fs_state_changed (FarsightStream *stream,
           ctx->stream = self;
           ctx->method = "Media.StreamHandler::StreamState";
 
-          tp_media_stream_handler_stream_state_async (
-            priv->stream_handler_proxy, state, async_method_callback, ctx);
+          tp_cli_media_stream_handler_call_stream_state (
+            priv->stream_handler_proxy, -1, state, async_method_callback, ctx,
+            method_call_ctx_free, (GObject *) self);
         }
 
       priv->state = state;
@@ -890,9 +798,9 @@ cb_fs_new_native_candidate (FarsightStream *stream,
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::NativeCandidatesPrepared";
 
-  tp_media_stream_handler_new_native_candidate_async (
-      priv->stream_handler_proxy, candidate_id, transports,
-      async_method_callback, ctx);
+  tp_cli_media_stream_handler_call_new_native_candidate (
+      priv->stream_handler_proxy, -1, candidate_id, transports,
+      async_method_callback, ctx, method_call_ctx_free, (GObject *) self);
 }
 
 /**
@@ -904,7 +812,7 @@ cb_fs_new_native_candidate (FarsightStream *stream,
  * Free the list using free_fs_transports
  */
 static GList *
-tp_transports_to_fs (gchar* candidate, GPtrArray *transports)
+tp_transports_to_fs (const gchar* candidate, const GPtrArray *transports)
 {
   GList *fs_trans_list = NULL;
   GValueArray *transport;
@@ -1036,10 +944,12 @@ fs_codecs_to_tp (const GList *codecs)
 }
 
 static void
-add_remote_candidate (DBusGProxy *proxy, gchar *candidate,
-                      GPtrArray *transports, gpointer user_data)
+add_remote_candidate (DBusGProxy *proxy,
+                      const gchar *candidate,
+                      const GPtrArray *transports,
+                      TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_transports;
 
@@ -1052,10 +962,11 @@ add_remote_candidate (DBusGProxy *proxy, gchar *candidate,
 }
 
 static void
-remove_remote_candidate (DBusGProxy *proxy, gchar *candidate,
-                         gpointer user_data)
+remove_remote_candidate (DBusGProxy *proxy,
+                         const gchar *candidate,
+                         TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   DEBUG (self, "removing remote candidate %s", candidate);
@@ -1063,10 +974,12 @@ remove_remote_candidate (DBusGProxy *proxy, gchar *candidate,
 }
 
 static void
-set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
-                           gchar* remote_candidate, gpointer user_data)
+set_active_candidate_pair (DBusGProxy *proxy,
+                           const gchar *native_candidate,
+                           const gchar *remote_candidate,
+                           TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   farsight_stream_set_active_candidate_pair (priv->fs_stream,
                                              native_candidate,
@@ -1074,10 +987,11 @@ set_active_candidate_pair (DBusGProxy *proxy, gchar* native_candidate,
 }
 
 static void
-set_remote_candidate_list (DBusGProxy *proxy, GPtrArray *candidates,
-                           gpointer user_data)
+set_remote_candidate_list (DBusGProxy *proxy,
+                           const GPtrArray *candidates,
+                           TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_transports = NULL;
   GValueArray *candidate = NULL;
@@ -1117,9 +1031,11 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
+set_remote_codecs (DBusGProxy *proxy,
+                   const GPtrArray *codecs,
+                   TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_codecs =NULL, *lp, *lp2;
   GValueArray *codec;
@@ -1188,8 +1104,9 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::SupportedCodecs";
 
-  tp_media_stream_handler_supported_codecs_async
-    (priv->stream_handler_proxy, supp_codecs, async_method_callback, ctx);
+  tp_cli_media_stream_handler_call_supported_codecs
+    (priv->stream_handler_proxy, -1, supp_codecs, async_method_callback, ctx,
+     method_call_ctx_free, (GObject *) self);
 
   for (lp = g_list_first (fs_codecs); lp; lp = g_list_next (lp))
     {
@@ -1228,9 +1145,11 @@ stop_stream (TpStreamEngineStream *self)
 }
 
 static void
-set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
+set_stream_playing (DBusGProxy *proxy,
+                    gboolean play,
+                    TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   g_assert (priv->fs_stream != NULL);
@@ -1249,9 +1168,11 @@ set_stream_playing (DBusGProxy *proxy, gboolean play, gpointer user_data)
 }
 
 static void
-set_stream_sending (DBusGProxy *proxy, gboolean send, gpointer user_data)
+set_stream_sending (DBusGProxy *proxy,
+                    gboolean send,
+                    TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   g_assert (priv->fs_stream != NULL);
@@ -1262,9 +1183,11 @@ set_stream_sending (DBusGProxy *proxy, gboolean send, gpointer user_data)
 }
 
 static void
-start_telephony_event (DBusGProxy *proxy, guchar event, gpointer user_data)
+start_telephony_event (DBusGProxy *proxy,
+                       guchar event,
+                       TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   g_assert (priv->fs_stream != NULL);
@@ -1277,9 +1200,10 @@ start_telephony_event (DBusGProxy *proxy, guchar event, gpointer user_data)
 }
 
 static void
-stop_telephony_event (DBusGProxy *proxy, gpointer user_data)
+stop_telephony_event (DBusGProxy *proxy,
+                      TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   g_assert (priv->fs_stream != NULL);
@@ -1291,9 +1215,10 @@ stop_telephony_event (DBusGProxy *proxy, gpointer user_data)
 }
 
 static void
-close (DBusGProxy *proxy, gpointer user_data)
+close (DBusGProxy *proxy,
+       TpProxySignalConnection *sig_conn)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
 
   DEBUG (self, "close requested by connection manager");
 
@@ -1371,8 +1296,9 @@ prepare_transports (TpStreamEngineStream *self)
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::Ready";
 
-  tp_media_stream_handler_ready_async (
-    priv->stream_handler_proxy, codecs, async_method_callback, ctx);
+  tp_cli_media_stream_handler_call_ready (priv->stream_handler_proxy,
+      -1, codecs, async_method_callback, ctx, method_call_ctx_free,
+      (GObject *) self);
 }
 
 static void
@@ -1398,8 +1324,9 @@ cb_fs_codec_changed (FarsightStream *stream,
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::CodecChoice";
 
-  tp_media_stream_handler_codec_choice_async (
-    priv->stream_handler_proxy, codec_id, async_method_callback, ctx);
+  tp_cli_media_stream_handler_call_codec_choice (priv->stream_handler_proxy,
+      -1, codec_id, async_method_callback, ctx, method_call_ctx_free,
+      (GObject *) self);
 }
 
 static void
@@ -1430,9 +1357,9 @@ cb_fs_new_active_candidate_pair (FarsightStream *stream,
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::NewActiveCandidatePair";
 
-  tp_media_stream_handler_new_active_candidate_pair_async (
-    priv->stream_handler_proxy, native_candidate, remote_candidate,
-    async_method_callback, ctx);
+  tp_cli_media_stream_handler_call_new_active_candidate_pair (
+    priv->stream_handler_proxy, -1, native_candidate, remote_candidate,
+    async_method_callback, ctx, method_call_ctx_free, (GObject *) self);
 }
 
 static void
@@ -1461,8 +1388,9 @@ cb_fs_native_candidates_prepared (FarsightStream *stream,
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::NativeCandidatesPrepared";
 
-  tp_media_stream_handler_native_candidates_prepared_async (
-    priv->stream_handler_proxy, async_method_callback, ctx);
+  tp_cli_media_stream_handler_call_native_candidates_prepared (
+    priv->stream_handler_proxy, -1, async_method_callback, ctx,
+    method_call_ctx_free, (GObject *) self);
 }
 
 static GstElement *
@@ -1576,14 +1504,15 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 }
 
 static void
-destroy_cb (DBusGProxy *proxy, gpointer user_data)
+destroy_cb (DBusGProxy *proxy,
+            gpointer user_data)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
 
   if (priv->stream_handler_proxy)
     {
-      DBusGProxy *tmp = priv->stream_handler_proxy;
+      TpMediaStreamHandler *tmp = priv->stream_handler_proxy;
 
       priv->stream_handler_proxy = NULL;
       g_object_unref (tmp);
@@ -1592,8 +1521,7 @@ destroy_cb (DBusGProxy *proxy, gpointer user_data)
 
 TpStreamEngineStream *
 tp_stream_engine_stream_new (FarsightSession *fs_session,
-                             const gchar *bus_name,
-                             const gchar *object_path,
+                             TpMediaStreamHandler *proxy,
                              guint stream_id,
                              TpMediaStreamType media_type,
                              TpMediaStreamDirection direction,
@@ -1603,16 +1531,14 @@ tp_stream_engine_stream_new (FarsightSession *fs_session,
 
   g_return_val_if_fail (fs_session != NULL, NULL);
   g_return_val_if_fail (FARSIGHT_IS_SESSION (fs_session), NULL);
-  g_return_val_if_fail (bus_name != NULL, NULL);
-  g_return_val_if_fail (object_path != NULL, NULL);
+  g_return_val_if_fail (proxy != NULL, NULL);
   g_return_val_if_fail (media_type <= TP_MEDIA_STREAM_TYPE_VIDEO, NULL);
   g_return_val_if_fail (direction <= TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
       NULL);
 
   ret = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM,
       "farsight-session", fs_session,
-      "bus-name", bus_name,
-      "object-path", object_path,
+      "proxy", proxy,
       "stream-id", stream_id,
       "media-type", media_type,
       "direction", direction,
@@ -1795,8 +1721,8 @@ tp_stream_engine_stream_error (TpStreamEngineStream *self,
 
   g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
 
-  tp_media_stream_handler_error (priv->stream_handler_proxy, error,
-      message, NULL);
+  tp_cli_media_stream_handler_call_error (priv->stream_handler_proxy,
+      -1, error, message, NULL, NULL, NULL, NULL);
   g_signal_emit (self, signals[ERROR], 0);
 }
 

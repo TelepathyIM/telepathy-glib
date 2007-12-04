@@ -579,11 +579,21 @@ new_stream_cb (TpStreamEngineSession *session,
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpStreamEngineStream *stream;
   FarsightSession *fs_session;
-  gchar *bus_name;
   GType stream_gtype;
   GstBin *pipeline;
+  TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
+  TpMediaStreamHandler *proxy;
 
-  g_object_get (priv->channel_proxy, "bus-name", &bus_name, NULL);
+  proxy = tp_media_stream_handler_new (channel_as_proxy->dbus_daemon,
+      channel_as_proxy->bus_name, object_path, NULL);
+
+  if (proxy == NULL)
+    {
+      g_warning ("failed to construct TpMediaStreamHandler: bad object path "
+          "'%s'?", object_path);
+      return;
+    }
+
   g_object_get (session, "farsight-session", &fs_session, NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
@@ -599,8 +609,7 @@ new_stream_cb (TpStreamEngineSession *session,
 
   stream = g_object_new (stream_gtype,
       "farsight-session", fs_session,
-      "bus-name", bus_name,
-      "object-path", object_path,
+      "proxy", proxy,
       "stream-id", stream_id,
       "media-type", media_type,
       "direction", direction,
@@ -608,7 +617,7 @@ new_stream_cb (TpStreamEngineSession *session,
       "pipeline", pipeline,
       NULL);
 
-  g_free (bus_name);
+  g_object_unref (proxy);
   g_object_unref (fs_session);
 
   if (priv->streams->len <= stream_id)
