@@ -21,6 +21,9 @@
 
 #include "telepathy-glib/media-interfaces.h"
 
+#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/interfaces.h>
+
 #include "telepathy-glib/_gen/tp-cli-media-session-handler-body.h"
 #include "telepathy-glib/_gen/tp-cli-media-stream-handler-body.h"
 
@@ -70,6 +73,8 @@ tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *klass)
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_STREAM_HANDLER;
+  tp_proxy_class_hook_on_interface_add (proxy_class,
+      tp_cli_media_stream_handler_add_signals);
 }
 
 /**
@@ -92,7 +97,7 @@ tp_media_stream_handler_new (TpDBusDaemon *dbus,
 {
   TpMediaStreamHandler *ret = NULL;
 
-  if (!tp_dbus_check_valid_bus_name (bus_name,
+  if (!tp_dbus_check_valid_bus_name (unique_name,
         TP_DBUS_NAME_TYPE_UNIQUE, error))
     goto finally;
 
@@ -101,7 +106,7 @@ tp_media_stream_handler_new (TpDBusDaemon *dbus,
 
   ret = TP_MEDIA_STREAM_HANDLER (g_object_new (TP_TYPE_MEDIA_STREAM_HANDLER,
         "dbus-daemon", dbus,
-        "bus-name", bus_name,
+        "bus-name", unique_name,
         "object-path", object_path,
         NULL));
 
@@ -145,6 +150,8 @@ tp_media_session_handler_class_init (TpMediaSessionHandlerClass *klass)
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_SESSION_HANDLER;
+  tp_proxy_class_hook_on_interface_add (proxy_class,
+      tp_cli_media_session_handler_add_signals);
 }
 
 /**
@@ -162,12 +169,12 @@ tp_media_session_handler_class_init (TpMediaSessionHandlerClass *klass)
 TpMediaSessionHandler *
 tp_media_session_handler_new (TpDBusDaemon *dbus,
                               const gchar *unique_name,
-                              const gchar *object_path
+                              const gchar *object_path,
                               GError **error)
 {
   TpMediaSessionHandler *ret = NULL;
 
-  if (!tp_dbus_check_valid_bus_name (bus_name,
+  if (!tp_dbus_check_valid_bus_name (unique_name,
         TP_DBUS_NAME_TYPE_UNIQUE, error))
     goto finally;
 
@@ -176,7 +183,7 @@ tp_media_session_handler_new (TpDBusDaemon *dbus,
 
   ret = TP_MEDIA_SESSION_HANDLER (g_object_new (TP_TYPE_MEDIA_SESSION_HANDLER,
         "dbus-daemon", dbus,
-        "bus-name", bus_name,
+        "bus-name", unique_name,
         "object-path", object_path,
         NULL));
 
