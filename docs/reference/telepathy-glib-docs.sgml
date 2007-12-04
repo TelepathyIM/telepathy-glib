@@ -7,19 +7,25 @@
   </bookinfo>
 
   <chapter id="ch-dbus">
+    <title>General D-Bus support</title>
+    <xi:include href="xml/proxy.xml"/>
+    <xi:include href="xml/dbus.xml"/>
+  </chapter>
+  <chapter id="ch-protocol">
     <title>The Telepathy protocol</title>
     <xi:include href="xml/defs.xml"/>
     <xi:include href="xml/handle.xml"/>
     <xi:include href="xml/interfaces.xml"/>
     <xi:include href="xml/enums.xml"/>
     <xi:include href="xml/errors.xml"/>
+    <xi:include href="xml/channel-iface.xml"/>
   </chapter>
   <chapter id="ch-client">
-    <title>Client-side D-Bus support</title>
-    <xi:include href="xml/proxy.xml"/>
+    <title>Client-side proxies</title>
     <xi:include href="xml/connection-manager.xml"/>
     <xi:include href="xml/connection.xml"/>
     <xi:include href="xml/channel.xml"/>
+    <xi:include href="xml/media-interfaces.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">
@@ -32,25 +38,21 @@
     <xi:include href="xml/svc-connection-manager.xml"/>
   </chapter>
   <chapter id="ch-service-base">
-    <title>Service-side base classes</title>
+    <title>Service-side implementation</title>
     <xi:include href="xml/run.xml"/>
     <xi:include href="xml/base-connection-manager.xml"/>
     <xi:include href="xml/base-connection.xml"/>
     <xi:include href="xml/channel-factory-iface.xml"/>
-    <xi:include href="xml/channel-iface.xml"/>
+    <xi:include href="xml/presence-mixin.xml"/>
+    <xi:include href="xml/properties-mixin.xml"/>
+    <xi:include href="xml/group-mixin.xml"/>
+    <xi:include href="xml/text-mixin.xml"/>
   </chapter>
   <chapter id="ch-service-handles">
     <title>Service-side handle repositories</title>
     <xi:include href="xml/handle-repo.xml"/>
     <xi:include href="xml/handle-repo-static.xml"/>
     <xi:include href="xml/handle-repo-dynamic.xml"/>
-  </chapter>
-  <chapter id="ch-service-mixins">
-    <title>Service-side mplementation mixins</title>
-    <xi:include href="xml/presence-mixin.xml"/>
-    <xi:include href="xml/properties-mixin.xml"/>
-    <xi:include href="xml/group-mixin.xml"/>
-    <xi:include href="xml/text-mixin.xml"/>
   </chapter>
 
   <chapter id="ch-utilities">
@@ -59,7 +61,6 @@
     <xi:include href="xml/debug-ansi.xml"/>
     <xi:include href="xml/debug.xml"/>
     <xi:include href="xml/intset.xml"/>
-    <xi:include href="xml/dbus.xml"/>
     <xi:include href="xml/heap.xml"/>
     <xi:include href="xml/gtypes.xml"/>
   </chapter>
