@@ -41,7 +41,7 @@ typedef struct {
 
 GType tp_stream_engine_channel_get_type (void);
 
-TpStreamEngineChannel *tp_stream_engine_channel_new (
+TpStreamEngineChannel *tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
   const gchar *bus_name,
   const gchar *channel_path,
   guint handle_type,

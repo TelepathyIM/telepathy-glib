@@ -779,7 +779,8 @@ cb_properties_ready (TpPropsIface *iface,
 }
 
 TpStreamEngineChannel *
-tp_stream_engine_channel_new (const gchar *bus_name,
+tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
+                              const gchar *bus_name,
                               const gchar *channel_path,
                               guint handle_type,
                               guint handle,
