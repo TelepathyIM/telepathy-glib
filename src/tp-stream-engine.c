@@ -26,11 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <libtelepathy/tp-conn.h>
-#include <libtelepathy/tp-helpers.h>
-#include <libtelepathy/tp-interfaces.h>
-#include <libtelepathy/tp-constants.h>
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/gtypes.h>
 
 #include <farsight/farsight-session.h>
