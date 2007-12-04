@@ -28,8 +28,7 @@ libtelepathy_glib_la_SOURCES =
 
 if HAVE_LD_VERSION_SCRIPT
 libtelepathy_glib_la_SOURCES += version-script.txt
-
-all-local: _gen/abi.txt
+libtelepathy_glib_la_DEPENDENCIES = version-script.txt _gen/abi.txt
 
 _gen/abi.txt: libtelepathy-glib-internal.la _gen/versioned-abi.txt Makefile.am
 	$(NM) .libs/libtelepathy-glib-internal.a > _gen/abi.nm
