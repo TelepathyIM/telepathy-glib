@@ -341,6 +341,25 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
           DEBUG ("%s = %s", paramspec->name, b ? "TRUE" : "FALSE");
         }
         break;
+      case DBUS_TYPE_ARRAY:
+        switch (paramspec->dtype[1])
+          {
+            case DBUS_TYPE_BYTE:
+              {
+                GArray **save_to = (GArray **) (params + paramspec->offset);
+                GArray *a = g_value_get_boxed (value);
+                *save_to = g_array_sized_new (FALSE, FALSE, sizeof(guint8), a->len);
+                g_array_append_vals (*save_to, a->data, a->len);
+                DEBUG ("%s = ...[%u]", paramspec->name, a->len);
+              }
+              break;
+            default:
+              g_error ("%s: encountered unhandled D-Bus array type %s on "
+                       "argument %s", G_STRFUNC, paramspec->dtype,
+                       paramspec->name);
+              g_assert_not_reached ();
+          }
+        break;
       default:
         g_error ("%s: encountered unhandled D-Bus type %s on argument %s",
                  G_STRFUNC, paramspec->dtype, paramspec->name);
