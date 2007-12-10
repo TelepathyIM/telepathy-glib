@@ -589,10 +589,10 @@ tp_proxy_set_property (GObject *object,
           if (conn == NULL)
             return;
 
-          g_assert (self->dbus_connection == NULL ||
-              self->dbus_connection == g_value_get_boxed (value));
+          if (self->dbus_connection == NULL)
+            self->dbus_connection = g_value_dup_boxed (value);
 
-          self->dbus_connection = g_value_dup_boxed (value);
+          g_assert (self->dbus_connection == g_value_get_boxed (value));
         }
       break;
     case PROP_BUS_NAME:
