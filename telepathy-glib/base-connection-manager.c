@@ -348,6 +348,11 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
               {
                 GArray **save_to = (GArray **) (params + paramspec->offset);
                 GArray *a = g_value_get_boxed (value);
+
+                if (*save_to != NULL)
+                  {
+                    g_array_free (*save_to, TRUE);
+                  }
                 *save_to = g_array_sized_new (FALSE, FALSE, sizeof(guint8), a->len);
                 g_array_append_vals (*save_to, a->data, a->len);
                 DEBUG ("%s = ...[%u]", paramspec->name, a->len);
