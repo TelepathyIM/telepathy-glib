@@ -202,6 +202,9 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 void
 tp_proxy_invalidated (TpProxy *self, const GError *error)
 {
+  g_return_if_fail (self != NULL);
+  g_return_if_fail (error != NULL);
+
   if (self->priv->valid)
     {
       self->priv->valid = FALSE;
