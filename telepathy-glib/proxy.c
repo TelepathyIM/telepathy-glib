@@ -431,7 +431,8 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
  * @member: the name of the signal to which we're connecting
  * @callback: a callback to be called when the signal is received
  * @user_data: user-supplied data for the callback
- * @destroy: user-supplied destructor for the data
+ * @destroy: user-supplied destructor for the data, which will be called
+ *   when the signal connection is disconnected for any reason
  * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
  *   the signal connection - if it is destroyed, the signal connection will
  *   automatically be disconnected
