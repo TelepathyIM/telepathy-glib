@@ -22,4 +22,5 @@ TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
     XDG_DATA_HOME=@abs_builddir@ \
     XDG_DATA_DIRS=@abs_srcdir@ \
+    G_DEBUG=fatal_warnings,fatal_criticals \
     sh $(top_srcdir)/tools/with-session-bus.sh --session --

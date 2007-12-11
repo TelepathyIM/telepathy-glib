@@ -11,6 +11,8 @@ noinst_PROGRAMS = \
     test-internal-debug
 
 TESTS = $(noinst_PROGRAMS)
+TESTS_ENVIRONMENT = \
+    G_DEBUG=fatal_warnings,fatal_criticals
 
 test_handle_set_SOURCES = \
     test-intset.c
