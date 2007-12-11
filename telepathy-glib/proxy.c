@@ -207,6 +207,7 @@ tp_proxy_invalidated (TpProxy *self, const GError *error)
 
   if (self->priv->valid)
     {
+      DEBUG ("%p: %s", self, error->message);
       self->priv->valid = FALSE;
 
       g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, error);
@@ -292,6 +293,8 @@ tp_proxy_pending_call_lost_weak_ref (gpointer data,
 {
   TpProxyPendingCall *self = data;
 
+  DEBUG ("%p lost weak ref to %p", self, dead);
+
   g_return_if_fail (self->priv == pending_call_magic);
   g_return_if_fail (dead == self->weak_object);
 
@@ -330,6 +333,10 @@ tp_proxy_pending_call_new (TpProxy *self,
 {
   TpProxyPendingCall *ret = g_slice_new (TpProxyPendingCall);
 
+  DEBUG ("(proxy=%p, if=%s, meth=%s, cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
+      self, g_quark_to_string (interface), member, callback, user_data,
+      destroy, weak_object, ret);
+
   ret->proxy = g_object_ref (self);
   ret->interface = interface;
   ret->member = g_strdup (member);
@@ -359,6 +366,8 @@ tp_proxy_pending_call_cancel (const TpProxyPendingCall *self)
 {
   DBusGProxy *iface;
 
+  DEBUG ("%p", self);
+
   g_return_if_fail (self->priv == pending_call_magic);
 
   iface = tp_proxy_borrow_interface_by_id (self->proxy, self->interface, NULL);
@@ -382,6 +391,8 @@ tp_proxy_pending_call_free (gpointer self)
 {
   TpProxyPendingCall *data = self;
 
+  DEBUG ("%p", self);
+
   g_return_if_fail (data->priv == pending_call_magic);
 
   g_object_unref (TP_PROXY (data->proxy));
@@ -403,6 +414,8 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
                                           GObject *dead)
 {
   TpProxySignalConnection *self = data;
+
+  DEBUG ("%p: lost weak ref to %p", self, dead);
 
   g_return_if_fail (self->priv == signal_conn_magic);
   g_return_if_fail (dead == self->weak_object);
@@ -442,6 +455,10 @@ tp_proxy_signal_connection_new (TpProxy *self,
 {
   TpProxySignalConnection *ret = g_slice_new (TpProxySignalConnection);
 
+  DEBUG ("(proxy=%p, if=%s, sig=%s, cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
+      self, g_quark_to_string (interface), member, callback, user_data,
+      destroy, weak_object, ret);
+
   ret->proxy = g_object_ref (self);
   ret->interface = interface;
   ret->member = g_strdup (member);
@@ -471,6 +488,8 @@ tp_proxy_signal_connection_disconnect (const TpProxySignalConnection *self)
 {
   DBusGProxy *iface;
 
+  DEBUG ("%p", self);
+
   g_return_if_fail (self->priv == signal_conn_magic);
 
   iface = tp_proxy_borrow_interface_by_id (self->proxy, self->interface, NULL);
@@ -497,6 +516,8 @@ tp_proxy_signal_connection_free_closure (gpointer self,
                                          GClosure *unused)
 {
   TpProxySignalConnection *data = self;
+
+  DEBUG ("%p", self);
 
   g_return_if_fail (data->priv == signal_conn_magic);
 
