@@ -4,12 +4,8 @@ noinst_PROGRAMS = \
 
 TESTS = $(noinst_PROGRAMS)
 
-test_dbus_SOURCES = \
-    test-dbus.c
 test_dbus_LDADD = $(TP_GLIB_LIBS)
 
-test_example_no_protocols_SOURCES = \
-    test-example-no-protocols.c
 test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
 
 check_c_sources = *.c
