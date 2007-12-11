@@ -110,6 +110,8 @@
  * @user_data: user-supplied data to be used by the handler
  * @destroy: function used to free the user-supplied data
  * @weak_object: user-supplied object
+ * @impl_callback: the internal callback given to dbus-glib by TpProxy
+ *  subclasses
  * @priv: private data used by the TpProxy implementation
  *
  * Structure representing a D-Bus signal connection.
@@ -436,6 +438,8 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
  * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
  *   the signal connection - if it is destroyed, the signal connection will
  *   automatically be disconnected
+ * @impl_callback: the internal callback from a #TpProxy subclass given to
+ *   dbus-glib, used to cancel the signal connection
  *
  * Allocate a new structure representing a signal connection. The
  * public members are set from the arguments.
@@ -452,7 +456,8 @@ tp_proxy_signal_connection_new (TpProxy *self,
                                 GCallback callback,
                                 gpointer user_data,
                                 GDestroyNotify destroy,
-                                GObject *weak_object)
+                                GObject *weak_object,
+                                GCallback impl_callback)
 {
   TpProxySignalConnection *ret = g_slice_new (TpProxySignalConnection);
 
@@ -467,6 +472,7 @@ tp_proxy_signal_connection_new (TpProxy *self,
   ret->user_data = user_data;
   ret->destroy = destroy;
   ret->weak_object = weak_object;
+  ret->impl_callback = impl_callback;
   ret->priv = signal_conn_magic;
 
   if (weak_object != NULL)
@@ -498,7 +504,7 @@ tp_proxy_signal_connection_disconnect (const TpProxySignalConnection *self)
   if (iface == NULL)
     return;
 
-  dbus_g_proxy_disconnect_signal (iface, self->member, self->callback,
+  dbus_g_proxy_disconnect_signal (iface, self->member, self->impl_callback,
       (gpointer) self);
 }
 

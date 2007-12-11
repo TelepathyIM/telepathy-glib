@@ -221,7 +221,7 @@ class Generator(object):
         self.b('  data = tp_proxy_signal_connection_new (proxy,')
         self.b('      TP_IFACE_QUARK_%s, \"%s\",' % (iface_lc.upper(), member))
         self.b('      G_CALLBACK (callback), user_data, destroy,')
-        self.b('      weak_object);')
+        self.b('      weak_object, G_CALLBACK (_%s));' % callback_name)
         self.b('')
         self.b('  dbus_g_proxy_connect_signal (iface, \"%s\",' % member)
         self.b('      G_CALLBACK (_%s), data,' % callback_name)

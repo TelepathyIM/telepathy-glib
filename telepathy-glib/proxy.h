@@ -95,12 +95,14 @@ struct _TpProxySignalConnection {
     gpointer user_data;
     GDestroyNotify destroy;
     GObject *weak_object;
+    GCallback impl_callback;
     gconstpointer priv;
 };
 
 TpProxySignalConnection *tp_proxy_signal_connection_new (TpProxy *self,
     GQuark interface, const gchar *member, GCallback callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object,
+    GCallback impl_callback);
 
 void tp_proxy_signal_connection_free_closure (gpointer self, GClosure *unused);
 
