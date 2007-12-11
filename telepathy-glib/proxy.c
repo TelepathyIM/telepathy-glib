@@ -215,6 +215,11 @@ tp_proxy_invalidated (TpProxy *self, const GError *error)
       g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, error);
     }
 
+  /* Don't clear the datalist until after we've emitted the signal, so
+   * the pending call and signal connection friend classes can still get
+   * to the proxies */
+  g_datalist_clear (&self->priv->interfaces);
+
   if (self->dbus_daemon != NULL)
     {
       g_object_unref (self->dbus_daemon);
@@ -234,6 +239,11 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
 {
   GError e = { DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER,
       "Name owner lost (service crashed?)" };
+
+  /* We can't call any API on the proxy now. Because the proxies are all
+   * for the same bus name, we can assume that all of them are equally
+   * useless now */
+  g_datalist_clear (&self->priv->interfaces);
 
   tp_proxy_invalidated (self, &e);
 }
@@ -372,7 +382,8 @@ tp_proxy_pending_call_cancel (const TpProxyPendingCall *self)
 
   g_return_if_fail (self->priv == pending_call_magic);
 
-  iface = tp_proxy_borrow_interface_by_id (self->proxy, self->interface, NULL);
+  iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
+      self->interface);
 
   if (iface == NULL || self->pending_call == NULL)
     return;
@@ -426,6 +437,35 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
   tp_proxy_signal_connection_disconnect (self);
 }
 
+static void
+tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
+                                              const GError *why,
+                                              TpProxySignalConnection *self)
+{
+  g_assert (self != NULL);
+  g_assert (why != NULL);
+  DEBUG ("%p: proxy %p invalidated (I have %p): %s", self, proxy, self->proxy,
+      why->message);
+  g_assert (proxy == self->proxy);
+
+  tp_proxy_signal_connection_disconnect (self);
+}
+
+static void
+tp_proxy_signal_connection_lost_proxy (gpointer data,
+                                       GObject *dead)
+{
+  TpProxySignalConnection *self = data;
+  TpProxy *proxy = TP_PROXY (dead);
+
+  g_assert (self != NULL);
+  DEBUG ("%p: lost proxy %p (I have %p)", self, proxy, self->proxy);
+  g_assert (proxy == self->proxy);
+
+  self->proxy = NULL;
+  tp_proxy_signal_connection_disconnect (self);
+}
+
 /**
  * tp_proxy_signal_connection_new:
  * @self: a proxy
@@ -465,7 +505,7 @@ tp_proxy_signal_connection_new (TpProxy *self,
       self, g_quark_to_string (interface), member, callback, user_data,
       destroy, weak_object, ret);
 
-  ret->proxy = g_object_ref (self);
+  ret->proxy = self;
   ret->interface = interface;
   ret->member = g_strdup (member);
   ret->callback = callback;
@@ -478,6 +518,12 @@ tp_proxy_signal_connection_new (TpProxy *self,
   if (weak_object != NULL)
     g_object_weak_ref (weak_object, tp_proxy_signal_connection_lost_weak_ref,
         ret);
+
+  g_signal_connect (self, "destroyed",
+      G_CALLBACK (tp_proxy_signal_connection_proxy_invalidated), ret);
+
+  g_object_weak_ref ((GObject *) self,
+      tp_proxy_signal_connection_lost_proxy, ret);
 
   return ret;
 }
@@ -499,7 +545,15 @@ tp_proxy_signal_connection_disconnect (const TpProxySignalConnection *self)
 
   g_return_if_fail (self->priv == signal_conn_magic);
 
-  iface = tp_proxy_borrow_interface_by_id (self->proxy, self->interface, NULL);
+  /* Make sure the callback won't be called */
+  g_return_if_fail (self->callback != NULL);
+  ((TpProxySignalConnection *) self)->callback = NULL;
+
+  if (self->proxy == NULL)
+    return;
+
+  iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
+      self->interface);
 
   if (iface == NULL)
     return;
@@ -528,16 +582,29 @@ tp_proxy_signal_connection_free_closure (gpointer self,
 
   g_return_if_fail (data->priv == signal_conn_magic);
 
-  g_object_unref (TP_PROXY (data->proxy));
-
-  g_free (data->member);
+  if (data->proxy != NULL)
+    {
+      g_signal_handlers_disconnect_by_func (data->proxy,
+          tp_proxy_signal_connection_proxy_invalidated, self);
+      g_object_weak_unref ((GObject *) data->proxy,
+          tp_proxy_signal_connection_lost_proxy, data);
+      data->proxy = NULL;
+    }
 
   if (data->destroy != NULL)
     data->destroy (data->user_data);
 
+  data->destroy = NULL;
+  data->user_data = NULL;
+
   if (data->weak_object != NULL)
-    g_object_weak_unref (data->weak_object,
-        tp_proxy_signal_connection_lost_weak_ref, self);
+    {
+      g_object_weak_unref (data->weak_object,
+          tp_proxy_signal_connection_lost_weak_ref, data);
+      data->weak_object = NULL;
+    }
+
+  g_free (data->member);
 
   g_slice_free (TpProxySignalConnection, data);
 }
