@@ -297,8 +297,8 @@ tp_proxy_pending_call_lost_weak_ref (gpointer data,
 
   DEBUG ("%p lost weak ref to %p", self, dead);
 
-  g_return_if_fail (self->priv == pending_call_magic);
-  g_return_if_fail (dead == self->weak_object);
+  g_assert (self->priv == pending_call_magic);
+  g_assert (dead == self->weak_object);
 
   self->weak_object = NULL;
   tp_proxy_pending_call_cancel (self);
@@ -419,8 +419,8 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
 
   DEBUG ("%p: lost weak ref to %p", self, dead);
 
-  g_return_if_fail (self->priv == signal_conn_magic);
-  g_return_if_fail (dead == self->weak_object);
+  g_assert (self->priv == signal_conn_magic);
+  g_assert (dead == self->weak_object);
 
   self->weak_object = NULL;
   tp_proxy_signal_connection_disconnect (self);
