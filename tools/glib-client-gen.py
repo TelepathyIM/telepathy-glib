@@ -126,6 +126,40 @@ class Generator(object):
         self.h('    TpProxySignalConnection *signal_connection);')
 
         # Example:
+        # static void _tp_cli_connection_signal_callback_new_channel
+        #   (DBusGProxy *proxy, const gchar *arg_object_path,
+        #   const gchar *arg_channel_type, guint arg_handle_type,
+        #   guint arg_handle, gboolean arg_suppress_handler,
+        #   TpProxySignalConnection *signal_connection);
+
+        self.b('static void _%s (DBusGProxy *proxy,'
+               % callback_name)
+
+        for arg in args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            const = pointer and 'const ' or ''
+
+            self.b('    %s%s%s,' % (const, ctype, name))
+
+        self.b('    TpProxySignalConnection *signal_connection)')
+        self.b('{')
+        self.b('  %s callback =' % callback_name)
+        self.b('      (%s)' % callback_name)
+        self.b('          signal_connection->callback;')
+        self.b('')
+        self.b('  if (callback != NULL)')
+        self.b('    callback (proxy,')
+
+        for arg in args:
+            name, info, tp_type = arg
+            self.b('      %s,' % name)
+
+        self.b('      signal_connection);')
+        self.b('}')
+
+        # Example:
         #
         # const TpProxySignalConnection *
         #   tp_cli_connection_connect_to_new_channel
@@ -190,7 +224,7 @@ class Generator(object):
         self.b('      weak_object);')
         self.b('')
         self.b('  dbus_g_proxy_connect_signal (iface, \"%s\",' % member)
-        self.b('      G_CALLBACK (callback), data,')
+        self.b('      G_CALLBACK (_%s), data,' % callback_name)
         self.b('      tp_proxy_signal_connection_free_closure);')
         self.b('')
         self.b('  return data;')
