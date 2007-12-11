@@ -1,10 +1,13 @@
 noinst_PROGRAMS = \
     test-dbus \
+    test-disconnection \
     test-example-no-protocols
 
 TESTS = $(noinst_PROGRAMS)
 
 test_dbus_LDADD = $(TP_GLIB_LIBS)
+
+test_disconnection_LDADD = $(TP_GLIB_LIBS)
 
 test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
 
