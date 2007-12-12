@@ -103,35 +103,35 @@ enum
   PROP_SINK
 };
 
-static void add_remote_candidate (DBusGProxy *proxy, const gchar *candidate,
-    const GPtrArray *transports, TpProxySignalConnection *sig_conn);
+static void add_remote_candidate (TpProxy *proxy, const gchar *candidate,
+    const GPtrArray *transports, gpointer user_data, GObject *object);
 
-static void remove_remote_candidate (DBusGProxy *proxy, const gchar *candidate,
-    TpProxySignalConnection *sig_conn);
+static void remove_remote_candidate (TpProxy *proxy, const gchar *candidate,
+    gpointer user_data, GObject *object);
 
-static void set_active_candidate_pair (DBusGProxy *proxy,
+static void set_active_candidate_pair (TpProxy *proxy,
     const gchar *native_candidate, const gchar *remote_candidate,
-    TpProxySignalConnection *sig_conn);
+    gpointer user_data, GObject *object);
 
-static void set_remote_candidate_list (DBusGProxy *proxy,
-    const GPtrArray *candidates, TpProxySignalConnection *sig_conn);
+static void set_remote_candidate_list (TpProxy *proxy,
+    const GPtrArray *candidates, gpointer user_data, GObject *object);
 
-static void set_remote_codecs (DBusGProxy *proxy, const GPtrArray *codecs,
-    TpProxySignalConnection *sig_conn);
+static void set_remote_codecs (TpProxy *proxy, const GPtrArray *codecs,
+    gpointer user_data, GObject *object);
 
-static void set_stream_playing (DBusGProxy *proxy, gboolean play,
-    TpProxySignalConnection *sig_conn);
+static void set_stream_playing (TpProxy *proxy, gboolean play,
+    gpointer user_data, GObject *object);
 
-static void set_stream_sending (DBusGProxy *proxy, gboolean play,
-    TpProxySignalConnection *sig_conn);
+static void set_stream_sending (TpProxy *proxy, gboolean play,
+    gpointer user_data, GObject *object);
 
-static void start_telephony_event (DBusGProxy *proxy, guchar event,
-    TpProxySignalConnection *sig_conn);
+static void start_telephony_event (TpProxy *proxy, guchar event,
+    gpointer user_data, GObject *object);
 
-static void stop_telephony_event (DBusGProxy *proxy,
-    TpProxySignalConnection *sig_conn);
+static void stop_telephony_event (TpProxy *proxy,
+    gpointer user_data, GObject *object);
 
-static void close (DBusGProxy *proxy, TpProxySignalConnection *sig_conn);
+static void close (TpProxy *proxy, gpointer user_data, GObject *object);
 
 static GstElement *make_src (TpStreamEngineStream *stream, guint media_type);
 
@@ -167,7 +167,7 @@ static void prepare_transports (TpStreamEngineStream *self);
 
 static void stop_stream (TpStreamEngineStream *self);
 
-static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
+static void destroy_cb (TpProxy *proxy, gpointer user_data);
 
 static void
 _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
@@ -944,12 +944,13 @@ fs_codecs_to_tp (const GList *codecs)
 }
 
 static void
-add_remote_candidate (DBusGProxy *proxy,
+add_remote_candidate (TpProxy *proxy,
                       const gchar *candidate,
                       const GPtrArray *transports,
-                      TpProxySignalConnection *sig_conn)
+                      gpointer user_data,
+                      GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_transports;
 
@@ -962,11 +963,12 @@ add_remote_candidate (DBusGProxy *proxy,
 }
 
 static void
-remove_remote_candidate (DBusGProxy *proxy,
+remove_remote_candidate (TpProxy *proxy,
                          const gchar *candidate,
-                         TpProxySignalConnection *sig_conn)
+                         gpointer user_data,
+                         GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   DEBUG (self, "removing remote candidate %s", candidate);
@@ -974,12 +976,13 @@ remove_remote_candidate (DBusGProxy *proxy,
 }
 
 static void
-set_active_candidate_pair (DBusGProxy *proxy,
+set_active_candidate_pair (TpProxy *proxy,
                            const gchar *native_candidate,
                            const gchar *remote_candidate,
-                           TpProxySignalConnection *sig_conn)
+                           gpointer user_data,
+                           GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   farsight_stream_set_active_candidate_pair (priv->fs_stream,
                                              native_candidate,
@@ -987,11 +990,12 @@ set_active_candidate_pair (DBusGProxy *proxy,
 }
 
 static void
-set_remote_candidate_list (DBusGProxy *proxy,
+set_remote_candidate_list (TpProxy *proxy,
                            const GPtrArray *candidates,
-                           TpProxySignalConnection *sig_conn)
+                           gpointer user_data,
+                           GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_transports = NULL;
   GValueArray *candidate = NULL;
@@ -1031,11 +1035,12 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-set_remote_codecs (DBusGProxy *proxy,
+set_remote_codecs (TpProxy *proxy,
                    const GPtrArray *codecs,
-                   TpProxySignalConnection *sig_conn)
+                   gpointer user_data,
+                   GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_codecs =NULL, *lp, *lp2;
   GValueArray *codec;
@@ -1145,11 +1150,12 @@ stop_stream (TpStreamEngineStream *self)
 }
 
 static void
-set_stream_playing (DBusGProxy *proxy,
+set_stream_playing (TpProxy *proxy,
                     gboolean play,
-                    TpProxySignalConnection *sig_conn)
+                    gpointer user_data,
+                    GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   g_assert (priv->fs_stream != NULL);
@@ -1168,11 +1174,12 @@ set_stream_playing (DBusGProxy *proxy,
 }
 
 static void
-set_stream_sending (DBusGProxy *proxy,
+set_stream_sending (TpProxy *proxy,
                     gboolean send,
-                    TpProxySignalConnection *sig_conn)
+                    gpointer user_data,
+                    GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   g_assert (priv->fs_stream != NULL);
@@ -1183,11 +1190,12 @@ set_stream_sending (DBusGProxy *proxy,
 }
 
 static void
-start_telephony_event (DBusGProxy *proxy,
+start_telephony_event (TpProxy *proxy,
                        guchar event,
-                       TpProxySignalConnection *sig_conn)
+                       gpointer user_data,
+                       GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   g_assert (priv->fs_stream != NULL);
@@ -1200,10 +1208,11 @@ start_telephony_event (DBusGProxy *proxy,
 }
 
 static void
-stop_telephony_event (DBusGProxy *proxy,
-                      TpProxySignalConnection *sig_conn)
+stop_telephony_event (TpProxy *proxy,
+                      gpointer user_data,
+                      GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   g_assert (priv->fs_stream != NULL);
@@ -1215,10 +1224,11 @@ stop_telephony_event (DBusGProxy *proxy,
 }
 
 static void
-close (DBusGProxy *proxy,
-       TpProxySignalConnection *sig_conn)
+close (TpProxy *proxy,
+       gpointer user_data,
+       GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (sig_conn->weak_object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
 
   DEBUG (self, "close requested by connection manager");
 
@@ -1504,7 +1514,7 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 }
 
 static void
-destroy_cb (DBusGProxy *proxy,
+destroy_cb (TpProxy *proxy,
             gpointer user_data)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);

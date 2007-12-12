@@ -180,29 +180,22 @@ tp_stream_engine_channel_set_property (GObject      *object,
 static void channel_destroyed (TpChannel *channel_proxy,
     TpStreamEngineChannel *self);
 
-static void new_media_session_handler (DBusGProxy *proxy,
+static void new_media_session_handler (TpProxy *proxy,
     const gchar *session_handler_path, const gchar *type,
-    TpProxySignalConnection *signal_connection);
+    gpointer user_data, GObject *weak_object);
 
 static void get_session_handlers_reply (TpProxy *proxy,
     const GPtrArray *session_handlers, const GError *error,
     gpointer user_data, GObject *weak_object);
 
 static void
-cb_properties_got (TpProxy *proxy,
-                   const GPtrArray *structs,
-                   const GError *error,
-                   gpointer user_data,
-                   GObject *object)
+cb_properties_changed (TpProxy *proxy,
+                       const GPtrArray *structs,
+                       gpointer user_data,
+                       GObject *object)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
   guint i;
-
-  if (error != NULL)
-    {
-      g_warning ("GetProperties(): %s", error->message);
-      return;
-    }
 
   for (i = 0; i < structs->len; i++)
     {
@@ -248,12 +241,21 @@ cb_properties_got (TpProxy *proxy,
 }
 
 static void
-cb_properties_changed (DBusGProxy *proxy,
-                       const GPtrArray *structs,
-                       TpProxySignalConnection *signal_connection)
+cb_properties_got (TpProxy *proxy,
+                   const GPtrArray *structs,
+                   const GError *error,
+                   gpointer user_data,
+                   GObject *object)
 {
-  cb_properties_got (signal_connection->proxy, structs, NULL, NULL,
-      signal_connection->weak_object);
+  if (error != NULL)
+    {
+      g_warning ("GetProperties(): %s", error->message);
+      return;
+    }
+  else
+    {
+      cb_properties_changed (proxy, structs, user_data, object);
+    }
 }
 
 static void
@@ -681,13 +683,13 @@ add_session (TpStreamEngineChannel *self,
 }
 
 static void
-new_media_session_handler (DBusGProxy *proxy,
+new_media_session_handler (TpProxy *proxy,
                            const gchar *session_handler_path,
                            const gchar *type,
-                           TpProxySignalConnection *signal_connection)
+                           gpointer user_data,
+                           GObject *weak_object)
 {
-  TpStreamEngineChannel *self =
-      TP_STREAM_ENGINE_CHANNEL (signal_connection->weak_object);
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (weak_object);
 
   add_session (self, session_handler_path, type);
 }
