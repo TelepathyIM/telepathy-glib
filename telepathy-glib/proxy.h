@@ -43,6 +43,8 @@ struct _TpProxy {
     gchar *bus_name;
     gchar *object_path;
 
+    GError *invalidated /* initialized to NULL by g_object_new */;
+
     TpProxyPrivate *priv;
 };
 
@@ -73,12 +75,14 @@ struct _TpProxyPendingCall {
     GDestroyNotify destroy;
     GObject *weak_object;
     DBusGProxyCall *pending_call;
+    void (*raise_error) (TpProxyPendingCall *);
     gconstpointer priv;
 };
 
 TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
     GQuark interface, const gchar *member, GCallback callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object,
+    void (*raise_error) (TpProxyPendingCall *));
 
 void tp_proxy_pending_call_free (gpointer self);
 

@@ -56,6 +56,8 @@
  * @dbus_connection: the D-Bus connection used by this object (read-only)
  * @bus_name: the bus name of the application exporting the object (read-only)
  * @object_path: the object path of the remote object (read-only)
+ * @invalidated: if not %NULL, the reason this proxy was invalidated
+ *  (read-only)
  * @priv: private internal data
  *
  * Structure representing a Telepathy client-side proxy.
@@ -207,12 +209,12 @@ tp_proxy_invalidated (TpProxy *self, const GError *error)
   g_return_if_fail (self != NULL);
   g_return_if_fail (error != NULL);
 
-  if (self->priv->valid)
+  if (self->invalidated == NULL)
     {
       DEBUG ("%p: %s", self, error->message);
-      self->priv->valid = FALSE;
+      self->invalidated = g_error_copy (error);
 
-      g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, error);
+      g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, self->invalidated);
     }
 
   /* Don't clear the datalist until after we've emitted the signal, so
@@ -314,6 +316,24 @@ tp_proxy_pending_call_lost_weak_ref (gpointer data,
   tp_proxy_pending_call_cancel (self);
 }
 
+static void
+tp_proxy_pending_call_proxy_invalidated (TpProxy *proxy,
+                                         const GError *why,
+                                         TpProxyPendingCall *self)
+{
+  g_assert (self != NULL);
+  g_assert (why != NULL);
+  DEBUG ("%p: proxy %p invalidated (I have %p): %s", self, proxy, self->proxy,
+      why->message);
+  g_assert (proxy == self->proxy);
+
+  if (self->callback != NULL)
+    {
+      self->raise_error (self);
+      self->callback = NULL;
+    }
+}
+
 /**
  * tp_proxy_pending_call_new:
  * @self: a proxy
@@ -325,6 +345,9 @@ tp_proxy_pending_call_lost_weak_ref (gpointer data,
  * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
  *   the signal connection - if it is destroyed, the signal connection will
  *   automatically be disconnected
+ * @raise_error: a callback with a simpler signature, which is called
+ *   instead of @callback if the proxy is invalidated (it should
+ *   call @callback with appropriate arguments)
  *
  * Allocate a new pending call structure. The @pending_call member is NULL,
  * and the rest of the public members are set from the arguments.
@@ -341,7 +364,8 @@ tp_proxy_pending_call_new (TpProxy *self,
                            GCallback callback,
                            gpointer user_data,
                            GDestroyNotify destroy,
-                           GObject *weak_object)
+                           GObject *weak_object,
+                           void (*raise_error) (TpProxyPendingCall *))
 {
   TpProxyPendingCall *ret = g_slice_new (TpProxyPendingCall);
 
@@ -357,10 +381,14 @@ tp_proxy_pending_call_new (TpProxy *self,
   ret->destroy = destroy;
   ret->weak_object = weak_object;
   ret->pending_call = NULL;
+  ret->raise_error = raise_error;
   ret->priv = pending_call_magic;
 
   if (weak_object != NULL)
     g_object_weak_ref (weak_object, tp_proxy_pending_call_lost_weak_ref, ret);
+
+  g_signal_connect (self, "destroyed",
+      G_CALLBACK (tp_proxy_pending_call_proxy_invalidated), ret);
 
   return ret;
 }
@@ -381,6 +409,9 @@ tp_proxy_pending_call_cancel (const TpProxyPendingCall *self)
   DEBUG ("%p", self);
 
   g_return_if_fail (self->priv == pending_call_magic);
+
+  /* Mark the pending call as expired */
+  ((TpProxyPendingCall *) self)->callback = NULL;
 
   iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
       self->interface);
@@ -408,7 +439,28 @@ tp_proxy_pending_call_free (gpointer self)
 
   g_return_if_fail (data->priv == pending_call_magic);
 
-  g_object_unref (TP_PROXY (data->proxy));
+  if (data->proxy != NULL)
+    {
+      /* Annoyingly, dbus-glib frees us *before* it emits destroy. If we
+       * haven't already finished or been cancelled, then that must be what's
+       * happening to us. So, we have to force the TpProxy to invalidate
+       * itself slightly early, in order to get our error callback.
+       * tp_proxy_invalidate is safe against repeated calls, so this is fine -
+       * the 'destroy' signal will call it again, which will basically be
+       * ignored. */
+      if (data->callback != NULL)
+        {
+          DEBUG ("Looks like this pending call hasn't finished, assuming "
+              "the DBusGProxy is about to die");
+          tp_proxy_invalidated (data->proxy, &tp_proxy_dgproxy_destroyed);
+          g_assert (data->callback == NULL);
+        }
+
+      g_signal_handlers_disconnect_by_func (TP_PROXY (data->proxy),
+          tp_proxy_pending_call_proxy_invalidated, self);
+      g_object_unref (data->proxy);
+      data->proxy = NULL;
+    }
 
   g_free (data->member);
 
@@ -544,10 +596,6 @@ tp_proxy_signal_connection_disconnect (const TpProxySignalConnection *self)
   DEBUG ("%p", self);
 
   g_return_if_fail (self->priv == signal_conn_magic);
-
-  /* Make sure the callback won't be called */
-  g_return_if_fail (self->callback != NULL);
-  ((TpProxySignalConnection *) self)->callback = NULL;
 
   if (self->proxy == NULL)
     return;

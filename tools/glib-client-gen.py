@@ -453,6 +453,9 @@ class Generator(object):
 
         self.b('      error, data->user_data, data->weak_object);')
         self.b('')
+        self.b('  /* avoid re-invocation */')
+        self.b('  data->callback = NULL;')
+        self.b('')
         self.b('  if (error != NULL)')
         self.b('    {')
         self.b('      g_error_free (error);')
@@ -473,6 +476,36 @@ class Generator(object):
 
         self.b('}')
         self.b('')
+
+        # Async error-raising function
+        raise_name = '_%s_%s_raise_error_in_%s' % (self.prefix_lc, iface_lc,
+                member_lc)
+
+        self.b('static void')
+        self.b('%s (TpProxyPendingCall *pc)' % raise_name)
+        self.b('{')
+        self.b('  %s callback =' % callback_name)
+        self.b('      (%s) pc->callback;' % callback_name)
+        self.b('')
+        self.b('  if (callback != NULL)')
+        self.b('    callback (pc->proxy,')
+
+        for arg in out_args:
+            name, info, tp_type = arg
+            ctype, gtype, marshaller, pointer = info
+
+            if pointer:
+                self.b('        NULL,')
+            else:
+                self.b('        0,')
+
+        self.b('        pc->proxy->invalidated,')
+        self.b('        pc->user_data,')
+        self.b('        pc->weak_object);')
+        self.b('')
+        self.b('  /* avoid re-invocation */')
+        self.b('  pc->callback = NULL;')
+        self.b('}')
 
         # Async stub
 
@@ -589,7 +622,8 @@ class Generator(object):
         self.b('      data = tp_proxy_pending_call_new (proxy,')
         self.b('          interface, "%s",' % member)
         self.b('          G_CALLBACK (callback),')
-        self.b('          user_data, destroy, weak_object);')
+        self.b('          user_data, destroy, weak_object,')
+        self.b('          %s);' % raise_name)
         self.b('      data->pending_call = '
                'dbus_g_proxy_begin_call_with_timeout (iface,')
         self.b('          "%s",' % member)
