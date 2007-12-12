@@ -233,19 +233,19 @@ tp_proxy_invalidated (TpProxy *self, const GError *error)
     }
 }
 
+/* this error is raised in multiple places - it's initialized by class_init */
+static GError tp_proxy_dgproxy_destroyed = { 0 };
+
 static void
 tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
                              TpProxy *self)
 {
-  GError e = { DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER,
-      "Name owner lost (service crashed?)" };
-
   /* We can't call any API on the proxy now. Because the proxies are all
    * for the same bus name, we can assume that all of them are equally
    * useless now */
   g_datalist_clear (&self->priv->interfaces);
 
-  tp_proxy_invalidated (self, &e);
+  tp_proxy_invalidated (self, &tp_proxy_dgproxy_destroyed);
 }
 
 /**
@@ -811,6 +811,15 @@ tp_proxy_class_init (TpProxyClass *klass)
 {
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  /* Initialize our global GError if needed */
+  if (tp_proxy_dgproxy_destroyed.domain == 0)
+    {
+      tp_proxy_dgproxy_destroyed.domain = DBUS_GERROR;
+      tp_proxy_dgproxy_destroyed.code = DBUS_GERROR_NAME_HAS_NO_OWNER;
+      tp_proxy_dgproxy_destroyed.message =
+          "Name owner lost (service crashed?)";
+    }
 
   g_type_class_add_private (klass, sizeof (TpProxyPrivate));
 
