@@ -6,6 +6,7 @@
 static void
 prepare (void)
 {
+  GError *error = NULL;
   const gchar *abs_top_builddir = g_getenv ("abs_top_builddir");
   gchar *command[] = {
       g_strdup_printf ("%s/%s",
@@ -13,12 +14,13 @@ prepare (void)
           "examples/cm/no-protocols/telepathy-example-no-protocols"),
       NULL
   };
-  gboolean ret;
 
   g_assert (abs_top_builddir != NULL);
 
-  ret = g_spawn_async (NULL, command, NULL, 0, NULL, NULL, NULL, NULL);
-  g_assert (ret);
+  if (!g_spawn_async (NULL, command, NULL, 0, NULL, NULL, NULL, &error))
+    {
+      g_error ("g_spawn_async: %s", error->message);
+    }
 
   g_free (command[0]);
 }
