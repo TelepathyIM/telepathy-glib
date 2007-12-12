@@ -57,6 +57,9 @@
 (^|/).libs($|/)
 \.lo$
 \.la$
+\.gcno$
+\.gcda$
+\.gcov$
 \-glue.(c|h)$
 \-marshal.(c|h)$
 \-enumtypes.(c|h)$

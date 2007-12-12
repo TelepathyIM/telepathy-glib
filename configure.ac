@@ -59,6 +59,12 @@ AC_SUBST([LT_CURRENT])
 AC_SUBST([LT_REVISION])
 AC_SUBST([LT_AGE])
 
+dnl optimizations, etc.
+COMPILER_OPTIMISATIONS
+COMPILER_COVERAGE
+LINKER_OPTIMISATIONS
+LINKER_VERSION_SCRIPT
+
 dnl decide error flags
 AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
 AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
@@ -101,10 +107,6 @@ AC_ARG_ENABLE(backtrace,
   AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash (in most GLib connection managers)]),
     enable_backtrace=$enableval, enable_backtrace=no )
 
-AC_ARG_ENABLE(coverage,
-  AC_HELP_STRING([--enable-coverage],[compile with coverage info]),
-    enable_coverage=$enableval, enable_coverage=no )
-
 ifelse(tp_glib_nano_version, 0,
     [ # tp-glib is version x.y.z - disable coding style checks by default
 AC_ARG_ENABLE(coding-style-checks,
@@ -130,10 +132,6 @@ fi
 
 if test x$enable_backtrace = xyes; then
   AC_DEFINE(ENABLE_BACKTRACE, [], [Enable backtrace output on crashes])
-fi
-
-if test x$enable_coverage = xyes; then
-  COVERAGE_CFLAGS="-g -fprofile-arcs -ftest-coverage"
 fi
 
 AC_SUBST(HANDLE_LEAK_DEBUG_CFLAGS)
@@ -193,9 +191,9 @@ AC_CHECK_FUNCS(signal)
 AC_CHECK_HEADERS(signal.h)
 
 HAVE_LD_VERSION_SCRIPT=no
-[if ld --help | grep '[-]-version-script' >/dev/null; then
+if test -n "$VERSION_SCRIPT_ARG"; then
 	HAVE_LD_VERSION_SCRIPT=yes
-fi]
+fi
 AC_CHECK_PROGS([NM], [nm])
 if test -z "$NM"; then
 	HAVE_LD_VERSION_SCRIPT=no

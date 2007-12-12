@@ -43,7 +43,7 @@ _gen/versioned-abi.txt: version-script.txt Makefile.am
 	sort -u < $@.tmp > $@
 
 libtelepathy_glib_la_LDFLAGS += \
-    -Wl,--version-script=$(srcdir)/version-script.txt
+    $(VERSION_SCRIPT_ARG)=$(srcdir)/version-script.txt
 
 else # !HAVE_LD_VERSION_SCRIPT
 
@@ -189,7 +189,6 @@ AM_CFLAGS = \
     @DBUS_CFLAGS@ \
     @GLIB_CFLAGS@ \
     @HANDLE_LEAK_DEBUG_CFLAGS@ \
-    @COVERAGE_CFLAGS@ \
     -I$(top_builddir) \
     -I$(top_srcdir)
 

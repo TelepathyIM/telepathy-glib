@@ -48,5 +48,4 @@ AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     $(DBUS_CFLAGS) \
     $(GLIB_CFLAGS) \
-    $(COVERAGE_CFLAGS) \
     $(TP_GLIB_CFLAGS)
