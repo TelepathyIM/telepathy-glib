@@ -158,14 +158,14 @@ main (int argc,
 
   /* a survives */
   g_message ("Connecting signal to a");
-  tp_cli_dbus_daemon_connect_to_name_owner_changed (a, noc, PTR(TEST_A),
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (a, noc, PTR (TEST_A),
       destroy_user_data, (GObject *) z);
 
   /* b gets its signal connection cancelled because stub is
    * destroyed */
   stub = g_object_new (stub_object_get_type (), NULL);
   g_message ("Connecting signal to b");
-  tp_cli_dbus_daemon_connect_to_name_owner_changed (b, noc, PTR(TEST_B),
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (b, noc, PTR (TEST_B),
       destroy_user_data, stub);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_B));
   g_object_unref (stub);
@@ -174,7 +174,7 @@ main (int argc,
   /* c gets its signal connection cancelled because it's explicitly
    * invalidated */
   g_message ("Connecting signal to c");
-  tp_cli_dbus_daemon_connect_to_name_owner_changed (c, noc, PTR(TEST_C),
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (c, noc, PTR (TEST_C),
       destroy_user_data, NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C));
   g_message ("Forcibly invalidating c");
@@ -184,7 +184,7 @@ main (int argc,
   /* d gets its signal connection cancelled because it's
    * implicitly invalidated by being destroyed */
   g_message ("Connecting signal to d");
-  tp_cli_dbus_daemon_connect_to_name_owner_changed (d, noc, PTR(TEST_D),
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (d, noc, PTR (TEST_D),
       destroy_user_data, NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_D));
   g_message ("Destroying d");
@@ -197,7 +197,7 @@ main (int argc,
 
   /* e gets its signal connection cancelled explicitly */
   g_message ("Connecting signal to e");
-  sc = tp_cli_dbus_daemon_connect_to_name_owner_changed (e, noc, PTR(TEST_E),
+  sc = tp_cli_dbus_daemon_connect_to_name_owner_changed (e, noc, PTR (TEST_E),
       destroy_user_data, NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_E));
   g_message ("Disconnecting signal from e");
@@ -210,7 +210,7 @@ main (int argc,
    * Note that this test case exploits implementation details of dbus-glib.
    * If it stops working after a dbus-glib upgrade, that's probably why. */
   g_message ("Connecting signal to f");
-  tp_cli_dbus_daemon_connect_to_name_owner_changed (f, noc, PTR(TEST_F),
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (f, noc, PTR (TEST_F),
       destroy_user_data, NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_F));
   g_message ("Forcibly disposing f's DBusGProxy to simulate name owner loss");
@@ -224,7 +224,7 @@ main (int argc,
    * forward or reverse order, so if both a and z have had their signal, we
    * can stop the main loop */
   g_message ("Connecting signal to z");
-  tp_cli_dbus_daemon_connect_to_name_owner_changed (z, noc, PTR(TEST_Z),
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (z, noc, PTR (TEST_Z),
       destroy_user_data, (GObject *) a);
 
   /* make sure a NameOwnerChanged signal occurs */
@@ -236,6 +236,8 @@ main (int argc,
   g_main_loop_run (mainloop);
   g_main_loop_unref (mainloop);
 
+  /* both A and Z are still listening for signals, so their user data is
+   * still held */
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_A));
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_Z));
 
@@ -248,7 +250,14 @@ main (int argc,
   g_object_unref (f);
   g_object_unref (z);
 
+  /* we should already have checked each of these at least once, but just to
+   * make sure we have a systematic test that all user data is freed... */
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_A));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_D));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F));
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z));
 
   tp_intset_destroy (freed_user_data);
