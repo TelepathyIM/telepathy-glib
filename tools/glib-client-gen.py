@@ -83,14 +83,16 @@ class Generator(object):
         # Example:
         #
         # typedef void (*tp_cli_connection_signal_callback_new_channel)
-        #   (DBusGProxy *proxy, const gchar *arg_object_path,
+        #   (TpProxy *proxy, const gchar *arg_object_path,
         #   const gchar *arg_channel_type, guint arg_handle_type,
         #   guint arg_handle, gboolean arg_suppress_handler,
-        #   TpProxySignalConnection *signal_connection);
+        #   gpointer user_data, GObject *weak_object);
 
         self.b('/**')
         self.b(' * %s:' % callback_name)
-        self.b(' * @proxy: A dbus-glib proxy (avoid using this)')
+        self.b(' * @proxy: The proxy on which %s_%s_connect_to_%s ()'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b(' *  was called')
 
         for arg in args:
             name, info, tp_type = arg
@@ -98,21 +100,13 @@ class Generator(object):
 
             self.b(' * @%s: FIXME' % name)
 
-        self.b(' * @signal_connection: The same object that was returned by')
-        self.b(' *   %s_%s_connect_to_%s()'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.b(' * @user_data: User-supplied data')
+        self.b(' * @weak_object: User-supplied weakly referenced object')
         self.b(' *')
         self.b(' * Represents the signature of a callback for the signal %s.'
                % member)
-        self.b(' * The @proxy, @user_data and @weak_object supplied to')
-        self.b(' * %s_%s_connect_to_%s()'
-               % (self.prefix_lc, iface_lc, member_lc))
-        self.b(' * can be retrieved via')
-        self.b(' * <literal>signal_connection->proxy</literal>,')
-        self.b(' * <literal>signal_connection->user_data</literal> and')
-        self.b(' * <literal>signal_connection->weak_object</literal>')
         self.b(' */')
-        self.h('typedef void (*%s) (DBusGProxy *proxy,'
+        self.h('typedef void (*%s) (TpProxy *proxy,'
                % callback_name)
 
         for arg in args:
@@ -123,7 +117,7 @@ class Generator(object):
 
             self.h('    %s%s%s,' % (const, ctype, name))
 
-        self.h('    TpProxySignalConnection *signal_connection);')
+        self.h('    gpointer user_data, GObject *weak_object);')
 
         # Example:
         # static void _tp_cli_connection_signal_callback_new_channel
@@ -150,13 +144,14 @@ class Generator(object):
         self.b('          signal_connection->callback;')
         self.b('')
         self.b('  if (callback != NULL)')
-        self.b('    callback (proxy,')
+        self.b('    callback (signal_connection->proxy,')
 
         for arg in args:
             name, info, tp_type = arg
             self.b('      %s,' % name)
 
-        self.b('      signal_connection);')
+        self.b('      signal_connection->user_data,')
+        self.b('      signal_connection->weak_object);')
         self.b('}')
 
         # Example:

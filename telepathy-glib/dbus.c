@@ -612,13 +612,14 @@ _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
 }
 
 static void
-_tp_dbus_daemon_name_owner_changed_cb (DBusGProxy *proxy,
+_tp_dbus_daemon_name_owner_changed_cb (TpProxy *proxy,
                                        const gchar *name,
                                        const gchar *old_owner,
                                        const gchar *new_owner,
-                                       TpProxySignalConnection *sig_conn)
+                                       gpointer user_data,
+                                       GObject *object)
 {
-  TpDBusDaemon *self = TP_DBUS_DAEMON (sig_conn->proxy);
+  TpDBusDaemon *self = TP_DBUS_DAEMON (proxy);
 
   _tp_dbus_daemon_name_owner_changed (self, name, new_owner);
 }

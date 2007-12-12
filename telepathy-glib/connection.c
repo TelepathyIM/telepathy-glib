@@ -190,12 +190,13 @@ tp_connection_status_changed (TpConnection *self,
 }
 
 static void
-tp_connection_status_changed_cb (DBusGProxy *proxy,
+tp_connection_status_changed_cb (TpProxy *proxy,
                                  guint status,
                                  guint reason,
-                                 TpProxySignalConnection *data)
+                                 gpointer user_data,
+                                 GObject *weak_object)
 {
-  TpConnection *self = TP_CONNECTION (data->proxy);
+  TpConnection *self = TP_CONNECTION (proxy);
 
   tp_connection_status_changed (self, status, reason);
 }

@@ -275,14 +275,14 @@ tp_channel_got_handle_cb (TpProxy *proxy,
 }
 
 static void
-tp_channel_closed_cb (DBusGProxy *proxy,
-                      TpProxySignalConnection *data)
+tp_channel_closed_cb (TpProxy *proxy,
+                      gpointer user_data,
+                      GObject *weak_object)
 {
-  TpChannel *self = TP_CHANNEL (data->proxy);
   GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
       "Channel was closed" };
 
-  tp_proxy_invalidated ((TpProxy *) self, &e);
+  tp_proxy_invalidated (proxy, &e);
 }
 
 static GObject *

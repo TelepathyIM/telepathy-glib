@@ -75,20 +75,21 @@ requested_name (TpProxy *proxy,
 }
 
 static void
-noc (DBusGProxy *dgproxy,
+noc (TpProxy *proxy,
      const gchar *name,
      const gchar *old,
      const gchar *new,
-     TpProxySignalConnection *signal_conn)
+     gpointer user_data,
+     GObject *weak_object)
 {
-  guint which = GPOINTER_TO_UINT (signal_conn->user_data);
+  guint which = GPOINTER_TO_UINT (user_data);
   TpProxy *want_proxy = NULL;
   GObject *want_object = NULL;
 
   g_message ("Caught signal (%s: %s -> %s) with proxy #%d '%c' according to "
       "user_data", name, old, new, which, 'a' + which);
-  g_message ("Proxy is %p, weak object is %p", signal_conn->proxy,
-      signal_conn->weak_object);
+  g_message ("Proxy is %p, weak object is %p", proxy,
+      weak_object);
   tp_intset_add (caught_signal, which);
 
   switch (which)
@@ -103,15 +104,15 @@ noc (DBusGProxy *dgproxy,
       break;
     default:
       g_critical ("%c (%p) got the signal, which shouldn't have happened",
-          'a' + which, signal_conn->proxy);
+          'a' + which, proxy);
       fail = 1;
       return;
     }
 
   g_message ("Expecting proxy %p, weak object %p", want_proxy, want_object);
 
-  MYASSERT (signal_conn->proxy == want_proxy);
-  MYASSERT (signal_conn->weak_object == want_object);
+  MYASSERT (proxy == want_proxy);
+  MYASSERT (weak_object == want_object);
 
   if (tp_intset_is_member (caught_signal, TEST_A) &&
       tp_intset_is_member (caught_signal, TEST_Z))
