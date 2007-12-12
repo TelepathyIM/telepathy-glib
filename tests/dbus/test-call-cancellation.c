@@ -223,12 +223,12 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (method_ok, TEST_D), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_D), "");
 
-  /* e gets its signal connection cancelled explicitly */
+  /* e gets its method call cancelled explicitly */
   g_message ("Starting call on e");
   pc = tp_cli_dbus_daemon_call_list_names (e, -1, listed_names, PTR (TEST_E),
       destroy_user_data, NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_E), "");
-  g_message ("Disconnecting signal from e");
+  g_message ("Cancelling call on e");
   tp_proxy_pending_call_cancel (pc);
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_E), "");
