@@ -47,7 +47,7 @@ gpointer copy_of_d;
           g_critical ("Assertion failed: %s" m, #x, ##__VA_ARGS__); \
           fail = 1; \
         } \
-  } while(0)
+  } while (0)
 
 enum {
     TEST_A,
