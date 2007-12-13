@@ -1573,6 +1573,17 @@ tp_stream_engine_remove_output_window (TpStreamEngine *obj,
 }
 
 
+static void
+handler_result (TpStreamEngineChannel *chan,
+                GError *error,
+                DBusGMethodInvocation *context)
+{
+  if (error == NULL)
+    stream_engine_svc_channel_handler_return_from_handle_channel (context);
+  else
+    dbus_g_method_return_error (context, error);
+}
+
 /**
  * tp_stream_engine_handle_channel
  *
@@ -1622,6 +1633,8 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
   g_ptr_array_add (obj->priv->channels, chan);
   g_hash_table_insert (obj->priv->channels_by_path, g_strdup (channel), chan);
 
+  g_signal_connect (chan, "handler-result", G_CALLBACK (handler_result),
+      context);
   g_signal_connect (chan, "closed", G_CALLBACK (channel_closed), obj);
   g_signal_connect (chan, "stream-state-changed",
       G_CALLBACK (channel_stream_state_changed), obj);
@@ -1629,8 +1642,6 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
       G_CALLBACK (channel_stream_receiving), obj);
 
   g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
-
-  stream_engine_svc_channel_handler_return_from_handle_channel (context);
 }
 
 void

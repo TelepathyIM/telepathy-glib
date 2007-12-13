@@ -55,6 +55,7 @@ struct _TpStreamEngineChannelPrivate
   GPtrArray *streams;
 
   gulong channel_destroy_handler;
+  gulong channel_ready_handler;
 };
 
 enum
@@ -72,6 +73,7 @@ enum
   STREAM_CREATED,
   STREAM_STATE_CHANGED,
   STREAM_RECEIVING,
+  HANDLER_RESULT,
   SIGNAL_COUNT
 };
 
@@ -328,6 +330,57 @@ cb_properties_listed (TpProxy *proxy,
   g_array_free (get_properties, TRUE);
 }
 
+static void
+channel_ready (TpChannel *channel_proxy,
+               const gchar *channel_type,
+               guint handle_type,
+               guint handle,
+               const gchar * const * interfaces,
+               TpStreamEngineChannel *self)
+{
+  TpProxy *as_proxy = (TpProxy *) channel_proxy;
+
+  g_signal_handler_disconnect (channel_proxy,
+      self->priv->channel_ready_handler);
+  self->priv->channel_ready_handler = 0;
+
+  if (tp_proxy_borrow_interface_by_id (as_proxy,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING, NULL) == NULL)
+    {
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+        "Stream Engine was passed a channel that does not implement "
+        TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING };
+
+      g_message ("%s", e.message);
+      g_signal_emit (self, signals[HANDLER_RESULT], 0, &e);
+      return;
+    }
+
+  g_signal_emit (self, signals[HANDLER_RESULT], 0, NULL);
+
+  if (tp_proxy_borrow_interface_by_id (as_proxy,
+        TP_IFACE_QUARK_PROPERTIES_INTERFACE, NULL) == NULL)
+    {
+      /* no point doing properties manipulation on a channel with none */
+      g_message ("Channel has no properties: %s", as_proxy->object_path);
+    }
+  else
+    {
+      /* FIXME: it'd be good to use the replacement for TpPropsIface, when it
+       * exists */
+      tp_cli_properties_interface_connect_to_properties_changed (channel_proxy,
+          cb_properties_changed, NULL, NULL, (GObject *) self);
+      tp_cli_properties_interface_call_list_properties (channel_proxy, -1,
+          cb_properties_listed, NULL, NULL, (GObject *) self);
+    }
+
+  tp_cli_channel_interface_media_signalling_connect_to_new_session_handler
+      (channel_proxy, new_media_session_handler, NULL, NULL, (GObject *) self);
+  tp_cli_channel_interface_media_signalling_call_get_session_handlers
+      (channel_proxy, -1, get_session_handlers_reply, NULL, NULL,
+       (GObject *) self);
+}
+
 static GObject *
 tp_stream_engine_channel_constructor (GType type,
                                       guint n_props,
@@ -342,23 +395,11 @@ tp_stream_engine_channel_constructor (GType type,
   self = (TpStreamEngineChannel *) obj;
   priv = CHANNEL_PRIVATE (self);
 
+  priv->channel_ready_handler = g_signal_connect (priv->channel_proxy,
+      "channel-ready", G_CALLBACK (channel_ready), obj);
+
   priv->channel_destroy_handler = g_signal_connect (priv->channel_proxy,
       "destroyed", G_CALLBACK (channel_destroyed), obj);
-
-  /* FIXME: it'd be good to use the replacement for TpPropsIface, when it
-   * exists */
-
-  tp_cli_properties_interface_connect_to_properties_changed
-      (priv->channel_proxy, cb_properties_changed, NULL, NULL, obj);
-
-  tp_cli_properties_interface_call_list_properties (priv->channel_proxy,
-      -1, cb_properties_listed, NULL, NULL, obj);
-
-  tp_cli_channel_interface_media_signalling_connect_to_new_session_handler
-      (priv->channel_proxy, new_media_session_handler, NULL, NULL, obj);
-
-  tp_cli_channel_interface_media_signalling_call_get_session_handlers
-      (priv->channel_proxy, -1, get_session_handlers_reply, NULL, NULL, obj);
 
   return obj;
 }
@@ -488,6 +529,11 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
       G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_VIDEO_PIPELINE,
       param_spec);
+
+  signals[HANDLER_RESULT] = g_signal_new ("handler-result",
+      G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0, NULL, NULL, g_cclosure_marshal_VOID__POINTER, G_TYPE_NONE,
+      1, G_TYPE_POINTER);
 
   signals[CLOSED] =
     g_signal_new ("closed",
@@ -709,7 +755,12 @@ shutdown_channel (TpStreamEngineChannel *self)
 
   if (priv->channel_proxy != NULL)
     {
-      TpChannel *tmp;
+      if (priv->channel_ready_handler)
+        {
+          g_signal_handler_disconnect (
+            priv->channel_proxy, priv->channel_ready_handler);
+          priv->channel_ready_handler = 0;
+        }
 
       if (priv->channel_destroy_handler)
         {
@@ -727,6 +778,16 @@ channel_destroyed (TpChannel *channel_proxy,
                    const GError *error,
                    TpStreamEngineChannel *self)
 {
+  if (self->priv->channel_ready_handler != 0)
+    {
+      /* we haven't yet decided whether to handle this channel - do it now */
+      g_signal_handler_disconnect (channel_proxy,
+          self->priv->channel_ready_handler);
+      self->priv->channel_ready_handler = 0;
+
+      g_signal_emit (self, signals[HANDLER_RESULT], 0, error);
+    }
+
   shutdown_channel (self);
 }
 
@@ -791,12 +852,6 @@ tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
       handle_type, handle, error);
 
   if (channel_proxy == NULL)
-    {
-      return NULL;
-    }
-
-  if (tp_proxy_borrow_interface_by_id ((TpProxy *) channel_proxy,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING, error) == NULL)
     {
       return NULL;
     }

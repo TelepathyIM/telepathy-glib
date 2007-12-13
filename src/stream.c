@@ -165,7 +165,7 @@ static void prepare_transports (TpStreamEngineStream *self);
 
 static void stop_stream (TpStreamEngineStream *self);
 
-static void destroy_cb (TpProxy *proxy, gpointer user_data);
+static void destroy_cb (TpProxy *proxy, GError *error, gpointer user_data);
 
 static void
 _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
@@ -1498,6 +1498,7 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 
 static void
 destroy_cb (TpProxy *proxy,
+            GError *error,
             gpointer user_data)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
