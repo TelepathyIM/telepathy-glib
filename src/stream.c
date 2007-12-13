@@ -50,9 +50,7 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
     G_STRFUNC, \
     ##__VA_ARGS__)
 
-#define STREAM_PRIVATE(o) ((TpStreamEngineStreamPrivate *)((o)->priv))
-
-typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
+#define STREAM_PRIVATE(o) ((o)->priv)
 
 struct _TpStreamEngineStreamPrivate
 {

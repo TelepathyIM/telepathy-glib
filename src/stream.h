@@ -30,10 +30,12 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
   TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamClass))
 
+typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
+
 typedef struct {
   GObject parent;
 
-  gpointer priv;
+  TpStreamEngineStreamPrivate *priv;
 } TpStreamEngineStream;
 
 typedef struct {
