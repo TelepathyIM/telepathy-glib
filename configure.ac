@@ -93,7 +93,7 @@ AC_SUBST(DBUS_SERVICES_DIR)
 AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [DBus services directory])
 
 dnl Check for Telepathy libraries
-PKG_CHECK_MODULES([TELEPATHY], [libtelepathy >= 0.3.1 telepathy-glib >= 0.7.0])
+PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.7.1])
 
 AC_SUBST(TELEPATHY_CFLAGS)
 AC_SUBST(TELEPATHY_LIBS)
