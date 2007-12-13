@@ -364,26 +364,26 @@ tp_stream_engine_session_new (const gchar *bus_name,
                               const gchar *session_type,
                               GError **error)
 {
-  TpStreamEngineSession *ret;
+  TpStreamEngineSession *self;
 
   g_return_val_if_fail (bus_name != NULL, NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (session_type != NULL, NULL);
 
-  ret = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION,
+  self = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION,
       "bus-name", bus_name,
       "object-path", object_path,
       "session-type", session_type,
       NULL);
 
-  if (ret->priv->fs_session == NULL)
+  if (self->priv->fs_session == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "requested session type not found");
-      g_object_unref (ret);
+      g_object_unref (self);
       return NULL;
     }
 
-  return ret;
+  return self;
 }
 
