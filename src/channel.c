@@ -717,12 +717,6 @@ shutdown_channel (TpStreamEngineChannel *self)
             priv->channel_proxy, priv->channel_destroy_handler);
           priv->channel_destroy_handler = 0;
         }
-
-      /* We shouldn't try to use the channel proxy any more, although
-       * it won't actually be fatal to use it now. */
-      tmp = priv->channel_proxy;
-      priv->channel_proxy = NULL;
-      g_object_unref (tmp);
     }
 
   g_signal_emit (self, signals[CLOSED], 0);
