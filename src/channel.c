@@ -658,17 +658,24 @@ add_session (TpStreamEngineChannel *self,
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpStreamEngineSession *session;
-  gchar *bus_name;
   GError *error = NULL;
+  TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
+  TpMediaSessionHandler *proxy;
 
   g_debug ("adding session handler %s, type %s", object_path, session_type);
 
-  g_object_get (priv->channel_proxy, "bus-name", &bus_name, NULL);
+  proxy = tp_media_session_handler_new (channel_as_proxy->dbus_daemon,
+      channel_as_proxy->bus_name, object_path, &error);
 
-  session = tp_stream_engine_session_new (bus_name, object_path,
-      session_type, &error);
+  if (proxy == NULL)
+    {
+      g_warning ("failed to construct TpMediaSessionHandler: %s",
+          error->message);
+      g_error_free (error);
+      return;
+    }
 
-  g_free (bus_name);
+  session = tp_stream_engine_session_new (proxy, session_type, &error);
 
   if (session == NULL)
     {

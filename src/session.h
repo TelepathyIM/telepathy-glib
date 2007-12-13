@@ -2,6 +2,7 @@
 #define __TP_STREAM_ENGINE_SESSION_H__
 
 #include <glib-object.h>
+#include <telepathy-glib/media-interfaces.h>
 
 G_BEGIN_DECLS
 
@@ -42,8 +43,7 @@ typedef struct {
 GType tp_stream_engine_session_get_type (void);
 
 TpStreamEngineSession *
-tp_stream_engine_session_new (const gchar *bus_name,
-                              const gchar *object_path,
+tp_stream_engine_session_new (TpMediaSessionHandler *proxy,
                               const gchar *session_type,
                               GError **error);
 

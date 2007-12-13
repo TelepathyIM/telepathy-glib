@@ -18,7 +18,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libtelepathy/tp-media-session-handler-gen.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
@@ -38,13 +37,12 @@ struct _TpStreamEngineSessionPrivate
   gchar *session_type;
   FarsightSession *fs_session;
 
-  DBusGProxy *session_handler_proxy;
+  TpMediaSessionHandler *session_handler_proxy;
 };
 
 enum
 {
-  PROP_BUS_NAME = 1,
-  PROP_OBJECT_PATH,
+  PROP_PROXY = 1,
   PROP_SESSION_TYPE,
   PROP_FARSIGHT_SESSION
 };
@@ -76,17 +74,14 @@ tp_stream_engine_session_get_property (GObject    *object,
 
   switch (property_id)
     {
-    case PROP_BUS_NAME:
-      g_value_set_string (value, self->priv->bus_name);
-      break;
-    case PROP_OBJECT_PATH:
-      g_value_set_string (value, self->priv->object_path);
-      break;
     case PROP_SESSION_TYPE:
       g_value_set_string (value, self->priv->session_type);
       break;
     case PROP_FARSIGHT_SESSION:
       g_value_set_object (value, self->priv->fs_session);
+      break;
+    case PROP_PROXY:
+      g_value_set_object (value, self->priv->session_handler_proxy);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -104,14 +99,12 @@ tp_stream_engine_session_set_property (GObject      *object,
 
   switch (property_id)
     {
-    case PROP_BUS_NAME:
-      self->priv->bus_name = g_value_dup_string (value);
-      break;
-    case PROP_OBJECT_PATH:
-      self->priv->object_path = g_value_dup_string (value);
-      break;
     case PROP_SESSION_TYPE:
       self->priv->session_type = g_value_dup_string (value);
+      break;
+    case PROP_PROXY:
+      self->priv->session_handler_proxy =
+          TP_MEDIA_SESSION_HANDLER (g_value_dup_object (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -119,15 +112,15 @@ tp_stream_engine_session_set_property (GObject      *object,
     }
 }
 
-static void new_media_stream_handler (DBusGProxy *proxy,
-    gchar *stream_handler_path, guint id, guint media_type, guint direction,
-    gpointer user_data);
+static void new_media_stream_handler (TpProxy *proxy,
+    const gchar *stream_handler_path, guint id, guint media_type,
+    guint direction, gpointer user_data, GObject *object);
 
 static void cb_fs_session_error (FarsightSession *stream,
     FarsightSessionError error, const gchar *debug, gpointer user_data);
 
-static void dummy_callback (DBusGProxy *proxy, GError *error,
-    gpointer user_data);
+static void dummy_callback (TpProxy *proxy, const GError *error,
+    gpointer user_data, GObject *object);
 
 static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
 
@@ -157,29 +150,20 @@ tp_stream_engine_session_constructor (GType type,
       farsight_plugin_get_description (self->priv->fs_session->plugin),
       farsight_plugin_get_author (self->priv->fs_session->plugin));
 
-  self->priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus (),
-      self->priv->bus_name,
-      self->priv->object_path,
-      TP_IFACE_MEDIA_SESSION_HANDLER);
-
-  g_signal_connect (self->priv->session_handler_proxy, "destroy",
+  g_signal_connect (self->priv->session_handler_proxy, "destroyed",
       G_CALLBACK (destroy_cb), obj);
 
   g_signal_connect (G_OBJECT (self->priv->fs_session), "error",
       G_CALLBACK (cb_fs_session_error), self->priv->session_handler_proxy);
 
-  /* tell the proxy about the NewStreamHandler signal*/
-  dbus_g_proxy_add_signal (self->priv->session_handler_proxy, "NewStreamHandler",
-      DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
-      G_TYPE_INVALID);
-
-  dbus_g_proxy_connect_signal (self->priv->session_handler_proxy, "NewStreamHandler",
-      G_CALLBACK (new_media_stream_handler), obj, NULL);
+  tp_cli_media_session_handler_connect_to_new_stream_handler
+      (self->priv->session_handler_proxy, new_media_stream_handler, NULL, NULL,
+       obj);
 
   g_debug ("calling MediaSessionHandler::Ready");
 
-  tp_media_session_handler_ready_async (self->priv->session_handler_proxy,
-      dummy_callback, "Media.SessionHandler::Ready");
+  tp_cli_media_session_handler_call_ready (self->priv->session_handler_proxy,
+      -1, dummy_callback, "Media.SessionHandler::Ready", NULL, NULL);
 
   return obj;
 }
@@ -193,14 +177,7 @@ tp_stream_engine_session_dispose (GObject *object)
 
   if (self->priv->session_handler_proxy)
     {
-      DBusGProxy *tmp;
-
-      g_debug ("%s: disconnecting signals from session handler proxy",
-        G_STRFUNC);
-
-      dbus_g_proxy_disconnect_signal (
-          self->priv->session_handler_proxy, "NewStreamHandler",
-          G_CALLBACK (new_media_stream_handler), self);
+      TpMediaSessionHandler *tmp;
 
       g_signal_handlers_disconnect_by_func (
           self->priv->session_handler_proxy, destroy_cb, self);
@@ -244,28 +221,6 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
 
   object_class->dispose = tp_stream_engine_session_dispose;
 
-  param_spec = g_param_spec_string ("bus-name",
-                                    "session handler bus name",
-                                    "D-Bus bus name for the session handler "
-                                    "which this session interacts with.",
-                                    NULL,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_BUS_NAME, param_spec);
-
-  param_spec = g_param_spec_string ("object-path",
-                                    "session handler object path",
-                                    "D-Bus object path of the session handler "
-                                    "which this session interacts with.",
-                                    NULL,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
-
   param_spec = g_param_spec_string ("session-type",
                                     "Farsight session type",
                                     "Name of the Farsight session type this "
@@ -289,6 +244,13 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
   g_object_class_install_property (object_class, PROP_FARSIGHT_SESSION,
       param_spec);
 
+  param_spec = g_param_spec_object ("proxy", "TpMediaSessionHandler proxy",
+      "The session handler proxy which this session interacts with.",
+      TP_TYPE_MEDIA_SESSION_HANDLER,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_PROXY, param_spec);
+
   signals[NEW_STREAM] =
     g_signal_new ("new-stream",
                   G_OBJECT_CLASS_TYPE (klass),
@@ -302,12 +264,14 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
 
 /* dummy callback handler for async calling calls with no return values */
 static void
-dummy_callback (DBusGProxy *proxy, GError *error, gpointer user_data)
+dummy_callback (TpProxy *proxy,
+                const GError *error,
+                gpointer user_data,
+                GObject *weak_object)
 {
-  if (error)
+  if (error != NULL)
     {
       g_warning ("Error calling %s: %s", (gchar *) user_data, error->message);
-      g_error_free (error);
     }
 }
 
@@ -321,19 +285,19 @@ cb_fs_session_error (FarsightSession *session,
 
   g_message (
     "%s: session error: session=%p error=%s\n", G_STRFUNC, session, debug);
-  tp_media_session_handler_error_async (
-    session_handler_proxy, error, debug, dummy_callback,
-    "Media.SessionHandler::Error");
+  tp_cli_media_session_handler_call_error (session_handler_proxy, -1, error,
+      debug, dummy_callback, "Media.SessionHandler::Error", NULL, NULL);
 }
 
 static void
-destroy_cb (DBusGProxy *proxy, gpointer user_data)
+destroy_cb (DBusGProxy *proxy,
+            gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
 
   if (self->priv->session_handler_proxy)
     {
-      DBusGProxy *tmp;
+      TpMediaSessionHandler *tmp;
 
       tmp = self->priv->session_handler_proxy;
       self->priv->session_handler_proxy = NULL;
@@ -342,14 +306,15 @@ destroy_cb (DBusGProxy *proxy, gpointer user_data)
 }
 
 static void
-new_media_stream_handler (DBusGProxy *proxy,
-                          gchar *object_path,
+new_media_stream_handler (TpProxy *proxy,
+                          const gchar *object_path,
                           guint stream_id,
                           guint media_type,
                           guint direction,
-                          gpointer user_data)
+                          gpointer user_data,
+                          GObject *object)
 {
-  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (object);
 
   g_debug ("New stream, stream_id=%d, media_type=%d, direction=%d",
       stream_id, media_type, direction);
@@ -359,20 +324,17 @@ new_media_stream_handler (DBusGProxy *proxy,
 }
 
 TpStreamEngineSession *
-tp_stream_engine_session_new (const gchar *bus_name,
-                              const gchar *object_path,
+tp_stream_engine_session_new (TpMediaSessionHandler *proxy,
                               const gchar *session_type,
                               GError **error)
 {
   TpStreamEngineSession *self;
 
-  g_return_val_if_fail (bus_name != NULL, NULL);
-  g_return_val_if_fail (object_path != NULL, NULL);
+  g_return_val_if_fail (proxy != NULL, NULL);
   g_return_val_if_fail (session_type != NULL, NULL);
 
   self = g_object_new (TP_STREAM_ENGINE_TYPE_SESSION,
-      "bus-name", bus_name,
-      "object-path", object_path,
+      "proxy", proxy,
       "session-type", session_type,
       NULL);
 
