@@ -706,7 +706,6 @@ shutdown_channel (TpStreamEngineChannel *self)
 {
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
-  /* */
   if (priv->channel_proxy != NULL)
     {
       TpChannel *tmp;
