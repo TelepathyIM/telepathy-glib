@@ -737,7 +737,7 @@ get_session_handlers_reply (TpProxy *proxy,
                             gpointer user_data,
                             GObject *weak_object)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
+  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (weak_object);
   guint i;
 
   if (error)
