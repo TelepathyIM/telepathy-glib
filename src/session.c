@@ -31,9 +31,7 @@
 
 G_DEFINE_TYPE (TpStreamEngineSession, tp_stream_engine_session, G_TYPE_OBJECT);
 
-#define SESSION_PRIVATE(o) ((TpStreamEngineSessionPrivate *)((o)->priv))
-
-typedef struct _TpStreamEngineSessionPrivate TpStreamEngineSessionPrivate;
+#define SESSION_PRIVATE(o) ((o)->priv)
 
 struct _TpStreamEngineSessionPrivate
 {

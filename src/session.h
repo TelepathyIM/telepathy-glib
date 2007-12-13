@@ -27,10 +27,12 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
   TP_STREAM_ENGINE_TYPE_SESSION, TpStreamEngineSessionClass))
 
+typedef struct _TpStreamEngineSessionPrivate TpStreamEngineSessionPrivate;
+
 typedef struct {
   GObject parent;
 
-  gpointer priv;
+  TpStreamEngineSessionPrivate *priv;
 } TpStreamEngineSession;
 
 typedef struct {
