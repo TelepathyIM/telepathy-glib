@@ -755,12 +755,8 @@ shutdown_channel (TpStreamEngineChannel *self)
 
   if (priv->channel_proxy != NULL)
     {
-      if (priv->channel_ready_handler)
-        {
-          g_signal_handler_disconnect (
-            priv->channel_proxy, priv->channel_ready_handler);
-          priv->channel_ready_handler = 0;
-        }
+      /* I've ensured that this is true everywhere this function is called */
+      g_assert (priv->channel_ready_handler == 0);
 
       if (priv->channel_destroy_handler)
         {
@@ -877,6 +873,20 @@ tp_stream_engine_channel_error (TpStreamEngineChannel *self,
     if (g_ptr_array_index (priv->streams, i) != NULL)
       tp_stream_engine_stream_error (g_ptr_array_index (priv->streams, i),
           error, message);
+
+  if (self->priv->channel_ready_handler != 0)
+    {
+      /* we haven't yet decided whether we're handling this channel. This
+       * seems an unlikely situation at this point, but for the sake of
+       * returning *something* from HandleChannel, let's claim we are */
+
+      g_signal_emit (self, signals[HANDLER_RESULT], 0, NULL);
+
+      /* if the channel becomes ready, we no longer want to know */
+      g_signal_handler_disconnect (self->priv->channel_proxy,
+          self->priv->channel_ready_handler);
+      self->priv->channel_ready_handler = 0;
+    }
 
   shutdown_channel (self);
 }
