@@ -31,8 +31,6 @@
 
 G_DEFINE_TYPE (TpStreamEngineSession, tp_stream_engine_session, G_TYPE_OBJECT);
 
-#define SESSION_PRIVATE(o) ((o)->priv)
-
 struct _TpStreamEngineSessionPrivate
 {
   gchar *bus_name;
@@ -75,21 +73,20 @@ tp_stream_engine_session_get_property (GObject    *object,
                                        GParamSpec *pspec)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (object);
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
   switch (property_id)
     {
     case PROP_BUS_NAME:
-      g_value_set_string (value, priv->bus_name);
+      g_value_set_string (value, self->priv->bus_name);
       break;
     case PROP_OBJECT_PATH:
-      g_value_set_string (value, priv->object_path);
+      g_value_set_string (value, self->priv->object_path);
       break;
     case PROP_SESSION_TYPE:
-      g_value_set_string (value, priv->session_type);
+      g_value_set_string (value, self->priv->session_type);
       break;
     case PROP_FARSIGHT_SESSION:
-      g_value_set_object (value, priv->fs_session);
+      g_value_set_object (value, self->priv->fs_session);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -104,18 +101,17 @@ tp_stream_engine_session_set_property (GObject      *object,
                                        GParamSpec   *pspec)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (object);
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
   switch (property_id)
     {
     case PROP_BUS_NAME:
-      priv->bus_name = g_value_dup_string (value);
+      self->priv->bus_name = g_value_dup_string (value);
       break;
     case PROP_OBJECT_PATH:
-      priv->object_path = g_value_dup_string (value);
+      self->priv->object_path = g_value_dup_string (value);
       break;
     case PROP_SESSION_TYPE:
-      priv->session_type = g_value_dup_string (value);
+      self->priv->session_type = g_value_dup_string (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -142,49 +138,47 @@ tp_stream_engine_session_constructor (GType type,
 {
   GObject *obj;
   TpStreamEngineSession *self;
-  TpStreamEngineSessionPrivate *priv;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_session_parent_class)->
            constructor (type, n_props, props);
   self = (TpStreamEngineSession *) obj;
-  priv = SESSION_PRIVATE (self);
 
-  priv->fs_session = farsight_session_factory_make (priv->session_type);
+  self->priv->fs_session = farsight_session_factory_make (self->priv->session_type);
 
   /* TODO: signal an error back to the connection manager */
-  if (priv->fs_session == NULL)
+  if (self->priv->fs_session == NULL)
     {
       g_warning ("requested session type was not found, session is unusable!");
       return obj;
     }
 
   g_debug ("plugin details:\n name: %s\n description: %s\n author: %s",
-      farsight_plugin_get_name (priv->fs_session->plugin),
-      farsight_plugin_get_description (priv->fs_session->plugin),
-      farsight_plugin_get_author (priv->fs_session->plugin));
+      farsight_plugin_get_name (self->priv->fs_session->plugin),
+      farsight_plugin_get_description (self->priv->fs_session->plugin),
+      farsight_plugin_get_author (self->priv->fs_session->plugin));
 
-  priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus (),
-      priv->bus_name,
-      priv->object_path,
+  self->priv->session_handler_proxy = dbus_g_proxy_new_for_name (tp_get_bus (),
+      self->priv->bus_name,
+      self->priv->object_path,
       TP_IFACE_MEDIA_SESSION_HANDLER);
 
-  g_signal_connect (priv->session_handler_proxy, "destroy",
+  g_signal_connect (self->priv->session_handler_proxy, "destroy",
       G_CALLBACK (destroy_cb), obj);
 
-  g_signal_connect (G_OBJECT (priv->fs_session), "error",
-      G_CALLBACK (cb_fs_session_error), priv->session_handler_proxy);
+  g_signal_connect (G_OBJECT (self->priv->fs_session), "error",
+      G_CALLBACK (cb_fs_session_error), self->priv->session_handler_proxy);
 
   /* tell the proxy about the NewStreamHandler signal*/
-  dbus_g_proxy_add_signal (priv->session_handler_proxy, "NewStreamHandler",
+  dbus_g_proxy_add_signal (self->priv->session_handler_proxy, "NewStreamHandler",
       DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
       G_TYPE_INVALID);
 
-  dbus_g_proxy_connect_signal (priv->session_handler_proxy, "NewStreamHandler",
+  dbus_g_proxy_connect_signal (self->priv->session_handler_proxy, "NewStreamHandler",
       G_CALLBACK (new_media_stream_handler), obj, NULL);
 
   g_debug ("calling MediaSessionHandler::Ready");
 
-  tp_media_session_handler_ready_async (priv->session_handler_proxy,
+  tp_media_session_handler_ready_async (self->priv->session_handler_proxy,
       dummy_callback, "Media.SessionHandler::Ready");
 
   return obj;
@@ -194,11 +188,10 @@ static void
 tp_stream_engine_session_dispose (GObject *object)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (object);
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
   g_debug (G_STRFUNC);
 
-  if (priv->session_handler_proxy)
+  if (self->priv->session_handler_proxy)
     {
       DBusGProxy *tmp;
 
@@ -206,31 +199,31 @@ tp_stream_engine_session_dispose (GObject *object)
         G_STRFUNC);
 
       dbus_g_proxy_disconnect_signal (
-          priv->session_handler_proxy, "NewStreamHandler",
+          self->priv->session_handler_proxy, "NewStreamHandler",
           G_CALLBACK (new_media_stream_handler), self);
 
       g_signal_handlers_disconnect_by_func (
-          priv->session_handler_proxy, destroy_cb, self);
+          self->priv->session_handler_proxy, destroy_cb, self);
 
-      tmp = priv->session_handler_proxy;
-      priv->session_handler_proxy = NULL;
+      tmp = self->priv->session_handler_proxy;
+      self->priv->session_handler_proxy = NULL;
       g_object_unref (tmp);
     }
 
-  if (priv->fs_session)
+  if (self->priv->fs_session)
     {
-      g_object_unref (priv->fs_session);
-      priv->fs_session = NULL;
+      g_object_unref (self->priv->fs_session);
+      self->priv->fs_session = NULL;
     }
 
-  g_free (priv->bus_name);
-  priv->bus_name = NULL;
+  g_free (self->priv->bus_name);
+  self->priv->bus_name = NULL;
 
-  g_free (priv->object_path);
-  priv->object_path = NULL;
+  g_free (self->priv->object_path);
+  self->priv->object_path = NULL;
 
-  g_free (priv->session_type);
-  priv->session_type = NULL;
+  g_free (self->priv->session_type);
+  self->priv->session_type = NULL;
 
   if (G_OBJECT_CLASS (tp_stream_engine_session_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_session_parent_class)->dispose (object);
@@ -337,14 +330,13 @@ static void
 destroy_cb (DBusGProxy *proxy, gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
-  TpStreamEngineSessionPrivate *priv = SESSION_PRIVATE (self);
 
-  if (priv->session_handler_proxy)
+  if (self->priv->session_handler_proxy)
     {
       DBusGProxy *tmp;
 
-      tmp = priv->session_handler_proxy;
-      priv->session_handler_proxy = NULL;
+      tmp = self->priv->session_handler_proxy;
+      self->priv->session_handler_proxy = NULL;
       g_object_unref (tmp);
     }
 }
@@ -373,7 +365,6 @@ tp_stream_engine_session_new (const gchar *bus_name,
                               GError **error)
 {
   TpStreamEngineSession *ret;
-  TpStreamEngineSessionPrivate *priv;
 
   g_return_val_if_fail (bus_name != NULL, NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
@@ -385,9 +376,7 @@ tp_stream_engine_session_new (const gchar *bus_name,
       "session-type", session_type,
       NULL);
 
-  priv = SESSION_PRIVATE (ret);
-
-  if (priv->fs_session == NULL)
+  if (ret->priv->fs_session == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "requested session type not found");
