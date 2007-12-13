@@ -44,9 +44,9 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
 #define DEBUG(stream, format, ...) \
   g_debug ("stream %d (%s) %s: " format, \
-    ((TpStreamEngineStreamPrivate *) STREAM_PRIVATE(stream))->stream_id, \
-    ((TpStreamEngineStreamPrivate *) STREAM_PRIVATE(stream))->media_type \
-      == FARSIGHT_MEDIA_TYPE_AUDIO ? "audio" : "video", \
+    stream->priv->stream_id, \
+    (stream->priv->media_type == FARSIGHT_MEDIA_TYPE_AUDIO) ? "audio" \
+                                                            : "video", \
     G_STRFUNC, \
     ##__VA_ARGS__)
 
@@ -217,40 +217,39 @@ tp_stream_engine_stream_get_property (GObject    *object,
                                       GParamSpec *pspec)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   switch (property_id)
     {
     case PROP_FARSIGHT_SESSION:
-      g_value_set_object (value, priv->fs_session);
+      g_value_set_object (value, self->priv->fs_session);
       break;
     case PROP_PROXY:
-      g_value_set_object (value, priv->stream_handler_proxy);
+      g_value_set_object (value, self->priv->stream_handler_proxy);
       break;
     case PROP_STREAM_ID:
-      g_value_set_uint (value, priv->stream_id);
+      g_value_set_uint (value, self->priv->stream_id);
       break;
     case PROP_MEDIA_TYPE:
-      g_value_set_uint (value, priv->media_type);
+      g_value_set_uint (value, self->priv->media_type);
       break;
     case PROP_DIRECTION:
-      g_value_set_uint (value, priv->direction);
+      g_value_set_uint (value, self->priv->direction);
       break;
     case PROP_NAT_PROPERTIES:
       g_value_set_pointer (value,
-          (TpStreamEngineNatProperties *) priv->nat_props);
+          (TpStreamEngineNatProperties *) self->priv->nat_props);
       break;
     case PROP_PIPELINE:
       g_value_set_object (value,
-          farsight_stream_get_pipeline (priv->fs_stream));
+          farsight_stream_get_pipeline (self->priv->fs_stream));
       break;
     case PROP_SOURCE:
       g_value_set_object (value,
-          farsight_stream_get_source (priv->fs_stream));
+          farsight_stream_get_source (self->priv->fs_stream));
       break;
     case PROP_SINK:
       g_value_set_object (value,
-          farsight_stream_get_sink (priv->fs_stream));
+          farsight_stream_get_sink (self->priv->fs_stream));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -265,39 +264,38 @@ tp_stream_engine_stream_set_property (GObject      *object,
                                       GParamSpec   *pspec)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   switch (property_id)
     {
     case PROP_FARSIGHT_SESSION:
-      priv->fs_session = FARSIGHT_SESSION (g_value_dup_object (value));
+      self->priv->fs_session = FARSIGHT_SESSION (g_value_dup_object (value));
       break;
     case PROP_PROXY:
-      priv->stream_handler_proxy =
+      self->priv->stream_handler_proxy =
           TP_MEDIA_STREAM_HANDLER (g_value_dup_object (value));
       break;
     case PROP_STREAM_ID:
-      priv->stream_id = g_value_get_uint (value);
+      self->priv->stream_id = g_value_get_uint (value);
       break;
     case PROP_MEDIA_TYPE:
-      priv->media_type = g_value_get_uint (value);
+      self->priv->media_type = g_value_get_uint (value);
       break;
     case PROP_DIRECTION:
-      priv->direction = g_value_get_uint (value);
+      self->priv->direction = g_value_get_uint (value);
       break;
     case PROP_NAT_PROPERTIES:
-      priv->nat_props = g_value_get_pointer (value);
+      self->priv->nat_props = g_value_get_pointer (value);
       break;
     case PROP_PIPELINE:
-      g_assert (priv->pipeline == NULL);
-      priv->pipeline = (GstBin *) g_value_dup_object (value);
+      g_assert (self->priv->pipeline == NULL);
+      self->priv->pipeline = (GstBin *) g_value_dup_object (value);
       break;
     case PROP_SOURCE:
-      farsight_stream_set_source (priv->fs_stream,
+      farsight_stream_set_source (self->priv->fs_stream,
           g_value_get_object (value));
       break;
     case PROP_SINK:
-      farsight_stream_set_sink (priv->fs_stream,
+      farsight_stream_set_sink (self->priv->fs_stream,
           g_value_get_object (value));
       break;
     default:
@@ -320,7 +318,7 @@ tp_stream_engine_stream_constructor (GType type,
   obj = G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->
             constructor (type, n_props, props);
   stream = (TpStreamEngineStream *) obj;
-  priv = STREAM_PRIVATE (stream);
+  priv = stream->priv;
 
   g_signal_connect (priv->stream_handler_proxy, "destroyed",
       G_CALLBACK (destroy_cb), obj);
@@ -417,7 +415,7 @@ static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+  TpStreamEngineStreamPrivate *priv = stream->priv;
 
   g_assert (priv->pipeline == NULL);
 
@@ -646,7 +644,6 @@ cb_fs_state_changed (FarsightStream *stream,
                      gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   const gchar *state_str = "invalid!", *dir_str = "invalid!";
 
   switch (state)
@@ -683,14 +680,14 @@ cb_fs_state_changed (FarsightStream *stream,
   DEBUG (self, "stream %p, state: %s, direction: %s", stream, state_str,
       dir_str);
 
-  if (priv->state != state || priv->dir != dir)
+  if (self->priv->state != state || self->priv->dir != dir)
     {
       g_signal_emit (self, signals[STATE_CHANGED], 0, state, dir);
     }
 
-  if (priv->state != state)
+  if (self->priv->state != state)
     {
-      if (priv->stream_handler_proxy)
+      if (self->priv->stream_handler_proxy)
         {
           method_call_ctx *ctx = g_slice_new0 (method_call_ctx);
 
@@ -698,16 +695,17 @@ cb_fs_state_changed (FarsightStream *stream,
           ctx->method = "Media.StreamHandler::StreamState";
 
           tp_cli_media_stream_handler_call_stream_state (
-            priv->stream_handler_proxy, -1, state, async_method_callback, ctx,
-            method_call_ctx_free, (GObject *) self);
+            self->priv->stream_handler_proxy, -1, state,
+            async_method_callback, ctx, method_call_ctx_free,
+            (GObject *) self);
         }
 
-      priv->state = state;
+      self->priv->state = state;
     }
 
-  if (priv->dir != dir)
+  if (self->priv->dir != dir)
     {
-      if ((priv->dir & FARSIGHT_STREAM_DIRECTION_RECEIVEONLY) !=
+      if ((self->priv->dir & FARSIGHT_STREAM_DIRECTION_RECEIVEONLY) !=
           (dir & FARSIGHT_STREAM_DIRECTION_RECEIVEONLY))
         {
           gboolean receiving =
@@ -716,7 +714,7 @@ cb_fs_state_changed (FarsightStream *stream,
           g_signal_emit (self, signals[RECEIVING], 0, receiving);
         }
 
-      priv->dir = dir;
+      self->priv->dir = dir;
     }
 }
 
@@ -726,7 +724,6 @@ cb_fs_new_native_candidate (FarsightStream *stream,
                             gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   const GList *fs_candidates, *lp;
   GPtrArray *transports;
   method_call_ctx *ctx;
@@ -797,7 +794,7 @@ cb_fs_new_native_candidate (FarsightStream *stream,
   ctx->method = "Media.StreamHandler::NativeCandidatesPrepared";
 
   tp_cli_media_stream_handler_call_new_native_candidate (
-      priv->stream_handler_proxy, -1, candidate_id, transports,
+      self->priv->stream_handler_proxy, -1, candidate_id, transports,
       async_method_callback, ctx, method_call_ctx_free, (GObject *) self);
 }
 
@@ -949,13 +946,12 @@ add_remote_candidate (TpProxy *proxy,
                       GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_transports;
 
   fs_transports = tp_transports_to_fs (candidate, transports);
 
   DEBUG (self, "adding remote candidate %s", candidate);
-  farsight_stream_add_remote_candidate (priv->fs_stream, fs_transports);
+  farsight_stream_add_remote_candidate (self->priv->fs_stream, fs_transports);
 
   free_fs_transports (fs_transports);
 }
@@ -967,10 +963,9 @@ remove_remote_candidate (TpProxy *proxy,
                          GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
   DEBUG (self, "removing remote candidate %s", candidate);
-  farsight_stream_remove_remote_candidate (priv->fs_stream, candidate);
+  farsight_stream_remove_remote_candidate (self->priv->fs_stream, candidate);
 }
 
 static void
@@ -981,8 +976,8 @@ set_active_candidate_pair (TpProxy *proxy,
                            GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  farsight_stream_set_active_candidate_pair (priv->fs_stream,
+
+  farsight_stream_set_active_candidate_pair (self->priv->fs_stream,
                                              native_candidate,
                                              remote_candidate);
 }
@@ -994,7 +989,6 @@ set_remote_candidate_list (TpProxy *proxy,
                            GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_transports = NULL;
   GValueArray *candidate = NULL;
   GPtrArray *transports = NULL;
@@ -1018,7 +1012,8 @@ set_remote_candidate_list (TpProxy *proxy,
                         tp_transports_to_fs (candidate_id, transports));
     }
 
-  farsight_stream_set_remote_candidate_list (priv->fs_stream, fs_transports);
+  farsight_stream_set_remote_candidate_list (self->priv->fs_stream,
+      fs_transports);
   free_fs_transports (fs_transports);
 }
 
@@ -1039,7 +1034,6 @@ set_remote_codecs (TpProxy *proxy,
                    GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GList *fs_codecs =NULL, *lp, *lp2;
   GValueArray *codec;
   GHashTable *params = NULL;
@@ -1089,7 +1083,7 @@ set_remote_codecs (TpProxy *proxy,
   }
   fs_codecs = g_list_reverse (fs_codecs);
 
-  if (!farsight_stream_set_remote_codecs (priv->fs_stream, fs_codecs)) {
+  if (!farsight_stream_set_remote_codecs (self->priv->fs_stream, fs_codecs)) {
     /*
      * Call the error method with the proper thing here
      */
@@ -1101,15 +1095,15 @@ set_remote_codecs (TpProxy *proxy,
   tp_stream_engine_stream_mute_input (self, priv->input_mute, NULL);
 
   supp_codecs = fs_codecs_to_tp (
-      farsight_stream_get_codec_intersection (priv->fs_stream));
+      farsight_stream_get_codec_intersection (self->priv->fs_stream));
 
   ctx = g_slice_new0 (method_call_ctx);
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::SupportedCodecs";
 
   tp_cli_media_stream_handler_call_supported_codecs
-    (priv->stream_handler_proxy, -1, supp_codecs, async_method_callback, ctx,
-     method_call_ctx_free, (GObject *) self);
+    (self->priv->stream_handler_proxy, -1, supp_codecs, async_method_callback,
+     ctx, method_call_ctx_free, (GObject *) self);
 
   for (lp = g_list_first (fs_codecs); lp; lp = g_list_next (lp))
     {
@@ -1130,18 +1124,17 @@ set_remote_codecs (TpProxy *proxy,
 static void
 stop_stream (TpStreamEngineStream *self)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GstElement *sink = NULL;
 
-  if (!priv->fs_stream)
+  if (!self->priv->fs_stream)
     return;
 
-  DEBUG (self, "calling stop on farsight stream %p", priv->fs_stream);
+  DEBUG (self, "calling stop on farsight stream %p", self->priv->fs_stream);
 
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
-    sink = farsight_stream_get_sink (priv->fs_stream);
+  if (self->priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
+    sink = farsight_stream_get_sink (self->priv->fs_stream);
 
-  farsight_stream_stop (priv->fs_stream);
+  farsight_stream_stop (self->priv->fs_stream);
 
   if (sink)
     _remove_video_sink (self, sink);
@@ -1154,18 +1147,17 @@ set_stream_playing (TpProxy *proxy,
                     GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  g_assert (priv->fs_stream != NULL);
+  g_assert (self->priv->fs_stream != NULL);
 
   DEBUG (self, "%d", play);
 
   if (play)
     {
-      priv->playing = TRUE;
-      farsight_stream_start (priv->fs_stream);
+      self->priv->playing = TRUE;
+      farsight_stream_start (self->priv->fs_stream);
     }
-  else if (priv->playing)
+  else if (self->priv->playing)
     {
       stop_stream (self);
     }
@@ -1178,13 +1170,12 @@ set_stream_sending (TpProxy *proxy,
                     GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  g_assert (priv->fs_stream != NULL);
+  g_assert (self->priv->fs_stream != NULL);
 
   DEBUG (self, "%d", send);
 
-  farsight_stream_set_sending (priv->fs_stream, send);
+  farsight_stream_set_sending (self->priv->fs_stream, send);
 }
 
 static void
@@ -1194,14 +1185,13 @@ start_telephony_event (TpProxy *proxy,
                        GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  g_assert (priv->fs_stream != NULL);
+  g_assert (self->priv->fs_stream != NULL);
 
   DEBUG (self, "called with event %u", event);
 
   /* this week, volume is 8, for the sake of argument... */
-  if (!farsight_stream_start_telephony_event (priv->fs_stream, event, 8))
+  if (!farsight_stream_start_telephony_event (self->priv->fs_stream, event, 8))
     DEBUG (self, "sending event %u failed", event);
 }
 
@@ -1211,13 +1201,12 @@ stop_telephony_event (TpProxy *proxy,
                       GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
 
-  g_assert (priv->fs_stream != NULL);
+  g_assert (self->priv->fs_stream != NULL);
 
   DEBUG (self, "called");
 
-  if (!farsight_stream_stop_telephony_event (priv->fs_stream))
+  if (!farsight_stream_stop_telephony_event (self->priv->fs_stream))
     DEBUG (self, "stopping event failed");
 }
 
@@ -1237,9 +1226,8 @@ close (TpProxy *proxy,
 static void
 set_nat_properties (TpStreamEngineStream *self)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-  const TpStreamEngineNatProperties *props = priv->nat_props;
-  FarsightStream *stream = priv->fs_stream;
+  const TpStreamEngineNatProperties *props = self->priv->nat_props;
+  FarsightStream *stream = self->priv->fs_stream;
   const gchar *transmitter = "rawudp";
   GObject *xmit = NULL;
 
@@ -1289,14 +1277,13 @@ set_nat_properties (TpStreamEngineStream *self)
 static void
 prepare_transports (TpStreamEngineStream *self)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   GPtrArray *codecs;
   method_call_ctx *ctx;
 
-  farsight_stream_prepare_transports (priv->fs_stream);
+  farsight_stream_prepare_transports (self->priv->fs_stream);
 
   codecs = fs_codecs_to_tp (
-             farsight_stream_get_local_codecs (priv->fs_stream));
+             farsight_stream_get_local_codecs (self->priv->fs_stream));
 
   DEBUG (self, "calling MediaStreamHandler::Ready");
 
@@ -1304,7 +1291,7 @@ prepare_transports (TpStreamEngineStream *self)
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::Ready";
 
-  tp_cli_media_stream_handler_call_ready (priv->stream_handler_proxy,
+  tp_cli_media_stream_handler_call_ready (self->priv->stream_handler_proxy,
       -1, codecs, async_method_callback, ctx, method_call_ctx_free,
       (GObject *) self);
 }
@@ -1315,15 +1302,15 @@ cb_fs_codec_changed (FarsightStream *stream,
                      gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   method_call_ctx *ctx;
 
-  if (priv->media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (self->priv->media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      tp_stream_engine_stream_mute_output (self, priv->output_mute, NULL);
-      tp_stream_engine_stream_mute_input (self, priv->input_mute, NULL);
-      tp_stream_engine_stream_set_output_volume (self, priv->output_volume,
-        NULL);
+      tp_stream_engine_stream_mute_output (self, self->priv->output_mute,
+          NULL);
+      tp_stream_engine_stream_mute_input (self, self->priv->input_mute, NULL);
+      tp_stream_engine_stream_set_output_volume (self,
+          self->priv->output_volume, NULL);
     }
 
   DEBUG (self, "codec_id=%d, stream=%p", codec_id, stream);
@@ -1332,9 +1319,9 @@ cb_fs_codec_changed (FarsightStream *stream,
   ctx->stream = self;
   ctx->method = "Media.StreamHandler::CodecChoice";
 
-  tp_cli_media_stream_handler_call_codec_choice (priv->stream_handler_proxy,
-      -1, codec_id, async_method_callback, ctx, method_call_ctx_free,
-      (GObject *) self);
+  tp_cli_media_stream_handler_call_codec_choice
+      (self->priv->stream_handler_proxy, -1, codec_id,
+       async_method_callback, ctx, method_call_ctx_free, (GObject *) self);
 }
 
 static void
@@ -1356,7 +1343,6 @@ cb_fs_new_active_candidate_pair (FarsightStream *stream,
                                  gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   method_call_ctx *ctx;
 
   DEBUG (self, "stream=%p", stream);
@@ -1366,7 +1352,7 @@ cb_fs_new_active_candidate_pair (FarsightStream *stream,
   ctx->method = "Media.StreamHandler::NewActiveCandidatePair";
 
   tp_cli_media_stream_handler_call_new_active_candidate_pair (
-    priv->stream_handler_proxy, -1, native_candidate, remote_candidate,
+    self->priv->stream_handler_proxy, -1, native_candidate, remote_candidate,
     async_method_callback, ctx, method_call_ctx_free, (GObject *) self);
 }
 
@@ -1375,7 +1361,6 @@ cb_fs_native_candidates_prepared (FarsightStream *stream,
                                   gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
   const GList *transport_candidates, *lp;
   FarsightTransportInfo *info;
   method_call_ctx *ctx;
@@ -1397,7 +1382,7 @@ cb_fs_native_candidates_prepared (FarsightStream *stream,
   ctx->method = "Media.StreamHandler::NativeCandidatesPrepared";
 
   tp_cli_media_stream_handler_call_native_candidates_prepared (
-    priv->stream_handler_proxy, -1, async_method_callback, ctx,
+    self->priv->stream_handler_proxy, -1, async_method_callback, ctx,
     method_call_ctx_free, (GObject *) self);
 }
 
@@ -1516,13 +1501,12 @@ destroy_cb (TpProxy *proxy,
             gpointer user_data)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
 
-  if (priv->stream_handler_proxy)
+  if (stream->priv->stream_handler_proxy)
     {
-      TpMediaStreamHandler *tmp = priv->stream_handler_proxy;
+      TpMediaStreamHandler *tmp = stream->priv->stream_handler_proxy;
 
-      priv->stream_handler_proxy = NULL;
+      stream->priv->stream_handler_proxy = NULL;
       g_object_unref (tmp);
     }
 }
@@ -1561,20 +1545,19 @@ gboolean tp_stream_engine_stream_mute_output (
   gboolean mute_state,
   GError **error)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   GstElement *sink;
 
-  g_return_val_if_fail (priv->fs_stream, FALSE);
+  g_return_val_if_fail (stream->priv->fs_stream, FALSE);
 
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "MuteInput can only be called on audio streams");
       return FALSE;
     }
 
-  priv->output_mute = mute_state;
-  sink = farsight_stream_get_sink (priv->fs_stream);
+  stream->priv->output_mute = mute_state;
+  sink = farsight_stream_get_sink (stream->priv->fs_stream);
 
   if (!sink)
     return TRUE;
@@ -1593,13 +1576,12 @@ gboolean tp_stream_engine_stream_set_output_volume (
   guint volume,
   GError **error)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   GstElement *sink;
   guint scaled_volume;
 
-  g_return_val_if_fail (priv->fs_stream, FALSE);
+  g_return_val_if_fail (stream->priv->fs_stream, FALSE);
 
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "SetOutputVolume can only be called on audio streams");
@@ -1609,10 +1591,10 @@ gboolean tp_stream_engine_stream_set_output_volume (
   if (volume > 100)
     volume = 100;
 
-  priv->output_volume = volume;
+  stream->priv->output_volume = volume;
   scaled_volume = (volume * 65535)/100;
-  DEBUG (stream, "setting output volume to %d", priv->output_volume);
-  sink = farsight_stream_get_sink (priv->fs_stream);
+  DEBUG (stream, "setting output volume to %d", stream->priv->output_volume);
+  sink = farsight_stream_get_sink (stream->priv->fs_stream);
 
   if (!sink)
     return TRUE;
@@ -1628,20 +1610,19 @@ gboolean tp_stream_engine_stream_mute_input (
   gboolean mute_state,
   GError **error)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   GstElement *source;
 
-  g_return_val_if_fail (priv->fs_stream, FALSE);
+  g_return_val_if_fail (stream->priv->fs_stream, FALSE);
 
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
+  if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "MuteInput can only be called on audio streams");
       return FALSE;
     }
 
-  priv->input_mute = mute_state;
-  source = farsight_stream_get_source (priv->fs_stream);
+  stream->priv->input_mute = mute_state;
+  source = farsight_stream_get_source (stream->priv->fs_stream);
 
   if (!source)
     return TRUE;
@@ -1661,11 +1642,10 @@ tp_stream_engine_stream_set_output_window (
   guint window_id,
   GError **error)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   TpStreamEngine *engine;
   GstElement *sink;
 
-  if (priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
+  if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
       DEBUG (stream, "can only be called on video streams");
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
@@ -1673,7 +1653,7 @@ tp_stream_engine_stream_set_output_window (
       return FALSE;
     }
 
-  if (priv->output_window_id == window_id)
+  if (stream->priv->output_window_id == window_id)
     {
       DEBUG (stream, "not doing anything, output window is already set to "
           "window ID %u", window_id);
@@ -1684,17 +1664,19 @@ tp_stream_engine_stream_set_output_window (
 
   engine = tp_stream_engine_get ();
 
-  if (priv->output_window_id != 0)
+  if (stream->priv->output_window_id != 0)
     {
-      tp_stream_engine_remove_output_window (engine, priv->output_window_id);
+      tp_stream_engine_remove_output_window (engine,
+          stream->priv->output_window_id);
     }
 
-  priv->output_window_id = window_id;
+  stream->priv->output_window_id = window_id;
 
-  if (priv->output_window_id == 0)
+  if (stream->priv->output_window_id == 0)
     {
-      GstElement *stream_sink = farsight_stream_get_sink (priv->fs_stream);
-      farsight_stream_set_sink (priv->fs_stream, NULL);
+      GstElement *stream_sink = farsight_stream_get_sink
+          (stream->priv->fs_stream);
+      farsight_stream_set_sink (stream->priv->fs_stream, NULL);
       _remove_video_sink (stream, stream_sink);
 
       return TRUE;
@@ -1714,7 +1696,7 @@ tp_stream_engine_stream_set_output_window (
   DEBUG (stream, "putting video output in window %d", window_id);
 
   tp_stream_engine_add_output_window (engine, stream, sink, window_id);
-  farsight_stream_set_sink (priv->fs_stream, sink);
+  farsight_stream_set_sink (stream->priv->fs_stream, sink);
   gst_object_unref (sink);
 
   return TRUE;
@@ -1725,11 +1707,9 @@ tp_stream_engine_stream_error (TpStreamEngineStream *self,
                                guint error,
                                const gchar *message)
 {
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (self);
-
   g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
 
-  tp_cli_media_stream_handler_call_error (priv->stream_handler_proxy,
+  tp_cli_media_stream_handler_call_error (self->priv->stream_handler_proxy,
       -1, error, message, NULL, NULL, NULL, NULL);
   g_signal_emit (self, signals[ERROR], 0);
 }
