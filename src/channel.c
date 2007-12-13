@@ -1,7 +1,7 @@
 /*
  * channel.c - Source for TpStreamEngineChannel
- * Copyright (C) 2006 Collabora Ltd.
- * Copyright (C) 2006 Nokia Corporation
+ * Copyright (C) 2006-2007 Collabora Ltd.
+ * Copyright (C) 2006-2007 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
