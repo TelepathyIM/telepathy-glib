@@ -178,6 +178,7 @@ tp_stream_engine_channel_set_property (GObject      *object,
 }
 
 static void channel_destroyed (TpChannel *channel_proxy,
+    const GError *error,
     TpStreamEngineChannel *self);
 
 static void new_media_session_handler (TpProxy *proxy,
@@ -729,6 +730,7 @@ shutdown_channel (TpStreamEngineChannel *self)
 
 static void
 channel_destroyed (TpChannel *channel_proxy,
+                   const GError *error,
                    TpStreamEngineChannel *self)
 {
   shutdown_channel (self);
