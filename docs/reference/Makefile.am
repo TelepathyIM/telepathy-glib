@@ -89,15 +89,17 @@ include $(top_srcdir)/gtk-doc.make
 
 if ENABLE_GTK_DOC
 check-local:
-	@if grep '^0 symbols incomplete' telepathy-glib-undocumented.txt; then\
+	@if grep '^0 symbols incomplete' \
+		$(srcdir)/telepathy-glib-undocumented.txt; then\
 		:; else \
-		cat telepathy-glib-undocumented.txt; exit 1; fi
-	@if grep '^0 not documented' telepathy-glib-undocumented.txt; then\
+		cat $(srcdir)/telepathy-glib-undocumented.txt; exit 1; fi
+	@if grep '^0 not documented' \
+		$(srcdir)/telepathy-glib-undocumented.txt; then\
 		:; else \
-		cat telepathy-glib-undocumented.txt; exit 1; fi
-	@if grep . telepathy-glib-unused.txt; then\
+		cat $(srcdir)/telepathy-glib-undocumented.txt; exit 1; fi
+	@if grep . $(srcdir)/telepathy-glib-unused.txt; then\
 		echo "^^^ Unused symbols" >&2; exit 1; fi
-	@if test -e telepathy-glib-undeclared.txt &&\
-		grep . telepathy-glib-undeclared.txt; then\
+	@if test -e $(srcdir)/telepathy-glib-undeclared.txt &&\
+		grep . $(srcdir)/telepathy-glib-undeclared.txt; then\
 		echo "^^^ Undeclared symbols" >&2; exit 1; fi
 endif
