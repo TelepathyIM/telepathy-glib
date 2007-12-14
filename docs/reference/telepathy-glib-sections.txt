@@ -1900,6 +1900,8 @@ TP_TYPE_MEDIA_SESSION_HANDLER
 TP_TYPE_MEDIA_STREAM_HANDLER
 tp_media_session_handler_get_type
 tp_media_stream_handler_get_type
+TpMediaSessionHandlerPrivate
+TpMediaStreamHandlerPrivate
 <SUBSECTION>
 tp_media_session_handler_new
 TpMediaSessionHandler

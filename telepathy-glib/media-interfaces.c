@@ -45,6 +45,7 @@
 struct _TpMediaStreamHandlerClass {
     TpProxyClass parent_class;
     /*<private>*/
+    gpointer priv;
 };
 
 /**
@@ -55,6 +56,7 @@ struct _TpMediaStreamHandlerClass {
 struct _TpMediaStreamHandler {
     TpProxy parent;
     /*<private>*/
+    TpMediaStreamHandlerPrivate *priv;
 };
 
 G_DEFINE_TYPE (TpMediaStreamHandler,
@@ -122,6 +124,7 @@ finally:
 struct _TpMediaSessionHandlerClass {
     TpProxyClass parent_class;
     /*<private>*/
+    gpointer priv;
 };
 
 /**
@@ -132,6 +135,7 @@ struct _TpMediaSessionHandlerClass {
 struct _TpMediaSessionHandler {
     TpProxy parent;
     /*<private>*/
+    TpMediaSessionHandlerPrivate *priv;
 };
 
 G_DEFINE_TYPE (TpMediaSessionHandler,

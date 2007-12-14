@@ -27,11 +27,13 @@
 G_BEGIN_DECLS
 
 typedef struct _TpMediaStreamHandler TpMediaStreamHandler;
+typedef struct _TpMediaStreamHandlerPrivate TpMediaStreamHandlerPrivate;
 typedef struct _TpMediaStreamHandlerClass TpMediaStreamHandlerClass;
 
 GType tp_media_stream_handler_get_type (void);
 
 typedef struct _TpMediaSessionHandler TpMediaSessionHandler;
+typedef struct _TpMediaSessionHandlerPrivate TpMediaSessionHandlerPrivate;
 typedef struct _TpMediaSessionHandlerClass TpMediaSessionHandlerClass;
 
 GType tp_media_session_handler_get_type (void);
