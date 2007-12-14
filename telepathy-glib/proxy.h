@@ -86,7 +86,7 @@ TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
 
 void tp_proxy_pending_call_free (gpointer self);
 
-void tp_proxy_pending_call_cancel (const TpProxyPendingCall *self);
+void tp_proxy_pending_call_cancel (TpProxyPendingCall *self);
 
 typedef struct _TpProxySignalConnection TpProxySignalConnection;
 
@@ -110,8 +110,7 @@ TpProxySignalConnection *tp_proxy_signal_connection_new (TpProxy *self,
 
 void tp_proxy_signal_connection_free_closure (gpointer self, GClosure *unused);
 
-void tp_proxy_signal_connection_disconnect
-    (const TpProxySignalConnection *self);
+void tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self);
 
 GType tp_proxy_get_type (void);
 

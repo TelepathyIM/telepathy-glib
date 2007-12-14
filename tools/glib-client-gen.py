@@ -156,7 +156,7 @@ class Generator(object):
 
         # Example:
         #
-        # const TpProxySignalConnection *
+        # TpProxySignalConnection *
         #   tp_cli_connection_connect_to_new_channel
         #   (TpProxy *proxy,
         #   tp_cli_connection_signal_callback_new_channel callback,
@@ -186,7 +186,7 @@ class Generator(object):
         self.b(' * Returns: a #TpProxySignalConnection containing all of the')
         self.b(' * above, which can be used to disconnect the signal')
         self.b(' */')
-        self.h('const TpProxySignalConnection *%s_%s_connect_to_%s ('
+        self.h('TpProxySignalConnection *%s_%s_connect_to_%s ('
                'gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.h('    %s callback,' % callback_name)
@@ -194,7 +194,7 @@ class Generator(object):
         self.h('    GDestroyNotify destroy,')
         self.h('    GObject *weak_object);')
 
-        self.b('const TpProxySignalConnection *')
+        self.b('TpProxySignalConnection *')
         self.b('%s_%s_connect_to_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.b('    %s callback,' % callback_name)
@@ -505,7 +505,7 @@ class Generator(object):
         # Async stub
 
         # Example:
-        # const TpProxyPendingCall *
+        # TpProxyPendingCall *
         #   tp_cli_properties_interface_call_get_properties
         #   (gpointer proxy,
         #   gint timeout_ms,
@@ -514,7 +514,7 @@ class Generator(object):
         #   gpointer user_data,
         #   GDestroyNotify *destructor);
 
-        self.h('const TpProxyPendingCall *%s_%s_call_%s (gpointer proxy,'
+        self.h('TpProxyPendingCall *%s_%s_call_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.h('    gint timeout_ms,')
 
@@ -547,7 +547,7 @@ class Generator(object):
         self.b(' *  invalid when the callback is called, the call is')
         self.b(' *  cancelled or the #TpProxy becomes invalid.')
         self.b(' */')
-        self.b('const TpProxyPendingCall *\n%s_%s_call_%s (gpointer proxy,'
+        self.b('TpProxyPendingCall *\n%s_%s_call_%s (gpointer proxy,'
                % (self.prefix_lc, iface_lc, member_lc))
         self.b('    gint timeout_ms,')
 

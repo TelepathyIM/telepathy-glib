@@ -402,7 +402,7 @@ tp_proxy_pending_call_new (TpProxy *self,
  * explicitly free it either.
  */
 void
-tp_proxy_pending_call_cancel (const TpProxyPendingCall *self)
+tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
 {
   DBusGProxy *iface;
 
@@ -411,7 +411,7 @@ tp_proxy_pending_call_cancel (const TpProxyPendingCall *self)
   g_return_if_fail (self->priv == pending_call_magic);
 
   /* Mark the pending call as expired */
-  ((TpProxyPendingCall *) self)->callback = NULL;
+  self->callback = NULL;
 
   iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
       self->interface);
@@ -589,7 +589,7 @@ tp_proxy_signal_connection_new (TpProxy *self,
  * explicitly free it either.
  */
 void
-tp_proxy_signal_connection_disconnect (const TpProxySignalConnection *self)
+tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
 {
   DBusGProxy *iface;
 

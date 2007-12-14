@@ -152,7 +152,7 @@ main (int argc,
 {
   GObject *stub;
   GError err = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
-  const TpProxyPendingCall *pc;
+  TpProxyPendingCall *pc;
   gpointer tmp_obj;
 
   g_type_init ();
