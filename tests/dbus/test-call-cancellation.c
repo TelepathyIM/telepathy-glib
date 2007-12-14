@@ -33,12 +33,14 @@ static TpDBusDaemon *c;
 static TpDBusDaemon *d;
 static TpDBusDaemon *e;
 static TpDBusDaemon *f;
+static TpDBusDaemon *g;
 static TpDBusDaemon *z;
 TpIntSet *method_ok;
 TpIntSet *method_error;
 TpIntSet *freed_user_data;
 int fail = 0;
 gpointer copy_of_d;
+gpointer copy_of_g;
 
 #define MYASSERT(x, m, ...) \
   do { \
@@ -56,6 +58,7 @@ enum {
     TEST_D,
     TEST_E,
     TEST_F,
+    TEST_G,
     TEST_Z = 25,
     N_DAEMONS
 };
@@ -94,6 +97,10 @@ listed_names (TpProxy *proxy,
         case TEST_D:
           want_proxy = (TpProxy *) copy_of_d;
           want_object = NULL;
+          break;
+        case TEST_G:
+          want_proxy = (TpProxy *) copy_of_g;
+          want_object = (GObject *) copy_of_g;
           break;
         case TEST_Z:
           want_proxy = (TpProxy *) z;
@@ -172,6 +179,8 @@ main (int argc,
   g_message ("e=%p", e);
   f = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("f=%p", f);
+  g = tp_dbus_daemon_new (tp_get_bus ());
+  g_message ("g=%p", g);
   z = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("z=%p", z);
 
@@ -252,6 +261,25 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (method_ok, TEST_F), "");
   MYASSERT (tp_intset_is_member (method_error, TEST_F), "");
 
+  /* g gets unreferenced, but survives long enough for the call to complete
+   * successfully later, because the pending call holds a reference;
+   * however, unlike case D, here the pending call weakly references the
+   * proxy. This is never necessary, but is an interesting corner case that
+   * should be tested. */
+  g_message ("Starting call on g");
+  tp_cli_dbus_daemon_call_list_names (g, -1, listed_names, PTR (TEST_G),
+      destroy_user_data, (GObject *) g);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_G), "");
+  g_message ("Unreferencing g");
+  copy_of_g = g;
+  g_object_add_weak_pointer (copy_of_g, &copy_of_g);
+  g_object_unref (g);
+  g = NULL;
+  MYASSERT (copy_of_g != NULL, "");
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_G), "");
+  MYASSERT (!tp_intset_is_member (method_ok, TEST_G), "");
+  MYASSERT (!tp_intset_is_member (method_error, TEST_G), "");
+
   /* z survives too; we assume that method calls succeed in order,
    * so when z has had its reply, we can stop the main loop */
   g_message ("Starting call on z");
@@ -271,6 +299,12 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (method_error, TEST_D), "");
   MYASSERT (copy_of_d == NULL, "");
 
+  /* ... and g too */
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
+  MYASSERT (tp_intset_is_member (method_ok, TEST_G), "");
+  MYASSERT (!tp_intset_is_member (method_error, TEST_G), "");
+  MYASSERT (copy_of_g == NULL, "");
+
   /* the calls have been delivered to both A and Z by now */
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_A), "");
   MYASSERT (tp_intset_is_member (method_ok, TEST_A), "");
@@ -287,6 +321,7 @@ main (int argc,
   MYASSERT (d == NULL, "");
   g_object_unref (e);
   g_object_unref (f);
+  MYASSERT (g == NULL, "");
   g_object_unref (z);
 
   /* we should already have checked each of these at least once, but just to
@@ -297,6 +332,7 @@ main (int argc,
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_D), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z), "");
 
   tp_intset_destroy (freed_user_data);

@@ -33,6 +33,7 @@ static TpDBusDaemon *c;
 static TpDBusDaemon *d;
 static TpDBusDaemon *e;
 static TpDBusDaemon *f;
+static TpDBusDaemon *g;
 static TpDBusDaemon *z;
 TpIntSet *caught_signal;
 TpIntSet *freed_user_data;
@@ -48,6 +49,7 @@ enum {
     TEST_D,
     TEST_E,
     TEST_F,
+    TEST_G,
     TEST_Z = 25,
     N_DAEMONS
 };
@@ -154,6 +156,8 @@ main (int argc,
   g_message ("e=%p", e);
   f = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("f=%p", f);
+  g = tp_dbus_daemon_new (tp_get_bus ());
+  g_message ("g=%p", g);
   z = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("z=%p", z);
 
@@ -221,6 +225,22 @@ main (int argc,
   g_object_run_dispose (tmp_obj);
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_F));
 
+  /* g gets its signal connection cancelled because it's
+   * implicitly invalidated by being destroyed; unlike d, the signal
+   * connection weakly references the proxy. This is never necessary, but is
+   * an interesting corner case that should be tested. */
+  g_message ("Connecting signal to g");
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (g, noc, PTR (TEST_G),
+      destroy_user_data, (GObject *) g);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_G));
+  g_message ("Destroying g");
+  tmp_obj = g;
+  g_object_add_weak_pointer (tmp_obj, &tmp_obj);
+  g_object_unref (g);
+  MYASSERT (tmp_obj == NULL);
+  g = NULL;
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G));
+
   /* z survives; we assume that the signals are delivered in either
    * forward or reverse order, so if both a and z have had their signal, we
    * can stop the main loop */
@@ -249,6 +269,7 @@ main (int argc,
   MYASSERT (d == NULL);
   g_object_unref (e);
   g_object_unref (f);
+  MYASSERT (g == NULL);
   g_object_unref (z);
 
   /* we should already have checked each of these at least once, but just to
@@ -259,6 +280,7 @@ main (int argc,
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_D));
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_E));
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_F));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G));
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z));
 
   tp_intset_destroy (freed_user_data);
