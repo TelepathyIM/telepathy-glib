@@ -86,3 +86,18 @@ GTKDOC_LIBS=@DBUS_LIBS@ @GLIB_LIBS@ \
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
+
+if ENABLE_GTK_DOC
+check-local:
+	@if grep '^0 symbols incomplete' telepathy-glib-undocumented.txt; then\
+		:; else \
+		cat telepathy-glib-undocumented.txt; exit 1; fi
+	@if grep '^0 not documented' telepathy-glib-undocumented.txt; then\
+		:; else \
+		cat telepathy-glib-undocumented.txt; exit 1; fi
+	@if grep . telepathy-glib-unused.txt; then\
+		echo "^^^ Unused symbols" >&2; exit 1; fi
+	@if test -e telepathy-glib-undeclared.txt &&\
+		grep . telepathy-glib-undeclared.txt; then\
+		echo "^^^ Undeclared symbols" >&2; exit 1; fi
+endif
