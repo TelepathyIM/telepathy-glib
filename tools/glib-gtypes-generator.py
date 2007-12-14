@@ -24,6 +24,7 @@ import sys
 import xml.dom.minidom
 
 from libglibcodegen import escape_as_identifier, \
+                           get_docstring, \
                            NS_TP, \
                            Signature, \
                            type_to_gtype
@@ -31,19 +32,6 @@ from libglibcodegen import escape_as_identifier, \
 
 def types_to_gtypes(types):
     return [type_to_gtype(t)[1] for t in types]
-
-
-def get_docstring(element):
-    docstring = element.getElementsByTagNameNS(NS_TP, 'docstring')
-    if docstring:
-        docstring = docstring[0].toxml().replace('\n', ' ').strip()
-        if docstring.startswith('<tp:docstring>'):
-            docstring = docstring[14:].lstrip()
-        if docstring.endswith('</tp:docstring>'):
-            docstring = docstring[:-15].rstrip()
-        if docstring in ('<tp:docstring/>', ''):
-            docstring = ''
-    return docstring
 
 
 class GTypesGenerator(object):

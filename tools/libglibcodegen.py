@@ -115,6 +115,22 @@ def escape_as_identifier(identifier):
     return ''.join(ret)
 
 
+def get_docstring(element):
+    docstring = None
+    for x in element.childNodes:
+        if x.namespaceURI == NS_TP and x.localName == 'docstring':
+            docstring = x
+    if docstring is not None:
+        docstring = docstring.toxml().replace('\n', ' ').strip()
+        if docstring.startswith('<tp:docstring>'):
+            docstring = docstring[14:].lstrip()
+        if docstring.endswith('</tp:docstring>'):
+            docstring = docstring[:-15].rstrip()
+        if docstring in ('<tp:docstring/>', ''):
+            docstring = ''
+    return docstring
+
+
 def signal_to_marshal_type(signal):
     """
     return a list of strings indicating the marshalling type for this signal.
