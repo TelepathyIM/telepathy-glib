@@ -491,6 +491,7 @@ struct _TpDBusDaemonClass
 {
   /*<private>*/
   TpProxyClass parent_class;
+  gpointer priv;
 };
 
 /**
@@ -505,6 +506,12 @@ struct _TpDBusDaemon
 {
   /*<private>*/
   TpProxy parent;
+
+  TpDBusDaemonPrivate *priv;
+};
+
+struct _TpDBusDaemonPrivate
+{
   /* dup'd name => _NameOwnerWatch */
   GHashTable *name_owner_watches;
 };
@@ -590,7 +597,7 @@ _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
                                     const gchar *name,
                                     const gchar *new_owner)
 {
-  _NameOwnerWatch *watch = g_hash_table_lookup (self->name_owner_watches,
+  _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
 
   if (watch == NULL)
@@ -678,7 +685,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
                                  gpointer user_data,
                                  GDestroyNotify destroy)
 {
-  _NameOwnerWatch *watch = g_hash_table_lookup (self->name_owner_watches,
+  _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
 
   if (watch == NULL)
@@ -690,7 +697,8 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
       watch->destroy = destroy;
       watch->last_owner = NULL;
 
-      g_hash_table_insert (self->name_owner_watches, g_strdup (name), watch);
+      g_hash_table_insert (self->priv->name_owner_watches, g_strdup (name),
+          watch);
 
       tp_cli_dbus_daemon_call_get_name_owner (self, -1, name,
           _tp_dbus_daemon_got_name_owner,
@@ -758,7 +766,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
                                         TpDBusDaemonNameOwnerChangedCb callback,
                                         gconstpointer user_data)
 {
-  _NameOwnerWatch *watch = g_hash_table_lookup (self->name_owner_watches,
+  _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
 
   if (watch == NULL)
@@ -774,7 +782,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
 
       g_free (watch->last_owner);
       g_slice_free (_NameOwnerWatch, watch);
-      g_hash_table_remove (self->name_owner_watches, name);
+      g_hash_table_remove (self->priv->name_owner_watches, name);
       return TRUE;
     }
   else if (watch->callback == _tp_dbus_daemon_name_owner_changed_multiple)
@@ -801,7 +809,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
                   watch->destroy (watch->user_data);
                   g_free (watch->last_owner);
                   g_slice_free (_NameOwnerWatch, watch);
-                  g_hash_table_remove (self->name_owner_watches, name);
+                  g_hash_table_remove (self->priv->name_owner_watches, name);
                 }
 
               return TRUE;
@@ -836,8 +844,11 @@ tp_dbus_daemon_constructor (GType type,
 static void
 tp_dbus_daemon_init (TpDBusDaemon *self)
 {
-  self->name_owner_watches = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, NULL);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_DBUS_DAEMON,
+      TpDBusDaemonPrivate);
+
+  self->priv->name_owner_watches = g_hash_table_new_full (g_str_hash,
+      g_str_equal, g_free, NULL);
 }
 
 static void
@@ -845,11 +856,11 @@ tp_dbus_daemon_dispose (GObject *object)
 {
   TpDBusDaemon *self = TP_DBUS_DAEMON (object);
 
-  if (self->name_owner_watches != NULL)
+  if (self->priv->name_owner_watches != NULL)
     {
-      GHashTable *tmp = self->name_owner_watches;
+      GHashTable *tmp = self->priv->name_owner_watches;
 
-      self->name_owner_watches = NULL;
+      self->priv->name_owner_watches = NULL;
       g_hash_table_destroy (tmp);
     }
 
@@ -861,6 +872,8 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
+
+  g_type_class_add_private (klass, sizeof (TpDBusDaemonPrivate));
 
   object_class->constructor = tp_dbus_daemon_constructor;
   object_class->dispose = tp_dbus_daemon_dispose;

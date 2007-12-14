@@ -30,6 +30,8 @@ void tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context);
 DBusGConnection * tp_get_bus (void);
 DBusGProxy * tp_get_bus_proxy (void);
 
+/* TpDBusDaemon is typedef'd in proxy.h */
+typedef struct _TpDBusDaemonPrivate TpDBusDaemonPrivate;
 typedef struct _TpDBusDaemonClass TpDBusDaemonClass;
 GType tp_dbus_daemon_get_type (void);
 
