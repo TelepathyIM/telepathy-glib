@@ -28,7 +28,7 @@ import xml.dom.minidom
 from getopt import gnu_getopt
 
 from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
-        camelcase_to_lower
+        camelcase_to_lower, get_docstring
 
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
@@ -181,7 +181,10 @@ class Generator(object):
         self.b(' *   if it is destroyed, this callback will automatically be')
         self.b(' *   disconnected')
         self.b(' *')
-        self.b(' * <!-- -->')
+        self.b(' * Connect a handler to the signal %s.' % member)
+        self.b(' *')
+        self.b(' * <![CDATA[%s]]>'
+                % (get_docstring(signal) or '(Undocumented)'))
         self.b(' *')
         self.b(' * Returns: a #TpProxySignalConnection containing all of the')
         self.b(' * above, which can be used to disconnect the signal')
@@ -300,7 +303,11 @@ class Generator(object):
 
         self.b(' * @error: Used to return errors')
         self.b(' *')
-        self.b(' * Auto-generated synchronous call wrapper.')
+        self.b(' * Auto-generated synchronous call wrapper for the method')
+        self.b(' * %s.' % member)
+        self.b(' *')
+        self.b(' * <![CDATA[%s]]>'
+                % (get_docstring(method) or '(Undocumented)'))
         self.b(' *')
         self.b(' * Returns: TRUE on success, FALSE and sets @error on error')
         self.b(' */')
@@ -541,6 +548,9 @@ class Generator(object):
         self.b(' *   disconnected')
         self.b(' *')
         self.b(' * Start a %s method call.' % member)
+        self.b(' *')
+        self.b(' * <![CDATA[%s]]>'
+                % (get_docstring(method) or '(Undocumented)'))
         self.b(' *')
         self.b(' * Returns: a #TpProxyPendingCall representing the call in')
         self.b(' *  progress. It is borrowed from the object, and will become')
