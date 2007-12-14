@@ -98,7 +98,8 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: FIXME' % name)
+            self.b(' * @%s: <![CDATA[%s]]>' % (name,
+                get_docstring(elt) or '(Undocumented)'))
 
         self.b(' * @user_data: User-supplied data')
         self.b(' * @weak_object: User-supplied weakly referenced object')
@@ -291,20 +292,21 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to pass an \'in\' argument (FIXME: docs)'
-                   % name)
+            self.b(' * @%s: Used to pass an \'in\' argument: <![CDATA[%s]]>'
+                   % (name, get_docstring(elt) or '(Undocumented)'))
 
         for arg in out_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to return an \'out\' argument (FIXME: docs)'
-                   % name)
+            self.b(' * @%s: Used to return an \'out\' argument if %%TRUE is '
+                   'returned: <![CDATA[%s]]>'
+                   % (name, get_docstring(elt) or '(Undocumented)'))
 
-        self.b(' * @error: Used to return errors')
+        self.b(' * @error: Used to return errors if %FALSE is returned')
         self.b(' *')
-        self.b(' * Auto-generated synchronous call wrapper for the method')
-        self.b(' * %s.' % member)
+        self.b(' * Call the method %s and block, without.' % member)
+        self.b(' * re-entering the main loop, until it returns.')
         self.b(' *')
         self.b(' * <![CDATA[%s]]>'
                 % (get_docstring(method) or '(Undocumented)'))
@@ -381,10 +383,11 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to return an \'out\' argument if @error is'
-                   'NULL' % name)
+            self.b(' * @%s: Used to return an \'out\' argument if @error is '
+                   '%%NULL: <![CDATA[%s]]>'
+                   % (name, get_docstring(elt) or '(Undocumented)'))
 
-        self.b(' * @error: NULL on success, or an error on failure')
+        self.b(' * @error: %NULL on success, or an error on failure')
         self.b(' * @user_data: user-supplied data')
         self.b(' * @weak_object: user-supplied object')
         self.b(' *')
@@ -536,8 +539,8 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to pass an \'in\' argument (FIXME: docs)'
-                   % name)
+            self.b(' * @%s: Used to pass an \'in\' argument: <![CDATA[%s]]>'
+                   % (name, get_docstring(elt) or '(Undocumented)'))
 
         self.b(' * @callback: called when the method call succeeds or fails')
         self.b(' * @user_data: user-supplied data passed to the callback')
