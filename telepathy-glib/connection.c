@@ -74,7 +74,7 @@ struct _TpConnection {
     TpConnectionStatusReason status_reason;
     TpHandle _reserved_for_self_handle;
 
-    gpointer priv;
+    TpConnectionPrivate *priv;
 };
 
 enum

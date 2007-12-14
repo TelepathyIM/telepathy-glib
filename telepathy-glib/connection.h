@@ -27,6 +27,7 @@
 G_BEGIN_DECLS
 
 typedef struct _TpConnection TpConnection;
+typedef struct _TpConnectionPrivate TpConnectionPrivate;
 typedef struct _TpConnectionClass TpConnectionClass;
 
 GType tp_connection_get_type (void);

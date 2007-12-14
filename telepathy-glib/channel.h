@@ -28,6 +28,7 @@
 G_BEGIN_DECLS
 
 typedef struct _TpChannel TpChannel;
+typedef struct _TpChannelPrivate TpChannelPrivate;
 typedef struct _TpChannelClass TpChannelClass;
 
 GType tp_channel_get_type (void);

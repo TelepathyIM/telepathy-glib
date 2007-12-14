@@ -11,6 +11,7 @@ TP_IS_CHANNEL_IFACE
 TP_TYPE_CHANNEL_IFACE
 tp_channel_iface_get_type
 TP_CHANNEL_IFACE_GET_CLASS
+TpChannelPrivate
 </SECTION>
 
 <SECTION>
@@ -1726,6 +1727,7 @@ TP_CONNECTION_CLASS
 TP_CONNECTION_GET_CLASS
 TP_IS_CONNECTION
 TP_IS_CONNECTION_CLASS
+TpConnectionPrivate
 <SUBSECTION>
 tp_cli_connection_callback_for_connect
 tp_cli_connection_call_connect

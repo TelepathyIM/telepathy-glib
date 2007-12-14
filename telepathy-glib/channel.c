@@ -77,7 +77,7 @@ struct _TpChannel {
     TpHandleType handle_type;
     TpHandle handle;
 
-    gpointer priv;
+    TpChannelPrivate *priv;
 };
 
 enum
