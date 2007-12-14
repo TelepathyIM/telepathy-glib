@@ -1152,25 +1152,7 @@ TP_IFACE_QUARK_DBUS_DAEMON
 TP_IS_DBUS_DAEMON
 TP_IS_DBUS_DAEMON_CLASS
 TP_TYPE_DBUS_DAEMON
-<SUBSECTION Private>
-g_marshal_value_peek_boolean
-g_marshal_value_peek_boxed
-g_marshal_value_peek_char
-g_marshal_value_peek_double
-g_marshal_value_peek_enum
-g_marshal_value_peek_flags
-g_marshal_value_peek_float
-g_marshal_value_peek_int
-g_marshal_value_peek_int64
-g_marshal_value_peek_long
-g_marshal_value_peek_object
-g_marshal_value_peek_param
-g_marshal_value_peek_pointer
-g_marshal_value_peek_string
-g_marshal_value_peek_uchar
-g_marshal_value_peek_uint
-g_marshal_value_peek_uint64
-g_marshal_value_peek_ulong
+TpDBusDaemonPrivate
 </SECTION>
 
 <SECTION>
