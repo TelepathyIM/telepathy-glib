@@ -75,7 +75,7 @@ class Generator(object):
                 name = 'arg_%s' % name
 
             info = type_to_gtype(type)
-            args.append((name, info, tp_type))
+            args.append((name, info, tp_type, arg))
 
         callback_name = ('%s_%s_signal_callback_%s'
                          % (self.prefix_lc, iface_lc, member_lc))
@@ -95,7 +95,7 @@ class Generator(object):
         self.b(' *  was called')
 
         for arg in args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             self.b(' * @%s: FIXME' % name)
@@ -110,7 +110,7 @@ class Generator(object):
                % callback_name)
 
         for arg in args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             const = pointer and 'const ' or ''
@@ -130,7 +130,7 @@ class Generator(object):
                % callback_name)
 
         for arg in args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             const = pointer and 'const ' or ''
@@ -147,7 +147,7 @@ class Generator(object):
         self.b('    callback (signal_connection->proxy,')
 
         for arg in args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             self.b('      %s,' % name)
 
         self.b('      signal_connection->user_data,')
@@ -264,9 +264,9 @@ class Generator(object):
 
             info = type_to_gtype(type)
             if direction != 'out':
-                in_args.append((name, info, tp_type))
+                in_args.append((name, info, tp_type, arg))
             else:
-                out_args.append((name, info, tp_type))
+                out_args.append((name, info, tp_type, arg))
 
         # Synchronous stub
 
@@ -288,14 +288,14 @@ class Generator(object):
         self.b(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
 
         for arg in in_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             self.b(' * @%s: Used to pass an \'in\' argument (FIXME: docs)'
                    % name)
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             self.b(' * @%s: Used to return an \'out\' argument (FIXME: docs)'
@@ -316,7 +316,7 @@ class Generator(object):
         self.b('    gint timeout_ms,')
 
         for arg in in_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             const = pointer and 'const ' or ''
@@ -325,7 +325,7 @@ class Generator(object):
             self.b('    %s%s%s,' % (const, ctype, name))
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             self.h('    %s*%s,' % (ctype, name))
@@ -378,7 +378,7 @@ class Generator(object):
         self.b(' * @proxy: the proxy on which the call was made')
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             self.b(' * @%s: Used to return an \'out\' argument if @error is'
@@ -399,7 +399,7 @@ class Generator(object):
         self.h('typedef void (*%s) (TpProxy *proxy,' % callback_name)
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
             const = pointer and 'const ' or ''
 
@@ -426,7 +426,7 @@ class Generator(object):
                                                            callback_name))
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             self.b('  %s%s;' % (ctype, name))
@@ -436,7 +436,7 @@ class Generator(object):
         self.b('  dbus_g_proxy_end_call (proxy, call, &error,')
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             self.b('      %s, &%s,' % (gtype, name))
@@ -445,7 +445,7 @@ class Generator(object):
         self.b('  callback (data->proxy,')
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             if gtype == 'G_TYPE_STRV':
@@ -466,7 +466,7 @@ class Generator(object):
         self.b('')
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             if not pointer:
@@ -493,7 +493,7 @@ class Generator(object):
         self.b('    callback (pc->proxy,')
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             if pointer:
@@ -533,7 +533,7 @@ class Generator(object):
         self.b(' *   default')
 
         for arg in in_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             self.b(' * @%s: Used to pass an \'in\' argument (FIXME: docs)'
@@ -562,7 +562,7 @@ class Generator(object):
         self.b('    gint timeout_ms,')
 
         for arg in in_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             const = pointer and 'const ' or ''
@@ -593,7 +593,7 @@ class Generator(object):
         self.b('        callback (proxy,')
 
         for arg in out_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             if pointer:
@@ -610,7 +610,7 @@ class Generator(object):
         self.b('      dbus_g_proxy_call_no_reply (iface, "%s",' % member)
 
         for arg in in_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             const = pointer and 'const ' or ''
@@ -638,7 +638,7 @@ class Generator(object):
         self.b('          timeout_ms,')
 
         for arg in in_args:
-            name, info, tp_type = arg
+            name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
             const = pointer and 'const ' or ''
