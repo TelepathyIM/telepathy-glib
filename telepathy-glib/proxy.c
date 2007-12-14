@@ -98,6 +98,9 @@
  * @destroy: function used to free the user-supplied data
  * @weak_object: user-supplied object
  * @pending_call: the underlying dbus-glib pending call
+ * @raise_error: a callback with a simpler signature, which is called
+ *   instead of @callback if the proxy is invalidated (it should
+ *   call @callback with appropriate arguments)
  * @priv: private data used by the TpProxy implementation
  *
  * Structure representing a pending D-Bus call.
