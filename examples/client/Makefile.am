@@ -1,3 +1,5 @@
+SUBDIRS = extended
+
 noinst_PROGRAMS =
 
 noinst_PROGRAMS += telepathy-example-inspect-channel
