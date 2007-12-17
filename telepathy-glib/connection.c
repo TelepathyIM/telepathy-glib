@@ -169,23 +169,10 @@ tp_connection_status_changed (TpConnection *self,
   self->status = status;
   self->status_reason = reason;
 
-  switch (status)
+  if (status == TP_CONNECTION_STATUS_CONNECTED)
     {
-    case TP_CONNECTION_STATUS_DISCONNECTED:
-        {
-          GError *error = g_error_new (TP_ERRORS, TP_ERROR_DISCONNECTED,
-              "Disconnected: reason %d", reason);
-
-          tp_proxy_invalidated ((TpProxy *) self, error);
-          g_error_free (error);
-          break;
-        }
-    case TP_CONNECTION_STATUS_CONNECTED:
       tp_cli_connection_call_get_interfaces (self, -1,
           tp_connection_got_interfaces_cb, NULL, NULL, NULL);
-      break;
-    default:
-      break;
     }
 }
 
@@ -199,6 +186,18 @@ tp_connection_status_changed_cb (TpProxy *proxy,
   TpConnection *self = TP_CONNECTION (proxy);
 
   tp_connection_status_changed (self, status, reason);
+
+  /* we only want to run this in response to a StatusChanged signal,
+   * not if the initial status is DISCONNECTED */
+
+  if (status == TP_CONNECTION_STATUS_DISCONNECTED)
+    {
+      GError *error = g_error_new (TP_ERRORS, TP_ERROR_DISCONNECTED,
+          "Disconnected: reason %d", reason);
+
+      tp_proxy_invalidated ((TpProxy *) self, error);
+      g_error_free (error);
+    }
 }
 
 static void
