@@ -205,8 +205,10 @@ AC_OUTPUT( Makefile \
 	   docs/reference/Makefile \
 	   examples/Makefile \
 	   examples/client/Makefile \
+	   examples/client/extended/Makefile \
 	   examples/cm/Makefile \
 	   examples/cm/echo/Makefile \
+	   examples/cm/extended/Makefile \
 	   examples/cm/no-protocols/Makefile \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
