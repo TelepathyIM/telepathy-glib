@@ -90,21 +90,23 @@
 
 /**
  * TpProxyPendingCall:
- * @proxy: the TpProxy
- * @interface: GQuark representing the D-Bus interface
- * @member: the D-Bus member name
- * @callback: the user-supplied handler
- * @user_data: user-supplied data to be passed to the handler
- * @destroy: function used to free the user-supplied data
- * @weak_object: user-supplied object
- * @pending_call: the underlying dbus-glib pending call
- * @raise_error: a callback with a simpler signature, which is called
- *   instead of @callback if the proxy is invalidated (it should
- *   call @callback with appropriate arguments)
- * @priv: private data used by the TpProxy implementation
  *
- * Structure representing a pending D-Bus call.
+ * Opaque structure representing a pending D-Bus call.
  */
+
+struct _TpProxyPendingCall {
+    /*<public>*/
+    TpProxy *proxy;
+    GQuark interface;
+    gchar *member;
+    GCallback callback;
+    gpointer user_data;
+    GDestroyNotify destroy;
+    GObject *weak_object;
+    DBusGProxyCall *pending_call;
+    void (*raise_error) (TpProxyPendingCall *);
+    gconstpointer priv;
+};
 
 /**
  * TpProxySignalConnection:
@@ -475,6 +477,58 @@ tp_proxy_pending_call_free (gpointer self)
         tp_proxy_pending_call_lost_weak_ref, self);
 
   g_slice_free (TpProxyPendingCall, data);
+}
+
+/**
+ * tp_proxy_pending_call_steal_callback:
+ * @self: The pending call
+ * @proxy_out: Used to return the proxy on which the call was made
+ * @user_data_out: Used to return the user-supplied data
+ * @weak_object_out: Used to return the user-supplied object
+ *
+ * Return the callback to be called when this pending call completes,
+ * and set the callback in the pending call data structure to %NULL
+ * to ensure that it is not called again. This method should only be
+ * called from #TpProxy subclass implementations, and only when they
+ * are about to call the callback. The other arguments are used to retrieve
+ * things that must be passed to the callback.
+ *
+ * Returns: the callback for this pending call
+ */
+GCallback
+tp_proxy_pending_call_steal_callback (TpProxyPendingCall *self,
+                                      TpProxy **proxy_out,
+                                      gpointer *user_data_out,
+                                      GObject **weak_object_out)
+{
+  GCallback tmp = self->callback;
+
+  if (proxy_out != NULL)
+    *proxy_out = self->proxy;
+
+  if (user_data_out != NULL)
+    *user_data_out = self->user_data;
+
+  if (weak_object_out != NULL)
+    *weak_object_out = self->weak_object;
+
+  self->callback = NULL;
+  return tmp;
+}
+
+/**
+ * tp_proxy_pending_call_take_pending_call:
+ * @self: A pending call on which this function has not yet been called
+ * @pending_call: The underlying dbus-glib pending call
+ *
+ * Set the underlying pending call to be used by this object.
+ * This method should only be called from #TpProxy subclass implementations.
+ */
+void
+tp_proxy_pending_call_take_pending_call (TpProxyPendingCall *self,
+                                         DBusGProxyCall *pending_call)
+{
+  self->pending_call = pending_call;
 }
 
 static void

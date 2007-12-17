@@ -65,20 +65,6 @@ struct _TpProxyClass {
 
 typedef struct _TpProxyPendingCall TpProxyPendingCall;
 
-struct _TpProxyPendingCall {
-    /*<public>*/
-    TpProxy *proxy;
-    GQuark interface;
-    gchar *member;
-    GCallback callback;
-    gpointer user_data;
-    GDestroyNotify destroy;
-    GObject *weak_object;
-    DBusGProxyCall *pending_call;
-    void (*raise_error) (TpProxyPendingCall *);
-    gconstpointer priv;
-};
-
 TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
     GQuark interface, const gchar *member, GCallback callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object,
@@ -87,6 +73,12 @@ TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
 void tp_proxy_pending_call_free (gpointer self);
 
 void tp_proxy_pending_call_cancel (TpProxyPendingCall *self);
+
+GCallback tp_proxy_pending_call_steal_callback (TpProxyPendingCall *self,
+    TpProxy **proxy_out, gpointer *user_data_out, GObject **weak_object_out);
+
+void tp_proxy_pending_call_take_pending_call (TpProxyPendingCall *self,
+    DBusGProxyCall *pending_call);
 
 typedef struct _TpProxySignalConnection TpProxySignalConnection;
 

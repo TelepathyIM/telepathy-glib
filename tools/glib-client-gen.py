@@ -424,9 +424,13 @@ class Generator(object):
         self.b('    gpointer user_data)')
         self.b('{')
         self.b('  TpProxyPendingCall *data = user_data;')
+        self.b('  TpProxy *tpproxy;')
         self.b('  GError *error = NULL;')
-        self.b('  %s callback = (%s) (data->callback);' % (callback_name,
-                                                           callback_name))
+        self.b('  gpointer call_data;')
+        self.b('  GObject *weak_object;')
+        self.b('  %s callback = (%s)' % (callback_name, callback_name))
+        self.b('     tp_proxy_pending_call_steal_callback (data,')
+        self.b('         &tpproxy, &call_data, &weak_object);')
 
         for arg in out_args:
             name, info, tp_type, elt = arg
@@ -435,7 +439,6 @@ class Generator(object):
             self.b('  %s%s;' % (ctype, name))
 
         self.b('')
-        self.b('  g_assert (data->pending_call == call);')
         self.b('  dbus_g_proxy_end_call (proxy, call, &error,')
 
         for arg in out_args:
@@ -445,7 +448,7 @@ class Generator(object):
             self.b('      %s, &%s,' % (gtype, name))
 
         self.b('      G_TYPE_INVALID);')
-        self.b('  callback (data->proxy,')
+        self.b('  callback (tpproxy,')
 
         for arg in out_args:
             name, info, tp_type, elt = arg
@@ -456,10 +459,7 @@ class Generator(object):
             else:
                 self.b('      %s,' % name)
 
-        self.b('      error, data->user_data, data->weak_object);')
-        self.b('')
-        self.b('  /* avoid re-invocation */')
-        self.b('  data->callback = NULL;')
+        self.b('      error, call_data, weak_object);')
         self.b('')
         self.b('  if (error != NULL)')
         self.b('    {')
@@ -489,11 +489,15 @@ class Generator(object):
         self.b('static void')
         self.b('%s (TpProxyPendingCall *pc)' % raise_name)
         self.b('{')
-        self.b('  %s callback =' % callback_name)
-        self.b('      (%s) pc->callback;' % callback_name)
+        self.b('  TpProxy *tpproxy;')
+        self.b('  gpointer call_data;')
+        self.b('  GObject *weak_object;')
+        self.b('  %s callback = (%s)' % (callback_name, callback_name))
+        self.b('     tp_proxy_pending_call_steal_callback (pc,')
+        self.b('         &tpproxy, &call_data, &weak_object);')
         self.b('')
         self.b('  if (callback != NULL)')
-        self.b('    callback (pc->proxy,')
+        self.b('    callback (tpproxy,')
 
         for arg in out_args:
             name, info, tp_type, elt = arg
@@ -504,12 +508,9 @@ class Generator(object):
             else:
                 self.b('        0,')
 
-        self.b('        pc->proxy->invalidated,')
-        self.b('        pc->user_data,')
-        self.b('        pc->weak_object);')
-        self.b('')
-        self.b('  /* avoid re-invocation */')
-        self.b('  pc->callback = NULL;')
+        self.b('        tpproxy->invalidated,')
+        self.b('        call_data,')
+        self.b('        weak_object);')
         self.b('}')
 
         # Async stub
@@ -632,13 +633,13 @@ class Generator(object):
         self.b('          G_CALLBACK (callback),')
         self.b('          user_data, destroy, weak_object,')
         self.b('          %s);' % raise_name)
-        self.b('      data->pending_call = '
-               'dbus_g_proxy_begin_call_with_timeout (iface,')
-        self.b('          "%s",' % member)
-        self.b('          %s,' % callback_impl_name)
-        self.b('          data,')
-        self.b('          tp_proxy_pending_call_free,')
-        self.b('          timeout_ms,')
+        self.b('      tp_proxy_pending_call_take_pending_call (data,')
+        self.b('          dbus_g_proxy_begin_call_with_timeout (iface,')
+        self.b('              "%s",' % member)
+        self.b('              %s,' % callback_impl_name)
+        self.b('              data,')
+        self.b('              tp_proxy_pending_call_free,')
+        self.b('              timeout_ms,')
 
         for arg in in_args:
             name, info, tp_type, elt = arg
@@ -646,9 +647,9 @@ class Generator(object):
 
             const = pointer and 'const ' or ''
 
-            self.b('          %s, %s,' % (gtype, name))
+            self.b('              %s, %s,' % (gtype, name))
 
-        self.b('          G_TYPE_INVALID);')
+        self.b('              G_TYPE_INVALID));')
         self.b('')
         self.b('      return data;')
         self.b('    }')
