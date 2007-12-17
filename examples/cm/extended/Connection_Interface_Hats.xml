@@ -42,8 +42,8 @@
         <tp:docstring>There is no hat. color MUST be the empty
           string and properties MUST be an empty mapping.</tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="Helmet" value="1">
-        <tp:docstring>A hat with protective qualities.</tp:docstring>
+      <tp:enumvalue suffix="Other" value="1">
+        <tp:docstring>An unspecified type of hat.</tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Fedora" value="2">
         <tp:docstring>A fedora, which MAY be red.</tp:docstring>
