@@ -45,6 +45,13 @@ class Generator(object):
         self.prefix_mc = prefix.replace('_', '')
         self.basename = basename
         self.group = opts.get('--group', None)
+        self.proxy_cls = opts.get('--subclass', 'TpProxy') + ' *'
+        self.proxy_arg = opts.get('--subclass', 'void') + ' *'
+        self.proxy_assert = opts.get('--subclass-assert', 'TP_IS_PROXY')
+        self.proxy_doc = ('A #%s or subclass'
+            % opts.get('--subclass', 'TpProxy'))
+        if self.proxy_arg == 'void *':
+            self.proxy_arg = 'gpointer '
 
     def h(self, s):
         self.__header.append(s)
@@ -83,7 +90,7 @@ class Generator(object):
         # Example:
         #
         # typedef void (*tp_cli_connection_signal_callback_new_channel)
-        #   (TpProxy *proxy, const gchar *arg_object_path,
+        #   (TpConnection *proxy, const gchar *arg_object_path,
         #   const gchar *arg_channel_type, guint arg_handle_type,
         #   guint arg_handle, gboolean arg_suppress_handler,
         #   gpointer user_data, GObject *weak_object);
@@ -107,8 +114,8 @@ class Generator(object):
         self.b(' * Represents the signature of a callback for the signal %s.'
                % member)
         self.b(' */')
-        self.h('typedef void (*%s) (TpProxy *proxy,'
-               % callback_name)
+        self.h('typedef void (*%s) (%sproxy,'
+               % (callback_name, self.proxy_cls))
 
         for arg in args:
             name, info, tp_type, elt = arg
@@ -170,7 +177,7 @@ class Generator(object):
         #
         # TpProxySignalConnection *
         #   tp_cli_connection_connect_to_new_channel
-        #   (TpProxy *proxy,
+        #   (TpConnection *proxy,
         #   tp_cli_connection_signal_callback_new_channel callback,
         #   gpointer user_data,
         #   GDestroyNotify destroy);
@@ -184,7 +191,7 @@ class Generator(object):
         self.b('/**')
         self.b(' * %s_%s_connect_to_%s:'
                % (self.prefix_lc, iface_lc, member_lc))
-        self.b(' * @proxy: The #TpProxy')
+        self.b(' * @proxy: %s' % self.proxy_doc)
         self.b(' * @callback: Callback to be called when the signal is')
         self.b(' *   received')
         self.b(' * @user_data: User-supplied data for the callback')
@@ -201,25 +208,29 @@ class Generator(object):
         self.b(' * Returns: a #TpProxySignalConnection containing all of the')
         self.b(' * above, which can be used to disconnect the signal')
         self.b(' */')
-        self.h('TpProxySignalConnection *%s_%s_connect_to_%s ('
-               'gpointer proxy,'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.h('TpProxySignalConnection *%s_%s_connect_to_%s (%sproxy,'
+               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.h('    %s callback,' % callback_name)
         self.h('    gpointer user_data,')
         self.h('    GDestroyNotify destroy,')
         self.h('    GObject *weak_object);')
 
         self.b('TpProxySignalConnection *')
-        self.b('%s_%s_connect_to_%s (gpointer proxy,'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.b('%s_%s_connect_to_%s (%sproxy,'
+               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.b('    %s callback,' % callback_name)
         self.b('    gpointer user_data,')
         self.b('    GDestroyNotify destroy,')
         self.b('    GObject *weak_object)')
         self.b('{')
         self.b('  TpProxySignalConnection *data;')
-        self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
-        self.b('      TP_PROXY (proxy),')
+        self.b('  DBusGProxy *iface;')
+        self.b('')
+        self.b('  g_return_val_if_fail (%s (proxy), NULL);'
+               % self.proxy_assert)
+        self.b('')
+        self.b('  iface = tp_proxy_borrow_interface_by_id (')
+        self.b('      (TpProxy *) proxy,')
         self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
         self.b('      NULL);')
         self.b('')
@@ -228,7 +239,7 @@ class Generator(object):
         self.b('  if (iface == NULL)')
         self.b('    return NULL;')
         self.b('')
-        self.b('  data = tp_proxy_signal_connection_new (proxy,')
+        self.b('  data = tp_proxy_signal_connection_new ((TpProxy *) proxy,')
         self.b('      TP_IFACE_QUARK_%s, \"%s\",' % (iface_lc.upper(), member))
         self.b('      G_CALLBACK (callback), user_data, destroy,')
         self.b('      weak_object, G_CALLBACK (_%s));' % callback_name)
@@ -290,13 +301,13 @@ class Generator(object):
         #       GPtrArray **out0,
         #       GError **error);
 
-        self.h('gboolean %s_%s_block_on_%s (gpointer proxy,'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.h('gboolean %s_%s_block_on_%s (%sproxy,'
+               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.h('    gint timeout_ms,')
 
         self.b('/**')
         self.b(' * %s_%s_block_on_%s:' % (self.prefix_lc, iface_lc, member_lc))
-        self.b(' * @proxy: A #TpProxy or subclass')
+        self.b(' * @proxy: %s' % self.proxy_doc)
         self.b(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
 
         for arg in in_args:
@@ -324,8 +335,8 @@ class Generator(object):
         self.b(' *')
         self.b(' * Returns: TRUE on success, FALSE and sets @error on error')
         self.b(' */')
-        self.b('gboolean\n%s_%s_block_on_%s (gpointer proxy,'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.b('gboolean\n%s_%s_block_on_%s (%sproxy,'
+               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.b('    gint timeout_ms,')
 
         for arg in in_args:
@@ -349,8 +360,13 @@ class Generator(object):
 
         self.b('    GError **error)')
         self.b('{')
-        self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
-        self.b('      TP_PROXY (proxy),')
+        self.b('  DBusGProxy *iface;')
+        self.b('')
+        self.b('  g_return_val_if_fail (%s (proxy), FALSE);'
+               % self.proxy_assert)
+        self.b('')
+        self.b('  iface = tp_proxy_borrow_interface_by_id (')
+        self.b('      (TpProxy *) proxy,')
         self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
         self.b('      error);')
         self.b('')
@@ -410,7 +426,8 @@ class Generator(object):
         callback_name = '%s_%s_callback_for_%s' % (self.prefix_lc, iface_lc,
                                                    member_lc)
 
-        self.h('typedef void (*%s) (TpProxy *proxy,' % callback_name)
+        self.h('typedef void (*%s) (%sproxy,'
+               % (callback_name, self.proxy_cls))
 
         for arg in out_args:
             name, info, tp_type, elt = arg
@@ -459,7 +476,7 @@ class Generator(object):
             self.b('      %s, &%s,' % (gtype, name))
 
         self.b('      G_TYPE_INVALID);')
-        self.b('  callback (tpproxy,')
+        self.b('  callback ((%s) tpproxy,' % self.proxy_cls)
 
         for arg in out_args:
             name, info, tp_type, elt = arg
@@ -508,7 +525,7 @@ class Generator(object):
         self.b('         &tpproxy, &call_data, &weak_object);')
         self.b('')
         self.b('  if (callback != NULL)')
-        self.b('    callback (tpproxy,')
+        self.b('    callback ((%s) tpproxy,' % self.proxy_cls)
 
         for arg in out_args:
             name, info, tp_type, elt = arg
@@ -536,8 +553,8 @@ class Generator(object):
         #   gpointer user_data,
         #   GDestroyNotify *destructor);
 
-        self.h('TpProxyPendingCall *%s_%s_call_%s (gpointer proxy,'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.h('TpProxyPendingCall *%s_%s_call_%s (%sproxy,'
+               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.h('    gint timeout_ms,')
 
         self.b('/**')
@@ -572,8 +589,8 @@ class Generator(object):
         self.b(' *  invalid when the callback is called, the call is')
         self.b(' *  cancelled or the #TpProxy becomes invalid.')
         self.b(' */')
-        self.b('TpProxyPendingCall *\n%s_%s_call_%s (gpointer proxy,'
-               % (self.prefix_lc, iface_lc, member_lc))
+        self.b('TpProxyPendingCall *\n%s_%s_call_%s (%sproxy,'
+               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.b('    gint timeout_ms,')
 
         for arg in in_args:
@@ -598,8 +615,13 @@ class Generator(object):
         self.b('{')
         self.b('  GError *error = NULL;')
         self.b('  GQuark interface = TP_IFACE_QUARK_%s;' % iface_lc.upper())
-        self.b('  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (')
-        self.b('      TP_PROXY (proxy),')
+        self.b('  DBusGProxy *iface;')
+        self.b('')
+        self.b('  g_return_val_if_fail (%s (proxy), NULL);'
+               % self.proxy_assert)
+        self.b('')
+        self.b('  iface = tp_proxy_borrow_interface_by_id (')
+        self.b('      (TpProxy *) proxy,')
         self.b('      interface, &error);')
         self.b('')
         self.b('  if (iface == NULL)')
@@ -639,7 +661,7 @@ class Generator(object):
         self.b('    {')
         self.b('      TpProxyPendingCall *data;')
         self.b('')
-        self.b('      data = tp_proxy_pending_call_new (proxy,')
+        self.b('      data = tp_proxy_pending_call_new ((TpProxy *) proxy,')
         self.b('          interface, "%s",' % member)
         self.b('          G_CALLBACK (callback),')
         self.b('          user_data, destroy, weak_object,')
@@ -735,7 +757,7 @@ class Generator(object):
 
             self.b('/*')
             self.b(' * %s_%s_add_signals:' % (self.prefix_lc, self.group))
-            self.b(' * @proxy: the TpProxy')
+            self.b(' * @self: the #TpProxy')
             self.b(' * @quark: a quark whose string value is the interface')
             self.b(' *   name whose signals should be added')
             self.b(' * @proxy: the D-Bus proxy to which to add the signals')
@@ -779,7 +801,7 @@ def types_to_gtypes(types):
 
 if __name__ == '__main__':
     options, argv = gnu_getopt(sys.argv[1:], '',
-                               ['group='])
+                               ['group=', 'subclass=', 'subclass-assert='])
 
     opts = {}
 
