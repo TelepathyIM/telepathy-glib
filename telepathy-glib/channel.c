@@ -25,6 +25,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #include "_gen/signals-marshal.h"
 

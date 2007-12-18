@@ -65,35 +65,11 @@ struct _TpProxyClass {
 
 typedef struct _TpProxyPendingCall TpProxyPendingCall;
 
-TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
-    GQuark interface, const gchar *member, GCallback callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object,
-    void (*raise_error) (TpProxyPendingCall *));
-
-void tp_proxy_pending_call_free (gpointer self);
-
 void tp_proxy_pending_call_cancel (TpProxyPendingCall *self);
-
-GCallback tp_proxy_pending_call_steal_callback (TpProxyPendingCall *self,
-    TpProxy **proxy_out, gpointer *user_data_out, GObject **weak_object_out);
-
-void tp_proxy_pending_call_take_pending_call (TpProxyPendingCall *self,
-    DBusGProxyCall *pending_call);
 
 typedef struct _TpProxySignalConnection TpProxySignalConnection;
 
-TpProxySignalConnection *tp_proxy_signal_connection_new (TpProxy *self,
-    GQuark interface, const gchar *member, GCallback callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object,
-    GCallback impl_callback);
-
-void tp_proxy_signal_connection_free_closure (gpointer self, GClosure *unused);
-
 void tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self);
-
-GCallback tp_proxy_signal_connection_get_callback
-    (TpProxySignalConnection *self, TpProxy **proxy_out,
-     gpointer *user_data_out, GObject **weak_object_out);
 
 GType tp_proxy_get_type (void);
 
@@ -114,18 +90,18 @@ GType tp_proxy_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_PROXY, \
                               TpProxyClass))
 
-typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
-    guint quark, DBusGProxy *proxy, gpointer unused);
+gboolean tp_proxy_has_interface_by_id (gpointer self, GQuark interface);
 
-void tp_proxy_class_hook_on_interface_add (TpProxyClass *klass,
-    TpProxyInterfaceAddedCb callback);
+static inline gboolean
+_tp_proxy_inline_has_interface (gpointer self, const gchar *interface)
+{
+  GQuark q = g_quark_try_string (interface);
 
-DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
-    GError **error);
+  return q != 0 && tp_proxy_has_interface_by_id (self, q);
+}
 
-DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark interface);
-
-void tp_proxy_invalidated (TpProxy *self, const GError *error);
+#define tp_proxy_has_interface(self, interface) \
+    (_tp_proxy_inline_has_interface (self, interface))
 
 G_END_DECLS
 

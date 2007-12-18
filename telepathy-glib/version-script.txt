@@ -689,6 +689,7 @@ TELEPATHY_GLIB_0.7.1 {
         tp_proxy_borrow_interface_by_id;
         tp_proxy_class_hook_on_interface_add;
         tp_proxy_get_type;
+        tp_proxy_has_interface_by_id;
         tp_proxy_invalidated;
         tp_proxy_pending_call_cancel;
         tp_proxy_pending_call_free;

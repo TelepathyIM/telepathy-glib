@@ -28,6 +28,7 @@
 #include "telepathy-glib/errors.h"
 #include "telepathy-glib/gtypes.h"
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-subclass.h>
 #include "telepathy-glib/util.h"
 
 #define DEBUG_FLAG TP_DEBUG_MANAGER

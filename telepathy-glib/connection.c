@@ -26,6 +26,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "debug-internal.h"

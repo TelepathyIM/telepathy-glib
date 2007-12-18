@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "telepathy-glib/proxy.h"
+#include "telepathy-glib/proxy-subclass.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
@@ -44,6 +44,23 @@
  *
  * The header proxy.h also includes auto-generated client wrappers for the
  * Properties interface, which can be implemented by any type of object.
+ *
+ * Since: 0.7.1
+ */
+
+/**
+ * SECTION:proxy-subclass
+ * @title: TpProxy subclasses and mixins
+ * @short_description: Providing extra functionality for a #TpProxy or
+ *  subclass, or subclassing it
+ * @see_also: #TpProxy
+ *
+ * The implementations of #TpProxy subclasses and "mixin" functions need
+ * access to the underlying dbus-glib objects used to implement the
+ * #TpProxy API.
+ *
+ * Mixin functions to implement particular D-Bus interfaces should usually
+ * be auto-generated, by copying tools/glib-client-gen.py from telepathy-glib.
  *
  * Since: 0.7.1
  */
@@ -200,6 +217,32 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 
   return NULL;
 }
+
+/**
+ * tp_proxy_has_interface_by_id:
+ * @self: the #TpProxy (or subclass)
+ * @interface: quark representing the interface required
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if this proxy implements the given interface.
+ */
+gboolean
+tp_proxy_has_interface_by_id (gpointer self,
+                              GQuark interface)
+{
+  return tp_proxy_borrow_interface_by_id (self, interface, NULL) != NULL;
+}
+
+/**
+ * tp_proxy_has_interface:
+ * @self: the #TpProxy (or subclass)
+ * @interface: the interface required, as a string
+ *
+ * A macro wrapping tp_proxy_has_interface_by_id().
+ *
+ * Returns: %TRUE if this proxy implements the given interface.
+ */
 
 /**
  * tp_proxy_invalidated:

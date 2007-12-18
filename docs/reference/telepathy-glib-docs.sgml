@@ -10,6 +10,7 @@
     <title>General D-Bus support</title>
     <xi:include href="xml/proxy.xml"/>
     <xi:include href="xml/dbus.xml"/>
+    <xi:include href="xml/proxy-subclass.xml"/>
   </chapter>
   <chapter id="ch-protocol">
     <title>The Telepathy protocol</title>

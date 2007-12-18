@@ -23,6 +23,7 @@
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #include "telepathy-glib/_gen/tp-cli-media-session-handler-body.h"
 #include "telepathy-glib/_gen/tp-cli-media-stream-handler-body.h"

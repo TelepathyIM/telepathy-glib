@@ -3,6 +3,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/intset.h>
+#include <telepathy-glib/proxy-subclass.h>    /* for _invalidated etc. */
 #include <telepathy-glib/util.h>
 
 typedef struct { GObject p; } StubObject;
