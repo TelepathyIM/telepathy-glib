@@ -153,14 +153,12 @@ tp_connection_continue_introspection (TpConnection *self)
 }
 
 static void
-got_aliasing_flags (TpProxy *proxy,
+got_aliasing_flags (TpConnection *self,
                     guint flags,
                     const GError *error,
                     gpointer user_data,
                     GObject *weak_object)
 {
-  TpConnection *self = TP_CONNECTION (proxy);
-
   if (error == NULL)
     {
       DEBUG ("Introspected aliasing flags: 0x%x", flags);
@@ -184,14 +182,12 @@ introspect_aliasing (TpConnection *self)
 }
 
 static void
-tp_connection_got_interfaces_cb (TpProxy *proxy,
+tp_connection_got_interfaces_cb (TpConnection *self,
                                  const gchar **interfaces,
                                  const GError *error,
                                  gpointer user_data,
                                  GObject *user_object)
 {
-  TpConnection *self = TP_CONNECTION (proxy);
-
   DEBUG ("%p", self);
 
   if (error == NULL)
@@ -277,14 +273,12 @@ tp_connection_status_changed (TpConnection *self,
 }
 
 static void
-tp_connection_status_changed_cb (TpProxy *proxy,
+tp_connection_status_changed_cb (TpConnection *self,
                                  guint status,
                                  guint reason,
                                  gpointer user_data,
                                  GObject *weak_object)
 {
-  TpConnection *self = TP_CONNECTION (proxy);
-
   tp_connection_status_changed (self, status, reason);
 
   /* we only want to run this in response to a StatusChanged signal,
@@ -301,14 +295,12 @@ tp_connection_status_changed_cb (TpProxy *proxy,
 }
 
 static void
-tp_connection_got_status_cb (TpProxy *proxy,
+tp_connection_got_status_cb (TpConnection *self,
                              guint status,
                              const GError *error,
                              gpointer unused,
                              GObject *user_object)
 {
-  TpConnection *self = TP_CONNECTION (proxy);
-
   DEBUG ("%p", self);
 
   if (error == NULL)

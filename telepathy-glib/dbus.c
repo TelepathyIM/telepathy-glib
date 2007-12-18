@@ -620,26 +620,23 @@ _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
 }
 
 static void
-_tp_dbus_daemon_name_owner_changed_cb (TpProxy *proxy,
+_tp_dbus_daemon_name_owner_changed_cb (TpDBusDaemon *self,
                                        const gchar *name,
                                        const gchar *old_owner,
                                        const gchar *new_owner,
                                        gpointer user_data,
                                        GObject *object)
 {
-  TpDBusDaemon *self = TP_DBUS_DAEMON (proxy);
-
   _tp_dbus_daemon_name_owner_changed (self, name, new_owner);
 }
 
 static void
-_tp_dbus_daemon_got_name_owner (TpProxy *proxy,
+_tp_dbus_daemon_got_name_owner (TpDBusDaemon *self,
                                 const gchar *owner,
                                 const GError *error,
                                 gpointer user_data,
                                 GObject *user_object)
 {
-  TpDBusDaemon *self = TP_DBUS_DAEMON (proxy);
   gchar *name = user_data;
 
   if (error != NULL)

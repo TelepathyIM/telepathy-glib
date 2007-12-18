@@ -303,6 +303,35 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	../tools/glib-client-gen.py \
 	../tools/ls-interfaces.xsl \
 	Makefile.am
+	set -e; \
+	subclass= ; \
+	case $* in \
+		channel) \
+			subclass=--subclass=TpChannel; \
+			subclass_assert=--subclass-assert=TP_IS_CHANNEL; \
+			;; \
+		connection-manager) \
+			subclass=--subclass=TpConnectionManager; \
+			subclass_assert=--subclass-assert=TP_IS_CONNECTION_MANAGER \
+			;; \
+		connection) \
+			subclass=--subclass=TpConnection; \
+			subclass_assert=--subclass-assert=TP_IS_CONNECTION; \
+			;; \
+		media-session-handler) \
+			subclass=--subclass=TpMediaSessionHandler; \
+			subclass_assert=--subclass-assert=TP_IS_MEDIA_SESSION_HANDLER; \
+			;; \
+		media-stream-handler) \
+			subclass=--subclass=TpMediaStreamHandler; \
+			subclass_assert=--subclass-assert=TP_IS_MEDIA_STREAM_HANDLER; \
+			;; \
+		dbus-daemon) \
+			subclass=--subclass=TpDBusDaemon; \
+			subclass_assert=--subclass-assert=TP_IS_DBUS_DAEMON; \
+			;; \
+	esac; \
 	$(PYTHON) $(srcdir)/../tools/glib-client-gen.py \
+		$$subclass $$subclass_assert \
 		--group `echo $* | tr - _` \
 		$< Tp_Cli _gen/tp-cli-$*

@@ -155,14 +155,12 @@ tp_channel_set_property (GObject *object,
 }
 
 static void
-tp_channel_got_interfaces_cb (TpProxy *proxy,
+tp_channel_got_interfaces_cb (TpChannel *self,
                               const gchar **interfaces,
                               const GError *error,
                               gpointer unused,
                               GObject *unused2)
 {
-  TpChannel *self = TP_CHANNEL (proxy);
-
   if (error == NULL)
     {
       DEBUG ("%p: Introspected interfaces", self);
@@ -199,14 +197,12 @@ tp_channel_got_interfaces_cb (TpProxy *proxy,
 }
 
 static void
-tp_channel_got_channel_type_cb (TpProxy *proxy,
+tp_channel_got_channel_type_cb (TpChannel *self,
                                 const gchar *channel_type,
                                 const GError *error,
                                 gpointer unused,
                                 GObject *unused2)
 {
-  TpChannel *self = TP_CHANNEL (proxy);
-
   if (error == NULL)
     {
       DEBUG ("%p: Introspected channel type %s", self, channel_type);
@@ -238,15 +234,13 @@ tp_channel_got_channel_type_cb (TpProxy *proxy,
 }
 
 static void
-tp_channel_got_handle_cb (TpProxy *proxy,
+tp_channel_got_handle_cb (TpChannel *self,
                           guint handle_type,
                           guint handle,
                           const GError *error,
                           gpointer unused,
                           GObject *unused2)
 {
-  TpChannel *self = TP_CHANNEL (proxy);
-
   if (error == NULL)
     {
       DEBUG ("%p: Introspected handle #%d of type %d", self, handle,
@@ -276,14 +270,14 @@ tp_channel_got_handle_cb (TpProxy *proxy,
 }
 
 static void
-tp_channel_closed_cb (TpProxy *proxy,
+tp_channel_closed_cb (TpChannel *self,
                       gpointer user_data,
                       GObject *weak_object)
 {
   GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
       "Channel was closed" };
 
-  tp_proxy_invalidated (proxy, &e);
+  tp_proxy_invalidated ((TpProxy *) self, &e);
 }
 
 static GObject *

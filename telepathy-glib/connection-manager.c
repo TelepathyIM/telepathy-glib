@@ -196,13 +196,12 @@ static void tp_connection_manager_continue_introspection
     (TpConnectionManager *self);
 
 static void
-tp_connection_manager_got_parameters (TpProxy *proxy,
+tp_connection_manager_got_parameters (TpConnectionManager *self,
                                       const GPtrArray *parameters,
                                       const GError *error,
                                       gpointer user_data,
                                       GObject *user_object)
 {
-  TpConnectionManager *self = TP_CONNECTION_MANAGER (proxy);
   gchar *protocol = user_data;
   GArray *output;
   guint i;
@@ -369,13 +368,12 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 }
 
 static void
-tp_connection_manager_got_protocols (TpProxy *proxy,
+tp_connection_manager_got_protocols (TpConnectionManager *self,
                                      const gchar **protocols,
                                      const GError *error,
                                      gpointer user_data,
                                      GObject *user_object)
 {
-  TpConnectionManager *self = TP_CONNECTION_MANAGER (proxy);
   guint i = 0;
   const gchar **iter;
 
@@ -1198,14 +1196,13 @@ list_context_unref (_ListContext *list_context)
 }
 
 void
-tp_list_connection_managers_got_names (TpProxy *proxy,
+tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
                                        const gchar **names,
                                        const GError *error,
                                        gpointer user_data,
                                        GObject *user_object)
 {
   _ListContext *list_context = user_data;
-  TpDBusDaemon *bus_daemon = (TpDBusDaemon *) proxy;
   const gchar **iter;
 
   if (error != NULL)
