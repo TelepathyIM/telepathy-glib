@@ -95,7 +95,6 @@
  */
 
 struct _TpProxyPendingCall {
-    /*<public>*/
     TpProxy *proxy;
     GQuark interface;
     gchar *member;
