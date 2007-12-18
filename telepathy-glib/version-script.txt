@@ -697,6 +697,7 @@ TELEPATHY_GLIB_0.7.1 {
         tp_proxy_pending_call_new;
         tp_proxy_signal_connection_disconnect;
         tp_proxy_signal_connection_free_closure;
+        tp_proxy_signal_connection_get_callback;
         tp_proxy_signal_connection_new;
 } TELEPATHY_GLIB_0.7.0;
 

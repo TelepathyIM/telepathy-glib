@@ -1357,6 +1357,7 @@ TpProxySignalConnection
 tp_proxy_signal_connection_disconnect
 tp_proxy_signal_connection_new
 tp_proxy_signal_connection_free_closure
+tp_proxy_signal_connection_get_callback
 <SUBSECTION Standard>
 TpProxyPrivate
 TP_TYPE_PROXY

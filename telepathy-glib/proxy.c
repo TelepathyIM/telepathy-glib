@@ -109,19 +109,21 @@ struct _TpProxyPendingCall {
 
 /**
  * TpProxySignalConnection:
- * @proxy: the TpProxy
- * @interface: GQuark representing the D-Bus interface
- * @member: the D-Bus signal name
- * @callback: the user-supplied handler
- * @user_data: user-supplied data to be used by the handler
- * @destroy: function used to free the user-supplied data
- * @weak_object: user-supplied object
- * @impl_callback: the internal callback given to dbus-glib by TpProxy
- *  subclasses
- * @priv: private data used by the TpProxy implementation
  *
- * Structure representing a D-Bus signal connection.
+ * Opaque structure representing a D-Bus signal connection.
  */
+
+struct _TpProxySignalConnection {
+    TpProxy *proxy;
+    GQuark interface;
+    gchar *member;
+    GCallback callback;
+    gpointer user_data;
+    GDestroyNotify destroy;
+    GObject *weak_object;
+    GCallback impl_callback;
+    gconstpointer priv;
+};
 
 struct _TpProxyPrivate {
     /* GQuark for interface => ref'd DBusGProxy * */
@@ -711,6 +713,39 @@ tp_proxy_signal_connection_free_closure (gpointer self,
   g_free (data->member);
 
   g_slice_free (TpProxySignalConnection, data);
+}
+
+/**
+ * tp_proxy_signal_connection_get_callback:
+ * @self: The pending call
+ * @proxy_out: Used to return the proxy on which the call was made
+ * @user_data_out: Used to return the user-supplied data
+ * @weak_object_out: Used to return the user-supplied object
+ *
+ * Return the callback to be called when this signal is received.
+ * This method should only be called from #TpProxy subclass implementations.
+ *
+ * The other arguments are used to retrieve things that must be passed to the
+ * callback. They output "borrowed" references.
+ *
+ * Returns: the callback for this pending call
+ */
+GCallback
+tp_proxy_signal_connection_get_callback (TpProxySignalConnection *self,
+                                         TpProxy **proxy_out,
+                                         gpointer *user_data_out,
+                                         GObject **weak_object_out)
+{
+  if (proxy_out != NULL)
+    *proxy_out = self->proxy;
+
+  if (user_data_out != NULL)
+    *user_data_out = self->user_data;
+
+  if (weak_object_out != NULL)
+    *weak_object_out = self->weak_object;
+
+  return self->callback;
 }
 
 static void

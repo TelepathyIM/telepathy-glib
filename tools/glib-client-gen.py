@@ -140,19 +140,30 @@ class Generator(object):
 
         self.b('    TpProxySignalConnection *signal_connection)')
         self.b('{')
+        self.b('  TpProxy *tpproxy;')
+        self.b('  gpointer user_data;')
+        self.b('  GObject *weak_object;')
         self.b('  %s callback =' % callback_name)
         self.b('      (%s)' % callback_name)
-        self.b('          signal_connection->callback;')
+        self.b('          tp_proxy_signal_connection_get_callback '
+               '(signal_connection,')
+        self.b('          &tpproxy,')
+        self.b('          &user_data,')
+        self.b('          &weak_object);')
+        self.b('')
+        self.b('  g_assert (tpproxy != NULL);')
         self.b('')
         self.b('  if (callback != NULL)')
-        self.b('    callback (signal_connection->proxy,')
+        self.b('    callback (g_object_ref (tpproxy),')
 
         for arg in args:
             name, info, tp_type, elt = arg
             self.b('      %s,' % name)
 
-        self.b('      signal_connection->user_data,')
-        self.b('      signal_connection->weak_object);')
+        self.b('      user_data,')
+        self.b('      weak_object);')
+        self.b('')
+        self.b('  g_object_unref (tpproxy);')
         self.b('}')
 
         # Example:
