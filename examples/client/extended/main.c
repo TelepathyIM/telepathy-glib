@@ -53,10 +53,10 @@ conn_ready (TpConnection *conn,
   GHashTable *asv;
   GValue *value;
 
-  if (tp_proxy_borrow_interface_by_id ((TpProxy *) conn,
-        EXAMPLE_IFACE_QUARK_CONNECTION_INTERFACE_HATS, NULL) == NULL)
+  if (!tp_proxy_has_interface_by_id (conn,
+        EXAMPLE_IFACE_QUARK_CONNECTION_INTERFACE_HATS))
     {
-      g_warning ("Connection does not support Hats interfacr");
+      g_warning ("Connection does not support Hats interface");
       g_main_loop_quit (mainloop);
       return;
     }
