@@ -239,9 +239,8 @@ tp_proxy_has_interface_by_id (gpointer self,
  * @self: the #TpProxy (or subclass)
  * @interface: the interface required, as a string
  *
- * A macro wrapping tp_proxy_has_interface_by_id().
- *
- * Returns: %TRUE if this proxy implements the given interface.
+ * A macro wrapping tp_proxy_has_interface_by_id(). Returns %TRUE if this
+ * proxy implements the given interface.
  */
 
 /**
