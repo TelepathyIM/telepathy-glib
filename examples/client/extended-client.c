@@ -127,7 +127,7 @@ conn_ready (TpConnection *conn,
 }
 
 static void
-conn_status_changed (TpProxy *proxy,
+conn_status_changed (TpConnection *conn,
                      guint status,
                      guint reason,
                      gpointer user_data,
@@ -143,7 +143,7 @@ conn_status_changed (TpProxy *proxy,
 }
 
 static void
-cm_requested_connection (TpProxy *proxy,
+cm_requested_connection (TpConnectionManager *manager,
                          const gchar *bus_name,
                          const gchar *object_path,
                          const GError *error,
@@ -152,10 +152,12 @@ cm_requested_connection (TpProxy *proxy,
 {
   GError *e = NULL;
   TpConnection *conn;
+  TpProxy *proxy = (TpProxy *) manager;
 
   if (die_if (error, "RequestConnection()"))
     return;
 
+  /* FIXME: there should be convenience API for this */
   conn = tp_connection_new (proxy->dbus_daemon,
       bus_name, object_path, &e);
 

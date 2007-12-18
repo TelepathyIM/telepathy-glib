@@ -64,7 +64,7 @@ destroy_user_data (gpointer user_data)
 }
 
 static void
-requested_name (TpProxy *proxy,
+requested_name (TpDBusDaemon *proxy,
                 guint result,
                 const GError *error,
                 gpointer user_data,
@@ -78,7 +78,7 @@ requested_name (TpProxy *proxy,
 }
 
 static void
-noc (TpProxy *proxy,
+noc (TpDBusDaemon *proxy,
      const gchar *name,
      const gchar *old,
      const gchar *new,
@@ -86,7 +86,7 @@ noc (TpProxy *proxy,
      GObject *weak_object)
 {
   guint which = GPOINTER_TO_UINT (user_data);
-  TpProxy *want_proxy = NULL;
+  TpDBusDaemon *want_proxy = NULL;
   GObject *want_object = NULL;
 
   g_message ("Caught signal (%s: %s -> %s) with proxy #%d '%c' according to "
@@ -98,11 +98,11 @@ noc (TpProxy *proxy,
   switch (which)
     {
     case TEST_A:
-      want_proxy = (TpProxy *) a;
+      want_proxy = a;
       want_object = (GObject *) z;
       break;
     case TEST_Z:
-      want_proxy = (TpProxy *) z;
+      want_proxy = z;
       want_object = (GObject *) a;
       break;
     default:

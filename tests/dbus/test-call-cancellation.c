@@ -73,14 +73,14 @@ destroy_user_data (gpointer user_data)
 }
 
 static void
-listed_names (TpProxy *proxy,
+listed_names (TpDBusDaemon *proxy,
               const gchar **names,
               const GError *error,
               gpointer user_data,
               GObject *weak_object)
 {
   guint which = GPOINTER_TO_UINT (user_data);
-  TpProxy *want_proxy = NULL;
+  TpDBusDaemon *want_proxy = NULL;
   GObject *want_object = NULL;
 
   if (error == NULL)
@@ -92,19 +92,19 @@ listed_names (TpProxy *proxy,
       switch (which)
         {
         case TEST_A:
-          want_proxy = (TpProxy *) a;
+          want_proxy = a;
           want_object = (GObject *) z;
           break;
         case TEST_D:
-          want_proxy = (TpProxy *) copy_of_d;
+          want_proxy = copy_of_d;
           want_object = NULL;
           break;
         case TEST_G:
-          want_proxy = (TpProxy *) copy_of_g;
+          want_proxy = copy_of_g;
           want_object = (GObject *) copy_of_g;
           break;
         case TEST_Z:
-          want_proxy = (TpProxy *) z;
+          want_proxy = z;
           want_object = (GObject *) a;
           break;
         default:
@@ -124,11 +124,11 @@ listed_names (TpProxy *proxy,
       switch (which)
         {
         case TEST_C:
-          want_proxy = (TpProxy *) c;
+          want_proxy = c;
           want_object = NULL;
           break;
         case TEST_F:
-          want_proxy = (TpProxy *) f;
+          want_proxy = f;
           want_object = NULL;
           break;
         default:

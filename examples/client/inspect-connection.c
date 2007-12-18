@@ -28,13 +28,12 @@ connection_died (TpConnection *connection,
 }
 
 void
-got_channels (TpProxy *proxy,
+got_channels (TpConnection *connection,
               const GPtrArray *channels,
               const GError *error,
               gpointer user_data,
               GObject *weak_object)
 {
-  TpConnection *connection = TP_CONNECTION (proxy);
   GMainLoop *mainloop = user_data;
 
   /* this is the connection - you can do more with it */
