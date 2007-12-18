@@ -78,6 +78,16 @@ struct _TpConnection {
     TpConnectionPrivate *priv;
 };
 
+typedef void (*TpConnectionProc) (TpConnection *self);
+
+struct _TpConnectionPrivate {
+    /* GArray of TpConnectionProc */
+    GArray *introspect_needed;
+
+    TpConnectionAliasFlags alias_flags;
+    /* other stuff could go here */
+};
+
 enum
 {
   PROP_STATUS = 1,
@@ -119,6 +129,61 @@ tp_connection_get_property (GObject *object,
 }
 
 static void
+tp_connection_continue_introspection (TpConnection *self)
+{
+  g_assert (self->priv->introspect_needed != NULL);
+
+  if (self->priv->introspect_needed->len == 0)
+    {
+      g_array_free (self->priv->introspect_needed, TRUE);
+      self->priv->introspect_needed = NULL;
+
+      DEBUG ("%p: emitting connection-ready", self);
+      g_signal_emit (self, signals[SIGNAL_CONNECTION_READY], 0);
+    }
+  else
+    {
+      guint i = self->priv->introspect_needed->len - 1;
+      TpConnectionProc next = g_array_index (self->priv->introspect_needed,
+          TpConnectionProc, i);
+
+      g_array_remove_index (self->priv->introspect_needed, i);
+      next (self);
+    }
+}
+
+static void
+got_aliasing_flags (TpProxy *proxy,
+                    guint flags,
+                    const GError *error,
+                    gpointer user_data,
+                    GObject *weak_object)
+{
+  TpConnection *self = TP_CONNECTION (proxy);
+
+  if (error == NULL)
+    {
+      DEBUG ("Introspected aliasing flags: 0x%x", flags);
+      self->priv->alias_flags = flags;
+    }
+  else
+    {
+      DEBUG ("GetAliasFlags(): %s", error->message);
+    }
+
+  tp_connection_continue_introspection (self);
+}
+
+static void
+introspect_aliasing (TpConnection *self)
+{
+  g_assert (self->priv->introspect_needed != NULL);
+
+  tp_cli_connection_interface_aliasing_call_get_alias_flags
+      (self, -1, got_aliasing_flags, NULL, NULL, NULL);
+}
+
+static void
 tp_connection_got_interfaces_cb (TpProxy *proxy,
                                  const gchar **interfaces,
                                  const GError *error,
@@ -136,12 +201,47 @@ tp_connection_got_interfaces_cb (TpProxy *proxy,
         {
           const gchar **iter;
 
+          g_assert (self->priv->introspect_needed == NULL);
+          self->priv->introspect_needed = g_array_new (FALSE, FALSE,
+              sizeof (TpConnectionProc));
+
           for (iter = interfaces; *iter != NULL; iter++)
             {
               if (tp_dbus_check_valid_interface_name (*iter, NULL))
                 {
+                  GQuark q = g_quark_from_string (*iter);
+
                   tp_proxy_add_interface_by_id ((TpProxy *) self,
                       g_quark_from_string (*iter));
+
+                  if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
+                    {
+                      /* call GetAliasFlags */
+                      TpConnectionProc func = introspect_aliasing;
+
+                      g_array_append_val (self->priv->introspect_needed,
+                          func);
+                    }
+#if 0
+                  else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
+                    {
+                      /* call GetAvatarRequirements */
+                      TpConnectionProc func = introspect_avatars;
+
+                      g_array_append_val (self->priv->introspect_needed,
+                          func);
+                    }
+                  else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE)
+                    {
+                      /* call GetStatuses */
+                      TpConnectionProc func = introspect_presence;
+
+                      g_array_append_val (self->priv->introspect_needed,
+                          func);
+                    }
+                  /* if Privacy was stable, we'd also queue GetPrivacyModes
+                   * here */
+#endif
                 }
               else
                 {
@@ -150,8 +250,7 @@ tp_connection_got_interfaces_cb (TpProxy *proxy,
             }
         }
 
-      DEBUG ("%p: emitting connection-ready", self);
-      g_signal_emit (self, signals[SIGNAL_CONNECTION_READY], 0);
+      tp_connection_continue_introspection (self);
     }
   else
     {
@@ -256,6 +355,9 @@ tp_connection_init (TpConnection *self)
 {
   DEBUG ("%p", self);
 
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONNECTION,
+      TpConnectionPrivate);
+
   self->status = TP_UNKNOWN_CONNECTION_STATUS;
   self->status_reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
 }
@@ -274,6 +376,8 @@ tp_connection_class_init (TpConnectionClass *klass)
   GParamSpec *param_spec;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
+
+  g_type_class_add_private (klass, sizeof (TpConnectionPrivate));
 
   object_class->constructor = tp_connection_constructor;
   object_class->get_property = tp_connection_get_property;
@@ -305,7 +409,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * know yet.
    */
   param_spec = g_param_spec_uint ("status-reason", "Last status change reason",
-      "The reason why TpConnection:status changed to its current value",
+      "The reason why #TpConnection:status changed to its current value",
       0, G_MAXUINT32, TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
       G_PARAM_READABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_STATUS_REASON,
