@@ -112,14 +112,14 @@ tp_stream_engine_session_set_property (GObject      *object,
     }
 }
 
-static void new_media_stream_handler (TpProxy *proxy,
+static void new_media_stream_handler (TpMediaSessionHandler *proxy,
     const gchar *stream_handler_path, guint id, guint media_type,
     guint direction, gpointer user_data, GObject *object);
 
 static void cb_fs_session_error (FarsightSession *stream,
     FarsightSessionError error, const gchar *debug, gpointer user_data);
 
-static void dummy_callback (TpProxy *proxy, const GError *error,
+static void dummy_callback (TpMediaSessionHandler *proxy, const GError *error,
     gpointer user_data, GObject *object);
 
 static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
@@ -264,7 +264,7 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
 
 /* dummy callback handler for async calling calls with no return values */
 static void
-dummy_callback (TpProxy *proxy,
+dummy_callback (TpMediaSessionHandler *proxy,
                 const GError *error,
                 gpointer user_data,
                 GObject *weak_object)
@@ -281,7 +281,8 @@ cb_fs_session_error (FarsightSession *session,
                      const gchar *debug,
                      gpointer user_data)
 {
-  DBusGProxy *session_handler_proxy = (DBusGProxy *) user_data;
+  TpMediaSessionHandler *session_handler_proxy =
+      TP_MEDIA_SESSION_HANDLER (user_data);
 
   g_message (
     "%s: session error: session=%p error=%s\n", G_STRFUNC, session, debug);
@@ -306,7 +307,7 @@ destroy_cb (DBusGProxy *proxy,
 }
 
 static void
-new_media_stream_handler (TpProxy *proxy,
+new_media_stream_handler (TpMediaSessionHandler *proxy,
                           const gchar *object_path,
                           guint stream_id,
                           guint media_type,
