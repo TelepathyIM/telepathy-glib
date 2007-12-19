@@ -79,6 +79,7 @@ tpginclude_HEADERS = \
     presence-mixin.h \
     properties-mixin.h \
     proxy.h \
+    proxy-subclass.h \
     run.h \
     svc-channel.h \
     svc-connection.h \
