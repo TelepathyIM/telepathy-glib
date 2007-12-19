@@ -101,35 +101,38 @@ enum
   PROP_SINK
 };
 
-static void add_remote_candidate (TpProxy *proxy, const gchar *candidate,
-    const GPtrArray *transports, gpointer user_data, GObject *object);
-
-static void remove_remote_candidate (TpProxy *proxy, const gchar *candidate,
+static void add_remote_candidate (TpMediaStreamHandler *proxy,
+    const gchar *candidate, const GPtrArray *transports,
     gpointer user_data, GObject *object);
 
-static void set_active_candidate_pair (TpProxy *proxy,
+static void remove_remote_candidate (TpMediaStreamHandler *proxy,
+    const gchar *candidate,
+    gpointer user_data, GObject *object);
+
+static void set_active_candidate_pair (TpMediaStreamHandler *proxy,
     const gchar *native_candidate, const gchar *remote_candidate,
     gpointer user_data, GObject *object);
 
-static void set_remote_candidate_list (TpProxy *proxy,
+static void set_remote_candidate_list (TpMediaStreamHandler *proxy,
     const GPtrArray *candidates, gpointer user_data, GObject *object);
 
-static void set_remote_codecs (TpProxy *proxy, const GPtrArray *codecs,
+static void set_remote_codecs (TpMediaStreamHandler *proxy,
+    const GPtrArray *codecs, gpointer user_data, GObject *object);
+
+static void set_stream_playing (TpMediaStreamHandler *proxy, gboolean play,
     gpointer user_data, GObject *object);
 
-static void set_stream_playing (TpProxy *proxy, gboolean play,
+static void set_stream_sending (TpMediaStreamHandler *proxy, gboolean play,
     gpointer user_data, GObject *object);
 
-static void set_stream_sending (TpProxy *proxy, gboolean play,
+static void start_telephony_event (TpMediaStreamHandler *proxy, guchar event,
     gpointer user_data, GObject *object);
 
-static void start_telephony_event (TpProxy *proxy, guchar event,
+static void stop_telephony_event (TpMediaStreamHandler *proxy,
     gpointer user_data, GObject *object);
 
-static void stop_telephony_event (TpProxy *proxy,
+static void close (TpMediaStreamHandler *proxy,
     gpointer user_data, GObject *object);
-
-static void close (TpProxy *proxy, gpointer user_data, GObject *object);
 
 static GstElement *make_src (TpStreamEngineStream *stream, guint media_type);
 
@@ -165,7 +168,8 @@ static void prepare_transports (TpStreamEngineStream *self);
 
 static void stop_stream (TpStreamEngineStream *self);
 
-static void destroy_cb (TpProxy *proxy, GError *error, gpointer user_data);
+static void destroy_cb (TpMediaStreamHandler *proxy, GError *error,
+    gpointer user_data);
 
 static void
 _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
@@ -623,7 +627,7 @@ method_call_ctx_free (gpointer user_data)
 
 /* dummy callback handler for async calling calls with no return values */
 static void
-async_method_callback (TpProxy *proxy,
+async_method_callback (TpMediaStreamHandler *proxy,
                        const GError *error,
                        gpointer user_data,
                        GObject *weak_object)
@@ -939,7 +943,7 @@ fs_codecs_to_tp (const GList *codecs)
 }
 
 static void
-add_remote_candidate (TpProxy *proxy,
+add_remote_candidate (TpMediaStreamHandler *proxy,
                       const gchar *candidate,
                       const GPtrArray *transports,
                       gpointer user_data,
@@ -957,7 +961,7 @@ add_remote_candidate (TpProxy *proxy,
 }
 
 static void
-remove_remote_candidate (TpProxy *proxy,
+remove_remote_candidate (TpMediaStreamHandler *proxy,
                          const gchar *candidate,
                          gpointer user_data,
                          GObject *object)
@@ -969,7 +973,7 @@ remove_remote_candidate (TpProxy *proxy,
 }
 
 static void
-set_active_candidate_pair (TpProxy *proxy,
+set_active_candidate_pair (TpMediaStreamHandler *proxy,
                            const gchar *native_candidate,
                            const gchar *remote_candidate,
                            gpointer user_data,
@@ -983,7 +987,7 @@ set_active_candidate_pair (TpProxy *proxy,
 }
 
 static void
-set_remote_candidate_list (TpProxy *proxy,
+set_remote_candidate_list (TpMediaStreamHandler *proxy,
                            const GPtrArray *candidates,
                            gpointer user_data,
                            GObject *object)
@@ -1028,7 +1032,7 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-set_remote_codecs (TpProxy *proxy,
+set_remote_codecs (TpMediaStreamHandler *proxy,
                    const GPtrArray *codecs,
                    gpointer user_data,
                    GObject *object)
@@ -1141,7 +1145,7 @@ stop_stream (TpStreamEngineStream *self)
 }
 
 static void
-set_stream_playing (TpProxy *proxy,
+set_stream_playing (TpMediaStreamHandler *proxy,
                     gboolean play,
                     gpointer user_data,
                     GObject *object)
@@ -1164,7 +1168,7 @@ set_stream_playing (TpProxy *proxy,
 }
 
 static void
-set_stream_sending (TpProxy *proxy,
+set_stream_sending (TpMediaStreamHandler *proxy,
                     gboolean send,
                     gpointer user_data,
                     GObject *object)
@@ -1179,7 +1183,7 @@ set_stream_sending (TpProxy *proxy,
 }
 
 static void
-start_telephony_event (TpProxy *proxy,
+start_telephony_event (TpMediaStreamHandler *proxy,
                        guchar event,
                        gpointer user_data,
                        GObject *object)
@@ -1196,7 +1200,7 @@ start_telephony_event (TpProxy *proxy,
 }
 
 static void
-stop_telephony_event (TpProxy *proxy,
+stop_telephony_event (TpMediaStreamHandler *proxy,
                       gpointer user_data,
                       GObject *object)
 {
@@ -1211,7 +1215,7 @@ stop_telephony_event (TpProxy *proxy,
 }
 
 static void
-close (TpProxy *proxy,
+close (TpMediaStreamHandler *proxy,
        gpointer user_data,
        GObject *object)
 {
@@ -1497,7 +1501,7 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 }
 
 static void
-destroy_cb (TpProxy *proxy,
+destroy_cb (TpMediaStreamHandler *proxy,
             GError *error,
             gpointer user_data)
 {
