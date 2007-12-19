@@ -9,11 +9,13 @@
 #include "_gen/cli-connection-body.h"
 #include "_gen/register-dbus-glib-marshallers-body.h"
 
+/* I know, I know, init functions considered harmful. However, we need it. */
 void
-example_cli_conn_add_signals (TpProxy *self,
-                              guint quark,
-                              DBusGProxy *proxy,
-                              gpointer unused)
+example_cli_init (void)
 {
-  example_cli_connection_add_signals (self, quark, proxy, unused);
+  _example_ext_register_dbus_glib_marshallers ();
+
+  /* is this evil? */
+  tp_proxy_class_hook_on_interface_add (g_type_class_ref (TP_TYPE_CONNECTION),
+      example_cli_connection_add_signals);
 }

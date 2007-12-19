@@ -168,10 +168,6 @@ cm_requested_connection (TpConnectionManager *manager,
       return;
     }
 
-  /* FIXME: shouldn't be necessary - fix this somehow */
-  g_signal_connect (conn, "interface-added",
-      G_CALLBACK (example_cli_conn_add_signals), NULL);
-
   g_signal_connect (conn, "connection-ready", G_CALLBACK (conn_ready), NULL);
   /* the connection hasn't had a chance to become invalid yet, so we can
    * assume that this signal connection will work */
@@ -228,8 +224,7 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  /* FIXME: this should be done semi-automatically? */
-  _example_ext_register_dbus_glib_marshallers ();
+  example_cli_init ();
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
