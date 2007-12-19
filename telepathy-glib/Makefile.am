@@ -305,6 +305,7 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	Makefile.am
 	set -e; \
 	subclass= ; \
+	subclass_assert= ; \
 	case $* in \
 		channel) \
 			subclass=--subclass=TpChannel; \
