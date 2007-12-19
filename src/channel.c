@@ -183,11 +183,11 @@ static void channel_destroyed (TpChannel *channel_proxy,
     const GError *error,
     TpStreamEngineChannel *self);
 
-static void new_media_session_handler (TpProxy *proxy,
+static void new_media_session_handler (TpChannel *channel_proxy,
     const gchar *session_handler_path, const gchar *type,
     gpointer user_data, GObject *weak_object);
 
-static void get_session_handlers_reply (TpProxy *proxy,
+static void get_session_handlers_reply (TpChannel *channel_proxy,
     const GPtrArray *session_handlers, const GError *error,
     gpointer user_data, GObject *weak_object);
 
@@ -344,8 +344,8 @@ channel_ready (TpChannel *channel_proxy,
       self->priv->channel_ready_handler);
   self->priv->channel_ready_handler = 0;
 
-  if (tp_proxy_borrow_interface_by_id (as_proxy,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING, NULL) == NULL)
+  if (!tp_proxy_has_interface_by_id (as_proxy,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING))
     {
       GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
         "Stream Engine was passed a channel that does not implement "
@@ -358,8 +358,8 @@ channel_ready (TpChannel *channel_proxy,
 
   g_signal_emit (self, signals[HANDLER_RESULT], 0, NULL);
 
-  if (tp_proxy_borrow_interface_by_id (as_proxy,
-        TP_IFACE_QUARK_PROPERTIES_INTERFACE, NULL) == NULL)
+  if (!tp_proxy_has_interface_by_id (as_proxy,
+        TP_IFACE_QUARK_PROPERTIES_INTERFACE))
     {
       /* no point doing properties manipulation on a channel with none */
       g_message ("Channel has no properties: %s", as_proxy->object_path);
@@ -737,7 +737,7 @@ add_session (TpStreamEngineChannel *self,
 }
 
 static void
-new_media_session_handler (TpProxy *proxy,
+new_media_session_handler (TpChannel *channel_proxy,
                            const gchar *session_handler_path,
                            const gchar *type,
                            gpointer user_data,
@@ -788,7 +788,7 @@ channel_destroyed (TpChannel *channel_proxy,
 }
 
 static void
-get_session_handlers_reply (TpProxy *proxy,
+get_session_handlers_reply (TpChannel *channel_proxy,
                             const GPtrArray *session_handlers,
                             const GError *error,
                             gpointer user_data,
