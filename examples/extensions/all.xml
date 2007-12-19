@@ -2,9 +2,9 @@
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
-<tp:title>Extensions for 'extended' CM example</tp:title>
+<tp:title>Extensions for 'extended' examples</tp:title>
 
-<xi:include href="Connection_Interface_Hats.xml"/>
+<xi:include href="connection.xml"/>
 
 <tp:generic-types>
   <tp:external-type name="Contact_Handle" type="u"

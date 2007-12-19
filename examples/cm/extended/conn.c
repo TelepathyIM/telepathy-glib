@@ -19,7 +19,8 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/util.h>
 
-#include "extensions.h"
+/* This would conventionally be extensions/extensions.h */
+#include "examples/extensions/extensions.h"
 
 static void _hats_iface_init (gpointer, gpointer);
 

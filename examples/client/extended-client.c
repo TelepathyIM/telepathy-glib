@@ -22,7 +22,8 @@
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/util.h>
 
-#include "extensions.h"
+/* Usually this'd be a top-level extensions/ directory in practice */
+#include "examples/extensions/extensions.h"
 
 static guint timer;
 static int main_ret = 1;
@@ -167,7 +168,7 @@ cm_requested_connection (TpProxy *proxy,
 
   /* FIXME: shouldn't be necessary - fix this somehow */
   g_signal_connect (conn, "interface-added",
-      G_CALLBACK (example_cli_add_signals), NULL);
+      G_CALLBACK (example_cli_conn_add_signals), NULL);
 
   g_signal_connect (conn, "connection-ready", G_CALLBACK (conn_ready), NULL);
   tp_cli_connection_connect_to_status_changed (conn, conn_status_changed,

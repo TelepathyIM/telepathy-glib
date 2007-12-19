@@ -85,7 +85,7 @@
 ^examples/client/telepathy-example-[a-z-]+$
 ^examples/client/[^/]+/telepathy-example-[a-z-]+$
 ^examples/cm/[^/]+/telepathy-example-[a-z-]+$
-^examples/[^/]+/extended/_gen(/|$)
-^examples/[^/]+/extended/extensions\.html$
+^examples/extensions/_gen(/|$)
+^examples/extensions/extensions\.html$
 ^tools/update-spec-gen-am\.sh$
 ^FIXME\.out$
