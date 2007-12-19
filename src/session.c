@@ -122,7 +122,8 @@ static void cb_fs_session_error (FarsightSession *stream,
 static void dummy_callback (TpMediaSessionHandler *proxy, const GError *error,
     gpointer user_data, GObject *object);
 
-static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
+static void destroy_cb (TpMediaSessionHandler *proxy, GError *error,
+    gpointer user_data);
 
 static GObject *
 tp_stream_engine_session_constructor (GType type,
@@ -291,7 +292,8 @@ cb_fs_session_error (FarsightSession *session,
 }
 
 static void
-destroy_cb (DBusGProxy *proxy,
+destroy_cb (TpMediaSessionHandler *proxy,
+            GError *error,
             gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
