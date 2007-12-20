@@ -1562,26 +1562,6 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
     {
       g_debug ("%s: pipeline not playing, adding later", G_STRFUNC);
       _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      return TRUE;
-    }
-  else
-    {
-      g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
-      _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      return _add_preview_window (obj, window_id, error);
-    }
-}
-
-static void
-stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
-                                  guint window_id,
-                                  DBusGMethodInvocation *context)
-{
-  GError *error = NULL;
-
-  if (tp_stream_engine_add_preview_window (TP_STREAM_ENGINE (iface),
-        window_id, &error))
-    {
       stream_engine_svc_stream_engine_return_from_add_preview_window
         (context);
     }
