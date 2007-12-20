@@ -327,7 +327,7 @@ class Generator(object):
 
         self.b(' * @error: Used to return errors if %FALSE is returned')
         self.b(' *')
-        self.b(' * Call the method %s and block, without.' % member)
+        self.b(' * Call the method %s and block, without' % member)
         self.b(' * re-entering the main loop, until it returns.')
         self.b(' *')
         self.b(' * <![CDATA[%s]]>'
