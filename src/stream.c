@@ -1640,6 +1640,9 @@ gboolean tp_stream_engine_stream_mute_output (
   priv->output_mute = mute_state;
   sink = farsight_stream_get_sink (priv->fs_stream);
 
+  if (!sink)
+    return TRUE;
+
   g_message ("%s: output mute set to %s", G_STRFUNC,
     mute_state ? "on" : "off");
 
@@ -1675,6 +1678,9 @@ gboolean tp_stream_engine_stream_set_output_volume (
   DEBUG (stream, "setting output volume to %d", priv->output_volume);
   sink = farsight_stream_get_sink (priv->fs_stream);
 
+  if (!sink)
+    return TRUE;
+
   if (sink && g_object_has_property (G_OBJECT (sink), "volume"))
     g_object_set (G_OBJECT (sink), "volume", scaled_volume, NULL);
 
@@ -1700,6 +1706,9 @@ gboolean tp_stream_engine_stream_mute_input (
 
   priv->input_mute = mute_state;
   source = farsight_stream_get_source (priv->fs_stream);
+
+  if (!source)
+    return TRUE;
 
   g_message ("%s: input mute set to %s", G_STRFUNC,
     mute_state ? " on" : "off");
