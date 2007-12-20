@@ -1159,10 +1159,9 @@ bus_async_handler (GstBus *bus,
         gst_message_parse_error (message, &error, &error_string);
         tmp = g_strdup_printf ("%s: %s", error->message, error_string);
 
-        g_debug ("%s: got error from %s", G_STRFUNC, name);
-        g_debug ("%s: got error: %s %s %d %d", G_STRFUNC, error->message,
-            error_string, error->domain, error->code);
-        g_free (error_string);
+        g_debug ("%s: got error from %s: %s: %s (%d %d), destroying video "
+            "pipeline", G_STRFUNC, name, error->message, error_string,
+            error->domain, error->code);
 
         close_all_video_streams (engine, tmp);
 
@@ -1179,29 +1178,6 @@ bus_async_handler (GstBus *bus,
                 _remove_defunct_output_sink (wp);
               }
           }
-        else
-          {
-            GSList *i;
-
-            g_debug ("%s: got an error on the video pipeline: %s", G_STRFUNC,
-                error->message);
-            g_debug ("%s: will teardown video pipeline and try a new one",
-                G_STRFUNC);
-
-            close_all_video_streams (engine, error->message);
-
-            g_debug ("%s: destroying video pipeline", G_STRFUNC);
-
-            for (i = priv->output_windows; i; i = i->next)
-              {
-                WindowPair *wp = (WindowPair *) i->data;
-                if (wp->removing == FALSE)
-                  {
-                    wp->removing = TRUE;
-                    wp->post_remove = _window_pairs_empty_cb;
-                    _remove_defunct_output_sink (wp);
-                  }
-              }
 
         for (i = priv->preview_windows; i; i = i->next)
           {
@@ -1214,9 +1190,9 @@ bus_async_handler (GstBus *bus,
               }
           }
 
-            gst_element_set_state (priv->pipeline, GST_STATE_NULL);
-            gst_object_unref (priv->pipeline);
-            priv->pipeline = NULL;
+        gst_element_set_state (priv->pipeline, GST_STATE_NULL);
+        gst_object_unref (priv->pipeline);
+        priv->pipeline = NULL;
 
         g_error_free (error);
         g_free (error_string);
