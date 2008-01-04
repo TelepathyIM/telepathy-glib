@@ -395,7 +395,7 @@ TELEPATHY_GLIB_0.7.0 {
         *;
 };
 
-TELEPATHY_GLIB_0.7.1 {
+TELEPATHY_GLIB_0.7.1_UNRELEASED {
     global:
         tp_channel_get_type;
         tp_channel_new;
