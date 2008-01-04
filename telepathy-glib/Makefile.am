@@ -25,10 +25,11 @@ libtelepathy_glib_la_LDFLAGS = \
     -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
 libtelepathy_glib_la_LIBADD = libtelepathy-glib-internal.la
 libtelepathy_glib_la_SOURCES =
+libtelepathy_glib_la_DEPENDENCIES =
 
 if HAVE_LD_VERSION_SCRIPT
 libtelepathy_glib_la_SOURCES += version-script.txt
-libtelepathy_glib_la_DEPENDENCIES = version-script.txt _gen/abi.txt
+libtelepathy_glib_la_DEPENDENCIES += version-script.txt _gen/abi.txt
 
 _gen/abi.txt: libtelepathy-glib-internal.la _gen/versioned-abi.txt Makefile.am
 	$(NM) .libs/libtelepathy-glib-internal.a > _gen/abi.nm
@@ -196,6 +197,14 @@ AM_CFLAGS = \
 ALL_LIBS = \
     @DBUS_LIBS@ \
     @GLIB_LIBS@
+
+if OFFICIAL_RELEASE
+dist-hook: version-script.txt
+	if grep '[^#]*UNRELEASED' $< >&2; then
+		echo "*** You need to update version-script.txt to not say"
+		echo "*** UNRELEASED before making a release tarball."
+	fi >&2
+endif
 
 # Generated stuff
 

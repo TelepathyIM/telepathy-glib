@@ -703,9 +703,13 @@ TELEPATHY_GLIB_0.7.1 {
 } TELEPATHY_GLIB_0.7.0;
 
 # For every release that adds ABI, add a stanza like:
-# TELEPATHY_GLIB_0.7.2 {
+# TELEPATHY_GLIB_0.7.2_UNRELEASED {
 #     global:
 #         tp_some_new_symbol;
 # } TELEPATHY_GLIB_0.7.1;
+#
+# When making the release, remove _UNRELEASED.
+# This lets us detect binaries that have been linked against an unreleased
+# library, and forces re-linking against a released version.
 
 # vim:set sw=4 sts=4 et:

@@ -22,6 +22,13 @@ m4_define([tp_glib_nano_version], [1])
 #  increment current and set revision to 0
 # If interfaces have been added since last release, increment age
 # If interfaces have been removed since last release, set age to 0
+#
+# If interfaces have been added, they'll be in a section like
+# TP_GLIB_0.7.2_UNRELEASED in telepathy-glib/version-script.txt.
+# You need to rename this to TP_GLIB_0.7.2 before making the release.
+# This is to force binaries built against devel versions to be rebuilt
+# (we don't guarantee that we won't add ABI then remove it again, if it was
+# never seen in a release).
 
 m4_define([tp_glib_lt_current], [4])
 m4_define([tp_glib_lt_revision], [0])
@@ -81,8 +88,10 @@ AS_COMPILER_FLAG(-Wno-unused-parameter,
         wno_unused_parameter=yes,
         wno_unused_parameter=no)
 
-ifelse(tp_glib_nano_version, 0, [],
+ifelse(tp_glib_nano_version, 0,
+    [ official_release=yes ],
     [
+        official_release=no
         if test x$werror = xyes; then
             ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
         fi
@@ -94,6 +103,7 @@ ifelse(tp_glib_nano_version, 0, [],
     ])
 
 AC_SUBST(ERROR_CFLAGS)
+AM_CONDITIONAL([OFFICIAL_RELEASE], [test "x$official_release" = xyes])
 
 AC_ARG_ENABLE(debug,
   AC_HELP_STRING([--disable-debug],[compile without debug code (note that this will disable much of the debug code in all GLib connection managers)]),
