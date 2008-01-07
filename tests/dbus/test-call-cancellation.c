@@ -108,7 +108,7 @@ listed_names (TpDBusDaemon *proxy,
           want_object = (GObject *) a;
           break;
         default:
-          MYASSERT (FALSE, "%c (%p) method call succeeded, which shouldn't "
+          MYASSERT (FALSE, ": %c (%p) method call succeeded, which shouldn't "
               "happen", 'a' + which, proxy);
           fail = 1;
           return;
@@ -132,7 +132,7 @@ listed_names (TpDBusDaemon *proxy,
           want_object = NULL;
           break;
         default:
-          MYASSERT (FALSE, "%c (%p) method call failed, which shouldn't "
+          MYASSERT (FALSE, ": %c (%p) method call failed, which shouldn't "
               "happen", 'a' + which, proxy);
           fail = 1;
         }
