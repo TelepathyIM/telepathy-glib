@@ -200,7 +200,7 @@ ALL_LIBS = \
 
 if OFFICIAL_RELEASE
 dist-hook: version-script.txt
-	if grep '[^#]*UNRELEASED' $< >&2; then
+	@if grep '^[^#]*UNRELEASED' $< >&2; then
 		echo "*** You need to update version-script.txt to not say"
 		echo "*** UNRELEASED before making a release tarball."
 	fi >&2
