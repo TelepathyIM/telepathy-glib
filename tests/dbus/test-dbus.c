@@ -1,6 +1,7 @@
 #include <dbus/dbus-shared.h>
 #include <glib.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/debug.h>
 #include <telepathy-glib/util.h>
 
 static GPtrArray *events;
@@ -70,6 +71,7 @@ int
 main (int argc,
       char **argv)
 {
+  tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
 
   events = g_ptr_array_new ();
