@@ -722,6 +722,32 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
 }
 
 static void
+tp_proxy_signal_connection_disconnect_internal (TpProxySignalConnection *self)
+{
+  DBusGProxy *iface;
+
+  g_assert (self->priv == signal_conn_magic);
+
+  if (self->proxy == NULL)
+    return;
+
+  iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
+      self->interface);
+
+  if (iface == NULL)
+    return;
+
+  dbus_g_proxy_disconnect_signal (iface, self->member, self->collect_args,
+      (gpointer) self);
+}
+
+static void
+tp_proxy_signal_connection_cancel_invocations (TpProxySignalConnection *self)
+{
+  /* FIXME: implement */
+}
+
+static void
 tp_proxy_signal_connection_lost_weak_ref (gpointer data,
                                           GObject *dead)
 {
@@ -733,8 +759,8 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
   g_assert (dead == self->weak_object);
 
   self->weak_object = NULL;
-  /* FIXME: ensure we drop any idle callback invocations */
-  tp_proxy_signal_connection_disconnect (self);
+  tp_proxy_signal_connection_cancel_invocations (self);
+  tp_proxy_signal_connection_disconnect_internal (self);
 }
 
 static void
@@ -748,9 +774,7 @@ tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
       why->message);
   g_assert (proxy == self->proxy);
 
-  /* FIXME: this will drop any idle callback invocations, but we don't want
-   * to */
-  tp_proxy_signal_connection_disconnect (self);
+  tp_proxy_signal_connection_disconnect_internal (self);
 }
 
 static void
@@ -761,27 +785,18 @@ tp_proxy_signal_connection_lost_proxy (gpointer data,
   TpProxy *proxy = TP_PROXY (dead);
 
   g_assert (self != NULL);
+  /* FIXME: g_assert (there are no queued invocations); */
+
   DEBUG ("%p: lost proxy %p (I have %p)", self, proxy, self->proxy);
   g_assert (proxy == self->proxy);
 
   self->proxy = NULL;
-  /* FIXME: this will drop any idle callback invocations, but we don't want
-   * to */
-  tp_proxy_signal_connection_disconnect (self);
+  tp_proxy_signal_connection_disconnect_internal (self);
 }
 
 static void
-tp_proxy_signal_connection_dropped (gpointer p,
-                                    GClosure *unused)
+tp_proxy_signal_connection_free (TpProxySignalConnection *self)
 {
-  TpProxySignalConnection *self = p;
-
-  DEBUG ("%p", self);
-
-  g_return_if_fail (self->priv == signal_conn_magic);
-
-  /* FIXME: let any idle callback invocations run first */
-
   if (self->proxy != NULL)
     {
       g_signal_handlers_disconnect_by_func (self->proxy,
@@ -807,6 +822,25 @@ tp_proxy_signal_connection_dropped (gpointer p,
   g_free (self->member);
 
   g_slice_free (TpProxySignalConnection, self);
+}
+
+static void
+tp_proxy_signal_connection_dropped (gpointer p,
+                                    GClosure *unused)
+{
+  TpProxySignalConnection *self = p;
+
+  DEBUG ("%p", self);
+
+  g_return_if_fail (self->priv == signal_conn_magic);
+
+  /* FIXME:
+  if (have idle callback invocations queued)
+    return;
+  */
+
+
+  tp_proxy_signal_connection_free (self);
 }
 
 static void
@@ -845,8 +879,7 @@ collect_none (DBusGProxy *proxy, TpProxySignalConnection *sc)
  *
  * This function is for use by #TpProxy subclass implementations only.
  *
- * Returns: a signal connection structure to be freed with
- *  tp_proxy_signal_connection_free_closure().
+ * Returns: a signal connection structure.
  */
 TpProxySignalConnection *
 tp_proxy_signal_connection_v0_new (TpProxy *self,
@@ -921,25 +954,12 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
 void
 tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
 {
-  DBusGProxy *iface;
-
   DEBUG ("%p", self);
 
   g_return_if_fail (self->priv == signal_conn_magic);
 
-  /* FIXME: drop any idle callback invocations */
-
-  if (self->proxy == NULL)
-    return;
-
-  iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
-      self->interface);
-
-  if (iface == NULL)
-    return;
-
-  dbus_g_proxy_disconnect_signal (iface, self->member, self->collect_args,
-      (gpointer) self);
+  tp_proxy_signal_connection_cancel_invocations (self);
+  tp_proxy_signal_connection_disconnect_internal (self);
 }
 
 /**
@@ -947,11 +967,11 @@ tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
  * @self: The signal connection
  * @args: The arguments of the signal
  *
- * Return the callback to be called when this signal is received.
- * This method should only be called from #TpProxy subclass implementations.
+ * Feed the results of a signal invocation back into the signal connection
+ * machinery.
  *
- * The other arguments are used to retrieve things that must be passed to the
- * callback. They output "borrowed" references.
+ * This method should only be called from #TpProxy subclass implementations,
+ * in the callback that implements @collect_args.
  */
 void
 tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *self,
@@ -960,8 +980,12 @@ tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *self,
   /* FIXME: assert that the GValueArray is the right length, or
    * even that it contains the right types? */
 
+  /* FIXME: instead of doing this, queue it up (with a ref to the proxy
+   * to avoid death) and run it on return to the main loop */
+  g_object_ref (self->proxy);
   self->invoke_callback (self->proxy, NULL, args, self->callback,
       self->user_data, self->weak_object);
+  g_object_unref (self->proxy);
 }
 
 static void
