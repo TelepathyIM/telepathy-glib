@@ -733,7 +733,7 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
 }
 
 static void
-tp_proxy_signal_connection_disconnect_internal (TpProxySignalConnection *self)
+tp_proxy_signal_connection_disconnect_dbus_glib (TpProxySignalConnection *self)
 {
   DBusGProxy *iface;
 
@@ -756,48 +756,6 @@ tp_proxy_signal_connection_disconnect_internal (TpProxySignalConnection *self)
 }
 
 static void
-tp_proxy_signal_connection_cancel_invocations (TpProxySignalConnection *self)
-{
-  TpProxySignalInvocation *invocation;
-
-  while ((invocation = g_queue_pop_head (&self->invocations)) != NULL)
-    {
-      g_source_remove (invocation->idle_source);
-      g_assert (invocation->sc == self);
-      g_object_unref (invocation->sc->proxy);
-      invocation->sc = NULL;
-    }
-
-  if (self->collect_args == NULL)
-    {
-      /* indicates that tp_proxy_signal_connection_dropped has run -
-       * so now there are no more pending callback invocations, the signal
-       * connection falls off. */
-      tp_proxy_signal_connection_free (self->sc);
-
-      return;
-    }
-
-  tp_proxy_signal_connection_disconnect_internal (self);
-}
-
-static void
-tp_proxy_signal_connection_lost_weak_ref (gpointer data,
-                                          GObject *dead)
-{
-  TpProxySignalConnection *self = data;
-
-  DEBUG ("%p: lost weak ref to %p", self, dead);
-
-  g_assert (self->priv == signal_conn_magic);
-  g_assert (dead == self->weak_object);
-
-  self->weak_object = NULL;
-
-  tp_proxy_signal_connection_cancel_invocations (self);
-}
-
-static void
 tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
                                               const GError *why,
                                               TpProxySignalConnection *self)
@@ -808,7 +766,7 @@ tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
       why->message);
   g_assert (proxy == self->proxy);
 
-  tp_proxy_signal_connection_disconnect_internal (self);
+  tp_proxy_signal_connection_disconnect_dbus_glib (self);
 }
 
 static void
@@ -825,7 +783,23 @@ tp_proxy_signal_connection_lost_proxy (gpointer data,
   g_assert (proxy == self->proxy);
 
   self->proxy = NULL;
-  tp_proxy_signal_connection_disconnect_internal (self);
+  tp_proxy_signal_connection_disconnect_dbus_glib (self);
+}
+
+static void
+tp_proxy_signal_connection_lost_weak_ref (gpointer data,
+                                          GObject *dead)
+{
+  TpProxySignalConnection *self = data;
+
+  DEBUG ("%p: lost weak ref to %p", self, dead);
+
+  g_assert (self->priv == signal_conn_magic);
+  g_assert (dead == self->weak_object);
+
+  self->weak_object = NULL;
+
+  tp_proxy_signal_connection_disconnect (self);
 }
 
 static void
@@ -858,6 +832,42 @@ tp_proxy_signal_connection_free (TpProxySignalConnection *self)
   g_slice_free (TpProxySignalConnection, self);
 }
 
+/**
+ * tp_proxy_signal_connection_disconnect:
+ * @self: a signal connection
+ *
+ * Disconnect the given signal connection. After this function returns, you
+ * must not assume that the signal connection remains valid, but you must not
+ * explicitly free it either.
+ */
+void
+tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
+{
+  TpProxySignalInvocation *invocation;
+
+  g_return_if_fail (self->priv == signal_conn_magic);
+
+  while ((invocation = g_queue_pop_head (&self->invocations)) != NULL)
+    {
+      g_source_remove (invocation->idle_source);
+      g_assert (invocation->sc == self);
+      g_object_unref (invocation->sc->proxy);
+      invocation->sc = NULL;
+    }
+
+  if (self->collect_args == NULL)
+    {
+      /* indicates that tp_proxy_signal_connection_dropped has run -
+       * so now there are no more pending callback invocations, the signal
+       * connection falls off. */
+      tp_proxy_signal_connection_free (self);
+
+      return;
+    }
+
+  tp_proxy_signal_connection_disconnect_dbus_glib (self);
+}
+
 static void
 tp_proxy_signal_invocation_free (gpointer p)
 {
@@ -866,7 +876,7 @@ tp_proxy_signal_invocation_free (gpointer p)
   if (self->sc != NULL)
     {
       /* this shouldn't really happen - it'll get run if the idle source
-       * is removed by something other than t_p_s_c_cancel_invocations or
+       * is removed by something other than t_p_s_c_disconnect or
        * t_p_s_i_run */
       g_warning ("%s: idle source removed by someone else", G_STRFUNC);
 
@@ -1041,24 +1051,6 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
       tp_proxy_signal_connection_dropped);
 
   return ret;
-}
-
-/**
- * tp_proxy_signal_connection_disconnect:
- * @self: a signal connection
- *
- * Disconnect the given signal connection. After this function returns, you
- * must not assume that the signal connection remains valid, but you must not
- * explicitly free it either.
- */
-void
-tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
-{
-  DEBUG ("%p", self);
-
-  g_return_if_fail (self->priv == signal_conn_magic);
-
-  tp_proxy_signal_connection_cancel_invocations (self);
 }
 
 /**
