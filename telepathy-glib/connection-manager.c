@@ -311,6 +311,7 @@ static void
 tp_connection_manager_end_introspection (TpConnectionManager *self)
 {
   gboolean emit = self->priv->listing_protocols;
+  guint i;
 
   self->priv->listing_protocols = FALSE;
 
@@ -323,9 +324,11 @@ tp_connection_manager_end_introspection (TpConnectionManager *self)
   if (self->priv->pending_protocols != NULL)
     {
       emit = TRUE;
-      if (self->priv->pending_protocols->len > 0)
-        g_strfreev ((gchar **) g_ptr_array_free (self->priv->pending_protocols,
-              FALSE));
+
+      for (i = 0; i < self->priv->pending_protocols->len; i++)
+        g_free (self->priv->pending_protocols->pdata[i]);
+
+      g_ptr_array_free (self->priv->pending_protocols, TRUE);
       self->priv->pending_protocols = NULL;
     }
 
@@ -882,6 +885,35 @@ tp_connection_manager_dispose (GObject *object)
 }
 
 static void
+tp_connection_manager_finalize (GObject *object)
+{
+  TpConnectionManager *self = TP_CONNECTION_MANAGER (object);
+  guint i;
+
+  g_free (self->priv->manager_file);
+
+  if (self->priv->protocols != NULL)
+    {
+      tp_connection_manager_free_protocols (self->priv->protocols);
+    }
+
+  if (self->priv->pending_protocols != NULL)
+    {
+      for (i = 0; i < self->priv->pending_protocols->len; i++)
+        g_free (self->priv->pending_protocols->pdata[i]);
+
+      g_ptr_array_free (self->priv->pending_protocols, TRUE);
+    }
+
+  if (self->priv->found_protocols != NULL)
+    {
+      tp_connection_manager_free_protocols (self->priv->found_protocols);
+    }
+
+  G_OBJECT_CLASS (tp_connection_manager_parent_class)->finalize (object);
+}
+
+static void
 tp_connection_manager_get_property (GObject *object,
                                     guint property_id,
                                     GValue *value,
@@ -977,6 +1009,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   object_class->get_property = tp_connection_manager_get_property;
   object_class->set_property = tp_connection_manager_set_property;
   object_class->dispose = tp_connection_manager_dispose;
+  object_class->finalize = tp_connection_manager_finalize;
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
   tp_proxy_class_hook_on_interface_add (proxy_class,
