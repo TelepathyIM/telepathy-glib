@@ -278,6 +278,22 @@ tp_proxy_has_interface_by_id (gpointer self,
  * proxy implements the given interface.
  */
 
+/* This signature is chosen to match GSourceFunc */
+static gboolean
+tp_proxy_emit_invalidated (gpointer p)
+{
+  TpProxy *self = p;
+
+  g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, self->invalidated);
+
+  /* Don't clear the datalist until after we've emitted the signal, so
+   * the pending call and signal connection friend classes can still get
+   * to the proxies */
+  g_datalist_clear (&self->priv->interfaces);
+
+  return FALSE;
+}
+
 /**
  * tp_proxy_invalidated:
  * @self: a proxy
@@ -297,13 +313,8 @@ tp_proxy_invalidated (TpProxy *self, const GError *error)
       DEBUG ("%p: %s", self, error->message);
       self->invalidated = g_error_copy (error);
 
-      g_signal_emit (self, signals[SIGNAL_DESTROYED], 0, self->invalidated);
+      tp_proxy_emit_invalidated (self);
     }
-
-  /* Don't clear the datalist until after we've emitted the signal, so
-   * the pending call and signal connection friend classes can still get
-   * to the proxies */
-  g_datalist_clear (&self->priv->interfaces);
 
   if (self->dbus_daemon != NULL)
     {
@@ -330,7 +341,21 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
    * useless now */
   g_datalist_clear (&self->priv->interfaces);
 
-  tp_proxy_invalidated (self, &tp_proxy_dgproxy_destroyed);
+  /* We need to be able to delay emitting the destroyed signal, so that
+   * any queued-up method calls and signal handlers will run first, and so
+   * it doesn't try to reenter libdbus.
+   */
+  if (self->invalidated == NULL)
+    {
+      DEBUG ("%p", self);
+      self->invalidated = g_error_copy (&tp_proxy_dgproxy_destroyed);
+
+      g_idle_add_full (G_PRIORITY_HIGH, tp_proxy_emit_invalidated,
+          g_object_ref (self), g_object_unref);
+    }
+
+  /* this won't re-emit 'destroyed' because we already set self->invalidated */
+  tp_proxy_invalidated (self, self->invalidated);
 }
 
 /**
@@ -600,19 +625,14 @@ tp_proxy_pending_call_v0_completed (gpointer p)
 
   if (self->proxy != NULL)
     {
-      /* Annoyingly, dbus-glib frees us *before* it emits destroy. If we
-       * haven't already finished or been cancelled, then that must be what's
-       * happening to us. So, we have to force the TpProxy to invalidate
-       * itself slightly early, in order to get our error callback.
-       * tp_proxy_invalidate is safe against repeated calls, so this is fine -
-       * the 'destroy' signal will call it again, which will basically be
-       * ignored. */
+      /* dbus-glib frees its user_data *before* it emits destroy; if we
+       * haven't yet run the callback, assume that's what's going on. */
       if (self->callback != NULL)
         {
           DEBUG ("Looks like this pending call hasn't finished, assuming "
               "the DBusGProxy is about to die");
-          tp_proxy_invalidated (self->proxy, &tp_proxy_dgproxy_destroyed);
-          g_assert (self->callback == NULL);
+          tp_proxy_pending_call_proxy_invalidated (self->proxy,
+              &tp_proxy_dgproxy_destroyed, self);
         }
     }
 
