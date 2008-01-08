@@ -71,6 +71,8 @@ int
 main (int argc,
       char **argv)
 {
+  guint i;
+
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
 
@@ -169,6 +171,16 @@ main (int argc,
         "[4] net.example 58"));
   g_assert (!tp_strdiff (g_ptr_array_index (events, 8),
         "[4] net.example 0"));
+
+  /* keep valgrind happy, at least in the successful case */
+  for (i = 0; i < events->len; i++)
+    {
+      g_free (events->pdata[i]);
+    }
+
+  g_ptr_array_free (events, TRUE);
+  g_main_loop_unref (mainloop);
+  mainloop = NULL;
 
   return 0;
 }
