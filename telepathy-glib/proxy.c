@@ -155,6 +155,7 @@ struct _TpProxyPendingCall {
     GDestroyNotify destroy;
     GObject *weak_object;
     DBusGProxyCall *pending_call;
+    guint idle_source;
     gconstpointer priv;
 };
 
@@ -411,6 +412,11 @@ tp_proxy_pending_call_proxy_invalidated (TpProxy *proxy,
       why->message);
   g_assert (proxy == self->proxy);
 
+  if (self->idle_source != 0)
+    {
+      g_source_remove (self->idle_source);
+    }
+
   if (callback != NULL)
     {
       self->callback = NULL;
@@ -514,6 +520,13 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
   /* Mark the pending call as expired */
   self->callback = NULL;
 
+  if (self->idle_source != 0)
+    {
+      /* we aren't actually doing dbus-glib things any more anyway */
+      g_source_remove (self->idle_source);
+      return;
+    }
+
   iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
       self->interface);
 
@@ -538,6 +551,12 @@ tp_proxy_pending_call_free (gpointer p)
       g_object_unref (self->proxy);
       self->proxy = NULL;
     }
+
+  if (self->error != NULL)
+    g_error_free (self->error);
+
+  if (self->args != NULL)
+    g_value_array_free (self->args);
 
   g_free (self->member);
 
@@ -571,6 +590,13 @@ tp_proxy_pending_call_v0_completed (gpointer p)
   DEBUG ("%p", self);
 
   g_return_if_fail (self->priv == pending_call_magic);
+
+  if (self->idle_source != 0)
+    {
+      /* we've kicked off an idle function, so we don't want to die until
+       * that function runs */
+      return;
+    }
 
   if (self->proxy != NULL)
     {
@@ -613,6 +639,29 @@ tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *self,
   self->pending_call = pending_call;
 }
 
+static gboolean
+tp_proxy_pending_call_idle_invoke (gpointer p)
+{
+  TpProxyPendingCall *self = p;
+  GCallback callback = self->callback;
+
+  DEBUG ("%p", self);
+
+  g_return_val_if_fail (self->invoke_callback != NULL, FALSE);
+  g_return_val_if_fail (self->callback != NULL, FALSE);
+
+  self->callback = NULL;
+  self->invoke_callback (self->proxy, self->error, self->args, callback,
+      self->user_data, self->weak_object);
+  self->error = NULL;
+  self->args = NULL;
+
+  /* don't clear self->idle_source here! tp_proxy_pending_call_v0_completed
+   * compares it to 0 to determine whether to free the object */
+
+  return FALSE;
+}
+
 /**
  * tp_proxy_pending_call_v0_take_results:
  * @self: A pending call on which this function has not yet been called
@@ -631,8 +680,6 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
                                        GError *error,
                                        GValueArray *args)
 {
-  GCallback callback;
-
   if (error == NULL)
     DEBUG ("%p: success, %d args", self, args == NULL ? 0 : args->n_values);
   else
@@ -648,12 +695,9 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
   g_return_if_fail (error == NULL || args == NULL);
   self->args = args;
 
-  DEBUG ("(Temporary code) Invoking %p", self->invoke_callback);
-  g_return_if_fail (self->invoke_callback != NULL);
-  callback = self->callback;
-  self->callback = NULL;
-  self->invoke_callback (self->proxy, error, self->args, callback,
-      self->user_data, self->weak_object);
+  /* queue up the actual callback to run after we go back to the event loop */
+  self->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
+      tp_proxy_pending_call_idle_invoke, self, tp_proxy_pending_call_free);
 }
 
 static void
