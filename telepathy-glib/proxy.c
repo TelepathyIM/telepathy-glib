@@ -165,16 +165,27 @@ struct _TpProxyPendingCall {
  * Opaque structure representing a D-Bus signal connection.
  */
 
+typedef struct _TpProxySignalInvocation TpProxySignalInvocation;
+
+struct _TpProxySignalInvocation {
+    TpProxySignalConnection *sc;
+    GValueArray *args;
+    guint idle_source;
+};
+
 struct _TpProxySignalConnection {
     TpProxy *proxy;
     GQuark interface;
     gchar *member;
+    /* this is NULL if and only if dbus-glib has dropped us */
     GCallback collect_args;
     TpProxyInvokeFunc invoke_callback;
     GCallback callback;
     gpointer user_data;
     GDestroyNotify destroy;
     GObject *weak_object;
+    /* queue of _TpProxySignalInvocation */
+    GQueue invocations;
     gconstpointer priv;
 };
 
@@ -727,6 +738,9 @@ tp_proxy_signal_connection_disconnect_internal (TpProxySignalConnection *self)
   DBusGProxy *iface;
 
   g_assert (self->priv == signal_conn_magic);
+  /* we can't be disconnecting like this unless dbus-glib still knows about
+   * self */
+  g_assert (self->collect_args != NULL);
 
   if (self->proxy == NULL)
     return;
@@ -744,7 +758,27 @@ tp_proxy_signal_connection_disconnect_internal (TpProxySignalConnection *self)
 static void
 tp_proxy_signal_connection_cancel_invocations (TpProxySignalConnection *self)
 {
-  /* FIXME: implement */
+  TpProxySignalInvocation *invocation;
+
+  while ((invocation = g_queue_pop_head (&self->invocations)) != NULL)
+    {
+      g_source_remove (invocation->idle_source);
+      g_assert (invocation->sc == self);
+      g_object_unref (invocation->sc->proxy);
+      invocation->sc = NULL;
+    }
+
+  if (self->collect_args == NULL)
+    {
+      /* indicates that tp_proxy_signal_connection_dropped has run -
+       * so now there are no more pending callback invocations, the signal
+       * connection falls off. */
+      tp_proxy_signal_connection_free (self->sc);
+
+      return;
+    }
+
+  tp_proxy_signal_connection_disconnect_internal (self);
 }
 
 static void
@@ -759,8 +793,8 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
   g_assert (dead == self->weak_object);
 
   self->weak_object = NULL;
+
   tp_proxy_signal_connection_cancel_invocations (self);
-  tp_proxy_signal_connection_disconnect_internal (self);
 }
 
 static void
@@ -785,7 +819,7 @@ tp_proxy_signal_connection_lost_proxy (gpointer data,
   TpProxy *proxy = TP_PROXY (dead);
 
   g_assert (self != NULL);
-  /* FIXME: g_assert (there are no queued invocations); */
+  g_assert (self->invocations.length == 0);
 
   DEBUG ("%p: lost proxy %p (I have %p)", self, proxy, self->proxy);
   g_assert (proxy == self->proxy);
@@ -825,6 +859,67 @@ tp_proxy_signal_connection_free (TpProxySignalConnection *self)
 }
 
 static void
+tp_proxy_signal_invocation_free (gpointer p)
+{
+  TpProxySignalInvocation *self = p;
+
+  if (self->sc != NULL)
+    {
+      /* this shouldn't really happen - it'll get run if the idle source
+       * is removed by something other than t_p_s_c_cancel_invocations or
+       * t_p_s_i_run */
+      g_warning ("%s: idle source removed by someone else", G_STRFUNC);
+
+      g_queue_remove (&self->sc->invocations, self);
+
+      /* there's one ref to the proxy per queued invocation, to keep it
+       * alive */
+      g_object_unref (self->sc->proxy);
+    }
+
+  if (self->args != NULL)
+    g_value_array_free (self->args);
+
+  g_slice_free (TpProxySignalInvocation, self);
+}
+
+static gboolean
+tp_proxy_signal_invocation_run (gpointer p)
+{
+  TpProxySignalInvocation *self = p;
+  TpProxySignalInvocation *popped = g_queue_pop_head (&self->sc->invocations);
+
+  DEBUG ("%p, head is %p", self, popped);
+
+  /* if GLib is running idle handlers in the wrong order, then we've lost */
+  g_assert (popped == self);
+
+  self->sc->invoke_callback (self->sc->proxy, NULL, self->args,
+      self->sc->callback, self->sc->user_data, self->sc->weak_object);
+
+  /* the invoke callback steals args */
+  self->args = NULL;
+
+  if (self->sc->collect_args == NULL && self->sc->invocations.length == 0)
+    {
+      /* indicates that tp_proxy_signal_connection_dropped has run and there
+       * are no more pending callback invocations - so the signal connection
+       * falls off */
+      tp_proxy_signal_connection_free (self->sc);
+    }
+
+  /* there's one ref to the proxy per queued invocation, to keep it
+   * alive */
+  g_object_unref (self->sc->proxy);
+
+  /* avoid the bits of tp_proxy_signal_invocation_free that rely on self->sc
+   * still existing */
+  self->sc = NULL;
+
+  return FALSE;
+}
+
+static void
 tp_proxy_signal_connection_dropped (gpointer p,
                                     GClosure *unused)
 {
@@ -834,11 +929,12 @@ tp_proxy_signal_connection_dropped (gpointer p,
 
   g_return_if_fail (self->priv == signal_conn_magic);
 
-  /* FIXME:
-  if (have idle callback invocations queued)
-    return;
-  */
-
+  if (self->invocations.length > 0)
+    {
+      /* indicate that we're no longer registered with dbus-glib */
+      self->collect_args = NULL;
+      return;
+    }
 
   tp_proxy_signal_connection_free (self);
 }
@@ -904,17 +1000,21 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
       return NULL;
     }
 
+  if (expected_types[0] == G_TYPE_INVALID)
+    {
+      collect_args = G_CALLBACK (collect_none);
+    }
+  else
+    {
+      g_return_val_if_fail (collect_args != NULL, NULL);
+    }
+
   ret = g_slice_new0 (TpProxySignalConnection);
 
   DEBUG ("(proxy=%p, if=%s, sig=%s, collect=%p, invoke=%p, "
       "cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
       self, g_quark_to_string (interface), member, collect_args,
       invoke_callback, callback, user_data, destroy, weak_object, ret);
-
-  if (expected_types[0] == G_TYPE_INVALID)
-    {
-      collect_args = G_CALLBACK (collect_none);
-    }
 
   ret->proxy = self;
   ret->interface = interface;
@@ -959,7 +1059,6 @@ tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
   g_return_if_fail (self->priv == signal_conn_magic);
 
   tp_proxy_signal_connection_cancel_invocations (self);
-  tp_proxy_signal_connection_disconnect_internal (self);
 }
 
 /**
@@ -977,15 +1076,21 @@ void
 tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *self,
                                             GValueArray *args)
 {
+  TpProxySignalInvocation *invocation = g_slice_new0 (TpProxySignalInvocation);
   /* FIXME: assert that the GValueArray is the right length, or
    * even that it contains the right types? */
 
-  /* FIXME: instead of doing this, queue it up (with a ref to the proxy
-   * to avoid death) and run it on return to the main loop */
+  /* as long as there are queued invocations, we keep one ref to the TpProxy
+   * per invocation, to stop it dying */
   g_object_ref (self->proxy);
-  self->invoke_callback (self->proxy, NULL, args, self->callback,
-      self->user_data, self->weak_object);
-  g_object_unref (self->proxy);
+  invocation->sc = self;
+  invocation->args = args;
+
+  g_queue_push_tail (&self->invocations, invocation);
+
+  invocation->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
+      tp_proxy_signal_invocation_run, invocation,
+      tp_proxy_signal_invocation_free);
 }
 
 static void
