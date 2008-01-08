@@ -827,6 +827,8 @@ tp_connection_manager_find_manager_file (const gchar *name)
 
       if (g_file_test (filename, G_FILE_TEST_EXISTS))
         return filename;
+
+      g_free (filename);
     }
 
   return NULL;
