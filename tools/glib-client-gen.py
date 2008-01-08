@@ -442,29 +442,33 @@ class Generator(object):
 
         # Async callback implementation
 
-        callback_impl_name =  '_%s_%s_take_reply_from_%s' % (self.prefix_lc,
-                                                             iface_lc,
-                                                             member_lc)
+        invoke_callback = '_%s_%s_invoke_callback_%s' % (self.prefix_lc,
+                                                         iface_lc,
+                                                         member_lc)
 
+        collect_callback = '_%s_%s_collect_callback_%s' % (self.prefix_lc,
+                                                           iface_lc,
+                                                           member_lc)
+
+        # The callback called by dbus-glib; this ends the call and collects
+        # the results into a GValueArray.
         self.b('static void')
-        self.b('%s (DBusGProxy *proxy,' % callback_impl_name)
+        self.b('%s (DBusGProxy *proxy,' % collect_callback)
         self.b('    DBusGProxyCall *call,')
         self.b('    gpointer user_data)')
         self.b('{')
-        self.b('  TpProxyPendingCall *data = user_data;')
-        self.b('  TpProxy *tpproxy;')
         self.b('  GError *error = NULL;')
-        self.b('  gpointer call_data;')
-        self.b('  GObject *weak_object;')
-        self.b('  %s callback = (%s)' % (callback_name, callback_name))
-        self.b('     tp_proxy_pending_call_steal_callback (data,')
-        self.b('         &tpproxy, &call_data, &weak_object);')
 
-        for arg in out_args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
+        if len(out_args) > 0:
+            self.b('  GValueArray *args;')
+            self.b('  GValue blank = { 0 };')
+            self.b('  guint i;')
 
-            self.b('  %s%s;' % (ctype, name))
+            for arg in out_args:
+                name, info, tp_type, elt = arg
+                ctype, gtype, marshaller, pointer = info
+
+                self.b('  %s%s;' % (ctype, name))
 
         self.b('')
         self.b('  dbus_g_proxy_end_call (proxy, call, &error,')
@@ -476,70 +480,138 @@ class Generator(object):
             self.b('      %s, &%s,' % (gtype, name))
 
         self.b('      G_TYPE_INVALID);')
-        self.b('  callback ((%s) tpproxy,' % self.proxy_cls)
 
-        for arg in out_args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
+        if len(out_args) == 0:
+            self.b('  tp_proxy_pending_call_v0_take_results (user_data, error,'
+                   'NULL);')
+        else:
+            self.b('')
+            self.b('  if (error != NULL)')
+            self.b('    {')
+            self.b('      tp_proxy_pending_call_v0_take_results (user_data, error,')
+            self.b('          NULL);')
+            self.b('      return;')
+            self.b('    }')
+            self.b('')
+            self.b('  args = g_value_array_new (%d);' % len(out_args))
+            self.b('  g_value_init (&blank, G_TYPE_INT);')
+            self.b('')
+            self.b('  for (i = 0; i < %d; i++)' % len(out_args))
+            self.b('    g_value_array_append (args, &blank);')
 
-            if gtype == 'G_TYPE_STRV':
-                self.b('      (const gchar **) %s,' % name)
-            else:
-                self.b('      %s,' % name)
+            for i, arg in enumerate(out_args):
+                name, info, tp_type, elt = arg
+                ctype, gtype, marshaller, pointer = info
 
-        self.b('      error, call_data, weak_object);')
+                self.b('')
+                self.b('  g_value_unset (args->values + %d);' % i)
+                self.b('  g_value_init (args->values + %d, %s);' % (i, gtype))
+
+                if gtype == 'G_TYPE_STRING':
+                    self.b('  g_value_take_string (args->values + %d, %s);'
+                           % (i, name))
+                elif marshaller == 'BOXED':
+                    self.b('  g_value_take_boxed (args->values + %d, %s);'
+                            % (i, name))
+                elif gtype == 'G_TYPE_UCHAR':
+                    self.b('  g_value_set_uchar (args->values + %d, %s);'
+                            % (i, name))
+                elif gtype == 'G_TYPE_BOOLEAN':
+                    self.b('  g_value_set_boolean (args->values + %d, %s);'
+                            % (i, name))
+                elif gtype == 'G_TYPE_INT':
+                    self.b('  g_value_set_int (args->values + %d, %s);'
+                            % (i, name))
+                elif gtype == 'G_TYPE_UINT':
+                    self.b('  g_value_set_uint (args->values + %d, %s);'
+                            % (i, name))
+                elif gtype == 'G_TYPE_INT64':
+                    self.b('  g_value_set_int (args->values + %d, %s);'
+                            % (i, name))
+                elif gtype == 'G_TYPE_UINT64':
+                    self.b('  g_value_set_uint (args->values + %d, %s);'
+                            % (i, name))
+                elif gtype == 'G_TYPE_DOUBLE':
+                    self.b('  g_value_set_double (args->values + %d, %s);'
+                            % (i, name))
+                else:
+                    assert False, ("Don't know how to put %s in a GValue"
+                                   % gtype)
+
+            self.b('  tp_proxy_pending_call_v0_take_results (user_data, '
+                   'NULL, args);')
+
+        self.b('}')
+
+        self.b('static void')
+        self.b('%s (TpProxy *self,' % invoke_callback)
+        self.b('    GError *error,')
+        self.b('    GValueArray *args,')
+        self.b('    GCallback generic_callback,')
+        self.b('    gpointer user_data,')
+        self.b('    GObject *weak_object)')
+        self.b('{')
+        self.b('  %s callback = (%s) generic_callback;'
+               % (callback_name, callback_name))
         self.b('')
         self.b('  if (error != NULL)')
         self.b('    {')
+        self.b('      callback ((%s) self,' % self.proxy_cls)
+
+        for arg in out_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            if marshaller == 'BOXED' or pointer:
+                self.b('          NULL,')
+            elif gtype == 'G_TYPE_DOUBLE':
+                self.b('          0.0,')
+            else:
+                self.b('          0,')
+
+        self.b('          error, user_data, weak_object);')
         self.b('      g_error_free (error);')
         self.b('      return;')
         self.b('    }')
-        self.b('')
 
-        for arg in out_args:
+        self.b('  callback ((%s) self,' % self.proxy_cls)
+
+        for i, arg in enumerate(out_args):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            if not pointer:
-                continue
-            if marshaller == 'STRING':
-                self.b('  g_free (%s);' % name)
+            if marshaller == 'BOXED':
+                self.b('      g_value_get_boxed (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_STRING':
+                self.b('      g_value_get_string (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_UCHAR':
+                self.b('      g_value_get_uchar (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_BOOLEAN':
+                self.b('      g_value_get_boolean (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_UINT':
+                self.b('      g_value_get_uint (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_INT':
+                self.b('      g_value_get_int (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_UINT64':
+                self.b('      g_value_get_uint64 (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_INT64':
+                self.b('      g_value_get_int64 (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_DOUBLE':
+                self.b('      g_value_get_double (args->values + %d),' % i)
             else:
-                self.b('  g_boxed_free (%s, %s);' % (gtype, name))
+                assert False, "Don't know how to get %s from a GValue" % gtype
+
+        self.b('      error, user_data, weak_object);')
+        self.b('')
+
+        if len(out_args) > 0:
+            self.b('  g_value_array_free (args);')
+        else:
+            self.b('  if (args != NULL)')
+            self.b('    g_value_array_free (args);')
 
         self.b('}')
         self.b('')
-
-        # Async error-raising function
-        raise_name = '_%s_%s_raise_error_in_%s' % (self.prefix_lc, iface_lc,
-                member_lc)
-
-        self.b('static void')
-        self.b('%s (TpProxyPendingCall *pc)' % raise_name)
-        self.b('{')
-        self.b('  TpProxy *tpproxy;')
-        self.b('  gpointer call_data;')
-        self.b('  GObject *weak_object;')
-        self.b('  %s callback = (%s)' % (callback_name, callback_name))
-        self.b('     tp_proxy_pending_call_steal_callback (pc,')
-        self.b('         &tpproxy, &call_data, &weak_object);')
-        self.b('')
-        self.b('  if (callback != NULL)')
-        self.b('    callback ((%s) tpproxy,' % self.proxy_cls)
-
-        for arg in out_args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
-
-            if pointer:
-                self.b('        NULL,')
-            else:
-                self.b('        0,')
-
-        self.b('        tpproxy->invalidated,')
-        self.b('        call_data,')
-        self.b('        weak_object);')
-        self.b('}')
 
         # Async stub
 
@@ -661,17 +733,17 @@ class Generator(object):
         self.b('    {')
         self.b('      TpProxyPendingCall *data;')
         self.b('')
-        self.b('      data = tp_proxy_pending_call_new ((TpProxy *) proxy,')
+        self.b('      data = tp_proxy_pending_call_v0_new ((TpProxy *) proxy,')
         self.b('          interface, "%s",' % member)
-        self.b('          G_CALLBACK (callback),')
-        self.b('          user_data, destroy, weak_object,')
-        self.b('          %s);' % raise_name)
-        self.b('      tp_proxy_pending_call_take_pending_call (data,')
+        self.b('          %s,' % invoke_callback)
+        self.b('          G_CALLBACK (callback), user_data, destroy,')
+        self.b('          weak_object);')
+        self.b('      tp_proxy_pending_call_v0_take_pending_call (data,')
         self.b('          dbus_g_proxy_begin_call_with_timeout (iface,')
         self.b('              "%s",' % member)
-        self.b('              %s,' % callback_impl_name)
+        self.b('              %s,' % collect_callback)
         self.b('              data,')
-        self.b('              tp_proxy_pending_call_free,')
+        self.b('              tp_proxy_pending_call_v0_completed,')
         self.b('              timeout_ms,')
 
         for arg in in_args:

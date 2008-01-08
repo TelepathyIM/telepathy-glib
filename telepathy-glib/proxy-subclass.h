@@ -27,18 +27,23 @@
 
 G_BEGIN_DECLS
 
-TpProxyPendingCall *tp_proxy_pending_call_new (TpProxy *self,
-    GQuark interface, const gchar *member, GCallback callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object,
-    void (*raise_error) (TpProxyPendingCall *));
+typedef void (*TpProxyInvokeFunc) (TpProxy *self,
+    GError *error, GValueArray *args, GCallback callback, gpointer user_data,
+    GObject *weak_object);
 
-void tp_proxy_pending_call_free (gpointer self);
+TpProxyPendingCall *tp_proxy_pending_call_v0_new (TpProxy *self,
+    GQuark interface, const gchar *member,
+    TpProxyInvokeFunc invoke_callback,
+    GCallback callback, gpointer user_data, GDestroyNotify destroy,
+    GObject *weak_object);
 
-GCallback tp_proxy_pending_call_steal_callback (TpProxyPendingCall *self,
-    TpProxy **proxy_out, gpointer *user_data_out, GObject **weak_object_out);
-
-void tp_proxy_pending_call_take_pending_call (TpProxyPendingCall *self,
+void tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *self,
     DBusGProxyCall *pending_call);
+
+void tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
+    GError *error, GValueArray *args);
+
+void tp_proxy_pending_call_v0_completed (gpointer p);
 
 TpProxySignalConnection *tp_proxy_signal_connection_new (TpProxy *self,
     GQuark interface, const gchar *member, GCallback callback,

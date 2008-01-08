@@ -106,6 +106,38 @@
 /* priv is actually a GSList of callbacks */
 
 /**
+ * TpProxyInvokeFunc:
+ * @self: the #TpProxy on which the D-Bus method was invoked
+ * @error: %NULL if the method call succeeded, or a non-%NULL error if the
+ *  method call failed
+ * @args: array of "out" arguments (return values) for the D-Bus method,
+ *  or %NULL if an error occurred or if there were no "out" arguments
+ * @callback: the callback that should be invoked, as passed to
+ *  tp_proxy_pending_call_v0_new()
+ * @user_data: user-supplied data to pass to the callback, as passed to
+ *  tp_proxy_pending_call_v0_new()
+ * @weak_object: user-supplied object to pass to the callback, as passed to
+ *  tp_proxy_pending_call_v0_new()
+ *
+ * Signature of a callback invoked by the #TpProxy machinery after a D-Bus
+ * method call has succeeded or failed. It is responsible for calling the
+ * user-supplied callback.
+ *
+ * Because parts of dbus-glib aren't reentrant, this callback may be called
+ * from an idle handler shortly after the method call reply is received,
+ * rather than from the callback for the reply.
+ *
+ * At most one of @args and @error can be non-%NULL (implementations may
+ * assert this). @args and @error may both be %NULL if a method with no
+ * "out" arguments (i.e. a method that returns nothing) was called
+ * successfully.
+ *
+ * The #TpProxyInvokeFunc must call callback with @user_data, @weak_object,
+ * and appropriate arguments derived from @error and @args. It is responsible
+ * for freeing @error and @args, if their ownership has not been transferred.
+ */
+
+/**
  * TpProxyPendingCall:
  *
  * Opaque structure representing a pending D-Bus call.
@@ -115,12 +147,14 @@ struct _TpProxyPendingCall {
     TpProxy *proxy;
     GQuark interface;
     gchar *member;
+    TpProxyInvokeFunc invoke_callback;
+    GError *error;
+    GValueArray *args;
     GCallback callback;
     gpointer user_data;
     GDestroyNotify destroy;
     GObject *weak_object;
     DBusGProxyCall *pending_call;
-    void (*raise_error) (TpProxyPendingCall *);
     gconstpointer priv;
 };
 
@@ -369,67 +403,86 @@ tp_proxy_pending_call_proxy_invalidated (TpProxy *proxy,
                                          const GError *why,
                                          TpProxyPendingCall *self)
 {
+  GCallback callback = self->callback;
+
   g_assert (self != NULL);
   g_assert (why != NULL);
   DEBUG ("%p: proxy %p invalidated (I have %p): %s", self, proxy, self->proxy,
       why->message);
   g_assert (proxy == self->proxy);
 
-  if (self->callback != NULL)
+  if (callback != NULL)
     {
-      self->raise_error (self);
       self->callback = NULL;
+      DEBUG ("Invoking %p", self->invoke_callback);
+      g_return_if_fail (self->invoke_callback != NULL);
+      self->invoke_callback (proxy, g_error_copy (why), NULL, callback,
+          self->user_data, self->weak_object);
     }
 }
 
 /**
- * tp_proxy_pending_call_new:
+ * tp_proxy_pending_call_v0_new:
  * @self: a proxy
  * @interface: a quark whose string value is the D-Bus interface
  * @member: the name of the method being called
+ * @invoke_callback: an implementation of #TpProxyInvokeFunc which will
+ *  invoke @callback with appropriate arguments
  * @callback: a callback to be called when the call completes
  * @user_data: user-supplied data for the callback
  * @destroy: user-supplied destructor for the data
  * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
  *   the signal connection - if it is destroyed, the signal connection will
  *   automatically be disconnected
- * @raise_error: a callback with a simpler signature, which is called
- *   instead of @callback if the proxy is invalidated (it should
- *   call @callback with appropriate arguments)
  *
- * Allocate a new pending call structure. The @pending_call member is NULL,
- * and the rest of the public members are set from the arguments.
+ * Allocate a new pending call structure. After calling this function, the
+ * caller must start an asynchronous D-Bus call and give the resulting
+ * DBusGProxyCall to the pending call object using
+ * tp_proxy_pending_call_v0_take_pending_call().
  *
- * This function is for use by #TpProxy subclass implementations only.
+ * If dbus-glib gets a reply to the call before it's cancelled, the caller
+ * must arrange for tp_proxy_pending_call_v0_take_results() to be called
+ * with the results (the intention is for this to be done immediately
+ * after dbus_g_proxy_end_call in the callback supplied to dbus-glib).
  *
- * Returns: a pending call structure to be freed with
- *  tp_proxy_pending_call_free().
+ * When dbus-glib discards its reference to the user_data supplied in the
+ * asynchronous D-Bus call (i.e. after the call is cancelled or a reply
+ * arrives), tp_proxy_pending_call_v0_completed must be called (the intention
+ * is for the #TpProxyPendingCall to be the @user_data in the async call,
+ * and for tp_proxy_pending_call_v0_completed to be the #GDestroyNotify
+ * passed to the same async call).
+ *
+ * This function is for use by #TpProxy subclass implementations only, and
+ * should usually only be called from code generated by
+ * tools/glib-client-gen.py.
+ *
+ * Returns: a new pending call structure
  */
 TpProxyPendingCall *
-tp_proxy_pending_call_new (TpProxy *self,
-                           GQuark interface,
-                           const gchar *member,
-                           GCallback callback,
-                           gpointer user_data,
-                           GDestroyNotify destroy,
-                           GObject *weak_object,
-                           void (*raise_error) (TpProxyPendingCall *))
+tp_proxy_pending_call_v0_new (TpProxy *self,
+                              GQuark interface,
+                              const gchar *member,
+                              TpProxyInvokeFunc invoke_callback,
+                              GCallback callback,
+                              gpointer user_data,
+                              GDestroyNotify destroy,
+                              GObject *weak_object)
 {
-  TpProxyPendingCall *ret = g_slice_new (TpProxyPendingCall);
+  TpProxyPendingCall *ret = g_slice_new0 (TpProxyPendingCall);
 
-  DEBUG ("(proxy=%p, if=%s, meth=%s, cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
-      self, g_quark_to_string (interface), member, callback, user_data,
-      destroy, weak_object, ret);
+  DEBUG ("(proxy=%p, if=%s, meth=%s, ic=%p; cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
+      self, g_quark_to_string (interface), member, invoke_callback,
+      callback, user_data, destroy, weak_object, ret);
 
   ret->proxy = g_object_ref (self);
   ret->interface = interface;
   ret->member = g_strdup (member);
+  ret->invoke_callback = invoke_callback;
   ret->callback = callback;
   ret->user_data = user_data;
   ret->destroy = destroy;
   ret->weak_object = weak_object;
   ret->pending_call = NULL;
-  ret->raise_error = raise_error;
   ret->priv = pending_call_magic;
 
   if (weak_object != NULL)
@@ -470,24 +523,56 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
   dbus_g_proxy_cancel_call (iface, self->pending_call);
 }
 
+static void
+tp_proxy_pending_call_free (gpointer p)
+{
+  TpProxyPendingCall *self = p;
+  DEBUG ("%p", self);
+
+  g_return_if_fail (self->priv == pending_call_magic);
+
+  if (self->proxy != NULL)
+    {
+      g_signal_handlers_disconnect_by_func (TP_PROXY (self->proxy),
+          tp_proxy_pending_call_proxy_invalidated, self);
+      g_object_unref (self->proxy);
+      self->proxy = NULL;
+    }
+
+  g_free (self->member);
+
+  if (self->destroy != NULL)
+    self->destroy (self->user_data);
+
+  if (self->weak_object != NULL)
+    g_object_weak_unref (self->weak_object,
+        tp_proxy_pending_call_lost_weak_ref, self);
+
+  g_slice_free (TpProxyPendingCall, self);
+}
+
 /**
- * tp_proxy_pending_call_free:
- * @self: a #TpProxyPendingCall allocated with tp_proxy_pending_call_new()
+ * tp_proxy_pending_call_v0_completed:
+ * @p: a #TpProxyPendingCall allocated with tp_proxy_pending_call_new()
  *
- * Free a pending call. The signature is chosen to match #GDestroyNotify.
+ * Indicate that dbus-glib has finished with this pending call, and therefore
+ * either tp_proxy_pending_call_v0_take_results() has already been called,
+ * or it will never be called. See tp_proxy_pending_call_v0_new().
+ *
+ * The signature is chosen to match #GDestroyNotify.
  *
  * This function is for use by #TpProxy subclass implementations only.
  */
 void
-tp_proxy_pending_call_free (gpointer self)
+tp_proxy_pending_call_v0_completed (gpointer p)
 {
-  TpProxyPendingCall *data = self;
+  TpProxyPendingCall *self = p;
 
   DEBUG ("%p", self);
 
-  g_return_if_fail (data->priv == pending_call_magic);
+  g_return_if_fail (self->priv == pending_call_magic);
 
-  if (data->proxy != NULL)
+  if (self->proxy != NULL)
     {
       /* Annoyingly, dbus-glib frees us *before* it emits destroy. If we
        * haven't already finished or been cancelled, then that must be what's
@@ -496,82 +581,79 @@ tp_proxy_pending_call_free (gpointer self)
        * tp_proxy_invalidate is safe against repeated calls, so this is fine -
        * the 'destroy' signal will call it again, which will basically be
        * ignored. */
-      if (data->callback != NULL)
+      if (self->callback != NULL)
         {
           DEBUG ("Looks like this pending call hasn't finished, assuming "
               "the DBusGProxy is about to die");
-          tp_proxy_invalidated (data->proxy, &tp_proxy_dgproxy_destroyed);
-          g_assert (data->callback == NULL);
+          tp_proxy_invalidated (self->proxy, &tp_proxy_dgproxy_destroyed);
+          g_assert (self->callback == NULL);
         }
-
-      g_signal_handlers_disconnect_by_func (TP_PROXY (data->proxy),
-          tp_proxy_pending_call_proxy_invalidated, self);
-      g_object_unref (data->proxy);
-      data->proxy = NULL;
     }
 
-  g_free (data->member);
-
-  if (data->destroy != NULL)
-    data->destroy (data->user_data);
-
-  if (data->weak_object != NULL)
-    g_object_weak_unref (data->weak_object,
-        tp_proxy_pending_call_lost_weak_ref, self);
-
-  g_slice_free (TpProxyPendingCall, data);
+  tp_proxy_pending_call_free (self);
 }
 
 /**
- * tp_proxy_pending_call_steal_callback:
- * @self: The pending call
- * @proxy_out: Used to return the proxy on which the call was made
- * @user_data_out: Used to return the user-supplied data
- * @weak_object_out: Used to return the user-supplied object
- *
- * Return the callback to be called when this pending call completes,
- * and set the callback in the pending call data structure to %NULL
- * to ensure that it is not called again. This method should only be
- * called from #TpProxy subclass implementations, and only when they
- * are about to call the callback. The other arguments are used to retrieve
- * things that must be passed to the callback.
- *
- * Returns: the callback for this pending call
- */
-GCallback
-tp_proxy_pending_call_steal_callback (TpProxyPendingCall *self,
-                                      TpProxy **proxy_out,
-                                      gpointer *user_data_out,
-                                      GObject **weak_object_out)
-{
-  GCallback tmp = self->callback;
-
-  if (proxy_out != NULL)
-    *proxy_out = self->proxy;
-
-  if (user_data_out != NULL)
-    *user_data_out = self->user_data;
-
-  if (weak_object_out != NULL)
-    *weak_object_out = self->weak_object;
-
-  self->callback = NULL;
-  return tmp;
-}
-
-/**
- * tp_proxy_pending_call_take_pending_call:
+ * tp_proxy_pending_call_v0_take_pending_call:
  * @self: A pending call on which this function has not yet been called
  * @pending_call: The underlying dbus-glib pending call
  *
  * Set the underlying pending call to be used by this object.
+ * See also tp_proxy_pending_call_v0_new().
+ *
  * This method should only be called from #TpProxy subclass implementations.
  */
 void
-tp_proxy_pending_call_take_pending_call (TpProxyPendingCall *self,
-                                         DBusGProxyCall *pending_call)
+tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *self,
+                                            DBusGProxyCall *pending_call)
 {
+  DEBUG ("%p: %p", self, pending_call);
+
+  g_return_if_fail (self->priv == pending_call_magic);
   self->pending_call = pending_call;
+}
+
+/**
+ * tp_proxy_pending_call_v0_take_results:
+ * @self: A pending call on which this function has not yet been called
+ * @error: %NULL if the call was successful, or an error (whose ownership
+ *  is taken over by the pending call object)
+ * @args: %NULL if the call failed or had no "out" arguments, or an array
+ *  of "out" arguments
+ *
+ * Set the "out" arguments (return values) from this pending call.
+ * See also tp_proxy_pending_call_v0_new().
+ *
+ * This method should only be called from #TpProxy subclass implementations.
+ */
+void
+tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
+                                       GError *error,
+                                       GValueArray *args)
+{
+  GCallback callback;
+
+  if (error == NULL)
+    DEBUG ("%p: success, %d args", self, args == NULL ? 0 : args->n_values);
+  else
+    DEBUG ("%p: error, %s", self, error->message);
+
+  g_return_if_fail (self->priv == pending_call_magic);
+  g_return_if_fail (self->args == NULL);
+  g_return_if_fail (self->error == NULL);
+  g_return_if_fail (self->idle_source == 0);
+
+  self->error = error;
+  /* the ordering here means that error + args => assert or raise error */
+  g_return_if_fail (error == NULL || args == NULL);
+  self->args = args;
+
+  DEBUG ("(Temporary code) Invoking %p", self->invoke_callback);
+  g_return_if_fail (self->invoke_callback != NULL);
+  callback = self->callback;
+  self->callback = NULL;
+  self->invoke_callback (self->proxy, error, self->args, callback,
+      self->user_data, self->weak_object);
 }
 
 static void

@@ -692,10 +692,10 @@ TELEPATHY_GLIB_0.7.1_UNRELEASED {
         tp_proxy_has_interface_by_id;
         tp_proxy_invalidated;
         tp_proxy_pending_call_cancel;
-        tp_proxy_pending_call_free;
-        tp_proxy_pending_call_new;
-        tp_proxy_pending_call_steal_callback;
-        tp_proxy_pending_call_take_pending_call;
+        tp_proxy_pending_call_v0_completed;
+        tp_proxy_pending_call_v0_new;
+        tp_proxy_pending_call_v0_take_pending_call;
+        tp_proxy_pending_call_v0_take_results;
         tp_proxy_signal_connection_disconnect;
         tp_proxy_signal_connection_free_closure;
         tp_proxy_signal_connection_get_callback;
