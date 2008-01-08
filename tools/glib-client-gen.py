@@ -86,6 +86,10 @@ class Generator(object):
 
         callback_name = ('%s_%s_signal_callback_%s'
                          % (self.prefix_lc, iface_lc, member_lc))
+        collect_name = ('_%s_%s_collect_args_of_%s'
+                        % (self.prefix_lc, iface_lc, member_lc))
+        invoke_name = ('_%s_%s_invoke_callback_for_%s'
+                       % (self.prefix_lc, iface_lc, member_lc))
 
         # Example:
         #
@@ -127,49 +131,123 @@ class Generator(object):
 
         self.h('    gpointer user_data, GObject *weak_object);')
 
-        # Example:
-        # static void _tp_cli_connection_signal_callback_new_channel
-        #   (DBusGProxy *proxy, const gchar *arg_object_path,
-        #   const gchar *arg_channel_type, guint arg_handle_type,
-        #   guint arg_handle, gboolean arg_suppress_handler,
-        #   TpProxySignalConnection *signal_connection);
+        if args:
+            self.b('static void')
+            self.b('%s (DBusGProxy *proxy,' % collect_name)
 
-        self.b('static void _%s (DBusGProxy *proxy,'
-               % callback_name)
+            for arg in args:
+                name, info, tp_type, elt = arg
+                ctype, gtype, marshaller, pointer = info
 
-        for arg in args:
-            name, info, tp_type, elt = arg
-            ctype, gtype, marshaller, pointer = info
+                const = pointer and 'const ' or ''
 
-            const = pointer and 'const ' or ''
+                self.b('    %s%s%s,' % (const, ctype, name))
 
-            self.b('    %s%s%s,' % (const, ctype, name))
+            self.b('    TpProxySignalConnection *sc)')
+            self.b('{')
+            self.b('  GValueArray *args = g_value_array_new (%d);' % len(args))
+            self.b('  GValue blank = { 0 };')
+            self.b('  guint i;')
+            self.b('')
+            self.b('  g_value_init (&blank, G_TYPE_INT);')
+            self.b('')
+            self.b('  for (i = 0; i < %d; i++)' % len(args))
+            self.b('    g_value_array_append (args, &blank);')
+            self.b('')
 
-        self.b('    TpProxySignalConnection *signal_connection)')
+            for i, arg in enumerate(args):
+                name, info, tp_type, elt = arg
+                ctype, gtype, marshaller, pointer = info
+
+                self.b('  g_value_unset (args->values + %d);' % i)
+                self.b('  g_value_init (args->values + %d, %s);' % (i, gtype))
+
+                if gtype == 'G_TYPE_STRING':
+                    self.b('  g_value_set_string (args->values + %d, %s);'
+                           % (i, name))
+                elif marshaller == 'BOXED':
+                    self.b('  g_value_set_boxed (args->values + %d, %s);'
+                           % (i, name))
+                elif gtype == 'G_TYPE_UCHAR':
+                    self.b('  g_value_set_uchar (args->values + %d, %s);'
+                           % (i, name))
+                elif gtype == 'G_TYPE_BOOLEAN':
+                    self.b('  g_value_set_boolean (args->values + %d, %s);'
+                           % (i, name))
+                elif gtype == 'G_TYPE_INT':
+                    self.b('  g_value_set_int (args->values + %d, %s);'
+                           % (i, name))
+                elif gtype == 'G_TYPE_UINT':
+                    self.b('  g_value_set_uint (args->values + %d, %s);'
+                           % (i, name))
+                elif gtype == 'G_TYPE_INT64':
+                    self.b('  g_value_set_int (args->values + %d, %s);'
+                           % (i, name))
+                elif gtype == 'G_TYPE_UINT64':
+                    self.b('  g_value_set_uint (args->values + %d, %s);'
+                           % (i, name))
+                elif gtype == 'G_TYPE_DOUBLE':
+                    self.b('  g_value_set_double (args->values + %d, %s);'
+                           % (i, name))
+                else:
+                    assert False, ("Don't know how to put %s in a GValue"
+                                   % gtype)
+                self.b('')
+
+            self.b('  tp_proxy_signal_connection_v0_take_results (sc, args);')
+            self.b('}')
+
+        self.b('static void')
+        self.b('%s (TpProxy *tpproxy,' % invoke_name)
+        self.b('    GError *error,')
+        self.b('    GValueArray *args,')
+        self.b('    GCallback generic_callback,')
+        self.b('    gpointer user_data,')
+        self.b('    GObject *weak_object)')
         self.b('{')
-        self.b('  TpProxy *tpproxy;')
-        self.b('  gpointer user_data;')
-        self.b('  GObject *weak_object;')
         self.b('  %s callback =' % callback_name)
-        self.b('      (%s)' % callback_name)
-        self.b('          tp_proxy_signal_connection_get_callback '
-               '(signal_connection,')
-        self.b('          &tpproxy,')
-        self.b('          &user_data,')
-        self.b('          &weak_object);')
-        self.b('')
-        self.b('  g_assert (tpproxy != NULL);')
+        self.b('      (%s) generic_callback;' % callback_name)
         self.b('')
         self.b('  if (callback != NULL)')
         self.b('    callback (g_object_ref (tpproxy),')
 
-        for arg in args:
+        # FIXME: factor out into a function
+        for i, arg in enumerate(args):
             name, info, tp_type, elt = arg
-            self.b('      %s,' % name)
+            ctype, gtype, marshaller, pointer = info
+
+            if marshaller == 'BOXED':
+                self.b('      g_value_get_boxed (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_STRING':
+                self.b('      g_value_get_string (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_UCHAR':
+                self.b('      g_value_get_uchar (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_BOOLEAN':
+                self.b('      g_value_get_boolean (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_UINT':
+                self.b('      g_value_get_uint (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_INT':
+                self.b('      g_value_get_int (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_UINT64':
+                self.b('      g_value_get_uint64 (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_INT64':
+                self.b('      g_value_get_int64 (args->values + %d),' % i)
+            elif gtype == 'G_TYPE_DOUBLE':
+                self.b('      g_value_get_double (args->values + %d),' % i)
+            else:
+                assert False, "Don't know how to get %s from a GValue" % gtype
 
         self.b('      user_data,')
         self.b('      weak_object);')
         self.b('')
+
+        if len(args) > 0:
+            self.b('  g_value_array_free (args);')
+        else:
+            self.b('  if (args != NULL)')
+            self.b('    g_value_array_free (args);')
+            self.b('')
+
         self.b('  g_object_unref (tpproxy);')
         self.b('}')
 
@@ -223,32 +301,32 @@ class Generator(object):
         self.b('    GDestroyNotify destroy,')
         self.b('    GObject *weak_object)')
         self.b('{')
-        self.b('  TpProxySignalConnection *data;')
-        self.b('  DBusGProxy *iface;')
+        self.b('  GType expected_types[%d] = {' % (len(args) + 1))
+
+        for arg in args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b('      %s,' % gtype)
+
+        self.b('      G_TYPE_INVALID };')
         self.b('')
         self.b('  g_return_val_if_fail (%s (proxy), NULL);'
                % self.proxy_assert)
-        self.b('')
-        self.b('  iface = tp_proxy_borrow_interface_by_id (')
-        self.b('      (TpProxy *) proxy,')
-        self.b('      TP_IFACE_QUARK_%s,' % iface_lc.upper())
-        self.b('      NULL);')
-        self.b('')
         self.b('  g_return_val_if_fail (callback != NULL, NULL);')
         self.b('')
-        self.b('  if (iface == NULL)')
-        self.b('    return NULL;')
-        self.b('')
-        self.b('  data = tp_proxy_signal_connection_new ((TpProxy *) proxy,')
+        self.b('  return tp_proxy_signal_connection_v0_new ((TpProxy *) proxy,')
         self.b('      TP_IFACE_QUARK_%s, \"%s\",' % (iface_lc.upper(), member))
+        self.b('      expected_types,')
+
+        if args:
+            self.b('      G_CALLBACK (%s),' % collect_name)
+        else:
+            self.b('      NULL, /* no args => no collector function */')
+
+        self.b('      %s,' % invoke_name)
         self.b('      G_CALLBACK (callback), user_data, destroy,')
-        self.b('      weak_object, G_CALLBACK (_%s));' % callback_name)
-        self.b('')
-        self.b('  dbus_g_proxy_connect_signal (iface, \"%s\",' % member)
-        self.b('      G_CALLBACK (_%s), data,' % callback_name)
-        self.b('      tp_proxy_signal_connection_free_closure);')
-        self.b('')
-        self.b('  return data;')
+        self.b('      weak_object);')
         self.b('}')
         self.b('')
 
@@ -576,6 +654,7 @@ class Generator(object):
 
         self.b('  callback ((%s) self,' % self.proxy_cls)
 
+        # FIXME: factor out into a function
         for i, arg in enumerate(out_args):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info

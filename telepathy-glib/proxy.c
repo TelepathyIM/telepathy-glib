@@ -169,11 +169,12 @@ struct _TpProxySignalConnection {
     TpProxy *proxy;
     GQuark interface;
     gchar *member;
+    GCallback collect_args;
+    TpProxyInvokeFunc invoke_callback;
     GCallback callback;
     gpointer user_data;
     GDestroyNotify destroy;
     GObject *weak_object;
-    GCallback impl_callback;
     gconstpointer priv;
 };
 
@@ -732,6 +733,7 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
   g_assert (dead == self->weak_object);
 
   self->weak_object = NULL;
+  /* FIXME: ensure we drop any idle callback invocations */
   tp_proxy_signal_connection_disconnect (self);
 }
 
@@ -746,6 +748,8 @@ tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
       why->message);
   g_assert (proxy == self->proxy);
 
+  /* FIXME: this will drop any idle callback invocations, but we don't want
+   * to */
   tp_proxy_signal_connection_disconnect (self);
 }
 
@@ -761,23 +765,80 @@ tp_proxy_signal_connection_lost_proxy (gpointer data,
   g_assert (proxy == self->proxy);
 
   self->proxy = NULL;
+  /* FIXME: this will drop any idle callback invocations, but we don't want
+   * to */
   tp_proxy_signal_connection_disconnect (self);
 }
 
+static void
+tp_proxy_signal_connection_dropped (gpointer p,
+                                    GClosure *unused)
+{
+  TpProxySignalConnection *self = p;
+
+  DEBUG ("%p", self);
+
+  g_return_if_fail (self->priv == signal_conn_magic);
+
+  /* FIXME: let any idle callback invocations run first */
+
+  if (self->proxy != NULL)
+    {
+      g_signal_handlers_disconnect_by_func (self->proxy,
+          tp_proxy_signal_connection_proxy_invalidated, self);
+      g_object_weak_unref ((GObject *) self->proxy,
+          tp_proxy_signal_connection_lost_proxy, self);
+      self->proxy = NULL;
+    }
+
+  if (self->destroy != NULL)
+    self->destroy (self->user_data);
+
+  self->destroy = NULL;
+  self->user_data = NULL;
+
+  if (self->weak_object != NULL)
+    {
+      g_object_weak_unref (self->weak_object,
+          tp_proxy_signal_connection_lost_weak_ref, self);
+      self->weak_object = NULL;
+    }
+
+  g_free (self->member);
+
+  g_slice_free (TpProxySignalConnection, self);
+}
+
+static void
+collect_none (DBusGProxy *proxy, TpProxySignalConnection *sc)
+{
+  tp_proxy_signal_connection_v0_take_results (sc, NULL);
+}
+
 /**
- * tp_proxy_signal_connection_new:
+ * tp_proxy_signal_connection_v0_new:
  * @self: a proxy
  * @interface: a quark whose string value is the D-Bus interface
  * @member: the name of the signal to which we're connecting
- * @callback: a callback to be called when the signal is received
+ * @expected_types: an array of expected GTypes for the arguments, terminated
+ *  by %G_TYPE_INVALID
+ * @collect_args: a callback to be given to dbus_g_proxy_connect_signal(),
+ *  which must marshal the arguments into a #GValueArray and use them to call
+ *  tp_proxy_signal_connection_v0_take_results(); this callback is not
+ *  guaranteed to be called by future versions of telepathy-glib, which might
+ *  be able to implement its functionality internally. If no arguments are
+ *  expected at all (expected_types = { G_TYPE_INVALID }) then this callback
+ *  should instead be %NULL
+ * @invoke_callback: a function which will be called with @error = %NULL,
+ *  which should invoke @callback with @user_data, @weak_object and other
+ *  appropriate arguments taken from @args
+ * @callback: user callback to be invoked by @invoke_callback
  * @user_data: user-supplied data for the callback
  * @destroy: user-supplied destructor for the data, which will be called
  *   when the signal connection is disconnected for any reason
  * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
  *   the signal connection - if it is destroyed, the signal connection will
  *   automatically be disconnected
- * @impl_callback: the internal callback from a #TpProxy subclass given to
- *   dbus-glib, used to cancel the signal connection
  *
  * Allocate a new structure representing a signal connection. The
  * public members are set from the arguments.
@@ -788,29 +849,49 @@ tp_proxy_signal_connection_lost_proxy (gpointer data,
  *  tp_proxy_signal_connection_free_closure().
  */
 TpProxySignalConnection *
-tp_proxy_signal_connection_new (TpProxy *self,
-                                GQuark interface,
-                                const gchar *member,
-                                GCallback callback,
-                                gpointer user_data,
-                                GDestroyNotify destroy,
-                                GObject *weak_object,
-                                GCallback impl_callback)
+tp_proxy_signal_connection_v0_new (TpProxy *self,
+                                   GQuark interface,
+                                   const gchar *member,
+                                   const GType *expected_types,
+                                   GCallback collect_args,
+                                   TpProxyInvokeFunc invoke_callback,
+                                   GCallback callback,
+                                   gpointer user_data,
+                                   GDestroyNotify destroy,
+                                   GObject *weak_object)
 {
-  TpProxySignalConnection *ret = g_slice_new (TpProxySignalConnection);
+  TpProxySignalConnection *ret;
+  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (self,
+      interface, NULL);
 
-  DEBUG ("(proxy=%p, if=%s, sig=%s, cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
-      self, g_quark_to_string (interface), member, callback, user_data,
-      destroy, weak_object, ret);
+  if (iface == NULL)
+    {
+      DEBUG ("Proxy already invalidated - not connecting to signal %s",
+          member);
+      return NULL;
+    }
+
+  ret = g_slice_new0 (TpProxySignalConnection);
+
+  DEBUG ("(proxy=%p, if=%s, sig=%s, collect=%p, invoke=%p, "
+      "cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
+      self, g_quark_to_string (interface), member, collect_args,
+      invoke_callback, callback, user_data, destroy, weak_object, ret);
+
+  if (expected_types[0] == G_TYPE_INVALID)
+    {
+      collect_args = G_CALLBACK (collect_none);
+    }
 
   ret->proxy = self;
   ret->interface = interface;
   ret->member = g_strdup (member);
+  ret->collect_args = collect_args;
+  ret->invoke_callback = invoke_callback;
   ret->callback = callback;
   ret->user_data = user_data;
   ret->destroy = destroy;
   ret->weak_object = weak_object;
-  ret->impl_callback = impl_callback;
   ret->priv = signal_conn_magic;
 
   if (weak_object != NULL)
@@ -822,6 +903,9 @@ tp_proxy_signal_connection_new (TpProxy *self,
 
   g_object_weak_ref ((GObject *) self,
       tp_proxy_signal_connection_lost_proxy, ret);
+
+  dbus_g_proxy_connect_signal (iface, member, collect_args, ret,
+      tp_proxy_signal_connection_dropped);
 
   return ret;
 }
@@ -843,6 +927,8 @@ tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
 
   g_return_if_fail (self->priv == signal_conn_magic);
 
+  /* FIXME: drop any idle callback invocations */
+
   if (self->proxy == NULL)
     return;
 
@@ -852,88 +938,30 @@ tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self)
   if (iface == NULL)
     return;
 
-  dbus_g_proxy_disconnect_signal (iface, self->member, self->impl_callback,
+  dbus_g_proxy_disconnect_signal (iface, self->member, self->collect_args,
       (gpointer) self);
 }
 
 /**
- * tp_proxy_signal_connection_free_closure:
- * @self: a #TpProxySignalConnection
- * @unused: not used
- *
- * Free a signal connection allocated with tp_proxy_signal_connection_new().
- * The signature of this function is chosen to make it match #GClosureNotify.
- *
- * This function is for use by #TpProxy subclass implementations only.
- */
-void
-tp_proxy_signal_connection_free_closure (gpointer self,
-                                         GClosure *unused)
-{
-  TpProxySignalConnection *data = self;
-
-  DEBUG ("%p", self);
-
-  g_return_if_fail (data->priv == signal_conn_magic);
-
-  if (data->proxy != NULL)
-    {
-      g_signal_handlers_disconnect_by_func (data->proxy,
-          tp_proxy_signal_connection_proxy_invalidated, self);
-      g_object_weak_unref ((GObject *) data->proxy,
-          tp_proxy_signal_connection_lost_proxy, data);
-      data->proxy = NULL;
-    }
-
-  if (data->destroy != NULL)
-    data->destroy (data->user_data);
-
-  data->destroy = NULL;
-  data->user_data = NULL;
-
-  if (data->weak_object != NULL)
-    {
-      g_object_weak_unref (data->weak_object,
-          tp_proxy_signal_connection_lost_weak_ref, data);
-      data->weak_object = NULL;
-    }
-
-  g_free (data->member);
-
-  g_slice_free (TpProxySignalConnection, data);
-}
-
-/**
- * tp_proxy_signal_connection_get_callback:
- * @self: The pending call
- * @proxy_out: Used to return the proxy on which the call was made
- * @user_data_out: Used to return the user-supplied data
- * @weak_object_out: Used to return the user-supplied object
+ * tp_proxy_signal_connection_v0_take_results:
+ * @self: The signal connection
+ * @args: The arguments of the signal
  *
  * Return the callback to be called when this signal is received.
  * This method should only be called from #TpProxy subclass implementations.
  *
  * The other arguments are used to retrieve things that must be passed to the
  * callback. They output "borrowed" references.
- *
- * Returns: the callback for this pending call
  */
-GCallback
-tp_proxy_signal_connection_get_callback (TpProxySignalConnection *self,
-                                         TpProxy **proxy_out,
-                                         gpointer *user_data_out,
-                                         GObject **weak_object_out)
+void
+tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *self,
+                                            GValueArray *args)
 {
-  if (proxy_out != NULL)
-    *proxy_out = self->proxy;
+  /* FIXME: assert that the GValueArray is the right length, or
+   * even that it contains the right types? */
 
-  if (user_data_out != NULL)
-    *user_data_out = self->user_data;
-
-  if (weak_object_out != NULL)
-    *weak_object_out = self->weak_object;
-
-  return self->callback;
+  self->invoke_callback (self->proxy, NULL, args, self->callback,
+      self->user_data, self->weak_object);
 }
 
 static void

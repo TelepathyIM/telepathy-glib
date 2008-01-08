@@ -45,16 +45,15 @@ void tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
 
 void tp_proxy_pending_call_v0_completed (gpointer p);
 
-TpProxySignalConnection *tp_proxy_signal_connection_new (TpProxy *self,
-    GQuark interface, const gchar *member, GCallback callback,
-    gpointer user_data, GDestroyNotify destroy, GObject *weak_object,
-    GCallback impl_callback);
+TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
+    GQuark interface, const gchar *member,
+    const GType *expected_types,
+    GCallback collect_args, TpProxyInvokeFunc invoke_callback,
+    GCallback callback, gpointer user_data, GDestroyNotify destroy,
+    GObject *weak_object);
 
-void tp_proxy_signal_connection_free_closure (gpointer self, GClosure *unused);
-
-GCallback tp_proxy_signal_connection_get_callback
-    (TpProxySignalConnection *self, TpProxy **proxy_out,
-     gpointer *user_data_out, GObject **weak_object_out);
+void tp_proxy_signal_connection_v0_take_results
+    (TpProxySignalConnection *self, GValueArray *args);
 
 typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
     guint quark, DBusGProxy *proxy, gpointer unused);

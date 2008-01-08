@@ -697,9 +697,8 @@ TELEPATHY_GLIB_0.7.1_UNRELEASED {
         tp_proxy_pending_call_v0_take_pending_call;
         tp_proxy_pending_call_v0_take_results;
         tp_proxy_signal_connection_disconnect;
-        tp_proxy_signal_connection_free_closure;
-        tp_proxy_signal_connection_get_callback;
-        tp_proxy_signal_connection_new;
+        tp_proxy_signal_connection_v0_new;
+        tp_proxy_signal_connection_v0_take_results;
 } TELEPATHY_GLIB_0.7.0;
 
 # For every release that adds ABI, add a stanza like:
