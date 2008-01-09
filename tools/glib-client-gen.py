@@ -840,8 +840,200 @@ class Generator(object):
         self.b('}')
         self.b('')
 
+        # Reentrant blocking calls
+        # Example:
+        # gboolean tp_cli_properties_interface_run_get_properties
+        #   (gpointer proxy,
+        #       gint timeout_ms,
+        #       const GArray *in_properties,
+        #       GPtrArray **out0,
+        #       GError **error);
+
+        self.b('typedef struct {')
+        self.b('    GMainLoop *loop;')
+        self.b('    GError **error;')
+
+        for arg in out_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b('    %s*%s;' % (ctype, name))
+
+        self.b('    gboolean success:1;')
+        self.b('    gboolean completed:1;')
+        self.b('} _%s_%s_run_state_%s;'
+               % (self.prefix_lc, iface_lc, member_lc))
+
+        reentrant_invoke = '_%s_%s_finish_running_%s' % (self.prefix_lc,
+                                                         iface_lc,
+                                                         member_lc)
+
+        self.b('static void')
+        self.b('%s (TpProxy *self,' % reentrant_invoke)
+        self.b('    GError *error,')
+        self.b('    GValueArray *args,')
+        self.b('    GCallback unused,')
+        self.b('    gpointer user_data,')
+        self.b('    GObject *unused2)')
+        self.b('{')
+        self.b('  _%s_%s_run_state_%s *state = user_data;'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b('')
+        self.b('  state->success = (error == NULL);')
+        self.b('  state->completed = TRUE;')
+        self.b('  g_main_loop_quit (state->loop);')
+        self.b('')
+        self.b('  if (error != NULL)')
+        self.b('    {')
+        self.b('      if (state->error != NULL)')
+        self.b('        *state->error = error;')
+        self.b('      else')
+        self.b('        g_error_free (error);')
+        self.b('')
+        self.b('      return;')
+        self.b('    }')
         self.b('')
 
+        for i, arg in enumerate(out_args):
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b('  if (state->%s != NULL)' % name)
+            if marshaller == 'BOXED':
+                self.b('    *state->%s = g_value_dup_boxed ('
+                       'args->values + %d);' % (name, i))
+            elif marshaller == 'STRING':
+                self.b('    *state->%s = g_value_dup_string '
+                       '(args->values + %d);' % (name, i))
+            elif marshaller in ('UCHAR', 'BOOLEAN', 'INT', 'UINT',
+                    'INT64', 'UINT64', 'DOUBLE'):
+                self.b('    *state->%s = g_value_get_%s (args->values + %d);'
+                       % (name, marshaller.lower(), i))
+            else:
+                assert False, "Don't know how to copy %s" % gtype
+
+            self.b('')
+
+        self.b('  g_value_array_free (args);')
+        self.b('}')
+        self.b('')
+
+        self.h('gboolean %s_%s_run_%s (%sproxy,'
+               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.h('    gint timeout_ms,')
+
+        self.b('/**')
+        self.b(' * %s_%s_run_%s:' % (self.prefix_lc, iface_lc, member_lc))
+        self.b(' * @proxy: %s' % self.proxy_doc)
+        self.b(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
+
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b(' * @%s: Used to pass an \'in\' argument: <![CDATA[%s]]>'
+                   % (name, get_docstring(elt) or '(Undocumented)'))
+
+        for arg in out_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.b(' * @%s: Used to return an \'out\' argument if %%TRUE is '
+                   'returned: <![CDATA[%s]]>'
+                   % (name, get_docstring(elt) or '(Undocumented)'))
+
+        self.b(' * @error: Used to return errors if %FALSE is returned')
+        self.b(' *')
+        self.b(' * Call the method %s and block, without' % member)
+        self.b(' * re-entering the main loop, until it returns.')
+        self.b(' *')
+        self.b(' * <![CDATA[%s]]>'
+                % (get_docstring(method) or '(Undocumented)'))
+        self.b(' *')
+        self.b(' * Returns: TRUE on success, FALSE and sets @error on error')
+        self.b(' */')
+        self.b('gboolean\n%s_%s_run_%s (%sproxy,'
+               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.b('    gint timeout_ms,')
+
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            const = pointer and 'const ' or ''
+
+            self.h('    %s%s%s,' % (const, ctype, name))
+            self.b('    %s%s%s,' % (const, ctype, name))
+
+        for arg in out_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            self.h('    %s*%s,' % (ctype, name))
+            self.b('    %s*%s,' % (ctype, name))
+
+        self.h('    GError **error);')
+        self.h('')
+
+        self.b('    GError **error)')
+        self.b('{')
+        self.b('  DBusGProxy *iface;')
+        self.b('  GQuark interface = TP_IFACE_QUARK_%s;' % iface_lc.upper())
+        self.b('  TpProxyPendingCall *pc;')
+        self.b('  _%s_%s_run_state_%s state = {'
+               % (self.prefix_lc, iface_lc, member_lc))
+        self.b('      NULL /* loop */, error,')
+
+        for arg in out_args:
+            name, info, tp_type, elt = arg
+
+            self.b('    %s,' % name)
+
+        self.b('      FALSE /* completed */, FALSE /* success */ };')
+        self.b('')
+        self.b('  g_return_val_if_fail (%s (proxy), FALSE);'
+               % self.proxy_assert)
+        self.b('')
+        self.b('  iface = tp_proxy_borrow_interface_by_id')
+        self.b('       ((TpProxy *) proxy, interface, error);')
+        self.b('')
+        self.b('  if (iface == NULL)')
+        self.b('    return FALSE;')
+        self.b('')
+        self.b('  state.loop = g_main_loop_new (NULL, FALSE);')
+        self.b('')
+        self.b('  pc = tp_proxy_pending_call_v0_new ((TpProxy *) proxy,')
+        self.b('      interface, "%s", ' % member)
+        self.b('      %s,' % reentrant_invoke)
+        self.b('      NULL, &state, NULL, NULL);')
+        self.b('  tp_proxy_pending_call_v0_take_pending_call (pc,')
+        self.b('      dbus_g_proxy_begin_call_with_timeout (iface,')
+        self.b('          "%s",' % member)
+        self.b('          %s,' % collect_callback)
+        self.b('          pc,')
+        self.b('          tp_proxy_pending_call_v0_completed,')
+        self.b('          timeout_ms,')
+
+        for arg in in_args:
+            name, info, tp_type, elt = arg
+            ctype, gtype, marshaller, pointer = info
+
+            const = pointer and 'const ' or ''
+
+            self.b('              %s, %s,' % (gtype, name))
+
+        self.b('          G_TYPE_INVALID));')
+        self.b('')
+        self.b('  if (!state.completed)')
+        self.b('    g_main_loop_run (state.loop);')
+        self.b('  g_main_loop_unref (state.loop);')
+        self.b('')
+        self.b('  return state.success;')
+        self.b('}')
+        self.b('')
+
+        # leave a gap for the end of the method
+        self.b('')
         self.h('')
 
     def do_signal_add(self, signal):
