@@ -459,7 +459,6 @@ tp_proxy_pending_call_proxy_invalidated (TpProxy *proxy,
   if (invoke != NULL)
     {
       self->invoke_callback = NULL;
-      DEBUG ("Invoking %p", invoke);
       invoke (proxy, g_error_copy (why), NULL, self->callback,
           self->user_data, self->weak_object);
     }
@@ -582,7 +581,6 @@ static void
 tp_proxy_pending_call_free (gpointer p)
 {
   TpProxyPendingCall *self = p;
-  DEBUG ("%p", self);
 
   g_return_if_fail (self->priv == pending_call_magic);
 
@@ -629,8 +627,6 @@ tp_proxy_pending_call_v0_completed (gpointer p)
 {
   TpProxyPendingCall *self = p;
 
-  DEBUG ("%p", self);
-
   g_return_if_fail (self->priv == pending_call_magic);
 
   if (self->idle_source != 0)
@@ -670,8 +666,6 @@ void
 tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *self,
                                             DBusGProxyCall *pending_call)
 {
-  DEBUG ("%p: %p", self, pending_call);
-
   g_return_if_fail (self->priv == pending_call_magic);
   self->pending_call = pending_call;
 }
@@ -681,8 +675,6 @@ tp_proxy_pending_call_idle_invoke (gpointer p)
 {
   TpProxyPendingCall *self = p;
   TpProxyInvokeFunc invoke = self->invoke_callback;
-
-  DEBUG ("%p", self);
 
   g_return_val_if_fail (self->invoke_callback != NULL, FALSE);
 
@@ -716,11 +708,6 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
                                        GError *error,
                                        GValueArray *args)
 {
-  if (error == NULL)
-    DEBUG ("%p: success, %d args", self, args == NULL ? 0 : args->n_values);
-  else
-    DEBUG ("%p: error, %s", self, error->message);
-
   g_return_if_fail (self->priv == pending_call_magic);
   g_return_if_fail (self->args == NULL);
   g_return_if_fail (self->error == NULL);
@@ -902,8 +889,6 @@ tp_proxy_signal_invocation_run (gpointer p)
 {
   TpProxySignalInvocation *self = p;
   TpProxySignalInvocation *popped = g_queue_pop_head (&self->sc->invocations);
-
-  DEBUG ("%p, head is %p", self, popped);
 
   /* if GLib is running idle handlers in the wrong order, then we've lost */
   g_assert (popped == self);
