@@ -57,8 +57,9 @@ channel_ready (TpChannel *channel,
       GError *error = NULL;
 
       printf ("Group members:\n");
-      /* An example of a blocking call */
-      if (tp_cli_channel_interface_group_block_on_get_members (channel, -1,
+      /* An example of a reentrant blocking call. This re-enters the
+       * main loop and dispatches events until the call completes */
+      if (tp_cli_channel_interface_group_run_get_members (channel, -1,
             /* If GetMembers had any "in" arguments they'd go here */
           &members, &error))
         {

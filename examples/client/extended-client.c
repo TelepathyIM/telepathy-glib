@@ -64,7 +64,7 @@ conn_ready (TpConnection *conn,
 
   /* Get handles for myself and someone else */
 
-  tp_cli_connection_block_on_request_handles (conn, -1, TP_HANDLE_TYPE_CONTACT,
+  tp_cli_connection_run_request_handles (conn, -1, TP_HANDLE_TYPE_CONTACT,
       names, &handles, &error);
 
   if (die_if (error, "RequestHandles()"))
@@ -79,7 +79,7 @@ conn_ready (TpConnection *conn,
   g_value_set_static_string (value, "Shadowman");
   g_hash_table_insert (asv, "previous-owner",
       value);
-  example_cli_connection_interface_hats_block_on_set_hat (conn, -1,
+  example_cli_connection_interface_hats_run_set_hat (conn, -1,
       "red", EXAMPLE_HAT_STYLE_FEDORA, asv, &error);
   g_hash_table_destroy (asv);
 
@@ -89,7 +89,7 @@ conn_ready (TpConnection *conn,
       return;
     }
 
-  example_cli_connection_interface_hats_block_on_get_hats (conn, -1,
+  example_cli_connection_interface_hats_run_get_hats (conn, -1,
       handles, &hats, &error);
 
   if (die_if (error, "GetHats()"))
@@ -114,7 +114,7 @@ conn_ready (TpConnection *conn,
   g_array_free (handles, TRUE);
   g_boxed_free (EXAMPLE_ARRAY_TYPE_CONTACT_HAT_LIST, hats);
 
-  tp_cli_connection_block_on_disconnect (conn, -1, &error);
+  tp_cli_connection_run_disconnect (conn, -1, &error);
 
   if (die_if (error, "Disconnect()"))
     {
