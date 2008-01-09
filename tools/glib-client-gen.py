@@ -944,8 +944,11 @@ class Generator(object):
 
         self.b(' * @error: Used to return errors if %FALSE is returned')
         self.b(' *')
-        self.b(' * Call the method %s and block, without' % member)
-        self.b(' * re-entering the main loop, until it returns.')
+        self.b(' * Call the method %s and run the main loop' % member)
+        self.b(' * until it returns. Before calling this method, you must')
+        self.b(' * add a reference to any borrowed objects you need to keep,')
+        self.b(' * and generally ensure that everything is in a consistent')
+        self.b(' * state.')
         self.b(' *')
         self.b(' * <![CDATA[%s]]>'
                 % (get_docstring(method) or '(Undocumented)'))
