@@ -33,6 +33,12 @@
 
 #include "_gen/tp-cli-generic-body.h"
 
+#if 0
+#define MORE_DEBUG DEBUG
+#else
+#define MORE_DEBUG(...) G_STMT_START {} G_STMT_END
+#endif
+
 /**
  * SECTION:proxy
  * @title: TpProxy
@@ -517,8 +523,8 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
 
   ret = g_slice_new0 (TpProxyPendingCall);
 
-  DEBUG ("(proxy=%p, if=%s, meth=%s, ic=%p; cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
-      self, g_quark_to_string (interface), member, invoke_callback,
+  MORE_DEBUG ("(proxy=%p, if=%s, meth=%s, ic=%p; cb=%p, ud=%p, dn=%p, wo=%p)"
+      " -> %p", self, g_quark_to_string (interface), member, invoke_callback,
       callback, user_data, destroy, weak_object, ret);
 
   ret->proxy = g_object_ref (self);
@@ -642,7 +648,7 @@ tp_proxy_pending_call_v0_completed (gpointer p)
        * haven't yet run the callback, assume that's what's going on. */
       if (self->invoke_callback != NULL)
         {
-          DEBUG ("Looks like this pending call hasn't finished, assuming "
+          MORE_DEBUG ("Looks like this pending call hasn't finished, assuming "
               "the DBusGProxy is about to die");
           tp_proxy_pending_call_proxy_invalidated (self->proxy,
               &tp_proxy_dgproxy_destroyed, self);
@@ -1010,7 +1016,7 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
 
   ret = g_slice_new0 (TpProxySignalConnection);
 
-  DEBUG ("(proxy=%p, if=%s, sig=%s, collect=%p, invoke=%p, "
+  MORE_DEBUG ("(proxy=%p, if=%s, sig=%s, collect=%p, invoke=%p, "
       "cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
       self, g_quark_to_string (interface), member, collect_args,
       invoke_callback, callback, user_data, destroy, weak_object, ret);
