@@ -147,6 +147,8 @@ struct _TpProxyPendingCall {
     TpProxy *proxy;
     GQuark interface;
     gchar *member;
+    /* set to NULL after it's been invoked once, so we can assert that it
+     * doesn't get called again */
     TpProxyInvokeFunc invoke_callback;
     GError *error;
     GValueArray *args;
@@ -441,7 +443,7 @@ tp_proxy_pending_call_proxy_invalidated (TpProxy *proxy,
                                          const GError *why,
                                          TpProxyPendingCall *self)
 {
-  GCallback callback = self->callback;
+  TpProxyInvokeFunc invoke = self->invoke_callback;
 
   g_assert (self != NULL);
   g_assert (why != NULL);
@@ -454,12 +456,11 @@ tp_proxy_pending_call_proxy_invalidated (TpProxy *proxy,
       g_source_remove (self->idle_source);
     }
 
-  if (callback != NULL)
+  if (invoke != NULL)
     {
-      self->callback = NULL;
-      DEBUG ("Invoking %p", self->invoke_callback);
-      g_return_if_fail (self->invoke_callback != NULL);
-      self->invoke_callback (proxy, g_error_copy (why), NULL, callback,
+      self->invoke_callback = NULL;
+      DEBUG ("Invoking %p", invoke);
+      invoke (proxy, g_error_copy (why), NULL, self->callback,
           self->user_data, self->weak_object);
     }
 }
@@ -511,7 +512,11 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
                               GDestroyNotify destroy,
                               GObject *weak_object)
 {
-  TpProxyPendingCall *ret = g_slice_new0 (TpProxyPendingCall);
+  TpProxyPendingCall *ret;
+
+  g_return_val_if_fail (invoke_callback != NULL, NULL);
+
+  ret = g_slice_new0 (TpProxyPendingCall);
 
   DEBUG ("(proxy=%p, if=%s, meth=%s, ic=%p; cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
       self, g_quark_to_string (interface), member, invoke_callback,
@@ -555,7 +560,7 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
   g_return_if_fail (self->priv == pending_call_magic);
 
   /* Mark the pending call as expired */
-  self->callback = NULL;
+  self->invoke_callback = NULL;
 
   if (self->idle_source != 0)
     {
@@ -639,7 +644,7 @@ tp_proxy_pending_call_v0_completed (gpointer p)
     {
       /* dbus-glib frees its user_data *before* it emits destroy; if we
        * haven't yet run the callback, assume that's what's going on. */
-      if (self->callback != NULL)
+      if (self->invoke_callback != NULL)
         {
           DEBUG ("Looks like this pending call hasn't finished, assuming "
               "the DBusGProxy is about to die");
@@ -675,15 +680,14 @@ static gboolean
 tp_proxy_pending_call_idle_invoke (gpointer p)
 {
   TpProxyPendingCall *self = p;
-  GCallback callback = self->callback;
+  TpProxyInvokeFunc invoke = self->invoke_callback;
 
   DEBUG ("%p", self);
 
   g_return_val_if_fail (self->invoke_callback != NULL, FALSE);
-  g_return_val_if_fail (self->callback != NULL, FALSE);
 
-  self->callback = NULL;
-  self->invoke_callback (self->proxy, self->error, self->args, callback,
+  self->invoke_callback = NULL;
+  invoke (self->proxy, self->error, self->args, self->callback,
       self->user_data, self->weak_object);
   self->error = NULL;
   self->args = NULL;

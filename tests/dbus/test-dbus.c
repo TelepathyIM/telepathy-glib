@@ -39,13 +39,13 @@ noc (TpDBusDaemon *bus,
               guint ret;
               GError *error = NULL;
 
-              g_assert (tp_cli_dbus_daemon_block_on_request_name (bus, -1,
+              g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
                     "com.example", 0, &ret, &error));
               g_assert (ret == 1 && error == NULL);
-              g_assert (tp_cli_dbus_daemon_block_on_request_name (bus, -1,
+              g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
                     "org.example", 0, &ret, &error));
               g_assert (ret == 1 && error == NULL);
-              g_assert (tp_cli_dbus_daemon_block_on_request_name (bus, -1,
+              g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
                     "net.example", 0, &ret, &error));
               g_assert (ret == 1 && error == NULL);
             }
@@ -57,10 +57,10 @@ noc (TpDBusDaemon *bus,
 
           g_assert (tp_dbus_daemon_cancel_name_owner_watch (bus,
                 "org.example", noc, five));
-          g_assert (tp_cli_dbus_daemon_block_on_release_name (bus, -1,
+          g_assert (tp_cli_dbus_daemon_run_release_name (bus, -1,
                 "org.example", &ret, &error));
           g_assert (ret == 1 && error == NULL);
-          g_assert (tp_cli_dbus_daemon_block_on_release_name (bus, -1,
+          g_assert (tp_cli_dbus_daemon_run_release_name (bus, -1,
                 "net.example", &ret, &error));
           g_assert (ret == 1 && error == NULL);
         }
