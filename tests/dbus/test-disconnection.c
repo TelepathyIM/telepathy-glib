@@ -85,6 +85,30 @@ requested_name (TpDBusDaemon *proxy,
 }
 
 static void
+prop_changed (TpProxy *proxy,
+              const GPtrArray *properties,
+              gpointer user_data,
+              GObject *weak_object)
+{
+  g_critical ("prop_changed called - a signal connection which should have "
+      "failed has succeeded. Args: proxy=%p user_data=%p", proxy, user_data);
+  fail = 1;
+}
+
+static void
+dummy_noc (TpDBusDaemon *proxy,
+           const gchar *name,
+           const gchar *old,
+           const gchar *new,
+           gpointer user_data,
+           GObject *weak_object)
+{
+  g_critical ("dummy_noc called - a signal connection which should have "
+      "failed has succeeded. Args: proxy=%p user_data=%p", proxy, user_data);
+  fail = 1;
+}
+
+static void
 noc (TpDBusDaemon *proxy,
      const gchar *name,
      const gchar *old,
@@ -132,6 +156,15 @@ noc (TpDBusDaemon *proxy,
     }
 }
 
+void
+set_freed (gpointer user_data)
+{
+  gboolean *boolptr = user_data;
+
+  MYASSERT (*boolptr == FALSE);
+  *boolptr = TRUE;
+}
+
 int
 main (int argc,
       char **argv)
@@ -141,6 +174,7 @@ main (int argc,
   GError err = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
   TpProxySignalConnection *sc;
   gpointer tmp_obj;
+  gboolean freed = FALSE;
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -176,6 +210,16 @@ main (int argc,
       destroy_user_data, (GObject *) z, &error_out);
   MYASSERT (error_out == NULL);
 
+  /* assert that connecting to a signal on an interface we don't have fails */
+  freed = FALSE;
+  tp_cli_properties_interface_connect_to_properties_changed (a, prop_changed,
+      &freed, set_freed, NULL, &error_out);
+  MYASSERT (freed);
+  MYASSERT (error_out != NULL);
+  MYASSERT (error_out->code == TP_ERROR_NOT_IMPLEMENTED);
+  g_error_free (error_out);
+  error_out = NULL;
+
   /* b gets its signal connection cancelled because stub is
    * destroyed */
   stub = g_object_new (stub_object_get_type (), NULL);
@@ -197,6 +241,17 @@ main (int argc,
   g_message ("Forcibly invalidating c");
   tp_proxy_invalidated ((TpProxy *) c, &err);
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_C));
+  /* assert that connecting to a signal on an invalid proxy fails */
+  freed = FALSE;
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (c, dummy_noc, &freed,
+      set_freed, NULL, &error_out);
+  MYASSERT (freed);
+  MYASSERT (error_out != NULL);
+  g_message ("%d: %d: %s", error_out->domain, error_out->code,
+      error_out->message);
+  MYASSERT (error_out->code == err.code);
+  g_error_free (error_out);
+  error_out = NULL;
 
   /* d gets its signal connection cancelled because it's
    * implicitly invalidated by being destroyed */
@@ -239,6 +294,15 @@ main (int argc,
   MYASSERT (tmp_obj != NULL);
   g_object_run_dispose (tmp_obj);
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_F));
+  /* assert that connecting to a signal on an invalid proxy fails */
+  freed = FALSE;
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (f, dummy_noc, &freed,
+      set_freed, NULL, &error_out);
+  MYASSERT (freed);
+  MYASSERT (error_out != NULL);
+  MYASSERT (error_out->code == DBUS_GERROR_NAME_HAS_NO_OWNER);
+  g_error_free (error_out);
+  error_out = NULL;
 
   /* g gets its signal connection cancelled because it's
    * implicitly invalidated by being destroyed; unlike d, the signal
