@@ -21,8 +21,12 @@ noinst_LTLIBRARIES = libtelepathy-glib-internal.la
 # libtelepathy-glib is just a shared version of libtelepathy-glib-internal.
 # The static version is necessary because one of the tests wants to use
 # internal symbols (_tp_debug) which are made invisible by GNU ld.
+
+# The quoting here is unnecessary but harmless, and has the useful side-effect
+# that vim quickfix mode (:make) doesn't interpret the libtool --mode=link
+# command as an error message in a bizarrely named file
 libtelepathy_glib_la_LDFLAGS = \
-    -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
+    -version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
 libtelepathy_glib_la_LIBADD = libtelepathy-glib-internal.la
 libtelepathy_glib_la_SOURCES =
 libtelepathy_glib_la_DEPENDENCIES =
