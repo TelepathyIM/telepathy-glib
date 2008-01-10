@@ -18,12 +18,13 @@
 #include <telepathy-glib/util.h>
 
 void
-channel_died (TpChannel *channel,
-              GError *error,
-              GMainLoop *mainloop)
+channel_invalidated (TpChannel *channel,
+                     guint domain,
+                     gint code,
+                     const gchar *message,
+                     GMainLoop *mainloop)
 {
-  printf ("Channel died before introspection finished: %s\n",
-      error->message);
+  printf ("Channel invalidated before introspection finished: %s\n", message);
   g_main_loop_quit (mainloop);
 }
 
@@ -118,7 +119,7 @@ main (int argc,
 
   g_signal_connect (channel, "channel-ready",
       G_CALLBACK (channel_ready), mainloop);
-  g_signal_connect (channel, "invalidated", G_CALLBACK (channel_died),
+  g_signal_connect (channel, "invalidated", G_CALLBACK (channel_invalidated),
       mainloop);
 
   g_main_loop_run (mainloop);

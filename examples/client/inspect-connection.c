@@ -18,12 +18,14 @@
 #include <telepathy-glib/util.h>
 
 void
-connection_died (TpConnection *connection,
-                 GError *error,
-                 GMainLoop *mainloop)
+connection_invalidated (TpConnection *connection,
+                        guint domain,
+                        gint code,
+                        const gchar *message,
+                        GMainLoop *mainloop)
 {
-  printf ("Connection died before introspection finished: %s\n",
-    error->message);
+  printf ("Connection invalidated before introspection finished: %s\n",
+    message);
   g_main_loop_quit (mainloop);
 }
 
@@ -120,8 +122,8 @@ main (int argc,
 
   g_signal_connect (connection, "connection-ready",
       G_CALLBACK (connection_ready), mainloop);
-  g_signal_connect (connection, "invalidated", G_CALLBACK (connection_died),
-      mainloop);
+  g_signal_connect (connection, "invalidated",
+      G_CALLBACK (connection_invalidated), mainloop);
 
   g_main_loop_run (mainloop);
 
