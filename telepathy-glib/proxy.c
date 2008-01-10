@@ -257,9 +257,17 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
       return proxy;
     }
 
-  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-      "Object %s does not have interface %s",
-      self->object_path, g_quark_to_string (interface));
+  if (self->invalidated != NULL)
+    {
+      g_set_error (error, self->invalidated->domain, self->invalidated->code,
+          "%s", self->invalidated->message);
+    }
+  else
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Object %s does not have interface %s",
+          self->object_path, g_quark_to_string (interface));
+    }
 
   return NULL;
 }
