@@ -27,10 +27,10 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 
-#include "_gen/signals-marshal.h"
-
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
-#include "debug-internal.h"
+#include "telepathy-glib/dbus-internal.h"
+#include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-channel-body.h"
 
@@ -490,7 +490,7 @@ tp_channel_new (TpDBusDaemon *dbus,
   /* Resolve unique name if necessary */
   if (bus_name[0] != ':')
     {
-      if (!tp_cli_dbus_daemon_block_on_get_name_owner (dbus, 2000, bus_name,
+      if (!_tp_dbus_daemon_get_name_owner (dbus, 2000, bus_name,
           &dup, error))
         goto finally;
 

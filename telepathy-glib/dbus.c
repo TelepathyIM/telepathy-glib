@@ -819,6 +819,28 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
   return FALSE;
 }
 
+/* for internal use (TpChannel, TpConnection _new convenience functions) */
+gboolean
+_tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
+                                gint timeout_ms,
+                                const gchar *well_known_name,
+                                gchar **unique_name,
+                                GError **error)
+{
+  DBusGProxy *iface = tp_proxy_borrow_interface_by_id ((TpProxy *) self,
+      TP_IFACE_QUARK_DBUS_DAEMON, error);
+
+  if (iface == NULL)
+    return FALSE;
+
+  return dbus_g_proxy_call_with_timeout (iface, "GetNameOwner", timeout_ms,
+      error,
+      G_TYPE_STRING, well_known_name,
+      G_TYPE_INVALID,
+      G_TYPE_STRING, unique_name,
+      G_TYPE_INVALID);
+}
+
 static GObject *
 tp_dbus_daemon_constructor (GType type,
                             guint n_params,

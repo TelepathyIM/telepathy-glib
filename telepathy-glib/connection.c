@@ -29,7 +29,8 @@
 #include <telepathy-glib/proxy-subclass.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
-#include "debug-internal.h"
+#include "telepathy-glib/dbus-internal.h"
+#include "telepathy-glib/debug-internal.h"
 
 #include "_gen/tp-cli-connection-body.h"
 
@@ -478,7 +479,7 @@ tp_connection_new (TpDBusDaemon *dbus,
   /* Resolve unique name if necessary */
   if (bus_name[0] != ':')
     {
-      if (!tp_cli_dbus_daemon_block_on_get_name_owner (dbus, 2000, bus_name,
+      if (!_tp_dbus_daemon_get_name_owner (dbus, 2000, bus_name,
           &dup_unique_name, error))
         goto finally;
 
