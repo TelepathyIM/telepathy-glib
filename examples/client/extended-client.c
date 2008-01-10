@@ -173,8 +173,10 @@ cm_requested_connection (TpConnectionManager *manager,
       G_CALLBACK (example_cli_conn_add_signals), NULL);
 
   g_signal_connect (conn, "connection-ready", G_CALLBACK (conn_ready), NULL);
+  /* the connection hasn't had a chance to become invalid yet, so we can
+   * assume that this signal connection will work */
   tp_cli_connection_connect_to_status_changed (conn, conn_status_changed,
-      NULL, NULL, NULL);
+      NULL, NULL, NULL, NULL);
   tp_cli_connection_call_connect (conn, -1, NULL, NULL, NULL, NULL);
 }
 
