@@ -60,6 +60,7 @@ destroy_user_data (gpointer user_data)
 {
   guint which = GPOINTER_TO_UINT (user_data);
   g_message ("User data %c destroyed", 'A' + which);
+  MYASSERT (!tp_intset_is_member (freed_user_data, which));
   tp_intset_add (freed_user_data, which);
 }
 
