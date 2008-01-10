@@ -970,7 +970,8 @@ collect_none (DBusGProxy *proxy, TpProxySignalConnection *sc)
  * @callback: user callback to be invoked by @invoke_callback
  * @user_data: user-supplied data for the callback
  * @destroy: user-supplied destructor for the data, which will be called
- *   when the signal connection is disconnected for any reason
+ *   when the signal connection is disconnected for any reason,
+ *   or will be called before this function returns if an error occurs
  * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
  *   the signal connection - if it is destroyed, the signal connection will
  *   automatically be disconnected
@@ -980,7 +981,7 @@ collect_none (DBusGProxy *proxy, TpProxySignalConnection *sc)
  *
  * This function is for use by #TpProxy subclass implementations only.
  *
- * Returns: a signal connection structure.
+ * Returns: a signal connection structure
  */
 TpProxySignalConnection *
 tp_proxy_signal_connection_v0_new (TpProxy *self,
@@ -1002,6 +1003,10 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
     {
       DEBUG ("Proxy already invalidated - not connecting to signal %s",
           member);
+
+      if (destroy != NULL)
+        destroy (user_data);
+
       return NULL;
     }
 
