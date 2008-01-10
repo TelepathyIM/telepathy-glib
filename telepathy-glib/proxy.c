@@ -201,7 +201,6 @@ struct _TpProxyPrivate {
     /* GQuark for interface => ref'd DBusGProxy * */
     GData *interfaces;
 
-    gboolean valid:1;
     gboolean dispose_has_run:1;
 };
 
@@ -250,14 +249,6 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
   if (!tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
         error))
       return NULL;
-
-  if (!self->priv->valid)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Object %s has become invalid", self->object_path);
-
-      return NULL;
-    }
 
   proxy = g_datalist_id_get_data (&self->priv->interfaces, interface);
 
@@ -1233,8 +1224,6 @@ tp_proxy_constructor (GType type,
     {
       g_return_val_if_fail (self->bus_name[0] == ':', NULL);
     }
-
-  self->priv->valid = TRUE;
 
   return (GObject *) self;
 }
