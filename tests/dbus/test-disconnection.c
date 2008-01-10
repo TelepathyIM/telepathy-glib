@@ -41,7 +41,13 @@ TpIntSet *freed_user_data;
 int fail = 0;
 
 #define MYASSERT(x) \
-  do { if (!(x)) { g_critical ("Assertion failed: " #x); fail = 1; } } while(0)
+  do { \
+      if (!(x)) \
+        { \
+          g_critical ("%s:%d: Assertion failed: %s", __FILE__, __LINE__, #x); \
+          fail = 1; \
+        } \
+  } while (0)
 
 enum {
     TEST_A,
