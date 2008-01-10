@@ -130,6 +130,7 @@ main (int argc,
       char **argv)
 {
   GObject *stub;
+  GError *error_out = NULL;
   GError err = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "Because I said so" };
   TpProxySignalConnection *sc;
   gpointer tmp_obj;
@@ -165,14 +166,16 @@ main (int argc,
   /* a survives */
   g_message ("Connecting signal to a");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (a, noc, PTR (TEST_A),
-      destroy_user_data, (GObject *) z);
+      destroy_user_data, (GObject *) z, &error_out);
+  MYASSERT (error_out == NULL);
 
   /* b gets its signal connection cancelled because stub is
    * destroyed */
   stub = g_object_new (stub_object_get_type (), NULL);
   g_message ("Connecting signal to b");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (b, noc, PTR (TEST_B),
-      destroy_user_data, stub);
+      destroy_user_data, stub, &error_out);
+  MYASSERT (error_out == NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_B));
   g_object_unref (stub);
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_B));
@@ -181,7 +184,8 @@ main (int argc,
    * invalidated */
   g_message ("Connecting signal to c");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (c, noc, PTR (TEST_C),
-      destroy_user_data, NULL);
+      destroy_user_data, NULL, &error_out);
+  MYASSERT (error_out == NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C));
   g_message ("Forcibly invalidating c");
   tp_proxy_invalidated ((TpProxy *) c, &err);
@@ -191,7 +195,8 @@ main (int argc,
    * implicitly invalidated by being destroyed */
   g_message ("Connecting signal to d");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (d, noc, PTR (TEST_D),
-      destroy_user_data, NULL);
+      destroy_user_data, NULL, &error_out);
+  MYASSERT (error_out == NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_D));
   g_message ("Destroying d");
   tmp_obj = d;
@@ -204,7 +209,8 @@ main (int argc,
   /* e gets its signal connection cancelled explicitly */
   g_message ("Connecting signal to e");
   sc = tp_cli_dbus_daemon_connect_to_name_owner_changed (e, noc, PTR (TEST_E),
-      destroy_user_data, NULL);
+      destroy_user_data, NULL, &error_out);
+  MYASSERT (error_out == NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_E));
   g_message ("Disconnecting signal from e");
   tp_proxy_signal_connection_disconnect (sc);
@@ -217,7 +223,8 @@ main (int argc,
    * If it stops working after a dbus-glib upgrade, that's probably why. */
   g_message ("Connecting signal to f");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (f, noc, PTR (TEST_F),
-      destroy_user_data, NULL);
+      destroy_user_data, NULL, &error_out);
+  MYASSERT (error_out == NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_F));
   g_message ("Forcibly disposing f's DBusGProxy to simulate name owner loss");
   tmp_obj = tp_proxy_borrow_interface_by_id ((TpProxy *) f,
@@ -232,7 +239,8 @@ main (int argc,
    * an interesting corner case that should be tested. */
   g_message ("Connecting signal to g");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (g, noc, PTR (TEST_G),
-      destroy_user_data, (GObject *) g);
+      destroy_user_data, (GObject *) g, &error_out);
+  MYASSERT (error_out == NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_G));
   g_message ("Destroying g");
   tmp_obj = g;
@@ -247,7 +255,8 @@ main (int argc,
    * can stop the main loop */
   g_message ("Connecting signal to z");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (z, noc, PTR (TEST_Z),
-      destroy_user_data, (GObject *) a);
+      destroy_user_data, (GObject *) a, &error_out);
+  MYASSERT (error_out == NULL);
 
   /* make sure a NameOwnerChanged signal occurs */
   g_message ("Requesting name");
