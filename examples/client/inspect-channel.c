@@ -118,7 +118,8 @@ main (int argc,
 
   g_signal_connect (channel, "channel-ready",
       G_CALLBACK (channel_ready), mainloop);
-  g_signal_connect (channel, "destroyed", G_CALLBACK (channel_died), mainloop);
+  g_signal_connect (channel, "invalidated", G_CALLBACK (channel_died),
+      mainloop);
 
   g_main_loop_run (mainloop);
 

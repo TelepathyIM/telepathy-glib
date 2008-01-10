@@ -192,7 +192,7 @@ tp_channel_got_interfaces_cb (TpChannel *self,
   else
     {
       DEBUG ("%p: GetInterfaces() failed", self);
-      tp_proxy_invalidated ((TpProxy *) self, error);
+      tp_proxy_invalidate ((TpProxy *) self, error);
     }
 }
 
@@ -215,14 +215,14 @@ tp_channel_got_channel_type_cb (TpChannel *self,
       else
         {
           DEBUG ("\t\tChannel type not valid: %s", err2->message);
-          tp_proxy_invalidated ((TpProxy *) self, err2);
+          tp_proxy_invalidate ((TpProxy *) self, err2);
           return;
         }
     }
   else
     {
       DEBUG ("%p: GetChannelType() failed, will self-destruct", self);
-      tp_proxy_invalidated ((TpProxy *) self, error);
+      tp_proxy_invalidate ((TpProxy *) self, error);
       return;
     }
 
@@ -251,7 +251,7 @@ tp_channel_got_handle_cb (TpChannel *self,
   else
     {
       DEBUG ("%p: GetHandle() failed, will self-destruct", self);
-      tp_proxy_invalidated ((TpProxy *) self, error);
+      tp_proxy_invalidate ((TpProxy *) self, error);
       return;
     }
 
@@ -277,7 +277,7 @@ tp_channel_closed_cb (TpChannel *self,
   GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
       "Channel was closed" };
 
-  tp_proxy_invalidated ((TpProxy *) self, &e);
+  tp_proxy_invalidate ((TpProxy *) self, &e);
 }
 
 static GObject *

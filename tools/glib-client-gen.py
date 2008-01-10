@@ -263,7 +263,7 @@ class Generator(object):
         # destroy is invoked when the signal becomes disconnected. This
         # is either because the signal has been disconnected explicitly
         # by the user, because the TpProxy has become invalid and
-        # emitted the 'destroyed' signal, or because the weakly referenced
+        # emitted the 'invalidated' signal, or because the weakly referenced
         # object has gone away.
 
         self.b('/**')

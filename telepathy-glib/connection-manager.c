@@ -119,7 +119,7 @@ enum
  * This might represent a connection manager which is currently running
  * (in which case it can be introspected) or not (in which case its
  * capabilities can be read from .manager files in the filesystem).
- * Accordingly, this object never emits #TpProxy::destroyed unless all
+ * Accordingly, this object never emits #TpProxy::invalidated unless all
  * references to it are discarded.
  *
  * On initialization, we find and read the .manager file, and emit

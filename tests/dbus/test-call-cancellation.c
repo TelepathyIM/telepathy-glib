@@ -212,7 +212,7 @@ main (int argc,
       destroy_user_data, NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C), "");
   g_message ("Forcibly invalidating c");
-  tp_proxy_invalidated ((TpProxy *) c, &err);
+  tp_proxy_invalidate ((TpProxy *) c, &err);
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_C), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_C), "");
   MYASSERT (tp_intset_is_member (method_error, TEST_C), "");

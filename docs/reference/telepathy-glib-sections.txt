@@ -1379,7 +1379,7 @@ tp_cli_properties_interface_connect_to_property_flags_changed
 <INCLUDE>telepathy-glib/proxy-subclass.h</INCLUDE>
 tp_proxy_add_interface_by_id
 tp_proxy_borrow_interface_by_id
-tp_proxy_invalidated
+tp_proxy_invalidate
 TpProxyInterfaceAddedCb
 tp_proxy_class_hook_on_interface_add
 <SUBSECTION>

@@ -239,7 +239,7 @@ main (int argc,
   MYASSERT (error_out == NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C));
   g_message ("Forcibly invalidating c");
-  tp_proxy_invalidated ((TpProxy *) c, &err);
+  tp_proxy_invalidate ((TpProxy *) c, &err);
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_C));
   /* assert that connecting to a signal on an invalid proxy fails */
   freed = FALSE;

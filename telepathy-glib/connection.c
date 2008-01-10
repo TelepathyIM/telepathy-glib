@@ -252,7 +252,7 @@ tp_connection_got_interfaces_cb (TpConnection *self,
   else
     {
       DEBUG ("%p: GetInterfaces() failed", self);
-      tp_proxy_invalidated ((TpProxy *) self, error);
+      tp_proxy_invalidate ((TpProxy *) self, error);
     }
 }
 
@@ -290,7 +290,7 @@ tp_connection_status_changed_cb (TpConnection *self,
       GError *error = g_error_new (TP_ERRORS, TP_ERROR_DISCONNECTED,
           "Disconnected: reason %d", reason);
 
-      tp_proxy_invalidated ((TpProxy *) self, error);
+      tp_proxy_invalidate ((TpProxy *) self, error);
       g_error_free (error);
     }
 }
@@ -315,7 +315,7 @@ tp_connection_got_status_cb (TpConnection *self,
       DEBUG ("%p: GetStatus() failed with %s %d \"%s\", will self-destruct",
           self, g_quark_to_string (error->domain), error->code,
           error->message);
-      tp_proxy_invalidated ((TpProxy *) self, error);
+      tp_proxy_invalidate ((TpProxy *) self, error);
       return;
     }
 }

@@ -120,7 +120,7 @@ main (int argc,
 
   g_signal_connect (connection, "connection-ready",
       G_CALLBACK (connection_ready), mainloop);
-  g_signal_connect (connection, "destroyed", G_CALLBACK (connection_died),
+  g_signal_connect (connection, "invalidated", G_CALLBACK (connection_died),
       mainloop);
 
   g_main_loop_run (mainloop);
