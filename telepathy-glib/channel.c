@@ -289,9 +289,11 @@ tp_channel_constructor (GType type,
   TpChannel *self = TP_CHANNEL (object_class->constructor (type,
         n_params, params));
 
-  /* connect to my own Closed signal and self-destruct when it arrives */
+  /* Connect to my own Closed signal and self-destruct when it arrives.
+   * The channel hasn't had a chance to become invalid yet, so we can
+   * assume that this signal connection will work */
   tp_cli_channel_connect_to_closed (self, tp_channel_closed_cb, NULL, NULL,
-      NULL);
+      NULL, NULL);
 
   DEBUG ("%p: constructed with channel type \"%s\", handle #%d of type %d",
       self, (self->channel_type != 0) ? g_quark_to_string (self->channel_type)

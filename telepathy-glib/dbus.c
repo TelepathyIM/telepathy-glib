@@ -852,8 +852,11 @@ tp_dbus_daemon_constructor (GType type,
         n_params, params));
   TpProxy *as_proxy = (TpProxy *) self;
 
+  /* Connect to my own NameOwnerChanged signal.
+   * The proxy hasn't had a chance to become invalid yet, so we can
+   * assume that this signal connection will work */
   tp_cli_dbus_daemon_connect_to_name_owner_changed (self,
-      _tp_dbus_daemon_name_owner_changed_cb, NULL, NULL, NULL);
+      _tp_dbus_daemon_name_owner_changed_cb, NULL, NULL, NULL, NULL);
 
   g_assert (!tp_strdiff (as_proxy->bus_name, DBUS_SERVICE_DBUS));
   g_assert (!tp_strdiff (as_proxy->object_path, DBUS_PATH_DBUS));

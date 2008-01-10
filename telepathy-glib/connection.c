@@ -329,10 +329,12 @@ tp_connection_constructor (GType type,
   TpConnection *self = TP_CONNECTION (object_class->constructor (type,
         n_params, params));
 
-  /* connect to my own StatusChanged signal */
+  /* Connect to my own StatusChanged signal.
+   * The connection hasn't had a chance to become invalid yet, so we can
+   * assume that this signal connection will work */
   DEBUG ("Connecting to StatusChanged");
   tp_cli_connection_connect_to_status_changed (self,
-      tp_connection_status_changed_cb, NULL, NULL, NULL);
+      tp_connection_status_changed_cb, NULL, NULL, NULL, NULL);
 
   /* get my initial status */
   DEBUG ("Calling GetStatus");
