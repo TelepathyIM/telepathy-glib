@@ -50,7 +50,7 @@ TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
     const GType *expected_types,
     GCallback collect_args, TpProxyInvokeFunc invoke_callback,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
-    GObject *weak_object);
+    GObject *weak_object, GError **error);
 
 void tp_proxy_signal_connection_v0_take_results
     (TpProxySignalConnection *self, GValueArray *args);

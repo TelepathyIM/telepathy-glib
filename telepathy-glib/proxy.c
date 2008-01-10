@@ -974,13 +974,15 @@ collect_none (DBusGProxy *proxy, TpProxySignalConnection *sc)
  * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
  *   the signal connection - if it is destroyed, the signal connection will
  *   automatically be disconnected
+ * @error: If not %NULL, used to raise an error if %NULL is returned
  *
  * Allocate a new structure representing a signal connection. The
  * public members are set from the arguments.
  *
  * This function is for use by #TpProxy subclass implementations only.
  *
- * Returns: a signal connection structure
+ * Returns: a signal connection structure, or %NULL if the proxy does not
+ *  have the desired interface or has become invalid
  */
 TpProxySignalConnection *
 tp_proxy_signal_connection_v0_new (TpProxy *self,
@@ -992,17 +994,15 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
                                    GCallback callback,
                                    gpointer user_data,
                                    GDestroyNotify destroy,
-                                   GObject *weak_object)
+                                   GObject *weak_object,
+                                   GError **error)
 {
   TpProxySignalConnection *ret;
   DBusGProxy *iface = tp_proxy_borrow_interface_by_id (self,
-      interface, NULL);
+      interface, error);
 
   if (iface == NULL)
     {
-      DEBUG ("Proxy already invalidated - not connecting to signal %s",
-          member);
-
       if (destroy != NULL)
         destroy (user_data);
 
