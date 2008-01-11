@@ -161,39 +161,33 @@ tp_channel_got_interfaces_cb (TpChannel *self,
                               gpointer unused,
                               GObject *unused2)
 {
-  if (error == NULL)
+  const gchar **iter;
+
+  if (error != NULL)
     {
-      DEBUG ("%p: Introspected interfaces", self);
-      if (interfaces != NULL)
+      DEBUG ("%p: GetInterfaces() failed: %s", self, error->message);
+      interfaces = NULL;
+    }
+
+  for (iter = interfaces; *iter != NULL; iter++)
+    {
+      DEBUG ("- %s", *iter);
+
+      if (tp_dbus_check_valid_interface_name (*iter, NULL))
         {
-          const gchar **iter;
-
-          for (iter = interfaces; *iter != NULL; iter++)
-            {
-              DEBUG ("\t- %s", *iter);
-
-              if (tp_dbus_check_valid_interface_name (*iter, NULL))
-                {
-                  tp_proxy_add_interface_by_id ((TpProxy *) self,
-                      g_quark_from_string (*iter));
-                }
-              else
-                {
-                  DEBUG ("\t\tInterface %s not valid", *iter);
-                }
-            }
+          tp_proxy_add_interface_by_id ((TpProxy *) self,
+              g_quark_from_string (*iter));
         }
+      else
+        {
+          DEBUG ("\tInterface %s not valid", *iter);
+        }
+    }
 
-      DEBUG ("%p: emitting channel-ready", self);
-      g_signal_emit (self, signals[SIGNAL_CHANNEL_READY], 0,
-          g_quark_to_string (self->channel_type), self->handle_type,
-          self->handle, interfaces);
-    }
-  else
-    {
-      DEBUG ("%p: GetInterfaces() failed", self);
-      tp_proxy_invalidate ((TpProxy *) self, error);
-    }
+  DEBUG ("%p: emitting channel-ready", self);
+  g_signal_emit (self, signals[SIGNAL_CHANNEL_READY], 0,
+      g_quark_to_string (self->channel_type), self->handle_type,
+      self->handle, interfaces);
 }
 
 static void
@@ -203,31 +197,26 @@ tp_channel_got_channel_type_cb (TpChannel *self,
                                 gpointer unused,
                                 GObject *unused2)
 {
-  if (error == NULL)
+  GError *err2 = NULL;
+
+  if (error != NULL)
+    {
+      DEBUG ("%p: GetChannelType() failed: %s", self, error->message);
+    }
+  else if (tp_dbus_check_valid_interface_name (channel_type, &err2))
     {
       DEBUG ("%p: Introspected channel type %s", self, channel_type);
-      GError *err2 = NULL;
+      self->channel_type = g_quark_from_string (channel_type);
 
-      if (tp_dbus_check_valid_interface_name (channel_type, &err2))
-        {
-          self->channel_type = g_quark_from_string (channel_type);
-        }
-      else
-        {
-          DEBUG ("\t\tChannel type not valid: %s", err2->message);
-          tp_proxy_invalidate ((TpProxy *) self, err2);
-          return;
-        }
+      tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
+
     }
   else
     {
-      DEBUG ("%p: GetChannelType() failed, will self-destruct", self);
-      tp_proxy_invalidate ((TpProxy *) self, error);
-      return;
+      DEBUG ("%p: channel type %s not valid: %s", self, channel_type,
+          err2->message);
+      g_error_free (err2);
     }
-
-  g_assert (self->channel_type != 0);
-  tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
 
   tp_cli_channel_call_get_interfaces (self, -1,
       tp_channel_got_interfaces_cb, NULL, NULL, NULL);
@@ -250,9 +239,7 @@ tp_channel_got_handle_cb (TpChannel *self,
     }
   else
     {
-      DEBUG ("%p: GetHandle() failed, will self-destruct", self);
-      tp_proxy_invalidate ((TpProxy *) self, error);
-      return;
+      DEBUG ("%p: GetHandle() failed: %s", self, error->message);
     }
 
   if (self->channel_type == 0)
@@ -407,10 +394,11 @@ tp_channel_class_init (TpChannelClass *klass)
    *    or 0 if @handle is 0
    *
    * Emitted once, when the channel's channel type, handle type, handle and
-   * extra interfaces have all been retrieved.
+   * extra interfaces have all been retrieved, or when attempts to retrieve
+   * them have failed.
    *
    * By the time this signal is emitted, the channel-type, handle-type and
-   * handle properties are guaranteed to be valid, and the interfaces will
+   * handle properties will be set (if possible), and the interfaces will
    * have been added in the #TpProxy code.
    */
   signals[SIGNAL_CHANNEL_READY] = g_signal_new ("channel-ready",
