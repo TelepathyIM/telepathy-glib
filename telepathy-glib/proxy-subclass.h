@@ -32,7 +32,7 @@ typedef void (*TpProxyInvokeFunc) (TpProxy *self,
     GObject *weak_object);
 
 TpProxyPendingCall *tp_proxy_pending_call_v0_new (TpProxy *self,
-    GQuark interface, const gchar *member,
+    GQuark interface, const gchar *member, DBusGProxy *iface_proxy,
     TpProxyInvokeFunc invoke_callback,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);

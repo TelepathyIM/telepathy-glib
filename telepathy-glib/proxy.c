@@ -485,6 +485,7 @@ tp_proxy_pending_call_proxy_invalidated (TpProxy *proxy,
  * @self: a proxy
  * @interface: a quark whose string value is the D-Bus interface
  * @member: the name of the method being called
+ * @iface_proxy: the interface-specific #DBusGProxy for @interface
  * @invoke_callback: an implementation of #TpProxyInvokeFunc which will
  *  invoke @callback with appropriate arguments
  * @callback: a callback to be called when the call completes
@@ -521,6 +522,7 @@ TpProxyPendingCall *
 tp_proxy_pending_call_v0_new (TpProxy *self,
                               GQuark interface,
                               const gchar *member,
+                              DBusGProxy *iface_proxy,
                               TpProxyInvokeFunc invoke_callback,
                               GCallback callback,
                               gpointer user_data,
