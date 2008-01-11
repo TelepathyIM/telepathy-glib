@@ -282,7 +282,8 @@ tp_dbus_check_valid_bus_name (const gchar *name,
 /**
  * tp_dbus_check_valid_interface_name:
  * @name: a possible interface name
- * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
+ * @error: used to raise %TP_DBUS_ERROR_INVALID_INTERFACE_NAME if %FALSE is
+ *  returned
  *
  * Check that the given string is a valid D-Bus interface name. This is
  * also appropriate to use to check for valid error names.
@@ -301,14 +302,14 @@ tp_dbus_check_valid_interface_name (const gchar *name,
 
   if (name[0] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
           "The empty string is not a valid interface name");
       return FALSE;
     }
 
   if (strlen (name) > 255)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
           "Invalid interface name: too long (> 255 characters)");
       return FALSE;
     }
@@ -323,13 +324,15 @@ tp_dbus_check_valid_interface_name (const gchar *name,
 
           if (last == '.')
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
                   "Invalid interface name '%s': contains '..'", name);
               return FALSE;
             }
           else if (last == '\0')
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
                   "Invalid interface name '%s': must not start with '.'",
                   name);
               return FALSE;
@@ -339,7 +342,8 @@ tp_dbus_check_valid_interface_name (const gchar *name,
         {
           if (last == '\0')
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
                   "Invalid interface name '%s': must not start with a digit",
                   name);
               return FALSE;
@@ -347,7 +351,8 @@ tp_dbus_check_valid_interface_name (const gchar *name,
         }
       else if (!g_ascii_isalpha (*ptr) && *ptr != '_')
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_DBUS_ERRORS,
+              TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
               "Invalid interface name '%s': contains invalid character '%c'",
               name, *ptr);
           return FALSE;
@@ -358,14 +363,14 @@ tp_dbus_check_valid_interface_name (const gchar *name,
 
   if (last == '.')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
           "Invalid interface name '%s': must not end with '.'", name);
       return FALSE;
     }
 
   if (!dot)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
           "Invalid interface name '%s': must contain '.'", name);
       return FALSE;
     }
