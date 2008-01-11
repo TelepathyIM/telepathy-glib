@@ -285,8 +285,12 @@ tp_channel_closed_cb (TpChannel *self,
                       gpointer user_data,
                       GObject *weak_object)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+  GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
       "Channel was closed" };
+
+  /* FIXME: if it's a group, watch for MembersChanged: if we're removed
+   * for a reason, we can use that reason in the TP_ERRORS_REMOVED_FROM_GROUP
+   * domain */
 
   tp_proxy_invalidate ((TpProxy *) self, &e);
 }
