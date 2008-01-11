@@ -1403,8 +1403,8 @@ tp_channel_new
 TpChannel
 TpChannelClass
 TP_ERRORS_REMOVED_FROM_GROUP
-tp_errors_removed_from_group_quark
 <SUBSECTION Standard>
+tp_errors_removed_from_group_quark
 tp_channel_get_type
 TP_TYPE_CHANNEL
 TP_CHANNEL
