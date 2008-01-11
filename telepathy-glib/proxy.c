@@ -322,7 +322,7 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
     }
   else
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
           "Object %s does not have interface %s",
           self->object_path, g_quark_to_string (interface));
     }

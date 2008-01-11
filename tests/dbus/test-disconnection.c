@@ -216,7 +216,7 @@ main (int argc,
       &freed, set_freed, NULL, &error_out);
   MYASSERT (freed, "");
   MYASSERT (error_out != NULL, "");
-  MYASSERT (error_out->code == TP_ERROR_NOT_IMPLEMENTED, "");
+  MYASSERT (error_out->code == TP_DBUS_ERROR_NO_INTERFACE, "");
   g_error_free (error_out);
   error_out = NULL;
 
