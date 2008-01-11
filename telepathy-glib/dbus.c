@@ -142,7 +142,7 @@ tp_get_bus_proxy (void)
  *  %TP_DBUS_NAME_TYPE_WELL_KNOWN or %TP_DBUS_NAME_TYPE_BUS_DAEMON
  *  (often this will be %TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON or
  *  %TP_DBUS_NAME_TYPE_ANY)
- * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
+ * @error: used to raise %TP_DBUS_ERROR_INVALID_BUS_NAME if %FALSE is returned
  *
  * Check that the given string is a valid D-Bus bus name of an appropriate
  * type.
@@ -163,7 +163,7 @@ tp_dbus_check_valid_bus_name (const gchar *name,
 
   if (name[0] == '\0')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
           "The empty string is not a valid bus name");
       return FALSE;
     }
@@ -173,7 +173,7 @@ tp_dbus_check_valid_bus_name (const gchar *name,
       if (allow_types & TP_DBUS_NAME_TYPE_BUS_DAEMON)
         return TRUE;
 
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
           "The D-Bus daemon's bus name is not acceptable here");
       return FALSE;
     }
@@ -181,7 +181,7 @@ tp_dbus_check_valid_bus_name (const gchar *name,
   unique = (name[0] == ':');
   if (unique && (allow_types & TP_DBUS_NAME_TYPE_UNIQUE) == 0)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
           "A well-known bus name not starting with ':'%s is required",
           allow_types & TP_DBUS_NAME_TYPE_BUS_DAEMON
             ? " (or the bus daemon itself)"
@@ -191,7 +191,7 @@ tp_dbus_check_valid_bus_name (const gchar *name,
 
   if (!unique && (allow_types & TP_DBUS_NAME_TYPE_WELL_KNOWN) == 0)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
           "A unique bus name starting with ':'%s is required",
           allow_types & TP_DBUS_NAME_TYPE_BUS_DAEMON
             ? " (or the bus daemon itself)"
@@ -201,7 +201,7 @@ tp_dbus_check_valid_bus_name (const gchar *name,
 
   if (strlen (name) > 255)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
           "Invalid bus name: too long (> 255 characters)");
       return FALSE;
     }
@@ -216,13 +216,15 @@ tp_dbus_check_valid_bus_name (const gchar *name,
 
           if (last == '.')
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INVALID_BUS_NAME,
                   "Invalid bus name '%s': contains '..'", name);
               return FALSE;
             }
           else if (last == '\0')
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INVALID_BUS_NAME,
                   "Invalid bus name '%s': must not start with '.'", name);
               return FALSE;
             }
@@ -233,14 +235,16 @@ tp_dbus_check_valid_bus_name (const gchar *name,
             {
               if (last == '.')
                 {
-                  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  g_set_error (error, TP_DBUS_ERRORS,
+                      TP_DBUS_ERROR_INVALID_BUS_NAME,
                       "Invalid bus name '%s': a digit may not follow '.' "
                       "except in a unique name starting with ':'", name);
                   return FALSE;
                 }
               else if (last == '\0')
                 {
-                  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  g_set_error (error, TP_DBUS_ERRORS,
+                      TP_DBUS_ERROR_INVALID_BUS_NAME,
                       "Invalid bus name '%s': must not start with a digit",
                       name);
                   return FALSE;
@@ -249,7 +253,7 @@ tp_dbus_check_valid_bus_name (const gchar *name,
         }
       else if (!g_ascii_isalpha (*ptr) && *ptr != '_' && *ptr != '-')
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
               "Invalid bus name '%s': contains invalid character '%c'",
               name, *ptr);
           return FALSE;
@@ -260,14 +264,14 @@ tp_dbus_check_valid_bus_name (const gchar *name,
 
   if (last == '.')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
           "Invalid bus name '%s': must not end with '.'", name);
       return FALSE;
     }
 
   if (!dot)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
           "Invalid bus name '%s': must contain '.'", name);
       return FALSE;
     }
