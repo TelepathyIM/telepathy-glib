@@ -45,14 +45,11 @@ int fail = 0;
 gpointer copy_of_d;
 gpointer copy_of_g;
 
-#define MYASSERT(x, m, ...) \
-  do { \
-      if (!(x)) \
-        { \
-          g_critical ("Assertion failed: %s" m, #x, ##__VA_ARGS__); \
-          fail = 1; \
-        } \
-  } while (0)
+static void
+myassert_failed (void)
+{
+  fail = 1;
+}
 
 enum {
     TEST_A,
@@ -112,7 +109,6 @@ listed_names (TpDBusDaemon *proxy,
         default:
           MYASSERT (FALSE, ": %c (%p) method call succeeded, which shouldn't "
               "happen", 'a' + which, proxy);
-          fail = 1;
           return;
         }
     }
@@ -136,7 +132,6 @@ listed_names (TpDBusDaemon *proxy,
         default:
           MYASSERT (FALSE, ": %c (%p) method call failed, which shouldn't "
               "happen", 'a' + which, proxy);
-          fail = 1;
         }
     }
 

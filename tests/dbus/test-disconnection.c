@@ -6,6 +6,8 @@
 #include <telepathy-glib/proxy-subclass.h>    /* for _invalidated etc. */
 #include <telepathy-glib/util.h>
 
+#include "tests/myassert.h"
+
 typedef struct { GObject p; } StubObject;
 typedef struct { GObjectClass p; } StubObjectClass;
 
@@ -40,14 +42,11 @@ TpIntSet *caught_signal;
 TpIntSet *freed_user_data;
 int fail = 0;
 
-#define MYASSERT(x) \
-  do { \
-      if (!(x)) \
-        { \
-          g_critical ("%s:%d: Assertion failed: %s", __FILE__, __LINE__, #x); \
-          fail = 1; \
-        } \
-  } while (0)
+static void
+myassert_failed (void)
+{
+  fail = 1;
+}
 
 enum {
     TEST_A,
@@ -66,7 +65,7 @@ destroy_user_data (gpointer user_data)
 {
   guint which = GPOINTER_TO_UINT (user_data);
   g_message ("User data %c destroyed", 'A' + which);
-  MYASSERT (!tp_intset_is_member (freed_user_data, which));
+  MYASSERT (!tp_intset_is_member (freed_user_data, which), "");
   tp_intset_add (freed_user_data, which);
 }
 
@@ -80,8 +79,8 @@ requested_name (TpDBusDaemon *proxy,
   g_message ("RequestName raised %s",
       (error == NULL ? "no error" : error->message));
   /* we're on a private bus, so certainly nobody else should own this name */
-  MYASSERT (error == NULL);
-  MYASSERT (result == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
+  MYASSERT_NO_ERROR (error);
+  MYASSERT (result == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER, ": %u", result);
 }
 
 static void
@@ -145,8 +144,9 @@ noc (TpDBusDaemon *proxy,
 
   g_message ("Expecting proxy %p, weak object %p", want_proxy, want_object);
 
-  MYASSERT (proxy == want_proxy);
-  MYASSERT (weak_object == want_object);
+  MYASSERT (proxy == want_proxy, ": %p != %p", proxy, want_proxy);
+  MYASSERT (weak_object == want_object, ": %p != %p", weak_object,
+      want_object);
 
   if (tp_intset_is_member (caught_signal, TEST_A) &&
       tp_intset_is_member (caught_signal, TEST_Z))
@@ -161,7 +161,7 @@ set_freed (gpointer user_data)
 {
   gboolean *boolptr = user_data;
 
-  MYASSERT (*boolptr == FALSE);
+  MYASSERT (*boolptr == FALSE, "");
   *boolptr = TRUE;
 }
 
@@ -208,15 +208,15 @@ main (int argc,
   g_message ("Connecting signal to a");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (a, noc, PTR (TEST_A),
       destroy_user_data, (GObject *) z, &error_out);
-  MYASSERT (error_out == NULL);
+  MYASSERT_NO_ERROR (error_out);
 
   /* assert that connecting to a signal on an interface we don't have fails */
   freed = FALSE;
   tp_cli_properties_interface_connect_to_properties_changed (a, prop_changed,
       &freed, set_freed, NULL, &error_out);
-  MYASSERT (freed);
-  MYASSERT (error_out != NULL);
-  MYASSERT (error_out->code == TP_ERROR_NOT_IMPLEMENTED);
+  MYASSERT (freed, "");
+  MYASSERT (error_out != NULL, "");
+  MYASSERT (error_out->code == TP_ERROR_NOT_IMPLEMENTED, "");
   g_error_free (error_out);
   error_out = NULL;
 
@@ -226,30 +226,31 @@ main (int argc,
   g_message ("Connecting signal to b");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (b, noc, PTR (TEST_B),
       destroy_user_data, stub, &error_out);
-  MYASSERT (error_out == NULL);
-  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_B));
+  MYASSERT_NO_ERROR (error_out);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_B), "");
   g_object_unref (stub);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B), "");
 
   /* c gets its signal connection cancelled because it's explicitly
    * invalidated */
   g_message ("Connecting signal to c");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (c, noc, PTR (TEST_C),
       destroy_user_data, NULL, &error_out);
-  MYASSERT (error_out == NULL);
-  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C));
+  MYASSERT_NO_ERROR (error_out);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C), "");
   g_message ("Forcibly invalidating c");
   tp_proxy_invalidate ((TpProxy *) c, &err);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C), "");
   /* assert that connecting to a signal on an invalid proxy fails */
   freed = FALSE;
   tp_cli_dbus_daemon_connect_to_name_owner_changed (c, dummy_noc, &freed,
       set_freed, NULL, &error_out);
-  MYASSERT (freed);
-  MYASSERT (error_out != NULL);
+  MYASSERT (freed, "");
+  MYASSERT (error_out != NULL, "");
   g_message ("%d: %d: %s", error_out->domain, error_out->code,
       error_out->message);
-  MYASSERT (error_out->code == err.code);
+  MYASSERT (error_out->code == err.code, "%d != %d", error_out->code,
+      err.code);
   g_error_free (error_out);
   error_out = NULL;
 
@@ -258,25 +259,25 @@ main (int argc,
   g_message ("Connecting signal to d");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (d, noc, PTR (TEST_D),
       destroy_user_data, NULL, &error_out);
-  MYASSERT (error_out == NULL);
-  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_D));
+  MYASSERT_NO_ERROR (error_out);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_D), "");
   g_message ("Destroying d");
   tmp_obj = d;
   g_object_add_weak_pointer (tmp_obj, &tmp_obj);
   g_object_unref (d);
-  MYASSERT (tmp_obj == NULL);
+  MYASSERT (tmp_obj == NULL, "");
   d = NULL;
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_D));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_D), "");
 
   /* e gets its signal connection cancelled explicitly */
   g_message ("Connecting signal to e");
   sc = tp_cli_dbus_daemon_connect_to_name_owner_changed (e, noc, PTR (TEST_E),
       destroy_user_data, NULL, &error_out);
-  MYASSERT (error_out == NULL);
-  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_E));
+  MYASSERT_NO_ERROR (error_out);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_E), "");
   g_message ("Disconnecting signal from e");
   tp_proxy_signal_connection_disconnect (sc);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
 
   /* f gets its signal connection cancelled because it's implicitly
    * invalidated by its DBusGProxy being destroyed.
@@ -286,21 +287,21 @@ main (int argc,
   g_message ("Connecting signal to f");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (f, noc, PTR (TEST_F),
       destroy_user_data, NULL, &error_out);
-  MYASSERT (error_out == NULL);
-  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_F));
+  MYASSERT_NO_ERROR (error_out);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_F), "");
   g_message ("Forcibly disposing f's DBusGProxy to simulate name owner loss");
   tmp_obj = tp_proxy_borrow_interface_by_id ((TpProxy *) f,
       TP_IFACE_QUARK_DBUS_DAEMON, NULL);
-  MYASSERT (tmp_obj != NULL);
+  MYASSERT (tmp_obj != NULL, "");
   g_object_run_dispose (tmp_obj);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
   /* assert that connecting to a signal on an invalid proxy fails */
   freed = FALSE;
   tp_cli_dbus_daemon_connect_to_name_owner_changed (f, dummy_noc, &freed,
       set_freed, NULL, &error_out);
-  MYASSERT (freed);
-  MYASSERT (error_out != NULL);
-  MYASSERT (error_out->code == DBUS_GERROR_NAME_HAS_NO_OWNER);
+  MYASSERT (freed, "");
+  MYASSERT (error_out != NULL, "");
+  MYASSERT (error_out->code == DBUS_GERROR_NAME_HAS_NO_OWNER, "");
   g_error_free (error_out);
   error_out = NULL;
 
@@ -311,15 +312,15 @@ main (int argc,
   g_message ("Connecting signal to g");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (g, noc, PTR (TEST_G),
       destroy_user_data, (GObject *) g, &error_out);
-  MYASSERT (error_out == NULL);
-  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_G));
+  MYASSERT_NO_ERROR (error_out);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_G), "");
   g_message ("Destroying g");
   tmp_obj = g;
   g_object_add_weak_pointer (tmp_obj, &tmp_obj);
   g_object_unref (g);
-  MYASSERT (tmp_obj == NULL);
+  MYASSERT (tmp_obj == NULL, "");
   g = NULL;
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
 
   /* z survives; we assume that the signals are delivered in either
    * forward or reverse order, so if both a and z have had their signal, we
@@ -327,7 +328,7 @@ main (int argc,
   g_message ("Connecting signal to z");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (z, noc, PTR (TEST_Z),
       destroy_user_data, (GObject *) a, &error_out);
-  MYASSERT (error_out == NULL);
+  MYASSERT_NO_ERROR (error_out);
 
   /* make sure a NameOwnerChanged signal occurs */
   g_message ("Requesting name");
@@ -340,29 +341,29 @@ main (int argc,
 
   /* both A and Z are still listening for signals, so their user data is
    * still held */
-  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_A));
-  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_Z));
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_A), "");
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_Z), "");
 
   g_message ("Dereferencing remaining proxies");
   g_object_unref (a);
   g_object_unref (b);
   g_object_unref (c);
-  MYASSERT (d == NULL);
+  MYASSERT (d == NULL, "");
   g_object_unref (e);
   g_object_unref (f);
-  MYASSERT (g == NULL);
+  MYASSERT (g == NULL, "");
   g_object_unref (z);
 
   /* we should already have checked each of these at least once, but just to
    * make sure we have a systematic test that all user data is freed... */
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_A));
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B));
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C));
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_D));
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E));
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F));
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G));
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z));
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_A), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_D), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z), "");
 
   tp_intset_destroy (freed_user_data);
   tp_intset_destroy (caught_signal);
