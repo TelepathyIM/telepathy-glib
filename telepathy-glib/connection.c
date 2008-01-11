@@ -189,71 +189,68 @@ tp_connection_got_interfaces_cb (TpConnection *self,
                                  gpointer user_data,
                                  GObject *user_object)
 {
-  DEBUG ("%p", self);
-
-  if (error == NULL)
+  if (error != NULL)
     {
-      DEBUG ("%p: Introspected interfaces", self);
-      if (interfaces != NULL)
+      DEBUG ("%p: GetInterfaces() failed, assuming no interfaces: %s",
+          self, error->message);
+      interfaces = NULL;
+    }
+
+  DEBUG ("%p: Introspected interfaces", self);
+  if (interfaces != NULL)
+    {
+      const gchar **iter;
+
+      g_assert (self->priv->introspect_needed == NULL);
+      self->priv->introspect_needed = g_array_new (FALSE, FALSE,
+          sizeof (TpConnectionProc));
+
+      for (iter = interfaces; *iter != NULL; iter++)
         {
-          const gchar **iter;
-
-          g_assert (self->priv->introspect_needed == NULL);
-          self->priv->introspect_needed = g_array_new (FALSE, FALSE,
-              sizeof (TpConnectionProc));
-
-          for (iter = interfaces; *iter != NULL; iter++)
+          if (tp_dbus_check_valid_interface_name (*iter, NULL))
             {
-              if (tp_dbus_check_valid_interface_name (*iter, NULL))
+              GQuark q = g_quark_from_string (*iter);
+
+              tp_proxy_add_interface_by_id ((TpProxy *) self,
+                  g_quark_from_string (*iter));
+
+              if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
                 {
-                  GQuark q = g_quark_from_string (*iter);
+                  /* call GetAliasFlags */
+                  TpConnectionProc func = introspect_aliasing;
 
-                  tp_proxy_add_interface_by_id ((TpProxy *) self,
-                      g_quark_from_string (*iter));
-
-                  if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
-                    {
-                      /* call GetAliasFlags */
-                      TpConnectionProc func = introspect_aliasing;
-
-                      g_array_append_val (self->priv->introspect_needed,
-                          func);
-                    }
+                  g_array_append_val (self->priv->introspect_needed,
+                      func);
+                }
 #if 0
-                  else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
-                    {
-                      /* call GetAvatarRequirements */
-                      TpConnectionProc func = introspect_avatars;
-
-                      g_array_append_val (self->priv->introspect_needed,
-                          func);
-                    }
-                  else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE)
-                    {
-                      /* call GetStatuses */
-                      TpConnectionProc func = introspect_presence;
-
-                      g_array_append_val (self->priv->introspect_needed,
-                          func);
-                    }
-                  /* if Privacy was stable, we'd also queue GetPrivacyModes
-                   * here */
-#endif
-                }
-              else
+              else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
                 {
-                  DEBUG ("\t\tInterface %s not valid", *iter);
+                  /* call GetAvatarRequirements */
+                  TpConnectionProc func = introspect_avatars;
+
+                  g_array_append_val (self->priv->introspect_needed,
+                      func);
                 }
+              else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE)
+                {
+                  /* call GetStatuses */
+                  TpConnectionProc func = introspect_presence;
+
+                  g_array_append_val (self->priv->introspect_needed,
+                      func);
+                }
+              /* if Privacy was stable, we'd also queue GetPrivacyModes
+               * here */
+#endif
+            }
+          else
+            {
+              DEBUG ("\t\tInterface %s not valid", *iter);
             }
         }
+    }
 
-      tp_connection_continue_introspection (self);
-    }
-  else
-    {
-      DEBUG ("%p: GetInterfaces() failed", self);
-      tp_proxy_invalidate ((TpProxy *) self, error);
-    }
+  tp_connection_continue_introspection (self);
 }
 
 static void
@@ -312,11 +309,9 @@ tp_connection_got_status_cb (TpConnection *self,
     }
   else
     {
-      DEBUG ("%p: GetStatus() failed with %s %d \"%s\", will self-destruct",
+      DEBUG ("%p: GetStatus() failed with %s %d \"%s\"",
           self, g_quark_to_string (error->domain), error->code,
           error->message);
-      tp_proxy_invalidate ((TpProxy *) self, error);
-      return;
     }
 }
 
