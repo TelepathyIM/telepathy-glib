@@ -47,6 +47,33 @@
  */
 
 /**
+ * TP_ERRORS_DISCONNECTED:
+ *
+ * #GError domain representing a Telepathy connection becoming disconnected.
+ * The @code in a #GError with this domain must be a member of
+ * #TpConnectionStatusReason.
+ *
+ * This macro expands to a function call returning a #GQuark.
+ */
+GQuark
+tp_errors_disconnected_quark (void)
+{
+  static GQuark q = 0;
+
+  if (q == 0)
+    q = g_quark_from_static_string ("tp_errors_disconnected_quark");
+
+  return q;
+}
+
+/**
+ * TP_UNKNOWN_CONNECTION_STATUS:
+ *
+ * An invalid connection status used in #TpConnection to indicate that the
+ * status has not yet been discovered.
+ */
+
+/**
  * TpConnectionClass:
  * @parent_class: the parent class
  * @priv: pointer to opaque private data

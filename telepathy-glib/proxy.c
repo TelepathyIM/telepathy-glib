@@ -40,6 +40,57 @@
 #endif
 
 /**
+ * TP_DBUS_ERRORS:
+ *
+ * #GError domain representing D-Bus errors not directly related to
+ * Telepathy, for use by #TpProxy. The @code in a #GError with this
+ * domain must be a member of #TpDBusError.
+ *
+ * This macro expands to a function call returning a #GQuark.
+ */
+GQuark
+tp_dbus_errors_quark (void)
+{
+  static GQuark q = 0;
+
+  if (q == 0)
+    q = g_quark_from_static_string ("tp_dbus_errors_quark");
+
+  return q;
+}
+
+/**
+ * TpDBusError:
+ * @TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR: Raised if the error raised by
+ *  a remote D-Bus object is not recognised. The corresponding @message
+ *  for this error code is guaranteed to start with the D-Bus error
+ *  name followed by a colon ':'; client code MAY parse the @message
+ *  if needed.
+ * @TP_DBUS_ERROR_PROXY_UNREFERENCED: Emitted in #TpProxy:invalidated
+ *  when the #TpProxy has lost its last reference
+ * @TP_DBUS_ERROR_NO_INTERFACE: Raised by #TpProxy methods if the remote
+ *  object does not appear to have the required interface
+ * @TP_DBUS_ERROR_NAME_OWNER_LOST: Emitted in #TpProxy:invalidated if the
+ *  remote process loses ownership of its bus name, and raised by
+ *  any #TpProxy methods that have not had a reply at that time or are called
+ *  after the proxy becomes invalid in this way (usually meaning it crashed)
+ * @TP_DBUS_ERROR_INVALID_BUS_NAME: Raised if a D-Bus bus name given is not
+ *  valid, or is of an unacceptable type (e.g. well-known vs. unique)
+ * @TP_DBUS_ERROR_INVALID_INTERFACE_NAME: Raised if a D-Bus interface or
+ *  error name given is not valid
+ * @TP_DBUS_ERROR_INVALID_OBJECT_PATH: Raised if a D-Bus object path
+ *  given is not valid
+ * @TP_DBUS_ERROR_INVALID_MEMBER_NAME: Raised if a D-Bus method or signal
+ *  name given is not valid
+ * @TP_DBUS_ERROR_OBJECT_REMOVED: A generic error which can be used with
+ *  #TpProxy:invalidated to indicate an application-specific indication
+ *  that the remote object no longer exists, if no more specific error
+ *  is available.
+ *
+ * #GError codes for use with the %TP_DBUS_ERRORS domain.
+ */
+
+/**
  * SECTION:proxy
  * @title: TpProxy
  * @short_description: base class for Telepathy client proxy objects
@@ -236,8 +287,8 @@ static guint signals[N_SIGNALS] = {0};
  * tp_proxy_borrow_interface_by_id:
  * @self: the TpProxy
  * @interface: quark representing the interface required
- * @error: used to raise TP_ERROR_NOT_IMPLEMENTED if this object does not have
- *    the required interface
+ * @error: used to raise TP_DBUS_ERROR_NO_INTERFACE if this object does not
+ * have the required interface
  *
  * <!-- -->
  *

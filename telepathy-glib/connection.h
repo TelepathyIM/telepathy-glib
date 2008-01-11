@@ -32,12 +32,9 @@ typedef struct _TpConnectionClass TpConnectionClass;
 
 GType tp_connection_get_type (void);
 
-/**
- * TP_UNKNOWN_CONNECTION_STATUS:
- *
- * An invalid connection status used in #TpConnection to indicate that the
- * status has not yet been discovered.
- */
+#define TP_ERRORS_DISCONNECTED (tp_errors_disconnected_quark ())
+GQuark tp_errors_disconnected_quark (void);
+
 #define TP_UNKNOWN_CONNECTION_STATUS ((TpConnectionStatus) -1)
 
 /* TYPE MACROS */

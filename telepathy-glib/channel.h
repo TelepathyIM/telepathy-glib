@@ -33,6 +33,9 @@ typedef struct _TpChannelClass TpChannelClass;
 
 GType tp_channel_get_type (void);
 
+#define TP_ERRORS_REMOVED_FROM_GROUP (tp_errors_removed_from_group_quark ())
+GQuark tp_errors_removed_from_group_quark (void);
+
 /* TYPE MACROS */
 #define TP_TYPE_CHANNEL \
   (tp_channel_get_type ())

@@ -34,6 +34,22 @@ typedef struct _TpProxyPrivate TpProxyPrivate;
 
 typedef struct _TpProxy TpProxy;
 
+#define TP_DBUS_ERRORS (tp_dbus_errors_quark ())
+GQuark tp_dbus_errors_quark (void);
+
+typedef enum {
+    TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR = 0,
+    TP_DBUS_ERROR_PROXY_UNREFERENCED = 1,
+    TP_DBUS_ERROR_NO_INTERFACE = 2,
+    TP_DBUS_ERROR_NAME_OWNER_LOST = 3,
+    TP_DBUS_ERROR_INVALID_BUS_NAME = 4,
+    TP_DBUS_ERROR_INVALID_INTERFACE_NAME = 5,
+    TP_DBUS_ERROR_INVALID_OBJECT_PATH = 6,
+    TP_DBUS_ERROR_INVALID_MEMBER_NAME = 7,
+    TP_DBUS_ERROR_OBJECT_REMOVED = 8,
+    NUM_TP_DBUS_ERRORS
+} TpDBusError;
+
 struct _TpProxy {
     /*<public>*/
     GObject parent;

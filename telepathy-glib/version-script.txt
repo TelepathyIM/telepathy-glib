@@ -676,8 +676,11 @@ TELEPATHY_GLIB_0.7.1_UNRELEASED {
         tp_dbus_daemon_get_type;
         tp_dbus_daemon_new;
         tp_dbus_daemon_watch_name_owner;
+        tp_dbus_errors_quark;
         tp_debug_divert_messages;
         tp_debug_timestamped_log_handler;
+        tp_errors_disconnected_quark;
+        tp_errors_removed_from_group_quark;
         tp_iface_quark_dbus_daemon;
         tp_list_connection_managers;
         tp_list_connection_managers_got_names;

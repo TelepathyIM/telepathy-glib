@@ -1348,7 +1348,10 @@ TpProxyPendingCall
 tp_proxy_pending_call_cancel
 TpProxySignalConnection
 tp_proxy_signal_connection_disconnect
+TP_DBUS_ERRORS
+TpDBusError
 <SUBSECTION Standard>
+tp_dbus_errors_quark
 TpProxyPrivate
 TP_TYPE_PROXY
 tp_proxy_get_type
@@ -1399,6 +1402,8 @@ tp_proxy_signal_connection_v0_take_results
 tp_channel_new
 TpChannel
 TpChannelClass
+TP_ERRORS_REMOVED_FROM_GROUP
+tp_errors_removed_from_group_quark
 <SUBSECTION Standard>
 tp_channel_get_type
 TP_TYPE_CHANNEL
@@ -1600,7 +1605,9 @@ tp_connection_new
 TpConnection
 TpConnectionClass
 TP_UNKNOWN_CONNECTION_STATUS
+TP_ERRORS_DISCONNECTED
 <SUBSECTION Standard>
+tp_errors_disconnected_quark
 tp_connection_get_type
 TP_TYPE_CONNECTION
 TP_CONNECTION

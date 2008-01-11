@@ -46,6 +46,30 @@
  */
 
 /**
+ * TP_ERRORS_REMOVED_FROM_GROUP:
+ *
+ * #GError domain representing the local user being removed from a channel
+ * with the Group interface. The @code in a #GError with this domain must
+ * be a member of #TpChannelGroupChangeReason.
+ *
+ * This error may be raised on non-Group channels with certain reason codes
+ * if there's no better error code to use (mainly
+ * %TP_CHANNEL_GROUP_CHANGE_REASON_NONE).
+ *
+ * This macro expands to a function call returning a #GQuark.
+ */
+GQuark
+tp_errors_removed_from_group_quark (void)
+{
+  static GQuark q = 0;
+
+  if (q == 0)
+    q = g_quark_from_static_string ("tp_errors_removed_from_group_quark");
+
+  return q;
+}
+
+/**
  * TpChannelClass:
  * @parent_class: parent class
  * @priv: pointer to opaque private data
