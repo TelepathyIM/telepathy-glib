@@ -424,8 +424,8 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
   if (self->invalidated == NULL)
     {
       DEBUG ("%p", self);
-      self->invalidated = g_error_new_literal (DBUS_GERROR,
-          DBUS_GERROR_NAME_HAS_NO_OWNER, "Name owner lost (service crashed?)");
+      self->invalidated = g_error_new_literal (TP_DBUS_ERRORS,
+          TP_DBUS_ERROR_NAME_OWNER_LOST, "Name owner lost (service crashed?)");
 
       g_idle_add_full (G_PRIORITY_HIGH, tp_proxy_emit_invalidated,
           g_object_ref (self), g_object_unref);
@@ -541,8 +541,8 @@ tp_proxy_pending_call_proxy_destroyed (DBusGProxy *iface_proxy,
       g_assert (self->args == NULL);
       g_assert (self->error == NULL);
 
-      self->error = g_error_new_literal (DBUS_GERROR,
-          DBUS_GERROR_NAME_HAS_NO_OWNER, "Name owner lost (service crashed?)");
+      self->error = g_error_new_literal (TP_DBUS_ERRORS,
+          TP_DBUS_ERROR_NAME_OWNER_LOST, "Name owner lost (service crashed?)");
 
       self->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
           tp_proxy_pending_call_idle_invoke, self, tp_proxy_pending_call_free);
@@ -1315,7 +1315,8 @@ static void
 tp_proxy_dispose (GObject *object)
 {
   TpProxy *self = TP_PROXY (object);
-  GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "Proxy unreferenced" };
+  GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_PROXY_UNREFERENCED,
+      "Proxy unreferenced" };
 
   if (self->priv->dispose_has_run)
     return;
