@@ -440,7 +440,8 @@ tp_dbus_check_valid_member_name (const gchar *name,
 /**
  * tp_dbus_check_valid_object_path:
  * @path: a possible object path
- * @error: used to raise %TP_ERROR_INVALID_ARGUMENT if %FALSE is returned
+ * @error: used to raise %TP_DBUS_ERROR_INVALID_OBJECT_PATH if %FALSE is
+ *  returned
  *
  * Check that the given string is a valid D-Bus object path.
  *
@@ -455,7 +456,7 @@ tp_dbus_check_valid_object_path (const gchar *path, GError **error)
 
   if (path[0] != '/')
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_OBJECT_PATH,
           "Invalid object path '%s': must start with '/'",
           path);
       return FALSE;
@@ -470,14 +471,16 @@ tp_dbus_check_valid_object_path (const gchar *path, GError **error)
         {
           if (ptr[-1] == '/')
             {
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              g_set_error (error, TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INVALID_OBJECT_PATH,
                   "Invalid object path '%s': contains '//'", path);
               return FALSE;
             }
         }
       else if (!g_ascii_isalnum (*ptr) && *ptr != '_')
         {
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_DBUS_ERRORS,
+              TP_DBUS_ERROR_INVALID_OBJECT_PATH,
               "Invalid object path '%s': contains invalid character '%c'",
               path, *ptr);
           return FALSE;
@@ -486,7 +489,7 @@ tp_dbus_check_valid_object_path (const gchar *path, GError **error)
 
   if (ptr[-1] == '/')
     {
-        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+        g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_OBJECT_PATH,
             "Invalid object path '%s': is not '/' but does end with '/'",
             path);
         return FALSE;
