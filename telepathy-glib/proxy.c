@@ -799,10 +799,9 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
   g_return_if_fail (self->args == NULL);
   g_return_if_fail (self->error == NULL);
   g_return_if_fail (self->idle_source == 0);
+  g_return_if_fail (error == NULL || args == NULL);
 
   self->error = error;
-  /* the ordering here means that error + args => assert or raise error */
-  g_return_if_fail (error == NULL || args == NULL);
   self->args = args;
 
   /* queue up the actual callback to run after we go back to the event loop */
