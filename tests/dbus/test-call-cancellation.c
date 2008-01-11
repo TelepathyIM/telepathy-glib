@@ -94,6 +94,10 @@ listed_names (TpDBusDaemon *proxy,
           want_proxy = a;
           want_object = (GObject *) z;
           break;
+        case TEST_C:
+          want_proxy = c;
+          want_object = NULL;
+          break;
         case TEST_D:
           want_proxy = copy_of_d;
           want_object = NULL;
@@ -202,17 +206,17 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (method_ok, TEST_B), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_B), "");
 
-  /* c's call fails with error "Because I said so" because it's explicitly
-   * invalidated */
+  /* c is explicitly invalidated for an application-specific reason,
+   * but its call still proceeds */
   g_message ("Starting call on c");
   tp_cli_dbus_daemon_call_list_names (c, -1, listed_names, PTR (TEST_C),
       destroy_user_data, NULL);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C), "");
   g_message ("Forcibly invalidating c");
   tp_proxy_invalidate ((TpProxy *) c, &err);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C), "");
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_C), "");
-  MYASSERT (tp_intset_is_member (method_error, TEST_C), "");
+  MYASSERT (!tp_intset_is_member (method_error, TEST_C), "");
 
   /* d gets unreferenced, but survives long enough for the call to complete
    * successfully later, because the pending call holds a reference */
@@ -255,9 +259,11 @@ main (int argc,
       TP_IFACE_QUARK_DBUS_DAEMON, NULL);
   MYASSERT (tmp_obj != NULL, "");
   g_object_run_dispose (tmp_obj);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
+  /* the callback will be queued (to avoid reentrancy), so we don't get it
+   * until the main loop runs */
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_F), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_F), "");
-  MYASSERT (tp_intset_is_member (method_error, TEST_F), "");
+  MYASSERT (!tp_intset_is_member (method_error, TEST_F), "");
 
   /* g gets unreferenced, but survives long enough for the call to complete
    * successfully later, because the pending call holds a reference;
@@ -303,10 +309,19 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (method_error, TEST_G), "");
   MYASSERT (copy_of_g == NULL, "");
 
-  /* the calls have been delivered to both A and Z by now */
+  /* also, F will have been invalidated */
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
+  MYASSERT (!tp_intset_is_member (method_ok, TEST_F), "");
+  MYASSERT (tp_intset_is_member (method_error, TEST_F), "");
+
+  /* the calls have been delivered to A, C and Z by now */
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_A), "");
   MYASSERT (tp_intset_is_member (method_ok, TEST_A), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_A), "");
+
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C), "");
+  MYASSERT (tp_intset_is_member (method_ok, TEST_C), "");
+  MYASSERT (!tp_intset_is_member (method_error, TEST_C), "");
 
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z), "");
   MYASSERT (tp_intset_is_member (method_ok, TEST_Z), "");

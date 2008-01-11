@@ -162,6 +162,7 @@ struct _TpProxyPendingCall {
     gpointer user_data;
     GDestroyNotify destroy;
     GObject *weak_object;
+    DBusGProxy *iface_proxy;
     DBusGProxyCall *pending_call;
     guint idle_source;
     gconstpointer priv;
@@ -450,34 +451,56 @@ tp_proxy_pending_call_lost_weak_ref (gpointer data,
   tp_proxy_pending_call_cancel (self);
 }
 
-static void
-tp_proxy_pending_call_proxy_invalidated (TpProxy *proxy,
-                                         guint domain,
-                                         gint code,
-                                         const gchar *message,
-                                         TpProxyPendingCall *self)
+static gboolean
+tp_proxy_pending_call_idle_invoke (gpointer p)
 {
+  TpProxyPendingCall *self = p;
   TpProxyInvokeFunc invoke = self->invoke_callback;
 
+  g_return_val_if_fail (self->invoke_callback != NULL, FALSE);
+
+  self->invoke_callback = NULL;
+  invoke (self->proxy, self->error, self->args, self->callback,
+      self->user_data, self->weak_object);
+  self->error = NULL;
+  self->args = NULL;
+
+  /* don't clear self->idle_source here! tp_proxy_pending_call_v0_completed
+   * compares it to 0 to determine whether to free the object */
+
+  return FALSE;
+}
+
+static void tp_proxy_pending_call_free (gpointer p);
+
+static void
+tp_proxy_pending_call_proxy_destroyed (DBusGProxy *iface_proxy,
+                                       TpProxyPendingCall *self)
+{
+  g_assert (iface_proxy != NULL);
   g_assert (self != NULL);
-  g_assert (domain != 0);
-  g_assert (message != NULL);
+  g_assert (self->iface_proxy == iface_proxy);
 
-  DEBUG ("%p: proxy %p invalidated (I have %p): %s", self, proxy, self->proxy,
-      message);
-  g_assert (proxy == self->proxy);
+  DEBUG ("%p: proxy %p invalidated", self, iface_proxy);
 
-  if (self->idle_source != 0)
+  if (self->idle_source == 0)
     {
-      g_source_remove (self->idle_source);
+      /* we haven't already received and queued a reply, so synthesize
+       * one */
+      g_assert (self->args == NULL);
+      g_assert (self->error == NULL);
+
+      self->error = g_error_new_literal (DBUS_GERROR,
+          DBUS_GERROR_NAME_HAS_NO_OWNER, "Name owner lost (service crashed?)");
+
+      self->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
+          tp_proxy_pending_call_idle_invoke, self, tp_proxy_pending_call_free);
     }
 
-  if (invoke != NULL)
-    {
-      self->invoke_callback = NULL;
-      invoke (proxy, g_error_new_literal (domain, code, message), NULL,
-          self->callback, self->user_data, self->weak_object);
-    }
+  g_signal_handlers_disconnect_by_func (self->iface_proxy,
+      tp_proxy_pending_call_proxy_destroyed, self);
+  g_object_unref (self->iface_proxy);
+  self->iface_proxy = NULL;
 }
 
 /**
@@ -547,14 +570,15 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
   ret->user_data = user_data;
   ret->destroy = destroy;
   ret->weak_object = weak_object;
+  ret->iface_proxy = g_object_ref (iface_proxy);
   ret->pending_call = NULL;
   ret->priv = pending_call_magic;
 
   if (weak_object != NULL)
     g_object_weak_ref (weak_object, tp_proxy_pending_call_lost_weak_ref, ret);
 
-  g_signal_connect (self, "invalidated",
-      G_CALLBACK (tp_proxy_pending_call_proxy_invalidated), ret);
+  g_signal_connect (iface_proxy, "destroy",
+      G_CALLBACK (tp_proxy_pending_call_proxy_destroyed), ret);
 
   return ret;
 }
@@ -604,10 +628,16 @@ tp_proxy_pending_call_free (gpointer p)
 
   if (self->proxy != NULL)
     {
-      g_signal_handlers_disconnect_by_func (TP_PROXY (self->proxy),
-          tp_proxy_pending_call_proxy_invalidated, self);
       g_object_unref (self->proxy);
       self->proxy = NULL;
+    }
+
+  if (self->iface_proxy != NULL)
+    {
+      g_signal_handlers_disconnect_by_func (self->iface_proxy,
+          tp_proxy_pending_call_proxy_destroyed, self);
+      g_object_unref (self->iface_proxy);
+      self->iface_proxy = NULL;
     }
 
   if (self->error != NULL)
@@ -664,9 +694,9 @@ tp_proxy_pending_call_v0_completed (gpointer p)
         {
           MORE_DEBUG ("Looks like this pending call hasn't finished, assuming "
               "the DBusGProxy is about to die");
-          tp_proxy_pending_call_proxy_invalidated (self->proxy,
-              DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER,
-              "Name owner lost (service crashed?)", self);
+          /* this causes the pending call to be freed */
+          tp_proxy_pending_call_proxy_destroyed (self->iface_proxy, self);
+          return;
         }
     }
 
@@ -691,26 +721,6 @@ tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *self,
 {
   g_return_if_fail (self->priv == pending_call_magic);
   self->pending_call = pending_call;
-}
-
-static gboolean
-tp_proxy_pending_call_idle_invoke (gpointer p)
-{
-  TpProxyPendingCall *self = p;
-  TpProxyInvokeFunc invoke = self->invoke_callback;
-
-  g_return_val_if_fail (self->invoke_callback != NULL, FALSE);
-
-  self->invoke_callback = NULL;
-  invoke (self->proxy, self->error, self->args, self->callback,
-      self->user_data, self->weak_object);
-  self->error = NULL;
-  self->args = NULL;
-
-  /* don't clear self->idle_source here! tp_proxy_pending_call_v0_completed
-   * compares it to 0 to determine whether to free the object */
-
-  return FALSE;
 }
 
 /**
