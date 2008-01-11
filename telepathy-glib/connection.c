@@ -311,7 +311,7 @@ tp_connection_status_changed_cb (TpConnection *self,
 
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
-      GError *error = g_error_new (TP_ERRORS, TP_ERROR_DISCONNECTED,
+      GError *error = g_error_new (TP_ERRORS_DISCONNECTED, reason,
           "Disconnected: reason %d", reason);
 
       tp_proxy_invalidate ((TpProxy *) self, error);
