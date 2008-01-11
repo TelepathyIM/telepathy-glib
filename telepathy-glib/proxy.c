@@ -21,6 +21,8 @@
 
 #include "telepathy-glib/proxy-subclass.h"
 
+#include <string.h>
+
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
@@ -62,10 +64,7 @@ tp_dbus_errors_quark (void)
 /**
  * TpDBusError:
  * @TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR: Raised if the error raised by
- *  a remote D-Bus object is not recognised. The corresponding @message
- *  for this error code is guaranteed to start with the D-Bus error
- *  name followed by a colon ':'; client code MAY parse the @message
- *  if needed.
+ *  a remote D-Bus object is not recognised
  * @TP_DBUS_ERROR_PROXY_UNREFERENCED: Emitted in #TpProxy:invalidated
  *  when the #TpProxy has lost its last reference
  * @TP_DBUS_ERROR_NO_INTERFACE: Raised by #TpProxy methods if the remote
@@ -485,6 +484,54 @@ tp_proxy_add_interface_by_id (TpProxy *self,
   return iface_proxy;
 }
 
+static GError *
+tp_proxy_take_and_remap_error (TpProxy *self,
+                               GError *error)
+{
+  if (error == NULL ||
+      error->domain != DBUS_GERROR ||
+      error->code != DBUS_GERROR_REMOTE_EXCEPTION)
+    {
+      return error;
+    }
+  else
+    {
+      GError *replacement;
+      const gchar *dbus = dbus_g_error_get_name (error);
+      const gchar *last_dot = strrchr (dbus, '.');
+      const gchar *member;
+      GQuark namespace;
+      gchar *tmp;
+
+      if (last_dot == NULL)
+        {
+          /* invalid error name? let's just paste it in anyway */
+          goto unknown;
+        }
+
+      tmp = g_strndup (dbus, last_dot - dbus);
+      namespace = g_quark_try_string (tmp);
+      g_free (tmp);
+
+      if (namespace != 0)
+        {
+          goto unknown;
+        }
+
+      member = last_dot + 1;
+
+      /* FIXME: look up the error according to the TpProxy's class somehow */
+
+unknown:
+      /* we don't have an error mapping - so let's just paste the
+       * error name and message into TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR */
+      replacement = g_error_new (TP_DBUS_ERRORS,
+          TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR, "%s: %s", dbus, error->message);
+      g_error_free (error);
+      return replacement;
+    }
+}
+
 static const gchar * const pending_call_magic = "TpProxyPendingCall";
 
 static void
@@ -778,7 +825,8 @@ tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *self,
  * tp_proxy_pending_call_v0_take_results:
  * @self: A pending call on which this function has not yet been called
  * @error: %NULL if the call was successful, or an error (whose ownership
- *  is taken over by the pending call object)
+ *  is taken over by the pending call object). Because of dbus-glib
+ *  idiosyncrasies, this must be the error produced by dbus-glib, not a copy.
  * @args: %NULL if the call failed or had no "out" arguments, or an array
  *  of "out" arguments (whose ownership is taken over by the pending call
  *  object)
@@ -801,8 +849,8 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
   g_return_if_fail (self->idle_source == 0);
   g_return_if_fail (error == NULL || args == NULL);
 
-  self->error = error;
   self->args = args;
+  self->error = tp_proxy_take_and_remap_error (self->proxy, error);
 
   /* queue up the actual callback to run after we go back to the event loop */
   self->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
