@@ -822,7 +822,12 @@ class Generator(object):
 
             self.b('')
 
-        self.b('  g_value_array_free (args);')
+        if len(out_args) > 0:
+            self.b('  g_value_array_free (args);')
+        else:
+            self.b('  if (args != NULL)')
+            self.b('    g_value_array_free (args);')
+
         self.b('}')
         self.b('')
 
