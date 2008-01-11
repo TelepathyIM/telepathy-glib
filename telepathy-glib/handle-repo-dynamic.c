@@ -184,7 +184,7 @@ struct _TpDynamicHandleRepo {
 };
 
 /* To listen for NameOwnerChanged. One ref per dynamic handle repo */
-static TpDBusDaemon *bus_daemon;
+static gpointer bus_daemon;
 
 static TpDBusDaemon *
 ref_bus_daemon (void)
@@ -193,7 +193,8 @@ ref_bus_daemon (void)
     return g_object_ref (bus_daemon);
 
   bus_daemon = tp_dbus_daemon_new (tp_get_bus ());
-  return bus_daemon;
+  g_object_add_weak_pointer (bus_daemon, &bus_daemon);
+  return (TpDBusDaemon *) bus_daemon;
 }
 
 static void dynamic_repo_iface_init (gpointer g_iface,
