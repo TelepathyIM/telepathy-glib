@@ -6,6 +6,8 @@
 #include <telepathy-glib/proxy-subclass.h>    /* for _invalidated etc. */
 #include <telepathy-glib/util.h>
 
+#include "tests/myassert.h"
+
 typedef struct { GObject p; } StubObject;
 typedef struct { GObjectClass p; } StubObjectClass;
 

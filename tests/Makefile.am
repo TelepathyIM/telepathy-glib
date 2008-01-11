@@ -14,6 +14,9 @@ TESTS = $(noinst_PROGRAMS)
 TESTS_ENVIRONMENT = \
     G_DEBUG=fatal_warnings,fatal_criticals
 
+# used by some of the tests in dbus/
+EXTRA_DIST = myassert.h
+
 test_handle_set_SOURCES = \
     test-intset.c
 test_handle_set_LDADD = \
