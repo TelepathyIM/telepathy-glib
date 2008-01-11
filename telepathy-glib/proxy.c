@@ -486,7 +486,6 @@ tp_proxy_add_interface_by_id (TpProxy *self,
 }
 
 static const gchar * const pending_call_magic = "TpProxyPendingCall";
-static const gchar * const signal_conn_magic = "TpProxySignalConnection";
 
 static void
 tp_proxy_pending_call_lost_weak_ref (gpointer data,
