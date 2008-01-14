@@ -45,6 +45,7 @@ class Generator(object):
         self.prefix_mc = prefix.replace('_', '')
         self.basename = basename
         self.group = opts.get('--group', None)
+        self.iface_quark_prefix = opts.get('--iface-quark-prefix', None)
         self.proxy_cls = opts.get('--subclass', 'TpProxy') + ' *'
         self.proxy_arg = opts.get('--subclass', 'void') + ' *'
         self.proxy_assert = opts.get('--subclass-assert', 'TP_IS_PROXY')
@@ -58,6 +59,14 @@ class Generator(object):
 
     def b(self, s):
         self.__body.append(s)
+
+    def get_iface_quark(self):
+        assert self.iface_dbus is not None
+        assert self.iface_uc is not None
+        if self.iface_quark_prefix is None:
+            return 'g_quark_from_static_string (\"%s\")' % self.iface_dbus
+        else:
+            return '%s_%s' % (self.iface_quark_prefix, self.iface_uc)
 
     def do_signal(self, iface, signal):
         iface_lc = iface.lower()
@@ -323,9 +332,8 @@ class Generator(object):
                % self.proxy_assert)
         self.b('  g_return_val_if_fail (callback != NULL, NULL);')
         self.b('')
-        # FIXME: the use of TP_IFACE_QUARK here shouldn't be hard-coded
         self.b('  return tp_proxy_signal_connection_v0_new ((TpProxy *) proxy,')
-        self.b('      TP_IFACE_QUARK_%s, \"%s\",' % (iface_lc.upper(), member))
+        self.b('      %s, \"%s\",' % (self.get_iface_quark(), member))
         self.b('      expected_types,')
 
         if args:
@@ -674,8 +682,7 @@ class Generator(object):
         self.b('    GObject *weak_object)')
         self.b('{')
         self.b('  GError *error = NULL;')
-        # FIXME: the use of TP_IFACE_QUARK here shouldn't be hard-coded
-        self.b('  GQuark interface = TP_IFACE_QUARK_%s;' % iface_lc.upper())
+        self.b('  GQuark interface = %s;' % self.get_iface_quark())
         self.b('  DBusGProxy *iface;')
         self.b('')
         self.b('  g_return_val_if_fail (%s (proxy), NULL);'
@@ -896,8 +903,7 @@ class Generator(object):
         self.b('    GError **error)')
         self.b('{')
         self.b('  DBusGProxy *iface;')
-        # FIXME: the use of TP_IFACE_QUARK here shouldn't be hard-coded
-        self.b('  GQuark interface = TP_IFACE_QUARK_%s;' % iface_lc.upper())
+        self.b('  GQuark interface = %s;' % self.get_iface_quark())
         self.b('  TpProxyPendingCall *pc;')
         self.b('  _%s_%s_run_state_%s state = {'
                % (self.prefix_lc, iface_lc, member_lc))
@@ -978,6 +984,12 @@ class Generator(object):
         iface = ifaces[0]
         name = node.getAttribute('name').replace('/', '')
 
+        self.iface = name
+        self.iface_lc = name.lower()
+        self.iface_uc = name.lower()
+        self.iface_mc = name.replace('_', '')
+        self.iface_dbus = iface.getAttribute('name')
+
         signals = node.getElementsByTagName('signal')
         methods = node.getElementsByTagName('method')
 
@@ -999,6 +1011,8 @@ class Generator(object):
         for method in methods:
             self.do_method(name, method)
 
+        self.iface_dbus = None
+
     def __call__(self):
 
         self.h('G_BEGIN_DECLS')
@@ -1009,11 +1023,11 @@ class Generator(object):
         self.b('/*<private_header>*/')
         self.b('')
 
-        ifaces = self.dom.getElementsByTagName('node')
-        ifaces.sort(cmp_by_name)
+        nodes = self.dom.getElementsByTagName('node')
+        nodes.sort(cmp_by_name)
 
-        for iface in ifaces:
-            self.do_interface(iface)
+        for node in nodes:
+            self.do_interface(node)
 
         if self.group is not None:
 
@@ -1041,10 +1055,12 @@ class Generator(object):
 
             self.b('{')
 
-            for iface in ifaces:
-                name = iface.getAttribute('name').replace('/', '').lower()
-                # FIXME: the use of TP_IFACE_QUARK here shouldn't be hard-coded
-                self.b('  if (quark == TP_IFACE_QUARK_%s)' % name.upper())
+            for node in nodes:
+                iface = node.getElementsByTagName('interface')[0]
+                self.iface_dbus = iface.getAttribute('name')
+                name = node.getAttribute('name').replace('/', '').lower()
+                self.iface_uc = name.upper()
+                self.b('  if (quark == %s)' % self.get_iface_quark())
                 self.b('    %s_add_signals_for_%s (proxy);'
                        % (self.prefix_lc, name))
 
@@ -1064,7 +1080,8 @@ def types_to_gtypes(types):
 
 if __name__ == '__main__':
     options, argv = gnu_getopt(sys.argv[1:], '',
-                               ['group=', 'subclass=', 'subclass-assert='])
+                               ['group=', 'subclass=', 'subclass-assert=',
+                                'iface-quark-prefix='])
 
     opts = {}
 
