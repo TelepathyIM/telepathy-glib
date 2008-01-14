@@ -1490,8 +1490,8 @@ tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
  * If there is an error mapping for which the D-Bus error name
  * starts with the mapping's @static_prefix, the proxy will check the
  * corresponding @code_enum_type for a value whose @value_nick is
- * the rest of the D-Bus error name. If there isn't such a value, it
- * will continue to try other error mappings.
+ * the rest of the D-Bus error name (with the leading dot removed). If there
+ * isn't such a value, it will continue to try other error mappings.
  *
  * If a suitable error mapping and code are found, the #GError that is raised
  * will have its error domain set to the @domain from the error mapping,
