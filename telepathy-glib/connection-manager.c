@@ -1017,6 +1017,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
   tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_connection_manager_add_signals);
+  tp_proxy_subclass_add_error_mapping (tp_type,
+      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
 
   /**
    * TpConnectionManager::info-source:
