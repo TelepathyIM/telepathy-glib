@@ -371,6 +371,8 @@ tp_channel_class_init (TpChannelClass *klass)
   proxy_class->must_have_unique_name = TRUE;
   tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_channel_add_signals);
+  tp_proxy_subclass_add_error_mapping (tp_type,
+      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
 
   /**
    * TpChannel:channel-type:
