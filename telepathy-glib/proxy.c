@@ -931,11 +931,11 @@ tp_proxy_signal_connection_unref (TpProxySignalConnection *self)
 {
   if (--(self->refcount) > 0)
     {
-      DEBUG ("%p: %" G_GSIZE_FORMAT " refs left", self, self->refcount);
+      MORE_DEBUG ("%p: %" G_GSIZE_FORMAT " refs left", self, self->refcount);
       return FALSE;
     }
 
-  DEBUG ("destroying %p", self);
+  MORE_DEBUG ("destroying %p", self);
 
   if (self->proxy != NULL)
     {
@@ -1025,7 +1025,7 @@ tp_proxy_signal_invocation_run (gpointer p)
   TpProxySignalInvocation *popped = g_queue_pop_head (&self->sc->invocations);
 
   /* if GLib is running idle handlers in the wrong order, then we've lost */
-  DEBUG ("%p: popped %p", self->sc, popped);
+  MORE_DEBUG ("%p: popped %p", self->sc, popped);
   g_assert (popped == self);
 
   self->sc->invoke_callback (self->sc->proxy, NULL, self->args,
@@ -1036,7 +1036,7 @@ tp_proxy_signal_invocation_run (gpointer p)
 
   /* there's one ref to the proxy per queued invocation, to keep it
    * alive */
-  DEBUG ("%p refcount-- due to %p run, sc=%p", self->sc->proxy, self,
+  MORE_DEBUG ("%p refcount-- due to %p run, sc=%p", self->sc->proxy, self,
       self->sc);
   g_object_unref (self->sc->proxy);
   tp_proxy_signal_connection_unref (self->sc);
@@ -1051,7 +1051,7 @@ tp_proxy_signal_connection_dropped (gpointer p,
 {
   TpProxySignalConnection *self = p;
 
-  DEBUG ("%p (%u invocations queued)", self, self->invocations.length);
+  MORE_DEBUG ("%p (%u invocations queued)", self, self->invocations.length);
 
   tp_proxy_signal_connection_unref (self);
 }
@@ -1188,7 +1188,7 @@ tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *self,
 
   /* as long as there are queued invocations, we keep one ref to the TpProxy
    * and one ref to the TpProxySignalConnection per invocation */
-  DEBUG ("%p refcount++ due to %p, sc=%p", self->proxy, invocation, self);
+  MORE_DEBUG ("%p refcount++ due to %p, sc=%p", self->proxy, invocation, self);
   g_object_ref (self->proxy);
   self->refcount++;
 
@@ -1197,7 +1197,7 @@ tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *self,
 
   g_queue_push_tail (&self->invocations, invocation);
 
-  DEBUG ("invocations: head=%p tail=%p count=%u",
+  MORE_DEBUG ("invocations: head=%p tail=%p count=%u",
       self->invocations.head, self->invocations.tail,
       self->invocations.length);
 
