@@ -323,6 +323,7 @@ class Generator(object):
                % self.proxy_assert)
         self.b('  g_return_val_if_fail (callback != NULL, NULL);')
         self.b('')
+        # FIXME: the use of TP_IFACE_QUARK here shouldn't be hard-coded
         self.b('  return tp_proxy_signal_connection_v0_new ((TpProxy *) proxy,')
         self.b('      TP_IFACE_QUARK_%s, \"%s\",' % (iface_lc.upper(), member))
         self.b('      expected_types,')
@@ -673,6 +674,7 @@ class Generator(object):
         self.b('    GObject *weak_object)')
         self.b('{')
         self.b('  GError *error = NULL;')
+        # FIXME: the use of TP_IFACE_QUARK here shouldn't be hard-coded
         self.b('  GQuark interface = TP_IFACE_QUARK_%s;' % iface_lc.upper())
         self.b('  DBusGProxy *iface;')
         self.b('')
@@ -894,6 +896,7 @@ class Generator(object):
         self.b('    GError **error)')
         self.b('{')
         self.b('  DBusGProxy *iface;')
+        # FIXME: the use of TP_IFACE_QUARK here shouldn't be hard-coded
         self.b('  GQuark interface = TP_IFACE_QUARK_%s;' % iface_lc.upper())
         self.b('  TpProxyPendingCall *pc;')
         self.b('  _%s_%s_run_state_%s state = {'
@@ -1040,6 +1043,7 @@ class Generator(object):
 
             for iface in ifaces:
                 name = iface.getAttribute('name').replace('/', '').lower()
+                # FIXME: the use of TP_IFACE_QUARK here shouldn't be hard-coded
                 self.b('  if (quark == TP_IFACE_QUARK_%s)' % name.upper())
                 self.b('    %s_add_signals_for_%s (proxy);'
                        % (self.prefix_lc, name))
