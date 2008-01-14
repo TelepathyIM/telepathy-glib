@@ -349,4 +349,5 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	$(PYTHON) $(srcdir)/../tools/glib-client-gen.py \
 		$$subclass $$subclass_assert \
 		--group `echo $* | tr - _` \
+		--iface-quark-prefix=TP_IFACE_QUARK \
 		$< Tp_Cli _gen/tp-cli-$*
