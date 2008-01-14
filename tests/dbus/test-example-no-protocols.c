@@ -2,6 +2,7 @@
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/errors.h>
 
 static void
 prepare (void)
@@ -30,10 +31,26 @@ connection_manager_got_info (TpConnectionManager *cm,
                              guint source,
                              GMainLoop *mainloop)
 {
+  GHashTable *empty = g_hash_table_new (NULL, NULL);
+  gchar *bus_name = NULL;
+  gchar *object_path = NULL;
+  GError *error = NULL;
+
   g_message ("Emitted got-info (source=%d)", source);
+
+  tp_cli_connection_manager_run_request_connection (cm, -1,
+      "jabber", empty, &bus_name, &object_path, &error);
+
+  g_assert (error != NULL);
+  g_assert (error->domain == TP_ERRORS);
+  g_assert (error->code == TP_ERROR_NOT_IMPLEMENTED);
+
+  g_error_free (error);
 
   if (source > 0)
     g_main_loop_quit (mainloop);
+
+  g_hash_table_destroy (empty);
 }
 
 gboolean
