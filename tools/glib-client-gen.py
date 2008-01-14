@@ -986,7 +986,7 @@ class Generator(object):
 
         self.iface = name
         self.iface_lc = name.lower()
-        self.iface_uc = name.lower()
+        self.iface_uc = name.upper()
         self.iface_mc = name.replace('_', '')
         self.iface_dbus = iface.getAttribute('name')
 
