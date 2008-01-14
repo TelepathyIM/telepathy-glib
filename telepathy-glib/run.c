@@ -203,6 +203,10 @@ tp_run_connection_manager (const char *prog_name,
       G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
       G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
       critical_handler, NULL);
+  g_log_set_handler ("tp-glib",
+      G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
+      G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+      critical_handler, NULL);
   g_log_set_handler (NULL,
       G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_ERROR |
       G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,

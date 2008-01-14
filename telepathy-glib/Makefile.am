@@ -191,6 +191,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     util.c
 
 AM_CFLAGS = \
+    -DG_LOG_DOMAIN=\"tp-glib\" \
     $(ERROR_CFLAGS) \
     @DBUS_CFLAGS@ \
     @GLIB_CFLAGS@ \
