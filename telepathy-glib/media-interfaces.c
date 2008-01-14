@@ -22,6 +22,7 @@
 #include "telepathy-glib/media-interfaces.h"
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 
@@ -72,11 +73,12 @@ tp_media_stream_handler_init (TpMediaStreamHandler *self)
 static void
 tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *klass)
 {
+  GType tp_type = TP_TYPE_MEDIA_STREAM_HANDLER;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_STREAM_HANDLER;
-  tp_proxy_class_hook_on_interface_add (proxy_class,
+  tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_media_stream_handler_add_signals);
 }
 
@@ -151,11 +153,12 @@ tp_media_session_handler_init (TpMediaSessionHandler *self)
 static void
 tp_media_session_handler_class_init (TpMediaSessionHandlerClass *klass)
 {
+  GType tp_type = TP_TYPE_MEDIA_SESSION_HANDLER;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_SESSION_HANDLER;
-  tp_proxy_class_hook_on_interface_add (proxy_class,
+  tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_media_session_handler_add_signals);
 }
 

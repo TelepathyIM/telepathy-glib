@@ -58,7 +58,7 @@ void tp_proxy_signal_connection_v0_take_results
 typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
     guint quark, DBusGProxy *proxy, gpointer unused);
 
-void tp_proxy_class_hook_on_interface_add (TpProxyClass *klass,
+void tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
     TpProxyInterfaceAddedCb callback);
 
 DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
@@ -67,6 +67,9 @@ DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
 DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark interface);
 
 void tp_proxy_invalidate (TpProxy *self, const GError *error);
+
+void tp_proxy_subclass_add_error_mapping (GType proxy_subclass,
+    const gchar *static_prefix, GQuark domain, GType code_enum_type);
 
 G_END_DECLS
 

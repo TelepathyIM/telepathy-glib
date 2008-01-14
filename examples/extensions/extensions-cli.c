@@ -15,7 +15,6 @@ example_cli_init (void)
 {
   _example_ext_register_dbus_glib_marshallers ();
 
-  /* is this evil? */
-  tp_proxy_class_hook_on_interface_add (g_type_class_ref (TP_TYPE_CONNECTION),
+  tp_proxy_or_subclass_hook_on_interface_add (TP_TYPE_CONNECTION,
       example_cli_connection_add_signals);
 }

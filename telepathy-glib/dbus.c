@@ -917,7 +917,7 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
   object_class->dispose = tp_dbus_daemon_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_DBUS_DAEMON;
-  tp_proxy_class_hook_on_interface_add (proxy_class,
+  tp_proxy_or_subclass_hook_on_interface_add (TP_TYPE_DBUS_DAEMON,
       tp_cli_dbus_daemon_add_signals);
 }
 

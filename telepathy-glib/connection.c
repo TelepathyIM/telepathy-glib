@@ -390,6 +390,7 @@ tp_connection_dispose (GObject *object)
 static void
 tp_connection_class_init (TpConnectionClass *klass)
 {
+  GType tp_type = TP_TYPE_CONNECTION;
   GParamSpec *param_spec;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -402,7 +403,7 @@ tp_connection_class_init (TpConnectionClass *klass)
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION;
   proxy_class->must_have_unique_name = TRUE;
-  tp_proxy_class_hook_on_interface_add (proxy_class,
+  tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_connection_add_signals);
 
   /**

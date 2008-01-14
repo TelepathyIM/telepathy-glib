@@ -1385,7 +1385,8 @@ tp_proxy_add_interface_by_id
 tp_proxy_borrow_interface_by_id
 tp_proxy_invalidate
 TpProxyInterfaceAddedCb
-tp_proxy_class_hook_on_interface_add
+tp_proxy_or_subclass_hook_on_interface_add
+tp_proxy_subclass_add_error_mapping
 <SUBSECTION>
 TpProxyInvokeFunc
 tp_proxy_pending_call_v0_new

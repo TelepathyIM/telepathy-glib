@@ -160,7 +160,22 @@ tp_dbus_errors_quark (void)
  *
  * The class of a #TpProxy.
  */
-/* priv is actually a GSList of callbacks */
+
+typedef struct _TpProxyErrorMappingLink TpProxyErrorMappingLink;
+
+struct _TpProxyErrorMappingLink {
+    const gchar *prefix;
+    GQuark domain;
+    GEnumClass *code_enum_class;
+    TpProxyErrorMappingLink *next;
+};
+
+typedef struct _TpProxyInterfaceAddLink TpProxyInterfaceAddLink;
+
+struct _TpProxyInterfaceAddLink {
+    TpProxyInterfaceAddedCb callback;
+    TpProxyInterfaceAddLink *next;
+};
 
 /**
  * TpProxyInvokeFunc:
@@ -484,6 +499,19 @@ tp_proxy_add_interface_by_id (TpProxy *self,
   return iface_proxy;
 }
 
+static GQuark
+error_mapping_quark (void)
+{
+  static GQuark q = 0;
+
+  if (G_UNLIKELY (q == 0))
+    {
+      q = g_quark_from_static_string ("TpProxyErrorMappingCb_0.7.1");
+    }
+
+  return q;
+}
+
 static GError *
 tp_proxy_take_and_remap_error (TpProxy *self,
                                GError *error)
@@ -498,31 +526,39 @@ tp_proxy_take_and_remap_error (TpProxy *self,
     {
       GError *replacement;
       const gchar *dbus = dbus_g_error_get_name (error);
-      const gchar *last_dot = strrchr (dbus, '.');
-      const gchar *member;
-      GQuark namespace;
-      gchar *tmp;
+      GType proxy_type = TP_TYPE_PROXY;
+      GType type;
 
-      if (last_dot == NULL)
+      for (type = G_TYPE_FROM_INSTANCE (self);
+           type != proxy_type;
+           type = g_type_parent (type))
         {
-          /* invalid error name? let's just paste it in anyway */
-          goto unknown;
+          TpProxyErrorMappingLink *iter;
+
+          for (iter = g_type_get_qdata (type, error_mapping_quark ());
+               iter != NULL;
+               iter = iter->next)
+            {
+              size_t prefix_len = strlen (iter->prefix);
+
+              if (!strncmp (dbus, iter->prefix, prefix_len)
+                  && dbus[prefix_len] == '.')
+                {
+                  GEnumValue *code =
+                    g_enum_get_value_by_nick (iter->code_enum_class,
+                        dbus + prefix_len + 1);
+
+                  if (code != NULL)
+                    {
+                      replacement = g_error_new_literal (iter->domain,
+                          code->value, error->message);
+                      g_error_free (error);
+                      return replacement;
+                    }
+                }
+            }
         }
 
-      tmp = g_strndup (dbus, last_dot - dbus);
-      namespace = g_quark_try_string (tmp);
-      g_free (tmp);
-
-      if (namespace != 0)
-        {
-          goto unknown;
-        }
-
-      member = last_dot + 1;
-
-      /* FIXME: look up the error according to the TpProxy's class somehow */
-
-unknown:
       /* we don't have an error mapping - so let's just paste the
        * error name and message into TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR */
       replacement = g_error_new (TP_DBUS_ERRORS,
@@ -1311,6 +1347,19 @@ tp_proxy_init (TpProxy *self)
       TpProxyPrivate);
 }
 
+static GQuark
+interface_added_cb_quark (void)
+{
+  static GQuark q = 0;
+
+  if (G_UNLIKELY (q == 0))
+    {
+      q = g_quark_from_static_string ("TpProxyInterfaceAddedCb_0.7.1");
+    }
+
+  return q;
+}
+
 static GObject *
 tp_proxy_constructor (GType type,
                       guint n_params,
@@ -1320,17 +1369,21 @@ tp_proxy_constructor (GType type,
   TpProxy *self = TP_PROXY (object_class->constructor (type,
         n_params, params));
   TpProxyClass *klass = TP_PROXY_GET_CLASS (self);
+  TpProxyInterfaceAddLink *iter;
+  GType ancestor_type = type;
+  GType proxy_parent_type = G_TYPE_FROM_CLASS (tp_proxy_parent_class);
 
   _tp_register_dbus_glib_marshallers ();
 
-  if (klass->priv != NULL)
+  for (ancestor_type = type;
+       ancestor_type != proxy_parent_type && ancestor_type != 0;
+       ancestor_type = g_type_parent (ancestor_type))
     {
-      GSList *iter;
-
-      for (iter = klass->priv;
+      for (iter = g_type_get_qdata (ancestor_type,
+              interface_added_cb_quark ());
            iter != NULL;
            iter = iter->next)
-        g_signal_connect (self, "interface-added", G_CALLBACK (iter->data),
+        g_signal_connect (self, "interface-added", G_CALLBACK (iter->callback),
             NULL);
     }
 
@@ -1390,20 +1443,74 @@ tp_proxy_finalize (GObject *object)
 }
 
 /**
- * tp_proxy_class_hook_on_interface_add:
- * @klass: A subclass of TpProxyClass
+ * tp_proxy_or_subclass_hook_on_interface_add:
+ * @proxy_or_subclass: The #GType of #TpProxy or a subclass
  * @callback: A signal handler for #TpProxy::interface-added
  *
  * Arrange for @callback to be connected to #TpProxy::interface-added
  * during the #TpProxy constructor. This is done sufficiently early that
  * it will see the signal for the default interface (@interface member of
- * #TpProxyClass), if any, being added.
+ * #TpProxyClass), if any, being added. The intended use is for the callback
+ * to call dbus_g_proxy_add_signal() on the new #DBusGProxy.
  */
 void
-tp_proxy_class_hook_on_interface_add (TpProxyClass *klass,
-                                      TpProxyInterfaceAddedCb callback)
+tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
+    TpProxyInterfaceAddedCb callback)
 {
-  klass->priv = g_slist_prepend (klass->priv, callback);
+  GQuark q = interface_added_cb_quark ();
+  TpProxyInterfaceAddLink *old_link = g_type_get_qdata (proxy_or_subclass, q);
+  TpProxyInterfaceAddLink *new_link;
+
+  g_return_if_fail (g_type_is_a (proxy_or_subclass, TP_TYPE_PROXY));
+  g_return_if_fail (callback != NULL);
+
+  new_link = g_slice_new0 (TpProxyInterfaceAddLink);
+  new_link->callback = callback;
+  new_link->next = old_link;    /* may be NULL */
+  g_type_set_qdata (proxy_or_subclass, q, new_link);
+}
+
+/**
+ * tp_proxy_subclass_add_error_mapping:
+ * @proxy_subclass: The #GType of a subclass of #TpProxy (which must not be
+ *  #TpProxy itself)
+ * @static_prefix: A prefix for D-Bus error names, not including the trailing
+ *  dot (which must remain valid forever, and should usually be in static
+ *  storage)
+ * @domain: A quark representing the corresponding #GError domain
+ * @code_enum_type: The type of a subclass of #GEnumClass
+ *
+ * Register a mapping from D-Bus errors received from the given proxy
+ * subclass to #GError instances, as follows: if a D-Bus error is received
+ * whose name is the concatenation of the @static_prefix, a dot '.', and the
+ * @value_nick of a #GEnumValue in the #GEnumClass whose type is @code_type,
+ * then the given @domain will be used as the domain of a #GError, the @value
+ * from the #GEnumValue will be used as the #GError code, and the message from
+ * the D-Bus error will be used as the #GError message.
+ */
+void
+tp_proxy_subclass_add_error_mapping (GType proxy_subclass,
+                                     const gchar *static_prefix,
+                                     GQuark domain,
+                                     GType code_enum_type)
+{
+  GQuark q = error_mapping_quark ();
+  TpProxyErrorMappingLink *old_link = g_type_get_qdata (proxy_subclass, q);
+  TpProxyErrorMappingLink *new_link;
+  GType tp_type_proxy = TP_TYPE_PROXY;
+
+  g_return_if_fail (proxy_subclass != tp_type_proxy);
+  g_return_if_fail (g_type_is_a (proxy_subclass, tp_type_proxy));
+  g_return_if_fail (static_prefix != NULL);
+  g_return_if_fail (domain != 0);
+  g_return_if_fail (code_enum_type != G_TYPE_INVALID);
+
+  new_link = g_slice_new0 (TpProxyErrorMappingLink);
+  new_link->prefix = static_prefix;
+  new_link->domain = domain;
+  new_link->code_enum_class = g_type_class_ref (code_enum_type);
+  new_link->next = old_link;    /* may be NULL */
+  g_type_set_qdata (proxy_subclass, q, new_link);
 }
 
 static void
@@ -1420,7 +1527,8 @@ tp_proxy_class_init (TpProxyClass *klass)
   object_class->dispose = tp_proxy_dispose;
   object_class->finalize = tp_proxy_finalize;
 
-  tp_proxy_class_hook_on_interface_add (klass, tp_cli_generic_add_signals);
+  tp_proxy_or_subclass_hook_on_interface_add (TP_TYPE_PROXY,
+      tp_cli_generic_add_signals);
 
   /**
    * TpProxy:dbus-daemon:

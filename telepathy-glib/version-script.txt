@@ -690,10 +690,10 @@ TELEPATHY_GLIB_0.7.1_UNRELEASED {
         tp_media_stream_handler_new;
         tp_proxy_add_interface_by_id;
         tp_proxy_borrow_interface_by_id;
-        tp_proxy_class_hook_on_interface_add;
         tp_proxy_get_type;
         tp_proxy_has_interface_by_id;
         tp_proxy_invalidate;
+        tp_proxy_or_subclass_hook_on_interface_add;
         tp_proxy_pending_call_cancel;
         tp_proxy_pending_call_v0_completed;
         tp_proxy_pending_call_v0_new;
@@ -702,6 +702,7 @@ TELEPATHY_GLIB_0.7.1_UNRELEASED {
         tp_proxy_signal_connection_disconnect;
         tp_proxy_signal_connection_v0_new;
         tp_proxy_signal_connection_v0_take_results;
+        tp_proxy_subclass_add_error_mapping;
 } TELEPATHY_GLIB_0.7.0;
 
 # For every release that adds ABI, add a stanza like:

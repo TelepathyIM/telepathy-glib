@@ -358,6 +358,7 @@ tp_channel_dispose (GObject *object)
 static void
 tp_channel_class_init (TpChannelClass *klass)
 {
+  GType tp_type = TP_TYPE_CHANNEL;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
@@ -368,7 +369,7 @@ tp_channel_class_init (TpChannelClass *klass)
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL;
   proxy_class->must_have_unique_name = TRUE;
-  tp_proxy_class_hook_on_interface_add (proxy_class,
+  tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_channel_add_signals);
 
   /**
