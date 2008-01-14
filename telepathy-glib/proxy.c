@@ -1481,12 +1481,25 @@ tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
  * @code_enum_type: The type of a subclass of #GEnumClass
  *
  * Register a mapping from D-Bus errors received from the given proxy
- * subclass to #GError instances, as follows: if a D-Bus error is received
- * whose name is the concatenation of the @static_prefix, a dot '.', and the
- * @value_nick of a #GEnumValue in the #GEnumClass whose type is @code_type,
- * then the given @domain will be used as the domain of a #GError, the @value
- * from the #GEnumValue will be used as the #GError code, and the message from
- * the D-Bus error will be used as the #GError message.
+ * subclass to #GError instances.
+ *
+ * When a D-Bus error is received, the #TpProxy code checks for error
+ * mappings registered for the class of the proxy receiving the error,
+ * then for all of its parent classes.
+ *
+ * If there is an error mapping for which the D-Bus error name
+ * starts with the mapping's @static_prefix, the proxy will check the
+ * corresponding @code_enum_type for a value whose @value_nick is
+ * the rest of the D-Bus error name. If there isn't such a value, it
+ * will continue to try other error mappings.
+ *
+ * If a suitable error mapping and code are found, the #GError that is raised
+ * will have its error domain set to the @domain from the error mapping,
+ * and its error code taken from the enum represented by the @code_enum_type.
+ *
+ * If no suitable error mapping or code is found, the #GError will have
+ * error domain %TP_DBUS_ERRORS and error code
+ * %TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR.
  */
 void
 tp_proxy_subclass_add_error_mapping (GType proxy_subclass,
