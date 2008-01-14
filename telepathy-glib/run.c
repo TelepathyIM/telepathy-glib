@@ -211,8 +211,7 @@ tp_run_connection_manager (const char *prog_name,
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  dbus_g_error_domain_register (TP_ERRORS,
-      "org.freedesktop.Telepathy.Error", TP_TYPE_ERROR);
+  dbus_g_error_domain_register (TP_ERRORS, TP_ERROR_PREFIX, TP_TYPE_ERROR);
 
   manager = construct_cm ();
 

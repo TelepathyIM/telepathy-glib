@@ -23,6 +23,13 @@
 #include <glib.h>
 
 /**
+ * TP_ERROR_PREFIX:
+ *
+ * The common prefix of Telepathy errors, as a string constant, without
+ * the trailing '.' character.
+ */
+
+/**
  * tp_g_set_error_invalid_handle_type:
  * @type: An invalid handle type
  * @error: Either %NULL, or used to return an error (as for g_set_error)

@@ -1159,6 +1159,7 @@ TpDBusDaemonPrivate
 <TITLE>errors</TITLE>
 <INCLUDE>telepathy-glib/errors.h</INCLUDE>
 <FILE>errors</FILE>
+TP_ERROR_PREFIX
 TP_ERRORS
 TP_TYPE_ERROR
 TpError
