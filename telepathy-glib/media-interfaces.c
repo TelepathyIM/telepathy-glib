@@ -80,6 +80,8 @@ tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *klass)
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_STREAM_HANDLER;
   tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_media_stream_handler_add_signals);
+  tp_proxy_subclass_add_error_mapping (tp_type,
+      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
 }
 
 /**
@@ -160,6 +162,8 @@ tp_media_session_handler_class_init (TpMediaSessionHandlerClass *klass)
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_SESSION_HANDLER;
   tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_media_session_handler_add_signals);
+  tp_proxy_subclass_add_error_mapping (tp_type,
+      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
 }
 
 /**
