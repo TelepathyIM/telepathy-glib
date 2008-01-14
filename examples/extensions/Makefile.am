@@ -127,6 +127,7 @@ _gen/cli-connection-body.h _gen/cli-connection.h: _gen/connection.xml \
 		--group=connection \
 		--subclass=TpConnection \
 		--subclass-assert=TP_IS_CONNECTION \
+		--iface-quark-prefix=EXAMPLE_IFACE_QUARK \
 		$< Example_Cli _gen/cli-connection
 
 _gen/svc-connection.c _gen/svc-connection.h: _gen/connection.xml \
