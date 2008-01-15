@@ -1658,7 +1658,7 @@ tp_stream_engine_register (TpStreamEngine *self)
 
   g_debug("Requesting " BUS_NAME);
 
-  if (!tp_cli_dbus_daemon_block_on_request_name (self->priv->dbus_daemon, -1,
+  if (!tp_cli_dbus_daemon_run_request_name (self->priv->dbus_daemon, -1,
         BUS_NAME, DBUS_NAME_FLAG_DO_NOT_QUEUE, &request_name_result, &error))
     g_error ("Failed to request bus name: %s", error->message);
 
