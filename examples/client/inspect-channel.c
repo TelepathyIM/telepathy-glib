@@ -34,18 +34,27 @@ channel_ready (TpChannel *channel,
                GMainLoop *mainloop)
 {
   gchar *channel_type;
+  gchar **interfaces, **iter;
   guint handle_type, handle;
 
   g_object_get (channel,
       "channel-type", &channel_type,
       "handle-type", &handle_type,
       "handle", &handle,
+      "interfaces", &interfaces,
       NULL);
 
   printf ("Type: %s\n", channel_type);
   printf ("Handle: of type %u, #%u\n", handle_type, handle);
+  puts ("Interfaces:");
+
+  for (iter = interfaces; iter != NULL && *iter != NULL; iter++)
+    {
+      printf ("\t%s", *iter);
+    }
 
   g_free (channel_type);
+  g_strfreev (interfaces);
 
   if (tp_proxy_has_interface_by_id (channel,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
