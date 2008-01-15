@@ -30,29 +30,25 @@ channel_invalidated (TpChannel *channel,
 
 void
 channel_ready (TpChannel *channel,
-               const gchar *channel_type,
-               guint handle_type,
-               guint handle,
-               const gchar * const * interfaces,
+               GParamSpec *unused,
                GMainLoop *mainloop)
 {
-  const gchar * const * iter = interfaces;
-  gboolean is_group;
+  gchar *channel_type;
+  guint handle_type, handle;
+
+  g_object_get (channel,
+      "channel-type", &channel_type,
+      "handle-type", &handle_type,
+      "handle", &handle,
+      NULL);
 
   printf ("Type: %s\n", channel_type);
   printf ("Handle: of type %u, #%u\n", handle_type, handle);
-  printf ("Interfaces:\n");
 
-  for (; *iter != NULL; iter++)
-    {
-      printf ("\t%s\n", *iter);
-      if (!tp_strdiff (*iter, TP_IFACE_CHANNEL_INTERFACE_GROUP))
-        {
-          is_group = TRUE;
-        }
-    }
+  g_free (channel_type);
 
-  if (is_group)
+  if (tp_proxy_has_interface_by_id (channel,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
     {
       GArray *members;
       GError *error = NULL;
@@ -117,7 +113,7 @@ main (int argc,
       return 1;
     }
 
-  g_signal_connect (channel, "channel-ready",
+  g_signal_connect (channel, "notify::channel-ready",
       G_CALLBACK (channel_ready), mainloop);
   g_signal_connect (channel, "invalidated", G_CALLBACK (channel_invalidated),
       mainloop);
