@@ -84,6 +84,9 @@ struct _TpChannelClass {
 /**
  * TpChannel:
  * @parent: parent class instance
+ * @ready: the same as #TpChannel:channel-ready; should be considered
+ *  read-only
+ * @_reserved_flags: (private, reserved for future use)
  * @channel_type: quark representing the channel type; should be considered
  *  read-only
  * @handle_type: the handle type (%TP_UNKNOWN_HANDLE_TYPE if not yet known);
@@ -98,6 +101,8 @@ struct _TpChannelClass {
 struct _TpChannel {
     TpProxy parent;
 
+    gboolean ready:1;
+    gboolean _reserved_flags:31;
     GQuark channel_type;
     TpHandleType handle_type;
     TpHandle handle;
@@ -110,6 +115,7 @@ enum
   PROP_CHANNEL_TYPE = 1,
   PROP_HANDLE_TYPE,
   PROP_HANDLE,
+  PROP_CHANNEL_READY,
   N_PROPS
 };
 
@@ -135,6 +141,9 @@ tp_channel_get_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_CHANNEL_READY:
+      g_value_set_boolean (value, self->ready);
+      break;
     case PROP_CHANNEL_TYPE:
       g_value_set_static_string (value,
           g_quark_to_string (self->channel_type));
@@ -209,6 +218,8 @@ tp_channel_got_interfaces_cb (TpChannel *self,
     }
 
   DEBUG ("%p: emitting channel-ready", self);
+  self->ready = TRUE;
+  g_object_notify ((GObject *) self, "channel-ready");
   g_signal_emit (self, signals[SIGNAL_CHANNEL_READY], 0,
       g_quark_to_string (self->channel_type), self->handle_type,
       self->handle, interfaces);
@@ -358,6 +369,7 @@ tp_channel_dispose (GObject *object)
 static void
 tp_channel_class_init (TpChannelClass *klass)
 {
+  GParamSpec *param_spec;
   GType tp_type = TP_TYPE_CHANNEL;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -414,6 +426,23 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   g_object_class_override_property (object_class, PROP_HANDLE,
       "handle");
+
+  /**
+   * TpChannel:channel-ready:
+   *
+   * Initially %FALSE; changes to %TRUE when introspection of the channel
+   * has finished and it's ready for use.
+   *
+   * By the time this property becomes %TRUE, the #TpChannel:channel-type,
+   * #TpChannel:handle-type and #TpChannel:handle properties will have been
+   * set (if introspection did not fail), and any extra interfaces will
+   * have been set up.
+   */
+  param_spec = g_param_spec_boolean ("channel-ready", "Channel ready?",
+      "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_CHANNEL_READY,
+      param_spec);
 
   /**
    * TpChannel::channel-ready:
