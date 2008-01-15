@@ -290,6 +290,7 @@ enum
   PROP_DBUS_CONNECTION,
   PROP_BUS_NAME,
   PROP_OBJECT_PATH,
+  PROP_INTERFACES,
   N_PROPS
 };
 
@@ -1262,6 +1263,16 @@ tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *self,
 }
 
 static void
+dup_quark_into_ptr_array (GQuark q,
+                          gpointer unused,
+                          gpointer user_data)
+{
+  GPtrArray *strings = user_data;
+
+  g_ptr_array_add (strings, g_strdup (g_quark_to_string (q)));
+}
+
+static void
 tp_proxy_get_property (GObject *object,
                        guint property_id,
                        GValue *value,
@@ -1289,6 +1300,16 @@ tp_proxy_get_property (GObject *object,
       break;
     case PROP_OBJECT_PATH:
       g_value_set_string (value, self->object_path);
+      break;
+    case PROP_INTERFACES:
+        {
+          GPtrArray *strings = g_ptr_array_new ();
+
+          g_datalist_foreach (&self->priv->interfaces,
+              dup_quark_into_ptr_array, strings);
+          g_ptr_array_add (strings, NULL);
+          g_value_take_boxed (value, g_ptr_array_free (strings, FALSE));
+        }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1612,6 +1633,17 @@ tp_proxy_class_init (TpProxyClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH,
+      param_spec);
+
+  /**
+   * TpProxy:interfaces:
+   *
+   * Known D-Bus interface names for this object.
+   */
+  param_spec = g_param_spec_boxed ("interfaces", "D-Bus object path",
+      "The D-Bus object path for this object", G_TYPE_STRV,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INTERFACES,
       param_spec);
 
   /**
