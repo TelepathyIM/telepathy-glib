@@ -1,0 +1,8 @@
+Where to put new tests:
+
+/tests/ if they're simple regression tests that don't touch the session bus
+
+/tests/dbus/ if they touch the session bus
+(a temporary session bus will be used)
+
+/tests/tools/ if they're shell scripts that test the code generation tools
