@@ -62,7 +62,7 @@ channel_ready (TpChannel *channel,
        * main loop and dispatches events until the call completes */
       if (tp_cli_channel_interface_group_run_get_members (channel, -1,
             /* If GetMembers had any "in" arguments they'd go here */
-          &members, &error))
+          &members, &error, NULL))
         {
           guint i;
 

@@ -39,7 +39,7 @@ connection_manager_got_info (TpConnectionManager *cm,
   g_message ("Emitted got-info (source=%d)", source);
 
   tp_cli_connection_manager_run_request_connection (cm, -1,
-      "jabber", empty, &bus_name, &object_path, &error);
+      "jabber", empty, &bus_name, &object_path, &error, NULL);
 
   g_assert (error != NULL);
   g_assert (error->domain == TP_ERRORS);

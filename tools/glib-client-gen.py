@@ -764,7 +764,8 @@ class Generator(object):
         #       gint timeout_ms,
         #       const GArray *in_properties,
         #       GPtrArray **out0,
-        #       GError **error);
+        #       GError **error,
+        #       TpProxyPendingCall **pending_call);
 
         self.b('typedef struct {')
         self.b('    GMainLoop *loop;')
@@ -864,7 +865,13 @@ class Generator(object):
                    'returned: <![CDATA[%s]]>'
                    % (name, get_docstring(elt) or '(Undocumented)'))
 
-        self.b(' * @error: Used to return errors if %FALSE is returned')
+        self.b(' * @error: If not %NULL, used to return errors if %FALSE ')
+        self.b(' *  is returned')
+        self.b(' * @pending_call: If not %NULL, set before re-entering ')
+        self.b(' *  the main loop, to point to a #TpProxyPendingCall ')
+        self.b(' *  which can be used to cancel this call with ')
+        self.b(' *  tp_proxy_pending_call_cancel(), causing a return of ')
+        self.b(' *  %FALSE with @error set to %TP_DBUS_ERROR_CANCELLED')
         self.b(' *')
         self.b(' * Call the method %s and run the main loop' % member)
         self.b(' * until it returns. Before calling this method, you must')
@@ -897,10 +904,12 @@ class Generator(object):
             self.h('    %s*%s,' % (ctype, name))
             self.b('    %s*%s,' % (ctype, name))
 
-        self.h('    GError **error);')
+        self.h('    GError **error,')
+        self.h('    TpProxyPendingCall **pending_call);')
         self.h('')
 
-        self.b('    GError **error)')
+        self.b('    GError **error,')
+        self.b('    TpProxyPendingCall **pending_call)')
         self.b('{')
         self.b('  DBusGProxy *iface;')
         self.b('  GQuark interface = %s;' % self.get_iface_quark())
@@ -931,6 +940,9 @@ class Generator(object):
         self.b('      interface, "%s", iface,' % member)
         self.b('      %s,' % reentrant_invoke)
         self.b('      NULL, &state, NULL, NULL, TRUE);')
+        self.b('')
+        self.b('  if (pending_call != NULL)')
+        self.b('    *pending_call = pc;')
         self.b('')
         self.b('  tp_proxy_pending_call_v0_take_pending_call (pc,')
         self.b('      dbus_g_proxy_begin_call_with_timeout (iface,')

@@ -40,13 +40,13 @@ noc (TpDBusDaemon *bus,
               GError *error = NULL;
 
               g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
-                    "com.example", 0, &ret, &error));
+                    "com.example", 0, &ret, &error, NULL));
               g_assert (ret == 1 && error == NULL);
               g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
-                    "org.example", 0, &ret, &error));
+                    "org.example", 0, &ret, &error, NULL));
               g_assert (ret == 1 && error == NULL);
               g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
-                    "net.example", 0, &ret, &error));
+                    "net.example", 0, &ret, &error, NULL));
               g_assert (ret == 1 && error == NULL);
             }
         }
@@ -58,10 +58,10 @@ noc (TpDBusDaemon *bus,
           g_assert (tp_dbus_daemon_cancel_name_owner_watch (bus,
                 "org.example", noc, five));
           g_assert (tp_cli_dbus_daemon_run_release_name (bus, -1,
-                "org.example", &ret, &error));
+                "org.example", &ret, &error, NULL));
           g_assert (ret == 1 && error == NULL);
           g_assert (tp_cli_dbus_daemon_run_release_name (bus, -1,
-                "net.example", &ret, &error));
+                "net.example", &ret, &error, NULL));
           g_assert (ret == 1 && error == NULL);
         }
     }
