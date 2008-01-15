@@ -289,6 +289,8 @@ tp_connection_status_changed (TpConnection *self,
 
   self->status = status;
   self->status_reason = reason;
+  g_object_notify ((GObject *) self, "status");
+  g_object_notify ((GObject *) self, "status-reason");
 
   if (status == TP_CONNECTION_STATUS_CONNECTED)
     {

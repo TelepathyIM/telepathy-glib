@@ -232,6 +232,7 @@ tp_channel_got_channel_type_cb (TpChannel *self,
     {
       DEBUG ("%p: Introspected channel type %s", self, channel_type);
       self->channel_type = g_quark_from_string (channel_type);
+      g_object_notify ((GObject *) self, "channel-type");
 
       tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
 
@@ -261,6 +262,8 @@ tp_channel_got_handle_cb (TpChannel *self,
           handle_type);
       self->handle_type = handle_type;
       self->handle = handle;
+      g_object_notify ((GObject *) self, "handle-type");
+      g_object_notify ((GObject *) self, "handle");
     }
   else
     {
