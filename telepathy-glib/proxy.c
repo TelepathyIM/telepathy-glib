@@ -85,6 +85,8 @@ tp_dbus_errors_quark (void)
  *  #TpProxy:invalidated to indicate an application-specific indication
  *  that the remote object no longer exists, if no more specific error
  *  is available.
+ * @TP_DBUS_ERROR_CANCELLED: Raised from calls that re-enter the main
+ *  loop (*_run_*) if they are cancelled
  * @NUM_TP_DBUS_ERRORS: 1 more than the highest valid #TpDBusError
  *
  * #GError codes for use with the %TP_DBUS_ERRORS domain.
