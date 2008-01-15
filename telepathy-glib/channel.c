@@ -419,10 +419,11 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel::channel-ready:
    * @self: the channel proxy
    * @channel_type: the type of the channel (a D-Bus interface name)
-   * @handle_type: the type of the handle, or 0 if @handle is 0
-   *    (a member of #TpHandleType)
+   * @handle_type: the type of the handle, or %TP_HANDLE_TYPE_NONE if @handle
+   *    is 0 (a member of #TpHandleType)
    * @handle: the handle (contact, etc.) with which the channel communicates,
    *    or 0 if @handle is 0
+   * @extra_interfaces: the channel's extra interfaces as a gchar **
    *
    * Emitted once, when the channel's channel type, handle type, handle and
    * extra interfaces have all been retrieved, or when attempts to retrieve
