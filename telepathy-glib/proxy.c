@@ -233,6 +233,7 @@ struct _TpProxyPendingCall {
     DBusGProxy *iface_proxy;
     DBusGProxyCall *pending_call;
     guint idle_source;
+    gboolean cancel_must_raise:1;
     gconstpointer priv;
 };
 
@@ -651,8 +652,12 @@ tp_proxy_pending_call_proxy_destroyed (DBusGProxy *iface_proxy,
  * @user_data: user-supplied data for the callback
  * @destroy: user-supplied destructor for the data
  * @weak_object: if not %NULL, a #GObject which will be weakly referenced by
- *   the signal connection - if it is destroyed, the signal connection will
- *   automatically be disconnected
+ *   the signal connection - if it is destroyed, the pending call will
+ *   automatically be cancelled
+ * @cancel_must_raise: if %TRUE, the @invoke_callback will be run with
+ *  error %TP_DBUS_ERROR_CANCELLED if the call is cancelled by a call to
+ *  tp_proxy_pending_call_cancel() or by destruction of the weak_object();
+ *  if %FALSE, the @invoke_callback will not be run at all in these cases
  *
  * Allocate a new pending call structure. After calling this function, the
  * caller must start an asynchronous D-Bus call and give the resulting
@@ -686,7 +691,8 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
                               GCallback callback,
                               gpointer user_data,
                               GDestroyNotify destroy,
-                              GObject *weak_object)
+                              GObject *weak_object,
+                              gboolean cancel_must_raise)
 {
   TpProxyPendingCall *ret;
 
@@ -709,6 +715,7 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
   ret->iface_proxy = g_object_ref (iface_proxy);
   ret->pending_call = NULL;
   ret->priv = pending_call_magic;
+  ret->cancel_must_raise = cancel_must_raise;
 
   if (weak_object != NULL)
     g_object_weak_ref (weak_object, tp_proxy_pending_call_lost_weak_ref, ret);
@@ -731,6 +738,7 @@ void
 tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
 {
   DBusGProxy *iface;
+  TpProxyInvokeFunc invoke = self->invoke_callback;
 
   DEBUG ("%p", self);
 
@@ -738,6 +746,15 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
 
   /* Mark the pending call as expired */
   self->invoke_callback = NULL;
+
+  if (invoke != NULL && self->cancel_must_raise)
+    {
+      GError *error = g_error_new_literal (TP_DBUS_ERRORS,
+          TP_DBUS_ERROR_CANCELLED, "Re-entrant D-Bus call cancelled");
+
+      invoke (self->proxy, error, NULL, self->callback, self->user_data,
+          self->weak_object);
+    }
 
   if (self->idle_source != 0)
     {

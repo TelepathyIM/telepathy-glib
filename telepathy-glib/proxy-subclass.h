@@ -35,7 +35,7 @@ TpProxyPendingCall *tp_proxy_pending_call_v0_new (TpProxy *self,
     GQuark interface, const gchar *member, DBusGProxy *iface_proxy,
     TpProxyInvokeFunc invoke_callback,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
-    GObject *weak_object);
+    GObject *weak_object, gboolean cancel_must_raise);
 
 void tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *self,
     DBusGProxyCall *pending_call);
