@@ -328,25 +328,31 @@ tp_stream_engine_stream_constructor (GType type,
       G_CALLBACK (destroy_cb), obj);
 
   tp_cli_media_stream_handler_connect_to_add_remote_candidate
-      (priv->stream_handler_proxy, add_remote_candidate, NULL, NULL, obj);
+      (priv->stream_handler_proxy, add_remote_candidate, NULL, NULL, obj,
+       NULL);
   tp_cli_media_stream_handler_connect_to_remove_remote_candidate
-      (priv->stream_handler_proxy, remove_remote_candidate, NULL, NULL, obj);
+      (priv->stream_handler_proxy, remove_remote_candidate, NULL, NULL, obj,
+       NULL);
   tp_cli_media_stream_handler_connect_to_set_active_candidate_pair
-      (priv->stream_handler_proxy, set_active_candidate_pair, NULL, NULL, obj);
+      (priv->stream_handler_proxy, set_active_candidate_pair, NULL, NULL, obj,
+       NULL);
   tp_cli_media_stream_handler_connect_to_set_remote_candidate_list
-      (priv->stream_handler_proxy, set_remote_candidate_list, NULL, NULL, obj);
+      (priv->stream_handler_proxy, set_remote_candidate_list, NULL, NULL, obj,
+       NULL);
   tp_cli_media_stream_handler_connect_to_set_remote_codecs
-      (priv->stream_handler_proxy, set_remote_codecs, NULL, NULL, obj);
+      (priv->stream_handler_proxy, set_remote_codecs, NULL, NULL, obj, NULL);
   tp_cli_media_stream_handler_connect_to_set_stream_playing
-      (priv->stream_handler_proxy, set_stream_playing, NULL, NULL, obj);
+      (priv->stream_handler_proxy, set_stream_playing, NULL, NULL, obj, NULL);
   tp_cli_media_stream_handler_connect_to_set_stream_sending
-      (priv->stream_handler_proxy, set_stream_sending, NULL, NULL, obj);
+      (priv->stream_handler_proxy, set_stream_sending, NULL, NULL, obj, NULL);
   tp_cli_media_stream_handler_connect_to_start_telephony_event
-      (priv->stream_handler_proxy, start_telephony_event, NULL, NULL, obj);
+      (priv->stream_handler_proxy, start_telephony_event, NULL, NULL, obj,
+       NULL);
   tp_cli_media_stream_handler_connect_to_stop_telephony_event
-      (priv->stream_handler_proxy, stop_telephony_event, NULL, NULL, obj);
+      (priv->stream_handler_proxy, stop_telephony_event, NULL, NULL, obj,
+       NULL);
   tp_cli_media_stream_handler_connect_to_close
-      (priv->stream_handler_proxy, close, NULL, NULL, obj);
+      (priv->stream_handler_proxy, close, NULL, NULL, obj, NULL);
 
   priv->fs_stream = farsight_session_create_stream (priv->fs_session,
       priv->media_type, priv->direction);

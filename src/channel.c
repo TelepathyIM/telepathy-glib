@@ -369,13 +369,14 @@ channel_ready (TpChannel *channel_proxy,
       /* FIXME: it'd be good to use the replacement for TpPropsIface, when it
        * exists */
       tp_cli_properties_interface_connect_to_properties_changed (channel_proxy,
-          cb_properties_changed, NULL, NULL, (GObject *) self);
+          cb_properties_changed, NULL, NULL, (GObject *) self, NULL);
       tp_cli_properties_interface_call_list_properties (channel_proxy, -1,
           cb_properties_listed, NULL, NULL, (GObject *) self);
     }
 
   tp_cli_channel_interface_media_signalling_connect_to_new_session_handler
-      (channel_proxy, new_media_session_handler, NULL, NULL, (GObject *) self);
+      (channel_proxy, new_media_session_handler, NULL, NULL, (GObject *) self,
+       NULL);
   tp_cli_channel_interface_media_signalling_call_get_session_handlers
       (channel_proxy, -1, get_session_handlers_reply, NULL, NULL,
        (GObject *) self);

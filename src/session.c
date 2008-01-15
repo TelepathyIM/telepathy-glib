@@ -159,7 +159,7 @@ tp_stream_engine_session_constructor (GType type,
 
   tp_cli_media_session_handler_connect_to_new_stream_handler
       (self->priv->session_handler_proxy, new_media_stream_handler, NULL, NULL,
-       obj);
+       obj, NULL);
 
   g_debug ("calling MediaSessionHandler::Ready");
 
