@@ -124,13 +124,6 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
     TP_TYPE_PROXY,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL));
 
-enum {
-    SIGNAL_CHANNEL_READY,
-    N_SIGNALS
-};
-
-static guint signals[N_SIGNALS] = {0};
-
 static void
 tp_channel_get_property (GObject *object,
                          guint property_id,
@@ -217,12 +210,9 @@ tp_channel_got_interfaces_cb (TpChannel *self,
         }
     }
 
-  DEBUG ("%p: emitting channel-ready", self);
+  DEBUG ("%p: channel ready", self);
   self->ready = TRUE;
   g_object_notify ((GObject *) self, "channel-ready");
-  g_signal_emit (self, signals[SIGNAL_CHANNEL_READY], 0,
-      g_quark_to_string (self->channel_type), self->handle_type,
-      self->handle, interfaces);
 }
 
 static void
@@ -443,36 +433,6 @@ tp_channel_class_init (TpChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CHANNEL_READY,
       param_spec);
-
-  /**
-   * TpChannel::channel-ready:
-   * @self: the channel proxy
-   * @channel_type: the type of the channel (a D-Bus interface name)
-   * @handle_type: the type of the handle, or %TP_HANDLE_TYPE_NONE if @handle
-   *    is 0 (a member of #TpHandleType)
-   * @handle: the handle (contact, etc.) with which the channel communicates,
-   *    or 0 if @handle is 0
-   * @extra_interfaces: the channel's extra interfaces as a gchar **
-   *
-   * Emitted once, when the channel's channel type, handle type, handle and
-   * extra interfaces have all been retrieved, or when attempts to retrieve
-   * them have failed.
-   *
-   * By the time this signal is emitted, the channel-type, handle-type and
-   * handle properties will be set (if possible), and the interfaces will
-   * have been added in the #TpProxy code.
-   */
-  signals[SIGNAL_CHANNEL_READY] = g_signal_new ("channel-ready",
-      G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL,
-      _tp_marshal_VOID__STRING_UINT_UINT_BOXED,
-      G_TYPE_NONE, 4,
-      G_TYPE_STRING,    /* Channel type */
-      G_TYPE_UINT,      /* Handle type */
-      G_TYPE_UINT,      /* Handle */
-      G_TYPE_STRV);     /* Extra interfaces */
 }
 
 /**
