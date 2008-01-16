@@ -495,8 +495,8 @@ tp_dynamic_handle_repo_class_init (TpDynamicHandleRepoClass *klass)
   param_spec = g_param_spec_pointer ("normalize-function",
       "Normalization function",
       "A TpDynamicHandleRepoNormalizeFunc used to normalize handle IDs.",
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_NORMALIZE_FUNCTION,
       param_spec);
 
@@ -513,8 +513,8 @@ tp_dynamic_handle_repo_class_init (TpDynamicHandleRepoClass *klass)
       "The default context given to the normalize-function if NULL is passed "
       "as context to the ensure or lookup function, e.g. when RequestHandle"
       "is called via D-Bus. The default is NULL.",
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class,
       PROP_DEFAULT_NORMALIZE_CONTEXT, param_spec);
 }

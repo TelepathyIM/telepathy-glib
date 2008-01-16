@@ -180,8 +180,8 @@ tp_static_handle_repo_class_init (TpStaticHandleRepoClass *klass)
   param_spec = g_param_spec_boxed ("handle-names", "Handle names",
       "The static set of handle names supported by this repo.",
       G_TYPE_STRV,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_HANDLE_NAMES,
       param_spec);
 }

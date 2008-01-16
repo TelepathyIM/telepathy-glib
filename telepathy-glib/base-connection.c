@@ -516,14 +516,11 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * name is required.
    */
   param_spec = g_param_spec_string ("protocol",
-                                    "Telepathy identifier for protocol",
-                                    "Identifier string used when the protocol "
-                                    "name is required.",
-                                    NULL,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NAME |
-                                    G_PARAM_STATIC_BLURB);
+      "Telepathy identifier for protocol",
+      "Identifier string used when the protocol name is required.",
+      NULL,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_PROTOCOL, param_spec);
 
   /* signal definitions */

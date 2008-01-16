@@ -48,13 +48,9 @@ tp_channel_iface_base_init (gpointer klass)
      * except during construction.
      */
     param_spec = g_param_spec_string ("object-path", "D-Bus object path",
-                                      "The D-Bus object path used for this "
-                                      "object on the bus.",
-                                      NULL,
-                                      G_PARAM_CONSTRUCT_ONLY |
-                                      G_PARAM_READWRITE |
-                                      G_PARAM_STATIC_NAME |
-                                      G_PARAM_STATIC_BLURB);
+        "The D-Bus object path used for this object on the bus.", NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+        G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
     g_object_interface_install_property (klass, param_spec);
 
     /**
@@ -73,7 +69,7 @@ tp_channel_iface_base_init (gpointer klass)
         "The D-Bus interface representing the type of this channel.",
         NULL,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-        G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+        G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
     g_object_interface_install_property (klass, param_spec);
 
     /**
@@ -86,13 +82,10 @@ tp_channel_iface_base_init (gpointer klass)
      */
 
     param_spec = g_param_spec_uint ("handle-type", "Handle type",
-                                    "The TpHandleType of this channel's "
-                                    "associated handle.",
-                                    0, G_MAXUINT32, 0,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NAME |
-                                    G_PARAM_STATIC_BLURB);
+        "The TpHandleType of this channel's associated handle.",
+        0, G_MAXUINT32, 0,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+        G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
     g_object_interface_install_property (klass, param_spec);
 
     /**
@@ -105,16 +98,12 @@ tp_channel_iface_base_init (gpointer klass)
      */
 
     param_spec = g_param_spec_uint ("handle", "Handle",
-                                    "The TpHandle representing the "
-                                    "contact, group, etc. with which "
-                                    "this channel communicates, whose "
-                                    "type is given by the handle-type "
-                                    "property.",
-                                    0, G_MAXUINT32, 0,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NAME |
-                                    G_PARAM_STATIC_BLURB);
+        "The TpHandle representing the contact, group, etc. with which "
+        "this channel communicates, whose type is given by the handle-type "
+        "property.",
+        0, G_MAXUINT32, 0,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+        G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
     g_object_interface_install_property (klass, param_spec);
   }
 }

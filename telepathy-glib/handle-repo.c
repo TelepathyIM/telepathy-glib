@@ -48,13 +48,10 @@ repo_base_init (gpointer klass)
       initialized = TRUE;
 
       param_spec = g_param_spec_uint ("handle-type", "Handle type",
-                                      "The TpHandleType held in this handle "
-                                      "repository.",
-                                      0, G_MAXUINT32, 0,
-                                      G_PARAM_CONSTRUCT_ONLY |
-                                      G_PARAM_READWRITE |
-                                      G_PARAM_STATIC_NAME |
-                                      G_PARAM_STATIC_BLURB);
+          "The TpHandleType held in this handle repository.",
+          0, G_MAXUINT32, 0,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+          G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
       g_object_interface_install_property (klass, param_spec);
     }
 }
