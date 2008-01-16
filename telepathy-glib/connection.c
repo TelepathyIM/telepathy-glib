@@ -92,6 +92,9 @@ struct _TpConnectionClass {
  * @status_reason: same as #TpConnection:status-reason, should be considered
  *  read-only
  * @_reserved_for_self_handle: reserved, currently always 0
+ * @ready: the same as #TpChannel:channel-ready; should be considered
+ *  read-only
+ * @_reserved_flags: (private, reserved for future use)
  * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy connection.
@@ -102,6 +105,9 @@ struct _TpConnection {
     TpConnectionStatus status;
     TpConnectionStatusReason status_reason;
     TpHandle _reserved_for_self_handle;
+
+    gboolean ready:1;
+    gboolean _reserved_flags:31;
 
     TpConnectionPrivate *priv;
 };
@@ -120,19 +126,13 @@ enum
 {
   PROP_STATUS = 1,
   PROP_STATUS_REASON,
+  PROP_CONNECTION_READY,
   N_PROPS
 };
 
 G_DEFINE_TYPE (TpConnection,
     tp_connection,
     TP_TYPE_PROXY);
-
-enum {
-    SIGNAL_CONNECTION_READY,
-    N_SIGNALS
-};
-
-static guint signals[N_SIGNALS] = {0};
 
 static void
 tp_connection_get_property (GObject *object,
@@ -144,6 +144,9 @@ tp_connection_get_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_CONNECTION_READY:
+      g_value_set_boolean (value, self->ready);
+      break;
     case PROP_STATUS:
       g_value_set_uint (value, self->status);
       break;
@@ -166,8 +169,9 @@ tp_connection_continue_introspection (TpConnection *self)
       g_array_free (self->priv->introspect_needed, TRUE);
       self->priv->introspect_needed = NULL;
 
-      DEBUG ("%p: emitting connection-ready", self);
-      g_signal_emit (self, signals[SIGNAL_CONNECTION_READY], 0);
+      DEBUG ("%p: connection ready", self);
+      self->ready = TRUE;
+      g_object_notify ((GObject *) self, "connection-ready");
     }
   else
     {
@@ -440,24 +444,21 @@ tp_connection_class_init (TpConnectionClass *klass)
       param_spec);
 
   /**
-   * TpConnection::connection-ready:
-   * @self: the connection proxy
+   * TpConnection:connection-ready:
    *
-   * Emitted once, either shortly after the connection becomes connected (if
-   * it was not initially connected), or shortly after we find out that it
-   * is connected (if it was initially connected).
+   * Initially %FALSE; changes to %TRUE when the connection has gone to
+   * CONNECTED status, introspection has finished and it's ready for use.
    *
-   * Before this signal is emitted, the interfaces will have been set up
-   * in the #TpProxy code and the TpConnection:status property will have been
-   * set to TP_CONNECTION_STATUS_CONNECTED.
+   * By the time this property becomes %TRUE, any extra interfaces will
+   * have been set up and the #TpProxy:interfaces property will have been
+   * populated.
    */
-  signals[SIGNAL_CONNECTION_READY] = g_signal_new ("connection-ready",
-      G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
+  param_spec = g_param_spec_boolean ("connection-ready", "Connection ready?",
+      "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
+      G_PARAM_READABLE
+      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+  g_object_class_install_property (object_class, PROP_CONNECTION_READY,
+      param_spec);
 }
 
 /**
