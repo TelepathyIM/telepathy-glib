@@ -50,7 +50,7 @@ channel_ready (TpChannel *channel,
 
   for (iter = interfaces; iter != NULL && *iter != NULL; iter++)
     {
-      printf ("\t%s", *iter);
+      printf ("\t%s\n", *iter);
     }
 
   g_free (channel_type);
