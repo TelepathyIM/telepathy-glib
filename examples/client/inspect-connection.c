@@ -18,18 +18,6 @@
 #include <telepathy-glib/util.h>
 
 void
-connection_invalidated (TpConnection *connection,
-                        guint domain,
-                        gint code,
-                        const gchar *message,
-                        GMainLoop *mainloop)
-{
-  printf ("Connection invalidated before introspection finished: %s\n",
-    message);
-  g_main_loop_quit (mainloop);
-}
-
-void
 got_channels (TpConnection *connection,
               const GPtrArray *channels,
               const GError *error,
@@ -67,20 +55,6 @@ got_channels (TpConnection *connection,
   g_main_loop_quit (mainloop);
 }
 
-void
-connection_ready (TpConnection *connection,
-                  GParamSpec *unused,
-                  GMainLoop *mainloop)
-{
-  printf ("Connection ready\n");
-
-  /* An example non-blocking call */
-  tp_cli_connection_call_list_channels (connection, -1,
-      /* If ListChannels() needed any arguments, they'd go here */
-      got_channels, g_main_loop_ref (mainloop),
-      (GDestroyNotify) g_main_loop_unref, NULL);
-}
-
 int
 main (int argc,
       char **argv)
@@ -90,7 +64,6 @@ main (int argc,
   GMainLoop *mainloop;
   TpDBusDaemon *daemon;
   GError *error = NULL;
-  gboolean ready;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -114,26 +87,30 @@ main (int argc,
 
   connection = tp_connection_new (daemon, bus_name, object_path, &error);
 
-  if (connection == NULL)
+  /* for this example I assume it's an existing connection on which someone
+   * else has called (or will call) Connect(), so we won't call Connect()
+   * on it ourselves
+   */
+  if (connection == NULL ||
+      !tp_connection_run_until_ready (connection, FALSE, &error, NULL))
     {
       g_warning ("%s", error->message);
       g_error_free (error);
       g_object_unref (daemon);
+
+      if (connection != NULL)
+        g_object_unref (connection);
+
       return 1;
     }
 
-  g_object_get (connection,
-      "connection-ready", &ready,
-      NULL);
+  printf ("Connection ready\n");
 
-  if (ready)
-    connection_ready (connection, NULL, mainloop);
-  else
-    g_signal_connect (connection, "notify::connection-ready",
-        G_CALLBACK (connection_ready), mainloop);
-
-  g_signal_connect (connection, "invalidated",
-      G_CALLBACK (connection_invalidated), mainloop);
+  /* An example non-blocking call */
+  tp_cli_connection_call_list_channels (connection, -1,
+      /* If ListChannels() needed any arguments, they'd go here */
+      got_channels, g_main_loop_ref (mainloop),
+      (GDestroyNotify) g_main_loop_unref, NULL);
 
   g_main_loop_run (mainloop);
 
