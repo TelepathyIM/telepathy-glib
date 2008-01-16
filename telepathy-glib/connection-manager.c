@@ -1029,7 +1029,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   param_spec = g_param_spec_uint ("info-source", "CM info source",
       "Where we got the current information on supported protocols",
       TP_CM_INFO_SOURCE_NONE, TP_CM_INFO_SOURCE_LIVE, TP_CM_INFO_SOURCE_NONE,
-      G_PARAM_READABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+      G_PARAM_READABLE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_INFO_SOURCE,
       param_spec);
 
@@ -1041,7 +1042,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   param_spec = g_param_spec_string ("connection-manager", "CM name",
       "The name of the connection manager, e.g. \"gabble\" (read-only)",
       NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+      G_PARAM_READABLE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
       param_spec);
 
@@ -1058,7 +1060,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       "The .manager filename",
       NULL,
       G_PARAM_CONSTRUCT | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_MANAGER_FILE,
       param_spec);
 
@@ -1070,7 +1072,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    */
   param_spec = g_param_spec_boolean ("always-introspect", "Always introspect?",
       "Opportunistically introspect the CM when it's run", FALSE,
-      G_PARAM_READWRITE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+      G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_ALWAYS_INTROSPECT,
       param_spec);
 

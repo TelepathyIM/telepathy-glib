@@ -433,7 +433,8 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   param_spec = g_param_spec_boolean ("channel-ready", "Channel ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+      G_PARAM_READABLE
+      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_CHANNEL_READY,
       param_spec);
 }
