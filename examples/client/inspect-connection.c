@@ -69,6 +69,7 @@ got_channels (TpConnection *connection,
 
 void
 connection_ready (TpConnection *connection,
+                  GParamSpec *unused,
                   GMainLoop *mainloop)
 {
   printf ("Connection ready\n");
@@ -89,6 +90,7 @@ main (int argc,
   GMainLoop *mainloop;
   TpDBusDaemon *daemon;
   GError *error = NULL;
+  gboolean ready;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -120,8 +122,16 @@ main (int argc,
       return 1;
     }
 
-  g_signal_connect (connection, "connection-ready",
-      G_CALLBACK (connection_ready), mainloop);
+  g_object_get (connection,
+      "connection-ready", &ready,
+      NULL);
+
+  if (ready)
+    connection_ready (connection, NULL, mainloop);
+  else
+    g_signal_connect (connection, "notify::connection-ready",
+        G_CALLBACK (connection_ready), mainloop);
+
   g_signal_connect (connection, "invalidated",
       G_CALLBACK (connection_invalidated), mainloop);
 
