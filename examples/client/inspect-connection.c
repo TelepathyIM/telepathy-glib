@@ -66,7 +66,14 @@ main (int argc,
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   if (argc < 2)
-    return 2;
+    {
+      fputs ("Usage: one of\n"
+          "    telepathy-example-inspect-connection BUS_NAME\n"
+          "    telepathy-example-inspect-connection OBJECT_PATH\n"
+          "    telepathy-example-inspect-connection BUS_NAME OBJECT_PATH\n",
+          stderr);
+      return 2;
+    }
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
