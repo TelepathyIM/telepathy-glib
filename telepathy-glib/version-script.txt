@@ -669,6 +669,7 @@ TELEPATHY_GLIB_0.7.1_UNRELEASED {
         tp_connection_manager_get_type;
         tp_connection_manager_new;
         tp_connection_new;
+        tp_connection_run_until_ready;
         tp_dbus_check_valid_bus_name;
         tp_dbus_check_valid_interface_name;
         tp_dbus_check_valid_member_name;

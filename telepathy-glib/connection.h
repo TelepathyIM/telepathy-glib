@@ -57,6 +57,10 @@ GQuark tp_errors_disconnected_quark (void);
 TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
     const gchar *object_path, GError **error);
 
+gboolean tp_connection_run_until_ready (TpConnection *self,
+    gboolean connect, GError **error,
+    GMainLoop **loop);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection.h>

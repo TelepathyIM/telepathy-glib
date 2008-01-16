@@ -538,3 +538,126 @@ finally:
 
   return ret;
 }
+
+/**
+ * tp_connection_run_until_ready:
+ * @self: a connection
+ * @connect: if %TRUE, call Connect() if it appears to be necessary;
+ *  if %FALSE, rely on Connect() to be called by another client
+ * @error: if not %NULL and %FALSE is returned, used to raise an error
+ * @loop: if not %NULL, a #GMainLoop is placed here while it is being run
+ *  (so calling code can call g_main_loop_quit() to abort), and %NULL is
+ *  placed here after the loop has been run
+ *
+ * If @self is connected and ready for use, return immediately. Otherwise,
+ * call Connect() (unless @connect is %FALSE) and re-enter the main loop
+ * until the connection becomes invalid, the connection connects successfully
+ * and is introspected, or the main loop stored via @loop is cancelled.
+ *
+ * Returns: %TRUE if the connection is now connected and ready for use,
+ *  %FALSE if the connection has become invalid.
+ */
+
+typedef struct {
+    GMainLoop *loop;
+    TpProxyPendingCall *pc;
+    GError *connect_error;
+} RunUntilReadyData;
+
+static void
+run_until_ready_ret (TpConnection *self,
+                     const GError *error,
+                     gpointer user_data,
+                     GObject *weak_object)
+{
+  RunUntilReadyData *data = user_data;
+
+  if (error != NULL)
+    {
+      g_main_loop_quit (data->loop);
+      data->connect_error = g_error_copy (error);
+    }
+}
+
+static void
+run_until_ready_destroy (gpointer p)
+{
+  RunUntilReadyData *data = p;
+
+  data->pc = NULL;
+}
+
+gboolean
+tp_connection_run_until_ready (TpConnection *self,
+                               gboolean connect,
+                               GError **error,
+                               GMainLoop **loop)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+  gulong invalidated_id, ready_id;
+  RunUntilReadyData data = { NULL, NULL, NULL };
+
+  if (as_proxy->invalidated)
+    goto raise_invalidated;
+
+  if (self->ready)
+    return TRUE;
+
+  data.loop = g_main_loop_new (NULL, FALSE);
+
+  invalidated_id = g_signal_connect_swapped (self, "invalidated",
+      G_CALLBACK (g_main_loop_quit), data.loop);
+  ready_id = g_signal_connect_swapped (self, "notify::connection-ready",
+      G_CALLBACK (g_main_loop_quit), data.loop);
+
+  if (self->status != TP_CONNECTION_STATUS_CONNECTED &&
+      connect)
+    {
+      data.pc = tp_cli_connection_call_connect (self, -1,
+          run_until_ready_ret, &data,
+          run_until_ready_destroy, NULL);
+    }
+
+  if (data.connect_error == NULL)
+    {
+      if (loop != NULL)
+        *loop = data.loop;
+
+      g_main_loop_run (data.loop);
+
+      if (loop != NULL)
+        *loop = NULL;
+    }
+
+  if (data.pc != NULL)
+    tp_proxy_pending_call_cancel (data.pc);
+
+  g_signal_handler_disconnect (self, invalidated_id);
+  g_signal_handler_disconnect (self, ready_id);
+  g_main_loop_unref (data.loop);
+
+  if (data.connect_error != NULL)
+    {
+      g_propagate_error (error, data.connect_error);
+      return FALSE;
+    }
+
+  if (as_proxy->invalidated != NULL)
+    goto raise_invalidated;
+
+  if (self->ready)
+    return TRUE;
+
+  g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_CANCELLED,
+      "tp_connection_run_until_ready() cancelled");
+  return FALSE;
+
+raise_invalidated:
+  if (error != NULL)
+    {
+      g_return_val_if_fail (*error == NULL, FALSE);
+      *error = g_error_copy (as_proxy->invalidated);
+    }
+
+  return FALSE;
+}
