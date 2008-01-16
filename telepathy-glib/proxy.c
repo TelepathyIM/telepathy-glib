@@ -1640,8 +1640,8 @@ tp_proxy_class_init (TpProxyClass *klass)
    *
    * Known D-Bus interface names for this object.
    */
-  param_spec = g_param_spec_boxed ("interfaces", "D-Bus object path",
-      "The D-Bus object path for this object", G_TYPE_STRV,
+  param_spec = g_param_spec_boxed ("interfaces", "D-Bus interfaces",
+      "Known D-Bus interface names for this object", G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INTERFACES,
       param_spec);
