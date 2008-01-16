@@ -44,6 +44,7 @@ die_if (const GError *error, const gchar *context)
 
 static void
 conn_ready (TpConnection *conn,
+            GParamSpec *unused,
             gpointer user_data)
 {
   GError *error = NULL;
@@ -153,6 +154,7 @@ cm_requested_connection (TpConnectionManager *manager,
   GError *e = NULL;
   TpConnection *conn;
   TpProxy *proxy = (TpProxy *) manager;
+  gboolean ready;
 
   if (die_if (error, "RequestConnection()"))
     return;
@@ -168,11 +170,21 @@ cm_requested_connection (TpConnectionManager *manager,
       return;
     }
 
-  g_signal_connect (conn, "connection-ready", G_CALLBACK (conn_ready), NULL);
   /* the connection hasn't had a chance to become invalid yet, so we can
    * assume that this signal connection will work */
   tp_cli_connection_connect_to_status_changed (conn, conn_status_changed,
       NULL, NULL, NULL, NULL);
+
+  g_object_get (conn,
+      "connection-ready", &ready,
+      NULL);
+
+  if (ready)
+    conn_ready (conn, NULL, NULL);
+  else
+    g_signal_connect (conn, "notify::connection-ready",
+        G_CALLBACK (conn_ready), NULL);
+
   tp_cli_connection_call_connect (conn, -1, NULL, NULL, NULL, NULL);
 }
 
