@@ -1402,6 +1402,7 @@ tp_proxy_signal_connection_v0_take_results
 <TITLE>channel</TITLE>
 <INCLUDE>telepathy-glib/channel.h</INCLUDE>
 tp_channel_new
+tp_channel_run_until_ready
 TpChannel
 TpChannelClass
 TP_ERRORS_REMOVED_FROM_GROUP

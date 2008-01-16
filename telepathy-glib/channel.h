@@ -58,6 +58,9 @@ TpChannel *tp_channel_new (TpDBusDaemon *dbus, const gchar *bus_name,
     TpHandleType optional_handle_type, TpHandle optional_handle,
     GError **error);
 
+gboolean tp_channel_run_until_ready (TpChannel *self, GError **error,
+    GMainLoop **loop);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel.h>

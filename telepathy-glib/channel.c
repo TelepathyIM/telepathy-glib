@@ -530,3 +530,68 @@ finally:
 
   return ret;
 }
+
+/**
+ * tp_channel_run_until_ready:
+ * @self: a channel
+ * @error: if not %NULL and %FALSE is returned, used to raise an error
+ * @loop: if not %NULL, a #GMainLoop is placed here while it is being run
+ *  (so calling code can call g_main_loop_quit() to abort), and %NULL is
+ *  placed here after the loop has been run
+ *
+ * If @self is ready for use (introspection has finished, etc.), return
+ * immediately. Otherwise, re-enter the main loop until the channel either
+ * becomes invalid or becomes ready for use, or until the main loop stored
+ * via @loop is cancelled.
+ *
+ * Returns: %TRUE if the channel has been introspected and is ready for use,
+ *  %FALSE if the channel has become invalid.
+ */
+gboolean
+tp_channel_run_until_ready (TpChannel *self,
+                            GError **error,
+                            GMainLoop **loop)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+  GMainLoop *my_loop;
+  gulong invalidated_id, ready_id;
+
+  if (as_proxy->invalidated)
+    goto raise_invalidated;
+
+  if (self->ready)
+    return TRUE;
+
+  my_loop = g_main_loop_new (NULL, FALSE);
+  invalidated_id = g_signal_connect_swapped (self, "invalidated",
+      G_CALLBACK (g_main_loop_quit), my_loop);
+  ready_id = g_signal_connect_swapped (self, "notify::channel-ready",
+      G_CALLBACK (g_main_loop_quit), my_loop);
+
+  if (loop != NULL)
+    *loop = my_loop;
+
+  g_main_loop_run (my_loop);
+
+  if (loop != NULL)
+    *loop = NULL;
+
+  g_signal_handler_disconnect (self, invalidated_id);
+  g_signal_handler_disconnect (self, ready_id);
+  g_main_loop_unref (my_loop);
+
+  if (as_proxy->invalidated)
+    goto raise_invalidated;
+
+  g_assert (self->ready);
+  return TRUE;
+
+raise_invalidated:
+  if (error != NULL)
+    {
+      g_return_val_if_fail (*error == NULL, FALSE);
+      *error = g_error_copy (as_proxy->invalidated);
+    }
+
+  return FALSE;
+}
