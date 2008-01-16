@@ -17,25 +17,43 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
-void
-channel_invalidated (TpChannel *channel,
-                     guint domain,
-                     gint code,
-                     const gchar *message,
-                     GMainLoop *mainloop)
+int
+main (int argc,
+      char **argv)
 {
-  printf ("Channel invalidated before introspection finished: %s\n", message);
-  g_main_loop_quit (mainloop);
-}
-
-void
-channel_ready (TpChannel *channel,
-               GParamSpec *unused,
-               GMainLoop *mainloop)
-{
+  guint handle_type, handle;
   gchar *channel_type;
   gchar **interfaces, **iter;
-  guint handle_type, handle;
+  const gchar *bus_name, *object_path;
+  TpChannel *channel;
+  GMainLoop *mainloop;
+  TpDBusDaemon *daemon;
+  GError *error = NULL;
+  int ret = 0;
+
+  g_type_init ();
+  tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
+
+  if (argc < 3)
+    return 2;
+
+  mainloop = g_main_loop_new (NULL, FALSE);
+
+  bus_name = argv[1];
+  object_path = argv[2];
+
+  daemon = tp_dbus_daemon_new (tp_get_bus ());
+
+  channel = tp_channel_new (daemon, bus_name, object_path, NULL,
+      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+
+  if (channel == NULL || !tp_channel_run_until_ready (channel, &error, NULL))
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      ret = 1;
+      goto out;
+    }
 
   g_object_get (channel,
       "channel-type", &channel_type,
@@ -60,7 +78,6 @@ channel_ready (TpChannel *channel,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
     {
       GArray *members;
-      GError *error = NULL;
 
       printf ("Group members:\n");
       /* An example of a reentrant blocking call. This re-enters the
@@ -82,55 +99,16 @@ channel_ready (TpChannel *channel,
         {
           printf ("\t[error: %s]\n", error->message);
           g_error_free (error);
+          ret = 1;
+          goto out;
         }
     }
 
-  g_main_loop_quit (mainloop);
-}
-
-int
-main (int argc,
-      char **argv)
-{
-  const gchar *bus_name, *object_path;
-  TpChannel *channel;
-  GMainLoop *mainloop;
-  TpDBusDaemon *daemon;
-  GError *error = NULL;
-
-  g_type_init ();
-  tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
-
-  if (argc < 3)
-    return 2;
-
-  mainloop = g_main_loop_new (NULL, FALSE);
-
-  bus_name = argv[1];
-  object_path = argv[2];
-
-  daemon = tp_dbus_daemon_new (tp_get_bus ());
-
-  channel = tp_channel_new (daemon, bus_name, object_path, NULL,
-      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
-
-  if (channel == NULL)
-    {
-      g_warning ("%s", error->message);
-      g_error_free (error);
-      g_object_unref (daemon);
-      return 1;
-    }
-
-  g_signal_connect (channel, "notify::channel-ready",
-      G_CALLBACK (channel_ready), mainloop);
-  g_signal_connect (channel, "invalidated", G_CALLBACK (channel_invalidated),
-      mainloop);
-
-  g_main_loop_run (mainloop);
-
-  g_main_loop_unref (mainloop);
+out:
   g_object_unref (daemon);
 
-  return 0;
+  if (channel != NULL)
+    g_object_unref (channel);
+
+  return ret;
 }
