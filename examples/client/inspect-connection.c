@@ -26,9 +26,6 @@ got_channels (TpConnection *connection,
 {
   GMainLoop *mainloop = user_data;
 
-  /* this is the connection - you can do more with it */
-  (void) connection;
-
   if (error == NULL)
     {
       guint i;
