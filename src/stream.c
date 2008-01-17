@@ -1179,6 +1179,8 @@ set_remote_codecs (DBusGProxy *proxy, GPtrArray *codecs, gpointer user_data)
     return;
   }
 
+  tp_stream_engine_stream_mute_input (self, priv->input_mute, NULL);
+
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (priv->fs_stream));
 
