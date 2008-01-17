@@ -1248,7 +1248,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
 
   if (error != NULL)
     {
-      list_context->callback (NULL, error, list_context->user_data,
+      list_context->callback (NULL, 0, error, list_context->user_data,
           list_context->weak_object);
       return;
     }
@@ -1279,13 +1279,15 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
               (list_context->table));
       TpConnectionManager **cms;
       TpConnectionManager * const *iter;
+      gsize n_cms;
 
       g_hash_table_foreach_steal (list_context->table, steal_into_ptr_array,
           arr);
+      n_cms = arr->len;
       g_ptr_array_add (arr, NULL);
 
       cms = (TpConnectionManager **) g_ptr_array_free (arr, FALSE);
-      list_context->callback (cms, NULL, list_context->user_data,
+      list_context->callback (cms, n_cms, NULL, list_context->user_data,
           list_context->weak_object);
       list_context->callback = NULL;
 

@@ -14,6 +14,7 @@
 
 void
 got_connection_managers (TpConnectionManager * const *cms,
+                         gsize n_cms,
                          const GError *error,
                          gpointer user_data,
                          GObject *unused)
@@ -28,6 +29,8 @@ got_connection_managers (TpConnectionManager * const *cms,
     {
       TpConnectionManager * const *iter = cms;
 
+      g_message ("Found %" G_GSIZE_FORMAT " connection managers:", n_cms);
+
       for (iter = cms; *iter != NULL; iter++)
         {
           gchar *name;
@@ -36,7 +39,7 @@ got_connection_managers (TpConnectionManager * const *cms,
               "connection-manager", &name,
               NULL);
 
-          g_message ("Found connection manager: %s", name);
+          g_message ("- %s", name);
 
           g_free (name);
         }
