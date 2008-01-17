@@ -43,6 +43,13 @@
  * #TpConnection objects represent Telepathy instant messaging connections
  * accessed via D-Bus.
  *
+ * Compared with a simple proxy for method calls, they add the following
+ * features:
+ *
+ * * connection status tracking
+ *
+ * * calling GetInterfaces() automatically
+ *
  * Since: 0.7.1
  */
 
