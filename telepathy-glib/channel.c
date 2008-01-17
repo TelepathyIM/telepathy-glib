@@ -42,6 +42,11 @@
  *
  * #TpChannel objects provide convenient access to Telepathy channels.
  *
+ * Compared with a simple proxy for method calls, they add the following
+ * features:
+ *
+ * * calling GetChannelType(), GetInterfaces(), GetHandles() automatically
+ *
  * Since: 0.7.1
  */
 
