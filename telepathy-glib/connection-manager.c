@@ -54,6 +54,8 @@
  *   be unreferenced and the array will be freed after the callback returns,
  *   so the callback must reference any CMs it stores a pointer to),
  *   or %NULL on error
+ * @n_cms: number of connection managers in @cms (not including the final
+ *  %NULL)
  * @error: %NULL on success, or an error that occurred
  * @user_data: user-supplied data
  * @weak_object: user-supplied weakly referenced object
