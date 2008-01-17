@@ -1238,7 +1238,7 @@ list_context_unref (_ListContext *list_context)
   g_slice_free (_ListContext, list_context);
 }
 
-void
+static void
 tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
                                        const gchar **names,
                                        const GError *error,
