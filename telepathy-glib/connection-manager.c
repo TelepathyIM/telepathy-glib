@@ -1314,12 +1314,10 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
  * tp_list_connection_managers:
  * @bus_daemon: proxy for the D-Bus daemon
  * @callback: callback to be called when listing the CMs succeeds or fails;
- *   not called if the D-Bus connection fails completely or if the
- *   @weak_object goes away
+ *   not called if the @weak_object goes away
  * @user_data: user-supplied data for the callback
  * @destroy: callback to destroy the user-supplied data, called after
- *   @callback, but also if the D-Bus connection fails or if the @weak_object
- *   goes away
+ *   @callback, but also if the @weak_object goes away
  * @weak_object: if not %NULL, will be weakly referenced; the callback will
  *   not be called, and the call will be cancelled, if the object has vanished
  *
