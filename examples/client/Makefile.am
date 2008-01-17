@@ -12,6 +12,10 @@ noinst_PROGRAMS += telepathy-example-inspect-cm
 telepathy_example_inspect_cm_SOURCES = inspect-cm.c
 telepathy_example_inspect_cm_LDADD = $(ALL_LIBS)
 
+noinst_PROGRAMS += telepathy-example-list-connections
+telepathy_example_list_connections_SOURCES = list-connections.c
+telepathy_example_list_connections_LDADD = $(ALL_LIBS)
+
 noinst_PROGRAMS += telepathy-example-list-managers
 telepathy_example_list_managers_SOURCES = list-managers.c
 telepathy_example_list_managers_LDADD = $(ALL_LIBS)
