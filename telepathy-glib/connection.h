@@ -61,6 +61,16 @@ gboolean tp_connection_run_until_ready (TpConnection *self,
     gboolean connect, GError **error,
     GMainLoop **loop);
 
+typedef void (*TpConnectionNameListCb) (const gchar * const *names,
+    gsize n, const gchar * const *cms, const gchar * const *protocols,
+    const GError *error, gpointer user_data,
+    GObject *weak_object);
+
+void tp_list_connection_names (TpDBusDaemon *bus_daemon,
+    TpConnectionNameListCb callback,
+    gpointer user_data, GDestroyNotify destroy,
+    GObject *weak_object);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection.h>

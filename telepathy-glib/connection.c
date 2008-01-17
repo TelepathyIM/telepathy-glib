@@ -21,12 +21,17 @@
 
 #include "telepathy-glib/connection.h"
 
+#include <string.h>
+
+#include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/dbus-internal.h"
@@ -667,4 +672,164 @@ raise_invalidated:
     }
 
   return FALSE;
+}
+
+/**
+ * TpConnectionNameListCb:
+ * @names: %NULL-terminated array of connection bus names,
+ *   or %NULL on error
+ * @n: number of names (not including the final %NULL), or 0 on error
+ * @cms: %NULL-terminated array of connection manager names in the same order
+ *   as @names, or %NULL on error
+ * @protocols: %NULL-terminated array of protocol names in the same order
+ *   as @names, or %NULL on error
+ * @error: %NULL on success, or an error that occurred
+ * @user_data: user-supplied data
+ * @weak_object: user-supplied weakly referenced object
+ *
+ * Signature of the callback supplied to tp_list_connection_managers().
+ */
+
+typedef struct {
+    TpConnectionNameListCb callback;
+    gpointer user_data;
+    GDestroyNotify destroy;
+    GObject *weak_object;
+    size_t base_len;
+} _ListContext;
+
+static void
+tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
+                                 const gchar **names,
+                                 const GError *error,
+                                 gpointer user_data,
+                                 GObject *user_object)
+{
+  _ListContext *list_context = user_data;
+  const gchar **iter;
+  /* array of borrowed strings */
+  GPtrArray *bus_names;
+  /* array of dup'd strings */
+  GPtrArray *cms;
+  /* array of borrowed strings */
+  GPtrArray *protocols;
+
+  if (error != NULL)
+    {
+      list_context->callback (NULL, 0, NULL, NULL, error,
+          list_context->user_data, list_context->weak_object);
+      return;
+    }
+
+  bus_names = g_ptr_array_new ();
+  cms = g_ptr_array_new ();
+  protocols = g_ptr_array_new ();
+
+  for (iter = names; iter != NULL && *iter != NULL; iter++)
+    {
+      gchar *dup, *proto, *dot;
+
+      if (strncmp (TP_CONN_BUS_NAME_BASE, *iter, list_context->base_len) != 0)
+        continue;
+
+      dup = g_strdup (*iter + list_context->base_len);
+      dot = strchr (dup, '.');
+
+      if (dot == NULL)
+        goto invalid;
+
+      *dot = '\0';
+
+      if (!tp_connection_manager_check_valid_name (dup, NULL))
+        goto invalid;
+
+      proto = dot + 1;
+      dot = strchr (proto, '.');
+
+      if (dot == NULL)
+        goto invalid;
+
+      *dot = '\0';
+
+      if (!tp_strdiff (proto, "local_2dxmpp"))
+        {
+          /* the CM's telepathy-glib is older than 0.7.x, work around it.
+           * FIXME: Remove this workaround in 0.9.x */
+          proto = "local-xmpp";
+        }
+      else if (!tp_connection_manager_check_valid_protocol_name (proto, NULL))
+        {
+          goto invalid;
+        }
+
+      /* the casts here are because g_ptr_array contains non-const pointers -
+       * but in this case I'll only be passing pdata to a callback with const
+       * arguments, so it's fine */
+      g_ptr_array_add (bus_names, (gpointer) *iter);
+      g_ptr_array_add (cms, dup);
+      g_ptr_array_add (protocols, (gpointer) proto);
+
+      continue;
+
+invalid:
+      g_free (dup);
+    }
+
+  g_ptr_array_add (bus_names, NULL);
+  g_ptr_array_add (cms, NULL);
+  g_ptr_array_add (protocols, NULL);
+
+  list_context->callback ((const gchar * const *) bus_names->pdata,
+      bus_names->len - 1, (const gchar * const *) cms->pdata,
+      (const gchar * const *) protocols->pdata,
+      NULL, list_context->user_data, list_context->weak_object);
+
+  g_ptr_array_free (bus_names, TRUE);
+  g_strfreev ((char **) g_ptr_array_free (cms, FALSE));
+  g_ptr_array_free (protocols, TRUE);
+}
+
+static void
+list_context_free (gpointer p)
+{
+  _ListContext *list_context = p;
+
+  if (list_context->destroy != NULL)
+    list_context->destroy (list_context->user_data);
+
+  g_slice_free (_ListContext, list_context);
+}
+
+/**
+ * tp_list_connection_names:
+ * @bus_daemon: proxy for the D-Bus daemon
+ * @callback: callback to be called when listing the connections succeeds or
+ *   fails; not called if the D-Bus connection fails completely or if the
+ *   @weak_object goes away
+ * @user_data: user-supplied data for the callback
+ * @destroy: callback to destroy the user-supplied data, called after
+ *   @callback, but also if the D-Bus connection fails or if the @weak_object
+ *   goes away
+ * @weak_object: if not %NULL, will be weakly referenced; the callback will
+ *   not be called, and the call will be cancelled, if the object has vanished
+ *
+ * List the available (running or installed) connection managers. Call the
+ * callback when done.
+ */
+void
+tp_list_connection_names (TpDBusDaemon *bus_daemon,
+                          TpConnectionNameListCb callback,
+                          gpointer user_data,
+                          GDestroyNotify destroy,
+                          GObject *weak_object)
+{
+  _ListContext *list_context = g_slice_new0 (_ListContext);
+
+  list_context->base_len = strlen (TP_CONN_BUS_NAME_BASE);
+  list_context->callback = callback;
+  list_context->user_data = user_data;
+
+  tp_cli_dbus_daemon_call_list_names (bus_daemon, 2000,
+      tp_list_connection_names_helper, list_context,
+      list_context_free, weak_object);
 }
