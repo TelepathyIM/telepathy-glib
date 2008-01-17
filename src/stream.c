@@ -1632,8 +1632,8 @@ gboolean tp_stream_engine_stream_mute_output (
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-        "MuteInput can only be called on audio streams");
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "MuteInput can only be called on audio streams");
       return FALSE;
     }
 
@@ -1665,8 +1665,8 @@ gboolean tp_stream_engine_stream_set_output_volume (
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-        "SetOutputVolume can only be called on audio streams");
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "SetOutputVolume can only be called on audio streams");
       return FALSE;
     }
 
@@ -1699,8 +1699,8 @@ gboolean tp_stream_engine_stream_mute_input (
 
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-        "MuteInput can only be called on audio streams");
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "MuteInput can only be called on audio streams");
       return FALSE;
     }
 
@@ -1732,8 +1732,8 @@ tp_stream_engine_stream_set_output_window (
   if (priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
       DEBUG (stream, "can only be called on video streams");
-      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-        "SetOutputWindow can only be called on video streams");
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "SetOutputWindow can only be called on video streams");
       return FALSE;
     }
 
@@ -1741,7 +1741,7 @@ tp_stream_engine_stream_set_output_window (
     {
       DEBUG (stream, "not doing anything, output window is already set to "
           "window ID %u", window_id);
-      *error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "not doing "
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "not doing "
           "anything, output window is already set window ID %u", window_id);
       return FALSE;
     }
