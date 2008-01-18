@@ -815,7 +815,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
               if (entry->destroy != NULL)
                 entry->destroy (entry->user_data);
 
-              g_array_remove_index_fast (array, array->len - i);
+              g_array_remove_index (array, array->len - i);
 
               if (array->len == 0)
                 {
