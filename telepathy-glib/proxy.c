@@ -374,6 +374,26 @@ tp_proxy_has_interface_by_id (gpointer self,
  * proxy implements the given interface.
  */
 
+static void tp_proxy_iface_destroyed_cb (DBusGProxy *proxy, TpProxy *self);
+
+static void
+tp_proxy_lose_interface (GQuark unused,
+                         gpointer dgproxy,
+                         gpointer self)
+{
+  g_signal_handlers_disconnect_by_func (dgproxy,
+      G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
+}
+
+static void
+tp_proxy_lose_interfaces (TpProxy *self)
+{
+  g_datalist_foreach (&self->priv->interfaces,
+      tp_proxy_lose_interface, self);
+
+  g_datalist_clear (&self->priv->interfaces);
+}
+
 /* This signature is chosen to match GSourceFunc */
 static gboolean
 tp_proxy_emit_invalidated (gpointer p)
@@ -387,7 +407,7 @@ tp_proxy_emit_invalidated (gpointer p)
   /* Don't clear the datalist until after we've emitted the signal, so
    * the pending call and signal connection friend classes can still get
    * to the proxies */
-  g_datalist_clear (&self->priv->interfaces);
+  tp_proxy_lose_interfaces (self);
 
   return FALSE;
 }
@@ -434,7 +454,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
   /* We can't call any API on the proxy now. Because the proxies are all
    * for the same bus name, we can assume that all of them are equally
    * useless now */
-  g_datalist_clear (&self->priv->interfaces);
+  tp_proxy_lose_interfaces (self);
 
   /* We need to be able to delay emitting the invalidated signal, so that
    * any queued-up method calls and signal handlers will run first, and so
@@ -486,9 +506,10 @@ tp_proxy_add_interface_by_id (TpProxy *self,
 
   if (iface_proxy == NULL)
     {
-      DEBUG ("%p: %s", self, g_quark_to_string (interface));
       iface_proxy = dbus_g_proxy_new_for_name (self->dbus_connection,
           self->bus_name, self->object_path, g_quark_to_string (interface));
+      DEBUG ("%p: %s DBusGProxy is %p", self, g_quark_to_string (interface),
+          iface_proxy);
 
       g_signal_connect (iface_proxy, "destroy",
           G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
