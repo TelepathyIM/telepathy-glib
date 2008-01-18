@@ -418,7 +418,8 @@ tp_proxy_emit_invalidated (gpointer p)
  * @error: an error causing the invalidation
  *
  * Mark @self as having been invalidated - no further calls will work, and
- * the #TpProxy:invalidated signal will be emitted with the given error.
+ * if not already invalidated, the #TpProxy:invalidated signal will be emitted
+ * with the given error.
  */
 void
 tp_proxy_invalidate (TpProxy *self, const GError *error)
