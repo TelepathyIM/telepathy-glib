@@ -37,6 +37,8 @@ int main (int argc, char **argv)
   tp_intset_remove (set1, 1024);
   g_assert (tp_intset_size (set1) == 5);
 
+  tp_intset_destroy (set1);
+
 #define NUM_A 11
 #define NUM_B 823
 #define NUM_C 367
@@ -71,6 +73,8 @@ int main (int argc, char **argv)
 
   ab_union = tp_intset_union (a, b);
   g_assert (tp_intset_is_equal (ab_union, ab_expected_union));
+  tp_intset_destroy (ab_union);
+  tp_intset_destroy (ab_expected_union);
 
   ab_expected_inter = tp_intset_new ();
   tp_intset_add (ab_expected_inter, NUM_C);
@@ -78,6 +82,8 @@ int main (int argc, char **argv)
 
   ab_inter = tp_intset_intersection (a, b);
   g_assert (tp_intset_is_equal (ab_inter, ab_expected_inter));
+  tp_intset_destroy (ab_inter);
+  tp_intset_destroy (ab_expected_inter);
 
   a_expected_diff_b = tp_intset_new ();
   tp_intset_add (a_expected_diff_b, NUM_A);
@@ -85,6 +91,8 @@ int main (int argc, char **argv)
 
   a_diff_b = tp_intset_difference (a, b);
   g_assert (tp_intset_is_equal (a_diff_b, a_expected_diff_b));
+  tp_intset_destroy (a_diff_b);
+  tp_intset_destroy (a_expected_diff_b);
 
   b_expected_diff_a = tp_intset_new ();
   tp_intset_add (b_expected_diff_a, NUM_E);
@@ -92,6 +100,8 @@ int main (int argc, char **argv)
 
   b_diff_a = tp_intset_difference (b, a);
   g_assert (tp_intset_is_equal (b_diff_a, b_expected_diff_a));
+  tp_intset_destroy (b_diff_a);
+  tp_intset_destroy (b_expected_diff_a);
 
   ab_expected_symmdiff = tp_intset_new ();
   tp_intset_add (ab_expected_symmdiff, NUM_A);
@@ -101,6 +111,8 @@ int main (int argc, char **argv)
 
   ab_symmdiff = tp_intset_symmetric_difference (a, b);
   g_assert (tp_intset_is_equal (ab_symmdiff, ab_expected_symmdiff));
+  tp_intset_destroy (ab_symmdiff);
+  tp_intset_destroy (ab_expected_symmdiff);
 
   {
     GArray *arr;
@@ -118,6 +130,9 @@ int main (int argc, char **argv)
     g_array_free (arr, TRUE);
     tp_intset_destroy (tmp);
   }
+
+  tp_intset_destroy (a);
+  tp_intset_destroy (b);
 
   return 0;
 }
