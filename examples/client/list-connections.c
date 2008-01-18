@@ -1,8 +1,8 @@
 /*
  * telepathy-example-list-managers - list installed connection managers
  *
- * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2007 Nokia Corporation
+ * Copyright (C) 2008 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2008 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -13,6 +13,11 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
 
+typedef struct {
+    GMainLoop *mainloop;
+    int exit_code;
+} ExampleData;
+
 void
 got_connections (const gchar * const *bus_names,
                  gsize n,
@@ -22,11 +27,12 @@ got_connections (const gchar * const *bus_names,
                  gpointer user_data,
                  GObject *unused)
 {
-  GMainLoop *mainloop = user_data;
+  ExampleData *data = user_data;
 
   if (error != NULL)
     {
       g_warning ("%s", error->message);
+      data->exit_code = 1;
     }
   else
     {
@@ -45,25 +51,25 @@ got_connections (const gchar * const *bus_names,
           protocols[n] == NULL);
     }
 
-  g_main_loop_quit (mainloop);
+  g_main_loop_quit (data->mainloop);
 }
 
 int
 main (int argc,
       char **argv)
 {
-  GMainLoop *mainloop;
+  ExampleData data = { g_main_loop_new (NULL, FALSE), 0 };
+  TpDBusDaemon *bus_daemon;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  mainloop = g_main_loop_new (NULL, FALSE);
+  bus_daemon = tp_dbus_daemon_new (tp_get_bus ());
 
-  tp_list_connection_names (tp_dbus_daemon_new (tp_get_bus ()),
-      got_connections, mainloop, NULL, NULL);
+  tp_list_connection_names (bus_daemon, got_connections, &data, NULL, NULL);
 
-  g_main_loop_run (mainloop);
-
-  g_main_loop_unref (mainloop);
-  return 0;
+  g_main_loop_run (data.mainloop);
+  g_main_loop_unref (data.mainloop);
+  g_object_unref (bus_daemon);
+  return data.exit_code;
 }
