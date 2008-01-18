@@ -6,4 +6,4 @@ export LD_LIBRARY_PATH
 G_DEBUG="fatal_criticals,fatal_warnings${G_DEBUG:+",${G_DEBUG}"}"
 export G_DEBUG
 
-"$@"
+exec "$@"
