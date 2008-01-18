@@ -805,7 +805,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
       GArray *array = watch->user_data;
       guint i;
 
-      for (i = 0; i < array->len; i++)
+      for (i = 1; i <= array->len; i++)
         {
           _NameOwnerSubWatch *entry = &g_array_index (array,
               _NameOwnerSubWatch, array->len - i);
