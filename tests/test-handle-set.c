@@ -13,7 +13,7 @@ int main (int argc, char **argv)
 
   TpHandleRepoIface *repo = NULL;
   TpHandleSet *set = NULL;
-  TpIntSet *iset = NULL;
+  TpIntSet *iset = NULL, *result = NULL;
 
   TpHandle h1, h2, h3, h4;
 
@@ -49,13 +49,14 @@ int main (int argc, char **argv)
   tp_intset_add (iset, h1);
   tp_intset_add (iset, h2);
   tp_intset_add (iset, h3);
-  iset = tp_handle_set_update (set, iset);
+  result = tp_handle_set_update (set, iset);
+  tp_intset_destroy (iset);
 
   /* h2 and h3 should be added, and h1 not */
-  g_assert (!tp_intset_is_member (iset, h1));
-  g_assert (tp_intset_is_member (iset, h2));
-  g_assert (tp_intset_is_member (iset, h3));
-  tp_intset_destroy (iset);
+  g_assert (!tp_intset_is_member (result, h1));
+  g_assert (tp_intset_is_member (result, h2));
+  g_assert (tp_intset_is_member (result, h3));
+  tp_intset_destroy (result);
 
   g_assert (tp_handle_set_is_member (set, h2));
   g_assert (tp_handle_set_is_member (set, h3));
@@ -64,12 +65,13 @@ int main (int argc, char **argv)
   iset = tp_intset_new ();
   tp_intset_add (iset, h1);
   tp_intset_add (iset, h4);
-  iset = tp_handle_set_difference_update (set, iset);
+  result = tp_handle_set_difference_update (set, iset);
+  tp_intset_destroy (iset);
 
   /* h1 should be removed, h4 not */
-  g_assert (tp_intset_is_member (iset, h1));
-  g_assert (!tp_intset_is_member (iset, h4));
-  tp_intset_destroy (iset);
+  g_assert (tp_intset_is_member (result, h1));
+  g_assert (!tp_intset_is_member (result, h4));
+  tp_intset_destroy (result);
 
   /* Removing a member should succeed */
   g_assert (tp_handle_set_remove (set, h2) == TRUE);
@@ -79,8 +81,8 @@ int main (int argc, char **argv)
   g_assert (tp_handle_set_size (set) == 1);
 
   g_assert (tp_handle_set_remove (set, h3) == TRUE);
-  tp_handle_set_destroy (set);
 
+  tp_handle_set_destroy (set);
   g_object_unref (G_OBJECT (repo));
 
   return 0;
