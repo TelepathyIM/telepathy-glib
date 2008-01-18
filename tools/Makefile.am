@@ -1,8 +1,8 @@
 abs_top_builddir = @abs_top_builddir@
 
-noinst_SCRIPTS = telepathy-glib-gdb
+noinst_SCRIPTS = telepathy-glib-env
 
-telepathy-glib-gdb: telepathy-glib-gdb.in Makefile
+telepathy-glib-env: telepathy-glib-env.in Makefile
 	sed -e 's![@]abs_top_builddir[@]!$(abs_top_builddir)!' $< > $@
 	chmod +x $@
 
@@ -29,7 +29,7 @@ EXTRA_DIST = \
     ls-interfaces.xsl \
     make-all-async.xsl \
     spec-to-introspect.xsl \
-    telepathy-glib-gdb.in \
+    telepathy-glib-env.in \
     with-session-bus.sh
 
 CLEANFILES = libglibcodegen.pyc libglibcodegen.pyo $(noinst_SCRIPTS)
