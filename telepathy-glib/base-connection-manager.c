@@ -522,7 +522,7 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
   TpBaseConnectionManagerClass *cls =
     TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
   GType param_type = TP_STRUCT_TYPE_PARAM_SPEC;
-  int i;
+  guint i;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
   g_assert (cls->protocol_params != NULL);
@@ -536,7 +536,7 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
 
   ret = g_ptr_array_new ();
 
-  for (i = 0; protospec->parameters[i].name; i++)
+  for (i = 0; protospec->parameters[i].name != NULL; i++)
     {
       GValue *def_value;
       GValue param = { 0, };
@@ -559,6 +559,12 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
     }
 
   tp_svc_connection_manager_return_from_get_parameters (context, ret);
+
+  for (i = 0; i < ret->len; i++)
+    {
+      g_boxed_free (param_type, g_ptr_array_index (ret, i));
+    }
+
   g_ptr_array_free (ret, TRUE);
 }
 
