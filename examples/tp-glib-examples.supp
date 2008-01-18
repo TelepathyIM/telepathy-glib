@@ -59,17 +59,6 @@
 }
 
 {
-   g_type_init cruft (2)
-   Memcheck:Leak
-   fun:malloc
-   fun:realloc
-   fun:g_realloc
-   fun:g_quark_from_static_string
-   fun:g_type_init_with_debug_flags
-   fun:g_type_init
-}
-
-{
    g_type_init cruft (3)
    Memcheck:Leak
    fun:realloc
@@ -160,3 +149,11 @@
    fun:main
 }
 
+{
+   GQuarks can't be freed
+   Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   fun:g_realloc
+   fun:g_quark_from_static_string
+}
