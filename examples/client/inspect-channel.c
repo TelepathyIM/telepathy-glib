@@ -26,7 +26,6 @@ main (int argc,
   gchar **interfaces, **iter;
   const gchar *bus_name, *object_path;
   TpChannel *channel;
-  GMainLoop *mainloop;
   TpDBusDaemon *daemon;
   GError *error = NULL;
   int ret = 0;
@@ -41,8 +40,6 @@ main (int argc,
           stderr);
       return 2;
     }
-
-  mainloop = g_main_loop_new (NULL, FALSE);
 
   bus_name = argv[1];
   object_path = argv[2];
