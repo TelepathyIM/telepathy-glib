@@ -99,17 +99,25 @@
 }
 
 {
-   g_type_init cruft (6)
+   g_type_init cruft (5) but with G_SLICE_DEBUG=always-malloc
    Memcheck:Leak
-   fun:calloc
-   fun:g_malloc0
-   fun:g_slice_init_nomessage
+   fun:malloc
+   fun:g_malloc
    fun:g_slice_alloc
    fun:g_hash_table_new_full
    fun:g_hash_table_new
    fun:g_quark_from_static_string
    fun:g_type_init_with_debug_flags
    fun:g_type_init
+}
+
+{
+   g_slice_init_nomessage (1)
+   Memcheck:Leak
+   fun:calloc
+   fun:g_malloc0
+   fun:g_slice_init_nomessage
+   fun:g_slice_alloc
 }
 
 {
