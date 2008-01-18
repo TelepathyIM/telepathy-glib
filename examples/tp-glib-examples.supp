@@ -1,5 +1,12 @@
 # Valgrind error suppression file
 {
+   dbus-glib, https://bugs.freedesktop.org/show_bug.cgi?id=14125
+   Memcheck:Addr4
+   fun:g_hash_table_foreach
+   fun:dbus_g_proxy_dispose
+}
+
+{
    libdbus shared connection via tp_get_bus (1)
    Memcheck:Leak
    fun:malloc
