@@ -31,5 +31,7 @@ int main ()
       prev = elem;
     }
 
+  tp_heap_destroy (heap);
+
   return 0;
 }
