@@ -145,8 +145,18 @@
    fun:g_ptr_array_new
    fun:g_main_context_new
    fun:g_main_context_default
-   fun:g_main_loop_new
-   fun:main
+}
+
+{
+   shared global default g_main_context (2) (with G_SLICE_DEBUG=always-malloc)
+   Memcheck:Leak
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_ptr_array_sized_new
+   fun:g_ptr_array_new
+   fun:g_main_context_new
+   fun:g_main_context_default
 }
 
 {
