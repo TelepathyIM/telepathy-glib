@@ -1476,6 +1476,9 @@ tp_proxy_finalize (GObject *object)
 
   DEBUG ("%p", self);
 
+  g_assert (self->invalidated != NULL);
+  g_error_free (self->invalidated);
+
   g_free (self->bus_name);
   g_free (self->object_path);
 
