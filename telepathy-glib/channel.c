@@ -38,7 +38,7 @@
  * SECTION:channel
  * @title: TpChannel
  * @short_description: proxy object for a Telepathy channel
- * @see_also: #TpConnection
+ * @see_also: #TpConnection, channel-group, channel-text, channel-media
  *
  * #TpChannel objects provide convenient access to Telepathy channels.
  *
@@ -46,6 +46,11 @@
  * features:
  *
  * * calling GetChannelType(), GetInterfaces(), GetHandles() automatically
+ *
+ * This section also documents the auto-generated C wrappers for the
+ * Channel D-Bus interface. Of these, in general, only
+ * tp_cli_channel_call_close() and tp_cli_channel_run_close() are useful (the
+ * #TpChannel object provides a more convenient API for the rest).
  *
  * Since: 0.7.1
  */

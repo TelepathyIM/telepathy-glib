@@ -148,3 +148,154 @@
  *
  * The TpHandle type represents a Telepathy handle.
  */
+
+/**
+ * SECTION:channel-group
+ * @title: Group interface on Channels
+ * @short_description: client-side wrappers for the Group interface
+ * @see_also: #TpChannel
+ *
+ * Many Telepathy Channel objects can be seen as representing groups or
+ * sets of contacts. The Telepathy specification represents this by a common
+ * interface, Group. This section documents the auto-generated C wrappers for
+ * the Group interface.
+ *
+ * Contacts can be in four states:
+ *
+ * * in the group (the "members" set)
+ *
+ * * "local pending" (waiting to be added to the group by the local client
+ *   calling AddMembers())
+ *
+ * * "remote pending" (waiting to be added to the group by some other
+ *   action, probably by someone else)
+ *
+ * * no relationship with the group at all
+ *
+ * For instance, chatrooms implement the Group interface. Contacts in the
+ * chatroom are members, and contacts who we've invited to the group, or
+ * contacts who've requested permission to join, are remote pending. If the
+ * local user has been invited by another contact, they will appear in the
+ * local-pending set until they accept or decline the invitation.
+ */
+
+/**
+ * SECTION:channel-text
+ * @title: Text channels
+ * @short_description: client-side wrappers for the Text channel type, and
+ *  the Chat State and Password interfaces
+ * @see_also: channel-group, #TpChannel
+ *
+ * A major use for instant messaging is obviously to send messages.
+ * Channels of type Text represent IM conversations or chat rooms.
+ *
+ * This section documents the auto-generated C wrappers for the Text channel
+ * type, and also for the Chat State and Password interfaces, which are
+ * usually used in conjunction with Text channels.
+ */
+
+/**
+ * SECTION:channel-media
+ * @title: Media channels
+ * @short_description: client-side wrappers for the Streamed Media channel
+ *  type, and the DTMF and Media Signalling interfaces
+ * @see_also: channel-group, #TpChannel
+ *
+ * This section documents the auto-generated C wrappers for the Streamed Media
+ * channel type, and the DTMF and Media Signalling interfaces which are
+ * optionally supported by channels of this type.
+ *
+ * Streamed Media channels represent real-time audio or video streaming,
+ * including voice over IP, webcams, and telephony.
+ *
+ * Channels of type Streamed Media may support the Media Signalling interface.
+ * If not, the connection manager is assumed to be presenting the media
+ * streams to the user automatically (for instance, in a connection manager
+ * like gnome-phone-manager or telepathy-snom that remotely controls a
+ * telephone, the phone's own speaker and microphone will probably be
+ * used directly).
+ *
+ * If Media Signalling is supported, the Telepathy client is responsible for
+ * actually streaming the media, using the Media Signalling interface to
+ * provide signalling (connection managers might implement this interface in
+ * terms of Jingle or SDP, for instance). The Telepathy project suggests that
+ * client authors use the Farsight library for this; the glue between Media
+ * Signalling and Farsight is currently done in telepathy-stream-engine, an
+ * additional D-Bus service, but it will be provided as a library in future.
+ *
+ * Channels of type Streamed Media may also support the DTMF interface.
+ */
+
+/**
+ * SECTION:channel-tubes
+ * @title: Tubes channels
+ * @short_description: client-side wrappers for the Tubes channel type
+ * @see_also: channel-group
+ *
+ * A "tube" is a mechanism for arbitrary data transfer.
+ * This section documents the auto-generated C wrappers for the Tubes
+ * channel type.
+ */
+
+/**
+ * SECTION:channel-roomlist
+ * @title: Room List channels
+ * @short_description: client-side wrappers for the Room List channel type
+ * @see_also: #TpChannel
+ *
+ * Many instant messaging protocols allow named chatrooms to be listed.
+ * This section documents the auto-generated C wrappers for the Room List
+ * channel type.
+ */
+
+/**
+ * SECTION:connection-avatars
+ * @title: Connection Avatars interface
+ * @short_description: client-side wrappers for the Avatars interface
+ * @see_also: #TpConnection
+ *
+ * Most instant messaging protocols allow users to set an icon or avatar.
+ * This section documents the auto-generated C wrappers for the Avatar
+ * interface, used with #TpConnection objects.
+ */
+
+/**
+ * SECTION:connection-aliasing
+ * @title: Connection Aliasing interface
+ * @short_description: client-side wrappers for the Aliasing interface
+ * @see_also: #TpConnection
+ *
+ * Most instant messaging protocols allow users to set a nickname or
+ * alias. This section documents the auto-generated C wrappers for the
+ * Aliasing interface, used with #TpConnection objects.
+ */
+
+/**
+ * SECTION:connection-caps
+ * @title: Connection Capabilities interface
+ * @short_description: client-side wrappers for the Capabilities interface
+ * @see_also: #TpConnection
+ *
+ * Some instant messaging protocols allow discovery of the capabilities of
+ * a user's client. In Telepathy, this is represented by the Capabilities
+ * interface, which lets applications advertise extra capabilities for the
+ * local user, and query the interfaces supported by their contacts.
+ *
+ * This section documents the auto-generated C wrappers for the
+ * Capabilities interface, used with #TpConnection objects.
+ */
+
+/**
+ * SECTION:connection-presence
+ * @title: Connection Presence interface
+ * @short_description: client-side wrappers for the Presence interface
+ * @see_also: #TpConnection
+ *
+ * Most instant messaging protocols allow users to advertise their presence
+ * status. In Telepathy, this is represented by the Presence
+ * interface, which lets applications advertise the presence status of the
+ * local user, and query the presence status of their contacts.
+ *
+ * This section documents the auto-generated C wrappers for the
+ * Presence interface, used with #TpConnection objects.
+ */

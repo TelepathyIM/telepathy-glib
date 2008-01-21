@@ -26,7 +26,16 @@
     <title>Client-side proxies</title>
     <xi:include href="xml/connection-manager.xml"/>
     <xi:include href="xml/connection.xml"/>
+    <xi:include href="xml/connection-aliasing.xml"/>
+    <xi:include href="xml/connection-avatars.xml"/>
+    <xi:include href="xml/connection-caps.xml"/>
+    <xi:include href="xml/connection-presence.xml"/>
     <xi:include href="xml/channel.xml"/>
+    <xi:include href="xml/channel-group.xml"/>
+    <xi:include href="xml/channel-text.xml"/>
+    <xi:include href="xml/channel-media.xml"/>
+    <xi:include href="xml/channel-tubes.xml"/>
+    <xi:include href="xml/channel-roomlist.xml"/>
     <xi:include href="xml/media-interfaces.xml"/>
   </chapter>
 
