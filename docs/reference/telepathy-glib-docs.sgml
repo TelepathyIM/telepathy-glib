@@ -19,6 +19,7 @@
     <xi:include href="xml/interfaces.xml"/>
     <xi:include href="xml/enums.xml"/>
     <xi:include href="xml/errors.xml"/>
+    <xi:include href="xml/gtypes.xml"/>
     <xi:include href="xml/channel-iface.xml"/>
   </chapter>
   <chapter id="ch-client">
@@ -63,6 +64,5 @@
     <xi:include href="xml/debug.xml"/>
     <xi:include href="xml/intset.xml"/>
     <xi:include href="xml/heap.xml"/>
-    <xi:include href="xml/gtypes.xml"/>
   </chapter>
 </book>
