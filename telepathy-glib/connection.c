@@ -694,7 +694,6 @@ typedef struct {
     TpConnectionNameListCb callback;
     gpointer user_data;
     GDestroyNotify destroy;
-    GObject *weak_object;
     size_t base_len;
 } _ListContext;
 
@@ -717,7 +716,7 @@ tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
   if (error != NULL)
     {
       list_context->callback (NULL, 0, NULL, NULL, error,
-          list_context->user_data, list_context->weak_object);
+          list_context->user_data, user_object);
       return;
     }
 
@@ -782,7 +781,7 @@ invalid:
   list_context->callback ((const gchar * const *) bus_names->pdata,
       bus_names->len - 1, (const gchar * const *) cms->pdata,
       (const gchar * const *) protocols->pdata,
-      NULL, list_context->user_data, list_context->weak_object);
+      NULL, list_context->user_data, user_object);
 
   g_ptr_array_free (bus_names, TRUE);
   g_strfreev ((char **) g_ptr_array_free (cms, FALSE));

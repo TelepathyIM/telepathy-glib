@@ -1219,7 +1219,6 @@ typedef struct
   gpointer user_data;
   GDestroyNotify destroy;
   TpProxyPendingCall *pending_call;
-  GObject *weak_object;
   size_t base_len;
   gboolean getting_names:1;
   guint refcount:2;
@@ -1243,7 +1242,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
                                        const gchar **names,
                                        const GError *error,
                                        gpointer user_data,
-                                       GObject *user_object)
+                                       GObject *weak_object)
 {
   _ListContext *list_context = user_data;
   const gchar **iter;
@@ -1251,7 +1250,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
   if (error != NULL)
     {
       list_context->callback (NULL, 0, error, list_context->user_data,
-          list_context->weak_object);
+          weak_object);
       return;
     }
 
@@ -1290,7 +1289,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
 
       cms = (TpConnectionManager **) g_ptr_array_free (arr, FALSE);
       list_context->callback (cms, n_cms, NULL, list_context->user_data,
-          list_context->weak_object);
+          weak_object);
       list_context->callback = NULL;
 
       for (iter = cms; *iter != NULL; iter++)
@@ -1306,7 +1305,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
       list_context->refcount++;
       tp_cli_dbus_daemon_call_list_names (bus_daemon, 2000,
           tp_list_connection_managers_got_names, list_context,
-          (GDestroyNotify) list_context_unref, list_context->weak_object);
+          (GDestroyNotify) list_context_unref, weak_object);
     }
 }
 
@@ -1337,7 +1336,6 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
   list_context->callback = callback;
   list_context->user_data = user_data;
   list_context->destroy = destroy;
-  list_context->weak_object = weak_object;
 
   list_context->getting_names = FALSE;
   list_context->refcount = 1;
