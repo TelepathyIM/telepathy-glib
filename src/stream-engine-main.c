@@ -41,6 +41,7 @@
 #include <dbus/dbus-glib.h>
 #include <gst/gst.h>
 
+#include <telepathy-glib/debug.h>
 #include <telepathy-glib/errors.h>
 
 #include "tp-stream-engine.h"
@@ -192,45 +193,14 @@ watchdog_bite (int sig)
   abort ();
 }
 
-static void
-set_log_file_from_env (void)
-{
-  const gchar *output_file;
-  int out;
-
-  output_file = g_getenv ("STREAM_ENGINE_LOGFILE");
-  if (output_file == NULL)
-    return;
-
-  out = g_open (output_file, O_WRONLY | O_CREAT, 0644);
-  if (out == -1)
-    {
-      g_warning ("Can't open logfile '%s': %s", output_file,
-          g_strerror (errno));
-      return;
-    }
-
-  if (dup2 (out, STDOUT_FILENO) == -1)
-    {
-      g_warning ("Error when duplicating stdout file descriptor: %s",
-          g_strerror (errno));
-      return;
-    }
-
-  if (dup2 (out, STDERR_FILENO) == -1)
-    {
-      g_warning ("Error when duplicating stderr file descriptor: %s",
-          g_strerror (errno));
-      return;
-    }
-}
-
 int main(int argc, char **argv)
 {
 
   gst_init (&argc, &argv);
 
-  set_log_file_from_env ();
+  tp_debug_divert_messages (g_getenv ("STREAM_ENGINE_LOGFILE"));
+  tp_debug_set_flags (g_getenv ("STREAM_ENGINE_DEBUG"));
+  /* FIXME: switch this project to use DEBUG() too */
 
   signal (SIGBUS, got_sigbus);
 
