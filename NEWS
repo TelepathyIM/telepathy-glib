@@ -10,8 +10,11 @@ process of making libtelepathy obsolete.
   - TpDBusDaemon, a TpProxy subclass to talk to the bus daemon
   - TpChannel, a channel (replaces libtelepathy's TpChan)
   - TpConnection, a connection (replaces libtelepathy's TpConn)
-  - TpConnMgr, a connection manager (replaces libtelepathy's TpConnMgr)
+  - TpConnectionManager, a connection manager (replaces libtelepathy's
+    TpConnMgr)
   - TpMediaStreamHandler and TpMediaSessionHandler, media signalling helpers
+  - Correct algorithms for listing connection managers, listing connections,
+    and reading .manager files (as documented in the 0.17.1 spec)
 
 * Examples extended:
   - various simple client examples
