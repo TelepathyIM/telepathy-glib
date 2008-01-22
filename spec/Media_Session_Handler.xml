@@ -62,7 +62,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <method name="Ready">
       <tp:docstring>
         Inform the connection manager that a client is ready to handle
-        this session handler.
+        this session handler (i.e. that it has connected to the
+        NewStreamHandler signal and done any other necessary setup).
       </tp:docstring>
     </method>
     <tp:docstring>

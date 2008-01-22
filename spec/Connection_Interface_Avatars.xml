@@ -154,8 +154,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Get the unique tokens for the given contacts' avatars. These tokens
         can be persisted across connections, and should be used by the client
-        to check whether the avatars have been updated. A empty token means
-        that no avatar is set for the given contact.
+        to check whether the avatars have been updated.  A CM must always have
+        the tokens for the self handle if one is set (even if it is set to no
+        avatar). Otherwise, only tokens that are already known or that can be
+        discovered without retrieving the complete avatar are returned. An
+        empty token means the given contact has no avatar.
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -266,9 +269,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     a changed token implies the contact's avatar has changed, but the strings
     should otherwise be considered opaque by clients.</p>
 
-    <p>A client should use GetAvatarTokens to request the tokens for the avatars
-    of all the contacts it is interested in when it connects. The avatars can
-    then be retreived using RequestAvatar for the corresponding contact.
+    <p>A client should use GetKnownAvatarTokens to request the tokens for the
+    avatars of all the contacts it is interested in when it connects. The
+    avatars can then be requested using RequestAvatars for the contacts.
     Clients should bind to the AvatarChanged signal and request a new copy of
     the avatar when a contacts' avatar token changes. Clients should cache the
     token and data of each contact's avatar between connections, to avoid

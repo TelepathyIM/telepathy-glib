@@ -22,22 +22,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <tp:simple-type name="Protocol" type="s">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>An instant messaging protocol. Where possible, this SHOULD be
-        chosen from the following well-known values:</p>
+        <p>An instant messaging protocol. It must consist only of ASCII
+          letters, digits and hyphen/minus signs (U+002D "-"), and must start
+          with a letter. Where possible, this SHOULD be
+          chosen from the following well-known values:</p>
+
         <ul>
-          <li>aim - AOL Instant Messenger</li>
+          <li>aim - AOL Instant Messenger (OSCAR or TOC)</li>
           <li>gadugadu - Gadu-Gadu</li>
           <li>groupwise - Novell Groupwise</li>
-          <li>icq - ICQ</li>
-          <li>irc - Internet Relay Chat</li>
-          <li>jabber - Jabber (XMPP)</li>
-          <li>local-xmpp - Link-local XMPP (XEP-0174, Bonjour, Salut)</li>
-          <li>msn - MSN Messenger</li>
+          <li>icq - ICQ (OSCAR)</li>
+          <li>irc - Internet Relay Chat (RFC 1459, 2810-2813)</li>
+          <li>jabber - XMPP (RFC 3920, 3921) or Jabber</li>
+          <li>local-xmpp - Link-local XMPP (XEP-0174) (Bonjour, Salut)</li>
+          <li>msn - MSNP (Windows Live Messenger)</li>
+          <li>myspace - MySpaceIM</li>
           <li>napster - Napster</li>
+          <li>qq - Tencent QQ</li>
+          <li>sametime - IBM Lotus Sametime</li>
           <li>silc - SILC</li>
           <li>sip - Session Initiation Protocol (SIP)</li>
           <li>trepia - Trepia</li>
-          <li>yahoo - Yahoo! Messenger</li>
+          <li>yahoo - YMSG (Yahoo! Messenger)</li>
           <li>zephyr - Zephyr</li>
         </ul>
       </tp:docstring>
@@ -169,17 +175,31 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Connect method.</p>
 
         <p>In order to allow Connection objects to be discovered by new clients,
-        the object path and bus name must be of the form:</p>
-        <pre>/org/freedesktop/Telepathy/Connection/manager/proto/account</pre>
-        <p>And:</p>
-        <pre>org.freedesktop.Telepathy.Connection.manager.proto.account</pre>
-        <p>Where manager and proto are the identifiers for this manager and this
-        protocol, and account is a series of elements formed such that any
-        valid distinct connection instance on this protocol has a distinct
-        name. This might be formed by including the server name followed by the
-        user name, or on protocols where connecting multiple times is
-        permissable, a per-connection identifier is also necessary to ensure
-        uniqueness.</p>
+        the object path and well-known bus name must be of the form
+        <code>/org/freedesktop/Telepathy/Connection/cmname/proto/account</code>
+        and
+        <code>org.freedesktop.Telepathy.Connection.cmname.proto.account</code>
+        where:</p>
+
+        <ul>
+          <li><em>cmname</em> is the same connection manager name that appears
+            in the connection manager's object path and well-known bus name</li>
+          <li><em>proto</em> is the protocol name as seen in
+            ListProtocols, but with "-" replaced with "_" to get a valid
+            object path/bus name</li>
+          <li><em>account</em> SHOULD be a series of elements formed such that
+            any valid distinct connection instance on this protocol has a
+            distinct name; this might be formed by including the server name
+            followed by the user name (escaped via some suitable mechanism like
+            telepathy-glib's tp_escape_as_identifier() function to preserve
+            uniqueness), or on protocols where connecting multiple times
+            is permissable, a per-connection identifier might be necessary to
+            ensure uniqueness</li>
+        </ul>
+
+        <p>Clients MUST NOT attempt to parse the <em>account</em> part of the
+          bus name. Connection managers MAY use any unique string for this
+          part.</p>
 
         <p>The parameters which must and may be provided in the parameters
         dictionary can be discovered with the GetParameters method. These
@@ -248,16 +268,90 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </method>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
     <p>A D-Bus service which allows connections to be created. The manager
-    processes are intended to be started by D-Bus service activation.  The
-    names of these services, the protocols they support, and the parameters
-    understood by that protocol are intended to be discovered by reading files
-    on disk which are provided along with the connection manager. These are
-    documented elsewhere.</p>
+      processes are intended to be started by D-Bus service activation.</p>
 
-    <p>Once a connection manager service has been activated, the object
-    path of the manager object implementing this interface is always
-     /org/freedesktop/Telepathy/ConnectionManager/name
-     Where name is the identifier for the connection manager.</p>
+    <p>For service discovery, each Telepathy connection manager must have
+      a <em>connection manager name</em>, which is a non-empty string of
+      ASCII letters, digits and underscores, starting with a letter. This
+      is typically the name of the executable with any "telepathy-" prefix
+      removed.</p>
+
+    <p>The connection manager must then provide a well-known bus name of
+      <code>org.freedesktop.Telepathy.ConnectionManager.<em>cmname</em></code>
+      where <em>cmname</em> is its connection manager name. If it makes sense
+      to start the connection manager using D-Bus service activation, it
+      must register that well-known name for service activation by installing
+      a .service file.</p>
+
+    <p>Clients can list the running connection managers by calling the
+      ListNames method on the D-Bus daemon's org.freedesktop.DBus interface
+      and looking for names matching the above pattern; they can list the
+      activatable connection managers by calling ListActivatableNames, and
+      they should usually combine the two lists to get a complete list of
+      running or activatable connection managers.</p>
+
+    <p>When the connection manager is running, it must have an object
+      implementing the ConnectionManager interface at the object path
+      <code>/org/freedesktop/Telepathy/ConnectionManager/<em>cmname</em></code>.
+    </p>
+
+    <p>Connection managers' capabilities can be determined dynamically by
+      calling their ListProtocols method, then for each protocol of interest,
+      calling GetParameters to discover the required and optional parameters.
+      However, since it is inefficient to activate all possible connection
+      managers on the system just to find out what they can do, there
+      is a standard mechanism to store static information about CMs in
+      ".manager files".</p>
+
+    <p>To look up a connection manager's supported protocols, clients
+      should search the data directories specified by
+      <a href="http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html">the
+        freedesktop.org XDG Base Directory Specification</a> ($XDG_DATA_HOME,
+      defaulting to $HOME/.local/share if unset, followed by
+      colon-separated paths from $XDG_DATA_DIRS, defaulting to
+      /usr/local/share:/usr/share if unset) for the first file named
+      <code>telepathy/managers/<em>cmname</em>.manager</code> that can be
+      read without error. This file has the same syntax as a
+      <a href="http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html">freedesktop.org Desktop Entry file</a>.</p>
+    
+    <p>For each protocol name <em>proto</em> that would be returned by
+      ListProtocols, the .manager file contains a group
+      headed <code>[Protocol <em>proto</em>]</code>. For each parameter
+      <em>p</em> that would be returned by GetParameters(<em>proto</em>), the
+      .manager file contains a key <code>param-<em>p</em></code> with a value
+      consisting of a D-Bus signature (a single complete type), optionally
+      followed by a space and a space-separated list of flags. The supported
+      flags are <code>required</code>, corresponding to
+      Conn_Mgr_Param_Flag_Required, and <code>register</code>, corresponding
+      to Conn_Mgr_Param_Flag_Register.
+    </p>
+
+    <p>The group may also contain a key <code>default-<em>p</em></code>
+      whose value is a string form of the default value for the parameter.
+      If this key exists, it sets the default, and also sets the flag
+      Conn_Mgr_Param_Flag_Has_Default. The default value is formatted
+      according to the D-Bus signature as follows:</p>
+
+    <dl>
+      <dt>s (string)</dt>
+        <dd>The UTF-8 string</dd>
+      <dt>o (object path)</dt>
+        <dd>The object path as an ASCII string</dd>
+      <dt>b (boolean)</dt>
+        <dd>"true" (case-insensitively) or "1" means True, "false"
+          (case-insensitively) or "0" means False</dd>
+      <dt>q, u, t (16-, 32-, 64-bit unsigned integer)</dt>
+        <dd>ASCII decimal integer</dd>
+      <dt>n, i, x (16-, 32-, 64-bit signed integer)</dt>
+        <dd>ASCII decimal integer, optionally prefixed with "-"</dd>
+      <dt>d (double-precision floating point)</dt>
+        <dd>ASCII decimal number</dd>
+    </dl>
+
+    <p>Currently, no other D-Bus signatures are allowed to have default values,
+      but clients parsing the .manager file MUST ignore defaults
+      that they cannot parse, and treat them as if the
+      <code>default-<em>p</em></code> key was not present at all.</p>
 
     <p>It is not required that a connection manager be able to support multiple
     protocols, or even multiple connections. When a connection is made, a

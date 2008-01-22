@@ -47,11 +47,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Invite all the given contacts into the channel, or accept requests for
           channel membership for contacts on the pending local list.</p>
-        
+
         <p>A message may be provided along with the request, which will be sent
         to the server if supported. See the CHANNEL_GROUP_FLAG_MESSAGE_ADD and
         CHANNEL_GROUP_FLAG_MESSAGE_ACCEPT flags to see in which cases this
         message should be provided.</p>
+
+        <p>Attempting to add contacts who are already members is allowed;
+          connection managers must silently accept this, without error.</p>
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
