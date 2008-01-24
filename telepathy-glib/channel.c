@@ -122,6 +122,10 @@ struct _TpChannel {
     TpChannelPrivate *priv;
 };
 
+struct _TpChannelPrivate {
+    gulong conn_invalidated_id;
+};
+
 enum
 {
   PROP_CONNECTION = 1,
@@ -322,7 +326,7 @@ static void
 tp_channel_connection_invalidated_cb (TpConnection *conn,
                                       guint domain,
                                       guint code,
-                                      const gchar *message,
+                                      gchar *message,
                                       TpChannel *self)
 {
   const GError e = { domain, code, message };
@@ -330,7 +334,7 @@ tp_channel_connection_invalidated_cb (TpConnection *conn,
   g_signal_handler_disconnect (conn, self->priv->conn_invalidated_id);
   self->priv->conn_invalidated_id = 0;
 
-  tp_proxy_invalidate (self, &e);
+  tp_proxy_invalidate ((TpProxy *) self, &e);
 }
 
 static GObject *
@@ -393,7 +397,8 @@ tp_channel_init (TpChannel *self)
 static void
 tp_channel_dispose (GObject *object)
 {
-  DEBUG ("%p", object);
+  TpChannel *self = (TpChannel *) object;
+  DEBUG ("%p", self);
 
   if (self->priv->conn_invalidated_id != 0)
     g_signal_handler_disconnect (self->connection,
