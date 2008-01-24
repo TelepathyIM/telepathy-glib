@@ -274,7 +274,9 @@ struct _TpProxySignalConnection {
 };
 
 struct _TpProxyPrivate {
-    /* GQuark for interface => ref'd DBusGProxy * */
+    /* GQuark for interface => either a ref'd DBusGProxy *,
+     * or the TpProxy itself used as a dummy value to indicate that
+     * the DBusGProxy has not been needed yet */
     GData *interfaces;
 
     gboolean dispose_has_run:1;
@@ -302,6 +304,8 @@ enum {
 
 static guint signals[N_SIGNALS] = {0};
 
+static void tp_proxy_iface_destroyed_cb (DBusGProxy *proxy, TpProxy *self);
+
 /**
  * tp_proxy_borrow_interface_by_id:
  * @self: the TpProxy
@@ -321,13 +325,33 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
                                  GQuark interface,
                                  GError **error)
 {
-  DBusGProxy *proxy;
+  gpointer proxy;
 
   if (!tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
         error))
       return NULL;
 
   proxy = g_datalist_id_get_data (&self->priv->interfaces, interface);
+
+  if (proxy == self)
+    {
+      /* dummy value - we've never actually needed the interface, so we
+       * didn't create it, to avoid binding to all the signals */
+
+      proxy = dbus_g_proxy_new_for_name (self->dbus_connection,
+          self->bus_name, self->object_path, g_quark_to_string (interface));
+      DEBUG ("%p: %s DBusGProxy is %p", self, g_quark_to_string (interface),
+          proxy);
+
+      g_signal_connect (proxy, "destroy",
+          G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
+
+      g_datalist_id_set_data_full (&self->priv->interfaces, interface,
+          proxy, g_object_unref);
+
+      g_signal_emit (self, signals[SIGNAL_INTERFACE_ADDED], 0,
+          (guint) interface, proxy);
+    }
 
   if (proxy != NULL)
     {
@@ -374,15 +398,14 @@ tp_proxy_has_interface_by_id (gpointer self,
  * proxy implements the given interface.
  */
 
-static void tp_proxy_iface_destroyed_cb (DBusGProxy *proxy, TpProxy *self);
-
 static void
 tp_proxy_lose_interface (GQuark unused,
-                         gpointer dgproxy,
+                         gpointer dgproxy_or_self,
                          gpointer self)
 {
-  g_signal_handlers_disconnect_by_func (dgproxy,
-      G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
+  if (dgproxy_or_self != self)
+    g_signal_handlers_disconnect_by_func (dgproxy_or_self,
+        G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
 }
 
 static void
@@ -507,19 +530,12 @@ tp_proxy_add_interface_by_id (TpProxy *self,
 
   if (iface_proxy == NULL)
     {
-      iface_proxy = dbus_g_proxy_new_for_name (self->dbus_connection,
-          self->bus_name, self->object_path, g_quark_to_string (interface));
-      DEBUG ("%p: %s DBusGProxy is %p", self, g_quark_to_string (interface),
-          iface_proxy);
-
-      g_signal_connect (iface_proxy, "destroy",
-          G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
-
+      /* we don't want to actually create it just yet - dbus-glib will
+       * helpfully wake us up on every signal, if we do. So we set a
+       * dummy value (self), and replace it with the real value in
+       * tp_proxy_borrow_interface_by_id */
       g_datalist_id_set_data_full (&self->priv->interfaces, interface,
-          iface_proxy, g_object_unref);
-
-      g_signal_emit (self, signals[SIGNAL_INTERFACE_ADDED], 0,
-          (guint) interface, iface_proxy);
+          self, NULL);
     }
 
   return iface_proxy;
@@ -760,7 +776,7 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
 void
 tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
 {
-  DBusGProxy *iface;
+  gpointer iface;
   TpProxyInvokeFunc invoke = self->invoke_callback;
 
   DEBUG ("%p", self);
@@ -789,7 +805,7 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
   iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
       self->interface);
 
-  if (iface == NULL || self->pending_call == NULL)
+  if (iface == NULL || iface == self->proxy || self->pending_call == NULL)
     return;
 
   dbus_g_proxy_cancel_call (iface, self->pending_call);
@@ -938,7 +954,7 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
 static void
 tp_proxy_signal_connection_disconnect_dbus_glib (TpProxySignalConnection *self)
 {
-  DBusGProxy *iface;
+  gpointer iface;
 
   if (self->proxy == NULL)
     return;
@@ -946,7 +962,7 @@ tp_proxy_signal_connection_disconnect_dbus_glib (TpProxySignalConnection *self)
   iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
       self->interface);
 
-  if (iface == NULL)
+  if (iface == NULL || iface == self->proxy)
     return;
 
   dbus_g_proxy_disconnect_signal (iface, self->member, self->collect_args,
@@ -1678,7 +1694,14 @@ tp_proxy_class_init (TpProxyClass *klass)
    * @id: the GQuark representing the interface
    * @proxy: the dbus-glib proxy representing the interface
    *
-   * Emitted when this proxy has gained an interface.
+   * Emitted when this proxy has gained an interface. It is not guaranteed
+   * to be emitted immediately, but will be emitted before the interface is
+   * first used (at the latest: before it's returned from
+   * tp_proxy_borrow_interface_by_id(), any signal is connected, or any
+   * method is called).
+   *
+   * The intended use is to call dbus_g_proxy_add_signals(). This signal
+   * should only be used by TpProy implementations
    */
   signals[SIGNAL_INTERFACE_ADDED] = g_signal_new ("interface-added",
       G_OBJECT_CLASS_TYPE (klass),
