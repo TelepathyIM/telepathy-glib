@@ -24,9 +24,10 @@ main (int argc,
   guint handle_type, handle;
   gchar *channel_type;
   gchar **interfaces, **iter;
-  const gchar *bus_name, *object_path;
-  TpChannel *channel;
+  const gchar *conn_name, *object_path;
   TpDBusDaemon *daemon;
+  TpConnection *connection;
+  TpChannel *channel = NULL;
   GError *error = NULL;
   int ret = 0;
 
@@ -36,17 +37,33 @@ main (int argc,
   if (argc < 3)
     {
       fputs ("Usage:\n"
-          "    telepathy-example-inspect-channel BUS_NAME OBJECT_PATH\n",
+          "    telepathy-example-inspect-channel CONN OBJECT_PATH\n"
+          "CONN may either be a connection's well-known bus name or object\n"
+          "path.\n",
           stderr);
       return 2;
     }
 
-  bus_name = argv[1];
+  conn_name = argv[1];
   object_path = argv[2];
 
   daemon = tp_dbus_daemon_new (tp_get_bus ());
 
-  channel = tp_channel_new (daemon, bus_name, object_path, NULL,
+  if (conn_name[0] == '/')
+    connection = tp_connection_new (daemon, NULL, conn_name, &error);
+  else
+    connection = tp_connection_new (daemon, conn_name, NULL, &error);
+
+  if (connection == NULL ||
+      !tp_connection_run_until_ready (connection, FALSE, &error, NULL))
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      ret = 1;
+      goto out;
+    }
+
+  channel = tp_channel_new (connection, object_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
 
   if (channel == NULL || !tp_channel_run_until_ready (channel, &error, NULL))
@@ -108,6 +125,9 @@ main (int argc,
 
 out:
   g_object_unref (daemon);
+
+  if (connection != NULL)
+    g_object_unref (connection);
 
   if (channel != NULL)
     g_object_unref (channel);
