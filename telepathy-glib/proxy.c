@@ -509,7 +509,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
  *
  * To use methods and signals of that interface, either call
  * tp_proxy_borrow_interface_by_id() to get the #DBusGProxy, or use the
- * tp_cli_* wrapper functions.
+ * tp_cli_* wrapper functions (strongly recommended).
  *
  * If the interface is the proxy's "main interface", or has already been
  * added, then do nothing.
