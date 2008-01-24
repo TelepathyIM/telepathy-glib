@@ -335,6 +335,13 @@ tp_channel_connection_invalidated_cb (TpConnection *conn,
   self->priv->conn_invalidated_id = 0;
 
   tp_proxy_invalidate ((TpProxy *) self, &e);
+
+  /* this channel's handle is now meaningless */
+  if (self->handle != 0)
+    {
+      self->handle = 0;
+      g_object_notify ((GObject *) self, "handle");
+    }
 }
 
 static GObject *
