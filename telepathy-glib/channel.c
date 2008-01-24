@@ -111,6 +111,8 @@ struct _TpChannelClass {
 struct _TpChannel {
     TpProxy parent;
 
+    TpConnection *connection;
+
     gboolean ready:1;
     gboolean _reserved_flags:31;
     GQuark channel_type;
@@ -122,7 +124,8 @@ struct _TpChannel {
 
 enum
 {
-  PROP_CHANNEL_TYPE = 1,
+  PROP_CONNECTION = 1,
+  PROP_CHANNEL_TYPE,
   PROP_HANDLE_TYPE,
   PROP_HANDLE,
   PROP_CHANNEL_READY,
@@ -144,6 +147,9 @@ tp_channel_get_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_CONNECTION:
+      g_value_set_object (value, self->connection);
+      break;
     case PROP_CHANNEL_READY:
       g_value_set_boolean (value, self->ready);
       break;
@@ -173,6 +179,9 @@ tp_channel_set_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_CONNECTION:
+      self->connection = g_value_get_object (value);
+      break;
     case PROP_CHANNEL_TYPE:
       /* can only be set in constructor */
       g_assert (self->channel_type == 0);
@@ -447,14 +456,24 @@ tp_channel_class_init (TpChannelClass *klass)
       | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_CHANNEL_READY,
       param_spec);
+
+  /**
+   * TpChannel:connection:
+   *
+   * The #TpConnection to which this #TpChannel belongs. Used for e.g.
+   * handle manipulation.
+   */
+  param_spec = g_param_spec_object ("connection", "TpConnection",
+      "The connection to which this object belongs.", TP_TYPE_CONNECTION,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+  g_object_class_install_property (object_class, PROP_CONNECTION,
+      param_spec);
 }
 
 /**
  * tp_channel_new:
- * @dbus: a D-Bus daemon; may not be %NULL
- * @bus_name: the bus name of the connection process; may not be %NULL.
- *  If this is a well-known name, this function will make a blocking call
- *  to the bus daemon to resolve the unique name.
+ * @conn: a connection; may not be %NULL
  * @object_path: the object path of the channel; may not be %NULL
  * @optional_channel_type: the channel type if already known, or %NULL if not
  * @optional_handle_type: the handle type if already known, or
@@ -469,8 +488,7 @@ tp_channel_class_init (TpChannelClass *klass)
  * Returns: a new channel proxy, or %NULL on invalid arguments.
  */
 TpChannel *
-tp_channel_new (TpDBusDaemon *dbus,
-                const gchar *bus_name,
+tp_channel_new (TpConnection *conn,
                 const gchar *object_path,
                 const gchar *optional_channel_type,
                 TpHandleType optional_handle_type,
@@ -478,15 +496,15 @@ tp_channel_new (TpDBusDaemon *dbus,
                 GError **error)
 {
   TpChannel *ret = NULL;
+  TpProxy *conn_proxy = (TpProxy *) conn;
   gchar *dup = NULL;
 
-  g_return_val_if_fail (dbus != NULL, NULL);
-  g_return_val_if_fail (bus_name != NULL, NULL);
+  g_return_val_if_fail (conn != NULL, NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
 
-  if (!tp_dbus_check_valid_bus_name (bus_name,
-        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, error))
-    goto finally;
+  /* TpConnection always has a unique name, so we can assert this */
+  g_assert (tp_dbus_check_valid_bus_name (conn_proxy->bus_name,
+        TP_DBUS_NAME_TYPE_UNIQUE, NULL));
 
   if (!tp_dbus_check_valid_object_path (object_path, error))
     goto finally;
@@ -512,23 +530,9 @@ tp_channel_new (TpDBusDaemon *dbus,
       goto finally;
     }
 
-  /* Resolve unique name if necessary */
-  if (bus_name[0] != ':')
-    {
-      if (!_tp_dbus_daemon_get_name_owner (dbus, 2000, bus_name,
-          &dup, error))
-        goto finally;
-
-      bus_name = dup;
-
-      if (!tp_dbus_check_valid_bus_name (bus_name,
-          TP_DBUS_NAME_TYPE_UNIQUE, error))
-        goto finally;
-    }
-
   ret = TP_CHANNEL (g_object_new (TP_TYPE_CHANNEL,
-        "dbus-daemon", dbus,
-        "bus-name", bus_name,
+        "connection", conn,
+        "dbus-daemon", conn_proxy->dbus_daemon,
         "object-path", object_path,
         "channel-type", optional_channel_type,
         "handle-type", optional_handle_type,

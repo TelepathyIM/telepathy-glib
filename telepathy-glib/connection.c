@@ -420,6 +420,8 @@ tp_connection_class_init (TpConnectionClass *klass)
   object_class->dispose = tp_connection_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION;
+  /* If you change this, you must also change TpChannel to stop asserting
+   * that its connection has a unique name */
   proxy_class->must_have_unique_name = TRUE;
   tp_proxy_or_subclass_hook_on_interface_add (tp_type,
       tp_cli_connection_add_signals);
