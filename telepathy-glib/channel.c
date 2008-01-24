@@ -180,7 +180,7 @@ tp_channel_set_property (GObject *object,
   switch (property_id)
     {
     case PROP_CONNECTION:
-      self->connection = g_value_get_object (value);
+      self->connection = g_value_dup_object (value);
       break;
     case PROP_CHANNEL_TYPE:
       /* can only be set in constructor */
@@ -318,6 +318,21 @@ tp_channel_closed_cb (TpChannel *self,
   tp_proxy_invalidate ((TpProxy *) self, &e);
 }
 
+static void
+tp_channel_connection_invalidated_cb (TpConnection *conn,
+                                      guint domain,
+                                      guint code,
+                                      const gchar *message,
+                                      TpChannel *self)
+{
+  const GError e = { domain, code, message };
+
+  g_signal_handler_disconnect (conn, self->priv->conn_invalidated_id);
+  self->priv->conn_invalidated_id = 0;
+
+  tp_proxy_invalidate (self, &e);
+}
+
 static GObject *
 tp_channel_constructor (GType type,
                         guint n_params,
@@ -326,6 +341,11 @@ tp_channel_constructor (GType type,
   GObjectClass *object_class = (GObjectClass *) tp_channel_parent_class;
   TpChannel *self = TP_CHANNEL (object_class->constructor (type,
         n_params, params));
+
+  /* If our TpConnection dies, so do we. */
+  self->priv->conn_invalidated_id = g_signal_connect (self->connection,
+      "invalidated", G_CALLBACK (tp_channel_connection_invalidated_cb),
+      NULL);
 
   /* Connect to my own Closed signal and self-destruct when it arrives.
    * The channel hasn't had a chance to become invalid yet, so we can
@@ -374,6 +394,15 @@ static void
 tp_channel_dispose (GObject *object)
 {
   DEBUG ("%p", object);
+
+  if (self->priv->conn_invalidated_id != 0)
+    g_signal_handler_disconnect (self->connection,
+        self->priv->conn_invalidated_id);
+
+  self->priv->conn_invalidated_id = 0;
+
+  g_object_unref (self->connection);
+  self->connection = NULL;
 
   ((GObjectClass *) tp_channel_parent_class)->dispose (object);
 }
