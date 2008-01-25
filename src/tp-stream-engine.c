@@ -261,7 +261,7 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
 }
 
 GstElement *
-tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
+tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
 {
   const gchar *videosink_name;
   GstElement *sink = NULL;
@@ -270,7 +270,7 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
   GstPad *pad;
 #endif
 
-  g_assert (obj->priv->pipeline != NULL);
+  g_assert (self->priv->pipeline != NULL);
 
   if ((videosink_name = getenv ("PREVIEW_VIDEO_SINK")) ||
       (videosink_name = getenv ("FS_VIDEO_SINK")) ||
@@ -372,22 +372,23 @@ tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview)
   sink = bin;
 #endif
 
-  gst_bin_add (GST_BIN (obj->priv->pipeline), sink);
+  gst_bin_add (GST_BIN (self->priv->pipeline), sink);
 
   return sink;
 }
 
 static gboolean
-_add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
+_add_preview_window (TpStreamEngine *self, guint window_id, GError **error)
 {
   WindowPair *wp;
   GstElement *tee, *sink;
   GstStateChangeReturn state_change_ret;
 
-  g_assert (obj->priv->pipeline != NULL);
+  g_assert (self->priv->pipeline != NULL);
 
   g_debug ("%s: called for window id %d", G_STRFUNC, window_id);
-  wp = _window_pairs_find_by_window_id (obj->priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (self->priv->preview_windows,
+      window_id);
 
   if (wp == NULL)
     {
@@ -399,8 +400,8 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
 
   g_debug ("adding preview in window %u", window_id);
 
-  tee = gst_bin_get_by_name (GST_BIN (obj->priv->pipeline), "tee");
-  sink = tp_stream_engine_make_video_sink (obj, TRUE);
+  tee = gst_bin_get_by_name (GST_BIN (self->priv->pipeline), "tee");
+  sink = tp_stream_engine_make_video_sink (self, TRUE);
 
   if (sink == NULL)
     goto sink_failure;
@@ -432,12 +433,12 @@ _add_preview_window (TpStreamEngine *obj, guint window_id, GError **error)
   g_debug ("linked tee and sink");
 
   gst_object_unref (tee);
-  g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
+  g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
   return TRUE;
 
 link_failure:
   gst_element_set_state (sink, GST_STATE_NULL);
-  gst_bin_remove (GST_BIN (obj->priv->pipeline), sink);
+  gst_bin_remove (GST_BIN (self->priv->pipeline), sink);
 
 sink_failure:
   gst_object_unref (tee);
@@ -445,7 +446,7 @@ sink_failure:
   if (error != NULL)
     g_warning ((*error)->message);
 
-  _window_pairs_remove (&(obj->priv->preview_windows), wp);
+  _window_pairs_remove (&(self->priv->preview_windows), wp);
 
   return FALSE;
 }
@@ -494,12 +495,12 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
                gpointer data);
 
 static void
-tp_stream_engine_init (TpStreamEngine *obj)
+tp_stream_engine_init (TpStreamEngine *self)
 {
-  TpStreamEnginePrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (obj,
+  TpStreamEnginePrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_STREAM_ENGINE, TpStreamEnginePrivate);
 
-  obj->priv = priv;
+  self->priv = priv;
 
   priv->channels = g_ptr_array_new ();
 
@@ -510,16 +511,16 @@ tp_stream_engine_init (TpStreamEngine *obj)
 
   priv->bad_drawable_handler_id =
     g_signal_connect (priv->handler, "bad-drawable", (GCallback) bad_misc_cb,
-      obj);
+      self);
   priv->bad_gc_handler_id =
     g_signal_connect (priv->handler, "bad-gc", (GCallback) bad_other_cb,
-      obj);
+      self);
   priv->bad_value_handler_id =
     g_signal_connect (priv->handler, "bad-value", (GCallback) bad_value_cb,
-      obj);
+      self);
   priv->bad_window_handler_id =
     g_signal_connect (priv->handler, "bad-window", (GCallback) bad_window_cb,
-      obj);
+      self);
 }
 
 static void tp_stream_engine_dispose (GObject *object);
@@ -1114,9 +1115,9 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
 }
 
 static void
-_create_pipeline (TpStreamEngine *obj)
+_create_pipeline (TpStreamEngine *self)
 {
-  TpStreamEnginePrivate *priv = obj->priv;
+  TpStreamEnginePrivate *priv = self->priv;
   GstElement *videosrc = NULL;
   GstElement *tee;
 #ifndef MAEMO_OSSO_SUPPORT
@@ -1231,9 +1232,9 @@ _create_pipeline (TpStreamEngine *obj)
   /* connect a callback to the stream bus so that we can set X window IDs
    * at the right time, and detect when sinks have gone away */
   bus = gst_element_get_bus (priv->pipeline);
-  gst_bus_set_sync_handler (bus, bus_sync_handler, obj);
+  gst_bus_set_sync_handler (bus, bus_sync_handler, self);
   priv->bus_async_source_id =
-    gst_bus_add_watch (bus, bus_async_handler, obj);
+    gst_bus_add_watch (bus, bus_async_handler, self);
   gst_object_unref (bus);
 }
 
@@ -1245,14 +1246,14 @@ _create_pipeline (TpStreamEngine *obj)
  */
 
 GstElement *
-tp_stream_engine_get_pipeline (TpStreamEngine *obj)
+tp_stream_engine_get_pipeline (TpStreamEngine *self)
 {
-  if (NULL == obj->priv->pipeline)
+  if (NULL == self->priv->pipeline)
     {
-      _create_pipeline (obj);
+      _create_pipeline (self);
     }
 
-  return obj->priv->pipeline;
+  return self->priv->pipeline;
 }
 
 
@@ -1278,15 +1279,15 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
                                      guint window_id,
                                      DBusGMethodInvocation *context)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
-  TpStreamEnginePrivate *priv = obj->priv;
+  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
+  TpStreamEnginePrivate *priv = self->priv;
   WindowPair *wp;
 
   g_debug ("%s: called for %u", G_STRFUNC, window_id);
 
   if (priv->pipeline == NULL)
     {
-      _create_pipeline (obj);
+      _create_pipeline (self);
     }
 
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
@@ -1327,7 +1328,7 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
 
       g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
       _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      if (_add_preview_window (obj, window_id, &error))
+      if (_add_preview_window (self, window_id, &error))
         {
           stream_engine_svc_stream_engine_return_from_add_preview_window
             (context);
@@ -1503,12 +1504,13 @@ tp_stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
                                         guint window_id,
                                         DBusGMethodInvocation *context)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
+  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   WindowPair *wp;
 
   g_debug ("%s: called for %u", G_STRFUNC, window_id);
 
-  wp = _window_pairs_find_by_window_id (obj->priv->preview_windows, window_id);
+  wp = _window_pairs_find_by_window_id (self->priv->preview_windows,
+      window_id);
 
   if (wp == NULL)
     {
@@ -1530,7 +1532,7 @@ tp_stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
   if (wp->created == FALSE)
     {
       g_debug ("Window not created yet, can remove right away");
-      _window_pairs_remove (&(obj->priv->preview_windows), wp);
+      _window_pairs_remove (&(self->priv->preview_windows), wp);
       goto success;
     }
 
@@ -1545,29 +1547,29 @@ success:
 
 
 gboolean
-tp_stream_engine_add_output_window (TpStreamEngine *obj,
+tp_stream_engine_add_output_window (TpStreamEngine *self,
                                     TpStreamEngineStream *stream,
                                     GstElement *sink,
                                     guint window_id)
 {
-  _window_pairs_add (&(obj->priv->output_windows), stream, sink, window_id);
+  _window_pairs_add (&(self->priv->output_windows), stream, sink, window_id);
 
   return TRUE;
 }
 
 
 gboolean
-tp_stream_engine_remove_output_window (TpStreamEngine *obj,
+tp_stream_engine_remove_output_window (TpStreamEngine *self,
                                        guint window_id)
 {
   WindowPair *wp;
 
-  wp = _window_pairs_find_by_window_id (obj->priv->output_windows, window_id);
+  wp = _window_pairs_find_by_window_id (self->priv->output_windows, window_id);
 
   if (wp == NULL)
     return FALSE;
 
-  _window_pairs_remove (&(obj->priv->output_windows), wp);
+  _window_pairs_remove (&(self->priv->output_windows), wp);
 
   return TRUE;
 }
@@ -1600,7 +1602,7 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
                                  guint handle,
                                  DBusGMethodInvocation *context)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
+  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineChannel *chan = NULL;
   GError *error = NULL;
 
@@ -1617,7 +1619,7 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
       return;
      }
 
-  chan = tp_stream_engine_channel_new (obj->priv->dbus_daemon, bus_name,
+  chan = tp_stream_engine_channel_new (self->priv->dbus_daemon, bus_name,
       connection, channel, handle_type, handle, &error);
 
   if (chan == NULL)
@@ -1628,21 +1630,21 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
     }
 
   g_object_set ((GObject *) chan,
-      "video-pipeline", tp_stream_engine_get_pipeline (obj),
+      "video-pipeline", tp_stream_engine_get_pipeline (self),
       NULL);
 
-  g_ptr_array_add (obj->priv->channels, chan);
-  g_hash_table_insert (obj->priv->channels_by_path, g_strdup (channel), chan);
+  g_ptr_array_add (self->priv->channels, chan);
+  g_hash_table_insert (self->priv->channels_by_path, g_strdup (channel), chan);
 
   g_signal_connect (chan, "handler-result", G_CALLBACK (handler_result),
       context);
-  g_signal_connect (chan, "closed", G_CALLBACK (channel_closed), obj);
+  g_signal_connect (chan, "closed", G_CALLBACK (channel_closed), self);
   g_signal_connect (chan, "stream-state-changed",
-      G_CALLBACK (channel_stream_state_changed), obj);
+      G_CALLBACK (channel_stream_state_changed), self);
   g_signal_connect (chan, "stream-receiving",
-      G_CALLBACK (channel_stream_receiving), obj);
+      G_CALLBACK (channel_stream_receiving), self);
 
-  g_signal_emit (obj, signals[HANDLING_CHANNEL], 0);
+  g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
 }
 
 void
@@ -1674,7 +1676,7 @@ tp_stream_engine_register (TpStreamEngine *self)
 }
 
 static TpStreamEngineStream *
-_lookup_stream (TpStreamEngine *obj,
+_lookup_stream (TpStreamEngine *self,
                 const gchar *path,
                 guint stream_id,
                 GError **error)
@@ -1682,7 +1684,7 @@ _lookup_stream (TpStreamEngine *obj,
   TpStreamEngineChannel *channel;
   TpStreamEngineStream *stream;
 
-  channel = g_hash_table_lookup (obj->priv->channels_by_path, path);
+  channel = g_hash_table_lookup (self->priv->channels_by_path, path);
   if (channel == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
@@ -1718,11 +1720,11 @@ tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
                              gboolean mute_state,
                              DBusGMethodInvocation *context)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
+  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
   GError *error = NULL;
 
-  stream = _lookup_stream (obj, channel_path, stream_id, &error);
+  stream = _lookup_stream (self, channel_path, stream_id, &error);
 
   if (stream != NULL &&
       tp_stream_engine_stream_mute_input (stream, mute_state, &error))
@@ -1749,11 +1751,11 @@ tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
                               gboolean mute_state,
                               DBusGMethodInvocation *context)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
+  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
   GError *error = NULL;
 
-  stream = _lookup_stream (obj, channel_path, stream_id, &error);
+  stream = _lookup_stream (self, channel_path, stream_id, &error);
 
   if (stream != NULL &&
       tp_stream_engine_stream_mute_output (stream, mute_state, &error))
@@ -1781,11 +1783,11 @@ tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
                                     guint volume,
                                     DBusGMethodInvocation *context)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
+  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
   GError *error = NULL;
 
-  stream = _lookup_stream (obj, channel_path, stream_id, &error);
+  stream = _lookup_stream (self, channel_path, stream_id, &error);
 
   if (stream != NULL &&
       tp_stream_engine_stream_set_output_volume (stream, volume, &error))
@@ -1812,14 +1814,14 @@ tp_stream_engine_set_output_window (StreamEngineSvcStreamEngine *iface,
                                     guint window_id,
                                     DBusGMethodInvocation *context)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (iface);
+  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
   GError *error = NULL;
 
   g_debug ("%s: channel_path=%s, stream_id=%u, window_id=%u", G_STRFUNC,
       channel_path, stream_id, window_id);
 
-  stream = _lookup_stream (obj, channel_path, stream_id, &error);
+  stream = _lookup_stream (self, channel_path, stream_id, &error);
 
   if (stream != NULL &&
       tp_stream_engine_stream_set_output_window (stream, window_id, &error))
