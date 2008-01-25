@@ -1614,6 +1614,7 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
 
       g_message ("%s", e.message);
       dbus_g_method_return_error (context, &e);
+      return;
      }
 
   chan = tp_stream_engine_channel_new (obj->priv->dbus_daemon, bus_name,
