@@ -833,25 +833,33 @@ get_session_handlers_reply (TpChannel *channel_proxy,
 TpStreamEngineChannel *
 tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
                               const gchar *bus_name,
+                              const gchar *connection_path,
                               const gchar *channel_path,
                               guint handle_type,
                               guint handle,
                               GError **error)
 {
+  TpConnection *connection;
   TpChannel *channel_proxy;
   TpStreamEngineChannel *ret;
 
   g_return_val_if_fail (bus_name != NULL, NULL);
+  g_return_val_if_fail (connection_path != NULL, NULL);
   g_return_val_if_fail (channel_path != NULL, NULL);
 
-  channel_proxy = tp_channel_new (dbus_daemon,
-      bus_name, channel_path, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
-      handle_type, handle, error);
+  connection = tp_connection_new (dbus_daemon,
+      bus_name, connection_path, error);
+
+  if (connection == NULL)
+    return NULL;
+
+  channel_proxy = tp_channel_new (connection, channel_path,
+      TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA, handle_type, handle, error);
 
   if (channel_proxy == NULL)
-    {
-      return NULL;
-    }
+    return NULL;
+
+  g_object_unref (connection);
 
   ret = g_object_new (TP_STREAM_ENGINE_TYPE_CHANNEL,
       "channel", channel_proxy,

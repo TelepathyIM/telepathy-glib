@@ -1617,7 +1617,7 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
      }
 
   chan = tp_stream_engine_channel_new (obj->priv->dbus_daemon, bus_name,
-      channel, handle_type, handle, &error);
+      connection, channel, handle_type, handle, &error);
 
   if (chan == NULL)
     {
