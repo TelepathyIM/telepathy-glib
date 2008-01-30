@@ -399,6 +399,8 @@ tp_channel_init (TpChannel *self)
   self->channel_type = 0;
   self->handle_type = TP_UNKNOWN_HANDLE_TYPE;
   self->handle = 0;
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CHANNEL,
+      TpChannelPrivate);
 }
 
 static void
