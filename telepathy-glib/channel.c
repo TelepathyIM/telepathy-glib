@@ -429,6 +429,8 @@ tp_channel_class_init (TpChannelClass *klass)
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
+  g_type_class_add_private (klass, sizeof (TpChannelPrivate));
+
   object_class->constructor = tp_channel_constructor;
   object_class->get_property = tp_channel_get_property;
   object_class->set_property = tp_channel_set_property;
