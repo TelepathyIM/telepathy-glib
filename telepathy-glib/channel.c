@@ -356,7 +356,7 @@ tp_channel_constructor (GType type,
   /* If our TpConnection dies, so do we. */
   self->priv->conn_invalidated_id = g_signal_connect (self->connection,
       "invalidated", G_CALLBACK (tp_channel_connection_invalidated_cb),
-      NULL);
+      self);
 
   /* Connect to my own Closed signal and self-destruct when it arrives.
    * The channel hasn't had a chance to become invalid yet, so we can
