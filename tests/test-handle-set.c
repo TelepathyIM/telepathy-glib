@@ -26,10 +26,10 @@ int main (int argc, char **argv)
   set = tp_handle_set_new (repo);
   g_assert (set != NULL);
 
-  h1 = tp_handle_request (repo, "h1@foo", TRUE);
-  h2 = tp_handle_request (repo, "h2@foo", TRUE);
-  h3 = tp_handle_request (repo, "h3@foo", TRUE);
-  h4 = tp_handle_request (repo, "h4@foo", TRUE);
+  h1 = tp_handle_ensure (repo, "h1@foo", NULL, NULL);
+  h2 = tp_handle_ensure (repo, "h2@foo", NULL, NULL);
+  h3 = tp_handle_ensure (repo, "h3@foo", NULL, NULL);
+  h4 = tp_handle_ensure (repo, "h4@foo", NULL, NULL);
   g_assert (h1 && h2 && h3 && h4);
 
   /* Add one handle, check that it's in, check the size */
