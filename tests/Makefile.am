@@ -35,7 +35,7 @@ check-valgrind:
 EXTRA_DIST = myassert.h README
 
 test_handle_set_SOURCES = \
-    test-intset.c
+    test-handle-set.c
 test_handle_set_LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
