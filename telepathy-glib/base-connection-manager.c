@@ -158,6 +158,9 @@
  * In addition to the fields documented here, there are four gpointer fields
  * which must currently be %NULL (a meaning may be defined for these in a
  * future version of telepathy-glib), and a pointer to opaque private data.
+ *
+ * Changed in 0.7.1: it is a fatal error for @cm_dbus_name not to conform to
+ * the specification.
  */
 
 /**

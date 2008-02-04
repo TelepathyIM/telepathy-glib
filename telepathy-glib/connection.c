@@ -66,6 +66,8 @@
  * #TpConnectionStatusReason.
  *
  * This macro expands to a function call returning a #GQuark.
+ *
+ * Since: 0.7.1
  */
 GQuark
 tp_errors_disconnected_quark (void)
@@ -83,6 +85,8 @@ tp_errors_disconnected_quark (void)
  *
  * An invalid connection status used in #TpConnection to indicate that the
  * status has not yet been discovered.
+ *
+ * Since: 0.7.1
  */
 
 /**
@@ -91,6 +95,8 @@ tp_errors_disconnected_quark (void)
  * @priv: pointer to opaque private data
  *
  * The class of a #TpConnection.
+ *
+ * Since: 0.7.1
  */
 struct _TpConnectionClass {
     TpProxyClass parent_class;
@@ -110,6 +116,8 @@ struct _TpConnectionClass {
  * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy connection.
+ *
+ * Since: 0.7.1
  */
 struct _TpConnection {
     TpProxy parent;
@@ -491,6 +499,8 @@ tp_connection_class_init (TpConnectionClass *klass)
  *
  * Returns: a new connection proxy, or %NULL if unique-name resolution
  *  fails or on invalid arguments
+ *
+ * Since: 0.7.1
  */
 TpConnection *
 tp_connection_new (TpDBusDaemon *dbus,
@@ -570,6 +580,8 @@ finally:
  *
  * Returns: %TRUE if the connection is now connected and ready for use,
  *  %FALSE if the connection has become invalid.
+ *
+ * Since: 0.7.1
  */
 
 typedef struct {
@@ -690,6 +702,8 @@ raise_invalidated:
  * @weak_object: user-supplied weakly referenced object
  *
  * Signature of the callback supplied to tp_list_connection_managers().
+ *
+ * Since: 0.7.1
  */
 
 typedef struct {
@@ -816,6 +830,8 @@ list_context_free (gpointer p)
  *
  * List the available (running or installed) connection managers. Call the
  * callback when done.
+ *
+ * Since: 0.7.1
  */
 void
 tp_list_connection_names (TpDBusDaemon *bus_daemon,

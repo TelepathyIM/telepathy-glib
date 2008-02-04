@@ -27,6 +27,8 @@
  *
  * The common prefix of Telepathy errors, as a string constant, without
  * the trailing '.' character.
+ *
+ * Since: 0.7.1
  */
 
 /**

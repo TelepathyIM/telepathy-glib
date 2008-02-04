@@ -67,6 +67,8 @@
  * %TP_CHANNEL_GROUP_CHANGE_REASON_NONE).
  *
  * This macro expands to a function call returning a #GQuark.
+ *
+ * Since: 0.7.1
  */
 GQuark
 tp_errors_removed_from_group_quark (void)
@@ -85,6 +87,8 @@ tp_errors_removed_from_group_quark (void)
  * @priv: pointer to opaque private data
  *
  * The class of a #TpChannel.
+ *
+ * Since: 0.7.1
  */
 struct _TpChannelClass {
     TpProxyClass parent_class;
@@ -107,6 +111,8 @@ struct _TpChannelClass {
  * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy channel.
+ *
+ * Since: 0.7.1
  */
 struct _TpChannel {
     TpProxy parent;
@@ -531,6 +537,8 @@ tp_channel_class_init (TpChannelClass *klass)
  * <!-- -->
  *
  * Returns: a new channel proxy, or %NULL on invalid arguments.
+ *
+ * Since: 0.7.1
  */
 TpChannel *
 tp_channel_new (TpConnection *conn,
@@ -606,6 +614,8 @@ finally:
  *
  * Returns: %TRUE if the channel has been introspected and is ready for use,
  *  %FALSE if the channel has become invalid.
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_channel_run_until_ready (TpChannel *self,

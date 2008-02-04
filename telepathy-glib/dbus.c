@@ -502,6 +502,8 @@ tp_dbus_check_valid_object_path (const gchar *path, GError **error)
  * TpDBusDaemonClass:
  *
  * The class of #TpDBusDaemon.
+ *
+ * Since: 0.7.1
  */
 struct _TpDBusDaemonClass
 {

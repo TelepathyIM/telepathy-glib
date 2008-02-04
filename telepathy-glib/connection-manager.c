@@ -61,6 +61,8 @@
  * @weak_object: user-supplied weakly referenced object
  *
  * Signature of the callback supplied to tp_list_connection_managers().
+ *
+ * Since: 0.7.1
  */
 
 /**
@@ -71,12 +73,16 @@
  *
  * Describes possible sources of information on connection managers'
  * supported protocols.
+ *
+ * Since: 0.7.1
  */
 
 /**
  * TpConnectionManagerClass:
  *
  * The class of a #TpConnectionManager.
+ *
+ * Since: 0.7.1
  */
 
 enum
@@ -136,6 +142,8 @@ enum
  *
  * If the CM exits, we still consider it to have been "introspected". If it's
  * re-run, we introspect it again.
+ *
+ * Since: 0.7.1
  */
 
 /**
@@ -150,6 +158,8 @@ enum
  * @priv: Pointer to opaque private data
  *
  * Structure representing a connection manager parameter.
+ *
+ * Since: 0.7.1
  */
 
 /**
@@ -161,6 +171,8 @@ enum
  * Structure representing a protocol supported by a connection manager.
  * Note that the size of this structure may change, so its size must not be
  * relied on.
+ *
+ * Since: 0.7.1
  */
 
 struct _TpConnectionManagerPrivate {
@@ -1185,6 +1197,8 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
  * Returns: %TRUE if activation was needed and is now in progress, %FALSE
  *  if the connection manager was already running and no additional signals
  *  will be emitted.
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_connection_manager_activate (TpConnectionManager *self)
@@ -1322,6 +1336,8 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
  *
  * List the available (running or installed) connection managers. Call the
  * callback when done.
+ *
+ * Since: 0.7.1
  */
 void
 tp_list_connection_managers (TpDBusDaemon *bus_daemon,
@@ -1357,6 +1373,8 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
  * with a letter.
  *
  * Returns: %TRUE if @name is valid
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_connection_manager_check_valid_name (const gchar *name,
@@ -1404,6 +1422,8 @@ tp_connection_manager_check_valid_name (const gchar *name,
  * with a letter.
  *
  * Returns: %TRUE if @name is valid
+ *
+ * Since: 0.7.1
  */
 gboolean
 tp_connection_manager_check_valid_protocol_name (const gchar *name,

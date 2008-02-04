@@ -37,12 +37,16 @@
  *
  * This module provides access to the auxiliary objects used to
  * implement #TpSvcChannelTypeStreamedMedia.
+ *
+ * Since: 0.7.1
  */
 
 /**
  * TpMediaStreamHandlerClass:
  *
  * The class of a #TpMediaStreamHandler.
+ *
+ * Since: 0.7.1
  */
 struct _TpMediaStreamHandlerClass {
     TpProxyClass parent_class;
@@ -54,6 +58,8 @@ struct _TpMediaStreamHandlerClass {
  * TpMediaStreamHandler:
  *
  * A proxy object for a Telepathy connection manager.
+ *
+ * Since: 0.7.1
  */
 struct _TpMediaStreamHandler {
     TpProxy parent;
@@ -95,6 +101,8 @@ tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *klass)
  * <!-- -->
  *
  * Returns: a new media stream handler proxy, or %NULL on invalid arguments
+ *
+ * Since: 0.7.1
  */
 TpMediaStreamHandler *
 tp_media_stream_handler_new (TpDBusDaemon *dbus,
@@ -125,6 +133,8 @@ finally:
  * TpMediaSessionHandlerClass:
  *
  * The class of a #TpMediaSessionHandler.
+ *
+ * Since: 0.7.1
  */
 struct _TpMediaSessionHandlerClass {
     TpProxyClass parent_class;
@@ -136,6 +146,8 @@ struct _TpMediaSessionHandlerClass {
  * TpMediaSessionHandler:
  *
  * A proxy object for a Telepathy connection manager.
+ *
+ * Since: 0.7.1
  */
 struct _TpMediaSessionHandler {
     TpProxy parent;
@@ -177,6 +189,8 @@ tp_media_session_handler_class_init (TpMediaSessionHandlerClass *klass)
  * <!-- -->
  *
  * Returns: a new media session handler proxy, or %NULL on invalid arguments
+ *
+ * Since: 0.7.1
  */
 TpMediaSessionHandler *
 tp_media_session_handler_new (TpDBusDaemon *dbus,

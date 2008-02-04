@@ -9,6 +9,8 @@
  *
  * Expands to a call to a function that returns a quark whose string value is
  * %DBUS_INTERFACE_DBUS, the main interface exported by the D-Bus daemon
+ *
+ * Since: 0.7.1
  */
 GQuark
 tp_iface_quark_dbus_daemon (void)
