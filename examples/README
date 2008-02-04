@@ -1,0 +1,64 @@
+telepathy-glib examples
+=======================
+
+You can get more examples of telepathy-glib usage from:
+* the telepathy-glib branch of telepathy-inspector (versions >= 0.5.1 will use
+  telepathy-glib)
+* the core connection managers (particularly telepathy-gabble; also
+  telepathy-salut, telepathy-sofiasip and telepathy-haze)
+* the regression tests (tests/ in the source release)
+
+telepathy-glib-examples.supp
+----------------------------
+A Valgrind suppressions file, used to check the examples and tests for leaks -
+it may be useful to Telepathy developers, to suppress unwanted messages
+when debugging other Telepathy components.
+
+client/list-managers.c
+----------------------
+List available connection managers.
+Usage: telepathy-example-list-managers
+
+client/inspect-cm.c
+-------------------
+Introspect a connection manager (doesn't yet print out the information
+gathered, but it could).
+Example usage: telepathy-example-inspect-cm gabble
+
+client/list-connections.c
+-------------------------
+List available connections.
+Usage: telepathy-example-list-connections
+
+client/inspect-connection.c
+---------------------------
+Introspect a connection (as found by list-connections) and make an asynchronous
+method call to list its channels.
+Usage: one of
+  telepathy-example-inspect-connection BUS_NAME
+  telepathy-example-inspect-connection OBJECT_PATH
+  telepathy-example-inspect-connection BUS_NAME OBJECT_PATH
+
+client/inspect-channel.c
+------------------------
+Introspect a channel (as found by inspect-connection) and print out its
+type, handle and interfaces. If it has the Group interface, also make a
+reentrant method call to list its members.
+Usage: telepathy-example-inspect-channel CONN_OBJECT_PATH CHAN_OBJECT_PATH
+
+cm/no-protocols/
+----------------
+The simplest possible Telepathy connection manager. It doesn't support any
+protocols.
+
+cm/echo/
+--------
+A simple fake Telepathy connection manager, which supports text channels where
+the remote contact just echoes back your messages.
+
+extensions/
+-----------
+An example of how to add extra interfaces to telepathy-glib, for use with
+experimental or special-purpose interfaces. client/extended-client.c and
+cm/extended/ use the convenience library built by extensions/ to implement
+the Hats interface.
