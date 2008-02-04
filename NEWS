@@ -4,9 +4,13 @@ telepathy-glib 0.7.1 (unreleased)
 This is a major feature release, adding client-side code which continues the
 process of making libtelepathy obsolete.
 
+* Implements specification 0.17.1
+
 * Initial client-side code added:
-  - TpProxy, a much more capable version of DBusGProxy
-  - auto-generation machinery for client call wrappers
+  - TpProxy, a much more capable version of DBusGProxy (it more closely
+    resembles a dbus-python ProxyObject, with one object per connection,
+    channel etc. rather than one per interface)
+  - auto-generation machinery for client call wrappers (namespaced tp_cli_*)
   - TpDBusDaemon, a TpProxy subclass to talk to the bus daemon
   - TpChannel, a channel (replaces libtelepathy's TpChan)
   - TpConnection, a connection (replaces libtelepathy's TpConn)
@@ -20,11 +24,12 @@ process of making libtelepathy obsolete.
   - various simple client examples
   - an "echo" connection manager
   - an extended connection manager and client (implementing a hypothetical
-    Hats interface)
+    Hats interface), to illustrate how to support experimental or extension
+    interfaces in services and clients
 
-* Misc utilities:
-  - tp_debug_divert_messages
-  - tp_debug_timestamped_log_handler
+* Miscellaneous utilities:
+  - tp_debug_divert_messages (adapted from Gabble)
+  - tp_debug_timestamped_log_handler (adapted from Gabble)
 
 * Versioned symbols
   - versions are of the form TELEPATHY_GLIB_x.y.z
