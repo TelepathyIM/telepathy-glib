@@ -18,7 +18,7 @@ the specification that this library claims to implement.
 Requirements
 ============
 
-telepathy-glib requires:
+Building telepathy-glib requires:
   GLib, GObject <http://ftp.gnome.org/pub/GNOME/sources/glib/>
   libdbus <http://dbus.freedesktop.org/releases/dbus/>
   The D-Bus GLib bindings <http://dbus.freedesktop.org/releases/dbus-glib/>
@@ -30,9 +30,21 @@ and can also make use of:
   gtkdoc <http://ftp.gnome.org/pub/GNOME/sources/gtk-doc/>
 
 See configure.ac for full details, including versions required.
+Of the packages listed above, only GLib, GObject, libdbus and dbus-glib are
+required at runtime.
 
 Building from Darcs also requires the GNU build system (Autoconf, Automake,
 libtool).
+
+Bugs, feature requests and to-do list
+=====================================
+
+Report all bugs, feature requests and "to-do" items here:
+  <https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=telepathy-glib>
+
+Running "make check" will produce FIXME.out, which lists all the mentions of
+FIXME, TODO or XXX in the source code. Ideally, all of these should be in
+Bugzilla, but sometimes they're not.
 
 API stability policy
 ====================

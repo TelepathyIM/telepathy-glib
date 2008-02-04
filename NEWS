@@ -5,6 +5,11 @@ This is a major feature release, adding client-side code which continues the
 process of making libtelepathy obsolete.
 
 * Implements specification 0.17.1
+  - it is a fatal error for TpBaseConnectionManagerClass::cm_dbus_name not to
+    conform to the specification (briefly: it must match
+    /[A-Za-z_][A-Za-z0-9_]+/)
+  - connections cannot be opened for protocols not matching
+    /[A-Za-z-][A-Za-z0-9-]+/
 
 * Initial client-side code added:
   - TpProxy, a much more capable version of DBusGProxy (it more closely
@@ -27,9 +32,10 @@ process of making libtelepathy obsolete.
     Hats interface), to illustrate how to support experimental or extension
     interfaces in services and clients
 
-* Miscellaneous utilities:
+* Miscellaneous:
   - tp_debug_divert_messages (adapted from Gabble)
   - tp_debug_timestamped_log_handler (adapted from Gabble)
+  - tp_cm_param_setter_offset now supports byte-array params
 
 * Versioned symbols
   - versions are of the form TELEPATHY_GLIB_x.y.z
