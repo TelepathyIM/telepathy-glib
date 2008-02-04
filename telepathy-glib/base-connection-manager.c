@@ -45,6 +45,143 @@
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "debug-internal.h"
 
+/**
+ * TpCMParamSpec:
+ * @name: Name as passed over D-Bus
+ * @dtype: D-Bus type signature. We currently support 16- and 32-bit integers
+ *         (@gtype is INT), 16- and 32-bit unsigned integers (gtype is UINT),
+ *         strings (gtype is STRING) and booleans (gtype is BOOLEAN).
+ * @gtype: GLib type, derived from @dtype as above
+ * @flags: Some combination of TP_CONN_MGR_PARAM_FLAG_foo
+ * @def: Default value, as a (const gchar *) for string parameters, or
+         using #GINT_TO_POINTER or #GUINT_TO_POINTER for integer parameters
+ * @offset: Offset of the parameter in the opaque data structure, if
+ *          appropriate. The member at that offset is expected to be a gint,
+ *          guint, (gchar *) or gboolean, depending on @gtype. The default
+ *          parameter setter, #tp_cm_param_setter_offset, uses this field.
+ * @filter: A callback which is used to validate or normalize the user-provided
+ *          value before it is written into the opaque data structure
+ * @filter_data: Arbitrary opaque data intended for use by the filter function
+ * @setter_data: Arbitrary opaque data intended for use by the setter function
+ *               instead of or in addition to @offset.
+ *
+ * Structure representing a connection manager parameter, as accepted by
+ * RequestConnection.
+ *
+ * In addition to the fields documented here, there is one gpointer field
+ * which must currently be %NULL. A meaning may be defined for it in a
+ * future version of telepathy-glib.
+ */
+
+/**
+ * TpCMParamFilter:
+ * @paramspec: The parameter specification. The filter is likely to use
+ *  name (for the error message if the value is invalid) and filter_data.
+ * @value: The value for that parameter provided by the user.
+ *  May be changed to contain a different value of the same type, if
+ *  some sort of normalization is required
+ * @error: Used to raise %TP_ERROR_INVALID_ARGUMENT if the given value is
+ *  rejected
+ *
+ * Signature of a callback used to validate and/or normalize user-provided
+ * CM parameter values.
+ *
+ * Returns: %TRUE to accept, %FALSE (with @error set) to reject
+ */
+
+/**
+ * TpCMParamSetter:
+ * @paramspec: The parameter specification.  The setter is likely to use
+ *  some combination of the name, offset and setter_data fields.
+ * @value: The value for that parameter provided by the user.
+ * @params: An opaque data structure, created by
+ *  #TpCMProtocolSpec.params_new.
+ *
+ * The signature of a callback used to set a parameter within the opaque
+ * data structure used for a protocol.
+ *
+ * Since: 0.7.0
+ */
+
+/**
+ * TpCMProtocolSpec:
+ * @name: The name which should be passed to RequestConnection for this
+ *        protocol.
+ * @parameters: An array of #TpCMParamSpec representing the valid parameters
+ *              for this protocol, terminated by a #TpCMParamSpec whose name
+ *              entry is NULL.
+ * @params_new: A function which allocates an opaque data structure to store
+ *              the parsed parameters for this protocol. The offset fields
+ *              in the members of the @parameters array refer to offsets
+ *              within this opaque structure.
+ * @params_free: A function which deallocates the opaque data structure
+ *               provided by #params_new, including deallocating its
+ *               data members (currently, only strings) if necessary.
+ * @set_param: A function which sets a parameter within the opaque data
+ *             structure provided by #params_new. If %NULL,
+ *             tp_cm_param_setter_offset() will be used. (New in 0.7.0 -
+ *             previously, code equivalent to tp_cm_param_setter_offset() was
+ *             always used.)
+ *
+ * Structure representing a connection manager protocol.
+ *
+ * In addition to the fields documented here, there are three gpointer fields
+ * which must currently be %NULL. A meaning may be defined for these in a
+ * future version of telepathy-glib.
+ */
+
+/**
+ * TpBaseConnectionManager:
+ * @parent: The parent instance structure
+ * @priv: Pointer to opaque private data
+ *
+ * A base class for connection managers. There are no interesting public
+ * fields in the instance structure.
+ */
+
+/**
+ * TpBaseConnectionManagerClass:
+ * @parent_class: The parent class
+ * @cm_dbus_name: The name of this connection manager, as used to construct
+ *  D-Bus object paths and bus names. Must contain only letters, digits
+ *  and underscores, and may not start with a digit. Must be filled in by
+ *  subclasses in their class_init function.
+ * @protocol_params: An array of #TpCMProtocolSpec structures representing
+ *  the protocols this connection manager supports, terminated by a structure
+ *  whose name member is %NULL.
+ * @new_connection: A #TpBaseConnectionManagerNewConnFunc used to construct
+ *  new connections. Must be filled in by subclasses in their class_init
+ *  function.
+ *
+ * The class structure for #TpBaseConnectionManager.
+ *
+ * In addition to the fields documented here, there are four gpointer fields
+ * which must currently be %NULL (a meaning may be defined for these in a
+ * future version of telepathy-glib), and a pointer to opaque private data.
+ */
+
+/**
+ * TpBaseConnectionManagerNewConnFunc:
+ * @self: The connection manager implementation
+ * @proto: The protocol name from the D-Bus request
+ * @params_present: A set of integers representing the indexes into the
+ *                  array of #TpCMParamSpec of those parameters that were
+ *                  present in the request
+ * @parsed_params: An opaque data structure as returned by the protocol's
+ *                 params_new function, populated according to the
+ *                 parameter specifications
+ * @error: if not %NULL, used to indicate the error if %NULL is returned
+ *
+ * A function that will return a new connection according to the
+ * parsed parameters; used to implement RequestConnection.
+ *
+ * The connection manager base class will register the bus name for the
+ * new connection, and place a reference to it in its table of
+ * connections until the connection's shutdown process finishes.
+ *
+ * Returns: the new connection object, or %NULL on error.
+ */
+
 static void service_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnectionManager,
@@ -705,6 +842,18 @@ OUT:
   if (params)
     protospec->params_free (params);
 }
+
+/**
+ * tp_base_connection_manager_register:
+ * @self: The connection manager implementation
+ *
+ * Register the connection manager with an appropriate object path as
+ * determined from its @cm_dbus_name, and register the appropriate well-known
+ * bus name.
+ *
+ * Returns: %TRUE on success, %FALSE (having emitted a warning to stderr)
+ *          on failure
+ */
 
 gboolean
 tp_base_connection_manager_register (TpBaseConnectionManager *self)
