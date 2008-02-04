@@ -294,13 +294,20 @@ tp_debug_set_persistent (gboolean persistent)
  * @filename: A file to which to divert stdout and stderr, or %NULL to
  *  do nothing
  *
+ * Open the given file for writing and duplicate its file descriptor to
+ * be used for stdout and stderr. This has the effect of closing the previous
+ * stdout and stderr, and sending all messages that would have gone there
+ * to the given file instead.
+ *
  * Passing %NULL to this function is guaranteed to have no effect. This is
- * so you can call it as
+ * so you can call it with the recommended usage
  * <literal>tp_debug_divert_messages (g_getenv ("MYAPP_LOGFILE"))</literal>
  * and it won't do anything if the environment variable is not set.
  *
- * This function is still present if telepathy-glib was compiled without debug
+ * This function still works if telepathy-glib was compiled without debug
  * support.
+ *
+ * Since: 0.7.1
  */
 void
 tp_debug_divert_messages (const gchar *filename)
@@ -331,6 +338,12 @@ tp_debug_divert_messages (const gchar *filename)
       g_warning ("Error duplicating stderr file descriptor: %s",
           g_strerror (errno));
     }
+
+  /* avoid leaking the fd */
+  if (close (fd) != 0)
+    {
+      g_warning ("Error closing temporary logfile fd: %s", g_strerror (errno));
+    }
 }
 
 /**
@@ -349,6 +362,11 @@ tp_debug_divert_messages (const gchar *filename)
  * <informalexample><programlisting>if (g_getenv ("MYPROG_TIMING") != NULL)
  *   g_log_set_default_handler (tp_debug_timestamped_log_handler, NULL);
  * </programlisting></informalexample>
+ *
+ * If telepathy-glib was compiled with --disable-debug (not recommended),
+ * this function is equivalent to g_log_default_handler().
+ *
+ * Since: 0.7.1
  */
 void
 tp_debug_timestamped_log_handler (const gchar *log_domain,
