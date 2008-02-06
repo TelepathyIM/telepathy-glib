@@ -105,10 +105,35 @@ tp_dbus_errors_quark (void)
  * #TpProxy is a base class for Telepathy client-side proxies, which represent
  * an object accessed via D-Bus and provide access to its methods and signals.
  *
- * The header proxy.h also includes auto-generated client wrappers for the
- * Properties interface, which can be implemented by any type of object.
- *
  * Since: 0.7.1
+ */
+
+/**
+ * SECTION:proxy-dbus-core
+ * @title: TpProxy D-Bus core methods
+ * @short_description: The D-Bus Introspectable, Peer and Properties interfaces
+ * @see_also: #TpProxy
+ *
+ * All D-Bus objects support the Peer interface, and many support the
+ * Introspectable and Properties interfaces.
+ *
+ * Since: 0.7.2
+ */
+
+/**
+ * SECTION:proxy-tp-properties
+ * @title: TpProxy Telepathy Properties
+ * @short_description: The Telepathy Properties interface
+ * @see_also: #TpProxy
+ *
+ * As well as #TpProxy, proxy.h includes auto-generated client wrappers for the
+ * Telepathy Properties interface, which can be implemented by any type of
+ * object.
+ *
+ * The Telepathy Properties interface should not be confused with the D-Bus
+ * core Properties interface.
+ *
+ * Since: 0.7.2
  */
 
 /**
@@ -1515,6 +1540,10 @@ tp_proxy_constructor (GType type,
         NULL), NULL);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (self->bus_name,
         TP_DBUS_NAME_TYPE_ANY, NULL), NULL);
+
+  tp_proxy_add_interface_by_id (self, TP_IFACE_QUARK_DBUS_INTROSPECTABLE);
+  tp_proxy_add_interface_by_id (self, TP_IFACE_QUARK_DBUS_PEER);
+  tp_proxy_add_interface_by_id (self, TP_IFACE_QUARK_DBUS_PROPERTIES);
 
   if (klass->interface != 0)
     {

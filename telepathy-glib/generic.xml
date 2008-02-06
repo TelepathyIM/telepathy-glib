@@ -4,6 +4,10 @@
 
 <tp:title>Generic interfaces</tp:title>
 
+<xi:include href="dbus-peer.xml"/>
+<xi:include href="dbus-introspectable.xml"/>
+<xi:include href="dbus-properties.xml"/>
+
 <xi:include href="../spec/Properties_Interface.xml"/>
 
 </tp:spec>

@@ -21,10 +21,17 @@
 
 /**
  * SECTION:svc-generic
- * @title: Service-side Properties interface
- * @short_description: GInterface for D-Bus objects exporting Telepathy
- *  properties
+ * @title: Generic service-side interfaces
+ * @short_description: GInterfaces for D-Bus objects exporting Telepathy
+ *  properties and common D-Bus core interfaces
  * @see_also: #TpPropertiesMixin
+ *
+ * The D-Bus Properties interface associates named properties with any D-Bus
+ * object.
+ *
+ * The D-Bus Introspectable interface provides introspection information.
+ *
+ * The D-Bus Peer interface is exported by every D-Bus object.
  *
  * The Telepathy Properties interface associates a number of named properties
  * with a channel, connection or other D-Bus object. Signals are emitted

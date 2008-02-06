@@ -707,6 +707,34 @@ TELEPATHY_GLIB_0.7.1 {
         tp_proxy_subclass_add_error_mapping;
 } TELEPATHY_GLIB_0.7.0;
 
+TELEPATHY_GLIB_0.7.2_UNRELEASED {
+    global:
+        tp_cli_dbus_introspectable_call_introspect;
+        tp_cli_dbus_introspectable_run_introspect;
+        tp_cli_dbus_peer_call_get_machine_id;
+        tp_cli_dbus_peer_call_ping;
+        tp_cli_dbus_peer_run_get_machine_id;
+        tp_cli_dbus_peer_run_ping;
+        tp_cli_dbus_properties_call_get;
+        tp_cli_dbus_properties_call_get_all;
+        tp_cli_dbus_properties_call_set;
+        tp_cli_dbus_properties_run_get;
+        tp_cli_dbus_properties_run_get_all;
+        tp_cli_dbus_properties_run_set;
+        tp_iface_quark_dbus_introspectable;
+        tp_iface_quark_dbus_peer;
+        tp_iface_quark_dbus_properties;
+        tp_svc_dbus_introspectable_get_type;
+        tp_svc_dbus_introspectable_implement_introspect;
+        tp_svc_dbus_peer_get_type;
+        tp_svc_dbus_peer_implement_get_machine_id;
+        tp_svc_dbus_peer_implement_ping;
+        tp_svc_dbus_properties_get_type;
+        tp_svc_dbus_properties_implement_get;
+        tp_svc_dbus_properties_implement_get_all;
+        tp_svc_dbus_properties_implement_set;
+} TELEPATHY_GLIB_0.7.1;
+
 # For every release that adds ABI, add a stanza like:
 # TELEPATHY_GLIB_0.7.2_UNRELEASED {
 #     global:
