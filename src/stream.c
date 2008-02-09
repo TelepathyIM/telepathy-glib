@@ -1597,8 +1597,20 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
         }
       else
         {
-          DEBUG (stream, "making audio sink with alsasink element");
-          sink = gst_element_factory_make ("alsasink", NULL);
+          DEBUG (stream, "making audio sink with gconfaudiosink element");
+          sink = gst_element_factory_make ("gconfaudiosink", NULL);
+
+          if (sink == NULL)
+            {
+              DEBUG (stream, "making audio sink with autoaudiosink element");
+              sink = gst_element_factory_make ("autoaudiosink", NULL);
+            }
+
+          if (sink == NULL)
+            {
+              DEBUG (stream, "making audio sink with alsasink element");
+              sink = gst_element_factory_make ("alsasink", NULL);
+            }
         }
     }
   else
