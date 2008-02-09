@@ -1506,14 +1506,20 @@ make_src (TpStreamEngineStream *stream, guint media_type)
         }
       else
         {
-          DEBUG (stream, "making audio src with alsasrc element");
-          src = gst_element_factory_make ("alsasrc", NULL);
+          DEBUG (stream, "making audio src with gconfaudiosrc element");
+          src = gst_element_factory_make ("gconfaudiosrc", NULL);
 
-          if (src)
+          if (!src)
             {
-              g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
-              g_object_set(G_OBJECT(src), "latency-time",
-                G_GINT64_CONSTANT (20000), NULL);
+              DEBUG (stream, "making audio src with alsasrc element");
+              src = gst_element_factory_make ("alsasrc", NULL);
+
+              if (src)
+                {
+                  g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
+                  g_object_set(G_OBJECT(src), "latency-time",
+                      G_GINT64_CONSTANT (20000), NULL);
+                }
             }
         }
 
