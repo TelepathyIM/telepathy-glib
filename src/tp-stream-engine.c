@@ -1525,6 +1525,7 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEnginePrivate *priv = self->priv;
   WindowPair *wp;
+  GError *error = NULL;
 
   g_debug ("%s: called for %u", G_STRFUNC, window_id);
 
@@ -1558,12 +1559,11 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
       return;
     }
 
-  if (!priv->pipeline_playing)
+  g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
+  _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
+  if (_add_preview_window (obj, window_id, &error))
     {
-      g_debug ("%s: pipeline not playing, adding later", G_STRFUNC);
-      _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      stream_engine_svc_stream_engine_return_from_add_preview_window
-        (context);
+      stream_engine_svc_stream_engine_return_from_add_preview_window (context);
     }
   else
     {
@@ -1571,7 +1571,7 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
 
       g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
       _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      if (_add_preview_window (self, window_id, &error))
+      if (_add_preview_window (obj, window_id, &error))
         {
           stream_engine_svc_stream_engine_return_from_add_preview_window
             (context);
