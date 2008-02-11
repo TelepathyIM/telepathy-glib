@@ -726,9 +726,6 @@ TELEPATHY_GLIB_0.7.2_UNRELEASED {
         tp_iface_quark_dbus_properties;
         tp_svc_dbus_introspectable_get_type;
         tp_svc_dbus_introspectable_implement_introspect;
-        tp_svc_dbus_peer_get_type;
-        tp_svc_dbus_peer_implement_get_machine_id;
-        tp_svc_dbus_peer_implement_ping;
         tp_svc_dbus_properties_get_type;
         tp_svc_dbus_properties_implement_get;
         tp_svc_dbus_properties_implement_get_all;
