@@ -133,7 +133,7 @@ tp_dbus_errors_quark (void)
  * The Telepathy Properties interface should not be confused with the D-Bus
  * core Properties interface.
  *
- * Since: 0.7.2
+ * Since: 0.7.1
  */
 
 /**
