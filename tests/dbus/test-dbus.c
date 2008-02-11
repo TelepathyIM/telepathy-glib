@@ -4,11 +4,20 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/util.h>
 
+#include "tests/myassert.h"
+
 static GPtrArray *events;
 static TpDBusDaemon *bus;
 static GMainLoop *mainloop;
 static gchar *two = "2", *five = "5";
 static gboolean had_owners = FALSE;
+int fail = 0;
+
+static void
+myassert_failed (void)
+{
+  fail = 1;
+}
 
 static void
 noc (TpDBusDaemon *bus,
@@ -39,15 +48,15 @@ noc (TpDBusDaemon *bus,
               guint ret;
               GError *error = NULL;
 
-              g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
-                    "com.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
-              g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
-                    "org.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
-              g_assert (tp_cli_dbus_daemon_run_request_name (bus, -1,
-                    "net.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
+              MYASSERT (tp_cli_dbus_daemon_run_request_name (bus, -1,
+                    "com.example", 0, &ret, &error, NULL), "");
+              MYASSERT (ret == 1 && error == NULL, "");
+              MYASSERT (tp_cli_dbus_daemon_run_request_name (bus, -1,
+                    "org.example", 0, &ret, &error, NULL), "");
+              MYASSERT (ret == 1 && error == NULL, "");
+              MYASSERT (tp_cli_dbus_daemon_run_request_name (bus, -1,
+                    "net.example", 0, &ret, &error, NULL), "");
+              MYASSERT (ret == 1 && error == NULL, "");
             }
         }
       else
@@ -55,14 +64,14 @@ noc (TpDBusDaemon *bus,
           guint ret;
           GError *error = NULL;
 
-          g_assert (tp_dbus_daemon_cancel_name_owner_watch (bus,
-                "org.example", noc, five));
-          g_assert (tp_cli_dbus_daemon_run_release_name (bus, -1,
-                "org.example", &ret, &error, NULL));
-          g_assert (ret == 1 && error == NULL);
-          g_assert (tp_cli_dbus_daemon_run_release_name (bus, -1,
-                "net.example", &ret, &error, NULL));
-          g_assert (ret == 1 && error == NULL);
+          MYASSERT (tp_dbus_daemon_cancel_name_owner_watch (bus,
+                "org.example", noc, five), "");
+          MYASSERT (tp_cli_dbus_daemon_run_release_name (bus, -1,
+                "org.example", &ret, &error, NULL), "");
+          MYASSERT (ret == 1 && error == NULL, "");
+          MYASSERT (tp_cli_dbus_daemon_run_release_name (bus, -1,
+                "net.example", &ret, &error, NULL), "");
+          MYASSERT (ret == 1 && error == NULL, "");
         }
     }
 }
@@ -80,65 +89,81 @@ main (int argc,
 
   g_type_init ();
 
-    {
-      GError *error = NULL;
+  MYASSERT (tp_dbus_check_valid_bus_name (":1.1", TP_DBUS_NAME_TYPE_ANY,
+        NULL), "");
+  MYASSERT (tp_dbus_check_valid_bus_name ("com.example", TP_DBUS_NAME_TYPE_ANY,
+        NULL), "");
+  MYASSERT (tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
 
-      if (!tp_dbus_check_valid_bus_name (":1.1", TP_DBUS_NAME_TYPE_ANY,
-            &error))
-        {
-          g_message ("%s", error->message);
-        }
-    }
+  MYASSERT (tp_dbus_check_valid_bus_name (":1.1",
+        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL), "");
+  MYASSERT (tp_dbus_check_valid_bus_name ("com.example",
+        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL), "");
 
-  g_assert (tp_dbus_check_valid_bus_name (":1.1", TP_DBUS_NAME_TYPE_ANY,
-        NULL));
-  g_assert (tp_dbus_check_valid_bus_name ("com.example", TP_DBUS_NAME_TYPE_ANY,
-        NULL));
-  g_assert (tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
-        TP_DBUS_NAME_TYPE_ANY, NULL));
+  MYASSERT (!tp_dbus_check_valid_bus_name (":1.1",
+        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name ("com.example",
+        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL), "");
+  MYASSERT (tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL), "");
 
-  g_assert (tp_dbus_check_valid_bus_name (":1.1",
-        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL));
-  g_assert (tp_dbus_check_valid_bus_name ("com.example",
-        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
-        TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON, NULL));
+  MYASSERT (!tp_dbus_check_valid_bus_name (":1.1",
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL), "");
+  MYASSERT (tp_dbus_check_valid_bus_name ("com.example",
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL), "");
 
-  g_assert (!tp_dbus_check_valid_bus_name (":1.1",
-        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name ("com.example",
-        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL));
-  g_assert (tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
-        TP_DBUS_NAME_TYPE_BUS_DAEMON, NULL));
+  MYASSERT (tp_dbus_check_valid_bus_name (":1.1",
+        TP_DBUS_NAME_TYPE_UNIQUE, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name ("com.example",
+        TP_DBUS_NAME_TYPE_UNIQUE, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
+        TP_DBUS_NAME_TYPE_UNIQUE, NULL), "");
 
-  g_assert (!tp_dbus_check_valid_bus_name (":1.1",
-        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL));
-  g_assert (tp_dbus_check_valid_bus_name ("com.example",
-        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
-        TP_DBUS_NAME_TYPE_WELL_KNOWN, NULL));
-
-  g_assert (tp_dbus_check_valid_bus_name (":1.1",
-        TP_DBUS_NAME_TYPE_UNIQUE, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name ("com.example",
-        TP_DBUS_NAME_TYPE_UNIQUE, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
-        TP_DBUS_NAME_TYPE_UNIQUE, NULL));
-
-  g_assert (!tp_dbus_check_valid_bus_name ("com.1",
-        TP_DBUS_NAME_TYPE_ANY, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name ("com.e*ample",
-        TP_DBUS_NAME_TYPE_ANY, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name ("com..example",
-        TP_DBUS_NAME_TYPE_ANY, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name (".com.example",
-        TP_DBUS_NAME_TYPE_ANY, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name ("com.example.",
-        TP_DBUS_NAME_TYPE_ANY, NULL));
-  g_assert (!tp_dbus_check_valid_bus_name (":1.1.",
-        TP_DBUS_NAME_TYPE_ANY, NULL));
+  MYASSERT (!tp_dbus_check_valid_bus_name ("com.1",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name ("com.e*ample",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name ("com..example",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name (".com.example",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name ("com.example.",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name (":1.1.",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
 
   bus = tp_dbus_daemon_new (tp_get_bus ());
+
+  /* Regression test for properties */
+    {
+      gchar *bus_name;
+      gchar *object_path;
+      DBusGConnection *dbus_conn;
+
+      g_object_get (bus,
+          "dbus-connection", &dbus_conn,
+          "bus-name", &bus_name,
+          "object-path", &object_path,
+          NULL);
+
+      MYASSERT (object_path != NULL, "");
+      MYASSERT (object_path[0] == '/', "%s", object_path);
+      MYASSERT (bus_name != NULL, "");
+      MYASSERT (!tp_strdiff (bus_name, "org.freedesktop.DBus"),
+            "%s", bus_name);
+      MYASSERT (dbus_conn != NULL, "");
+      MYASSERT (dbus_conn == tp_get_bus (), "%p != %p", dbus_conn,
+          tp_get_bus ());
+
+      g_free (bus_name);
+      g_free (object_path);
+      dbus_g_connection_unref (dbus_conn);
+    }
 
   tp_dbus_daemon_watch_name_owner (bus, "com.example", noc, "1", NULL);
   tp_dbus_daemon_watch_name_owner (bus, "com.example", noc, two, NULL);
@@ -149,28 +174,28 @@ main (int argc,
 
   g_main_loop_run (mainloop);
 
-  g_assert (events->len == 9);
+  MYASSERT (events->len == 9, "");
 
   /* 58 == ':' - i.e. the beginning of a unique name */
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 0),
-        "[1] com.example 0"));
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 1),
-        "[3] com.example 0"));
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 2),
-        "[4] net.example 0"));
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 3),
-        "[5] org.example 0"));
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 0),
+        "[1] com.example 0"), "");
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 1),
+        "[3] com.example 0"), "");
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 2),
+        "[4] net.example 0"), "");
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 3),
+        "[5] org.example 0"), "");
 
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 4),
-        "[1] com.example 58"));
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 5),
-        "[3] com.example 58"));
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 6),
-        "[5] org.example 58"));
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 7),
-        "[4] net.example 58"));
-  g_assert (!tp_strdiff (g_ptr_array_index (events, 8),
-        "[4] net.example 0"));
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 4),
+        "[1] com.example 58"), "");
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 5),
+        "[3] com.example 58"), "");
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 6),
+        "[5] org.example 58"), "");
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 7),
+        "[4] net.example 58"), "");
+  MYASSERT (!tp_strdiff (g_ptr_array_index (events, 8),
+        "[4] net.example 0"), "");
 
   /* keep valgrind happy, at least in the successful case */
   for (i = 0; i < events->len; i++)
@@ -182,5 +207,5 @@ main (int argc,
   g_main_loop_unref (mainloop);
   mainloop = NULL;
 
-  return 0;
+  return fail;
 }
