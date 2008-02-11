@@ -1373,7 +1373,7 @@ tp_proxy_get_property (GObject *object,
         }
       break;
     case PROP_DBUS_CONNECTION:
-      g_value_set_object (value, self->dbus_connection);
+      g_value_set_boxed (value, self->dbus_connection);
       break;
     case PROP_BUS_NAME:
       g_value_set_string (value, self->bus_name);
