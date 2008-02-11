@@ -138,4 +138,5 @@ _gen/svc-connection.c _gen/svc-connection.h: _gen/connection.xml \
 		--include='<telepathy-glib/dbus.h>' \
 		--include='"_gen/signals-marshal.h"' \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
+		--allow-unstable \
 		$< Example_Svc_
