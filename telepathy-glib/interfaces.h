@@ -1,7 +1,6 @@
 #ifndef __TP_INTERFACES_H__
 #define __TP_INTERFACES_H__
 
-#include <dbus/dbus-shared.h>
 #include <glib/gquark.h>
 
 G_BEGIN_DECLS
