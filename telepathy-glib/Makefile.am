@@ -9,6 +9,9 @@ EXTRA_DIST = \
     connection.xml \
     connection-manager.xml \
     dbus-daemon.xml \
+    dbus-introspectable.xml \
+    dbus-peer.xml \
+    dbus-properties.xml \
     extra-gtkdoc.h \
     generic.xml \
     media-session-handler.xml \
