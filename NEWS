@@ -1,3 +1,11 @@
+telepathy-glib 0.7.2 (2008-02-11)
+=================================
+
+* Fixed incorrect GValue code that caused Empathy to assert on
+  Room -> Join New...
+
+* Added support for the D-Bus core Properties, Introspect and Peer interfaces
+
 telepathy-glib 0.7.1 (2008-01-04)
 =================================
 

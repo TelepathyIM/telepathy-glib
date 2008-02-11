@@ -707,7 +707,7 @@ TELEPATHY_GLIB_0.7.1 {
         tp_proxy_subclass_add_error_mapping;
 } TELEPATHY_GLIB_0.7.0;
 
-TELEPATHY_GLIB_0.7.2_UNRELEASED {
+TELEPATHY_GLIB_0.7.2 {
     global:
         tp_cli_dbus_introspectable_call_introspect;
         tp_cli_dbus_introspectable_run_introspect;
