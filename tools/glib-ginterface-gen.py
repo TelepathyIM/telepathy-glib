@@ -89,7 +89,11 @@ class Generator(object):
         interface = interfaces[0]
         self.iface_name = interface.getAttribute('name')
 
-        tmp = node.getAttribute('causes-havoc')
+        tmp = interface.getAttribute('tp:implement-service')
+        if tmp == "no":
+            return
+
+        tmp = interface.getAttribute('tp:causes-havoc')
         if tmp and not self.allow_havoc:
             raise AssertionError('%s is %s' % (self.iface_name, tmp))
 
