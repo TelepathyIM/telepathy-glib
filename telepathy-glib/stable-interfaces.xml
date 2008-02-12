@@ -10,6 +10,7 @@
 <xi:include href="media-session-handler.xml"/>
 <xi:include href="media-stream-handler.xml"/>
 <xi:include href="generic.xml"/>
+<xi:include href="dbus-daemon.xml"/>
 
 <xi:include href="../spec/generic-types.xml"/>
 <xi:include href="../spec/errors.xml"/>
