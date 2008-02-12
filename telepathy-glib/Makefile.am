@@ -145,8 +145,7 @@ BUILT_SOURCES = \
     $(nodist_geninclude_HEADERS) \
     _gen/stable-spec.xml \
     _gen/spec-stamp \
-    _gen/stable-stamp \
-    _gen/stable-interfaces
+    _gen/stable-stamp
 
 CLEANFILES = \
     $(BUILT_SOURCES)
@@ -227,10 +226,6 @@ _gen/spec-stamp: $(wildcard $(top_srcdir)/spec/*.xml)
 
 _gen/stable-stamp: $(wildcard *.xml) _gen/spec-stamp
 	touch $@
-
-_gen/stable-interfaces: _gen/stable-spec.xml ../tools/ls-interfaces.xsl
-	$(XSLTPROC) $(XSLTPROCFLAGS) $(srcdir)/../tools/ls-interfaces.xsl \
-		$< > $@
 
 _gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
