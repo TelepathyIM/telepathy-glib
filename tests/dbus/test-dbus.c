@@ -89,6 +89,14 @@ main (int argc,
 
   g_type_init ();
 
+  MYASSERT (tp_dbus_check_valid_object_path ("/", NULL), "");
+  MYASSERT (tp_dbus_check_valid_object_path ("/a", NULL), "");
+  MYASSERT (tp_dbus_check_valid_object_path ("/foo", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_object_path ("//", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_object_path ("/a//b", NULL), "");
+  MYASSERT (tp_dbus_check_valid_object_path ("/a/b", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_object_path ("/a/b/", NULL), "");
+
   MYASSERT (tp_dbus_check_valid_bus_name (":1.1", TP_DBUS_NAME_TYPE_ANY,
         NULL), "");
   MYASSERT (tp_dbus_check_valid_bus_name ("com.example", TP_DBUS_NAME_TYPE_ANY,
