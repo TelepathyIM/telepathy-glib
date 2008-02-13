@@ -732,6 +732,14 @@ TELEPATHY_GLIB_0.7.2 {
         tp_svc_dbus_properties_implement_set;
 } TELEPATHY_GLIB_0.7.1;
 
+TELEPATHY_GLIB_0.7.3_UNRELEASED {
+    global:
+        tp_dbus_properties_mixin_class_init;
+        tp_dbus_properties_mixin_iface_init;
+        tp_svc_interface_get_dbus_properties_info;
+        tp_svc_interface_set_dbus_properties_info;
+} TELEPATHY_GLIB_0.7.2;
+
 # For every release that adds ABI, add a stanza like:
 # TELEPATHY_GLIB_0.7.2_UNRELEASED {
 #     global:

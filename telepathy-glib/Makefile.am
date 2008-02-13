@@ -69,6 +69,7 @@ tpginclude_HEADERS = \
     connection.h \
     connection-manager.h \
     dbus.h \
+    dbus-properties-mixin.h \
     defs.h \
     debug.h \
     debug-ansi.h \
@@ -167,6 +168,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     connection-manager.c \
     dbus.c \
     dbus-internal.h \
+    dbus-properties-mixin.c \
     debug.c \
     interfaces.c \
     debug-internal.h \
