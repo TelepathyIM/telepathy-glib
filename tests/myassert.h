@@ -1,7 +1,9 @@
 #ifndef TP_TESTS_MYASSERT_H
 #define TP_TESTS_MYASSERT_H
 
-/* Assumes the presence of a function myassert_failed () */
+/* code using this header must define */
+static void myassert_failed (void);
+
 #define MYASSERT(assertion, extra_format, ...)\
   G_STMT_START {\
       if (!(assertion))\
