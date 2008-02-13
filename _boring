@@ -66,8 +66,7 @@
 \-bindings.(c|h)$
 \-gen.h$
 \.pc$
-^spec/spec-gen\.am$
-^telepathy-glib/_gen($|/)
+(^|/)_gen(/|$)
 ^tests/test-[-a-z]+$
 ^tests/[-a-z]+/test-[-a-z]+$
 (^|/)cscope\.out$
@@ -85,7 +84,6 @@
 ^examples/client/telepathy-example-[a-z-]+$
 ^examples/client/[^/]+/telepathy-example-[a-z-]+$
 ^examples/cm/[^/]+/telepathy-example-[a-z-]+$
-^examples/extensions/_gen(/|$)
 ^examples/extensions/extensions\.html$
 ^tools/telepathy-glib-env$
 ^FIXME\.out$
