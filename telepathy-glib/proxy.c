@@ -431,7 +431,10 @@ gboolean
 tp_proxy_has_interface_by_id (gpointer self,
                               GQuark interface)
 {
-  return tp_proxy_borrow_interface_by_id (self, interface, NULL) != NULL;
+  TpProxy *proxy = TP_PROXY (self);
+
+  return (g_datalist_id_get_data (&proxy->priv->interfaces, interface)
+      != NULL);
 }
 
 /**
