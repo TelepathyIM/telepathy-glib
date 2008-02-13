@@ -2,7 +2,8 @@ noinst_PROGRAMS = \
     test-call-cancellation \
     test-dbus \
     test-disconnection \
-    test-example-no-protocols
+    test-example-no-protocols \
+    test-properties
 
 TESTS = $(noinst_PROGRAMS)
 
@@ -10,6 +11,12 @@ test_call_cancellation_LDADD = $(TP_GLIB_LIBS)
 test_dbus_LDADD = $(TP_GLIB_LIBS)
 test_disconnection_LDADD = $(TP_GLIB_LIBS)
 test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
+
+test_properties_LDADD = $(TP_GLIB_LIBS)
+test_properties_SOURCES = \
+    properties.c \
+    _gen/svc.h \
+    _gen/svc.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
@@ -44,3 +51,22 @@ VALGRIND_TESTS_ENVIRONMENT = \
         --suppressions=$(top_srcdir)/examples/tp-glib-examples.supp \
         --child-silent-after-fork=yes --num-callers=20 \
         $(VALGRIND_FLAGS)
+
+BUILT_SOURCES = \
+	_gen/svc.h \
+	_gen/svc.c
+
+CLEANFILES = \
+    $(BUILT_SOURCES)
+
+distclean-local:
+	rm -rf _gen
+
+_gen/svc.c _gen/svc.h: with-properties.xml \
+	$(top_srcdir)/tools/glib-ginterface-gen.py \
+	Makefile.am
+	$(mkdir_p) _gen
+	$(PYTHON) $(top_srcdir)/tools/glib-ginterface-gen.py \
+		--filename=_gen/svc \
+		--signal-marshal-prefix=NOT_NEEDED \
+		$< Test_Svc_

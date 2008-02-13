@@ -1,0 +1,16 @@
+<tp:spec
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+
+  <tp:title>Something with properties</tp:title>
+
+  <node name="/With_Properties">
+    <interface name="com.example.WithProperties">
+
+      <property name="ReadOnly" access="read" type="u" />
+      <property name="WriteOnly" access="write" type="u" />
+      <property name="ReadWrite" access="readwrite" type="u" />
+
+    </interface>
+  </node>
+
+</tp:spec>
