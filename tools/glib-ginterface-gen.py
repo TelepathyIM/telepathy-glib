@@ -103,9 +103,9 @@ class Generator(object):
 
         methods = interface.getElementsByTagName('method')
         signals = interface.getElementsByTagName('signal')
-        # Don't handle properties until we know what we're doing
-        # a bit better - generate empty introspect data
-        properties = []
+        properties = interface.getElementsByTagName('property')
+        # Don't put properties in dbus-glib glue
+        glue_properties = []
 
         self.b('struct _%s%sClass {' % (self.Prefix, node_name_mixed))
         self.b('    GTypeInterface parent_class;')
@@ -203,16 +203,45 @@ class Generator(object):
         for signal in signals:
             base_init_code.extend(self.do_signal(signal))
 
-        self.b('static void')
-        self.b('%s%s_base_init (gpointer klass)'
+        self.b('static inline void')
+        self.b('%s%s_base_init_once (gpointer klass)'
                % (self.prefix_, node_name_lc))
         self.b('{')
-        self.b('  static gboolean initialized = FALSE;')
+        self.b('  static TpDBusPropertiesMixinPropInfo properties[%d] = {'
+               % (len(properties) + 1))
+
+        for m in properties:
+            access = m.getAttribute('access')
+            assert access in ('read', 'write', 'readwrite')
+
+            if access == 'read':
+                flags = 'TP_DBUS_PROPERTIES_MIXIN_FLAG_READ'
+            elif access == 'write':
+                flags = 'TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE'
+            else:
+                flags = ('TP_DBUS_PROPERTIES_MIXIN_FLAG_READ | '
+                         'TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE')
+
+            self.b('      { 0, %s, "%s", 0, NULL, NULL }, /* %s */'
+                   % (flags, m.getAttribute('type'), m.getAttribute('name')))
+
+        self.b('      { 0, 0, NULL, 0, NULL, NULL }')
+        self.b('  };')
+        self.b('  static TpDBusPropertiesMixinIfaceInfo interface =')
+        self.b('      { 0, properties, NULL, NULL };')
         self.b('')
-        self.b('  if (initialized)')
-        self.b('    return;')
-        self.b('')
-        self.b('  initialized = TRUE;')
+        self.b('  interface.dbus_interface = g_quark_from_static_string '
+               '("%s");' % self.iface_name)
+
+        for i, m in enumerate(properties):
+            self.b('  properties[%d].name = g_quark_from_static_string ("%s");'
+                   % (i, m.getAttribute('name')))
+            self.b('  properties[%d].type = %s;'
+                   % (i, type_to_gtype(m.getAttribute('type'))[1]))
+
+        self.b('  tp_svc_interface_set_dbus_properties_info (%s, &interface);'
+               % self.current_gtype)
+
         self.b('')
         for s in base_init_code:
             self.b(s)
@@ -220,6 +249,21 @@ class Generator(object):
                % (self.prefix_, node_name_lc))
         self.b('      &_%s%s_object_info);'
                % (self.prefix_, node_name_lc))
+        self.b('}')
+
+        self.b('static void')
+        self.b('%s%s_base_init (gpointer klass)'
+               % (self.prefix_, node_name_lc))
+        self.b('{')
+        self.b('  static gboolean initialized = FALSE;')
+        self.b('')
+        self.b('  if (!initialized)')
+        self.b('    {')
+        self.b('      initialized = TRUE;')
+        self.b('      %s%s_base_init_once (klass);'
+               % (self.prefix_, node_name_lc))
+        self.b('    }')
+        # insert anything we need to do per implementation here
         self.b('}')
 
         self.h('')
@@ -242,7 +286,9 @@ class Generator(object):
         self.b('  %d,' % len(methods))
         self.b('"' + method_blob.replace('\0', '\\0') + '",')
         self.b('"' + self.get_signal_glue(signals).replace('\0', '\\0') + '",')
-        self.b('"' + self.get_property_glue(properties).replace('\0', '\\0') + '",')
+        self.b('"' +
+               self.get_property_glue(glue_properties).replace('\0', '\\0') +
+               '",')
         self.b('};')
         self.b('')
 
@@ -562,6 +608,7 @@ class Generator(object):
     def __call__(self):
         self.h('#include <glib-object.h>')
         self.h('#include <dbus/dbus-glib.h>')
+        self.h('#include <telepathy-glib/dbus-properties-mixin.h>')
         self.h('')
         self.h('G_BEGIN_DECLS')
         self.h('')
