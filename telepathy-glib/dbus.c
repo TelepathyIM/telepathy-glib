@@ -462,7 +462,7 @@ tp_dbus_check_valid_object_path (const gchar *path, GError **error)
       return FALSE;
     }
 
-  if (path[1] == '/')
+  if (path[1] == '\0')
     return TRUE;
 
   for (ptr = path + 1; *ptr != '\0'; ptr++)
