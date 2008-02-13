@@ -463,7 +463,13 @@ class Generator(object):
                 name, info, tp_type, elt = arg
                 ctype, gtype, marshaller, pointer = info
 
-                self.b('  %s%s;' % (ctype, name))
+                # "We handle variants specially; the caller is expected to
+                # have already allocated storage for them". Thanks,
+                # dbus-glib...
+                if gtype == 'G_TYPE_VALUE':
+                    self.b('  GValue *%s = g_new0 (GValue, 1);' % name)
+                else:
+                    self.b('  %s%s;' % (ctype, name))
 
         self.b('')
         self.b('  dbus_g_proxy_end_call (proxy, call, &error,')
@@ -472,7 +478,10 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b('      %s, &%s,' % (gtype, name))
+            if gtype == 'G_TYPE_VALUE':
+                self.b('      %s, %s,' % (gtype, name))
+            else:
+                self.b('      %s, &%s,' % (gtype, name))
 
         self.b('      G_TYPE_INVALID);')
 
@@ -485,6 +494,13 @@ class Generator(object):
             self.b('    {')
             self.b('      tp_proxy_pending_call_v0_take_results (user_data, error,')
             self.b('          NULL);')
+
+            for arg in out_args:
+                name, info, tp_type, elt = arg
+                ctype, gtype, marshaller, pointer = info
+                if gtype == 'G_TYPE_VALUE':
+                    self.b('      g_free (%s);' % name)
+
             self.b('      return;')
             self.b('    }')
             self.b('')
