@@ -1219,6 +1219,15 @@ _create_pipeline (TpStreamEngine *obj)
       gst_element_link (videosrc, tmp);
       videosrc = tmp;
     }
+
+  tmp = gst_element_factory_make ("videoscale", NULL);
+  if (tmp != NULL)
+    {
+      g_debug ("linking videoscale");
+      gst_bin_add (GST_BIN (priv->pipeline), tmp);
+      gst_element_link (videosrc, tmp);
+      videosrc = tmp;
+    }
 #endif
 
   g_object_set(G_OBJECT(queue), "leaky", 2,
