@@ -54,28 +54,32 @@ void tp_svc_interface_set_dbus_properties_info (GType g_interface,
 /* ---- Concrete implementation (in GObject subclasses) ------------- */
 
 typedef void (*TpDBusPropertiesMixinGetter) (GObject *object,
-    GQuark interface, GQuark name, GValue *value, gpointer user_data);
+    GQuark interface, GQuark name, GValue *value, gpointer getter_data);
 
 typedef gboolean (*TpDBusPropertiesMixinSetter) (GObject *object,
-    GQuark interface, GQuark name, const GValue *value, gpointer user_data,
+    GQuark interface, GQuark name, const GValue *value, gpointer setter_data,
     GError **error);
 
 typedef struct {
     const gchar *name;
-    gpointer data;
-    gpointer _1;
+    gpointer getter_data;
+    gpointer setter_data;
+    /*<private>*/
+    GCallback _1;
+    GCallback _2;
     gpointer mixin_priv;
 } TpDBusPropertiesMixinPropImpl;
 
 typedef struct {
-    GQuark dbus_interface;
-    GType svc_interface;
+    const gchar *name;
     TpDBusPropertiesMixinGetter getter;
     TpDBusPropertiesMixinSetter setter;
     TpDBusPropertiesMixinPropImpl *props;
-    gpointer _1;
-    gpointer _2;
-    gpointer _3;
+    /*<private>*/
+    GCallback _1;
+    GCallback _2;
+    GCallback _3;
+    gpointer mixin_priv;
 } TpDBusPropertiesMixinIfaceImpl;
 
 struct _TpDBusPropertiesMixinClass {

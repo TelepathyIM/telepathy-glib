@@ -106,6 +106,7 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
   GType type = G_OBJECT_CLASS_TYPE (cls);
   TpDBusPropertiesMixinClass *mixin;
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
+  GType *interfaces, *iface;
 
   g_return_if_fail (G_IS_OBJECT_CLASS (cls));
   g_return_if_fail (g_type_get_qdata (type, q) == NULL);
@@ -115,22 +116,41 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
 
   g_return_if_fail (mixin->interfaces != NULL);
 
+  interfaces = g_type_interfaces (type, NULL);
+
   for (iface_impl = mixin->interfaces;
-       iface_impl->dbus_interface != 0;
+       iface_impl->name != NULL;
        iface_impl++)
     {
-      TpDBusPropertiesMixinIfaceInfo *iface_info;
+      TpDBusPropertiesMixinIfaceInfo *iface_info = NULL;
       TpDBusPropertiesMixinPropImpl *prop_impl;
+      GQuark iface_quark = g_quark_try_string (iface_impl->name);
 
-      g_return_if_fail (G_TYPE_IS_INTERFACE (iface_impl->svc_interface));
       g_return_if_fail (iface_impl->props != NULL);
 
-      iface_info = tp_svc_interface_get_dbus_properties_info
-          (iface_impl->svc_interface);
+      /* no point bothering if there is no quark for the interface name */
+      if (iface_quark != 0)
+        {
+          for (iface = interfaces; *iface != 0; iface++)
+            {
+              iface_info = tp_svc_interface_get_dbus_properties_info (*iface);
 
-      g_return_if_fail (iface_info != NULL);
-      g_return_if_fail (iface_impl->dbus_interface ==
-          iface_info->dbus_interface);
+              if (iface_info != NULL &&
+                  iface_info->dbus_interface == iface_quark)
+                break;
+              else
+                iface_info = NULL;
+            }
+        }
+
+      if (iface_info == NULL)
+        {
+          g_critical ("%s tried to implement undefined interface %s",
+              g_type_name (type), iface_impl->name);
+          goto out;
+        }
+
+      iface_impl->mixin_priv = iface_info;
 
       for (prop_impl = iface_impl->props; prop_impl->name != NULL; prop_impl++)
         {
@@ -147,7 +167,10 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
                    prop_info++)
                 {
                   if (prop_info->name == name_quark)
-                    prop_impl->mixin_priv = prop_info;
+                    {
+                      prop_impl->mixin_priv = prop_info;
+                      break;
+                    }
                 }
             }
 
@@ -155,11 +178,14 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
             {
               g_critical ("%s tried to implement nonexistent property %s"
                   "on interface %s", g_type_name (type), prop_impl->name,
-                  g_quark_to_string (iface_impl->dbus_interface));
-              return;
+                  iface_impl->name);
+              goto out;
             }
         }
     }
+
+out:
+  g_free (interfaces);
 }
 
 static TpDBusPropertiesMixinIfaceImpl *
@@ -181,6 +207,7 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
       gpointer offset = g_type_get_qdata (type, q);
       TpDBusPropertiesMixinClass *mixin;
       TpDBusPropertiesMixinIfaceImpl *iface_impl;
+      TpDBusPropertiesMixinIfaceInfo *iface_info;
 
       if (offset == NULL)
         continue;
@@ -189,10 +216,12 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
           G_OBJECT_GET_CLASS (self), GPOINTER_TO_SIZE (offset));
 
       for (iface_impl = mixin->interfaces;
-           iface_impl->dbus_interface != 0;
+           iface_impl->name != NULL;
            iface_impl++)
         {
-          if (iface_impl->dbus_interface == iface_quark)
+          iface_info = iface_impl->mixin_priv;
+
+          if (iface_info->dbus_interface == iface_quark)
             return iface_impl;
         }
     }
@@ -233,6 +262,7 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
 {
   GObject *self = G_OBJECT (iface);
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
+  TpDBusPropertiesMixinIfaceInfo *iface_info;
   TpDBusPropertiesMixinPropImpl *prop_impl;
   TpDBusPropertiesMixinPropInfo *prop_info;
   GValue value = { 0 };
@@ -242,6 +272,8 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
 
   if (iface_impl == NULL)
     return;
+
+  iface_info = iface_impl->mixin_priv;
 
   prop_impl = _tp_dbus_properties_mixin_find_prop_impl (iface_impl,
       property_name, context);
@@ -261,8 +293,8 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
     }
 
   g_value_init (&value, prop_info->type);
-  iface_impl->getter (self, iface_impl->dbus_interface,
-      prop_info->name, &value, prop_impl->data);
+  iface_impl->getter (self, iface_info->dbus_interface,
+      prop_info->name, &value, prop_impl->getter_data);
   tp_svc_dbus_properties_return_from_get (context, &value);
   g_value_unset (&value);
 }
@@ -274,6 +306,7 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
 {
   GObject *self = G_OBJECT (iface);
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
+  TpDBusPropertiesMixinIfaceInfo *iface_info;
   TpDBusPropertiesMixinPropImpl *prop_impl;
   /* no key destructor needed - the keys are immortal */
   GHashTable *values = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
@@ -284,6 +317,8 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
 
   if (iface_impl == NULL)
     return;
+
+  iface_info = iface_impl->mixin_priv;
 
   for (prop_impl = iface_impl->props;
        prop_impl->name != NULL;
@@ -296,8 +331,8 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
         continue;
 
       value = tp_g_value_slice_new (prop_info->type);
-      iface_impl->getter (self, iface_impl->dbus_interface,
-          prop_info->name, value, prop_impl->data);
+      iface_impl->getter (self, iface_info->dbus_interface,
+          prop_info->name, value, prop_impl->getter_data);
       g_hash_table_insert (values, (gchar *) prop_impl->name, value);
     }
 
@@ -314,6 +349,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 {
   GObject *self = G_OBJECT (iface);
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
+  TpDBusPropertiesMixinIfaceInfo *iface_info;
   TpDBusPropertiesMixinPropImpl *prop_impl;
   TpDBusPropertiesMixinPropInfo *prop_info;
   GValue copy = { 0 };
@@ -324,6 +360,8 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 
   if (iface_impl == NULL)
     return;
+
+  iface_info = iface_impl->mixin_priv;
 
   prop_impl = _tp_dbus_properties_mixin_find_prop_impl (iface_impl,
       property_name, context);
@@ -359,8 +397,8 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
         }
     }
 
-  if (iface_impl->setter (self, iface_impl->dbus_interface,
-        prop_info->name, value, prop_impl->data, &error))
+  if (iface_impl->setter (self, iface_info->dbus_interface,
+        prop_info->name, value, prop_impl->setter_data, &error))
     {
       tp_svc_dbus_properties_return_from_get (context, value);
     }

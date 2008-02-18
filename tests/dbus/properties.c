@@ -8,6 +8,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/util.h>
 
 #include "_gen/svc.h"
 #include "tests/myassert.h"
@@ -57,6 +58,9 @@ prop_getter (GObject *object,
              GValue *value,
              gpointer user_data)
 {
+  MYASSERT (!tp_strdiff (user_data, "read") ||
+            !tp_strdiff (user_data, "full-access"),
+            "%s", (gchar *) user_data);
   g_value_set_uint (value, 42);
 }
 
@@ -69,6 +73,9 @@ prop_setter (GObject *object,
              GError **error)
 {
   MYASSERT (G_VALUE_HOLDS_UINT (value), "");
+  MYASSERT (!tp_strdiff (user_data, "FULL ACCESS") ||
+            !tp_strdiff (user_data, "BLACK HOLE"),
+            "%s", (gchar *) user_data);
   MYASSERT (g_value_get_uint (value) == 57, "%u", g_value_get_uint (value));
   return TRUE;
 }
@@ -77,19 +84,16 @@ static void
 test_properties_class_init (TestPropertiesClass *cls)
 {
   static TpDBusPropertiesMixinPropImpl with_properties_props[] = {
-        { "ReadOnly", "read" },
-        { "ReadWrite", "full-access" },
-        { "WriteOnly", "black-hole" },
+        { "ReadOnly", "read", "READ" },
+        { "ReadWrite", "full-access", "FULL ACCESS" },
+        { "WriteOnly", "black-hole", "BLACK HOLE" },
         { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl interfaces[] = {
-      { 0, 0, prop_getter, prop_setter, with_properties_props },
-      { 0 }
+      { "com.example.WithProperties", prop_getter, prop_setter,
+        with_properties_props },
+      { NULL }
   };
-
-  interfaces[0].dbus_interface =
-      g_quark_from_static_string ("com.example.WithProperties");
-  interfaces[0].svc_interface = TEST_TYPE_SVC_WITH_PROPERTIES;
 
   cls->props.interfaces = interfaces;
 
