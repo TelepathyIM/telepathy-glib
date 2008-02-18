@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: Telepathy-GLib
 Description: GLib utility library for the Telepathy framework
 Version: @VERSION@
-Requires: dbus-glib-1 glib-2.0 gobject-2.0
+Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.10, gobject-2.0 >= 2.10
 Libs: -L${libdir} -ltelepathy-glib
 Cflags: -I${includedir}/telepathy-1.0
