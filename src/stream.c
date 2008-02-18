@@ -1078,7 +1078,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy,
     return;
   }
 
-  tp_stream_engine_stream_mute_input (self, priv->input_mute, NULL);
+  tp_stream_engine_stream_mute_input (self, self->priv->input_mute, NULL);
 
   supp_codecs = fs_codecs_to_tp (
       farsight_stream_get_codec_intersection (self->priv->fs_stream));
