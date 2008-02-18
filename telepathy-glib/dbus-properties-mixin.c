@@ -67,7 +67,8 @@ tp_svc_interface_set_dbus_properties_info (GType g_interface,
   g_type_set_qdata (g_interface, q, info);
 }
 
-TpDBusPropertiesMixinIfaceInfo *
+/* could make this public, but it doesn't seem necessary yet */
+static TpDBusPropertiesMixinIfaceInfo *
 tp_svc_interface_get_dbus_properties_info (GType g_interface)
 {
   return g_type_get_qdata (g_interface, _info_quark ());
