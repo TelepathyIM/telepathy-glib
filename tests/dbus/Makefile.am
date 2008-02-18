@@ -62,6 +62,8 @@ CLEANFILES = \
 distclean-local:
 	rm -rf _gen
 
+EXTRA_DIST = with-properties.xml
+
 _gen/svc.c _gen/svc.h: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \
 	Makefile.am
