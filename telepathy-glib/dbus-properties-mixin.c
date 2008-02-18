@@ -173,6 +173,30 @@ tp_svc_interface_get_dbus_properties_info (GType g_interface)
  */
 
 /**
+ * tp_dbus_properties_mixin_getter_gobject_properties:
+ * @object: The exported object with the properties
+ * @interface: A quark representing the D-Bus interface name
+ * @name: A quark representing the D-Bus property name
+ * @value: A GValue pre-initialized to the right type, into which to put
+ *  the value
+ * @getter_data: The getter_data from the #TpDBusPropertiesMixinPropImpl,
+ *  which must be a string containing the GObject property's name
+ *
+ * An implementation of #TpDBusPropertiesMixinGetter which assumes that
+ * the @getter_data is the name of a readable #GObject property of an
+ * appropriate type, and uses it for the value of the D-Bus property.
+ */
+void
+tp_dbus_properties_mixin_getter_gobject_properties (GObject *object,
+                                                    GQuark interface,
+                                                    GQuark name,
+                                                    GValue *value,
+                                                    gpointer getter_data)
+{
+  g_object_get_property (object, getter_data, value);
+}
+
+/**
  * TpDBusPropertiesMixinSetter:
  * @object: The exported object with the properties
  * @interface: A quark representing the D-Bus interface name
@@ -185,6 +209,34 @@ tp_svc_interface_get_dbus_properties_info (GType g_interface)
  *
  * Returns: %TRUE on success, %FALSE (setting @error) on failure
  */
+
+/**
+ * tp_dbus_properties_mixin_setter_gobject_properties:
+ * @object: The exported object with the properties
+ * @interface: A quark representing the D-Bus interface name
+ * @name: A quark representing the D-Bus property name
+ * @value: The new value for the property
+ * @setter_data: The setter_data from the #TpDBusPropertiesMixinPropImpl,
+ *  which must be a string containing the GObject property's name
+ * @error: Not used
+ *
+ * An implementation of #TpDBusPropertiesMixinSetter which assumes that the
+ * @setter_data is the name of a writable #GObject property of an appropriate
+ * type, and sets that property to the given value.
+ *
+ * Returns: %TRUE
+ */
+gboolean
+tp_dbus_properties_mixin_setter_gobject_properties (GObject *object,
+                                                    GQuark interface,
+                                                    GQuark name,
+                                                    const GValue *value,
+                                                    gpointer setter_data,
+                                                    GError **error)
+{
+  g_object_set_property (object, setter_data, value);
+  return TRUE;
+}
 
 /**
  * TpDBusPropertiesMixinPropImpl:
