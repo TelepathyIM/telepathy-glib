@@ -23,7 +23,8 @@
 /**
  * SECTION:properties-mixin
  * @title: TpPropertiesMixin
- * @short_description: a mixin implementation of the properties interface
+ * @short_description: a mixin implementation of the Telepathy.Properties
+ *  interface
  * @see_also: #TpSvcPropertiesInterface
  *
  * This mixin can be added to any GObject class to implement the properties

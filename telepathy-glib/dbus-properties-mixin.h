@@ -37,15 +37,17 @@ typedef struct {
     TpDBusPropertiesMixinFlags flags;
     gchar *dbus_signature;
     GType type;
-    gpointer _1;
-    gpointer _2;
+    /*<private>*/
+    GCallback _1;
+    GCallback _2;
 } TpDBusPropertiesMixinPropInfo;
 
 typedef struct {
     GQuark dbus_interface;
     TpDBusPropertiesMixinPropInfo *props;
-    gpointer _1;
-    gpointer _2;
+    /*<private>*/
+    GCallback _1;
+    GCallback _2;
 } TpDBusPropertiesMixinIfaceInfo;
 
 void tp_svc_interface_set_dbus_properties_info (GType g_interface,
@@ -84,6 +86,7 @@ typedef struct {
 
 struct _TpDBusPropertiesMixinClass {
     TpDBusPropertiesMixinIfaceImpl *interfaces;
+    /*<private>*/
     gpointer _1;
     gpointer _2;
     gpointer _3;

@@ -1181,6 +1181,24 @@ TpDBusDaemonPrivate
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/dbus_properties-mixin.h</INCLUDE>
+<FILE>dbus-properties-mixin</FILE>
+<TITLE>dbus-properties-mixin</TITLE>
+TpDBusPropertiesMixinFlags
+TpDBusPropertiesMixinIfaceInfo
+TpDBusPropertiesMixinPropInfo
+tp_svc_interface_set_dbus_properties_info
+<SUBSECTION>
+TpDBusPropertiesMixinClass
+TpDBusPropertiesMixinIfaceImpl
+TpDBusPropertiesMixinPropImpl
+TpDBusPropertiesMixinGetter
+TpDBusPropertiesMixinSetter
+tp_dbus_properties_mixin_class_init
+tp_dbus_properties_mixin_iface_init
+</SECTION>
+
+<SECTION>
 <TITLE>errors</TITLE>
 <INCLUDE>telepathy-glib/errors.h</INCLUDE>
 <FILE>errors</FILE>

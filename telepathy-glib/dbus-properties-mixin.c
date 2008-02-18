@@ -18,17 +18,89 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <telepathy-glib/dbus-properties-mixin.h>
+
+#include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/util.h>
+
 /**
  * SECTION:dbus-properties-mixin
  * @title: TpDBusPropertiesMixin
  * @short_description: a mixin implementation of the DBus.Properties interface
  * @see_also: #TpSvcDBusProperties
+ *
+ * This mixin provides an implementation of the org.freedesktop.DBus.Properties
+ * interface. It relies on the auto-generated service-side GInterfaces from
+ * telepathy-glib >= 0.7.3, or something similar, to register the abstract
+ * properties and their GTypes; classes with the mixin can then register
+ * an implementation of the properties.
+ *
+ * To register D-Bus properties in a GInterface to be implementable with this
+ * mixin, either use the code-generation tools from telepathy-glib >= 0.7.3,
+ * or call tp_svc_interface_set_properties_info() from a section of the
+ * base_init function that only runs once.
+ *
+ * To use this mixin, include a #TpDBusPropertiesMixinClass somewhere
+ * in your class structure, populate it with pointers to statically allocated
+ * (or duplicated and never freed) data, and call
+ * tp_dbus_properties_mixin_class_init() from your class_init implementation.
+ *
+ * To use this mixin as the implementation of #TpSvcDBusProperties,
+ * call <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+ * tp_dbus_properties_mixin_iface_init)</literal> in the fourth argument to
+ * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
+ *
+ * Since: 0.7.3
  */
 
-#include <telepathy-glib/dbus-properties-mixin.h>
+/**
+ * TpDBusPropertiesMixinFlags:
+ * @TP_DBUS_PROPERTIES_MIXIN_FLAG_READ: The property can be read using Get and
+ *  GetAll
+ * @TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE: The property can be written using Set
+ *
+ * Bitfield representing allowed access to a property.
+ *
+ * Since: 0.7.3
+ */
 
-#include <telepathy-glib/svc-generic.h>
-#include <telepathy-glib/util.h>
+/**
+ * TpDBusPropertiesMixinPropInfo:
+ * @name: Quark representing the property's name
+ * @flags: Flags representing read/write access to the property
+ * @dbus_signature: The D-Bus signature of the property
+ * @type: The GType used in a GValue to implement the property
+ *
+ * Semi-abstract description of a property, as attached to a service
+ * GInterface. This structure must either be statically allocated, or
+ * duplicated and never freed, so it always remains valid.
+ *
+ * In addition to the documented members, there are two private pointers
+ * for future expansion, which must always be initialized to %NULL.
+ *
+ * Since: 0.7.3
+ */
+
+/**
+ * TpDBusPropertiesMixinIfaceInfo:
+ * @dbus_interface: Quark representing the interface's name
+ * @props: Array of property descriptions, terminated by one with
+ *  @name == %NULL
+ *
+ * Semi-abstract description of an interface. Each service GInterface that
+ * has properties must have one of these attached to it via
+ * tp_svc_interface_set_dbus_properties_info() in its base_init function;
+ * service GInterfaces that do not have properties may have one of these
+ * with no properties.
+ *
+ * This structure must either be statically allocated, or duplicated and never
+ * freed, so it always remains valid.
+ *
+ * In addition to the documented members, there are two private pointers
+ * for future expansion, which must always be initialized to %NULL.
+ *
+ * Since: 0.7.3
+ */
 
 static GQuark
 _info_quark (void)
@@ -42,6 +114,17 @@ _info_quark (void)
   return q;
 }
 
+/**
+ * tp_svc_interface_set_dbus_properties_info:
+ * @g_interface: The #GType of a service interface
+ * @info: an interface description
+ *
+ * Declare that @g_interface implements the given D-Bus interface, with the
+ * given properties. This may only be called once per GInterface, usually from
+ * a section of its base_init function that only runs once.
+ *
+ * Since: 0.7.3
+ */
 void
 tp_svc_interface_set_dbus_properties_info (GType g_interface,
     TpDBusPropertiesMixinIfaceInfo *info)
@@ -74,6 +157,87 @@ tp_svc_interface_get_dbus_properties_info (GType g_interface)
   return g_type_get_qdata (g_interface, _info_quark ());
 }
 
+/**
+ * TpDBusPropertiesMixinGetter:
+ * @object: The exported object with the properties
+ * @interface: A quark representing the D-Bus interface name
+ * @name: A quark representing the D-Bus property name
+ * @value: A GValue pre-initialized to the right type, into which to put
+ *  the value
+ * @getter_data: The getter_data from the #TpDBusPropertiesMixinPropImpl
+ *
+ * Signature of a callback used to get the value of a property.
+ *
+ * For simplicity, in this mixin we don't allow getting a property to fail;
+ * implementations must always be prepared to return *something*.
+ */
+
+/**
+ * TpDBusPropertiesMixinSetter:
+ * @object: The exported object with the properties
+ * @interface: A quark representing the D-Bus interface name
+ * @name: A quark representing the D-Bus property name
+ * @value: The new value for the property
+ * @setter_data: The setter_data from the #TpDBusPropertiesMixinPropImpl
+ * @error: Used to return an error on failure
+ *
+ * Signature of a callback used to get the value of a property.
+ *
+ * Returns: %TRUE on success, %FALSE (setting @error) on failure
+ */
+
+/**
+ * TpDBusPropertiesMixinPropImpl:
+ * @name: The name of the property as it appears on D-Bus
+ * @getter_data: Arbitrary user-supplied data for the getter function
+ * @setter_data: Arbitrary user-supplied data for the setter function
+ *
+ * Structure representing an implementation of a property.
+ *
+ * In addition to the documented fields, there are three pointers which must
+ * be initialized to %NULL.
+ *
+ * This structure must either be statically allocated, or duplicated and never
+ * freed, so it always remains valid.
+ *
+ * Since: 0.7.3
+ */
+
+/**
+ * TpDBusPropertiesMixinIfaceImpl:
+ * @name: The name of the interface
+ * @getter: A callback to get the current value of the property, to which
+ *  the @getter_data from each property implementation will be passed
+ * @setter: A callback to set a new value for the property, to which
+ *  the @setter_data from each property implementation will be passed
+ * @props: An array of property implementations, terminated by one with
+ *  @name equal to %NULL
+ *
+ * Structure representing an implementation of an interface's properties.
+ *
+ * In addition to the documented fields, there are three pointers which must
+ * be initialized to %NULL.
+ *
+ * This structure must either be statically allocated, or duplicated and never
+ * freed, so it always remains valid.
+ *
+ * Since: 0.7.3
+ */
+
+/**
+ * TpDBusPropertiesMixinClass:
+ * @interfaces: An array of interface implementations, terminated by one with
+ *  @name equal to %NULL
+ *
+ * Structure representing all of a class's property implementations. One of
+ * these structures may be placed in the layout of an object class structure.
+ *
+ * In addition to the documented fields, there are 7 pointers reserved for
+ * future use, which must be initialized to %NULL.
+ *
+ * Since: 0.7.3
+ */
+
 static GQuark
 _mixin_quark (void)
 {
@@ -95,8 +259,14 @@ _mixin_quark (void)
  * The given struct member, of size sizeof(TpDBusPropertiesMixinClass),
  * will be used to store property implementation information.
  *
+ * Each property and each interface must have been declared as a member of
+ * a GInterface implemented by @cls, using
+ * tp_svc_interface_set_dbus_properties_info().
+ *
  * Before calling this function, the array of interfaces must have been
  * placed in the TpDBusPropertiesMixinClass structure.
+ *
+ * Since: 0.7.3
  */
 void
 tp_dbus_properties_mixin_class_init (GObjectClass *cls,
@@ -412,6 +582,14 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
     g_value_unset (&copy);
 }
 
+/**
+ * tp_dbus_properties_mixin_iface_init:
+ * @g_iface: a pointer to a #TpSvcDBusPropertiesClass structure
+ * @iface_data: ignored
+ *
+ * Declare that the DBus.Properties interface represented by @g_iface
+ * is implemented using this mixin.
+ */
 void
 tp_dbus_properties_mixin_iface_init (gpointer g_iface,
                                      gpointer iface_data)
