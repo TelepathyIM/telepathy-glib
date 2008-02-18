@@ -22,6 +22,8 @@ Building telepathy-glib requires:
   GLib, GObject <http://ftp.gnome.org/pub/GNOME/sources/glib/>
   libdbus <http://dbus.freedesktop.org/releases/dbus/>
   The D-Bus GLib bindings <http://dbus.freedesktop.org/releases/dbus-glib/>
+
+  GNU make <http://www.gnu.org/software/make/>
   pkg-config <http://ftp.gnome.org/pub/GNOME/sources/pkg-config/>
   libxslt, xsltproc <http://xmlsoft.org/XSLT/>
   Python <http://www.python.org/>

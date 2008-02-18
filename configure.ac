@@ -46,7 +46,7 @@ AC_INIT([Telepathy-GLib], [tp_glib_version],
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.8])
+AM_INIT_AUTOMAKE([1.8 -Wno-portability])
 AM_CONFIG_HEADER(config.h)
 
 dnl check for tools
