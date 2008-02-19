@@ -120,7 +120,7 @@ static void cb_fs_session_error (FarsightSession *stream,
 static void dummy_callback (TpMediaSessionHandler *proxy, const GError *error,
     gpointer user_data, GObject *object);
 
-static void destroy_cb (TpMediaSessionHandler *proxy, guint domain,
+static void invalidated_cb (TpMediaSessionHandler *proxy, guint domain,
     gint code, gchar *message, gpointer user_data);
 
 static GObject *
@@ -150,7 +150,7 @@ tp_stream_engine_session_constructor (GType type,
       farsight_plugin_get_author (self->priv->fs_session->plugin));
 
   g_signal_connect (self->priv->session_handler_proxy, "invalidated",
-      G_CALLBACK (destroy_cb), obj);
+      G_CALLBACK (invalidated_cb), obj);
 
   g_signal_connect (G_OBJECT (self->priv->fs_session), "error",
       G_CALLBACK (cb_fs_session_error), self->priv->session_handler_proxy);
@@ -179,7 +179,7 @@ tp_stream_engine_session_dispose (GObject *object)
       TpMediaSessionHandler *tmp;
 
       g_signal_handlers_disconnect_by_func (
-          self->priv->session_handler_proxy, destroy_cb, self);
+          self->priv->session_handler_proxy, invalidated_cb, self);
 
       tmp = self->priv->session_handler_proxy;
       self->priv->session_handler_proxy = NULL;
@@ -284,11 +284,11 @@ cb_fs_session_error (FarsightSession *session,
 }
 
 static void
-destroy_cb (TpMediaSessionHandler *proxy,
-            guint domain,
-            gint code,
-            gchar *message,
-            gpointer user_data)
+invalidated_cb (TpMediaSessionHandler *proxy,
+                guint domain,
+                gint code,
+                gchar *message,
+                gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
 
