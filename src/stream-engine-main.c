@@ -202,6 +202,9 @@ int main(int argc, char **argv)
   tp_debug_set_flags (g_getenv ("STREAM_ENGINE_DEBUG"));
   /* FIXME: switch this project to use DEBUG() too */
 
+  if (g_getenv ("STREAM_ENGINE_TIMING") != NULL)
+    g_log_set_default_handler (tp_debug_timestamped_log_handler, NULL);
+
   signal (SIGBUS, got_sigbus);
 
 #ifdef USE_REALTIME
