@@ -32,8 +32,6 @@ G_DEFINE_TYPE (TpStreamEngineSession, tp_stream_engine_session, G_TYPE_OBJECT);
 
 struct _TpStreamEngineSessionPrivate
 {
-  gchar *bus_name;
-  gchar *object_path;
   gchar *session_type;
   FarsightSession *fs_session;
 
@@ -193,12 +191,6 @@ tp_stream_engine_session_dispose (GObject *object)
       g_object_unref (self->priv->fs_session);
       self->priv->fs_session = NULL;
     }
-
-  g_free (self->priv->bus_name);
-  self->priv->bus_name = NULL;
-
-  g_free (self->priv->object_path);
-  self->priv->object_path = NULL;
 
   g_free (self->priv->session_type);
   self->priv->session_type = NULL;
