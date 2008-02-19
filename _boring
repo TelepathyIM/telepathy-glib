@@ -58,7 +58,7 @@
 \.la$
 \-glue.(c|h)$
 \-marshal.(c|h)$
-\-enumtypes.(c|h)$
+\-enum-?types.(c|h)$
 \-bindings.(c|h)$
 \-gen.h$
 \.pc$
@@ -75,3 +75,4 @@
 ^doc/log\.sh$
 ^doc/test$
 ^doc/.*\.png$
+(^|/)_gen(/|$)
