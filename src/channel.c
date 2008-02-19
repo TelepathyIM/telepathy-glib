@@ -179,9 +179,8 @@ tp_stream_engine_channel_set_property (GObject      *object,
     }
 }
 
-static void channel_destroyed (TpChannel *channel_proxy,
-    const GError *error,
-    TpStreamEngineChannel *self);
+static void channel_invalidated (TpChannel *channel_proxy,
+    guint domain, gint code, gchar *message, TpStreamEngineChannel *self);
 
 static void new_media_session_handler (TpChannel *channel_proxy,
     const gchar *session_handler_path, const gchar *type,
@@ -332,10 +331,7 @@ cb_properties_listed (TpProxy *proxy,
 
 static void
 channel_ready (TpChannel *channel_proxy,
-               const gchar *channel_type,
-               guint handle_type,
-               guint handle,
-               const gchar * const * interfaces,
+               GParamSpec *unused,
                TpStreamEngineChannel *self)
 {
   TpProxy *as_proxy = (TpProxy *) channel_proxy;
@@ -397,10 +393,10 @@ tp_stream_engine_channel_constructor (GType type,
   priv = CHANNEL_PRIVATE (self);
 
   priv->channel_ready_handler = g_signal_connect (priv->channel_proxy,
-      "channel-ready", G_CALLBACK (channel_ready), obj);
+      "notify::channel-ready", G_CALLBACK (channel_ready), obj);
 
   priv->channel_destroy_handler = g_signal_connect (priv->channel_proxy,
-      "destroyed", G_CALLBACK (channel_destroyed), obj);
+      "invalidated", G_CALLBACK (channel_invalidated), obj);
 
   return obj;
 }
@@ -771,10 +767,14 @@ shutdown_channel (TpStreamEngineChannel *self)
 }
 
 static void
-channel_destroyed (TpChannel *channel_proxy,
-                   const GError *error,
-                   TpStreamEngineChannel *self)
+channel_invalidated (TpChannel *channel_proxy,
+                     guint domain,
+                     gint code,
+                     gchar *message,
+                     TpStreamEngineChannel *self)
 {
+  GError e = { domain, code, message };
+
   if (self->priv->channel_ready_handler != 0)
     {
       /* we haven't yet decided whether to handle this channel - do it now */
@@ -782,7 +782,7 @@ channel_destroyed (TpChannel *channel_proxy,
           self->priv->channel_ready_handler);
       self->priv->channel_ready_handler = 0;
 
-      g_signal_emit (self, signals[HANDLER_RESULT], 0, error);
+      g_signal_emit (self, signals[HANDLER_RESULT], 0, &e);
     }
 
   shutdown_channel (self);
