@@ -1243,7 +1243,9 @@ stop_stream (TpStreamEngineStream *self)
   if (self->priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
     sink = farsight_stream_get_sink (self->priv->fs_stream);
 
-  farsight_stream_stop (priv->fs_stream);
+  farsight_stream_stop (self->priv->fs_stream);
+
+  farsight_stream_set_source (self->priv->fs_stream, NULL);
 
   if (sink)
     _remove_video_sink (self, sink);
@@ -1847,14 +1849,13 @@ tp_stream_engine_stream_set_output_window (
 
   DEBUG (stream, "putting video output in window %d", window_id);
 
-  old_sink = farsight_stream_get_sink (priv->fs_stream);
+  old_sink = farsight_stream_get_sink (stream->priv->fs_stream);
 
   if (old_sink)
       _remove_video_sink (stream, old_sink);
 
   tp_stream_engine_add_output_window (engine, stream, sink, window_id);
-  farsight_stream_set_sink (priv->fs_stream, sink);
-  gst_object_unref (sink);
+  farsight_stream_set_sink (stream->priv->fs_stream, sink);
 
   return TRUE;
 }

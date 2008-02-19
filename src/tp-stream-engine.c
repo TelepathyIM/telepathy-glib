@@ -456,7 +456,15 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
   sink = bin;
 #endif
 
-  gst_bin_add (GST_BIN (priv->pipeline), sink);
+  gst_object_ref (sink);
+
+  if (!gst_bin_add (GST_BIN (self->priv->pipeline), sink))
+    {
+      g_warning ("Could not add the sink to the pipeline");
+      gst_object_unref (sink);
+      gst_object_unref (sink);
+      return NULL;
+    }
 
   return sink;
 }
@@ -484,8 +492,17 @@ _add_preview_window (TpStreamEngine *self, guint window_id, GError **error)
 
   g_debug ("adding preview in window %u", window_id);
 
-  tee = gst_bin_get_by_name (GST_BIN (priv->pipeline), "tee");
-  sink = tp_stream_engine_make_video_sink (obj, TRUE);
+  tee = gst_bin_get_by_name (GST_BIN (self->priv->pipeline), "tee");
+
+  if (!tee)
+    {
+      g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED,
+          "Failed to get tee in the bin %s",
+          GST_ELEMENT_NAME (self->priv->pipeline));
+      goto tee_failure;
+    }
+
+  sink = tp_stream_engine_make_video_sink (self, TRUE);
 
   if (sink == NULL)
     goto sink_failure;
@@ -522,7 +539,7 @@ _add_preview_window (TpStreamEngine *self, guint window_id, GError **error)
 
   g_debug ("linked tee and sink");
 
-  tp_stream_engine_start_source (obj);
+  tp_stream_engine_start_source (self);
 
   gst_object_unref (tee);
   g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
@@ -544,46 +561,6 @@ tee_failure:
 
   return FALSE;
 }
-
-static void
-_add_pending_preview_windows (TpStreamEngine *engine)
-{
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
-
-  g_debug ("%s: called", G_STRFUNC);
-
-  GSList *tmp;
-
-  for (tmp = priv->preview_windows;
-       tmp != NULL;
-       tmp = tmp->next)
-    {
-      WindowPair *wp = tmp->data;
-      if (wp->created == FALSE)
-        {
-          GError *error = NULL;
-          _add_preview_window (engine, wp->window_id, &error);
-
-          if (error != NULL)
-            g_error_free (error);
-        }
-    }
-}
-
-#ifdef USE_INFOPRINT
-static void
-tp_stream_engine_infoprint (const gchar *log_domain,
-    GLogLevelFlags log_level,
-    const gchar *message,
-    gpointer user_data)
-{
-  TpStreamEnginePrivate *priv = (TpStreamEnginePrivate *)user_data;
-  com_nokia_statusbar_system_note_infoprint (
-          DBUS_G_PROXY (priv->infoprint_proxy),
-          message, NULL);
-  g_log_default_handler (log_domain, log_level, message, user_data);
-}
-#endif
 
 static gboolean
 bad_misc_cb (TpStreamEngineXErrorHandler *handler,
@@ -921,7 +898,7 @@ static void
 _window_pairs_readd_cb (WindowPair *wp)
 {
   TpStreamEngine *engine = tp_stream_engine_get ();
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
+  GError *error = NULL;
 
   wp->sink = NULL;
   wp->created = FALSE;
@@ -929,16 +906,12 @@ _window_pairs_readd_cb (WindowPair *wp)
   wp->removing = FALSE;
   wp->post_remove = NULL;
 
-  if (priv->pipeline_playing)
+  _add_preview_window (engine, wp->window_id, &error);
+  if (error)
     {
-      GError *error = NULL;
-      _add_preview_window (engine, wp->window_id, &error);
-      if (error) {
-        g_debug ("Error creating preview window: %s", error->message);
-        g_error_free (error);
-      }
+      g_debug ("Error creating preview window: %s", error->message);
+      g_error_free (error);
     }
-
 }
 
 static void
@@ -1111,7 +1084,6 @@ static void
 bus_sync_message (GstBus *bus, GstMessage *message, gpointer data)
 {
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (engine);
   GError *error = NULL;
   gchar *error_string = NULL;
 
@@ -1124,11 +1096,12 @@ bus_sync_message (GstBus *bus, GstMessage *message, gpointer data)
           strstr (error_string, "not-linked"))
         {
 
-          priv->linked = FALSE;
-          priv->restart_source = TRUE;
+          engine->priv->linked = FALSE;
+          engine->priv->restart_source = TRUE;
 
           g_debug ("Stream error, lets unlink the source to stop the EOS");
-          gst_element_unlink (priv->videosrc, priv->videosrc_next);
+          gst_element_unlink (engine->priv->videosrc,
+              engine->priv->videosrc_next);
         }
       g_free (error_string);
       g_error_free (error);
@@ -1433,37 +1406,39 @@ _create_pipeline (TpStreamEngine *self)
   bus = gst_element_get_bus (priv->pipeline);
   gst_bus_set_sync_handler (bus, bus_sync_handler, self);
   priv->bus_async_source_id =
-    gst_bus_add_watch (bus, bus_async_handler, obj);
+    gst_bus_add_watch (bus, bus_async_handler, self);
+  gst_bus_enable_sync_message_emission (bus);
+  priv->bus_sync_source_id = g_signal_connect (bus, "sync-message",
+      G_CALLBACK (bus_sync_message), self);
   gst_object_unref (bus);
 }
 
 
 static void
-tp_stream_engine_start_source (TpStreamEngine *obj)
+tp_stream_engine_start_source (TpStreamEngine *self)
 {
-  TpStreamEnginePrivate *priv = TP_STREAM_ENGINE_GET_PRIVATE (obj);
   GstStateChangeReturn state_ret;
 
   g_debug ("Starting source");
 
-  priv->linked = TRUE;
+  self->priv->linked = TRUE;
 
   /*
    * FIXME: We should instead get the pads, and check if they are already
    * linked, then we'd be able to check properly for errors
    */
-  gst_element_link (priv->videosrc, priv->videosrc_next);
+  gst_element_link (self->priv->videosrc, self->priv->videosrc_next);
 
-  if (priv->restart_source)
+  if (self->priv->restart_source)
     {
-      priv->restart_source = FALSE;
+      self->priv->restart_source = FALSE;
 
-      state_ret = gst_element_set_state (priv->videosrc, GST_STATE_NULL);
+      state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_NULL);
       if (state_ret == GST_STATE_CHANGE_ASYNC)
         {
           g_warning ("The video source tries to change state async to NULL");
 
-          state_ret = gst_element_get_state (priv->videosrc, NULL, NULL,
+          state_ret = gst_element_get_state (self->priv->videosrc, NULL, NULL,
               GST_SECOND);
         }
 
@@ -1475,7 +1450,7 @@ tp_stream_engine_start_source (TpStreamEngine *obj)
 
     }
 
-  state_ret = gst_element_set_state (priv->videosrc, GST_STATE_PLAYING);
+  state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_PLAYING);
 
   if (state_ret == GST_STATE_CHANGE_FAILURE)
     g_error ("Error starting the video source");
@@ -1561,26 +1536,14 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
 
   g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
   _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-  if (_add_preview_window (obj, window_id, &error))
+  if (_add_preview_window (self, window_id, &error))
     {
       stream_engine_svc_stream_engine_return_from_add_preview_window (context);
     }
   else
     {
-      GError *error = NULL;
-
-      g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
-      _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-      if (_add_preview_window (obj, window_id, &error))
-        {
-          stream_engine_svc_stream_engine_return_from_add_preview_window
-            (context);
-        }
-      else
-        {
-          dbus_g_method_return_error (context, error);
-          g_error_free (error);
-        }
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
     }
 }
 
@@ -1885,7 +1848,10 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
   g_signal_connect (chan, "stream-state-changed",
       G_CALLBACK (channel_stream_state_changed), self);
   g_signal_connect (chan, "stream-receiving",
-      G_CALLBACK (channel_stream_receiving), obj);
+      G_CALLBACK (channel_stream_receiving), self);
+  g_signal_connect (chan, "stream-created",
+      G_CALLBACK (channel_stream_created), self);
+
 
   g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
 }
