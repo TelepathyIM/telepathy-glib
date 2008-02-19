@@ -168,8 +168,8 @@ static void prepare_transports (TpStreamEngineStream *self);
 
 static void stop_stream (TpStreamEngineStream *self);
 
-static void destroy_cb (TpMediaStreamHandler *proxy, GError *error,
-    gpointer user_data);
+static void destroy_cb (TpMediaStreamHandler *proxy,
+    guint domain, gint code, gchar *message, gpointer user_data);
 
 static void
 _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
@@ -324,7 +324,7 @@ tp_stream_engine_stream_constructor (GType type,
   stream = (TpStreamEngineStream *) obj;
   priv = stream->priv;
 
-  g_signal_connect (priv->stream_handler_proxy, "destroyed",
+  g_signal_connect (priv->stream_handler_proxy, "invalidated",
       G_CALLBACK (destroy_cb), obj);
 
   tp_cli_media_stream_handler_connect_to_add_remote_candidate
@@ -1463,7 +1463,9 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 
 static void
 destroy_cb (TpMediaStreamHandler *proxy,
-            GError *error,
+            guint domain,
+            gint code,
+            gchar *message,
             gpointer user_data)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
