@@ -54,7 +54,7 @@ struct _TpStreamEngineChannelPrivate
   GPtrArray *sessions;
   GPtrArray *streams;
 
-  gulong channel_destroy_handler;
+  gulong channel_invalidated_handler;
   gulong channel_ready_handler;
 };
 
@@ -395,11 +395,25 @@ tp_stream_engine_channel_constructor (GType type,
   priv->channel_ready_handler = g_signal_connect (priv->channel_proxy,
       "notify::channel-ready", G_CALLBACK (channel_ready), obj);
 
-  priv->channel_destroy_handler = g_signal_connect (priv->channel_proxy,
+  priv->channel_invalidated_handler = g_signal_connect (priv->channel_proxy,
       "invalidated", G_CALLBACK (channel_invalidated), obj);
 
   return obj;
 }
+
+static void new_stream_cb (TpStreamEngineSession *session, gchar *object_path,
+    guint stream_id, TpMediaStreamType media_type,
+    TpMediaStreamDirection direction, gpointer user_data);
+
+static void stream_state_changed_cb (TpStreamEngineStream *stream,
+    TpMediaStreamState state, TpMediaStreamDirection direction,
+    gpointer user_data);
+
+static void stream_receiving_cb (TpStreamEngineStream *stream,
+    gboolean receiving, gpointer user_data);
+
+static void stream_closed_cb (TpStreamEngineStream *stream,
+    gpointer user_data);
 
 static void
 tp_stream_engine_channel_dispose (GObject *object)
@@ -414,7 +428,13 @@ tp_stream_engine_channel_dispose (GObject *object)
       guint i;
 
       for (i = 0; i < priv->sessions->len; i++)
-        g_object_unref (g_ptr_array_index (priv->sessions, i));
+        {
+          GObject *obj = g_ptr_array_index (priv->sessions, i);
+
+          g_signal_handlers_disconnect_by_func (obj, new_stream_cb, self);
+
+          g_object_unref (g_ptr_array_index (priv->sessions, i));
+        }
 
       g_ptr_array_free (priv->sessions, TRUE);
       priv->sessions = NULL;
@@ -425,8 +445,22 @@ tp_stream_engine_channel_dispose (GObject *object)
       guint i;
 
       for (i = 0; i < priv->streams->len; i++)
-        if (g_ptr_array_index (priv->streams, i) != NULL)
-          g_object_unref (g_ptr_array_index (priv->streams, i));
+        {
+          GObject *obj = g_ptr_array_index (priv->streams, i);
+
+          if (obj != NULL)
+            {
+              /* this first one covers both error and closed */
+              g_signal_handlers_disconnect_by_func (obj,
+                  stream_closed_cb, self);
+              g_signal_handlers_disconnect_by_func (obj,
+                  stream_state_changed_cb, self);
+              g_signal_handlers_disconnect_by_func (obj,
+                  stream_receiving_cb, self);
+
+              g_object_unref (obj);
+            }
+        }
 
       g_ptr_array_free (priv->streams, TRUE);
       priv->streams = NULL;
@@ -447,6 +481,14 @@ tp_stream_engine_channel_dispose (GObject *object)
   if (priv->channel_proxy)
     {
       TpChannel *tmp;
+
+      if (priv->channel_ready_handler != 0)
+        g_signal_handler_disconnect (priv->channel_proxy,
+            priv->channel_ready_handler);
+
+      if (priv->channel_invalidated_handler != 0)
+        g_signal_handler_disconnect (priv->channel_proxy,
+            priv->channel_invalidated_handler);
 
       tmp = priv->channel_proxy;
       priv->channel_proxy = NULL;
@@ -755,11 +797,11 @@ shutdown_channel (TpStreamEngineChannel *self)
       /* I've ensured that this is true everywhere this function is called */
       g_assert (priv->channel_ready_handler == 0);
 
-      if (priv->channel_destroy_handler)
+      if (priv->channel_invalidated_handler)
         {
           g_signal_handler_disconnect (
-            priv->channel_proxy, priv->channel_destroy_handler);
-          priv->channel_destroy_handler = 0;
+            priv->channel_proxy, priv->channel_invalidated_handler);
+          priv->channel_invalidated_handler = 0;
         }
     }
 
