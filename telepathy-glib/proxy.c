@@ -1477,7 +1477,7 @@ tp_proxy_set_property (GObject *object,
 
           g_assert (self->dbus_daemon == NULL);
 
-          if (self->dbus_daemon != NULL)
+          if (daemon_as_proxy != NULL)
             self->dbus_daemon = TP_DBUS_DAEMON (g_object_ref
                 (daemon_as_proxy));
 
