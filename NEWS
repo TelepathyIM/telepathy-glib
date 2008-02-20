@@ -1,3 +1,22 @@
+telepathy-glib 0.7.3 (unreleased)
+=================================
+
+Enhancements:
+
+* Supports org.freedesktop.DBus.Properties with client support on every
+  TpProxy, a mixin for services, and extensions to auto-generated code
+
+* Supports org.freedesktop.DBus.Introspect and org.freedesktop.DBus.Peer
+  on all TpProxy objects
+
+Fixes:
+
+* Correct client-side bindings are generated for methods that return a variant
+  (e.g. o.fd.DBus.Properties.Get) fixing potential crashes in clients
+
+* tp_dbus_check_valid_object_path allows "/" and disallows "//", not the
+  reverse
+
 telepathy-glib 0.7.2 (2008-02-11)
 =================================
 
