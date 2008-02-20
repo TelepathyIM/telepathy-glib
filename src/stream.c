@@ -1799,6 +1799,7 @@ tp_stream_engine_stream_set_output_window (
   TpStreamEngine *engine;
   GstElement *sink;
   GstElement *old_sink = NULL;
+  GstStateChangeReturn ret;
 
   if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_VIDEO)
     {
@@ -1856,6 +1857,16 @@ tp_stream_engine_stream_set_output_window (
       _remove_video_sink (stream, old_sink);
 
   tp_stream_engine_add_output_window (engine, stream, sink, window_id);
+
+  ret = gst_element_set_state (sink, GST_STATE_PLAYING);
+  if (ret == GST_STATE_CHANGE_FAILURE)
+    {
+      DEBUG (stream, "failed to set video sink to playing");
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "failed to set video sink to playing");
+      return FALSE;
+    }
+
   farsight_stream_set_sink (stream->priv->fs_stream, sink);
 
   return TRUE;
