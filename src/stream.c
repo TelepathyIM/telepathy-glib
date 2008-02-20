@@ -202,7 +202,7 @@ video_sink_unlinked_idle_cb (gpointer user_data)
 
 
 static void
-video_sink_unlinked_cb (GstPad  *pad, GstPad  *peer, gpointer user_data)
+video_sink_unlinked_cb (GstPad *pad, GstPad *peer, gpointer user_data)
 {
   g_idle_add (video_sink_unlinked_idle_cb, user_data);
 
