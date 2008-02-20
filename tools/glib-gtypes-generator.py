@@ -27,7 +27,8 @@ from libglibcodegen import escape_as_identifier, \
                            get_docstring, \
                            NS_TP, \
                            Signature, \
-                           type_to_gtype
+                           type_to_gtype, \
+                           xml_escape
 
 
 def types_to_gtypes(types):
@@ -70,7 +71,7 @@ class GTypesGenerator(object):
         docstring = get_docstring(mapping) or '(Undocumented)'
 
         self.header.write('/**\n * %s:\n *\n' % name)
-        self.header.write(' * <![CDATA[%s]]>\n' % docstring)
+        self.header.write(' * %s\n' % xml_escape(docstring))
         self.header.write(' *\n')
         self.header.write(' * This macro expands to a call to a function\n')
         self.header.write(' * that returns the #GType of a #GHashTable\n')
@@ -89,7 +90,7 @@ class GTypesGenerator(object):
         self.header.write(' * named <literal>%s</literal>):\n'
                           % key.getAttribute('name'))
         docstring = get_docstring(key) or '(Undocumented)'
-        self.header.write(' * <![CDATA[%s]]>\n' % docstring)
+        self.header.write(' * %s\n' % xml_escape(docstring))
         self.header.write(' *\n')
 
         self.header.write(' * Values (D-Bus type <literal>%s</literal>,\n'
@@ -100,7 +101,7 @@ class GTypesGenerator(object):
         self.header.write(' * named <literal>%s</literal>):\n'
                           % value.getAttribute('name'))
         docstring = get_docstring(value) or '(Undocumented)'
-        self.header.write(' * <![CDATA[%s]]>\n' % docstring)
+        self.header.write(' * %s\n' % xml_escape(docstring))
         self.header.write(' *\n')
 
         self.header.write(' */\n')
@@ -125,8 +126,10 @@ class GTypesGenerator(object):
                 docstring = docstring[:-16]
             if docstring.strip() in ('<tp:docstring/>', ''):
                 docstring = '(Undocumented)'
+        else:
+            docstring = '(Undocumented)'
         self.header.write('/**\n * %s:\n\n' % name)
-        self.header.write(' * <![CDATA[%s]]>\n' % docstring)
+        self.header.write(' * %s\n' % xml_escape(docstring))
         self.header.write(' *\n')
         self.header.write(' * This macro expands to a call to a function\n')
         self.header.write(' * that returns the #GType of a #GValueArray\n')
@@ -145,7 +148,7 @@ class GTypesGenerator(object):
             self.header.write(' * named <literal>%s</literal>):\n'
                               % member.getAttribute('name'))
             docstring = get_docstring(member) or '(Undocumented)'
-            self.header.write(' * <![CDATA[%s]]>\n' % docstring)
+            self.header.write(' * %s\n' % xml_escape(docstring))
             self.header.write(' *\n')
 
         self.header.write(' */\n')

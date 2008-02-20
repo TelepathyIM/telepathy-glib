@@ -313,3 +313,8 @@ def type_to_gtype(s):
 
     # we just don't know ..
     raise Exception, "don't know the GType for " + s
+
+
+def xml_escape(s):
+    s = s.replace('&', '&amp;').replace("'", '&#39;').replace('"', '&#34;')
+    return s.replace('<', '&lt;').replace('>', '&gt;')
