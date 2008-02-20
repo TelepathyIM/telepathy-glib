@@ -185,6 +185,9 @@ video_sink_unlinked_idle_cb (gpointer user_data)
 
   binparent = GST_ELEMENT (gst_element_get_parent (sink));
 
+  if (!binparent)
+    goto out;
+
   retval = gst_bin_remove (GST_BIN (binparent), sink);
   g_assert (retval);
 
@@ -195,6 +198,7 @@ video_sink_unlinked_idle_cb (gpointer user_data)
   }
   g_assert (ret != GST_STATE_CHANGE_FAILURE);
 
+ out:
   gst_object_unref (sink);
 
   return FALSE;
