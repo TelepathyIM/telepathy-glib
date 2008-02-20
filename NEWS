@@ -21,6 +21,9 @@ Fixes:
 * tp_dbus_check_valid_object_path allows "/" and disallows "//", not the
   reverse
 
+* Partially works around some gtkdoc 1.7 bugs (if your gtkdoc is 1.7 you'll
+  still lose the "Telepathy protocol enumerations" section)
+
 telepathy-glib 0.7.2 (2008-02-11)
 =================================
 
