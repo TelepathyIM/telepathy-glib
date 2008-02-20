@@ -316,5 +316,5 @@ def type_to_gtype(s):
 
 
 def xml_escape(s):
-    s = s.replace('&', '&amp;').replace("'", '&#39;').replace('"', '&#34;')
+    s = s.replace('&', '&amp;').replace("'", '&apos;').replace('"', '&quot;')
     return s.replace('<', '&lt;').replace('>', '&gt;')
