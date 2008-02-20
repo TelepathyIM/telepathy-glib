@@ -574,7 +574,9 @@ tp_stream_engine_stream_dispose (GObject *object)
           tee_src_pad_blocked (pad, TRUE, object);
         }
 
-      /* Lets keep a ref around until we've blocked the pad and removed the queue */  }
+      /* Lets keep a ref around until we've blocked the pad
+       * and removed the queue, so we dont unref the pad here. */
+    }
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
