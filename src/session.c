@@ -153,7 +153,7 @@ tp_stream_engine_session_constructor (GType type,
       G_CALLBACK (invalidated_cb), obj);
 
   g_signal_connect (G_OBJECT (self->priv->fs_session), "error",
-      G_CALLBACK (cb_fs_session_error), self->priv->session_handler_proxy);
+      G_CALLBACK (cb_fs_session_error), obj);
 
   tp_cli_media_session_handler_connect_to_new_stream_handler
       (self->priv->session_handler_proxy, new_media_stream_handler, NULL, NULL,
@@ -188,6 +188,9 @@ tp_stream_engine_session_dispose (GObject *object)
 
   if (self->priv->fs_session)
     {
+      g_signal_handlers_disconnect_by_func (
+          self->priv->session_handler_proxy, cb_fs_session_error, self);
+
       g_object_unref (self->priv->fs_session);
       self->priv->fs_session = NULL;
     }
@@ -274,13 +277,13 @@ cb_fs_session_error (FarsightSession *session,
                      const gchar *debug,
                      gpointer user_data)
 {
-  TpMediaSessionHandler *session_handler_proxy =
-      TP_MEDIA_SESSION_HANDLER (user_data);
+  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
 
   g_message (
     "%s: session error: session=%p error=%s\n", G_STRFUNC, session, debug);
-  tp_cli_media_session_handler_call_error (session_handler_proxy, -1, error,
-      debug, dummy_callback, "Media.SessionHandler::Error", NULL, NULL);
+  tp_cli_media_session_handler_call_error (self->priv->session_handler_proxy,
+      -1, error, debug, dummy_callback,
+      "Media.SessionHandler::Error", NULL, NULL);
 }
 
 static void
