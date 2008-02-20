@@ -1168,7 +1168,6 @@ bus_async_handler (GstBus *bus,
         priv->pipeline = NULL;
 
         g_error_free (error);
-        g_free (error_string);
         break;
       case GST_MESSAGE_WARNING:
         {
