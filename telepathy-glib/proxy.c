@@ -867,8 +867,16 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
   iface = g_datalist_id_get_data (&self->proxy->priv->interfaces,
       self->interface);
 
-  if (iface == NULL || iface == self->proxy || self->pending_call == NULL)
-    return;
+  if (iface == NULL || self->pending_call == NULL)
+    {
+      MORE_DEBUG ("I don't actually have a DBusGProxy, never mind; "
+          "iface=%p proxy=%p pending_call=%p", iface, self->proxy,
+          self->pending_call);
+      return;
+    }
+
+  /* if we made a call, then we really ought to actually have a DBusGProxy */
+  g_return_if_fail (iface != self->proxy);
 
   MORE_DEBUG ("Cancelling pending call %p on DBusGProxy %p",
       self->pending_call, iface);
