@@ -1473,11 +1473,13 @@ tp_proxy_set_property (GObject *object,
         }
       else
         {
-          TpProxy *daemon_as_proxy = g_value_get_object (value);
+          TpProxy *daemon_as_proxy = TP_PROXY (g_value_get_object (value));
 
           g_assert (self->dbus_daemon == NULL);
 
-          self->dbus_daemon = g_value_dup_object (value);
+          if (self->dbus_daemon != NULL)
+            self->dbus_daemon = TP_DBUS_DAEMON (g_object_ref
+                (daemon_as_proxy));
 
           if (daemon_as_proxy != NULL)
             {

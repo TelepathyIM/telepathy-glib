@@ -190,7 +190,7 @@ tp_channel_set_property (GObject *object,
   switch (property_id)
     {
     case PROP_CONNECTION:
-      self->connection = g_value_dup_object (value);
+      self->connection = TP_CONNECTION (g_value_dup_object (value));
       break;
     case PROP_CHANNEL_TYPE:
       /* can only be set in constructor */
