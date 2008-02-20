@@ -1490,6 +1490,128 @@ queue_linked (GstPad *pad, GstPad *peer, gpointer user_data)
 }
 
 static GstElement *
+get_volume_element (GstElement *element)
+{
+  GstElement *volume_element = NULL;
+
+  if (g_object_has_property (G_OBJECT (element), "volume") &&
+      g_object_has_property (G_OBJECT (element), "mute"))
+    return gst_object_ref (element);
+
+  if (GST_IS_BIN (element))
+    {
+      GstIterator *it = NULL;
+      gboolean done = FALSE;
+      gpointer item;
+
+      it = gst_bin_iterate_recurse (GST_BIN (element));
+
+      while (!volume_element && !done) {
+        switch (gst_iterator_next (it, &item)) {
+        case GST_ITERATOR_OK:
+          if (g_object_has_property (G_OBJECT (item), "volume") &&
+              g_object_has_property (G_OBJECT (item), "mute"))
+            volume_element = GST_ELEMENT (item);
+          else
+            gst_object_unref (item);
+          break;
+        case GST_ITERATOR_RESYNC:
+          if (volume_element)
+            gst_object_unref (volume_element);
+          volume_element = NULL;
+          gst_iterator_resync (it);
+          break;
+        case GST_ITERATOR_ERROR:
+          g_error ("Can not iterate sink");
+          done = TRUE;
+          break;
+        case GST_ITERATOR_DONE:
+          done = TRUE;
+          break;
+        }
+      }
+      gst_iterator_free (it);
+    }
+
+  return volume_element;
+}
+
+static gboolean has_volume_element (GstElement *element)
+{
+  GstElement *volume_element = get_volume_element (element);
+
+  if (volume_element)
+    {
+      gst_object_unref (volume_element);
+      return TRUE;
+    }
+  else
+    {
+      return FALSE;
+    }
+}
+
+static GstElement *
+make_volume_bin (TpStreamEngineStream *stream, GstElement *element,
+    gchar *padname)
+{
+  GstElement *bin = gst_bin_new (NULL);
+  GstElement *volume = gst_element_factory_make ("volume", NULL);
+  GstPad *volume_pad;
+  GstPad *ghostpad;
+  g_assert (volume);
+
+  DEBUG (stream, "Putting the %s into a bin with a volume element", padname);
+
+  if (!gst_bin_add (GST_BIN (bin), element) ||
+      !gst_bin_add (GST_BIN (bin), volume))
+    {
+      g_warning ("Could not add %s and volume to the bin", padname);
+      gst_object_unref (element);
+      gst_object_unref (bin);
+      gst_object_unref (volume);
+      return NULL;
+    }
+
+  if (!strcmp (padname, "src"))
+    {
+      if (!gst_element_link (element, volume))
+        {
+          g_warning ("Could not link volume and %s", padname);
+          gst_object_unref (bin);
+          return NULL;
+        }
+    }
+  else
+    {
+      if (!gst_element_link (volume, element))
+        {
+          g_warning ("Could not link volume and %s", padname);
+          gst_object_unref (bin);
+          return NULL;
+        }
+    }
+
+  volume_pad = gst_element_get_static_pad (volume, padname);
+  g_assert (volume_pad);
+
+  ghostpad = gst_ghost_pad_new (padname, volume_pad);
+  g_assert (ghostpad);
+
+  gst_object_unref (volume_pad);
+
+  if (!gst_element_add_pad (bin, ghostpad))
+    {
+      g_warning ("Could not add %s ghostpad to src element", padname);
+      gst_object_unref (element);
+      gst_object_unref (ghostpad);
+      return NULL;
+    }
+
+  return bin;
+}
+
+static GstElement *
 make_src (TpStreamEngineStream *stream, guint media_type)
 {
   const gchar *elem;
@@ -1525,6 +1647,9 @@ make_src (TpStreamEngineStream *stream, guint media_type)
 
       if (src && g_object_has_property (G_OBJECT (src), "is-live"))
         g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
+
+      if (src && !has_volume_element (src))
+        src = make_volume_bin (stream, src, "src");
     }
   else
     {
@@ -1618,6 +1743,9 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
               sink = gst_element_factory_make ("alsasink", NULL);
             }
         }
+
+      if (sink && !has_volume_element (sink))
+        sink = make_volume_bin (stream, sink, "sink");
     }
   else
     {
