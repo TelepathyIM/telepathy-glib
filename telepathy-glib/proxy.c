@@ -689,6 +689,8 @@ tp_proxy_pending_call_idle_invoke (gpointer p)
 
   g_return_val_if_fail (self->invoke_callback != NULL, FALSE);
 
+  MORE_DEBUG ("%p: invoking user callback", self);
+
   self->invoke_callback = NULL;
   invoke (self->proxy, self->error, self->args, self->callback,
       self->user_data, self->weak_object);
@@ -849,6 +851,7 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
       GError *error = g_error_new_literal (TP_DBUS_ERRORS,
           TP_DBUS_ERROR_CANCELLED, "Re-entrant D-Bus call cancelled");
 
+      MORE_DEBUG ("Telling user callback");
       invoke (self->proxy, error, NULL, self->callback, self->user_data,
           self->weak_object);
     }
@@ -856,6 +859,7 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
   if (self->idle_source != 0)
     {
       /* we aren't actually doing dbus-glib things any more anyway */
+      MORE_DEBUG ("Removing idle source");
       g_source_remove (self->idle_source);
       return;
     }
@@ -866,13 +870,18 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *self)
   if (iface == NULL || iface == self->proxy || self->pending_call == NULL)
     return;
 
+  MORE_DEBUG ("Cancelling pending call %p on DBusGProxy %p",
+      self->pending_call, iface);
   dbus_g_proxy_cancel_call (iface, self->pending_call);
+  MORE_DEBUG ("... done");
 }
 
 static void
 tp_proxy_pending_call_free (gpointer p)
 {
   TpProxyPendingCall *self = p;
+
+  DEBUG ("%p", self);
 
   g_return_if_fail (self->priv == pending_call_magic);
 
@@ -929,12 +938,15 @@ tp_proxy_pending_call_v0_completed (gpointer p)
 {
   TpProxyPendingCall *self = p;
 
+  MORE_DEBUG ("%p", p);
+
   g_return_if_fail (self->priv == pending_call_magic);
 
   if (self->idle_source != 0)
     {
       /* we've kicked off an idle function, so we don't want to die until
        * that function runs */
+      MORE_DEBUG ("Refusing to die til the idle function runs");
       return;
     }
 
@@ -952,6 +964,7 @@ tp_proxy_pending_call_v0_completed (gpointer p)
         }
     }
 
+  MORE_DEBUG ("Freeing myself");
   tp_proxy_pending_call_free (self);
 }
 
@@ -1006,6 +1019,9 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
   g_return_if_fail (self->error == NULL);
   g_return_if_fail (self->idle_source == 0);
   g_return_if_fail (error == NULL || args == NULL);
+
+  MORE_DEBUG ("%p (error: %s)", self,
+      error == NULL ? "(none)" : error->message);
 
   self->args = args;
   self->error = tp_proxy_take_and_remap_error (self->proxy, error);
