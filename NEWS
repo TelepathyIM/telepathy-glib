@@ -11,6 +11,10 @@ Enhancements:
 
 Fixes:
 
+* Fixed a crash that could occur when pending calls on otherwise unreferenced
+  proxies are cancelled, e.g. during teardown in telepathy-stream-engine
+  (fd.o #14576)
+
 * Correct client-side bindings are generated for methods that return a variant
   (e.g. o.fd.DBus.Properties.Get) fixing potential crashes in clients
 
