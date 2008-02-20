@@ -732,7 +732,7 @@ TELEPATHY_GLIB_0.7.2 {
         tp_svc_dbus_properties_implement_set;
 } TELEPATHY_GLIB_0.7.1;
 
-TELEPATHY_GLIB_0.7.3_UNRELEASED {
+TELEPATHY_GLIB_0.7.3 {
     global:
         tp_dbus_properties_mixin_class_init;
         tp_dbus_properties_mixin_getter_gobject_properties;

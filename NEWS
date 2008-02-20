@@ -1,13 +1,16 @@
-telepathy-glib 0.7.3 (unreleased)
+telepathy-glib 0.7.3 (2008-02-20)
 =================================
+
+Requirements:
+
+* pkg-config 0.21 is now required
+
+* gtkdoc 1.8 is recommended
 
 Enhancements:
 
-* Supports org.freedesktop.DBus.Properties with client support on every
-  TpProxy, a mixin for services, and extensions to auto-generated code
-
-* Supports org.freedesktop.DBus.Introspect and org.freedesktop.DBus.Peer
-  on all TpProxy objects
+* Supports org.freedesktop.DBus.Properties with a mixin for services, and
+  extensions to auto-generated code
 
 Fixes:
 
@@ -23,6 +26,9 @@ Fixes:
 
 * Partially works around some gtkdoc 1.7 bugs (if your gtkdoc is 1.7 you'll
   still lose the "Telepathy protocol enumerations" section)
+
+* Uses pkg-config's Requires.private feature to reduce shared library
+  interdependencies
 
 telepathy-glib 0.7.2 (2008-02-11)
 =================================
