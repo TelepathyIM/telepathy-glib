@@ -64,7 +64,6 @@ struct _TpStreamEngineStreamPrivate
   TpMediaStreamHandler *stream_handler_proxy;
 
   FarsightStream *fs_stream;
-  guint state_changed_handler_id;
 
   gboolean playing;
   FarsightStreamState state;
@@ -430,16 +429,18 @@ tp_stream_engine_stream_constructor (GType type,
 
   g_signal_connect (G_OBJECT (priv->fs_stream), "error",
       G_CALLBACK (cb_fs_stream_error), obj);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "new-active-candidate-pair",
+  g_signal_connect (G_OBJECT (priv->fs_stream),
+      "new-active-candidate-pair",
       G_CALLBACK (cb_fs_new_active_candidate_pair), obj);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "codec-changed",
-      G_CALLBACK (cb_fs_codec_changed), obj);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "native-candidates-prepared",
+  g_signal_connect (G_OBJECT (priv->fs_stream),
+      "codec-changed", G_CALLBACK (cb_fs_codec_changed), obj);
+  g_signal_connect (G_OBJECT (priv->fs_stream),
+      "native-candidates-prepared",
       G_CALLBACK (cb_fs_native_candidates_prepared), obj);
-  priv->state_changed_handler_id =
-    g_signal_connect (G_OBJECT (priv->fs_stream), "state-changed",
+  g_signal_connect (G_OBJECT (priv->fs_stream), "state-changed",
         G_CALLBACK (cb_fs_state_changed), obj);
-  g_signal_connect (G_OBJECT (priv->fs_stream), "new-native-candidate",
+  g_signal_connect (G_OBJECT (priv->fs_stream),
+      "new-native-candidate",
       G_CALLBACK (cb_fs_new_native_candidate), obj);
 
   set_nat_properties (stream);
@@ -537,6 +538,9 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       TpMediaStreamHandler *tmp = priv->stream_handler_proxy;
 
+      g_signal_handlers_disconnect_by_func (
+          priv->stream_handler_proxy, invalidated_cb, stream);
+
       priv->stream_handler_proxy = NULL;
       g_object_unref (tmp);
     }
@@ -545,8 +549,19 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       stop_stream (stream);
 
-      g_signal_handler_disconnect (priv->fs_stream,
-          priv->state_changed_handler_id);
+      g_signal_handlers_disconnect_by_func (
+          priv->fs_stream, cb_fs_stream_error, stream);
+      g_signal_handlers_disconnect_by_func (
+          priv->fs_stream, cb_fs_new_active_candidate_pair, stream);
+      g_signal_handlers_disconnect_by_func (
+          priv->fs_stream, cb_fs_codec_changed, stream);
+      g_signal_handlers_disconnect_by_func (
+          priv->fs_stream, cb_fs_native_candidates_prepared, stream);
+      g_signal_handlers_disconnect_by_func (
+          priv->fs_stream, cb_fs_state_changed, stream);
+      g_signal_handlers_disconnect_by_func (
+          priv->fs_stream, cb_fs_new_native_candidate, stream);
+
       g_object_unref (priv->fs_stream);
       priv->fs_stream = NULL;
     }
