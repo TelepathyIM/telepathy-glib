@@ -896,7 +896,7 @@ tp_proxy_pending_call_free (gpointer p)
 {
   TpProxyPendingCall *self = p;
 
-  DEBUG ("%p", self);
+  MORE_DEBUG ("%p", self);
 
   g_return_if_fail (self->priv == pending_call_magic);
 
