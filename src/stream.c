@@ -458,28 +458,27 @@ tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
   TpStreamEngine *engine = tp_stream_engine_get ();
-  GstPad *queuesinkpad = gst_element_get_pad (priv->queue, "sink");
+  GstPad *queuesinkpad = NULL;
   GstElement *pipeline = NULL;
   GstElement *tee = NULL;
   GstPad *teesrcpad = NULL;
 
   GstStateChangeReturn ret;
 
-  pipeline = tp_stream_engine_get_pipeline (engine);
-  g_assert (pipeline);
-  tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-  g_assert (tee);
-  teesrcpad = gst_pad_get_peer (queuesinkpad);
-  g_assert (teesrcpad);
-
-  if (queuesinkpad)
-    gst_object_unref (queuesinkpad);
-
   if (!priv->queue)
     {
       gst_object_unref (pad);
       return;
     }
+  pipeline = tp_stream_engine_get_pipeline (engine);
+  g_assert (pipeline);
+  tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
+  g_assert (tee);
+  queuesinkpad = gst_element_get_static_pad (priv->queue, "sink");
+  teesrcpad = gst_pad_get_peer (queuesinkpad);
+  g_assert (teesrcpad);
+
+  gst_object_unref (queuesinkpad);
 
   if (!gst_bin_remove (GST_BIN (pipeline), priv->queue))
     {
