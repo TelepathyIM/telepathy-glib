@@ -804,13 +804,13 @@ tp_properties_mixin_change_value (GObject *obj,
  * @obj: An object with the properties mixin
  * @prop_id: A property ID on which to act
  * @add: Property flags to be added via bitwise OR
- * @remove: Property flags to be removed via bitwise AND
+ * @del: Property flags to be removed via bitwise AND
  * @props: either %NULL, or a pointer to a TpIntSet
  *
  * Change the flags for the given property ID in response to a server state
  * change.
  *
- * Flags removed by @remove override flags added by @add. This should not be
+ * Flags removed by @del override flags added by @add. This should not be
  * relied upon.
  *
  * If @props is %NULL the PropertyFlagsChanged signal is emitted for this
@@ -824,7 +824,7 @@ void
 tp_properties_mixin_change_flags (GObject *obj,
                                   guint prop_id,
                                   TpPropertyFlags add,
-                                  TpPropertyFlags remove,
+                                  TpPropertyFlags del,
                                   TpIntSet *props)
 {
   TpPropertiesMixin *mixin = TP_PROPERTIES_MIXIN (obj);
@@ -840,7 +840,7 @@ tp_properties_mixin_change_flags (GObject *obj,
   prev_flags = prop->flags;
 
   prop->flags |= add;
-  prop->flags &= ~remove;
+  prop->flags &= ~del;
 
   if (prop->flags == prev_flags)
     return;
