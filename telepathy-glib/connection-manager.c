@@ -1259,7 +1259,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
                                        GObject *weak_object)
 {
   _ListContext *list_context = user_data;
-  const gchar **iter;
+  const gchar **name_iter;
 
   if (error != NULL)
     {
@@ -1268,15 +1268,16 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
       return;
     }
 
-  for (iter = names; iter != NULL && *iter != NULL; iter++)
+  for (name_iter = names; name_iter != NULL && *name_iter != NULL; name_iter++)
     {
       const gchar *name;
       TpConnectionManager *cm;
 
-      if (strncmp (TP_CM_BUS_NAME_BASE, *iter, list_context->base_len) != 0)
+      if (strncmp (TP_CM_BUS_NAME_BASE, *name_iter, list_context->base_len)
+          != 0)
         continue;
 
-      name = *iter + list_context->base_len;
+      name = *name_iter + list_context->base_len;
 
       if (g_hash_table_lookup (list_context->table, name) == NULL)
         {
@@ -1293,7 +1294,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
       GPtrArray *arr = g_ptr_array_sized_new (g_hash_table_size
               (list_context->table));
       TpConnectionManager **cms;
-      TpConnectionManager * const *iter;
+      TpConnectionManager * const *cm_iter;
       gsize n_cms;
 
       g_hash_table_foreach_steal (list_context->table, steal_into_ptr_array,
@@ -1306,9 +1307,9 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
           weak_object);
       list_context->callback = NULL;
 
-      for (iter = cms; *iter != NULL; iter++)
+      for (cm_iter = cms; *cm_iter != NULL; cm_iter++)
         {
-          g_object_unref (*iter);
+          g_object_unref (*cm_iter);
         }
 
       g_free (cms);
