@@ -596,7 +596,7 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
  */
 static void
 tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *iface,
-                                          guint time,
+                                          guint timestamp,
                                           DBusGMethodInvocation *context)
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
