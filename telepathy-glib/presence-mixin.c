@@ -93,7 +93,7 @@ deep_copy_hashtable (GHashTable *hash_table)
 
 /**
  * tp_presence_status_new
- * @index: Index of the presence status in the provided supported presence
+ * @which: Index of the presence status in the provided supported presence
  *  statuses array
  * @optional_arguments: Optional arguments for the presence statuses. Can be
  *  NULL if there are no optional arguments. The presence status object makes a
@@ -105,12 +105,12 @@ deep_copy_hashtable (GHashTable *hash_table)
  * Returns: A pointer to the newly allocated presence status structure.
  */
 TpPresenceStatus *
-tp_presence_status_new (guint index,
+tp_presence_status_new (guint which,
                         GHashTable *optional_arguments)
 {
   TpPresenceStatus *status = g_slice_new (TpPresenceStatus);
 
-  status->index = index;
+  status->index = which;
   status->optional_arguments = deep_copy_hashtable (optional_arguments);
 
   return status;
