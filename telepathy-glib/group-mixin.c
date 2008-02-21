@@ -1077,31 +1077,31 @@ group_flags_to_string (TpChannelGroupFlags flags)
  * tp_group_mixin_change_flags:
  * @obj: An object implementing the groups interface using this mixin
  * @add: Flags to be added
- * @remove: Flags to be removed
+ * @del: Flags to be removed
  *
  * Request a change to be made to the flags. Emits the
  * GroupFlagsChanged signal with the changes which were actually made.
  *
- * It is an error to set any of the same bits in both @add and @remove.
+ * It is an error to set any of the same bits in both @add and @del.
  */
 void
 tp_group_mixin_change_flags (GObject *obj,
                              TpChannelGroupFlags add,
-                             TpChannelGroupFlags remove)
+                             TpChannelGroupFlags del)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   TpChannelGroupFlags added, removed;
 
   /* It's meaningless to want to add and remove the same capability */
-  g_return_if_fail ((add & remove) == 0);
+  g_return_if_fail ((add & del) == 0);
 
   added = add & ~mixin->group_flags;
   mixin->group_flags |= added;
 
-  removed = remove & mixin->group_flags;
+  removed = del & mixin->group_flags;
   mixin->group_flags &= ~removed;
 
-  if (add != 0 || remove != 0)
+  if (add != 0 || del != 0)
     {
       gchar *str_added, *str_removed, *str_flags;
 
@@ -1230,7 +1230,7 @@ local_pending_remove (TpGroupMixin *mixin,
  * @add: A set of contact handles to be added to the members (if not
  *  already present) and removed from local pending and remote pending
  *  (if present)
- * @remove: A set of contact handles to be removed from members,
+ * @del: A set of contact handles to be removed from members,
  *  local pending or remote pending, wherever they are present
  * @add_local_pending: A set of contact handles to be added to local pending,
  *  and removed from members and remote pending
@@ -1246,7 +1246,7 @@ local_pending_remove (TpGroupMixin *mixin,
  * IM protocol, and must not be called in direct response to user input;
  * it does not respect the permissions flags, but changes the group directly.
  *
- * If any two of add, remove, add_local_pending and add_remote_pending have
+ * If any two of add, del, add_local_pending and add_remote_pending have
  * a non-empty intersection, the result is undefined. Don't do that.
  *
  * Each of the TpIntSet arguments may be %NULL, which is treated as
@@ -1260,7 +1260,7 @@ gboolean
 tp_group_mixin_change_members (GObject *obj,
                                const gchar *message,
                                TpIntSet *add,
-                               TpIntSet *remove,
+                               TpIntSet *del,
                                TpIntSet *add_local_pending,
                                TpIntSet *add_remote_pending,
                                TpHandle actor,
@@ -1279,8 +1279,8 @@ tp_group_mixin_change_members (GObject *obj,
   if (add == NULL)
     add = empty;
 
-  if (remove == NULL)
-    remove = empty;
+  if (del == NULL)
+    del = empty;
 
   if (add_local_pending == NULL)
     add_local_pending = empty;
@@ -1297,8 +1297,8 @@ tp_group_mixin_change_members (GObject *obj,
   /* members + add */
   new_add = tp_handle_set_update (mixin->members, add);
 
-  /* members - remove */
-  new_remove = tp_handle_set_difference_update (mixin->members, remove);
+  /* members - del */
+  new_remove = tp_handle_set_difference_update (mixin->members, del);
 
   /* members - add_local_pending */
   tmp = tp_handle_set_difference_update (mixin->members, add_local_pending);
@@ -1319,8 +1319,8 @@ tp_group_mixin_change_members (GObject *obj,
   local_pending_remove (mixin, tmp);
   tp_intset_destroy (tmp);
 
-  /* local pending - remove */
-  tmp = tp_handle_set_difference_update (mixin->local_pending, remove);
+  /* local pending - del */
+  tmp = tp_handle_set_difference_update (mixin->local_pending, del);
   local_pending_remove (mixin, tmp);
 
   tmp2 = tp_intset_union (new_remove, tmp);
@@ -1343,8 +1343,8 @@ tp_group_mixin_change_members (GObject *obj,
   tmp = tp_handle_set_difference_update (mixin->remote_pending, add);
   tp_intset_destroy (tmp);
 
-  /* remote pending - remove */
-  tmp = tp_handle_set_difference_update (mixin->remote_pending, remove);
+  /* remote pending - del */
+  tmp = tp_handle_set_difference_update (mixin->remote_pending, del);
   tmp2 = tp_intset_union (new_remove, tmp);
   tp_intset_destroy (new_remove);
   tp_intset_destroy (tmp);
