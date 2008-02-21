@@ -293,7 +293,10 @@ _gen/signals-marshal.h: _gen/signals-marshal.list
 	$(GLIB_GENMARSHAL) --header --prefix=_tp_marshal $< > $@
 
 _gen/signals-marshal.c: _gen/signals-marshal.list
-	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< > $@
+	{\
+	echo '#include "_gen/signals-marshal.h"' && \
+	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< ; \
+	} > $@
 
 # Things generated per interface
 
