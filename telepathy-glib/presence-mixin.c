@@ -329,20 +329,18 @@ static GHashTable *
 construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
                          GHashTable *contact_statuses)
 {
-  GHashTable *presence_hash;
+  struct _i_absolutely_love_g_hash_table_foreach data = { supported_statuses,
+    contact_statuses, NULL };
 
   DEBUG ("called.");
 
-  presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
+  data.presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_value_array_free);
-
-  struct _i_absolutely_love_g_hash_table_foreach data = { supported_statuses,
-    contact_statuses, presence_hash };
 
   g_hash_table_foreach (contact_statuses, construct_presence_hash_foreach,
       &data);
 
-  return presence_hash;
+  return data.presence_hash;
 }
 
 
