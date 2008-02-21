@@ -109,7 +109,7 @@ struct _TpHandlePriv
 };
 
 static TpHandlePriv *
-handle_priv_new ()
+handle_priv_new (void)
 {
   TpHandlePriv *priv;
 
