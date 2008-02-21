@@ -28,6 +28,7 @@
  */
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-internal.h>
 
 #include <stdlib.h>
 #include <string.h>
