@@ -136,6 +136,7 @@ struct _TpStreamEnginePrivate
 
   gboolean linked;
   gboolean restart_source;
+  gboolean force_testsrc;
 };
 
 typedef struct _WindowPair WindowPair;
@@ -1290,14 +1291,16 @@ _create_pipeline (TpStreamEngine *self)
   const gchar *caps_str;
   GstStateChangeReturn state_ret;
   gboolean ret;
+  GstElement *fakesink;
 
   priv->pipeline = gst_pipeline_new (NULL);
-  tee = gst_element_factory_make ("tee", "tee");
 
-  g_assert (tee);
+ try_again:
 
   if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
     {
+      if (priv->force_testsrc)
+        g_error ("Invalid video source passed in FS_VIDEOSRC");
       g_debug ("making video src with pipeline \"%s\"", elem);
       videosrc = gst_parse_bin_from_description (elem, TRUE, NULL);
       g_assert (videosrc);
@@ -1308,7 +1311,14 @@ _create_pipeline (TpStreamEngine *self)
 #ifdef MAEMO_OSSO_SUPPORT
       videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
 #else
-      videosrc = gst_element_factory_make ("gconfvideosrc", NULL);
+      if (priv->force_testsrc)
+        {
+          videosrc = gst_element_factory_make ("videotestsrc", NULL);
+          g_object_set (videosrc, "is-live", TRUE, NULL);
+        }
+
+      if (videosrc == NULL)
+        videosrc = gst_element_factory_make ("gconfvideosrc", NULL);
 
       if (videosrc == NULL)
         videosrc = gst_element_factory_make ("v4l2src", NULL);
@@ -1318,9 +1328,16 @@ _create_pipeline (TpStreamEngine *self)
 #endif
 
       if (videosrc != NULL)
-        g_debug ("using %s as video source", GST_ELEMENT_NAME (videosrc));
+        {
+          g_debug ("using %s as video source", GST_ELEMENT_NAME (videosrc));
+        }
       else
-        g_error ("failed to create video source");
+        {
+          videosrc = gst_element_factory_make ("videotestsrc", NULL);
+          g_object_set (videosrc, "is-live", TRUE, NULL);
+          if (videosrc == NULL)
+            g_error ("failed to create any video source");
+        }
     }
 
   if ((caps_str = getenv ("FS_VIDEO_SRC_CAPS")) || (caps_str = getenv ("FS_VIDEOSRC_CAPS")))
@@ -1346,10 +1363,51 @@ _create_pipeline (TpStreamEngine *self)
       g_debug ("applying custom caps '%s' on the video source\n", caps_str);
     }
 
+  fakesink = gst_element_factory_make ("fakesink", NULL);
+
+  gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, fakesink, NULL);
+
+  if (!gst_element_link (videosrc, fakesink))
+    g_error ("Could not link fakesink to videosrc");
+
+  state_ret = gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
+  g_debug ("state_ret: %d", state_ret);
+  if (state_ret == GST_STATE_CHANGE_FAILURE)
+    {
+      if (priv->force_testsrc)
+        {
+          g_error ("Could not even start videotstsrc");
+        }
+      else
+        {
+          g_debug ("Video source failed, falling back to videotestsrc");
+          state_ret = gst_element_set_state (priv->pipeline, GST_STATE_NULL);
+          g_assert (state_ret == GST_STATE_CHANGE_SUCCESS);
+          if (!gst_bin_remove (GST_BIN (priv->pipeline), fakesink))
+            g_error ("Could not remove fakesink");
+
+          priv->force_testsrc = TRUE;
+          gst_bin_remove (GST_BIN (priv->pipeline), videosrc);
+          goto try_again;
+        }
+    }
+  else
+    {
+      state_ret = gst_element_set_state (priv->pipeline, GST_STATE_NULL);
+      g_assert (state_ret == GST_STATE_CHANGE_SUCCESS);
+      gst_bin_remove (GST_BIN (priv->pipeline), fakesink);
+    }
+
   priv->videosrc = videosrc;
+
   gst_element_set_locked_state (videosrc, TRUE);
 
-  gst_bin_add_many (GST_BIN (priv->pipeline), videosrc, tee, NULL);
+  tee = gst_element_factory_make ("tee", "tee");
+  g_assert (tee);
+  if (!gst_bin_add (GST_BIN (priv->pipeline), tee))
+    g_error ("Could not add tee to pipeline");
+
+
 
 #ifndef MAEMO_OSSO_SUPPORT
 #if 0
@@ -1403,9 +1461,7 @@ _create_pipeline (TpStreamEngine *self)
   ret = gst_element_link (capsfilter, tee);
   g_assert (ret);
 
-
   state_ret = gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
-
   g_assert (state_ret != GST_STATE_CHANGE_FAILURE);
 
   /* connect a callback to the stream bus so that we can set X window IDs
