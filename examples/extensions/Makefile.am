@@ -79,14 +79,12 @@ _gen/signals-marshal.list: _gen/all.xml \
 	$(tools_dir)/glib-signals-marshal-gen.py
 	$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py $< > $@
 
-_gen/signals-marshal.h: _gen/signals-marshal.list
+_gen/signals-marshal.h: _gen/signals-marshal.list Makefile.am
 	$(GLIB_GENMARSHAL) --header --prefix=_example_ext_marshal $< > $@
 
-_gen/signals-marshal.c: _gen/signals-marshal.list
-	{\
-	echo '#include "_gen/signals-marshal.h"' && \
-	$(GLIB_GENMARSHAL) --body --prefix=_example_ext_marshal $< ; \
-	} > $@
+_gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
+	{ echo '#include "_gen/signals-marshal.h"' && \
+	$(GLIB_GENMARSHAL) --body --prefix=_example_ext_marshal $< ; } > $@
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/all.xml \
 	$(tools_dir)/glib-client-marshaller-gen.py
