@@ -1572,6 +1572,17 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
       _create_pipeline (self);
     }
 
+  if (priv->force_testsrc)
+    {
+      GError *error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Could not get a video source");
+      g_debug ("%s", error->message);
+
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
   wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
 
   if (wp != NULL)
