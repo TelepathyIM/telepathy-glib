@@ -261,7 +261,7 @@ gboolean tp_properties_context_return_if_done (TpPropertiesContext *ctx);
 void tp_properties_mixin_change_value (GObject *obj, guint prop_id,
     const GValue *new_value, TpIntSet *props);
 void tp_properties_mixin_change_flags (GObject *obj, guint prop_id,
-    TpPropertyFlags add, TpPropertyFlags remove, TpIntSet *props);
+    TpPropertyFlags add, TpPropertyFlags del, TpIntSet *props);
 void tp_properties_mixin_emit_changed (GObject *obj, const TpIntSet *props);
 void tp_properties_mixin_emit_flags (GObject *obj, const TpIntSet *props);
 

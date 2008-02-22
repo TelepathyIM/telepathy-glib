@@ -104,14 +104,14 @@ struct _TpPresenceStatus {
     gpointer _future2;
 };
 
-TpPresenceStatus *tp_presence_status_new (guint index,
+TpPresenceStatus *tp_presence_status_new (guint which,
     GHashTable *optional_arguments);
 void tp_presence_status_free (TpPresenceStatus *status);
 
 /**
  * TpPresenceMixinStatusAvailableFunc:
  * @obj: An object implementing the presence interface with this mixin
- * @index: The index of the presence status in the provided supported presence
+ * @which: The index of the presence status in the provided supported presence
  *  statuses array
  *
  * Signature of the callback used to determine if a given status is currently
@@ -120,7 +120,7 @@ void tp_presence_status_free (TpPresenceStatus *status);
  * Returns: %TRUE if the status is available, %FALSE if not.
  */
 typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
-    guint index);
+    guint which);
 
 /**
  * TpPresenceMixinGetContactStatusesFunc:

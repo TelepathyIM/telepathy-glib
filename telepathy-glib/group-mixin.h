@@ -199,9 +199,9 @@ gboolean tp_group_mixin_get_handle_owners (GObject *obj,
     const GArray *handles, GArray **ret, GError **error);
 
 void tp_group_mixin_change_flags (GObject *obj,
-    TpChannelGroupFlags add, TpChannelGroupFlags remove);
+    TpChannelGroupFlags add, TpChannelGroupFlags del);
 gboolean tp_group_mixin_change_members (GObject *obj,
-    const gchar *message, TpIntSet *add, TpIntSet *remove,
+    const gchar *message, TpIntSet *add, TpIntSet *del,
     TpIntSet *add_local_pending, TpIntSet *add_remote_pending, TpHandle actor,
     TpChannelGroupChangeReason reason);
 
