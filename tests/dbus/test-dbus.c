@@ -20,7 +20,7 @@ myassert_failed (void)
 }
 
 static void
-noc (TpDBusDaemon *bus,
+noc (TpDBusDaemon *obj,
      const gchar *name,
      const gchar *new_owner,
      gpointer user_data)
@@ -48,13 +48,13 @@ noc (TpDBusDaemon *bus,
               guint ret;
               GError *error = NULL;
 
-              MYASSERT (tp_cli_dbus_daemon_run_request_name (bus, -1,
+              MYASSERT (tp_cli_dbus_daemon_run_request_name (obj, -1,
                     "com.example", 0, &ret, &error, NULL), "");
               MYASSERT (ret == 1 && error == NULL, "");
-              MYASSERT (tp_cli_dbus_daemon_run_request_name (bus, -1,
+              MYASSERT (tp_cli_dbus_daemon_run_request_name (obj, -1,
                     "org.example", 0, &ret, &error, NULL), "");
               MYASSERT (ret == 1 && error == NULL, "");
-              MYASSERT (tp_cli_dbus_daemon_run_request_name (bus, -1,
+              MYASSERT (tp_cli_dbus_daemon_run_request_name (obj, -1,
                     "net.example", 0, &ret, &error, NULL), "");
               MYASSERT (ret == 1 && error == NULL, "");
             }
@@ -64,12 +64,12 @@ noc (TpDBusDaemon *bus,
           guint ret;
           GError *error = NULL;
 
-          MYASSERT (tp_dbus_daemon_cancel_name_owner_watch (bus,
+          MYASSERT (tp_dbus_daemon_cancel_name_owner_watch (obj,
                 "org.example", noc, five), "");
-          MYASSERT (tp_cli_dbus_daemon_run_release_name (bus, -1,
+          MYASSERT (tp_cli_dbus_daemon_run_release_name (obj, -1,
                 "org.example", &ret, &error, NULL), "");
           MYASSERT (ret == 1 && error == NULL, "");
-          MYASSERT (tp_cli_dbus_daemon_run_release_name (bus, -1,
+          MYASSERT (tp_cli_dbus_daemon_run_release_name (obj, -1,
                 "net.example", &ret, &error, NULL), "");
           MYASSERT (ret == 1 && error == NULL, "");
         }

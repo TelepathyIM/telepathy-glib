@@ -10,7 +10,9 @@ static gint comparator_fn (gconstpointer a, gconstpointer b)
     return (a < b) ? -1 : (a == b) ? 0 : 1;
 }
 
-int main ()
+int
+main (int argc,
+      char **argv)
 {
   TpHeap *heap = tp_heap_new (comparator_fn, NULL);
   guint prev = 0;

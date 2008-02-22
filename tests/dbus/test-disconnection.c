@@ -156,7 +156,7 @@ noc (TpDBusDaemon *proxy,
     }
 }
 
-void
+static void
 set_freed (gpointer user_data)
 {
   gboolean *boolptr = user_data;

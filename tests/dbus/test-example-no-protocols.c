@@ -53,7 +53,7 @@ connection_manager_got_info (TpConnectionManager *cm,
   g_hash_table_destroy (empty);
 }
 
-gboolean
+static gboolean
 time_out (gpointer mainloop)
 {
   g_error ("Timed out");
