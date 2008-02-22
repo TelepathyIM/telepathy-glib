@@ -51,6 +51,7 @@ struct _TpStreamEngineChannelPrivate
   guint prop_id_stun_port;
   guint prop_id_gtalk_p2p_relay_token;
 
+  /* sessions is NULL until we've had a reply from GetSessionHandlers */
   GPtrArray *sessions;
   GPtrArray *streams;
 
@@ -100,7 +101,7 @@ tp_stream_engine_channel_init (TpStreamEngineChannel *self)
   priv->audio_stream_gtype = TP_STREAM_ENGINE_TYPE_STREAM;
   priv->video_stream_gtype = TP_STREAM_ENGINE_TYPE_STREAM;
 
-  priv->sessions = g_ptr_array_new ();
+  priv->sessions = NULL;
   priv->streams = g_ptr_array_new ();
 }
 
@@ -423,7 +424,7 @@ tp_stream_engine_channel_dispose (GObject *object)
 
   g_debug (G_STRFUNC);
 
-  if (priv->sessions)
+  if (priv->sessions != NULL)
     {
       guint i;
 
@@ -750,6 +751,8 @@ add_session (TpStreamEngineChannel *self,
 
   g_debug ("adding session handler %s, type %s", object_path, session_type);
 
+  g_assert (self->priv->sessions != NULL);
+
   proxy = tp_media_session_handler_new (channel_as_proxy->dbus_daemon,
       channel_as_proxy->bus_name, object_path, &error);
 
@@ -784,7 +787,13 @@ new_media_session_handler (TpChannel *channel_proxy,
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (weak_object);
 
-  add_session (self, session_handler_path, type);
+  /* Ignore NewMediaSessionHandler until we've had a reply to
+   * GetSessionHandlers; otherwise, if the two cross over in mid-flight,
+   * we think the CM is asking us to add the same session twice, and get
+   * very confused
+   */
+  if (self->priv->sessions != NULL)
+    add_session (self, session_handler_path, type);
 }
 
 static void
@@ -839,6 +848,8 @@ get_session_handlers_reply (TpChannel *channel_proxy,
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (weak_object);
   guint i;
+
+  self->priv->sessions = g_ptr_array_sized_new (session_handlers->len);
 
   if (error)
     {
