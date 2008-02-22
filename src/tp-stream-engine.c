@@ -1154,15 +1154,31 @@ bus_async_handler (GstBus *bus,
     {
       case GST_MESSAGE_ERROR:
         gst_message_parse_error (message, &error, &error_string);
-        tmp = g_strdup_printf ("%s: %s", error->message, error_string);
+
+        if (strstr (error_string, "not-linked"))
+          {
+            g_debug ("%s: got error from %s: %s: %s (%d %d)",
+                G_STRFUNC, name, error->message, error_string,
+                error->domain, error->code);
+            g_free (error_string);
+            g_error_free (error);
+            break;
+          }
+
 
         g_debug ("%s: got error from %s: %s: %s (%d %d), destroying video "
             "pipeline", G_STRFUNC, name, error->message, error_string,
             error->domain, error->code);
 
+        if (priv->force_testsrc)
+          g_error ("Could not even start videotestsrc");
+
+        tmp = g_strdup_printf ("%s: %s", error->message, error_string);
+        g_free (error_string);
+        g_error_free (error);
+
         close_all_video_streams (engine, tmp);
 
-        g_free (error_string);
         g_free (tmp);
 
         for (i = priv->output_windows; i; i = i->next)
@@ -1192,7 +1208,6 @@ bus_async_handler (GstBus *bus,
         gst_object_unref (priv->pipeline);
         priv->pipeline = NULL;
 
-        g_error_free (error);
         break;
       case GST_MESSAGE_WARNING:
         {
