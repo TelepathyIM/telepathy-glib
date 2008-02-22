@@ -188,8 +188,8 @@ tp_stream_engine_session_dispose (GObject *object)
 
   if (self->priv->fs_session)
     {
-      g_signal_handlers_disconnect_by_func (
-          self->priv->session_handler_proxy, cb_fs_session_error, self);
+      g_signal_handlers_disconnect_by_func (self->priv->fs_session,
+          cb_fs_session_error, self);
 
       g_object_unref (self->priv->fs_session);
       self->priv->fs_session = NULL;
