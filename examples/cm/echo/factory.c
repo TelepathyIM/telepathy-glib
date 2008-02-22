@@ -217,7 +217,7 @@ request (TpChannelFactoryIface *iface,
          const gchar *chan_type,
          TpHandleType handle_type,
          guint handle,
-         gpointer request,
+         gpointer request_id,
          TpChannelIface **ret,
          GError **error)
 {

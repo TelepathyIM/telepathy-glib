@@ -18,7 +18,7 @@ typedef struct {
     int exit_code;
 } ExampleData;
 
-void
+static void
 got_connections (const gchar * const *bus_names,
                  gsize n,
                  const gchar * const *cms,

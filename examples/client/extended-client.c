@@ -191,7 +191,7 @@ cm_requested_connection (TpConnectionManager *manager,
 static void
 connection_manager_got_info (TpConnectionManager *cm,
                              guint source,
-                             GMainLoop *mainloop)
+                             gpointer unused)
 {
   g_message ("Emitted got-info (source=%d)", source);
 
@@ -218,8 +218,8 @@ connection_manager_got_info (TpConnectionManager *cm,
     }
 }
 
-gboolean
-time_out (gpointer mainloop)
+static gboolean
+time_out (gpointer unused)
 {
   g_warning ("Timed out trying to get CM info");
   g_main_loop_quit (mainloop);
@@ -250,9 +250,9 @@ main (int argc,
     }
 
   g_signal_connect (cm, "got-info",
-      G_CALLBACK (connection_manager_got_info), mainloop);
+      G_CALLBACK (connection_manager_got_info), NULL);
 
-  timer = g_timeout_add (5000, time_out, mainloop);
+  timer = g_timeout_add (5000, time_out, NULL);
 
   g_main_loop_run (mainloop);
 

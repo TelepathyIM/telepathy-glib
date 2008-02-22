@@ -40,7 +40,7 @@ connection_manager_got_info (TpConnectionManager *cm,
     g_main_loop_quit (mainloop);
 }
 
-gboolean
+static gboolean
 time_out (gpointer mainloop)
 {
   g_message ("Timed out");

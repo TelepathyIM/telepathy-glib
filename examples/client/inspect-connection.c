@@ -17,7 +17,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
-void
+static void
 got_channels (TpConnection *connection,
               const GPtrArray *channels,
               const GError *error,
