@@ -1006,7 +1006,8 @@ free_fs_transports (GList *fs_trans_list)
  * to a Telepathy codec list.
  */
 static GPtrArray *
-fs_codecs_to_tp (const GList *codecs)
+fs_codecs_to_tp (TpStreamEngineStream *stream,
+                 const GList *codecs)
 {
   GPtrArray *tp_codecs;
   const GList *el;
@@ -1060,8 +1061,7 @@ fs_codecs_to_tp (const GList *codecs)
 
       g_hash_table_destroy (params);
 
-      g_debug ("%s: adding codec %s [%d]",
-          G_STRFUNC, fsc->encoding_name, fsc->id);
+      DEBUG (stream, "adding codec %s [%d]", fsc->encoding_name, fsc->id);
 
       g_ptr_array_add (tp_codecs, g_value_get_boxed (&codec));
     }
@@ -1224,7 +1224,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy,
 
   tp_stream_engine_stream_mute_input (self, self->priv->input_mute, NULL);
 
-  supp_codecs = fs_codecs_to_tp (
+  supp_codecs = fs_codecs_to_tp (self,
       farsight_stream_get_codec_intersection (self->priv->fs_stream));
 
   tp_cli_media_stream_handler_call_supported_codecs
@@ -1408,8 +1408,8 @@ prepare_transports (TpStreamEngineStream *self)
 
   farsight_stream_prepare_transports (self->priv->fs_stream);
 
-  codecs = fs_codecs_to_tp (
-             farsight_stream_get_local_codecs (self->priv->fs_stream));
+  codecs = fs_codecs_to_tp (self,
+      farsight_stream_get_local_codecs (self->priv->fs_stream));
 
   DEBUG (self, "calling MediaStreamHandler::Ready");
 
