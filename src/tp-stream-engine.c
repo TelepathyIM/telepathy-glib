@@ -1259,21 +1259,6 @@ bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
   gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (GST_MESSAGE_SRC (message)),
       wp->window_id);
 
-  if (g_object_has_property (G_OBJECT (GST_MESSAGE_SRC (message)), "sync"))
-    {
-      g_debug ("setting sync to FALSE");
-      g_object_set (G_OBJECT (GST_MESSAGE_SRC (message)), "sync", FALSE, NULL);
-    }
-#ifndef MAEMO_OSSO_SUPPORT
-  if (g_object_has_property (G_OBJECT (GST_MESSAGE_SRC (message)),
-          "force-aspect-ratio"))
-    {
-      g_debug ("setting force-aspect-ratio to TRUE");
-      g_object_set (G_OBJECT (GST_MESSAGE_SRC (message)), 
-          "force-aspect-ratio", TRUE, NULL);
-    }
-#endif
-
   gst_message_unref (message);
 
   return GST_BUS_DROP;
