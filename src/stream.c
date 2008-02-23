@@ -1626,8 +1626,25 @@ make_volume_bin (TpStreamEngineStream *stream, GstElement *element,
   return bin;
 }
 
+static void
+set_audio_src_props (GstBin *bin,
+                     GstElement *src,
+                     void *user_data)
+{
+  if (g_object_has_property ((GObject *) src, "blocksize"))
+    g_object_set ((GObject *) src, "blocksize", 320, NULL);
+
+  if (g_object_has_property ((GObject *) src, "latency-time"))
+    g_object_set ((GObject *) src, "latency-time", G_GINT64_CONSTANT (20000),
+        NULL);
+
+  if (g_object_has_property ((GObject *) src, "is-live"))
+    g_object_set ((GObject *) src, "is-live", TRUE, NULL);
+}
+
 static GstElement *
-make_src (TpStreamEngineStream *stream, guint media_type)
+make_src (TpStreamEngineStream *stream,
+          guint media_type)
 {
   const gchar *elem;
   GstElement *src = NULL;
@@ -1646,24 +1663,26 @@ make_src (TpStreamEngineStream *stream, guint media_type)
           DEBUG (stream, "making audio src with gconfaudiosrc element");
           src = gst_element_factory_make ("gconfaudiosrc", NULL);
 
-          if (!src)
+          if (src == NULL)
             {
               DEBUG (stream, "making audio src with alsasrc element");
               src = gst_element_factory_make ("alsasrc", NULL);
-
-              if (src)
-                {
-                  g_object_set(G_OBJECT(src), "blocksize", 320, NULL);
-                  g_object_set(G_OBJECT(src), "latency-time",
-                      G_GINT64_CONSTANT (20000), NULL);
-                }
             }
         }
 
-      if (src && g_object_has_property (G_OBJECT (src), "is-live"))
-        g_object_set(G_OBJECT(src), "is-live", TRUE, NULL);
+      g_return_val_if_fail (src != NULL, NULL);
 
-      if (src && !has_volume_element (src))
+      if (GST_IS_BIN (src))
+        {
+          g_signal_connect ((GObject *) src, "element-added",
+              G_CALLBACK (set_audio_src_props), NULL);
+        }
+      else
+        {
+          set_audio_src_props (NULL, src, NULL);
+        }
+
+      if (!has_volume_element (src))
         src = make_volume_bin (stream, src, "src");
     }
   else
@@ -1724,7 +1743,7 @@ make_src (TpStreamEngineStream *stream, guint media_type)
       gst_object_unref (tee);
     }
 
-    return src;
+  return src;
 }
 
 static GstElement *
