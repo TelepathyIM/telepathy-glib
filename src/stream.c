@@ -1748,6 +1748,15 @@ make_src (TpStreamEngineStream *stream,
   return src;
 }
 
+static void
+set_audio_sink_props (GstBin *bin,
+                      GstElement *sink,
+                      void *user_data)
+{
+  if (g_object_has_property ((GObject *) sink, "sync"))
+    g_object_set ((GObject *) sink, "sync", FALSE, NULL);
+}
+
 static GstElement *
 make_sink (TpStreamEngineStream *stream, guint media_type)
 {
@@ -1764,23 +1773,34 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
         }
       else
         {
-          DEBUG (stream, "making audio sink with gconfaudiosink element");
           sink = gst_element_factory_make ("gconfaudiosink", NULL);
 
           if (sink == NULL)
-            {
-              DEBUG (stream, "making audio sink with autoaudiosink element");
-              sink = gst_element_factory_make ("autoaudiosink", NULL);
-            }
+            sink = gst_element_factory_make ("autoaudiosink", NULL);
 
           if (sink == NULL)
-            {
-              DEBUG (stream, "making audio sink with alsasink element");
-              sink = gst_element_factory_make ("alsasink", NULL);
-            }
+            sink = gst_element_factory_make ("alsasink", NULL);
         }
 
-      if (sink && !has_volume_element (sink))
+      if (sink == NULL)
+        {
+          DEBUG (stream, "failed to make audio sink element!");
+          return NULL;
+        }
+
+      DEBUG (stream, "made audio sink element %s", GST_ELEMENT_NAME (sink));
+
+      if (GST_IS_BIN (sink))
+        {
+          g_signal_connect ((GObject *) sink, "element-added",
+              G_CALLBACK (set_audio_sink_props), NULL);
+        }
+      else
+        {
+          set_audio_sink_props (NULL, sink, NULL);
+        }
+
+      if (!has_volume_element (sink))
         sink = make_volume_bin (stream, sink, "sink");
     }
   else
