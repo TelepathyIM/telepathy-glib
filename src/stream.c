@@ -1809,13 +1809,14 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           (elem = getenv ("FS_VIDEO_SINK")) ||
           (elem = getenv ("FS_VIDEOSINK")))
         {
-          TpStreamEngine *engine;
+          TpStreamEngine *engine = tp_stream_engine_get ();
           GstStateChangeReturn state_ret;
 
           DEBUG (stream, "making video sink with pipeline \"%s\"", elem);
           sink = gst_parse_bin_from_description (elem, TRUE, NULL);
+          g_assert (sink != NULL);
           g_assert (GST_IS_BIN (sink));
-          engine = tp_stream_engine_get ();
+
           gst_object_ref (sink);
           if (!gst_bin_add (GST_BIN (tp_stream_engine_get_pipeline (engine)),
                   sink))
@@ -1825,6 +1826,7 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
               gst_object_unref (sink);
               return NULL;
             }
+
           state_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
           if (state_ret == GST_STATE_CHANGE_FAILURE)
             {
