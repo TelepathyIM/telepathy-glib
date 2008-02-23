@@ -1660,17 +1660,19 @@ make_src (TpStreamEngineStream *stream,
         }
       else
         {
-          DEBUG (stream, "making audio src with gconfaudiosrc element");
           src = gst_element_factory_make ("gconfaudiosrc", NULL);
 
           if (src == NULL)
-            {
-              DEBUG (stream, "making audio src with alsasrc element");
-              src = gst_element_factory_make ("alsasrc", NULL);
-            }
+            src = gst_element_factory_make ("alsasrc", NULL);
         }
 
-      g_return_val_if_fail (src != NULL, NULL);
+      if (src == NULL)
+        {
+          DEBUG (stream, "failed to make audio src element!");
+          return NULL;
+        }
+
+      DEBUG (stream, "made audio src element %s", GST_ELEMENT_NAME (src));
 
       if (GST_IS_BIN (src))
         {
