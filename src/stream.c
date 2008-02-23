@@ -1845,9 +1845,6 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
         }
     }
 
-  if (sink && g_object_has_property (G_OBJECT (sink), "sync"))
-    g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
-
   return sink;
 }
 
