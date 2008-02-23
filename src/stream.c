@@ -1775,8 +1775,15 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
         {
           sink = gst_element_factory_make ("gconfaudiosink", NULL);
 
-          if (sink == NULL)
-            sink = gst_element_factory_make ("autoaudiosink", NULL);
+          if (sink != NULL)
+            {
+              /* set profile=2 for gconfaudiosink "chat" profile */
+              g_object_set ((GObject *) sink, "profile", 2, NULL);
+            }
+          else
+            {
+              sink = gst_element_factory_make ("autoaudiosink", NULL);
+            }
 
           if (sink == NULL)
             sink = gst_element_factory_make ("alsasink", NULL);
