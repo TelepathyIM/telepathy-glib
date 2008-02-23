@@ -302,6 +302,39 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
   return NULL;
 }
 
+void
+tp_stream_engine_set_video_sink_props (GstBin *bin,
+                                       GstElement *sink,
+                                       void *user_data)
+{
+  if (g_object_has_property (G_OBJECT (sink), "sync"))
+    {
+      g_debug ("setting sync to FALSE");
+      g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
+    }
+  if (g_object_has_property (G_OBJECT (sink), "qos"))
+    {
+      g_debug ("setting qos to FALSE");
+      g_object_set (G_OBJECT (sink), "qos", FALSE, NULL);
+    }
+#ifndef MAEMO_OSSO_SUPPORT
+  if (g_object_has_property (G_OBJECT (sink), "force-aspect-ratio"))
+    {
+      g_debug ("setting force-aspect-ratio to TRUE");
+      g_object_set (G_OBJECT (sink), "force-aspect-ratio", TRUE, NULL);
+    }
+#endif
+  /* Setting this will make sure we can have several preview windows using
+   * the tee without any queue elements */
+  /* Without this, elements linked to the tee just block on prerolling and
+   * wait for each other to finish */
+  if (g_object_has_property (G_OBJECT (sink), "preroll-queue-len"))
+    {
+      g_debug ("setting preroll-queue-len to 1");
+      g_object_set (G_OBJECT (sink), "preroll-queue-len", TRUE, NULL);
+    }
+}
+
 GstElement *
 tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
 {
@@ -348,41 +381,22 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
 #endif
     }
 
-  if (sink != NULL)
-    {
-      g_debug ("made video sink element %s", GST_ELEMENT_NAME (sink));
-
-      if (g_object_has_property (G_OBJECT (sink), "sync"))
-        {
-          g_debug ("setting sync to FALSE");
-          g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
-        }
-      if (g_object_has_property (G_OBJECT (sink), "qos"))
-        {
-          g_debug ("setting qos to FALSE");
-          g_object_set (G_OBJECT (sink), "qos", FALSE, NULL);
-        }
-#ifndef MAEMO_OSSO_SUPPORT
-      if (g_object_has_property (G_OBJECT (sink), "force-aspect-ratio"))
-        {
-          g_debug ("setting force-aspect-ratio to TRUE");
-          g_object_set (G_OBJECT (sink), "force-aspect-ratio", TRUE, NULL);
-        }
-#endif
-      /* Setting this will make sure we can have several preview windows using
-       * the tee without any queue elements */
-      /* Without this, elements linked to the tee just block on prerolling and
-       * wait for each other to finish */
-      if (g_object_has_property (G_OBJECT (sink), "preroll-queue-len"))
-        {
-          g_debug ("setting preroll-queue-len to 1");
-          g_object_set (G_OBJECT (sink), "preroll-queue-len", TRUE, NULL);
-        }
-    }
-  else
+  if (sink == NULL)
     {
       g_debug ("failed to make a video sink");
       return NULL;
+    }
+
+  g_debug ("made video sink element %s", GST_ELEMENT_NAME (sink));
+
+  if (GST_IS_BIN (sink))
+    {
+      g_signal_connect ((GObject *) sink, "element-added",
+          G_CALLBACK (tp_stream_engine_set_video_sink_props), NULL);
+    }
+  else
+    {
+      tp_stream_engine_set_video_sink_props (NULL, sink, NULL);
     }
 
 #ifndef MAEMO_OSSO_SUPPORT
