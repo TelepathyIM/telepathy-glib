@@ -59,13 +59,28 @@ GType tp_stream_engine_get_type(void);
 #define TP_STREAM_ENGINE_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_STREAM_ENGINE, TpStreamEngineClass))
 
-void tp_stream_engine_register (TpStreamEngine *self);
-void tp_stream_engine_error (TpStreamEngine *self, int error, const char *debug);
+void
+tp_stream_engine_register (TpStreamEngine *self);
 
-TpStreamEngine *tp_stream_engine_get ();
+void
+tp_stream_engine_error (TpStreamEngine *self,
+                        int error,
+                        const char *debug);
 
-GstElement *tp_stream_engine_make_video_sink (TpStreamEngine *obj, gboolean is_preview);
-GstElement *tp_stream_engine_get_pipeline (TpStreamEngine *obj);
+TpStreamEngine *
+tp_stream_engine_get (void);
+
+GstElement *
+tp_stream_engine_make_video_sink (TpStreamEngine *obj,
+                                  gboolean is_preview);
+
+void
+tp_stream_engine_set_video_sink_props (GstBin *bin,
+                                       GstElement *sink,
+                                       void *user_data);
+
+GstElement *
+tp_stream_engine_get_pipeline (TpStreamEngine *obj);
 
 gboolean
 tp_stream_engine_add_output_window (TpStreamEngine *obj,
