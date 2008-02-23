@@ -302,10 +302,10 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
   return NULL;
 }
 
-void
-tp_stream_engine_set_video_sink_props (GstBin *bin,
-                                       GstElement *sink,
-                                       void *user_data)
+static void
+set_video_sink_props (GstBin *bin,
+                      GstElement *sink,
+                      void *user_data)
 {
   if (g_object_has_property (G_OBJECT (sink), "sync"))
     {
@@ -392,11 +392,11 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
   if (GST_IS_BIN (sink))
     {
       g_signal_connect ((GObject *) sink, "element-added",
-          G_CALLBACK (tp_stream_engine_set_video_sink_props), NULL);
+          G_CALLBACK (set_video_sink_props), NULL);
     }
   else
     {
-      tp_stream_engine_set_video_sink_props (NULL, sink, NULL);
+      set_video_sink_props (NULL, sink, NULL);
     }
 
 #ifndef MAEMO_OSSO_SUPPORT

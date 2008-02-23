@@ -74,11 +74,6 @@ GstElement *
 tp_stream_engine_make_video_sink (TpStreamEngine *obj,
                                   gboolean is_preview);
 
-void
-tp_stream_engine_set_video_sink_props (GstBin *bin,
-                                       GstElement *sink,
-                                       void *user_data);
-
 GstElement *
 tp_stream_engine_get_pipeline (TpStreamEngine *obj);
 
