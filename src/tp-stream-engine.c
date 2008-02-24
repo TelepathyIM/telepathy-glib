@@ -328,10 +328,15 @@ set_video_sink_props (GstBin *bin,
    * the tee without any queue elements */
   /* Without this, elements linked to the tee just block on prerolling and
    * wait for each other to finish */
-  if (g_object_has_property (G_OBJECT (sink), "preroll-queue-len"))
+  if (g_object_has_property (G_OBJECT (sink), "async"))
+    {
+      g_debug ("setting async to FALSE");
+      g_object_set (G_OBJECT (sink), "async", FALSE, NULL);
+    }
+  else if (g_object_has_property (G_OBJECT (sink), "preroll-queue-len"))
     {
       g_debug ("setting preroll-queue-len to 1");
-      g_object_set (G_OBJECT (sink), "preroll-queue-len", TRUE, NULL);
+      g_object_set (G_OBJECT (sink), "preroll-queue-len", 1, NULL);
     }
 }
 
