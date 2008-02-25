@@ -772,7 +772,15 @@ tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
            * FIXME: Remove this workaround in 0.9.x */
           proto = "local-xmpp";
         }
-      else if (!tp_connection_manager_check_valid_protocol_name (proto, NULL))
+      else
+        {
+          /* the real protocol name may have "-" in; bus names may not, but
+           * they may have "_", so the Telepathy spec specifies replacement.
+           * Here we need to undo that replacement */
+          g_strdelimit (proto, "_", '-');
+        }
+
+      if (!tp_connection_manager_check_valid_protocol_name (proto, NULL))
         {
           goto invalid;
         }
