@@ -795,6 +795,7 @@ tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
       continue;
 
 invalid:
+      DEBUG ("invalid name: %s", *iter);
       g_free (dup);
     }
 
