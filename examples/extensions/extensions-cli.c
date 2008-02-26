@@ -10,12 +10,21 @@ static void _example_ext_register_dbus_glib_marshallers (void);
 #include "_gen/cli-connection-body.h"
 #include "_gen/register-dbus-glib-marshallers-body.h"
 
-/* I know, I know, init functions considered harmful. However, we need it. */
-void
-example_cli_init (void)
+static gpointer
+example_cli_once (gpointer data)
 {
   _example_ext_register_dbus_glib_marshallers ();
 
   tp_proxy_or_subclass_hook_on_interface_add (TP_TYPE_CONNECTION,
       example_cli_connection_add_signals);
+
+  return NULL;
+}
+
+void
+example_cli_init (void)
+{
+  static GOnce once = G_ONCE_INIT;
+
+  g_once (&once, example_cli_once, NULL);
 }
