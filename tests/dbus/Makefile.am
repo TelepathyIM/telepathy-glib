@@ -3,7 +3,8 @@ noinst_PROGRAMS = \
     test-dbus \
     test-disconnection \
     test-example-no-protocols \
-    test-properties
+    test-properties \
+    test-unsupported-interface
 
 TESTS = $(noinst_PROGRAMS)
 
@@ -11,6 +12,9 @@ test_call_cancellation_LDADD = $(TP_GLIB_LIBS)
 test_dbus_LDADD = $(TP_GLIB_LIBS)
 test_disconnection_LDADD = $(TP_GLIB_LIBS)
 test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
+
+test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)
+test_unsupported_interface_SOURCES = unsupported-interface.c
 
 test_properties_LDADD = $(TP_GLIB_LIBS)
 test_properties_SOURCES = \
