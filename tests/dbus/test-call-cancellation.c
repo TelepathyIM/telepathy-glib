@@ -22,6 +22,7 @@ static TpDBusDaemon *e;
 static TpDBusDaemon *f;
 static TpDBusDaemon *g;
 static TpDBusDaemon *h;
+static TpDBusDaemon *i;
 static TpDBusDaemon *z;
 TpIntSet *method_ok;
 TpIntSet *method_error;
@@ -30,6 +31,7 @@ int fail = 0;
 gpointer copy_of_d;
 gpointer copy_of_g;
 gpointer copy_of_h;
+gpointer copy_of_i;
 
 static void
 myassert_failed (void)
@@ -46,6 +48,7 @@ enum {
     TEST_F,
     TEST_G,
     TEST_H,
+    TEST_I,
     TEST_Z = 25,
     N_DAEMONS
 };
@@ -172,6 +175,8 @@ main (int argc,
   g_message ("g=%p", g);
   h = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("h=%p", h);
+  i = tp_dbus_daemon_new (tp_get_bus ());
+  g_message ("i=%p", i);
   z = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("z=%p", z);
 
@@ -296,6 +301,30 @@ main (int argc,
   /* Now that it's been cancelled, h will have gone away */
   MYASSERT (copy_of_h == NULL, "");
 
+  /* i gets its pending call cancelled because stub is
+   * destroyed, *and* the pending call holds the last reference to it
+   * (an attempt at reproducing fd.o #14750) */
+  stub = g_object_new (stub_object_get_type (), NULL);
+  g_message ("Starting call on i");
+  tp_cli_dbus_daemon_call_list_names (i, -1, listed_names, PTR (TEST_I),
+      destroy_user_data, stub);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_I), "");
+  g_message ("Unreferencing i");
+  copy_of_i = i;
+  g_object_add_weak_pointer (copy_of_i, &copy_of_i);
+  g_object_unref (i);
+  i = NULL;
+  MYASSERT (copy_of_i != NULL, "");
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_I), "");
+  MYASSERT (!tp_intset_is_member (method_ok, TEST_I), "");
+  MYASSERT (!tp_intset_is_member (method_error, TEST_I), "");
+  g_object_unref (stub);
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_I), "");
+  MYASSERT (!tp_intset_is_member (method_ok, TEST_I), "");
+  MYASSERT (!tp_intset_is_member (method_error, TEST_I), "");
+  /* Now that it's been cancelled, i will have gone away */
+  MYASSERT (copy_of_i == NULL, "");
+
   /* z survives too; we assume that method calls succeed in order,
    * so when z has had its reply, we can stop the main loop */
   g_message ("Starting call on z");
@@ -348,6 +377,7 @@ main (int argc,
   g_object_unref (f);
   MYASSERT (g == NULL, "");
   MYASSERT (h == NULL, "");
+  MYASSERT (i == NULL, "");
   g_object_unref (z);
 
   /* we should already have checked each of these at least once, but just to
@@ -360,6 +390,7 @@ main (int argc,
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_H), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_I), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z), "");
 
   tp_intset_destroy (freed_user_data);
