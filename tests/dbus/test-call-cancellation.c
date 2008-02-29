@@ -138,6 +138,17 @@ listed_names (TpDBusDaemon *proxy,
     g_main_loop_quit (mainloop);
 }
 
+static void
+noc (TpDBusDaemon *proxy,
+     const gchar *name,
+     const gchar *old,
+     const gchar *new,
+     gpointer user_data,
+     GObject *weak_object)
+{
+  /* do nothing */
+}
+
 int
 main (int argc,
       char **argv)
@@ -302,13 +313,16 @@ main (int argc,
   MYASSERT (copy_of_h == NULL, "");
 
   /* i gets its pending call cancelled because stub is
-   * destroyed, *and* the pending call holds the last reference to it
+   * destroyed, *and* the pending call holds the last reference to it,
+   * *and* there is a signal connection
    * (an attempt at reproducing fd.o #14750) */
   stub = g_object_new (stub_object_get_type (), NULL);
   g_message ("Starting call on i");
   tp_cli_dbus_daemon_call_list_names (i, -1, listed_names, PTR (TEST_I),
       destroy_user_data, stub);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_I), "");
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (i, noc, PTR (TEST_I),
+      NULL, stub, NULL);
   g_message ("Unreferencing i");
   copy_of_i = i;
   g_object_add_weak_pointer (copy_of_i, &copy_of_i);
