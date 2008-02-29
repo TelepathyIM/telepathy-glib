@@ -57,6 +57,11 @@ unsupported_cb (TpProxy *proxy,
     g_main_loop_quit (mainloop);
 }
 
+static void
+do_nothing (void)
+{
+}
+
 int
 main (int argc,
       char **argv)
@@ -88,6 +93,19 @@ main (int argc,
         NULL, NULL, NULL) != NULL, "");
   MYASSERT (tp_cli_properties_interface_call_list_properties (bus_daemon, -1,
         unsupported_cb, NULL, NULL, NULL) == NULL, "");
+
+  /* the same, but with signals */
+  MYASSERT (tp_cli_dbus_daemon_connect_to_name_acquired (bus_daemon,
+        (tp_cli_dbus_daemon_signal_callback_name_acquired) do_nothing,
+        NULL, NULL, NULL, NULL) != NULL, "");
+  MYASSERT (tp_cli_properties_interface_connect_to_property_flags_changed
+        (bus_daemon,
+        (tp_cli_properties_interface_signal_callback_property_flags_changed)
+            do_nothing,
+        NULL, NULL, NULL, &error) == NULL, "");
+  MYASSERT (error != NULL, "");
+  g_error_free (error);
+  error = NULL;
 
   g_main_loop_run (mainloop);
   g_main_loop_unref (mainloop);
