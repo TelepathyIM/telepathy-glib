@@ -22,7 +22,8 @@ VALGRIND_TESTS_ENVIRONMENT = \
     $(top_builddir)/tools/telepathy-glib-env \
     valgrind --tool=memcheck --leak-check=full --show-reachable=yes \
         --suppressions=$(top_srcdir)/examples/tp-glib-examples.supp \
-        --child-silent-after-fork=yes --num-callers=20 \
+        --child-silent-after-fork=yes --num-callers=20 --error-exitcode=42 \
+        --gen-suppressions=all \
         $(VALGRIND_FLAGS)
 
 check-valgrind:

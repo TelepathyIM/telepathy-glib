@@ -49,7 +49,8 @@ VALGRIND_TESTS_ENVIRONMENT = \
     sh $(top_srcdir)/tools/with-session-bus.sh --session -- \
     valgrind --tool=memcheck --leak-check=full --show-reachable=yes \
         --suppressions=$(top_srcdir)/examples/tp-glib-examples.supp \
-        --child-silent-after-fork=yes --num-callers=20 \
+        --child-silent-after-fork=yes --num-callers=20 --error-exitcode=42 \
+        --gen-suppressions=all \
         $(VALGRIND_FLAGS)
 
 BUILT_SOURCES = \
