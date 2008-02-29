@@ -721,6 +721,7 @@ class Generator(object):
                 self.b('            0,')
 
         self.b('            error, user_data, weak_object);')
+        self.b('      g_error_free (error);')
         self.b('      return NULL;')
         self.b('    }')
         self.b('')
