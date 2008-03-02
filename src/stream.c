@@ -1891,44 +1891,12 @@ make_src (TpStreamEngineStream *stream,
 }
 
 static void
-set_audio_sink_props (GstBin *bin G_GNUC_UNUSED,
+set_audio_sink_props (GstBin *bin,
                       GstElement *sink,
-                      void *user_data G_GNUC_UNUSED)
+                      void *user_data)
 {
   if (g_object_has_property ((GObject *) sink, "sync"))
     g_object_set ((GObject *) sink, "sync", FALSE, NULL);
-
-  if (GST_IS_BIN (sink))
-    {
-      gboolean done = FALSE;
-      GstIterator *it = NULL;
-      gpointer elem;
-
-      g_signal_connect ((GObject *) sink, "element-added",
-        G_CALLBACK (set_audio_sink_props), NULL);
-
-      it = gst_bin_iterate_recurse (GST_BIN (sink));
-      while (!done)
-        {
-          switch (gst_iterator_next (it, &elem))
-            {
-              case GST_ITERATOR_OK:
-                set_audio_sink_props (NULL, GST_ELEMENT(elem), NULL);
-                g_object_unref (elem);
-                break;
-              case GST_ITERATOR_RESYNC:
-                gst_iterator_resync (it);
-                break;
-              case GST_ITERATOR_ERROR:
-                g_error ("Can not iterate audiosink bin");
-                done = TRUE;
-                break;
-             case GST_ITERATOR_DONE:
-               done = TRUE;
-               break;
-            }
-        }
-    }
 }
 
 static GstElement *
@@ -1946,12 +1914,6 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           g_assert (sink);
         }
       else
-#ifdef MAEMO_OSSO_SUPPORT
-        {
-          DEBUG (stream, "running on Maemo platform, not making audio sink");
-          return NULL;
-        }
-#else /* MAEMO_OSSO_SUPPORT */
         {
           sink = gst_element_factory_make ("gconfaudiosink", NULL);
 
@@ -1968,7 +1930,6 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           if (sink == NULL)
             sink = gst_element_factory_make ("alsasink", NULL);
         }
-#endif /* MAEMO_OSSO_SUPPORT */
 
       if (sink == NULL)
         {

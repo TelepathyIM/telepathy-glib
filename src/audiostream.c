@@ -56,6 +56,8 @@ struct _TpStreamEngineAudioStreamPrivate
 
 static GstElement *
 tp_stream_engine_audio_stream_make_src (TpStreamEngineStream *stream);
+static GstElement *
+tp_stream_engine_audio_stream_make_sink (TpStreamEngineStream *stream);
 
 static void
 tp_stream_engine_audio_stream_init (TpStreamEngineAudioStream *self)
@@ -84,6 +86,7 @@ tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
   object_class->dispose = tp_stream_engine_audio_stream_dispose;
 
   stream_class->make_src = tp_stream_engine_audio_stream_make_src;
+  stream_class->make_sink = tp_stream_engine_audio_stream_make_sink;
 }
 
 static GstElement *
@@ -268,4 +271,69 @@ tp_stream_engine_audio_stream_make_src (TpStreamEngineStream *stream)
     src = make_volume_bin (audiostream, src, "src");
 
   return src;
+}
+
+static void
+set_audio_sink_props (GstBin *bin,
+                      GstElement *sink,
+                      void *user_data)
+{
+  if (g_object_has_property ((GObject *) sink, "sync"))
+    g_object_set ((GObject *) sink, "sync", FALSE, NULL);
+}
+
+static GstElement *
+tp_stream_engine_audio_stream_make_sink (TpStreamEngineStream *stream)
+{
+  const gchar *elem;
+  GstElement *sink = NULL;
+  TpStreamEngineAudioStream *audiostream =
+      TP_STREAM_ENGINE_AUDIO_STREAM (stream);
+
+  if ((elem = getenv ("FS_AUDIO_SINK")) || (elem = getenv("FS_AUDIOSINK")))
+    {
+      DEBUG (stream, "making audio sink with pipeline \"%s\"", elem);
+      sink = gst_parse_bin_from_description (elem, TRUE, NULL);
+      g_assert (sink);
+    }
+  else
+    {
+      sink = gst_element_factory_make ("gconfaudiosink", NULL);
+
+      if (sink != NULL)
+        {
+          /* set profile=2 for gconfaudiosink "chat" profile */
+          g_object_set ((GObject *) sink, "profile", 2, NULL);
+        }
+      else
+        {
+          sink = gst_element_factory_make ("autoaudiosink", NULL);
+        }
+
+      if (sink == NULL)
+        sink = gst_element_factory_make ("alsasink", NULL);
+    }
+
+  if (sink == NULL)
+    {
+      DEBUG (stream, "failed to make audio sink element!");
+      return NULL;
+    }
+
+  DEBUG (stream, "made audio sink element %s", GST_ELEMENT_NAME (sink));
+
+  if (GST_IS_BIN (sink))
+    {
+      g_signal_connect ((GObject *) sink, "element-added",
+          G_CALLBACK (set_audio_sink_props), NULL);
+    }
+  else
+    {
+      set_audio_sink_props (NULL, sink, NULL);
+    }
+
+  if (!has_volume_element (sink))
+    sink = make_volume_bin (audiostream, sink, "sink");
+
+  return sink;
 }
