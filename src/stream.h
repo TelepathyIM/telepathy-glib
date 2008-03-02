@@ -35,6 +35,9 @@ typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
 typedef struct {
   GObject parent;
 
+  /* Read-only */
+  guint stream_id;
+
   TpStreamEngineStreamPrivate *priv;
 } TpStreamEngineStream;
 

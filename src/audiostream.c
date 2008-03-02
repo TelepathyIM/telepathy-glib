@@ -43,11 +43,11 @@
 G_DEFINE_TYPE (TpStreamEngineAudioStream, tp_stream_engine_audio_stream,
     TP_STREAM_ENGINE_TYPE_STREAM);
 
-#define DEBUG(stream, format, ...) \
-  g_debug ("stream %d (audio) %s: " format, \
-    stream->priv->stream_id, \
-    G_STRFUNC, \
-    ##__VA_ARGS__)
+#define DEBUG(stream, format, ...)          \
+  g_debug ("stream %d (audio) %s: " format,             \
+      ((TpStreamEngineStream *)stream)->stream_id,      \
+      G_STRFUNC,                                        \
+      ##__VA_ARGS__)
 
 struct _TpStreamEngineAudioStreamPrivate
 {

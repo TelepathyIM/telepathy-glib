@@ -44,7 +44,7 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
 #define DEBUG(stream, format, ...) \
   g_debug ("stream %d (%s) %s: " format, \
-    stream->priv->stream_id, \
+    stream->stream_id, \
     (stream->priv->media_type == FARSIGHT_MEDIA_TYPE_AUDIO) ? "audio" \
                                                             : "video", \
     G_STRFUNC, \
@@ -55,7 +55,6 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 struct _TpStreamEngineStreamPrivate
 {
   FarsightSession *fs_session;
-  guint stream_id;
   TpMediaStreamType media_type;
   TpMediaStreamDirection direction;
   const TpStreamEngineNatProperties *nat_props;
@@ -273,7 +272,7 @@ tp_stream_engine_stream_get_property (GObject    *object,
       g_value_set_object (value, self->priv->stream_handler_proxy);
       break;
     case PROP_STREAM_ID:
-      g_value_set_uint (value, self->priv->stream_id);
+      g_value_set_uint (value, self->stream_id);
       break;
     case PROP_MEDIA_TYPE:
       g_value_set_uint (value, self->priv->media_type);
@@ -321,7 +320,7 @@ tp_stream_engine_stream_set_property (GObject      *object,
           TP_MEDIA_STREAM_HANDLER (g_value_dup_object (value));
       break;
     case PROP_STREAM_ID:
-      self->priv->stream_id = g_value_get_uint (value);
+      self->stream_id = g_value_get_uint (value);
       break;
     case PROP_MEDIA_TYPE:
       self->priv->media_type = g_value_get_uint (value);
