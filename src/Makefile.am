@@ -19,6 +19,8 @@ libstreamengine_convenience_la_SOURCES = \
 	util.c \
 	xerrorhandler.h \
 	xerrorhandler.c \
+	audiostream.c \
+	audiostream.h \
 	tp-stream-engine-signals-marshal.list
 
 nodist_libstreamengine_convenience_la_SOURCES = \
