@@ -46,6 +46,7 @@
 #include "session.h"
 #include "stream.h"
 #include "audiostream.h"
+#include "videostream.h"
 #include "util.h"
 #include "xerrorhandler.h"
 
@@ -2111,6 +2112,7 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
   g_object_set ((GObject *) chan,
       "video-pipeline", tp_stream_engine_get_pipeline (self),
       "audio-stream-gtype", TP_STREAM_ENGINE_TYPE_AUDIO_STREAM,
+      "video-stream-gtype", TP_STREAM_ENGINE_TYPE_VIDEO_STREAM,
       NULL);
 
   g_ptr_array_add (self->priv->channels, chan);
