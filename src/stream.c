@@ -362,11 +362,13 @@ tp_stream_engine_stream_constructor (GType type,
   TpStreamEngineStreamPrivate *priv;
   const gchar *conn_timeout_str;
   GstElement *src, *sink;
+  TpStreamEngineStreamClass *klass = NULL;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->
             constructor (type, n_props, props);
   stream = (TpStreamEngineStream *) obj;
   priv = stream->priv;
+  klass = TP_STREAM_ENGINE_STREAM_GET_CLASS(obj);
 
   g_signal_connect (priv->stream_handler_proxy, "invalidated",
       G_CALLBACK (invalidated_cb), obj);
@@ -422,8 +424,14 @@ tp_stream_engine_stream_constructor (GType type,
 
   /* TODO Make this smarter, we should only create those sources and sinks if
    * they exist. */
-  src = make_src (stream, priv->media_type);
-  sink = make_sink (stream, priv->media_type);
+  if (klass->make_src)
+    src = klass->make_src (stream);
+  else
+    src = make_src (stream, priv->media_type);
+  if (klass->make_sink)
+    sink = klass->make_sink (stream);
+  else
+    sink = make_sink (stream, priv->media_type);
 
   if (src)
     {
