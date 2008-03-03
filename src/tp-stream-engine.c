@@ -582,12 +582,12 @@ tee_failure:
 }
 
 static gboolean
-bad_misc_cb (TpStreamEngineXErrorHandler *handler,
+bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
              guint window_id,
              gpointer data);
 
 static gboolean
-bad_other_cb (TpStreamEngineXErrorHandler *handler,
+bad_gc_cb (TpStreamEngineXErrorHandler *handler,
               guint window_id,
               gpointer data);
 
@@ -620,10 +620,10 @@ tp_stream_engine_init (TpStreamEngine *self)
   priv->handler = tp_stream_engine_x_error_handler_get ();
 
   priv->bad_drawable_handler_id =
-    g_signal_connect (priv->handler, "bad-drawable", (GCallback) bad_misc_cb,
-      self);
+    g_signal_connect (priv->handler, "bad-drawable",
+        (GCallback) bad_drawable_cb, self);
   priv->bad_gc_handler_id =
-    g_signal_connect (priv->handler, "bad-gc", (GCallback) bad_other_cb,
+    g_signal_connect (priv->handler, "bad-gc", (GCallback) bad_gc_cb,
       self);
   priv->bad_value_handler_id =
     g_signal_connect (priv->handler, "bad-value", (GCallback) bad_value_cb,
@@ -1597,9 +1597,9 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 
 
 static gboolean
-bad_misc_cb (TpStreamEngineXErrorHandler *handler,
-             guint window_id,
-             gpointer data)
+bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
+    guint window_id,
+    gpointer data)
 {
   TpStreamEngine *engine = data;
   WindowPair *wp;
@@ -1643,7 +1643,7 @@ bad_misc_cb (TpStreamEngineXErrorHandler *handler,
 
 
 static gboolean
-bad_other_cb (TpStreamEngineXErrorHandler *handler,
+bad_gc_cb (TpStreamEngineXErrorHandler *handler,
               guint gc_id,
               gpointer data)
 {
