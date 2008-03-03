@@ -264,8 +264,6 @@ struct _TpProxyPendingCall {
      */
 
     TpProxy *proxy;
-    GQuark interface;
-    gchar *member;
 
     /* Set to NULL after it's been invoked once, so we can assert that it
      * doesn't get called again. Supplied by the generated code */
@@ -819,8 +817,6 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
       callback, user_data, destroy, weak_object, pc);
 
   pc->proxy = g_object_ref (self);
-  pc->interface = interface;
-  pc->member = g_strdup (member);
   pc->invoke_callback = invoke_callback;
   pc->callback = callback;
   pc->user_data = user_data;
@@ -922,8 +918,6 @@ tp_proxy_pending_call_free (gpointer p)
 
   if (pc->args != NULL)
     g_value_array_free (pc->args);
-
-  g_free (pc->member);
 
   if (pc->destroy != NULL)
     pc->destroy (pc->user_data);
