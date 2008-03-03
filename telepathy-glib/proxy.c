@@ -808,36 +808,36 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
                               GObject *weak_object,
                               gboolean cancel_must_raise)
 {
-  TpProxyPendingCall *ret;
+  TpProxyPendingCall *pc;
 
   g_return_val_if_fail (invoke_callback != NULL, NULL);
 
-  ret = g_slice_new0 (TpProxyPendingCall);
+  pc = g_slice_new0 (TpProxyPendingCall);
 
   MORE_DEBUG ("(proxy=%p, if=%s, meth=%s, ic=%p; cb=%p, ud=%p, dn=%p, wo=%p)"
       " -> %p", self, g_quark_to_string (interface), member, invoke_callback,
-      callback, user_data, destroy, weak_object, ret);
+      callback, user_data, destroy, weak_object, pc);
 
-  ret->proxy = g_object_ref (self);
-  ret->interface = interface;
-  ret->member = g_strdup (member);
-  ret->invoke_callback = invoke_callback;
-  ret->callback = callback;
-  ret->user_data = user_data;
-  ret->destroy = destroy;
-  ret->weak_object = weak_object;
-  ret->iface_proxy = g_object_ref (iface_proxy);
-  ret->pending_call = NULL;
-  ret->priv = pending_call_magic;
-  ret->cancel_must_raise = cancel_must_raise;
+  pc->proxy = g_object_ref (self);
+  pc->interface = interface;
+  pc->member = g_strdup (member);
+  pc->invoke_callback = invoke_callback;
+  pc->callback = callback;
+  pc->user_data = user_data;
+  pc->destroy = destroy;
+  pc->weak_object = weak_object;
+  pc->iface_proxy = g_object_ref (iface_proxy);
+  pc->pending_call = NULL;
+  pc->priv = pending_call_magic;
+  pc->cancel_must_raise = cancel_must_raise;
 
   if (weak_object != NULL)
-    g_object_weak_ref (weak_object, tp_proxy_pending_call_lost_weak_ref, ret);
+    g_object_weak_ref (weak_object, tp_proxy_pending_call_lost_weak_ref, pc);
 
   g_signal_connect (iface_proxy, "destroy",
-      G_CALLBACK (_tp_proxy_pending_call_dgproxy_destroy), ret);
+      G_CALLBACK (_tp_proxy_pending_call_dgproxy_destroy), pc);
 
-  return ret;
+  return pc;
 }
 
 /**
