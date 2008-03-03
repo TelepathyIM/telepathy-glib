@@ -308,12 +308,14 @@ struct _TpProxySignalInvocation {
 };
 
 struct _TpProxySignalConnection {
-    /* 1 if D-Bus has us, 1 per member of @invocations, 1 per callback
-     * being invoked right now */
+    /* 1 if D-Bus has us
+     * 1 per member of @invocations
+     * 1 per callback being invoked right now */
     gsize refcount;
 
-    /* weak ref + 1 per member of @invocations + 1 per callback
-     * being invoked (possibly nested!) right now */
+    /* borrowed ref (discarded when we see invalidated signal)
+     * + 1 per member of @invocations
+     * + 1 per callback being invoked (possibly nested!) right now */
     TpProxy *proxy;
 
     DBusGProxy *iface_proxy;
@@ -1074,23 +1076,6 @@ tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
 }
 
 static void
-tp_proxy_signal_connection_lost_proxy (gpointer data,
-                                       GObject *dead)
-{
-  TpProxySignalConnection *sc = data;
-  TpProxy *proxy = TP_PROXY (dead);
-
-  g_assert (sc != NULL);
-  g_assert (sc->invocations.length == 0);
-
-  DEBUG ("%p: lost TpProxy %p (I have %p)", sc, proxy, sc->proxy);
-  g_assert (proxy == sc->proxy);
-
-  sc->proxy = NULL;
-  tp_proxy_signal_connection_disconnect_dbus_glib (sc);
-}
-
-static void
 tp_proxy_signal_connection_lost_weak_ref (gpointer data,
                                           GObject *dead)
 {
@@ -1121,8 +1106,6 @@ tp_proxy_signal_connection_unref (TpProxySignalConnection *sc)
     {
       g_signal_handlers_disconnect_by_func (sc->proxy,
           tp_proxy_signal_connection_proxy_invalidated, sc);
-      g_object_weak_unref ((GObject *) sc->proxy,
-          tp_proxy_signal_connection_lost_proxy, sc);
       sc->proxy = NULL;
     }
 
@@ -1362,9 +1345,6 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
 
   g_signal_connect (iface, "destroy",
       G_CALLBACK (_tp_proxy_signal_connection_dgproxy_destroy), sc);
-
-  g_object_weak_ref ((GObject *) self,
-      tp_proxy_signal_connection_lost_proxy, sc);
 
   dbus_g_proxy_connect_signal (iface, member, collect_args, sc,
       tp_proxy_signal_connection_dropped);
