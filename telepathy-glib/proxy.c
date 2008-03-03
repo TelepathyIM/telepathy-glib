@@ -723,7 +723,7 @@ tp_proxy_pending_call_idle_invoke (gpointer p)
 static void tp_proxy_pending_call_free (gpointer p);
 
 static void
-tp_proxy_pending_call_proxy_destroyed (DBusGProxy *iface_proxy,
+_tp_proxy_pending_call_dgproxy_destroy (DBusGProxy *iface_proxy,
                                        TpProxyPendingCall *pc)
 {
   g_assert (iface_proxy != NULL);
@@ -747,7 +747,7 @@ tp_proxy_pending_call_proxy_destroyed (DBusGProxy *iface_proxy,
     }
 
   g_signal_handlers_disconnect_by_func (pc->iface_proxy,
-      tp_proxy_pending_call_proxy_destroyed, pc);
+      _tp_proxy_pending_call_dgproxy_destroy, pc);
   g_object_unref (pc->iface_proxy);
   pc->iface_proxy = NULL;
 }
@@ -835,7 +835,7 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
     g_object_weak_ref (weak_object, tp_proxy_pending_call_lost_weak_ref, ret);
 
   g_signal_connect (iface_proxy, "destroy",
-      G_CALLBACK (tp_proxy_pending_call_proxy_destroyed), ret);
+      G_CALLBACK (_tp_proxy_pending_call_dgproxy_destroy), ret);
 
   return ret;
 }
@@ -926,7 +926,7 @@ tp_proxy_pending_call_free (gpointer p)
   if (pc->iface_proxy != NULL)
     {
       g_signal_handlers_disconnect_by_func (pc->iface_proxy,
-          tp_proxy_pending_call_proxy_destroyed, pc);
+          _tp_proxy_pending_call_dgproxy_destroy, pc);
       g_object_unref (pc->iface_proxy);
       pc->iface_proxy = NULL;
     }
@@ -991,7 +991,7 @@ tp_proxy_pending_call_v0_completed (gpointer p)
           MORE_DEBUG ("Looks like this pending call hasn't finished, assuming "
               "the DBusGProxy is about to die");
           /* this causes the pending call to be freed */
-          tp_proxy_pending_call_proxy_destroyed (pc->iface_proxy, pc);
+          _tp_proxy_pending_call_dgproxy_destroy (pc->iface_proxy, pc);
           return;
         }
     }
