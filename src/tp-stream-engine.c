@@ -1615,9 +1615,9 @@ bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
 
   if (wp == NULL)
     {
-      g_debug ("%s: BadDrawable(%u) not for a preview or output window, not "
-          "handling", G_STRFUNC, window_id);
-      return FALSE;
+      g_debug ("%s: BadDrawable(%u) not for a preview or output window, "
+          "ignoring", G_STRFUNC, window_id);
+      return TRUE;
     }
 
   if (wp->removing)
