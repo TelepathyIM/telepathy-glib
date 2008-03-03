@@ -37,10 +37,10 @@ TpProxyPendingCall *tp_proxy_pending_call_v0_new (TpProxy *self,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object, gboolean cancel_must_raise);
 
-void tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *self,
+void tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *pc,
     DBusGProxyCall *pending_call);
 
-void tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *self,
+void tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
     GError *error, GValueArray *args);
 
 void tp_proxy_pending_call_v0_completed (gpointer p);
@@ -53,7 +53,7 @@ TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
     GObject *weak_object, GError **error);
 
 void tp_proxy_signal_connection_v0_take_results
-    (TpProxySignalConnection *self, GValueArray *args);
+    (TpProxySignalConnection *sc, GValueArray *args);
 
 typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
     guint quark, DBusGProxy *proxy, gpointer unused);

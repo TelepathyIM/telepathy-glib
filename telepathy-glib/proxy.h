@@ -82,7 +82,7 @@ struct _TpProxyClass {
 
 typedef struct _TpProxyPendingCall TpProxyPendingCall;
 
-void tp_proxy_pending_call_cancel (TpProxyPendingCall *self);
+void tp_proxy_pending_call_cancel (TpProxyPendingCall *pc);
 
 typedef struct _TpProxySignalConnection TpProxySignalConnection;
 
