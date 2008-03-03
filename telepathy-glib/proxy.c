@@ -713,7 +713,7 @@ tp_proxy_pending_call_proxy_destroyed (DBusGProxy *iface_proxy,
   g_assert (self != NULL);
   g_assert (self->iface_proxy == iface_proxy);
 
-  DEBUG ("%p: proxy %p invalidated", self, iface_proxy);
+  DEBUG ("%p: DBusGProxy %p invalidated", self, iface_proxy);
 
   if (self->idle_source == 0)
     {
@@ -1075,8 +1075,8 @@ tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
   g_assert (domain != 0);
   g_assert (message != NULL);
 
-  DEBUG ("%p: proxy %p invalidated (I have %p): %s", self, proxy, self->proxy,
-      message);
+  DEBUG ("%p: TpProxy %p invalidated (I have %p): %s", self, proxy,
+      self->proxy, message);
   g_assert (proxy == self->proxy);
 
   tp_proxy_signal_connection_disconnect_dbus_glib (self);
@@ -1092,7 +1092,7 @@ tp_proxy_signal_connection_lost_proxy (gpointer data,
   g_assert (self != NULL);
   g_assert (self->invocations.length == 0);
 
-  DEBUG ("%p: lost proxy %p (I have %p)", self, proxy, self->proxy);
+  DEBUG ("%p: lost TpProxy %p (I have %p)", self, proxy, self->proxy);
   g_assert (proxy == self->proxy);
 
   self->proxy = NULL;
