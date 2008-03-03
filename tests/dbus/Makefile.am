@@ -8,9 +8,13 @@ noinst_PROGRAMS = \
 
 TESTS = $(noinst_PROGRAMS)
 
-test_call_cancellation_LDADD = $(TP_GLIB_LIBS)
+test_call_cancellation_LDADD = \
+    $(TP_GLIB_LIBS) \
+    $(builddir)/../libtp-glib-tests.la
 test_dbus_LDADD = $(TP_GLIB_LIBS)
-test_disconnection_LDADD = $(TP_GLIB_LIBS)
+test_disconnection_LDADD = \
+    $(TP_GLIB_LIBS) \
+    $(builddir)/../libtp-glib-tests.la
 test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
 
 test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)

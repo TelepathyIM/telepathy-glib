@@ -7,23 +7,7 @@
 #include <telepathy-glib/util.h>
 
 #include "tests/myassert.h"
-
-typedef struct { GObject p; } StubObject;
-typedef struct { GObjectClass p; } StubObjectClass;
-
-static GType stub_object_get_type (void);
-
-G_DEFINE_TYPE (StubObject, stub_object, G_TYPE_OBJECT)
-
-static void
-stub_object_class_init (StubObjectClass *klass)
-{
-}
-
-static void
-stub_object_init (StubObject *self)
-{
-}
+#include "tests/stub-object.h"
 
 /* just for convenience, since it's used a lot */
 #define PTR(ui) GUINT_TO_POINTER(ui)

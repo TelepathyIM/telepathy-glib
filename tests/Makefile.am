@@ -16,6 +16,13 @@ TESTS = $(noinst_PROGRAMS)
 TESTS_ENVIRONMENT = \
     G_DEBUG=fatal_warnings,fatal_criticals
 
+noinst_LTLIBRARIES = libtp-glib-tests.la
+
+libtp_glib_tests_la_SOURCES = \
+    myassert.h \
+    stub-object.c \
+    stub-object.h
+
 VALGRIND_TESTS_ENVIRONMENT = \
     G_SLICE=always-malloc \
     $(TESTS_ENVIRONMENT) \
@@ -32,8 +39,7 @@ check-valgrind:
 		TESTS="$(STATIC_TESTS) $(DYNAMIC_TESTS:%=.libs/%)"
 	$(MAKE) -C dbus check-valgrind
 
-# myassert.h is used by some of the tests in dbus/
-EXTRA_DIST = myassert.h README
+EXTRA_DIST = README
 
 test_handle_set_SOURCES = \
     test-handle-set.c
