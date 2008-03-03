@@ -86,7 +86,7 @@ void tp_proxy_pending_call_cancel (TpProxyPendingCall *pc);
 
 typedef struct _TpProxySignalConnection TpProxySignalConnection;
 
-void tp_proxy_signal_connection_disconnect (TpProxySignalConnection *self);
+void tp_proxy_signal_connection_disconnect (TpProxySignalConnection *sc);
 
 GType tp_proxy_get_type (void);
 

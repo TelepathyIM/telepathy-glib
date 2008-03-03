@@ -985,7 +985,7 @@ tp_proxy_pending_call_v0_completed (gpointer p)
 
 /**
  * tp_proxy_pending_call_v0_take_pending_call:
- * @self: A pending call on which this function has not yet been called
+ * @pc: A pending call on which this function has not yet been called
  * @pending_call: The underlying dbus-glib pending call
  *
  * Set the underlying pending call to be used by this object.
@@ -1007,7 +1007,7 @@ tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *pc,
 
 /**
  * tp_proxy_pending_call_v0_take_results:
- * @self: A pending call on which this function has not yet been called
+ * @pc: A pending call on which this function has not yet been called
  * @error: %NULL if the call was successful, or an error (whose ownership
  *  is taken over by the pending call object). Because of dbus-glib
  *  idiosyncrasies, this must be the error produced by dbus-glib, not a copy.
@@ -1366,7 +1366,7 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
 
 /**
  * tp_proxy_signal_connection_v0_take_results:
- * @self: The signal connection
+ * @sc: The signal connection
  * @args: The arguments of the signal
  *
  * Feed the results of a signal invocation back into the signal connection
