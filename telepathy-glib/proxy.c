@@ -881,26 +881,12 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *pc)
       return;
     }
 
-  iface = g_datalist_id_get_data (&pc->proxy->priv->interfaces,
-      pc->interface);
-
-  if (iface == NULL || pc->pending_call == NULL)
-    {
-      MORE_DEBUG ("I don't actually have a DBusGProxy, never mind; "
-          "iface=%p proxy=%p pending_call=%p", iface, pc->proxy,
-          pc->pending_call);
-      return;
-    }
-
-  /* if we made a call, then we really ought to actually have a DBusGProxy */
-  g_return_if_fail (iface != pc->proxy);
-
   /* It's possible that the DBusGProxy is only reffed by the TpProxy, and
    * the TpProxy is only reffed by this TpProxyPendingCall, which will be
    * freed as a side-effect of cancelling the DBusGProxyCall halfway through
    * dbus_g_proxy_cancel_call (), so temporarily ref the DBusGProxy to ensure
    * that it survives for the duration. (fd.o #14576) */
-  g_object_ref (iface);
+  iface = g_object_ref (pc->iface_proxy);
   MORE_DEBUG ("Cancelling pending call %p on DBusGProxy %p",
       pc->pending_call, iface);
   dbus_g_proxy_cancel_call (iface, pc->pending_call);
