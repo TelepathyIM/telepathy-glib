@@ -317,6 +317,8 @@ main (int argc,
    * *and* there is a signal connection
    * (an attempt at reproducing fd.o #14750) */
   stub = g_object_new (stub_object_get_type (), NULL);
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (i, noc, PTR (TEST_I),
+      NULL, stub, NULL);
   g_message ("Starting call on i");
   tp_cli_dbus_daemon_call_list_names (i, -1, listed_names, PTR (TEST_I),
       destroy_user_data, stub);
