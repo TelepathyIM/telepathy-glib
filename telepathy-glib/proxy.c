@@ -1057,7 +1057,9 @@ tp_proxy_signal_connection_disconnect_dbus_glib (TpProxySignalConnection *sc)
   iface = g_datalist_id_get_data (&sc->proxy->priv->interfaces,
       sc->interface);
 
-  if (iface == NULL || iface == sc->proxy)
+  g_return_if_fail (iface != sc->proxy);
+
+  if (iface == NULL)
     return;
 
   dbus_g_proxy_disconnect_signal (iface, sc->member, sc->collect_args,
