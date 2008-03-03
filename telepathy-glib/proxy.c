@@ -257,21 +257,38 @@ struct _TpProxyInterfaceAddLink {
  */
 
 struct _TpProxyPendingCall {
+    /* This structure's "reference count" is implicit:
+     * - 1 if D-Bus has us
+     * - 1 if results have come in but we haven't run the callback yet
+     *   (idle_source is nonzero)
+     */
+
     TpProxy *proxy;
     GQuark interface;
     gchar *member;
-    /* set to NULL after it's been invoked once, so we can assert that it
-     * doesn't get called again */
+
+    /* Set to NULL after it's been invoked once, so we can assert that it
+     * doesn't get called again. Supplied by the generated code */
     TpProxyInvokeFunc invoke_callback;
+
+    /* dbus-glib-supplied arguments for invoke_callback */
     GError *error;
     GValueArray *args;
+
+    /* user-supplied arguments for invoke_callback */
     GCallback callback;
     gpointer user_data;
     GDestroyNotify destroy;
     GObject *weak_object;
+
     DBusGProxy *iface_proxy;
     DBusGProxyCall *pending_call;
+
+    /* If nonzero, we have results (either args or error) and have queued
+     * up tp_proxy_pending_call_idle_invoke (after which
+     * tp_proxy_pending_call_free will run) */
     guint idle_source;
+
     gboolean cancel_must_raise:1;
     gconstpointer priv;
 };
@@ -309,8 +326,8 @@ struct _TpProxySignalConnection {
     gpointer user_data;
     GDestroyNotify destroy;
     GObject *weak_object;
-
-    /* queue of _TpProxySignalInvocation */
+    /* queue of _TpProxySignalInvocation, not including any that are
+     * being invoked right now */
     GQueue invocations;
 };
 
