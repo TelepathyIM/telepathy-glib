@@ -316,7 +316,7 @@ struct _TpProxySignalConnection {
      * being invoked (possibly nested!) right now */
     TpProxy *proxy;
 
-    GQuark interface;
+    DBusGProxy *iface_proxy;
     gchar *member;
     GCallback collect_args;
     TpProxyInvokeFunc invoke_callback;
@@ -1046,21 +1046,13 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
 static void
 tp_proxy_signal_connection_disconnect_dbus_glib (TpProxySignalConnection *sc)
 {
-  gpointer iface;
-
   if (sc->proxy == NULL)
     return;
 
-  iface = g_datalist_id_get_data (&sc->proxy->priv->interfaces,
-      sc->interface);
+  g_assert (sc->iface_proxy != NULL);
 
-  g_return_if_fail (iface != sc->proxy);
-
-  if (iface == NULL)
-    return;
-
-  dbus_g_proxy_disconnect_signal (iface, sc->member, sc->collect_args,
-      (gpointer) sc);
+  dbus_g_proxy_disconnect_signal (sc->iface_proxy, sc->member,
+      sc->collect_args, (gpointer) sc);
 }
 
 static void
@@ -1249,6 +1241,22 @@ tp_proxy_signal_connection_dropped (gpointer p,
 }
 
 static void
+_tp_proxy_signal_connection_dgproxy_destroy (DBusGProxy *iface_proxy,
+                                             TpProxySignalConnection *sc)
+{
+  g_assert (iface_proxy != NULL);
+  g_assert (sc != NULL);
+  g_assert (sc->iface_proxy == iface_proxy);
+
+  DEBUG ("%p: DBusGProxy %p invalidated", sc, iface_proxy);
+
+  sc->iface_proxy = NULL;
+  g_signal_handlers_disconnect_by_func (iface_proxy,
+      _tp_proxy_signal_connection_dgproxy_destroy, sc);
+  g_object_unref (iface_proxy);
+}
+
+static void
 collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
 {
   tp_proxy_signal_connection_v0_take_results (sc, NULL);
@@ -1306,7 +1314,7 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
                                    GObject *weak_object,
                                    GError **error)
 {
-  TpProxySignalConnection *ret;
+  TpProxySignalConnection *sc;
   DBusGProxy *iface = tp_proxy_borrow_interface_by_id (self,
       interface, error);
 
@@ -1327,38 +1335,41 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
       g_return_val_if_fail (collect_args != NULL, NULL);
     }
 
-  ret = g_slice_new0 (TpProxySignalConnection);
+  sc = g_slice_new0 (TpProxySignalConnection);
 
   MORE_DEBUG ("(proxy=%p, if=%s, sig=%s, collect=%p, invoke=%p, "
       "cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
       self, g_quark_to_string (interface), member, collect_args,
-      invoke_callback, callback, user_data, destroy, weak_object, ret);
+      invoke_callback, callback, user_data, destroy, weak_object, sc);
 
-  ret->refcount = 1;
-  ret->proxy = self;
-  ret->interface = interface;
-  ret->member = g_strdup (member);
-  ret->collect_args = collect_args;
-  ret->invoke_callback = invoke_callback;
-  ret->callback = callback;
-  ret->user_data = user_data;
-  ret->destroy = destroy;
-  ret->weak_object = weak_object;
+  sc->refcount = 1;
+  sc->proxy = self;
+  sc->iface_proxy = g_object_ref (iface);
+  sc->member = g_strdup (member);
+  sc->collect_args = collect_args;
+  sc->invoke_callback = invoke_callback;
+  sc->callback = callback;
+  sc->user_data = user_data;
+  sc->destroy = destroy;
+  sc->weak_object = weak_object;
 
   if (weak_object != NULL)
     g_object_weak_ref (weak_object, tp_proxy_signal_connection_lost_weak_ref,
-        ret);
+        sc);
 
   g_signal_connect (self, "invalidated",
-      G_CALLBACK (tp_proxy_signal_connection_proxy_invalidated), ret);
+      G_CALLBACK (tp_proxy_signal_connection_proxy_invalidated), sc);
+
+  g_signal_connect (iface, "destroy",
+      G_CALLBACK (_tp_proxy_signal_connection_dgproxy_destroy), sc);
 
   g_object_weak_ref ((GObject *) self,
-      tp_proxy_signal_connection_lost_proxy, ret);
+      tp_proxy_signal_connection_lost_proxy, sc);
 
-  dbus_g_proxy_connect_signal (iface, member, collect_args, ret,
+  dbus_g_proxy_connect_signal (iface, member, collect_args, sc,
       tp_proxy_signal_connection_dropped);
 
-  return ret;
+  return sc;
 }
 
 /**
