@@ -76,3 +76,4 @@
 ^doc/test$
 ^doc/.*\.png$
 (^|/)_gen(/|$)
+^api/api\.html$

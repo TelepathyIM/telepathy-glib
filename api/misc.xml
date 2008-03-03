@@ -2,8 +2,9 @@
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
-<tp:title>Stream Engine API and extensions</tp:title>
+<tp:title>Stream Engine API</tp:title>
 
-<xi:include href="misc.xml"/>
+<xi:include href="Channel_Handler.xml"/>
+<xi:include href="Stream_Engine.xml"/>
 
 </tp:spec>
