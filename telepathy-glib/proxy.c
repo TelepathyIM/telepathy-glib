@@ -345,7 +345,7 @@ enum {
 
 static guint signals[N_SIGNALS] = {0};
 
-static void tp_proxy_iface_destroyed_cb (DBusGProxy *proxy, TpProxy *self);
+static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
 
 /**
  * tp_proxy_borrow_interface_by_id:
@@ -368,37 +368,37 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
                                  GQuark interface,
                                  GError **error)
 {
-  gpointer proxy;
+  gpointer dgproxy;
 
   if (!tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
         error))
       return NULL;
 
-  proxy = g_datalist_id_get_data (&self->priv->interfaces, interface);
+  dgproxy = g_datalist_id_get_data (&self->priv->interfaces, interface);
 
-  if (proxy == self)
+  if (dgproxy == self)
     {
       /* dummy value - we've never actually needed the interface, so we
        * didn't create it, to avoid binding to all the signals */
 
-      proxy = dbus_g_proxy_new_for_name (self->dbus_connection,
+      dgproxy = dbus_g_proxy_new_for_name (self->dbus_connection,
           self->bus_name, self->object_path, g_quark_to_string (interface));
       DEBUG ("%p: %s DBusGProxy is %p", self, g_quark_to_string (interface),
-          proxy);
+          dgproxy);
 
-      g_signal_connect (proxy, "destroy",
+      g_signal_connect (dgproxy, "destroy",
           G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
 
       g_datalist_id_set_data_full (&self->priv->interfaces, interface,
-          proxy, g_object_unref);
+          dgproxy, g_object_unref);
 
       g_signal_emit (self, signals[SIGNAL_INTERFACE_ADDED], 0,
-          (guint) interface, proxy);
+          (guint) interface, dgproxy);
     }
 
-  if (proxy != NULL)
+  if (dgproxy != NULL)
     {
-      return proxy;
+      return dgproxy;
     }
 
   if (self->invalidated != NULL)
@@ -524,7 +524,7 @@ tp_proxy_invalidate (TpProxy *self, const GError *error)
 }
 
 static void
-tp_proxy_iface_destroyed_cb (DBusGProxy *proxy,
+tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
                              TpProxy *self)
 {
   /* We can't call any API on the proxy now. Because the proxies are all
@@ -1248,7 +1248,7 @@ tp_proxy_signal_connection_dropped (gpointer p,
 }
 
 static void
-collect_none (DBusGProxy *proxy, TpProxySignalConnection *sc)
+collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
 {
   tp_proxy_signal_connection_v0_take_results (sc, NULL);
 }
