@@ -68,16 +68,25 @@ struct _TpProxySignalConnection {
     GQueue invocations;
 };
 
+static void _tp_proxy_signal_connection_dgproxy_destroy (DBusGProxy *,
+    TpProxySignalConnection *);
+
 static void
 tp_proxy_signal_connection_disconnect_dbus_glib (TpProxySignalConnection *sc)
 {
-  if (sc->proxy == NULL)
+  DBusGProxy *iface_proxy = sc->iface_proxy;
+
+  /* ignore if already done */
+  if (iface_proxy == NULL)
     return;
 
-  g_assert (sc->iface_proxy != NULL);
-
-  dbus_g_proxy_disconnect_signal (sc->iface_proxy, sc->member,
+  sc->iface_proxy = NULL;
+  g_signal_handlers_disconnect_by_func (iface_proxy,
+      _tp_proxy_signal_connection_dgproxy_destroy, sc);
+  dbus_g_proxy_disconnect_signal (iface_proxy, sc->member,
       sc->collect_args, (gpointer) sc);
+
+  g_object_unref (iface_proxy);
 }
 
 static void
