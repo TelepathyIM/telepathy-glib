@@ -231,7 +231,6 @@ main (int argc,
       destroy_user_data, b_stub);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_B), "");
   g_object_unref (b_stub);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_B), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_B), "");
 
@@ -270,7 +269,6 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_E), "");
   g_message ("Cancelling call on e");
   tp_proxy_pending_call_cancel (pc);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_E), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_E), "");
 
@@ -330,11 +328,8 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (method_error, TEST_H), "");
   g_message ("Cancelling call on h");
   tp_proxy_pending_call_cancel (pc);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_H), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_H), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_H), "");
-  /* Now that it's been cancelled, h will have gone away */
-  MYASSERT (copy_of_h == NULL, "");
 
   /* i gets its pending call cancelled because i_stub is
    * destroyed, *and* the pending call holds the last reference to it,
@@ -360,11 +355,8 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (method_ok, TEST_I), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_I), "");
   g_object_unref (i_stub);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_I), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_I), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_I), "");
-  /* Now that it's been cancelled, i will have gone away */
-  MYASSERT (copy_of_i == NULL, "");
 
   /* j gets its pending call cancelled explicitly, and j_stub is
    * destroyed in response (related to fd.o #14750) */
@@ -376,7 +368,6 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_J), "");
   g_message ("Cancelling call on j");
   tp_proxy_pending_call_cancel (pc);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_J), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_J), "");
   MYASSERT (!tp_intset_is_member (method_error, TEST_J), "");
 
@@ -425,6 +416,19 @@ main (int argc,
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_F), "");
   MYASSERT (tp_intset_is_member (method_error, TEST_F), "");
+
+  /* Now that its call has been cancelled, h will have gone away. Likewise
+   * for i */
+  MYASSERT (copy_of_h == NULL, "");
+  MYASSERT (copy_of_i == NULL, "");
+
+  /* User data for all the cancelled calls has also gone away */
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_H), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_I), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_J), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_K), "");
 
   /* the calls have been delivered to A, C and Z by now */
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_A), "");
