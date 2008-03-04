@@ -122,6 +122,23 @@ tp_proxy_signal_connection_lost_weak_ref (gpointer data,
   tp_proxy_signal_connection_disconnect (sc);
 }
 
+static gboolean
+_tp_proxy_signal_connection_finish_free (gpointer p)
+{
+  TpProxySignalConnection *sc = p;
+
+  if (sc->weak_object != NULL)
+    {
+      g_object_weak_unref (sc->weak_object,
+          tp_proxy_signal_connection_lost_weak_ref, sc);
+      sc->weak_object = NULL;
+    }
+
+  g_slice_free (TpProxySignalConnection, sc);
+
+  return FALSE;
+}
+
 /* Return TRUE if it dies. */
 static gboolean
 tp_proxy_signal_connection_unref (TpProxySignalConnection *sc)
@@ -132,7 +149,7 @@ tp_proxy_signal_connection_unref (TpProxySignalConnection *sc)
       return FALSE;
     }
 
-  MORE_DEBUG ("destroying %p", sc);
+  MORE_DEBUG ("removed last ref to %p", sc);
 
   if (sc->proxy != NULL)
     {
@@ -149,16 +166,17 @@ tp_proxy_signal_connection_unref (TpProxySignalConnection *sc)
   sc->destroy = NULL;
   sc->user_data = NULL;
 
-  if (sc->weak_object != NULL)
-    {
-      g_object_weak_unref (sc->weak_object,
-          tp_proxy_signal_connection_lost_weak_ref, sc);
-      sc->weak_object = NULL;
-    }
-
   g_free (sc->member);
 
-  g_slice_free (TpProxySignalConnection, sc);
+  /* We can't inline this here, because of fd.o #14750. If our signal
+   * connection gets destroyed by side-effects of something else losing a
+   * weak reference to the same object (e.g. a pending call whose weak
+   * object is the same as ours has the last ref to the TpProxy, causing
+   * invalidation when the weak object goes away) then we need to avoid dying
+   * til *our* weak-reference callback has run. So, don't actually free the
+   * signal connection until we've re-entered the main loop. */
+  g_idle_add_full (G_PRIORITY_HIGH, _tp_proxy_signal_connection_finish_free,
+      sc, NULL);
 
   return TRUE;
 }
