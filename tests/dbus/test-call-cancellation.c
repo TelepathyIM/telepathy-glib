@@ -315,7 +315,8 @@ main (int argc,
   /* i gets its pending call cancelled because stub is
    * destroyed, *and* the pending call holds the last reference to it,
    * *and* there is a signal connection
-   * (an attempt at reproducing fd.o #14750) */
+   * (used to reproduce fd.o #14750 - see case h in test-disconnection.c
+   * for the minimal regression test) */
   stub = g_object_new (stub_object_get_type (), NULL);
   tp_cli_dbus_daemon_connect_to_name_owner_changed (i, noc, PTR (TEST_I),
       NULL, stub, NULL);

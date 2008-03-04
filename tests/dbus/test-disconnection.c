@@ -21,10 +21,11 @@ static TpDBusDaemon *d;
 static TpDBusDaemon *e;
 static TpDBusDaemon *f;
 static TpDBusDaemon *g;
+static TpDBusDaemon *h;
 static TpDBusDaemon *z;
-TpIntSet *caught_signal;
-TpIntSet *freed_user_data;
-int fail = 0;
+static TpIntSet *caught_signal;
+static TpIntSet *freed_user_data;
+static int fail = 0;
 
 static void
 myassert_failed (void)
@@ -40,9 +41,19 @@ enum {
     TEST_E,
     TEST_F,
     TEST_G,
+    TEST_H,
     TEST_Z = 25,
     N_DAEMONS
 };
+
+static void
+h_stub_destroyed (gpointer data,
+                  GObject *stub)
+{
+  TpProxySignalConnection **p = data;
+
+  tp_proxy_signal_connection_disconnect (*p);
+}
 
 static void
 destroy_user_data (gpointer user_data)
@@ -185,6 +196,8 @@ main (int argc,
   g_message ("f=%p", f);
   g = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("g=%p", g);
+  h = tp_dbus_daemon_new (tp_get_bus ());
+  g_message ("h=%p", h);
   z = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("z=%p", z);
 
@@ -300,6 +313,18 @@ main (int argc,
   MYASSERT (tmp_obj == NULL, "");
   g = NULL;
 
+  /* h gets its signal connection cancelled because its weak object is
+   * destroyed, meaning there are simultaneously two reasons for it to become
+   * cancelled (fd.o#14750) */
+  stub = g_object_new (stub_object_get_type (), NULL);
+  g_object_weak_ref (stub, h_stub_destroyed, &sc);
+  g_message ("Connecting signal to h");
+  sc = tp_cli_dbus_daemon_connect_to_name_owner_changed (h, noc, PTR (TEST_H),
+      destroy_user_data, stub, &error_out);
+  MYASSERT_NO_ERROR (error_out);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_H), "");
+  g_object_unref (stub);
+
   /* z survives; we assume that the signals are delivered in either
    * forward or reverse order, so if both a and z have had their signal, we
    * can stop the main loop */
@@ -325,6 +350,7 @@ main (int argc,
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_H), "");
 
   /* both A and Z are still listening for signals, so their user data is
    * still held */
@@ -350,6 +376,7 @@ main (int argc,
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_H), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z), "");
 
   tp_intset_destroy (freed_user_data);
