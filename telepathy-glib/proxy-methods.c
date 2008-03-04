@@ -39,18 +39,47 @@
 
 struct _TpProxyPendingCall {
     /* This structure's "reference count" is implicit:
-     * - 1 if D-Bus has us
+     * - 1 if D-Bus has us (from creation until _completed)
      * - 1 if results have come in but we haven't run the callback yet
      *   (idle_source is nonzero)
+     *
+     * In normal use, its life cycle should go like this:
+     * - Created by tp_proxy_pending_call_v0_new
+     * - Given to dbus-glib by generated code (actual call starts here)
+     * - tp_proxy_pending_call_v0_take_pending_call
+     * - (Phase 1)
+     * - tp_proxy_pending_call_v0_take_results
+     * - Idle handler queued
+     * - (Phase 2)
+     * - tp_proxy_pending_call_v0_completed
+     * - (Phase 3)
+     * - tp_proxy_pending_call_idle_invoke
+     * - tp_proxy_pending_call_free
+     *
+     * although we can't guarantee that idle_invoke won't go off before
+     * completed does, if the dbus-glib implementation changes.
+     *
+     * Exceptional conditions that can occur:
+     * - Weak object dies
+     *   - Reference cleared, otherwise equivalent to explicit cancellation
+     * - Explicitly cancelled
+     *   - All phases: callback invoked if cancel_must_raise, otherwise
+     *     not
+     * - DBusGProxy destroy signal (or _completed before _take_results)
+     *   - Phase 1: error callback queued
+     *   - Phase 2: ignored, we use the results we've already got
+     *   - Phase 3: ignored, we use the results we've already got
      */
 
+    /* Always non-NULL */
     TpProxy *proxy;
 
     /* Set to NULL after it's been invoked once, so we can assert that it
      * doesn't get called again. Supplied by the generated code */
     TpProxyInvokeFunc invoke_callback;
 
-    /* dbus-glib-supplied arguments for invoke_callback */
+    /* arguments for invoke_callback supplied by _take_results, by
+     * cancellation or by the destroy signal */
     GError *error;
     GValueArray *args;
 
@@ -60,15 +89,18 @@ struct _TpProxyPendingCall {
     GDestroyNotify destroy;
     GObject *weak_object;
 
+    /* Non-NULL until either _completed or destroy, whichever comes first */
     DBusGProxy *iface_proxy;
     DBusGProxyCall *pending_call;
 
-    /* If nonzero, we have results (either args or error) and have queued
-     * up tp_proxy_pending_call_idle_invoke (after which
-     * tp_proxy_pending_call_free will run) */
+    /* Nonzero if _idle_invoke has been queued (even if it has already
+     * happened) */
     guint idle_source;
 
+    /* If TRUE, invoke the callback even on cancellation */
     gboolean cancel_must_raise:1;
+
+    /* Marker to indicate that this is, in fact, a valid TpProxyPendingCall */
     gconstpointer priv;
 };
 
