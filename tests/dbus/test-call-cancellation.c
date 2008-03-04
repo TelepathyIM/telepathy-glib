@@ -24,14 +24,14 @@ static TpDBusDaemon *g;
 static TpDBusDaemon *h;
 static TpDBusDaemon *i;
 static TpDBusDaemon *z;
-TpIntSet *method_ok;
-TpIntSet *method_error;
-TpIntSet *freed_user_data;
+static TpIntSet *method_ok;
+static TpIntSet *method_error;
+static TpIntSet *freed_user_data;
 int fail = 0;
-gpointer copy_of_d;
-gpointer copy_of_g;
-gpointer copy_of_h;
-gpointer copy_of_i;
+static gpointer copy_of_d;
+static gpointer copy_of_g;
+static gpointer copy_of_h;
+static gpointer copy_of_i;
 
 static void
 myassert_failed (void)
