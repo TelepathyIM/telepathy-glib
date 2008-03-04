@@ -5,6 +5,29 @@ Enhancements:
 
 Fixes:
 
+* Refactoring and life-cycle fixes in TpProxy, including some assertions
+  during method-call and signal-connection cancellation (fd.o #14750; fixes a
+  crash in development versions of Mission Control)
+
+* Maps "_" back to "-" in protocol names seen in bus names (fd.o #14667;
+  fixes telepathy-inspector 0.5.1 not displaying Salut connections)
+
+* Does not leak the GError when connecting to signals on an unsupported
+  interface (fd.o #14746)
+
+* Builds with more warnings by default, for additional strictness
+
+* Improvements to example client code:
+  - make example_cli_init() safe to call multiple times
+  - generate signals-marshal.list in a way that avoids more gcc warnings
+
+Recommended updates for projects using telepathy-glib code generation:
+
+* Update glib-client-gen.py from telepathy-glib to fix #14746 (this will make
+  the generated code require telepathy-glib 0.7.3)
+* Consider updating *_cli_init() and extensions/Makefile.am to resemble the
+  examples
+
 telepathy-glib 0.7.3 (2008-02-20)
 =================================
 
