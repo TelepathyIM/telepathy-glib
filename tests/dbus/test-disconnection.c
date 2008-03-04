@@ -213,7 +213,6 @@ main (int argc,
   MYASSERT_NO_ERROR (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_B), "");
   g_object_unref (stub);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B), "");
 
   /* c gets its signal connection cancelled because it's explicitly
    * invalidated */
@@ -224,7 +223,6 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C), "");
   g_message ("Forcibly invalidating c");
   tp_proxy_invalidate ((TpProxy *) c, &err);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C), "");
   /* assert that connecting to a signal on an invalid proxy fails */
   freed = FALSE;
   tp_cli_dbus_daemon_connect_to_name_owner_changed (c, dummy_noc, &freed,
@@ -251,7 +249,6 @@ main (int argc,
   g_object_unref (d);
   MYASSERT (tmp_obj == NULL, "");
   d = NULL;
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_D), "");
 
   /* e gets its signal connection cancelled explicitly */
   g_message ("Connecting signal to e");
@@ -261,7 +258,6 @@ main (int argc,
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_E), "");
   g_message ("Disconnecting signal from e");
   tp_proxy_signal_connection_disconnect (sc);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
 
   /* f gets its signal connection cancelled because it's implicitly
    * invalidated by its DBusGProxy being destroyed.
@@ -278,7 +274,6 @@ main (int argc,
       TP_IFACE_QUARK_DBUS_DAEMON, NULL);
   MYASSERT (tmp_obj != NULL, "");
   g_object_run_dispose (tmp_obj);
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
   /* assert that connecting to a signal on an invalid proxy fails */
   freed = FALSE;
   tp_cli_dbus_daemon_connect_to_name_owner_changed (f, dummy_noc, &freed,
@@ -304,7 +299,6 @@ main (int argc,
   g_object_unref (g);
   MYASSERT (tmp_obj == NULL, "");
   g = NULL;
-  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
 
   /* z survives; we assume that the signals are delivered in either
    * forward or reverse order, so if both a and z have had their signal, we
@@ -322,6 +316,15 @@ main (int argc,
   g_message ("Running main loop");
   g_main_loop_run (mainloop);
   g_main_loop_unref (mainloop);
+
+  /* Now that the main loop has run, cancelled signal connections have been
+   * freed */
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_B), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_C), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_D), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_E), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_F), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
 
   /* both A and Z are still listening for signals, so their user data is
    * still held */
