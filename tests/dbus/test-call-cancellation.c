@@ -23,6 +23,7 @@ static TpDBusDaemon *f;
 static TpDBusDaemon *g;
 static TpDBusDaemon *h;
 static TpDBusDaemon *i;
+static TpDBusDaemon *j;
 static TpDBusDaemon *z;
 static TpIntSet *method_ok;
 static TpIntSet *method_error;
@@ -49,6 +50,7 @@ enum {
     TEST_G,
     TEST_H,
     TEST_I,
+    TEST_J,
     TEST_Z = 25,
     N_DAEMONS
 };
@@ -59,6 +61,13 @@ destroy_user_data (gpointer user_data)
   guint which = GPOINTER_TO_UINT (user_data);
   g_message ("User data %c destroyed", 'A' + which);
   tp_intset_add (freed_user_data, which);
+}
+
+static void
+stub_destroyed (gpointer data,
+                GObject *stub)
+{
+  destroy_user_data (data);
 }
 
 static void
@@ -188,6 +197,8 @@ main (int argc,
   g_message ("h=%p", h);
   i = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("i=%p", i);
+  j = tp_dbus_daemon_new (tp_get_bus ());
+  g_message ("j=%p", j);
   z = tp_dbus_daemon_new (tp_get_bus ());
   g_message ("z=%p", z);
 
@@ -342,6 +353,20 @@ main (int argc,
   /* Now that it's been cancelled, i will have gone away */
   MYASSERT (copy_of_i == NULL, "");
 
+  /* j gets its pending call cancelled explicitly, and stub is
+   * destroyed in response (related to fd.o #14750) */
+  stub = g_object_new (stub_object_get_type (), NULL);
+  g_object_weak_ref (stub, stub_destroyed, PTR (TEST_J));
+  g_message ("Starting call on j");
+  pc = tp_cli_dbus_daemon_call_list_names (j, -1, listed_names, stub,
+      g_object_unref, stub);
+  MYASSERT (!tp_intset_is_member (freed_user_data, TEST_J), "");
+  g_message ("Cancelling call on j");
+  tp_proxy_pending_call_cancel (pc);
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_J), "");
+  MYASSERT (!tp_intset_is_member (method_ok, TEST_J), "");
+  MYASSERT (!tp_intset_is_member (method_error, TEST_J), "");
+
   /* z survives too; we assume that method calls succeed in order,
    * so when z has had its reply, we can stop the main loop */
   g_message ("Starting call on z");
@@ -395,6 +420,7 @@ main (int argc,
   MYASSERT (g == NULL, "");
   MYASSERT (h == NULL, "");
   MYASSERT (i == NULL, "");
+  g_object_unref (j);
   g_object_unref (z);
 
   /* we should already have checked each of these at least once, but just to
@@ -408,6 +434,7 @@ main (int argc,
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_G), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_H), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_I), "");
+  MYASSERT (tp_intset_is_member (freed_user_data, TEST_J), "");
   MYASSERT (tp_intset_is_member (freed_user_data, TEST_Z), "");
 
   tp_intset_destroy (freed_user_data);
