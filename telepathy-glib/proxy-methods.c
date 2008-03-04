@@ -74,8 +74,8 @@ struct _TpProxyPendingCall {
     /* Always non-NULL */
     TpProxy *proxy;
 
-    /* Set to NULL after it's been invoked once, so we can assert that it
-     * doesn't get called again. Supplied by the generated code */
+    /* Set to NULL after it's been invoked once, or if cancellation means
+     * it should never be called. Supplied by the generated code */
     TpProxyInvokeFunc invoke_callback;
 
     /* arguments for invoke_callback supplied by _take_results, by
@@ -94,11 +94,17 @@ struct _TpProxyPendingCall {
     DBusGProxyCall *pending_call;
 
     /* Nonzero if _idle_invoke has been queued (even if it has already
-     * happened) */
+     * happened), i.e. if results have been taken or the DBusGProxy
+     * was destroyed */
     guint idle_source;
 
     /* If TRUE, invoke the callback even on cancellation */
     gboolean cancel_must_raise:1;
+
+    /* If TRUE, the idle_invoke callback has either run or been cancelled */
+    gboolean idle_completed:1;
+    /* If TRUE, dbus-glib no longer holds a reference to us */
+    gboolean dbus_completed:1;
 
     /* Marker to indicate that this is, in fact, a valid TpProxyPendingCall */
     gconstpointer priv;
@@ -118,7 +124,9 @@ tp_proxy_pending_call_lost_weak_ref (gpointer data,
   g_assert (dead == pc->weak_object);
 
   pc->weak_object = NULL;
-  tp_proxy_pending_call_cancel (pc);
+
+  if (!pc->idle_completed)
+    tp_proxy_pending_call_cancel (pc);
 }
 
 static gboolean
@@ -127,9 +135,19 @@ tp_proxy_pending_call_idle_invoke (gpointer p)
   TpProxyPendingCall *pc = p;
   TpProxyInvokeFunc invoke = pc->invoke_callback;
 
-  g_return_val_if_fail (pc->invoke_callback != NULL, FALSE);
+  MORE_DEBUG ("%p", pc);
+
+  if (invoke == NULL)
+    {
+      /* either already invoked (bug?), or cancelled */
+      return FALSE;
+    }
 
   MORE_DEBUG ("%p: invoking user callback", pc);
+
+  g_assert (pc->proxy != NULL);
+  g_assert (pc->error == NULL || pc->args == NULL);
+  g_assert (!pc->idle_completed);
 
   pc->invoke_callback = NULL;
   invoke (pc->proxy, pc->error, pc->args, pc->callback,
@@ -143,7 +161,7 @@ tp_proxy_pending_call_idle_invoke (gpointer p)
   return FALSE;
 }
 
-static void tp_proxy_pending_call_free (gpointer p);
+static void _tp_proxy_pending_call_idle_completed (gpointer p);
 
 static void
 _tp_proxy_pending_call_dgproxy_destroy (DBusGProxy *iface_proxy,
@@ -152,6 +170,7 @@ _tp_proxy_pending_call_dgproxy_destroy (DBusGProxy *iface_proxy,
   g_assert (iface_proxy != NULL);
   g_assert (pc != NULL);
   g_assert (pc->iface_proxy == iface_proxy);
+  g_assert (pc->proxy != NULL);
 
   DEBUG ("%p: DBusGProxy %p invalidated", pc, iface_proxy);
 
@@ -166,7 +185,8 @@ _tp_proxy_pending_call_dgproxy_destroy (DBusGProxy *iface_proxy,
           TP_DBUS_ERROR_NAME_OWNER_LOST, "Name owner lost (service crashed?)");
 
       pc->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
-          tp_proxy_pending_call_idle_invoke, pc, tp_proxy_pending_call_free);
+          tp_proxy_pending_call_idle_invoke, pc,
+          _tp_proxy_pending_call_idle_completed);
     }
 
   g_signal_handlers_disconnect_by_func (pc->iface_proxy,
@@ -234,6 +254,7 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
   TpProxyPendingCall *pc;
 
   g_return_val_if_fail (invoke_callback != NULL, NULL);
+  g_return_val_if_fail ((gpointer) iface_proxy != (gpointer) self, NULL);
 
   pc = g_slice_new0 (TpProxyPendingCall);
 
@@ -274,61 +295,79 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
 void
 tp_proxy_pending_call_cancel (TpProxyPendingCall *pc)
 {
-  gpointer iface;
-  TpProxyInvokeFunc invoke = pc->invoke_callback;
-
   DEBUG ("%p", pc);
 
   g_return_if_fail (pc->priv == pending_call_magic);
+  g_return_if_fail (pc->proxy != NULL);
+  /* If the callback has already run, it's too late to cancel */
+  g_return_if_fail (!pc->idle_completed);
 
-  /* Mark the pending call as expired */
-  pc->invoke_callback = NULL;
-
-  if (invoke != NULL && pc->cancel_must_raise)
+  if (pc->cancel_must_raise)
     {
-      GError *error = g_error_new_literal (TP_DBUS_ERRORS,
+      if (pc->error != NULL)
+        g_error_free (pc->error);
+
+      pc->error = g_error_new_literal (TP_DBUS_ERRORS,
           TP_DBUS_ERROR_CANCELLED, "Re-entrant D-Bus call cancelled");
 
-      MORE_DEBUG ("Telling user callback");
-      invoke (pc->proxy, error, NULL, pc->callback, pc->user_data,
-          pc->weak_object);
+      if (pc->args != NULL)
+        {
+          g_value_array_free (pc->args);
+          pc->args = NULL;
+        }
     }
-
-  if (pc->idle_source != 0)
+  else
     {
-      /* we aren't actually doing dbus-glib things any more anyway */
-      MORE_DEBUG ("Removing idle source");
-      g_source_remove (pc->idle_source);
-      return;
+      pc->invoke_callback = NULL;
     }
 
-  /* It's possible that the DBusGProxy is only reffed by the TpProxy, and
-   * the TpProxy is only reffed by this TpProxyPendingCall, which will be
-   * freed as a side-effect of cancelling the DBusGProxyCall halfway through
-   * dbus_g_proxy_cancel_call (), so temporarily ref the DBusGProxy to ensure
-   * that it survives for the duration. (fd.o #14576) */
-  iface = g_object_ref (pc->iface_proxy);
-  MORE_DEBUG ("Cancelling pending call %p on DBusGProxy %p",
-      pc->pending_call, iface);
-  dbus_g_proxy_cancel_call (iface, pc->pending_call);
-  MORE_DEBUG ("... done");
-  g_object_unref (iface);
+  /* If we're calling the callback due to cancellation, we must free the
+   * pending call object afterwards. Otherwise, we must free the pending
+   * call object later anyway, in case this function was called due to
+   * weak refs (like fd.o #14750). */
+  if (pc->idle_source == 0)
+    {
+      pc->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
+          tp_proxy_pending_call_idle_invoke, pc,
+          _tp_proxy_pending_call_idle_completed);
+    }
+
+  if (!pc->dbus_completed)
+    {
+      /* Implicitly asserts that iface_proxy is non-NULL */
+      DBusGProxy *iface_proxy = g_object_ref (pc->iface_proxy);
+
+      dbus_g_proxy_cancel_call (iface_proxy, pc->pending_call);
+      g_object_unref (iface_proxy);
+    }
 }
 
 static void
-tp_proxy_pending_call_free (gpointer p)
+tp_proxy_pending_call_free (TpProxyPendingCall *pc)
 {
-  TpProxyPendingCall *pc = p;
-
   MORE_DEBUG ("%p", pc);
 
-  g_return_if_fail (pc->priv == pending_call_magic);
+  g_assert (pc->priv == pending_call_magic);
 
-  if (pc->proxy != NULL)
-    {
-      g_object_unref (pc->proxy);
-      pc->proxy = NULL;
-    }
+  if (pc->destroy != NULL)
+    pc->destroy (pc->user_data);
+
+  pc->destroy = NULL;
+  pc->user_data = NULL;
+
+  if (pc->error != NULL)
+    g_error_free (pc->error);
+
+  pc->error = NULL;
+
+  if (pc->args != NULL)
+    g_value_array_free (pc->args);
+
+  pc->args = NULL;
+
+  if (pc->weak_object != NULL)
+    g_object_weak_unref (pc->weak_object,
+        tp_proxy_pending_call_lost_weak_ref, pc);
 
   if (pc->iface_proxy != NULL)
     {
@@ -338,18 +377,9 @@ tp_proxy_pending_call_free (gpointer p)
       pc->iface_proxy = NULL;
     }
 
-  if (pc->error != NULL)
-    g_error_free (pc->error);
-
-  if (pc->args != NULL)
-    g_value_array_free (pc->args);
-
-  if (pc->destroy != NULL)
-    pc->destroy (pc->user_data);
-
-  if (pc->weak_object != NULL)
-    g_object_weak_unref (pc->weak_object,
-        tp_proxy_pending_call_lost_weak_ref, pc);
+  g_assert (pc->proxy != NULL);
+  g_object_unref (pc->proxy);
+  pc->proxy = NULL;
 
   g_slice_free (TpProxyPendingCall, pc);
 }
@@ -375,34 +405,29 @@ tp_proxy_pending_call_v0_completed (gpointer p)
 {
   TpProxyPendingCall *pc = p;
 
-  MORE_DEBUG ("%p", p);
+  MORE_DEBUG ("%p", pc);
 
   g_return_if_fail (pc->priv == pending_call_magic);
+  g_return_if_fail (!pc->dbus_completed);
+  g_return_if_fail (pc->proxy != NULL);
 
-  if (pc->idle_source != 0)
+  /* dbus-glib frees its user_data *before* it emits destroy; if we
+   * haven't yet queued the callback, assume that's what's going on. */
+  if (pc->idle_source != 0 && pc->iface_proxy != NULL)
     {
-      /* we've kicked off an idle function, so we don't want to die until
-       * that function runs */
-      MORE_DEBUG ("Refusing to die til the idle function runs");
-      return;
+      MORE_DEBUG ("Looks like this pending call hasn't finished, assuming "
+          "the DBusGProxy is about to die");
+      /* this causes the pending call to be freed */
+      _tp_proxy_pending_call_dgproxy_destroy (pc->iface_proxy, pc);
+
+      g_assert (pc->iface_proxy == NULL);
     }
 
-  if (pc->proxy != NULL)
-    {
-      /* dbus-glib frees its user_data *before* it emits destroy; if we
-       * haven't yet run the callback, assume that's what's going on. */
-      if (pc->invoke_callback != NULL)
-        {
-          MORE_DEBUG ("Looks like this pending call hasn't finished, assuming "
-              "the DBusGProxy is about to die");
-          /* this causes the pending call to be freed */
-          _tp_proxy_pending_call_dgproxy_destroy (pc->iface_proxy, pc);
-          return;
-        }
-    }
+  pc->dbus_completed = TRUE;
 
-  MORE_DEBUG ("Freeing myself");
-  tp_proxy_pending_call_free (pc);
+  /* If the idle callback has been run already, we can go away */
+  if (pc->idle_completed)
+    tp_proxy_pending_call_free (pc);
 }
 
 /**
@@ -424,7 +449,23 @@ tp_proxy_pending_call_v0_take_pending_call (TpProxyPendingCall *pc,
                                             DBusGProxyCall *pending_call)
 {
   g_return_if_fail (pc->priv == pending_call_magic);
+  g_return_if_fail (pc->pending_call == NULL);
+  g_return_if_fail (pc->proxy != NULL);
+
   pc->pending_call = pending_call;
+}
+
+static void
+_tp_proxy_pending_call_idle_completed (gpointer p)
+{
+  TpProxyPendingCall *pc = p;
+
+  MORE_DEBUG ("%p", pc);
+
+  pc->idle_completed = TRUE;
+
+  if (pc->dbus_completed)
+    tp_proxy_pending_call_free (pc);
 }
 
 /**
@@ -451,6 +492,7 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
                                        GError *error,
                                        GValueArray *args)
 {
+  g_return_if_fail (pc->proxy != NULL);
   g_return_if_fail (pc->priv == pending_call_magic);
   g_return_if_fail (pc->args == NULL);
   g_return_if_fail (pc->error == NULL);
@@ -465,5 +507,6 @@ tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
 
   /* queue up the actual callback to run after we go back to the event loop */
   pc->idle_source = g_idle_add_full (G_PRIORITY_HIGH,
-      tp_proxy_pending_call_idle_invoke, pc, tp_proxy_pending_call_free);
+      tp_proxy_pending_call_idle_invoke, pc,
+      _tp_proxy_pending_call_idle_completed);
 }
