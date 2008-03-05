@@ -2,7 +2,7 @@
 The master copy of this stylesheet is in the Telepathy spec repository -
 please make any changes there.
 
-Copyright (C) 2006, 2007 Collabora Limited
+Copyright (C) 2006-2008 Collabora Limited
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -12,19 +12,26 @@ version 2.1 of the License, or (at your option) any later version.
 This library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
-  exclude-result-prefixes="tp">
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  exclude-result-prefixes="tp html">
   <!--Don't move the declaration of the HTML namespace up here - XMLNSs
   don't work ideally in the presence of two things that want to use the
   absence of a prefix, sadly. -->
+
+  <xsl:template match="html:*" mode="html">
+    <xsl:copy>
+      <xsl:apply-templates mode="html"/>
+    </xsl:copy>
+  </xsl:template>
 
   <xsl:template match="*" mode="identity">
     <xsl:copy>
@@ -33,7 +40,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
   </xsl:template>
 
   <xsl:template match="tp:docstring">
-    <xsl:apply-templates select="node()" mode="identity"/>
+    <xsl:apply-templates select="text() | html:*" mode="html"/>
+    <xsl:apply-templates select="tp:rationale"/>
+  </xsl:template>
+
+  <xsl:template match="tp:rationale">
+    <div xmlns="http://www.w3.org/1999/xhtml" class="rationale">
+      <xsl:apply-templates select="node()" mode="html"/>
+    </div>
   </xsl:template>
 
   <xsl:template match="tp:errors">
@@ -90,7 +104,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
   </xsl:template>
   <xsl:template match="/tp:spec/tp:license">
     <div xmlns="http://www.w3.org/1999/xhtml" class="license">
-      <xsl:apply-templates mode="identity"/>
+      <xsl:apply-templates mode="html"/>
     </div>
   </xsl:template>
 
@@ -141,13 +155,32 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
     <xsl:choose>
       <xsl:when test="tp:property">
-        <h2 xmlns="http://www.w3.org/1999/xhtml">Properties:</h2>
+        <h2 xmlns="http://www.w3.org/1999/xhtml">Telepathy Properties:</h2>
+        <p xmlns="http://www.w3.org/1999/xhtml">Accessed using the
+          <a href="#org.freedesktop.Telepathy.Properties">Telepathy
+            Properties</a> interface.</p>
         <dl xmlns="http://www.w3.org/1999/xhtml">
           <xsl:apply-templates select="tp:property"/>
         </dl>
       </xsl:when>
       <xsl:otherwise>
-        <p xmlns="http://www.w3.org/1999/xhtml">Interface has no properties.</p>
+        <p xmlns="http://www.w3.org/1999/xhtml">Interface has no Telepathy
+          properties.</p>
+      </xsl:otherwise>
+    </xsl:choose>
+
+    <xsl:choose>
+      <xsl:when test="property">
+        <h2 xmlns="http://www.w3.org/1999/xhtml">D-Bus core Properties:</h2>
+        <p xmlns="http://www.w3.org/1999/xhtml">Accessed using the
+          org.freedesktop.DBus.Properties interface.</p>
+        <dl xmlns="http://www.w3.org/1999/xhtml">
+          <xsl:apply-templates select="property"/>
+        </dl>
+      </xsl:when>
+      <xsl:otherwise>
+        <p xmlns="http://www.w3.org/1999/xhtml">Interface has no D-Bus core
+          properties.</p>
       </xsl:otherwise>
     </xsl:choose>
 
@@ -217,6 +250,36 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
         </xsl:choose>
       </xsl:for-each>
     </dl>
+  </xsl:template>
+
+  <xsl:template match="property">
+    <dt xmlns="http://www.w3.org/1999/xhtml">
+      <a name="{concat(../@name, '.', @name)}">
+        <code><xsl:value-of select="@name"/></code>
+      </a>
+      <xsl:text> - </xsl:text>
+      <code><xsl:value-of select="@type"/></code>
+      <xsl:call-template name="parenthesized-tp-type"/>
+      <xsl:text>, </xsl:text>
+      <xsl:choose>
+        <xsl:when test="@access = 'read'">
+          <xsl:text>read-only</xsl:text>
+        </xsl:when>
+        <xsl:when test="@access = 'write'">
+          <xsl:text>write-only</xsl:text>
+        </xsl:when>
+        <xsl:when test="@access = 'readwrite'">
+          <xsl:text>read/write</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:text>access: </xsl:text>
+          <code><xsl:value-of select="@access"/></code>
+        </xsl:otherwise>
+      </xsl:choose>
+    </dt>
+    <dd xmlns="http://www.w3.org/1999/xhtml">
+      <xsl:apply-templates select="tp:docstring"/>
+    </dd>
   </xsl:template>
 
   <xsl:template match="tp:property">
@@ -626,13 +689,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
             float: right;
             font-style: italic;
           }
-          .method {
+          .method, .signal, .property {
             margin-left: 1em;
             margin-right: 4em;
           }
-          .signal {
-            margin-left: 1em;
-            margin-right: 4em;
+          .rationale {
+            font-style: italic;
+            border-left: 0.25em solid #808080;
+            padding-left: 0.5em;
           }
 
         </style>
