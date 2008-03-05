@@ -714,19 +714,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
         <h2>Interfaces</h2>
         <ul>
-        <xsl:for-each select="node/interface">
+          <xsl:for-each select="//node/interface">
             <li><code><a href="#{@name}"><xsl:value-of select="@name"/></a></code></li>
           </xsl:for-each>
         </ul>
 
-        <xsl:apply-templates select="node"/>
+        <xsl:apply-templates select="//node"/>
         <xsl:apply-templates select="tp:generic-types"/>
         <xsl:apply-templates select="tp:errors"/>
 
         <h1>Index</h1>
         <h2>Index of interfaces</h2>
         <ul>
-        <xsl:for-each select="node/interface">
+          <xsl:for-each select="//node/interface">
             <li><code><a href="#{@name}"><xsl:value-of select="@name"/></a></code></li>
           </xsl:for-each>
         </ul>
