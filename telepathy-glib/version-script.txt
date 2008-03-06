@@ -741,6 +741,14 @@ TELEPATHY_GLIB_0.7.3 {
         tp_svc_interface_set_dbus_properties_info;
 } TELEPATHY_GLIB_0.7.2;
 
+# There were no new symbols in 0.7.4
+
+TELEPATHY_GLIB_0.7.5_UNRELEASED {
+    global:
+        tp_type_dbus_array_os;
+        tp_type_dbus_struct_os;
+} TELEPATHY_GLIB_0.7.3;
+
 # For every release that adds ABI, add a stanza like:
 # TELEPATHY_GLIB_0.7.2_UNRELEASED {
 #     global:
