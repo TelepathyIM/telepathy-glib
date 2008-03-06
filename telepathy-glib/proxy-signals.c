@@ -40,6 +40,7 @@ typedef struct _TpProxySignalInvocation TpProxySignalInvocation;
 
 struct _TpProxySignalInvocation {
     TpProxySignalConnection *sc;
+    TpProxy *proxy;
     GValueArray *args;
     guint idle_source;
 };
@@ -103,6 +104,10 @@ tp_proxy_signal_connection_proxy_invalidated (TpProxy *proxy,
   DEBUG ("%p: TpProxy %p invalidated (I have %p): %s", sc, proxy,
       sc->proxy, message);
   g_assert (proxy == sc->proxy);
+
+  g_signal_handlers_disconnect_by_func (sc->proxy,
+      tp_proxy_signal_connection_proxy_invalidated, sc);
+  sc->proxy = NULL;
 
   tp_proxy_signal_connection_disconnect_dbus_glib (sc);
 }
@@ -199,7 +204,8 @@ tp_proxy_signal_connection_disconnect (TpProxySignalConnection *sc)
   while ((invocation = g_queue_pop_head (&sc->invocations)) != NULL)
     {
       g_assert (invocation->sc == sc);
-      g_object_unref (invocation->sc->proxy);
+      g_object_unref (invocation->proxy);
+      invocation->proxy = NULL;
       invocation->sc = NULL;
       g_source_remove (invocation->idle_source);
 
@@ -223,9 +229,11 @@ tp_proxy_signal_invocation_free (gpointer p)
       g_warning ("%s: idle source removed by someone else", G_STRFUNC);
 
       g_queue_remove (&invocation->sc->invocations, invocation);
-      g_object_unref (invocation->sc->proxy);
+      g_object_unref (invocation->proxy);
       tp_proxy_signal_connection_unref (invocation->sc);
     }
+
+  g_assert (invocation->proxy == NULL);
 
   if (invocation->args != NULL)
     g_value_array_free (invocation->args);
@@ -244,7 +252,7 @@ tp_proxy_signal_invocation_run (gpointer p)
   MORE_DEBUG ("%p: popped %p", invocation->sc, popped);
   g_assert (popped == invocation);
 
-  invocation->sc->invoke_callback (invocation->sc->proxy, NULL,
+  invocation->sc->invoke_callback (invocation->proxy, NULL,
       invocation->args, invocation->sc->callback, invocation->sc->user_data,
       invocation->sc->weak_object);
 
@@ -253,9 +261,10 @@ tp_proxy_signal_invocation_run (gpointer p)
 
   /* there's one ref to the proxy per queued invocation, to keep it
    * alive */
-  MORE_DEBUG ("%p refcount-- due to %p run, sc=%p", invocation->sc->proxy,
+  MORE_DEBUG ("%p refcount-- due to %p run, sc=%p", invocation->proxy,
       invocation, invocation->sc);
-  g_object_unref (invocation->sc->proxy);
+  g_object_unref (invocation->proxy);
+  invocation->proxy = NULL;
   tp_proxy_signal_connection_unref (invocation->sc);
   invocation->sc = NULL;
 
@@ -426,7 +435,7 @@ tp_proxy_signal_connection_v0_take_results (TpProxySignalConnection *sc,
   /* as long as there are queued invocations, we keep one ref to the TpProxy
    * and one ref to the TpProxySignalConnection per invocation */
   MORE_DEBUG ("%p refcount++ due to %p, sc=%p", sc->proxy, invocation, sc);
-  g_object_ref (sc->proxy);
+  invocation->proxy = g_object_ref (sc->proxy);
   sc->refcount++;
 
   invocation->sc = sc;
