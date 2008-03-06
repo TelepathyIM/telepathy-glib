@@ -21,13 +21,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Channel.Type.Text">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
 
+    <tp:simple-type name="Message_ID" type="u"/>
+
     <tp:struct name="Pending_Text_Message" array-name="Pending_Text_Message_List">
       <tp:docstring>A struct (message ID, timestamp in seconds since
         1970-01-01 00:00 UTC, sender's handle, message type, flags, text)
         representing a pending text message, as returned by ListPendingMessages
         on the Text channel type. The arguments of the Received signal
         also match this struct's signature.</tp:docstring>
-      <tp:member type="u" name="Message_ID"/>
+      <tp:member type="u" tp:type="Message_ID" name="Identifier"/>
       <tp:member type="u" name="Unix_Timestamp"/>
       <tp:member type="u" tp:type="Contact_Handle" name="Sender"/>
       <tp:member type="u" tp:type="Channel_Text_Message_Type"
@@ -37,7 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </tp:struct>
 
     <method name="AcknowledgePendingMessages">
-      <arg direction="in" name="ids" type="au">
+      <arg direction="in" name="ids" type="au" tp:type="Message_ID[]">
         <tp:docstring>
           The IDs of the messages to acknowledge
         </tp:docstring>
@@ -344,26 +346,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </tp:property>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-      <p>A channel type for sending and receiving messages in plain text, with no
-        formatting.</p>
+      <p>A channel type for sending and receiving messages in plain text,
+        with no formatting.</p>
 
-      <p>When a message is received, an identifier is assigned and a Received signal
-      emitted, and the message placed in a pending queue which can be inspected
-      with ListPendingMessages. A client which has handled the message by showing
-      it to the user (or equivalent) should acknowledge the receipt using the
-      AcknowledgePendingMessage method, and the message will then be removed from
-      the pending queue. Numeric identifiers for received messages may be reused
-      over the lifetime of the channel.</p>
+      <p>When a message is received, an identifier is assigned and a
+        Received signal emitted, and the message placed in a pending queue
+        which can be inspected with ListPendingMessages. A client which has
+        handled the message by showing it to the user (or equivalent) should
+        acknowledge the receipt using the AcknowledgePendingMessage method,
+        and the message will then be removed from the pending queue. Numeric
+        identifiers for received messages may be reused over the lifetime of
+        the channel.</p>
 
-      <p>Each message has an associated 'type' value, which should be one of the
-      values allowed by ChannelTextMessageType.</p>
+      <p>Each message has an associated 'type' value, which should be one
+        of the values allowed by ChannelTextMessageType.</p>
 
       <p>Each message also has a flags value, which is a bitwise OR of the
-      flags given in ChannelTextMessageFlags.</p>
+        flags given in ChannelTextMessageFlags.</p>
 
-      <p>Sending messages can be requested using the Send method, which will return
-      and cause the Sent signal to be emitted when the message has been delivered
-      to the server, or SendError if there is a failure.</p>
+      <p>Sending messages can be requested using the Send method, which will
+        return and cause the Sent signal to be emitted when the message has
+        been delivered to the server, or SendError if there is a failure.</p>
 
       <p>On protocols where additional contacts cannot be invited into
         a one-to-one chat, or where a one-to-one chat is just a series of

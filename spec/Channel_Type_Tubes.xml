@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <node name="/Channel_Type_Tubes" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <tp:copyright>
-    Copyright (C) 2007 Collabora Limited
+    Copyright (C) 2007-2008 Collabora Limited
   </tp:copyright>
   <tp:license>
     This library is free software; you can redistribute it and/or
@@ -47,7 +47,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <tp:docstring>A struct (tube ID, initiator handle, tube type,
         service name, parameters, state) representing a tube, as returned
         by ListTubes on the Tubes channel type.</tp:docstring>
-      <tp:member type="u" name="Tube_ID"/>
+      <tp:member type="u" tp:type="Tube_ID" name="Identifier"/>
       <tp:member type="u" tp:type="Contact_Handle" name="Initiator"/>
       <tp:member type="u" tp:type="Tube_Type" name="Type"/>
       <tp:member type="s" name="Service"/>
@@ -350,7 +350,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           D-Bus type, or a byte array 'ay'.
         </tp:docstring>
       </arg>
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Tube_ID">
         <tp:docstring>
           The ID of the new tube.
         </tp:docstring>
@@ -380,6 +380,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           A string representing the service name that will be used over the
           tube.
           It should be a well-known TCP service name as defined by
+          <a href="http://www.iana.org/assignments/port-numbers">
+            http://www.iana.org/assignments/port-numbers</a> or
           <a href="http://www.dns-sd.org/ServiceTypes.html">
             http://www.dns-sd.org/ServiceTypes.html</a>, for instance
           "rsync" or "daap".
@@ -421,7 +423,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           specified in the documentation for the Socket_Access_Control enum.
         </tp:docstring>
       </arg>
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Tube_ID">
         <tp:docstring>
           The ID of the new tube.
         </tp:docstring>

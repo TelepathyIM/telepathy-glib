@@ -20,6 +20,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.ConnectionManager">
 
+    <tp:simple-type name="Connection_Manager_Name" type="s">
+      <tp:docstring>
+        The name of a connection manager, found in its well-known
+        bus name and object path. This must be a non-empty string of
+        ASCII letters, digits and underscores, starting with a letter.
+        This is typically the name of the executable with any "telepathy-"
+        prefix removed, and any hyphen/minus signs replaced by
+        underscores.
+      </tp:docstring>
+    </tp:simple-type>
+
     <tp:simple-type name="Protocol" type="s">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>An instant messaging protocol. It must consist only of ASCII
@@ -86,6 +97,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           This parameter has a default value, which is returned in
           GetParameters; not providing this parameter is equivalent to
           providing the default.
+        </tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="Secret" value="8">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>This parameter should be considered private or secret; for
+            instance, clients should store it in a "password safe" like
+            gnome-keyring or kwallet, omit it from debug logs, and use a
+            text input widget that hides the value of the parameter.</p>
+
+          <p>(Clients that support older connection managers may also treat
+            any parameter whose name contains "password" as though it had this
+            flag.)</p>
         </tp:docstring>
       </tp:flag>
     </tp:flags>
@@ -271,10 +294,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       processes are intended to be started by D-Bus service activation.</p>
 
     <p>For service discovery, each Telepathy connection manager must have
-      a <em>connection manager name</em>, which is a non-empty string of
-      ASCII letters, digits and underscores, starting with a letter. This
-      is typically the name of the executable with any "telepathy-" prefix
-      removed.</p>
+      a <em>connection manager name</em> (see Connection_Manager_Name for
+      syntax).</p>
 
     <p>The connection manager must then provide a well-known bus name of
       <code>org.freedesktop.Telepathy.ConnectionManager.<em>cmname</em></code>
@@ -313,7 +334,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <code>telepathy/managers/<em>cmname</em>.manager</code> that can be
       read without error. This file has the same syntax as a
       <a href="http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html">freedesktop.org Desktop Entry file</a>.</p>
-    
+
+    <p>Clients must still support connection managers for which no
+      <code>.manager</code> file can be found, which they can do by activating
+      the connection manager and calling its methods; the
+      <code>.manager</code> file is merely an optimization. Connection managers
+      whose list of protocols can change at any time (for instance, via
+      a plugin architecture) should not install a <code>.manager</code>
+      file.</p>
+
     <p>For each protocol name <em>proto</em> that would be returned by
       ListProtocols, the .manager file contains a group
       headed <code>[Protocol <em>proto</em>]</code>. For each parameter
@@ -321,10 +350,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       .manager file contains a key <code>param-<em>p</em></code> with a value
       consisting of a D-Bus signature (a single complete type), optionally
       followed by a space and a space-separated list of flags. The supported
-      flags are <code>required</code>, corresponding to
-      Conn_Mgr_Param_Flag_Required, and <code>register</code>, corresponding
-      to Conn_Mgr_Param_Flag_Register.
-    </p>
+      flags are:</p>
+
+    <ul>
+      <li><code>required</code>, corresponding to
+        Conn_Mgr_Param_Flag_Required</li>
+      <li><code>register</code>, corresponding
+        to Conn_Mgr_Param_Flag_Register</li>
+      <li><code>secret</code>, corresponding
+        to Conn_Mgr_Param_Flag_Secret</li>
+    </ul>
 
     <p>The group may also contain a key <code>default-<em>p</em></code>
       whose value is a string form of the default value for the parameter.

@@ -21,20 +21,39 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Channel.Interface.MediaSignalling">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
     <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.StreamedMedia"/>
+
+    <tp:simple-type name="Media_Session_Type" type="s">
+      <tp:docstring>The type of a media session. Currently, the only supported
+        value is "rtp".</tp:docstring>
+    </tp:simple-type>
+
+    <tp:struct name="Media_Session_Handler_Info"
+        array-name="Media_Session_Handler_Info_List">
+      <tp:docstring>A struct representing a active session handler.</tp:docstring>
+      <tp:member type="o" name="Session_Handler">
+        <tp:docstring>The object path of the session handler, which is on the
+          same bus name as the channel.</tp:docstring>
+      </tp:member>
+      <tp:member type="s" tp:type="Media_Session_Type" name="Media_Session_Type">
+        <tp:docstring>The media session's type</tp:docstring>
+      </tp:member>
+    </tp:struct>
+
     <method name="GetSessionHandlers">
-      <arg direction="out" type="a(os)"/>
+      <arg direction="out" type="a(os)" tp:type="Media_Session_Handler_Info[]"/>
       <tp:docstring>
         Returns all currently active session handlers on this channel
         as a list of (session_handler_path, type).
       </tp:docstring>
     </method>
+
     <signal name="NewSessionHandler">
-      <arg name="session_handler" type="o">
+      <arg name="Session_Handler" type="o">
         <tp:docstring>
           Object path of the new MediaSessionHandler object
         </tp:docstring>
       </arg>
-      <arg name="type" type="s">
+      <arg name="Session_Type" tp:type="Media_Session_Type" type="s">
         <tp:docstring>
           String indicating type of session, eg &quot;rtp&quot;
         </tp:docstring>
@@ -81,6 +100,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       server.
       </tp:docstring>
     </tp:property>
+
     <tp:docstring>
       An interface for signalling a channel containing synchronised media
     sessions which can contain an arbitrary number of streams. The negotiation

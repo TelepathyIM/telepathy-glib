@@ -48,12 +48,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         asynchronously and errors will be returned by emitting StatusChanged
         signals.
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
           The connection is already connecting or connected
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="Disconnect">
       <tp:docstring>
         Request that the connection be closed. This closes the connection if
@@ -61,66 +63,79 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         object.
       </tp:docstring>
     </method>
+
     <method name="GetInterfaces">
       <arg direction="out" type="as" tp:type="DBus_Interface[]">
         <tp:docstring>
           An array of D-Bus interface names
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Get the optional interfaces supported by this connection.
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetProtocol">
       <arg direction="out" type="s">
         <tp:docstring>
           A string identifier for the protocol
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Get the protocol this connection is using.
       </tp:docstring>
     </method>
+
     <method name="GetSelfHandle">
       <arg direction="out" type="u">
         <tp:docstring>
           An integer handle representing the user
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Get the handle which represents the user on this connection, which will
         remain valid for the lifetime of this connection, or until a change
         in the user's identifier is signalled by the Renamed signal on the
         Renaming interface (if present). This is always a CONTACT type handle.
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetStatus">
       <arg direction="out" type="u" tp:type="Connection_Status">
         <tp:docstring>
           An integer representing the current status
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Get the current status as defined in the StatusChanged signal.
       </tp:docstring>
     </method>
+
     <method name="HoldHandles">
       <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           The type of handle to be held
         </tp:docstring>
       </arg>
+
       <arg direction="in" name="handles" type="au" tp:type="Handle[]">
         <tp:docstring>
           A array of integer handles to hold
         </tp:docstring>
       </arg>
+
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Notify the connection manger that your client is holding a copy
         of handles which may not be in use in any existing channel or
@@ -138,6 +153,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           ReleaseHandles when none of the cooperating components need the
           handle any longer.</p>
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
@@ -148,26 +164,31 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="InspectHandles">
       <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           The type of handle to be inspected
         </tp:docstring>
       </arg>
+
       <arg direction="in" name="handles" type="au" tp:type="Handle[]">
         <tp:docstring>
           An array of integer handles of this type
         </tp:docstring>
       </arg>
+
       <arg direction="out" type="as">
         <tp:docstring>
           An array of handle names in the same order as the given numbers
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Return a string representation for a number of handles of a given
         type.
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
@@ -178,45 +199,54 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="ListChannels">
       <arg direction="out" type="a(osuu)" tp:type="Channel_Info[]">
         <tp:docstring>
           An array of structs representing channels.
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         List all the channels which currently exist on this connection.
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
       </tp:possible-errors>
     </method>
+
     <signal name="NewChannel">
       <arg name="object_path" type="o">
         <tp:docstring>
           A D-Bus object path for the channel object on this service
         </tp:docstring>
       </arg>
+
       <arg name="channel_type" type="s" tp:type="DBus_Interface">
         <tp:docstring>
           A D-Bus interface name representing the channel type
         </tp:docstring>
       </arg>
+
       <arg name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer representing the type of handle this channel communicates with, which is zero if no handle is specified
         </tp:docstring>
       </arg>
+
       <arg name="handle" type="u" tp:type="Handle">
         <tp:docstring>
           A handle indicating the specific contact, room or list this channel communicates with, or zero if it is an anonymous channel
         </tp:docstring>
       </arg>
+
       <arg name="suppress_handler" type="b">
         <tp:docstring>
           A boolean indicating that the channel was requested by a client that intends to display it to the user, so no handler needs to be launched
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Emitted when a new Channel object is created, either through user
         request or incoming information from the service. The suppress_handler
@@ -224,23 +254,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         or is an incoming communication and needs to have a handler launched.
       </tp:docstring>
     </signal>
+
     <method name="ReleaseHandles">
       <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer handle type (as defined in RequestHandle)
         </tp:docstring>
       </arg>
+
       <arg direction="in" name="handles" type="au" tp:type="Handle[]">
         <tp:docstring>
           An array of integer handles being held by the client
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Explicitly notify the connection manager that your client is no
         longer holding any references to the given handles, and that they
         may be deallocated if they are not held by any other clients or
         referenced by any existing channels. See HoldHandles for notes.
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
@@ -254,23 +288,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="RequestChannel">
       <arg direction="in" name="type" type="s" tp:type="DBus_Interface">
         <tp:docstring>
           A D-Bus interface name representing base channel type
         </tp:docstring>
       </arg>
+
       <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer representing the handle type, or zero if no handle is being specified
         </tp:docstring>
       </arg>
+
       <arg direction="in" name="handle" type="u" tp:type="Handle">
         <tp:docstring>
           A nonzero integer handle representing a contact, room, list etc.
           according to handle_type, or zero if the handle_type is zero
         </tp:docstring>
       </arg>
+
       <arg direction="in" name="suppress_handler" type="b">
         <tp:docstring>
           If true, the requesting client intends to take responsibility for
@@ -278,11 +316,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           be launched
         </tp:docstring>
       </arg>
+
       <arg direction="out" type="o">
         <tp:docstring>
           The D-Bus object path for the channel created or retrieved
         </tp:docstring>
       </arg>
+
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Request a channel satisfying the specified type and communicating
           with the contact, room, list etc. indicated by the given
@@ -312,6 +352,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <p>If the request cannot be satisfied, an error is raised and no
           channel is created.</p>
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
@@ -335,6 +376,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.Channel.InviteOnly"/>
       </tp:possible-errors>
     </method>
+
     <tp:enum name="Handle_Type" type="u">
       <tp:enumvalue suffix="None" value="0">
         <tp:docstring>
@@ -364,22 +406,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <method name="RequestHandles">
       <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           The type of handle required
         </tp:docstring>
       </arg>
+
       <arg direction="in" name="names" type="as">
         <tp:docstring>
           An array of names of entities to request handles for
         </tp:docstring>
       </arg>
+
       <arg direction="out" type="au" tp:type="Handle[]">
         <tp:docstring>
           An array of integer handle numbers in the same order as the given strings
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Request several handles from the connection manager which represent a
         number of contacts, rooms or server-stored lists on the service. The
@@ -390,6 +436,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         in this connection manager, this handle should be returned instead.
         The handle number 0 must not be returned by the connection manager.
       </tp:docstring>
+
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
@@ -400,6 +447,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <tp:enum name="Connection_Status" plural="Connection_Statuses" type="u">
       <tp:enumvalue suffix="Connected" value="0">
         <tp:docstring>
@@ -496,24 +544,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <signal name="StatusChanged">
       <arg name="status" type="u" tp:type="Connection_Status">
         <tp:docstring>
           An integer indicating the new status, as defined by ConnectionStatus
         </tp:docstring>
       </arg>
+
       <arg name="reason" type="u" tp:type="Connection_Status_Reason">
         <tp:docstring>
           An integer indicating the reason for the status change, as defined
           by ConnectionStatusReason
         </tp:docstring>
       </arg>
+
       <tp:docstring>
         Emitted when the status of the connection changes.  All states and
         reasons have numerical values, as defined in ConnectionStatus
         and ConnectionStatusReason.
       </tp:docstring>
     </signal>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
     <p>This models a connection to a single user account on a communication
     service. Its basic capability is to provide the facility to request and

@@ -21,19 +21,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Channel.Type.ContactSearch"
     tp:causes-havoc='not well-tested'>
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
+ 
+    <tp:struct name="Search_Key_Info">
+      <tp:docstring>A struct representing details on search strings.</tp:docstring>
+      <tp:member type="b" name="Is_Mandatory">
+        <tp:docstring>Booleans indicating if the search key is mandatory.
+          </tp:docstring>
+      </tp:member>
+      <tp:member type="g" name="Type_Signature">
+        <tp:docstring>The type signature of the value for this search key.
+          </tp:docstring>
+      </tp:member>
+    </tp:struct>
+
+    <tp:mapping name="Search_Key_Info_Map">
+      <tp:docstring>A dictionary mapping string search key names to its search details.
+        </tp:docstring>
+      <tp:member type="s" name="Term"/>
+      <tp:member type="(bg)" tp:type="Search_Key_Info" name="Details"/>
+    </tp:mapping>
+
     <method name="GetSearchKeys">
       <arg direction="out" type="s">
         <tp:docstring>
           A string with any instructions from the server
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a{s(bg)}">
+      <arg direction="out" type="a{s(bg)}" tp:type="Search_Key_Info_Map">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          A dictionary mapping string search key names to an array of:
-          <ul>
-            <li>booleans indicating if the search key is mandatory</li>
-            <li>type signature of the value for this search key</li>
-          </ul>
+          A dictionary mapping string search key names to its search details. 
         </tp:docstring>
       </arg>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -75,7 +91,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
     <method name="Search">
-      <arg direction="in" name="terms" type="a{sv}">
+      <arg direction="in" name="terms" type="a{sv}" tp:type="String_Variant_Map">
         <tp:docstring>
           A dictionary mapping search key names to the desired values
         </tp:docstring>
@@ -95,7 +111,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <arg name="contact" type="u" tp:type="Contact_Handle">
         <tp:docstring>An integer handle for the contact</tp:docstring>
       </arg>
-      <arg name="values" type="a{sv}">
+      <arg name="values" type="a{sv}" tp:type="String_Variant_Map">
         <tp:docstring>A dictionary mapping search key names to values for this contact</tp:docstring>
       </arg>
       <tp:docstring>

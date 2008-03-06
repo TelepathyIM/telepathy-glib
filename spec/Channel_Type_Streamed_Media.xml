@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <node name="/Channel_Type_Streamed_Media" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright> Copyright (C) 2005, 2006 Collabora Limited </tp:copyright>
-  <tp:copyright> Copyright (C) 2005, 2006 Nokia Corporation </tp:copyright>
+  <tp:copyright> Copyright (C) 2005-2008 Collabora Limited </tp:copyright>
+  <tp:copyright> Copyright (C) 2005-2008 Nokia Corporation </tp:copyright>
   <tp:copyright> Copyright (C) 2006 INdT </tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
     <p>This library is free software; you can redistribute it and/or
@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Channel.Type.StreamedMedia">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
     <tp:requires interface="org.freedesktop.Telepathy.Channel.Interface.Group"/>
+
     <tp:enum name="Media_Stream_Type" type="u">
       <tp:enumvalue suffix="Audio" value="0">
         <tp:docstring>An audio stream</tp:docstring>
@@ -29,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring>A video stream</tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <tp:enum name="Media_Stream_State" type="u">
       <tp:enumvalue suffix="Disconnected" value="0">
         <tp:docstring>The stream is disconnected.</tp:docstring>
@@ -40,6 +42,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring>The stream is connected.</tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <tp:enum name="Media_Stream_Direction" type="u">
       <tp:enumvalue suffix="None" value="0">
         <tp:docstring>Media are not being sent or received</tp:docstring>
@@ -54,6 +57,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring>Media are being sent and received</tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <tp:flags name="Media_Stream_Pending_Send" value-prefix="Media_Stream_Pending" type="u">
       <tp:flag suffix="Local_Send" value="1">
         <tp:docstring>
@@ -70,6 +74,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
     </tp:flags>
+
+    <tp:struct name="Media_Stream_Info" array-name="Media_Stream_Info_List">
+      <tp:member type="u" tp:type="Stream_ID" name="Identifier"/>
+      <tp:member type="u" tp:type="Contact_Handle" name="Contact"/>
+      <tp:member type="u" tp:type="Media_Stream_Type" name="Type"/>
+      <tp:member type="u" tp:type="Media_Stream_State" name="State"/>
+      <tp:member type="u" tp:type="Media_Stream_Direction" name="Direction"/>
+      <tp:member type="u" tp:type="Media_Stream_Pending_Send"
+        name="Pending_Send_Flags"/>
+    </tp:struct>
+
+    <tp:simple-type name="Stream_ID" type="u"/>
+
     <method name="ListStreams">
       <arg direction="out" type="a(uuuuuu)" tp:type="Media_Stream_Info[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -91,8 +108,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         which is unique for each stream within the channel.
       </tp:docstring>
     </method>
+
     <method name="RemoveStreams">
-      <arg direction="in" name="streams" type="au">
+      <arg direction="in" name="streams" type="au" tp:type="Stream_ID[]">
         <tp:docstring>
           An array of stream identifiers (as defined in ListStreams)
         </tp:docstring>
@@ -106,6 +124,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="RequestStreamDirection">
       <arg direction="in" name="stream_id" type="u">
         <tp:docstring>
@@ -142,13 +161,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="RequestStreams">
       <arg direction="in" name="contact_handle" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           A contact handle with whom to establish the streams
         </tp:docstring>
       </arg>
-      <arg direction="in" name="types" type="au">
+      <arg direction="in" name="types" type="au" tp:type="Media_Stream_Type[]">
         <tp:docstring>
           An array of stream types (values of MediaStreamType)
         </tp:docstring>
@@ -178,6 +198,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         them), the StreamDirectionChanged signal will be emitted with the
         MEDIA_STREAM_PENDING_REMOTE_SEND flag set, and the signal emitted again
         with the flag cleared when the remote end has replied.</p>
+
+        <p>As of version 0.17.2, it is valid to use a handle which is neither
+          a current nor pending member in this channel's Group interface. If
+          so, that handle will be added to the remote-pending set only when
+          an attempt has actually been made to contact them. For further
+          call-state notification, use the CallState interface, if
+          supported.</p>
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
@@ -189,6 +216,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <signal name="StreamAdded">
       <arg name="stream_id" type="u">
         <tp:docstring>
@@ -210,6 +238,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Emitted when a new stream has been added to this channel.
       </tp:docstring>
     </signal>
+
     <signal name="StreamDirectionChanged">
       <arg name="stream_id" type="u">
         <tp:docstring>
@@ -233,6 +262,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         should be called to indicate whether or not this change is acceptable.
       </tp:docstring>
     </signal>
+
     <signal name="StreamError">
       <arg name="stream_id" type="u">
         <tp:docstring>
@@ -253,6 +283,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Emitted when a stream encounters an error.
       </tp:docstring>
     </signal>
+
     <signal name="StreamRemoved">
       <arg name="stream_id" type="u">
         <tp:docstring>
@@ -263,6 +294,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Emitted when a stream has been removed from this channel.
       </tp:docstring>
     </signal>
+
     <signal name="StreamStateChanged">
       <arg name="stream_id" type="u">
         <tp:docstring>
@@ -278,6 +310,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Emitted when a member's stream's state changes.
       </tp:docstring>
     </signal>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>A channel that can send and receive streamed media such as audio or video.
     Provides a number of methods for listing and requesting new streams, and
@@ -289,8 +322,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         to a contact, clients should request a new, empty streamed media
         channel, then call AddMembers to add the contact to the channel.
         The local user should be in the group's members, while the contact
-        should be in "remote pending" until the call is accepted, then
-        move to the group's members.</p>
+        should be absent from the channel until a call is made, appear in
+        "remote pending" from when the call is attempted until the call is
+        accepted, then move to the group's members.</p>
 
       <p>Similarly, incoming calls should be signalled as having handle type 0
         and handle 0. The remote contact should be in the group's members,
@@ -306,6 +340,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     connection manager), the signalling interface can be omitted and this
     channel type used simply to control the streams.</p>
     </tp:docstring>
+
     <tp:flags name="Channel_Media_Capabilities" value-prefix="Channel_Media_Capability" type="u">
       <tp:docstring>
         The channel-type-specific capability flags used for
@@ -334,16 +369,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
     </tp:flags>
-
-    <tp:struct name="Media_Stream_Info" array-name="Media_Stream_Info_List">
-      <tp:member type="u" name="Identifier"/>
-      <tp:member type="u" tp:type="Contact_Handle" name="Contact"/>
-      <tp:member type="u" tp:type="Media_Stream_Type" name="Type"/>
-      <tp:member type="u" tp:type="Media_Stream_State" name="State"/>
-      <tp:member type="u" tp:type="Media_Stream_Direction" name="Direction"/>
-      <tp:member type="u" tp:type="Media_Stream_Pending_Send"
-        name="Pending_Send_Flags"/>
-    </tp:struct>
 
   </interface>
 </node>

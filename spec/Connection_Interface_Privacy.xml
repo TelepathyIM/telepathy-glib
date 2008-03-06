@@ -42,7 +42,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           An array of valid privacy modes for this connection
         </tp:docstring>
       </arg>
-      <tp:docstring>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         Returns the privacy modes available on this connection. The following
         well-known names should be used where appropriate:
         <dl>

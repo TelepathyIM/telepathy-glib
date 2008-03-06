@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Avatars">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
 
-    <tp:mapping name="Avatar_Token_Map" array-name="">
+    <tp:mapping name="Avatar_Token_Map">
       <tp:docstring>A dictionary whose keys are contact handles and whose
         values are avatar tokens.</tp:docstring>
       <tp:member type="u" tp:type="Contact_Handle" name="Handle"/>
@@ -43,7 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Emitted when the avatar for a contact has been updated, or first
         discovered on this connection. If the token differs from the token
         associated with the client's cached avatar for this contact, the new
-        avatar should be requested with RequestAvatar.
+        avatar should be requested with RequestAvatars.
       </tp:docstring>
     </signal>
     <signal name="AvatarRetrieved">
@@ -156,8 +156,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         can be persisted across connections, and should be used by the client
         to check whether the avatars have been updated.  A CM must always have
         the tokens for the self handle if one is set (even if it is set to no
-        avatar). Otherwise, only tokens that are already known or that can be
-        discovered without retrieving the complete avatar are returned. An
+        avatar). Otherwise, only tokens that are already known are returned. An
         empty token means the given contact has no avatar.
       </tp:docstring>
       <tp:possible-errors>

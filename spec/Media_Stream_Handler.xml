@@ -181,7 +181,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:enumvalue>
     </tp:enum>
     <method name="Ready">
-      <arg direction="in" name="codecs" type="a(usuuua{ss})">
+      <arg direction="in" name="codecs" type="a(usuuua{ss})"
+        tp:type="Media_Stream_Handler_Codec[]">
         <tp:docstring>
           As for SupportedCodecs.
         </tp:docstring>
@@ -193,7 +194,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
     <method name="SetLocalCodecs">
-      <arg name="codecs" type="a(usuuua{ss})" direction="in">
+      <arg name="codecs" type="a(usuuua{ss})" direction="in"
+        tp:type="Media_Stream_Handler_Codec[]">
         <tp:docstring>Codecs in the same format as for
           SupportedCodecs, which have the same semantics as the
           local codecs passed to Ready</tp:docstring>

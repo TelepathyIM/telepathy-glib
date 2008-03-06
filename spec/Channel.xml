@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <signal name="Closed">
       <tp:docstring>
         Emitted when the channel has been closed. Method calls on the
@@ -51,6 +52,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         at any point.
       </tp:docstring>
     </signal>
+
     <method name="GetChannelType">
       <arg direction="out" type="s" tp:type="DBus_Interface">
         <tp:docstring>The interface name</tp:docstring>
@@ -59,6 +61,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Returns the interface name for the type of this channel.
       </tp:docstring>
     </method>
+
     <method name="GetHandle">
       <arg direction="out" type="u" tp:type="Handle_Type">
         <tp:docstring>
@@ -78,6 +81,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         zero if it is transient and defined only by its contents.
       </tp:docstring>
     </method>
+
     <method name="GetInterfaces">
       <arg direction="out" type="as" tp:type="DBus_Interface[]">
         <tp:docstring>
@@ -88,6 +92,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Get the optional interfaces implemented by the channel.
       </tp:docstring>
     </method>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
     <p>All communication in the Telepathy framework is carried out via channel
     objects which are created and managed by connections. This interface must

@@ -39,12 +39,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:member type="u" name="New_Flags"/>
     </tp:struct>
 
+    <tp:simple-type name="Property_ID" type="u">
+      <tp:docstring>
+        An unsigned integer used to represent a Telepathy property.
+      </tp:docstring>
+    </tp:simple-type>
+
     <tp:struct name="Property_Value" array-name="Property_Value_List">
       <tp:docstring>A struct (property ID, value) representing a
         property's value, as seen in the PropertiesChanged signal on
         the Properties interface, returned by the GetProperties method
         and passed to the SetProperties method.</tp:docstring>
-      <tp:member type="u" name="Property_ID"/>
+      <tp:member type="u" tp:type="Property_ID" name="Identifier"/>
       <tp:member type="v" name="Value"/>
     </tp:struct>
 
@@ -53,7 +59,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Returns an array of (identifier, value) pairs containing the current
         values of the given properties.
       </tp:docstring>
-      <arg direction="in" name="properties" type="au">
+      <arg direction="in" name="properties" type="au" tp:type="Property_ID[]">
         <tp:docstring>An array of property identifiers</tp:docstring>
       </arg>
       <arg direction="out" type="a(uv)" tp:type="Property_Value[]">
