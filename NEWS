@@ -1,7 +1,14 @@
-telepathy-glib 0.7.4 (2008-03-04)
+telepathy-glib 0.7.5 (unreleased)
 =================================
 
 Enhancements:
+
+* Updated to specification 0.17.2
+  - GType-generating functions for Media_Session_Handler_Info
+  - Added TP_CONN_MGR_PARAM_FLAG_SECRET
+
+telepathy-glib 0.7.4 (2008-03-04)
+=================================
 
 Fixes:
 
