@@ -7,6 +7,17 @@ Enhancements:
   - GType-generating functions for Media_Session_Handler_Info
   - Added TP_CONN_MGR_PARAM_FLAG_SECRET
 
+Fixes:
+
+* No longer crashes if a proxy is invalidated while still invoking signal
+  callbacks (fd.o #14854)
+
+* Compilation now works on architectures with function descriptors, like ppc64
+  (fd.o #14852, thanks Brian Pepple)
+
+* TpChannel no longer crashes if GetInterfaces() returns an error or an
+  empty list (fd.o #14855)
+
 telepathy-glib 0.7.4 (2008-03-04)
 =================================
 
