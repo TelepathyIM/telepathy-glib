@@ -179,7 +179,7 @@ AC_SUBST(DBUS_LIBS)
 dnl We want the examples to be able to use TP_GLIB_CFLAGS, TP_GLIB_LIBS
 dnl as though they were independent programs
 TP_GLIB_CFLAGS='-I${top_builddir} -I${top_srcdir}'
-TP_GLIB_LIBS='-L${top_builddir}/telepathy-glib -ltelepathy-glib'
+TP_GLIB_LIBS='${top_builddir}/telepathy-glib/libtelepathy-glib.la'
 AC_SUBST(TP_GLIB_CFLAGS)
 AC_SUBST(TP_GLIB_LIBS)
 
