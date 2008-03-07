@@ -257,9 +257,9 @@ int main(int argc, char **argv)
   g_signal_connect (stream_engine, "shutdown-requested",
                     (GCallback) shutdown, NULL);
 
-  tp_stream_engine_register (stream_engine);
-
   timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
+
+  tp_stream_engine_register (stream_engine);
 
   if (g_getenv ("STREAM_ENGINE_NO_DOG") == NULL)
     {

@@ -1871,6 +1871,11 @@ tp_stream_engine_register (TpStreamEngine *self)
   bus = tp_get_bus ();
   self->priv->dbus_daemon = tp_dbus_daemon_new (bus);
 
+  g_debug("registering StreamEngine at " OBJECT_PATH);
+  dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
+
+  register_dbus_signal_marshallers();
+
   g_debug("Requesting " BUS_NAME);
 
   if (!tp_cli_dbus_daemon_run_request_name (self->priv->dbus_daemon, -1,
@@ -1880,11 +1885,6 @@ tp_stream_engine_register (TpStreamEngine *self)
 
   if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
     g_error ("Failed to acquire bus name, stream engine already running?");
-
-  g_debug("registering StreamEngine at " OBJECT_PATH);
-  dbus_g_connection_register_g_object (bus, OBJECT_PATH, G_OBJECT (self));
-
-  register_dbus_signal_marshallers();
 }
 
 static TpStreamEngineStream *
