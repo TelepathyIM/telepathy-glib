@@ -18,6 +18,9 @@ Fixes:
 * TpChannel no longer crashes if GetInterfaces() returns an error or an
   empty list (fd.o #14855)
 
+* Linking examples no longer fails in environments where .la files exist for
+  system libraries
+
 telepathy-glib 0.7.4 (2008-03-04)
 =================================
 
