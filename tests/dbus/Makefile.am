@@ -1,4 +1,5 @@
 noinst_PROGRAMS = \
+    test-invalidated-while-invoking-signals \
     test-call-cancellation \
     test-dbus \
     test-disconnection \
@@ -19,6 +20,12 @@ test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
 
 test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)
 test_unsupported_interface_SOURCES = unsupported-interface.c
+
+test_invalidated_while_invoking_signals_LDADD = \
+    $(TP_GLIB_LIBS) \
+    ../libtp-glib-tests.la
+test_invalidated_while_invoking_signals_SOURCES = \
+    invalidated-while-invoking-signals.c
 
 test_properties_LDADD = $(TP_GLIB_LIBS)
 test_properties_SOURCES = \
