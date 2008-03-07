@@ -40,7 +40,7 @@ libtelepathy_glib_la_DEPENDENCIES += version-script.txt _gen/abi.txt
 
 _gen/abi.txt: libtelepathy-glib-internal.la _gen/versioned-abi.txt Makefile.am
 	$(NM) .libs/libtelepathy-glib-internal.a > _gen/abi.nm
-	grep " T " < _gen/abi.nm > _gen/abi.funcs
+	grep " [DT] " < _gen/abi.nm > _gen/abi.funcs
 	cut -d" " -f3 < _gen/abi.funcs > _gen/abi.funcnames
 	grep "^tp" < _gen/abi.funcnames > _gen/abi.tpfuncnames
 	sort -u < _gen/abi.tpfuncnames > $@
