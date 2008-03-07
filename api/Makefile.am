@@ -1,6 +1,7 @@
 tools_dir = $(top_srcdir)/tools
 
 AM_CFLAGS = \
+    -I${top_srcdir} -I${top_builddir} \
     $(ERROR_CFLAGS) \
     $(DBUS_CFLAGS) \
     $(GLIB_CFLAGS) \
