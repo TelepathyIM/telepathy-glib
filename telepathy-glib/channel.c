@@ -216,26 +216,29 @@ tp_channel_got_interfaces_cb (TpChannel *self,
                               gpointer unused,
                               GObject *unused2)
 {
-  const gchar **iter;
-
   if (error != NULL)
     {
       DEBUG ("%p: GetInterfaces() failed: %s", self, error->message);
       interfaces = NULL;
     }
 
-  for (iter = interfaces; *iter != NULL; iter++)
+  if (interfaces != NULL)
     {
-      DEBUG ("- %s", *iter);
+      const gchar **iter;
 
-      if (tp_dbus_check_valid_interface_name (*iter, NULL))
+      for (iter = interfaces; *iter != NULL; iter++)
         {
-          tp_proxy_add_interface_by_id ((TpProxy *) self,
-              g_quark_from_string (*iter));
-        }
-      else
-        {
-          DEBUG ("\tInterface %s not valid", *iter);
+          DEBUG ("- %s", *iter);
+
+          if (tp_dbus_check_valid_interface_name (*iter, NULL))
+            {
+              tp_proxy_add_interface_by_id ((TpProxy *) self,
+                  g_quark_from_string (*iter));
+            }
+          else
+            {
+              DEBUG ("\tInterface %s not valid", *iter);
+            }
         }
     }
 
