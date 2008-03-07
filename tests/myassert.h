@@ -1,6 +1,8 @@
 #ifndef TP_TESTS_MYASSERT_H
 #define TP_TESTS_MYASSERT_H
 
+#include <glib.h>
+
 /* code using this header must define */
 static void myassert_failed (void);
 
