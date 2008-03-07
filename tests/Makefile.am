@@ -20,6 +20,10 @@ noinst_LTLIBRARIES = libtp-glib-tests.la
 
 libtp_glib_tests_la_SOURCES = \
     myassert.h \
+    simple-conn.c \
+    simple-conn.h \
+    simple-manager.c \
+    simple-manager.h \
     stub-object.c \
     stub-object.h
 
