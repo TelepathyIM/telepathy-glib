@@ -50,7 +50,11 @@ GSource *timeout = NULL;
 GMainLoop *mainloop = NULL;
 TpStreamEngine *stream_engine = NULL;
 gboolean connections_exist = FALSE;
-guint timeout_id;
+
+/* timeout_id is initialized to 0 to mean no timeout has been added.
+ * g_timeout_add() returns an event source ID greater than 0. */
+guint timeout_id = 0;
+
 gboolean forced_exit_in_progress = FALSE;
 
 #define DIE_TIME 5000
@@ -123,13 +127,15 @@ static void
 handling_channel (TpStreamEngine *stream_engine)
 {
   connections_exist = TRUE;
-  g_source_remove (timeout_id);
+  if (timeout_id != 0)
+    g_source_remove (timeout_id);
 }
 
 static void
 no_more_channels (TpStreamEngine *stream_engine)
 {
-  if (g_main_context_find_source_by_id (g_main_loop_get_context (mainloop),
+  if (timeout_id != 0 &&
+      g_main_context_find_source_by_id (g_main_loop_get_context (mainloop),
                                         timeout_id))
     {
       g_source_remove (timeout_id);
@@ -257,9 +263,9 @@ int main(int argc, char **argv)
   g_signal_connect (stream_engine, "shutdown-requested",
                     (GCallback) shutdown, NULL);
 
-  timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
-
   tp_stream_engine_register (stream_engine);
+
+  timeout_id = g_timeout_add(DIE_TIME, kill_stream_engine, NULL);
 
   if (g_getenv ("STREAM_ENGINE_NO_DOG") == NULL)
     {
