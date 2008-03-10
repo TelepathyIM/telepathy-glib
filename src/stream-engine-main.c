@@ -134,9 +134,7 @@ handling_channel (TpStreamEngine *stream_engine)
 static void
 no_more_channels (TpStreamEngine *stream_engine)
 {
-  if (timeout_id != 0 &&
-      g_main_context_find_source_by_id (g_main_loop_get_context (mainloop),
-                                        timeout_id))
+  if (timeout_id != 0)
     {
       g_source_remove (timeout_id);
     }
