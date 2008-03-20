@@ -311,6 +311,41 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         and those supported by the peer.
       </tp:docstring>
     </method>
+
+    <signal name="SetStreamHeld">
+      <tp:docstring>
+        Emitted when the connection manager wishes to place the stream on
+        hold (so the streaming client should free hardware or software
+        resources) or take the stream off hold (so the streaming client should
+        reacquire the necessary resources).
+      </tp:docstring>
+      <arg name="Held" type="b">
+        <tp:docstring>
+          If true, the stream is to be placed on hold.
+        </tp:docstring>
+      </arg>
+    </signal>
+
+    <method name="HoldState">
+      <tp:docstring>
+        Notify the connection manager that the stream's hold state has
+        been changed successfully in response to SetStreamHeld.
+      </tp:docstring>
+      <arg direction="in" name="Held" type="b">
+        <tp:docstring>
+          If true, the stream is now on hold.
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <method name="UnholdFailed">
+      <tp:docstring>
+        Notify the connection manager that an attempt to reacquire the
+        necessary hardware or software resources to unhold the stream,
+        in response to SetStreamHeld, has failed.
+      </tp:docstring>
+    </method>
+
     <tp:docstring>
     Handles signalling the information pertaining to a specific media stream.
     A client should provide information to this handler as and when it is

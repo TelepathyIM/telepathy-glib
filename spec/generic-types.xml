@@ -5,30 +5,6 @@
     <tp:docstring>An unsigned 32-bit integer representing time since 1970</tp:docstring>
   </tp:simple-type>
 
-  <tp:simple-type name="Handle" type="u">
-    <tp:docstring>An unsigned 32-bit integer representing a handle</tp:docstring>
-  </tp:simple-type>
-
-  <tp:simple-type name="Contact_Handle" type="u">
-    <tp:docstring>An unsigned 32-bit integer representing a handle of type
-      Handle_Type_Contact</tp:docstring>
-  </tp:simple-type>
-
-  <tp:simple-type name="Room_Handle" type="u">
-    <tp:docstring>An unsigned 32-bit integer representing a handle of type
-      Handle_Type_Room</tp:docstring>
-  </tp:simple-type>
-
-  <tp:simple-type name="List_Handle" type="u">
-    <tp:docstring>An unsigned 32-bit integer representing a handle of type
-      Handle_Type_List</tp:docstring>
-  </tp:simple-type>
-
-  <tp:simple-type name="Group_Handle" type="u">
-    <tp:docstring>An unsigned 32-bit integer representing a handle of type
-      Handle_Type_Group</tp:docstring>
-  </tp:simple-type>
-
   <tp:simple-type name="DBus_Bus_Name" type="s">
     <tp:docstring>A string representing a D-Bus bus name - either a well-known
       name like "org.freedesktop.Telepathy.MissionControl" or a unique name

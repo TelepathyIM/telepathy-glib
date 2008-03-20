@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         on the Text channel type. The arguments of the Received signal
         also match this struct's signature.</tp:docstring>
       <tp:member type="u" tp:type="Message_ID" name="Identifier"/>
-      <tp:member type="u" name="Unix_Timestamp"/>
+      <tp:member type="u" tp:type="Unix_Timestamp" name="Unix_Timestamp"/>
       <tp:member type="u" tp:type="Contact_Handle" name="Sender"/>
       <tp:member type="u" tp:type="Channel_Text_Message_Type"
                  name="Message_Type"/>
@@ -47,13 +47,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Inform the channel that you have handled messages by displaying them to
         the user (or equivalent), so they can be removed from the pending queue.
+        If appropriate, the connection manager SHOULD send an acknowledgement
+        of receipt of the messages to the server when the client calls this
+        method.
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
-          A given message ID was not found, so no action was taken
+          <tp:docstring>
+            A given message ID was not found, so no action was taken
+          </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetMessageTypes">
       <arg direction="out" type="au" tp:type="Channel_Text_Message_Type[]">
         <tp:docstring>
@@ -65,10 +72,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         channel.
       </tp:docstring>
     </method>
+
     <method name="ListPendingMessages">
       <arg direction="in" name="clear" type="b">
         <tp:docstring>
-          If true, remove all messages from the queue
+          If true, behave as if AcknowledgePendingMessages had also been
+          called. Setting this to true is NOT RECOMMENDED for clients that
+          have some sort of persistent message storage - clients SHOULD only
+          acknowledge messages after they have actually stored them, which is
+          impossible if this flag is true.
         </tp:docstring>
       </arg>
       <arg direction="out" type="a(uuuuus)" tp:type="Pending_Text_Message[]">
@@ -89,6 +101,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         remove then all.
       </tp:docstring>
     </method>
+
     <signal name="LostMessage">
       <tp:docstring>
         This signal is emitted to indicate that an incoming message was
@@ -96,6 +109,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         due to lack of memory.
       </tp:docstring>
     </signal>
+
     <signal name="Received">
       <arg name="id" type="u">
         <tp:docstring>
@@ -114,13 +128,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
       <arg name="type" type="u" tp:type="Channel_Text_Message_Type">
         <tp:docstring>
-          The type of the message (normal, action, notice, etc), from
-          ChannelTextMessageType
+          The type of the message (normal, action, notice, etc.)
         </tp:docstring>
       </arg>
       <arg name="flags" type="u" tp:type="Channel_Text_Message_Flags">
         <tp:docstring>
-          A bitwise OR of the message flags as defined by ChannelTextMessageFlags
+          A bitwise OR of the message flags
         </tp:docstring>
       </arg>
       <arg name="text" type="s">
@@ -136,11 +149,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         AcknowledgePendingMessage method.
       </tp:docstring>
     </signal>
+
     <method name="Send">
       <arg direction="in" name="type" type="u" tp:type="Channel_Text_Message_Type">
         <tp:docstring>
-          An integer indicating the type of the message, from
-          ChannelTextMessageType
+          An integer indicating the type of the message
         </tp:docstring>
       </arg>
       <arg direction="in" name="text" type="s">
@@ -149,8 +162,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Request that a message be sent on this channel. The Sent signal will be
-        emitted when the message has been sent, and this method will return.
+        Request that a message be sent on this channel. When the message has
+        been submitted for delivery, this method will return and the Sent
+        signal will be emitted. If the message cannot be submitted for
+        delivery, the method returns an error and no signal is emitted.
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -159,6 +174,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
       </tp:possible-errors>
     </method>
+
     <tp:enum name="Channel_Text_Send_Error" type="u">
       <tp:enumvalue suffix="Unknown" value="0">
         <tp:docstring>
@@ -192,6 +208,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <signal name="SendError">
       <arg name="error" type="u">
         <tp:docstring>
@@ -213,11 +230,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           The text of the message
         </tp:docstring>
       </arg>
-      <tp:docstring>
-        Signals that an outgoing message has failed to send. The error
-        will be one of the values from ChannelTextSendError.
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Signals that an outgoing message has failed to send. The error
+          will be one of the values from ChannelTextSendError.</p>
+
+        <p>This signal should only be emitted for messages for which
+          Sent has already been emitted and Send has already returned
+          success.</p>
       </tp:docstring>
     </signal>
+
     <signal name="Sent">
       <arg name="timestamp" type="u" tp:type="Unix_Timestamp">
         <tp:docstring>
@@ -236,9 +258,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Signals that a message has been sent on this channel.
+        Signals that a message has been submitted for sending.
       </tp:docstring>
     </signal>
+
     <tp:enum name="Channel_Text_Message_Type" type="u">
       <tp:enumvalue suffix="Normal" value="0">
         <tp:docstring>
@@ -248,7 +271,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:enumvalue suffix="Action" value="1">
         <tp:docstring>
         An action which might be presented to the user as
-        "* &lt;sender&gt; &lt;action&gt;"
+        "* &lt;sender&gt; &lt;action&gt;", such as an IRC CTCP
+        ACTION (typically selected by the "/me" command). For example, the
+        text of the message might be "drinks more coffee".
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Notice" value="2">
@@ -262,6 +287,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <tp:flags name="Channel_Text_Message_Flags" value-prefix="Channel_Text_Message_Flag" type="u">
       <tp:flag suffix="Truncated" value="1">
         <tp:docstring>
@@ -270,6 +296,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
     </tp:flags>
+
     <tp:property name="anonymous" type="b">
       <tp:docstring>
       True if people may join the channel without other members being made
@@ -345,9 +372,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       A unix timestamp indicating when the subject was last modified.
       </tp:docstring>
     </tp:property>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>A channel type for sending and receiving messages in plain text,
-        with no formatting.</p>
+        with no formatting. In future specifications, channels for sending
+        and receiving messages that can be reduced to plain text (i.e.
+        formatted text) should also have this type.</p>
 
       <p>When a message is received, an identifier is assigned and a
         Received signal emitted, and the message placed in a pending queue
@@ -365,8 +395,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         flags given in ChannelTextMessageFlags.</p>
 
       <p>Sending messages can be requested using the Send method, which will
-        return and cause the Sent signal to be emitted when the message has
-        been delivered to the server, or SendError if there is a failure.</p>
+        return successfully and emit the Sent signal when the message has
+        been delivered to the server, or return an error with no signal
+        emission if there is a failure. If a message is sent but delivery
+        of the message later fails, this is indicated with the SendError
+        signal.</p>
 
       <p>On protocols where additional contacts cannot be invited into
         a one-to-one chat, or where a one-to-one chat is just a series of

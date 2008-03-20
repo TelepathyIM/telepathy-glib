@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Channel.Type.ContactList">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
     <tp:requires interface="org.freedesktop.Telepathy.Channel.Interface.Group"/>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>A channel type for representing a list of people on the server which is
     not used for communication. This is intended for use with the interface
@@ -64,6 +65,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     server, so disconnecting from the server and reconnecting might cause
     empty groups to vanish.</p>
     </tp:docstring>
+
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->

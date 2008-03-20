@@ -21,6 +21,50 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Capabilities">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
 
+    <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+      <p>An interface for connections where it is possible to know what channel
+        types may be requested before the request is made to the connection
+        object. Each capability represents a commitment by the connection
+        manager that it will ordinarily be able to create a channel when given
+        a request with the given type and handle.</p>
+
+      <p>Capabilities can pertain to a certain contact handle, representing
+        activities such as having a text chat or a voice call with the user, or
+        can be on the connection itself (where the handle will be zero), where
+        they represent the ability to create channels for chat rooms or
+        activities such as searching and room listing. The activities are
+        represented by the D-Bus interface name of the channel type for that
+        activity.</p>
+
+      <p>The generic capability flags are defined by
+        Connection_Capability_Flags.</p>
+
+      <p>In addition, channel types may have type specific capability flags of
+        their own, which are described in the documentation for each channel
+        type.</p>
+
+      <p>This interface also provides for user interfaces notifying the
+        connection manager of what capabilities to advertise for the user. This
+        is done by using the AdvertiseCapabilities method, and deals with the
+        interface names of channel types and the type specific flags pertaining
+        to them which are implemented by available client processes.</p>
+    </tp:docstring>
+
+    <tp:flags name="Connection_Capability_Flags"
+      value-prefix="Connection_Capability_Flag" type="u">
+      <tp:flag suffix="Create" value="1">
+        <tp:docstring>
+          The given channel type and handle can be given to RequestChannel to
+          create a new channel of this type.
+        </tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="Invite" value="2">
+        <tp:docstring>
+          The given contact can be invited to an existing channel of this type.
+        </tp:docstring>
+      </tp:flag>
+    </tp:flags>
+
     <tp:struct name="Capability_Pair" array-name="Capability_Pair_List">
       <tp:docstring>A pair (channel type, type-specific flags) as passed to
         AdvertiseCapabilities on the Capabilities interface.</tp:docstring>
@@ -103,6 +147,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
       </tp:possible-errors>
     </method>
+
     <signal name="CapabilitiesChanged">
       <arg name="caps" type="a(usuuuu)" tp:type="Capability_Change[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -122,6 +167,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         given handle, or on the connection itself if the handle is zero.
       </tp:docstring>
     </signal>
+
     <method name="GetCapabilities">
       <arg direction="in" name="handles" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
@@ -154,44 +200,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
       </tp:possible-errors>
     </method>
-    <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-      <p>An interface for connections where it is possible to know what channel
-    types may be requested before the request is made to the connection object.
-    Each capability represents a commitment by the connection manager that it
-    will ordinarily be able to create a channel when given a request with the
-    given type and handle.</p>
 
-    <p>Capabilities can pertain to a certain contact handle, representing
-    activities such as having a text chat or a voice call with the user, or can
-    be on the connection itself (where the handle will be zero), where they
-    represent the ability to create channels for chat rooms or activities such
-    as searching and room listing. The activities are represented by the D-Bus
-    interface name of the channel type for that activity.</p>
-
-    <p>The generic capability flags are defined by ConnectionCapabilityFlag.</p>
-
-    <p>In addition, channel types may have type specific capability flags of their
-      own, which are described in the documentation for each channel type.</p>
-
-    <p>This interface also provides for user interfaces notifying the connection
-    manager of what capabilities to advertise for the user. This is done by
-    using the AdvertiseCapabilities method, and deals with the interface names
-    of channel types and the type specific flags pertaining to them which are
-    implemented by available client processes.</p>
-    </tp:docstring>
   </interface>
-  <tp:flags name="Connection_Capability_Flags" value-prefix="Connection_Capability_Flag" type="u">
-    <tp:flag suffix="Create" value="1">
-      <tp:docstring>
-        The given channel type and handle can be given to RequestChannel to
-        create a new channel of this type.
-      </tp:docstring>
-    </tp:flag>
-    <tp:flag suffix="Invite" value="2">
-      <tp:docstring>
-        The given contact can be invited to an existing channel of this type.
-      </tp:docstring>
-    </tp:flag>
-  </tp:flags>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->

@@ -3,7 +3,7 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>Telepathy D-Bus Interface Specification</tp:title>
-<tp:version>0.17.2</tp:version>
+<tp:version>0.17.2.1</tp:version>
 
 <tp:copyright>Copyright (C) 2005-2008 Collabora Limited</tp:copyright>
 <tp:copyright>Copyright (C) 2005-2008 Nokia Corporation</tp:copyright>
@@ -30,15 +30,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 <xi:include href="Connection_Interface_Aliasing.xml"/>
 <xi:include href="Connection_Interface_Avatars.xml"/>
 <xi:include href="Connection_Interface_Capabilities.xml"/>
-<xi:include href="Connection_Interface_Contact_Info.xml"/>
-<xi:include href="Connection_Interface_Forwarding.xml"/>
+<!-- Never implemented, is a terrible API
+<xi:include href="Connection_Interface_Contact_Info.xml"/> -->
+<!-- Never implemented, insufficient (needs conditions)
+<xi:include href="Connection_Interface_Forwarding.xml"/> -->
 <xi:include href="Connection_Interface_Presence.xml"/>
-<xi:include href="Connection_Interface_Privacy.xml"/>
+<!-- Never implemented, vague
+<xi:include href="Connection_Interface_Privacy.xml"/> -->
 <xi:include href="Connection_Interface_Renaming.xml"/>
 
 <xi:include href="Channel.xml"/>
 <xi:include href="Channel_Type_Contact_List.xml"/>
-<xi:include href="Channel_Type_Contact_Search.xml"/>
+<!-- Never implemented, can't be implemented with current dbus-glib, vague
+<xi:include href="Channel_Type_Contact_Search.xml"/> -->
 <xi:include href="Channel_Type_Streamed_Media.xml"/>
 <xi:include href="Channel_Type_Room_List.xml"/>
 <xi:include href="Channel_Type_Text.xml"/>
@@ -51,7 +55,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 <xi:include href="Channel_Interface_Group.xml"/>
 <xi:include href="Channel_Interface_Hold.xml"/>
 <xi:include href="Channel_Interface_Password.xml"/>
-<xi:include href="Channel_Interface_Transfer.xml"/>
+<!-- Causes havoc, never implemented, unclear requirements
+<xi:include href="Channel_Interface_Transfer.xml"/> -->
 <xi:include href="Channel_Interface_Media_Signalling.xml"/>
 
 <xi:include href="Media_Session_Handler.xml"/>

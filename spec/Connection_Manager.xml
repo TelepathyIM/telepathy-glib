@@ -112,6 +112,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
     </tp:flags>
+
     <method name="GetParameters">
       <arg direction="in" name="proto" type="s" tp:type="Protocol">
         <tp:docstring>
@@ -135,18 +136,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="ListProtocols">
       <arg direction="out" type="as" tp:type="Protocol[]">
         <tp:docstring>
           A array of string protocol identifiers supported by this manager
         </tp:docstring>
       </arg>
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+      <tp:docstring>
         Get a list of protocol identifiers that are implemented by this
-        connection manager. The following well-known values should be used
-        when applicable:
+        connection manager.
       </tp:docstring>
     </method>
+
     <signal name="NewConnection">
       <arg name="bus_name" type="s" tp:type="DBus_Bus_Name">
         <tp:docstring>
@@ -167,6 +169,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Emitted when a new Connection object is created.
       </tp:docstring>
     </signal>
+
     <method name="RequestConnection">
       <arg direction="in" name="proto" type="s" tp:type="Protocol">
         <tp:docstring>
@@ -179,7 +182,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           A dictionary mapping parameter name to the variant boxed value
         </tp:docstring>
       </arg>
-      <arg direction="out" type="s">
+      <arg direction="out" type="s" tp:type="DBus_Bus_Name">
         <tp:docstring>
           A D-Bus service name where the new Connection object can be found
         </tp:docstring>
@@ -289,6 +292,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
     <p>A D-Bus service which allows connections to be created. The manager
       processes are intended to be started by D-Bus service activation.</p>

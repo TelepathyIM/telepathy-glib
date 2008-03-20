@@ -18,7 +18,8 @@ Lesser General Public License for more details.</p>
 
 <p>You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
+USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection">
 
@@ -34,7 +35,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:member>
       <tp:member type="u" tp:type="Handle_Type" name="Handle_Type">
         <tp:docstring>The type of the handle that the channel communicates
-          with, or 0 if there is no associated handle</tp:docstring>
+          with, or Handle_Type_None if there is no associated
+          handle</tp:docstring>
       </tp:member>
       <tp:member type="u" tp:type="Handle" name="Handle">
         <tp:docstring>The handle that the channel communicates with,
@@ -81,7 +83,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </method>
 
     <method name="GetProtocol">
-      <arg direction="out" type="s">
+      <arg direction="out" type="s" tp:type="Protocol">
         <tp:docstring>
           A string identifier for the protocol
         </tp:docstring>
@@ -93,7 +95,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </method>
 
     <method name="GetSelfHandle">
-      <arg direction="out" type="u">
+      <arg direction="out" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           An integer handle representing the user
         </tp:docstring>
@@ -231,13 +233,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <arg name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
-          An integer representing the type of handle this channel communicates with, which is zero if no handle is specified
+          An integer representing the type of handle this channel
+          communicates with, or Handle_Type_None if no handle is specified
         </tp:docstring>
       </arg>
 
       <arg name="handle" type="u" tp:type="Handle">
         <tp:docstring>
-          A handle indicating the specific contact, room or list this channel communicates with, or zero if it is an anonymous channel
+          A handle indicating the specific contact, room or list this
+          channel communicates with, or zero if no handle is specified
         </tp:docstring>
       </arg>
 
@@ -298,14 +302,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
         <tp:docstring>
-          An integer representing the handle type, or zero if no handle is being specified
+          An integer representing the handle type, or Handle_Type_None if
+          no handle is specified
         </tp:docstring>
       </arg>
 
       <arg direction="in" name="handle" type="u" tp:type="Handle">
         <tp:docstring>
           A nonzero integer handle representing a contact, room, list etc.
-          according to handle_type, or zero if the handle_type is zero
+          according to handle_type, or zero if the handle_type is
+          Handle_Type_None
         </tp:docstring>
       </arg>
 
@@ -406,6 +412,31 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
+    <tp:simple-type name="Handle" type="u">
+      <tp:docstring>An unsigned 32-bit integer representing a
+        handle</tp:docstring>
+    </tp:simple-type>
+
+    <tp:simple-type name="Contact_Handle" type="u">
+      <tp:docstring>An unsigned 32-bit integer representing a handle of type
+        Handle_Type_Contact</tp:docstring>
+    </tp:simple-type>
+
+    <tp:simple-type name="Room_Handle" type="u">
+      <tp:docstring>An unsigned 32-bit integer representing a handle of type
+        Handle_Type_Room</tp:docstring>
+    </tp:simple-type>
+
+    <tp:simple-type name="List_Handle" type="u">
+      <tp:docstring>An unsigned 32-bit integer representing a handle of type
+        Handle_Type_List</tp:docstring>
+    </tp:simple-type>
+
+    <tp:simple-type name="Group_Handle" type="u">
+      <tp:docstring>An unsigned 32-bit integer representing a handle of type
+        Handle_Type_Group</tp:docstring>
+    </tp:simple-type>
 
     <method name="RequestHandles">
       <arg direction="in" name="handle_type" type="u" tp:type="Handle_Type">
@@ -590,7 +621,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <p>Zero as a handle value is sometimes used as a "null" value to mean
     the absence of a contact, room, etc.</p>
-  
+
     <p>Handles have per-type uniqueness, meaning that
     every (handle type, handle number) tuple is guaranteed to be unique within
     a connection and that a handle alone (without its type) is meaningless or
