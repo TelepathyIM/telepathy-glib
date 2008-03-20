@@ -93,10 +93,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
 
-      <tp:flag suffix="Held" value="3">
+      <tp:flag suffix="Held" value="4">
         <tp:docstring>
           The contact has placed the call on hold, and will not receive
-          streams from the local user or any other participants until they
+          media from the local user or any other participants until they
           unhold the call again.
         </tp:docstring>
       </tp:flag>
