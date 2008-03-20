@@ -1171,7 +1171,7 @@ bus_async_handler (GstBus *bus,
             error->domain, error->code);
 
         if (priv->force_testsrc)
-          g_error ("Could not even start videotestsrc");
+          g_error ("Could not even start fakesrc");
 
         tmp = g_strdup_printf ("%s: %s", error->message, error_string);
         g_free (error_string);
@@ -1328,7 +1328,7 @@ _create_pipeline (TpStreamEngine *self)
 #else
       if (priv->force_testsrc)
         {
-          videosrc = gst_element_factory_make ("videotestsrc", NULL);
+          videosrc = gst_element_factory_make ("fakesrc", NULL);
           g_object_set (videosrc, "is-live", TRUE, NULL);
         }
 
@@ -1391,7 +1391,7 @@ _create_pipeline (TpStreamEngine *self)
     {
       if (priv->force_testsrc)
         {
-          g_error ("Could not even start videotstsrc");
+          g_error ("Could not even start fakesrc");
         }
       else
         {
@@ -1506,6 +1506,9 @@ tp_stream_engine_start_source (TpStreamEngine *self)
    * linked, then we'd be able to check properly for errors
    */
   gst_element_link (self->priv->videosrc, self->priv->videosrc_next);
+
+  if (self->priv->force_testsrc)
+    return;
 
   if (self->priv->restart_source)
     {
