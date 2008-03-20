@@ -986,6 +986,8 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
   if (ret == GST_STATE_CHANGE_ASYNC) {
     ret = gst_element_get_state (sink_element, NULL, NULL, 5*GST_SECOND);
     g_assert (ret != GST_STATE_CHANGE_FAILURE);
+    if (ret == GST_STATE_CHANGE_ASYNC)
+      g_warning ("Could not stop the video sink in 5 seconds!!");
   }
 
   gst_object_unref (tee_peer_src_pad);
@@ -1185,6 +1187,7 @@ bus_async_handler (GstBus *bus,
           }
 
         gst_element_set_state (priv->pipeline, GST_STATE_NULL);
+        gst_element_set_state (priv->videosrc, GST_STATE_NULL);
         gst_object_unref (priv->pipeline);
         priv->pipeline = NULL;
 
