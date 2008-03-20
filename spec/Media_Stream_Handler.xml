@@ -338,7 +338,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
     </method>
 
-    <method name="UnholdFailed">
+    <method name="UnholdFailure">
       <tp:docstring>
         Notify the connection manager that an attempt to reacquire the
         necessary hardware or software resources to unhold the stream,

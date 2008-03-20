@@ -92,6 +92,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           in a queue (e.g. 182 Queued in SIP, or call-waiting in telephony).
         </tp:docstring>
       </tp:flag>
+
+      <tp:flag suffix="Held" value="3">
+        <tp:docstring>
+          The contact has placed the call on hold, and will not receive
+          streams from the local user or any other participants until they
+          unhold the call again.
+        </tp:docstring>
+      </tp:flag>
     </tp:flags>
 
   </interface>

@@ -24,18 +24,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.StreamedMedia"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-      <p>Interface for channels where you or other members may put
-        the channel on hold. This only makes sense for channels where
+      <p>Interface for channels where you may put the channel on hold.
+        This only makes sense for channels where
         you are streaming media to or from the members.</p>
-
-      <p>If you are placed on hold, this indicates that some or all members
-        of the channel will no longer be receiving media streams from you.
-        If the channel has the MediaSignalling interface, client applications
-        should stop sending media to all members of the channel.</p>
-
-      <p>Depending on the protocol, it might not be possible to tell that
-        you're on hold, in which case the connection manager should always
-        indicate that you're not on hold unless it finds out otherwise.</p>
 
       <p>If you place a channel on hold, this indicates that you do not wish
         to be sent media streams by any of its members and will be ignoring
@@ -46,61 +37,33 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         another call).</p>
     </tp:docstring>
 
-    <tp:enum name="Channel_Hold_State" type="u">
-      <tp:docstring>
-        The possible hold states of a call.
-      </tp:docstring>
-      <tp:enumvalue suffix="None" value="0">
-        <tp:docstring>
-          Neither the local user nor a remote member have placed the call on
-          hold.
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue suffix="Local" value="1">
-        <tp:docstring>
-          The local user has put the call on hold.
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue suffix="Remote" value="2">
-        <tp:docstring>
-          The call has been put on hold by a remote member.
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue suffix="Both" value="3">
-        <tp:docstring>
-          The local user and a remote member have both placed the call
-          on hold.
-        </tp:docstring>
-      </tp:enumvalue>
-    </tp:enum>
-
     <method name="GetHoldState">
-      <arg direction="out" type="u" tp:type="Channel_Hold_State">
+      <arg name="Held" direction="out" type="b">
         <tp:docstring>
-          The channel's current hold state
+          True if the local user has placed the channel on hold.
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Return the channel's current hold state.
+        Return whether the local user has placed the channel on hold.
       </tp:docstring>
     </method>
 
     <signal name="HoldStateChanged">
-      <arg name="state" type="u" tp:type="Channel_Hold_State">
+      <arg name="Held" type="b">
         <tp:docstring>
-          An integer representing the new hold state
+          True if the local user has placed the channel on hold.
         </tp:docstring>
       </arg>
       <tp:docstring>
         Emitted to indicate that the hold state has changed for this channel.
         This may occur as a consequence of you requesting a change with
-        RequestHold, or the state changing as a result of a request from a
-        remote member or another process.
+        RequestHold, or the state changing as a result of a request from
+        another process.
       </tp:docstring>
     </signal>
 
     <method name="RequestHold">
-      <arg direction="in" name="hold" type="b">
+      <arg direction="in" name="Hold" type="b">
         <tp:docstring>
           A boolean indicating whether or not the channel should be on hold
         </tp:docstring>
