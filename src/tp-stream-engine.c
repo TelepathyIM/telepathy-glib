@@ -136,7 +136,7 @@ struct _TpStreamEnginePrivate
 
   gboolean linked;
   gboolean restart_source;
-  gboolean force_testsrc;
+  gboolean force_fakesrc;
 };
 
 typedef struct _WindowPair WindowPair;
@@ -1170,7 +1170,7 @@ bus_async_handler (GstBus *bus,
             "pipeline", G_STRFUNC, name, error->message, error_string,
             error->domain, error->code);
 
-        if (priv->force_testsrc)
+        if (priv->force_fakesrc)
           g_error ("Could not even start fakesrc");
 
         tmp = g_strdup_printf ("%s: %s", error->message, error_string);
@@ -1314,7 +1314,7 @@ _create_pipeline (TpStreamEngine *self)
 
   if ((elem = getenv ("FS_VIDEO_SRC")) || (elem = getenv ("FS_VIDEOSRC")))
     {
-      if (priv->force_testsrc)
+      if (priv->force_fakesrc)
         g_error ("Invalid video source passed in FS_VIDEOSRC");
       g_debug ("making video src with pipeline \"%s\"", elem);
       videosrc = gst_parse_bin_from_description (elem, TRUE, NULL);
@@ -1326,7 +1326,7 @@ _create_pipeline (TpStreamEngine *self)
 #ifdef MAEMO_OSSO_SUPPORT
       videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
 #else
-      if (priv->force_testsrc)
+      if (priv->force_fakesrc)
         {
           videosrc = gst_element_factory_make ("fakesrc", NULL);
           g_object_set (videosrc, "is-live", TRUE, NULL);
@@ -1389,19 +1389,19 @@ _create_pipeline (TpStreamEngine *self)
   g_debug ("state_ret: %d", state_ret);
   if (state_ret == GST_STATE_CHANGE_FAILURE)
     {
-      if (priv->force_testsrc)
+      if (priv->force_fakesrc)
         {
           g_error ("Could not even start fakesrc");
         }
       else
         {
-          g_debug ("Video source failed, falling back to videotestsrc");
+          g_debug ("Video source failed, falling back to fakesrc");
           state_ret = gst_element_set_state (priv->pipeline, GST_STATE_NULL);
           g_assert (state_ret == GST_STATE_CHANGE_SUCCESS);
           if (!gst_bin_remove (GST_BIN (priv->pipeline), fakesink))
             g_error ("Could not remove fakesink");
 
-          priv->force_testsrc = TRUE;
+          priv->force_fakesrc = TRUE;
           gst_bin_remove (GST_BIN (priv->pipeline), videosrc);
           goto try_again;
         }
@@ -1507,7 +1507,7 @@ tp_stream_engine_start_source (TpStreamEngine *self)
    */
   gst_element_link (self->priv->videosrc, self->priv->videosrc_next);
 
-  if (self->priv->force_testsrc)
+  if (self->priv->force_fakesrc)
     return;
 
   if (self->priv->restart_source)
@@ -1590,7 +1590,7 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
       _create_pipeline (self);
     }
 
-  if (priv->force_testsrc)
+  if (priv->force_fakesrc)
     {
       GError *error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Could not get a video source");
