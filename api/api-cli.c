@@ -10,7 +10,7 @@ static void _se_api_register_dbus_glib_marshallers (void);
 #include "_gen/register-dbus-glib-marshallers-body.h"
 
 static gpointer
-stream_engine_cli_once (gpointer data)
+stream_engine_cli_once (gpointer data G_GNUC_UNUSED)
 {
   _se_api_register_dbus_glib_marshallers ();
 
