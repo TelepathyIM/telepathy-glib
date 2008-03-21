@@ -304,9 +304,9 @@ _window_pairs_find_by_window_id (GSList *list, guint window_id)
 }
 
 static void
-set_video_sink_props (GstBin *bin,
+set_video_sink_props (GstBin *bin G_GNUC_UNUSED,
                       GstElement *sink,
-                      void *user_data)
+                      void *user_data G_GNUC_UNUSED)
 {
   if (g_object_has_property (G_OBJECT (sink), "sync"))
     {
@@ -813,7 +813,7 @@ tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
 
 
 static void
-stream_linked (TpStreamEngineStream *stream, gpointer user_data)
+stream_linked (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
 {
   TpStreamEngine *obj = TP_STREAM_ENGINE (user_data);
 
@@ -822,7 +822,7 @@ stream_linked (TpStreamEngineStream *stream, gpointer user_data)
 
 
 static void
-channel_stream_created (TpStreamEngineChannel *chan,
+channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
     TpStreamEngineStream *stream, gpointer user_data)
 {
   guint mediatype;
@@ -937,8 +937,8 @@ _window_pairs_readd_cb (WindowPair *wp)
 }
 
 static void
-unblock_cb (GstPad *pad, gboolean blocked,
-    gpointer user_data)
+unblock_cb (GstPad *pad, gboolean blocked G_GNUC_UNUSED,
+    gpointer user_data G_GNUC_UNUSED)
 {
   g_debug ("Pad unblocked successfully after removing preview sink");
   gst_object_unref (pad);
@@ -1012,7 +1012,8 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 }
 
 static void
-_remove_defunct_preview_sink_callback (GstPad *tee_peer_src_pad, gboolean blocked,
+_remove_defunct_preview_sink_callback (GstPad *tee_peer_src_pad G_GNUC_UNUSED,
+    gboolean blocked G_GNUC_UNUSED,
     gpointer user_data)
 {
   g_debug("Pad blocked, scheduling preview sink removal");
@@ -1072,8 +1073,8 @@ _remove_defunct_output_sink (WindowPair *wp)
 }
 
 static void
-close_one_video_stream (TpStreamEngineChannel *chan,
-                        guint stream_id,
+close_one_video_stream (TpStreamEngineChannel *chan G_GNUC_UNUSED,
+                        guint stream_id G_GNUC_UNUSED,
                         TpStreamEngineStream *stream,
                         gpointer user_data)
 {
@@ -1105,7 +1106,8 @@ close_all_video_streams (TpStreamEngine *self, const gchar *message)
 }
 
 static void
-bus_sync_message (GstBus *bus, GstMessage *message, gpointer data)
+bus_sync_message (GstBus *bus G_GNUC_UNUSED,
+    GstMessage *message, gpointer data)
 {
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   GError *error = NULL;
@@ -1137,7 +1139,7 @@ bus_sync_message (GstBus *bus, GstMessage *message, gpointer data)
 }
 
 static gboolean
-bus_async_handler (GstBus *bus,
+bus_async_handler (GstBus *bus G_GNUC_UNUSED,
                    GstMessage *message,
                    gpointer data)
 {
@@ -1247,7 +1249,7 @@ bus_async_handler (GstBus *bus,
 }
 
 static GstBusSyncReply
-bus_sync_handler (GstBus *bus, GstMessage *message, gpointer data)
+bus_sync_handler (GstBus *bus G_GNUC_UNUSED, GstMessage *message, gpointer data)
 {
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   TpStreamEnginePrivate *priv = engine->priv;
@@ -1640,7 +1642,7 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
 }
 
 static gboolean
-bad_window_cb (TpStreamEngineXErrorHandler *handler,
+bad_window_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
                guint window_id,
                gpointer data)
 {
@@ -1686,7 +1688,7 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler,
 
 
 static gboolean
-bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
+bad_drawable_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
     guint window_id,
     gpointer data)
 {
@@ -1732,7 +1734,7 @@ bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
 
 
 static gboolean
-bad_gc_cb (TpStreamEngineXErrorHandler *handler,
+bad_gc_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
               guint gc_id,
               gpointer data)
 {
@@ -1761,7 +1763,7 @@ bad_gc_cb (TpStreamEngineXErrorHandler *handler,
 
 
 static gboolean
-bad_value_cb (TpStreamEngineXErrorHandler *handler,
+bad_value_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
               guint window_id,
               gpointer data)
 {
@@ -1874,7 +1876,7 @@ tp_stream_engine_remove_output_window (TpStreamEngine *self,
 
 
 static void
-handler_result (TpStreamEngineChannel *chan,
+handler_result (TpStreamEngineChannel *chan G_GNUC_UNUSED,
                 GError *error,
                 DBusGMethodInvocation *context)
 {
@@ -2173,7 +2175,7 @@ tp_stream_engine_shutdown (StreamEngineSvcStreamEngine *iface,
 }
 
 static void
-se_iface_init (gpointer iface, gpointer data)
+se_iface_init (gpointer iface, gpointer data G_GNUC_UNUSED)
 {
   StreamEngineSvcStreamEngineClass *klass = iface;
 
@@ -2190,7 +2192,7 @@ se_iface_init (gpointer iface, gpointer data)
 }
 
 static void
-ch_iface_init (gpointer iface, gpointer data)
+ch_iface_init (gpointer iface, gpointer data G_GNUC_UNUSED)
 {
   StreamEngineSvcChannelHandlerClass *klass = iface;
 

@@ -205,7 +205,8 @@ video_sink_unlinked_idle_cb (gpointer user_data)
 
 
 static void
-video_sink_unlinked_cb (GstPad *pad, GstPad *peer, gpointer user_data)
+video_sink_unlinked_cb (GstPad *pad, GstPad *peer G_GNUC_UNUSED,
+    gpointer user_data)
 {
   g_idle_add (video_sink_unlinked_idle_cb, user_data);
 
@@ -452,13 +453,15 @@ tp_stream_engine_stream_constructor (GType type,
 
 
 static void
-tee_src_pad_unblocked (GstPad *pad, gboolean blocked, gpointer user_data)
+tee_src_pad_unblocked (GstPad *pad, gboolean blocked G_GNUC_UNUSED,
+    gpointer user_data G_GNUC_UNUSED)
 {
   gst_object_unref (pad);
 }
 
 static void
-tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
+tee_src_pad_blocked (GstPad *pad, gboolean blocked G_GNUC_UNUSED,
+    gpointer user_data G_GNUC_UNUSED)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
   TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
@@ -763,7 +766,7 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 
 /* dummy callback handler for async calling calls with no return values */
 static void
-async_method_callback (TpMediaStreamHandler *proxy,
+async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                        const GError *error,
                        gpointer user_data,
                        GObject *weak_object)
@@ -1070,10 +1073,10 @@ fs_codecs_to_tp (TpStreamEngineStream *stream,
 }
 
 static void
-add_remote_candidate (TpMediaStreamHandler *proxy,
+add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                       const gchar *candidate,
                       const GPtrArray *transports,
-                      gpointer user_data,
+                      gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1088,9 +1091,9 @@ add_remote_candidate (TpMediaStreamHandler *proxy,
 }
 
 static void
-remove_remote_candidate (TpMediaStreamHandler *proxy,
+remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                          const gchar *candidate,
-                         gpointer user_data,
+                         gpointer user_data G_GNUC_UNUSED,
                          GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1100,10 +1103,10 @@ remove_remote_candidate (TpMediaStreamHandler *proxy,
 }
 
 static void
-set_active_candidate_pair (TpMediaStreamHandler *proxy,
+set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                            const gchar *native_candidate,
                            const gchar *remote_candidate,
-                           gpointer user_data,
+                           gpointer user_data G_GNUC_UNUSED,
                            GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1114,9 +1117,9 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy,
 }
 
 static void
-set_remote_candidate_list (TpMediaStreamHandler *proxy,
+set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                            const GPtrArray *candidates,
-                           gpointer user_data,
+                           gpointer user_data G_GNUC_UNUSED,
                            GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1159,9 +1162,9 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-set_remote_codecs (TpMediaStreamHandler *proxy,
+set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                    const GPtrArray *codecs,
-                   gpointer user_data,
+                   gpointer user_data G_GNUC_UNUSED,
                    GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1268,9 +1271,9 @@ stop_stream (TpStreamEngineStream *self)
 }
 
 static void
-set_stream_playing (TpMediaStreamHandler *proxy,
+set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     gboolean play,
-                    gpointer user_data,
+                    gpointer user_data G_GNUC_UNUSED,
                     GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1291,9 +1294,9 @@ set_stream_playing (TpMediaStreamHandler *proxy,
 }
 
 static void
-set_stream_sending (TpMediaStreamHandler *proxy,
+set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     gboolean send,
-                    gpointer user_data,
+                    gpointer user_data G_GNUC_UNUSED,
                     GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1306,9 +1309,9 @@ set_stream_sending (TpMediaStreamHandler *proxy,
 }
 
 static void
-start_telephony_event (TpMediaStreamHandler *proxy,
+start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                        guchar event,
-                       gpointer user_data,
+                       gpointer user_data G_GNUC_UNUSED,
                        GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1323,8 +1326,8 @@ start_telephony_event (TpMediaStreamHandler *proxy,
 }
 
 static void
-stop_telephony_event (TpMediaStreamHandler *proxy,
-                      gpointer user_data,
+stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+                      gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1338,8 +1341,8 @@ stop_telephony_event (TpMediaStreamHandler *proxy,
 }
 
 static void
-close (TpMediaStreamHandler *proxy,
-       gpointer user_data,
+close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+       gpointer user_data G_GNUC_UNUSED,
        GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
@@ -1443,8 +1446,8 @@ cb_fs_codec_changed (FarsightStream *stream,
 }
 
 static void
-cb_fs_stream_error (FarsightStream *stream,
-                    FarsightStreamError error,
+cb_fs_stream_error (FarsightStream *stream G_GNUC_UNUSED,
+                    FarsightStreamError error G_GNUC_UNUSED,
                     const gchar *debug,
                     gpointer user_data)
 {
@@ -1497,7 +1500,8 @@ cb_fs_native_candidates_prepared (FarsightStream *stream,
 }
 
 static void
-queue_linked (GstPad *pad, GstPad *peer, gpointer user_data)
+queue_linked (GstPad *pad G_GNUC_UNUSED, GstPad *peer G_GNUC_UNUSED,
+    gpointer user_data)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
 
@@ -1627,9 +1631,9 @@ make_volume_bin (TpStreamEngineStream *stream, GstElement *element,
 }
 
 static void
-set_audio_src_props (GstBin *bin,
+set_audio_src_props (GstBin *bin G_GNUC_UNUSED,
                      GstElement *src,
-                     void *user_data)
+                     void *user_data G_GNUC_UNUSED)
 {
   if (g_object_has_property ((GObject *) src, "blocksize"))
     g_object_set ((GObject *) src, "blocksize", 320, NULL);
@@ -1749,9 +1753,9 @@ make_src (TpStreamEngineStream *stream,
 }
 
 static void
-set_audio_sink_props (GstBin *bin,
+set_audio_sink_props (GstBin *bin G_GNUC_UNUSED,
                       GstElement *sink,
-                      void *user_data)
+                      void *user_data G_GNUC_UNUSED)
 {
   if (g_object_has_property ((GObject *) sink, "sync"))
     g_object_set ((GObject *) sink, "sync", FALSE, NULL);
@@ -1856,10 +1860,10 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 }
 
 static void
-invalidated_cb (TpMediaStreamHandler *proxy,
-                guint domain,
-                gint code,
-                gchar *message,
+invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+                guint domain G_GNUC_UNUSED,
+                gint code G_GNUC_UNUSED,
+                gchar *message G_GNUC_UNUSED,
                 gpointer user_data)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);

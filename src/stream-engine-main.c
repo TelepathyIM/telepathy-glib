@@ -111,7 +111,7 @@ set_realtime (const char *argv0, int policy) {
 #endif /* USE_REALTIME */
 
 static gboolean
-kill_stream_engine (gpointer data)
+kill_stream_engine (gpointer data G_GNUC_UNUSED)
 {
   if (!g_getenv ("STREAM_ENGINE_PERSIST") && !connections_exist)
     {
@@ -124,7 +124,7 @@ kill_stream_engine (gpointer data)
 }
 
 static void
-handling_channel (TpStreamEngine *stream_engine)
+handling_channel (TpStreamEngine *stream_engine G_GNUC_UNUSED)
 {
   connections_exist = TRUE;
   if (timeout_id != 0)
@@ -132,7 +132,7 @@ handling_channel (TpStreamEngine *stream_engine)
 }
 
 static void
-no_more_channels (TpStreamEngine *stream_engine)
+no_more_channels (TpStreamEngine *stream_engine G_GNUC_UNUSED)
 {
   if (timeout_id != 0)
     {
@@ -164,7 +164,7 @@ dsp_crashed (gpointer dummy)
 #endif
 
 static void
-got_sigbus (int i)
+got_sigbus (int i G_GNUC_UNUSED)
 {
   const char *msg = "stream engine: DSP crashed\n";
 
@@ -183,7 +183,7 @@ got_sigbus (int i)
 
 /* every time the watchdog barks, schedule a bite */
 static gboolean
-watchdog_bark (gpointer data)
+watchdog_bark (gpointer data G_GNUC_UNUSED)
 {
   alarm (WATCHDOG_BITE);
   return TRUE;
@@ -191,7 +191,7 @@ watchdog_bark (gpointer data)
 
 /* if it ever catches us, we're gone */
 static void
-watchdog_bite (int sig)
+watchdog_bite (int sig G_GNUC_UNUSED)
 {
   printf ("bitten by the watchdog, aborting!\n");
   abort ();

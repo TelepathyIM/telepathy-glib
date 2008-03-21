@@ -260,10 +260,10 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
 
 /* dummy callback handler for async calling calls with no return values */
 static void
-dummy_callback (TpMediaSessionHandler *proxy,
+dummy_callback (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
                 const GError *error,
                 gpointer user_data,
-                GObject *weak_object)
+                GObject *weak_object G_GNUC_UNUSED)
 {
   if (error != NULL)
     {
@@ -287,10 +287,10 @@ cb_fs_session_error (FarsightSession *session,
 }
 
 static void
-invalidated_cb (TpMediaSessionHandler *proxy,
-                guint domain,
-                gint code,
-                gchar *message,
+invalidated_cb (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
+                guint domain G_GNUC_UNUSED,
+                gint code G_GNUC_UNUSED,
+                gchar *message G_GNUC_UNUSED,
                 gpointer user_data)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
@@ -306,12 +306,12 @@ invalidated_cb (TpMediaSessionHandler *proxy,
 }
 
 static void
-new_media_stream_handler (TpMediaSessionHandler *proxy,
+new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
                           const gchar *object_path,
                           guint stream_id,
                           guint media_type,
                           guint direction,
-                          gpointer user_data,
+                          gpointer user_data G_GNUC_UNUSED,
                           GObject *object)
 {
   TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (object);

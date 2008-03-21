@@ -192,9 +192,9 @@ static void get_session_handlers_reply (TpChannel *channel_proxy,
     gpointer user_data, GObject *weak_object);
 
 static void
-cb_properties_changed (TpProxy *proxy,
+cb_properties_changed (TpProxy *proxy G_GNUC_UNUSED,
                        const GPtrArray *structs,
-                       gpointer user_data,
+                       gpointer user_data G_GNUC_UNUSED,
                        GObject *object)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
@@ -265,7 +265,7 @@ static void
 cb_properties_listed (TpProxy *proxy,
                       const GPtrArray *structs,
                       const GError *error,
-                      gpointer user_data,
+                      gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
@@ -332,7 +332,7 @@ cb_properties_listed (TpProxy *proxy,
 
 static void
 channel_ready (TpChannel *channel_proxy,
-               GParamSpec *unused,
+               GParamSpec *unused G_GNUC_UNUSED,
                TpStreamEngineChannel *self)
 {
   TpProxy *as_proxy = (TpProxy *) channel_proxy;
@@ -779,10 +779,10 @@ add_session (TpStreamEngineChannel *self,
 }
 
 static void
-new_media_session_handler (TpChannel *channel_proxy,
+new_media_session_handler (TpChannel *channel_proxy G_GNUC_UNUSED,
                            const gchar *session_handler_path,
                            const gchar *type,
-                           gpointer user_data,
+                           gpointer user_data G_GNUC_UNUSED,
                            GObject *weak_object)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (weak_object);
@@ -840,10 +840,10 @@ channel_invalidated (TpChannel *channel_proxy,
 }
 
 static void
-get_session_handlers_reply (TpChannel *channel_proxy,
+get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
                             const GPtrArray *session_handlers,
                             const GError *error,
-                            gpointer user_data,
+                            gpointer user_data G_GNUC_UNUSED,
                             GObject *weak_object)
 {
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (weak_object);
