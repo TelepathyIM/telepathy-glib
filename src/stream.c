@@ -1644,6 +1644,38 @@ set_audio_src_props (GstBin *bin G_GNUC_UNUSED,
 
   if (g_object_has_property ((GObject *) src, "is-live"))
     g_object_set ((GObject *) src, "is-live", TRUE, NULL);
+
+  if (GST_IS_BIN (src))
+    {
+      gboolean done = FALSE;
+      GstIterator *it = NULL;
+      gpointer elem;
+
+      g_signal_connect ((GObject *) src, "element-added",
+        G_CALLBACK (set_audio_src_props), NULL);
+
+      it = gst_bin_iterate_recurse (GST_BIN (src));
+      while (!done)
+        {
+          switch (gst_iterator_next (it, &elem))
+            {
+              case GST_ITERATOR_OK:
+                set_audio_src_props (NULL, GST_ELEMENT(elem), NULL);
+                g_object_unref (elem);
+                break;
+              case GST_ITERATOR_RESYNC:
+                gst_iterator_resync (it);
+                break;
+              case GST_ITERATOR_ERROR:
+                g_error ("Can not iterate audiosrc bin");
+                done = TRUE;
+                break;
+             case GST_ITERATOR_DONE:
+               done = TRUE;
+               break;
+            }
+        }
+    }
 }
 
 static GstElement *

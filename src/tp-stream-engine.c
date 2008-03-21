@@ -339,6 +339,38 @@ set_video_sink_props (GstBin *bin G_GNUC_UNUSED,
       g_debug ("setting preroll-queue-len to 1");
       g_object_set (G_OBJECT (sink), "preroll-queue-len", 1, NULL);
     }
+
+  if (GST_IS_BIN (sink))
+    {
+      gboolean done = FALSE;
+      GstIterator *it = NULL;
+      gpointer elem;
+
+      g_signal_connect ((GObject *) sink, "element-added",
+        G_CALLBACK (set_video_sink_props), NULL);
+
+      it = gst_bin_iterate_recurse (GST_BIN (sink));
+      while (!done)
+        {
+          switch (gst_iterator_next (it, &elem))
+            {
+              case GST_ITERATOR_OK:
+                set_video_sink_props (NULL, GST_ELEMENT(elem), NULL);
+                g_object_unref (elem);
+                break;
+              case GST_ITERATOR_RESYNC:
+                gst_iterator_resync (it);
+                break;
+              case GST_ITERATOR_ERROR:
+                g_error ("Can not iterate videosink bin");
+                done = TRUE;
+                break;
+             case GST_ITERATOR_DONE:
+               done = TRUE;
+               break;
+            }
+        }
+    }
 }
 
 GstElement *
