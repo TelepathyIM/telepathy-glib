@@ -1331,16 +1331,16 @@ _create_pipeline (TpStreamEngine *self)
   if (!filter)
     {
       filter = gst_caps_new_simple ("video/x-raw-yuv",
-           "framerate", GST_TYPE_FRACTION, 15, 1,
+          "framerate", GST_TYPE_FRACTION_RANGE, 5, 1, 20, 1,
 #ifdef MAEMO_OSSO_SUPPORT
-           "width", G_TYPE_INT, 176,
-           "height", G_TYPE_INT, 144,
+          "width", G_TYPE_INT, 176,
+          "height", G_TYPE_INT, 144,
 #else
-           "width", G_TYPE_INT, 352,
-           "height", G_TYPE_INT, 288,
-           "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
+          "width", G_TYPE_INT, 352,
+          "height", G_TYPE_INT, 288,
+          "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
 #endif
-           NULL);
+          NULL);
     }
   else
     {
