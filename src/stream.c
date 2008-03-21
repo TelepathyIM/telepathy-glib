@@ -241,9 +241,6 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
       TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamPrivate);
 
   self->priv = priv;
-
-  self->priv->input_mute = FALSE;
-  self->priv->output_mute = FALSE;
   self->priv->output_volume = 100;
 }
 
