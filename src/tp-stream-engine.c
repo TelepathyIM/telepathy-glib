@@ -457,13 +457,13 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
         {
           g_warning ("Could not add videoscale to the source bin");
           gst_object_unref (tmp);
-          gst_object_unref (sink);
+          gst_object_unref (bin);
           return NULL;
         }
       if (!gst_element_link (tmp, sink))
         {
           g_warning ("Could not link sink and videoscale elements");
-          gst_object_unref (sink);
+          gst_object_unref (bin);
           return NULL;
         }
       sink = tmp;
@@ -478,13 +478,13 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
        {
          g_warning ("Could not add ffmpegcolorspace to the source bin");
          gst_object_unref (tmp);
-         gst_object_unref (sink);
+         gst_object_unref (bin);
          return NULL;
        }
       if (!gst_element_link (tmp, sink))
         {
           g_warning ("Could not link sink and ffmpegcolorspace elements");
-          gst_object_unref (sink);
+          gst_object_unref (bin);
           return NULL;
         }
       sink = tmp;
@@ -495,14 +495,14 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
   if (!pad)
     {
       g_warning ("Could not find unconnected sink pad in the source bin");
-      gst_object_unref (sink);
+      gst_object_unref (bin);
       return NULL;
     }
 
   if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
     {
       g_warning ("Could not add sink ghostpad to the source bin");
-      gst_object_unref (sink);
+      gst_object_unref (bin);
       return NULL;
     }
   gst_object_unref (GST_OBJECT (pad));
