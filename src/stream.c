@@ -577,6 +577,7 @@ tp_stream_engine_stream_dispose (GObject *object)
       ret = tp_stream_engine_remove_output_window (engine,
           priv->output_window_id);
       g_assert (ret);
+      priv->output_window_id = 0;
     }
 
   if (priv->queue)
@@ -2156,9 +2157,9 @@ tp_stream_engine_stream_set_output_window (
           stream->priv->output_window_id);
     }
 
-  stream->priv->output_window_id = window_id;
+  stream->priv->output_window_id = 0;
 
-  if (stream->priv->output_window_id == 0)
+  if (window_id == 0)
     {
       GstElement *stream_sink = farsight_stream_get_sink
           (stream->priv->fs_stream);
@@ -2187,6 +2188,8 @@ tp_stream_engine_stream_set_output_window (
       _remove_video_sink (stream, old_sink);
 
   tp_stream_engine_add_output_window (engine, stream, sink, window_id);
+
+  stream->priv->output_window_id = window_id;
 
   ret = gst_element_set_state (sink, GST_STATE_PLAYING);
   if (ret == GST_STATE_CHANGE_FAILURE)
