@@ -20,6 +20,8 @@
 
 #include "xerrorhandler.h"
 
+#include "tp-stream-engine-signals-marshal.h"
+
 #include <X11/Xlib.h>
 
 G_DEFINE_TYPE (TpStreamEngineXErrorHandler, tp_stream_engine_x_error_handler, G_TYPE_OBJECT);
@@ -100,8 +102,7 @@ tp_stream_engine_x_error_handler_class_init (TpStreamEngineXErrorHandlerClass *k
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   g_signal_accumulator_true_handled, NULL,
-                  /* FIXME: should be _BOOLEAN__UINT really */
-                  g_cclosure_marshal_BOOLEAN__FLAGS,
+                  tp_stream_engine_marshal_BOOLEAN__UINT,
                   G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   signals[SIGNAL_BAD_GC] =
@@ -110,8 +111,7 @@ tp_stream_engine_x_error_handler_class_init (TpStreamEngineXErrorHandlerClass *k
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   g_signal_accumulator_true_handled, NULL,
-                  /* FIXME: should be _BOOLEAN__UINT really */
-                  g_cclosure_marshal_BOOLEAN__FLAGS,
+                  tp_stream_engine_marshal_BOOLEAN__UINT,
                   G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   signals[SIGNAL_BAD_VALUE] =
@@ -120,8 +120,7 @@ tp_stream_engine_x_error_handler_class_init (TpStreamEngineXErrorHandlerClass *k
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   g_signal_accumulator_true_handled, NULL,
-                  /* FIXME: should be _BOOLEAN__UINT really */
-                  g_cclosure_marshal_BOOLEAN__FLAGS,
+                  tp_stream_engine_marshal_BOOLEAN__UINT,
                   G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   signals[SIGNAL_BAD_WINDOW] =
@@ -130,8 +129,7 @@ tp_stream_engine_x_error_handler_class_init (TpStreamEngineXErrorHandlerClass *k
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   g_signal_accumulator_true_handled, NULL,
-                  /* FIXME: should be _BOOLEAN__UINT really */
-                  g_cclosure_marshal_BOOLEAN__FLAGS,
+                  tp_stream_engine_marshal_BOOLEAN__UINT,
                   G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 }
 
