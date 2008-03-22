@@ -510,15 +510,14 @@ tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
   sink = bin;
 #endif
 
-  gst_object_ref (sink);
-
   if (!gst_bin_add (GST_BIN (self->priv->pipeline), sink))
     {
       g_warning ("Could not add the sink to the pipeline");
       gst_object_unref (sink);
-      gst_object_unref (sink);
       return NULL;
     }
+
+  gst_object_ref (sink);
 
   return sink;
 }
