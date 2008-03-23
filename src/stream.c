@@ -331,12 +331,14 @@ tp_stream_engine_stream_set_property (GObject      *object,
       self->priv->pipeline = (GstBin *) g_value_dup_object (value);
       break;
     case PROP_SOURCE:
-      farsight_stream_set_source (self->priv->fs_stream,
-          g_value_get_object (value));
+      if (!farsight_stream_set_source (self->priv->fs_stream,
+              g_value_get_object (value)))
+        g_error ("Could not set source on farsight stream");
       break;
     case PROP_SINK:
-      farsight_stream_set_sink (self->priv->fs_stream,
-          g_value_get_object (value));
+      if (!farsight_stream_set_sink (self->priv->fs_stream,
+              g_value_get_object (value)))
+        g_error ("Could not set sink on farsight stream");
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -418,7 +420,8 @@ tp_stream_engine_stream_constructor (GType type,
   if (src)
     {
       DEBUG (stream, "setting source on Farsight stream");
-      farsight_stream_set_source (priv->fs_stream, src);
+      if (!farsight_stream_set_source (priv->fs_stream, src))
+        g_error ("Could not set source on farsight stream");
     }
   else
     {
@@ -428,7 +431,9 @@ tp_stream_engine_stream_constructor (GType type,
   if (sink)
     {
       DEBUG (stream, "setting sink on Farsight stream");
-      farsight_stream_set_sink (priv->fs_stream, sink);
+      if (!farsight_stream_set_sink (priv->fs_stream, sink))
+        g_error ("Could not set sink on farsight stream");
+
     }
   else
     {
@@ -2206,7 +2211,9 @@ tp_stream_engine_stream_set_output_window (
       return FALSE;
     }
 
-  farsight_stream_set_sink (stream->priv->fs_stream, sink);
+  if (!farsight_stream_set_sink (stream->priv->fs_stream, sink))
+    g_error ("Could not set sink on farsight stream");
+
 
   return TRUE;
 }
