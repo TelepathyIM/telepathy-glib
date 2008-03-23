@@ -204,7 +204,7 @@ class Generator(object):
             base_init_code.extend(self.do_signal(signal))
 
         self.b('static inline void')
-        self.b('%s%s_base_init_once (gpointer klass)'
+        self.b('%s%s_base_init_once (gpointer klass G_GNUC_UNUSED)'
                % (self.prefix_, node_name_lc))
         self.b('{')
         self.b('  static TpDBusPropertiesMixinPropInfo properties[%d] = {'
