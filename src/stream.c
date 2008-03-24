@@ -1971,35 +1971,6 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
 }
 
-TpStreamEngineStream *
-tp_stream_engine_stream_new (FarsightSession *fs_session,
-                             TpMediaStreamHandler *proxy,
-                             guint stream_id,
-                             TpMediaStreamType media_type,
-                             TpMediaStreamDirection direction,
-                             const TpStreamEngineNatProperties *nat_props)
-{
-  TpStreamEngineStream *ret;
-
-  g_return_val_if_fail (fs_session != NULL, NULL);
-  g_return_val_if_fail (FARSIGHT_IS_SESSION (fs_session), NULL);
-  g_return_val_if_fail (proxy != NULL, NULL);
-  g_return_val_if_fail (media_type <= TP_MEDIA_STREAM_TYPE_VIDEO, NULL);
-  g_return_val_if_fail (direction <= TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
-      NULL);
-
-  ret = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM,
-      "farsight-session", fs_session,
-      "proxy", proxy,
-      "stream-id", stream_id,
-      "media-type", media_type,
-      "direction", direction,
-      "nat-properties", nat_props,
-      NULL);
-
-  return ret;
-}
-
 gboolean tp_stream_engine_stream_mute_output (
   TpStreamEngineStream *stream,
   gboolean mute_state,
