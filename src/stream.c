@@ -580,6 +580,17 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       stop_stream (stream);
 
+      /* Stopping the stream means we must tell s-e that the stream is not active
+       * anymore. We can only check whether our channel is the unheld one and if
+       * the farsight stream was unheld before.
+       */
+      if (priv->parent_channel &&
+          tp_stream_engine_get_unheld_channel () == priv->parent_channel &&
+          farsight_stream_is_held (priv->fs_stream) == FALSE)
+        {
+          tp_stream_engine_stream_held (stream, priv->parent_channel);
+        }
+
       g_signal_handlers_disconnect_by_func (
           priv->fs_stream, cb_fs_stream_error, stream);
       g_signal_handlers_disconnect_by_func (
@@ -1316,6 +1327,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpStreamEngineChannel *unheld_channel = tp_stream_engine_get_unheld_channel ();
 
   g_assert (self->priv->fs_stream != NULL);
 
@@ -1323,8 +1335,18 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   if (play)
     {
-      self->priv->playing = TRUE;
-      farsight_stream_start (self->priv->fs_stream);
+      if (unheld_channel == NULL ||
+          unheld_channel == self->priv->parent_channel)
+        {
+          self->priv->playing = TRUE;
+          farsight_stream_start (self->priv->fs_stream);
+          tp_stream_engine_stream_unheld (self, self->priv->parent_channel);
+        }
+      else
+        {
+          stop_stream (self);
+          tp_stream_engine_stream_error (self, 0, "Resources Unavailable");
+        }
     }
   else if (self->priv->playing)
     {
