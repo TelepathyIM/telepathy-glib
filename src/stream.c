@@ -54,6 +54,7 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
 struct _TpStreamEngineStreamPrivate
 {
+  TpStreamEngineChannel *parent_channel;
   FarsightSession *fs_session;
   guint stream_id;
   TpMediaStreamType media_type;
@@ -92,7 +93,8 @@ static guint signals[SIGNAL_COUNT] = {0};
 /* properties */
 enum
 {
-  PROP_FARSIGHT_SESSION = 1,
+  PROP_CHANNEL = 1,
+  PROP_FARSIGHT_SESSION,
   PROP_PROXY,
   PROP_STREAM_ID,
   PROP_MEDIA_TYPE,
@@ -262,6 +264,9 @@ tp_stream_engine_stream_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_CHANNEL:
+      g_value_set_object (value, self->priv->parent_channel);
+      break;
     case PROP_FARSIGHT_SESSION:
       g_value_set_object (value, self->priv->fs_session);
       break;
@@ -309,6 +314,10 @@ tp_stream_engine_stream_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_CHANNEL:
+      self->priv->parent_channel =
+          TP_STREAM_ENGINE_CHANNEL (g_value_get_object (value));
+      break;
     case PROP_FARSIGHT_SESSION:
       self->priv->fs_session = FARSIGHT_SESSION (g_value_dup_object (value));
       break;
@@ -634,6 +643,16 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   object_class->constructor = tp_stream_engine_stream_constructor;
 
   object_class->dispose = tp_stream_engine_stream_dispose;
+
+  param_spec = g_param_spec_object ("stream-engine-channel",
+                                    "The TpStreamEngineChannel parent",
+                                    "of the stream.",
+                                    TP_STREAM_ENGINE_TYPE_CHANNEL,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
 
   param_spec = g_param_spec_object ("farsight-session",
                                     "Farsight session",
