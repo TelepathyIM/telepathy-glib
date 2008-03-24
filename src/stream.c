@@ -208,9 +208,11 @@ static void
 video_sink_unlinked_cb (GstPad *pad, GstPad *peer G_GNUC_UNUSED,
     gpointer user_data)
 {
-  if (! g_signal_handlers_disconnect_by_func (pad, video_sink_unlinked_idle_cb, user_data))
+  if (! g_signal_handlers_disconnect_by_func (pad, video_sink_unlinked_cb,
+          user_data))
     {
-      g_debug ("video_sink_unlinked_cb has already been called for sink %p", user_data);
+      g_debug ("video_sink_unlinked_cb has already been called for sink %p",
+          user_data);
       return;
     }
 
