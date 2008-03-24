@@ -125,6 +125,8 @@ static void set_remote_codecs (TpMediaStreamHandler *proxy,
 
 static void set_stream_playing (TpMediaStreamHandler *proxy, gboolean play,
     gpointer user_data, GObject *object);
+static void set_stream_held (TpMediaStreamHandler *proxy, gboolean held,
+    gpointer user_data, GObject *object);
 
 static void set_stream_sending (TpMediaStreamHandler *proxy, gboolean play,
     gpointer user_data, GObject *object);
@@ -394,6 +396,8 @@ tp_stream_engine_stream_constructor (GType type,
       (priv->stream_handler_proxy, set_stream_playing, NULL, NULL, obj, NULL);
   tp_cli_media_stream_handler_connect_to_set_stream_sending
       (priv->stream_handler_proxy, set_stream_sending, NULL, NULL, obj, NULL);
+  tp_cli_media_stream_handler_connect_to_set_stream_held
+      (priv->stream_handler_proxy, set_stream_held, NULL, NULL, obj, NULL);
   tp_cli_media_stream_handler_connect_to_start_telephony_event
       (priv->stream_handler_proxy, start_telephony_event, NULL, NULL, obj,
        NULL);
@@ -1341,6 +1345,81 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   DEBUG (self, "%d", send);
 
   farsight_stream_set_sending (self->priv->fs_stream, send);
+}
+
+
+static void
+set_stream_held (TpMediaStreamHandler *proxy,
+                    gboolean held,
+                    gpointer user_data,
+                    GObject *object)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpStreamEngineChannel *unheld_channel = tp_stream_engine_get_unheld_channel ();
+
+  g_assert (self->priv->fs_stream != NULL);
+
+  DEBUG (self, "parent_channel = %p. Holding : %d",
+      self->priv->parent_channel, held);
+
+  if (held)
+    {
+      /* Hold the stream */
+      if (farsight_stream_hold (self->priv->fs_stream))
+        {
+          tp_stream_engine_stream_held (self, self->priv->parent_channel);
+          /* Send success message */
+          if (self->priv->stream_handler_proxy)
+            {
+              tp_cli_media_stream_handler_call_hold_state (
+                  self->priv->stream_handler_proxy, -1, TRUE,
+                  async_method_callback, "Media.StreamHandler::HoldState",
+                  NULL, (GObject *) self);
+            }
+        }
+      else
+        {
+          stop_stream (self);
+          tp_stream_engine_stream_error (self, 0, "Error holding stream");
+        }
+    }
+  else
+    {
+      /* Make sure we have access to the resource */
+      if (unheld_channel == NULL ||
+          unheld_channel == self->priv->parent_channel)
+        {
+          /* Unhold the stream */
+          if (farsight_stream_unhold (self->priv->fs_stream))
+            {
+              tp_stream_engine_stream_unheld (self, self->priv->parent_channel);
+              /* Send success message */
+              if (self->priv->stream_handler_proxy)
+                {
+                  tp_cli_media_stream_handler_call_hold_state (
+                      self->priv->stream_handler_proxy, -1, FALSE,
+                      async_method_callback, "Media.StreamHandler::HoldState",
+                      NULL, (GObject *) self);
+                }
+            }
+          else
+            {
+              stop_stream (self);
+              tp_stream_engine_stream_error (self, 0, "Error unholding stream");
+            }
+        }
+      else
+        {
+          /* Send failure message */
+          if (self->priv->stream_handler_proxy)
+            {
+              tp_cli_media_stream_handler_call_unhold_failure (
+                  self->priv->stream_handler_proxy, -1,
+                  async_method_callback, "Media.StreamHandler::UnholdFailure",
+                  NULL, (GObject *) self);
+            }
+        }
+    }
 }
 
 static void
