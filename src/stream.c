@@ -208,14 +208,6 @@ static void
 video_sink_unlinked_cb (GstPad *pad, GstPad *peer G_GNUC_UNUSED,
     gpointer user_data)
 {
-  if (! g_signal_handlers_disconnect_by_func (pad, video_sink_unlinked_cb,
-          user_data))
-    {
-      g_debug ("video_sink_unlinked_cb has already been called for sink %p",
-          user_data);
-      return;
-    }
-
   g_idle_add (video_sink_unlinked_idle_cb, user_data);
 
   gst_object_unref (pad);
@@ -235,6 +227,14 @@ _remove_video_sink (TpStreamEngineStream *stream, GstElement *sink)
 
   if (!sink_pad)
     return;
+
+  if (g_signal_handler_find (sink_pad,
+        G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA, 0, 0, NULL,
+        video_sink_unlinked_cb, sink))
+    {
+      DEBUG (stream, "found existing unlink callback, not adding a new one");
+      return;
+    }
 
   gst_object_ref (sink);
 
