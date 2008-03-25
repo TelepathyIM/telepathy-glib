@@ -125,7 +125,7 @@ struct _TpStreamEnginePrivate
   GSList *output_windows;
   GSList *preview_windows;
 
-  guint unheld_streams;
+  GList *unheld_streams;
   TpStreamEngineChannel *unheld_channel;
 
   guint bus_async_source_id;
@@ -664,6 +664,9 @@ tp_stream_engine_init (TpStreamEngine *self)
   priv->channels_by_path = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, NULL);
 
+  priv->unheld_channel = NULL;
+  priv->unheld_streams = NULL;
+
   priv->handler = tp_stream_engine_x_error_handler_get ();
 
   priv->bad_drawable_handler_id =
@@ -761,6 +764,17 @@ tp_stream_engine_dispose (GObject *object)
     {
       g_hash_table_destroy (priv->channels_by_path);
       priv->channels_by_path = NULL;
+    }
+
+  if (priv->unheld_channel)
+    {
+      g_object_remove_weak_pointer (G_OBJECT (priv->unheld_channel),
+          (gpointer) &priv->unheld_channel);
+    }
+
+  if (priv->unheld_streams)
+    {
+      g_list_free (priv->unheld_streams);
     }
 
   if (priv->pipeline)
@@ -2246,6 +2260,14 @@ tp_stream_engine_get_unheld_channel (void)
   return engine->priv->unheld_channel;
 }
 
+static void
+tp_stream_engine_unheld_stream_destroyed (gpointer data,
+                                          GObject *obj) {
+  TpStreamEngineStream *stream = (TpStreamEngineStream *) obj;
+  TpStreamEngineChannel *channel = (TpStreamEngineChannel *) data;
+
+  tp_stream_engine_stream_held (stream, channel);
+}
 
 /**
  * tp_stream_engine_stream_held
@@ -2260,8 +2282,9 @@ tp_stream_engine_stream_held (TpStreamEngineStream *stream,
   TpMediaStreamType media_type;
   gchar *channel_path = NULL;
 
-  g_assert (engine->priv->unheld_streams > 0);
+  g_assert (g_list_length (engine->priv->unheld_streams) > 0);
   g_assert (stream != NULL);
+  g_assert (g_list_index (engine->priv->unheld_streams, stream) >= 0);
   g_assert (engine->priv->unheld_channel != NULL);
   g_assert (engine->priv->unheld_channel == channel);
 
@@ -2269,14 +2292,17 @@ tp_stream_engine_stream_held (TpStreamEngineStream *stream,
   g_object_get (G_OBJECT (stream), "stream-id", &stream_id, NULL);
   g_object_get (G_OBJECT (channel), "object-path", &channel_path, NULL);
 
-  engine->priv->unheld_streams--;
+  engine->priv->unheld_streams = g_list_remove (engine->priv->unheld_streams, stream);
+
+  g_object_weak_unref (G_OBJECT (stream),
+      tp_stream_engine_unheld_stream_destroyed, channel);
 
   g_debug ("%s: Stream %d (%s) held. Channel %s now has %u unheld streams",
       G_STRFUNC, stream_id,
       (media_type == TP_MEDIA_STREAM_TYPE_AUDIO) ? "audio" : "video",
-      channel_path, engine->priv->unheld_streams);
+      channel_path, g_list_length (engine->priv->unheld_streams));
 
-  if (engine->priv->unheld_streams == 0)
+  if (g_list_length (engine->priv->unheld_streams) == 0)
     {
       g_debug ("%s: Channel %s is now completely held. No channels are unheld",
           G_STRFUNC, channel_path);
@@ -2304,6 +2330,7 @@ tp_stream_engine_stream_unheld (TpStreamEngineStream *stream,
 
   g_assert (stream != NULL);
   g_assert (channel != NULL);
+  g_assert (g_list_index (engine->priv->unheld_streams, stream) == -1);
 
   g_object_get (G_OBJECT (stream), "media-type", &media_type, NULL);
   g_object_get (G_OBJECT (stream), "stream-id", &stream_id, NULL);
@@ -2311,7 +2338,7 @@ tp_stream_engine_stream_unheld (TpStreamEngineStream *stream,
 
   if (engine->priv->unheld_channel == NULL)
     {
-      g_assert (engine->priv->unheld_streams == 0);
+      g_assert (g_list_length (engine->priv->unheld_streams) == 0);
       engine->priv->unheld_channel = channel;
 
       g_debug ("%s: Marking channel %s has being unheld"
@@ -2324,16 +2351,22 @@ tp_stream_engine_stream_unheld (TpStreamEngineStream *stream,
     }
   else
     {
-      g_assert (engine->priv->unheld_streams > 0);
+      g_assert (g_list_length (engine->priv->unheld_streams) > 0);
     }
 
   g_assert (engine->priv->unheld_channel == channel);
-  engine->priv->unheld_streams++;
+
+  engine->priv->unheld_streams =
+      g_list_append (engine->priv->unheld_streams, stream);
+
+  g_object_weak_ref (G_OBJECT (stream),
+      tp_stream_engine_unheld_stream_destroyed, channel);
+
 
   g_debug ("%s: Stream %d (%s) unheld. Channel %s now has %u unheld streams",
       G_STRFUNC, stream_id,
       (media_type == TP_MEDIA_STREAM_TYPE_AUDIO) ? "audio" : "video",
-      channel_path, engine->priv->unheld_streams);
+      channel_path, g_list_length (engine->priv->unheld_streams));
 
   g_free (channel_path);
 }

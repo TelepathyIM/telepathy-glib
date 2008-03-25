@@ -580,17 +580,6 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       stop_stream (stream);
 
-      /* Stopping the stream means we must tell s-e that the stream is not active
-       * anymore. We can only check whether our channel is the unheld one and if
-       * the farsight stream was unheld before.
-       */
-      if (priv->parent_channel &&
-          tp_stream_engine_get_unheld_channel () == priv->parent_channel &&
-          farsight_stream_is_held (priv->fs_stream) == FALSE)
-        {
-          tp_stream_engine_stream_held (stream, priv->parent_channel);
-        }
-
       g_signal_handlers_disconnect_by_func (
           priv->fs_stream, cb_fs_stream_error, stream);
       g_signal_handlers_disconnect_by_func (
@@ -1307,6 +1296,7 @@ stop_stream (TpStreamEngineStream *self)
   if (!self->priv->fs_stream)
     return;
 
+
   DEBUG (self, "calling stop on farsight stream %p", self->priv->fs_stream);
 
   if (self->priv->media_type == FARSIGHT_MEDIA_TYPE_VIDEO)
@@ -1318,6 +1308,7 @@ stop_stream (TpStreamEngineStream *self)
 
   if (sink)
     _remove_video_sink (self, sink);
+
 }
 
 static void
