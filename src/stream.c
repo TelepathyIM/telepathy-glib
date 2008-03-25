@@ -1711,12 +1711,19 @@ make_src (TpStreamEngineStream *stream,
           g_assert (src);
         }
       else
+#ifdef MAEMO_OSSO_SUPPORT
+        {
+          DEBUG (stream, "running on Maemo platform, not making audio src");
+          return NULL;
+        }
+#else /* MAEMO_OSSO_SUPPORT */
         {
           src = gst_element_factory_make ("gconfaudiosrc", NULL);
 
           if (src == NULL)
             src = gst_element_factory_make ("alsasrc", NULL);
         }
+#endif /* MAEMO_OSSO_SUPPORT */
 
       if (src == NULL)
         {
@@ -1856,6 +1863,12 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           g_assert (sink);
         }
       else
+#ifdef MAEMO_OSSO_SUPPORT
+        {
+          DEBUG (stream, "running on Maemo platform, not making audio sink");
+          return NULL;
+        }
+#else /* MAEMO_OSSO_SUPPORT */
         {
           sink = gst_element_factory_make ("gconfaudiosink", NULL);
 
@@ -1872,6 +1885,7 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
           if (sink == NULL)
             sink = gst_element_factory_make ("alsasink", NULL);
         }
+#endif /* MAEMO_OSSO_SUPPORT */
 
       if (sink == NULL)
         {
