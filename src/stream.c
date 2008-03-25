@@ -422,6 +422,7 @@ tp_stream_engine_stream_constructor (GType type,
   if (src)
     {
       DEBUG (stream, "setting source on Farsight stream");
+
       if (!farsight_stream_set_source (priv->fs_stream, src))
         g_error ("Could not set source on farsight stream");
     }
@@ -433,9 +434,9 @@ tp_stream_engine_stream_constructor (GType type,
   if (sink)
     {
       DEBUG (stream, "setting sink on Farsight stream");
+
       if (!farsight_stream_set_sink (priv->fs_stream, sink))
         g_error ("Could not set sink on farsight stream");
-
     }
   else
     {
@@ -2216,7 +2217,6 @@ tp_stream_engine_stream_set_output_window (
   if (!farsight_stream_set_sink (stream->priv->fs_stream, sink))
     g_error ("Could not set sink on farsight stream");
 
-
   return TRUE;
 }
 
@@ -2229,6 +2229,7 @@ tp_stream_engine_stream_error (TpStreamEngineStream *self,
 
   tp_cli_media_stream_handler_call_error (self->priv->stream_handler_proxy,
       -1, error, message, NULL, NULL, NULL, NULL);
+
   g_signal_emit (self, signals[ERROR], 0);
 }
 
