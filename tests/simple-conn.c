@@ -136,16 +136,12 @@ simple_connection_inject_disconnect (SimpleConnection *self)
 }
 
 static gboolean
-start_connecting (TpBaseConnection *conn,
-                  GError **error)
+pretend_connected (gpointer data)
 {
-  SimpleConnection *self = SIMPLE_CONNECTION (conn);
+  SimpleConnection *self = SIMPLE_CONNECTION (data);
+  TpBaseConnection *conn = (TpBaseConnection *) self;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
-
-  /* In a real connection manager we'd ask the underlying implementation to
-   * start connecting, then go to state CONNECTED when finished, but here
-   * we can do it immediately. */
 
   conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
       NULL, NULL);
@@ -153,16 +149,42 @@ start_connecting (TpBaseConnection *conn,
   tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
 
+  return FALSE;
+}
+
+static gboolean
+start_connecting (TpBaseConnection *conn,
+                  GError **error)
+{
+  SimpleConnection *self = SIMPLE_CONNECTION (conn);
+
+  tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTING,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+  /* In a real connection manager we'd ask the underlying implementation to
+   * start connecting, then go to state CONNECTED when finished. Here there
+   * isn't actually a connection, so we'll fake a connection process that
+   * takes half a second. */
+  g_timeout_add (500, pretend_connected, self);
+
   return TRUE;
+}
+
+static gboolean
+pretend_disconnected (gpointer data)
+{
+  tp_base_connection_finish_shutdown (TP_BASE_CONNECTION (data));
+  return FALSE;
 }
 
 static void
 shut_down (TpBaseConnection *conn)
 {
   /* In a real connection manager we'd ask the underlying implementation to
-   * start shutting down, then call this function when finished, but here
-   * we can do it immediately. */
-  tp_base_connection_finish_shutdown (conn);
+   * start shutting down, then call this function when finished. Here there
+   * isn't actually a connection, so we'll fake a disconnection process that
+   * takes half a second. */
+  g_timeout_add (500, pretend_disconnected, conn);
 }
 
 static void
