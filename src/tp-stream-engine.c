@@ -985,6 +985,12 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
   WindowPair *wp = user_data;
   g_assert (wp);
 
+  if (self->priv->pipeline == NULL)
+    {
+      check_if_busy (self);
+      return FALSE;
+    }
+
   g_debug ("Removing defunct preview sink for window %u", wp->window_id);
 
   GstPad *sink_pad = gst_element_get_pad (wp->sink, "sink");
