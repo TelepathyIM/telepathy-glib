@@ -1028,17 +1028,17 @@ class Generator(object):
         methods = node.getElementsByTagName('method')
 
         if signals:
-          self.b('static inline void')
-          self.b('%s_add_signals_for_%s (DBusGProxy *proxy)'
-                  % (self.prefix_lc, name.lower()))
-          self.b('{')
+            self.b('static inline void')
+            self.b('%s_add_signals_for_%s (DBusGProxy *proxy)'
+                    % (self.prefix_lc, name.lower()))
+            self.b('{')
 
-          for signal in signals:
-              self.do_signal_add(signal)
+            for signal in signals:
+                self.do_signal_add(signal)
 
-          self.b('}')
-          self.b('')
-          self.b('')
+            self.b('}')
+            self.b('')
+            self.b('')
 
         for signal in signals:
             self.do_signal(name, signal)
@@ -1095,7 +1095,7 @@ class Generator(object):
                 self.iface_dbus = iface.getAttribute('name')
                 signals = node.getElementsByTagName('signal')
                 if not signals:
-                  continue
+                    continue
                 name = node.getAttribute('name').replace('/', '').lower()
                 self.iface_uc = name.upper()
                 self.b('  if (quark == %s)' % self.get_iface_quark())
