@@ -477,6 +477,8 @@ tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
 {
   GObject *obj = (GObject *) iface;
   TpBaseConnection *conn = TP_BASE_CONNECTION (obj);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
+      TP_HANDLE_TYPE_CONTACT);
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   GHashTable *contact_statuses;
@@ -486,6 +488,22 @@ tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
   DEBUG ("called.");
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  if (contacts->len == 0)
+    {
+      presence_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
+      tp_svc_connection_interface_presence_return_from_get_presence (context,
+          presence_hash);
+      g_hash_table_destroy (presence_hash);
+      return;
+    }
+
+  if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
 
   contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, &error);
 
@@ -702,6 +720,8 @@ tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
+      TP_HANDLE_TYPE_CONTACT);
   GHashTable *contact_statuses;
   GError *error = NULL;
 
@@ -709,9 +729,16 @@ tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
-  if (!contacts->len)
+  if (contacts->len == 0)
     {
       tp_svc_connection_interface_presence_return_from_request_presence (context);
+      return;
+    }
+
+  if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
       return;
     }
 
