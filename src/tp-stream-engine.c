@@ -761,6 +761,8 @@ tp_stream_engine_dispose (GObject *object)
       gst_element_set_state (priv->pipeline, GST_STATE_NULL);
       g_object_unref (priv->pipeline);
       priv->pipeline = NULL;
+      priv->videosrc = NULL;
+      priv->videosrc_next = NULL;
     }
 
   if (priv->preview_windows != NULL)
@@ -1246,6 +1248,8 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
         gst_element_set_state (priv->videosrc, GST_STATE_NULL);
         gst_object_unref (priv->pipeline);
         priv->pipeline = NULL;
+        priv->videosrc = NULL;
+        priv->videosrc_next = NULL;
 
         break;
       case GST_MESSAGE_WARNING:
