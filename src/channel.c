@@ -697,7 +697,6 @@ new_stream_cb (TpStreamEngineSession *session,
     }
 
   stream = g_object_new (stream_gtype,
-      "stream-engine-channel", self,
       "farsight-session", fs_session,
       "proxy", proxy,
       "stream-id", stream_id,

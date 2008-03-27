@@ -25,7 +25,6 @@
 #include <telepathy-glib/enums.h>
 
 #include "stream.h"
-#include "channel.h"
 
 G_BEGIN_DECLS
 

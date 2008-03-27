@@ -2300,7 +2300,6 @@ tp_stream_engine_set_output_window (StreamEngineSvcStreamEngine *iface,
     }
 }
 
-
 /*
  * tp_stream_engine_get
  *
