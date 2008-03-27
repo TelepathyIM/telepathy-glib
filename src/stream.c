@@ -1336,7 +1336,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       else
         {
           stop_stream (self);
-          tp_stream_engine_stream_error (self, 0, "Resources Unavailable");
+          tp_stream_engine_stream_error (self, 0, "Resource Unavailable");
         }
     }
   else if (self->priv->playing)
