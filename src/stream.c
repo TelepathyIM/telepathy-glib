@@ -85,6 +85,8 @@ enum
   STATE_CHANGED,
   RECEIVING,
   LINKED,
+  REQUEST_RESOURCE,
+  FREE_RESOURCE,
   SIGNAL_COUNT
 };
 
@@ -801,6 +803,24 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  signals[REQUEST_RESOURCE] =
+    g_signal_new ("request-resource",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  g_signal_accumulator_true_handled, NULL,
+                  tp_stream_engine_marshal_BOOLEAN__VOID,
+                  G_TYPE_BOOLEAN, 0);
+
+  signals[FREE_RESOURCE] =
+    g_signal_new ("free-resource",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
 }
 
 /* dummy callback handler for async calling calls with no return values */
@@ -1318,7 +1338,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineChannel *unheld_channel = tp_stream_engine_get_unheld_channel ();
+  gboolean resource_available = FALSE;
 
   g_assert (self->priv->fs_stream != NULL);
 
@@ -1326,12 +1346,11 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   if (play)
     {
-      if (unheld_channel == NULL ||
-          unheld_channel == self->priv->parent_channel)
+      g_signal_emit (self, signals[REQUEST_RESOURCE], 0, &resource_available);
+      if (resource_available)
         {
           self->priv->playing = TRUE;
           farsight_stream_start (self->priv->fs_stream);
-          tp_stream_engine_stream_unheld (self, self->priv->parent_channel);
         }
       else
         {
@@ -1342,6 +1361,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else if (self->priv->playing)
     {
       stop_stream (self);
+      g_signal_emit (self, signals[FREE_RESOURCE], 0);
     }
 }
 
@@ -1368,7 +1388,7 @@ set_stream_held (TpMediaStreamHandler *proxy,
                     GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineChannel *unheld_channel = tp_stream_engine_get_unheld_channel ();
+  gboolean resource_available = FALSE;
 
   g_assert (self->priv->fs_stream != NULL);
 
@@ -1380,7 +1400,7 @@ set_stream_held (TpMediaStreamHandler *proxy,
       /* Hold the stream */
       if (farsight_stream_hold (self->priv->fs_stream))
         {
-          tp_stream_engine_stream_held (self, self->priv->parent_channel);
+          g_signal_emit (self, signals[FREE_RESOURCE], 0);
           /* Send success message */
           if (self->priv->stream_handler_proxy)
             {
@@ -1394,18 +1414,18 @@ set_stream_held (TpMediaStreamHandler *proxy,
         {
           stop_stream (self);
           tp_stream_engine_stream_error (self, 0, "Error holding stream");
+          g_signal_emit (self, signals[FREE_RESOURCE], 0);
         }
     }
   else
     {
+      g_signal_emit (self, signals[REQUEST_RESOURCE], 0, &resource_available);
       /* Make sure we have access to the resource */
-      if (unheld_channel == NULL ||
-          unheld_channel == self->priv->parent_channel)
+      if (resource_available)
         {
           /* Unhold the stream */
           if (farsight_stream_unhold (self->priv->fs_stream))
             {
-              tp_stream_engine_stream_unheld (self, self->priv->parent_channel);
               /* Send success message */
               if (self->priv->stream_handler_proxy)
                 {
@@ -1419,6 +1439,7 @@ set_stream_held (TpMediaStreamHandler *proxy,
             {
               stop_stream (self);
               tp_stream_engine_stream_error (self, 0, "Error unholding stream");
+              g_signal_emit (self, signals[FREE_RESOURCE], 0);
             }
         }
       else

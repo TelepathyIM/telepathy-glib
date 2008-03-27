@@ -68,17 +68,6 @@ tp_stream_engine_error (TpStreamEngine *self,
                         int error,
                         const char *debug);
 
-TpStreamEngineChannel *
-tp_stream_engine_get_unheld_channel (void);
-
-void
-tp_stream_engine_stream_held (TpStreamEngineStream *stream,
-                              TpStreamEngineChannel *channel);
-
-void
-tp_stream_engine_stream_unheld (TpStreamEngineStream *stream,
-                                TpStreamEngineChannel *channel);
-
 TpStreamEngine *
 tp_stream_engine_get (void);
 
