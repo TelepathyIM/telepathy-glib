@@ -573,6 +573,12 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       stop_stream (stream);
 
+      /* Free resources used by this stream
+       * If this stream was not the active one, then the signal
+       * would be ignored by stream-engine
+       */
+      g_signal_emit (stream, signals[FREE_RESOURCE], 0);
+
       g_signal_handlers_disconnect_by_func (
           priv->fs_stream, cb_fs_stream_error, stream);
       g_signal_handlers_disconnect_by_func (

@@ -90,6 +90,7 @@ register_dbus_signal_marshallers()
 
 static void ch_iface_init (gpointer, gpointer);
 static void se_iface_init (gpointer, gpointer);
+static void stream_free_resource_weak_unref (gpointer, GObject *);
 
 G_DEFINE_TYPE_WITH_CODE (TpStreamEngine, tp_stream_engine, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (STREAM_ENGINE_TYPE_SVC_CHANNEL_HANDLER,
@@ -768,8 +769,8 @@ tp_stream_engine_dispose (GObject *object)
 
   if (priv->audio_resource_owner)
     {
-      g_object_remove_weak_pointer (G_OBJECT (priv->audio_resource_owner),
-          (gpointer) &priv->audio_resource_owner);
+      g_object_weak_unref (G_OBJECT (priv->audio_resource_owner),
+          stream_free_resource_weak_unref, self);
       priv->audio_resource_owner = NULL;
     }
 
@@ -875,25 +876,40 @@ tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
 }
 
 static void
+stream_free_resource_weak_unref (gpointer user_data, GObject *obj)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (obj);
+  TpStreamEngine *engine = TP_STREAM_ENGINE (user_data);
+
+  g_assert (engine->priv->audio_resource_owner == stream);
+
+  engine->priv->audio_resource_owner = NULL;
+
+  /* Can't do a g_signal_handler_disconnect because the object may
+   * not exit anymore */
+  engine->priv->stream_free_resource_id = 0;
+}
+
+static void
 stream_free_resource (TpStreamEngineStream *stream, gpointer user_data)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (user_data);
+  TpStreamEngine *engine = TP_STREAM_ENGINE (user_data);
 
-  g_assert (obj->priv->audio_resource_owner == stream);
+  g_assert (engine->priv->audio_resource_owner == stream);
 
-  g_object_remove_weak_pointer (G_OBJECT (obj->priv->audio_resource_owner),
-      (gpointer) &obj->priv->audio_resource_owner);
-  obj->priv->audio_resource_owner = NULL;
+  g_object_weak_unref (G_OBJECT (engine->priv->audio_resource_owner),
+      stream_free_resource_weak_unref, engine);
+  engine->priv->audio_resource_owner = NULL;
 
-  g_signal_handler_disconnect (stream, obj->priv->stream_free_resource_id);
-  obj->priv->stream_free_resource_id = 0;
+  g_signal_handler_disconnect (stream, engine->priv->stream_free_resource_id);
+  engine->priv->stream_free_resource_id = 0;
 
 }
 
 static gboolean
 stream_request_resource (TpStreamEngineStream *stream, gpointer user_data)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (user_data);
+  TpStreamEngine *engine = TP_STREAM_ENGINE (user_data);
 
   guint mediatype;
 
@@ -901,20 +917,20 @@ stream_request_resource (TpStreamEngineStream *stream, gpointer user_data)
 
   if (mediatype == TP_MEDIA_STREAM_TYPE_AUDIO)
     {
-      if (obj->priv->audio_resource_owner != NULL)
+      if (engine->priv->audio_resource_owner != NULL)
         {
           return FALSE;
         }
 
-      g_assert (obj->priv->audio_resource_owner == NULL);
-      g_assert (obj->priv->stream_free_resource_id == 0);
+      g_assert (engine->priv->audio_resource_owner == NULL);
+      g_assert (engine->priv->stream_free_resource_id == 0);
 
-      obj->priv->audio_resource_owner = stream;
+      engine->priv->audio_resource_owner = stream;
 
-      g_object_add_weak_pointer (G_OBJECT (obj->priv->audio_resource_owner),
-          (gpointer) &obj->priv->audio_resource_owner);
+      g_object_weak_ref (G_OBJECT (engine->priv->audio_resource_owner),
+          stream_free_resource_weak_unref, engine);
 
-      obj->priv->stream_free_resource_id = g_signal_connect (stream,
+      engine->priv->stream_free_resource_id = g_signal_connect (stream,
           "free-resource", G_CALLBACK (stream_free_resource), user_data);
 
       return TRUE;
