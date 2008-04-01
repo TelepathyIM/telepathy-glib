@@ -190,7 +190,8 @@ _window_pairs_remove (GSList **list, WindowPair *pair)
 {
   g_assert (g_slist_find (*list, pair));
 
-  g_source_remove (pair->idle_source_id);
+  if (pair->idle_source_id)
+    g_source_remove (pair->idle_source_id);
   pair->idle_source_id = 0;
 
   g_assert (pair->context == NULL);
