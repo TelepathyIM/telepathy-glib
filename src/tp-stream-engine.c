@@ -148,6 +148,7 @@ struct _WindowPair
   volatile gboolean removing;
   gboolean created;
   guint idle_source_id;
+  DBusGMethodInvocation *context;
   void (*post_remove) (WindowPair *wp);
 };
 
@@ -178,6 +179,8 @@ _window_pairs_add (GSList **list, TpStreamEngineStream *stream, GstElement *sink
   wp->removing = FALSE;
   wp->created = FALSE;
   wp->post_remove = NULL;
+  wp->idle_source_id = 0;
+  wp->context = NULL;
 
   *list = g_slist_prepend (*list, wp);
 }
@@ -189,6 +192,8 @@ _window_pairs_remove (GSList **list, WindowPair *pair)
 
   g_source_remove (pair->idle_source_id);
   pair->idle_source_id = 0;
+
+  g_assert (pair->context == NULL);
 
   *list = g_slist_remove (*list, pair);
 
@@ -995,6 +1000,13 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
 
   if (self->priv->pipeline == NULL)
     {
+      if (wp->context)
+        {
+          stream_engine_svc_stream_engine_return_from_remove_preview_window (
+              wp->context);
+          wp->context = NULL;
+        }
+
       check_if_busy (self);
       return FALSE;
     }
@@ -1043,6 +1055,13 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
   gst_object_unref (sink_element);
   gst_element_release_request_pad (tee, tee_src_pad);
   gst_object_unref (sink_pad);
+
+  if (wp->context)
+    {
+      stream_engine_svc_stream_engine_return_from_remove_preview_window (
+          wp->context);
+      wp->context = NULL;
+    }
 
   if (wp->post_remove)
     wp->post_remove (wp);
@@ -1871,6 +1890,15 @@ tp_stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
       return;
     }
 
+  if (wp->context)
+    {
+      GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+                   "Window ID has already been removed" };
+
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
   if (wp->removing)
     {
       if (wp->post_remove == _window_pairs_readd_cb)
@@ -1889,8 +1917,11 @@ tp_stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
 
   wp->removing = TRUE;
   wp->post_remove = _window_pairs_remove_cb;
+  wp->context = context;
 
   _remove_defunct_preview_sink (wp);
+
+  return;
 
 success:
   stream_engine_svc_stream_engine_return_from_remove_preview_window (context);
