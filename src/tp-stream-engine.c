@@ -147,6 +147,7 @@ struct _WindowPair
   guint window_id;
   volatile gboolean removing;
   gboolean created;
+  guint idle_source_id;
   void (*post_remove) (WindowPair *wp);
 };
 
@@ -185,6 +186,9 @@ static void
 _window_pairs_remove (GSList **list, WindowPair *pair)
 {
   g_assert (g_slist_find (*list, pair));
+
+  g_source_remove (pair->idle_source_id);
+  pair->idle_source_id = 0;
 
   *list = g_slist_remove (*list, pair);
 
@@ -987,6 +991,8 @@ _remove_defunct_preview_sink_idle_callback (gpointer user_data)
   WindowPair *wp = user_data;
   g_assert (wp);
 
+  wp->idle_source_id = 0;
+
   if (self->priv->pipeline == NULL)
     {
       check_if_busy (self);
@@ -1055,8 +1061,10 @@ _remove_defunct_preview_sink_callback (GstPad *tee_peer_src_pad G_GNUC_UNUSED,
     gboolean blocked G_GNUC_UNUSED,
     gpointer user_data)
 {
+  WindowPair *wp = user_data;
+
   g_debug("Pad blocked, scheduling preview sink removal");
-  g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_preview_sink_idle_callback, user_data, NULL);
+  wp->idle_source_id = g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_preview_sink_idle_callback, wp, NULL);
   g_main_context_wakeup (NULL);
 }
 
@@ -1602,6 +1610,8 @@ tp_stream_engine_get_pipeline (TpStreamEngine *self)
 static gboolean
 _remove_defunct_sinks_idle_cb (WindowPair *wp)
 {
+  wp->idle_source_id = 0;
+
   if (wp->stream)
     _remove_defunct_output_sink (wp);
   else
@@ -1721,7 +1731,7 @@ bad_window_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
   wp->removing = TRUE;
   wp->post_remove = _window_pairs_remove_cb;
 
-  g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_sinks_idle_cb, wp, NULL);
+  wp->idle_source_id = g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_sinks_idle_cb, wp, NULL);
   g_main_context_wakeup (NULL);
 
   return TRUE;
@@ -1767,7 +1777,7 @@ bad_drawable_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
   wp->removing = TRUE;
   wp->post_remove = _window_pairs_remove_cb;
 
-  g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_sinks_idle_cb, wp, NULL);
+  wp->idle_source_id = g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_sinks_idle_cb, wp, NULL);
   g_main_context_wakeup (NULL);
 
   return TRUE;
