@@ -2177,7 +2177,7 @@ tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
   if (stream != NULL &&
       tp_stream_engine_stream_set_output_volume (stream, volume, &error))
     {
-      stream_engine_svc_stream_engine_return_from_set_output_window (context);
+      stream_engine_svc_stream_engine_return_from_set_output_volume (context);
     }
   else
     {
