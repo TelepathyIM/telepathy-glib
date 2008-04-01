@@ -1,9 +1,9 @@
 noinst_PROGRAMS = \
-    test-invalidated-while-invoking-signals \
     test-call-cancellation \
     test-dbus \
     test-disconnection \
     test-example-no-protocols \
+    test-invalidated-while-invoking-signals \
     test-properties \
     test-unsupported-interface
 
