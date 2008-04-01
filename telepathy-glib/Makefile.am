@@ -32,7 +32,7 @@ libtelepathy_glib_la_LDFLAGS = \
     -version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
 libtelepathy_glib_la_LIBADD = libtelepathy-glib-internal.la
 libtelepathy_glib_la_SOURCES =
-libtelepathy_glib_la_DEPENDENCIES =
+libtelepathy_glib_la_DEPENDENCIES = libtelepathy-glib-internal.la Makefile.am
 
 if HAVE_LD_VERSION_SCRIPT
 libtelepathy_glib_la_SOURCES += version-script.txt
