@@ -19,6 +19,21 @@ Fixes:
 * A couple of unterminated argument lists when initializing the allowed
   message types for the text mixin have been fixed
 
+* glib-client-gen.py optionally inserts a guard against assertion failures
+  caused by a local extension overriding an interface that is also now provided
+  by telepathy-glib (fd.o #15325)
+
+* glib-client-gen.py has a mechanism to allow its output to be made
+  backwards-compatible: specify --tp-proxy-api=x.y.z where x.y.z is the oldest
+  version of telepathy-glib you check for in configure.ac (it must be at
+  least 0.7.6)
+
+Recommended updates for projects using telepathy-glib code generation:
+
+* Update glib-client-gen.py from telepathy-glib, and invoke it with
+  the extra argument "--tp-proxy-api=0.7.6", to fix #15325 (this will make
+  the generated code require telepathy-glib 0.7.6)
+
 telepathy-glib 0.7.5 (2008-03-07)
 =================================
 
