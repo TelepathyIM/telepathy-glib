@@ -1,6 +1,7 @@
 EXTRA_DIST = \
     all.xml \
     Channel_Handler.xml \
+    Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
     Channel_Interface_DTMF.xml \
     Channel_Interface_Group.xml \
