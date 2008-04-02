@@ -1476,6 +1476,7 @@ tp_proxy_invalidate
 TpProxyInterfaceAddedCb
 tp_proxy_or_subclass_hook_on_interface_add
 tp_proxy_subclass_add_error_mapping
+tp_proxy_dbus_g_proxy_claim_for_signal_adding
 <SUBSECTION>
 TpProxyInvokeFunc
 tp_proxy_pending_call_v0_new

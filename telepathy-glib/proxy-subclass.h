@@ -71,6 +71,8 @@ void tp_proxy_invalidate (TpProxy *self, const GError *error);
 void tp_proxy_subclass_add_error_mapping (GType proxy_subclass,
     const gchar *static_prefix, GQuark domain, GType code_enum_type);
 
+gboolean tp_proxy_dbus_g_proxy_claim_for_signal_adding (DBusGProxy *proxy);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_PROXY_SUBCLASS_H__*/
