@@ -1,6 +1,14 @@
 telepathy-glib 0.7.6 (unreleased)
 =================================
 
+API changes:
+
+* API was added to fix fd.o #15325. Projects that add extension interfaces
+  to TpChannel or TpConnection might suffer from assertion failures if those
+  interfaces are later added to telepathy-glib, unless they follow the
+  recommendations below. Projects that do not use the telepathy-glib code
+  generation tools are unaffected.
+
 Fixes:
 
 * Doesn't assert in client code when a connection's GetInterfaces method fails
@@ -33,6 +41,10 @@ Recommended updates for projects using telepathy-glib code generation:
 * Update glib-client-gen.py from telepathy-glib, and invoke it with
   the extra argument "--tp-proxy-api=0.7.6", to fix #15325 (this will make
   the generated code require telepathy-glib 0.7.6)
+
+* Before calling tp_proxy_or_subclass_hook_on_interface_add for an existing
+  class, call tp_proxy_init_known_interfaces,
+  tp_connection_init_known_interfaces or tp_channel_init_known_interfaces.
 
 telepathy-glib 0.7.5 (2008-03-07)
 =================================
