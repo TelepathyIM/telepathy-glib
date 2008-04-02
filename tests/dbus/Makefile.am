@@ -5,6 +5,7 @@ noinst_PROGRAMS = \
     test-dbus \
     test-disconnection \
     test-example-no-protocols \
+    test-handle-set \
     test-invalidated-while-invoking-signals \
     test-properties \
     test-unsupported-interface
@@ -31,6 +32,9 @@ test_disconnection_LDADD = \
     $(TP_GLIB_LIBS) \
     ../lib/libtp-glib-tests.la
 test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
+
+test_handle_set_SOURCES = handle-set.c
+test_handle_set_LDADD = $(TP_GLIB_LIBS)
 
 test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)
 test_unsupported_interface_SOURCES = unsupported-interface.c

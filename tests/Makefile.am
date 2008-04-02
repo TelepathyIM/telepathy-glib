@@ -5,7 +5,6 @@ SUBDIRS = \
     tools
 
 DYNAMIC_TESTS = \
-    test-handle-set \
     test-heap \
     test-intset \
     test-util
@@ -34,11 +33,6 @@ check-valgrind:
 	$(MAKE) -C dbus check-valgrind
 
 EXTRA_DIST = README
-
-test_handle_set_SOURCES = \
-    test-handle-set.c
-test_handle_set_LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 test_heap_SOURCES = \
     test-heap.c
