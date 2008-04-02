@@ -1,5 +1,6 @@
 noinst_PROGRAMS = \
     test-call-cancellation \
+    test-connection-getinterfaces-failure \
     test-dbus \
     test-disconnection \
     test-example-no-protocols \
@@ -12,6 +13,12 @@ TESTS = $(noinst_PROGRAMS)
 test_call_cancellation_LDADD = \
     $(TP_GLIB_LIBS) \
     ../lib/libtp-glib-tests.la
+
+test_connection_getinterfaces_failure_LDADD = \
+    $(TP_GLIB_LIBS) \
+    ../lib/libtp-glib-tests.la
+test_connection_getinterfaces_failure_SOURCES = \
+    connection-getinterfaces-failure.c
 
 test_dbus_LDADD = $(TP_GLIB_LIBS)
 test_disconnection_LDADD = \
