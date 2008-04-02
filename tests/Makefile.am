@@ -17,17 +17,6 @@ TESTS = $(noinst_PROGRAMS)
 TESTS_ENVIRONMENT = \
     G_DEBUG=fatal_warnings,fatal_criticals
 
-noinst_LTLIBRARIES = libtp-glib-tests.la
-
-libtp_glib_tests_la_SOURCES = \
-    myassert.h \
-    simple-conn.c \
-    simple-conn.h \
-    simple-manager.c \
-    simple-manager.h \
-    stub-object.c \
-    stub-object.h
-
 VALGRIND_TESTS_ENVIRONMENT = \
     G_SLICE=always-malloc \
     $(TESTS_ENVIRONMENT) \

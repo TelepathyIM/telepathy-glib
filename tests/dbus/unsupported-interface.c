@@ -2,7 +2,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/util.h>
 
-#include "tests/myassert.h"
+#include "tests/lib/myassert.h"
 
 static int fail = 0;
 static gboolean had_unsupported = FALSE;

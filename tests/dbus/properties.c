@@ -11,7 +11,7 @@
 #include <telepathy-glib/util.h>
 
 #include "_gen/svc.h"
-#include "tests/myassert.h"
+#include "tests/lib/myassert.h"
 
 typedef struct _TestProperties {
     GObject parent;

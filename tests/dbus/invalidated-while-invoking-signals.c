@@ -13,8 +13,8 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
 
-#include "tests/myassert.h"
-#include "tests/simple-conn.h"
+#include "tests/lib/myassert.h"
+#include "tests/lib/simple-conn.h"
 
 static int fail = 0;
 static GMainLoop *mainloop;

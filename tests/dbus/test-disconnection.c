@@ -6,8 +6,8 @@
 #include <telepathy-glib/proxy-subclass.h>    /* for _invalidated etc. */
 #include <telepathy-glib/util.h>
 
-#include "tests/myassert.h"
-#include "tests/stub-object.h"
+#include "tests/lib/myassert.h"
+#include "tests/lib/stub-object.h"
 
 /* just for convenience, since it's used a lot */
 #define PTR(ui) GUINT_TO_POINTER(ui)
