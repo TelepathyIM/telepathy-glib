@@ -32,7 +32,6 @@ save_LDFLAGS="$LDFLAGS"
 LDFLAGS="$LDFLAGS -Wl,-O1"
 AC_TRY_LINK([], [], [can_use_linker_opt=yes],
 	[can_use_linker_opt=no])
-LDFLAGS="$save_LDFLAGS"
 AC_MSG_RESULT([$can_use_linker_opt])
 
 if test "x$can_use_linker_opt" = "xno"; then
@@ -44,7 +43,7 @@ AC_ARG_ENABLE(linker-optimisations,
 		       [Disable linker optimisations]),
 [if test "x$enable_linker_optimisations" = "xno"; then
 	[LDFLAGS=`echo "$LDFLAGS" | sed -e "s/ -Wl,-O[0-9]*\b//g"`]
-fi], [LDFLAGS="$LDFLAGS -Wl,-O1"])dnl
+fi], [])dnl
 ])# LINKER_OPTIMISATIONS
 
 # LINKER_VERSION_SCRIPT
