@@ -215,7 +215,7 @@ watchdog_bark (gpointer data G_GNUC_UNUSED)
 static void
 watchdog_bite (int sig G_GNUC_UNUSED)
 {
-  printf ("bitten by the watchdog, aborting!\n");
+  printf ("telepathy-stream-engine: bitten by the watchdog, aborting!\n");
   abort ();
 }
 
