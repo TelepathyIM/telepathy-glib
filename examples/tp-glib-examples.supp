@@ -58,8 +58,20 @@
    Memcheck:Leak
    fun:malloc
    fun:g_malloc
-   fun:g_param_type_register_static
-   fun:g_param_spec_types_init
+   obj:/usr/lib/libgobject-2.0.so.*
+   obj:/usr/lib/libgobject-2.0.so.*
+   fun:g_type_init_with_debug_flags
+   fun:g_type_init
+   fun:main
+}
+
+{
+   g_type_init cruft (1), 2.16 version
+   Memcheck:Leak
+   fun:calloc
+   fun:g_malloc0
+   obj:/usr/lib/libgobject-2.0.so.*
+   obj:/usr/lib/libgobject-2.0.so.*
    fun:g_type_init_with_debug_flags
    fun:g_type_init
    fun:main
@@ -70,11 +82,11 @@
    Memcheck:Leak
    fun:realloc
    fun:g_realloc
-   fun:type_node_any_new_W
-   fun:type_node_new_W
+   obj:/usr/lib/libgobject-2.0.so.*
+   obj:/usr/lib/libgobject-2.0.so.*
    fun:g_type_register_static
    fun:g_param_type_register_static
-   fun:g_param_spec_types_init
+   obj:/usr/lib/libgobject-2.0.so.*
    fun:g_type_init_with_debug_flags
    fun:g_type_init
 }
@@ -96,7 +108,7 @@
    Memcheck:Leak
    fun:calloc
    fun:g_malloc0
-   fun:g_slice_init_nomessage
+   obj:/usr/lib/libglib-2.0.so.*
    fun:g_slice_alloc
 }
 
