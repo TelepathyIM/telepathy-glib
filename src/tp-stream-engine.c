@@ -1125,7 +1125,7 @@ static void
 _remove_defunct_output_sink (WindowPair *wp)
 {
   TpStreamEngine *engine = tp_stream_engine_get ();
-  GError *error;
+  GError *error = NULL;
 
   g_debug ("%s: removing sink for output window ID %u", G_STRFUNC,
       wp->window_id);
