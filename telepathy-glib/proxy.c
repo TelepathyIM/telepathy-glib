@@ -839,6 +839,11 @@ tp_proxy_finalize (GObject *object)
  * #TpProxyClass), if any, being added. The intended use is for the callback
  * to call dbus_g_proxy_add_signal() on the new #DBusGProxy.
  *
+ * Since 0.7.6, to ensure correct overriding of interfaces that might be
+ * added to telepathy-glib, before calling this function you should
+ * call tp_proxy_init_known_interfaces, tp_connection_init_known_interfaces,
+ * tp_channel_init_known_interfaces etc. as appropriate for the subclass.
+ *
  * Since: 0.7.1
  */
 void
@@ -922,6 +927,8 @@ tp_proxy_class_init (TpProxyClass *klass)
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  tp_proxy_init_known_interfaces ();
+
   g_type_class_add_private (klass, sizeof (TpProxyPrivate));
 
   object_class->constructor = tp_proxy_constructor;
@@ -929,9 +936,6 @@ tp_proxy_class_init (TpProxyClass *klass)
   object_class->set_property = tp_proxy_set_property;
   object_class->dispose = tp_proxy_dispose;
   object_class->finalize = tp_proxy_finalize;
-
-  tp_proxy_or_subclass_hook_on_interface_add (TP_TYPE_PROXY,
-      tp_cli_generic_add_signals);
 
   /**
    * TpProxy:dbus-daemon:
@@ -1079,4 +1083,37 @@ tp_proxy_dbus_g_proxy_claim_for_signal_adding (DBusGProxy *proxy)
    * non-NULL pointer */
   g_object_set_qdata ((GObject *) proxy, q, proxy);
   return TRUE;
+}
+
+static gpointer
+tp_proxy_once (gpointer data G_GNUC_UNUSED)
+{
+  GType type = TP_TYPE_PROXY;
+
+  tp_proxy_or_subclass_hook_on_interface_add (type,
+      tp_cli_generic_add_signals);
+
+  return NULL;
+}
+
+/**
+ * tp_proxy_init_known_interfaces:
+ *
+ * Ensure that the known interfaces for TpProxy have been set up.
+ * This is done automatically when necessary, but for correct
+ * overriding of library interfaces by local extensions, you should
+ * call this function before calling
+ * tp_proxy_or_subclass_hook_on_interface_add().
+ *
+ * Functions like tp_connection_init_known_interfaces and
+ * tp_channel_init_known_interfaces do this automatically.
+ *
+ * Since: 0.7.6
+ */
+void
+tp_proxy_init_known_interfaces (void)
+{
+  static GOnce once = G_ONCE_INIT;
+
+  g_once (&once, tp_proxy_once, NULL);
 }

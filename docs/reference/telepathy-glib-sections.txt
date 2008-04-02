@@ -1475,6 +1475,7 @@ tp_proxy_borrow_interface_by_id
 tp_proxy_invalidate
 TpProxyInterfaceAddedCb
 tp_proxy_or_subclass_hook_on_interface_add
+tp_proxy_init_known_interfaces
 tp_proxy_subclass_add_error_mapping
 tp_proxy_dbus_g_proxy_claim_for_signal_adding
 <SUBSECTION>
@@ -1493,6 +1494,7 @@ tp_proxy_signal_connection_v0_take_results
 <INCLUDE>telepathy-glib/channel.h</INCLUDE>
 tp_channel_new
 tp_channel_run_until_ready
+tp_channel_init_known_interfaces
 TpChannel
 TpChannelClass
 TP_ERRORS_REMOVED_FROM_GROUP
@@ -1724,6 +1726,7 @@ TpConnectionNameListCb
 tp_list_connection_names
 tp_connection_new
 tp_connection_run_until_ready
+tp_connection_init_known_interfaces
 TpConnection
 TpConnectionClass
 TP_UNKNOWN_CONNECTION_STATUS

@@ -71,6 +71,8 @@ void tp_list_connection_names (TpDBusDaemon *bus_daemon,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
+void tp_connection_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection.h>

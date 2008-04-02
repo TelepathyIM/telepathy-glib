@@ -751,7 +751,10 @@ TELEPATHY_GLIB_0.7.5 {
 
 TELEPATHY_GLIB_0.7.6_UNRELEASED {
     global:
+        tp_channel_init_known_interfaces;
+        tp_connection_init_known_interfaces;
         tp_proxy_dbus_g_proxy_claim_for_signal_adding;
+        tp_proxy_init_known_interfaces;
 } TELEPATHY_GLIB_0.7.5;
 
 # For every release that adds ABI, add a stanza like:

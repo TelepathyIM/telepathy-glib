@@ -62,6 +62,8 @@ TpChannel *tp_channel_new (TpConnection *conn,
 gboolean tp_channel_run_until_ready (TpChannel *self, GError **error,
     GMainLoop **loop);
 
+void tp_channel_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel.h>

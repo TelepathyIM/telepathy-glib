@@ -860,3 +860,38 @@ tp_list_connection_names (TpDBusDaemon *bus_daemon,
       tp_list_connection_names_helper, list_context,
       list_context_free, weak_object);
 }
+
+static gpointer
+tp_connection_once (gpointer data G_GNUC_UNUSED)
+{
+  GType type = TP_TYPE_CONNECTION;
+
+  tp_proxy_init_known_interfaces ();
+
+  tp_proxy_or_subclass_hook_on_interface_add (type,
+      tp_cli_connection_add_signals);
+  tp_proxy_subclass_add_error_mapping (type,
+      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+
+  return NULL;
+}
+
+/**
+ * tp_connection_init_known_interfaces:
+ *
+ * Ensure that the known interfaces for TpConnection have been set up.
+ * This is done automatically when necessary, but for correct
+ * overriding of library interfaces by local extensions, you should
+ * call this function before calling
+ * tp_proxy_or_subclass_hook_on_interface_add() with first argument
+ * %TP_TYPE_CONNECTION.
+ *
+ * Since: 0.7.6
+ */
+void
+tp_connection_init_known_interfaces (void)
+{
+  static GOnce once = G_ONCE_INIT;
+
+  g_once (&once, tp_connection_once, NULL);
+}
