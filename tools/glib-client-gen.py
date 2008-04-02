@@ -46,6 +46,8 @@ class Generator(object):
         self.basename = basename
         self.group = opts.get('--group', None)
         self.iface_quark_prefix = opts.get('--iface-quark-prefix', None)
+        self.tp_proxy_api = map(int,
+                opts.get('--tp-proxy-api', '0').split('.'))
         self.proxy_cls = opts.get('--subclass', 'TpProxy') + ' *'
         self.proxy_arg = opts.get('--subclass', 'void') + ' *'
         self.proxy_assert = opts.get('--subclass-assert', 'TP_IS_PROXY')
@@ -1033,6 +1035,11 @@ class Generator(object):
                     % (self.prefix_lc, name.lower()))
             self.b('{')
 
+            if self.tp_proxy_api >= (0, 7, 6):
+                self.b('  if (!tp_proxy_dbus_g_proxy_claim_for_signal_adding '
+                       '(proxy))')
+                self.b('    return;')
+
             for signal in signals:
                 self.do_signal_add(signal)
 
@@ -1119,7 +1126,7 @@ def types_to_gtypes(types):
 if __name__ == '__main__':
     options, argv = gnu_getopt(sys.argv[1:], '',
                                ['group=', 'subclass=', 'subclass-assert=',
-                                'iface-quark-prefix='])
+                                'iface-quark-prefix=', 'tp-proxy-api='])
 
     opts = {}
 
