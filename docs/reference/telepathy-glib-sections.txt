@@ -1337,6 +1337,7 @@ NUM_TP_TUBE_STATES
 TpTubeState
 NUM_TP_TUBE_TYPES
 TpTubeType
+TpChannelCallStateFlags
 </SECTION>
 
 <SECTION>
