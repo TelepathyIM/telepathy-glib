@@ -248,13 +248,14 @@ tp_connection_got_interfaces_cb (TpConnection *self,
     }
 
   DEBUG ("%p: Introspected interfaces", self);
+
+  g_assert (self->priv->introspect_needed == NULL);
+  self->priv->introspect_needed = g_array_new (FALSE, FALSE,
+      sizeof (TpConnectionProc));
+
   if (interfaces != NULL)
     {
       const gchar **iter;
-
-      g_assert (self->priv->introspect_needed == NULL);
-      self->priv->introspect_needed = g_array_new (FALSE, FALSE,
-          sizeof (TpConnectionProc));
 
       for (iter = interfaces; *iter != NULL; iter++)
         {
