@@ -1,3 +1,24 @@
+telepathy-glib 0.7.6 (unreleased)
+=================================
+
+Fixes:
+
+* Doesn't assert in client code when a connection's GetInterfaces method fails
+  (fd.o #15306)
+
+* The build process works on platforms without -Wl,-O1 and
+  -Wl,--version-script, such as Mac OS X (fd.o #15026)
+
+* test-handle-set now runs under a temporary session bus, so the tests can work
+  in platforms without working D-Bus autolaunch
+
+* Code generation uses G_GNUC_UNUSED where necessary, so you can use the
+  generated code in projects with stricter warning flags than telepathy-glib
+  itself
+
+* A couple of unterminated argument lists when initializing the allowed
+  message types for the text mixin have been fixed
+
 telepathy-glib 0.7.5 (2008-03-07)
 =================================
 
