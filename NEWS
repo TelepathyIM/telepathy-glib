@@ -9,6 +9,10 @@ API changes:
   recommendations below. Projects that do not use the telepathy-glib code
   generation tools are unaffected.
 
+* Related to the above, extending TpDBusDaemon, TpMediaStreamHandler,
+  TpMediaSessionHandler and TpConnectionManager is officially not supported
+  at this time.
+
 Fixes:
 
 * Doesn't assert in client code when a connection's GetInterfaces method fails
