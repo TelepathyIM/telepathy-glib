@@ -46,8 +46,8 @@ class Generator(object):
         self.basename = basename
         self.group = opts.get('--group', None)
         self.iface_quark_prefix = opts.get('--iface-quark-prefix', None)
-        self.tp_proxy_api = map(int,
-                opts.get('--tp-proxy-api', '0').split('.'))
+        self.tp_proxy_api = tuple(map(int,
+                opts.get('--tp-proxy-api', '0').split('.')))
         self.proxy_cls = opts.get('--subclass', 'TpProxy') + ' *'
         self.proxy_arg = opts.get('--subclass', 'void') + ' *'
         self.proxy_assert = opts.get('--subclass-assert', 'TP_IS_PROXY')
