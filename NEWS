@@ -13,6 +13,15 @@ API changes:
   TpMediaSessionHandler and TpConnectionManager is officially not supported
   at this time.
 
+Enhancements:
+
+* Updated to specification 0.17.3
+  - supports the Hold interface, for putting calls on hold or detecting when
+    this has been done
+  - supports the CallState interface, for receiving notifications of a
+    remote contact or device's state (currently supported states are: ringing,
+    queued, placed us on hold)
+
 Fixes:
 
 * Doesn't assert in client code when a connection's GetInterfaces method fails
