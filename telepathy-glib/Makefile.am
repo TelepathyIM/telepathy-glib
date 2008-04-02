@@ -354,4 +354,5 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		$$subclass $$subclass_assert \
 		--group `echo $* | tr - _` \
 		--iface-quark-prefix=TP_IFACE_QUARK \
+		--tp-proxy-api=0.7.6 \
 		$< Tp_Cli _gen/tp-cli-$*
