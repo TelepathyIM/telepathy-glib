@@ -164,6 +164,15 @@ dsp_crashed (gpointer dummy)
 #endif
 
 static void
+got_sigusr1 (int i G_GNUC_UNUSED)
+{
+  TpStreamEngine *engine = tp_stream_engine_get ();
+  GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
+  GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
+      GST_DEBUG_GRAPH_SHOW_ALL, "stream-engine-pipeline");
+}
+
+static void
 got_sigbus (int i G_GNUC_UNUSED)
 {
   const char *msg = "stream engine: DSP crashed\n";
@@ -210,6 +219,7 @@ int main(int argc, char **argv)
     g_log_set_default_handler (tp_debug_timestamped_log_handler, NULL);
 
   signal (SIGBUS, got_sigbus);
+  signal (SIGUSR1, got_sigusr1);
 
 #ifdef USE_REALTIME
   {
