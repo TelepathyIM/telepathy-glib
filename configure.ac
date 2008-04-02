@@ -227,6 +227,7 @@ AC_OUTPUT( Makefile \
 	   telepathy-glib/Makefile \
 	   telepathy-glib/telepathy-glib.pc \
 	   tests/Makefile \
+	   tests/lib/Makefile \
 	   tests/dbus/Makefile \
 	   tests/tools/Makefile \
 	   tools/Makefile \
