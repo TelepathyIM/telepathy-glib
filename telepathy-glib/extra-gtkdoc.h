@@ -230,7 +230,8 @@
  * Signalling and Farsight is currently done in telepathy-stream-engine, an
  * additional D-Bus service, but it will be provided as a library in future.
  *
- * Channels of type Streamed Media may also support the DTMF interface.
+ * Channels of type Streamed Media may also support the DTMF and
+ * CallState interfaces.
  */
 
 /**

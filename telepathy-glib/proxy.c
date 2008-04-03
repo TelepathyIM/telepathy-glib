@@ -1058,6 +1058,7 @@ tp_proxy_class_init (TpProxyClass *klass)
  * telepathy-glib without causing assertion failures.
  *
  * Returns: %TRUE if it is safe to call dbus_g_proxy_add_signal()
+ * Since: 0.7.6
  */
 gboolean
 tp_proxy_dbus_g_proxy_claim_for_signal_adding (DBusGProxy *proxy)
