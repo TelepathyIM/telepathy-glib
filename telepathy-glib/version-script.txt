@@ -752,9 +752,17 @@ TELEPATHY_GLIB_0.7.5 {
 TELEPATHY_GLIB_0.7.6_UNRELEASED {
     global:
         tp_channel_init_known_interfaces;
+        tp_cli_media_stream_handler_call_hold_state;
+        tp_cli_media_stream_handler_call_unhold_failure;
+        tp_cli_media_stream_handler_connect_to_set_stream_held;
+        tp_cli_media_stream_handler_run_hold_state;
+        tp_cli_media_stream_handler_run_unhold_failure;
         tp_connection_init_known_interfaces;
         tp_proxy_dbus_g_proxy_claim_for_signal_adding;
         tp_proxy_init_known_interfaces;
+        tp_svc_media_stream_handler_emit_set_stream_held;
+        tp_svc_media_stream_handler_implement_hold_state;
+        tp_svc_media_stream_handler_implement_unhold_failure;
 } TELEPATHY_GLIB_0.7.5;
 
 # For every release that adds ABI, add a stanza like:
