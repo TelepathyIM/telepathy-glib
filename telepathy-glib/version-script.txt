@@ -749,7 +749,7 @@ TELEPATHY_GLIB_0.7.5 {
         tp_type_dbus_struct_os;
 } TELEPATHY_GLIB_0.7.3;
 
-TELEPATHY_GLIB_0.7.6_UNRELEASED {
+TELEPATHY_GLIB_0.7.6 {
     global:
         tp_channel_init_known_interfaces;
         tp_cli_channel_interface_call_state_call_get_call_states;
