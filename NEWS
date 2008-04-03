@@ -1,5 +1,7 @@
-telepathy-glib 0.7.6 (unreleased)
+telepathy-glib 0.7.6 (2008-04-03)
 =================================
+
+The "hold the assertions" release.
 
 API changes:
 
