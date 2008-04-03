@@ -16,11 +16,12 @@ API changes:
 Enhancements:
 
 * Updated to specification 0.17.3
-  - supports the Hold interface, for putting calls on hold or detecting when
-    this has been done
   - supports the CallState interface, for receiving notifications of a
     remote contact or device's state (currently supported states are: ringing,
     queued, placed us on hold)
+  - MediaStreamHandler supports some new Hold-related API
+  - the Hold interface is *not* yet supported, use private code-generation
+    (as seen in telepathy-sofiasip) for now
 
 Fixes:
 
