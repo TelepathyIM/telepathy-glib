@@ -1845,6 +1845,24 @@ tp_stream_engine_stream_set_output_window (
   return TRUE;
 }
 
+static void
+invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+                guint domain G_GNUC_UNUSED,
+                gint code G_GNUC_UNUSED,
+                gchar *message G_GNUC_UNUSED,
+                gpointer user_data)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
+
+  if (stream->priv->stream_handler_proxy)
+    {
+      TpMediaStreamHandler *tmp = stream->priv->stream_handler_proxy;
+
+      stream->priv->stream_handler_proxy = NULL;
+      g_object_unref (tmp);
+    }
+}
+
 void
 tp_stream_engine_stream_error (TpStreamEngineStream *self,
                                guint error,
