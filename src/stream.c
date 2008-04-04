@@ -1204,7 +1204,14 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 static void
 stop_stream (TpStreamEngineStream *self)
 {
+  TpStreamEngineStreamClass *klass = TP_STREAM_ENGINE_STREAM_GET_CLASS (self);
   GstElement *sink = NULL;
+
+  if (klass->stop_stream)
+    {
+      klass->stop_stream (self);
+      return;
+    }
 
   if (!self->fs_stream)
     return;

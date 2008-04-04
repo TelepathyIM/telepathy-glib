@@ -47,6 +47,7 @@ typedef struct {
 
   GstElement * (*make_sink) (TpStreamEngineStream *stream);
   GstElement * (*make_src) (TpStreamEngineStream *stream);
+  void (*stop_stream) (TpStreamEngineStream *stream);
 
 } TpStreamEngineStreamClass;
 
