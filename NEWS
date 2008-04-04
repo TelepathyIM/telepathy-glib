@@ -1,15 +1,17 @@
 telepathy-stream-engine 0.5.0 (2008-04-04)
 ==========================================
 
-* Refactoring to take us closer to having a "stream engine" library, cleaning
-  up API of channel/session/stream to allow inheritance.
+* Refactoring to take us closer to having a "stream engine" library,
+  cleaning up API of channel/session/stream to allow inheritance.
+* Port to use telepathy-glib instead of libtelepathy, increasing
+  robustness at shutdown and against CM crashes.
 * Use gconf and auto audio source/sink elements if available.
 * Add elements to allow volume control and muting when on non-maemo DSP
   platforms.
-* Fix race conditions where multiple stream objects could be created for the
-  same CM streams.
-* Port to use telepathy-glib instead of libtelepathy, increasing robustness at
-  shutdown and against CM crashes.
-* Remove fakesink element in video pipeline so the video device will be closed
-  when there are no preview windows or video streams.
+* Remove fakesink element in video pipeline so the video device will be
+  closed when there are no preview windows or video streams.
+* Fix race conditions where multiple stream objects could be created for
+  the same CM streams.
 * Installs to ${libexecdir} now, instead of ${bindir}.
+* Raise Farsight dependency to 0.1.26 for predictable source/sink
+  element reference counting behaviour.
