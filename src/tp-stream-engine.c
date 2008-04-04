@@ -148,7 +148,7 @@ struct _TpStreamEnginePrivate
 typedef struct _WindowPair WindowPair;
 struct _WindowPair
 {
-  TpStreamEngineStream *stream;
+  TpStreamEngineVideoStream *stream;
   GstElement *sink;
   guint window_id;
   volatile gboolean removing;
@@ -173,7 +173,8 @@ _window_pairs_free (GSList **list)
 }
 
 static void
-_window_pairs_add (GSList **list, TpStreamEngineStream *stream, GstElement *sink, guint window_id)
+_window_pairs_add (GSList **list, TpStreamEngineVideoStream *stream,
+    GstElement *sink, guint window_id)
 {
   g_debug ("Adding to windowpair list sink %p window_id %d", sink, window_id);
   WindowPair *wp;
@@ -1220,7 +1221,7 @@ _remove_defunct_output_sink (WindowPair *wp)
   g_debug ("%s: removing sink for output window ID %u", G_STRFUNC,
       wp->window_id);
 
-  if (!tp_stream_engine_stream_set_output_window (wp->stream, 0, &error))
+  if (!tp_stream_engine_video_stream_set_output_window (wp->stream, 0, &error))
   {
     g_debug ("%s: got error: %s", G_STRFUNC, error->message);
     g_error_free (error);
@@ -2028,7 +2029,7 @@ success:
 
 gboolean
 tp_stream_engine_add_output_window (TpStreamEngine *self,
-                                    TpStreamEngineStream *stream,
+                                    TpStreamEngineVideoStream *stream,
                                     GstElement *sink,
                                     guint window_id)
 {
@@ -2335,15 +2336,24 @@ tp_stream_engine_set_output_window (StreamEngineSvcStreamEngine *iface,
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
 
-  if (stream != NULL &&
-      tp_stream_engine_stream_set_output_window (stream, window_id, &error))
+  if (stream != NULL)
     {
-      stream_engine_svc_stream_engine_return_from_set_output_window (context);
+      if (!TP_STREAM_ENGINE_IS_VIDEO_STREAM (stream))
+        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "SetOutputWindow can only be called on video streams");
+      else
+        tp_stream_engine_video_stream_set_output_window (
+            TP_STREAM_ENGINE_VIDEO_STREAM (stream), window_id, &error);
     }
-  else
+
+  if (error)
     {
       dbus_g_method_return_error (context, error);
       g_error_free (error);
+    }
+  else
+    {
+      stream_engine_svc_stream_engine_return_from_set_output_window (context);
     }
 }
 

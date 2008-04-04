@@ -24,7 +24,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/enums.h>
 
-#include "stream.h"
+#include "videostream.h"
 
 G_BEGIN_DECLS
 
@@ -79,7 +79,7 @@ tp_stream_engine_get_pipeline (TpStreamEngine *obj);
 
 gboolean
 tp_stream_engine_add_output_window (TpStreamEngine *obj,
-                                    TpStreamEngineStream *stream,
+                                    TpStreamEngineVideoStream *stream,
                                     GstElement *sink,
                                     guint window_id);
 

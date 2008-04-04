@@ -47,6 +47,11 @@ typedef struct {
 
 GType tp_stream_engine_video_stream_get_type (void);
 
+
+gboolean tp_stream_engine_video_stream_set_output_window (
+  TpStreamEngineVideoStream *videostream,
+  guint window_id,
+  GError **error);
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_VIDEO_STREAM_H__ */
