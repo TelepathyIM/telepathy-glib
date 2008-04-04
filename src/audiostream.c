@@ -91,12 +91,18 @@ tp_stream_engine_audio_stream_constructor (GType type,
   GObject *obj;
   TpMediaStreamHandler *stream_handler_proxy = NULL;
   TpStreamEngineStream *stream = NULL;
+  TpMediaStreamType media_type;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->constructor (type, n_props, props);
 
   stream = (TpStreamEngineStream *) obj;
 
-  g_object_get (obj, "proxy", &stream_handler_proxy, NULL);
+  g_object_get (obj,
+      "proxy", &stream_handler_proxy,
+      "media-type", &media_type,
+      NULL);
+
+  g_assert (media_type == TP_MEDIA_STREAM_TYPE_AUDIO);
 
   tp_cli_media_stream_handler_connect_to_set_remote_codecs
       (stream_handler_proxy, cb_set_remote_codecs, NULL, NULL, obj, NULL);
