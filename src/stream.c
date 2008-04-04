@@ -68,9 +68,6 @@ struct _TpStreamEngineStreamPrivate
   FarsightStreamState state;
   FarsightStreamDirection dir;
 
-  guint output_volume;
-  gboolean output_mute;
-  gboolean input_mute;
   guint output_window_id;
 
   GstElement *queue;
@@ -252,7 +249,6 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
       TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamPrivate);
 
   self->priv = priv;
-  self->priv->output_volume = 100;
 }
 
 static void
@@ -1278,8 +1274,6 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     return;
   }
 
-  tp_stream_engine_stream_mute_input (self, self->priv->input_mute, NULL);
-
   supp_codecs = fs_codecs_to_tp (self,
       farsight_stream_get_codec_intersection (self->priv->fs_stream));
 
@@ -1567,15 +1561,6 @@ cb_fs_codec_changed (FarsightStream *stream,
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
 
-  if (self->priv->media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
-    {
-      tp_stream_engine_stream_mute_output (self, self->priv->output_mute,
-          NULL);
-      tp_stream_engine_stream_mute_input (self, self->priv->input_mute, NULL);
-      tp_stream_engine_stream_set_output_volume (self,
-          self->priv->output_volume, NULL);
-    }
-
   DEBUG (self, "codec_id=%d, stream=%p", codec_id, stream);
 
   tp_cli_media_stream_handler_call_codec_choice
@@ -1645,53 +1630,6 @@ queue_linked (GstPad *pad G_GNUC_UNUSED, GstPad *peer G_GNUC_UNUSED,
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
 
   g_signal_emit (stream, signals[LINKED], 0);
-}
-
-static GstElement *
-get_volume_element (GstElement *element)
-{
-  GstElement *volume_element = NULL;
-
-  if (g_object_has_property (G_OBJECT (element), "volume") &&
-      g_object_has_property (G_OBJECT (element), "mute"))
-    return gst_object_ref (element);
-
-  if (GST_IS_BIN (element))
-    {
-      GstIterator *it = NULL;
-      gboolean done = FALSE;
-      gpointer item;
-
-      it = gst_bin_iterate_recurse (GST_BIN (element));
-
-      while (!volume_element && !done) {
-        switch (gst_iterator_next (it, &item)) {
-        case GST_ITERATOR_OK:
-          if (g_object_has_property (G_OBJECT (item), "volume") &&
-              g_object_has_property (G_OBJECT (item), "mute"))
-            volume_element = GST_ELEMENT (item);
-          else
-            gst_object_unref (item);
-          break;
-        case GST_ITERATOR_RESYNC:
-          if (volume_element)
-            gst_object_unref (volume_element);
-          volume_element = NULL;
-          gst_iterator_resync (it);
-          break;
-        case GST_ITERATOR_ERROR:
-          g_error ("Can not iterate sink");
-          done = TRUE;
-          break;
-        case GST_ITERATOR_DONE:
-          done = TRUE;
-          break;
-        }
-      }
-      gst_iterator_free (it);
-    }
-
-  return volume_element;
 }
 
 static GstElement *
@@ -1819,173 +1757,6 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
     }
 
   return sink;
-}
-
-static void
-invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                guint domain G_GNUC_UNUSED,
-                gint code G_GNUC_UNUSED,
-                gchar *message G_GNUC_UNUSED,
-                gpointer user_data)
-{
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
-
-  if (stream->priv->stream_handler_proxy)
-    {
-      TpMediaStreamHandler *tmp = stream->priv->stream_handler_proxy;
-
-      stream->priv->stream_handler_proxy = NULL;
-      g_object_unref (tmp);
-    }
-}
-
-gboolean tp_stream_engine_stream_mute_output (
-  TpStreamEngineStream *stream,
-  gboolean mute_state,
-  GError **error)
-{
-  GstElement *sink;
-  GstElement *muter;
-
-  g_return_val_if_fail (stream->priv->fs_stream, FALSE);
-
-  if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "MuteInput can only be called on audio streams");
-      return FALSE;
-    }
-
-  stream->priv->output_mute = mute_state;
-  sink = farsight_stream_get_sink (stream->priv->fs_stream);
-
-  if (!sink)
-    return TRUE;
-
-  muter = get_volume_element (sink);
-
-  if (!muter)
-    return TRUE;
-
-  g_message ("%s: output mute set to %s", G_STRFUNC,
-    mute_state ? "on" : "off");
-
-  if (g_object_has_property (G_OBJECT (muter), "mute"))
-    g_object_set (G_OBJECT (muter), "mute", mute_state, NULL);
-
-  gst_object_unref (muter);
-
-  return TRUE;
-}
-
-gboolean tp_stream_engine_stream_set_output_volume (
-  TpStreamEngineStream *stream,
-  guint volume,
-  GError **error)
-{
-  GstElement *sink;
-  GstElement *volumer;
-  GParamSpec *volume_prop;
-
-  g_return_val_if_fail (stream->priv->fs_stream, FALSE);
-
-  if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "SetOutputVolume can only be called on audio streams");
-      return FALSE;
-    }
-
-  if (volume > 100)
-    volume = 100;
-
-  stream->priv->output_volume = volume;
-
-  sink = farsight_stream_get_sink (stream->priv->fs_stream);
-
-  if (!sink)
-    return TRUE;
-
-  volumer = get_volume_element (sink);
-
-  if (!volumer)
-    return TRUE;
-
-  volume_prop = g_object_class_find_property (G_OBJECT_GET_CLASS (volumer),
-      "volume");
-
-  if (volume_prop)
-    {
-      if (volume_prop->value_type == G_TYPE_DOUBLE)
-        {
-          gdouble dvolume = volume / 100.0;
-
-          DEBUG (stream, "Setting output volume to (%d) %f",
-              stream->priv->output_volume, dvolume);
-
-          g_object_set (volumer, "volume", dvolume, NULL);
-        }
-      else if (volume_prop->value_type == G_TYPE_INT)
-        {
-          gint scaled_volume;
-          GParamSpecInt *pint = G_PARAM_SPEC_INT (volume_prop);
-
-          scaled_volume = (volume * pint->maximum)/100;
-
-          DEBUG (stream, "Setting output volume to %d (%d)",
-              stream->priv->output_volume, scaled_volume);
-
-          g_object_set (volumer, "volume", scaled_volume, NULL);
-        }
-      else
-        {
-          g_warning ("Volume is of an unknown type");
-        }
-    }
-
-  gst_object_unref (volumer);
-
-  return TRUE;
-}
-
-gboolean tp_stream_engine_stream_mute_input (
-  TpStreamEngineStream *stream,
-  gboolean mute_state,
-  GError **error)
-{
-  GstElement *source;
-  GstElement *muter;
-
-  g_return_val_if_fail (stream->priv->fs_stream, FALSE);
-
-  if (stream->priv->media_type != FARSIGHT_MEDIA_TYPE_AUDIO)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "MuteInput can only be called on audio streams");
-      return FALSE;
-    }
-
-  stream->priv->input_mute = mute_state;
-  source = farsight_stream_get_source (stream->priv->fs_stream);
-
-  if (!source)
-    return TRUE;
-
-
-  muter = get_volume_element (source);
-
-  if (!muter)
-    return TRUE;
-
-  g_message ("%s: input mute set to %s", G_STRFUNC,
-    mute_state ? " on" : "off");
-
-  if (g_object_has_property (G_OBJECT (muter), "mute"))
-    g_object_set (G_OBJECT (muter), "mute", mute_state, NULL);
-
-  gst_object_unref (muter);
-
-  return TRUE;
 }
 
 gboolean

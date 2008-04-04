@@ -51,13 +51,26 @@ G_DEFINE_TYPE (TpStreamEngineAudioStream, tp_stream_engine_audio_stream,
 
 struct _TpStreamEngineAudioStreamPrivate
 {
-  gpointer filling;
+  guint output_volume;
+  gboolean output_mute;
+  gboolean input_mute;
 };
 
 static GstElement *
 tp_stream_engine_audio_stream_make_src (TpStreamEngineStream *stream);
 static GstElement *
 tp_stream_engine_audio_stream_make_sink (TpStreamEngineStream *stream);
+
+
+static void
+cb_set_remote_codecs (TpMediaStreamHandler *proxy,
+    const GPtrArray *codecs,
+    gpointer user_data,
+    GObject *object);
+static void
+cb_fs_codec_changed (FarsightStream *stream,
+    gint codec_id,
+    gpointer user_data);
 
 static void
 tp_stream_engine_audio_stream_init (TpStreamEngineAudioStream *self)
@@ -66,11 +79,45 @@ tp_stream_engine_audio_stream_init (TpStreamEngineAudioStream *self)
       TP_STREAM_ENGINE_TYPE_AUDIO_STREAM, TpStreamEngineAudioStreamPrivate);
 
   self->priv = priv;
+  self->priv->output_volume = 100;
+}
+
+
+static GObject *
+tp_stream_engine_audio_stream_constructor (GType type,
+    guint n_props,
+    GObjectConstructParam *props)
+{
+  GObject *obj;
+  TpMediaStreamHandler *stream_handler_proxy = NULL;
+  TpStreamEngineStream *stream = NULL;
+
+  obj = G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->constructor (type, n_props, props);
+
+  stream = (TpStreamEngineStream *) obj;
+
+  g_object_get (obj, "proxy", &stream_handler_proxy, NULL);
+
+  tp_cli_media_stream_handler_connect_to_set_remote_codecs
+      (stream_handler_proxy, cb_set_remote_codecs, NULL, NULL, obj, NULL);
+
+  g_object_unref (stream_handler_proxy);
+
+  g_signal_connect (G_OBJECT (stream->fs_stream),
+      "codec-changed", G_CALLBACK (cb_fs_codec_changed), obj);
+
+  return obj;
 }
 
 static void
 tp_stream_engine_audio_stream_dispose (GObject *object)
 {
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
+
+  if (stream->fs_stream)
+    g_signal_handlers_disconnect_by_func (stream->fs_stream,
+        cb_fs_codec_changed, stream);
+
   if (G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->dispose (object);
 }
@@ -84,6 +131,8 @@ tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineAudioStreamPrivate));
   object_class->dispose = tp_stream_engine_audio_stream_dispose;
+
+  object_class->constructor = tp_stream_engine_audio_stream_constructor;
 
   stream_class->make_src = tp_stream_engine_audio_stream_make_src;
   stream_class->make_sink = tp_stream_engine_audio_stream_make_sink;
@@ -414,4 +463,160 @@ tp_stream_engine_audio_stream_make_sink (TpStreamEngineStream *stream)
     sink = make_volume_bin (audiostream, sink, "sink");
 
   return sink;
+}
+
+gboolean tp_stream_engine_audio_stream_mute_output (
+  TpStreamEngineAudioStream *audiostream,
+  gboolean mute_state,
+  GError **error)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
+  GstElement *sink;
+  GstElement *muter;
+
+  g_return_val_if_fail (stream->fs_stream, FALSE);
+
+  audiostream->priv->output_mute = mute_state;
+  sink = farsight_stream_get_sink (stream->fs_stream);
+
+  if (!sink)
+    return TRUE;
+
+  muter = get_volume_element (sink);
+
+  if (!muter)
+    return TRUE;
+
+  g_message ("%s: output mute set to %s", G_STRFUNC,
+    mute_state ? "on" : "off");
+
+  if (g_object_has_property (G_OBJECT (muter), "mute"))
+    g_object_set (G_OBJECT (muter), "mute", mute_state, NULL);
+
+  gst_object_unref (muter);
+
+  return TRUE;
+}
+
+gboolean tp_stream_engine_audio_stream_set_output_volume (
+  TpStreamEngineAudioStream *audiostream,
+  guint volume,
+  GError **error)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
+  GstElement *sink;
+  GstElement *volumer;
+  GParamSpec *volume_prop;
+
+  g_return_val_if_fail (stream->fs_stream, FALSE);
+
+  if (volume > 100)
+    volume = 100;
+
+  audiostream->priv->output_volume = volume;
+
+  sink = farsight_stream_get_sink (stream->fs_stream);
+
+  if (!sink)
+    return TRUE;
+
+  volumer = get_volume_element (sink);
+
+  if (!volumer)
+    return TRUE;
+
+  volume_prop = g_object_class_find_property (G_OBJECT_GET_CLASS (volumer),
+      "volume");
+
+  if (volume_prop)
+    {
+      if (volume_prop->value_type == G_TYPE_DOUBLE)
+        {
+          gdouble dvolume = volume / 100.0;
+
+          DEBUG (stream, "Setting output volume to (%d) %f",
+              audiostream->priv->output_volume, dvolume);
+
+          g_object_set (volumer, "volume", dvolume, NULL);
+        }
+      else if (volume_prop->value_type == G_TYPE_INT)
+        {
+          gint scaled_volume;
+          GParamSpecInt *pint = G_PARAM_SPEC_INT (volume_prop);
+
+          scaled_volume = (volume * pint->maximum)/100;
+
+          DEBUG (stream, "Setting output volume to %d (%d)",
+              audiostream->priv->output_volume, scaled_volume);
+
+          g_object_set (volumer, "volume", scaled_volume, NULL);
+        }
+      else
+        {
+          g_warning ("Volume is of an unknown type");
+        }
+    }
+
+  gst_object_unref (volumer);
+
+  return TRUE;
+}
+
+gboolean tp_stream_engine_audio_stream_mute_input (
+  TpStreamEngineAudioStream *audiostream,
+  gboolean mute_state,
+  GError **error)
+{
+  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
+  GstElement *source;
+  GstElement *muter;
+
+  g_return_val_if_fail (stream->fs_stream, FALSE);
+
+  audiostream->priv->input_mute = mute_state;
+  source = farsight_stream_get_source (stream->fs_stream);
+
+  if (!source)
+    return TRUE;
+
+
+  muter = get_volume_element (source);
+
+  if (!muter)
+    return TRUE;
+
+  g_message ("%s: input mute set to %s", G_STRFUNC,
+    mute_state ? " on" : "off");
+
+  if (g_object_has_property (G_OBJECT (muter), "mute"))
+    g_object_set (G_OBJECT (muter), "mute", mute_state, NULL);
+
+  gst_object_unref (muter);
+
+  return TRUE;
+}
+
+static void
+cb_set_remote_codecs (TpMediaStreamHandler *proxy,
+    const GPtrArray *codecs,
+    gpointer user_data,
+    GObject *object)
+{
+  TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (object);
+
+  tp_stream_engine_audio_stream_mute_input (self, self->priv->input_mute, NULL);
+}
+
+static void
+cb_fs_codec_changed (FarsightStream *stream,
+                     gint codec_id,
+                     gpointer user_data)
+{
+  TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
+
+  tp_stream_engine_audio_stream_mute_output (self, self->priv->output_mute,
+      NULL);
+  tp_stream_engine_audio_stream_mute_input (self, self->priv->input_mute, NULL);
+  tp_stream_engine_audio_stream_set_output_volume (self,
+      self->priv->output_volume, NULL);
 }

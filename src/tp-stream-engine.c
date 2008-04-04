@@ -2209,15 +2209,24 @@ tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
 
-  if (stream != NULL &&
-      tp_stream_engine_stream_mute_input (stream, mute_state, &error))
+  if (stream != NULL)
     {
-      stream_engine_svc_stream_engine_return_from_mute_input (context);
+      if (!TP_STREAM_ENGINE_IS_AUDIO_STREAM (stream))
+        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "MuteInput can only be called on audio streams");
+      else
+        tp_stream_engine_audio_stream_mute_input (
+            TP_STREAM_ENGINE_AUDIO_STREAM (stream), mute_state, &error);
     }
-  else
+
+  if (error)
     {
       dbus_g_method_return_error (context, error);
       g_error_free (error);
+    }
+  else
+    {
+      stream_engine_svc_stream_engine_return_from_mute_input (context);
     }
 }
 
@@ -2240,15 +2249,24 @@ tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
 
-  if (stream != NULL &&
-      tp_stream_engine_stream_mute_output (stream, mute_state, &error))
+  if (stream != NULL)
     {
-      stream_engine_svc_stream_engine_return_from_mute_output (context);
+      if (!TP_STREAM_ENGINE_IS_AUDIO_STREAM (stream))
+        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "MuteOutput can only be called on audio streams");
+      else
+        tp_stream_engine_audio_stream_mute_output (
+            TP_STREAM_ENGINE_AUDIO_STREAM (stream), mute_state, &error);
     }
-  else
+
+  if (error)
     {
       dbus_g_method_return_error (context, error);
       g_error_free (error);
+    }
+  else
+    {
+      stream_engine_svc_stream_engine_return_from_mute_output (context);
     }
 }
 
@@ -2272,15 +2290,24 @@ tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
 
-  if (stream != NULL &&
-      tp_stream_engine_stream_set_output_volume (stream, volume, &error))
+  if (stream != NULL)
     {
-      stream_engine_svc_stream_engine_return_from_set_output_volume (context);
+      if (!TP_STREAM_ENGINE_IS_AUDIO_STREAM (stream))
+        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "SetOutputVolume can only be called on audio streams");
+      else
+        tp_stream_engine_audio_stream_set_output_volume (
+            TP_STREAM_ENGINE_AUDIO_STREAM (stream), volume, &error);
     }
-  else
+
+  if (error)
     {
       dbus_g_method_return_error (context, error);
       g_error_free (error);
+    }
+  else
+    {
+      stream_engine_svc_stream_engine_return_from_set_output_volume (context);
     }
 }
 

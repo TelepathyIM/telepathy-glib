@@ -58,18 +58,6 @@ typedef struct {
 
 GType tp_stream_engine_stream_get_type (void);
 
-gboolean tp_stream_engine_stream_mute_input (
-  TpStreamEngineStream *chan,
-  gboolean mute_state,
-  GError **error);
-gboolean tp_stream_engine_stream_mute_output (
-  TpStreamEngineStream *chan,
-  gboolean mute_state,
-  GError **error);
-gboolean tp_stream_engine_stream_set_output_volume (
-  TpStreamEngineStream *chan,
-  guint volume,
-  GError **error);
 gboolean tp_stream_engine_stream_set_output_window (
   TpStreamEngineStream *chan,
   guint window_id,
