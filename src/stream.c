@@ -1694,97 +1694,6 @@ get_volume_element (GstElement *element)
   return volume_element;
 }
 
-static gboolean has_volume_element (GstElement *element)
-{
-  GstElement *volume_element = get_volume_element (element);
-
-  if (volume_element)
-    {
-      gst_object_unref (volume_element);
-      return TRUE;
-    }
-  else
-    {
-      return FALSE;
-    }
-}
-
-static GstElement *
-make_volume_bin (TpStreamEngineStream *stream, GstElement *element,
-    gchar *padname)
-{
-  GstElement *bin = gst_bin_new (NULL);
-  GstElement *volume = gst_element_factory_make ("volume", NULL);
-  GstPad *volume_pad;
-  GstPad *ghostpad;
-  g_assert (volume);
-
-  DEBUG (stream, "Putting the %s into a bin with a volume element", padname);
-
-  if (!gst_bin_add (GST_BIN (bin), element) ||
-      !gst_bin_add (GST_BIN (bin), volume))
-    {
-      g_warning ("Could not add %s and volume to the bin", padname);
-      gst_object_unref (element);
-      gst_object_unref (bin);
-      gst_object_unref (volume);
-      return NULL;
-    }
-
-  if (!strcmp (padname, "src"))
-    {
-      if (!gst_element_link (element, volume))
-        {
-          g_warning ("Could not link volume and %s", padname);
-          gst_object_unref (bin);
-          return NULL;
-        }
-    }
-  else
-    {
-      if (!gst_element_link (volume, element))
-        {
-          g_warning ("Could not link volume and %s", padname);
-          gst_object_unref (bin);
-          return NULL;
-        }
-    }
-
-  volume_pad = gst_element_get_static_pad (volume, padname);
-  g_assert (volume_pad);
-
-  ghostpad = gst_ghost_pad_new (padname, volume_pad);
-  g_assert (ghostpad);
-
-  gst_object_unref (volume_pad);
-
-  if (!gst_element_add_pad (bin, ghostpad))
-    {
-      g_warning ("Could not add %s ghostpad to src element", padname);
-      gst_object_unref (element);
-      gst_object_unref (ghostpad);
-      return NULL;
-    }
-
-  return bin;
-}
-
-static void
-set_audio_src_props (GstBin *bin,
-                     GstElement *src,
-                     void *user_data)
-{
-  if (g_object_has_property ((GObject *) src, "blocksize"))
-    g_object_set ((GObject *) src, "blocksize", 320, NULL);
-
-  if (g_object_has_property ((GObject *) src, "latency-time"))
-    g_object_set ((GObject *) src, "latency-time", G_GINT64_CONSTANT (20000),
-        NULL);
-
-  if (g_object_has_property ((GObject *) src, "is-live"))
-    g_object_set ((GObject *) src, "is-live", TRUE, NULL);
-}
-
 static GstElement *
 make_src (TpStreamEngineStream *stream,
           guint media_type)
@@ -1794,40 +1703,7 @@ make_src (TpStreamEngineStream *stream,
 
   if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      if ((elem = getenv ("FS_AUDIO_SRC")) || (elem = getenv ("FS_AUDIOSRC")))
-        {
-          DEBUG (stream, "making audio src with pipeline \"%s\"", elem);
-          src = gst_parse_bin_from_description (elem, TRUE, NULL);
-          g_assert (src);
-        }
-      else
-        {
-          src = gst_element_factory_make ("gconfaudiosrc", NULL);
-
-          if (src == NULL)
-            src = gst_element_factory_make ("alsasrc", NULL);
-        }
-
-      if (src == NULL)
-        {
-          DEBUG (stream, "failed to make audio src element!");
-          return NULL;
-        }
-
-      DEBUG (stream, "made audio src element %s", GST_ELEMENT_NAME (src));
-
-      if (GST_IS_BIN (src))
-        {
-          g_signal_connect ((GObject *) src, "element-added",
-              G_CALLBACK (set_audio_src_props), NULL);
-        }
-      else
-        {
-          set_audio_src_props (NULL, src, NULL);
-        }
-
-      if (!has_volume_element (src))
-        src = make_volume_bin (stream, src, "src");
+      g_assert_not_reached ();
     }
   else
     {
@@ -1890,15 +1766,6 @@ make_src (TpStreamEngineStream *stream,
   return src;
 }
 
-static void
-set_audio_sink_props (GstBin *bin,
-                      GstElement *sink,
-                      void *user_data)
-{
-  if (g_object_has_property ((GObject *) sink, "sync"))
-    g_object_set ((GObject *) sink, "sync", FALSE, NULL);
-}
-
 static GstElement *
 make_sink (TpStreamEngineStream *stream, guint media_type)
 {
@@ -1907,50 +1774,7 @@ make_sink (TpStreamEngineStream *stream, guint media_type)
 
   if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
     {
-      if ((elem = getenv ("FS_AUDIO_SINK")) || (elem = getenv("FS_AUDIOSINK")))
-        {
-          DEBUG (stream, "making audio sink with pipeline \"%s\"", elem);
-          sink = gst_parse_bin_from_description (elem, TRUE, NULL);
-          g_assert (sink);
-        }
-      else
-        {
-          sink = gst_element_factory_make ("gconfaudiosink", NULL);
-
-          if (sink != NULL)
-            {
-              /* set profile=2 for gconfaudiosink "chat" profile */
-              g_object_set ((GObject *) sink, "profile", 2, NULL);
-            }
-          else
-            {
-              sink = gst_element_factory_make ("autoaudiosink", NULL);
-            }
-
-          if (sink == NULL)
-            sink = gst_element_factory_make ("alsasink", NULL);
-        }
-
-      if (sink == NULL)
-        {
-          DEBUG (stream, "failed to make audio sink element!");
-          return NULL;
-        }
-
-      DEBUG (stream, "made audio sink element %s", GST_ELEMENT_NAME (sink));
-
-      if (GST_IS_BIN (sink))
-        {
-          g_signal_connect ((GObject *) sink, "element-added",
-              G_CALLBACK (set_audio_sink_props), NULL);
-        }
-      else
-        {
-          set_audio_sink_props (NULL, sink, NULL);
-        }
-
-      if (!has_volume_element (sink))
-        sink = make_volume_bin (stream, sink, "sink");
+      g_assert_not_reached ();
     }
   else
     {
