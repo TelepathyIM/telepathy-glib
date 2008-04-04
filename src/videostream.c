@@ -382,11 +382,11 @@ tp_stream_engine_video_stream_set_output_window (
 
   if (window_id == 0)
     {
-      GstElement *stream_sink = farsight_stream_get_sink
-          (stream->fs_stream);
-      farsight_stream_set_sink (stream->fs_stream, NULL);
+      GstElement *stream_sink = NULL;
+      g_object_get (G_OBJECT (stream), "sink", &stream_sink, NULL);
+      g_object_set (G_OBJECT (stream), "sink", NULL, NULL);
       _remove_video_sink (videostream, stream_sink);
-
+      g_object_unref (stream_sink);
       return TRUE;
     }
 
@@ -403,10 +403,13 @@ tp_stream_engine_video_stream_set_output_window (
 
   DEBUG (stream, "putting video output in window %d", window_id);
 
-  old_sink = farsight_stream_get_sink (stream->fs_stream);
+  g_object_get (G_OBJECT (stream), "sink", &old_sink, NULL);
 
   if (old_sink)
+    {
       _remove_video_sink (videostream, old_sink);
+      g_object_unref (old_sink);
+    }
 
   tp_stream_engine_add_output_window (engine, videostream, sink, window_id);
 
@@ -421,9 +424,7 @@ tp_stream_engine_video_stream_set_output_window (
       return FALSE;
     }
 
-  if (!farsight_stream_set_sink (stream->fs_stream, sink))
-    g_warning ("Could not set video sink on farsight stream");
-
+  g_object_set (G_OBJECT (stream), "sink", sink, NULL);
 
   return TRUE;
 }
@@ -508,12 +509,15 @@ tp_stream_engine_video_stream_stop_stream (TpStreamEngineStream *stream)
 
   DEBUG (stream, "calling stop on farsight stream %p", stream->fs_stream);
 
-  sink = farsight_stream_get_sink (stream->fs_stream);
+  g_object_get (G_OBJECT (stream), "sink", &sink, NULL);
 
   farsight_stream_stop (stream->fs_stream);
 
-  farsight_stream_set_source (stream->fs_stream, NULL);
+  g_object_set (G_OBJECT (stream), "source", NULL, NULL);
 
   if (sink)
-    _remove_video_sink (TP_STREAM_ENGINE_VIDEO_STREAM (stream), sink);
+    {
+      _remove_video_sink (TP_STREAM_ENGINE_VIDEO_STREAM (stream), sink);
+      g_object_unref (sink);
+    }
 }
