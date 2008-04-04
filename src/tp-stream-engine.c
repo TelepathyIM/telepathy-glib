@@ -1192,7 +1192,8 @@ bus_sync_message (GstBus *bus G_GNUC_UNUSED,
           engine->priv->linked = FALSE;
           engine->priv->restart_source = TRUE;
 
-          g_debug ("Stream error, lets unlink the source to stop the EOS");
+          g_debug ("Got non-linked error (got no preview windows or video "
+              "streams any more), unlinking the source to stop the EOS");
           gst_element_unlink (engine->priv->videosrc,
               engine->priv->videosrc_next);
         }
@@ -1226,7 +1227,7 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
 
         if (strstr (error_string, "not-linked"))
           {
-            g_debug ("%s: got error from %s: %s: %s (%d %d)",
+            g_debug ("%s: ignoring not-linked from %s: %s: %s (%d %d)",
                 G_STRFUNC, name, error->message, error_string,
                 error->domain, error->code);
             g_free (error_string);
