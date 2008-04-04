@@ -67,8 +67,6 @@ struct _TpStreamEngineStreamPrivate
   FarsightStreamDirection dir;
 
   guint output_window_id;
-
-  GstElement *queue;
 };
 
 enum
@@ -476,78 +474,6 @@ tp_stream_engine_stream_constructor (GType type,
   return obj;
 }
 
-
-static void
-tee_src_pad_unblocked (GstPad *pad, gboolean blocked G_GNUC_UNUSED,
-    gpointer user_data G_GNUC_UNUSED)
-{
-  gst_object_unref (pad);
-}
-
-static void
-tee_src_pad_blocked (GstPad *pad, gboolean blocked G_GNUC_UNUSED,
-    gpointer user_data G_GNUC_UNUSED)
-{
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
-  TpStreamEngine *engine = tp_stream_engine_get ();
-  GstPad *queuesinkpad = NULL;
-  GstElement *pipeline = NULL;
-  GstElement *tee = NULL;
-  GstPad *teesrcpad = NULL;
-
-  GstStateChangeReturn ret;
-
-  if (!priv->queue)
-    {
-      gst_object_unref (pad);
-      return;
-    }
-  pipeline = tp_stream_engine_get_pipeline (engine);
-  g_assert (pipeline);
-  tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-  g_assert (tee);
-  queuesinkpad = gst_element_get_static_pad (priv->queue, "sink");
-  teesrcpad = gst_pad_get_peer (queuesinkpad);
-  g_assert (teesrcpad);
-
-  gst_object_unref (queuesinkpad);
-
-  if (!gst_bin_remove (GST_BIN (pipeline), priv->queue))
-    {
-      g_warning ("Could not remove the queue from the bin");
-    }
-
-  ret = gst_element_set_state (priv->queue, GST_STATE_NULL);
-
-  if (ret == GST_STATE_CHANGE_ASYNC)
-    {
-      g_warning ("%s is going to NULL async, lets wait 2 seconds",
-          GST_OBJECT_NAME (priv->queue));
-      ret = gst_element_get_state (priv->queue, NULL, NULL, 2*GST_SECOND);
-    }
-
-  if (ret == GST_STATE_CHANGE_ASYNC)
-    g_warning ("%s still hasn't going NULL, we have to leak it",
-        GST_OBJECT_NAME (priv->queue));
-  else if (ret == GST_STATE_CHANGE_FAILURE)
-    g_warning ("There was an error bringing %s to the NULL state",
-        GST_OBJECT_NAME (priv->queue));
-  else
-    gst_object_unref (priv->queue);
-
-  priv->queue = NULL;
-
-  gst_element_release_request_pad (tee, teesrcpad);
-
-  gst_object_unref (tee);
-
-  gst_object_unref (stream);
-
-  if (!gst_pad_set_blocked_async (pad, FALSE, tee_src_pad_unblocked, NULL))
-    gst_object_unref (pad);
-}
-
 static void
 tp_stream_engine_stream_dispose (GObject *object)
 {
@@ -608,28 +534,6 @@ tp_stream_engine_stream_dispose (GObject *object)
           priv->output_window_id);
       g_assert (ret);
       priv->output_window_id = 0;
-    }
-
-  if (priv->queue)
-    {
-      TpStreamEngine *engine = tp_stream_engine_get ();
-      GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
-      GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-      GstPad *pad = NULL;
-
-      pad = gst_element_get_static_pad (tee, "sink");
-
-      g_object_ref (object);
-
-      if (!gst_pad_set_blocked_async (pad, TRUE, tee_src_pad_blocked, object))
-        {
-          g_warning ("tee source pad already blocked, lets try to dispose"
-              " of it already");
-          tee_src_pad_blocked (pad, TRUE, object);
-        }
-
-      /* Lets keep a ref around until we've blocked the pad
-       * and removed the queue, so we dont unref the pad here. */
     }
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
@@ -1624,85 +1528,13 @@ cb_fs_native_candidates_prepared (FarsightStream *stream,
     NULL, (GObject *) self);
 }
 
-static void
-queue_linked (GstPad *pad G_GNUC_UNUSED, GstPad *peer G_GNUC_UNUSED,
-    gpointer user_data)
-{
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
-
-  g_signal_emit (stream, signals[LINKED], 0);
-}
-
 static GstElement *
 make_src (TpStreamEngineStream *stream,
           guint media_type)
 {
-  GstElement *src = NULL;
-  TpStreamEngineStreamPrivate *priv = STREAM_PRIVATE (stream);
+  g_assert_not_reached ();
 
-  if (media_type == FARSIGHT_MEDIA_TYPE_AUDIO)
-    {
-      g_assert_not_reached ();
-    }
-  else
-    {
-      TpStreamEngine *engine = tp_stream_engine_get ();
-      GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
-      GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-      GstElement *queue = gst_element_factory_make ("queue", NULL);
-      GstPad *pad = NULL;
-      GstStateChangeReturn state_ret;
-
-      g_return_val_if_fail (tee, NULL);
-
-      if (!queue)
-        g_error("Could not create queue element");
-
-      g_object_set(G_OBJECT(queue), "leaky", 2,
-          "max-size-time", 50*GST_MSECOND, NULL);
-
-      pad = gst_element_get_static_pad (queue, "src");
-
-      g_return_val_if_fail (pad, NULL);
-
-      g_signal_connect (pad, "linked", G_CALLBACK (queue_linked), stream);
-
-      priv->queue = queue;
-      gst_object_ref (queue);
-
-      if (!gst_bin_add(GST_BIN(pipeline), queue))
-        {
-          g_warning ("Culd not add queue to pipeline");
-          gst_object_unref (queue);
-          return NULL;
-        }
-
-      state_ret = gst_element_set_state(queue, GST_STATE_PLAYING);
-      if (state_ret == GST_STATE_CHANGE_FAILURE)
-        {
-          g_warning ("Could not set the queue to playing");
-          gst_bin_remove (GST_BIN(pipeline), queue);
-          return NULL;
-        }
-
-      if (!gst_element_link(tee, queue))
-        {
-          g_warning ("Could not link the tee to its queue");
-          gst_bin_remove (GST_BIN(pipeline), queue);
-          return NULL;
-        }
-
-      /*
-       * We need to keep a second ref
-       * one will be given to farsight and the second one is kept by s-e
-       */
-      gst_object_ref (queue);
-
-      src = queue;
-      gst_object_unref (tee);
-    }
-
-  return src;
+  return NULL;
 }
 
 static GstElement *
