@@ -163,13 +163,26 @@ dsp_crashed (gpointer dummy)
 }
 #endif
 
+static gboolean
+dump_dot_file(gpointer data)
+{
+  TpStreamEngine *engine = tp_stream_engine_get ();
+  GstElement *pipeline = NULL;
+
+  if (engine)
+    tp_stream_engine_get_pipeline (engine);
+
+  if (pipeline)
+    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
+        GST_DEBUG_GRAPH_SHOW_ALL, "stream-engine-pipeline");
+
+  return FALSE;
+}
+
 static void
 got_sigusr1 (int i G_GNUC_UNUSED)
 {
-  TpStreamEngine *engine = tp_stream_engine_get ();
-  GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
-  GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
-      GST_DEBUG_GRAPH_SHOW_ALL, "stream-engine-pipeline");
+  g_idle_add (dump_dot_file, NULL);
 }
 
 static void
