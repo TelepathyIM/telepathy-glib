@@ -1,4 +1,4 @@
-telepathy-stream-engine 0.5.0 (2008-03-21)
+telepathy-stream-engine 0.5.0 (2008-04-04)
 ==========================================
 
 * Refactoring to take us closer to having a "stream engine" library, cleaning
