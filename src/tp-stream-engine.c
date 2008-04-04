@@ -1232,9 +1232,15 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
                 error->domain, error->code);
             g_free (error_string);
             g_error_free (error);
+
+            if (priv->restart_source)
+              {
+                g_debug ("%s: setting video source to NULL state", G_STRFUNC);
+                gst_element_set_state (priv->videosrc, GST_STATE_NULL);
+              }
+
             break;
           }
-
 
         g_debug ("%s: got error from %s: %s: %s (%d %d), destroying video "
             "pipeline", G_STRFUNC, name, error->message, error_string,
