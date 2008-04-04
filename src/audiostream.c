@@ -471,18 +471,18 @@ gboolean tp_stream_engine_audio_stream_mute_output (
   GError **error)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
-  GstElement *sink;
+  GstElement *sink = NULL;
   GstElement *muter;
 
-  g_return_val_if_fail (stream->fs_stream, FALSE);
-
   audiostream->priv->output_mute = mute_state;
-  sink = farsight_stream_get_sink (stream->fs_stream);
+  g_object_get (G_OBJECT (stream), "sink", &sink, NULL);
 
   if (!sink)
     return TRUE;
 
   muter = get_volume_element (sink);
+
+  g_object_unref (sink);
 
   if (!muter)
     return TRUE;
@@ -504,23 +504,23 @@ gboolean tp_stream_engine_audio_stream_set_output_volume (
   GError **error)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
-  GstElement *sink;
+  GstElement *sink = NULL;
   GstElement *volumer;
   GParamSpec *volume_prop;
-
-  g_return_val_if_fail (stream->fs_stream, FALSE);
 
   if (volume > 100)
     volume = 100;
 
   audiostream->priv->output_volume = volume;
 
-  sink = farsight_stream_get_sink (stream->fs_stream);
+  g_object_get (G_OBJECT (stream), "sink", &sink, NULL);
 
   if (!sink)
     return TRUE;
 
   volumer = get_volume_element (sink);
+
+  g_object_unref (sink);
 
   if (!volumer)
     return TRUE;
@@ -568,19 +568,18 @@ gboolean tp_stream_engine_audio_stream_mute_input (
   GError **error)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
-  GstElement *source;
+  GstElement *source = NULL;
   GstElement *muter;
 
-  g_return_val_if_fail (stream->fs_stream, FALSE);
-
   audiostream->priv->input_mute = mute_state;
-  source = farsight_stream_get_source (stream->fs_stream);
+  g_object_get (G_OBJECT (stream), "source", &source, NULL);
 
   if (!source)
     return TRUE;
 
-
   muter = get_volume_element (source);
+
+  g_object_unref (source);
 
   if (!muter)
     return TRUE;

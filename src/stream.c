@@ -207,14 +207,17 @@ tp_stream_engine_stream_get_property (GObject    *object,
           (TpStreamEngineNatProperties *) self->priv->nat_props);
       break;
     case PROP_PIPELINE:
+      g_return_if_fail (self->fs_stream);
       g_value_set_object (value,
           farsight_stream_get_pipeline (self->fs_stream));
       break;
     case PROP_SOURCE:
+      g_return_if_fail (self->fs_stream);
       g_value_set_object (value,
           farsight_stream_get_source (self->fs_stream));
       break;
     case PROP_SINK:
+      g_return_if_fail (self->fs_stream);
       g_value_set_object (value,
           farsight_stream_get_sink (self->fs_stream));
       break;
