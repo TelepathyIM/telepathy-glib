@@ -37,6 +37,7 @@ typedef struct {
 
   /* Read-only */
   guint stream_id;
+  FarsightStream *fs_stream;
 
   TpStreamEngineStreamPrivate *priv;
 } TpStreamEngineStream;
