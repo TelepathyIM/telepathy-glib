@@ -494,7 +494,7 @@ tp_stream_engine_audio_stream_make_sink (TpStreamEngineStream *stream)
 gboolean tp_stream_engine_audio_stream_mute_output (
   TpStreamEngineAudioStream *audiostream,
   gboolean mute_state,
-  GError **error)
+  GError **error G_GNUC_UNUSED)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
   GstElement *sink = NULL;
@@ -527,7 +527,7 @@ gboolean tp_stream_engine_audio_stream_mute_output (
 gboolean tp_stream_engine_audio_stream_set_output_volume (
   TpStreamEngineAudioStream *audiostream,
   guint volume,
-  GError **error)
+  GError **error G_GNUC_UNUSED)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
   GstElement *sink = NULL;
@@ -591,7 +591,7 @@ gboolean tp_stream_engine_audio_stream_set_output_volume (
 gboolean tp_stream_engine_audio_stream_mute_input (
   TpStreamEngineAudioStream *audiostream,
   gboolean mute_state,
-  GError **error)
+  GError **error G_GNUC_UNUSED)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (audiostream);
   GstElement *source = NULL;
@@ -622,9 +622,9 @@ gboolean tp_stream_engine_audio_stream_mute_input (
 }
 
 static void
-cb_set_remote_codecs (TpMediaStreamHandler *proxy,
-    const GPtrArray *codecs,
-    gpointer user_data,
+cb_set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+    const GPtrArray *codecs G_GNUC_UNUSED,
+    gpointer user_data G_GNUC_UNUSED,
     GObject *object)
 {
   TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (object);
@@ -633,8 +633,8 @@ cb_set_remote_codecs (TpMediaStreamHandler *proxy,
 }
 
 static void
-cb_fs_codec_changed (FarsightStream *stream,
-                     gint codec_id,
+cb_fs_codec_changed (FarsightStream *stream G_GNUC_UNUSED,
+                     gint codec_id G_GNUC_UNUSED,
                      gpointer user_data)
 {
   TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);

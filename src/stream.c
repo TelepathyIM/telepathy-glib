@@ -1156,10 +1156,10 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 
 static void
-set_stream_held (TpMediaStreamHandler *proxy,
-                    gboolean held,
-                    gpointer user_data,
-                    GObject *object)
+set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+                 gboolean held,
+                 gpointer user_data G_GNUC_UNUSED,
+                 GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   gboolean resource_available = FALSE;

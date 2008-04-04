@@ -198,7 +198,9 @@ tp_stream_engine_video_stream_class_init (TpStreamEngineVideoStreamClass *klass)
 }
 
 static void
-queue_linked (GstPad *pad, GstPad *peer, gpointer user_data)
+queue_linked (GstPad *pad G_GNUC_UNUSED,
+    GstPad *peer G_GNUC_UNUSED,
+    gpointer user_data)
 {
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
 
@@ -319,13 +321,16 @@ tp_stream_engine_video_stream_make_sink (TpStreamEngineStream *stream)
 }
 
 static void
-tee_src_pad_unblocked (GstPad *pad, gboolean blocked, gpointer user_data)
+tee_src_pad_unblocked (GstPad *pad,
+    gboolean blocked G_GNUC_UNUSED,
+    gpointer user_data G_GNUC_UNUSED)
 {
   gst_object_unref (pad);
 }
 
 static void
-tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data)
+tee_src_pad_blocked (GstPad *pad, gboolean blocked G_GNUC_UNUSED,
+    gpointer user_data)
 {
   TpStreamEngineVideoStream *videostream =
       TP_STREAM_ENGINE_VIDEO_STREAM (user_data);
@@ -502,7 +507,8 @@ video_sink_unlinked_idle_cb (gpointer user_data)
 
 
 static void
-video_sink_unlinked_cb (GstPad *pad, GstPad *peer, gpointer user_data)
+video_sink_unlinked_cb (GstPad *pad, GstPad *peer G_GNUC_UNUSED,
+    gpointer user_data)
 {
   g_idle_add (video_sink_unlinked_idle_cb, user_data);
 
