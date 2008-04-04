@@ -45,8 +45,6 @@ typedef struct {
 typedef struct {
   GObjectClass parent_class;
 
-  GstElement * (*make_sink) (TpStreamEngineStream *stream);
-  GstElement * (*make_src) (TpStreamEngineStream *stream);
   void (*stop_stream) (TpStreamEngineStream *stream);
 
 } TpStreamEngineStreamClass;

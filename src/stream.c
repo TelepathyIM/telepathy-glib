@@ -130,10 +130,6 @@ static void stop_telephony_event (TpMediaStreamHandler *proxy,
 static void close (TpMediaStreamHandler *proxy,
     gpointer user_data, GObject *object);
 
-static GstElement *make_src (TpStreamEngineStream *stream, guint media_type);
-
-static GstElement *make_sink (TpStreamEngineStream *stream, guint media_type);
-
 static void cb_fs_stream_error (FarsightStream *stream,
     FarsightStreamError error, const gchar *debug, gpointer user_data);
 
@@ -286,7 +282,6 @@ tp_stream_engine_stream_constructor (GType type,
   TpStreamEngineStream *stream;
   TpStreamEngineStreamPrivate *priv;
   const gchar *conn_timeout_str;
-  GstElement *src, *sink;
   TpStreamEngineStreamClass *klass = NULL;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->
@@ -347,41 +342,6 @@ tp_stream_engine_stream_constructor (GType type,
       g_object_set (G_OBJECT (stream->fs_stream),
           "conn_timeout", conn_timeout,
           NULL);
-    }
-
-  /* TODO Make this smarter, we should only create those sources and sinks if
-   * they exist. */
-  if (klass->make_src)
-    src = klass->make_src (stream);
-  else
-    src = make_src (stream, priv->media_type);
-  if (klass->make_sink)
-    sink = klass->make_sink (stream);
-  else
-    sink = make_sink (stream, priv->media_type);
-
-  if (src)
-    {
-      DEBUG (stream, "setting source on Farsight stream");
-
-      if (!farsight_stream_set_source (stream->fs_stream, src))
-        g_warning ("Could not set source on farsight stream");
-    }
-  else
-    {
-      DEBUG (stream, "not setting source on Farsight stream");
-    }
-
-  if (sink)
-    {
-      DEBUG (stream, "setting sink on Farsight stream");
-
-      if (!farsight_stream_set_sink (stream->fs_stream, sink))
-        g_warning ("Could not set sink on farsight stream");
-    }
-  else
-    {
-      DEBUG (stream, "not setting sink on Farsight stream");
     }
 
   g_signal_connect (G_OBJECT (stream->fs_stream), "error",
@@ -1449,23 +1409,6 @@ cb_fs_native_candidates_prepared (FarsightStream *stream,
     self->priv->stream_handler_proxy, -1, async_method_callback,
     "Media.StreamHandler::NativeCandidatesPrepared",
     NULL, (GObject *) self);
-}
-
-static GstElement *
-make_src (TpStreamEngineStream *stream,
-          guint media_type)
-{
-  g_assert_not_reached ();
-
-  return NULL;
-}
-
-static GstElement *
-make_sink (TpStreamEngineStream *stream, guint media_type)
-{
-  g_assert_not_reached ();
-
-  return NULL;
 }
 
 static void

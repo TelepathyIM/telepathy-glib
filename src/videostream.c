@@ -88,6 +88,47 @@ tp_stream_engine_video_stream_init (TpStreamEngineVideoStream *self)
   self->priv = priv;
 }
 
+static GObject *
+tp_stream_engine_video_stream_constructor (GType type,
+    guint n_props,
+    GObjectConstructParam *props)
+{
+  GObject *obj;
+  TpStreamEngineStream *stream = NULL;
+  GstElement *src = NULL;
+  GstElement *sink = NULL;
+
+  obj = G_OBJECT_CLASS (tp_stream_engine_video_stream_parent_class)->constructor (type, n_props, props);
+
+  stream = (TpStreamEngineStream *) obj;
+
+  src = tp_stream_engine_video_stream_make_src (stream);
+  sink = tp_stream_engine_video_stream_make_sink (stream);
+
+  if (src)
+    {
+      DEBUG (stream, "setting source on Farsight stream");
+      farsight_stream_set_source (stream->fs_stream, src);
+    }
+  else
+    {
+      DEBUG (stream, "not setting source on Farsight stream");
+    }
+
+  if (sink)
+    {
+      DEBUG (stream, "setting sink on Farsight stream");
+      farsight_stream_set_sink (stream->fs_stream, sink);
+    }
+  else
+    {
+      DEBUG (stream, "not setting sink on Farsight stream");
+    }
+
+
+  return obj;
+}
+
 static void
 tp_stream_engine_video_stream_dispose (GObject *object)
 {
@@ -142,8 +183,8 @@ tp_stream_engine_video_stream_class_init (TpStreamEngineVideoStreamClass *klass)
   g_type_class_add_private (klass, sizeof (TpStreamEngineVideoStreamPrivate));
   object_class->dispose = tp_stream_engine_video_stream_dispose;
 
-  stream_class->make_src = tp_stream_engine_video_stream_make_src;
-  stream_class->make_sink = tp_stream_engine_video_stream_make_sink;
+  object_class->constructor = tp_stream_engine_video_stream_constructor;
+
   stream_class->stop_stream = tp_stream_engine_video_stream_stop_stream;
 
   signals[LINKED] =

@@ -92,6 +92,8 @@ tp_stream_engine_audio_stream_constructor (GType type,
   TpMediaStreamHandler *stream_handler_proxy = NULL;
   TpStreamEngineStream *stream = NULL;
   TpMediaStreamType media_type;
+  GstElement *src = NULL;
+  GstElement *sink = NULL;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->constructor (type, n_props, props);
 
@@ -111,6 +113,29 @@ tp_stream_engine_audio_stream_constructor (GType type,
 
   g_signal_connect (G_OBJECT (stream->fs_stream),
       "codec-changed", G_CALLBACK (cb_fs_codec_changed), obj);
+
+  src = tp_stream_engine_audio_stream_make_src (stream);
+  sink = tp_stream_engine_audio_stream_make_sink (stream);
+
+  if (src)
+    {
+      DEBUG (stream, "setting source on Farsight stream");
+      farsight_stream_set_source (stream->fs_stream, src);
+    }
+  else
+    {
+      DEBUG (stream, "not setting source on Farsight stream");
+    }
+
+  if (sink)
+    {
+      DEBUG (stream, "setting sink on Farsight stream");
+      farsight_stream_set_sink (stream->fs_stream, sink);
+    }
+  else
+    {
+      DEBUG (stream, "not setting sink on Farsight stream");
+    }
 
   return obj;
 }
@@ -132,16 +157,11 @@ static void
 tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  TpStreamEngineStreamClass *stream_class =
-      TP_STREAM_ENGINE_STREAM_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineAudioStreamPrivate));
   object_class->dispose = tp_stream_engine_audio_stream_dispose;
 
   object_class->constructor = tp_stream_engine_audio_stream_constructor;
-
-  stream_class->make_src = tp_stream_engine_audio_stream_make_src;
-  stream_class->make_sink = tp_stream_engine_audio_stream_make_sink;
 }
 
 static GstElement *
