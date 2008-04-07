@@ -40,11 +40,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
 
   <xsl:template match="tp:docstring">
-    <xsl:apply-templates select="text() | html:*" mode="html"/>
-    <xsl:apply-templates select="tp:rationale"/>
+    <xsl:apply-templates select="text() | html:* | tp:rationale" mode="html"/>
   </xsl:template>
 
-  <xsl:template match="tp:rationale">
+  <xsl:template match="tp:rationale" mode="html">
     <div xmlns="http://www.w3.org/1999/xhtml" class="rationale">
       <xsl:apply-templates select="node()" mode="html"/>
     </div>
@@ -310,6 +309,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       </h3>
       <div class="docstring">
         <xsl:apply-templates select="tp:docstring"/>
+        <xsl:if test="string(@array-name) != ''">
+          <p>In bindings that need a separate name, arrays of
+            <xsl:value-of select="@name"/> should be called
+            <xsl:value-of select="@array-name"/>.</p>
+        </xsl:if>
       </div>
       <div>
         <h4>Members</h4>
@@ -476,6 +480,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:when test="//tp:simple-type[@name=$tp-type]" />
         <xsl:when test="//tp:simple-type[concat(@name, '[]')=$tp-type]" />
         <xsl:when test="//tp:struct[concat(@name, '[]')=$tp-type][string(@array-name) != '']" />
+        <xsl:when test="//tp:mapping[concat(@name, '[]')=$tp-type][string(@array-name) != '']" />
         <xsl:when test="//tp:struct[@name=$tp-type]" />
         <xsl:when test="//tp:enum[@name=$tp-type]" />
         <xsl:when test="//tp:enum[concat(@name, '[]')=$tp-type]" />
