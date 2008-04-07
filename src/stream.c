@@ -163,6 +163,7 @@ static void stop_stream (TpStreamEngineStream *self);
 static void invalidated_cb (TpMediaStreamHandler *proxy,
     guint domain, gint code, gchar *message, gpointer user_data);
 
+static void stop_stream_real (TpStreamEngineStream *self);
 
 static void
 tp_stream_engine_stream_init (TpStreamEngineStream *self)
@@ -433,10 +434,10 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 
   object_class->set_property = tp_stream_engine_stream_set_property;
   object_class->get_property = tp_stream_engine_stream_get_property;
-
   object_class->constructor = tp_stream_engine_stream_constructor;
-
   object_class->dispose = tp_stream_engine_stream_dispose;
+
+  klass->stop_stream = stop_stream_real;
 
   param_spec = g_param_spec_object ("farsight-session",
                                     "Farsight session",
@@ -1090,11 +1091,12 @@ stop_stream (TpStreamEngineStream *self)
   TpStreamEngineStreamClass *klass = TP_STREAM_ENGINE_STREAM_GET_CLASS (self);
 
   if (klass->stop_stream)
-    {
-      klass->stop_stream (self);
-      return;
-    }
+    klass->stop_stream (self);
+}
 
+static void
+stop_stream_real (TpStreamEngineStream *self)
+{
   if (!self->fs_stream)
     return;
 
