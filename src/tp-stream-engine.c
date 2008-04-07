@@ -871,6 +871,7 @@ tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
 static void
 stream_free_resource (TpStreamEngineStream *stream, gpointer user_data)
 {
+#ifdef MAEMO_OSSO_SUPPORT
   TpStreamEngine *engine = TP_STREAM_ENGINE (user_data);
 
   g_assert (engine->priv->audio_resource_owner == stream);
@@ -878,7 +879,7 @@ stream_free_resource (TpStreamEngineStream *stream, gpointer user_data)
   g_object_remove_weak_pointer (G_OBJECT (engine->priv->audio_resource_owner),
       (gpointer) &engine->priv->audio_resource_owner);
   engine->priv->audio_resource_owner = NULL;
-
+#endif
 }
 
 static gboolean
