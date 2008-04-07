@@ -63,6 +63,7 @@ struct _TpStreamEngineStreamPrivate
   TpMediaStreamHandler *stream_handler_proxy;
 
   gboolean playing;
+  gboolean has_resource;
   FarsightStreamState state;
   FarsightStreamDirection dir;
 };
@@ -172,6 +173,8 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
       TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamPrivate);
 
   self->priv = priv;
+  priv->playing = FALSE;
+  priv->has_resource = FALSE;
 }
 
 static void
@@ -397,11 +400,11 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       stop_stream (stream);
 
-      /* Free resources used by this stream
-       * If this stream was not the active one, then the signal
-       * would be ignored by stream-engine
-       */
-      g_signal_emit (stream, signals[FREE_RESOURCE], 0);
+      /* Free resources used by this stream */
+      if (priv->has_resource == TRUE)
+        {
+          g_signal_emit (stream, signals[FREE_RESOURCE], 0);
+        }
 
       g_signal_handlers_disconnect_by_func (
           stream->fs_stream, cb_fs_stream_error, stream);
@@ -1125,6 +1128,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       g_signal_emit (self, signals[REQUEST_RESOURCE], 0, &resource_available);
       if (resource_available)
         {
+          self->priv->has_resource = TRUE;
           self->priv->playing = TRUE;
           farsight_stream_start (self->fs_stream);
         }
@@ -1138,6 +1142,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     {
       stop_stream (self);
       g_signal_emit (self, signals[FREE_RESOURCE], 0);
+      self->priv->has_resource = FALSE;
     }
 }
 
@@ -1176,6 +1181,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       if (farsight_stream_hold (self->fs_stream))
         {
           g_signal_emit (self, signals[FREE_RESOURCE], 0);
+          self->priv->has_resource = FALSE;
           /* Send success message */
           if (self->priv->stream_handler_proxy)
             {
@@ -1190,6 +1196,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           stop_stream (self);
           tp_stream_engine_stream_error (self, 0, "Error holding stream");
           g_signal_emit (self, signals[FREE_RESOURCE], 0);
+          self->priv->has_resource = FALSE;
         }
     }
   else
@@ -1198,6 +1205,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       /* Make sure we have access to the resource */
       if (resource_available)
         {
+          self->priv->has_resource = TRUE;
           /* Unhold the stream */
           if (farsight_stream_unhold (self->fs_stream))
             {
@@ -1215,6 +1223,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
               stop_stream (self);
               tp_stream_engine_stream_error (self, 0, "Error unholding stream");
               g_signal_emit (self, signals[FREE_RESOURCE], 0);
+              self->priv->has_resource = FALSE;
             }
         }
       else
