@@ -884,6 +884,7 @@ stream_free_resource (TpStreamEngineStream *stream, gpointer user_data)
 static gboolean
 stream_request_resource (TpStreamEngineStream *stream, gpointer user_data)
 {
+#ifdef MAEMO_OSSO_SUPPORT
   TpStreamEngine *engine = TP_STREAM_ENGINE (user_data);
 
   guint mediatype;
@@ -907,6 +908,7 @@ stream_request_resource (TpStreamEngineStream *stream, gpointer user_data)
       return TRUE;
     }
   else
+#endif
     {
       return TRUE;
     }
