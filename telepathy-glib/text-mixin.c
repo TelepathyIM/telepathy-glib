@@ -60,13 +60,13 @@
 
 struct _TpTextMixinPrivate
 {
-  TpHandleRepoIface *contacts_repo;
-  guint recv_id;
-  gboolean message_lost;
+    TpHandleRepoIface *contacts_repo;
+    guint recv_id;
+    gboolean message_lost;
 
-  GQueue *pending;
+    GQueue *pending;
 
-  GArray *msg_types;
+    GArray *msg_types;
 };
 
 /* pending message */
@@ -84,12 +84,12 @@ struct _TpTextMixinPrivate
  */
 typedef struct
 {
-  guint id;
-  time_t timestamp;
-  TpHandle sender;
-  TpChannelTextMessageType type;
-  char *text;
-  guint flags;
+    guint id;
+    time_t timestamp;
+    TpHandle sender;
+    TpChannelTextMessageType type;
+    char *text;
+    guint flags;
 } _PendingMessage;
 
 /**
@@ -103,8 +103,10 @@ GQuark
 tp_text_mixin_class_get_offset_quark ()
 {
   static GQuark offset_quark = 0;
-  if (!offset_quark)
+
+  if (G_UNLIKELY (offset_quark == 0))
     offset_quark = g_quark_from_static_string ("TpTextMixinClassOffsetQuark");
+
   return offset_quark;
 }
 
@@ -119,8 +121,10 @@ GQuark
 tp_text_mixin_get_offset_quark ()
 {
   static GQuark offset_quark = 0;
-  if (!offset_quark)
+
+  if (G_UNLIKELY (offset_quark == 0))
     offset_quark = g_quark_from_static_string ("TpTextMixinOffsetQuark");
+
   return offset_quark;
 }
 
@@ -437,7 +441,7 @@ tp_text_mixin_acknowledge_pending_messages_async (TpSvcChannelTypeText *iface,
 gboolean
 tp_text_mixin_list_pending_messages (GObject *obj,
                                      gboolean clear,
-                                     GPtrArray ** ret,
+                                     GPtrArray **ret,
                                      GError **error)
 {
   TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
@@ -453,7 +457,7 @@ tp_text_mixin_list_pending_messages (GObject *obj,
        cur != NULL;
        cur = cur->next)
     {
-      _PendingMessage *msg = (_PendingMessage *) cur->data;
+      _PendingMessage *msg = cur->data;
       GValue val = { 0, };
 
       g_value_init (&val, pending_type);
@@ -567,7 +571,7 @@ tp_text_mixin_clear (GObject *obj)
   TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
   _PendingMessage *msg;
 
-  while ((msg = g_queue_pop_head (mixin->priv->pending)))
+  while ((msg = g_queue_pop_head (mixin->priv->pending)) != NULL)
     {
       _pending_free (msg, mixin->priv->contacts_repo);
     }
@@ -585,9 +589,10 @@ tp_text_mixin_clear (GObject *obj)
  * providing a Send implementation.
  */
 void
-tp_text_mixin_iface_init (gpointer g_iface, gpointer iface_data)
+tp_text_mixin_iface_init (gpointer g_iface,
+                          gpointer iface_data)
 {
-  TpSvcChannelTypeTextClass *klass = (TpSvcChannelTypeTextClass *)g_iface;
+  TpSvcChannelTypeTextClass *klass = g_iface;
 
 #define IMPLEMENT(x) tp_svc_channel_type_text_implement_##x (klass,\
     tp_text_mixin_##x##_async)
