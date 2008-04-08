@@ -46,6 +46,12 @@
     <xi:include href="tp-svc.xml"/>
     <xi:include href="xml/svc-generic.xml"/>
     <xi:include href="xml/svc-channel.xml"/>
+    <xi:include href="xml/svc-channel-group.xml"/>
+    <xi:include href="xml/svc-channel-contactlist.xml"/>
+    <xi:include href="xml/svc-channel-text.xml"/>
+    <xi:include href="xml/svc-channel-media.xml"/>
+    <xi:include href="xml/svc-channel-tubes.xml"/>
+    <xi:include href="xml/svc-channel-roomlist.xml"/>
     <xi:include href="xml/svc-connection.xml"/>
     <xi:include href="xml/svc-media-interfaces.xml"/>
     <xi:include href="xml/svc-connection-manager.xml"/>

@@ -40,14 +40,118 @@
 
 /**
  * SECTION:svc-channel
- * @title: Service-side Channel types and interfaces
- * @short_description: GInterfaces for Telepathy Channel objects
+ * @title: Service-side Channel base interface
+ * @short_description: GInterface for Telepathy Channel objects
  * @see_also: #TpChannelIface
  *
- * These interfaces (auto-generated from the Telepathy spec) make it easier
- * to export objects implementing the Telepathy Channel and its types and
- * optional interfaces, with the correct method and signal signatures,
- * and emit signals from those objects in a type-safe way.
+ * This interface (auto-generated from the Telepathy spec) makes it easier
+ * to export objects implementing the Telepathy Channel.
+ */
+
+/**
+ * SECTION:svc-channel-group
+ * @title: Service-side Channel Group interface
+ * @short_description: Groups of contacts
+ * @see_also: #TpGroupMixin
+ *
+ * Many Telepathy Channel objects can be seen as representing groups or
+ * sets of contacts. The Telepathy specification represents this by a common
+ * interface, Group. This section documents the auto-generated GInterface
+ * used to implement the Group interface.
+ *
+ * Contacts can be in four states:
+ *
+ * * in the group (the "members" set)
+ *
+ * * "local pending" (waiting to be added to the group by the local client
+ *   calling AddMembers())
+ *
+ * * "remote pending" (waiting to be added to the group by some other
+ *   action, probably by someone else)
+ *
+ * * no relationship with the group at all
+ *
+ * For instance, chatrooms implement the Group interface. Contacts in the
+ * chatroom are members, and contacts who we've invited to the group, or
+ * contacts who've requested permission to join, are remote pending. If the
+ * local user has been invited by another contact, they will appear in the
+ * local-pending set until they accept or decline the invitation.
+ */
+
+/**
+ * SECTION:svc-channel-text
+ * @title: Text channels
+ * @short_description: service-side interfaces for the Text channel type, and
+ *  the Chat State and Password interfaces
+ * @see_also: #TpTextMixin
+ *
+ * A major use for instant messaging is obviously to send messages.
+ * Channels of type Text represent IM conversations or chat rooms.
+ *
+ * This section documents the auto-generated GInterfaces used to implement
+ * the Text channel type, and some interfaces used in conjunction with it.
+ */
+
+/**
+ * SECTION:svc-channel-media
+ * @title: Media channels
+ * @short_description: service-side interfaces for the Streamed Media channel
+ *  type, and the Call State, DTMF and Media Signalling interfaces
+ *
+ * This section documents the auto-generated C wrappers for the Streamed Media
+ * channel type, and some interfaces which are optionally supported by
+ * channels of this type.
+ *
+ * Streamed Media channels represent real-time audio or video streaming,
+ * including voice over IP, webcams, and telephony.
+ *
+ * Channels of type Streamed Media may support the Media Signalling interface.
+ * If not, the connection manager is assumed to be presenting the media
+ * streams to the user automatically (for instance, in a connection manager
+ * like gnome-phone-manager or telepathy-snom that remotely controls a
+ * telephone, the phone's own speaker and microphone will probably be
+ * used directly).
+ *
+ * If Media Signalling is supported, the Telepathy client is responsible for
+ * actually streaming the media, using the Media Signalling interface to
+ * provide signalling (connection managers might implement this interface in
+ * terms of Jingle or SDP, for instance).
+ *
+ * Channels of type Streamed Media may also support the DTMF and
+ * CallState interfaces.
+ */
+
+/**
+ * SECTION:svc-channel-tubes
+ * @title: Tubes channels
+ * @short_description: service-side interface for the Tubes channel type
+ *
+ * A "tube" is a mechanism for arbitrary data transfer.
+ * This section documents the auto-generated C wrappers for the Tubes
+ * channel type.
+ */
+
+/**
+ * SECTION:svc-channel-contactlist
+ * @title: Contact List channels
+ * @short_description: service-side interface for the Contact List channel type
+ *
+ * Many instant messaging protocols have the a concept of a contact list,
+ * roster or buddy list. Some protocols also have user-defined groups or tags
+ * which can be represented as subsets of the roster.
+ *
+ * This section documents the auto-generated C wrappers for the Contact List
+ * channel type.
+ */
+
+/**
+ * SECTION:svc-channel-roomlist
+ * @title: Room List channels
+ * @short_description: service-side interface for the Room List channel type
+ *
+ * Many instant messaging protocols allow named chatrooms to be listed.
+ * This section documents the auto-generated C wrappers for the Room List
+ * channel type.
  */
 
 /**
@@ -205,7 +309,7 @@
  * SECTION:channel-media
  * @title: Media channels
  * @short_description: client-side wrappers for the Streamed Media channel
- *  type, and the DTMF and Media Signalling interfaces
+ *  type, and the Call State, DTMF and Media Signalling interfaces
  * @see_also: channel-group, #TpChannel
  *
  * This section documents the auto-generated C wrappers for the Streamed Media
