@@ -71,10 +71,6 @@ struct _TpTextMixinPrivate
 
 /* pending message */
 
-/* some fairly arbitrary resource limits */
-#define MAX_PENDING_MESSAGES 256
-#define MAX_MESSAGE_SIZE 8191
-
 /*
  * _PendingMessage:
  * @id: The message ID
