@@ -58,58 +58,6 @@
 
 #include "debug-internal.h"
 
-/* allocator */
-
-typedef struct
-{
-  gulong size;
-  guint limit;
-  guint count;
-} _Allocator;
-
-#define _new0(alloc, type) \
-    ((type *) _allocator_alloc0 (alloc))
-
-static void
-_allocator_init (_Allocator *alloc, gulong size, guint limit)
-{
-  g_assert (alloc != NULL);
-  g_assert (size > 0);
-  g_assert (limit > 0);
-
-  alloc->size = size;
-  alloc->limit = limit;
-}
-
-static gpointer _allocator_alloc0 (_Allocator *alloc)
-{
-  gpointer ret;
-
-  g_assert (alloc != NULL);
-  g_assert (alloc->count <= alloc->limit);
-
-  if (alloc->count == alloc->limit)
-    {
-      ret = NULL;
-    }
-  else
-    {
-      ret = g_malloc0 (alloc->size);
-      alloc->count++;
-    }
-
-  return ret;
-}
-
-static void _allocator_free (_Allocator *alloc, gpointer thing)
-{
-  g_assert (alloc != NULL);
-  g_assert (thing != NULL);
-
-  g_free (thing);
-  alloc->count--;
-}
-
 struct _TpTextMixinPrivate
 {
   TpHandleRepoIface *contacts_repo;
@@ -274,9 +222,25 @@ tp_text_mixin_set_message_types (GObject *obj,
   va_end (args);
 }
 
-static void _pending_free (_PendingMessage *msg,
-    TpHandleRepoIface *contacts_repo);
-static _Allocator * _pending_get_alloc (void);
+static inline _PendingMessage *
+_pending_new0 (void)
+{
+  return g_slice_new0 (_PendingMessage);
+}
+
+/**
+ * _pending_free
+ *
+ * Free up a _PendingMessage struct.
+ */
+static void
+_pending_free (_PendingMessage *msg,
+               TpHandleRepoIface *contacts_repo)
+{
+  g_free (msg->text);
+  tp_handle_unref (contacts_repo, msg->sender);
+  g_slice_free (_PendingMessage, msg);
+}
 
 /**
  * tp_text_mixin_finalize:
@@ -303,39 +267,6 @@ tp_text_mixin_finalize (GObject *obj)
 }
 
 /**
- * _pending_get_alloc:
- *
- * Returns: an Allocator for creating up to 256 pending messages, but no
- * more.
- */
-static _Allocator *
-_pending_get_alloc ()
-{
-  static _Allocator alloc = { 0, };
-
-  if (0 == alloc.size)
-    _allocator_init (&alloc, sizeof (_PendingMessage), MAX_PENDING_MESSAGES);
-
-  return &alloc;
-}
-
-#define _pending_new0() \
-  (_new0 (_pending_get_alloc (), _PendingMessage))
-
-/**
- * _pending_free
- *
- * Free up a _PendingMessage struct.
- */
-static void _pending_free (_PendingMessage *msg,
-                           TpHandleRepoIface *contacts_repo)
-{
-  g_free (msg->text);
-  tp_handle_unref (contacts_repo, msg->sender);
-  _allocator_free (_pending_get_alloc (), msg);
-}
-
-/**
  * tp_text_mixin_receive:
  * @obj: An object with the text mixin
  * @type: The type of message received from the underlying protocol
@@ -356,26 +287,10 @@ tp_text_mixin_receive (GObject *obj,
                        const char *text)
 {
   TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
-
-  gchar *end;
   _PendingMessage *msg;
   size_t len;
 
   msg = _pending_new0 ();
-
-  if (msg == NULL)
-    {
-      DEBUG ("no more pending messages available, giving up");
-
-      if (!mixin->priv->message_lost)
-        {
-          tp_svc_channel_type_text_emit_lost_message (obj);
-          mixin->priv->message_lost = TRUE;
-        }
-
-      return FALSE;
-    }
-
   tp_handle_ref (mixin->priv->contacts_repo, sender);
   msg->sender = sender;
   msg->id = mixin->priv->recv_id++;
@@ -383,25 +298,11 @@ tp_text_mixin_receive (GObject *obj,
   msg->type = type;
 
   len = strlen (text);
-
-  if (len > MAX_MESSAGE_SIZE)
-    {
-      DEBUG ("message exceeds maximum size, truncating");
-
-      msg->flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_TRUNCATED;
-
-      end = g_utf8_find_prev_char (text, text+MAX_MESSAGE_SIZE);
-      if (end)
-        len = end-text;
-      else
-        len = 0;
-    }
-
   msg->text = g_try_malloc (len + 1);
 
   if (msg->text == NULL)
     {
-      DEBUG ("unable to allocate message, giving up");
+      DEBUG ("unable to copy message, giving up");
 
       if (!mixin->priv->message_lost)
         {
@@ -575,7 +476,10 @@ tp_text_mixin_list_pending_messages (GObject *obj,
     }
 
   if (clear)
-    tp_text_mixin_clear (obj);
+    {
+      DEBUG ("WARNING: ListPendingMessages(clear=TRUE) is deprecated");
+      tp_text_mixin_clear (obj);
+    }
 
   *ret = messages;
 
