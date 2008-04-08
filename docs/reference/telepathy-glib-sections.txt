@@ -1450,7 +1450,6 @@ tp_iface_quark_media_session_handler
 tp_iface_quark_media_stream_handler
 tp_iface_quark_properties_interface
 tp_iface_quark_channel_interface_call_state
-tp_iface_quark_channel_interface_hold
 </SECTION>
 
 <SECTION>
