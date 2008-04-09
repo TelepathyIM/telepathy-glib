@@ -2,7 +2,6 @@
 #define __TP_STREAM_ENGINE_STREAM_H__
 
 #include <glib-object.h>
-#include <farsight/farsight-session.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/media-interfaces.h>
 
@@ -37,7 +36,6 @@ typedef struct {
 
   /* Read-only */
   guint stream_id;
-  FarsightStream *fs_stream;
 
   TpStreamEngineStreamPrivate *priv;
 } TpStreamEngineStream;
