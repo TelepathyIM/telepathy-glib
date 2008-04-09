@@ -27,6 +27,8 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
+#include <gst/farsight/fs-conference-iface.h>
+
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
@@ -619,7 +621,8 @@ new_stream_cb (TpStreamEngineSession *session,
   TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
   TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpStreamEngineStream *stream;
-  FarsightSession *fs_session;
+  FsConference *fs_conference;
+  FsParticipant *fs_participant;
   GType stream_gtype;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
   TpMediaStreamHandler *proxy;
@@ -634,7 +637,10 @@ new_stream_cb (TpStreamEngineSession *session,
       return;
     }
 
-  g_object_get (session, "farsight-session", &fs_session, NULL);
+  g_object_get (session,
+      "farsight-conference", &fs_conference,
+      "farsight-participant", &fs_participant,
+      NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
       stream_gtype = priv->video_stream_gtype;
@@ -642,7 +648,8 @@ new_stream_cb (TpStreamEngineSession *session,
       stream_gtype = priv->audio_stream_gtype;
 
   stream = g_object_new (stream_gtype,
-      "farsight-session", fs_session,
+      "farsight-conference", fs_conference,
+      "farsight-participant", fs_participant,
       "proxy", proxy,
       "stream-id", stream_id,
       "media-type", media_type,
@@ -651,7 +658,8 @@ new_stream_cb (TpStreamEngineSession *session,
       NULL);
 
   g_object_unref (proxy);
-  g_object_unref (fs_session);
+  g_object_unref (fs_conference);
+  g_object_unref (fs_participant);
 
   if (priv->streams->len <= stream_id)
     g_ptr_array_set_size (priv->streams, stream_id + 1);
