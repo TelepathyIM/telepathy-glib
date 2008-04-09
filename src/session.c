@@ -22,8 +22,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 
-#include <farsight/farsight-session.h>
-#include <farsight/farsight-codec.h>
+#include <gst/farsight/fs-conference-iface.h>
 
 #include "session.h"
 #include "tp-stream-engine-signals-marshal.h"
@@ -32,8 +31,11 @@ G_DEFINE_TYPE (TpStreamEngineSession, tp_stream_engine_session, G_TYPE_OBJECT);
 
 struct _TpStreamEngineSessionPrivate
 {
+  GError *construction_error;
+
   gchar *session_type;
-  FarsightSession *fs_session;
+  FsConference *fs_conference;
+  FsParticipant *fs_participant;
 
   TpMediaSessionHandler *session_handler_proxy;
 };
@@ -42,7 +44,8 @@ enum
 {
   PROP_PROXY = 1,
   PROP_SESSION_TYPE,
-  PROP_FARSIGHT_SESSION
+  PROP_FARSIGHT_CONFERENCE,
+  PROP_FARSIGHT_PARTICIPANT,
 };
 
 enum
@@ -75,8 +78,11 @@ tp_stream_engine_session_get_property (GObject    *object,
     case PROP_SESSION_TYPE:
       g_value_set_string (value, self->priv->session_type);
       break;
-    case PROP_FARSIGHT_SESSION:
-      g_value_set_object (value, self->priv->fs_session);
+    case PROP_FARSIGHT_CONFERENCE:
+      g_value_set_object (value, self->priv->fs_conference);
+      break;
+    case PROP_FARSIGHT_PARTICIPANT:
+      g_value_set_object (value, self->priv->fs_participant);
       break;
     case PROP_PROXY:
       g_value_set_object (value, self->priv->session_handler_proxy);
@@ -114,9 +120,6 @@ static void new_media_stream_handler (TpMediaSessionHandler *proxy,
     const gchar *stream_handler_path, guint id, guint media_type,
     guint direction, gpointer user_data, GObject *object);
 
-static void cb_fs_session_error (FarsightSession *stream,
-    FarsightSessionError error, const gchar *debug, gpointer user_data);
-
 static void dummy_callback (TpMediaSessionHandler *proxy, const GError *error,
     gpointer user_data, GObject *object);
 
@@ -130,30 +133,31 @@ tp_stream_engine_session_constructor (GType type,
 {
   GObject *obj;
   TpStreamEngineSession *self;
+  gchar *conftype;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_session_parent_class)->
            constructor (type, n_props, props);
   self = (TpStreamEngineSession *) obj;
 
-  self->priv->fs_session = farsight_session_factory_make (self->priv->session_type);
+  conftype = g_strdup_printf ("fs%sconference", self->priv->session_type);
+  self->priv->fs_conference =
+      FS_CONFERENCE (gst_element_factory_make (conftype, NULL));
+  g_free (conftype);
 
-  /* TODO: signal an error back to the connection manager */
-  if (self->priv->fs_session == NULL)
+  if (!self->priv->fs_conference)
     {
-      g_warning ("requested session type was not found, session is unusable!");
+      g_error ("Invalid session");
       return obj;
     }
 
-  g_debug ("plugin details:\n name: %s\n description: %s\n author: %s",
-      farsight_plugin_get_name (self->priv->fs_session->plugin),
-      farsight_plugin_get_description (self->priv->fs_session->plugin),
-      farsight_plugin_get_author (self->priv->fs_session->plugin));
+  self->priv->fs_participant =
+      fs_conference_new_participant (self->priv->fs_conference,
+          "whaterver-cname@1.2.3.4",
+          &self->priv->construction_error);
 
   g_signal_connect (self->priv->session_handler_proxy, "invalidated",
       G_CALLBACK (invalidated_cb), obj);
 
-  g_signal_connect (G_OBJECT (self->priv->fs_session), "error",
-      G_CALLBACK (cb_fs_session_error), obj);
 
   tp_cli_media_session_handler_connect_to_new_stream_handler
       (self->priv->session_handler_proxy, new_media_stream_handler, NULL, NULL,
@@ -186,13 +190,18 @@ tp_stream_engine_session_dispose (GObject *object)
       g_object_unref (tmp);
     }
 
-  if (self->priv->fs_session)
+  if (self->priv->fs_participant)
     {
-      g_signal_handlers_disconnect_by_func (self->priv->fs_session,
-          cb_fs_session_error, self);
 
-      g_object_unref (self->priv->fs_session);
-      self->priv->fs_session = NULL;
+      g_object_unref (self->priv->fs_participant);
+      self->priv->fs_participant = NULL;
+    }
+
+  if (self->priv->fs_conference)
+    {
+
+      g_object_unref (self->priv->fs_conference);
+      self->priv->fs_conference = NULL;
     }
 
   g_free (self->priv->session_type);
@@ -229,15 +238,25 @@ tp_stream_engine_session_class_init (TpStreamEngineSessionClass *klass)
   g_object_class_install_property (object_class, PROP_SESSION_TYPE,
       param_spec);
 
-  param_spec = g_param_spec_object ("farsight-session",
-                                    "Farsight session",
-                                    "The Farsight session which streams "
-                                    "should be created within.",
-                                    FARSIGHT_TYPE_SESSION,
+  param_spec = g_param_spec_object ("farsight-conference",
+                                    "Farsight conference",
+                                    "The Farsight conference to add to the pipeline",
+                                    FS_TYPE_CONFERENCE,
                                     G_PARAM_READABLE |
                                     G_PARAM_STATIC_NICK |
                                     G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_FARSIGHT_SESSION,
+  g_object_class_install_property (object_class, PROP_FARSIGHT_CONFERENCE,
+      param_spec);
+
+  param_spec = g_param_spec_object ("farsight-participant",
+                                    "Farsight participant",
+                                    "The Farsight participant which streams "
+                                    "should be created within.",
+                                    FS_TYPE_PARTICIPANT,
+                                    G_PARAM_READABLE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_FARSIGHT_PARTICIPANT,
       param_spec);
 
   param_spec = g_param_spec_object ("proxy", "TpMediaSessionHandler proxy",
@@ -269,21 +288,6 @@ dummy_callback (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
     {
       g_warning ("Error calling %s: %s", (gchar *) user_data, error->message);
     }
-}
-
-static void
-cb_fs_session_error (FarsightSession *session,
-                     FarsightSessionError error,
-                     const gchar *debug,
-                     gpointer user_data)
-{
-  TpStreamEngineSession *self = TP_STREAM_ENGINE_SESSION (user_data);
-
-  g_message (
-    "%s: session error: session=%p error=%s\n", G_STRFUNC, session, debug);
-  tp_cli_media_session_handler_call_error (self->priv->session_handler_proxy,
-      -1, error, debug, dummy_callback,
-      "Media.SessionHandler::Error", NULL, NULL);
 }
 
 static void
@@ -338,10 +342,9 @@ tp_stream_engine_session_new (TpMediaSessionHandler *proxy,
       "session-type", session_type,
       NULL);
 
-  if (self->priv->fs_session == NULL)
+  if (self->priv->construction_error)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "requested session type not found");
+      g_propagate_error (error, self->priv->construction_error);
       g_object_unref (self);
       return NULL;
     }
