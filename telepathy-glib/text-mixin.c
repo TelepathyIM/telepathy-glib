@@ -601,8 +601,14 @@ tp_text_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
   if (tp_text_mixin_list_pending_messages (G_OBJECT (iface), clear, &ret,
       &error))
     {
+      guint i;
+
       tp_svc_channel_type_text_return_from_list_pending_messages (
           context, ret);
+
+      for (i = 0; i < ret->len; i++)
+        g_value_array_free (g_ptr_array_index (ret, i));
+
       g_ptr_array_free (ret, TRUE);
     }
   else
