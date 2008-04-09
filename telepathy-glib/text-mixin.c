@@ -293,6 +293,8 @@ tp_text_mixin_receive (GObject *obj,
   msg = _pending_new0 ();
   tp_handle_ref (mixin->priv->contacts_repo, sender);
   msg->sender = sender;
+  /* FIXME: we don't check for overflow, so in highly pathological cases we
+   * might end up with multiple messages with the same ID */
   msg->id = mixin->priv->recv_id++;
   msg->timestamp = timestamp;
   msg->type = type;
