@@ -41,9 +41,7 @@ struct _TpStreamEngineChannelPrivate
   TpChannel *channel_proxy;
   DBusGProxy *media_signalling_proxy;
   GType audio_stream_gtype;
-  GstBin *audio_pipeline;
   GType video_stream_gtype;
-  GstBin *video_pipeline;
 
   TpStreamEngineNatProperties nat_props;
   guint prop_id_nat_traversal;
@@ -85,9 +83,7 @@ enum
   PROP_CHANNEL = 1,
   PROP_OBJECT_PATH,
   PROP_AUDIO_STREAM_GTYPE,
-  PROP_AUDIO_PIPELINE,
-  PROP_VIDEO_STREAM_GTYPE,
-  PROP_VIDEO_PIPELINE
+  PROP_VIDEO_STREAM_GTYPE
 };
 
 static void
@@ -129,14 +125,8 @@ tp_stream_engine_channel_get_property (GObject    *object,
     case PROP_AUDIO_STREAM_GTYPE:
       g_value_set_gtype (value, priv->audio_stream_gtype);
       break;
-    case PROP_AUDIO_PIPELINE:
-      g_value_set_object (value, (GObject *) priv->audio_pipeline);
-      break;
     case PROP_VIDEO_STREAM_GTYPE:
       g_value_set_gtype (value, priv->video_stream_gtype);
-      break;
-    case PROP_VIDEO_PIPELINE:
-      g_value_set_object (value, (GObject *) priv->video_pipeline);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -161,18 +151,8 @@ tp_stream_engine_channel_set_property (GObject      *object,
     case PROP_AUDIO_STREAM_GTYPE:
       priv->audio_stream_gtype = g_value_get_gtype (value);
       break;
-    case PROP_AUDIO_PIPELINE:
-      if (priv->audio_pipeline != NULL)
-        g_object_unref ((GObject *) priv->audio_pipeline);
-      priv->audio_pipeline = (GstBin *) g_value_dup_object (value);
-      break;
     case PROP_VIDEO_STREAM_GTYPE:
       priv->video_stream_gtype = g_value_get_gtype (value);
-      break;
-    case PROP_VIDEO_PIPELINE:
-      if (priv->video_pipeline != NULL)
-        g_object_unref ((GObject *) priv->video_pipeline);
-      priv->video_pipeline = (GstBin *) g_value_dup_object (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -467,18 +447,6 @@ tp_stream_engine_channel_dispose (GObject *object)
       priv->streams = NULL;
     }
 
-  if (priv->audio_pipeline)
-    {
-      g_object_unref ((GObject *) priv->audio_pipeline);
-      priv->audio_pipeline = NULL;
-    }
-
-  if (priv->video_pipeline)
-    {
-      g_object_unref ((GObject *) priv->video_pipeline);
-      priv->video_pipeline = NULL;
-    }
-
   if (priv->channel_proxy)
     {
       TpChannel *tmp;
@@ -546,28 +514,12 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
   g_object_class_install_property (object_class, PROP_AUDIO_STREAM_GTYPE,
       param_spec);
 
-  param_spec = g_param_spec_object ("audio-pipeline",
-      "GStreamer pipeline for audio streams",
-      "The GStreamer pipeline which audio streams will be created in.",
-      GST_TYPE_BIN,
-      G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_AUDIO_PIPELINE,
-      param_spec);
-
   param_spec = g_param_spec_gtype ("video-stream-gtype",
       "GType of video streams",
       "GType which will be instantiated for video streams.",
       TP_STREAM_ENGINE_TYPE_STREAM,
       G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_VIDEO_STREAM_GTYPE,
-      param_spec);
-
-  param_spec = g_param_spec_object ("video-pipeline",
-      "GStreamer pipeline for video streams",
-      "The GStreamer pipeline which videostreams will be created in.",
-      GST_TYPE_BIN,
-      G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_VIDEO_PIPELINE,
       param_spec);
 
   signals[HANDLER_RESULT] = g_signal_new ("handler-result",
@@ -669,7 +621,6 @@ new_stream_cb (TpStreamEngineSession *session,
   TpStreamEngineStream *stream;
   FarsightSession *fs_session;
   GType stream_gtype;
-  GstBin *pipeline;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
   TpMediaStreamHandler *proxy;
 
@@ -686,15 +637,9 @@ new_stream_cb (TpStreamEngineSession *session,
   g_object_get (session, "farsight-session", &fs_session, NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-    {
       stream_gtype = priv->video_stream_gtype;
-      pipeline = priv->video_pipeline;
-    }
   else
-    {
       stream_gtype = priv->audio_stream_gtype;
-      pipeline = priv->audio_pipeline;
-    }
 
   stream = g_object_new (stream_gtype,
       "farsight-session", fs_session,
@@ -703,7 +648,6 @@ new_stream_cb (TpStreamEngineSession *session,
       "media-type", media_type,
       "direction", direction,
       "nat-properties", &(priv->nat_props),
-      "pipeline", pipeline,
       NULL);
 
   g_object_unref (proxy);
