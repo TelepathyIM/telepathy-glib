@@ -934,3 +934,45 @@ tp_stream_engine_channel_foreach_stream (TpStreamEngineChannel *self,
         func (self, i, stream, user_data);
     }
 }
+
+
+/**
+ * tp_stream_engine_channel_bus_message:
+ * @channel: A #TpStreamEngineChannel
+ * @message: A #GstMessage received from the bus
+ *
+ * You must call this function on call messages received on the async bus.
+ * #GstMessages are not modified.
+ *
+ * Returns: %TRUE if the message has been handled, %FALSE otherwise
+ */
+
+gboolean
+tp_stream_engine_channel_bus_message (TpStreamEngineChannel *channel,
+    GstMessage *message)
+{
+  guint i;
+  gboolean ret = FALSE;
+
+  for (i = 0; i < channel->priv->sessions->len; i++)
+    {
+      TpStreamEngineSession *session = g_ptr_array_index (
+          channel->priv->sessions, i);
+
+      if (session != NULL)
+        if (tp_stream_engine_session_bus_message (session, message))
+          ret = TRUE;
+    }
+
+  for (i = 0; i < channel->priv->streams->len; i++)
+    {
+      TpStreamEngineStream *stream = g_ptr_array_index (
+          channel->priv->streams, i);
+
+      if (stream != NULL)
+        if (tp_stream_engine_stream_bus_message (stream, message))
+          ret = TRUE;
+    }
+
+  return ret;
+}

@@ -63,6 +63,9 @@ void tp_stream_engine_stream_error (
   guint error,
   const gchar *message);
 
+gboolean tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
+    GstMessage *message);
+
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_STREAM_H__ */

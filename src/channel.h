@@ -68,6 +68,9 @@ void tp_stream_engine_channel_foreach_stream (
   TpStreamEngineChannelStreamFunc func,
   gpointer user_data);
 
+gboolean tp_stream_engine_channel_bus_message (TpStreamEngineChannel *channel,
+    GstMessage *message);
+
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_CHANNEL_H__ */

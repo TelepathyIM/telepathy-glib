@@ -47,6 +47,10 @@ tp_stream_engine_session_new (TpMediaSessionHandler *proxy,
                               const gchar *session_type,
                               GError **error);
 
+gboolean tp_stream_engine_session_bus_message (TpStreamEngineSession *session,
+    GstMessage *message);
+
+
 G_END_DECLS
 
 #endif /* __TP_STREAM_ENGINE_SESSION_H__ */

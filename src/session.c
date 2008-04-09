@@ -352,3 +352,91 @@ tp_stream_engine_session_new (TpMediaSessionHandler *proxy,
   return self;
 }
 
+/**
+ * tp_stream_engine_session_bus_message:
+ * @session: A #TpStreamEngineSession
+ * @message: A #GstMessage received from the bus
+ *
+ * You must call this function on call messages received on the async bus.
+ * #GstMessages are not modified.
+ *
+ * Returns: %TRUE if the message has been handled, %FALSE otherwise
+ */
+
+gboolean
+tp_stream_engine_session_bus_message (TpStreamEngineSession *session,
+    GstMessage *message)
+{
+  GError *error = NULL;
+  gchar *debug = NULL;
+
+  if (GST_MESSAGE_SRC (message) !=
+      GST_OBJECT_CAST (session->priv->fs_conference))
+    return FALSE;
+
+  switch (GST_MESSAGE_TYPE (message))
+    {
+    case GST_MESSAGE_WARNING:
+      gst_message_parse_warning (message, &error, &debug);
+
+      g_warning ("session: %s (%s)", error->message, debug);
+
+      g_error_free (error);
+      g_free (debug);
+      return TRUE;
+    case GST_MESSAGE_ERROR:
+      gst_message_parse_error (message, &error, &debug);
+
+      g_warning ("session ERROR: %s (%s)", error->message, debug);
+
+      tp_cli_media_session_handler_call_error (
+          session->priv->session_handler_proxy,
+          -1, 0, /* Not errors defined ??? */
+          error->message, NULL, /* Do I need a callback ? */
+          NULL, NULL, NULL);
+
+      g_error_free (error);
+      g_free (debug);
+      return TRUE;
+    case GST_MESSAGE_ELEMENT:
+      {
+        const GstStructure *s = gst_message_get_structure (message);
+
+        if (gst_structure_has_name (s, "farsight-error"))
+          {
+            GObject *object;
+            const GValue *value;
+
+            value = gst_structure_get_value (s, "error-src");
+            object = g_value_get_object (value);
+
+            if (object == G_OBJECT (session->priv->fs_participant))
+              {
+                const gchar *msg, *debugmsg;
+                FsError errorno;
+                GEnumClass *enumclass;
+                GEnumValue *enumvalue;
+
+                value = gst_structure_get_value (s, "error-no");
+                errorno = g_value_get_enum (value);
+                msg = gst_structure_get_string (s, "error-msg");
+                debugmsg = gst_structure_get_string (s, "debug-msg");
+
+
+                enumclass = g_type_class_ref (FS_TYPE_ERROR);
+                enumvalue = g_enum_get_value (enumclass, errorno);
+                g_warning ("participant error (%s (%d)): %s : %s",
+                    enumvalue->value_nick, errorno, msg, debugmsg);
+                g_type_class_unref (enumclass);
+
+                tp_cli_media_session_handler_call_error (
+                    session->priv->session_handler_proxy,
+                    -1, 0, msg, NULL, NULL, NULL, NULL);
+                return TRUE;
+              }
+          }
+      }
+    default:
+      return FALSE;
+    }
+}
