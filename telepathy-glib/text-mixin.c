@@ -552,19 +552,10 @@ static void
 tp_text_mixin_get_message_types_async (TpSvcChannelTypeText *iface,
                                        DBusGMethodInvocation *context)
 {
-  GArray *ret;
-  GError *error = NULL;
+  TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
 
-  if (tp_text_mixin_get_message_types (G_OBJECT (iface), &ret, &error))
-    {
-      tp_svc_channel_type_text_return_from_get_message_types (context, ret);
-      g_array_free (ret, TRUE);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
+  tp_svc_channel_type_text_return_from_get_message_types (context,
+      mixin->priv->msg_types);
 }
 
 /**
