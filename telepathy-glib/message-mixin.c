@@ -75,7 +75,7 @@
 
 struct _TpMessageMixinPrivate
 {
-  TpHandleRepoIface *contacts_repo;
+  TpHandleRepoIface *contact_repo;
   guint recv_id;
   gboolean message_lost;
 
@@ -154,11 +154,115 @@ tp_message_mixin_class_init (GObjectClass *obj_cls,
 }
 
 
+typedef enum {
+    PENDING_TEXT_MESSAGE,       /* A message with text/plain content */
+    PENDING_NON_TEXT_MESSAGE,   /* A message with no text/plain content */
+    PENDING_DELIVERY_REPORT     /* A delivery report */
+} PendingType;
+
+
+typedef struct {
+    guint32 id;
+    PendingType pending_type;
+    TpHandle sender;                        /* 0 for delivery reports */
+    time_t timestamp;                       /* 0 for delivery reports */
+    TpChannelTextMessageType message_type;  /* 0 for delivery reports */
+    GPtrArray *content;                     /* has exactly one item for d.r. */
+} PendingItem;
+
+
+static gint
+pending_item_id_equals_data (gconstpointer item,
+                             gconstpointer data)
+{
+  const PendingItem *self = item;
+  guint id = GPOINTER_TO_UINT (data);
+
+  return (self->id != id);
+}
+
+
+static void
+pending_item_free (PendingItem *pending,
+                   TpHandleRepoIface *contact_repo)
+{
+  guint i;
+
+  if (pending->sender != 0)
+    tp_handle_unref (contact_repo, pending->sender);
+
+  if (pending->content != NULL)
+    {
+      for (i = 0; i < pending->content->len; i++)
+        {
+          g_hash_table_destroy (g_ptr_array_index (pending->content, i));
+        }
+
+      g_ptr_array_free (pending->content, TRUE);
+    }
+
+  g_slice_free (PendingItem, pending);
+}
+
+
+#if 0
+static PendingItem *
+pending_item_new (void)
+{
+  PendingItem *pending = g_slice_new0 (PendingItem);
+
+  pending->content = g_ptr_array_sized_new (1);
+  return pending;
+}
+#endif
+
+
+static TpChannelTextMessageFlags
+pending_item_get_text (PendingItem *item,
+                       GString *buffer)
+{
+  guint i;
+  TpChannelTextMessageFlags flags = 0;
+
+  g_return_val_if_fail (item->pending_type != PENDING_TEXT_MESSAGE, 0);
+  g_return_val_if_fail (item->content != NULL, 0);
+
+  for (i = 0; i < item->content->len; i++)
+    {
+      GHashTable *part = g_ptr_array_index (item->content, i);
+
+      if (!tp_strdiff (g_hash_table_lookup (part, "type"), "text/plain"))
+        {
+          GValue *value;
+          /* FIXME: strictly, we should skip all but the first in any set of
+           * alternatives... in practice, this is only likely to affect XMPP,
+           * where this will result in getting *all* the languages for a
+           * multilingual message, rather than just one of them */
+
+          value = g_hash_table_lookup (part, "content");
+
+          if (value != NULL && G_VALUE_HOLDS_STRING (value))
+            {
+              g_string_append (buffer, g_value_get_string (value));
+
+              value = g_hash_table_lookup (part, "truncated");
+
+              if (value != NULL && G_VALUE_HOLDS_BOOLEAN (value) &&
+                  g_value_get_boolean (value))
+                flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_TRUNCATED;
+            }
+        }
+    }
+
+  return flags;
+}
+
+
 /**
  * tp_message_mixin_init:
  * @obj: An instance of the implementation that uses this mixin
  * @offset: The byte offset of the TpMessageMixin within the object structure
- * @contacts_repo: The connection's %TP_HANDLE_TYPE_CONTACT repository
+ * @contact_repo: The connection's %TP_HANDLE_TYPE_CONTACT repository
  *
  * Initialize the mixin. Should be called from the implementation's
  * instance init function like so:
@@ -172,7 +276,7 @@ tp_message_mixin_class_init (GObjectClass *obj_cls,
 void
 tp_message_mixin_init (GObject *obj,
                        gsize offset,
-                       TpHandleRepoIface *contacts_repo)
+                       TpHandleRepoIface *contact_repo)
 {
   TpMessageMixin *mixin;
 
@@ -187,7 +291,7 @@ tp_message_mixin_init (GObject *obj,
   mixin->priv = g_slice_new0 (TpMessageMixinPrivate);
 
   mixin->priv->pending = g_queue_new ();
-  mixin->priv->contacts_repo = contacts_repo;
+  mixin->priv->contact_repo = contact_repo;
   mixin->priv->recv_id = 0;
   mixin->priv->msg_types = g_array_sized_new (FALSE, FALSE, sizeof (guint),
       NUM_TP_CHANNEL_TEXT_MESSAGE_TYPES);
@@ -199,11 +303,11 @@ static void
 tp_message_mixin_clear (GObject *obj)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (obj);
-  gpointer msg;
+  PendingItem *item;
 
-  while ((msg = g_queue_pop_head (mixin->priv->pending)) != NULL)
+  while ((item = g_queue_pop_head (mixin->priv->pending)) != NULL)
     {
-      /* FIXME */
+      pending_item_free (item, mixin->priv->contact_repo);
     }
 }
 
@@ -233,9 +337,50 @@ tp_message_mixin_acknowledge_pending_messages_async (
     const GArray *ids,
     DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
+  GList **nodes;
+  PendingItem *item;
+  guint i;
 
-  dbus_g_method_return_error (context, &e);
+  nodes = g_new (GList *, ids->len);
+
+  for (i = 0; i < ids->len; i++)
+    {
+      guint id = g_array_index (ids, guint, i);
+
+      nodes[i] = g_queue_find_custom (mixin->priv->pending,
+          GUINT_TO_POINTER (id), pending_item_id_equals_data);
+
+      if (nodes[i] == NULL)
+        {
+          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "invalid message id %u", id);
+
+          DEBUG ("%s", error->message);
+          dbus_g_method_return_error (context, error);
+          g_error_free (error);
+
+          g_free (nodes);
+          return;
+        }
+    }
+
+  for (i = 0; i < ids->len; i++)
+    {
+      item = nodes[i]->data;
+
+      DEBUG ("acknowledging message id %u", item->id);
+
+      g_queue_remove (mixin->priv->pending, item);
+
+      /* FIXME: need a hook here to send acknowledgements out on the network
+       * if the protocol requires it */
+
+      pending_item_free (item, mixin->priv->contact_repo);
+    }
+
+  g_free (nodes);
+  tp_svc_channel_type_text_return_from_acknowledge_pending_messages (context);
 }
 
 static void
@@ -243,9 +388,81 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
                                               gboolean clear,
                                               DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
+  GType pending_type = TP_STRUCT_TYPE_PENDING_TEXT_MESSAGE;
+  guint count;
+  GPtrArray *messages;
+  GList *cur;
+  guint i;
 
-  dbus_g_method_return_error (context, &e);
+  count = g_queue_get_length (mixin->priv->pending);
+  messages = g_ptr_array_sized_new (count);
+
+  for (cur = g_queue_peek_head_link (mixin->priv->pending);
+       cur != NULL;
+       cur = cur->next)
+    {
+      PendingItem *msg = cur->data;
+      GValue val = { 0, };
+      guint flags;
+      GString *text;
+
+      if (msg->pending_type != PENDING_TEXT_MESSAGE)
+        {
+          /* No text/plain part */
+          continue;
+        }
+
+      text = g_string_new ("");
+      flags = pending_item_get_text (msg, text);
+
+      g_value_init (&val, pending_type);
+      g_value_take_boxed (&val,
+          dbus_g_type_specialized_construct (pending_type));
+      dbus_g_type_struct_set (&val,
+          0, msg->id,
+          1, msg->timestamp,
+          2, msg->sender,
+          3, msg->message_type,
+          4, flags,
+          5, text,
+          G_MAXUINT);
+
+      g_string_free (text, TRUE);
+
+      g_ptr_array_add (messages, g_value_get_boxed (&val));
+    }
+
+  if (clear)
+    {
+      DEBUG ("WARNING: ListPendingMessages(clear=TRUE) is deprecated");
+      cur = g_queue_peek_head_link (mixin->priv->pending);
+
+      while (cur != NULL)
+        {
+          PendingItem *msg = cur->data;
+          GList *next = cur->next;
+
+          if (msg->pending_type == PENDING_TEXT_MESSAGE)
+            {
+              /* FIXME: need a hook here to send acknowledgements out on the
+               * network if the protocol requires it */
+
+              g_queue_delete_link (mixin->priv->pending, cur);
+              pending_item_free (msg, mixin->priv->contact_repo);
+            }
+
+          cur = next;
+        }
+    }
+
+  tp_svc_channel_type_text_return_from_list_pending_messages (context,
+      messages);
+
+  for (i = 0; i < messages->len; i++)
+    g_value_array_free (g_ptr_array_index (messages, i));
+
+  g_ptr_array_free (messages, TRUE);
 }
 
 static void
