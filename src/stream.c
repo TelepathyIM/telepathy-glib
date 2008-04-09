@@ -97,7 +97,8 @@ enum
   PROP_STREAM_ID,
   PROP_MEDIA_TYPE,
   PROP_DIRECTION,
-  PROP_NAT_PROPERTIES
+  PROP_NAT_PROPERTIES,
+  PROP_SINK_PAD
 };
 
 static void add_remote_candidate (TpMediaStreamHandler *proxy,
@@ -191,6 +192,12 @@ tp_stream_engine_stream_get_property (GObject    *object,
       g_value_set_pointer (value,
           (TpStreamEngineNatProperties *) self->priv->nat_props);
       break;
+    case PROP_SINK_PAD:
+      {
+        GstPad *pad = NULL;
+        g_object_get (self->priv->fs_session, "sink-pad", &pad, NULL);
+        g_value_take_object (value, pad);
+      }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -492,6 +499,15 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                                      "and parameters to use for this stream.",
                                      G_PARAM_CONSTRUCT_ONLY |
                                      G_PARAM_READWRITE |
+                                     G_PARAM_STATIC_NICK |
+                                     G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_NAT_PROPERTIES,
+      param_spec);
+
+  param_spec = g_param_spec_pointer ("sink-pad",
+                                     "Sink pad for this stream",
+                                     "This sink pad that data has to be sent",
+                                     G_PARAM_READABLE |
                                      G_PARAM_STATIC_NICK |
                                      G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_NAT_PROPERTIES,
