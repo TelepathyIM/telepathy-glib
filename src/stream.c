@@ -355,6 +355,10 @@ tp_stream_engine_stream_constructor (GType type,
   if (stream->priv->fs_stream)
     return obj;
 
+  if (g_object_has_property ((GObject *) stream->priv->fs_stream,
+          "no-rtcp-timeout"))
+    g_object_set (stream->priv->fs_stream, "no-rtcp-timeout", 0, NULL);
+
   g_object_get (stream->priv->fs_session, "local-codecs", &fscodecs, NULL);
 
   tpcodecs = fs_codecs_to_tp (stream, fscodecs);
