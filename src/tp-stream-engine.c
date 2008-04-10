@@ -1280,9 +1280,15 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
   GError *error = NULL;
   gchar *error_string, *tmp;
   GSList *i;
-
+  guint ii;
   GstElement *source = GST_ELEMENT (GST_MESSAGE_SRC (message));
   gchar *name = gst_element_get_name (source);
+
+
+  for (ii = 0; ii < priv->channels->len; ii++)
+    if (tp_stream_engine_channel_bus_message (
+            g_ptr_array_index (priv->channels, ii), message))
+      return TRUE;
 
   switch (GST_MESSAGE_TYPE (message))
     {
