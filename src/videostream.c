@@ -70,8 +70,6 @@ static GstElement *
 tp_stream_engine_video_stream_make_src (TpStreamEngineStream *stream);
 static GstElement *
 tp_stream_engine_video_stream_make_sink (TpStreamEngineStream *stream);
-static void
-tp_stream_engine_video_stream_stop_stream (TpStreamEngineStream *stream);
 
 static void
 tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data);
@@ -108,7 +106,6 @@ tp_stream_engine_video_stream_constructor (GType type,
   if (src)
     {
       DEBUG (stream, "setting source on Farsight stream");
-      farsight_stream_set_source (stream->fs_stream, src);
     }
   else
     {
@@ -118,7 +115,6 @@ tp_stream_engine_video_stream_constructor (GType type,
   if (sink)
     {
       DEBUG (stream, "setting sink on Farsight stream");
-      farsight_stream_set_sink (stream->fs_stream, sink);
     }
   else
     {
@@ -177,15 +173,11 @@ static void
 tp_stream_engine_video_stream_class_init (TpStreamEngineVideoStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  TpStreamEngineStreamClass *stream_class =
-      TP_STREAM_ENGINE_STREAM_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineVideoStreamPrivate));
   object_class->dispose = tp_stream_engine_video_stream_dispose;
 
   object_class->constructor = tp_stream_engine_video_stream_constructor;
-
-  stream_class->stop_stream = tp_stream_engine_video_stream_stop_stream;
 
   signals[LINKED] =
     g_signal_new ("linked",
@@ -543,28 +535,4 @@ _remove_video_sink (TpStreamEngineVideoStream *videostream, GstElement *sink)
 
   g_signal_connect (sink_pad, "unlinked", G_CALLBACK (video_sink_unlinked_cb),
       sink);
-}
-
-
-static void
-tp_stream_engine_video_stream_stop_stream (TpStreamEngineStream *stream)
-{
-  GstElement *sink = NULL;
-
-  if (!stream->fs_stream)
-    return;
-
-  DEBUG (stream, "calling stop on farsight stream %p", stream->fs_stream);
-
-  g_object_get (G_OBJECT (stream), "sink", &sink, NULL);
-
-  farsight_stream_stop (stream->fs_stream);
-
-  g_object_set (G_OBJECT (stream), "source", NULL, NULL);
-
-  if (sink)
-    {
-      _remove_video_sink (TP_STREAM_ENGINE_VIDEO_STREAM (stream), sink);
-      g_object_unref (sink);
-    }
 }
