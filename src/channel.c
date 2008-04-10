@@ -42,8 +42,6 @@ struct _TpStreamEngineChannelPrivate
 {
   TpChannel *channel_proxy;
   DBusGProxy *media_signalling_proxy;
-  GType audio_stream_gtype;
-  GType video_stream_gtype;
 
   TpStreamEngineNatProperties nat_props;
   guint prop_id_nat_traversal;
@@ -81,9 +79,7 @@ static guint signals[SIGNAL_COUNT] = {0};
 enum
 {
   PROP_CHANNEL = 1,
-  PROP_OBJECT_PATH,
-  PROP_AUDIO_STREAM_GTYPE,
-  PROP_VIDEO_STREAM_GTYPE
+  PROP_OBJECT_PATH
 };
 
 static void
@@ -93,9 +89,6 @@ tp_stream_engine_channel_init (TpStreamEngineChannel *self)
       TP_STREAM_ENGINE_TYPE_CHANNEL, TpStreamEngineChannelPrivate);
 
   self->priv = priv;
-
-  priv->audio_stream_gtype = TP_STREAM_ENGINE_TYPE_STREAM;
-  priv->video_stream_gtype = TP_STREAM_ENGINE_TYPE_STREAM;
 
   priv->sessions = NULL;
   priv->streams = g_ptr_array_new ();
@@ -122,12 +115,6 @@ tp_stream_engine_channel_get_property (GObject    *object,
           g_value_set_string (value, as_proxy->object_path);
         }
       break;
-    case PROP_AUDIO_STREAM_GTYPE:
-      g_value_set_gtype (value, priv->audio_stream_gtype);
-      break;
-    case PROP_VIDEO_STREAM_GTYPE:
-      g_value_set_gtype (value, priv->video_stream_gtype);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -147,12 +134,6 @@ tp_stream_engine_channel_set_property (GObject      *object,
     {
     case PROP_CHANNEL:
       priv->channel_proxy = TP_CHANNEL (g_value_dup_object (value));
-      break;
-    case PROP_AUDIO_STREAM_GTYPE:
-      priv->audio_stream_gtype = g_value_get_gtype (value);
-      break;
-    case PROP_VIDEO_STREAM_GTYPE:
-      priv->video_stream_gtype = g_value_get_gtype (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -495,22 +476,6 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
-  param_spec = g_param_spec_gtype ("audio-stream-gtype",
-      "GType of audio streams",
-      "GType which will be instantiated for audio streams.",
-      TP_STREAM_ENGINE_TYPE_STREAM,
-      G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_AUDIO_STREAM_GTYPE,
-      param_spec);
-
-  param_spec = g_param_spec_gtype ("video-stream-gtype",
-      "GType of video streams",
-      "GType which will be instantiated for video streams.",
-      TP_STREAM_ENGINE_TYPE_STREAM,
-      G_PARAM_READWRITE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_VIDEO_STREAM_GTYPE,
-      param_spec);
-
   signals[HANDLER_RESULT] = g_signal_new ("handler-result",
       G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0, NULL, NULL, g_cclosure_marshal_VOID__POINTER, G_TYPE_NONE,
@@ -564,7 +529,6 @@ new_stream_cb (TpStreamEngineSession *session,
   TpStreamEngineStream *stream;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
-  GType stream_gtype;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
   TpMediaStreamHandler *proxy;
 
