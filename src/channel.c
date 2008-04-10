@@ -70,6 +70,7 @@ enum
 {
   CLOSED,
   STREAM_CREATED,
+  SESSION_CREATED,
   HANDLER_RESULT,
   SIGNAL_COUNT
 };
@@ -498,6 +499,15 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, TP_STREAM_ENGINE_TYPE_STREAM);
+
+  signals[SESSION_CREATED] =
+    g_signal_new ("session-created",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1, TP_STREAM_ENGINE_TYPE_SESSION);
 }
 
 static void
@@ -625,6 +635,8 @@ add_session (TpStreamEngineChannel *self,
   g_signal_connect (session, "new-stream", G_CALLBACK (new_stream_cb), self);
 
   g_ptr_array_add (priv->sessions, session);
+
+  g_signal_emit (self, signals[SESSION_CREATED], 0, session);
 }
 
 static void
