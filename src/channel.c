@@ -72,8 +72,6 @@ enum
 {
   CLOSED,
   STREAM_CREATED,
-  STREAM_STATE_CHANGED,
-  STREAM_RECEIVING,
   HANDLER_RESULT,
   SIGNAL_COUNT
 };
@@ -388,13 +386,6 @@ static void new_stream_cb (TpStreamEngineSession *session, gchar *object_path,
     guint stream_id, TpMediaStreamType media_type,
     TpMediaStreamDirection direction, gpointer user_data);
 
-static void stream_state_changed_cb (TpStreamEngineStream *stream,
-    TpMediaStreamState state, TpMediaStreamDirection direction,
-    gpointer user_data);
-
-static void stream_receiving_cb (TpStreamEngineStream *stream,
-    gboolean receiving, gpointer user_data);
-
 static void stream_closed_cb (TpStreamEngineStream *stream,
     gpointer user_data);
 
@@ -436,10 +427,6 @@ tp_stream_engine_channel_dispose (GObject *object)
               /* this first one covers both error and closed */
               g_signal_handlers_disconnect_by_func (obj,
                   stream_closed_cb, self);
-              g_signal_handlers_disconnect_by_func (obj,
-                  stream_state_changed_cb, self);
-              g_signal_handlers_disconnect_by_func (obj,
-                  stream_receiving_cb, self);
 
               g_object_unref (obj);
             }
@@ -546,24 +533,6 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, TP_STREAM_ENGINE_TYPE_STREAM);
-
-  signals[STREAM_STATE_CHANGED] =
-    g_signal_new ("stream-state-changed",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  NULL, NULL,
-                  tp_stream_engine_marshal_VOID__UINT_UINT_UINT,
-                  G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
-
-  signals[STREAM_RECEIVING] =
-    g_signal_new ("stream-receiving",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  NULL, NULL,
-                  tp_stream_engine_marshal_VOID__UINT_BOOLEAN,
-                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_BOOLEAN);
 }
 
 static void
@@ -580,34 +549,6 @@ stream_closed_cb (TpStreamEngineStream *stream,
 
   g_object_unref (stream);
   g_ptr_array_index (priv->streams, stream_id) = NULL;
-}
-
-static void
-stream_state_changed_cb (TpStreamEngineStream *stream,
-                         TpMediaStreamState state,
-                         TpMediaStreamDirection direction,
-                         gpointer user_data)
-{
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  guint stream_id;
-
-  g_object_get (stream, "stream-id", &stream_id, NULL);
-
-  g_signal_emit (self, signals[STREAM_STATE_CHANGED], 0, stream_id, state,
-      direction);
-}
-
-static void
-stream_receiving_cb (TpStreamEngineStream *stream,
-                     gboolean receiving,
-                     gpointer user_data)
-{
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  guint stream_id;
-
-  g_object_get (stream, "stream-id", &stream_id, NULL);
-
-  g_signal_emit (self, signals[STREAM_RECEIVING], 0, stream_id, receiving);
 }
 
 static void
@@ -682,10 +623,6 @@ new_stream_cb (TpStreamEngineSession *session,
       self);
   g_signal_connect (stream, "closed", G_CALLBACK (stream_closed_cb),
       self);
-  g_signal_connect (stream, "state-changed",
-      G_CALLBACK (stream_state_changed_cb), self);
-  g_signal_connect (stream, "receiving",
-      G_CALLBACK (stream_receiving_cb), self);
 
   g_signal_emit (self, signals[STREAM_CREATED], 0, stream);
 }
