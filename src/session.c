@@ -140,8 +140,8 @@ tp_stream_engine_session_constructor (GType type,
   self = (TpStreamEngineSession *) obj;
 
   conftype = g_strdup_printf ("fs%sconference", self->priv->session_type);
-  self->priv->fs_conference =
-      FS_CONFERENCE (gst_element_factory_make (conftype, NULL));
+  self->priv->fs_conference = FS_CONFERENCE (gst_object_ref (
+          gst_element_factory_make (conftype, NULL)));
   g_free (conftype);
 
   if (!self->priv->fs_conference)
@@ -200,7 +200,7 @@ tp_stream_engine_session_dispose (GObject *object)
   if (self->priv->fs_conference)
     {
 
-      g_object_unref (self->priv->fs_conference);
+      gst_object_unref (self->priv->fs_conference);
       self->priv->fs_conference = NULL;
     }
 
