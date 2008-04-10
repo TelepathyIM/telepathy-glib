@@ -36,32 +36,20 @@ typedef struct _TpStreamEngineAudioStreamPrivate
           TpStreamEngineAudioStreamPrivate;
 
 typedef struct {
-  TpStreamEngineStream parent;
+  GObject parent;
 
   TpStreamEngineAudioStreamPrivate *priv;
 } TpStreamEngineAudioStream;
 
 typedef struct {
-  TpStreamEngineStreamClass parent_class;
+  GObjectClass parent_class;
 } TpStreamEngineAudioStreamClass;
 
 GType tp_stream_engine_audio_stream_get_type (void);
 
-
-gboolean tp_stream_engine_audio_stream_mute_output (
-  TpStreamEngineAudioStream *audiostream,
-  gboolean mute_state,
-  GError **error);
-
-gboolean tp_stream_engine_audio_stream_set_output_volume (
-  TpStreamEngineAudioStream *stream,
-  guint volume,
-  GError **error);
-
-gboolean tp_stream_engine_audio_stream_mute_input (
-  TpStreamEngineAudioStream *audiostream,
-  gboolean mute_state,
-  GError **error);
+TpStreamEngineAudioStream *
+tp_stream_engine_audio_stream_new (TpStreamEngineStream *stream, GstBin *bin,
+    GError **error);
 
 G_END_DECLS
 
