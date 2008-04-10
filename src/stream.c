@@ -1450,3 +1450,36 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
 }
+
+TpStreamEngineStream *
+tp_stream_engine_stream_new (FsConference *conference,
+    FsParticipant *participant,
+    TpMediaStreamHandler *proxy,
+    guint stream_id,
+    TpMediaStreamType media_type,
+    TpMediaStreamDirection direction,
+    TpStreamEngineNatProperties *nat_props,
+    GError **error)
+
+{
+  TpStreamEngineStream *self = NULL;
+
+  self = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM,
+      "farsight-conference", conference,
+      "farsight-participant", participant,
+      "proxy", proxy,
+      "stream-id", stream_id,
+      "media-type", media_type,
+      "direction", direction,
+      "nat-properties", nat_props,
+      NULL);
+
+  if (self->priv->construction_error)
+    {
+      g_propagate_error (error, self->priv->construction_error);
+      g_object_unref (self);
+      return NULL;
+    }
+
+  return self;
+}

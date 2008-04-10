@@ -5,6 +5,8 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/media-interfaces.h>
 
+#include <gst/farsight/fs-conference-iface.h>
+
 G_BEGIN_DECLS
 
 #define TP_STREAM_ENGINE_TYPE_STREAM tp_stream_engine_stream_get_type()
@@ -43,8 +45,6 @@ typedef struct {
 typedef struct {
   GObjectClass parent_class;
 
-  void (*stop_stream) (TpStreamEngineStream *stream);
-
 } TpStreamEngineStreamClass;
 
 typedef struct {
@@ -55,6 +55,17 @@ typedef struct {
 } TpStreamEngineNatProperties;
 
 GType tp_stream_engine_stream_get_type (void);
+
+TpStreamEngineStream *
+tp_stream_engine_stream_new (FsConference *conference,
+    FsParticipant *participant,
+    TpMediaStreamHandler *proxy,
+    guint stream_id,
+    TpMediaStreamType media_type,
+    TpMediaStreamDirection direction,
+    TpStreamEngineNatProperties *nat_props,
+    GError **error);
+
 
 void tp_stream_engine_stream_error (
   TpStreamEngineStream *self,
