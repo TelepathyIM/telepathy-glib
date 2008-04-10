@@ -531,6 +531,7 @@ new_stream_cb (TpStreamEngineSession *session,
   FsParticipant *fs_participant;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
   TpMediaStreamHandler *proxy;
+  GError *error = NULL;
 
   proxy = tp_media_stream_handler_new (channel_as_proxy->dbus_daemon,
       channel_as_proxy->bus_name, object_path, NULL);
@@ -547,20 +548,15 @@ new_stream_cb (TpStreamEngineSession *session,
       "farsight-participant", &fs_participant,
       NULL);
 
-  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-      stream_gtype = priv->video_stream_gtype;
-  else
-      stream_gtype = priv->audio_stream_gtype;
+  stream = tp_stream_engine_stream_new (fs_conference, fs_participant,
+      proxy, stream_id, media_type, direction, &priv->nat_props, &error);
 
-  stream = g_object_new (stream_gtype,
-      "farsight-conference", fs_conference,
-      "farsight-participant", fs_participant,
-      "proxy", proxy,
-      "stream-id", stream_id,
-      "media-type", media_type,
-      "direction", direction,
-      "nat-properties", &(priv->nat_props),
-      NULL);
+  if (!stream)
+    {
+      g_warning ("Error creating stream: %s", error->message);
+      g_clear_error (&error);
+      return;
+    }
 
   g_object_unref (proxy);
   g_object_unref (fs_conference);
