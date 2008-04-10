@@ -193,11 +193,9 @@ tp_stream_engine_stream_get_property (GObject    *object,
           (TpStreamEngineNatProperties *) self->priv->nat_props);
       break;
     case PROP_SINK_PAD:
-      {
-        GstPad *pad = NULL;
-        g_object_get (self->priv->fs_session, "sink-pad", &pad, NULL);
-        g_value_take_object (value, pad);
-      }
+      g_object_get_property (G_OBJECT (self->priv->fs_session),
+          "sink-pad", value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
