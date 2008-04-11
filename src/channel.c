@@ -589,8 +589,6 @@ new_stream_cb (TpStreamEngineSession *session,
     }
 
   g_ptr_array_index (priv->streams, stream_id) = stream;
-  g_signal_connect (stream, "error", G_CALLBACK (stream_closed_cb),
-      self);
   g_signal_connect (stream, "closed", G_CALLBACK (stream_closed_cb),
       self);
 
