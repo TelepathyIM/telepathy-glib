@@ -69,6 +69,10 @@ struct _TpStreamEngineAudioStreamPrivate
   gulong src_pad_added_handler_id;
 
   GError *construction_error;
+
+  GMutex *mutex;
+  /* Everything below this line is protected by the mutex */
+  guint error_idle_id;
 };
 
 
@@ -115,6 +119,8 @@ tp_stream_engine_audio_stream_init (TpStreamEngineAudioStream *self)
       TP_STREAM_ENGINE_TYPE_AUDIO_STREAM, TpStreamEngineAudioStreamPrivate);
 
   self->priv = priv;
+
+  self->priv->mutex = g_mutex_new ();
 
   self->priv->element_added_notifier = fs_element_added_notifier_new ();
 
@@ -221,6 +227,14 @@ tp_stream_engine_audio_stream_dispose (GObject *object)
 {
   TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (object);
 
+  g_mutex_lock (self->priv->mutex);
+  if (self->priv->error_idle_id)
+    {
+      g_source_remove (self->priv->error_idle_id);
+      self->priv->error_idle_id = 0;
+    }
+  g_mutex_unlock (self->priv->mutex);
+
   if (self->priv->src_pad_added_handler_id)
     {
       g_signal_handler_disconnect (self->priv->stream,
@@ -268,6 +282,18 @@ tp_stream_engine_audio_stream_dispose (GObject *object)
 }
 
 static void
+tp_stream_engine_audio_stream_finalize (GObject *object)
+{
+  TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (object);
+
+  g_mutex_free (self->priv->mutex);
+
+  if (G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->finalize)
+    G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->finalize (object);
+}
+
+
+static void
 tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -275,6 +301,7 @@ tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineAudioStreamPrivate));
   object_class->dispose = tp_stream_engine_audio_stream_dispose;
+  object_class->finalize = tp_stream_engine_audio_stream_finalize;
   object_class->constructor = tp_stream_engine_audio_stream_constructor;
   object_class->set_property = tp_stream_engine_audio_stream_set_property;
   object_class->get_property = tp_stream_engine_audio_stream_get_property;
@@ -627,6 +654,22 @@ tp_stream_engine_audio_stream_new (TpStreamEngineStream *stream, GstBin *bin,
   return self;
 }
 
+static gboolean
+src_pad_added_idle_error (gpointer user_data)
+{
+  TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
+
+  tp_stream_engine_stream_error (self->priv->stream, 0,
+      "Error setting up audio reception");
+
+
+  g_mutex_lock (self->priv->mutex);
+  self->priv->error_idle_id = 0;
+  g_mutex_unlock (self->priv->mutex);
+
+  return FALSE;
+}
+
 /* This creates the following pipeline
  *
  * farsight-pad -> audioconvert -> audioresample -> liveadder
@@ -654,7 +697,7 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
     {
       WARNING (self, "Pad %s, is not a valid farsight src pad", padname);
       g_free (padname);
-      return;
+      goto error2;
     }
 
   g_free (padname);
@@ -663,14 +706,14 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
   if (!audioconvert)
     {
       WARNING (self, "Could not create audioconvert");
-      return;
+      goto error2;
     }
 
   if (!gst_bin_add (GST_BIN (self->priv->sink), audioconvert))
     {
       WARNING (self, "Could add audioconvert to bin");
       gst_object_unref (audioconvert);
-      return;
+      goto error2;
     }
 
   audioresample = gst_element_factory_make ("audioresample", NULL);
@@ -678,7 +721,7 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
     {
       gst_bin_remove (GST_BIN (self->priv->sink), audioconvert);
       WARNING (self, "Could not create audioresample");
-      return;
+      goto error2;
     }
 
   if (!gst_bin_add (GST_BIN (self->priv->sink), audioresample))
@@ -686,7 +729,7 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
       WARNING (self, "Could add audioresample to bin");
       gst_object_unref (audioresample);
       gst_bin_remove (GST_BIN (self->priv->sink), audioconvert);
-      return;
+      goto error2;
     }
 
   if (!gst_element_link (audioconvert, audioresample))
@@ -791,5 +834,13 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
   gst_element_set_state (audioresample, GST_STATE_NULL);
   gst_bin_remove (GST_BIN (self->priv->sink), audioconvert);
   gst_bin_remove (GST_BIN (self->priv->sink), audioresample);
+
+ error2:
+
+  g_mutex_lock (self->priv->mutex);
+  if (!self->priv->error_idle_id)
+    self->priv->error_idle_id =
+        g_idle_add (src_pad_added_idle_error, self);
+  g_mutex_unlock (self->priv->mutex);
   return;
 }
