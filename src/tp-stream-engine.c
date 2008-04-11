@@ -953,25 +953,47 @@ channel_session_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
 
 
 static void
-stream_linked (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
+stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
 {
-  TpStreamEngine *obj = TP_STREAM_ENGINE (user_data);
+  GObject *sestream = NULL;
 
-  tp_stream_engine_start_source (obj);
+  sestream = g_object_get_data (G_OBJECT (stream), "se-stream");
+  if (sestream)
+    g_object_unref (sestream);
 }
 
 static void
 channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
     TpStreamEngineStream *stream, gpointer user_data)
 {
-  guint mediatype;
+  guint media_type;
+  GError *error = NULL;
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
 
-  g_object_get (G_OBJECT (stream), "media-type", &mediatype, NULL);
 
-  if (mediatype == TP_MEDIA_STREAM_TYPE_VIDEO)
+  g_object_get (G_OBJECT (stream), "media-type", &media_type, NULL);
+
+  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
     {
-      g_signal_connect (stream, "linked", G_CALLBACK (stream_linked), user_data);
     }
+  else if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
+    {
+      TpStreamEngineAudioStream *audiostream;
+
+      audiostream = tp_stream_engine_audio_stream_new (stream,
+          GST_BIN (self->priv->pipeline), &error);
+
+      if (!audiostream)
+        {
+          g_warning ("Could not create audio stream: %s", error->message);
+          return;
+        }
+      g_clear_error (&error);
+      g_object_set_data ((GObject*) stream, "se-stream", audiostream);
+    }
+
+  g_signal_connect (stream, "closed", G_CALLBACK (stream_closed), user_data);
+
   g_signal_connect (stream, "request-resource",
       G_CALLBACK (stream_request_resource), user_data);
   g_signal_connect (stream, "free-resource",
@@ -2126,12 +2148,6 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
       return;
     }
 
-  g_object_set ((GObject *) chan,
-      "video-pipeline", tp_stream_engine_get_pipeline (self),
-      "audio-stream-gtype", TP_STREAM_ENGINE_TYPE_AUDIO_STREAM,
-      "video-stream-gtype", TP_STREAM_ENGINE_TYPE_VIDEO_STREAM,
-      NULL);
-
   g_ptr_array_add (self->priv->channels, chan);
   g_hash_table_insert (self->priv->channels_by_path, g_strdup (channel), chan);
 
@@ -2224,28 +2240,37 @@ tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
   GError *error = NULL;
+  TpMediaStreamType media_type;
+  TpStreamEngineAudioStream *audiostream;
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
 
-  if (stream != NULL)
-    {
-      if (!TP_STREAM_ENGINE_IS_AUDIO_STREAM (stream))
-        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "MuteInput can only be called on audio streams");
-      else
-        tp_stream_engine_audio_stream_mute_input (
-            TP_STREAM_ENGINE_AUDIO_STREAM (stream), mute_state, &error);
-    }
 
-  if (error)
+  if (stream == NULL)
     {
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Stream does not exist");
       dbus_g_method_return_error (context, error);
       g_error_free (error);
+      return;
     }
-  else
+
+  g_object_get (stream, "media-type", &media_type, NULL);
+
+  if (media_type != TP_MEDIA_STREAM_TYPE_AUDIO)
     {
-      stream_engine_svc_stream_engine_return_from_mute_input (context);
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "MuteInput can only be called on audio streams");
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
     }
+
+  audiostream = g_object_get_data ((GObject*) stream, "se-stream");
+
+  g_object_get (audiostream, "input-mute", mute_state, NULL);
+
+  stream_engine_svc_stream_engine_return_from_mute_input (context);
 }
 
 /**
@@ -2254,39 +2279,50 @@ tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
  * Implements DBus method MuteOutput
  * on interface org.freedesktop.Telepathy.StreamEngine
  */
+
 static void
 tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
-                              const gchar *channel_path,
-                              guint stream_id,
-                              gboolean mute_state,
-                              DBusGMethodInvocation *context)
+                             const gchar *channel_path,
+                             guint stream_id,
+                             gboolean mute_state,
+                             DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
   GError *error = NULL;
+  TpMediaStreamType media_type;
+  TpStreamEngineAudioStream *audiostream;
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
 
-  if (stream != NULL)
-    {
-      if (!TP_STREAM_ENGINE_IS_AUDIO_STREAM (stream))
-        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "MuteOutput can only be called on audio streams");
-      else
-        tp_stream_engine_audio_stream_mute_output (
-            TP_STREAM_ENGINE_AUDIO_STREAM (stream), mute_state, &error);
-    }
 
-  if (error)
+  if (stream == NULL)
     {
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Stream does not exist");
       dbus_g_method_return_error (context, error);
       g_error_free (error);
+      return;
     }
-  else
+
+  g_object_get (stream, "media-type", &media_type, NULL);
+
+  if (media_type != TP_MEDIA_STREAM_TYPE_AUDIO)
     {
-      stream_engine_svc_stream_engine_return_from_mute_output (context);
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "MuteOutput can only be called on audio streams");
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
     }
+
+  audiostream = g_object_get_data ((GObject*) stream, "se-stream");
+
+  g_object_get (audiostream, "output-mute", mute_state, NULL);
+
+  stream_engine_svc_stream_engine_return_from_mute_output (context);
 }
+
 
 
 /**
@@ -2305,28 +2341,38 @@ tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
   GError *error = NULL;
+  TpMediaStreamType media_type;
+  TpStreamEngineAudioStream *audiostream;
+  gdouble doublevolume = volume / 100.0;
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
 
-  if (stream != NULL)
-    {
-      if (!TP_STREAM_ENGINE_IS_AUDIO_STREAM (stream))
-        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "SetOutputVolume can only be called on audio streams");
-      else
-        tp_stream_engine_audio_stream_set_output_volume (
-            TP_STREAM_ENGINE_AUDIO_STREAM (stream), volume, &error);
-    }
 
-  if (error)
+  if (stream == NULL)
     {
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Stream does not exist");
       dbus_g_method_return_error (context, error);
       g_error_free (error);
+      return;
     }
-  else
+
+  g_object_get (stream, "media-type", &media_type, NULL);
+
+  if (media_type != TP_MEDIA_STREAM_TYPE_AUDIO)
     {
-      stream_engine_svc_stream_engine_return_from_set_output_volume (context);
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "MuteOutput can only be called on audio streams");
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
     }
+
+  audiostream = g_object_get_data ((GObject*) stream, "se-stream");
+
+  g_object_get (audiostream, "output-volume", doublevolume, NULL);
+
+  stream_engine_svc_stream_engine_return_from_mute_output (context);
 }
 
 /**
@@ -2370,7 +2416,7 @@ tp_stream_engine_set_output_window (StreamEngineSvcStreamEngine *iface,
     {
       stream_engine_svc_stream_engine_return_from_set_output_window (context);
     }
-}
+ }
 
 /*
  * tp_stream_engine_get

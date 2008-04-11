@@ -57,6 +57,8 @@ G_DEFINE_TYPE (TpStreamEngineAudioStream, tp_stream_engine_audio_stream,
 
 struct _TpStreamEngineAudioStreamPrivate
 {
+  TpStreamEngineStream *stream;
+
   FsElementAddedNotifier *element_added_notifier;
 
   GstElement *src;
@@ -64,11 +66,9 @@ struct _TpStreamEngineAudioStreamPrivate
 
   GstElement *bin;
 
-  gulong src_pad_added_handled_id;
+  gulong src_pad_added_handler_id;
 
   GError *construction_error;
-
-  TpStreamEngineStream *stream;
 };
 
 
@@ -147,7 +147,7 @@ tp_stream_engine_audio_stream_constructor (GType type,
     }
 
   sink = tp_stream_engine_audio_stream_make_sink (self);
-  if (!self->priv->sink)
+  if (!sink)
     {
       gst_object_unref (src);
       WARNING (self, "Could not make sink");
@@ -155,9 +155,9 @@ tp_stream_engine_audio_stream_constructor (GType type,
     }
 
   fs_element_added_notifier_add (self->priv->element_added_notifier,
-      GST_BIN (self->priv->src));
+      GST_BIN (src));
   fs_element_added_notifier_add (self->priv->element_added_notifier,
-      GST_BIN (self->priv->sink));
+      GST_BIN (sink));
 
 
   if (!gst_bin_add (GST_BIN (self->priv->bin), src))
@@ -180,9 +180,22 @@ tp_stream_engine_audio_stream_constructor (GType type,
 
   g_object_get (self->priv->stream, "sink-pad", &sink_pad, NULL);
 
+  if (!sink_pad)
+    {
+      WARNING (self, "Could not get stream sink pad");
+      goto out;
+    }
+
   src_pad = gst_element_get_static_pad (self->priv->src, "src");
 
-  if (GST_PAD_LINK_FAILED (gst_pad_link (sink_pad, src_pad)))
+  if (!src_pad)
+    {
+      WARNING (self, "Could not get src pad from src");
+      gst_object_unref (sink_pad);
+      goto out;
+    }
+
+  if (GST_PAD_LINK_FAILED (gst_pad_link (src_pad, sink_pad)))
     {
       WARNING (self, "Could not link src to stream");
       gst_object_unref (src_pad);
@@ -196,7 +209,7 @@ tp_stream_engine_audio_stream_constructor (GType type,
   gst_element_set_state (self->priv->sink, GST_STATE_PLAYING);
   gst_element_set_state (self->priv->src, GST_STATE_PLAYING);
 
-  self->priv->src_pad_added_handled_id = g_signal_connect (self->priv->stream,
+  self->priv->src_pad_added_handler_id = g_signal_connect (self->priv->stream,
       "src-pad-added", G_CALLBACK (src_pad_added_cb), self);
 
  out:
@@ -208,25 +221,17 @@ tp_stream_engine_audio_stream_dispose (GObject *object)
 {
   TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (object);
 
-  if (self->priv->src_pad_added_handled_id)
+  if (self->priv->src_pad_added_handler_id)
     {
       g_signal_handler_disconnect (self->priv->stream,
-          self->priv->src_pad_added_handled_id);
-      self->priv->src_pad_added_handled_id = 0;
+          self->priv->src_pad_added_handler_id);
+      self->priv->src_pad_added_handler_id = 0;
     }
 
   if (self->priv->element_added_notifier)
     {
       g_object_unref (self->priv->element_added_notifier);
       self->priv->element_added_notifier = NULL;
-    }
-
-  if (self->priv->src)
-    {
-      gst_element_set_locked_state (self->priv->src, TRUE);
-      gst_element_set_state (self->priv->src, GST_STATE_NULL);
-      gst_bin_remove (GST_BIN (self->priv->bin), self->priv->src);
-      self->priv->src = NULL;
     }
 
   if (self->priv->sink)
@@ -236,6 +241,15 @@ tp_stream_engine_audio_stream_dispose (GObject *object)
       gst_bin_remove (GST_BIN (self->priv->bin), self->priv->sink);
       self->priv->sink = NULL;
     }
+
+ if (self->priv->src)
+    {
+      gst_element_set_locked_state (self->priv->src, TRUE);
+      gst_element_set_state (self->priv->src, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (self->priv->bin), self->priv->src);
+      self->priv->src = NULL;
+    }
+
 
   if (self->priv->bin)
     {
@@ -485,7 +499,7 @@ tp_stream_engine_audio_stream_make_src (TpStreamEngineAudioStream *self)
       return NULL;
     }
 
-  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
+  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("src", pad)))
     {
       gst_object_unref (bin);
       WARNING (self, "Could not add pad to bin");
@@ -613,6 +627,10 @@ tp_stream_engine_audio_stream_new (TpStreamEngineStream *stream, GstBin *bin,
   return self;
 }
 
+/* This creates the following pipeline
+ *
+ * farsight-pad -> audioconvert -> audioresample -> liveadder
+ */
 
 static void
 src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
@@ -622,8 +640,24 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
   GstElement *audioconvert = NULL;
   GstElement *audioresample = NULL;
   GstElement *adder = NULL;
+  GstPad *resamplepad = NULL;
   GstPad *adderpad = NULL;
   GstPad *convertpad = NULL;
+  GstPad *ghost = NULL;
+  gchar *padname = gst_pad_get_name (pad);
+  gchar *ghostname = NULL;
+  gint session_id, ssrc, pt;
+
+  DEBUG (self, "New pad added: %s", padname);
+
+  if (sscanf (padname, "src_%d_%d_%d", &session_id, &ssrc, &pt) != 3)
+    {
+      WARNING (self, "Pad %s, is not a valid farsight src pad", padname);
+      g_free (padname);
+      return;
+    }
+
+  g_free (padname);
 
   audioconvert = gst_element_factory_make ("audioconvert", NULL);
   if (!audioconvert)
@@ -661,17 +695,6 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
       goto error;
     }
 
-  if (!gst_element_set_state (audioconvert, GST_STATE_PLAYING))
-    {
-      WARNING (self, "Could not set audioconvert to playing");
-      goto error;
-    }
-  if (!gst_element_set_state (audioresample, GST_STATE_PLAYING))
-    {
-      WARNING (self, "Could not set audioconvert to playing");
-      goto error;
-    }
-
   adder = gst_bin_get_by_name (GST_BIN (self->priv->sink), "adder");
 
   if (!adder)
@@ -690,14 +713,22 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
 
   gst_object_unref (adder);
 
-
-  if (GST_PAD_LINK_FAILED (gst_pad_link (pad, adderpad)))
+  resamplepad = gst_element_get_static_pad (audioresample, "src");
+  if (!resamplepad)
     {
-      WARNING (self, "Could not link converter to adder");
-      gst_object_unref (adderpad);
+      WARNING (self, "Could not get src pad from audioresample");
       goto error;
     }
 
+  if (GST_PAD_LINK_FAILED (gst_pad_link (resamplepad, adderpad)))
+    {
+      WARNING (self, "Could not link converter to adder");
+      gst_object_unref (adderpad);
+      gst_object_unref (resamplepad);
+      goto error;
+    }
+
+  gst_object_unref (resamplepad);
   gst_object_unref (adderpad);
 
 
@@ -708,17 +739,56 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
       goto error;
     }
 
-  if (GST_PAD_LINK_FAILED (gst_pad_link (pad, convertpad)))
+  ghostname = g_strdup_printf ("sink_%d_%d_%d", session_id, ssrc, pt);
+  ghost = gst_ghost_pad_new (ghostname, convertpad);
+  g_free (ghostname);
+
+  if (!ghost)
+    {
+      gst_object_unref (convertpad);
+      WARNING (self, "Could not make ghost pad for audioconvert");
+      goto error;
+    }
+  gst_object_unref (convertpad);
+
+  if (!gst_pad_set_active (ghost, TRUE))
+    {
+      gst_object_unref (ghost);
+      WARNING (self, "Could not activate ghost pad");
+      goto error;
+    }
+
+  if (!gst_element_add_pad (self->priv->sink, ghost))
+    {
+      gst_object_unref (ghost);
+      WARNING (self, "Could not add ghost pad to sink bin");
+      goto error;
+    }
+
+  if (GST_PAD_LINK_FAILED (gst_pad_link (pad, ghost)))
     {
       WARNING (self, "Could not link pad to sink");
       gst_object_unref (convertpad);
       goto error;
     }
 
-  gst_object_unref (convertpad);
+  if (!gst_element_set_state (audioconvert, GST_STATE_PLAYING))
+    {
+      WARNING (self, "Could not set audioconvert to playing");
+      goto error;
+    }
+  if (!gst_element_set_state (audioresample, GST_STATE_PLAYING))
+    {
+      WARNING (self, "Could not set audioconvert to playing");
+      goto error;
+    }
 
   return;
  error:
+  gst_element_set_locked_state (audioconvert, TRUE);
+  gst_element_set_locked_state (audioresample, TRUE);
+  gst_element_set_state (audioconvert, GST_STATE_NULL);
+  gst_element_set_state (audioresample, GST_STATE_NULL);
   gst_bin_remove (GST_BIN (self->priv->sink), audioconvert);
   gst_bin_remove (GST_BIN (self->priv->sink), audioresample);
   return;
