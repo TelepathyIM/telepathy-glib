@@ -143,11 +143,16 @@ static FsMediaType tp_media_type_to_fs (TpMediaStreamType type);
 
 static GPtrArray *fs_codecs_to_tp (TpStreamEngineStream *stream,
     const GList *codecs);
-static void
-async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+static void async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     const GError *error,
     gpointer user_data,
     GObject *weak_object);
+
+static void cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
+    GstPad *pad,
+    FsCodec *codec,
+    gpointer user_data);
+
 
 static void
 tp_stream_engine_stream_init (TpStreamEngineStream *self)
@@ -312,6 +317,8 @@ tp_stream_engine_stream_constructor (GType type,
     {
       gchar *conn_timeout_str = NULL;
 
+      memset (params, 0, sizeof(GParameter) * 4);
+
       params[n_args].name = "stun-ip";
       g_value_init (&params[n_args].value, G_TYPE_STRING);
       g_value_set_string (&params[n_args].value,
@@ -342,6 +349,9 @@ tp_stream_engine_stream_constructor (GType type,
       tp_media_type_to_fs (stream->priv->media_type),
       &stream->priv->construction_error);
 
+  if (!stream->priv->fs_session)
+    return obj;
+
   stream->priv->fs_stream = fs_session_new_stream (stream->priv->fs_session,
       stream->priv->fs_participant,
       FS_DIRECTION_NONE,
@@ -350,12 +360,15 @@ tp_stream_engine_stream_constructor (GType type,
       params,
       &stream->priv->construction_error);
 
-  if (stream->priv->fs_stream)
+  if (!stream->priv->fs_stream)
     return obj;
 
   if (g_object_has_property ((GObject *) stream->priv->fs_stream,
           "no-rtcp-timeout"))
     g_object_set (stream->priv->fs_stream, "no-rtcp-timeout", 0, NULL);
+
+  g_signal_connect (stream->priv->fs_stream, "src-pad-added",
+      G_CALLBACK (cb_fs_stream_src_pad_added), stream);
 
   g_object_get (stream->priv->fs_session, "local-codecs", &fscodecs, NULL);
 
@@ -399,7 +412,6 @@ tp_stream_engine_stream_dispose (GObject *object)
           g_signal_emit (stream, signals[FREE_RESOURCE], 0);
         }
 
-      g_object_unref (priv->fs_stream);
       priv->fs_stream = NULL;
     }
 
@@ -412,6 +424,7 @@ tp_stream_engine_stream_dispose (GObject *object)
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
 }
+
 
 static void
 tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
@@ -506,13 +519,14 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   g_object_class_install_property (object_class, PROP_NAT_PROPERTIES,
       param_spec);
 
-  param_spec = g_param_spec_pointer ("sink-pad",
-                                     "Sink pad for this stream",
-                                     "This sink pad that data has to be sent",
+  param_spec = g_param_spec_object ("sink-pad",
+                                    "Sink pad for this stream",
+                                    "This sink pad that data has to be sent",
+                                     GST_TYPE_PAD,
                                      G_PARAM_READABLE |
                                      G_PARAM_STATIC_NICK |
                                      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_NAT_PROPERTIES,
+  g_object_class_install_property (object_class, PROP_SINK_PAD,
       param_spec);
 
   signals[CLOSED] =
@@ -552,7 +566,7 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   G_TYPE_NONE, 0);
 
   signals[SRC_PAD_ADDED] =
-    g_signal_new ("free-resource",
+    g_signal_new ("src-pad-added",
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST,
                   0,
@@ -587,7 +601,6 @@ cb_fs_new_local_candidate (TpStreamEngineStream *self,
   TpMediaStreamTransportType type;
 
   transports = g_ptr_array_new ();
-
 
   g_value_init (&transport, TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT);
   g_value_set_static_boxed (&transport,
@@ -630,6 +643,8 @@ cb_fs_new_local_candidate (TpStreamEngineStream *self,
       1, candidate->ip,
       2, candidate->port,
       3, proto,
+      4, "RTP",
+      5, "AVP",
       6, (double) candidate->priority / 65536.0,
       7, type,
       8, candidate->username,
@@ -843,7 +858,6 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
 
   g_clear_error (&error);
-  fs_candidate_list_destroy (fscandidates);
 }
 
 static void
@@ -852,7 +866,10 @@ remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                          gpointer user_data G_GNUC_UNUSED,
                          GObject *object G_GNUC_UNUSED)
 {
-  g_error ("Not implemented");
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+
+  tp_stream_engine_stream_error (self, 0,
+      "RemoveRemoteCandidate is NOT implemented");
 }
 
 static void
@@ -862,9 +879,21 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                            gpointer user_data G_GNUC_UNUSED,
                            GObject *object)
 {
-  // TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  GError *error = NULL;
 
-  // FIXME IMPLEMENT
+  if (!fs_stream_select_candidate_pair (self->priv->fs_stream,
+          native_candidate,
+          remote_candidate,
+          &error))
+    {
+      if (error->domain == FS_ERROR && error->code == FS_ERROR_NOT_IMPLEMENTED)
+        WARNING (self, "Called not implemented SetActiveCandidatePair");
+      else
+        tp_stream_engine_stream_error (self, 0, error->message);
+    }
+
+  g_clear_error (&error);
 }
 
 static void
@@ -914,7 +943,6 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
               return;
             }
         }
-      fs_candidate_list_destroy (fs_candidates);
     }
 
   fs_stream_remote_candidates_added (self->priv->fs_stream);
@@ -979,8 +1007,8 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
       fs_codec->optional_params = fs_params;
 
-      g_message ("%s: adding remote codec %s [%d]",
-          G_STRFUNC, fs_codec->encoding_name, fs_codec->id);
+      DEBUG (self, "adding remote codec %s [%d]",
+          fs_codec->encoding_name, fs_codec->id);
 
       fs_remote_codecs = g_list_prepend (fs_remote_codecs, fs_codec);
   }
@@ -1253,6 +1281,11 @@ cb_fs_new_active_candidate_pair (TpStreamEngineStream *self,
     remote_candidate->foundation,
     async_method_callback, "Media.StreamHandler::NewActiveCandidatePair",
     NULL, (GObject *) self);
+
+  tp_cli_media_stream_handler_call_stream_state (
+    self->priv->stream_handler_proxy, -1, TP_MEDIA_STREAM_STATE_CONNECTED,
+    async_method_callback, "Media.StreamHandler::SetStreamState",
+    NULL, (GObject *) self);
 }
 
 static void
@@ -1440,13 +1473,15 @@ tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
 }
 
 
-void
+static void
 cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     GstPad *pad,
     FsCodec *codec,
     gpointer user_data)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+
+  DEBUG (self, "New pad");
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
 }
