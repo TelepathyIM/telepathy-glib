@@ -1042,7 +1042,6 @@ channel_stream_state_changed (TpStreamEngineChannel *chan,
 static void
 channel_stream_receiving (TpStreamEngineChannel *chan,
                           guint stream_id,
-                          gboolean receiving,
                           gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
@@ -1051,7 +1050,7 @@ channel_stream_receiving (TpStreamEngineChannel *chan,
   g_object_get (chan, "object-path", &channel_path, NULL);
 
   stream_engine_svc_stream_engine_emit_receiving (self,
-      channel_path, stream_id, receiving);
+      channel_path, stream_id, TRUE);
 
   g_free (channel_path);
 }
@@ -2142,13 +2141,12 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
   g_signal_connect (chan, "handler-result", G_CALLBACK (handler_result),
       context);
   g_signal_connect (chan, "closed", G_CALLBACK (channel_closed), self);
-  g_signal_connect (chan, "stream-state-changed",
-      G_CALLBACK (channel_stream_state_changed), self);
-  g_signal_connect (chan, "stream-receiving",
-      G_CALLBACK (channel_stream_receiving), self);
+  g_signal_connect (chan, "session-created",
+      G_CALLBACK (channel_session_created), self);
   g_signal_connect (chan, "stream-created",
       G_CALLBACK (channel_stream_created), self);
-
+  g_signal_connect (chan, "stream-receiving",
+      G_CALLBACK (channel_stream_receiving), self);
 
   g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
 }

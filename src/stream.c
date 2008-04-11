@@ -74,6 +74,13 @@ struct _TpStreamEngineStreamPrivate
 
   gboolean playing;
   gboolean has_resource;
+
+  GMutex *mutex;
+
+  /* These are protected by the mutex */
+
+  gboolean receiving;
+  guint receiving_idle_id;
 };
 
 enum
@@ -83,6 +90,7 @@ enum
   REQUEST_RESOURCE,
   FREE_RESOURCE,
   SRC_PAD_ADDED,
+  RECEIVING,
   SIGNAL_COUNT
 };
 
@@ -163,6 +171,8 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
   self->priv = priv;
   priv->playing = FALSE;
   priv->has_resource = FALSE;
+
+  priv->mutex = g_mutex_new ();
 }
 
 static void
@@ -391,6 +401,15 @@ tp_stream_engine_stream_dispose (GObject *object)
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = stream->priv;
 
+  if (priv->receiving_idle_id)
+    {
+      g_mutex_lock (priv->mutex);
+      priv->receiving = TRUE;
+      g_source_remove (priv->receiving_idle_id);
+      priv->receiving_idle_id = 0;
+      g_mutex_unlock (priv->mutex);
+    }
+
   if (priv->stream_handler_proxy)
     {
       TpMediaStreamHandler *tmp = priv->stream_handler_proxy;
@@ -425,6 +444,14 @@ tp_stream_engine_stream_dispose (GObject *object)
     G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
 }
 
+static void
+tp_stream_engine_stream_finalize (GObject *object)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+
+  if (self->priv->mutex)
+    g_mutex_free (self->priv->mutex);
+}
 
 static void
 tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
@@ -438,6 +465,7 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   object_class->get_property = tp_stream_engine_stream_get_property;
   object_class->constructor = tp_stream_engine_stream_constructor;
   object_class->dispose = tp_stream_engine_stream_dispose;
+  object_class->finalize = tp_stream_engine_stream_finalize;
 
   param_spec = g_param_spec_object ("farsight-conference",
                                     "Farsight conference",
@@ -573,6 +601,15 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   NULL, NULL,
                   tp_stream_engine_marshal_VOID__OBJECT_BOXED,
                   G_TYPE_NONE, 2, GST_TYPE_PAD, FS_TYPE_CODEC);
+
+  signals[RECEIVING] =
+    g_signal_new ("receiving",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
 }
 
 /* dummy callback handler for async calling calls with no return values */
@@ -1472,6 +1509,24 @@ tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
   return FALSE;
 }
 
+/*
+ * This idle function is just to insure that the signal is emitted on the main
+ * thread because dbus-glib is not thread safe
+ */
+
+static gboolean
+emit_receiving (gpointer user_data)
+{
+  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+
+  g_signal_emit (self, signals[RECEIVING], 0);
+
+  g_mutex_lock (self->priv->mutex);
+  self->priv->receiving_idle_id = 0;
+  g_mutex_unlock (self->priv->mutex);
+
+  return FALSE;
+}
 
 static void
 cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
@@ -1484,6 +1539,14 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
   DEBUG (self, "New pad");
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
+
+  g_mutex_lock (self->priv->mutex);
+  if (!self->priv->receiving && !self->priv->receiving_idle_id)
+    {
+      self->priv->receiving = TRUE;
+      self->priv->receiving_idle_id = g_idle_add (emit_receiving, self);
+    }
+  g_mutex_unlock (self->priv->mutex);
 }
 
 TpStreamEngineStream *
