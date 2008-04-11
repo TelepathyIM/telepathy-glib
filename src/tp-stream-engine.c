@@ -31,11 +31,6 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/gtypes.h>
 
-#include <farsight/farsight-session.h>
-#include <farsight/farsight-stream.h>
-#include <farsight/farsight-codec.h>
-#include <farsight/farsight-transport.h>
-
 #include <gst/interfaces/xoverlay.h>
 
 #include "tp-stream-engine.h"

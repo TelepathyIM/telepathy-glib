@@ -811,17 +811,17 @@ fs_codecs_to_tp (TpStreamEngineStream *stream,
 
   for (el = codecs; el; el = g_list_next (el))
     {
-      FarsightCodec *fsc = el->data;
+      FsCodec *fsc = el->data;
       GValue codec = { 0, };
       TpMediaStreamType type;
       GHashTable *params;
       GList *cur;
 
       switch (fsc->media_type) {
-        case FARSIGHT_MEDIA_TYPE_AUDIO:
+        case FS_MEDIA_TYPE_AUDIO:
           type = TP_MEDIA_STREAM_TYPE_AUDIO;
           break;
-        case FARSIGHT_MEDIA_TYPE_VIDEO:
+        case FS_MEDIA_TYPE_VIDEO:
           type = TP_MEDIA_STREAM_TYPE_VIDEO;
           break;
         default:
@@ -835,7 +835,7 @@ fs_codecs_to_tp (TpStreamEngineStream *stream,
 
       for (cur = fsc->optional_params; cur != NULL; cur = cur->next)
         {
-          FarsightCodecParameter *param = (FarsightCodecParameter *) cur->data;
+          FsCodecParameter *param = (FsCodecParameter *) cur->data;
 
           g_hash_table_insert (params, g_strdup (param->name),
                                g_strdup (param->value));
@@ -989,7 +989,7 @@ static void
 fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 {
   GList **fs_params = (GList **) user_data;
-  FarsightCodecParameter *param = g_new0(FarsightCodecParameter,1);
+  FsCodecParameter *param = g_new0(FsCodecParameter,1);
   param->name = key;
   param->value = value;
   *fs_params = g_list_prepend (*fs_params, param);

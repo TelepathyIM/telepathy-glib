@@ -2,7 +2,6 @@
 #define __TP_STREAM_ENGINE_VIDEO_STREAM_H__
 
 #include <glib-object.h>
-#include <farsight/farsight-session.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/media-interfaces.h>
 
