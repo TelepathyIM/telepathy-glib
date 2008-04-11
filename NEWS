@@ -1,3 +1,30 @@
+telepathy-glib 0.7.7 (unreleased)
+=================================
+
+Enhancements:
+
+* Documentation: divide up the service-side Channel interfaces by topic,
+  in the same way the client-side ones were already divided up
+
+* TpTextMixin: drop the futile attempt to limit memory consumption. We were
+  doing it wrong, and a typical connection manager has so many ways it can
+  be induced to consume memory that trying to guard against this particular
+  case by truncating or dropping messages seems likely to cause more problems
+  than it fixes.
+
+Fixes:
+
+* libglibcodegen.py: generate correct bindings for arrays of object-path (ao)
+
+* glib-client-gen.py: cope correctly with Unicode in the spec
+
+* doc-generator.xsl: update from telepathy-spec to cope with arrays of mappings
+
+Recommended updates for projects using code-generation:
+
+* Update libglibcodegen.py to avoid a crash if arrays of object-path appear
+  in your API in future.
+
 telepathy-glib 0.7.6 (2008-04-03)
 =================================
 
