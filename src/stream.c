@@ -1058,8 +1058,6 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
      */
     gchar *str = g_strdup_printf ("Codec negotiation failed: %s",
         error->message);
-    WARNING(self, "Codec negotiation failed: %s",
-        error->message);
     tp_stream_engine_stream_error (self, 0, str);
     g_free (str);
     return;
@@ -1359,7 +1357,7 @@ tp_stream_engine_stream_error (TpStreamEngineStream *self,
                                guint error,
                                const gchar *message)
 {
-  g_message ("%s: stream errorno=%d error=%s", G_STRFUNC, error, message);
+  g_message ("%s: stream error errorno=%d error=%s", G_STRFUNC, error, message);
 
   tp_cli_media_stream_handler_call_error (self->priv->stream_handler_proxy,
       -1, error, message, NULL, NULL, NULL, NULL);
