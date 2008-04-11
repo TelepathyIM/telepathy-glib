@@ -552,7 +552,7 @@ static void
 tp_text_mixin_get_message_types_async (TpSvcChannelTypeText *iface,
                                        DBusGMethodInvocation *context)
 {
-  TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
+  TpTextMixin *mixin = TP_TEXT_MIXIN (iface);
 
   tp_svc_channel_type_text_return_from_get_message_types (context,
       mixin->priv->msg_types);
