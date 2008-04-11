@@ -915,6 +915,48 @@ stream_request_resource (TpStreamEngineStream *stream, gpointer user_data)
     }
 }
 
+
+static void
+session_invalidated (TpStreamEngineSession *session G_GNUC_UNUSED,
+    gpointer user_data)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  GstElement *conf;
+
+  g_object_get (session, "farsight-conference", &conf, NULL);
+
+  gst_element_set_locked_state (conf, TRUE);
+  gst_element_set_state (conf, GST_STATE_NULL);
+  gst_element_get_state (conf, NULL, NULL, GST_CLOCK_TIME_NONE);
+
+  gst_bin_remove (GST_BIN (self->priv->pipeline), conf);
+}
+
+static void
+channel_session_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
+    TpStreamEngineSession *session, gpointer user_data)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  GstElement *conf;
+
+  g_object_get (session, "farsight-conference", &conf, NULL);
+
+  if (g_object_has_property ((GObject *)conf, "latency"))
+    g_object_set (conf, "latency", 100, NULL);
+
+  tp_stream_engine_get_pipeline (self);
+
+  if (!gst_bin_add (GST_BIN (self->priv->pipeline), conf))
+    g_error ("Could not add conference to pipeline");
+
+  gst_element_set_state (conf, GST_STATE_PLAYING);
+
+  g_signal_connect (session, "invalidated", G_CALLBACK (session_invalidated),
+      user_data);
+}
+
+
+
 static void
 stream_linked (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
 {
@@ -922,7 +964,6 @@ stream_linked (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
 
   tp_stream_engine_start_source (obj);
 }
-
 
 static void
 channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
