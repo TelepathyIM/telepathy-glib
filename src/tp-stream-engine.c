@@ -1288,7 +1288,9 @@ bus_sync_message (GstBus *bus G_GNUC_UNUSED,
     {
     case GST_MESSAGE_ERROR:
       gst_message_parse_error (message, &error, &error_string);
-      if (error->domain == GST_STREAM_ERROR &&
+      if (GST_MESSAGE_SRC (message) ==
+            GST_OBJECT_CAST (engine->priv->videosrc) &&
+          error->domain == GST_STREAM_ERROR &&
           error->code == GST_STREAM_ERROR_FAILED &&
           strstr (error_string, "not-linked"))
         {
@@ -1399,7 +1401,7 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
         break;
       case GST_MESSAGE_WARNING:
         {
-          gchar *debug_msg;
+          gchar *debug_msg = NULL;
           gst_message_parse_warning (message, &error, &debug_msg);
           g_warning ("%s: got warning: %s (%s)", G_STRFUNC, error->message,
               debug_msg);
