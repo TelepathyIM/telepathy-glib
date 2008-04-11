@@ -292,7 +292,7 @@ def type_to_gtype(s):
     elif s == 'ab': #boolean array
         return ("GArray *", "DBUS_TYPE_G_BOOLEAN_ARRAY", "BOXED", True)
     elif s == 'ao': #object path array
-        return ("GArray *", "DBUS_TYPE_G_OBJECT_ARRAY", "BOXED", True)
+        return ("GPtrArray *", "DBUS_TYPE_G_OBJECT_ARRAY", "BOXED", True)
     elif s == 'a{ss}': #hash table of string to string
         return ("GHashTable *", "DBUS_TYPE_G_STRING_STRING_HASHTABLE", "BOXED", False)
     elif s[:2] == 'a{':  #some arbitrary hash tables
