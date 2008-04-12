@@ -75,6 +75,14 @@ ifelse(stream_engine_nano_version, 0, [],
 
 AC_SUBST(ERROR_CFLAGS)
 
+AC_ARG_ENABLE(backtrace,
+  AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash]),
+    enable_backtrace=$enableval, enable_backtrace=no )
+
+if test x$enable_backtrace = xyes; then
+  AC_DEFINE(ENABLE_BACKTRACE, [], [Enable backtrace output on crashes])
+fi
+
 dnl options for building sequence diagrams
 SEQ_DIAS
 
