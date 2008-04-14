@@ -80,6 +80,35 @@ on_received (TpChannel *chan,
   last_received_text = g_strdup (text);
 }
 
+static void
+on_message_received (TpChannel *chan,
+                     guint id,
+                     guint timestamp,
+                     guint sender,
+                     guint type,
+                     const GPtrArray *parts,
+                     gpointer data,
+                     GObject *object)
+{
+  TpHandleRepoIface *contact_repo = data;
+
+  g_message ("%p: MessageReceived #%u: time %u, sender %u '%s', type %u, "
+      "%u parts", chan, id, timestamp, sender,
+      tp_handle_inspect (contact_repo, sender), type, parts->len);
+}
+
+static void
+on_message_sent (TpChannel *chan,
+                 guint type,
+                 const GPtrArray *parts,
+                 const gchar *token,
+                 gpointer data,
+                 GObject *object)
+{
+  g_message ("%p: MessageSent with token '%s': type %u, %u parts",
+      chan, token, type, parts->len);
+}
+
 int
 main (int argc,
       char **argv)
@@ -151,6 +180,13 @@ main (int argc,
       g_object_ref (contact_repo), g_object_unref, NULL, NULL) != NULL, "");
   MYASSERT (tp_cli_channel_type_text_connect_to_sent (chan, on_sent,
       NULL, NULL, NULL, NULL) != NULL, "");
+
+  MYASSERT (
+      tp_cli_channel_interface_message_parts_connect_to_message_received (chan,
+          on_message_received, g_object_ref (contact_repo), g_object_unref,
+          NULL, NULL) != NULL, "");
+  MYASSERT (tp_cli_channel_interface_message_parts_connect_to_message_sent (
+        chan, on_message_sent, NULL, NULL, NULL, NULL) != NULL, "");
 
   sent_count = 0;
   received_count = 0;
