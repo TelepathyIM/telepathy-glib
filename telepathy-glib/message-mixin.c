@@ -625,6 +625,9 @@ tp_message_mixin_take_received (GObject *object,
   if (timestamp == 0)
     timestamp = time (NULL);
 
+  DEBUG ("%p: time %u, sender %u, type %u, %u parts",
+      object, (guint) timestamp, sender, message_type, content->len);
+
   /* FIXME: we don't check for overflow, so in highly pathological cases we
    * might end up with multiple messages with the same ID */
   pending->id = mixin->priv->recv_id++;
