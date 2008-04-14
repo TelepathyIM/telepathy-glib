@@ -163,14 +163,14 @@ main (int argc,
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       ": %u != NORMAL", last_sent_type);
   MYASSERT (!tp_strdiff (last_sent_text, "Hello, world!"),
-      "'%s' != '%s'", last_sent_text, "Hello, world!");
+      ": '%s' != '%s'", last_sent_text, "Hello, world!");
   MYASSERT (last_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       ": %u != NORMAL", last_received_type);
   MYASSERT (last_received_flags == 0, ": %u != 0", last_received_flags);
   MYASSERT (last_received_sender == handle,
       ": %u != %u", last_received_sender, handle);
-  MYASSERT (!tp_strdiff (last_received_text, "You said: Hello, world!"),
-      "'%s'", last_received_text);
+  MYASSERT (!tp_strdiff (last_received_text, "Hello, world!"),
+      ": '%s'", last_received_text);
 
   sent_count = 0;
   received_count = 0;
@@ -190,7 +190,7 @@ main (int argc,
   MYASSERT (last_received_sender == handle,
       ": %u != %u", last_received_sender, handle);
   MYASSERT (!tp_strdiff (last_received_text,
-        "notices that the user drinks coffee"),
+        "drinks coffee"),
       ": '%s'", last_received_text);
 
   sent_count = 0;
@@ -211,7 +211,7 @@ main (int argc,
   MYASSERT (last_received_sender == handle,
       ": %u != %u", last_received_sender, handle);
   MYASSERT (!tp_strdiff (last_received_text,
-        "You sent a notice: Printer on fire"),
+        "Printer on fire"),
       ": '%s'", last_received_text);
 
   g_print ("\n\n==== Listing messages ====\n");
