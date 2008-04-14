@@ -80,6 +80,16 @@ on_received (TpChannel *chan,
   last_received_text = g_strdup (text);
 }
 
+static guint message_received_count = 0;
+static guint last_message_received_sender = 0;
+static guint last_message_received_type = 0;
+static guint last_message_received_n_parts = 0;
+
+static guint message_sent_count = 0;
+static guint last_message_sent_type = 0;
+static gchar *last_message_sent_token = NULL;
+static guint last_message_sent_n_parts = 0;
+
 static void
 on_message_received (TpChannel *chan,
                      guint id,
@@ -95,6 +105,11 @@ on_message_received (TpChannel *chan,
   g_message ("%p: MessageReceived #%u: time %u, sender %u '%s', type %u, "
       "%u parts", chan, id, timestamp, sender,
       tp_handle_inspect (contact_repo, sender), type, parts->len);
+
+  message_received_count++;
+  last_message_received_type = type;
+  last_message_received_sender = sender;
+  last_message_received_n_parts = parts->len;
 }
 
 static void
@@ -107,6 +122,12 @@ on_message_sent (TpChannel *chan,
 {
   g_message ("%p: MessageSent with token '%s': type %u, %u parts",
       chan, token, type, parts->len);
+
+  message_sent_count++;
+  last_message_sent_type = type;
+  last_message_sent_n_parts = parts->len;
+  g_free (last_message_sent_token);
+  last_message_sent_token = g_strdup (token);
 }
 
 int
@@ -190,6 +211,8 @@ main (int argc,
 
   sent_count = 0;
   received_count = 0;
+  message_sent_count = 0;
+  message_received_count = 0;
   tp_cli_channel_type_text_run_send (chan, -1,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "Hello, world!",
       &error, NULL);
@@ -207,9 +230,23 @@ main (int argc,
       ": %u != %u", last_received_sender, handle);
   MYASSERT (!tp_strdiff (last_received_text, "Hello, world!"),
       ": '%s'", last_received_text);
+  MYASSERT (message_sent_count == 1, ": %u != 1", message_sent_count);
+  MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
+  MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_sent_type);
+  MYASSERT (last_message_sent_n_parts == 1,
+      ": %u != 1", last_message_sent_n_parts);
+  MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_received_type);
+  MYASSERT (last_message_received_sender == handle,
+      ": %u != %u", last_message_received_sender, handle);
+  MYASSERT (last_message_received_n_parts == 1,
+      ": %u != 1", last_message_received_n_parts);
 
   sent_count = 0;
   received_count = 0;
+  message_sent_count = 0;
+  message_received_count = 0;
   tp_cli_channel_type_text_run_send (chan, -1,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION, "drinks coffee",
       &error, NULL);
@@ -228,9 +265,23 @@ main (int argc,
   MYASSERT (!tp_strdiff (last_received_text,
         "drinks coffee"),
       ": '%s'", last_received_text);
+  MYASSERT (message_sent_count == 1, ": %u != 1", message_sent_count);
+  MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
+  MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
+      ": %u != ACTION", last_message_sent_type);
+  MYASSERT (last_message_sent_n_parts == 1,
+      ": %u != 1", last_message_sent_n_parts);
+  MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
+      ": %u != ACTION", last_message_received_type);
+  MYASSERT (last_message_received_sender == handle,
+      ": %u != %u", last_message_received_sender, handle);
+  MYASSERT (last_message_received_n_parts == 1,
+      ": %u != 1", last_message_received_n_parts);
 
   sent_count = 0;
   received_count = 0;
+  message_sent_count = 0;
+  message_received_count = 0;
   tp_cli_channel_type_text_run_send (chan, -1,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE, "Printer on fire",
       &error, NULL);
@@ -249,6 +300,18 @@ main (int argc,
   MYASSERT (!tp_strdiff (last_received_text,
         "Printer on fire"),
       ": '%s'", last_received_text);
+  MYASSERT (message_sent_count == 1, ": %u != 1", message_sent_count);
+  MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
+  MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
+      ": %u != NOTICE", last_message_sent_type);
+  MYASSERT (last_message_sent_n_parts == 1,
+      ": %u != 1", last_message_sent_n_parts);
+  MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
+      ": %u != NOTICE", last_message_received_type);
+  MYASSERT (last_message_received_sender == handle,
+      ": %u != %u", last_message_received_sender, handle);
+  MYASSERT (last_message_received_n_parts == 1,
+      ": %u != 1", last_message_received_n_parts);
 
   g_print ("\n\n==== Listing messages ====\n");
 
@@ -354,6 +417,7 @@ main (int argc,
 
   g_free (last_sent_text);
   g_free (last_received_text);
+  g_free (last_message_sent_token);
 
   return fail;
 }
