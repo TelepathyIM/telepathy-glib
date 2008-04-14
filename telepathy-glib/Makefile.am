@@ -67,7 +67,7 @@ _gen/version-script.txt: $(ABI_LISTS) _gen/abi.txt Makefile.am \
 	: # the versioned API should always match the ^tp API
 	diff -c _gen/versioned-abi.txt _gen/abi.txt
 
-_gen/abi.txt: libtelepathy-glib-internal.la _gen/versioned-abi.txt Makefile.am
+_gen/abi.txt: libtelepathy-glib-internal.la Makefile.am
 	$(NM) .libs/libtelepathy-glib-internal.a > _gen/abi.nm
 	grep " [DT] " < _gen/abi.nm > _gen/abi.funcs
 	cut -d" " -f3 < _gen/abi.funcs > _gen/abi.funcnames
