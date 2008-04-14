@@ -47,6 +47,7 @@
 #include <dbus/dbus-glib.h>
 #include <string.h>
 
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
@@ -75,14 +76,31 @@
 
 struct _TpMessageMixinPrivate
 {
+  TpMessageMixinSendImpl send_message;
+
   TpHandleRepoIface *contact_repo;
   guint recv_id;
-  gboolean message_lost;
 
   GQueue *pending;
 
   GArray *msg_types;
 };
+
+#define TP_MESSAGE_MIXIN_CLASS_OFFSET_QUARK \
+  (tp_message_mixin_class_get_offset_quark ())
+#define TP_MESSAGE_MIXIN_CLASS_OFFSET(o) \
+  (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_CLASS_TYPE (o), \
+                                       TP_MESSAGE_MIXIN_CLASS_OFFSET_QUARK)))
+#define TP_MESSAGE_MIXIN_CLASS(o) \
+  ((TpMessageMixinClass *) tp_mixin_offset_cast (o, \
+    TP_MESSAGE_MIXIN_CLASS_OFFSET (o)))
+
+#define TP_MESSAGE_MIXIN_OFFSET_QUARK (tp_message_mixin_get_offset_quark ())
+#define TP_MESSAGE_MIXIN_OFFSET(o) \
+  (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_TYPE (o), \
+                                       TP_MESSAGE_MIXIN_OFFSET_QUARK)))
+#define TP_MESSAGE_MIXIN(o) \
+  ((TpMessageMixin *) tp_mixin_offset_cast (o, TP_MESSAGE_MIXIN_OFFSET (o)))
 
 /**
  * tp_message_mixin_class_get_offset_quark:
@@ -91,7 +109,7 @@ struct _TpMessageMixinPrivate
  *
  * Returns: the quark used for storing mixin offset on a GObjectClass
  */
-GQuark
+static GQuark
 tp_message_mixin_class_get_offset_quark (void)
 {
   static GQuark offset_quark = 0;
@@ -110,7 +128,7 @@ tp_message_mixin_class_get_offset_quark (void)
  *
  * Returns: the quark used for storing mixin offset on a GObject
  */
-GQuark
+static GQuark
 tp_message_mixin_get_offset_quark (void)
 {
   static GQuark offset_quark = 0;
@@ -154,20 +172,14 @@ tp_message_mixin_class_init (GObjectClass *obj_cls,
 }
 
 
-typedef enum {
-    PENDING_TEXT_MESSAGE,       /* A message with text/plain content */
-    PENDING_NON_TEXT_MESSAGE,   /* A message with no text/plain content */
-    PENDING_DELIVERY_REPORT     /* A delivery report */
-} PendingType;
-
-
 typedef struct {
     guint32 id;
-    PendingType pending_type;
-    TpHandle sender;                        /* 0 for delivery reports */
-    time_t timestamp;                       /* 0 for delivery reports */
-    TpChannelTextMessageType message_type;  /* 0 for delivery reports */
-    GPtrArray *content;                     /* has exactly one item for d.r. */
+    TpHandle sender;
+    time_t timestamp;
+    TpChannelTextMessageType message_type;
+    GPtrArray *content;
+    TpChannelTextMessageFlags old_flags;
+    gchar *old_text;
 } PendingItem;
 
 
@@ -205,39 +217,84 @@ pending_item_free (PendingItem *pending,
 }
 
 
-#if 0
-static PendingItem *
-pending_item_new (void)
+static inline const gchar *
+value_force_string (const GValue *value)
 {
-  PendingItem *pending = g_slice_new0 (PendingItem);
+  if (value == NULL || !G_VALUE_HOLDS_STRING (value))
+    return NULL;
 
-  pending->content = g_ptr_array_sized_new (1);
-  return pending;
+  return g_value_get_string (value);
 }
-#endif
+
+
+static inline void
+nullify_hash (GHashTable **hash)
+{
+  if (*hash != NULL)
+    return;
+
+  g_hash_table_destroy (*hash);
+  *hash = NULL;
+}
+
+
+static void
+subtract_from_hash (gpointer key,
+                    gpointer value,
+                    gpointer user_data)
+{
+  g_hash_table_remove (user_data, key);
+}
 
 
 static TpChannelTextMessageFlags
-pending_item_get_text (PendingItem *item,
-                       GString *buffer)
+parts_to_text (const GPtrArray *parts,
+               GString *buffer)
 {
   guint i;
   TpChannelTextMessageFlags flags = 0;
+  /* Lazily created hash tables, used as a sets: keys are borrowed
+   * "alternative" string values from @parts, value == key. */
+  /* Alternative IDs for which we have already extracted an alternative */
+  GHashTable *alternatives_used = NULL;
+  /* Alternative IDs for which we expect to extract text, but have not yet;
+   * cleared if the flag Channel_Text_Message_Flag_Non_Text_Content is set.
+   * At the end, if this contains any item not in alternatives_used,
+   * Channel_Text_Message_Flag_Non_Text_Content must be set. */
+  GHashTable *alternatives_needed = NULL;
 
-  g_return_val_if_fail (item->pending_type != PENDING_TEXT_MESSAGE, 0);
-  g_return_val_if_fail (item->content != NULL, 0);
-
-  for (i = 0; i < item->content->len; i++)
+  for (i = 0; i < parts->len; i++)
     {
-      GHashTable *part = g_ptr_array_index (item->content, i);
+      GHashTable *part = g_ptr_array_index (parts, i);
+      const gchar *type = value_force_string (g_hash_table_lookup (part,
+            "type"));
+      const gchar *alternative = value_force_string (g_hash_table_lookup (part,
+            "alternative"));
 
-      if (!tp_strdiff (g_hash_table_lookup (part, "type"), "text/plain"))
+      if (!tp_strdiff (type, "text/plain"))
         {
           GValue *value;
-          /* FIXME: strictly, we should skip all but the first in any set of
-           * alternatives... in practice, this is only likely to affect XMPP,
-           * where this will result in getting *all* the languages for a
-           * multilingual message, rather than just one of them */
+
+          if (alternative != NULL && alternative[0] != '\0')
+            {
+              if (alternatives_used == NULL)
+                {
+                  /* We can't have seen an alternative for this part yet.
+                   * However, we need to create the hash table now */
+                  alternatives_used = g_hash_table_new (g_str_hash,
+                      g_str_equal);
+                }
+              else if (g_hash_table_lookup (alternatives_used,
+                    alternative) != NULL)
+                {
+                  /* we've seen a "better" alternative for this part already.
+                   * Skip it */
+                  continue;
+                }
+
+              g_hash_table_insert (alternatives_used, (gpointer) alternative,
+                  (gpointer) alternative);
+            }
 
           value = g_hash_table_lookup (part, "content");
 
@@ -251,8 +308,50 @@ pending_item_get_text (PendingItem *item,
                   g_value_get_boolean (value))
                 flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_TRUNCATED;
             }
+          else
+            {
+              flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
+              nullify_hash (&alternatives_needed);
+            }
+        }
+      else if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) != 0)
+        {
+          if (alternative == NULL || alternative[0] == '\0')
+            {
+              /* This part can't possibly have a text alternative
+               * (attached image or something, perhaps) */
+              flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
+              nullify_hash (&alternatives_needed);
+            }
+          else
+            {
+              /* This part might have a text alternative later */
+              if (alternatives_needed == NULL)
+                alternatives_needed = g_hash_table_new (g_str_hash,
+                    g_str_equal);
+
+              g_hash_table_insert (alternatives_needed, (gpointer) alternative,
+                  (gpointer) alternative);
+            }
         }
     }
+
+  if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) == 0 &&
+      alternatives_needed != NULL)
+    {
+      if (alternatives_used != NULL)
+        g_hash_table_foreach (alternatives_used, subtract_from_hash,
+            alternatives_needed);
+
+      if (g_hash_table_size (alternatives_needed) > 0)
+        flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
+    }
+
+  if (alternatives_needed != NULL)
+    g_hash_table_destroy (alternatives_needed);
+
+  if (alternatives_used != NULL)
+    g_hash_table_destroy (alternatives_used);
 
   return flags;
 }
@@ -295,8 +394,6 @@ tp_message_mixin_init (GObject *obj,
   mixin->priv->recv_id = 0;
   mixin->priv->msg_types = g_array_sized_new (FALSE, FALSE, sizeof (guint),
       NUM_TP_CHANNEL_TEXT_MESSAGE_TYPES);
-
-  mixin->priv->message_lost = FALSE;
 }
 
 static void
@@ -407,14 +504,8 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
       guint flags;
       GString *text;
 
-      if (msg->pending_type != PENDING_TEXT_MESSAGE)
-        {
-          /* No text/plain part */
-          continue;
-        }
-
       text = g_string_new ("");
-      flags = pending_item_get_text (msg, text);
+      flags = parts_to_text (msg->content, text);
 
       g_value_init (&val, pending_type);
       g_value_take_boxed (&val,
@@ -443,14 +534,11 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
           PendingItem *msg = cur->data;
           GList *next = cur->next;
 
-          if (msg->pending_type == PENDING_TEXT_MESSAGE)
-            {
-              /* FIXME: need a hook here to send acknowledgements out on the
-               * network if the protocol requires it */
+          /* FIXME: need a hook here to send acknowledgements out on the
+           * network if the protocol requires it */
 
-              g_queue_delete_link (mixin->priv->pending, cur);
-              pending_item_free (msg, mixin->priv->contact_repo);
-            }
+          g_queue_delete_link (mixin->priv->pending, cur);
+          pending_item_free (msg, mixin->priv->contact_repo);
 
           cur = next;
         }
@@ -481,10 +569,131 @@ static void
 tp_message_mixin_get_message_types_async (TpSvcChannelTypeText *iface,
                                           DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
 
-  dbus_g_method_return_error (context, &e);
+  tp_svc_channel_type_text_return_from_get_message_types (context,
+      mixin->priv->msg_types);
 }
+
+
+/**
+ * tp_message_mixin_take_received:
+ * @object: a channel with this mixin
+ * @timestamp: the time the message was received (if 0, time (NULL) will be
+ *  used)
+ * @sender: an owned reference to the handle of the sender, which is stolen
+ *  by the message mixin
+ * @message_type: the type of message
+ * @content: the content of the message, which is stolen by the message mixin
+ *
+ * Receive a message into the pending messages queue, where it will stay
+ * until acknowledged, and emit the ReceivedMessage signal. Also emit the
+ * Received signal if appropriate.
+ *
+ * Note that the sender and content arguments are *not* copied, and the caller
+ * loses ownership of them (this is to avoid lengthy and unnecessary copying
+ * of the content).
+ */
+void
+tp_message_mixin_take_received (GObject *object,
+                                time_t timestamp,
+                                TpHandle sender,
+                                TpChannelTextMessageType message_type,
+                                GPtrArray *content)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+  PendingItem *pending = g_slice_new0 (PendingItem);
+  GString *text;
+
+  if (timestamp == 0)
+    timestamp = time (NULL);
+
+  /* FIXME: we don't check for overflow, so in highly pathological cases we
+   * might end up with multiple messages with the same ID */
+  pending->id = mixin->priv->recv_id++;
+  pending->sender = sender;
+  pending->timestamp = timestamp;
+  pending->message_type = message_type;
+  pending->content = content;
+  text = g_string_new ("");
+  pending->old_flags = parts_to_text (content, text);
+  pending->old_text = g_string_free (text, FALSE);
+
+  /* Queue it */
+
+  g_queue_push_tail (mixin->priv->pending, pending);
+
+  /* Signal it to clients */
+
+  tp_svc_channel_type_text_emit_received (object,
+      pending->id, timestamp, sender, message_type, pending->old_flags,
+      pending->old_text);
+
+  tp_svc_channel_interface_message_parts_emit_message_received (object,
+      pending->id, timestamp, sender, message_type, content);
+}
+
+
+#if 0
+void
+tp_message_mixin_take_delivery_report (GObject *object,
+                                       GHashTable *report)
+{
+}
+#endif
+
+
+struct _TpMessageMixinOutgoingMessagePrivate {
+    DBusGMethodInvocation *context;
+    gboolean message_parts:1;
+};
+
+
+void
+tp_message_mixin_sent (GObject *object,
+                       TpMessageMixinOutgoingMessage *message,
+                       const gchar *token)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+  time_t now = time (NULL);
+  GString *string;
+
+  g_return_if_fail (mixin != NULL);
+  g_return_if_fail (object != NULL);
+  g_return_if_fail (message != NULL);
+  g_return_if_fail (message != NULL);
+  g_return_if_fail (message->parts != NULL);
+  g_return_if_fail (message->priv != NULL);
+  g_return_if_fail (message->priv->context != NULL);
+
+  if (token == NULL)
+    token = "";
+
+  /* emit Sent and MessageSent */
+
+  tp_svc_channel_interface_message_parts_emit_message_sent (object,
+      message->message_type, message->parts, token);
+  string = g_string_new ("");
+  parts_to_text (message->parts, string);
+  tp_svc_channel_type_text_emit_sent (object, now, message->message_type,
+      g_string_free (string, FALSE));
+
+  /* return successfully */
+
+  if (message->priv->message_parts)
+    {
+      tp_svc_channel_interface_message_parts_return_from_send_message (
+          message->priv->context, token);
+    }
+  else
+    {
+      tp_svc_channel_type_text_return_from_send (
+          message->priv->context);
+    }
+
+  message->priv->context = NULL;
+}
+
 
 static void
 tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
@@ -492,10 +701,43 @@ tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
                              const gchar *text,
                              DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
+  GPtrArray *parts;
+  GHashTable *table;
+  GValue *value;
+  TpMessageMixinOutgoingMessage *message;
 
-  dbus_g_method_return_error (context, &e);
+  if (mixin->priv->send_message == NULL)
+    {
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  parts = g_ptr_array_sized_new (1);
+  table = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, (GDestroyNotify) tp_g_value_slice_free);
+
+  value = tp_g_value_slice_new (G_TYPE_STRING);
+  g_value_set_string (value, text);
+  g_hash_table_insert (table, "content", value);
+
+  value = tp_g_value_slice_new (G_TYPE_STRING);
+  g_value_set_static_string (value, "text/plain");
+  g_hash_table_insert (table, "type", value);
+
+  g_ptr_array_add (parts, table);
+
+  message = g_slice_new0 (TpMessageMixinOutgoingMessage);
+  message->flags = 0;
+  message->message_type = message_type;
+  message->parts = parts;
+  message->priv = g_slice_new0 (TpMessageMixinOutgoingMessagePrivate);
+  message->priv->context = context;
+  message->priv->message_parts = FALSE;
+
+  mixin->priv->send_message ((GObject *) iface, message);
 }
+
 
 static void
 tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessageParts *iface,
@@ -504,10 +746,29 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessageParts *iface,
                                      guint flags,
                                      DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
+  TpMessageMixinOutgoingMessage *message;
 
-  dbus_g_method_return_error (context, &e);
+  if (mixin->priv->send_message == NULL)
+    {
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  message = g_slice_new0 (TpMessageMixinOutgoingMessage);
+  message->flags = flags;
+  message->message_type = message_type;
+  /* FIXME: fix codegen so we get a GType-generator for
+   * TP_ARRAY_TYPE_MESSAGE_PART */
+  message->parts = g_boxed_copy (dbus_g_type_get_collection ("GPtrArray",
+        TP_HASH_TYPE_MESSAGE_PART), parts);
+  message->priv = g_slice_new0 (TpMessageMixinOutgoingMessagePrivate);
+  message->priv->context = context;
+  message->priv->message_parts = TRUE;
+
+  mixin->priv->send_message ((GObject *) iface, message);
 }
+
 
 /**
  * tp_message_mixin_iface_init:

@@ -16,11 +16,11 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
 
-static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
@@ -29,7 +29,10 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
+      tp_message_mixin_text_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGE_PARTS,
+      tp_message_mixin_message_parts_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL))
 
@@ -74,6 +77,31 @@ example_echo_2_channel_init (ExampleEcho2Channel *self)
       ExampleEcho2ChannelPrivate);
 }
 
+static gboolean
+send_message (GObject *object,
+              TpMessageMixinOutgoingMessage *message)
+{
+  ExampleEcho2Channel *self = EXAMPLE_ECHO_2_CHANNEL (object);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
+      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  time_t timestamp = time (NULL);
+  TpChannelTextMessageType message_type = message->message_type;
+  GPtrArray *parts = g_boxed_copy (dbus_g_type_get_collection ("GPtrArray",
+        TP_HASH_TYPE_MESSAGE_PART), message->parts);
+
+  tp_handle_ref (contact_repo, self->priv->handle);
+
+  /* This consumes the data, so we mustn't free it */
+  tp_message_mixin_take_received (object, timestamp, self->priv->handle,
+      message_type, parts);
+
+  /* "OK, we've sent the message" (after calling this, message must not be
+   * dereferenced) */
+  tp_message_mixin_sent (object, message, "");
+
+  return TRUE;
+}
+
 static GObject *
 constructor (GType type,
              guint n_props,
@@ -95,14 +123,10 @@ constructor (GType type,
   bus = tp_get_bus ();
   dbus_g_connection_register_g_object (bus, self->priv->object_path, object);
 
-  tp_text_mixin_init (object, G_STRUCT_OFFSET (ExampleEcho2Channel, text),
+  tp_message_mixin_init (object, G_STRUCT_OFFSET (ExampleEcho2Channel, text),
       contact_repo);
 
-  tp_text_mixin_set_message_types (object,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
-      G_MAXUINT);
+  tp_message_mixin_implement_sending (object, send_message);
 
   return object;
 }
@@ -255,7 +279,7 @@ finalize (GObject *object)
 
   g_free (self->priv->object_path);
 
-  tp_text_mixin_finalize (object);
+  tp_message_mixin_finalize (object);
 
   ((GObjectClass *) example_echo_2_channel_parent_class)->finalize (object);
 }
@@ -344,7 +368,7 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
 
-  tp_text_mixin_class_init (object_class,
+  tp_message_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleEcho2ChannelClass, text_class));
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
@@ -442,64 +466,6 @@ channel_iface_init (gpointer iface,
   IMPLEMENT (get_channel_type);
   IMPLEMENT (get_handle);
   IMPLEMENT (get_interfaces);
-#undef IMPLEMENT
-}
-
-static void
-text_send (TpSvcChannelTypeText *iface,
-           guint type,
-           const gchar *text,
-           DBusGMethodInvocation *context)
-{
-  ExampleEcho2Channel *self = EXAMPLE_ECHO_2_CHANNEL (iface);
-  time_t timestamp = time (NULL);
-  gchar *echo;
-  guint echo_type = type;
-
-  /* Tell the client that the message was sent successfully. If it's possible
-   * to tell whether a message has been delivered, you should delay emitting
-   * this signal until it's actually been successful, and emit SendError
-   * instead if there was an error; if you can't tell, emit Sent immediately,
-   * like this */
-  tp_svc_channel_type_text_emit_sent ((GObject *) self, timestamp, type, text);
-
-  /* Pretend that the remote contact has replied. Normally,
-   * you'd call tp_text_mixin_receive in response to network events */
-
-  switch (type)
-    {
-    case TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL:
-      echo = g_strdup_printf ("You said: %s", text);
-      break;
-    case TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION:
-      echo = g_strdup_printf ("notices that the user %s", text);
-      break;
-    case TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE:
-      echo = g_strdup_printf ("You sent a notice: %s", text);
-      break;
-    default:
-      echo = g_strdup_printf ("You sent some weird message type, %u: \"%s\"",
-          type, text);
-      echo_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
-    }
-
-  tp_text_mixin_receive ((GObject *) self, echo_type, self->priv->handle,
-      timestamp, echo);
-
-  g_free (echo);
-
-  tp_svc_channel_type_text_return_from_send (context);
-}
-
-static void
-text_iface_init (gpointer iface,
-                 gpointer data)
-{
-  TpSvcChannelTypeTextClass *klass = iface;
-
-  tp_text_mixin_iface_init (iface, data);
-#define IMPLEMENT(x) tp_svc_channel_type_text_implement_##x (klass, text_##x)
-  IMPLEMENT (send);
 #undef IMPLEMENT
 }
 

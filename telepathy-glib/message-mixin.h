@@ -42,34 +42,43 @@ struct _TpMessageMixin {
   TpMessageMixinPrivate *priv;
 };
 
-#define TP_MESSAGE_MIXIN_CLASS_OFFSET_QUARK \
-  (tp_message_mixin_class_get_offset_quark ())
-#define TP_MESSAGE_MIXIN_CLASS_OFFSET(o) \
-  (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_CLASS_TYPE (o), \
-                                       TP_MESSAGE_MIXIN_CLASS_OFFSET_QUARK)))
-#define TP_MESSAGE_MIXIN_CLASS(o) \
-  ((TpMessageMixinClass *) tp_mixin_offset_cast (o, \
-    TP_MESSAGE_MIXIN_CLASS_OFFSET (o)))
 
-#define TP_MESSAGE_MIXIN_OFFSET_QUARK (tp_message_mixin_get_offset_quark ())
-#define TP_MESSAGE_MIXIN_OFFSET(o) \
-  (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_TYPE (o), \
-                                       TP_MESSAGE_MIXIN_OFFSET_QUARK)))
-#define TP_MESSAGE_MIXIN(o) \
-  ((TpMessageMixin *) tp_mixin_offset_cast (o, TP_MESSAGE_MIXIN_OFFSET (o)))
+/* Receiving */
+void tp_message_mixin_take_received (GObject *object,
+    time_t timestamp, TpHandle sender, TpChannelTextMessageType message_type,
+    GPtrArray *content);
 
-GQuark tp_message_mixin_class_get_offset_quark (void);
-GQuark tp_message_mixin_get_offset_quark (void);
+
+/* Sending */
+typedef struct _TpMessageMixinOutgoingMessagePrivate
+    TpMessageMixinOutgoingMessagePrivate;
+
+typedef struct _TpMessageMixinOutgoingMessage {
+    guint flags;
+    guint message_type;
+    GPtrArray *parts;
+    TpMessageMixinOutgoingMessagePrivate *priv;
+} TpMessageMixinOutgoingMessage;
+
+typedef gboolean (*TpMessageMixinSendImpl) (GObject *object,
+    TpMessageMixinOutgoingMessage *message);
+
+void tp_message_mixin_sent (GObject *object,
+    TpMessageMixinOutgoingMessage *message, const gchar *token);
+
+
+/* Initialization */
+void tp_message_mixin_text_iface_init (gpointer g_iface, gpointer iface_data);
+void tp_message_mixin_message_parts_iface_init (gpointer g_iface,
+    gpointer iface_data);
 
 void tp_message_mixin_class_init (GObjectClass *obj_cls, gsize offset);
 
 void tp_message_mixin_init (GObject *obj, gsize offset,
     TpHandleRepoIface *contact_repo);
+void tp_message_mixin_implement_sending (GObject *object,
+    TpMessageMixinSendImpl send);
 void tp_message_mixin_finalize (GObject *obj);
-
-void tp_message_mixin_text_iface_init (gpointer g_iface, gpointer iface_data);
-void tp_message_mixin_message_parts_iface_init (gpointer g_iface,
-    gpointer iface_data);
 
 G_END_DECLS
 
