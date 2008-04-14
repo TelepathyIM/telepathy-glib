@@ -61,7 +61,7 @@ _gen/version-script.txt: $(ABI_LISTS) _gen/abi.txt Makefile.am \
 	$(top_srcdir)/tools/make-version-script.py
 	$(PYTHON) $(top_srcdir)/tools/make-version-script.py \
 		 --symbols=_gen/abi.txt $(MAKE_VERSION_SCRIPT_FLAGS) \
-		 $(ABI_LISTS) > $@
+		 $(ABI_LISTS:%=$(srcdir)/%) > $@
 	sed -n -e "s/^[	 ]*\\(tp_.*\\);/\\1/p" < $@ > _gen/versioned-abi.tmp
 	sort -u < _gen/versioned-abi.tmp > _gen/versioned-abi.txt
 	: # the versioned API should always match the ^tp API
