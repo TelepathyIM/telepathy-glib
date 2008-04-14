@@ -28,6 +28,7 @@ EXTRA_DIST = \
     libglibcodegen.py \
     ls-interfaces.xsl \
     make-all-async.xsl \
+    make-version-script.py \
     spec-to-introspect.xsl \
     telepathy-glib-env.in \
     with-session-bus.sh
