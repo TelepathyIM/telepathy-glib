@@ -19,7 +19,7 @@ static TpBaseConnectionManager *
 construct_cm (void)
 {
   return (TpBaseConnectionManager *) g_object_new (
-      EXAMPLE_TYPE_CONNECTION_MANAGER,
+      EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER,
       NULL);
 }
 

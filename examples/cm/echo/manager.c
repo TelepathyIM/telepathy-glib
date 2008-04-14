@@ -18,14 +18,14 @@
 
 #include "conn.h"
 
-G_DEFINE_TYPE (ExampleConnectionManager,
-    example_connection_manager,
+G_DEFINE_TYPE (ExampleEchoConnectionManager,
+    example_echo_connection_manager,
     TP_TYPE_BASE_CONNECTION_MANAGER)
 
 /* type definition stuff */
 
 static void
-example_connection_manager_init (ExampleConnectionManager *self)
+example_echo_connection_manager_init (ExampleEchoConnectionManager *self)
 {
 }
 
@@ -73,8 +73,8 @@ new_connection (TpBaseConnectionManager *self,
                 GError **error)
 {
   ExampleParams *params = parsed_params;
-  ExampleConnection *conn = EXAMPLE_CONNECTION
-      (g_object_new (EXAMPLE_TYPE_CONNECTION,
+  ExampleEchoConnection *conn = EXAMPLE_ECHO_CONNECTION
+      (g_object_new (EXAMPLE_TYPE_ECHO_CONNECTION,
           "account", params->account,
           "protocol", proto,
           NULL));
@@ -83,7 +83,8 @@ new_connection (TpBaseConnectionManager *self,
 }
 
 static void
-example_connection_manager_class_init (ExampleConnectionManagerClass *klass)
+example_echo_connection_manager_class_init (
+    ExampleEchoConnectionManagerClass *klass)
 {
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;

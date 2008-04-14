@@ -19,8 +19,8 @@
 
 #include "factory.h"
 
-G_DEFINE_TYPE (ExampleConnection,
-    example_connection,
+G_DEFINE_TYPE (ExampleEchoConnection,
+    example_echo_connection,
     TP_TYPE_BASE_CONNECTION)
 
 /* type definition stuff */
@@ -31,16 +31,16 @@ enum
   N_PROPS
 };
 
-struct _ExampleConnectionPrivate
+struct _ExampleEchoConnectionPrivate
 {
   gchar *account;
 };
 
 static void
-example_connection_init (ExampleConnection *self)
+example_echo_connection_init (ExampleEchoConnection *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_CONNECTION,
-      ExampleConnectionPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_ECHO_CONNECTION,
+      ExampleEchoConnectionPrivate);
 }
 
 static void
@@ -49,7 +49,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *spec)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (object);
+  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (object);
 
   switch (property_id) {
     case PROP_ACCOUNT:
@@ -66,7 +66,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *spec)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (object);
+  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (object);
 
   switch (property_id) {
     case PROP_ACCOUNT:
@@ -81,23 +81,23 @@ set_property (GObject *object,
 static void
 finalize (GObject *object)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (object);
+  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (object);
 
   g_free (self->priv->account);
 
-  G_OBJECT_CLASS (example_connection_parent_class)->finalize (object);
+  G_OBJECT_CLASS (example_echo_connection_parent_class)->finalize (object);
 }
 
 static gchar *
 get_unique_connection_name (TpBaseConnection *conn)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (conn);
+  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (conn);
 
   return g_strdup (self->priv->account);
 }
 
 static gchar *
-example_normalize_contact (TpHandleRepoIface *repo,
+example_echo_normalize_contact (TpHandleRepoIface *repo,
                            const gchar *id,
                            gpointer context,
                            GError **error)
@@ -117,7 +117,7 @@ create_handle_repos (TpBaseConnection *conn,
                      TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES])
 {
   repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
-      (TP_HANDLE_TYPE_CONTACT, example_normalize_contact, NULL);
+      (TP_HANDLE_TYPE_CONTACT, example_echo_normalize_contact, NULL);
 }
 
 static GPtrArray *
@@ -136,7 +136,7 @@ static gboolean
 start_connecting (TpBaseConnection *conn,
                   GError **error)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (conn);
+  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (conn);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
 
@@ -163,7 +163,7 @@ shut_down (TpBaseConnection *conn)
 }
 
 static void
-example_connection_class_init (ExampleConnectionClass *klass)
+example_echo_connection_class_init (ExampleEchoConnectionClass *klass)
 {
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
@@ -173,7 +173,7 @@ example_connection_class_init (ExampleConnectionClass *klass)
   object_class->get_property = get_property;
   object_class->set_property = set_property;
   object_class->finalize = finalize;
-  g_type_class_add_private (klass, sizeof (ExampleConnectionPrivate));
+  g_type_class_add_private (klass, sizeof (ExampleEchoConnectionPrivate));
 
   base_class->create_handle_repos = create_handle_repos;
   base_class->get_unique_connection_name = get_unique_connection_name;
