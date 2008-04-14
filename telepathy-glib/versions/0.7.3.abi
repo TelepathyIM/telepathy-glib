@@ -1,0 +1,8 @@
+Version: TELEPATHY_GLIB_0.7.3
+Extends: TELEPATHY_GLIB_0.7.2
+
+tp_dbus_properties_mixin_class_init
+tp_dbus_properties_mixin_getter_gobject_properties
+tp_dbus_properties_mixin_iface_init
+tp_dbus_properties_mixin_setter_gobject_properties
+tp_svc_interface_set_dbus_properties_info
