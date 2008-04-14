@@ -4,7 +4,16 @@ genincludedir=$(tpgincludedir)/_gen
 pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-glib.pc
 
+ABI_LISTS = \
+    versions/0.7.0.abi \
+    versions/0.7.1.abi \
+    versions/0.7.2.abi \
+    versions/0.7.3.abi \
+    versions/0.7.5.abi \
+    versions/0.7.6.abi
+
 EXTRA_DIST = \
+    $(ABI_LISTS) \
     channel.xml \
     connection.xml \
     connection-manager.xml \
@@ -35,8 +44,28 @@ libtelepathy_glib_la_SOURCES =
 libtelepathy_glib_la_DEPENDENCIES = libtelepathy-glib-internal.la Makefile.am
 
 if HAVE_LD_VERSION_SCRIPT
-libtelepathy_glib_la_SOURCES += version-script.txt
-libtelepathy_glib_la_DEPENDENCIES += version-script.txt _gen/abi.txt
+libtelepathy_glib_la_SOURCES += _gen/version-script.txt
+libtelepathy_glib_la_DEPENDENCIES += _gen/version-script.txt _gen/abi.txt
+
+if OFFICIAL_RELEASE
+# don't allow undocumented ABI
+MAKE_VERSION_SCRIPT_FLAGS =
+else
+# allow new ABI, and silently put it in a dummy version (which can be used to
+# check whether binaries have been linked against unguaranteed ABI)
+MAKE_VERSION_SCRIPT_FLAGS = \
+    --unreleased-version=TELEPATHY_GLIB_@VERSION@_UNRELEASED
+endif
+
+_gen/version-script.txt: $(ABI_LISTS) _gen/abi.txt Makefile.am \
+	$(top_srcdir)/tools/make-version-script.py
+	$(PYTHON) $(top_srcdir)/tools/make-version-script.py \
+		 --symbols=_gen/abi.txt $(MAKE_VERSION_SCRIPT_FLAGS) \
+		 $(ABI_LISTS) > $@
+	sed -n -e "s/^[	 ]*\\(tp_.*\\);/\\1/p" < $@ > _gen/versioned-abi.tmp
+	sort -u < _gen/versioned-abi.tmp > _gen/versioned-abi.txt
+	: # the versioned API should always match the ^tp API
+	diff -c _gen/versioned-abi.txt _gen/abi.txt
 
 _gen/abi.txt: libtelepathy-glib-internal.la _gen/versioned-abi.txt Makefile.am
 	$(NM) .libs/libtelepathy-glib-internal.a > _gen/abi.nm
@@ -44,14 +73,9 @@ _gen/abi.txt: libtelepathy-glib-internal.la _gen/versioned-abi.txt Makefile.am
 	cut -d" " -f3 < _gen/abi.funcs > _gen/abi.funcnames
 	grep "^tp" < _gen/abi.funcnames > _gen/abi.tpfuncnames
 	sort -u < _gen/abi.tpfuncnames > $@
-	diff -c $@ _gen/versioned-abi.txt
-
-_gen/versioned-abi.txt: version-script.txt Makefile.am
-	sed -n -e "s/^[	 ]*\\(tp_.*\\);/\\1/p" < $< > $@.tmp
-	sort -u < $@.tmp > $@
 
 libtelepathy_glib_la_LDFLAGS += \
-    $(VERSION_SCRIPT_ARG)=$(srcdir)/version-script.txt
+    $(VERSION_SCRIPT_ARG)=_gen/version-script.txt
 
 else # !HAVE_LD_VERSION_SCRIPT
 
