@@ -13,6 +13,7 @@ noinst_PROGRAMS = \
     test-finalized-in-invalidated-handler \
     test-handle-set \
     test-invalidated-while-invoking-signals \
+    test-message-mixin \
     test-properties \
     test-text-mixin \
     test-text-respawn \
@@ -80,6 +81,13 @@ test_invalidated_while_invoking_signals_LDADD = \
     ../lib/libtp-glib-tests.la
 test_invalidated_while_invoking_signals_SOURCES = \
     invalidated-while-invoking-signals.c
+
+test_message_mixin_LDADD = \
+    $(TP_GLIB_LIBS) \
+    ../lib/libtp-glib-tests.la \
+    ../../examples/cm/echo-message-parts/libexample-cm-echo-2.la
+test_message_mixin_SOURCES = \
+    message-mixin.c
 
 test_properties_LDADD = $(TP_GLIB_LIBS)
 test_properties_SOURCES = properties.c
