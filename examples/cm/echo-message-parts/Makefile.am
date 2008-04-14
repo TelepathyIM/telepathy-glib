@@ -11,12 +11,14 @@ libexample_cm_echo_2_la_SOURCES = \
     manager.c \
     manager.h
 
+libexample_cm_echo_2_la_LIBADD = \
+    $(TP_GLIB_LIBS)
+
 telepathy_example_cm_echo_2_SOURCES = \
     main.c
 
 telepathy_example_cm_echo_2_LDADD = \
-    $(TP_GLIB_LIBS) \
-    libexample-cm-echo-2.la
+    $(noinst_LTLIBRARIES)
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
