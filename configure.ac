@@ -23,10 +23,9 @@ m4_define([tp_glib_nano_version], [1])
 # If interfaces have been added since last release, increment age
 # If interfaces have been removed since last release, set age to 0
 #
-# If interfaces have been added, they'll be in a section like
-# TP_GLIB_0.7.2_UNRELEASED in telepathy-glib/version-script.txt.
-# You need to rename this to TP_GLIB_0.7.2 before making the release.
-# This is to force binaries built against devel versions to be rebuilt
+# If interfaces have been added, release builds will fail unless you add a new
+# file like telepathy-glib/versions/0.7.3.abi to add them to the official ABI.
+# This also forces binaries built against devel versions to be rebuilt
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
