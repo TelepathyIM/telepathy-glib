@@ -358,6 +358,23 @@ parts_to_text (const GPtrArray *parts,
 
 
 /**
+ * tp_message_mixin_implement_sending:
+ * @obj: An instance of the implementation that uses this mixin
+ * @send: An implementation of SendMessage()
+ *
+ */
+void
+tp_message_mixin_implement_sending (GObject *object,
+                                    TpMessageMixinSendImpl send)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+
+  g_return_if_fail (mixin->priv->send_message == NULL);
+  mixin->priv->send_message = send;
+}
+
+
+/**
  * tp_message_mixin_init:
  * @obj: An instance of the implementation that uses this mixin
  * @offset: The byte offset of the TpMessageMixin within the object structure
