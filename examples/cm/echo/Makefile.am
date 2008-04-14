@@ -1,18 +1,24 @@
 noinst_PROGRAMS = telepathy-example-cm-echo
+noinst_LTLIBRARIES = libexample-cm-echo.la
 
-telepathy_example_cm_echo_SOURCES = \
+libexample_cm_echo_la_SOURCES = \
     chan.c \
     chan.h \
     conn.c \
     conn.h \
     factory.c \
     factory.h \
-    main.c \
     manager.c \
     manager.h
 
-telepathy_example_cm_echo_LDADD = \
+libexample_cm_echo_la_LIBADD = \
     $(TP_GLIB_LIBS)
+
+telepathy_example_cm_echo_SOURCES = \
+    main.c
+
+telepathy_example_cm_echo_LDADD = \
+    $(noinst_LTLIBRARIES)
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
