@@ -12,6 +12,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
 #include "examples/cm/echo-message-parts/chan.h"
@@ -157,6 +158,22 @@ on_message_sent (TpChannel *chan,
   last_message_sent_token = g_strdup (token);
 }
 
+static void
+on_messages_removed (TpChannel *chan,
+                     const GArray *ids,
+                     gpointer data,
+                     GObject *object)
+{
+  guint i;
+
+  g_print ("%p: PendingMessagesRemoved: %u messages\n", chan, ids->len);
+
+  for (i = 0; i < ids->len; i++)
+    {
+      g_print ("    %u\n", g_array_index (ids, guint, i));
+    }
+}
+
 static GValue *
 slice_new_string (const char *string)
 {
@@ -257,6 +274,9 @@ main (int argc,
           NULL, NULL) != NULL, "");
   MYASSERT (tp_cli_channel_interface_messages_connect_to_message_sent (
         chan, on_message_sent, NULL, NULL, NULL, NULL) != NULL, "");
+  MYASSERT (
+      tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
+        chan, on_messages_removed, NULL, NULL, NULL, NULL) != NULL, "");
 
   /* Send three messages using the old Text API:
    *
@@ -776,7 +796,6 @@ main (int argc,
   MYASSERT (last_message_received_n_parts == 3,
       ": %u != 3", last_message_received_n_parts);
 
-
   g_print ("\n\n==== Listing messages ====\n");
 
     {
@@ -861,8 +880,6 @@ main (int argc,
 
       MYASSERT (dead, "");
     }
-
-  g_print ("\n\n==== End of tests ====\n");
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
