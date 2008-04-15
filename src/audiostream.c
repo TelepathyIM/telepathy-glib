@@ -24,19 +24,10 @@
 
 #include <string.h>
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/errors.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/interfaces.h>
-
-#include <gst/interfaces/xoverlay.h>
-
 #include <gst/farsight/fs-element-added-notifier.h>
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "audiostream.h"
-#include "tp-stream-engine.h"
-#include "tp-stream-engine-signals-marshal.h"
 #include "util.h"
 
 G_DEFINE_TYPE (TpStreamEngineAudioStream, tp_stream_engine_audio_stream,
