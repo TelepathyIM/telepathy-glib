@@ -245,6 +245,7 @@ subtract_from_hash (gpointer key,
                     gpointer value,
                     gpointer user_data)
 {
+  DEBUG ("... removing %s", (gchar *) key);
   g_hash_table_remove (user_data, key);
 }
 
@@ -273,9 +274,13 @@ parts_to_text (const GPtrArray *parts,
       const gchar *alternative = value_force_string (g_hash_table_lookup (part,
             "alternative"));
 
+      DEBUG ("Parsing part %u, type %s, alternative %s", i, type, alternative);
+
       if (!tp_strdiff (type, "text/plain"))
         {
           GValue *value;
+
+          DEBUG ("... is text/plain");
 
           if (alternative != NULL && alternative[0] != '\0')
             {
@@ -291,6 +296,7 @@ parts_to_text (const GPtrArray *parts,
                 {
                   /* we've seen a "better" alternative for this part already.
                    * Skip it */
+                  DEBUG ("... already saw a better alternative, skipping it");
                   continue;
                 }
 
@@ -302,36 +308,55 @@ parts_to_text (const GPtrArray *parts,
 
           if (value != NULL && G_VALUE_HOLDS_STRING (value))
             {
+              DEBUG ("... using its text");
               g_string_append (buffer, g_value_get_string (value));
 
               value = g_hash_table_lookup (part, "truncated");
 
-              if (value != NULL && G_VALUE_HOLDS_BOOLEAN (value) &&
-                  g_value_get_boolean (value))
-                flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_TRUNCATED;
+              if (value != NULL && (!G_VALUE_HOLDS_BOOLEAN (value) ||
+                  g_value_get_boolean (value)))
+                {
+                  DEBUG ("... appears to have been truncated");
+                  flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_TRUNCATED;
+                }
             }
           else
             {
+              /* There was a text/plain part we couldn't parse:
+               * that counts as "non-text content" I think */
+              DEBUG ("... didn't understand it, setting NON_TEXT_CONTENT");
               flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
               nullify_hash (&alternatives_needed);
             }
         }
-      else if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) != 0)
+      else if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) == 0)
         {
+          DEBUG ("... wondering whether this is NON_TEXT_CONTENT?");
+
           if (alternative == NULL || alternative[0] == '\0')
             {
-              /* This part can't possibly have a text alternative
+              /* This part can't possibly have a text alternative, since it
+               * isn't part of a multipart/alternative group
                * (attached image or something, perhaps) */
+              DEBUG ("... ... yes, no possibility of a text alternative");
               flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
               nullify_hash (&alternatives_needed);
             }
+          else if (alternatives_used != NULL &&
+              g_hash_table_lookup (alternatives_used, (gpointer) alternative)
+              != NULL)
+            {
+              DEBUG ("... ... no, we already saw a text alternative");
+            }
           else
             {
-              /* This part might have a text alternative later */
+              /* This part might have a text alternative later, if we're
+               * lucky */
               if (alternatives_needed == NULL)
                 alternatives_needed = g_hash_table_new (g_str_hash,
                     g_str_equal);
 
+              DEBUG ("... ... perhaps, but might have text alternative later");
               g_hash_table_insert (alternatives_needed, (gpointer) alternative,
                   (gpointer) alternative);
             }
