@@ -180,6 +180,8 @@ typedef struct {
     GPtrArray *content;
     TpChannelTextMessageFlags old_flags;
     gchar *old_text;
+    /* A non-NULL reference until we have been queued, NULL afterwards */
+    GObject *target;
 } PendingItem;
 
 
@@ -620,6 +622,31 @@ tp_message_mixin_get_message_types_async (TpSvcChannelTypeText *iface,
 }
 
 
+static gboolean
+queue_pending (gpointer data)
+{
+  PendingItem *pending = data;
+  GObject *object = pending->target;
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+
+  pending->target = NULL;
+
+  g_queue_push_tail (mixin->priv->pending, pending);
+
+  tp_svc_channel_type_text_emit_received (object, pending->id,
+      pending->timestamp, pending->sender, pending->message_type,
+      pending->old_flags, pending->old_text);
+
+  tp_svc_channel_interface_message_parts_emit_message_received (object,
+      pending->id, pending->timestamp, pending->sender, pending->message_type,
+      pending->content);
+
+  g_object_unref (object);
+
+  return FALSE;
+}
+
+
 /**
  * tp_message_mixin_take_received:
  * @object: a channel with this mixin
@@ -637,8 +664,10 @@ tp_message_mixin_get_message_types_async (TpSvcChannelTypeText *iface,
  * Note that the sender and content arguments are *not* copied, and the caller
  * loses ownership of them (this is to avoid lengthy and unnecessary copying
  * of the content).
+ *
+ * Returns: the message ID
  */
-void
+guint
 tp_message_mixin_take_received (GObject *object,
                                 time_t timestamp,
                                 TpHandle sender,
@@ -666,18 +695,14 @@ tp_message_mixin_take_received (GObject *object,
   pending->old_flags = parts_to_text (content, text);
   pending->old_text = g_string_free (text, FALSE);
 
-  /* Queue it */
+  /* We don't actually add the pending message to the queue immediately,
+   * to guarantee that the caller of this function gets to see the message ID
+   * before anyone else does (so that it can acknowledge the message to the
+   * network). */
+  pending->target = g_object_ref (object);
+  g_idle_add (queue_pending, pending);
 
-  g_queue_push_tail (mixin->priv->pending, pending);
-
-  /* Signal it to clients */
-
-  tp_svc_channel_type_text_emit_received (object,
-      pending->id, timestamp, sender, message_type, pending->old_flags,
-      pending->old_text);
-
-  tp_svc_channel_interface_message_parts_emit_message_received (object,
-      pending->id, timestamp, sender, message_type, content);
+  return pending->id;
 }
 
 
@@ -699,11 +724,13 @@ struct _TpMessageMixinOutgoingMessagePrivate {
 void
 tp_message_mixin_sent (GObject *object,
                        TpMessageMixinOutgoingMessage *message,
-                       const gchar *token)
+                       const gchar *token,
+                       const GError *error)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
   time_t now = time (NULL);
   GString *string;
+  guint i;
 
   g_return_if_fail (mixin != NULL);
   g_return_if_fail (object != NULL);
@@ -712,30 +739,43 @@ tp_message_mixin_sent (GObject *object,
   g_return_if_fail (message->parts != NULL);
   g_return_if_fail (message->priv != NULL);
   g_return_if_fail (message->priv->context != NULL);
+  g_return_if_fail (token == NULL || error == NULL);
+  g_return_if_fail (token != NULL || error != NULL);
 
-  if (token == NULL)
-    token = "";
-
-  /* emit Sent and MessageSent */
-
-  tp_svc_channel_interface_message_parts_emit_message_sent (object,
-      message->message_type, message->parts, token);
-  string = g_string_new ("");
-  parts_to_text (message->parts, string);
-  tp_svc_channel_type_text_emit_sent (object, now, message->message_type,
-      g_string_free (string, FALSE));
-
-  /* return successfully */
-
-  if (message->priv->message_parts)
+  if (error != NULL)
     {
-      tp_svc_channel_interface_message_parts_return_from_send_message (
-          message->priv->context, token);
+      GError *e = g_error_copy (error);
+
+      dbus_g_method_return_error (message->priv->context, e);
+      g_error_free (e);
     }
   else
     {
-      tp_svc_channel_type_text_return_from_send (
-          message->priv->context);
+      if (token == NULL)
+        token = "";
+
+      /* emit Sent and MessageSent */
+
+      tp_svc_channel_interface_message_parts_emit_message_sent (object,
+          message->message_type, message->parts, token);
+      string = g_string_new ("");
+      parts_to_text (message->parts, string);
+      tp_svc_channel_type_text_emit_sent (object, now, message->message_type,
+          string->str);
+      g_string_free (string, TRUE);
+
+      /* return successfully */
+
+      if (message->priv->message_parts)
+        {
+          tp_svc_channel_interface_message_parts_return_from_send_message (
+              message->priv->context, token);
+        }
+      else
+        {
+          tp_svc_channel_type_text_return_from_send (
+              message->priv->context);
+        }
     }
 
   message->priv->context = NULL;

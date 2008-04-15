@@ -99,7 +99,7 @@ send_message (GObject *object,
 
   /* "OK, we've sent the message" (after calling this, message must not be
    * dereferenced) */
-  tp_message_mixin_sent (object, message, "");
+  tp_message_mixin_sent (object, message, "", NULL);
 
   return TRUE;
 }

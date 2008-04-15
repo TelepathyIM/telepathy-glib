@@ -44,12 +44,14 @@ struct _TpMessageMixin {
 
 
 /* Receiving */
-void tp_message_mixin_take_received (GObject *object,
+
+guint tp_message_mixin_take_received (GObject *object,
     time_t timestamp, TpHandle sender, TpChannelTextMessageType message_type,
     GPtrArray *content);
 
 
 /* Sending */
+
 typedef struct _TpMessageMixinOutgoingMessagePrivate
     TpMessageMixinOutgoingMessagePrivate;
 
@@ -64,7 +66,11 @@ typedef gboolean (*TpMessageMixinSendImpl) (GObject *object,
     TpMessageMixinOutgoingMessage *message);
 
 void tp_message_mixin_sent (GObject *object,
-    TpMessageMixinOutgoingMessage *message, const gchar *token);
+    TpMessageMixinOutgoingMessage *message, const gchar *token,
+    const GError *error);
+
+void tp_message_mixin_implement_sending (GObject *object,
+    TpMessageMixinSendImpl send);
 
 
 /* Initialization */
@@ -76,8 +82,6 @@ void tp_message_mixin_class_init (GObjectClass *obj_cls, gsize offset);
 
 void tp_message_mixin_init (GObject *obj, gsize offset,
     TpHandleRepoIface *contact_repo);
-void tp_message_mixin_implement_sending (GObject *object,
-    TpMessageMixinSendImpl send);
 void tp_message_mixin_finalize (GObject *obj);
 
 G_END_DECLS
