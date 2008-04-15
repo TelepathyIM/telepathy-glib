@@ -278,6 +278,10 @@ main (int argc,
   tp_cli_channel_type_text_run_send (chan, -1,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "Hello, world!",
       &error, NULL);
+  /* wait for pending events to be delivered */
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, FALSE);
+
   MYASSERT_NO_ERROR (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
@@ -314,6 +318,10 @@ main (int argc,
   tp_cli_channel_type_text_run_send (chan, -1,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION, "drinks coffee",
       &error, NULL);
+  /* wait for pending events to be delivered */
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, FALSE);
+
   MYASSERT_NO_ERROR (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
@@ -351,6 +359,10 @@ main (int argc,
   tp_cli_channel_type_text_run_send (chan, -1,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE, "Printer on fire",
       &error, NULL);
+  /* wait for pending events to be delivered */
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, FALSE);
+
   MYASSERT_NO_ERROR (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
@@ -438,6 +450,10 @@ main (int argc,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
           &token, &error, NULL);
       MYASSERT_NO_ERROR (error);
+
+      /* wait for pending events to be delivered */
+      while (g_main_context_pending (NULL))
+        g_main_context_iteration (NULL, FALSE);
 
       g_print ("Sent message, got token '%s'\n", token);
       g_free (token);
@@ -540,6 +556,10 @@ main (int argc,
           &token, &error, NULL);
       MYASSERT_NO_ERROR (error);
 
+      /* wait for pending events to be delivered */
+      while (g_main_context_pending (NULL))
+        g_main_context_iteration (NULL, FALSE);
+
       g_print ("Sent message, got token '%s'\n", token);
       g_free (token);
 
@@ -625,6 +645,10 @@ main (int argc,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
           &token, &error, NULL);
       MYASSERT_NO_ERROR (error);
+
+      /* wait for pending events to be delivered */
+      while (g_main_context_pending (NULL))
+        g_main_context_iteration (NULL, FALSE);
 
       g_print ("Sent message, got token '%s'\n", token);
       g_free (token);
@@ -712,6 +736,10 @@ main (int argc,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
           &token, &error, NULL);
       MYASSERT_NO_ERROR (error);
+
+      /* wait for pending events to be delivered */
+      while (g_main_context_pending (NULL))
+        g_main_context_iteration (NULL, FALSE);
 
       g_print ("Sent message, got token '%s'\n", token);
       g_free (token);
