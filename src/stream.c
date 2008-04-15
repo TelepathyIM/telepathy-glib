@@ -72,7 +72,9 @@ struct _TpStreamEngineStreamPrivate
 
   TpMediaStreamHandler *stream_handler_proxy;
 
-  gboolean playing;
+  FsStreamDirection max_direction;
+  FsStreamDirection desired_direction;
+  gboolean held;
   gboolean has_resource;
 
   GMutex *mutex;
@@ -108,6 +110,11 @@ enum
   PROP_NAT_PROPERTIES,
   PROP_SINK_PAD
 };
+
+
+static gboolean tp_stream_engine_stream_request_resource (
+  TpStreamEngineStream *self);
+static void tp_stream_engine_stream_free_resource (TpStreamEngineStream *self);
 
 static void add_remote_candidate (TpMediaStreamHandler *proxy,
     const gchar *candidate, const GPtrArray *transports,
@@ -169,7 +176,6 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
       TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamPrivate);
 
   self->priv = priv;
-  priv->playing = FALSE;
   priv->has_resource = FALSE;
 
   priv->mutex = g_mutex_new ();
@@ -1083,7 +1089,6 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     GObject *object)
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  gboolean resource_available = FALSE;
   FsStreamDirection current_direction;
   gboolean playing;
 
@@ -1101,30 +1106,30 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   if (play)
     {
-      g_signal_emit (self, signals[REQUEST_RESOURCE], 0, &resource_available);
-
-      if (resource_available)
-        {
-          self->priv->has_resource = TRUE;
-          self->priv->playing = TRUE;
-
-          g_object_set (self->priv->fs_stream,
-              "direction", current_direction | FS_DIRECTION_RECV,
-              NULL);
-        }
-      else
-        {
-          tp_stream_engine_stream_error (self, 0, "Resource Unavailable");
-        }
+      if (!self->priv->held) {
+        if (tp_stream_engine_stream_request_resource (self))
+          {
+            g_object_set (self->priv->fs_stream,
+                "direction", current_direction | FS_DIRECTION_RECV,
+                NULL);
+          }
+        else
+          {
+            tp_stream_engine_stream_error (self, 0, "Resource Unavailable");
+          }
+      }
+      self->priv->desired_direction |= FS_DIRECTION_RECV;
     }
-  else if (self->priv->playing)
+  else
     {
-      g_signal_emit (self, signals[FREE_RESOURCE], 0);
-      self->priv->has_resource = FALSE;
+      if (!self->priv->held) {
+        tp_stream_engine_stream_free_resource (self);
 
-      g_object_set (self->priv->fs_stream,
-          "direction", current_direction & ~(FS_DIRECTION_RECV),
-          NULL);
+        g_object_set (self->priv->fs_stream,
+            "direction", current_direction & ~(FS_DIRECTION_RECV),
+            NULL);
+      }
+      self->priv->desired_direction &= ~(FS_DIRECTION_RECV);
     }
 }
 
@@ -1144,15 +1149,54 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   g_object_get (self->priv->fs_stream, "direction", &current_direction, NULL);
 
   if (send)
-    g_object_set (self->priv->fs_stream,
-        "direction", current_direction | FS_DIRECTION_SEND,
-        NULL);
+    {
+      if (!self->priv->held)
+        g_object_set (self->priv->fs_stream,
+            "direction", current_direction | FS_DIRECTION_SEND,
+            NULL);
+      self->priv->desired_direction |= FS_DIRECTION_SEND;
+    }
   else
-    g_object_set (self->priv->fs_stream,
-        "direction", current_direction & ~(FS_DIRECTION_SEND),
-        NULL);
+    {
+      if (!self->priv->held)
+        g_object_set (self->priv->fs_stream,
+            "direction", current_direction & ~(FS_DIRECTION_SEND),
+            NULL);
+      self->priv->desired_direction &= ~(FS_DIRECTION_SEND);
+    }
 }
 
+static gboolean
+tp_stream_engine_stream_request_resource (TpStreamEngineStream *self)
+{
+  gboolean resource_available = FALSE;
+
+  if (self->priv->has_resource)
+    return TRUE;
+
+  g_signal_emit (self, signals[REQUEST_RESOURCE], 0, &resource_available);
+
+  /* Make sure we have access to the resource */
+  if (resource_available)
+    {
+      self->priv->has_resource = TRUE;
+      return TRUE;
+    }
+  else
+    {
+      return FALSE;
+    }
+}
+
+static void
+tp_stream_engine_stream_free_resource (TpStreamEngineStream *self)
+{
+  if (!self->priv->has_resource)
+    return;
+
+  g_signal_emit (self, signals[FREE_RESOURCE], 0);
+  self->priv->has_resource = FALSE;
+}
 
 static void
 set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
@@ -1160,76 +1204,46 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                  gpointer user_data G_GNUC_UNUSED,
                  GObject *object)
 {
-#if 0
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-  gboolean resource_available = FALSE;
-
-  g_assert (self->priv->fs_stream != NULL);
 
   DEBUG (self, "Holding : %d", held);
 
+  if (held == self->priv->held)
+    return;
+
   if (held)
     {
-      /* Hold the stream */
-      if (farsight_stream_hold (self->priv->fs_stream))
-        {
-          g_signal_emit (self, signals[FREE_RESOURCE], 0);
-          self->priv->has_resource = FALSE;
-          /* Send success message */
-          if (self->priv->stream_handler_proxy)
-            {
-              tp_cli_media_stream_handler_call_hold_state (
-                  self->priv->stream_handler_proxy, -1, TRUE,
-                  async_method_callback, "Media.StreamHandler::HoldState",
-                  NULL, (GObject *) self);
-            }
-        }
-      else
-        {
-          tp_stream_engine_stream_error (self, 0, "Error holding stream");
-          g_signal_emit (self, signals[FREE_RESOURCE], 0);
-          self->priv->has_resource = FALSE;
-        }
+       g_object_set (self->priv->fs_stream,
+            "direction", FS_DIRECTION_NONE,
+            NULL);
+
+       tp_stream_engine_stream_free_resource (self);
+       /* Send success message */
+       if (self->priv->stream_handler_proxy)
+         {
+           tp_cli_media_stream_handler_call_hold_state (
+             self->priv->stream_handler_proxy, -1, TRUE,
+             async_method_callback, "Media.StreamHandler::HoldState",
+             NULL, (GObject *) self);
+         }
     }
   else
     {
-      g_signal_emit (self, signals[REQUEST_RESOURCE], 0, &resource_available);
-      /* Make sure we have access to the resource */
-      if (resource_available)
+      if (tp_stream_engine_stream_request_resource (self))
         {
-          self->priv->has_resource = TRUE;
-          /* Unhold the stream */
-          if (farsight_stream_unhold (self->priv->fs_stream))
-            {
-              /* Send success message */
-              if (self->priv->stream_handler_proxy)
-                {
-                  tp_cli_media_stream_handler_call_hold_state (
-                      self->priv->stream_handler_proxy, -1, FALSE,
-                      async_method_callback, "Media.StreamHandler::HoldState",
-                      NULL, (GObject *) self);
-                }
-            }
-          else
-            {
-              tp_stream_engine_stream_error (self, 0, "Error unholding stream");
-              g_signal_emit (self, signals[FREE_RESOURCE], 0);
-              self->priv->has_resource = FALSE;
-            }
+           g_object_set (self->priv->fs_stream,
+               "direction", self->priv->desired_direction,
+               NULL);
+           tp_cli_media_stream_handler_call_hold_state (
+             self->priv->stream_handler_proxy, -1, FALSE,
+             async_method_callback, "Media.StreamHandler::HoldState",
+             NULL, (GObject *) self);
         }
       else
         {
-          /* Send failure message */
-          if (self->priv->stream_handler_proxy)
-            {
-              tp_cli_media_stream_handler_call_unhold_failure (
-                  self->priv->stream_handler_proxy, -1,
-                  async_method_callback, "Media.StreamHandler::UnholdFailure",
-                  NULL, (GObject *) self);
-            }
+          tp_stream_engine_stream_error (self, 0, "Error unholding stream");
         }
     }
-#endif
 }
 
 static void
