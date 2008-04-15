@@ -562,7 +562,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
           2, msg->sender,
           3, msg->message_type,
           4, flags,
-          5, text,
+          5, text->str,
           G_MAXUINT);
 
       g_string_free (text, TRUE);
