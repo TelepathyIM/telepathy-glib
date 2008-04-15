@@ -213,6 +213,8 @@ pending_item_free (PendingItem *pending,
       g_ptr_array_free (pending->content, TRUE);
     }
 
+  g_free (pending->old_text);
+
   g_slice_free (PendingItem, pending);
 }
 
