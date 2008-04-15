@@ -252,10 +252,10 @@ main (int argc,
       NULL, NULL, NULL, NULL) != NULL, "");
 
   MYASSERT (
-      tp_cli_channel_interface_message_parts_connect_to_message_received (chan,
+      tp_cli_channel_interface_messages_connect_to_message_received (chan,
           on_message_received, g_object_ref (contact_repo), g_object_unref,
           NULL, NULL) != NULL, "");
-  MYASSERT (tp_cli_channel_interface_message_parts_connect_to_message_sent (
+  MYASSERT (tp_cli_channel_interface_messages_connect_to_message_sent (
         chan, on_message_sent, NULL, NULL, NULL, NULL) != NULL, "");
 
   /* Send three messages using the old Text API:
@@ -434,7 +434,7 @@ main (int argc,
             "\xff\xd8\xff\xe0\x00\x10JFIF\x00...", 14));
       g_ptr_array_add (send_parts, part);
 
-      tp_cli_channel_interface_message_parts_run_send_message (chan, -1,
+      tp_cli_channel_interface_messages_run_send_message (chan, -1,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
           &token, &error, NULL);
       MYASSERT_NO_ERROR (error);
@@ -535,7 +535,7 @@ main (int argc,
             "\x89PNG\x0d\x0a\x1a\x0a\x00...", 12));
       g_ptr_array_add (send_parts, part);
 
-      tp_cli_channel_interface_message_parts_run_send_message (chan, -1,
+      tp_cli_channel_interface_messages_run_send_message (chan, -1,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
           &token, &error, NULL);
       MYASSERT_NO_ERROR (error);
@@ -621,7 +621,7 @@ main (int argc,
           slice_new_string ("I feel my luck could change\n"));
       g_ptr_array_add (send_parts, part);
 
-      tp_cli_channel_interface_message_parts_run_send_message (chan, -1,
+      tp_cli_channel_interface_messages_run_send_message (chan, -1,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
           &token, &error, NULL);
       MYASSERT_NO_ERROR (error);
@@ -708,7 +708,7 @@ main (int argc,
           slice_new_string ("we're fixing the color of the video stream"));
       g_ptr_array_add (send_parts, part);
 
-      tp_cli_channel_interface_message_parts_run_send_message (chan, -1,
+      tp_cli_channel_interface_messages_run_send_message (chan, -1,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
           &token, &error, NULL);
       MYASSERT_NO_ERROR (error);
