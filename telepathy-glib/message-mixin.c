@@ -601,7 +601,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
 
 static void
 tp_message_mixin_get_pending_message_content_async (
-    TpSvcChannelInterfaceMessageParts *iface,
+    TpSvcChannelInterfaceMessages *iface,
     guint message_id,
     const GArray *part_numbers,
     DBusGMethodInvocation *context)
@@ -637,7 +637,7 @@ queue_pending (gpointer data)
       pending->timestamp, pending->sender, pending->message_type,
       pending->old_flags, pending->old_text);
 
-  tp_svc_channel_interface_message_parts_emit_message_received (object,
+  tp_svc_channel_interface_messages_emit_message_received (object,
       pending->id, pending->timestamp, pending->sender, pending->message_type,
       pending->content);
 
@@ -717,7 +717,7 @@ tp_message_mixin_take_delivery_report (GObject *object,
 
 struct _TpMessageMixinOutgoingMessagePrivate {
     DBusGMethodInvocation *context;
-    gboolean message_parts:1;
+    gboolean messages:1;
 };
 
 
@@ -756,7 +756,7 @@ tp_message_mixin_sent (GObject *object,
 
       /* emit Sent and MessageSent */
 
-      tp_svc_channel_interface_message_parts_emit_message_sent (object,
+      tp_svc_channel_interface_messages_emit_message_sent (object,
           message->message_type, message->parts, token);
       string = g_string_new ("");
       parts_to_text (message->parts, string);
@@ -766,9 +766,9 @@ tp_message_mixin_sent (GObject *object,
 
       /* return successfully */
 
-      if (message->priv->message_parts)
+      if (message->priv->messages)
         {
-          tp_svc_channel_interface_message_parts_return_from_send_message (
+          tp_svc_channel_interface_messages_return_from_send_message (
               message->priv->context, token);
         }
       else
@@ -830,14 +830,14 @@ tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
   message->parts = parts;
   message->priv = g_slice_new0 (TpMessageMixinOutgoingMessagePrivate);
   message->priv->context = context;
-  message->priv->message_parts = FALSE;
+  message->priv->messages = FALSE;
 
   mixin->priv->send_message ((GObject *) iface, message);
 }
 
 
 static void
-tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessageParts *iface,
+tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
                                      guint message_type,
                                      const GPtrArray *parts,
                                      guint flags,
@@ -861,7 +861,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessageParts *iface,
         TP_HASH_TYPE_MESSAGE_PART), parts);
   message->priv = g_slice_new0 (TpMessageMixinOutgoingMessagePrivate);
   message->priv->context = context;
-  message->priv->message_parts = TRUE;
+  message->priv->messages = TRUE;
 
   mixin->priv->send_message ((GObject *) iface, message);
 }
@@ -893,12 +893,12 @@ tp_message_mixin_text_iface_init (gpointer g_iface, gpointer iface_data)
 }
 
 void
-tp_message_mixin_message_parts_iface_init (gpointer g_iface,
+tp_message_mixin_messages_iface_init (gpointer g_iface,
                                            gpointer iface_data)
 {
-  TpSvcChannelInterfaceMessagePartsClass *klass = g_iface;
+  TpSvcChannelInterfaceMessagesClass *klass = g_iface;
 
-#define IMPLEMENT(x) tp_svc_channel_interface_message_parts_implement_##x (\
+#define IMPLEMENT(x) tp_svc_channel_interface_messages_implement_##x (\
     klass, tp_message_mixin_##x##_async)
   IMPLEMENT (send_message);
   IMPLEMENT (get_pending_message_content);
