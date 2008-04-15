@@ -45,7 +45,7 @@ on_sent (TpChannel *chan,
          gpointer data,
          GObject *object)
 {
-  g_message ("%p: Sent: time %u, type %u, text '%s'",
+  g_print ("%p: Sent: time %u, type %u, text '%s'\n",
       chan, timestamp, type, text);
 
   sent_count++;
@@ -67,8 +67,8 @@ on_received (TpChannel *chan,
 {
   TpHandleRepoIface *contact_repo = data;
 
-  g_message ("%p: Received #%u: time %u, sender %u '%s', type %u, flags %u, "
-      "text '%s'", chan, id, timestamp, sender,
+  g_print ("%p: Received #%u: time %u, sender %u '%s', type %u, flags %u, "
+      "text '%s'\n", chan, id, timestamp, sender,
       tp_handle_inspect (contact_repo, sender), type, flags, text);
 
   received_count++;
@@ -91,6 +91,18 @@ static gchar *last_message_sent_token = NULL;
 static guint last_message_sent_n_parts = 0;
 
 static void
+print_part (gpointer k,
+            gpointer v,
+            gpointer user_data)
+{
+  const gchar *key = k;
+  gchar *contents = g_strdup_value_contents (v);
+
+  g_print ("        %s: %s\n", key, contents);
+  g_free (contents);
+}
+
+static void
 on_message_received (TpChannel *chan,
                      guint id,
                      guint timestamp,
@@ -101,10 +113,17 @@ on_message_received (TpChannel *chan,
                      GObject *object)
 {
   TpHandleRepoIface *contact_repo = data;
+  guint i;
 
-  g_message ("%p: MessageReceived #%u: time %u, sender %u '%s', type %u, "
-      "%u parts", chan, id, timestamp, sender,
+  g_print ("%p: MessageReceived #%u: time %u, sender %u '%s', type %u, "
+      "%u parts\n", chan, id, timestamp, sender,
       tp_handle_inspect (contact_repo, sender), type, parts->len);
+
+  for (i = 0; i < parts->len; i++)
+    {
+      g_print ("    Part %u:\n", i);
+      g_hash_table_foreach (g_ptr_array_index (parts, i), print_part, NULL);
+    }
 
   message_received_count++;
   last_message_received_type = type;
@@ -120,14 +139,44 @@ on_message_sent (TpChannel *chan,
                  gpointer data,
                  GObject *object)
 {
-  g_message ("%p: MessageSent with token '%s': type %u, %u parts",
+  guint i;
+
+  g_print ("%p: MessageSent with token '%s': type %u, %u parts\n",
       chan, token, type, parts->len);
+
+  for (i = 0; i < parts->len; i++)
+    {
+      g_print ("    Part %u:\n", i);
+      g_hash_table_foreach (g_ptr_array_index (parts, i), print_part, NULL);
+    }
 
   message_sent_count++;
   last_message_sent_type = type;
   last_message_sent_n_parts = parts->len;
   g_free (last_message_sent_token);
   last_message_sent_token = g_strdup (token);
+}
+
+static GValue *
+slice_new_string (const char *string)
+{
+  GValue *ret = tp_g_value_slice_new (G_TYPE_STRING);
+
+  g_value_set_string (ret, string);
+  return ret;
+}
+
+static GValue *
+slice_new_byte_array (gconstpointer content,
+                      gsize length)
+{
+  GValue *ret = tp_g_value_slice_new (DBUS_TYPE_G_UCHAR_ARRAY);
+  GArray *arr = g_array_sized_new (FALSE, FALSE, 1, length);
+
+  g_array_append_vals (arr, content, length);
+  g_value_set_boxed (ret, arr);
+  g_array_free (arr, TRUE);
+  return ret;
 }
 
 int
@@ -209,6 +258,19 @@ main (int argc,
   MYASSERT (tp_cli_channel_interface_message_parts_connect_to_message_sent (
         chan, on_message_sent, NULL, NULL, NULL, NULL) != NULL, "");
 
+  /* Send three messages using the old Text API:
+   *
+   * (normal) Hello, world!
+   * (action) /me drinks coffee
+   * (notice) Printer on fire
+   *
+   * Verify that for each of them, we get a Sent signal in the old Text
+   * API, and a Received signal for the echo; also a MessageSent signal
+   * in the new Messages API, and a MessageReceived signal for the echo.
+   */
+
+  g_print ("\n\n==== Starting test: NORMAL ====\n");
+
   sent_count = 0;
   received_count = 0;
   message_sent_count = 0;
@@ -242,6 +304,8 @@ main (int argc,
       ": %u != %u", last_message_received_sender, handle);
   MYASSERT (last_message_received_n_parts == 1,
       ": %u != 1", last_message_received_n_parts);
+
+  g_print ("\n\n==== Starting test: ACTION ====\n");
 
   sent_count = 0;
   received_count = 0;
@@ -278,6 +342,8 @@ main (int argc,
   MYASSERT (last_message_received_n_parts == 1,
       ": %u != 1", last_message_received_n_parts);
 
+  g_print ("\n\n==== Starting test: NOTICE ====\n");
+
   sent_count = 0;
   received_count = 0;
   message_sent_count = 0;
@@ -312,6 +378,376 @@ main (int argc,
       ": %u != %u", last_message_received_sender, handle);
   MYASSERT (last_message_received_n_parts == 1,
       ": %u != 1", last_message_received_n_parts);
+
+  g_print ("\n\n==== Starting test: lolcat ====\n");
+
+  /* Send a multi-part message using the Messages API.
+   *
+   * Again, verify that we get a Sent signal in the old Text
+   * API, and a Received signal for the echo; also a MessageSent signal
+   * in the new Messages API, and a MessageReceived signal for the echo.
+   *
+   * Because this message contains an image, we must set the
+   * Channel_Text_Message_Flag_Non_Text_Content.
+   */
+
+  sent_count = 0;
+  received_count = 0;
+  message_sent_count = 0;
+  message_received_count = 0;
+
+#undef EXPECTED_TEXT
+#define EXPECTED_TEXT ("Here is a photo of a cat:\n"\
+    "[IMG: lol!]\n"\
+    "It's in ur regression tests verifying ur designs!")
+
+    {
+      GPtrArray *send_parts = g_ptr_array_sized_new (3);
+      GHashTable *part;
+      guint i;
+      gchar *token = NULL;
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "alternative", slice_new_string ("main"));
+      g_hash_table_insert (part, "type", slice_new_string ("text/html"));
+      g_hash_table_insert (part, "content", slice_new_string (
+            "Here is a photo of a cat:<br />;"
+            "<img src=\"cid:lolcat\" alt=\"lol!\" /><br />"
+            "It's in ur regression tests verifying ur designs!"
+            ));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "alternative", slice_new_string ("main"));
+      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content",
+          slice_new_string (EXPECTED_TEXT));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "identifier", slice_new_string ("lolcat"));
+      g_hash_table_insert (part, "type", slice_new_string ("image/jpeg"));
+      g_hash_table_insert (part, "content", slice_new_byte_array (
+            "\xff\xd8\xff\xe0\x00\x10JFIF\x00...", 14));
+      g_ptr_array_add (send_parts, part);
+
+      tp_cli_channel_interface_message_parts_run_send_message (chan, -1,
+          TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
+          &token, &error, NULL);
+      MYASSERT_NO_ERROR (error);
+
+      g_print ("Sent message, got token '%s'\n", token);
+      g_free (token);
+
+      for (i = 0; i < send_parts->len; i++)
+        g_hash_table_destroy (g_ptr_array_index (send_parts, i));
+
+      g_ptr_array_free (send_parts, TRUE);
+    }
+
+  MYASSERT (sent_count == 1, ": %u != 1", sent_count);
+  MYASSERT (received_count == 1, ": %u != 1", received_count);
+  MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_sent_type);
+  MYASSERT (!tp_strdiff (last_sent_text, EXPECTED_TEXT),
+      ": '%s' != '%s'", last_sent_text, EXPECTED_TEXT);
+  MYASSERT (last_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_received_type);
+  MYASSERT (last_received_flags ==
+      TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT,
+      ": %u != NON_TEXT_CONTENT", last_received_flags);
+  MYASSERT (last_received_sender == handle,
+      ": %u != %u", last_received_sender, handle);
+  MYASSERT (!tp_strdiff (last_received_text, EXPECTED_TEXT),
+      ": '%s'", last_received_text);
+  MYASSERT (message_sent_count == 1, ": %u != 1", message_sent_count);
+  MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
+  MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_sent_type);
+  MYASSERT (last_message_sent_n_parts == 3,
+      ": %u != 3", last_message_sent_n_parts);
+  MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_received_type);
+  MYASSERT (last_message_received_sender == handle,
+      ": %u != %u", last_message_received_sender, handle);
+  MYASSERT (last_message_received_n_parts == 3,
+      ": %u != 3", last_message_received_n_parts);
+
+  g_print ("\n\n==== Starting test: lolcat with PNG alternative ====\n");
+
+  /* This time, the non-text content has an alternative. */
+
+  sent_count = 0;
+  received_count = 0;
+  message_sent_count = 0;
+  message_received_count = 0;
+
+#undef EXPECTED_TEXT
+#define EXPECTED_TEXT ("Here is a photo of a cat:\n"\
+    "[IMG: lol!]\n"\
+    "It's in ur regression tests verifying ur designs!")
+
+    {
+      GPtrArray *send_parts = g_ptr_array_sized_new (3);
+      GHashTable *part;
+      guint i;
+      gchar *token = NULL;
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "alternative", slice_new_string ("main"));
+      g_hash_table_insert (part, "identifier", slice_new_string ("html"));
+      g_hash_table_insert (part, "type", slice_new_string ("text/html"));
+      g_hash_table_insert (part, "content", slice_new_string (
+            "Here is a photo of a cat:<br />;"
+            "<img src=\"cid:lolcat\" alt=\"lol!\" /><br />"
+            "It's in ur regression tests verifying ur designs!"
+            ));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "alternative", slice_new_string ("main"));
+      g_hash_table_insert (part, "identifier", slice_new_string ("text"));
+      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content",
+          slice_new_string (EXPECTED_TEXT));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "identifier", slice_new_string ("jpeg"));
+      g_hash_table_insert (part, "alternative", slice_new_string ("lolcat"));
+      g_hash_table_insert (part, "type", slice_new_string ("image/jpeg"));
+      g_hash_table_insert (part, "content", slice_new_byte_array (
+            "\xff\xd8\xff\xe0\x00\x10JFIF\x00...", 14));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "identifier", slice_new_string ("png"));
+      g_hash_table_insert (part, "alternative", slice_new_string ("lolcat"));
+      g_hash_table_insert (part, "type", slice_new_string ("image/png"));
+      g_hash_table_insert (part, "content", slice_new_byte_array (
+            "\x89PNG\x0d\x0a\x1a\x0a\x00...", 12));
+      g_ptr_array_add (send_parts, part);
+
+      tp_cli_channel_interface_message_parts_run_send_message (chan, -1,
+          TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
+          &token, &error, NULL);
+      MYASSERT_NO_ERROR (error);
+
+      g_print ("Sent message, got token '%s'\n", token);
+      g_free (token);
+
+      for (i = 0; i < send_parts->len; i++)
+        g_hash_table_destroy (g_ptr_array_index (send_parts, i));
+
+      g_ptr_array_free (send_parts, TRUE);
+    }
+
+  MYASSERT (sent_count == 1, ": %u != 1", sent_count);
+  MYASSERT (received_count == 1, ": %u != 1", received_count);
+  MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_sent_type);
+  MYASSERT (!tp_strdiff (last_sent_text, EXPECTED_TEXT),
+      ": '%s' != '%s'", last_sent_text, EXPECTED_TEXT);
+  MYASSERT (last_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_received_type);
+  MYASSERT (last_received_flags ==
+      TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT,
+      ": %u != NON_TEXT_CONTENT", last_received_flags);
+  MYASSERT (last_received_sender == handle,
+      ": %u != %u", last_received_sender, handle);
+  MYASSERT (!tp_strdiff (last_received_text, EXPECTED_TEXT),
+      ": '%s'", last_received_text);
+  MYASSERT (message_sent_count == 1, ": %u != 1", message_sent_count);
+  MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
+  MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_sent_type);
+  MYASSERT (last_message_sent_n_parts == 4,
+      ": %u != 4", last_message_sent_n_parts);
+  MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_received_type);
+  MYASSERT (last_message_received_sender == handle,
+      ": %u != %u", last_message_received_sender, handle);
+  MYASSERT (last_message_received_n_parts == 4,
+      ": %u != 4", last_message_received_n_parts);
+
+  g_print ("\n\n==== Starting test: defragment ====\n");
+
+  /* Send a multi-part message using the Messages API.
+   * This one has multiple text/plain parts, which the Text API needs to
+   * concatenate.
+   */
+
+  sent_count = 0;
+  received_count = 0;
+  message_sent_count = 0;
+  message_received_count = 0;
+
+#undef EXPECTED_TEXT
+#define EXPECTED_TEXT ("I'm on a roll\n"\
+    "I'm on a roll this time\n"\
+    "I feel my luck could change\n")
+
+    {
+      GPtrArray *send_parts = g_ptr_array_sized_new (3);
+      GHashTable *part;
+      guint i;
+      gchar *token = NULL;
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content",
+          slice_new_string ("I'm on a roll\n"));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content",
+          slice_new_string ("I'm on a roll this time\n"));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content",
+          slice_new_string ("I feel my luck could change\n"));
+      g_ptr_array_add (send_parts, part);
+
+      tp_cli_channel_interface_message_parts_run_send_message (chan, -1,
+          TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
+          &token, &error, NULL);
+      MYASSERT_NO_ERROR (error);
+
+      g_print ("Sent message, got token '%s'\n", token);
+      g_free (token);
+
+      for (i = 0; i < send_parts->len; i++)
+        g_hash_table_destroy (g_ptr_array_index (send_parts, i));
+
+      g_ptr_array_free (send_parts, TRUE);
+    }
+
+  MYASSERT (sent_count == 1, ": %u != 1", sent_count);
+  MYASSERT (received_count == 1, ": %u != 1", received_count);
+  MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_sent_type);
+  MYASSERT (!tp_strdiff (last_sent_text, EXPECTED_TEXT),
+      ": '%s' != '%s'", last_sent_text, EXPECTED_TEXT);
+  MYASSERT (last_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_received_type);
+  MYASSERT (last_received_flags == 0, ": %u != 0", last_received_flags);
+  MYASSERT (last_received_sender == handle,
+      ": %u != %u", last_received_sender, handle);
+  MYASSERT (!tp_strdiff (last_received_text, EXPECTED_TEXT),
+      ": '%s'", last_received_text);
+  MYASSERT (message_sent_count == 1, ": %u != 1", message_sent_count);
+  MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
+  MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_sent_type);
+  MYASSERT (last_message_sent_n_parts == 3,
+      ": %u != 3", last_message_sent_n_parts);
+  MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_received_type);
+  MYASSERT (last_message_received_sender == handle,
+      ": %u != %u", last_message_received_sender, handle);
+  MYASSERT (last_message_received_n_parts == 3,
+      ": %u != 3", last_message_received_n_parts);
+
+  g_print ("\n\n==== Starting test: multilingual ====\n");
+
+  /* Send a multi-part message using the Messages API.
+   * This one has multiple text/plain parts, but they're alternatives,
+   * so the old Text API picks the "best" (first) one.
+   */
+
+  sent_count = 0;
+  received_count = 0;
+  message_sent_count = 0;
+  message_received_count = 0;
+
+#undef EXPECTED_TEXT
+#define EXPECTED_TEXT "nous badgerez le coleur du stream de la video"
+
+    {
+      GPtrArray *send_parts = g_ptr_array_sized_new (3);
+      GHashTable *part;
+      guint i;
+      gchar *token = NULL;
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "alternative", slice_new_string ("alt"));
+      g_hash_table_insert (part, "lang", slice_new_string ("fr_CA@collabora"));
+      g_hash_table_insert (part, "content", slice_new_string (EXPECTED_TEXT));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "alternative", slice_new_string ("alt"));
+      g_hash_table_insert (part, "lang", slice_new_string ("en_GB"));
+      g_hash_table_insert (part, "content",
+          slice_new_string ("we're fixing the colour of the video stream"));
+      g_ptr_array_add (send_parts, part);
+
+      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+          (GDestroyNotify) tp_g_value_slice_free);
+      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "alternative", slice_new_string ("alt"));
+      g_hash_table_insert (part, "lang", slice_new_string ("en_US"));
+      g_hash_table_insert (part, "content",
+          slice_new_string ("we're fixing the color of the video stream"));
+      g_ptr_array_add (send_parts, part);
+
+      tp_cli_channel_interface_message_parts_run_send_message (chan, -1,
+          TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, send_parts, 0 /* flags */,
+          &token, &error, NULL);
+      MYASSERT_NO_ERROR (error);
+
+      g_print ("Sent message, got token '%s'\n", token);
+      g_free (token);
+
+      for (i = 0; i < send_parts->len; i++)
+        g_hash_table_destroy (g_ptr_array_index (send_parts, i));
+
+      g_ptr_array_free (send_parts, TRUE);
+    }
+
+  MYASSERT (sent_count == 1, ": %u != 1", sent_count);
+  MYASSERT (received_count == 1, ": %u != 1", received_count);
+  MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_sent_type);
+  MYASSERT (!tp_strdiff (last_sent_text, EXPECTED_TEXT),
+      ": '%s' != '%s'", last_sent_text, EXPECTED_TEXT);
+  MYASSERT (last_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_received_type);
+  MYASSERT (last_received_flags == 0, ": %u != 0", last_received_flags);
+  MYASSERT (last_received_sender == handle,
+      ": %u != %u", last_received_sender, handle);
+  MYASSERT (!tp_strdiff (last_received_text, EXPECTED_TEXT),
+      ": '%s'", last_received_text);
+  MYASSERT (message_sent_count == 1, ": %u != 1", message_sent_count);
+  MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
+  MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_sent_type);
+  MYASSERT (last_message_sent_n_parts == 3,
+      ": %u != 3", last_message_sent_n_parts);
+  MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      ": %u != NORMAL", last_message_received_type);
+  MYASSERT (last_message_received_sender == handle,
+      ": %u != %u", last_message_received_sender, handle);
+  MYASSERT (last_message_received_n_parts == 3,
+      ": %u != 3", last_message_received_n_parts);
+
 
   g_print ("\n\n==== Listing messages ====\n");
 
