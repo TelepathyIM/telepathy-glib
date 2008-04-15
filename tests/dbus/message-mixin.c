@@ -424,7 +424,7 @@ main (int argc,
       g_hash_table_insert (part, "alternative", slice_new_string ("main"));
       g_hash_table_insert (part, "type", slice_new_string ("text/html"));
       g_hash_table_insert (part, "content", slice_new_string (
-            "Here is a photo of a cat:<br />;"
+            "Here is a photo of a cat:<br />"
             "<img src=\"cid:lolcat\" alt=\"lol!\" /><br />"
             "It's in ur regression tests verifying ur designs!"
             ));
@@ -518,7 +518,7 @@ main (int argc,
       g_hash_table_insert (part, "identifier", slice_new_string ("html"));
       g_hash_table_insert (part, "type", slice_new_string ("text/html"));
       g_hash_table_insert (part, "content", slice_new_string (
-            "Here is a photo of a cat:<br />;"
+            "Here is a photo of a cat:<br />"
             "<img src=\"cid:lolcat\" alt=\"lol!\" /><br />"
             "It's in ur regression tests verifying ur designs!"
             ));
