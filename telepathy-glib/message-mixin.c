@@ -508,6 +508,9 @@ tp_message_mixin_acknowledge_pending_messages_async (
         }
     }
 
+  tp_svc_channel_interface_messages_emit_pending_messages_removed (iface,
+      ids);
+
   for (i = 0; i < ids->len; i++)
     {
       item = nodes[i]->data;
@@ -515,9 +518,6 @@ tp_message_mixin_acknowledge_pending_messages_async (
       DEBUG ("acknowledging message id %u", item->id);
 
       g_queue_remove (mixin->priv->pending, item);
-
-      /* FIXME: need a hook here to send acknowledgements out on the network
-       * if the protocol requires it */
 
       pending_item_free (item, mixin->priv->contact_repo);
     }
@@ -572,22 +572,29 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
 
   if (clear)
     {
+      GArray *ids;
+
       DEBUG ("WARNING: ListPendingMessages(clear=TRUE) is deprecated");
       cur = g_queue_peek_head_link (mixin->priv->pending);
+
+      ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), count);
 
       while (cur != NULL)
         {
           PendingItem *msg = cur->data;
           GList *next = cur->next;
 
-          /* FIXME: need a hook here to send acknowledgements out on the
-           * network if the protocol requires it */
-
+          i = msg->id;
+          g_array_append_val (ids, i);
           g_queue_delete_link (mixin->priv->pending, cur);
           pending_item_free (msg, mixin->priv->contact_repo);
 
           cur = next;
         }
+
+      tp_svc_channel_interface_messages_emit_pending_messages_removed (iface,
+          ids);
+      g_array_free (ids, TRUE);
     }
 
   tp_svc_channel_type_text_return_from_list_pending_messages (context,

@@ -279,8 +279,8 @@ main (int argc,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "Hello, world!",
       &error, NULL);
   /* wait for pending events to be delivered */
-  while (g_main_context_pending (NULL))
-    g_main_context_iteration (NULL, FALSE);
+  while (received_count < 1 || message_received_count < 1)
+    g_main_context_iteration (NULL, TRUE);
 
   MYASSERT_NO_ERROR (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
@@ -319,8 +319,8 @@ main (int argc,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION, "drinks coffee",
       &error, NULL);
   /* wait for pending events to be delivered */
-  while (g_main_context_pending (NULL))
-    g_main_context_iteration (NULL, FALSE);
+  while (received_count < 1 || message_received_count < 1)
+    g_main_context_iteration (NULL, TRUE);
 
   MYASSERT_NO_ERROR (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
@@ -360,8 +360,8 @@ main (int argc,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE, "Printer on fire",
       &error, NULL);
   /* wait for pending events to be delivered */
-  while (g_main_context_pending (NULL))
-    g_main_context_iteration (NULL, FALSE);
+  while (received_count < 1 || message_received_count < 1)
+    g_main_context_iteration (NULL, TRUE);
 
   MYASSERT_NO_ERROR (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
@@ -452,8 +452,8 @@ main (int argc,
       MYASSERT_NO_ERROR (error);
 
       /* wait for pending events to be delivered */
-      while (g_main_context_pending (NULL))
-        g_main_context_iteration (NULL, FALSE);
+      while (received_count < 1 || message_received_count < 1)
+        g_main_context_iteration (NULL, TRUE);
 
       g_print ("Sent message, got token '%s'\n", token);
       g_free (token);
@@ -557,8 +557,8 @@ main (int argc,
       MYASSERT_NO_ERROR (error);
 
       /* wait for pending events to be delivered */
-      while (g_main_context_pending (NULL))
-        g_main_context_iteration (NULL, FALSE);
+      while (received_count < 1 || message_received_count < 1)
+        g_main_context_iteration (NULL, TRUE);
 
       g_print ("Sent message, got token '%s'\n", token);
       g_free (token);
@@ -647,8 +647,8 @@ main (int argc,
       MYASSERT_NO_ERROR (error);
 
       /* wait for pending events to be delivered */
-      while (g_main_context_pending (NULL))
-        g_main_context_iteration (NULL, FALSE);
+      while (received_count < 1 || message_received_count < 1)
+        g_main_context_iteration (NULL, TRUE);
 
       g_print ("Sent message, got token '%s'\n", token);
       g_free (token);
@@ -738,8 +738,8 @@ main (int argc,
       MYASSERT_NO_ERROR (error);
 
       /* wait for pending events to be delivered */
-      while (g_main_context_pending (NULL))
-        g_main_context_iteration (NULL, FALSE);
+      while (received_count < 1 || message_received_count < 1)
+        g_main_context_iteration (NULL, TRUE);
 
       g_print ("Sent message, got token '%s'\n", token);
       g_free (token);
