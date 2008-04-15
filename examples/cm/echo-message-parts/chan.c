@@ -93,7 +93,8 @@ send_message (GObject *object,
 
   tp_handle_ref (contact_repo, self->priv->handle);
 
-  /* This consumes the data, so we mustn't free it */
+  /* This consumes one ref to the handle, and the array of parts, so we
+   * mustn't unref/free them here */
   tp_message_mixin_take_received (object, timestamp, self->priv->handle,
       message_type, parts);
 
