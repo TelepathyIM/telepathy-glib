@@ -881,6 +881,8 @@ main (int argc,
       MYASSERT (dead, "");
     }
 
+  g_print ("\n\n==== End of tests ====\n");
+
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
 
