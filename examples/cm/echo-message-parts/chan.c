@@ -31,8 +31,8 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
       tp_message_mixin_text_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGE_PARTS,
-      tp_message_mixin_message_parts_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
+      tp_message_mixin_messages_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL))
 
@@ -454,8 +454,15 @@ static void
 channel_get_interfaces (TpSvcChannel *iface,
                         DBusGMethodInvocation *context)
 {
+<<<<<<< HEAD:examples/cm/echo-message-parts/chan.c
   tp_svc_channel_return_from_get_interfaces (context,
       example_echo_2_channel_interfaces);
+=======
+  const char *interfaces[] = { TP_IFACE_CHANNEL_INTERFACE_MESSAGES,
+      NULL };
+
+  tp_svc_channel_return_from_get_interfaces (context, interfaces);
+>>>>>>> 4146aa4... echo-message-parts example: adapt to new interface name:examples/cm/echo-message-parts/chan.c
 }
 
 static void
