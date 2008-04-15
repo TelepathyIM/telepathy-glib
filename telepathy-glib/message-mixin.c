@@ -779,6 +779,16 @@ tp_message_mixin_sent (GObject *object,
     }
 
   message->priv->context = NULL;
+  memset (message->priv, '\xee', sizeof (message->priv));
+  g_slice_free (TpMessageMixinOutgoingMessagePrivate, message->priv);
+
+  for (i = 0; i < message->parts->len; i++)
+    g_hash_table_destroy (g_ptr_array_index (message->parts, i));
+
+  g_ptr_array_free (message->parts, TRUE);
+  /* poison message to make sure nobody dereferences it */
+  memset (message, '\xee', sizeof (message));
+  g_slice_free (TpMessageMixinOutgoingMessage, message);
 }
 
 
