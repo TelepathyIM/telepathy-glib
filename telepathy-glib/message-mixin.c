@@ -613,9 +613,71 @@ tp_message_mixin_get_pending_message_content_async (
     const GArray *part_numbers,
     DBusGMethodInvocation *context)
 {
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, "Not implemented" };
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
+  GList *node;
+  PendingItem *item;
+  GHashTable *ret;
+  guint i;
+  GValue empty = { 0 };
 
-  dbus_g_method_return_error (context, &e);
+  g_value_init (&empty, G_TYPE_STRING);
+  g_value_set_static_string (&empty, "");
+
+  node = g_queue_find_custom (mixin->priv->pending,
+      GUINT_TO_POINTER (message_id), pending_item_id_equals_data);
+
+  if (node == NULL)
+    {
+      GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "invalid message id %u", message_id);
+
+      DEBUG ("%s", error->message);
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  item = node->data;
+
+  for (i = 0; i < part_numbers->len; i++)
+    {
+      guint part = g_array_index (part_numbers, guint, i);
+
+      if (part >= item->content->len)
+        {
+          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "part number %u out of range", part);
+
+          DEBUG ("%s", error->message);
+          dbus_g_method_return_error (context, error);
+          g_error_free (error);
+          return;
+        }
+    }
+
+  ret = g_hash_table_new (NULL, NULL);
+
+  for (i = 0; i < part_numbers->len; i++)
+    {
+      guint part = g_array_index (part_numbers, guint, i);
+      GHashTable *part_data;
+      GValue *content;
+
+      g_assert (part < item->content->len);
+      part_data = g_ptr_array_index (item->content, part);
+
+      content = g_hash_table_lookup (part_data, "content");
+
+      if (content == NULL)
+        content = &empty;
+
+      g_hash_table_insert (ret, GUINT_TO_POINTER (part), content);
+    }
+
+  tp_svc_channel_interface_messages_return_from_get_pending_message_content (
+      context, ret);
+
+  g_hash_table_destroy (ret);
 }
 
 static void
