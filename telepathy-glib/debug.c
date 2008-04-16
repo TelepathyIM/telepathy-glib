@@ -317,7 +317,7 @@ tp_debug_divert_messages (const gchar *filename)
   if (filename == NULL)
     return;
 
-  fd = g_open (filename, O_WRONLY | O_CREAT, 0644);
+  fd = g_open (filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
   if (fd == -1)
     {
