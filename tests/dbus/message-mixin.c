@@ -824,13 +824,25 @@ main (int argc,
       tp_cli_channel_interface_messages_run_get_pending_message_content (chan,
           -1, last_received_id, part_numbers, &ret, &error, NULL);
       MYASSERT_NO_ERROR (error);
-      g_array_free (part_numbers, TRUE);
 
       MYASSERT (g_hash_table_size (ret) == 2, ": %u",
           g_hash_table_size (ret));
 
       g_hash_table_foreach (ret, print_part_content, NULL);
       g_hash_table_destroy (ret);
+
+      i = 47;
+      g_array_append_val (part_numbers, i);
+
+      tp_cli_channel_interface_messages_run_get_pending_message_content (chan,
+          -1, last_received_id, part_numbers, &ret, &error, NULL);
+      MYASSERT (error != NULL, "");
+      g_print ("Testing out-of-range part number: correctly got error %s\n",
+          error->message);
+      g_error_free (error);
+      error = NULL;
+
+      g_array_free (part_numbers, TRUE);
     }
 
   g_print ("\n\n==== Listing messages ====\n");
