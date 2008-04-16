@@ -104,6 +104,18 @@ print_part (gpointer k,
 }
 
 static void
+print_part_content (gpointer k,
+                    gpointer v,
+                    gpointer d)
+{
+  guint part_number = GPOINTER_TO_UINT (k);
+  gchar *contents = g_strdup_value_contents (v);
+
+  g_print ("        %u: %s\n", part_number, contents);
+  g_free (contents);
+}
+
+static void
 on_message_received (TpChannel *chan,
                      guint id,
                      guint timestamp,
@@ -795,6 +807,31 @@ main (int argc,
       ": %u != %u", last_message_received_sender, handle);
   MYASSERT (last_message_received_n_parts == 3,
       ": %u != 3", last_message_received_n_parts);
+
+  g_print ("\n\n==== Getting partial content of last message ====\n");
+
+    {
+      GArray *part_numbers = g_array_sized_new (FALSE, FALSE, sizeof (guint),
+          2);
+      GHashTable *ret;
+      guint i;
+
+      i = 2;
+      g_array_append_val (part_numbers, i);
+      i = 0;
+      g_array_append_val (part_numbers, i);
+
+      tp_cli_channel_interface_messages_run_get_pending_message_content (chan,
+          -1, last_received_id, part_numbers, &ret, &error, NULL);
+      MYASSERT_NO_ERROR (error);
+      g_array_free (part_numbers, TRUE);
+
+      MYASSERT (g_hash_table_size (ret) == 2, ": %u",
+          g_hash_table_size (ret));
+
+      g_hash_table_foreach (ret, print_part_content, NULL);
+      g_hash_table_destroy (ret);
+    }
 
   g_print ("\n\n==== Listing messages ====\n");
 
