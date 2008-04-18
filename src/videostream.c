@@ -340,12 +340,17 @@ tp_stream_engine_video_stream_dispose (GObject *object)
 
   if (self->priv->queue)
     {
+      gst_element_set_locked_state (self->priv->queue, TRUE);
+      gst_element_set_state (self->priv->queue, GST_STATE_NULL);
       gst_bin_remove (GST_BIN (self->priv->bin), self->priv->queue);
       self->priv->queue = NULL;
     }
 
   if (self->priv->sink)
     {
+      gst_element_set_locked_state (self->priv->sink, TRUE);
+      gst_element_set_state (self->priv->sink, GST_STATE_NULL);
+
       gst_bin_remove (GST_BIN (self->priv->bin), self->priv->sink);
       self->priv->sink = NULL;
       self->priv->sinkpad = NULL;
