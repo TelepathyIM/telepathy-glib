@@ -503,6 +503,29 @@ stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
 }
 
 static void
+stream_receiving (TpStreamEngineVideoStream *videostream, gpointer user_data)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpStreamEngineStream *stream = NULL;
+  TpStreamEngineChannel *chan = NULL;
+  guint stream_id;
+  gchar *channel_path;
+
+  g_object_get (videostream, "stream", &stream, NULL);
+
+  g_object_get (stream, "channel", &chan, "stream-id", &stream_id, NULL);
+
+  g_object_get (chan, "object-path", &channel_path, NULL);
+
+  stream_engine_svc_stream_engine_emit_receiving (self,
+      channel_path, stream_id, TRUE);
+
+  g_object_unref (chan);
+  g_object_unref (stream);
+  g_free (channel_path);
+}
+
+static void
 channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
     TpStreamEngineStream *stream, gpointer user_data)
 {
@@ -551,14 +574,16 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
           videostream);
       g_mutex_unlock (self->priv->mutex);
 
+      g_signal_connect (videostream, "receiving",
+          G_CALLBACK (stream_receiving), self);
     }
 
-  g_signal_connect (stream, "closed", G_CALLBACK (stream_closed), user_data);
+  g_signal_connect (stream, "closed", G_CALLBACK (stream_closed), self);
 
   g_signal_connect (stream, "request-resource",
-      G_CALLBACK (stream_request_resource), user_data);
+      G_CALLBACK (stream_request_resource), self);
   g_signal_connect (stream, "free-resource",
-      G_CALLBACK (stream_free_resource), user_data);
+      G_CALLBACK (stream_free_resource), self);
 }
 
 
@@ -602,23 +627,6 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 
   check_if_busy (self);
 }
-
-static void
-channel_stream_receiving (TpStreamEngineChannel *chan,
-                          guint stream_id,
-                          gpointer user_data)
-{
-  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
-  gchar *channel_path;
-
-  g_object_get (chan, "object-path", &channel_path, NULL);
-
-  stream_engine_svc_stream_engine_emit_receiving (self,
-      channel_path, stream_id, TRUE);
-
-  g_free (channel_path);
-}
-
 
 static void
 close_one_stream (TpStreamEngineChannel *chan G_GNUC_UNUSED,
@@ -855,7 +863,6 @@ _create_pipeline (TpStreamEngine *self)
     g_error ("Could not link fakesink to videosrc");
 
   state_ret = gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
-  g_debug ("state_ret: %d", state_ret);
   if (state_ret == GST_STATE_CHANGE_FAILURE)
     {
       if (priv->force_fakesrc)
@@ -1111,8 +1118,6 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
       G_CALLBACK (channel_session_created), self);
   g_signal_connect (chan, "stream-created",
       G_CALLBACK (channel_stream_created), self);
-  g_signal_connect (chan, "stream-receiving",
-      G_CALLBACK (channel_stream_receiving), self);
 
   g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
 }

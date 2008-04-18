@@ -57,7 +57,8 @@ typedef struct {
 GType tp_stream_engine_stream_get_type (void);
 
 TpStreamEngineStream *
-tp_stream_engine_stream_new (FsConference *conference,
+tp_stream_engine_stream_new (gpointer channel,
+    FsConference *conference,
     FsParticipant *participant,
     TpMediaStreamHandler *proxy,
     guint stream_id,

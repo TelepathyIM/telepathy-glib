@@ -62,7 +62,21 @@ struct _TpStreamEngineVideoStreamPrivate
 
   /* Everything below this line is protected by the mutex */
   guint error_idle_id;
+
+  GstPad *sinkpad;
+  gulong receiving_probe_id;
+  guint receiving_idle_id;
 };
+
+
+enum
+{
+  RECEIVING,
+  SIGNAL_COUNT
+};
+
+static guint signals[SIGNAL_COUNT] = {0};
+
 
 /* properties */
 enum
@@ -75,7 +89,8 @@ enum
 
 
 static GstElement *
-tp_stream_engine_video_stream_make_sink (TpStreamEngineVideoStream *stream);
+tp_stream_engine_video_stream_make_sink (TpStreamEngineVideoStream *stream,
+                                         GstPad **pad);
 
 static void src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad,
     FsCodec *codec, gpointer user_data);
@@ -106,7 +121,8 @@ tp_stream_engine_video_stream_init (TpStreamEngineVideoStream *self)
 
 
 static GstElement *
-tp_stream_engine_video_stream_make_sink (TpStreamEngineVideoStream *self)
+tp_stream_engine_video_stream_make_sink (TpStreamEngineVideoStream *self,
+                                         GstPad **pad)
 {
   GstElement *bin = gst_bin_new (NULL);
   GstElement *sink = NULL;
@@ -147,10 +163,41 @@ tp_stream_engine_video_stream_make_sink (TpStreamEngineVideoStream *self)
       goto error;
     }
 
+  *pad = gst_element_get_static_pad (sink, "sink");
+  gst_object_unref (*pad);
+
   return bin;
 error:
   gst_object_unref (bin);
   return NULL;
+}
+
+static gboolean
+receiving_idle (gpointer user_data)
+{
+  TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (user_data);
+
+  g_mutex_lock (self->priv->mutex);
+  self->priv->receiving_idle_id = 0;
+  g_mutex_unlock (self->priv->mutex);
+
+  g_signal_emit (self, signals[RECEIVING], 0);
+
+  return FALSE;
+}
+
+static gboolean
+receiving_data (GstPad *pad, GstMiniObject *obj, gpointer user_data)
+{
+  TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (user_data);
+
+  g_mutex_lock (self->priv->mutex);
+  self->priv->receiving_idle_id = g_idle_add (receiving_idle, self);
+  gst_pad_remove_buffer_probe (pad, self->priv->receiving_probe_id);
+  self->priv->receiving_probe_id = 0;
+  g_mutex_unlock (self->priv->mutex);
+
+  return TRUE;
 }
 
 static GObject *
@@ -168,7 +215,7 @@ tp_stream_engine_video_stream_constructor (GType type,
 
   self = (TpStreamEngineVideoStream *) obj;
 
-  sink = tp_stream_engine_video_stream_make_sink (self);
+  sink = tp_stream_engine_video_stream_make_sink (self, &self->priv->sinkpad);
 
   if (!sink)
     return obj;
@@ -180,6 +227,10 @@ tp_stream_engine_video_stream_constructor (GType type,
     }
 
   self->priv->sink = sink;
+
+  self->priv->receiving_probe_id =
+      gst_pad_add_buffer_probe (self->priv->sinkpad,
+          G_CALLBACK (receiving_data), self);
 
   if (gst_element_set_state (sink, GST_STATE_PLAYING) ==
       GST_STATE_CHANGE_FAILURE)
@@ -269,12 +320,42 @@ tp_stream_engine_video_stream_dispose (GObject *object)
     }
 
   g_mutex_lock (self->priv->mutex);
+  if (self->priv->receiving_probe_id)
+    {
+      gst_pad_remove_buffer_probe (self->priv->sinkpad,
+          self->priv->receiving_probe_id);
+      self->priv->receiving_probe_id = 0;
+    }
   if (self->priv->error_idle_id)
     {
       g_source_remove (self->priv->error_idle_id);
       self->priv->error_idle_id = 0;
     }
+  if (self->priv->receiving_idle_id)
+    {
+      g_source_remove (self->priv->receiving_idle_id);
+      self->priv->error_idle_id = 0;
+    }
   g_mutex_unlock (self->priv->mutex);
+
+  if (self->priv->queue)
+    {
+      gst_bin_remove (GST_BIN (self->priv->bin), self->priv->queue);
+      self->priv->queue = NULL;
+    }
+
+  if (self->priv->sink)
+    {
+      gst_bin_remove (GST_BIN (self->priv->bin), self->priv->sink);
+      self->priv->sink = NULL;
+      self->priv->sinkpad = NULL;
+    }
+
+  if (self->priv->bin)
+    {
+      gst_object_unref (self->priv->bin);
+      self->priv->bin = NULL;
+    }
 
   if (self->priv->stream)
     {
@@ -386,6 +467,15 @@ tp_stream_engine_video_stream_class_init (TpStreamEngineVideoStreamClass *klass)
       G_PARAM_STATIC_NICK |
       G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_PAD, param_spec);
+
+  signals[RECEIVING] =
+    g_signal_new ("receiving",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
 }
 
 

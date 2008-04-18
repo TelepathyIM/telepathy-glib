@@ -34,6 +34,7 @@
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "stream.h"
+#include "channel.h"
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
 #include "util.h"
@@ -60,6 +61,7 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
 struct _TpStreamEngineStreamPrivate
 {
+  TpStreamEngineChannel *channel;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
   FsSession *fs_session;
@@ -75,13 +77,6 @@ struct _TpStreamEngineStreamPrivate
   FsStreamDirection desired_direction;
   gboolean held;
   TpMediaStreamDirection has_resource;
-
-  GMutex *mutex;
-
-  /* These are protected by the mutex */
-
-  gboolean receiving;
-  guint receiving_idle_id;
 };
 
 enum
@@ -91,7 +86,6 @@ enum
   REQUEST_RESOURCE,
   FREE_RESOURCE,
   SRC_PAD_ADDED,
-  RECEIVING,
   SIGNAL_COUNT
 };
 
@@ -100,7 +94,9 @@ static guint signals[SIGNAL_COUNT] = {0};
 /* properties */
 enum
 {
-  PROP_FARSIGHT_CONFERENCE = 1,
+  PROP_0,
+  PROP_CHANNEL,
+  PROP_FARSIGHT_CONFERENCE,
   PROP_FARSIGHT_PARTICIPANT,
   PROP_PROXY,
   PROP_STREAM_ID,
@@ -178,8 +174,6 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
 
   self->priv = priv;
   priv->has_resource = TP_MEDIA_STREAM_DIRECTION_NONE;
-
-  priv->mutex = g_mutex_new ();
 }
 
 static void
@@ -192,6 +186,9 @@ tp_stream_engine_stream_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_CHANNEL:
+      g_value_set_object (value, self->priv->channel);
+      break;
     case PROP_FARSIGHT_CONFERENCE:
       g_value_set_object (value, self->priv->fs_conference);
       break;
@@ -234,6 +231,10 @@ tp_stream_engine_stream_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_CHANNEL:
+      self->priv->channel =
+          TP_STREAM_ENGINE_CHANNEL (g_value_get_object (value));
+      break;
     case PROP_FARSIGHT_CONFERENCE:
       self->priv->fs_conference =
           FS_CONFERENCE (g_value_dup_object (value));
@@ -427,15 +428,6 @@ tp_stream_engine_stream_dispose (GObject *object)
   TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
   TpStreamEngineStreamPrivate *priv = stream->priv;
 
-  if (priv->receiving_idle_id)
-    {
-      g_mutex_lock (priv->mutex);
-      priv->receiving = TRUE;
-      g_source_remove (priv->receiving_idle_id);
-      priv->receiving_idle_id = 0;
-      g_mutex_unlock (priv->mutex);
-    }
-
   if (priv->stream_handler_proxy)
     {
       TpMediaStreamHandler *tmp = priv->stream_handler_proxy;
@@ -468,15 +460,6 @@ tp_stream_engine_stream_dispose (GObject *object)
 }
 
 static void
-tp_stream_engine_stream_finalize (GObject *object)
-{
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
-
-  if (self->priv->mutex)
-    g_mutex_free (self->priv->mutex);
-}
-
-static void
 tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -488,7 +471,18 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
   object_class->get_property = tp_stream_engine_stream_get_property;
   object_class->constructor = tp_stream_engine_stream_constructor;
   object_class->dispose = tp_stream_engine_stream_dispose;
-  object_class->finalize = tp_stream_engine_stream_finalize;
+
+  param_spec = g_param_spec_object ("channel",
+                                    "Telepathy channel",
+                                    "The TpStreamEngineChannel this stream"
+                                    " is in",
+                                    TP_STREAM_ENGINE_TYPE_CHANNEL,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_CHANNEL,
+      param_spec);
 
   param_spec = g_param_spec_object ("farsight-conference",
                                     "Farsight conference",
@@ -624,15 +618,6 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   NULL, NULL,
                   tp_stream_engine_marshal_VOID__OBJECT_BOXED,
                   G_TYPE_NONE, 2, GST_TYPE_PAD, FS_TYPE_CODEC);
-
-  signals[RECEIVING] =
-    g_signal_new ("receiving",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
 }
 
 /* dummy callback handler for async calling calls with no return values */
@@ -1568,25 +1553,6 @@ tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
   return FALSE;
 }
 
-/*
- * This idle function is just to insure that the signal is emitted on the main
- * thread because dbus-glib is not thread safe
- */
-
-static gboolean
-emit_receiving (gpointer user_data)
-{
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
-
-  g_signal_emit (self, signals[RECEIVING], 0);
-
-  g_mutex_lock (self->priv->mutex);
-  self->priv->receiving_idle_id = 0;
-  g_mutex_unlock (self->priv->mutex);
-
-  return FALSE;
-}
-
 static void
 cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     GstPad *pad,
@@ -1598,18 +1564,11 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
   DEBUG (self, "New pad");
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
-
-  g_mutex_lock (self->priv->mutex);
-  if (!self->priv->receiving && !self->priv->receiving_idle_id)
-    {
-      self->priv->receiving = TRUE;
-      self->priv->receiving_idle_id = g_idle_add (emit_receiving, self);
-    }
-  g_mutex_unlock (self->priv->mutex);
 }
 
 TpStreamEngineStream *
-tp_stream_engine_stream_new (FsConference *conference,
+tp_stream_engine_stream_new (gpointer channel,
+    FsConference *conference,
     FsParticipant *participant,
     TpMediaStreamHandler *proxy,
     guint stream_id,
@@ -1622,6 +1581,7 @@ tp_stream_engine_stream_new (FsConference *conference,
   TpStreamEngineStream *self = NULL;
 
   self = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM,
+      "channel", channel,
       "farsight-conference", conference,
       "farsight-participant", participant,
       "proxy", proxy,

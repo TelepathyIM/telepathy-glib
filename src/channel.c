@@ -71,7 +71,6 @@ enum
   CLOSED,
   STREAM_CREATED,
   SESSION_CREATED,
-  STREAM_RECEIVING,
   HANDLER_RESULT,
   SIGNAL_COUNT
 };
@@ -509,15 +508,6 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, TP_STREAM_ENGINE_TYPE_SESSION);
-
-  signals[STREAM_RECEIVING] =
-    g_signal_new ("stream-receiving",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__UINT,
-                  G_TYPE_NONE, 1, G_TYPE_UINT);
 }
 
 static void
@@ -534,18 +524,6 @@ stream_closed_cb (TpStreamEngineStream *stream,
 
   g_object_unref (stream);
   g_ptr_array_index (priv->streams, stream_id) = NULL;
-}
-
-static void
-stream_receiving_cb (TpStreamEngineStream *stream,
-                     gpointer user_data)
-{
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  guint stream_id;
-
-  g_object_get (stream, "stream-id", &stream_id, NULL);
-
-  g_signal_emit (self, signals[STREAM_RECEIVING], 0, stream_id);
 }
 
 static void
@@ -580,8 +558,9 @@ new_stream_cb (TpStreamEngineSession *session,
       "farsight-participant", &fs_participant,
       NULL);
 
-  stream = tp_stream_engine_stream_new (fs_conference, fs_participant,
-      proxy, stream_id, media_type, direction, &priv->nat_props, &error);
+  stream = tp_stream_engine_stream_new ((gpointer) self, fs_conference,
+      fs_participant, proxy, stream_id, media_type, direction,
+      &priv->nat_props, &error);
 
   if (!stream)
     {
@@ -593,9 +572,6 @@ new_stream_cb (TpStreamEngineSession *session,
   g_object_unref (proxy);
   g_object_unref (fs_conference);
   g_object_unref (fs_participant);
-
-  g_signal_connect (stream, "receiving",
-      G_CALLBACK (stream_receiving_cb), self);
 
   if (priv->streams->len <= stream_id)
     g_ptr_array_set_size (priv->streams, stream_id + 1);
