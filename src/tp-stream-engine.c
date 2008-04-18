@@ -31,24 +31,26 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/gtypes.h>
 
-#include <gst/interfaces/xoverlay.h>
-
 #include "tp-stream-engine.h"
 #include "tp-stream-engine-signals-marshal.h"
+
+#include <gst/farsight/fs-element-added-notifier.h>
 
 #include "api/api.h"
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
 #include "audiostream.h"
+#include "videosink.h"
 #include "videostream.h"
+#include "videopreview.h"
 #include "util.h"
-#include "xerrorhandler.h"
 
 #define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"
 #define OBJECT_PATH     "/org/freedesktop/Telepathy/StreamEngine"
 
-static void tp_stream_engine_start_source (TpStreamEngine *obj);
+static void
+_create_pipeline (TpStreamEngine *self);
 
 static void
 register_dbus_signal_marshallers()
@@ -94,6 +96,13 @@ G_DEFINE_TYPE_WITH_CODE (TpStreamEngine, tp_stream_engine, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (STREAM_ENGINE_TYPE_SVC_STREAM_ENGINE,
       se_iface_init))
 
+/* properties */
+enum
+{
+  PROP_0,
+  PROP_PIPELINE
+};
+
 /* signal enum */
 enum
 {
@@ -114,536 +123,38 @@ struct _TpStreamEnginePrivate
 
   GstElement *pipeline;
   GstElement *videosrc;
-  GstElement *videosrc_next;
+  GstElement *tee;
 
   GPtrArray *channels;
   GHashTable *channels_by_path;
 
-  GSList *output_windows;
-  GSList *preview_windows;
+  GMutex *mutex;
 
-  TpStreamEngineStream *audio_resource_owner;
+  FsElementAddedNotifier *notifier;
+
+  /* Protected by the mutex */
+  GList *output_sinks;
+  GList *preview_sinks;
 
   guint bus_async_source_id;
-  guint bus_sync_source_id;
 
-  TpStreamEngineXErrorHandler *handler;
-  guint bad_drawable_handler_id;
-  guint bad_gc_handler_id;
-  guint bad_value_handler_id;
-  guint bad_window_handler_id;
-
-  gboolean linked;
-  gboolean restart_source;
   gboolean force_fakesrc;
-};
 
-typedef struct _WindowPair WindowPair;
-struct _WindowPair
-{
-  TpStreamEngineVideoStream *stream;
-  GstElement *sink;
-  guint window_id;
-  volatile gboolean removing;
-  gboolean created;
-  guint idle_source_id;
-  DBusGMethodInvocation *context;
-  void (*post_remove) (WindowPair *wp);
+  gint source_use_count;
 };
 
 static void
-_window_pairs_free (GSList **list)
+set_element_props (FsElementAddedNotifier *notifier,
+    GstBin *bin,
+    GstElement *element,
+    gpointer user_data)
 {
-  GSList *tmp;
+  if (g_object_has_property ((GObject *) element, "min-ptime"))
+    g_object_set ((GObject *) element, "min-ptime", GST_MSECOND * 20, NULL);
 
-  for (tmp = *list;
-       tmp != NULL;
-       tmp = tmp->next)
-    g_slice_free (WindowPair, tmp->data);
-
-  g_slist_free (*list);
-  *list = NULL;
+  if (g_object_has_property ((GObject *) element, "max-ptime"))
+    g_object_set ((GObject *) element, "max-ptime", GST_MSECOND * 50, NULL);
 }
-
-static void
-_window_pairs_add (GSList **list, TpStreamEngineVideoStream *stream,
-    GstElement *sink, guint window_id)
-{
-  g_debug ("Adding to windowpair list sink %p window_id %d", sink, window_id);
-  WindowPair *wp;
-
-  wp = g_slice_new (WindowPair);
-  wp->stream = stream;
-  wp->sink = sink;
-  wp->window_id = window_id;
-  wp->removing = FALSE;
-  wp->created = FALSE;
-  wp->post_remove = NULL;
-  wp->idle_source_id = 0;
-  wp->context = NULL;
-
-  *list = g_slist_prepend (*list, wp);
-}
-
-static void
-_window_pairs_remove (GSList **list, WindowPair *pair)
-{
-  g_assert (g_slist_find (*list, pair));
-
-  if (pair->idle_source_id)
-    g_source_remove (pair->idle_source_id);
-  pair->idle_source_id = 0;
-
-  g_assert (pair->context == NULL);
-
-  *list = g_slist_remove (*list, pair);
-
-  g_slice_free (WindowPair, pair);
-}
-
-static WindowPair *
-_window_pairs_find_by_removing (GSList *list, gboolean removing)
-{
-  GSList *tmp;
-
-  for (tmp = list;
-       tmp != NULL;
-       tmp = tmp->next)
-    {
-      WindowPair *wp = tmp->data;
-      if (wp->removing == removing)
-        return wp;
-    }
-
-  return NULL;
-}
-
-static gboolean
-_gst_bin_find_element (GstBin *bin, GstElement *element)
-{
-  GstIterator *iter;
-  gpointer item;
-  gboolean found = FALSE;
-  gboolean done = FALSE;
-
-  iter = gst_bin_iterate_elements (bin);
-
-  if (!iter)
-    {
-      gchar *bin_name = gst_element_get_name (GST_ELEMENT (bin));
-      g_warning ("Could not get iterator for bin %s", bin_name);
-      g_free (bin_name);
-      return FALSE;
-    }
-
-  while (!done)
-    {
-      GstIteratorResult ret;
-
-      ret = gst_iterator_next (iter, &item);
-      switch (ret)
-        {
-          case GST_ITERATOR_OK:
-            {
-              GstElement *child = (GstElement *) item;
-              if (child == element)
-                {
-                  found = TRUE;
-                  done = TRUE;
-                }
-              gst_object_unref (child);
-            }
-            break;
-          case GST_ITERATOR_RESYNC:
-            found = FALSE;
-            gst_iterator_resync (iter);
-            break;
-          case GST_ITERATOR_ERROR:
-            {
-              gchar *bin_name = gst_element_get_name (GST_ELEMENT (bin));
-              g_warning ("Error iterating %s", bin_name);
-              g_free (bin_name);
-            }
-            done = TRUE;
-            break;
-          case GST_ITERATOR_DONE:
-            done = TRUE;
-            break;
-        }
-    }
-
-  gst_iterator_free (iter);
-  return found;
-}
-
-static WindowPair *
-_window_pairs_find_by_sink (GSList *list, GstElement *sink)
-{
-  GSList *tmp;
-
-  for (tmp = list;
-       tmp != NULL;
-       tmp = tmp->next)
-    {
-      WindowPair *wp = tmp->data;
-      if (wp->sink == sink)
-        return wp;
-      else if (GST_IS_BIN (wp->sink))
-        if (_gst_bin_find_element (GST_BIN (wp->sink), GST_ELEMENT (sink)))
-          return wp;
-    }
-
-  return NULL;
-}
-
-static WindowPair *
-_window_pairs_find_by_window_id (GSList *list, guint window_id)
-{
-  GSList *tmp;
-
-  for (tmp = list;
-       tmp != NULL;
-       tmp = tmp->next)
-    {
-      WindowPair *wp = tmp->data;
-      if (wp->window_id == window_id)
-        return wp;
-    }
-
-  return NULL;
-}
-
-static void
-set_video_sink_props (GstBin *bin G_GNUC_UNUSED,
-                      GstElement *sink,
-                      void *user_data G_GNUC_UNUSED)
-{
-  if (g_object_has_property (G_OBJECT (sink), "sync"))
-    {
-      g_debug ("setting sync to FALSE");
-      g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
-    }
-  if (g_object_has_property (G_OBJECT (sink), "qos"))
-    {
-      g_debug ("setting qos to FALSE");
-      g_object_set (G_OBJECT (sink), "qos", FALSE, NULL);
-    }
-#ifndef MAEMO_OSSO_SUPPORT
-  if (g_object_has_property (G_OBJECT (sink), "force-aspect-ratio"))
-    {
-      g_debug ("setting force-aspect-ratio to TRUE");
-      g_object_set (G_OBJECT (sink), "force-aspect-ratio", TRUE, NULL);
-    }
-#endif
-  /* Setting this will make sure we can have several preview windows using
-   * the tee without any queue elements */
-  /* Without this, elements linked to the tee just block on prerolling and
-   * wait for each other to finish */
-  if (g_object_has_property (G_OBJECT (sink), "async"))
-    {
-      g_debug ("setting async to FALSE");
-      g_object_set (G_OBJECT (sink), "async", FALSE, NULL);
-    }
-  else if (g_object_has_property (G_OBJECT (sink), "preroll-queue-len"))
-    {
-      g_debug ("setting preroll-queue-len to 1");
-      g_object_set (G_OBJECT (sink), "preroll-queue-len", 1, NULL);
-    }
-
-  if (GST_IS_BIN (sink))
-    {
-      gboolean done = FALSE;
-      GstIterator *it = NULL;
-      gpointer elem;
-
-      g_signal_connect ((GObject *) sink, "element-added",
-        G_CALLBACK (set_video_sink_props), NULL);
-
-      it = gst_bin_iterate_recurse (GST_BIN (sink));
-      while (!done)
-        {
-          switch (gst_iterator_next (it, &elem))
-            {
-              case GST_ITERATOR_OK:
-                set_video_sink_props (NULL, GST_ELEMENT(elem), NULL);
-                g_object_unref (elem);
-                break;
-              case GST_ITERATOR_RESYNC:
-                gst_iterator_resync (it);
-                break;
-              case GST_ITERATOR_ERROR:
-                g_error ("Can not iterate videosink bin");
-                done = TRUE;
-                break;
-             case GST_ITERATOR_DONE:
-               done = TRUE;
-               break;
-            }
-        }
-    }
-}
-
-GstElement *
-tp_stream_engine_make_video_sink (TpStreamEngine *self, gboolean is_preview)
-{
-  const gchar *videosink_name;
-  GstElement *sink = NULL;
-#ifndef MAEMO_OSSO_SUPPORT
-  GstElement *bin, *tmp;
-  GstPad *pad;
-#endif
-
-  g_assert (self->priv->pipeline != NULL);
-
-  if ((videosink_name = getenv ("PREVIEW_VIDEO_SINK")) ||
-      (videosink_name = getenv ("FS_VIDEO_SINK")) ||
-      (videosink_name = getenv ("FS_VIDEOSINK")))
-    {
-      g_debug ("making video sink for local preview with pipeline \"%s\"", videosink_name);
-      sink = gst_parse_bin_from_description (videosink_name, TRUE, NULL);
-    }
-  else
-    {
-#ifndef MAEMO_OSSO_SUPPORT
-      if (is_preview) {
-        /* hack to leave an xvimage free for the bigger output.
-         * Most machines only have one xvport, so this helps in the majority of
-         * cases. More intelligent widgets 
-         * */
-        sink = gst_element_factory_make ("ximagesink", NULL);
-      }
-
-      if (sink == NULL)
-        sink = gst_element_factory_make ("gconfvideosink", NULL);
-
-      if (sink == NULL)
-        sink = gst_element_factory_make ("autovideosink", NULL);
-#endif
-
-      if (sink == NULL)
-        sink = gst_element_factory_make ("xvimagesink", NULL);
-
-#ifndef MAEMO_OSSO_SUPPORT
-      if (sink == NULL)
-        sink = gst_element_factory_make ("ximagesink", NULL);
-#endif
-    }
-
-  if (sink == NULL)
-    {
-      g_debug ("failed to make a video sink");
-      return NULL;
-    }
-
-  g_debug ("made video sink element %s", GST_ELEMENT_NAME (sink));
-
-  if (GST_IS_BIN (sink))
-    {
-      g_signal_connect ((GObject *) sink, "element-added",
-          G_CALLBACK (set_video_sink_props), NULL);
-    }
-  else
-    {
-      set_video_sink_props (NULL, sink, NULL);
-    }
-
-#ifndef MAEMO_OSSO_SUPPORT
-  bin = gst_bin_new (NULL);
-
-  if (!gst_bin_add (GST_BIN (bin), sink))
-    {
-      g_warning ("Could not add source bin to the pipeline");
-      gst_object_unref (bin);
-      gst_object_unref (sink);
-      return NULL;
-    }
-
-  tmp = gst_element_factory_make ("videoscale", NULL);
-  if (tmp != NULL)
-    {
-      g_object_set (G_OBJECT (tmp), "qos", FALSE, NULL);
-      g_debug ("linking videoscale");
-      if (!gst_bin_add (GST_BIN (bin), tmp))
-        {
-          g_warning ("Could not add videoscale to the source bin");
-          gst_object_unref (tmp);
-          gst_object_unref (bin);
-          return NULL;
-        }
-      if (!gst_element_link (tmp, sink))
-        {
-          g_warning ("Could not link sink and videoscale elements");
-          gst_object_unref (bin);
-          return NULL;
-        }
-      sink = tmp;
-    }
-
-  tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
-  if (tmp != NULL)
-    {
-      g_object_set (G_OBJECT (tmp), "qos", FALSE, NULL);
-      g_debug ("linking ffmpegcolorspace");
-     if (!gst_bin_add (GST_BIN (bin), tmp))
-       {
-         g_warning ("Could not add ffmpegcolorspace to the source bin");
-         gst_object_unref (tmp);
-         gst_object_unref (bin);
-         return NULL;
-       }
-      if (!gst_element_link (tmp, sink))
-        {
-          g_warning ("Could not link sink and ffmpegcolorspace elements");
-          gst_object_unref (bin);
-          return NULL;
-        }
-      sink = tmp;
-    }
-
-  pad = gst_bin_find_unconnected_pad (GST_BIN (bin), GST_PAD_SINK);
-
-  if (!pad)
-    {
-      g_warning ("Could not find unconnected sink pad in the source bin");
-      gst_object_unref (bin);
-      return NULL;
-    }
-
-  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
-    {
-      g_warning ("Could not add sink ghostpad to the source bin");
-      gst_object_unref (bin);
-      return NULL;
-    }
-  gst_object_unref (GST_OBJECT (pad));
-
-  sink = bin;
-#endif
-
-  if (!gst_bin_add (GST_BIN (self->priv->pipeline), sink))
-    {
-      g_warning ("Could not add the sink to the pipeline");
-      gst_object_unref (sink);
-      return NULL;
-    }
-
-  gst_object_ref (sink);
-
-  return sink;
-}
-
-static gboolean
-_add_preview_window (TpStreamEngine *self, guint window_id, GError **error)
-{
-  WindowPair *wp;
-  GstElement *tee, *sink;
-  GstStateChangeReturn state_change_ret;
-
-  g_assert (self->priv->pipeline != NULL);
-
-  g_debug ("%s: called for window id %d", G_STRFUNC, window_id);
-  wp = _window_pairs_find_by_window_id (self->priv->preview_windows,
-      window_id);
-
-  if (wp == NULL)
-    {
-      *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Given window id %d not in windowID list", window_id);
-      g_debug ("%s: Couldn't find xwindow id in window pair list", G_STRFUNC);
-      return FALSE;
-    }
-
-  g_debug ("adding preview in window %u", window_id);
-
-  tee = gst_bin_get_by_name (GST_BIN (self->priv->pipeline), "tee");
-
-  if (!tee)
-    {
-      g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED,
-          "Failed to get tee in the bin %s",
-          GST_ELEMENT_NAME (self->priv->pipeline));
-      goto tee_failure;
-    }
-
-  sink = tp_stream_engine_make_video_sink (self, TRUE);
-
-  if (sink == NULL)
-    goto sink_failure;
-
-  /* FIXME:
-   * We dont keep a ref, this means we can potentially point to a
-   * dead object
-   */
-  gst_object_unref (sink);
-
-  wp->created = TRUE;
-  wp->sink = sink;
-
-  g_debug ("trying to set sink to PLAYING");
-  state_change_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
-
-  if (state_change_ret != GST_STATE_CHANGE_SUCCESS &&
-      state_change_ret != GST_STATE_CHANGE_NO_PREROLL &&
-      state_change_ret != GST_STATE_CHANGE_ASYNC)
-    {
-      g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED,
-          "Failed to set element %s to PLAYING", GST_ELEMENT_NAME (sink));
-      goto link_failure;
-    }
-
-  g_debug ("trying to link tee and sink");
-  if (!gst_element_link (tee, sink))
-    {
-      g_set_error (error, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED,
-          "Failed to link element %s to %s", GST_ELEMENT_NAME (tee),
-          GST_ELEMENT_NAME (sink));
-      goto link_failure;
-    }
-
-  g_debug ("linked tee and sink");
-
-  tp_stream_engine_start_source (self);
-
-  gst_object_unref (tee);
-  g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
-  return TRUE;
-
-link_failure:
-  gst_element_set_state (sink, GST_STATE_NULL);
-  gst_bin_remove (GST_BIN (self->priv->pipeline), sink);
-
-sink_failure:
-  gst_object_unref (tee);
-
-tee_failure:
-
-  if (error != NULL)
-    g_warning ((*error)->message);
-
-  _window_pairs_remove (&(self->priv->preview_windows), wp);
-
-  return FALSE;
-}
-
-static gboolean
-bad_drawable_cb (TpStreamEngineXErrorHandler *handler,
-             guint window_id,
-             gpointer data);
-
-static gboolean
-bad_gc_cb (TpStreamEngineXErrorHandler *handler,
-              guint window_id,
-              gpointer data);
-
-static gboolean
-bad_value_cb (TpStreamEngineXErrorHandler *handler,
-              guint window_id,
-              gpointer data);
-
-static gboolean
-bad_window_cb (TpStreamEngineXErrorHandler *handler,
-               guint window_id,
-               gpointer data);
 
 static void
 tp_stream_engine_init (TpStreamEngine *self)
@@ -653,43 +164,57 @@ tp_stream_engine_init (TpStreamEngine *self)
 
   self->priv = priv;
 
-  priv->linked = FALSE;
-  priv->restart_source = FALSE;
-
   priv->channels = g_ptr_array_new ();
 
   priv->channels_by_path = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, NULL);
 
-  priv->audio_resource_owner = NULL;
+  priv->mutex = g_mutex_new ();
 
-  priv->handler = tp_stream_engine_x_error_handler_get ();
+  priv->notifier = fs_element_added_notifier_new ();
+  g_signal_connect (priv->notifier, "element-added",
+      G_CALLBACK (set_element_props), self);
 
-  priv->bad_drawable_handler_id =
-    g_signal_connect (priv->handler, "bad-drawable",
-        (GCallback) bad_drawable_cb, self);
-  priv->bad_gc_handler_id =
-    g_signal_connect (priv->handler, "bad-gc", (GCallback) bad_gc_cb,
-      self);
-  priv->bad_value_handler_id =
-    g_signal_connect (priv->handler, "bad-value", (GCallback) bad_value_cb,
-      self);
-  priv->bad_window_handler_id =
-    g_signal_connect (priv->handler, "bad-window", (GCallback) bad_window_cb,
-      self);
+  _create_pipeline (self);
 }
 
 static void tp_stream_engine_dispose (GObject *object);
 static void tp_stream_engine_finalize (GObject *object);
 
+
+
+static void
+tp_stream_engine_get_property  (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (object);
+
+  switch (property_id)
+    {
+    case PROP_PIPELINE:
+      g_value_set_object (value, self->priv->pipeline);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+
+
 static void
 tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (tp_stream_engine_class);
+  GParamSpec *param_spec;
 
   g_type_class_add_private (tp_stream_engine_class,
       sizeof (TpStreamEnginePrivate));
 
+
+  object_class->get_property = tp_stream_engine_get_property;
   object_class->dispose = tp_stream_engine_dispose;
   object_class->finalize = tp_stream_engine_finalize;
 
@@ -734,6 +259,16 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
         NULL, NULL,
         g_cclosure_marshal_VOID__VOID,
         G_TYPE_NONE, 0);
+
+  param_spec = g_param_spec_object ("pipeline",
+      "The GstPipeline",
+      "The GstPipeline that all the objects here live in",
+      GST_TYPE_PIPELINE,
+      G_PARAM_READABLE |
+      G_PARAM_STATIC_NICK |
+      G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_PIPELINE, param_spec);
+
 }
 
 static void
@@ -762,12 +297,9 @@ tp_stream_engine_dispose (GObject *object)
       priv->channels_by_path = NULL;
     }
 
-  if (priv->audio_resource_owner)
-    {
-      g_object_remove_weak_pointer (G_OBJECT (priv->audio_resource_owner),
-          (gpointer) &priv->audio_resource_owner);
-      priv->audio_resource_owner = NULL;
-    }
+  g_list_foreach (priv->preview_sinks, (GFunc) g_object_unref, NULL);
+  g_list_free (priv->preview_sinks);
+  priv->preview_sinks = NULL;
 
   if (priv->pipeline)
     {
@@ -781,56 +313,13 @@ tp_stream_engine_dispose (GObject *object)
       g_object_unref (priv->pipeline);
       priv->pipeline = NULL;
       priv->videosrc = NULL;
-      priv->videosrc_next = NULL;
     }
 
-  if (priv->preview_windows != NULL)
+  if (priv->notifier)
     {
-      _window_pairs_free (&(priv->preview_windows));
+      g_object_unref (priv->notifier);
+      priv->notifier = NULL;
     }
-
-  if (priv->output_windows != NULL)
-    {
-      _window_pairs_free (&(priv->output_windows));
-    }
-
-  if (priv->bus_async_source_id)
-    {
-      g_source_remove (priv->bus_async_source_id);
-      priv->bus_async_source_id = 0;
-    }
-
-  if (priv->bus_sync_source_id)
-    {
-      g_source_remove (priv->bus_sync_source_id);
-      priv->bus_sync_source_id = 0;
-    }
-
-  if (priv->bad_drawable_handler_id)
-    {
-      g_signal_handler_disconnect (priv->handler, priv->bad_drawable_handler_id);
-      priv->bad_drawable_handler_id = 0;
-    }
-
-  if (priv->bad_gc_handler_id)
-    {
-      g_signal_handler_disconnect (priv->handler, priv->bad_gc_handler_id);
-      priv->bad_gc_handler_id = 0;
-    }
-
-  if (priv->bad_value_handler_id)
-    {
-      g_signal_handler_disconnect (priv->handler, priv->bad_value_handler_id);
-      priv->bad_value_handler_id = 0;
-    }
-
-  if (priv->bad_window_handler_id)
-    {
-      g_signal_handler_disconnect (priv->handler, priv->bad_window_handler_id);
-      priv->bad_window_handler_id = 0;
-    }
-
-  g_object_unref (priv->handler);
 
   priv->dispose_has_run = TRUE;
 
@@ -841,6 +330,10 @@ tp_stream_engine_dispose (GObject *object)
 static void
 tp_stream_engine_finalize (GObject *object)
 {
+  TpStreamEngine *self = TP_STREAM_ENGINE (object);
+
+  g_mutex_free (self->priv->mutex);
+
   G_OBJECT_CLASS (tp_stream_engine_parent_class)->finalize (object);
 }
 
@@ -864,50 +357,80 @@ tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
 }
 
 static void
-stream_free_resource (TpStreamEngineStream *stream, gpointer user_data)
+tp_stream_engine_start_source (TpStreamEngine *self)
 {
-#ifdef MAEMO_OSSO_SUPPORT
-  TpStreamEngine *engine = TP_STREAM_ENGINE (user_data);
+  GstStateChangeReturn state_ret;
 
-  g_assert (engine->priv->audio_resource_owner == stream);
 
-  g_object_remove_weak_pointer (G_OBJECT (engine->priv->audio_resource_owner),
-      (gpointer) &engine->priv->audio_resource_owner);
-  engine->priv->audio_resource_owner = NULL;
-#endif
+  if (self->priv->force_fakesrc)
+    {
+      g_debug ("Don't have a video source, not starting it");
+      return;
+    }
+
+  g_debug ("Starting video source");
+
+  self->priv->source_use_count++;
+
+  if (self->priv->source_use_count > 1)
+    return;
+
+  state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_PLAYING);
+
+  if (state_ret == GST_STATE_CHANGE_FAILURE)
+    g_error ("Error starting the video source");
+}
+
+
+static void
+tp_stream_engine_stop_source (TpStreamEngine *self)
+{
+  GstStateChangeReturn state_ret;
+
+  self->priv->source_use_count--;
+
+  if (self->priv->source_use_count > 0)
+    return;
+
+  g_debug ("Stopping source");
+
+  state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_NULL);
+
+  if (state_ret == GST_STATE_CHANGE_FAILURE)
+    g_error ("Error stopping the video source");
+
+}
+
+static void
+stream_free_resource (TpStreamEngineStream *stream,
+    TpMediaStreamDirection dir,
+    gpointer user_data)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpMediaStreamType media_type;
+
+  g_object_get (stream, "media-type", &media_type, NULL);
+
+  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO &&
+      dir & TP_MEDIA_STREAM_DIRECTION_SEND)
+    tp_stream_engine_stop_source (self);
 }
 
 static gboolean
-stream_request_resource (TpStreamEngineStream *stream, gpointer user_data)
+stream_request_resource (TpStreamEngineStream *stream,
+    TpMediaStreamDirection dir,
+    gpointer user_data)
 {
-#ifdef MAEMO_OSSO_SUPPORT
-  TpStreamEngine *engine = TP_STREAM_ENGINE (user_data);
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  TpMediaStreamType media_type;
 
-  guint mediatype;
+  g_object_get (stream, "media-type", &media_type, NULL);
 
-  g_object_get (G_OBJECT (stream), "media-type", &mediatype, NULL);
+  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO &&
+      dir & TP_MEDIA_STREAM_DIRECTION_SEND)
+    tp_stream_engine_start_source (self);
 
-  if (mediatype == TP_MEDIA_STREAM_TYPE_AUDIO)
-    {
-      if (engine->priv->audio_resource_owner != NULL)
-        {
-          return FALSE;
-        }
-
-      g_assert (engine->priv->audio_resource_owner == NULL);
-
-      engine->priv->audio_resource_owner = stream;
-
-      g_object_add_weak_pointer (G_OBJECT (engine->priv->audio_resource_owner),
-          (gpointer) &engine->priv->audio_resource_owner);
-
-      return TRUE;
-    }
-  else
-#endif
-    {
-      return TRUE;
-    }
+  return TRUE;
 }
 
 
@@ -938,8 +461,6 @@ channel_session_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
 
   if (g_object_has_property ((GObject *)conf, "latency"))
     g_object_set (conf, "latency", 100, NULL);
-
-  tp_stream_engine_get_pipeline (self);
 
   if (!gst_bin_add (GST_BIN (self->priv->pipeline), conf))
     g_error ("Could not add conference to pipeline");
@@ -973,10 +494,7 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
 
   g_object_get (G_OBJECT (stream), "media-type", &media_type, NULL);
 
-  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-    {
-    }
-  else if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
+  if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
     {
       TpStreamEngineAudioStream *audiostream;
 
@@ -991,6 +509,30 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
       g_clear_error (&error);
       g_object_set_data ((GObject*) stream, "se-stream", audiostream);
     }
+  else if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+    {
+      TpStreamEngineVideoStream *videostream = NULL;
+      GstPad *pad;
+
+      pad = gst_element_get_request_pad (self->priv->tee, "src%d");
+
+      videostream = tp_stream_engine_video_stream_new (stream,
+          GST_BIN (self->priv->pipeline), pad, &error);
+
+      if (!videostream)
+        {
+          g_warning ("Could not create video stream: %s", error->message);
+          return;
+        }
+      g_clear_error (&error);
+      g_object_set_data ((GObject*) stream, "se-stream", videostream);
+
+      g_mutex_lock (self->priv->mutex);
+      self->priv->preview_sinks = g_list_prepend (self->priv->output_sinks,
+          videostream);
+      g_mutex_unlock (self->priv->mutex);
+
+    }
 
   g_signal_connect (stream, "closed", G_CALLBACK (stream_closed), user_data);
 
@@ -1004,7 +546,11 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
 static void
 check_if_busy (TpStreamEngine *self)
 {
-  guint num_previews = g_slist_length (self->priv->preview_windows);
+  guint num_previews;
+
+  g_mutex_lock (self->priv->mutex);
+  num_previews = g_list_length (self->priv->preview_sinks);
+  g_mutex_unlock (self->priv->mutex);
 
   if (self->priv->channels->len == 0 && num_previews == 0)
     {
@@ -1039,24 +585,6 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 }
 
 static void
-channel_stream_state_changed (TpStreamEngineChannel *chan,
-                              guint stream_id,
-                              TpMediaStreamState state,
-                              TpMediaStreamDirection direction,
-                              gpointer user_data)
-{
-  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
-  gchar *channel_path;
-
-  g_object_get (chan, "object-path", &channel_path, NULL);
-
-  stream_engine_svc_stream_engine_emit_stream_state_changed (self,
-      channel_path, stream_id, state, direction);
-
-  g_free (channel_path);
-}
-
-static void
 channel_stream_receiving (TpStreamEngineChannel *chan,
                           guint stream_id,
                           gpointer user_data)
@@ -1072,261 +600,34 @@ channel_stream_receiving (TpStreamEngineChannel *chan,
   g_free (channel_path);
 }
 
-static void
-_window_pairs_remove_cb (WindowPair *wp)
-{
-  TpStreamEngine *self = tp_stream_engine_get ();
-
-  _window_pairs_remove (&(self->priv->preview_windows), wp);
-}
 
 static void
-_window_pairs_readd_cb (WindowPair *wp)
-{
-  TpStreamEngine *engine = tp_stream_engine_get ();
-  GError *error = NULL;
-
-  wp->sink = NULL;
-  wp->created = FALSE;
-  wp->stream = NULL;
-  wp->removing = FALSE;
-  wp->post_remove = NULL;
-
-  _add_preview_window (engine, wp->window_id, &error);
-  if (error)
-    {
-      g_debug ("Error creating preview window: %s", error->message);
-      g_error_free (error);
-    }
-}
-
-static void
-unblock_cb (GstPad *pad, gboolean blocked G_GNUC_UNUSED,
-    gpointer user_data G_GNUC_UNUSED)
-{
-  g_debug ("Pad unblocked successfully after removing preview sink");
-  gst_object_unref (pad);
-}
-
-static gboolean
-_remove_defunct_preview_sink_idle_callback (gpointer user_data)
-{
-  TpStreamEngine *self = tp_stream_engine_get ();
-  gboolean retval;
-  GstStateChangeReturn ret;
-
-  WindowPair *wp = user_data;
-  g_assert (wp);
-
-  wp->idle_source_id = 0;
-
-  if (self->priv->pipeline == NULL)
-    {
-      if (wp->context)
-        {
-          stream_engine_svc_stream_engine_return_from_remove_preview_window (
-              wp->context);
-          wp->context = NULL;
-        }
-
-      check_if_busy (self);
-      return FALSE;
-    }
-
-  g_debug ("Removing defunct preview sink for window %u", wp->window_id);
-
-  GstPad *sink_pad = gst_element_get_pad (wp->sink, "sink");
-  g_assert (sink_pad);
-
-  GstPad *tee_src_pad = gst_pad_get_peer (sink_pad);
-  g_assert (tee_src_pad);
-
-  GstElement *sink_element = gst_pad_get_parent_element (sink_pad);
-  g_assert (sink_element);
-
-  GstElement *sink_parent = GST_ELEMENT (gst_element_get_parent (sink_element));
-  g_assert (sink_parent);
-
-  GstElement *tee = gst_bin_get_by_name (GST_BIN (self->priv->pipeline), "tee");
-  g_assert (tee);
-
-  GstPad *tee_sink_pad = gst_element_get_pad (tee, "sink");
-  g_assert (tee_sink_pad);
-
-  GstPad *tee_peer_src_pad = gst_pad_get_peer (tee_sink_pad);
-  g_assert (tee_peer_src_pad);
-
-
-  retval = gst_bin_remove (GST_BIN (sink_parent), sink_element);
-  g_assert (retval == TRUE);
-
-  ret = gst_element_set_state (sink_element, GST_STATE_NULL);
-  g_assert (ret != GST_STATE_CHANGE_FAILURE);
-
-  if (ret == GST_STATE_CHANGE_ASYNC) {
-    ret = gst_element_get_state (sink_element, NULL, NULL, 5*GST_SECOND);
-    g_assert (ret != GST_STATE_CHANGE_FAILURE);
-    if (ret == GST_STATE_CHANGE_ASYNC)
-      g_warning ("Could not stop the video sink in 5 seconds!!");
-  }
-
-  gst_object_unref (tee_peer_src_pad);
-  gst_object_unref (tee_sink_pad);
-  gst_object_unref (tee);
-  gst_object_unref (sink_parent);
-  gst_object_unref (sink_element);
-  gst_element_release_request_pad (tee, tee_src_pad);
-  gst_object_unref (sink_pad);
-
-  if (wp->context)
-    {
-      stream_engine_svc_stream_engine_return_from_remove_preview_window (
-          wp->context);
-      wp->context = NULL;
-    }
-
-  if (wp->post_remove)
-    wp->post_remove (wp);
-
-  check_if_busy (self);
-
-  if (!gst_pad_set_blocked_async (tee_peer_src_pad, FALSE, unblock_cb, NULL)) {
-    gst_object_unref (tee_peer_src_pad);
-  }
-
-  return FALSE;
-}
-
-static void
-_remove_defunct_preview_sink_callback (GstPad *tee_peer_src_pad G_GNUC_UNUSED,
-    gboolean blocked G_GNUC_UNUSED,
-    gpointer user_data)
-{
-  WindowPair *wp = user_data;
-
-  g_debug("Pad blocked, scheduling preview sink removal");
-  wp->idle_source_id = g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_preview_sink_idle_callback, wp, NULL);
-  g_main_context_wakeup (NULL);
-}
-
-static void
-_remove_defunct_preview_sink (WindowPair *wp)
-{
-  GstElement *tee = NULL;
-  GstPad *tee_sink_pad = NULL;
-  GstPad *tee_peer_src_pad = NULL;
-  TpStreamEngine *self = tp_stream_engine_get ();
-
-  if (wp->sink == NULL)
-    return;
-
-  tee = gst_bin_get_by_name (GST_BIN (self->priv->pipeline), "tee");
-  g_assert (tee);
-
-  tee_sink_pad = gst_element_get_pad (tee, "sink");
-  g_assert (tee_sink_pad);
-
-  gst_object_unref (tee);
-
-  tee_peer_src_pad = gst_pad_get_peer (tee_sink_pad);
-  g_assert (tee_peer_src_pad);
-
-  gst_object_unref (tee_sink_pad);
-
-  if (!gst_pad_set_blocked_async (tee_peer_src_pad, TRUE,
-          _remove_defunct_preview_sink_callback, wp))
-    {
-      g_warning ("Pad already blocked, "
-          "we will try calling the remove function directly");
-      _remove_defunct_preview_sink_idle_callback (wp);
-    }
-}
-
-static void
-_remove_defunct_output_sink (WindowPair *wp)
-{
-  TpStreamEngine *engine = tp_stream_engine_get ();
-  GError *error = NULL;
-
-  g_debug ("%s: removing sink for output window ID %u", G_STRFUNC,
-      wp->window_id);
-
-  if (!tp_stream_engine_video_stream_set_output_window (wp->stream, 0, &error))
-  {
-    g_debug ("%s: got error: %s", G_STRFUNC, error->message);
-    g_error_free (error);
-  }
-
-  check_if_busy (engine);
-}
-
-static void
-close_one_video_stream (TpStreamEngineChannel *chan G_GNUC_UNUSED,
+close_one_stream (TpStreamEngineChannel *chan G_GNUC_UNUSED,
                         guint stream_id G_GNUC_UNUSED,
                         TpStreamEngineStream *stream,
                         gpointer user_data)
 {
   const gchar *message = (const gchar *) user_data;
-  TpMediaStreamType media_type;
 
-  g_object_get (stream, "media-type", &media_type, NULL);
-
-  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-    tp_stream_engine_stream_error (stream, TP_MEDIA_STREAM_ERROR_UNKNOWN,
-        message);
+  tp_stream_engine_stream_error (stream, TP_MEDIA_STREAM_ERROR_UNKNOWN,
+      message);
 }
 
+
 static void
-close_all_video_streams (TpStreamEngine *self, const gchar *message)
+close_all_streams (TpStreamEngine *self, const gchar *message)
 {
   guint i;
 
-  g_debug ("Closing all video streams");
+  g_debug ("Closing all streams");
 
   for (i = 0; i < self->priv->channels->len; i++)
     {
       TpStreamEngineChannel *channel = g_ptr_array_index (self->priv->channels,
           i);
-
       tp_stream_engine_channel_foreach_stream (channel,
-          close_one_video_stream, (gpointer) message);
+          close_one_stream, (gpointer) message);
     }
-}
-
-static void
-bus_sync_message (GstBus *bus G_GNUC_UNUSED,
-    GstMessage *message, gpointer data)
-{
-  TpStreamEngine *engine = TP_STREAM_ENGINE (data);
-  GError *error = NULL;
-  gchar *error_string = NULL;
-
-  switch (GST_MESSAGE_TYPE (message))
-    {
-    case GST_MESSAGE_ERROR:
-      gst_message_parse_error (message, &error, &error_string);
-      if (GST_MESSAGE_SRC (message) ==
-            GST_OBJECT_CAST (engine->priv->videosrc) &&
-          error->domain == GST_STREAM_ERROR &&
-          error->code == GST_STREAM_ERROR_FAILED &&
-          strstr (error_string, "not-linked"))
-        {
-
-          engine->priv->linked = FALSE;
-          engine->priv->restart_source = TRUE;
-
-          g_debug ("Got non-linked error (got no preview windows or video "
-              "streams any more), unlinking the source to stop the EOS");
-          gst_element_unlink (engine->priv->videosrc,
-              engine->priv->videosrc_next);
-        }
-      g_free (error_string);
-      g_error_free (error);
-      break;
-    default:
-      break;
-    }
-
 }
 
 static gboolean
@@ -1338,15 +639,14 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
   TpStreamEnginePrivate *priv = engine->priv;
   GError *error = NULL;
   gchar *error_string, *tmp;
-  GSList *i;
-  guint ii;
+  guint i;
   GstElement *source = GST_ELEMENT (GST_MESSAGE_SRC (message));
   gchar *name = gst_element_get_name (source);
 
 
-  for (ii = 0; ii < priv->channels->len; ii++)
+  for (i = 0; i < priv->channels->len; i++)
     if (tp_stream_engine_channel_bus_message (
-            g_ptr_array_index (priv->channels, ii), message))
+            g_ptr_array_index (priv->channels, i), message))
       return TRUE;
 
   switch (GST_MESSAGE_TYPE (message))
@@ -1354,67 +654,16 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
       case GST_MESSAGE_ERROR:
         gst_message_parse_error (message, &error, &error_string);
 
-        if (strstr (error_string, "not-linked"))
-          {
-            g_debug ("%s: ignoring not-linked from %s: %s: %s (%d %d)",
-                G_STRFUNC, name, error->message, error_string,
-                error->domain, error->code);
-            g_free (error_string);
-            g_error_free (error);
-
-            if (priv->restart_source)
-              {
-                g_debug ("%s: setting video source to NULL state", G_STRFUNC);
-                gst_element_set_state (priv->videosrc, GST_STATE_NULL);
-              }
-
-            break;
-          }
-
         g_debug ("%s: got error from %s: %s: %s (%d %d), destroying video "
             "pipeline", G_STRFUNC, name, error->message, error_string,
             error->domain, error->code);
 
-        if (priv->force_fakesrc)
-          g_error ("Could not even start fakesrc");
-
         tmp = g_strdup_printf ("%s: %s", error->message, error_string);
+
+        close_all_streams (engine, error->message);
+
         g_free (error_string);
         g_error_free (error);
-
-        close_all_video_streams (engine, tmp);
-
-        g_free (tmp);
-
-        for (i = priv->output_windows; i; i = i->next)
-          {
-            WindowPair *wp = (WindowPair *) i->data;
-            if (wp->removing == FALSE)
-              {
-                wp->removing = TRUE;
-                wp->post_remove = _window_pairs_remove_cb;
-                _remove_defunct_output_sink (wp);
-              }
-          }
-
-        for (i = priv->preview_windows; i; i = i->next)
-          {
-            WindowPair *wp = (WindowPair *) i->data;
-            if (wp->removing == FALSE)
-              {
-                wp->removing = TRUE;
-                wp->post_remove = _window_pairs_remove_cb;
-                _remove_defunct_preview_sink (wp);
-              }
-          }
-
-        gst_element_set_state (priv->pipeline, GST_STATE_NULL);
-        gst_element_set_state (priv->videosrc, GST_STATE_NULL);
-        gst_object_unref (priv->pipeline);
-        priv->pipeline = NULL;
-        priv->videosrc = NULL;
-        priv->videosrc_next = NULL;
-
         break;
       case GST_MESSAGE_WARNING:
         {
@@ -1427,24 +676,6 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
           break;
         }
 
-        /*
-      case GST_MESSAGE_STATE_CHANGED:
-        {
-          GstState new_state;
-          GstState old_state;
-          GstState pending_state;
-          gst_message_parse_state_changed (message, &old_state, &new_state,
-              &pending_state);
-
-          g_debug ("State changed for %s refcount %d old:%s new:%s pending:%s",
-              name,
-              GST_OBJECT_REFCOUNT_VALUE (source),
-              gst_element_state_get_name (old_state),
-              gst_element_state_get_name (new_state),
-              gst_element_state_get_name (pending_state));
-          break;
-        }
-        */
       default:
         break;
     }
@@ -1456,10 +687,9 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
 static GstBusSyncReply
 bus_sync_handler (GstBus *bus G_GNUC_UNUSED, GstMessage *message, gpointer data)
 {
-  TpStreamEngine *engine = TP_STREAM_ENGINE (data);
-  TpStreamEnginePrivate *priv = engine->priv;
-  GstElement *element;
-  WindowPair *wp = NULL;
+  TpStreamEngine *self = TP_STREAM_ENGINE (data);
+  GList *item;
+  gboolean handled = FALSE;
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return GST_BUS_PASS;
@@ -1467,34 +697,41 @@ bus_sync_handler (GstBus *bus G_GNUC_UNUSED, GstMessage *message, gpointer data)
   if (!gst_structure_has_name (message->structure, "prepare-xwindow-id"))
     return GST_BUS_PASS;
 
-  element = GST_ELEMENT (GST_MESSAGE_SRC (message));
 
-  g_debug ("got prepare-xwindow-id message from %s",
-      gst_element_get_name (element));
-
-  while (element != NULL)
+  g_mutex_lock (self->priv->mutex);
+  for (item = g_list_first (self->priv->preview_sinks);
+       item && !handled;
+       item = g_list_next (item))
     {
-      wp = _window_pairs_find_by_sink (priv->output_windows, element);
+      TpStreamEngineVideoSink *preview = item->data;
 
-      if (wp == NULL)
-        wp = _window_pairs_find_by_sink (priv->preview_windows, element);
-
-      if (wp != NULL)
+      handled = tp_stream_engine_video_sink_bus_sync_message (preview, message);
+      if (handled)
         break;
-
-      element = GST_ELEMENT_PARENT (element);
     }
 
-  if (wp == NULL)
+  if (!handled)
+    {
+      for (item = g_list_first (self->priv->preview_sinks);
+           item && !handled;
+           item = g_list_next (item))
+        {
+          TpStreamEngineVideoSink *output = item->data;
+
+          handled = tp_stream_engine_video_sink_bus_sync_message (output, message);
+          if (handled)
+            break;
+        }
+    }
+  g_mutex_unlock (self->priv->mutex);
+
+  if (handled)
+    {
+      gst_message_unref (message);
+      return GST_BUS_DROP;
+    }
+  else
     return GST_BUS_PASS;
-
-  g_debug ("Giving video sink %p window id %d", wp->sink, wp->window_id);
-  gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (GST_MESSAGE_SRC (message)),
-      wp->window_id);
-
-  gst_message_unref (message);
-
-  return GST_BUS_DROP;
 }
 
 static void
@@ -1516,6 +753,8 @@ _create_pipeline (TpStreamEngine *self)
   GstElement *fakesink;
 
   priv->pipeline = gst_pipeline_new (NULL);
+
+  fs_element_added_notifier_add (priv->notifier, GST_BIN (priv->pipeline));
 
  try_again:
 
@@ -1629,6 +868,7 @@ _create_pipeline (TpStreamEngine *self)
   if (!gst_bin_add (GST_BIN (priv->pipeline), tee))
     g_error ("Could not add tee to pipeline");
 
+  self->priv->tee = tee;
 
 
 #ifndef MAEMO_OSSO_SUPPORT
@@ -1640,8 +880,6 @@ _create_pipeline (TpStreamEngine *self)
       g_debug ("linking videorate");
       gst_bin_add (GST_BIN (priv->pipeline), tmp);
       gst_element_link (videosrc, tmp);
-      if (priv->videosrc_next == NULL)
-        priv->videosrc_next = tmp;
       videosrc = tmp;
     }
 #endif
@@ -1652,8 +890,6 @@ _create_pipeline (TpStreamEngine *self)
       g_debug ("linking ffmpegcolorspace");
       gst_bin_add (GST_BIN (priv->pipeline), tmp);
       gst_element_link (videosrc, tmp);
-      if (priv->videosrc_next == NULL)
-        priv->videosrc_next = tmp;
       videosrc = tmp;
     }
 
@@ -1672,9 +908,6 @@ _create_pipeline (TpStreamEngine *self)
   ret = gst_bin_add (GST_BIN (priv->pipeline), capsfilter);
   g_assert (ret);
 
-  if (priv->videosrc_next == NULL)
-    priv->videosrc_next = capsfilter;
-
   g_object_set (capsfilter, "caps", filter, NULL);
   gst_caps_unref (filter);
 
@@ -1692,112 +925,45 @@ _create_pipeline (TpStreamEngine *self)
   gst_bus_set_sync_handler (bus, bus_sync_handler, self);
   priv->bus_async_source_id =
     gst_bus_add_watch (bus, bus_async_handler, self);
-  gst_bus_enable_sync_message_emission (bus);
-  priv->bus_sync_source_id = g_signal_connect (bus, "sync-message",
-      G_CALLBACK (bus_sync_message), self);
   gst_object_unref (bus);
 }
 
 
 static void
-tp_stream_engine_start_source (TpStreamEngine *self)
+_preview_window_plug_deleted (TpStreamEngineVideoPreview *preview,
+    gpointer user_data)
 {
-  GstStateChangeReturn state_ret;
-
-  g_debug ("Starting source");
-
-  self->priv->linked = TRUE;
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
 
   /*
-   * FIXME: We should instead get the pads, and check if they are already
-   * linked, then we'd be able to check properly for errors
+   * TODO:
+   *
+   * Pad block or stop source
+   * destroy preview
+   * and remove tee pad
    */
-  gst_element_link (self->priv->videosrc, self->priv->videosrc_next);
 
-  if (self->priv->force_fakesrc)
-    return;
+  tp_stream_engine_stop_source (self);
 
-  if (self->priv->restart_source)
-    {
-      self->priv->restart_source = FALSE;
-
-      state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_NULL);
-      if (state_ret == GST_STATE_CHANGE_ASYNC)
-        {
-          g_warning ("The video source tries to change state async to NULL");
-
-          state_ret = gst_element_get_state (self->priv->videosrc, NULL, NULL,
-              GST_SECOND);
-        }
-
-      if (state_ret == GST_STATE_CHANGE_ASYNC)
-        g_warning ("Could not change the video source to NULL in a reasonable"
-            " delay (1 second)");
-      else if (state_ret == GST_STATE_CHANGE_FAILURE)
-        g_warning ("Failure while stopping the video source");
-
-    }
-
-  state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_PLAYING);
-
-  if (state_ret == GST_STATE_CHANGE_FAILURE)
-    g_error ("Error starting the video source");
-}
-
-/*
- * tp_stream_engine_get_pipeline
- *
- * Return the GStreamer pipeline belonging to the stream engine. Caller does
- * not own a reference to the pipeline.
- */
-
-GstElement *
-tp_stream_engine_get_pipeline (TpStreamEngine *self)
-{
-  if (NULL == self->priv->pipeline)
-    {
-      _create_pipeline (self);
-    }
-
-  return self->priv->pipeline;
-}
-
-
-static gboolean
-_remove_defunct_sinks_idle_cb (WindowPair *wp)
-{
-  wp->idle_source_id = 0;
-
-  if (wp->stream)
-    _remove_defunct_output_sink (wp);
-  else
-    _remove_defunct_preview_sink (wp);
-
-  return FALSE;
+  check_if_busy (self);
 }
 
 /**
- * tp_stream_engine_add_preview_window
+ * tp_stream_engine_create_preview_window
  *
- * Implements DBus method AddPreviewWindow
+ * Implements DBus method CreatePreviewWindow
  * on interface org.freedesktop.Telepathy.StreamEngine
  */
 static void
-tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
-                                     guint window_id,
-                                     DBusGMethodInvocation *context)
+tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
+                                        DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEnginePrivate *priv = self->priv;
-  WindowPair *wp;
   GError *error = NULL;
-
-  g_debug ("%s: called for %u", G_STRFUNC, window_id);
-
-  if (priv->pipeline == NULL)
-    {
-      _create_pipeline (self);
-    }
+  GstPad *pad;
+  TpStreamEngineVideoPreview *preview;
+  guint window_id;
 
   if (priv->force_fakesrc)
     {
@@ -1810,287 +976,34 @@ tp_stream_engine_add_preview_window (StreamEngineSvcStreamEngine *iface,
       return;
     }
 
-  wp = _window_pairs_find_by_window_id (priv->preview_windows, window_id);
+  pad = gst_element_get_request_pad (self->priv->tee, "src%d");
 
-  if (wp != NULL)
-    {
-      if (wp->removing && wp->post_remove == _window_pairs_remove_cb)
-        {
-          g_debug ("window ID %u is already a preview window being removed, "
-              "will be re-added", window_id);
-          wp->post_remove = _window_pairs_readd_cb;
-          stream_engine_svc_stream_engine_return_from_add_preview_window
-            (context);
-        }
-      else
-        {
-          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-              "window ID %u is already a preview window", window_id);
-          g_debug ("%s", error->message);
+  preview = tp_stream_engine_video_preview_new (GST_BIN (self->priv->pipeline),
+      pad, &error);
 
-          dbus_g_method_return_error (context, error);
-          g_error_free (error);
-        }
-
-      return;
-    }
-
-  g_debug ("%s: pipeline playing, adding now", G_STRFUNC);
-  _window_pairs_add (&(priv->preview_windows), NULL, NULL, window_id);
-  if (_add_preview_window (self, window_id, &error))
-    {
-      stream_engine_svc_stream_engine_return_from_add_preview_window (context);
-    }
-  else
+  if (!preview)
     {
       dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-}
-
-static gboolean
-bad_window_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
-               guint window_id,
-               gpointer data)
-{
-  TpStreamEngine *engine = data;
-  WindowPair *wp;
-
-  /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
-
-  wp = _window_pairs_find_by_window_id (engine->priv->preview_windows,
-      window_id);
-
-  if (wp == NULL)
-    wp = _window_pairs_find_by_window_id (engine->priv->output_windows,
-        window_id);
-
-  if (wp == NULL)
-    {
-      g_debug ("%s: BadWindow(%u) not for a preview or output window, "
-          "ignoring", G_STRFUNC, window_id);
-      return TRUE;
-    }
-
-  if (wp->removing)
-    {
-      g_debug ("%s: BadWindow(%u) for a %s window being removed, ignoring",
-          G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
-      return TRUE;
-    }
-
-  g_debug ("%s: BadWindow(%u) for a %s window, scheduling sink removal",
-      G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
-
-  /* set removing to TRUE so that we know this window ID is being removed and X
-   * errors can be ignored */
-  wp->removing = TRUE;
-  wp->post_remove = _window_pairs_remove_cb;
-
-  wp->idle_source_id = g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_sinks_idle_cb, wp, NULL);
-  g_main_context_wakeup (NULL);
-
-  return TRUE;
-}
-
-
-static gboolean
-bad_drawable_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
-    guint window_id,
-    gpointer data)
-{
-  TpStreamEngine *engine = data;
-  WindowPair *wp;
-
-  /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
-
-  wp = _window_pairs_find_by_window_id (engine->priv->preview_windows,
-      window_id);
-
-  if (wp == NULL)
-    wp = _window_pairs_find_by_window_id (engine->priv->output_windows,
-        window_id);
-
-  if (wp == NULL)
-    {
-      g_debug ("%s: BadDrawable(%u) not for a preview or output window, "
-          "ignoring", G_STRFUNC, window_id);
-      return TRUE;
-    }
-
-  if (wp->removing)
-    {
-      g_debug ("%s: BadDrawable(%u) for a %s window being removed, ignoring",
-          G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
-      return TRUE;
-    }
-
-  g_debug ("%s: BadDrawable(%u) for a %s window, scheduling sink removal",
-      G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
-
-  /* set removing to TRUE so that we know this window ID is being removed and X
-   * errors can be ignored */
-  wp->removing = TRUE;
-  wp->post_remove = _window_pairs_remove_cb;
-
-  wp->idle_source_id = g_idle_add_full (G_PRIORITY_HIGH, (GSourceFunc) _remove_defunct_sinks_idle_cb, wp, NULL);
-  g_main_context_wakeup (NULL);
-
-  return TRUE;
-}
-
-
-static gboolean
-bad_gc_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
-              guint gc_id,
-              gpointer data)
-{
-  TpStreamEngine *engine = data;
-  WindowPair *wp;
-
-  /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
-
-  wp = _window_pairs_find_by_removing (engine->priv->preview_windows, TRUE);
-
-  if (wp == NULL)
-    wp = _window_pairs_find_by_removing (engine->priv->output_windows, TRUE);
-
-  if (wp == NULL)
-    {
-      g_debug ("%s: BadGC(%u) when no preview or output windows are being "
-          "removed, not handling", G_STRFUNC, gc_id);
-      return FALSE;
-    }
-
-  g_debug ("%s: BadGC(%u) when a preview or output window is being removed, "
-      "ignoring", G_STRFUNC, gc_id);
-
-  return TRUE;
-}
-
-
-static gboolean
-bad_value_cb (TpStreamEngineXErrorHandler *handler G_GNUC_UNUSED,
-              guint window_id,
-              gpointer data)
-{
-  TpStreamEngine *engine = data;
-  WindowPair *wp;
-
-  /* BEWARE: THIS CALLBACK IS NOT CALLED FROM THE MAINLOOP THREAD */
-
-  wp = _window_pairs_find_by_window_id (engine->priv->preview_windows,
-      window_id);
-
-  if (wp == NULL)
-    wp = _window_pairs_find_by_window_id (engine->priv->output_windows,
-        window_id);
-
-  if (wp == NULL)
-    {
-      g_debug ("%s: BadValue(%u) not for a preview or output window, not "
-          "handling", G_STRFUNC, window_id);
-      return FALSE;
-    }
-
-  g_debug ("%s: BadValue(%u) for a %s window being removed, ignoring",
-      G_STRFUNC, window_id, wp->stream == NULL ? "preview" : "output");
-
-  return TRUE;
-}
-
-
-/**
- * tp_stream_engine_remove_preview_window
- *
- * Implements DBus method RemovePreviewWindow
- * on interface org.freedesktop.Telepathy.StreamEngine
- */
-static void
-tp_stream_engine_remove_preview_window (StreamEngineSvcStreamEngine *iface,
-                                        guint window_id,
-                                        DBusGMethodInvocation *context)
-{
-  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
-  WindowPair *wp;
-
-  g_debug ("%s: called for %u", G_STRFUNC, window_id);
-
-  wp = _window_pairs_find_by_window_id (self->priv->preview_windows,
-      window_id);
-
-  if (wp == NULL)
-    {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "Window ID not found" };
-
-      dbus_g_method_return_error (context, &e);
+      g_clear_error (&error);
       return;
     }
+  g_signal_connect (preview, "plug-deleted",
+      G_CALLBACK (_preview_window_plug_deleted), self);
 
-  if (wp->context)
-    {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-                   "Window ID has already been removed" };
-
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
-
-  if (wp->removing)
-    {
-      if (wp->post_remove == _window_pairs_readd_cb)
-        wp->post_remove = _window_pairs_remove_cb;
-
-      /* already being removed, nothing to do */
-      goto success;
-    }
-
-  if (wp->created == FALSE)
-    {
-      g_debug ("Window not created yet, can remove right away");
-      _window_pairs_remove (&(self->priv->preview_windows), wp);
-      goto success;
-    }
-
-  wp->removing = TRUE;
-  wp->post_remove = _window_pairs_remove_cb;
-  wp->context = context;
-
-  _remove_defunct_preview_sink (wp);
-
-  return;
-
-success:
-  stream_engine_svc_stream_engine_return_from_remove_preview_window (context);
-}
+  g_mutex_lock (self->priv->mutex);
+  self->priv->preview_sinks = g_list_prepend (self->priv->preview_sinks,
+      preview);
+  g_mutex_unlock (self->priv->mutex);
 
 
-gboolean
-tp_stream_engine_add_output_window (TpStreamEngine *self,
-                                    TpStreamEngineVideoStream *stream,
-                                    GstElement *sink,
-                                    guint window_id)
-{
-  _window_pairs_add (&(self->priv->output_windows), stream, sink, window_id);
+  g_object_get (preview, "window-id", &window_id, NULL);
 
-  return TRUE;
-}
+  stream_engine_svc_stream_engine_return_from_create_preview_window (context,
+      window_id);
 
+  tp_stream_engine_start_source (self);
 
-gboolean
-tp_stream_engine_remove_output_window (TpStreamEngine *self,
-                                       guint window_id)
-{
-  WindowPair *wp;
-
-  wp = _window_pairs_find_by_window_id (self->priv->output_windows, window_id);
-
-  if (wp == NULL)
-    return FALSE;
-
-  _window_pairs_remove (&(self->priv->output_windows), wp);
-
-  return TRUE;
+  g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
 }
 
 
@@ -2268,7 +1181,7 @@ tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
 
   audiostream = g_object_get_data ((GObject*) stream, "se-stream");
 
-  g_object_get (audiostream, "input-mute", mute_state, NULL);
+  g_object_set (audiostream, "input-mute", mute_state, NULL);
 
   stream_engine_svc_stream_engine_return_from_mute_input (context);
 }
@@ -2318,7 +1231,7 @@ tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
 
   audiostream = g_object_get_data ((GObject*) stream, "se-stream");
 
-  g_object_get (audiostream, "output-mute", mute_state, NULL);
+  g_object_set (audiostream, "output-mute", mute_state, NULL);
 
   stream_engine_svc_stream_engine_return_from_mute_output (context);
 }
@@ -2370,53 +1283,105 @@ tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
 
   audiostream = g_object_get_data ((GObject*) stream, "se-stream");
 
-  g_object_get (audiostream, "output-volume", doublevolume, NULL);
+  g_object_set (audiostream, "output-volume", doublevolume, NULL);
 
   stream_engine_svc_stream_engine_return_from_mute_output (context);
 }
 
+
+
 /**
- * tp_stream_engine_set_output_window
+ * tp_stream_engine_set_input_volume
+ *
+ * Implements DBus method SetInputVolume
+ * on interface org.freedesktop.Telepathy.StreamEngine
+ */
+static void
+tp_stream_engine_set_input_volume (StreamEngineSvcStreamEngine *iface,
+                                    const gchar *channel_path,
+                                    guint stream_id,
+                                    guint volume,
+                                    DBusGMethodInvocation *context)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (iface);
+  TpStreamEngineStream *stream;
+  GError *error = NULL;
+  TpMediaStreamType media_type;
+  TpStreamEngineAudioStream *audiostream;
+  gdouble doublevolume = volume / 100.0;
+
+  stream = _lookup_stream (self, channel_path, stream_id, &error);
+
+
+  if (stream == NULL)
+    {
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Stream does not exist");
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  g_object_get (stream, "media-type", &media_type, NULL);
+
+  if (media_type != TP_MEDIA_STREAM_TYPE_AUDIO)
+    {
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "MuteInput can only be called on audio streams");
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  audiostream = g_object_get_data ((GObject*) stream, "se-stream");
+
+  g_object_set (audiostream, "input-volume", doublevolume, NULL);
+
+  stream_engine_svc_stream_engine_return_from_mute_input (context);
+}
+
+/**
+ * tp_stream_engine_get_output_window
  *
  * Implements DBus method SetOutputWindow
  * on interface org.freedesktop.Telepathy.StreamEngine
  */
 static void
-tp_stream_engine_set_output_window (StreamEngineSvcStreamEngine *iface,
+tp_stream_engine_get_output_window (StreamEngineSvcStreamEngine *iface,
                                     const gchar *channel_path,
                                     guint stream_id,
-                                    guint window_id,
                                     DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
   GError *error = NULL;
 
-  g_debug ("%s: channel_path=%s, stream_id=%u, window_id=%u", G_STRFUNC,
-      channel_path, stream_id, window_id);
+  g_debug ("%s: channel_path=%s, stream_id=%u", G_STRFUNC, channel_path,
+      stream_id);
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
 
-  if (stream != NULL)
+  if (stream)
     {
-      if (!TP_STREAM_ENGINE_IS_VIDEO_STREAM (stream))
-        error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "SetOutputWindow can only be called on video streams");
-      else
-        tp_stream_engine_video_stream_set_output_window (
-            TP_STREAM_ENGINE_VIDEO_STREAM (stream), window_id, &error);
-    }
+      guint window_id;
+      TpStreamEngineVideoSink *videosink;
 
-  if (error)
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
+      videosink = TP_STREAM_ENGINE_VIDEO_SINK (
+          g_object_get_data ((GObject*) stream, "se-stream"));
+
+      g_object_get (videosink, "window-id", &window_id, NULL);
+
+      g_debug ("Returning window id %u", window_id);
+
+      stream_engine_svc_stream_engine_return_from_get_output_window (context,
+          window_id);
     }
   else
     {
-      stream_engine_svc_stream_engine_return_from_set_output_window (context);
+      GError error = {TP_ERRORS, 0, "No stream"};
+      dbus_g_method_return_error (context, &error);
     }
- }
+}
 
 /*
  * tp_stream_engine_get
@@ -2462,11 +1427,11 @@ se_iface_init (gpointer iface, gpointer data G_GNUC_UNUSED)
 #define IMPLEMENT(x) stream_engine_svc_stream_engine_implement_##x (\
     klass, tp_stream_engine_##x)
   IMPLEMENT (set_output_volume);
+  IMPLEMENT (set_input_volume);
   IMPLEMENT (mute_input);
   IMPLEMENT (mute_output);
-  IMPLEMENT (set_output_window);
-  IMPLEMENT (add_preview_window);
-  IMPLEMENT (remove_preview_window);
+  IMPLEMENT (get_output_window);
+  IMPLEMENT (create_preview_window);
   IMPLEMENT (shutdown);
 #undef IMPLEMENT
 }

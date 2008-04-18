@@ -58,6 +58,8 @@ struct _TpStreamEngineAudioStreamPrivate
   GstElement *bin;
 
   gulong src_pad_added_handler_id;
+  gulong request_resource_handler_id;
+  gulong free_resource_handler_id;
 
   GError *construction_error;
 
@@ -116,7 +118,33 @@ tp_stream_engine_audio_stream_init (TpStreamEngineAudioStream *self)
   self->priv->element_added_notifier = fs_element_added_notifier_new ();
 
   g_signal_connect (self->priv->element_added_notifier,
-      "element-added", G_CALLBACK (set_audio_props), NULL);
+      "element-added", G_CALLBACK (set_audio_props), self);
+}
+
+
+static void
+stream_free_resource (TpStreamEngineStream *stream,
+    TpMediaStreamDirection dir,
+    gpointer user_data)
+{
+  TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
+
+  if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
+    gst_element_set_state (self->priv->src, GST_STATE_PLAYING);
+}
+
+static gboolean
+stream_request_resource (TpStreamEngineStream *stream,
+    TpMediaStreamDirection dir,
+    gpointer user_data)
+{
+ TpStreamEngineAudioStream  *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
+
+  if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
+    return (gst_element_set_state (self->priv->src, GST_STATE_PLAYING) !=
+        GST_STATE_CHANGE_FAILURE);
+  else
+    return TRUE;
 }
 
 
@@ -166,6 +194,8 @@ tp_stream_engine_audio_stream_constructor (GType type,
     }
   self->priv->src = src;
 
+  gst_element_set_locked_state (src, TRUE);
+
   if (!gst_bin_add (GST_BIN (self->priv->bin), sink))
     {
       gst_object_unref (sink);
@@ -204,7 +234,12 @@ tp_stream_engine_audio_stream_constructor (GType type,
   gst_object_unref (sink_pad);
 
   gst_element_set_state (self->priv->sink, GST_STATE_PLAYING);
-  gst_element_set_state (self->priv->src, GST_STATE_PLAYING);
+
+  self->priv->request_resource_handler_id = g_signal_connect (
+      self->priv->stream, "request-resource",
+      G_CALLBACK (stream_request_resource), self);
+  self->priv->free_resource_handler_id = g_signal_connect (self->priv->stream,
+      "free-resource", G_CALLBACK (stream_free_resource), self);
 
   self->priv->src_pad_added_handler_id = g_signal_connect (self->priv->stream,
       "src-pad-added", G_CALLBACK (src_pad_added_cb), self);
@@ -231,6 +266,20 @@ tp_stream_engine_audio_stream_dispose (GObject *object)
       g_signal_handler_disconnect (self->priv->stream,
           self->priv->src_pad_added_handler_id);
       self->priv->src_pad_added_handler_id = 0;
+    }
+
+  if (self->priv->request_resource_handler_id)
+    {
+      g_signal_handler_disconnect (self->priv->stream,
+          self->priv->request_resource_handler_id);
+      self->priv->request_resource_handler_id = 0;
+    }
+
+  if (self->priv->free_resource_handler_id)
+    {
+      g_signal_handler_disconnect (self->priv->stream,
+          self->priv->free_resource_handler_id);
+      self->priv->free_resource_handler_id = 0;
     }
 
   if (self->priv->element_added_notifier)
@@ -380,6 +429,7 @@ tp_stream_engine_audio_stream_set_property  (GObject *object,
           "volume::mute", value);
       break;
     case PROP_INPUT_VOLUME:
+      g_debug ("set input volume");
       gst_child_proxy_set_property (GST_OBJECT (self->priv->src),
           "volume::volume", value);
       break;
@@ -437,21 +487,26 @@ set_audio_props (FsElementAddedNotifier *notifier,
     GstElement *element,
     gpointer user_data)
 {
-  if (g_object_has_property ((GObject *) element, "blocksize"))
-    g_object_set ((GObject *) element, "blocksize", 320, NULL);
+  TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
 
-  if (g_object_has_property ((GObject *) element, "latency-time"))
-    g_object_set ((GObject *) element,
-        "latency-time", G_GINT64_CONSTANT (20000),
+  if (g_object_has_property ((GObject *) element, "blocksize"))
+    g_object_set (element, "blocksize", 320, NULL);
+
+  if (g_object_has_property ((GObject *) element, "latency-time") &&
+      gst_object_has_ancestor ((GstObject * )element,
+          (GstObject *) self->priv->sink))
+    g_object_set (element, "latency-time", G_GINT64_CONSTANT (20000),
         NULL);
   if (g_object_has_property ((GObject *) element, "is-live"))
-    g_object_set ((GObject *) element, "is-live", TRUE, NULL);
+    g_object_set (element, "is-live", TRUE, NULL);
 
-  if (g_object_has_property ((GObject *) element, "buffer-time"))
-    g_object_set ((GObject *) element, "buffer-time", 50000, NULL);
+  if (g_object_has_property ((GObject *) element, "buffer-time") &&
+      gst_object_has_ancestor ((GstObject *) element,
+          (GstObject *) self->priv->src))
+    g_object_set (element, "buffer-time", G_GINT64_CONSTANT (100000), NULL);
 
   if (g_object_has_property ((GObject *) element, "profile"))
-    g_object_set ((GObject *) element, "profile", 2 /* chat */ , NULL);
+    g_object_set (element, "profile", 2 /* chat */ , NULL);
 }
 
 static GstElement *

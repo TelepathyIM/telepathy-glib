@@ -71,11 +71,7 @@ TpStreamEngine *
 tp_stream_engine_get (void);
 
 GstElement *
-tp_stream_engine_make_video_sink (TpStreamEngine *obj,
-                                  gboolean is_preview);
-
-GstElement *
-tp_stream_engine_get_pipeline (TpStreamEngine *obj);
+tp_stream_engine_make_video_sink (gboolean is_preview);
 
 gboolean
 tp_stream_engine_add_output_window (TpStreamEngine *obj,

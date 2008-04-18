@@ -6,6 +6,11 @@
       <arg direction="in" type="u" name="stream_id" />
       <arg direction="in" type="u" name="volume" />
     </method>
+    <method name="SetInputVolume">
+      <arg direction="in" type="o" name="channel_path" />
+      <arg direction="in" type="u" name="stream_id" />
+      <arg direction="in" type="u" name="volume" />
+    </method>
     <method name="MuteInput">
       <arg direction="in" type="o" name="channel_path" />
       <arg direction="in" type="u" name="stream_id" />
@@ -16,27 +21,18 @@
       <arg direction="in" type="u" name="stream_id" />
       <arg direction="in" type="b" name="mute_state" />
     </method>
-    <method name="SetOutputWindow">
+    <method name="GetOutputWindow">
       <arg direction="in" type="o" name="channel_path" />
       <arg direction="in" type="u" name="stream_id" />
-      <arg direction="in" type="u" name="window" />
+      <arg direction="out" type="u" name="window" />
     </method>
-    <method name="AddPreviewWindow">
-      <arg direction="in" type="u" name="window" />
-    </method>
-    <method name="RemovePreviewWindow">
-      <arg direction="in" type="u" name="window" />
+    <method name="CreatePreviewWindow">
+      <arg direction="out" type="u" name="window" />
     </method>
     <signal name="Receiving">
       <arg type="o" name="channel_path" />
       <arg type="u" name="stream_id" />
       <arg type="b" name="state" />
-    </signal>
-    <signal name="StreamStateChanged">
-      <arg type="o" name="channel_path" />
-      <arg type="u" name="stream_id" />
-      <arg type="u" name="state" />
-      <arg type="u" name="direction" />
     </signal>
     <method name="Shutdown">
     </method>

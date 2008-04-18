@@ -38,6 +38,8 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 
+#include <gtk/gtk.h>
+
 #include <dbus/dbus-glib.h>
 #include <gst/gst.h>
 
@@ -169,12 +171,14 @@ dump_dot_file(gpointer data)
   TpStreamEngine *engine = tp_stream_engine_get ();
   GstElement *pipeline = NULL;
 
-  if (engine)
-    tp_stream_engine_get_pipeline (engine);
+  g_object_get (engine, "pipeline", &pipeline, NULL);
 
   if (pipeline)
-    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
-        GST_DEBUG_GRAPH_SHOW_ALL, "stream-engine-pipeline");
+    {
+      GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
+          GST_DEBUG_GRAPH_SHOW_ALL, "stream-engine-pipeline");
+      gst_object_unref (pipeline);
+    }
 
   return FALSE;
 }
@@ -223,6 +227,7 @@ int main(int argc, char **argv)
 {
 
   gst_init (&argc, &argv);
+  gtk_init (&argc, &argv);
 
   tp_debug_divert_messages (g_getenv ("STREAM_ENGINE_LOGFILE"));
   tp_debug_set_flags (g_getenv ("STREAM_ENGINE_DEBUG"));

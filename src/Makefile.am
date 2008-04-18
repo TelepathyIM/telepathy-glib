@@ -17,12 +17,14 @@ libstreamengine_convenience_la_SOURCES = \
 	tp-stream-engine.c \
 	util.h \
 	util.c \
-	xerrorhandler.h \
-	xerrorhandler.c \
 	audiostream.c \
 	audiostream.h \
 	videostream.c \
 	videostream.h \
+	videosink.c \
+	videosink.h \
+	videopreview.c \
+	videopreview.h \
 	tp-stream-engine-signals-marshal.list
 
 nodist_libstreamengine_convenience_la_SOURCES = \

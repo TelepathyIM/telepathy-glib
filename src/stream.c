@@ -72,10 +72,9 @@ struct _TpStreamEngineStreamPrivate
 
   TpMediaStreamHandler *stream_handler_proxy;
 
-  FsStreamDirection max_direction;
   FsStreamDirection desired_direction;
   gboolean held;
-  gboolean has_resource;
+  TpMediaStreamDirection has_resource;
 
   GMutex *mutex;
 
@@ -113,8 +112,10 @@ enum
 
 
 static gboolean tp_stream_engine_stream_request_resource (
-  TpStreamEngineStream *self);
-static void tp_stream_engine_stream_free_resource (TpStreamEngineStream *self);
+    TpStreamEngineStream *self,
+    TpMediaStreamDirection dir);
+static void tp_stream_engine_stream_free_resource (TpStreamEngineStream *self,
+    TpMediaStreamDirection dir);
 
 static void add_remote_candidate (TpMediaStreamHandler *proxy,
     const gchar *candidate, const GPtrArray *transports,
@@ -176,7 +177,7 @@ tp_stream_engine_stream_init (TpStreamEngineStream *self)
       TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamPrivate);
 
   self->priv = priv;
-  priv->has_resource = FALSE;
+  priv->has_resource = TP_MEDIA_STREAM_DIRECTION_NONE;
 
   priv->mutex = g_mutex_new ();
 }
@@ -276,6 +277,7 @@ tp_stream_engine_stream_constructor (GType type,
   GPtrArray *tpcodecs = NULL;
   gchar *transmitter;
   guint n_args = 0;
+  GList *preferred_local_candidates = NULL;
   GParameter params[4];
 
   obj = G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->
@@ -325,6 +327,15 @@ tp_stream_engine_stream_constructor (GType type,
   else
     {
       transmitter = "rawudp";
+
+      if (stream->priv->media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
+        preferred_local_candidates = g_list_prepend (NULL,
+            fs_candidate_new (NULL, FS_COMPONENT_RTP, FS_CANDIDATE_TYPE_HOST,
+                FS_NETWORK_PROTOCOL_UDP, NULL, 7078));
+      else if (stream->priv->media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+        preferred_local_candidates = g_list_prepend (NULL,
+            fs_candidate_new (NULL, FS_COMPONENT_RTP, FS_CANDIDATE_TYPE_HOST,
+                FS_NETWORK_PROTOCOL_UDP, NULL, 9078));
     }
 
   if (stream->priv->nat_props &&
@@ -358,6 +369,15 @@ tp_stream_engine_stream_constructor (GType type,
           g_value_set_uint (&params[n_args].value, conn_timeout);
           n_args++;
         }
+
+      if (preferred_local_candidates)
+        {
+          params[n_args].name = "preferred-local-candidates";
+          g_value_init (&params[n_args].value, FS_TYPE_CANDIDATE_LIST);
+          g_value_take_boxed (&params[n_args].value,
+              preferred_local_candidates);
+          n_args++;
+        }
     }
 
   stream->priv->fs_session = fs_conference_new_session (
@@ -379,9 +399,9 @@ tp_stream_engine_stream_constructor (GType type,
   if (!stream->priv->fs_stream)
     return obj;
 
-  if (g_object_has_property ((GObject *) stream->priv->fs_stream,
+  if (g_object_has_property ((GObject *) stream->priv->fs_session,
           "no-rtcp-timeout"))
-    g_object_set (stream->priv->fs_stream, "no-rtcp-timeout", 0, NULL);
+    g_object_set (stream->priv->fs_session, "no-rtcp-timeout", 0, NULL);
 
   g_signal_connect (stream->priv->fs_stream, "src-pad-added",
       G_CALLBACK (cb_fs_stream_src_pad_added), stream);
@@ -431,11 +451,8 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       g_object_unref (priv->fs_stream);
 
-      /* Free resources used by this stream */
-      if (priv->has_resource == TRUE)
-        {
-          g_signal_emit (stream, signals[FREE_RESOURCE], 0);
-        }
+      tp_stream_engine_stream_free_resource (stream,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
 
       priv->fs_stream = NULL;
     }
@@ -587,8 +604,8 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   g_signal_accumulator_true_handled, NULL,
-                  tp_stream_engine_marshal_BOOLEAN__VOID,
-                  G_TYPE_BOOLEAN, 0);
+                  tp_stream_engine_marshal_BOOLEAN__UINT,
+                  G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   signals[FREE_RESOURCE] =
     g_signal_new ("free-resource",
@@ -596,8 +613,8 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
+                  g_cclosure_marshal_VOID__UINT,
+                  G_TYPE_NONE, 1, G_TYPE_UINT);
 
   signals[SRC_PAD_ADDED] =
     g_signal_new ("src-pad-added",
@@ -912,7 +929,7 @@ remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
 
   tp_stream_engine_stream_error (self, 0,
-      "RemoveRemoteCandidate is NOT implemented");
+      "RemoveRemoteCandidate is NOT implemented by plugin");
 }
 
 static void
@@ -931,7 +948,7 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           &error))
     {
       if (error->domain == FS_ERROR && error->code == FS_ERROR_NOT_IMPLEMENTED)
-        WARNING (self, "Called not implemented SetActiveCandidatePair");
+        DEBUG (self, "Called not implemented SetActiveCandidatePair");
       else
         tp_stream_engine_stream_error (self, 0, error->message);
     }
@@ -1107,7 +1124,8 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   if (play)
     {
       if (!self->priv->held) {
-        if (tp_stream_engine_stream_request_resource (self))
+        if (tp_stream_engine_stream_request_resource (self,
+                TP_MEDIA_STREAM_DIRECTION_RECEIVE))
           {
             g_object_set (self->priv->fs_stream,
                 "direction", current_direction | FS_DIRECTION_RECV,
@@ -1123,7 +1141,8 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else
     {
       if (!self->priv->held) {
-        tp_stream_engine_stream_free_resource (self);
+        tp_stream_engine_stream_free_resource (self,
+            TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
         g_object_set (self->priv->fs_stream,
             "direction", current_direction & ~(FS_DIRECTION_RECV),
@@ -1141,6 +1160,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 {
   TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
   FsStreamDirection current_direction;
+  gboolean sending;
 
   g_assert (self->priv->fs_stream != NULL);
 
@@ -1148,38 +1168,61 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   g_object_get (self->priv->fs_stream, "direction", &current_direction, NULL);
 
+
+  sending = (current_direction & FS_DIRECTION_SEND) != 0;
+
+  /* We're already in the right state */
+  if (send == sending)
+    return;
+
   if (send)
     {
-      if (!self->priv->held)
-        g_object_set (self->priv->fs_stream,
-            "direction", current_direction | FS_DIRECTION_SEND,
-            NULL);
+      if (!self->priv->held) {
+        if (tp_stream_engine_stream_request_resource (self,
+                TP_MEDIA_STREAM_DIRECTION_SEND))
+          {
+            g_object_set (self->priv->fs_stream,
+                "direction", current_direction | FS_DIRECTION_SEND,
+                NULL);
+          }
+        else
+          {
+            tp_stream_engine_stream_error (self, 0, "Resource Unavailable");
+          }
+      }
       self->priv->desired_direction |= FS_DIRECTION_SEND;
     }
   else
     {
-      if (!self->priv->held)
+      if (!self->priv->held) {
+        tp_stream_engine_stream_free_resource (self,
+            TP_MEDIA_STREAM_DIRECTION_RECEIVE);
+
         g_object_set (self->priv->fs_stream,
             "direction", current_direction & ~(FS_DIRECTION_SEND),
             NULL);
+      }
       self->priv->desired_direction &= ~(FS_DIRECTION_SEND);
     }
 }
 
 static gboolean
-tp_stream_engine_stream_request_resource (TpStreamEngineStream *self)
+tp_stream_engine_stream_request_resource (TpStreamEngineStream *self,
+                                          TpMediaStreamDirection dir)
 {
   gboolean resource_available = FALSE;
 
-  if (self->priv->has_resource)
+  if ((self->priv->has_resource & dir) == dir)
     return TRUE;
 
-  g_signal_emit (self, signals[REQUEST_RESOURCE], 0, &resource_available);
+  g_signal_emit (self, signals[REQUEST_RESOURCE], 0,
+      dir & ~self->priv->has_resource,
+      &resource_available);
 
   /* Make sure we have access to the resource */
   if (resource_available)
     {
-      self->priv->has_resource = TRUE;
+      self->priv->has_resource |= dir;
       return TRUE;
     }
   else
@@ -1189,13 +1232,15 @@ tp_stream_engine_stream_request_resource (TpStreamEngineStream *self)
 }
 
 static void
-tp_stream_engine_stream_free_resource (TpStreamEngineStream *self)
+tp_stream_engine_stream_free_resource (TpStreamEngineStream *self,
+    TpMediaStreamDirection dir)
 {
-  if (!self->priv->has_resource)
+  if ((self->priv->has_resource & dir) == 0)
     return;
 
-  g_signal_emit (self, signals[FREE_RESOURCE], 0);
-  self->priv->has_resource = FALSE;
+  g_signal_emit (self, signals[FREE_RESOURCE], 0,
+      self->priv->has_resource & dir);
+  self->priv->has_resource &= ~dir;
 }
 
 static void
@@ -1217,7 +1262,8 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
             "direction", FS_DIRECTION_NONE,
             NULL);
 
-       tp_stream_engine_stream_free_resource (self);
+       tp_stream_engine_stream_free_resource (self,
+                TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
        /* Send success message */
        if (self->priv->stream_handler_proxy)
          {
@@ -1229,7 +1275,8 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
   else
     {
-      if (tp_stream_engine_stream_request_resource (self))
+      if (tp_stream_engine_stream_request_resource (self,
+              self->priv->desired_direction))
         {
            g_object_set (self->priv->fs_stream,
                "direction", self->priv->desired_direction,

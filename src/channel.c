@@ -886,6 +886,9 @@ tp_stream_engine_channel_bus_message (TpStreamEngineChannel *channel,
   guint i;
   gboolean ret = FALSE;
 
+  if (channel->priv->sessions == NULL)
+    return FALSE;
+
   for (i = 0; i < channel->priv->sessions->len; i++)
     {
       TpStreamEngineSession *session = g_ptr_array_index (

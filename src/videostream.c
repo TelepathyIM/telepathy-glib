@@ -24,10 +24,7 @@
 
 #include <string.h>
 
-#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/interfaces.h>
 
 #include <gst/interfaces/xoverlay.h>
 
@@ -37,7 +34,7 @@
 #include "util.h"
 
 G_DEFINE_TYPE (TpStreamEngineVideoStream, tp_stream_engine_video_stream,
-    TP_STREAM_ENGINE_TYPE_STREAM);
+    TP_STREAM_ENGINE_TYPE_VIDEO_SINK);
 
 #define DEBUG(stream, format, ...) \
   g_debug ("stream %d (video) %s: " format, \
@@ -47,30 +44,53 @@ G_DEFINE_TYPE (TpStreamEngineVideoStream, tp_stream_engine_video_stream,
 
 struct _TpStreamEngineVideoStreamPrivate
 {
+  TpStreamEngineStream *stream;
+
+  gulong src_pad_added_handler_id;
+
+  GError *construction_error;
+
+  GstPad *pad;
+
+  GstElement *bin;
+
+  GstElement *sink;
+
   GstElement *queue;
 
-  guint output_window_id;
+  GMutex *mutex;
+
+  /* Everything below this line is protected by the mutex */
+  guint error_idle_id;
 };
 
-
+/* properties */
 enum
 {
-  LINKED,
-  SIGNAL_COUNT
+  PROP_0,
+  PROP_STREAM,
+  PROP_BIN,
+  PROP_PAD,
 };
 
-static guint signals[SIGNAL_COUNT] = {0};
-
 
 static GstElement *
-tp_stream_engine_video_stream_make_src (TpStreamEngineStream *stream);
-static GstElement *
-tp_stream_engine_video_stream_make_sink (TpStreamEngineStream *stream);
+tp_stream_engine_video_stream_make_sink (TpStreamEngineVideoStream *stream);
 
-static void
-tee_src_pad_blocked (GstPad *pad, gboolean blocked, gpointer user_data);
-static void
-_remove_video_sink (TpStreamEngineVideoStream *videostream, GstElement *sink);
+static void src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad,
+    FsCodec *codec, gpointer user_data);
+
+
+
+static void tp_stream_engine_video_stream_set_property  (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
+
+static void tp_stream_engine_video_stream_get_property  (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 
 
 static void
@@ -80,6 +100,57 @@ tp_stream_engine_video_stream_init (TpStreamEngineVideoStream *self)
       TP_STREAM_ENGINE_TYPE_VIDEO_STREAM, TpStreamEngineVideoStreamPrivate);
 
   self->priv = priv;
+
+  self->priv->mutex = g_mutex_new ();
+}
+
+
+static GstElement *
+tp_stream_engine_video_stream_make_sink (TpStreamEngineVideoStream *self)
+{
+  GstElement *bin = gst_bin_new (NULL);
+  GstElement *sink = NULL;
+  GstElement *funnel = NULL;
+
+  g_object_get (self, "sink", &sink, NULL);
+
+  if (!sink)
+    {
+      g_warning ("Could not make sink");
+      goto error;
+    }
+
+  if (!gst_bin_add (GST_BIN (bin), sink))
+    {
+      gst_object_unref (sink);
+      g_warning ("Could not add sink to bin");
+      goto error;
+    }
+
+  funnel = gst_element_factory_make ("fsfunnel", "funnel");
+  if (!funnel)
+    {
+      g_warning ("Could not make funnel");
+      goto error;
+    }
+
+  if (!gst_bin_add (GST_BIN (bin), funnel))
+    {
+      gst_object_unref (funnel);
+      g_warning ("Could not add funnel to bin");
+      goto error;
+    }
+
+  if (!gst_element_link (funnel, sink))
+    {
+      g_warning ("Could not link funnel and sink");
+      goto error;
+    }
+
+  return bin;
+error:
+  gst_object_unref (bin);
+  return NULL;
 }
 
 static GObject *
@@ -88,35 +159,98 @@ tp_stream_engine_video_stream_constructor (GType type,
     GObjectConstructParam *props)
 {
   GObject *obj;
-  TpStreamEngineStream *stream = NULL;
-  GstElement *src = NULL;
+  TpStreamEngineVideoStream *self = NULL;
   GstElement *sink = NULL;
+  GstPad *srcpad;
+  GstPad *sinkpad;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_video_stream_parent_class)->constructor (type, n_props, props);
 
-  stream = (TpStreamEngineStream *) obj;
+  self = (TpStreamEngineVideoStream *) obj;
 
-  src = tp_stream_engine_video_stream_make_src (stream);
-  sink = tp_stream_engine_video_stream_make_sink (stream);
+  sink = tp_stream_engine_video_stream_make_sink (self);
 
-  if (src)
-    {
-      DEBUG (stream, "setting source on Farsight stream");
-    }
-  else
-    {
-      DEBUG (stream, "not setting source on Farsight stream");
-    }
+  if (!sink)
+    return obj;
 
-  if (sink)
+  if (!gst_bin_add (GST_BIN (self->priv->bin), sink))
     {
-      DEBUG (stream, "setting sink on Farsight stream");
-    }
-  else
-    {
-      DEBUG (stream, "not setting sink on Farsight stream");
+      g_warning ("Could not add sink to bin");
+      return obj;
     }
 
+  self->priv->sink = sink;
+
+  if (gst_element_set_state (sink, GST_STATE_PLAYING) ==
+      GST_STATE_CHANGE_FAILURE)
+    {
+      g_warning ("Could not start sink");
+      return obj;
+    }
+
+  self->priv->queue = gst_element_factory_make ("queue", NULL);
+
+  if (!self->priv->queue)
+    {
+      g_warning ("Could not make queue element");
+      return obj;
+    }
+
+  if (!gst_bin_add (GST_BIN (self->priv->bin), self->priv->queue))
+    {
+      g_warning ("Could not add quue to bin");
+      return obj;
+    }
+
+  if (gst_element_set_state (self->priv->queue, GST_STATE_PLAYING) ==
+      GST_STATE_CHANGE_FAILURE)
+    {
+      g_warning ("Could not start queue");
+      return obj;
+    }
+
+  sinkpad = gst_element_get_static_pad (self->priv->queue, "sink");
+
+  if (GST_PAD_LINK_FAILED (gst_pad_link (self->priv->pad, sinkpad)))
+    {
+      g_warning ("Could not link sink to queue");
+      gst_object_unref (sinkpad);
+      return obj;
+    }
+
+  gst_object_unref (sinkpad);
+
+  g_object_get (self->priv->stream, "sink-pad", &sinkpad, NULL);
+
+  if (!sinkpad)
+    {
+      g_warning ("Could not get stream's sinkpad");
+      return obj;
+    }
+
+  srcpad = gst_element_get_static_pad (self->priv->queue, "src");
+
+  if (!sinkpad)
+    {
+      g_warning ("Could not get queue's srcpad");
+      gst_object_unref (sinkpad);
+      return obj;
+    }
+
+  if (GST_PAD_LINK_FAILED (gst_pad_link (srcpad, sinkpad)))
+    {
+      gst_object_unref (srcpad);
+      gst_object_unref (sinkpad);
+      g_warning ("Could not link sink to queue");
+      return obj;
+    }
+
+  gst_object_unref (srcpad);
+  gst_object_unref (sinkpad);
+
+
+  self->priv->src_pad_added_handler_id = g_signal_connect (self->priv->stream,
+      "src-pad-added", G_CALLBACK (src_pad_added_cb), self);
 
   return obj;
 }
@@ -124,411 +258,237 @@ tp_stream_engine_video_stream_constructor (GType type,
 static void
 tp_stream_engine_video_stream_dispose (GObject *object)
 {
-  TpStreamEngineVideoStream *videostream =
-      TP_STREAM_ENGINE_VIDEO_STREAM (object);
+  TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (object);
 
 
-  if (videostream->priv->output_window_id)
+  if (self->priv->src_pad_added_handler_id)
     {
-      gboolean ret;
-      TpStreamEngine *engine = tp_stream_engine_get ();
-      ret = tp_stream_engine_remove_output_window (engine,
-          videostream->priv->output_window_id);
-      g_assert (ret);
-      videostream->priv->output_window_id = 0;
+      g_signal_handler_disconnect (self->priv->stream,
+          self->priv->src_pad_added_handler_id);
+      self->priv->src_pad_added_handler_id = 0;
+    }
+
+  g_mutex_lock (self->priv->mutex);
+  if (self->priv->error_idle_id)
+    {
+      g_source_remove (self->priv->error_idle_id);
+      self->priv->error_idle_id = 0;
+    }
+  g_mutex_unlock (self->priv->mutex);
+
+  if (self->priv->stream)
+    {
+      g_object_unref (self->priv->stream);
+      self->priv->stream = NULL;
     }
 
   if (G_OBJECT_CLASS (tp_stream_engine_video_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tp_stream_engine_video_stream_parent_class)->dispose (object);
+}
 
-  if (videostream->priv->queue)
+static void
+tp_stream_engine_video_stream_finalize (GObject *object)
+{
+  TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (object);
+
+  g_mutex_free (self->priv->mutex);
+}
+
+static void
+tp_stream_engine_video_stream_set_property  (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (object);
+
+    switch (property_id)
     {
-      TpStreamEngine *engine = tp_stream_engine_get ();
-      GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
-      GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-      GstPad *pad = NULL;
-
-      pad = gst_element_get_static_pad (tee, "sink");
-
-      g_object_ref (object);
-
-      if (!gst_pad_set_blocked_async (pad, TRUE, tee_src_pad_blocked, object))
-        {
-          g_warning ("tee source pad already blocked, lets try to dispose"
-              " of it already");
-          tee_src_pad_blocked (pad, TRUE, object);
-        }
-
-      /* Lets keep a ref around until we've blocked the pad
-       * and removed the queue, so we dont unref the pad here. */
+    case PROP_STREAM:
+      self->priv->stream = g_value_dup_object (value);
+      break;
+    case PROP_BIN:
+      self->priv->bin = g_value_dup_object (value);
+      break;
+    case PROP_PAD:
+      self->priv->pad = g_value_dup_object (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
     }
+}
 
+static void
+tp_stream_engine_video_stream_get_property  (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (object);
+
+    switch (property_id)
+    {
+    case PROP_STREAM:
+      g_value_set_object (value, self->priv->stream);
+      break;
+    case PROP_BIN:
+      g_value_set_object (value, self->priv->bin);
+      break;
+   case PROP_PAD:
+      g_value_set_object (value, self->priv->pad);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
 }
 
 static void
 tp_stream_engine_video_stream_class_init (TpStreamEngineVideoStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineVideoStreamPrivate));
   object_class->dispose = tp_stream_engine_video_stream_dispose;
-
+  object_class->finalize = tp_stream_engine_video_stream_finalize;
   object_class->constructor = tp_stream_engine_video_stream_constructor;
+  object_class->set_property = tp_stream_engine_video_stream_set_property;
+  object_class->get_property = tp_stream_engine_video_stream_get_property;
 
-  signals[LINKED] =
-    g_signal_new ("linked",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
-}
+  param_spec = g_param_spec_object ("stream",
+      "Tp StreamEngine Stream",
+      "The Telepathy Stream Engine Stream",
+      TP_STREAM_ENGINE_TYPE_STREAM,
+      G_PARAM_CONSTRUCT_ONLY |
+      G_PARAM_READWRITE |
+      G_PARAM_STATIC_NICK |
+      G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_STREAM, param_spec);
 
-static void
-queue_linked (GstPad *pad G_GNUC_UNUSED,
-    GstPad *peer G_GNUC_UNUSED,
-    gpointer user_data)
-{
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
+  param_spec = g_param_spec_object ("bin",
+      "The Bin to add stuff to",
+      "The Bin to add the elements to",
+      GST_TYPE_BIN,
+      G_PARAM_CONSTRUCT_ONLY |
+      G_PARAM_READWRITE |
+      G_PARAM_STATIC_NICK |
+      G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_BIN, param_spec);
 
-  g_signal_emit (stream, signals[LINKED], 0);
-}
-
-static GstElement *
-tp_stream_engine_video_stream_make_src (TpStreamEngineStream *stream)
-{
-  TpStreamEngineVideoStream *videostream =
-      TP_STREAM_ENGINE_VIDEO_STREAM (stream);
-  TpStreamEngine *engine = tp_stream_engine_get ();
-  GstElement *pipeline = tp_stream_engine_get_pipeline (engine);
-  GstElement *tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-  GstElement *queue = gst_element_factory_make ("queue", NULL);
-  GstPad *pad = NULL;
-  GstStateChangeReturn state_ret;
-
-  g_return_val_if_fail (tee, NULL);
-
-  if (!queue)
-    g_error("Could not create queue element");
-
-  g_object_set(G_OBJECT(queue), "leaky", 2,
-      "max-size-time", 50*GST_MSECOND, NULL);
-
-  pad = gst_element_get_static_pad (queue, "src");
-
-  g_return_val_if_fail (pad, NULL);
-
-  g_signal_connect (pad, "linked", G_CALLBACK (queue_linked), stream);
-
-  videostream->priv->queue = queue;
-  gst_object_ref (queue);
-
-  if (!gst_bin_add(GST_BIN(pipeline), queue))
-    {
-      g_warning ("Culd not add queue to pipeline");
-      gst_object_unref (queue);
-      return NULL;
-    }
-
-  state_ret = gst_element_set_state(queue, GST_STATE_PLAYING);
-  if (state_ret == GST_STATE_CHANGE_FAILURE)
-    {
-      g_warning ("Could not set the queue to playing");
-      gst_bin_remove (GST_BIN(pipeline), queue);
-      return NULL;
-    }
-
-  if (!gst_element_link(tee, queue))
-    {
-      g_warning ("Could not link the tee to its queue");
-      gst_bin_remove (GST_BIN(pipeline), queue);
-      return NULL;
-    }
-
-  /*
-   * We need to keep a second ref
-   * one will be given to farsight and the second one is kept by s-e
-   */
-  gst_object_ref (queue);
-
-  gst_object_unref (tee);
-
-  return queue;
-}
-
-
-static GstElement *
-tp_stream_engine_video_stream_make_sink (TpStreamEngineStream *stream)
-{
-  TpStreamEngineVideoStream *videostream =
-      TP_STREAM_ENGINE_VIDEO_STREAM (stream);
-  const gchar *elem;
-  GstElement *sink = NULL;
-
-  if ((elem = getenv ("STREAM_VIDEO_SINK")) ||
-      (elem = getenv ("FS_VIDEO_SINK")) ||
-      (elem = getenv ("FS_VIDEOSINK")))
-    {
-      TpStreamEngine *engine = tp_stream_engine_get ();
-      GstStateChangeReturn state_ret;
-
-      DEBUG (videostream, "making video sink with pipeline \"%s\"", elem);
-      sink = gst_parse_bin_from_description (elem, TRUE, NULL);
-      g_assert (sink != NULL);
-      g_assert (GST_IS_BIN (sink));
-
-      gst_object_ref (sink);
-      if (!gst_bin_add (GST_BIN (tp_stream_engine_get_pipeline (engine)),
-              sink))
-        {
-          g_warning ("Could not add sink bin to the pipeline");
-          gst_object_unref (sink);
-          gst_object_unref (sink);
-          return NULL;
-        }
-
-      state_ret = gst_element_set_state (sink, GST_STATE_PLAYING);
-      if (state_ret == GST_STATE_CHANGE_FAILURE)
-        {
-          g_warning ("Could not set sink to PLAYING");
-          gst_object_unref (sink);
-          gst_object_unref (sink);
-          return NULL;
-        }
-    }
-  else
-    {
-      /* do nothing: we set a sink when we get a window ID to send video
-       * to */
-
-      DEBUG (stream, "not making a video sink");
-    }
-
-  return sink;
-}
-
-static void
-tee_src_pad_unblocked (GstPad *pad,
-    gboolean blocked G_GNUC_UNUSED,
-    gpointer user_data G_GNUC_UNUSED)
-{
-  gst_object_unref (pad);
-}
-
-static void
-tee_src_pad_blocked (GstPad *pad, gboolean blocked G_GNUC_UNUSED,
-    gpointer user_data)
-{
-  TpStreamEngineVideoStream *videostream =
-      TP_STREAM_ENGINE_VIDEO_STREAM (user_data);
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
-  TpStreamEngine *engine = tp_stream_engine_get ();
-  GstPad *queuesinkpad = NULL;
-  GstElement *pipeline = NULL;
-  GstElement *tee = NULL;
-  GstPad *teesrcpad = NULL;
-
-  GstStateChangeReturn ret;
-
-  if (!videostream->priv->queue)
-    {
-      gst_object_unref (pad);
-      return;
-    }
-  pipeline = tp_stream_engine_get_pipeline (engine);
-  g_assert (pipeline);
-  tee = gst_bin_get_by_name (GST_BIN (pipeline), "tee");
-  g_assert (tee);
-  queuesinkpad = gst_element_get_static_pad (videostream->priv->queue, "sink");
-  teesrcpad = gst_pad_get_peer (queuesinkpad);
-  g_assert (teesrcpad);
-
-  gst_object_unref (queuesinkpad);
-
-  if (!gst_bin_remove (GST_BIN (pipeline), videostream->priv->queue))
-    {
-      g_warning ("Could not remove the queue from the bin");
-    }
-
-  ret = gst_element_set_state (videostream->priv->queue, GST_STATE_NULL);
-
-  if (ret == GST_STATE_CHANGE_ASYNC)
-    {
-      g_warning ("%s is going to NULL async, lets wait 2 seconds",
-          GST_OBJECT_NAME (videostream->priv->queue));
-      ret = gst_element_get_state (videostream->priv->queue, NULL, NULL,
-          2*GST_SECOND);
-    }
-
-  if (ret == GST_STATE_CHANGE_ASYNC)
-    g_warning ("%s still hasn't going NULL, we have to leak it",
-        GST_OBJECT_NAME (videostream->priv->queue));
-  else if (ret == GST_STATE_CHANGE_FAILURE)
-    g_warning ("There was an error bringing %s to the NULL state",
-        GST_OBJECT_NAME (videostream->priv->queue));
-  else
-    gst_object_unref (videostream->priv->queue);
-
-  videostream->priv->queue = NULL;
-
-  gst_element_release_request_pad (tee, teesrcpad);
-
-  gst_object_unref (tee);
-
-  gst_object_unref (stream);
-
-  if (!gst_pad_set_blocked_async (pad, FALSE, tee_src_pad_unblocked, NULL))
-    gst_object_unref (pad);
-}
-
-
-gboolean
-tp_stream_engine_video_stream_set_output_window (
-  TpStreamEngineVideoStream *videostream,
-  guint window_id,
-  GError **error)
-{
-  TpStreamEngine *engine;
-  GstElement *sink;
-  GstElement *old_sink = NULL;
-  GstStateChangeReturn ret;
-  TpStreamEngineStream *stream = (TpStreamEngineStream *) videostream;
-
-  if (videostream->priv->output_window_id == window_id)
-    {
-      DEBUG (videostream, "not doing anything, output window is already set to "
-          "window ID %u", window_id);
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "not doing "
-          "anything, output window is already set window ID %u", window_id);
-      return FALSE;
-    }
-
-  engine = tp_stream_engine_get ();
-
-  if (videostream->priv->output_window_id != 0)
-    {
-      tp_stream_engine_remove_output_window (engine,
-          videostream->priv->output_window_id);
-    }
-
-  videostream->priv->output_window_id = 0;
-
-  if (window_id == 0)
-    {
-      GstElement *stream_sink = NULL;
-      g_object_get (G_OBJECT (stream), "sink", &stream_sink, NULL);
-      g_object_set (G_OBJECT (stream), "sink", NULL, NULL);
-      _remove_video_sink (videostream, stream_sink);
-      g_object_unref (stream_sink);
-      return TRUE;
-    }
-
-  sink = tp_stream_engine_make_video_sink (engine, FALSE);
-
-  if (sink == NULL)
-    {
-      DEBUG (stream, "failed to make video sink, no output for window %d :(",
-          window_id);
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE, "failed to make a "
-          "video sink");
-      return FALSE;
-    }
-
-  DEBUG (stream, "putting video output in window %d", window_id);
-
-  g_object_get (G_OBJECT (stream), "sink", &old_sink, NULL);
-
-  if (old_sink)
-    {
-      _remove_video_sink (videostream, old_sink);
-      g_object_unref (old_sink);
-    }
-
-  tp_stream_engine_add_output_window (engine, videostream, sink, window_id);
-
-  videostream->priv->output_window_id = window_id;
-
-  ret = gst_element_set_state (sink, GST_STATE_PLAYING);
-  if (ret == GST_STATE_CHANGE_FAILURE)
-    {
-      DEBUG (stream, "failed to set video sink to playing");
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "failed to set video sink to playing");
-      return FALSE;
-    }
-
-  g_object_set (G_OBJECT (stream), "sink", sink, NULL);
-
-  return TRUE;
+  param_spec = g_param_spec_object ("pad",
+      "The pad to get the data from",
+      "the GstPad the data comes from",
+      GST_TYPE_PAD,
+      G_PARAM_CONSTRUCT_ONLY |
+      G_PARAM_READWRITE |
+      G_PARAM_STATIC_NICK |
+      G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_PAD, param_spec);
 }
 
 
 static gboolean
-video_sink_unlinked_idle_cb (gpointer user_data)
+src_pad_added_idle_error (gpointer user_data)
 {
-  GstElement *sink = GST_ELEMENT (user_data);
-  GstElement *binparent = NULL;
-  gboolean retval;
-  GstStateChangeReturn ret;
+  TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (user_data);
 
-  binparent = GST_ELEMENT (gst_element_get_parent (sink));
+  tp_stream_engine_stream_error (self->priv->stream, 0,
+      "Error setting up video reception");
 
-  if (!binparent)
-    goto out;
 
-  retval = gst_bin_remove (GST_BIN (binparent), sink);
-  g_assert (retval);
-
-  ret = gst_element_set_state (sink, GST_STATE_NULL);
-
-  if (ret == GST_STATE_CHANGE_ASYNC) {
-    ret = gst_element_get_state (sink, NULL, NULL, 5*GST_SECOND);
-  }
-  g_assert (ret != GST_STATE_CHANGE_FAILURE);
-
- out:
-  gst_object_unref (sink);
+  g_mutex_lock (self->priv->mutex);
+  self->priv->error_idle_id = 0;
+  g_mutex_unlock (self->priv->mutex);
 
   return FALSE;
 }
 
-
 static void
-video_sink_unlinked_cb (GstPad *pad, GstPad *peer G_GNUC_UNUSED,
+src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
     gpointer user_data)
 {
-  g_idle_add (video_sink_unlinked_idle_cb, user_data);
+  TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (user_data);
+  GstPad *sinkpad;
+  GstPad *ghost;
+  GstElement *funnel;
 
-  gst_object_unref (pad);
-}
+  funnel = gst_bin_get_by_name (GST_BIN (self->priv->sink), "funnel");
 
-static void
-_remove_video_sink (TpStreamEngineVideoStream *videostream, GstElement *sink)
-{
-  GstPad *sink_pad;
-
-  DEBUG (videostream, "removing video sink");
-
-  if (sink == NULL)
-    return;
-
-  sink_pad = gst_element_get_static_pad (sink, "sink");
-
-  if (!sink_pad)
-    return;
-
-  if (g_signal_handler_find (sink_pad,
-        G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA, 0, 0, NULL,
-        video_sink_unlinked_cb, sink))
+  if (!funnel)
     {
-      DEBUG (videostream, "found existing unlink callback,"
-          " not adding a new one");
-      return;
+      g_warning ("Could not get funnel");
+      goto error;
     }
 
-  gst_object_ref (sink);
 
-  g_signal_connect (sink_pad, "unlinked", G_CALLBACK (video_sink_unlinked_cb),
-      sink);
+  sinkpad = gst_element_get_request_pad (funnel, "sink%d");
+  if (!sinkpad)
+    {
+      gst_object_unref (funnel);
+      g_warning ("Could not get funnel sink pad");
+      goto error;
+    }
+
+  gst_object_unref (funnel);
+
+  ghost = gst_ghost_pad_new (NULL, sinkpad);
+
+  gst_object_unref (sinkpad);
+
+  gst_pad_set_active (ghost, TRUE);
+
+  if (!gst_element_add_pad (self->priv->sink, ghost))
+    {
+      g_warning ("Could not add ghost pad to sink bin");
+      gst_object_unref (ghost);
+      goto error;
+    }
+
+  if (GST_PAD_LINK_FAILED (gst_pad_link (pad, ghost)))
+    {
+      g_warning ("Could not link pad to ghost pad");
+      goto error;
+    }
+
+  return;
+
+
+ error:
+
+  g_mutex_lock (self->priv->mutex);
+  if (!self->priv->error_idle_id)
+    self->priv->error_idle_id =
+        g_idle_add (src_pad_added_idle_error, self);
+  g_mutex_unlock (self->priv->mutex);
+}
+
+
+
+TpStreamEngineVideoStream *
+tp_stream_engine_video_stream_new (
+  TpStreamEngineStream *stream,
+  GstBin *bin,
+  GstPad *pad,
+  GError **error)
+{
+  TpStreamEngineVideoStream *self = NULL;
+
+
+  self = g_object_new (TP_STREAM_ENGINE_TYPE_VIDEO_STREAM,
+      "stream", stream,
+      "bin", bin,
+      "pad", pad,
+      "is-preview", FALSE,
+      NULL);
+
+  if (self->priv->construction_error)
+    {
+      g_propagate_error (error, self->priv->construction_error);
+      g_object_unref (self);
+      return NULL;
+    }
+
+  return self;
 }
