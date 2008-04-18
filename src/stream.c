@@ -69,6 +69,7 @@ struct _TpStreamEngineStreamPrivate
   TpMediaStreamType media_type;
   TpMediaStreamDirection direction;
   const TpStreamEngineNatProperties *nat_props;
+  GList *local_codecs_config;
 
   GError *construction_error;
 
@@ -103,7 +104,8 @@ enum
   PROP_MEDIA_TYPE,
   PROP_DIRECTION,
   PROP_NAT_PROPERTIES,
-  PROP_SINK_PAD
+  PROP_SINK_PAD,
+  PROP_LOCAL_CODECS_CONFIG
 };
 
 
@@ -215,6 +217,9 @@ tp_stream_engine_stream_get_property (GObject    *object,
       g_object_get_property (G_OBJECT (self->priv->fs_session),
           "sink-pad", value);
       break;
+    case PROP_LOCAL_CODECS_CONFIG:
+      g_value_set_boxed (value, self->priv->local_codecs_config);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -258,6 +263,9 @@ tp_stream_engine_stream_set_property (GObject      *object,
       break;
     case PROP_NAT_PROPERTIES:
       self->priv->nat_props = g_value_get_pointer (value);
+      break;
+    case PROP_LOCAL_CODECS_CONFIG:
+      self->priv->local_codecs_config = g_value_dup_boxed (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -400,6 +408,13 @@ tp_stream_engine_stream_constructor (GType type,
   if (!stream->priv->fs_stream)
     return obj;
 
+  if (stream->priv->local_codecs_config)
+    if (!fs_session_set_local_codecs_config (stream->priv->fs_session,
+            stream->priv->local_codecs_config,
+            &stream->priv->construction_error))
+      return obj;
+
+
   if (g_object_has_property ((GObject *) stream->priv->fs_session,
           "no-rtcp-timeout"))
     g_object_set (stream->priv->fs_session, "no-rtcp-timeout", 0, NULL);
@@ -453,6 +468,12 @@ tp_stream_engine_stream_dispose (GObject *object)
     {
       g_object_unref (priv->fs_session);
       priv->fs_session = NULL;
+    }
+
+  if (priv->local_codecs_config)
+    {
+      fs_codec_list_destroy (priv->local_codecs_config);
+      priv->local_codecs_config = NULL;
     }
 
   if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
@@ -573,6 +594,19 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
                                      G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_SINK_PAD,
       param_spec);
+
+
+  param_spec = g_param_spec_boxed ("local-codecs-config",
+                                   "Local codecs config",
+                                   "A GList of FsCodec representing preferences to be passed to the fs_session_set_local_codecs_config() function",
+                                    FS_TYPE_CODEC_LIST,
+                                    G_PARAM_CONSTRUCT_ONLY |
+                                    G_PARAM_READWRITE |
+                                    G_PARAM_STATIC_NICK |
+                                    G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_LOCAL_CODECS_CONFIG,
+      param_spec);
+
 
   signals[CLOSED] =
     g_signal_new ("closed",
@@ -1575,6 +1609,7 @@ tp_stream_engine_stream_new (gpointer channel,
     TpMediaStreamType media_type,
     TpMediaStreamDirection direction,
     TpStreamEngineNatProperties *nat_props,
+    GList *local_codecs_config,
     GError **error)
 
 {
@@ -1589,6 +1624,7 @@ tp_stream_engine_stream_new (gpointer channel,
       "media-type", media_type,
       "direction", direction,
       "nat-properties", nat_props,
+      "local-codecs-config", local_codecs_config,
       NULL);
 
   if (self->priv->construction_error)

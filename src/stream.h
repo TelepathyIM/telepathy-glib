@@ -65,6 +65,7 @@ tp_stream_engine_stream_new (gpointer channel,
     TpMediaStreamType media_type,
     TpMediaStreamDirection direction,
     TpStreamEngineNatProperties *nat_props,
+    GList *local_codecs_config,
     GError **error);
 
 

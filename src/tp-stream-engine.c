@@ -535,7 +535,6 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
   GError *error = NULL;
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
 
-
   g_object_get (G_OBJECT (stream), "media-type", &media_type, NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
@@ -587,6 +586,59 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
   g_signal_connect (stream, "free-resource",
       G_CALLBACK (stream_free_resource), self);
 }
+
+static GList *
+stream_get_codec_config (TpStreamEngineChannel *chan,
+    guint stream_id,
+    TpMediaStreamType media_type,
+    TpMediaStreamDirection direction,
+    TpStreamEngine *self)
+{
+  GList *codec_config = NULL;
+  gchar *filename;
+  gint i;
+  GError *error = NULL;
+  const gchar * const *system_config_dirs = g_get_system_config_dirs ();
+
+  filename = g_build_filename (g_get_user_config_dir (), "stream-engine",
+      "gstcodecs.conf", NULL);
+
+  codec_config = fs_codec_list_from_keyfile (filename, &error);
+
+  if (!codec_config)
+    {
+      g_debug ("Could not read local codecs config at %s: %s", filename,
+          error ? error->message : "");
+      g_free (filename);
+    }
+  g_clear_error (&error);
+
+  for (i = 0; system_config_dirs[i] && codec_config == NULL; i++)
+    {
+      filename = g_build_filename (system_config_dirs[i],
+          "stream-engine",
+          "gstcodecs.conf", NULL);
+
+      codec_config = fs_codec_list_from_keyfile (filename, &error);
+
+      if (!codec_config)
+        {
+          g_debug ("Could not read global codecs config at %s: %s", filename,
+              error ? error->message : "");
+          g_free (filename);
+        }
+      g_clear_error (&error);
+    }
+
+  if (codec_config)
+    {
+      g_debug ("Loaded codec config from %s", filename);
+      g_free (filename);
+    }
+
+  return codec_config;
+}
+
 
 
 static void
@@ -1122,6 +1174,8 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
       G_CALLBACK (channel_session_created), self);
   g_signal_connect (chan, "stream-created",
       G_CALLBACK (channel_stream_created), self);
+  g_signal_connect (chan, "stream-get-codec-config",
+      G_CALLBACK (stream_get_codec_config), self);
 
   g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
 }

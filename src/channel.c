@@ -72,6 +72,7 @@ enum
   STREAM_CREATED,
   SESSION_CREATED,
   HANDLER_RESULT,
+  STREAM_GET_CODEC_CONFIG,
   SIGNAL_COUNT
 };
 
@@ -508,6 +509,15 @@ tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, TP_STREAM_ENGINE_TYPE_SESSION);
+
+  signals[STREAM_GET_CODEC_CONFIG] =
+    g_signal_new ("stream-get-codec-config",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  tp_stream_engine_marshal_BOXED__UINT_UINT_UINT,
+                  FS_TYPE_CODEC_LIST, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 static void
@@ -542,6 +552,7 @@ new_stream_cb (TpStreamEngineSession *session,
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
   TpMediaStreamHandler *proxy;
   GError *error = NULL;
+  GList *local_codec_config = NULL;
 
   proxy = tp_media_stream_handler_new (channel_as_proxy->dbus_daemon,
       channel_as_proxy->bus_name, object_path, NULL);
@@ -553,6 +564,12 @@ new_stream_cb (TpStreamEngineSession *session,
       return;
     }
 
+  g_signal_emit (self, signals[STREAM_GET_CODEC_CONFIG], 0,
+      stream_id,
+      media_type,
+      direction,
+      &local_codec_config);
+
   g_object_get (session,
       "farsight-conference", &fs_conference,
       "farsight-participant", &fs_participant,
@@ -560,7 +577,9 @@ new_stream_cb (TpStreamEngineSession *session,
 
   stream = tp_stream_engine_stream_new ((gpointer) self, fs_conference,
       fs_participant, proxy, stream_id, media_type, direction,
-      &priv->nat_props, &error);
+      &priv->nat_props, local_codec_config, &error);
+
+  fs_codec_list_destroy (local_codec_config);
 
   if (!stream)
     {
