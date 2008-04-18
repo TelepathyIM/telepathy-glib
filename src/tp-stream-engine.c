@@ -372,9 +372,6 @@ tp_stream_engine_start_source (TpStreamEngine *self)
 
   self->priv->source_use_count++;
 
-  if (self->priv->source_use_count > 1)
-    return;
-
   state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_PLAYING);
 
   if (state_ret == GST_STATE_CHANGE_FAILURE)
@@ -398,7 +395,6 @@ tp_stream_engine_stop_source (TpStreamEngine *self)
 
   if (state_ret == GST_STATE_CHANGE_FAILURE)
     g_error ("Error stopping the video source");
-
 }
 
 static void
@@ -934,18 +930,36 @@ _preview_window_plug_deleted (TpStreamEngineVideoPreview *preview,
     gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  GstPad *pad = NULL;
 
-  /*
-   * TODO:
-   *
-   * Pad block or stop source
-   * destroy preview
-   * and remove tee pad
-   */
+  while (g_signal_handlers_disconnect_by_func(preview,
+          _preview_window_plug_deleted,
+          user_data)) {}
+
+  g_mutex_lock (self->priv->mutex);
+  self->priv->preview_sinks = g_list_remove (self->priv->preview_sinks,
+      preview);
+  g_mutex_unlock (self->priv->mutex);
 
   tp_stream_engine_stop_source (self);
 
-  check_if_busy (self);
+  g_object_get (preview, "pad", &pad, NULL);
+
+  if (pad)
+    {
+      /* Take the stream lock to make sure nothing is flowing through the
+       * pad
+       * We can only do that because we have no blocking elements before
+       * a queue in our pipeline after the pads.
+       */
+      GST_PAD_STREAM_LOCK(pad);
+      gst_element_release_request_pad (self->priv->tee, pad);
+      GST_PAD_STREAM_UNLOCK(pad);
+
+      gst_object_unref (pad);
+    }
+
+  gst_object_unref (preview);
 }
 
 /**
@@ -959,13 +973,12 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
                                         DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
-  TpStreamEnginePrivate *priv = self->priv;
   GError *error = NULL;
   GstPad *pad;
   TpStreamEngineVideoPreview *preview;
   guint window_id;
 
-  if (priv->force_fakesrc)
+  if (self->priv->force_fakesrc)
     {
       GError *error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Could not get a video source");

@@ -45,6 +45,9 @@ struct _TpStreamEngineVideoSinkPrivate
   guint window_id;
 
   gboolean is_preview;
+
+  gulong delete_event_handler_id;
+  gulong embedded_handler_id;
 };
 
 /* properties */
@@ -236,10 +239,10 @@ tp_stream_engine_video_sink_constructor (GType type,
     gst_object_ref (self->priv->sink);
 
   self->priv->plug = gtk_plug_new (0);
-  g_signal_connect (self->priv->plug, "delete-event",
-		    G_CALLBACK (delete_event), self);
-  g_signal_connect (self->priv->plug, "embedded",
-      G_CALLBACK (gtk_widget_show), NULL);
+  self->priv->delete_event_handler_id = g_signal_connect (self->priv->plug,
+      "delete-event", G_CALLBACK (delete_event), self);
+  self->priv->embedded_handler_id = g_signal_connect (self->priv->plug,
+      "embedded", G_CALLBACK (gtk_widget_show), NULL);
 
   self->priv->window_id = gtk_plug_get_id (GTK_PLUG (self->priv->plug));
 
@@ -255,6 +258,20 @@ tp_stream_engine_video_sink_dispose (GObject *object)
     {
       gst_object_unref (self->priv->sink);
       self->priv->sink = NULL;
+    }
+
+  if (self->priv->delete_event_handler_id)
+    {
+      g_signal_handler_disconnect (self->priv->plug,
+          self->priv->delete_event_handler_id);
+      self->priv->delete_event_handler_id = 0;
+    }
+
+  if (self->priv->embedded_handler_id)
+    {
+      g_signal_handler_disconnect (self->priv->plug,
+          self->priv->embedded_handler_id);
+      self->priv->embedded_handler_id = 0;
     }
 
   if (self->priv->plug)
