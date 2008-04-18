@@ -395,6 +395,8 @@ tp_stream_engine_stop_source (TpStreamEngine *self)
 
   if (state_ret == GST_STATE_CHANGE_FAILURE)
     g_error ("Error stopping the video source");
+  else if (state_ret == GST_STATE_CHANGE_ASYNC)
+    g_debug ("Stopping video src async??");
 }
 
 static void
