@@ -472,11 +472,34 @@ channel_session_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
 static void
 stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
 {
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   GObject *sestream = NULL;
 
   sestream = g_object_get_data (G_OBJECT (stream), "se-stream");
   if (sestream)
-    g_object_unref (sestream);
+    {
+      if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream))
+        {
+          TpStreamEngineVideoStream *videostream =
+              (TpStreamEngineVideoStream *) sestream;
+          GstPad *pad;
+
+          g_object_get (videostream, "pad", &pad, NULL);
+
+          /* Take the stream lock to make sure nothing is flowing through the
+           * pad
+           * We can only do that because we have no blocking elements before
+           * a queue in our pipeline after the pads.
+           */
+          GST_PAD_STREAM_LOCK(pad);
+          gst_element_release_request_pad (self->priv->tee, pad);
+          GST_PAD_STREAM_UNLOCK(pad);
+
+          gst_object_unref (pad);
+       }
+
+      g_object_unref (sestream);
+    }
 }
 
 static void
