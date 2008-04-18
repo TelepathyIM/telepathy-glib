@@ -165,7 +165,6 @@ tp_stream_engine_video_preview_constructor (GType type,
 {
   GObject *obj;
   TpStreamEngineVideoPreview *self = NULL;
-  GstPad *pad;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_video_preview_parent_class)->constructor (type, n_props, props);
 
@@ -205,15 +204,6 @@ tp_stream_engine_video_preview_constructor (GType type,
     {
       self->priv->construction_error = g_error_new (TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
           "Could set sink to playing");
-      return obj;
-    }
-
-  pad = gst_element_get_static_pad (self->priv->sinkbin, "sink");
-
-  if (GST_PAD_LINK_FAILED (gst_pad_link (self->priv->pad, pad)))
-    {
-      self->priv->construction_error = g_error_new (TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
-          "Could not link preview sink");
       return obj;
     }
 
@@ -284,7 +274,22 @@ tp_stream_engine_video_preview_set_property  (GObject *object,
       self->priv->bin = g_value_dup_object (value);
       break;
     case PROP_PAD:
-      self->priv->pad = g_value_dup_object (value);
+      {
+        GstPad *pad;
+
+        if (self->priv->pad)
+          {
+            g_warning ("Trying to set already set pad");
+            return;
+          }
+
+        self->priv->pad = g_value_dup_object (value);
+
+        pad = gst_element_get_static_pad (self->priv->sinkbin, "sink");
+
+        if (GST_PAD_LINK_FAILED (gst_pad_link (self->priv->pad, pad)))
+          g_warning ("Could not link pad to preview sink");
+      }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -341,7 +346,6 @@ tp_stream_engine_video_preview_class_init (TpStreamEngineVideoPreviewClass *klas
       "The pad to get the data from",
       "the GstPad the data comes from",
       GST_TYPE_PAD,
-      G_PARAM_CONSTRUCT_ONLY |
       G_PARAM_READWRITE |
       G_PARAM_STATIC_NICK |
       G_PARAM_STATIC_BLURB);
@@ -352,14 +356,12 @@ tp_stream_engine_video_preview_class_init (TpStreamEngineVideoPreviewClass *klas
 
 TpStreamEngineVideoPreview *
 tp_stream_engine_video_preview_new (GstBin *bin,
-    GstPad *pad,
     GError **error)
 {
   TpStreamEngineVideoPreview *self = NULL;
 
   self = g_object_new (TP_STREAM_ENGINE_TYPE_VIDEO_PREVIEW,
       "bin", bin,
-      "pad", pad,
       "is-preview", TRUE,
       NULL);
 

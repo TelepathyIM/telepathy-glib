@@ -46,7 +46,6 @@ GType tp_stream_engine_video_preview_get_type (void);
 
 TpStreamEngineVideoPreview *
 tp_stream_engine_video_preview_new (GstBin *bin,
-    GstPad *pad,
     GError **error);
 
 G_END_DECLS

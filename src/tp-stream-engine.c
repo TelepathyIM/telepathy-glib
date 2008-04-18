@@ -1028,7 +1028,7 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
   pad = gst_element_get_request_pad (self->priv->tee, "src%d");
 
   preview = tp_stream_engine_video_preview_new (GST_BIN (self->priv->pipeline),
-      pad, &error);
+      &error);
 
   if (!preview)
     {
@@ -1036,14 +1036,16 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
       g_clear_error (&error);
       return;
     }
-  g_signal_connect (preview, "plug-deleted",
-      G_CALLBACK (_preview_window_plug_deleted), self);
 
   g_mutex_lock (self->priv->mutex);
   self->priv->preview_sinks = g_list_prepend (self->priv->preview_sinks,
       preview);
   g_mutex_unlock (self->priv->mutex);
 
+  g_object_set (preview, "pad", pad, NULL);
+
+  g_signal_connect (preview, "plug-deleted",
+      G_CALLBACK (_preview_window_plug_deleted), self);
 
   g_object_get (preview, "window-id", &window_id, NULL);
 
