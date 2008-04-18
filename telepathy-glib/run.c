@@ -240,9 +240,10 @@ tp_run_connection_manager (const char *prog_name,
   g_signal_connect (manager, "no-more-connections",
       (GCallback) no_more_connections, NULL);
 
-  /* For some strange reason, we have to call this *before*
-   * tp_base_connection_manager_register to properly catch the Disconnected
-   * signal */
+  /* It appears that dbus-glib registers a filter that wrongly returns
+   * DBUS_HANDLER_RESULT_HANDLED for signals, so for *our* filter to have any
+   * effect, we need to install it before calling
+   * tp_base_connection_manager_register () */
   connection = dbus_g_connection_get_connection (tp_get_bus ());
   dbus_connection_add_filter (connection, dbus_filter_function, NULL, NULL);
 
