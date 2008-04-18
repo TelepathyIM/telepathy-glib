@@ -164,7 +164,6 @@ dbus_filter_function (DBusConnection *connection,
       !tp_strdiff (dbus_message_get_path (message), DBUS_PATH_LOCAL))
     {
       g_warning ("Got disconnected from the session bus");
-      exit (1);
     }
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -241,14 +240,16 @@ tp_run_connection_manager (const char *prog_name,
   g_signal_connect (manager, "no-more-connections",
       (GCallback) no_more_connections, NULL);
 
+  /* For some strange reason, we have to call this *before*
+   * tp_base_connection_manager_register to properly catch the Disconnected
+   * signal */
+  connection = dbus_g_connection_get_connection (tp_get_bus ());
+  dbus_connection_add_filter (connection, dbus_filter_function, NULL, NULL);
+
   if (!tp_base_connection_manager_register (manager))
     {
       return 1;
     }
-
-  connection = dbus_g_connection_get_connection (tp_get_bus ());
-  dbus_connection_add_filter (connection, dbus_filter_function, NULL, NULL);
-  dbus_connection_set_exit_on_disconnect (connection, FALSE);
 
   g_debug ("started version %s (telepathy-glib version %s)", version,
       VERSION);
