@@ -681,6 +681,10 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
 
         close_all_streams (engine, error->message);
 
+        gst_element_set_state (engine->priv->pipeline, GST_STATE_NULL);
+        gst_element_set_state (engine->priv->videosrc, GST_STATE_NULL);
+        gst_element_set_state (engine->priv->pipeline, GST_STATE_PLAYING);
+
         g_free (error_string);
         g_error_free (error);
         break;
