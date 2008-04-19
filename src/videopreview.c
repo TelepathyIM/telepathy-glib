@@ -170,11 +170,11 @@ tp_stream_engine_video_preview_constructor (GType type,
 
   self = (TpStreamEngineVideoPreview *) obj;
 
-  if (!self->priv->bin || !self->priv->pad)
+  if (!self->priv->bin)
     {
       self->priv->construction_error = g_error_new (TP_ERRORS,
           TP_ERROR_INVALID_ARGUMENT,
-          "You must set the bin, pad and window-id properties");
+          "You must set the bin property");
       return obj;
     }
 
