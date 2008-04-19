@@ -735,8 +735,8 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
       case GST_MESSAGE_ERROR:
         gst_message_parse_error (message, &error, &error_string);
 
-        g_debug ("%s: got error from %s: %s: %s (%d %d), destroying video "
-            "pipeline", G_STRFUNC, name, error->message, error_string,
+        g_debug ("%s: got error from %s: %s: %s (%d %d), stopping pipeline",
+            G_STRFUNC, name, error->message, error_string,
             error->domain, error->code);
 
         tmp = g_strdup_printf ("%s: %s", error->message, error_string);
