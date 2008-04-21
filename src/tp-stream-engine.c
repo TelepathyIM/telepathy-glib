@@ -506,7 +506,7 @@ stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
               gst_pad_unlink (pad, peer);
               gst_object_unref (peer);
             }
-          gst_element_release_request_pad (self->priv->tee, pad);
+          //gst_element_release_request_pad (self->priv->tee, pad);
           GST_PAD_STREAM_UNLOCK(pad);
 
           gst_object_unref (pad);
@@ -1061,7 +1061,7 @@ _preview_window_plug_deleted (TpStreamEngineVideoPreview *preview,
           gst_pad_unlink (pad, peer);
           gst_object_unref (peer);
         }
-      gst_element_release_request_pad (self->priv->tee, pad);
+      //gst_element_release_request_pad (self->priv->tee, pad);
       GST_PAD_STREAM_UNLOCK(pad);
 
       gst_object_unref (pad);
