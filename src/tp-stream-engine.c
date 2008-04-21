@@ -484,21 +484,33 @@ stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
         {
           TpStreamEngineVideoStream *videostream =
               (TpStreamEngineVideoStream *) sestream;
-          GstPad *pad;
+          GstPad *pad, *peer;
+
+          g_mutex_lock (self->priv->mutex);
+          self->priv->output_sinks = g_list_remove (self->priv->output_sinks,
+              videostream);
+          g_mutex_unlock (self->priv->mutex);
 
           g_object_get (videostream, "pad", &pad, NULL);
+
 
           /* Take the stream lock to make sure nothing is flowing through the
            * pad
            * We can only do that because we have no blocking elements before
            * a queue in our pipeline after the pads.
            */
+          peer = gst_pad_get_peer (pad);
           GST_PAD_STREAM_LOCK(pad);
+          if (peer)
+            {
+              gst_pad_unlink (pad, peer);
+              gst_object_unref (peer);
+            }
           gst_element_release_request_pad (self->priv->tee, pad);
           GST_PAD_STREAM_UNLOCK(pad);
 
           gst_object_unref (pad);
-       }
+        }
 
       g_object_unref (sestream);
     }
@@ -571,7 +583,7 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
       g_object_set_data ((GObject*) stream, "se-stream", videostream);
 
       g_mutex_lock (self->priv->mutex);
-      self->priv->preview_sinks = g_list_prepend (self->priv->output_sinks,
+      self->priv->output_sinks = g_list_prepend (self->priv->output_sinks,
           videostream);
       g_mutex_unlock (self->priv->mutex);
 
@@ -797,13 +809,14 @@ bus_sync_handler (GstBus *bus G_GNUC_UNUSED, GstMessage *message, gpointer data)
 
   if (!handled)
     {
-      for (item = g_list_first (self->priv->preview_sinks);
+      for (item = g_list_first (self->priv->output_sinks);
            item && !handled;
            item = g_list_next (item))
         {
           TpStreamEngineVideoSink *output = item->data;
 
-          handled = tp_stream_engine_video_sink_bus_sync_message (output, message);
+          handled = tp_stream_engine_video_sink_bus_sync_message (output,
+              message);
           if (handled)
             break;
         }
@@ -1035,12 +1048,19 @@ _preview_window_plug_deleted (TpStreamEngineVideoPreview *preview,
 
   if (pad)
     {
+      GstPad *peer;
       /* Take the stream lock to make sure nothing is flowing through the
        * pad
        * We can only do that because we have no blocking elements before
        * a queue in our pipeline after the pads.
        */
+      peer = gst_pad_get_peer (pad);
       GST_PAD_STREAM_LOCK(pad);
+      if (peer)
+        {
+          gst_pad_unlink (pad, peer);
+          gst_object_unref (peer);
+        }
       gst_element_release_request_pad (self->priv->tee, pad);
       GST_PAD_STREAM_UNLOCK(pad);
 
