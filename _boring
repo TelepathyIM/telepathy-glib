@@ -51,6 +51,7 @@
 ^stamp-h1$
 ^depcomp$
 ^compile$
+^INSTALL$
 ^gtk-doc\.make$
 ^m4/gtk-doc\.m4$
 (^|/).deps($|/)
