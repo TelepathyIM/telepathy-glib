@@ -123,7 +123,7 @@ struct _TpStreamEnginePrivate
 
   GstElement *pipeline;
   GstElement *videosrc;
-  GstElement *tee;
+  GstElement *videotee;
 
   GPtrArray *channels;
   GHashTable *channels_by_path;
@@ -140,7 +140,7 @@ struct _TpStreamEnginePrivate
 
   gboolean force_fakesrc;
 
-  gint source_use_count;
+  gint video_source_use_count;
 };
 
 static void
@@ -357,7 +357,7 @@ tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
 }
 
 static void
-tp_stream_engine_start_source (TpStreamEngine *self)
+tp_stream_engine_start_video_source (TpStreamEngine *self)
 {
   GstStateChangeReturn state_ret;
 
@@ -370,7 +370,7 @@ tp_stream_engine_start_source (TpStreamEngine *self)
 
   g_debug ("Starting video source");
 
-  self->priv->source_use_count++;
+  self->priv->video_source_use_count++;
 
   state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_PLAYING);
 
@@ -380,13 +380,13 @@ tp_stream_engine_start_source (TpStreamEngine *self)
 
 
 static void
-tp_stream_engine_stop_source (TpStreamEngine *self)
+tp_stream_engine_stop_video_source (TpStreamEngine *self)
 {
   GstStateChangeReturn state_ret;
 
-  self->priv->source_use_count--;
+  self->priv->video_source_use_count--;
 
-  if (self->priv->source_use_count > 0)
+  if (self->priv->video_source_use_count > 0)
     return;
 
   g_debug ("Stopping source");
@@ -411,7 +411,7 @@ stream_free_resource (TpStreamEngineStream *stream,
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO &&
       dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-    tp_stream_engine_stop_source (self);
+    tp_stream_engine_stop_video_source (self);
 }
 
 static gboolean
@@ -426,7 +426,7 @@ stream_request_resource (TpStreamEngineStream *stream,
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO &&
       dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-    tp_stream_engine_start_source (self);
+    tp_stream_engine_start_video_source (self);
 
   return TRUE;
 }
@@ -569,7 +569,7 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
       TpStreamEngineVideoStream *videostream = NULL;
       GstPad *pad;
 
-      pad = gst_element_get_request_pad (self->priv->tee, "src%d");
+      pad = gst_element_get_request_pad (self->priv->videotee, "src%d");
 
       videostream = tp_stream_engine_video_stream_new (stream,
           GST_BIN (self->priv->pipeline), pad, &error);
@@ -965,7 +965,7 @@ _create_pipeline (TpStreamEngine *self)
   if (!gst_bin_add (GST_BIN (priv->pipeline), tee))
     g_error ("Could not add tee to pipeline");
 
-  self->priv->tee = tee;
+  self->priv->videotee = tee;
 
 
 #ifndef MAEMO_OSSO_SUPPORT
@@ -1042,7 +1042,7 @@ _preview_window_plug_deleted (TpStreamEngineVideoPreview *preview,
       preview);
   g_mutex_unlock (self->priv->mutex);
 
-  tp_stream_engine_stop_source (self);
+  tp_stream_engine_stop_video_source (self);
 
   g_object_get (preview, "pad", &pad, NULL);
 
@@ -1061,7 +1061,7 @@ _preview_window_plug_deleted (TpStreamEngineVideoPreview *preview,
           gst_pad_unlink (pad, peer);
           gst_object_unref (peer);
         }
-      //gst_element_release_request_pad (self->priv->tee, pad);
+      //gst_element_release_request_pad (self->priv->videotee, pad);
       GST_PAD_STREAM_UNLOCK(pad);
 
       gst_object_unref (pad);
@@ -1112,7 +1112,7 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
       preview);
   g_mutex_unlock (self->priv->mutex);
 
-  pad = gst_element_get_request_pad (self->priv->tee, "src%d");
+  pad = gst_element_get_request_pad (self->priv->videotee, "src%d");
 
   g_object_set (preview, "pad", pad, NULL);
 
@@ -1124,7 +1124,7 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
   stream_engine_svc_stream_engine_return_from_create_preview_window (context,
       window_id);
 
-  tp_stream_engine_start_source (self);
+  tp_stream_engine_start_video_source (self);
 
   g_signal_emit (self, signals[HANDLING_CHANNEL], 0);
 }
