@@ -416,9 +416,9 @@ tp_stream_engine_session_bus_message (TpStreamEngineSession *session,
         if (gst_structure_has_name (s, "farsight-error"))
           {
             GObject *object;
-            const GValue *value;
+            const GValue *value = NULL;
 
-            value = gst_structure_get_value (s, "error-src");
+            value = gst_structure_get_value (s, "src-object");
             object = g_value_get_object (value);
 
             if (object == G_OBJECT (session->priv->fs_participant))

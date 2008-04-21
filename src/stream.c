@@ -1463,7 +1463,7 @@ tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
 {
   const gchar *debug = NULL;
   const GstStructure *s = gst_message_get_structure (message);
-  const GValue *value;
+  const GValue *value = NULL;
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return FALSE;
@@ -1472,7 +1472,7 @@ tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
     {
       GObject *object;
 
-      value = gst_structure_get_value (s, "error-src");
+      value = gst_structure_get_value (s, "src-object");
       object = g_value_get_object (value);
 
       if (object == (GObject*) stream->priv->fs_session ||
