@@ -1077,8 +1077,6 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
       return;
     }
 
-  pad = gst_element_get_request_pad (self->priv->tee, "src%d");
-
   preview = tp_stream_engine_video_preview_new (GST_BIN (self->priv->pipeline),
       &error);
 
@@ -1093,6 +1091,8 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
   self->priv->preview_sinks = g_list_prepend (self->priv->preview_sinks,
       preview);
   g_mutex_unlock (self->priv->mutex);
+
+  pad = gst_element_get_request_pad (self->priv->tee, "src%d");
 
   g_object_set (preview, "pad", pad, NULL);
 
