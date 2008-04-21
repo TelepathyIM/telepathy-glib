@@ -335,7 +335,6 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 
 _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	../tools/glib-client-gen.py \
-	../tools/ls-interfaces.xsl \
 	Makefile.am
 	set -e; \
 	subclass= ; \
