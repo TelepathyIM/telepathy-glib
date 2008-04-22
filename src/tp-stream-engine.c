@@ -588,14 +588,20 @@ stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
         {
           TpStreamEngineVideoStream *videostream =
               (TpStreamEngineVideoStream *) sestream;
-          GstPad *pad, *peer;
 
           g_mutex_lock (self->priv->mutex);
           self->priv->output_sinks = g_list_remove (self->priv->output_sinks,
               videostream);
           g_mutex_unlock (self->priv->mutex);
 
-          g_object_get (videostream, "pad", &pad, NULL);
+        }
+
+      if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream) ||
+          TP_STREAM_ENGINE_IS_AUDIO_STREAM (sestream))
+        {
+          GstPad *pad, *peer;
+
+          g_object_get (sestream, "pad", &pad, NULL);
 
 
           /* Take the stream lock to make sure nothing is flowing through the
@@ -610,12 +616,16 @@ stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
               gst_pad_unlink (pad, peer);
               gst_object_unref (peer);
             }
-          //gst_element_release_request_pad (self->priv->tee, pad);
+          /*
+          if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream))
+            gst_element_release_request_pad (self->priv->videotee, pad);
+          else if (TP_STREAM_ENGINE_IS_AUDIO_STREAM (sestream))
+            gst_element_release_request_pad (self->priv->audiotee, pad);
+          */
           GST_PAD_STREAM_UNLOCK(pad);
 
           gst_object_unref (pad);
         }
-
       g_object_unref (sestream);
     }
 }
