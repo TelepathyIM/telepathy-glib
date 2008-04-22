@@ -444,47 +444,6 @@ tp_stream_engine_stop_audio_source (TpStreamEngine *self)
     g_debug ("Stopping audio src async??");
 }
 
-
-static void
-tp_stream_engine_start_audio_sink (TpStreamEngine *self)
-{
-  GstStateChangeReturn state_ret;
-
-  return;
-
-  g_debug ("Starting audio sink");
-
-  self->priv->audio_sink_use_count++;
-
-  state_ret = gst_element_set_state (self->priv->audiosink, GST_STATE_PLAYING);
-
-  if (state_ret == GST_STATE_CHANGE_FAILURE)
-    g_error ("Error starting the audio sink");
-}
-
-
-static void
-tp_stream_engine_stop_audio_sink (TpStreamEngine *self)
-{
-  GstStateChangeReturn state_ret;
-
-  return;
-
-  self->priv->audio_sink_use_count--;
-
-  if (self->priv->audio_sink_use_count > 0)
-    return;
-
-  g_debug ("Stopping sink");
-
-  state_ret = gst_element_set_state (self->priv->audiosink, GST_STATE_NULL);
-
-  if (state_ret == GST_STATE_CHANGE_FAILURE)
-    g_error ("Error stopping the audio sink");
-  else if (state_ret == GST_STATE_CHANGE_ASYNC)
-    g_debug ("Stopping audio sink async??");
-}
-
 static void
 stream_free_resource (TpStreamEngineStream *stream,
     TpMediaStreamDirection dir,
@@ -493,20 +452,15 @@ stream_free_resource (TpStreamEngineStream *stream,
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   TpMediaStreamType media_type;
 
+  if (!(dir & TP_MEDIA_STREAM_DIRECTION_SEND))
+    return;
+
   g_object_get (stream, "media-type", &media_type, NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-    {
-      if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-        tp_stream_engine_stop_video_source (self);
-    }
+    tp_stream_engine_stop_video_source (self);
   else if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
-    {
-      if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-        tp_stream_engine_stop_audio_source (self);
-      if (dir & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
-        tp_stream_engine_stop_audio_sink (self);
-    }
+    tp_stream_engine_stop_audio_source (self);
 }
 
 static gboolean
@@ -517,20 +471,15 @@ stream_request_resource (TpStreamEngineStream *stream,
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   TpMediaStreamType media_type;
 
+  if (!(dir & TP_MEDIA_STREAM_DIRECTION_SEND))
+    return TRUE;
+
   g_object_get (stream, "media-type", &media_type, NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-    {
-      if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-        tp_stream_engine_start_video_source (self);
-    }
+    tp_stream_engine_start_video_source (self);
   else if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
-    {
-      if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-        tp_stream_engine_start_audio_source (self);
-      if (dir & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
-        tp_stream_engine_start_audio_sink (self);
-    }
+    tp_stream_engine_start_audio_source (self);
 
   return TRUE;
 }
