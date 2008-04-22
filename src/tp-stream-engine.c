@@ -167,6 +167,66 @@ set_element_props (FsElementAddedNotifier *notifier,
 }
 
 static void
+add_gstelements_conf_to_notifier (FsElementAddedNotifier *notifier)
+{
+  GKeyFile *keyfile = NULL;
+  gchar *filename;
+  gboolean loaded = FALSE;
+  GError *error = NULL;
+
+  keyfile = g_key_file_new ();
+
+  filename = g_build_filename (g_get_user_config_dir (), "stream-engine",
+      "gstelements.conf", NULL);
+
+  if (!g_key_file_load_from_file (keyfile, filename, G_KEY_FILE_NONE, &error))
+    {
+      g_debug ("Could not read element properties config at %s: %s", filename,
+          error ? error->message : "");
+    }
+  else
+    {
+      loaded = TRUE;
+    }
+  g_free (filename);
+  g_clear_error (&error);
+
+  if (!loaded)
+    {
+      gchar *path = NULL;
+      filename = g_build_filename ("stream-engine", "gstelements.conf", NULL);
+
+      if (!g_key_file_load_from_dirs (keyfile, filename,
+              (const char **) g_get_system_config_dirs (),
+              &path, G_KEY_FILE_NONE, &error))
+        {
+          g_debug ("Could not read element properties config file %s from any"
+              "of the XDG system config directories: %s", filename,
+              error ? error->message : "");
+        }
+      else
+        {
+          g_debug ("Loaded element properties from %s", path);
+          g_free (path);
+          loaded = TRUE;
+        }
+      g_free (filename);
+    }
+
+  g_clear_error (&error);
+
+  if (loaded)
+    {
+      fs_element_added_notifier_set_properties_from_keyfile (notifier,
+          keyfile);
+    }
+  else
+    {
+      g_key_file_free (keyfile);
+    }
+}
+
+static void
 tp_stream_engine_init (TpStreamEngine *self)
 {
   TpStreamEnginePrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
@@ -184,6 +244,7 @@ tp_stream_engine_init (TpStreamEngine *self)
   priv->notifier = fs_element_added_notifier_new ();
   g_signal_connect (priv->notifier, "element-added",
       G_CALLBACK (set_element_props), self);
+  add_gstelements_conf_to_notifier (priv->notifier);
 
   _create_pipeline (self);
 }
