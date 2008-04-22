@@ -833,7 +833,7 @@ bus_sync_handler (GstBus *bus G_GNUC_UNUSED, GstMessage *message, gpointer data)
 }
 
 static void
-_create_pipeline (TpStreamEngine *self)
+_build_base_video_elements (TpStreamEngine *self)
 {
   TpStreamEnginePrivate *priv = self->priv;
   GstElement *videosrc = NULL;
@@ -842,17 +842,12 @@ _create_pipeline (TpStreamEngine *self)
 #ifndef MAEMO_OSSO_SUPPORT
   GstElement *tmp;
 #endif
-  GstBus *bus;
-  GstCaps *filter = NULL;
   const gchar *elem;
   const gchar *caps_str;
-  GstStateChangeReturn state_ret;
   gboolean ret;
   GstElement *fakesink;
-
-  priv->pipeline = gst_pipeline_new (NULL);
-
-  fs_element_added_notifier_add (priv->notifier, GST_BIN (priv->pipeline));
+  GstCaps *filter = NULL;
+  GstStateChangeReturn state_ret;
 
  try_again:
 
@@ -1012,6 +1007,20 @@ _create_pipeline (TpStreamEngine *self)
   g_assert (ret);
   ret = gst_element_link (capsfilter, tee);
   g_assert (ret);
+}
+
+static void
+_create_pipeline (TpStreamEngine *self)
+{
+  TpStreamEnginePrivate *priv = self->priv;
+  GstBus *bus;
+  GstStateChangeReturn state_ret;
+
+  priv->pipeline = gst_pipeline_new (NULL);
+
+  fs_element_added_notifier_add (priv->notifier, GST_BIN (priv->pipeline));
+
+  _build_base_video_elements (self);
 
   state_ret = gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
   g_assert (state_ret != GST_STATE_CHANGE_FAILURE);
