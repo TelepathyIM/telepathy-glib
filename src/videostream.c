@@ -247,6 +247,8 @@ tp_stream_engine_video_stream_constructor (GType type,
       return obj;
     }
 
+  g_object_set (self->priv->queue, "leaky", 2, NULL);
+
   if (!gst_bin_add (GST_BIN (self->priv->bin), self->priv->queue))
     {
       g_warning ("Could not add quue to bin");
