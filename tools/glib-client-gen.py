@@ -660,13 +660,18 @@ class Generator(object):
             self.b(' * @%s: Used to pass an \'in\' argument: %s'
                    % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
 
-        self.b(' * @callback: called when the method call succeeds or fails')
-        self.b(' * @user_data: user-supplied data passed to the callback')
+        self.b(' * @callback: called when the method call succeeds or fails;')
+        self.b(' *   may be %NULL to make a "fire and forget" call with no ')
+        self.b(' *   reply tracking')
+        self.b(' * @user_data: user-supplied data passed to the callback;')
+        self.b(' *   must be %NULL if @callback is %NULL')
         self.b(' * @destroy: called with the user_data as argument, after the')
-        self.b(' *   call has succeeded, failed or been cancelled')
-        self.b(' * @weak_object: A #GObject which will be weakly referenced; ')
-        self.b(' *   if it is destroyed, this callback will automatically be')
-        self.b(' *   disconnected')
+        self.b(' *   call has succeeded, failed or been cancelled;')
+        self.b(' *   must be %NULL if @callback is %NULL')
+        self.b(' * @weak_object: If not %NULL, a #GObject which will be ')
+        self.b(' *   weakly referenced; if it is destroyed, this call ')
+        self.b(' *   will automatically be cancelled. Must be %NULL if ')
+        self.b(' *   @callback is %NULL')
         self.b(' *')
         self.b(' * Start a %s method call.' % member)
         self.b(' *')
@@ -707,6 +712,12 @@ class Generator(object):
         self.b('')
         self.b('  g_return_val_if_fail (%s (proxy), NULL);'
                % self.proxy_assert)
+        self.b('  g_return_val_if_fail (callback != NULL || '
+               'user_data == NULL, NULL);')
+        self.b('  g_return_val_if_fail (callback != NULL || '
+               'destroy == NULL, NULL);')
+        self.b('  g_return_val_if_fail (callback != NULL || '
+               'weak_object == NULL, NULL);')
         self.b('')
         self.b('  iface = tp_proxy_borrow_interface_by_id (')
         self.b('      (TpProxy *) proxy,')
@@ -727,6 +738,10 @@ class Generator(object):
                 self.b('            0,')
 
         self.b('            error, user_data, weak_object);')
+        self.b('')
+        self.b('      if (destroy != NULL)')
+        self.b('        destroy (user_data);')
+        self.b('')
         self.b('      g_error_free (error);')
         self.b('      return NULL;')
         self.b('    }')
