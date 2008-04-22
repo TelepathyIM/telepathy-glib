@@ -126,10 +126,8 @@ struct _TpStreamEnginePrivate
   GstElement *videosrc;
   GstElement *videotee;
 
-  GstElement *audiotee;
-  GstElement *audioadder;
   GstElement *audiosrc;
-  GstElement *audiosink;
+  GstElement *audiotee;
 
   GPtrArray *channels;
   GHashTable *channels_by_path;
@@ -140,15 +138,19 @@ struct _TpStreamEnginePrivate
 
   gint video_source_use_count;
   gint audio_source_use_count;
-  gint audio_sink_use_count;
 
   gboolean force_fakesrc;
 
-  /* Protected by the mutex */
+  /* Everything below this is protected by the mutex */
   GList *output_sinks;
   GList *preview_sinks;
 
   guint bus_async_source_id;
+
+  GstElement *audiosink;
+  GstElement *audioadder;
+
+  gint audio_sink_use_count;
 };
 
 static void
@@ -606,6 +608,250 @@ stream_receiving (TpStreamEngineVideoStream *videostream, gpointer user_data)
   g_free (channel_path);
 }
 
+
+
+static GstElement *
+_make_audio_sink (void)
+{
+  const gchar *elem;
+  GstElement *bin = NULL;
+  GstElement *sink = NULL;
+  GstElement *audioconvert = NULL;
+  GstElement *audioresample = NULL;
+  GstPad *pad;
+
+  if ((elem = getenv ("FS_AUDIO_SINK")) || (elem = getenv("FS_AUDIOSINK")))
+    {
+      g_debug ("making audio sink with pipeline \"%s\"", elem);
+      sink = gst_parse_bin_from_description (elem, TRUE, NULL);
+      g_assert (sink);
+    }
+  else
+    {
+      sink = gst_element_factory_make ("gconfaudiosink", NULL);
+
+      if (sink == NULL)
+        sink = gst_element_factory_make ("autoaudiosink", NULL);
+
+      if (sink == NULL)
+        sink = gst_element_factory_make ("alsasink", NULL);
+    }
+
+  if (sink == NULL)
+    {
+      g_warning ("failed to make audio sink element!");
+      return NULL;
+    }
+
+  g_debug ("made audio sink element %s", GST_ELEMENT_NAME (sink));
+
+  bin = gst_bin_new ("audiosinkbin");
+
+  if (!gst_bin_add (GST_BIN (bin), sink))
+    {
+      gst_object_unref (bin);
+      gst_object_unref (sink);
+      g_warning ("Could not add sink to bin");
+      return NULL;
+    }
+
+  audioresample = gst_element_factory_make ("audioresample", NULL);
+  if (!gst_bin_add (GST_BIN (bin), audioresample))
+    {
+      gst_object_unref (audioresample);
+      gst_object_unref (bin);
+      g_warning ("Could not add audioresample to the bin");
+      return NULL;
+    }
+
+  audioconvert = gst_element_factory_make ("audioconvert", NULL);
+  if (!gst_bin_add (GST_BIN (bin), audioconvert))
+    {
+      gst_object_unref (audioconvert);
+      gst_object_unref (bin);
+      g_warning ("Could not add audioconvert to the bin");
+      return NULL;
+    }
+
+  if (!gst_element_link_many (audioresample, audioconvert, sink, NULL))
+    {
+      gst_object_unref (bin);
+      g_warning ("Could not link sink elements");
+      return NULL;
+    }
+
+  pad = gst_bin_find_unconnected_pad (GST_BIN (bin), GST_PAD_SINK);
+
+  if (!pad)
+    {
+      gst_object_unref (bin);
+      g_warning ("Could not find unconnected sink pad in src bin");
+      return NULL;
+    }
+
+  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
+    {
+      gst_object_unref (bin);
+      g_warning ("Could not add pad to bin");
+      return NULL;
+    }
+
+  gst_object_unref (pad);
+
+
+  return bin;
+}
+
+/*
+ * BEWARE: This is called with the mutex locked
+ */
+
+static gboolean
+tp_stream_engine_add_audio_sink_locked (TpStreamEngine *self)
+{
+  GstElement *sink = NULL;
+  GstElement *liveadder = NULL;
+
+  sink = _make_audio_sink ();
+
+  if (!sink)
+    {
+      g_warning ("Could not make audio sink");
+      goto error;
+    }
+
+  if (!gst_bin_add (GST_BIN (self->priv->pipeline), sink))
+    {
+      g_warning ("Could not add audio sink to pipeline");
+      gst_object_unref (sink);
+      sink = NULL;
+      goto error;
+    }
+
+  liveadder = gst_element_factory_make ("liveadder", NULL);
+  if (!liveadder)
+    {
+      g_warning ("Could not create liveadder");
+      goto error;
+    }
+
+  if (!gst_bin_add (GST_BIN (self->priv->pipeline), liveadder))
+    {
+      gst_object_unref (liveadder);
+      liveadder = NULL;
+      g_warning ("Could not add liveadder to the bin");
+      goto error;
+    }
+
+  if (!gst_element_link_pads (liveadder, "src", sink, "sink"))
+    {
+      g_warning ("Could not linnk the liveadder to the sink");
+      goto error;
+    }
+
+  if (gst_element_set_state (sink, GST_STATE_PLAYING) ==
+      GST_STATE_CHANGE_FAILURE ||
+      gst_element_set_state (liveadder, GST_STATE_PLAYING) ==
+      GST_STATE_CHANGE_FAILURE)
+    {
+      g_warning ("Could not start sink or liveadder");
+      goto error;
+    }
+
+  self->priv->audiosink = sink;
+  self->priv->audioadder = liveadder;
+
+  return TRUE;
+
+ error:
+  if (sink)
+    {
+      gst_element_set_locked_state (sink, TRUE);
+      gst_element_set_state (sink, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (self->priv->pipeline), sink);
+    }
+  if (liveadder)
+    {
+      gst_element_set_locked_state (liveadder, TRUE);
+      gst_element_set_state (liveadder, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (self->priv->pipeline), liveadder);
+    }
+
+  return FALSE;
+}
+
+/*
+ * BEWARE: This is called with the mutex locked
+ */
+
+static void
+tp_stream_engine_remove_audio_sink_locked (TpStreamEngine *self)
+{
+  gst_element_set_locked_state (self->priv->audiosink, TRUE);
+  gst_element_set_locked_state (self->priv->audioadder, TRUE);
+  gst_element_set_state (self->priv->audiosink, GST_STATE_NULL);
+  gst_element_set_state (self->priv->audioadder, GST_STATE_NULL);
+
+  gst_bin_remove (GST_BIN (self->priv->pipeline), self->priv->audioadder);
+  gst_bin_remove (GST_BIN (self->priv->pipeline), self->priv->audiosink);
+
+  self->priv->audiosink = NULL;
+  self->priv->audioadder = NULL;
+}
+
+/*
+ * WARNING:
+ * This will be called on the streaming thread
+ *
+ */
+
+static GstPad *
+audiostream_request_pad (TpStreamEngineAudioStream *audiostream,
+    gpointer user_data)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+  GstPad *pad = NULL;
+
+  g_mutex_lock (self->priv->mutex);
+
+  if (self->priv->audiosink == NULL)
+    if (!tp_stream_engine_add_audio_sink_locked (self))
+      goto out;
+
+  g_assert (self->priv->audioadder);
+
+  pad = gst_element_get_request_pad (self->priv->audioadder, "sink%d");
+
+  self->priv->audio_sink_use_count++;
+
+ out:
+  g_mutex_unlock (self->priv->mutex);
+
+  return pad;
+}
+
+static void
+audiostream_release_pad (TpStreamEngineAudioStream *audiostream, GstPad *pad,
+    gpointer user_data)
+{
+  TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
+
+  g_mutex_lock (self->priv->mutex);
+
+  gst_element_release_request_pad (self->priv->audioadder, pad);
+
+  self->priv->audio_sink_use_count--;
+
+  if (self->priv->audio_sink_use_count <= 0)
+    {
+      self->priv->audio_sink_use_count = 0;
+
+      tp_stream_engine_remove_audio_sink_locked (self);
+    }
+
+  g_mutex_unlock (self->priv->mutex);
+}
+
 static void
 channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
     TpStreamEngineStream *stream, gpointer user_data)
@@ -634,6 +880,12 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
         }
       g_clear_error (&error);
       g_object_set_data ((GObject*) stream, "se-stream", audiostream);
+
+      g_signal_connect (audiostream, "request-pad",
+          G_CALLBACK (audiostream_request_pad), self);
+      g_signal_connect (audiostream, "release-pad",
+          G_CALLBACK (audiostream_release_pad), self);
+
     }
   else if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
     {
@@ -1158,103 +1410,10 @@ _make_audio_src (void)
 }
 
 
-static GstElement *
-_make_audio_sink (void)
-{
-  const gchar *elem;
-  GstElement *bin = NULL;
-  GstElement *sink = NULL;
-  GstElement *audioconvert = NULL;
-  GstElement *audioresample = NULL;
-  GstPad *pad;
-
-  if ((elem = getenv ("FS_AUDIO_SINK")) || (elem = getenv("FS_AUDIOSINK")))
-    {
-      g_debug ("making audio sink with pipeline \"%s\"", elem);
-      sink = gst_parse_bin_from_description (elem, TRUE, NULL);
-      g_assert (sink);
-    }
-  else
-    {
-      sink = gst_element_factory_make ("gconfaudiosink", NULL);
-
-      if (sink == NULL)
-        sink = gst_element_factory_make ("autoaudiosink", NULL);
-
-      if (sink == NULL)
-        sink = gst_element_factory_make ("alsasink", NULL);
-    }
-
-  if (sink == NULL)
-    {
-      g_warning ("failed to make audio sink element!");
-      return NULL;
-    }
-
-  g_debug ("made audio sink element %s", GST_ELEMENT_NAME (sink));
-
-  bin = gst_bin_new ("audiosinkbin");
-
-  if (!gst_bin_add (GST_BIN (bin), sink))
-    {
-      gst_object_unref (bin);
-      gst_object_unref (sink);
-      g_warning ("Could not add sink to bin");
-      return NULL;
-    }
-
-  audioresample = gst_element_factory_make ("audioresample", NULL);
-  if (!gst_bin_add (GST_BIN (bin), audioresample))
-    {
-      gst_object_unref (audioresample);
-      gst_object_unref (bin);
-      g_warning ("Could not add audioresample to the bin");
-      return NULL;
-    }
-
-  audioconvert = gst_element_factory_make ("audioconvert", NULL);
-  if (!gst_bin_add (GST_BIN (bin), audioconvert))
-    {
-      gst_object_unref (audioconvert);
-      gst_object_unref (bin);
-      g_warning ("Could not add audioconvert to the bin");
-      return NULL;
-    }
-
-  if (!gst_element_link_many (audioresample, audioconvert, sink, NULL))
-    {
-      gst_object_unref (bin);
-      g_warning ("Could not link sink elements");
-      return NULL;
-    }
-
-  pad = gst_bin_find_unconnected_pad (GST_BIN (bin), GST_PAD_SINK);
-
-  if (!pad)
-    {
-      gst_object_unref (bin);
-      g_warning ("Could not find unconnected sink pad in src bin");
-      return NULL;
-    }
-
-  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
-    {
-      gst_object_unref (bin);
-      g_warning ("Could not add pad to bin");
-      return NULL;
-    }
-
-  gst_object_unref (pad);
-
-
-  return bin;
-}
-
-
 static void
 _build_base_audio_elements (TpStreamEngine *self)
 {
-  GstElement *src = NULL, *sink = NULL;
+  GstElement *src = NULL;
   GstElement *tee = NULL;
 
   src = _make_audio_src ();
@@ -1292,43 +1451,6 @@ _build_base_audio_elements (TpStreamEngine *self)
 
   self->priv->audiosrc = src;
   self->priv->audiotee = tee;
-
-
-  sink = _make_audio_sink ();
-
-  /*
-  if (!sink)
-    {
-      g_warning ("Could not make audio sink");
-      return;
-    }
-
-  if (!gst_bin_add (GST_BIN (self->priv->pipeline), sink))
-    {
-      g_warning ("Could not add audio sink to pipeline");
-      gst_object_unref (src);
-      return;
-    }
-
-  liveadder = gst_element_factory_make ("liveadder", NULL);
-  if (!gst_bin_add (GST_BIN (self->priv->pipeline), liveadder))
-    {
-      gst_object_unref (liveadder);
-      g_warning ("Could not add liveadder to the bin");
-      return;
-    }
-
-  if (!gst_element_link_pads (liveadder, "src", sink, "sink"))
-    {
-      g_warning ("Could not linnk the liveadder to the sink");
-      return;
-    }
-
-  self->priv->audiosink = sink;
-  self->priv->audioadder = liveadder;
-
-  */
-
 }
 
 
