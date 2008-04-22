@@ -52,14 +52,14 @@ struct _TpStreamEngineAudioStreamPrivate
 
   FsElementAddedNotifier *element_added_notifier;
 
-  GstElement *src;
+  GstElement *srcbin;
   GstElement *sink;
+
+  GstPad *pad;
 
   GstElement *bin;
 
   gulong src_pad_added_handler_id;
-  gulong request_resource_handler_id;
-  gulong free_resource_handler_id;
 
   GError *construction_error;
 
@@ -75,6 +75,7 @@ enum
   PROP_0,
   PROP_STREAM,
   PROP_BIN,
+  PROP_PAD,
   PROP_OUTPUT_VOLUME,
   PROP_OUTPUT_MUTE,
   PROP_INPUT_VOLUME,
@@ -82,7 +83,7 @@ enum
 };
 
 static GstElement *
-tp_stream_engine_audio_stream_make_src (TpStreamEngineAudioStream *self);
+tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self);
 static GstElement *
 tp_stream_engine_audio_stream_make_sink (TpStreamEngineAudioStream *self);
 
@@ -122,32 +123,6 @@ tp_stream_engine_audio_stream_init (TpStreamEngineAudioStream *self)
 }
 
 
-static void
-stream_free_resource (TpStreamEngineStream *stream,
-    TpMediaStreamDirection dir,
-    gpointer user_data)
-{
-  TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
-
-  if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-    gst_element_set_state (self->priv->src, GST_STATE_PLAYING);
-}
-
-static gboolean
-stream_request_resource (TpStreamEngineStream *stream,
-    TpMediaStreamDirection dir,
-    gpointer user_data)
-{
- TpStreamEngineAudioStream  *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
-
-  if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-    return (gst_element_set_state (self->priv->src, GST_STATE_PLAYING) !=
-        GST_STATE_CHANGE_FAILURE);
-  else
-    return TRUE;
-}
-
-
 static GObject *
 tp_stream_engine_audio_stream_constructor (GType type,
     guint n_props,
@@ -157,15 +132,15 @@ tp_stream_engine_audio_stream_constructor (GType type,
   TpStreamEngineAudioStream *self = NULL;
   GstPad *src_pad = NULL;
   GstPad *sink_pad = NULL;
-  GstElement *src = NULL;
+  GstElement *srcbin = NULL;
   GstElement *sink = NULL;
 
   obj = G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->constructor (type, n_props, props);
 
   self = (TpStreamEngineAudioStream *) obj;
 
-  src = tp_stream_engine_audio_stream_make_src (self);
-  if (!src)
+  srcbin = tp_stream_engine_audio_stream_make_src_bin (self);
+  if (!srcbin)
     {
       WARNING (self, "Could not make source");
       goto out;
@@ -174,27 +149,23 @@ tp_stream_engine_audio_stream_constructor (GType type,
   sink = tp_stream_engine_audio_stream_make_sink (self);
   if (!sink)
     {
-      gst_object_unref (src);
+      gst_object_unref (srcbin);
       WARNING (self, "Could not make sink");
       goto out;
     }
 
   fs_element_added_notifier_add (self->priv->element_added_notifier,
-      GST_BIN (src));
-  fs_element_added_notifier_add (self->priv->element_added_notifier,
       GST_BIN (sink));
 
 
-  if (!gst_bin_add (GST_BIN (self->priv->bin), src))
+  if (!gst_bin_add (GST_BIN (self->priv->bin), srcbin))
     {
-      gst_object_unref (src);
+      gst_object_unref (srcbin);
       gst_object_unref (sink);
       WARNING (self, "Could not add src to bin");
       goto out;
     }
-  self->priv->src = src;
-
-  gst_element_set_locked_state (src, TRUE);
+  self->priv->srcbin = srcbin;
 
   if (!gst_bin_add (GST_BIN (self->priv->bin), sink))
     {
@@ -213,7 +184,7 @@ tp_stream_engine_audio_stream_constructor (GType type,
       goto out;
     }
 
-  src_pad = gst_element_get_static_pad (self->priv->src, "src");
+  src_pad = gst_element_get_static_pad (self->priv->srcbin, "src");
 
   if (!src_pad)
     {
@@ -233,13 +204,27 @@ tp_stream_engine_audio_stream_constructor (GType type,
   gst_object_unref (src_pad);
   gst_object_unref (sink_pad);
 
-  gst_element_set_state (self->priv->sink, GST_STATE_PLAYING);
 
-  self->priv->request_resource_handler_id = g_signal_connect (
-      self->priv->stream, "request-resource",
-      G_CALLBACK (stream_request_resource), self);
-  self->priv->free_resource_handler_id = g_signal_connect (self->priv->stream,
-      "free-resource", G_CALLBACK (stream_free_resource), self);
+
+  sink_pad = gst_element_get_static_pad (self->priv->srcbin, "sink");
+
+  if (!sink_pad)
+    {
+      WARNING (self, "Could not get sink pad from srcbin");
+      goto out;
+    }
+
+  if (GST_PAD_LINK_FAILED (gst_pad_link (self->priv->pad, sink_pad)))
+    {
+      WARNING (self, "Could not link src to srcbin");
+      gst_object_unref (sink_pad);
+      goto out;
+    }
+
+  gst_object_unref (sink_pad);
+
+  gst_element_set_state (self->priv->srcbin, GST_STATE_PLAYING);
+  gst_element_set_state (self->priv->sink, GST_STATE_PLAYING);
 
   self->priv->src_pad_added_handler_id = g_signal_connect (self->priv->stream,
       "src-pad-added", G_CALLBACK (src_pad_added_cb), self);
@@ -268,20 +253,6 @@ tp_stream_engine_audio_stream_dispose (GObject *object)
       self->priv->src_pad_added_handler_id = 0;
     }
 
-  if (self->priv->request_resource_handler_id)
-    {
-      g_signal_handler_disconnect (self->priv->stream,
-          self->priv->request_resource_handler_id);
-      self->priv->request_resource_handler_id = 0;
-    }
-
-  if (self->priv->free_resource_handler_id)
-    {
-      g_signal_handler_disconnect (self->priv->stream,
-          self->priv->free_resource_handler_id);
-      self->priv->free_resource_handler_id = 0;
-    }
-
   if (self->priv->element_added_notifier)
     {
       g_object_unref (self->priv->element_added_notifier);
@@ -296,19 +267,24 @@ tp_stream_engine_audio_stream_dispose (GObject *object)
       self->priv->sink = NULL;
     }
 
- if (self->priv->src)
+  if (self->priv->srcbin)
     {
-      gst_element_set_locked_state (self->priv->src, TRUE);
-      gst_element_set_state (self->priv->src, GST_STATE_NULL);
-      gst_bin_remove (GST_BIN (self->priv->bin), self->priv->src);
-      self->priv->src = NULL;
+      gst_element_set_locked_state (self->priv->srcbin, TRUE);
+      gst_element_set_state (self->priv->srcbin, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (self->priv->bin), self->priv->srcbin);
+      self->priv->srcbin = NULL;
     }
-
 
   if (self->priv->bin)
     {
       gst_object_unref (self->priv->bin);
       self->priv->bin = NULL;
+    }
+
+  if (self->priv->pad)
+    {
+      gst_object_unref (self->priv->pad);
+      self->priv->pad = NULL;
     }
 
   if (self->priv->stream)
@@ -366,6 +342,16 @@ tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
       G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_BIN, param_spec);
 
+  param_spec = g_param_spec_object ("pad",
+      "The pad that the src data comes from",
+      "The GstPad the src data comes from",
+      GST_TYPE_PAD,
+      G_PARAM_CONSTRUCT_ONLY |
+      G_PARAM_READWRITE |
+      G_PARAM_STATIC_NICK |
+      G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_PAD, param_spec);
+
   param_spec = g_param_spec_double ("output-volume",
       "Output volume",
       "The output volume for this stream.",
@@ -420,6 +406,9 @@ tp_stream_engine_audio_stream_set_property  (GObject *object,
     case PROP_BIN:
       self->priv->bin = g_value_dup_object (value);
       break;
+    case PROP_PAD:
+      self->priv->pad = g_value_dup_object (value);
+      break;
     case PROP_OUTPUT_VOLUME:
       gst_child_proxy_set_property (GST_OBJECT (self->priv->sink),
           "volume::volume", value);
@@ -430,11 +419,11 @@ tp_stream_engine_audio_stream_set_property  (GObject *object,
       break;
     case PROP_INPUT_VOLUME:
       g_debug ("set input volume");
-      gst_child_proxy_set_property (GST_OBJECT (self->priv->src),
+      gst_child_proxy_set_property (GST_OBJECT (self->priv->srcbin),
           "volume::volume", value);
       break;
     case PROP_INPUT_MUTE:
-      gst_child_proxy_set_property (GST_OBJECT (self->priv->src),
+      gst_child_proxy_set_property (GST_OBJECT (self->priv->srcbin),
           "volume::mute", value);
       break;
     default:
@@ -459,6 +448,9 @@ tp_stream_engine_audio_stream_get_property  (GObject *object,
     case PROP_BIN:
       g_value_set_object (value, self->priv->bin);
       break;
+    case PROP_PAD:
+      g_value_set_object (value, self->priv->pad);
+      break;
     case PROP_OUTPUT_VOLUME:
       gst_child_proxy_get_property (GST_OBJECT (self->priv->sink),
           "volume::volume", value);
@@ -468,11 +460,11 @@ tp_stream_engine_audio_stream_get_property  (GObject *object,
           "volume::mute", value);
       break;
     case PROP_INPUT_VOLUME:
-      gst_child_proxy_get_property (GST_OBJECT (self->priv->src),
+      gst_child_proxy_get_property (GST_OBJECT (self->priv->srcbin),
           "volume::volume", value);
       break;
     case PROP_INPUT_MUTE:
-      gst_child_proxy_get_property (GST_OBJECT (self->priv->src),
+      gst_child_proxy_get_property (GST_OBJECT (self->priv->srcbin),
           "volume::mute", value);
       break;
     default:
@@ -502,7 +494,7 @@ set_audio_props (FsElementAddedNotifier *notifier,
 
   if (g_object_has_property ((GObject *) element, "buffer-time") &&
       gst_object_has_ancestor ((GstObject *) element,
-          (GstObject *) self->priv->src))
+          (GstObject *) self->priv->srcbin))
     g_object_set (element, "buffer-time", G_GINT64_CONSTANT (100000), NULL);
 
   if (g_object_has_property ((GObject *) element, "profile"))
@@ -510,56 +502,49 @@ set_audio_props (FsElementAddedNotifier *notifier,
 }
 
 static GstElement *
-tp_stream_engine_audio_stream_make_src (TpStreamEngineAudioStream *self)
+tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
 {
-  const gchar *elem;
   GstElement *bin = NULL;
+  GstElement *queue = NULL;
+  GstElement *audioconvert = NULL;
   GstElement *volume = NULL;
-  GstElement *src = NULL;
   GstPad *pad;
 
   bin = gst_bin_new (NULL);
 
-  if ((elem = getenv ("FS_AUDIO_SRC")) || (elem = getenv ("FS_AUDIOSRC")))
-    {
-      DEBUG (self, "making audio src with pipeline \"%s\"", elem);
-      src = gst_parse_bin_from_description (elem, TRUE, NULL);
-      g_assert (src);
-    }
-  else
-    {
-      src = gst_element_factory_make ("gconfaudiosrc", NULL);
+  queue = gst_element_factory_make ("queue", NULL);
+  g_object_set (queue, "leaky", 2, NULL);
 
-      if (src == NULL)
-        src = gst_element_factory_make ("alsasrc", NULL);
-    }
-
-  if (src == NULL)
+  if (!gst_bin_add (GST_BIN (bin), queue))
     {
-      DEBUG (self, "failed to make audio src element!");
+      gst_object_unref (queue);
+      gst_object_unref (bin);
+      WARNING (self, "Could not add queue to bin");
       return NULL;
     }
 
-  DEBUG (self, "made audio src element %s", GST_ELEMENT_NAME (src));
+  audioconvert = gst_element_factory_make ("audioconvert", NULL);
+  if (!gst_bin_add (GST_BIN (bin), audioconvert))
+    {
+      gst_object_unref (audioconvert);
+      gst_object_unref (bin);
+      WARNING (self, "Could not add audioconvert to bin");
+      return NULL;
+    }
 
   volume = gst_element_factory_make ("volume", "volume");
-
-  if (!gst_bin_add (GST_BIN (bin), volume) ||
-      !gst_bin_add (GST_BIN (bin), src))
+  if (!gst_bin_add (GST_BIN (bin), volume))
     {
-      gst_object_unref (bin);
-      gst_object_unref (src);
       gst_object_unref (volume);
-
-      WARNING (self, "Could not add volume or src to the bin");
-
+      gst_object_unref (bin);
+      WARNING (self, "Could not add volume to bin");
       return NULL;
     }
 
-  if (!gst_element_link_pads (src, "src", volume, "sink"))
+  if (!gst_element_link_many (queue, audioconvert, volume, NULL))
     {
       gst_object_unref (bin);
-      WARNING (self, "Could not link src and volume elements");
+      WARNING (self, "Could not link queue, audioconvert and volume elements");
       return NULL;
     }
 
@@ -573,6 +558,24 @@ tp_stream_engine_audio_stream_make_src (TpStreamEngineAudioStream *self)
     }
 
   if (!gst_element_add_pad (bin, gst_ghost_pad_new ("src", pad)))
+    {
+      gst_object_unref (bin);
+      WARNING (self, "Could not add pad to bin");
+      return NULL;
+    }
+
+  gst_object_unref (pad);
+
+  pad = gst_bin_find_unconnected_pad (GST_BIN (bin), GST_PAD_SINK);
+
+  if (!pad)
+    {
+      gst_object_unref (bin);
+      WARNING (self, "Could not find unconnected sink pad in sink bin");
+      return NULL;
+    }
+
+  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
     {
       gst_object_unref (bin);
       WARNING (self, "Could not add pad to bin");
@@ -680,14 +683,21 @@ tp_stream_engine_audio_stream_make_sink (TpStreamEngineAudioStream *self)
 
 
 TpStreamEngineAudioStream *
-tp_stream_engine_audio_stream_new (TpStreamEngineStream *stream, GstBin *bin,
+tp_stream_engine_audio_stream_new (TpStreamEngineStream *stream,
+    GstBin *bin,
+    GstPad *pad,
     GError **error)
 {
   TpStreamEngineAudioStream *self = NULL;
 
+  g_return_val_if_fail (TP_STREAM_ENGINE_IS_STREAM (stream) &&
+      GST_IS_BIN (bin) &&
+      GST_IS_PAD (pad), NULL);
+
   self = g_object_new (TP_STREAM_ENGINE_TYPE_AUDIO_STREAM,
       "stream", stream,
       "bin", bin,
+      "pad", pad,
       NULL);
 
   if (self->priv->construction_error)

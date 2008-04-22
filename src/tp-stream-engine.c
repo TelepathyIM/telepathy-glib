@@ -491,9 +491,18 @@ stream_free_resource (TpStreamEngineStream *stream,
 
   g_object_get (stream, "media-type", &media_type, NULL);
 
-  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO &&
-      dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-    tp_stream_engine_stop_video_source (self);
+  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+    {
+      if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
+        tp_stream_engine_stop_video_source (self);
+    }
+  else if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
+    {
+      if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
+        tp_stream_engine_stop_audio_source (self);
+      if (dir & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
+        tp_stream_engine_stop_audio_sink (self);
+    }
 }
 
 static gboolean
@@ -506,9 +515,18 @@ stream_request_resource (TpStreamEngineStream *stream,
 
   g_object_get (stream, "media-type", &media_type, NULL);
 
-  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO &&
-      dir & TP_MEDIA_STREAM_DIRECTION_SEND)
-    tp_stream_engine_start_video_source (self);
+  if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+    {
+      if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
+        tp_stream_engine_start_video_source (self);
+    }
+  else if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
+    {
+      if (dir & TP_MEDIA_STREAM_DIRECTION_SEND)
+        tp_stream_engine_start_audio_source (self);
+      if (dir & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
+        tp_stream_engine_start_audio_sink (self);
+    }
 
   return TRUE;
 }
@@ -634,13 +652,17 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
   if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
     {
       TpStreamEngineAudioStream *audiostream;
+      GstPad *pad;
+
+      pad = gst_element_get_request_pad (self->priv->audiotee, "src%d");
 
       audiostream = tp_stream_engine_audio_stream_new (stream,
-          GST_BIN (self->priv->pipeline), &error);
+          GST_BIN (self->priv->pipeline), pad, &error);
 
       if (!audiostream)
         {
           g_warning ("Could not create audio stream: %s", error->message);
+          gst_element_release_request_pad (self->priv->audiotee, pad);
           return;
         }
       g_clear_error (&error);
@@ -659,6 +681,7 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
       if (!videostream)
         {
           g_warning ("Could not create video stream: %s", error->message);
+          gst_element_release_request_pad (self->priv->videotee, pad);
           return;
         }
       g_clear_error (&error);
@@ -1033,8 +1056,6 @@ _build_base_video_elements (TpStreamEngine *self)
       gst_bin_remove (GST_BIN (priv->pipeline), fakesink);
     }
 
-  priv->videosrc = videosrc;
-
   gst_element_set_locked_state (videosrc, TRUE);
 
   tee = gst_element_factory_make ("tee", "videotee");
@@ -1042,8 +1063,8 @@ _build_base_video_elements (TpStreamEngine *self)
   if (!gst_bin_add (GST_BIN (priv->pipeline), tee))
     g_error ("Could not add tee to pipeline");
 
-  self->priv->videotee = tee;
-
+  priv->videosrc = videosrc;
+  priv->videotee = tee;
 
 #ifndef MAEMO_OSSO_SUPPORT
 #if 0
@@ -1338,7 +1359,7 @@ _build_base_audio_elements (TpStreamEngine *self)
       return;
     }
 
-  self->priv->audiosrc = src;
+  self->priv->audiosink = sink;
   self->priv->audioadder = liveadder;
 
 }

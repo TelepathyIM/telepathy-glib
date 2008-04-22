@@ -47,7 +47,9 @@ typedef struct {
 GType tp_stream_engine_audio_stream_get_type (void);
 
 TpStreamEngineAudioStream *
-tp_stream_engine_audio_stream_new (TpStreamEngineStream *stream, GstBin *bin,
+tp_stream_engine_audio_stream_new (TpStreamEngineStream *stream,
+    GstBin *bin,
+    GstPad *pad,
     GError **error);
 
 G_END_DECLS
