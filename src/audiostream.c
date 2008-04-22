@@ -24,7 +24,6 @@
 
 #include <string.h>
 
-#include <gst/farsight/fs-element-added-notifier.h>
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "audiostream.h"
@@ -50,8 +49,6 @@ G_DEFINE_TYPE (TpStreamEngineAudioStream, tp_stream_engine_audio_stream,
 struct _TpStreamEngineAudioStreamPrivate
 {
   TpStreamEngineStream *stream;
-
-  FsElementAddedNotifier *element_added_notifier;
 
   GstElement *srcbin;
 
@@ -100,11 +97,6 @@ static GstElement *
 tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self);
 
 
-static void set_audio_props (FsElementAddedNotifier *notifier G_GNUC_UNUSED,
-    GstBin *parent G_GNUC_UNUSED,
-    GstElement *element,
-    gpointer user_data);
-
 static void tp_stream_engine_audio_stream_set_property  (GObject *object,
     guint property_id,
     const GValue *value,
@@ -128,13 +120,8 @@ tp_stream_engine_audio_stream_init (TpStreamEngineAudioStream *self)
 
   self->priv->mutex = g_mutex_new ();
 
-  self->priv->element_added_notifier = fs_element_added_notifier_new ();
-
   self->priv->output_volume = 1;
   self->priv->output_mute = FALSE;
-
-  g_signal_connect (self->priv->element_added_notifier,
-      "element-added", G_CALLBACK (set_audio_props), self);
 }
 
 
@@ -282,13 +269,6 @@ tp_stream_engine_audio_stream_dispose (GObject *object)
           self->priv->src_pad_added_handler_id);
       self->priv->src_pad_added_handler_id = 0;
     }
-
-  if (self->priv->element_added_notifier)
-    {
-      g_object_unref (self->priv->element_added_notifier);
-      self->priv->element_added_notifier = NULL;
-    }
-
 
   g_mutex_lock (self->priv->mutex);
   g_list_foreach (self->priv->sinkbins, free_sinkbin, self);
@@ -551,36 +531,6 @@ tp_stream_engine_audio_stream_get_property  (GObject *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
     }
-}
-
-static void
-set_audio_props (FsElementAddedNotifier *notifier,
-    GstBin *parent G_GNUC_UNUSED,
-    GstElement *element,
-    gpointer user_data)
-{
-#if 0
-  TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
-
-  if (g_object_has_property ((GObject *) element, "blocksize"))
-    g_object_set (element, "blocksize", 320, NULL);
-
-  if (g_object_has_property ((GObject *) element, "latency-time") &&
-      gst_object_has_ancestor ((GstObject * )element,
-          (GstObject *) self->priv->sink))
-    g_object_set (element, "latency-time", G_GINT64_CONSTANT (20000),
-        NULL);
-  if (g_object_has_property ((GObject *) element, "is-live"))
-    g_object_set (element, "is-live", TRUE, NULL);
-
-  if (g_object_has_property ((GObject *) element, "buffer-time") &&
-      gst_object_has_ancestor ((GstObject *) element,
-          (GstObject *) self->priv->srcbin))
-    g_object_set (element, "buffer-time", G_GINT64_CONSTANT (100000), NULL);
-
-  if (g_object_has_property ((GObject *) element, "profile"))
-    g_object_set (element, "profile", 2 /* chat */ , NULL);
-#endif
 }
 
 static GstElement *
