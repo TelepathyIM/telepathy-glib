@@ -617,6 +617,10 @@ stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
               gst_object_unref (peer);
             }
           /*
+           * Releasing request pads currently fail cause stuff like
+           * alloc_buffer() does take any lock and there is no way to prevent it
+           * ??? or something like that
+
           if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream))
             gst_element_release_request_pad (self->priv->videotee, pad);
           else if (TP_STREAM_ENGINE_IS_AUDIO_STREAM (sestream))
