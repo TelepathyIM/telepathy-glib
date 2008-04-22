@@ -1116,7 +1116,7 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   TpStreamEnginePrivate *priv = engine->priv;
   GError *error = NULL;
-  gchar *error_string, *tmp;
+  gchar *error_string;
   guint i;
   GstElement *source = GST_ELEMENT (GST_MESSAGE_SRC (message));
   gchar *name = gst_element_get_name (source);
@@ -1135,8 +1135,6 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
         g_debug ("%s: got error from %s: %s: %s (%d %d), stopping pipeline",
             G_STRFUNC, name, error->message, error_string,
             error->domain, error->code);
-
-        tmp = g_strdup_printf ("%s: %s", error->message, error_string);
 
         close_all_streams (engine, error->message);
 
