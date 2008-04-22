@@ -460,7 +460,7 @@ tp_stream_engine_stop_video_source (TpStreamEngine *self)
   if (self->priv->video_source_use_count > 0)
     return;
 
-  g_debug ("Stopping source");
+  g_debug ("Stopping video source");
 
   state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_NULL);
 
@@ -497,7 +497,7 @@ tp_stream_engine_stop_audio_source (TpStreamEngine *self)
   if (self->priv->audio_source_use_count > 0)
     return;
 
-  g_debug ("Stopping source");
+  g_debug ("Stopping audio source");
 
   state_ret = gst_element_set_state (self->priv->audiosrc, GST_STATE_NULL);
 
