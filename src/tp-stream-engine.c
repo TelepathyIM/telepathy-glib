@@ -450,6 +450,8 @@ tp_stream_engine_start_audio_sink (TpStreamEngine *self)
 {
   GstStateChangeReturn state_ret;
 
+  return;
+
   g_debug ("Starting audio sink");
 
   self->priv->audio_sink_use_count++;
@@ -465,6 +467,8 @@ static void
 tp_stream_engine_stop_audio_sink (TpStreamEngine *self)
 {
   GstStateChangeReturn state_ret;
+
+  return;
 
   self->priv->audio_sink_use_count--;
 
@@ -1288,7 +1292,6 @@ static void
 _build_base_audio_elements (TpStreamEngine *self)
 {
   GstElement *src = NULL, *sink = NULL;
-  GstElement *liveadder = NULL;
   GstElement *tee = NULL;
 
   src = _make_audio_src ();
@@ -1330,6 +1333,7 @@ _build_base_audio_elements (TpStreamEngine *self)
 
   sink = _make_audio_sink ();
 
+  /*
   if (!sink)
     {
       g_warning ("Could not make audio sink");
@@ -1342,8 +1346,6 @@ _build_base_audio_elements (TpStreamEngine *self)
       gst_object_unref (src);
       return;
     }
-
-  gst_element_set_locked_state (sink, TRUE);
 
   liveadder = gst_element_factory_make ("liveadder", NULL);
   if (!gst_bin_add (GST_BIN (self->priv->pipeline), liveadder))
@@ -1361,6 +1363,8 @@ _build_base_audio_elements (TpStreamEngine *self)
 
   self->priv->audiosink = sink;
   self->priv->audioadder = liveadder;
+
+  */
 
 }
 
