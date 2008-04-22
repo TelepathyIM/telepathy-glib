@@ -456,10 +456,13 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->fs_stream)
     {
+      tp_stream_engine_stream_free_resource (stream,
+          TP_MEDIA_STREAM_DIRECTION_SEND);
+
       g_object_unref (priv->fs_stream);
 
       tp_stream_engine_stream_free_resource (stream,
-          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+          TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
       priv->fs_stream = NULL;
     }
