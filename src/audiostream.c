@@ -28,6 +28,7 @@
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "audiostream.h"
+#include "tp-stream-engine-signals-marshal.h"
 #include "util.h"
 
 G_DEFINE_TYPE (TpStreamEngineAudioStream, tp_stream_engine_audio_stream,
@@ -81,6 +82,16 @@ enum
   PROP_INPUT_VOLUME,
   PROP_INPUT_MUTE
 };
+
+/* signals */
+enum
+{
+  REQUEST_PAD,
+  RELEASE_PAD,
+  SIGNAL_COUNT
+};
+
+static guint signals[SIGNAL_COUNT] = {0};
 
 static GstElement *
 tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self);
@@ -308,6 +319,20 @@ tp_stream_engine_audio_stream_finalize (GObject *object)
     G_OBJECT_CLASS (tp_stream_engine_audio_stream_parent_class)->finalize (object);
 }
 
+static gboolean
+request_pad_accumulator (GSignalInvocationHint *ihint,
+    GValue *return_accu,
+    const GValue *handler_return,
+    gpointer data)
+{
+  if (G_TYPE_CHECK_VALUE_TYPE (handler_return, GST_TYPE_PAD))
+    {
+      g_value_copy (handler_return, return_accu);
+      return FALSE;
+    }
+
+  return TRUE;
+}
 
 static void
 tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
@@ -387,6 +412,27 @@ tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
       G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_INPUT_MUTE,
       param_spec);
+
+  /*
+   * BEWARE:
+   * This signal is emitted from the streaming thread
+   */
+
+  signals[REQUEST_PAD] = g_signal_new ("request-pad",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  request_pad_accumulator, NULL,
+                  tp_stream_engine_marshal_OBJECT__VOID,
+                  GST_TYPE_PAD, 0);
+
+  signals[RELEASE_PAD] = g_signal_new ("release-pad",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1, GST_TYPE_PAD);
 
 }
 
