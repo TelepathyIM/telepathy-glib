@@ -8,6 +8,7 @@ static int fail = 0;
 static gboolean had_unsupported = FALSE;
 static gboolean had_supported = FALSE;
 static GMainLoop *mainloop = NULL;
+static gboolean freed_user_data[] = { FALSE, FALSE, FALSE, FALSE };
 
 static void
 myassert_failed (void)
@@ -22,7 +23,7 @@ supported_cb (TpDBusDaemon *bus_daemon,
               gpointer user_data,
               GObject *weak_object)
 {
-  MYASSERT (user_data == NULL, "");
+  MYASSERT (user_data != NULL, "");
   MYASSERT (weak_object == NULL, "");
   MYASSERT (names != NULL, "");
   MYASSERT (bus_daemon != NULL, "");
@@ -44,7 +45,7 @@ unsupported_cb (TpProxy *proxy,
                 GObject *weak_object)
 {
   MYASSERT (weak_object == NULL, "");
-  MYASSERT (user_data == NULL, "");
+  MYASSERT (user_data != NULL, "");
   MYASSERT (proxy != NULL, "");
   MYASSERT (out0 == NULL, "");
   MYASSERT (error != NULL, "");
@@ -60,6 +61,14 @@ unsupported_cb (TpProxy *proxy,
 static void
 do_nothing (void)
 {
+}
+
+static void
+free_user_data (gpointer user_data)
+{
+  gboolean *ptr = user_data;
+
+  *ptr = TRUE;
 }
 
 int
@@ -90,19 +99,20 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
 
   MYASSERT (tp_cli_dbus_daemon_call_list_names (bus_daemon, -1, supported_cb,
-        NULL, NULL, NULL) != NULL, "");
+        freed_user_data + 0, free_user_data, NULL) != NULL, "");
   MYASSERT (tp_cli_properties_interface_call_list_properties (bus_daemon, -1,
-        unsupported_cb, NULL, NULL, NULL) == NULL, "");
+        unsupported_cb, freed_user_data + 1, free_user_data, NULL) == NULL,
+      "");
 
   /* the same, but with signals */
   MYASSERT (tp_cli_dbus_daemon_connect_to_name_acquired (bus_daemon,
         (tp_cli_dbus_daemon_signal_callback_name_acquired) do_nothing,
-        NULL, NULL, NULL, NULL) != NULL, "");
+        freed_user_data + 2, free_user_data, NULL, NULL) != NULL, "");
   MYASSERT (tp_cli_properties_interface_connect_to_property_flags_changed
         (bus_daemon,
         (tp_cli_properties_interface_signal_callback_property_flags_changed)
             do_nothing,
-        NULL, NULL, NULL, &error) == NULL, "");
+        freed_user_data + 3, free_user_data, NULL, &error) == NULL, "");
   MYASSERT (error != NULL, "");
   g_error_free (error);
   error = NULL;
@@ -110,6 +120,11 @@ main (int argc,
   g_main_loop_run (mainloop);
   g_main_loop_unref (mainloop);
   mainloop = NULL;
+
+  MYASSERT (freed_user_data[0], " (async call, supported)");
+  MYASSERT (freed_user_data[1], " (async call, unsupported)");
+  MYASSERT (!freed_user_data[2], " (signal connection, supported)");
+  MYASSERT (freed_user_data[3], " (signal connection, unsupported)");
 
   return fail;
 }
