@@ -163,7 +163,7 @@ dbus_filter_function (DBusConnection *connection,
   if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected") &&
       !tp_strdiff (dbus_message_get_path (message), DBUS_PATH_LOCAL))
     {
-      g_warning ("Got disconnected from the session bus");
+      g_message ("Got disconnected from the session bus");
     }
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
