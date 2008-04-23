@@ -1101,7 +1101,7 @@ tp_group_mixin_change_flags (GObject *obj,
   removed = del & mixin->group_flags;
   mixin->group_flags &= ~removed;
 
-  if (add != 0 || del != 0)
+  if (added != 0 || removed != 0)
     {
       gchar *str_added, *str_removed, *str_flags;
 
