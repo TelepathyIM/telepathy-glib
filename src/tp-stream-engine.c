@@ -1415,7 +1415,7 @@ _make_audio_src (void)
     }
   else
     {
-#if MAEMO_OSSO_SUPPORT
+#ifdef MAEMO_OSSO_SUPPORT
       src = gst_element_factory_make ("dsppcmsrc", NULL);
 #else
       src = gst_element_factory_make ("gconfaudiosrc", NULL);
