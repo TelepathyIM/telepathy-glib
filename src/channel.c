@@ -248,7 +248,7 @@ cb_properties_listed (TpProxy *proxy,
       GValueArray *spec = g_ptr_array_index (structs, i);
       guint id, flags;
       const gchar *name, *type;
-      gboolean want;
+      gboolean want = FALSE;
 
       id = g_value_get_uint (g_value_array_get_nth (spec, 0));
       name = g_value_get_string (g_value_array_get_nth (spec, 1));
