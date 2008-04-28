@@ -1104,7 +1104,12 @@ tp_group_mixin_change_flags (GObject *obj,
   removed = del & mixin->group_flags;
   mixin->group_flags &= ~removed;
 
-  if (added != 0 || removed != 0)
+  if (added == 0 && removed == 0)
+    {
+      DEBUG ("No change: %u includes all the bits of %u and none of %u",
+          mixin->group_flags, add, del);
+    }
+  else
     {
       gchar *str_added, *str_removed, *str_flags;
 
