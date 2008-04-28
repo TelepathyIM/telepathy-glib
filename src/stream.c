@@ -23,6 +23,7 @@
 #endif
 
 #include <string.h>
+#include <stdlib.h>
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>

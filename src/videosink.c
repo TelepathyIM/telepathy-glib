@@ -23,6 +23,7 @@
 #endif
 
 #include <string.h>
+#include <stdlib.h>
 
 #include <gst/interfaces/xoverlay.h>
 #include <gst/farsight/fs-element-added-notifier.h>
