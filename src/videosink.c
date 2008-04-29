@@ -386,10 +386,12 @@ tp_stream_engine_video_sink_bus_sync_message (
     GstMessage *message)
 {
   const GstStructure *s;
-  GstIterator *it = NULL;
-  gboolean done = FALSE;
   gboolean found = FALSE;
+#ifndef MAEMO_OSSO_SUPPORT
+  gboolean done = FALSE;
+  GstIterator *it = NULL;
   gpointer item;
+#endif
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return FALSE;
@@ -397,6 +399,17 @@ tp_stream_engine_video_sink_bus_sync_message (
   s = gst_message_get_structure (message);
   if (!gst_structure_has_name (s, "prepare-xwindow-id"))
     return FALSE;
+
+#ifdef MAEMO_OSSO_SUPPORT
+
+  if (GST_MESSAGE_SRC (message) == GST_OBJECT_CAST (self->priv->sink))
+    {
+      g_debug ("Setting window id on sink");
+      gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (self->priv->sink),
+          self->priv->window_id);
+      found = TRUE;
+    }
+#else
 
   it = gst_bin_iterate_all_by_interface (GST_BIN (self->priv->sink),
       GST_TYPE_X_OVERLAY);
@@ -427,6 +440,8 @@ tp_stream_engine_video_sink_bus_sync_message (
     }
   }
   gst_iterator_free (it);
+
+#endif
 
   return found;
 }
