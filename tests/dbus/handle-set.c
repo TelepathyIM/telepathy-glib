@@ -25,6 +25,7 @@ main (int argc,
   TpHandleRepoIface *repo = NULL;
   TpHandleSet *set = NULL;
   TpIntSet *iset = NULL, *result = NULL;
+  GError *error = NULL;
 
   TpHandle h1, h2, h3, h4;
 
@@ -46,6 +47,12 @@ main (int argc,
   MYASSERT (h2 != 0, "");
   MYASSERT (h3 != 0, "");
   MYASSERT (h4 != 0, "");
+
+  MYASSERT (tp_handle_lookup (repo, "not-there", NULL, &error) == 0, "");
+  /* Regression test for https://bugs.freedesktop.org/show_bug.cgi?id=15387 */
+  MYASSERT (error != NULL, "");
+  g_error_free (error);
+  error = NULL;
 
   /* Add one handle, check that it's in, check the size */
   tp_handle_set_add (set, h1);
