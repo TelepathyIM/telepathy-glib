@@ -36,9 +36,6 @@ test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
 test_handle_set_SOURCES = handle-set.c
 test_handle_set_LDADD = $(TP_GLIB_LIBS)
 
-test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)
-test_unsupported_interface_SOURCES = unsupported-interface.c
-
 test_invalidated_while_invoking_signals_LDADD = \
     $(TP_GLIB_LIBS) \
     ../lib/libtp-glib-tests.la
@@ -50,6 +47,9 @@ test_properties_SOURCES = \
     properties.c \
     _gen/svc.h \
     _gen/svc.c
+
+test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)
+test_unsupported_interface_SOURCES = unsupported-interface.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
