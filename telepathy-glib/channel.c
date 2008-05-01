@@ -343,6 +343,10 @@ tp_channel_connection_invalidated_cb (TpConnection *conn,
   g_signal_handler_disconnect (conn, self->priv->conn_invalidated_id);
   self->priv->conn_invalidated_id = 0;
 
+  /* tp_proxy_invalidate and g_object_notify call out to user code - add a
+   * temporary ref to ensure that we don't become finalized while doing so */
+  g_object_ref (self);
+
   tp_proxy_invalidate ((TpProxy *) self, &e);
 
   /* this channel's handle is now meaningless */
@@ -351,6 +355,8 @@ tp_channel_connection_invalidated_cb (TpConnection *conn,
       self->handle = 0;
       g_object_notify ((GObject *) self, "handle");
     }
+
+  g_object_unref (self);
 }
 
 static GObject *
