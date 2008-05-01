@@ -5,6 +5,7 @@ noinst_PROGRAMS = \
     test-dbus \
     test-disconnection \
     test-example-no-protocols \
+    test-finalized-in-invalidated-handler \
     test-handle-set \
     test-invalidated-while-invoking-signals \
     test-properties \
@@ -32,6 +33,12 @@ test_disconnection_LDADD = \
     $(TP_GLIB_LIBS) \
     ../lib/libtp-glib-tests.la
 test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
+
+test_finalized_in_invalidated_handler_SOURCES = \
+    finalized-in-invalidated-handler.c
+test_finalized_in_invalidated_handler_LDADD = \
+    $(TP_GLIB_LIBS) \
+    ../lib/libtp-glib-tests.la
 
 test_handle_set_SOURCES = handle-set.c
 test_handle_set_LDADD = $(TP_GLIB_LIBS)
