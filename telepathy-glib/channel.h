@@ -62,6 +62,12 @@ TpChannel *tp_channel_new (TpConnection *conn,
 gboolean tp_channel_run_until_ready (TpChannel *self, GError **error,
     GMainLoop **loop);
 
+typedef void (*TpChannelWhenReadyCb) (TpChannel *channel, const GError *error,
+    gpointer user_data);
+
+void tp_channel_call_when_ready (TpChannel *self,
+    TpChannelWhenReadyCb callback, gpointer user_data);
+
 void tp_channel_init_known_interfaces (void);
 
 G_END_DECLS
