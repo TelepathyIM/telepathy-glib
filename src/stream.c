@@ -274,6 +274,8 @@ tp_stream_engine_stream_set_property (GObject      *object,
     }
 }
 
+#define MAX_STREAM_TRANS_PARAMS 6
+
 static GObject *
 tp_stream_engine_stream_constructor (GType type,
                                      guint n_props,
@@ -288,7 +290,7 @@ tp_stream_engine_stream_constructor (GType type,
   gchar *transmitter;
   guint n_args = 0;
   GList *preferred_local_candidates = NULL;
-  GParameter params[4];
+  GParameter params[MAX_STREAM_TRANS_PARAMS];
 
   obj = G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->
             constructor (type, n_props, props);
@@ -328,11 +330,18 @@ tp_stream_engine_stream_constructor (GType type,
   tp_cli_media_stream_handler_connect_to_close
       (priv->stream_handler_proxy, close, NULL, NULL, obj, NULL);
 
+  memset (params, 0, sizeof(GParameter) * MAX_STREAM_TRANS_PARAMS);
+
   if (stream->priv->nat_props == NULL ||
       stream->priv->nat_props->nat_traversal == NULL ||
       !strcmp (stream->priv->nat_props->nat_traversal, "gtalk-p2p"))
     {
       transmitter = "nice";
+
+      params[n_args].name = "compatibility-mode";
+      g_value_init (&params[n_args].value, G_TYPE_UINT);
+      g_value_set_uint (&params[n_args].value, 1);
+      n_args++;
     }
   else
     {
@@ -353,8 +362,6 @@ tp_stream_engine_stream_constructor (GType type,
       stream->priv->nat_props->stun_port)
     {
       gchar *conn_timeout_str = NULL;
-
-      memset (params, 0, sizeof(GParameter) * 4);
 
       params[n_args].name = "stun-ip";
       g_value_init (&params[n_args].value, G_TYPE_STRING);
