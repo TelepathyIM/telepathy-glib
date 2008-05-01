@@ -1,6 +1,12 @@
 telepathy-glib 0.7.7 (unreleased)
 =================================
 
+API changes:
+
+* It is an error to pass non-NULL user_data, weak_object or destroy arguments
+  when making an asynchronous method call with callback == NULL (i.e.
+  ignoring the reply) - doing this would make no sense
+
 Enhancements:
 
 * Documentation: divide up the service-side Channel interfaces by topic,
@@ -12,6 +18,15 @@ Enhancements:
   case by truncating or dropping messages seems likely to cause more problems
   than it fixes.
 
+* TpTextMixin: save a malloc/free cycle in GetMessageTypes
+
+* TpGroupMixin: don't emit GroupFlagsChanged(0, 0)
+
+* Log a message when disconnected from the D-Bus session bus
+
+* Improve ABI-checking functionality so symbols only have to be whitelisted
+  just before a release
+
 Fixes:
 
 * libglibcodegen.py: generate correct bindings for arrays of object-path (ao)
@@ -20,10 +35,28 @@ Fixes:
 
 * doc-generator.xsl: update from telepathy-spec to cope with arrays of mappings
 
+* When a channel's connection becomes invalidated, don't warn if the
+  resulting invalidation causes the channel to be freed (fd.o #15644)
+
+* In tp_handle_lookup() on a dynamic handle repository, if the ID is valid
+  but there is no handle, raise the error NotAvailable, instead of returning
+  0 with no error set (fd.o #15387)
+
+* When asynchronous method calls are made on an unsupported interface, call
+  the user-supplied destroy() callback on the user_data (fd.o #15530)
+
+* TpTextMixin: fix a memory leak in ListPendingMessages
+
+* Use automake 1.8 if available, to verify that we can still build on such
+  an old version
+
 Recommended updates for projects using code-generation:
 
 * Update libglibcodegen.py to avoid a crash if arrays of object-path appear
-  in your API in future.
+  in your API in future
+
+* Update glib-client-gen.py to avoid fd.o #15530; this will cause your project
+  to require telepathy-glib >= 0.7.3
 
 telepathy-glib 0.7.6 (2008-04-03)
 =================================
