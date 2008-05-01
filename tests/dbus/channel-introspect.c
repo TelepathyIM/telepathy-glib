@@ -13,17 +13,54 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/textchan-null.h"
 
 static int fail = 0;
+static GError *invalidated = NULL;
+static GMainLoop *mainloop;
 
 static void
 myassert_failed (void)
 {
   fail = 1;
+}
+
+static void
+channel_ready (TpChannel *channel,
+               const GError *error,
+               gpointer user_data)
+{
+  gboolean *set = user_data;
+
+  *set = TRUE;
+
+  if (error == NULL)
+    {
+      g_message ("channel %p ready", channel);
+    }
+  else
+    {
+      g_message ("channel %p invalidated: %s #%u \"%s\"", channel,
+          g_quark_to_string (error->domain), error->code, error->message);
+
+      invalidated = g_error_copy (error);
+    }
+
+  if (mainloop != NULL)
+    g_main_loop_quit (mainloop);
+}
+
+static gboolean
+same_gerror (const GError *left,
+             const GError *right)
+{
+  return (left->domain == right->domain &&
+          left->code == right->code &&
+          g_str_equal (left->message, right->message));
 }
 
 int
@@ -42,6 +79,9 @@ main (int argc,
   gchar *conn_path;
   gchar *chan_path;
   TpHandle handle;
+  gboolean was_ready;
+  GError invalidated_for_test = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+      "No channel for you!" };
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -83,17 +123,101 @@ main (int argc,
         "handle", handle,
         NULL));
 
-  /* Check that introspecting a channel that has no extra interfaces is OK */
+  mainloop = g_main_loop_new (NULL, FALSE);
+
+  /* Channel becomes invalid while we wait */
+
+  chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_HANDLE_TYPE_CONTACT, handle, &error);
+  MYASSERT_NO_ERROR (error);
+  tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
+
+  MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
+  MYASSERT (error != NULL, "");
+  MYASSERT (same_gerror (&invalidated_for_test, error),
+      "%s #%i: %s", g_quark_to_string (error->domain), error->code,
+      error->message);
+  g_error_free (error);
+  error = NULL;
+
+  g_object_unref (chan);
+  chan = NULL;
+
+  /* Channel becomes invalid and we are called back synchronously */
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   MYASSERT_NO_ERROR (error);
 
-  tp_channel_run_until_ready (chan, &error, NULL);
+  was_ready = FALSE;
+  tp_channel_call_when_ready (chan, channel_ready, &was_ready);
+  tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
+  MYASSERT (was_ready == TRUE, "");
+  MYASSERT (invalidated != NULL, "");
+  MYASSERT (same_gerror (&invalidated_for_test, invalidated),
+      "%s #%i: %s", g_quark_to_string (invalidated->domain), invalidated->code,
+      invalidated->message);
+  g_error_free (invalidated);
+  invalidated = NULL;
+
+  g_object_unref (chan);
+  chan = NULL;
+
+  /* Channel becomes ready while we wait */
+
+  chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_HANDLE_TYPE_CONTACT, handle, &error);
   MYASSERT_NO_ERROR (error);
+
+  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
+  MYASSERT_NO_ERROR (error);
+
+  g_object_unref (chan);
+  chan = NULL;
+
+  /* Channel becomes ready and we are called back */
+
+  chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_HANDLE_TYPE_CONTACT, handle, &error);
+  MYASSERT_NO_ERROR (error);
+
+  was_ready = FALSE;
+  tp_channel_call_when_ready (chan, channel_ready, &was_ready);
+  g_message ("Entering main loop");
+  g_main_loop_run (mainloop);
+  g_message ("Leaving main loop");
+  MYASSERT (was_ready == TRUE, "");
+  MYASSERT_NO_ERROR (invalidated);
+
+  /* ... keep the same channel for the next test */
+
+  /* Channel already ready, so we are called back synchronously */
+
+  was_ready = FALSE;
+  tp_channel_call_when_ready (chan, channel_ready, &was_ready);
+  MYASSERT (was_ready == TRUE, "");
+  MYASSERT_NO_ERROR (invalidated);
+
+  /* ... keep the same channel for the next test */
+
+  /* Channel already dead, so we are called back synchronously */
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
+
+  was_ready = FALSE;
+  tp_channel_call_when_ready (chan, channel_ready, &was_ready);
+  MYASSERT (was_ready == TRUE, "");
+  MYASSERT (invalidated != NULL, "");
+  MYASSERT (invalidated->domain == TP_ERRORS_DISCONNECTED,
+      "%s", g_quark_to_string (invalidated->domain));
+  MYASSERT (invalidated->code == TP_CONNECTION_STATUS_REASON_REQUESTED,
+      "%u", invalidated->code);
+  g_error_free (invalidated);
+  invalidated = NULL;
+
+  g_main_loop_unref (mainloop);
+  mainloop = NULL;
 
   tp_handle_unref (contact_repo, handle);
   g_object_unref (chan);
