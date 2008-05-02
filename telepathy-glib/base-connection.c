@@ -160,6 +160,15 @@ struct _TpBaseConnectionPrivate
    * Note that this is a GArray of gchar*, not a GPtrArray,
    * so that we can use GArray's convenient auto-null-termination. */
   GArray *interfaces;
+
+  /* Array of DBusGMethodInvocation * representing Disconnect calls.
+   * If NULL and we are in a state != DISCONNECTED, then we have not started
+   * shutting down yet.
+   * If NULL and we are in state DISCONNECTED, then we have finished shutting
+   * down.
+   * If not NULL, we are trying to shut down (and must be in state
+   * DISCONNECTED). */
+  GPtrArray *disconnect_requests;
 };
 
 static void
@@ -796,11 +805,26 @@ tp_base_connection_disconnect (TpSvcConnection *iface,
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
+  if (self->priv->disconnect_requests != NULL)
+    {
+      g_assert (self->status == TP_CONNECTION_STATUS_DISCONNECTED);
+      g_ptr_array_add (self->priv->disconnect_requests, context);
+      return;
+    }
+
+  if (self->status == TP_CONNECTION_STATUS_DISCONNECTED)
+    {
+      /* status DISCONNECTED and disconnect_requests NULL => already dead */
+      tp_svc_connection_return_from_disconnect (context);
+      return;
+    }
+
+  self->priv->disconnect_requests = g_ptr_array_sized_new (1);
+  g_ptr_array_add (self->priv->disconnect_requests, context);
+
   tp_base_connection_change_status (self,
       TP_CONNECTION_STATUS_DISCONNECTED,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-
-  tp_svc_connection_return_from_disconnect (context);
 }
 
 /**
@@ -1417,6 +1441,19 @@ tp_base_connection_get_handles (TpBaseConnection *self,
  */
 void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 {
+  GPtrArray *contexts = self->priv->disconnect_requests;
+  guint i;
+
+  self->priv->disconnect_requests = NULL;
+
+  for (i = 0; i < contexts->len; i++)
+    {
+      tp_svc_connection_return_from_disconnect (g_ptr_array_index (contexts,
+            i));
+    }
+
+  g_ptr_array_free (contexts, TRUE);
+
   g_signal_emit (self, signals[SHUTDOWN_FINISHED], 0);
 }
 
