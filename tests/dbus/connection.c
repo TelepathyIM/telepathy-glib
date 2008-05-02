@@ -180,6 +180,7 @@ main (int argc,
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
+  TpConnection *conn;
 
   invalidated_for_test.domain = TP_ERRORS;
 
@@ -205,6 +206,20 @@ main (int argc,
   test_run_until_ready (dbus, service_conn, name, conn_path);
   test_call_when_ready (dbus, service_conn, name, conn_path);
   test_call_when_invalid (dbus, service_conn, name, conn_path);
+
+  conn = tp_connection_new (dbus, name, conn_path, &error);
+  MYASSERT (conn != NULL, "");
+  MYASSERT_NO_ERROR (error);
+  MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
+      "");
+  MYASSERT_NO_ERROR (error);
+  MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
+  MYASSERT_NO_ERROR (error);
+
+  service_conn_as_base = NULL;
+  g_object_unref (service_conn);
+  g_free (name);
+  g_free (conn_path);
 
   g_object_unref (dbus);
   g_main_loop_unref (mainloop);
