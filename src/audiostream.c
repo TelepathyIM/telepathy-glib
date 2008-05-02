@@ -681,7 +681,6 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
   GstPad *mypad = NULL;
   GstPad *ghostpad = NULL;
   gchar *padname = gst_pad_get_name (pad);
-  gchar *tmp = NULL;
   GstElement *bin = NULL;
   gint session_id, ssrc, pt;
 
@@ -696,9 +695,7 @@ src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
 
   g_free (padname);
 
-  tmp = g_strdup_printf ("sink_bin_%d_%d_%d", session_id, ssrc, pt);
-  bin = gst_bin_new (tmp);
-  g_free (tmp);
+  bin = gst_bin_new (NULL);
 
     audioconvert = gst_element_factory_make ("audioconvert", NULL);
   if (!audioconvert)
