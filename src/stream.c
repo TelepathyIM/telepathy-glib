@@ -1369,6 +1369,12 @@ close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   DEBUG (self, "close requested by connection manager");
 
+  g_object_set (self->priv->fs_stream,
+            "direction", FS_DIRECTION_NONE,
+            NULL);
+  tp_stream_engine_stream_free_resource (self,
+      TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+
   g_signal_emit (self, signals[CLOSED], 0);
 }
 
