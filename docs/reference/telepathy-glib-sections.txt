@@ -1789,6 +1789,8 @@ TpConnectionNameListCb
 tp_list_connection_names
 tp_connection_new
 tp_connection_run_until_ready
+TpConnectionWhenReadyCb
+tp_connection_call_when_ready
 tp_connection_init_known_interfaces
 TpConnection
 TpConnectionClass
