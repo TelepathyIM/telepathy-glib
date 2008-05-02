@@ -110,7 +110,7 @@ struct _TpConnectionClass {
  * @status_reason: same as #TpConnection:status-reason, should be considered
  *  read-only
  * @_reserved_for_self_handle: reserved, currently always 0
- * @ready: the same as #TpChannel:channel-ready; should be considered
+ * @ready: the same as #TpConnection:connection-ready; should be considered
  *  read-only
  * @_reserved_flags: (private, reserved for future use)
  * @priv: pointer to opaque private data
