@@ -74,7 +74,7 @@ test_run_until_ready (TpDBusDaemon *dbus,
 
 typedef struct {
     gboolean ready;
-    GError *error;
+    GError *error /* initialized to NULL statically */;
     GMainLoop *mainloop;
 } WhenReadyContext;
 
