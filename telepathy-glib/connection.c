@@ -947,6 +947,20 @@ cwr_ready (TpConnection *self,
 }
 
 /**
+ * TpConnectionWhenReadyCb:
+ * @connection: the connection (which may be in the middle of being disposed,
+ *  if error is non-%NULL, error->domain is TP_DBUS_ERRORS and error->code is
+ *  TP_DBUS_ERROR_PROXY_UNREFERENCED)
+ * @error: %NULL if the connection is ready for use, or the error with which
+ *  it was invalidated if it is now invalid
+ * @user_data: whatever was passed to tp_connection_call_when_ready()
+ *
+ * Signature of a callback passed to tp_connection_call_when_ready(), which
+ * will be called exactly once, when the connection becomes ready or
+ * invalid (whichever happens first)
+ */
+
+/**
  * tp_connection_call_when_ready:
  * @self: a connection
  * @callback: called when the connection becomes ready or invalidated,
