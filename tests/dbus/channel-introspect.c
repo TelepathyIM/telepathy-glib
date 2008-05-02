@@ -143,7 +143,7 @@ main (int argc,
   tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
   MYASSERT (was_ready == TRUE, "");
   MYASSERT (invalidated != NULL, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  MYASSERT_SAME_ERROR (&invalidated_for_test, invalidated);
   g_error_free (invalidated);
   invalidated = NULL;
 
