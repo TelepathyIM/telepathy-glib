@@ -1,0 +1,33 @@
+telepathy-glib 0.6.2
+====================
+
+The "backporting is scary" release.
+
+Debugging enhancements:
+
+* log a warning when a CM is disconnected from the session bus (backported from
+  0.7.7)
+
+* When doing handle-leak debugging, print a message when there are no leaks,
+  so you can tell the check has been done (backported from 0.7.7)
+
+* TpBaseConnection: assert that all pure-virtual functions are implemented in
+  subclasses (backported from 0.7.1)
+
+Fixes:
+
+* TpBaseConnection: don't return from Disconnect() until disconnection has
+  fully completed (fd.o #15796, backported from 0.7.7)
+
+* TpDynamicHandleRepo: in tp_handle_lookup() implementation, raise
+  NotAvailable if the ID is valid but there is no handle, rather than
+  returning 0 with no error (fd.o #15387, backported from 0.7.7)
+
+* TpTextMixin: ListPendingMessages: don't leak the GValueArrays and their
+  contents (backported from 0.7.7)
+
+* TpGroupMixin: silently map NULL message to "" rather than crashing
+  (backported from 0.7.1)
+
+* TpPresenceMixin: don't crash when RemoveStatus is called (backported from
+  0.7.1)
