@@ -2001,12 +2001,33 @@ tp_stream_engine_get_output_window (StreamEngineSvcStreamEngine *iface,
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TpStreamEngineStream *stream;
+  TpMediaStreamType media_type;
   GError *error = NULL;
 
   g_debug ("%s: channel_path=%s, stream_id=%u", G_STRFUNC, channel_path,
       stream_id);
 
   stream = _lookup_stream (self, channel_path, stream_id, &error);
+
+  if (stream == NULL)
+    {
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Stream does not exist");
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  g_object_get (stream, "media-type", &media_type, NULL);
+
+  if (media_type != TP_MEDIA_STREAM_TYPE_VIDEO)
+    {
+      error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "GetOutputWindow can only be called on video streams");
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
 
   if (stream)
     {
@@ -2022,11 +2043,6 @@ tp_stream_engine_get_output_window (StreamEngineSvcStreamEngine *iface,
 
       stream_engine_svc_stream_engine_return_from_get_output_window (context,
           window_id);
-    }
-  else
-    {
-      GError error = {TP_ERRORS, 0, "No stream"};
-      dbus_g_method_return_error (context, &error);
     }
 }
 
