@@ -939,6 +939,8 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     {
       FsCandidate *fscandidate = item->data;
 
+      fs_stream_remote_candidates_added (self->priv->fs_stream);
+
       if (!fs_stream_add_remote_candidate (self->priv->fs_stream,
               fscandidate, &error))
         {
