@@ -1562,6 +1562,10 @@ tp_base_connection_change_status (TpBaseConnection *self,
 
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
+      /* the presence of this array indicates that we are shutting down */
+      if (self->priv->disconnect_requests == NULL)
+        self->priv->disconnect_requests = g_ptr_array_sized_new (0);
+
       /* remove all channels and shut down all factories, so we don't get
        * any race conditions where method calls are delivered to a channel
        * after we've started disconnecting
