@@ -9,6 +9,9 @@ API changes:
 
 Enhancements:
 
+* Implement tp_connection_call_when_ready, tp_channel_call_when_ready -
+  fully async variants of the existing run_when_ready API (fd.o #15300)
+
 * Documentation: divide up the service-side Channel interfaces by topic,
   in the same way the client-side ones were already divided up
 
@@ -28,6 +31,9 @@ Enhancements:
   just before a release
 
 Fixes:
+
+* TpBaseConnection: don't return from Disconnect() until disconnection has
+  fully completed (fd.o #15796)
 
 * libglibcodegen.py: generate correct bindings for arrays of object-path (ao)
 
@@ -49,6 +55,10 @@ Fixes:
 
 * Use automake 1.8 if available, to verify that we can still build on such
   an old version
+
+* When running under valgrind with the recommended suppressions, don't
+  complain about libc dlopen initialization caused by the handle-leak debug
+  code
 
 Recommended updates for projects using code-generation:
 
