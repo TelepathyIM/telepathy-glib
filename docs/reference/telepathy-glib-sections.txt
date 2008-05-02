@@ -1550,6 +1550,8 @@ tp_proxy_signal_connection_v0_take_results
 <INCLUDE>telepathy-glib/channel.h</INCLUDE>
 tp_channel_new
 tp_channel_run_until_ready
+TpChannelWhenReadyCb
+tp_channel_call_when_ready
 tp_channel_init_known_interfaces
 TpChannel
 TpChannelClass
