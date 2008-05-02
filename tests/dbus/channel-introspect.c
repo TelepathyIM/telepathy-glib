@@ -54,15 +54,6 @@ channel_ready (TpChannel *channel,
     g_main_loop_quit (mainloop);
 }
 
-static gboolean
-same_gerror (const GError *left,
-             const GError *right)
-{
-  return (left->domain == right->domain &&
-          left->code == right->code &&
-          g_str_equal (left->message, right->message));
-}
-
 int
 main (int argc,
       char **argv)
@@ -134,9 +125,7 @@ main (int argc,
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT (error != NULL, "");
-  MYASSERT (same_gerror (&invalidated_for_test, error),
-      "%s #%i: %s", g_quark_to_string (error->domain), error->code,
-      error->message);
+  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
   g_error_free (error);
   error = NULL;
 
@@ -154,9 +143,7 @@ main (int argc,
   tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
   MYASSERT (was_ready == TRUE, "");
   MYASSERT (invalidated != NULL, "");
-  MYASSERT (same_gerror (&invalidated_for_test, invalidated),
-      "%s #%i: %s", g_quark_to_string (invalidated->domain), invalidated->code,
-      invalidated->message);
+  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
   g_error_free (invalidated);
   invalidated = NULL;
 
