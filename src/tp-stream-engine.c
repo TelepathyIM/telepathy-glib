@@ -589,7 +589,7 @@ channel_session_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
 
 
 static void
-stream_closed (TpStreamEngineStream *stream G_GNUC_UNUSED, gpointer user_data)
+stream_closed (TpStreamEngineStream *stream, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   GObject *sestream = NULL;
