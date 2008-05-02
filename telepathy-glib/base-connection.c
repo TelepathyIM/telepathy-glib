@@ -1444,6 +1444,9 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
   GPtrArray *contexts = self->priv->disconnect_requests;
   guint i;
 
+  g_return_if_fail (self->status == TP_CONNECTION_STATUS_DISCONNECTED);
+  g_return_if_fail (contexts != NULL);
+
   self->priv->disconnect_requests = NULL;
 
   for (i = 0; i < contexts->len; i++)
