@@ -61,6 +61,12 @@ gboolean tp_connection_run_until_ready (TpConnection *self,
     gboolean connect, GError **error,
     GMainLoop **loop);
 
+typedef void (*TpConnectionWhenReadyCb) (TpConnection *connection,
+    const GError *error, gpointer user_data);
+
+void tp_connection_call_when_ready (TpConnection *self,
+    TpConnectionWhenReadyCb callback, gpointer user_data);
+
 typedef void (*TpConnectionNameListCb) (const gchar * const *names,
     gsize n, const gchar * const *cms, const gchar * const *protocols,
     const GError *error, gpointer user_data,

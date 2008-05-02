@@ -895,3 +895,102 @@ tp_connection_init_known_interfaces (void)
 
   g_once (&once, tp_connection_once, NULL);
 }
+
+typedef struct {
+    TpConnectionWhenReadyCb callback;
+    gpointer user_data;
+    gulong invalidated_id;
+    gulong ready_id;
+} CallWhenReadyContext;
+
+static void
+cwr_invalidated (TpConnection *self,
+                 guint domain,
+                 gint code,
+                 gchar *message,
+                 gpointer user_data)
+{
+  CallWhenReadyContext *ctx = user_data;
+  GError e = { domain, code, message };
+
+  DEBUG ("enter");
+
+  g_assert (ctx->callback != NULL);
+
+  ctx->callback (self, &e, ctx->user_data);
+
+  g_signal_handler_disconnect (self, ctx->invalidated_id);
+  g_signal_handler_disconnect (self, ctx->ready_id);
+
+  ctx->callback = NULL;   /* poison it to detect errors */
+  g_slice_free (CallWhenReadyContext, ctx);
+}
+
+static void
+cwr_ready (TpConnection *self,
+           GParamSpec *unused G_GNUC_UNUSED,
+           gpointer user_data)
+{
+  CallWhenReadyContext *ctx = user_data;
+
+  DEBUG ("enter");
+
+  g_assert (ctx->callback != NULL);
+
+  ctx->callback (self, NULL, ctx->user_data);
+
+  g_signal_handler_disconnect (self, ctx->invalidated_id);
+  g_signal_handler_disconnect (self, ctx->ready_id);
+
+  ctx->callback = NULL;   /* poison it to detect errors */
+  g_slice_free (CallWhenReadyContext, ctx);
+}
+
+/**
+ * tp_connection_call_when_ready:
+ * @self: a connection
+ * @callback: called when the connection becomes ready or invalidated,
+ *  whichever happens first
+ * @user_data: arbitrary user-supplied data passed to the callback
+ *
+ * If @self is ready for use or has been invalidated, call @callback
+ * immediately, then return. Otherwise, arrange
+ * for @callback to be called when @self either becomes ready for use
+ * or becomes invalid.
+ *
+ * Note that if the connection is not in state CONNECTED, the callback will
+ * not be called until the connection either goes to state CONNECTED
+ * or is invalidated (e.g. by going to state DISCONNECTED or by becoming
+ * unreferenced). In particular, this method does not call Connect().
+ * Call tp_cli_connection_call_connect() too, if you want to do that.
+ *
+ * Since: 0.7.7
+ */
+void
+tp_connection_call_when_ready (TpConnection *self,
+                               TpConnectionWhenReadyCb callback,
+                               gpointer user_data)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+
+  g_return_if_fail (callback != NULL);
+
+  if (self->ready || as_proxy->invalidated != NULL)
+    {
+      DEBUG ("already ready or invalidated");
+      callback (self, as_proxy->invalidated, user_data);
+    }
+  else
+    {
+      CallWhenReadyContext *ctx = g_slice_new (CallWhenReadyContext);
+
+      DEBUG ("arranging callback later");
+
+      ctx->callback = callback;
+      ctx->user_data = user_data;
+      ctx->invalidated_id = g_signal_connect (self, "invalidated",
+          G_CALLBACK (cwr_invalidated), ctx);
+      ctx->ready_id = g_signal_connect (self, "notify::connection-ready",
+          G_CALLBACK (cwr_ready), ctx);
+    }
+}
