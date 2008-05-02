@@ -141,7 +141,7 @@ channel_request_cancel (gpointer data, gpointer user_data)
   channel_request_free (request);
 }
 
-typedef struct _TpBaseConnectionPrivate
+struct _TpBaseConnectionPrivate
 {
   /* Telepathy properties */
   gchar *protocol;
@@ -162,7 +162,7 @@ typedef struct _TpBaseConnectionPrivate
    * Note that this is a GArray of gchar*, not a GPtrArray,
    * so that we can use GArray's convenient auto-null-termination. */
   GArray *interfaces;
-} TpBaseConnectionPrivate;
+};
 
 static void
 tp_base_connection_get_property (GObject *object,

@@ -51,6 +51,7 @@ G_BEGIN_DECLS
 
 typedef struct _TpBaseConnection TpBaseConnection;
 typedef struct _TpBaseConnectionClass TpBaseConnectionClass;
+typedef struct _TpBaseConnectionPrivate TpBaseConnectionPrivate;
 
 /**
  * TpBaseConnectionProc:
@@ -256,7 +257,7 @@ struct _TpBaseConnection {
     gpointer _future3;
     gpointer _future4;
 
-    gpointer priv;
+    TpBaseConnectionPrivate *priv;
 };
 
 GType tp_base_connection_get_type (void);
