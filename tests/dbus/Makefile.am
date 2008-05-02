@@ -1,6 +1,7 @@
 noinst_PROGRAMS = \
     test-call-cancellation \
     test-channel-introspect \
+    test-connection \
     test-connection-getinterfaces-failure \
     test-dbus \
     test-disconnection \
@@ -21,6 +22,11 @@ test_channel_introspect_LDADD = \
     $(TP_GLIB_LIBS) \
     ../lib/libtp-glib-tests.la
 test_channel_introspect_SOURCES = channel-introspect.c
+
+test_connection_LDADD = \
+    $(TP_GLIB_LIBS) \
+    ../lib/libtp-glib-tests.la
+test_connection_SOURCES = connection.c
 
 test_connection_getinterfaces_failure_LDADD = \
     $(TP_GLIB_LIBS) \
