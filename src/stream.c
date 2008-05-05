@@ -1,5 +1,5 @@
 /*
- * stream.c - Source for TpStreamEngineStream
+ * stream.c - Source for TpmediaStream
  * Copyright (C) 2006-2008 Collabora Ltd.
  * Copyright (C) 2006-2008 Nokia Corporation
  *
@@ -40,7 +40,7 @@
 #include "tp-stream-engine-signals-marshal.h"
 #include "util.h"
 
-G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TpmediaStream, tpmedia_stream, G_TYPE_OBJECT);
 
 #define DEBUG(stream, format, ...) \
   g_debug ("stream %d (%s) %s: " format, \
@@ -60,7 +60,7 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
 #define STREAM_PRIVATE(o) ((o)->priv)
 
-struct _TpStreamEngineStreamPrivate
+struct _TpmediaStreamPrivate
 {
   TpmediaChannel *channel;
   FsConference *fs_conference;
@@ -110,10 +110,10 @@ enum
 };
 
 
-static gboolean tp_stream_engine_stream_request_resource (
-    TpStreamEngineStream *self,
+static gboolean tpmedia_stream_request_resource (
+    TpmediaStream *self,
     TpMediaStreamDirection dir);
-static void tp_stream_engine_stream_free_resource (TpStreamEngineStream *self,
+static void tpmedia_stream_free_resource (TpmediaStream *self,
     TpMediaStreamDirection dir);
 
 static void add_remote_candidate (TpMediaStreamHandler *proxy,
@@ -156,7 +156,7 @@ static void invalidated_cb (TpMediaStreamHandler *proxy,
 
 static FsMediaType tp_media_type_to_fs (TpMediaStreamType type);
 
-static GPtrArray *fs_codecs_to_tp (TpStreamEngineStream *stream,
+static GPtrArray *fs_codecs_to_tp (TpmediaStream *stream,
     const GList *codecs);
 static void async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     const GError *error,
@@ -170,22 +170,22 @@ static void cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
 
 
 static void
-tp_stream_engine_stream_init (TpStreamEngineStream *self)
+tpmedia_stream_init (TpmediaStream *self)
 {
-  TpStreamEngineStreamPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamPrivate);
+  TpmediaStreamPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TPMEDIA_TYPE_STREAM, TpmediaStreamPrivate);
 
   self->priv = priv;
   priv->has_resource = TP_MEDIA_STREAM_DIRECTION_NONE;
 }
 
 static void
-tp_stream_engine_stream_get_property (GObject    *object,
+tpmedia_stream_get_property (GObject    *object,
                                       guint       property_id,
                                       GValue     *value,
                                       GParamSpec *pspec)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
 
   switch (property_id)
     {
@@ -228,12 +228,12 @@ tp_stream_engine_stream_get_property (GObject    *object,
 }
 
 static void
-tp_stream_engine_stream_set_property (GObject      *object,
+tpmedia_stream_set_property (GObject      *object,
                                       guint         property_id,
                                       const GValue *value,
                                       GParamSpec   *pspec)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
 
   switch (property_id)
     {
@@ -277,14 +277,14 @@ tp_stream_engine_stream_set_property (GObject      *object,
 #define MAX_STREAM_TRANS_PARAMS 6
 
 static GObject *
-tp_stream_engine_stream_constructor (GType type,
+tpmedia_stream_constructor (GType type,
                                      guint n_props,
                                      GObjectConstructParam *props)
 {
   GObject *obj;
-  TpStreamEngineStream *stream;
-  TpStreamEngineStreamPrivate *priv;
-  TpStreamEngineStreamClass *klass = NULL;
+  TpmediaStream *stream;
+  TpmediaStreamPrivate *priv;
+  TpmediaStreamClass *klass = NULL;
   GList *fscodecs = NULL;
   GPtrArray *tpcodecs = NULL;
   gchar *transmitter;
@@ -292,11 +292,11 @@ tp_stream_engine_stream_constructor (GType type,
   GList *preferred_local_candidates = NULL;
   GParameter params[MAX_STREAM_TRANS_PARAMS];
 
-  obj = G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->
+  obj = G_OBJECT_CLASS (tpmedia_stream_parent_class)->
             constructor (type, n_props, props);
-  stream = (TpStreamEngineStream *) obj;
+  stream = (TpmediaStream *) obj;
   priv = stream->priv;
-  klass = TP_STREAM_ENGINE_STREAM_GET_CLASS(obj);
+  klass = TPMEDIA_STREAM_GET_CLASS(obj);
 
   g_signal_connect (priv->stream_handler_proxy, "invalidated",
       G_CALLBACK (invalidated_cb), obj);
@@ -446,10 +446,10 @@ tp_stream_engine_stream_constructor (GType type,
 }
 
 static void
-tp_stream_engine_stream_dispose (GObject *object)
+tpmedia_stream_dispose (GObject *object)
 {
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (object);
-  TpStreamEngineStreamPrivate *priv = stream->priv;
+  TpmediaStream *stream = TPMEDIA_STREAM (object);
+  TpmediaStreamPrivate *priv = stream->priv;
 
   if (priv->stream_handler_proxy)
     {
@@ -464,12 +464,12 @@ tp_stream_engine_stream_dispose (GObject *object)
 
   if (priv->fs_stream)
     {
-      tp_stream_engine_stream_free_resource (stream,
+      tpmedia_stream_free_resource (stream,
           TP_MEDIA_STREAM_DIRECTION_SEND);
 
       g_object_unref (priv->fs_stream);
 
-      tp_stream_engine_stream_free_resource (stream,
+      tpmedia_stream_free_resource (stream,
           TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
       priv->fs_stream = NULL;
@@ -487,22 +487,22 @@ tp_stream_engine_stream_dispose (GObject *object)
       priv->local_codecs_config = NULL;
     }
 
-  if (G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose)
-    G_OBJECT_CLASS (tp_stream_engine_stream_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tpmedia_stream_parent_class)->dispose)
+    G_OBJECT_CLASS (tpmedia_stream_parent_class)->dispose (object);
 }
 
 static void
-tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
+tpmedia_stream_class_init (TpmediaStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass, sizeof (TpStreamEngineStreamPrivate));
+  g_type_class_add_private (klass, sizeof (TpmediaStreamPrivate));
 
-  object_class->set_property = tp_stream_engine_stream_set_property;
-  object_class->get_property = tp_stream_engine_stream_get_property;
-  object_class->constructor = tp_stream_engine_stream_constructor;
-  object_class->dispose = tp_stream_engine_stream_dispose;
+  object_class->set_property = tpmedia_stream_set_property;
+  object_class->get_property = tpmedia_stream_get_property;
+  object_class->constructor = tpmedia_stream_constructor;
+  object_class->dispose = tpmedia_stream_dispose;
 
   param_spec = g_param_spec_object ("channel",
                                     "Telepathy channel",
@@ -672,7 +672,7 @@ async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                        gpointer user_data,
                        GObject *weak_object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (weak_object);
+  TpmediaStream *self = TPMEDIA_STREAM (weak_object);
 
   if (error != NULL)
     {
@@ -682,7 +682,7 @@ async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 }
 
 static void
-cb_fs_new_local_candidate (TpStreamEngineStream *self,
+cb_fs_new_local_candidate (TpmediaStream *self,
     FsCandidate *candidate)
 {
   GPtrArray *transports;
@@ -854,7 +854,7 @@ tp_media_type_to_fs (TpMediaStreamType type)
  * to a Telepathy codec list.
  */
 static GPtrArray *
-fs_codecs_to_tp (TpStreamEngineStream *stream,
+fs_codecs_to_tp (TpmediaStream *stream,
                  const GList *codecs)
 {
   GPtrArray *tp_codecs;
@@ -924,7 +924,7 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                       gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
   GError *error = NULL;
   GList *fscandidates;
   GList *item;
@@ -944,7 +944,7 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       if (!fs_stream_add_remote_candidate (self->priv->fs_stream,
               fscandidate, &error))
         {
-          tp_stream_engine_stream_error (self, 0, error->message);
+          tpmedia_stream_error (self, 0, error->message);
           break;
         }
     }
@@ -958,9 +958,9 @@ remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                          gpointer user_data G_GNUC_UNUSED,
                          GObject *object G_GNUC_UNUSED)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
 
-  tp_stream_engine_stream_error (self, 0,
+  tpmedia_stream_error (self, 0,
       "RemoveRemoteCandidate is NOT implemented by plugin");
 }
 
@@ -971,7 +971,7 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                            gpointer user_data G_GNUC_UNUSED,
                            GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
   GError *error = NULL;
 
   if (!fs_stream_select_candidate_pair (self->priv->fs_stream,
@@ -982,7 +982,7 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       if (error->domain == FS_ERROR && error->code == FS_ERROR_NOT_IMPLEMENTED)
         DEBUG (self, "Called not implemented SetActiveCandidatePair");
       else
-        tp_stream_engine_stream_error (self, 0, error->message);
+        tpmedia_stream_error (self, 0, error->message);
     }
 
   g_clear_error (&error);
@@ -994,7 +994,7 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                            gpointer user_data G_GNUC_UNUSED,
                            GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
   guint i;
 
   for (i = 0; i < candidates->len; i++)
@@ -1029,7 +1029,7 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           if (!fs_stream_add_remote_candidate (self->priv->fs_stream,
                   fscandidate, &error))
             {
-              tp_stream_engine_stream_error (self, 0, error->message);
+              tpmedia_stream_error (self, 0, error->message);
               g_clear_error (&error);
               fs_candidate_list_destroy (fs_candidates);
               return;
@@ -1056,7 +1056,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                    gpointer user_data G_GNUC_UNUSED,
                    GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
   GValueArray *codec;
   GHashTable *params = NULL;
   GList *fs_params = NULL;
@@ -1113,7 +1113,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
      */
     gchar *str = g_strdup_printf ("Codec negotiation failed: %s",
         error->message);
-    tp_stream_engine_stream_error (self, 0, str);
+    tpmedia_stream_error (self, 0, str);
     g_free (str);
     return;
   }
@@ -1137,7 +1137,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     gpointer user_data G_GNUC_UNUSED,
                     GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
   FsStreamDirection current_direction;
   gboolean playing;
 
@@ -1156,7 +1156,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   if (play)
     {
       if (!self->priv->held) {
-        if (tp_stream_engine_stream_request_resource (self,
+        if (tpmedia_stream_request_resource (self,
                 TP_MEDIA_STREAM_DIRECTION_RECEIVE))
           {
             g_object_set (self->priv->fs_stream,
@@ -1165,7 +1165,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           }
         else
           {
-            tp_stream_engine_stream_error (self, 0, "Resource Unavailable");
+            tpmedia_stream_error (self, 0, "Resource Unavailable");
           }
       }
       self->priv->desired_direction |= FS_DIRECTION_RECV;
@@ -1173,7 +1173,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else
     {
       if (!self->priv->held) {
-        tp_stream_engine_stream_free_resource (self,
+        tpmedia_stream_free_resource (self,
             TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
         g_object_set (self->priv->fs_stream,
@@ -1190,7 +1190,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     gpointer user_data G_GNUC_UNUSED,
                     GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
   FsStreamDirection current_direction;
   gboolean sending;
 
@@ -1210,7 +1210,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   if (send)
     {
       if (!self->priv->held) {
-        if (tp_stream_engine_stream_request_resource (self,
+        if (tpmedia_stream_request_resource (self,
                 TP_MEDIA_STREAM_DIRECTION_SEND))
           {
             g_object_set (self->priv->fs_stream,
@@ -1219,7 +1219,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           }
         else
           {
-            tp_stream_engine_stream_error (self, 0, "Resource Unavailable");
+            tpmedia_stream_error (self, 0, "Resource Unavailable");
           }
       }
       self->priv->desired_direction |= FS_DIRECTION_SEND;
@@ -1227,7 +1227,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else
     {
       if (!self->priv->held) {
-        tp_stream_engine_stream_free_resource (self,
+        tpmedia_stream_free_resource (self,
             TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
         g_object_set (self->priv->fs_stream,
@@ -1239,7 +1239,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 }
 
 static gboolean
-tp_stream_engine_stream_request_resource (TpStreamEngineStream *self,
+tpmedia_stream_request_resource (TpmediaStream *self,
                                           TpMediaStreamDirection dir)
 {
   gboolean resource_available = FALSE;
@@ -1264,7 +1264,7 @@ tp_stream_engine_stream_request_resource (TpStreamEngineStream *self,
 }
 
 static void
-tp_stream_engine_stream_free_resource (TpStreamEngineStream *self,
+tpmedia_stream_free_resource (TpmediaStream *self,
     TpMediaStreamDirection dir)
 {
   if ((self->priv->has_resource & dir) == 0)
@@ -1281,7 +1281,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                  gpointer user_data G_GNUC_UNUSED,
                  GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
 
   DEBUG (self, "Holding : %d", held);
 
@@ -1294,7 +1294,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
             "direction", FS_DIRECTION_NONE,
             NULL);
 
-       tp_stream_engine_stream_free_resource (self,
+       tpmedia_stream_free_resource (self,
                 TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
        /* Send success message */
        if (self->priv->stream_handler_proxy)
@@ -1307,7 +1307,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
   else
     {
-      if (tp_stream_engine_stream_request_resource (self,
+      if (tpmedia_stream_request_resource (self,
               self->priv->desired_direction))
         {
            g_object_set (self->priv->fs_stream,
@@ -1320,7 +1320,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
         }
       else
         {
-          tp_stream_engine_stream_error (self, 0, "Error unholding stream");
+          tpmedia_stream_error (self, 0, "Error unholding stream");
         }
     }
 }
@@ -1331,7 +1331,7 @@ start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                        gpointer user_data G_GNUC_UNUSED,
                        GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
 
   g_assert (self->priv->fs_session != NULL);
 
@@ -1349,7 +1349,7 @@ stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                       gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
 
   g_assert (self->priv->fs_session  != NULL);
 
@@ -1365,21 +1365,21 @@ close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
        gpointer user_data G_GNUC_UNUSED,
        GObject *object)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (object);
+  TpmediaStream *self = TPMEDIA_STREAM (object);
 
   DEBUG (self, "close requested by connection manager");
 
   g_object_set (self->priv->fs_stream,
             "direction", FS_DIRECTION_NONE,
             NULL);
-  tp_stream_engine_stream_free_resource (self,
+  tpmedia_stream_free_resource (self,
       TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
 
   g_signal_emit (self, signals[CLOSED], 0);
 }
 
 static void
-cb_fs_recv_codecs_changed (TpStreamEngineStream *self,
+cb_fs_recv_codecs_changed (TpmediaStream *self,
     GList *codecs)
 {
   guint id;
@@ -1404,7 +1404,7 @@ cb_fs_recv_codecs_changed (TpStreamEngineStream *self,
 }
 
 static void
-cb_fs_new_active_candidate_pair (TpStreamEngineStream *self,
+cb_fs_new_active_candidate_pair (TpmediaStream *self,
     FsCandidate *local_candidate,
     FsCandidate *remote_candidate)
 {
@@ -1423,7 +1423,7 @@ cb_fs_new_active_candidate_pair (TpStreamEngineStream *self,
 }
 
 static void
-cb_fs_local_candidates_prepared (TpStreamEngineStream *self)
+cb_fs_local_candidates_prepared (TpmediaStream *self)
 {
   DEBUG (self, "called");
 
@@ -1440,7 +1440,7 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                 gchar *message G_GNUC_UNUSED,
                 gpointer user_data)
 {
-  TpStreamEngineStream *stream = TP_STREAM_ENGINE_STREAM (user_data);
+  TpmediaStream *stream = TPMEDIA_STREAM (user_data);
 
   if (stream->priv->stream_handler_proxy)
     {
@@ -1452,7 +1452,7 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 }
 
 void
-tp_stream_engine_stream_error (TpStreamEngineStream *self,
+tpmedia_stream_error (TpmediaStream *self,
                                guint error,
                                const gchar *message)
 {
@@ -1466,8 +1466,8 @@ tp_stream_engine_stream_error (TpStreamEngineStream *self,
 
 
 /**
- * tp_stream_engine_stream_bus_message:
- * @stream: A #TpStreamEngineStream
+ * tpmedia_stream_bus_message:
+ * @stream: A #TpmediaStream
  * @message: A #GstMessage received from the bus
  *
  * You must call this function on call messages received on the async bus.
@@ -1477,7 +1477,7 @@ tp_stream_engine_stream_error (TpStreamEngineStream *self,
  */
 
 gboolean
-tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
+tpmedia_stream_bus_message (TpmediaStream *stream,
     GstMessage *message)
 {
   const gchar *debug = NULL;
@@ -1521,7 +1521,7 @@ tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
               enumvalue->value_nick, errorno, msg, debug);
           g_type_class_unref (enumclass);
 
-          tp_stream_engine_stream_error (stream, 0, msg);
+          tpmedia_stream_error (stream, 0, msg);
           return TRUE;
         }
     }
@@ -1612,15 +1612,15 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     FsCodec *codec,
     gpointer user_data)
 {
-  TpStreamEngineStream *self = TP_STREAM_ENGINE_STREAM (user_data);
+  TpmediaStream *self = TPMEDIA_STREAM (user_data);
 
   DEBUG (self, "New pad");
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
 }
 
-TpStreamEngineStream *
-tp_stream_engine_stream_new (gpointer channel,
+TpmediaStream *
+tpmedia_stream_new (gpointer channel,
     FsConference *conference,
     FsParticipant *participant,
     TpMediaStreamHandler *proxy,
@@ -1632,9 +1632,9 @@ tp_stream_engine_stream_new (gpointer channel,
     GError **error)
 
 {
-  TpStreamEngineStream *self = NULL;
+  TpmediaStream *self = NULL;
 
-  self = g_object_new (TP_STREAM_ENGINE_TYPE_STREAM,
+  self = g_object_new (TPMEDIA_TYPE_STREAM,
       "channel", channel,
       "farsight-conference", conference,
       "farsight-participant", participant,

@@ -509,7 +509,7 @@ tp_stream_engine_stop_audio_source (TpStreamEngine *self)
 }
 
 static void
-stream_free_resource (TpStreamEngineStream *stream,
+stream_free_resource (TpmediaStream *stream,
     TpMediaStreamDirection dir,
     gpointer user_data)
 {
@@ -528,7 +528,7 @@ stream_free_resource (TpStreamEngineStream *stream,
 }
 
 static gboolean
-stream_request_resource (TpStreamEngineStream *stream,
+stream_request_resource (TpmediaStream *stream,
     TpMediaStreamDirection dir,
     gpointer user_data)
 {
@@ -589,7 +589,7 @@ channel_session_created (TpmediaChannel *chan G_GNUC_UNUSED,
 
 
 static void
-stream_closed (TpStreamEngineStream *stream, gpointer user_data)
+stream_closed (TpmediaStream *stream, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   GObject *sestream = NULL;
@@ -651,7 +651,7 @@ static void
 stream_receiving (TpStreamEngineVideoStream *videostream, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
-  TpStreamEngineStream *stream = NULL;
+  TpmediaStream *stream = NULL;
   TpmediaChannel *chan = NULL;
   guint stream_id;
   gchar *channel_path;
@@ -920,7 +920,7 @@ audiostream_release_pad (TpStreamEngineAudioStream *audiostream, GstPad *pad,
 
 static void
 channel_stream_created (TpmediaChannel *chan G_GNUC_UNUSED,
-    TpStreamEngineStream *stream, gpointer user_data)
+    TpmediaStream *stream, gpointer user_data)
 {
   guint media_type;
   GError *error = NULL;
@@ -1087,12 +1087,12 @@ channel_closed (TpmediaChannel *chan, gpointer user_data)
 static void
 close_one_stream (TpmediaChannel *chan G_GNUC_UNUSED,
                         guint stream_id G_GNUC_UNUSED,
-                        TpStreamEngineStream *stream,
+                        TpmediaStream *stream,
                         gpointer user_data)
 {
   const gchar *message = (const gchar *) user_data;
 
-  tp_stream_engine_stream_error (stream, TP_MEDIA_STREAM_ERROR_UNKNOWN,
+  tpmedia_stream_error (stream, TP_MEDIA_STREAM_ERROR_UNKNOWN,
       message);
 }
 
@@ -1752,14 +1752,14 @@ tp_stream_engine_register (TpStreamEngine *self)
     g_error ("Failed to acquire bus name, stream engine already running?");
 }
 
-static TpStreamEngineStream *
+static TpmediaStream *
 _lookup_stream (TpStreamEngine *self,
                 const gchar *path,
                 guint stream_id,
                 GError **error)
 {
   TpmediaChannel *channel;
-  TpStreamEngineStream *stream;
+  TpmediaStream *stream;
 
   channel = g_hash_table_lookup (self->priv->channels_by_path, path);
   if (channel == NULL)
@@ -1798,7 +1798,7 @@ tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
                              DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
-  TpStreamEngineStream *stream;
+  TpmediaStream *stream;
   GError *error = NULL;
   TpMediaStreamType media_type;
   TpStreamEngineAudioStream *audiostream;
@@ -1848,7 +1848,7 @@ tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
                              DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
-  TpStreamEngineStream *stream;
+  TpmediaStream *stream;
   GError *error = NULL;
   TpMediaStreamType media_type;
   TpStreamEngineAudioStream *audiostream;
@@ -1899,7 +1899,7 @@ tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
                                     DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
-  TpStreamEngineStream *stream;
+  TpmediaStream *stream;
   GError *error = NULL;
   TpMediaStreamType media_type;
   TpStreamEngineAudioStream *audiostream;
@@ -1951,7 +1951,7 @@ tp_stream_engine_set_input_volume (StreamEngineSvcStreamEngine *iface,
                                     DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
-  TpStreamEngineStream *stream;
+  TpmediaStream *stream;
   GError *error = NULL;
   TpMediaStreamType media_type;
   TpStreamEngineAudioStream *audiostream;
@@ -2000,7 +2000,7 @@ tp_stream_engine_get_output_window (StreamEngineSvcStreamEngine *iface,
                                     DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
-  TpStreamEngineStream *stream;
+  TpmediaStream *stream;
   TpMediaStreamType media_type;
   GError *error = NULL;
 

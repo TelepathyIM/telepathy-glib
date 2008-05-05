@@ -1,5 +1,5 @@
-#ifndef __TP_STREAM_ENGINE_STREAM_H__
-#define __TP_STREAM_ENGINE_STREAM_H__
+#ifndef __TPMEDIA_STREAM_H__
+#define __TPMEDIA_STREAM_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/enums.h>
@@ -9,29 +9,29 @@
 
 G_BEGIN_DECLS
 
-#define TP_STREAM_ENGINE_TYPE_STREAM tp_stream_engine_stream_get_type()
+#define TPMEDIA_TYPE_STREAM tpmedia_stream_get_type()
 
-#define TP_STREAM_ENGINE_STREAM(obj) \
+#define TPMEDIA_STREAM(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStream))
+  TPMEDIA_TYPE_STREAM, TpmediaStream))
 
-#define TP_STREAM_ENGINE_STREAM_CLASS(klass) \
+#define TPMEDIA_STREAM_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamClass))
+  TPMEDIA_TYPE_STREAM, TpmediaStreamClass))
 
 #define TP_STREAM_ENGINE_IS_STREAM(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-  TP_STREAM_ENGINE_TYPE_STREAM))
+  TPMEDIA_TYPE_STREAM))
 
 #define TP_STREAM_ENGINE_IS_STREAM_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), \
-  TP_STREAM_ENGINE_TYPE_STREAM))
+  TPMEDIA_TYPE_STREAM))
 
-#define TP_STREAM_ENGINE_STREAM_GET_CLASS(obj) \
+#define TPMEDIA_STREAM_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TP_STREAM_ENGINE_TYPE_STREAM, TpStreamEngineStreamClass))
+  TPMEDIA_TYPE_STREAM, TpmediaStreamClass))
 
-typedef struct _TpStreamEngineStreamPrivate TpStreamEngineStreamPrivate;
+typedef struct _TpmediaStreamPrivate TpmediaStreamPrivate;
 
 typedef struct {
   GObject parent;
@@ -39,13 +39,13 @@ typedef struct {
   /* Read-only */
   guint stream_id;
 
-  TpStreamEngineStreamPrivate *priv;
-} TpStreamEngineStream;
+  TpmediaStreamPrivate *priv;
+} TpmediaStream;
 
 typedef struct {
   GObjectClass parent_class;
 
-} TpStreamEngineStreamClass;
+} TpmediaStreamClass;
 
 typedef struct {
   gchar *nat_traversal;
@@ -54,10 +54,10 @@ typedef struct {
   gchar *relay_token;
 } TpStreamEngineNatProperties;
 
-GType tp_stream_engine_stream_get_type (void);
+GType tpmedia_stream_get_type (void);
 
-TpStreamEngineStream *
-tp_stream_engine_stream_new (gpointer channel,
+TpmediaStream *
+tpmedia_stream_new (gpointer channel,
     FsConference *conference,
     FsParticipant *participant,
     TpMediaStreamHandler *proxy,
@@ -69,14 +69,14 @@ tp_stream_engine_stream_new (gpointer channel,
     GError **error);
 
 
-void tp_stream_engine_stream_error (
-  TpStreamEngineStream *self,
+void tpmedia_stream_error (
+  TpmediaStream *self,
   guint error,
   const gchar *message);
 
-gboolean tp_stream_engine_stream_bus_message (TpStreamEngineStream *stream,
+gboolean tpmedia_stream_bus_message (TpmediaStream *stream,
     GstMessage *message);
 
 G_END_DECLS
 
-#endif /* __TP_STREAM_ENGINE_STREAM_H__ */
+#endif /* __TPMEDIA_STREAM_H__ */

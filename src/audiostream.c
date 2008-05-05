@@ -35,20 +35,20 @@ G_DEFINE_TYPE (TpStreamEngineAudioStream, tp_stream_engine_audio_stream,
 
 #define DEBUG(stream, format, ...)          \
   g_debug ("stream %d (audio) %s: " format,             \
-      ((TpStreamEngineStream *)stream)->stream_id,      \
+      ((TpmediaStream *)stream)->stream_id,      \
       G_STRFUNC,                                        \
       ##__VA_ARGS__)
 
 #define WARNING(stream, format, ...)          \
   g_warning ("stream %d (audio) %s: " format,             \
-      ((TpStreamEngineStream *)stream)->stream_id,      \
+      ((TpmediaStream *)stream)->stream_id,      \
       G_STRFUNC,                                        \
       ##__VA_ARGS__)
 
 
 struct _TpStreamEngineAudioStreamPrivate
 {
-  TpStreamEngineStream *stream;
+  TpmediaStream *stream;
 
   GstElement *srcbin;
 
@@ -107,7 +107,7 @@ static void tp_stream_engine_audio_stream_get_property  (GObject *object,
     GValue *value,
     GParamSpec *pspec);
 
-static void src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad,
+static void src_pad_added_cb (TpmediaStream *stream, GstPad *pad,
     FsCodec *codec, gpointer user_data);
 
 static void
@@ -348,7 +348,7 @@ tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
   param_spec = g_param_spec_object ("stream",
       "Tp StreamEngine Stream",
       "The Telepathy Stream Engine Stream",
-      TP_STREAM_ENGINE_TYPE_STREAM,
+      TPMEDIA_TYPE_STREAM,
       G_PARAM_CONSTRUCT_ONLY |
       G_PARAM_READWRITE |
       G_PARAM_STATIC_NICK |
@@ -621,7 +621,7 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
 
 
 TpStreamEngineAudioStream *
-tp_stream_engine_audio_stream_new (TpStreamEngineStream *stream,
+tp_stream_engine_audio_stream_new (TpmediaStream *stream,
     GstBin *bin,
     GstPad *pad,
     GError **error)
@@ -653,7 +653,7 @@ src_pad_added_idle_error (gpointer user_data)
 {
   TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);
 
-  tp_stream_engine_stream_error (self->priv->stream, 0,
+  tpmedia_stream_error (self->priv->stream, 0,
       "Error setting up audio reception");
 
 
@@ -670,7 +670,7 @@ src_pad_added_idle_error (gpointer user_data)
  */
 
 static void
-src_pad_added_cb (TpStreamEngineStream *stream, GstPad *pad, FsCodec *codec,
+src_pad_added_cb (TpmediaStream *stream, GstPad *pad, FsCodec *codec,
     gpointer user_data)
 {
   TpStreamEngineAudioStream *self = TP_STREAM_ENGINE_AUDIO_STREAM (user_data);

@@ -54,12 +54,12 @@ void tpmedia_channel_error (
   guint error,
   const gchar *message);
 
-TpStreamEngineStream *tpmedia_channel_lookup_stream (
+TpmediaStream *tpmedia_channel_lookup_stream (
   TpmediaChannel *chan,
   guint stream_id);
 
 typedef void (* TpmediaChannelStreamFunc) (TpmediaChannel *chan,
-  guint stream_id, TpStreamEngineStream *stream, gpointer user_data);
+  guint stream_id, TpmediaStream *stream, gpointer user_data);
 
 void tpmedia_channel_foreach_stream (
   TpmediaChannel *chan,

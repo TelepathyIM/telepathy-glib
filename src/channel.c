@@ -369,7 +369,7 @@ static void new_stream_cb (TpStreamEngineSession *session, gchar *object_path,
     guint stream_id, TpMediaStreamType media_type,
     TpMediaStreamDirection direction, gpointer user_data);
 
-static void stream_closed_cb (TpStreamEngineStream *stream,
+static void stream_closed_cb (TpmediaStream *stream,
     gpointer user_data);
 
 static void
@@ -499,7 +499,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1, TP_STREAM_ENGINE_TYPE_STREAM);
+                  G_TYPE_NONE, 1, TPMEDIA_TYPE_STREAM);
 
   signals[SESSION_CREATED] =
     g_signal_new ("session-created",
@@ -521,7 +521,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
 }
 
 static void
-stream_closed_cb (TpStreamEngineStream *stream,
+stream_closed_cb (TpmediaStream *stream,
                   gpointer user_data)
 {
   TpmediaChannel *self = TPMEDIA_CHANNEL (user_data);
@@ -546,7 +546,7 @@ new_stream_cb (TpStreamEngineSession *session,
 {
   TpmediaChannel *self = TPMEDIA_CHANNEL (user_data);
   TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpStreamEngineStream *stream;
+  TpmediaStream *stream;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
@@ -575,7 +575,7 @@ new_stream_cb (TpStreamEngineSession *session,
       "farsight-participant", &fs_participant,
       NULL);
 
-  stream = tp_stream_engine_stream_new ((gpointer) self, fs_conference,
+  stream = tpmedia_stream_new ((gpointer) self, fs_conference,
       fs_participant, proxy, stream_id, media_type, direction,
       &priv->nat_props, local_codec_config, &error);
 
@@ -600,7 +600,7 @@ new_stream_cb (TpStreamEngineSession *session,
       g_warning ("connection manager gave us a new stream with existing id "
           "%u, sending error!", stream_id);
 
-      tp_stream_engine_stream_error (stream, 0,
+      tpmedia_stream_error (stream, 0,
           "already have a stream with this ID");
 
       g_object_unref (stream);
@@ -812,7 +812,7 @@ tpmedia_channel_error (TpmediaChannel *self,
 
   for (i = 0; i < priv->streams->len; i++)
     if (g_ptr_array_index (priv->streams, i) != NULL)
-      tp_stream_engine_stream_error (g_ptr_array_index (priv->streams, i),
+      tpmedia_stream_error (g_ptr_array_index (priv->streams, i),
           error, message);
 
   if (self->priv->channel_ready_handler != 0)
@@ -832,7 +832,7 @@ tpmedia_channel_error (TpmediaChannel *self,
   shutdown_channel (self);
 }
 
-TpStreamEngineStream *
+TpmediaStream *
 tpmedia_channel_lookup_stream (TpmediaChannel *self,
                                         guint stream_id)
 {
@@ -855,7 +855,7 @@ tpmedia_channel_foreach_stream (TpmediaChannel *self,
 
   for (i = 0; i < priv->streams->len; i++)
     {
-      TpStreamEngineStream *stream = g_ptr_array_index (priv->streams, i);
+      TpmediaStream *stream = g_ptr_array_index (priv->streams, i);
 
       if (stream != NULL)
         func (self, i, stream, user_data);
@@ -896,11 +896,11 @@ tpmedia_channel_bus_message (TpmediaChannel *channel,
 
   for (i = 0; i < channel->priv->streams->len; i++)
     {
-      TpStreamEngineStream *stream = g_ptr_array_index (
+      TpmediaStream *stream = g_ptr_array_index (
           channel->priv->streams, i);
 
       if (stream != NULL)
-        if (tp_stream_engine_stream_bus_message (stream, message))
+        if (tpmedia_stream_bus_message (stream, message))
           ret = TRUE;
     }
 
