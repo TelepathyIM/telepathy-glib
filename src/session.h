@@ -1,57 +1,57 @@
-#ifndef __TP_STREAM_ENGINE_SESSION_H__
-#define __TP_STREAM_ENGINE_SESSION_H__
+#ifndef __TPMEDIA_SESSION_H__
+#define __TPMEDIA_SESSION_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/media-interfaces.h>
 
 G_BEGIN_DECLS
 
-#define TP_STREAM_ENGINE_TYPE_SESSION tp_stream_engine_session_get_type()
+#define TPMEDIA_TYPE_SESSION tpmedia_session_get_type()
 
-#define TP_STREAM_ENGINE_SESSION(obj) \
+#define TPMEDIA_SESSION(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TP_STREAM_ENGINE_TYPE_SESSION, TpStreamEngineSession))
+  TPMEDIA_TYPE_SESSION, TpmediaSession))
 
-#define TP_STREAM_ENGINE_SESSION_CLASS(klass) \
+#define TPMEDIA_SESSION_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TP_STREAM_ENGINE_TYPE_SESSION, TpStreamEngineSessionClass))
+  TPMEDIA_TYPE_SESSION, TpmediaSessionClass))
 
 #define TP_STREAM_ENGINE_IS_SESSION(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-  TP_STREAM_ENGINE_TYPE_SESSION))
+  TPMEDIA_TYPE_SESSION))
 
 #define TP_STREAM_ENGINE_IS_SESSION_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), \
-  TP_STREAM_ENGINE_TYPE_SESSION))
+  TPMEDIA_TYPE_SESSION))
 
-#define TP_STREAM_ENGINE_SESSION_GET_CLASS(obj) \
+#define TPMEDIA_SESSION_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TP_STREAM_ENGINE_TYPE_SESSION, TpStreamEngineSessionClass))
+  TPMEDIA_TYPE_SESSION, TpmediaSessionClass))
 
-typedef struct _TpStreamEngineSessionPrivate TpStreamEngineSessionPrivate;
+typedef struct _TpmediaSessionPrivate TpmediaSessionPrivate;
 
 typedef struct {
   GObject parent;
 
-  TpStreamEngineSessionPrivate *priv;
-} TpStreamEngineSession;
+  TpmediaSessionPrivate *priv;
+} TpmediaSession;
 
 typedef struct {
   GObjectClass parent_class;
-} TpStreamEngineSessionClass;
+} TpmediaSessionClass;
 
-GType tp_stream_engine_session_get_type (void);
+GType tpmedia_session_get_type (void);
 
-TpStreamEngineSession *
-tp_stream_engine_session_new (TpMediaSessionHandler *proxy,
+TpmediaSession *
+tpmedia_session_new (TpMediaSessionHandler *proxy,
                               const gchar *session_type,
                               GError **error);
 
-gboolean tp_stream_engine_session_bus_message (TpStreamEngineSession *session,
+gboolean tpmedia_session_bus_message (TpmediaSession *session,
     GstMessage *message);
 
 
 G_END_DECLS
 
-#endif /* __TP_STREAM_ENGINE_SESSION_H__ */
+#endif /* __TPMEDIA_SESSION_H__ */
 

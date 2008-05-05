@@ -550,7 +550,7 @@ stream_request_resource (TpmediaStream *stream,
 
 
 static void
-session_invalidated (TpStreamEngineSession *session G_GNUC_UNUSED,
+session_invalidated (TpmediaSession *session G_GNUC_UNUSED,
     gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
@@ -567,7 +567,7 @@ session_invalidated (TpStreamEngineSession *session G_GNUC_UNUSED,
 
 static void
 channel_session_created (TpmediaChannel *chan G_GNUC_UNUSED,
-    TpStreamEngineSession *session, gpointer user_data)
+    TpmediaSession *session, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   GstElement *conf;

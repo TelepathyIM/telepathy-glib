@@ -365,7 +365,7 @@ tpmedia_channel_constructor (GType type,
   return obj;
 }
 
-static void new_stream_cb (TpStreamEngineSession *session, gchar *object_path,
+static void new_stream_cb (TpmediaSession *session, gchar *object_path,
     guint stream_id, TpMediaStreamType media_type,
     TpMediaStreamDirection direction, gpointer user_data);
 
@@ -508,7 +508,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1, TP_STREAM_ENGINE_TYPE_SESSION);
+                  G_TYPE_NONE, 1, TPMEDIA_TYPE_SESSION);
 
   signals[STREAM_GET_CODEC_CONFIG] =
     g_signal_new ("stream-get-codec-config",
@@ -537,7 +537,7 @@ stream_closed_cb (TpmediaStream *stream,
 }
 
 static void
-new_stream_cb (TpStreamEngineSession *session,
+new_stream_cb (TpmediaSession *session,
                gchar *object_path,
                guint stream_id,
                TpMediaStreamType media_type,
@@ -621,7 +621,7 @@ add_session (TpmediaChannel *self,
              const gchar *session_type)
 {
   TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpStreamEngineSession *session;
+  TpmediaSession *session;
   GError *error = NULL;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
   TpMediaSessionHandler *proxy;
@@ -641,7 +641,7 @@ add_session (TpmediaChannel *self,
       return;
     }
 
-  session = tp_stream_engine_session_new (proxy, session_type, &error);
+  session = tpmedia_session_new (proxy, session_type, &error);
 
   if (session == NULL)
     {
@@ -886,11 +886,11 @@ tpmedia_channel_bus_message (TpmediaChannel *channel,
 
   for (i = 0; i < channel->priv->sessions->len; i++)
     {
-      TpStreamEngineSession *session = g_ptr_array_index (
+      TpmediaSession *session = g_ptr_array_index (
           channel->priv->sessions, i);
 
       if (session != NULL)
-        if (tp_stream_engine_session_bus_message (session, message))
+        if (tpmedia_session_bus_message (session, message))
           ret = TRUE;
     }
 
