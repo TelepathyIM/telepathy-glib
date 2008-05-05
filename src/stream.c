@@ -62,7 +62,7 @@ G_DEFINE_TYPE (TpStreamEngineStream, tp_stream_engine_stream, G_TYPE_OBJECT);
 
 struct _TpStreamEngineStreamPrivate
 {
-  TpStreamEngineChannel *channel;
+  TpmediaChannel *channel;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
   FsSession *fs_session;
@@ -239,7 +239,7 @@ tp_stream_engine_stream_set_property (GObject      *object,
     {
     case PROP_CHANNEL:
       self->priv->channel =
-          TP_STREAM_ENGINE_CHANNEL (g_value_get_object (value));
+          TPMEDIA_CHANNEL (g_value_get_object (value));
       break;
     case PROP_FARSIGHT_CONFERENCE:
       self->priv->fs_conference =
@@ -506,9 +506,9 @@ tp_stream_engine_stream_class_init (TpStreamEngineStreamClass *klass)
 
   param_spec = g_param_spec_object ("channel",
                                     "Telepathy channel",
-                                    "The TpStreamEngineChannel this stream"
+                                    "The TpmediaChannel this stream"
                                     " is in",
-                                    TP_STREAM_ENGINE_TYPE_CHANNEL,
+                                    TPMEDIA_TYPE_CHANNEL,
                                     G_PARAM_CONSTRUCT_ONLY |
                                     G_PARAM_READWRITE |
                                     G_PARAM_STATIC_NICK |

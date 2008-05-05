@@ -424,7 +424,7 @@ tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
   guint i;
 
   for (i = 0; i < self->priv->channels->len; i++)
-    tp_stream_engine_channel_error (
+    tpmedia_channel_error (
       g_ptr_array_index (self->priv->channels, i), error, message);
 }
 
@@ -566,7 +566,7 @@ session_invalidated (TpStreamEngineSession *session G_GNUC_UNUSED,
 }
 
 static void
-channel_session_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
+channel_session_created (TpmediaChannel *chan G_GNUC_UNUSED,
     TpStreamEngineSession *session, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
@@ -652,7 +652,7 @@ stream_receiving (TpStreamEngineVideoStream *videostream, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   TpStreamEngineStream *stream = NULL;
-  TpStreamEngineChannel *chan = NULL;
+  TpmediaChannel *chan = NULL;
   guint stream_id;
   gchar *channel_path;
 
@@ -919,7 +919,7 @@ audiostream_release_pad (TpStreamEngineAudioStream *audiostream, GstPad *pad,
 }
 
 static void
-channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
+channel_stream_created (TpmediaChannel *chan G_GNUC_UNUSED,
     TpStreamEngineStream *stream, gpointer user_data)
 {
   guint media_type;
@@ -990,7 +990,7 @@ channel_stream_created (TpStreamEngineChannel *chan G_GNUC_UNUSED,
 }
 
 static GList *
-stream_get_codec_config (TpStreamEngineChannel *chan,
+stream_get_codec_config (TpmediaChannel *chan,
     guint stream_id,
     TpMediaStreamType media_type,
     TpMediaStreamDirection direction,
@@ -1066,7 +1066,7 @@ check_if_busy (TpStreamEngine *self)
 
 
 static void
-channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
+channel_closed (TpmediaChannel *chan, gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
   gchar *object_path;
@@ -1085,7 +1085,7 @@ channel_closed (TpStreamEngineChannel *chan, gpointer user_data)
 }
 
 static void
-close_one_stream (TpStreamEngineChannel *chan G_GNUC_UNUSED,
+close_one_stream (TpmediaChannel *chan G_GNUC_UNUSED,
                         guint stream_id G_GNUC_UNUSED,
                         TpStreamEngineStream *stream,
                         gpointer user_data)
@@ -1106,9 +1106,9 @@ close_all_streams (TpStreamEngine *self, const gchar *message)
 
   for (i = 0; i < self->priv->channels->len; i++)
     {
-      TpStreamEngineChannel *channel = g_ptr_array_index (self->priv->channels,
+      TpmediaChannel *channel = g_ptr_array_index (self->priv->channels,
           i);
-      tp_stream_engine_channel_foreach_stream (channel,
+      tpmedia_channel_foreach_stream (channel,
           close_one_stream, (gpointer) message);
     }
 }
@@ -1128,7 +1128,7 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
 
 
   for (i = 0; i < priv->channels->len; i++)
-    if (tp_stream_engine_channel_bus_message (
+    if (tpmedia_channel_bus_message (
             g_ptr_array_index (priv->channels, i), message))
       return TRUE;
 
@@ -1655,7 +1655,7 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
 
 
 static void
-handler_result (TpStreamEngineChannel *chan G_GNUC_UNUSED,
+handler_result (TpmediaChannel *chan G_GNUC_UNUSED,
                 GError *error,
                 DBusGMethodInvocation *context)
 {
@@ -1682,7 +1682,7 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
                                  DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
-  TpStreamEngineChannel *chan = NULL;
+  TpmediaChannel *chan = NULL;
   GError *error = NULL;
 
   g_debug("HandleChannel called");
@@ -1698,7 +1698,7 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
       return;
      }
 
-  chan = tp_stream_engine_channel_new (self->priv->dbus_daemon, bus_name,
+  chan = tpmedia_channel_new (self->priv->dbus_daemon, bus_name,
       connection, channel, handle_type, handle, &error);
 
   if (chan == NULL)
@@ -1758,7 +1758,7 @@ _lookup_stream (TpStreamEngine *self,
                 guint stream_id,
                 GError **error)
 {
-  TpStreamEngineChannel *channel;
+  TpmediaChannel *channel;
   TpStreamEngineStream *stream;
 
   channel = g_hash_table_lookup (self->priv->channels_by_path, path);
@@ -1770,7 +1770,7 @@ _lookup_stream (TpStreamEngine *self,
       return NULL;
     }
 
-  stream = tp_stream_engine_channel_lookup_stream (channel, stream_id);
+  stream = tpmedia_channel_lookup_stream (channel, stream_id);
   if (stream == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,

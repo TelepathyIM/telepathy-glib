@@ -1,5 +1,5 @@
 /*
- * channel.c - Source for TpStreamEngineChannel
+ * channel.c - Source for TpmediaChannel
  * Copyright (C) 2006-2007 Collabora Ltd.
  * Copyright (C) 2006-2007 Nokia Corporation
  *
@@ -34,11 +34,11 @@
 #include "stream.h"
 #include "tp-stream-engine-signals-marshal.h"
 
-G_DEFINE_TYPE (TpStreamEngineChannel, tp_stream_engine_channel, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TpmediaChannel, tpmedia_channel, G_TYPE_OBJECT);
 
 #define CHANNEL_PRIVATE(o) ((o)->priv)
 
-struct _TpStreamEngineChannelPrivate
+struct _TpmediaChannelPrivate
 {
   TpChannel *channel_proxy;
   DBusGProxy *media_signalling_proxy;
@@ -85,10 +85,10 @@ enum
 };
 
 static void
-tp_stream_engine_channel_init (TpStreamEngineChannel *self)
+tpmedia_channel_init (TpmediaChannel *self)
 {
-  TpStreamEngineChannelPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_STREAM_ENGINE_TYPE_CHANNEL, TpStreamEngineChannelPrivate);
+  TpmediaChannelPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TPMEDIA_TYPE_CHANNEL, TpmediaChannelPrivate);
 
   self->priv = priv;
 
@@ -97,13 +97,13 @@ tp_stream_engine_channel_init (TpStreamEngineChannel *self)
 }
 
 static void
-tp_stream_engine_channel_get_property (GObject    *object,
+tpmedia_channel_get_property (GObject    *object,
                                        guint       property_id,
                                        GValue     *value,
                                        GParamSpec *pspec)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   switch (property_id)
     {
@@ -124,13 +124,13 @@ tp_stream_engine_channel_get_property (GObject    *object,
 }
 
 static void
-tp_stream_engine_channel_set_property (GObject      *object,
+tpmedia_channel_set_property (GObject      *object,
                                        guint         property_id,
                                        const GValue *value,
                                        GParamSpec   *pspec)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   switch (property_id)
     {
@@ -144,7 +144,7 @@ tp_stream_engine_channel_set_property (GObject      *object,
 }
 
 static void channel_invalidated (TpChannel *channel_proxy,
-    guint domain, gint code, gchar *message, TpStreamEngineChannel *self);
+    guint domain, gint code, gchar *message, TpmediaChannel *self);
 
 static void new_media_session_handler (TpChannel *channel_proxy,
     const gchar *session_handler_path, const gchar *type,
@@ -160,7 +160,7 @@ cb_properties_changed (TpProxy *proxy G_GNUC_UNUSED,
                        gpointer user_data G_GNUC_UNUSED,
                        GObject *object)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
   guint i;
 
   for (i = 0; i < structs->len; i++)
@@ -231,7 +231,7 @@ cb_properties_listed (TpProxy *proxy,
                       gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
   guint i;
   GArray *get_properties;
 
@@ -296,7 +296,7 @@ cb_properties_listed (TpProxy *proxy,
 static void
 channel_ready (TpChannel *channel_proxy,
                GParamSpec *unused G_GNUC_UNUSED,
-               TpStreamEngineChannel *self)
+               TpmediaChannel *self)
 {
   TpProxy *as_proxy = (TpProxy *) channel_proxy;
 
@@ -343,17 +343,17 @@ channel_ready (TpChannel *channel_proxy,
 }
 
 static GObject *
-tp_stream_engine_channel_constructor (GType type,
+tpmedia_channel_constructor (GType type,
                                       guint n_props,
                                       GObjectConstructParam *props)
 {
   GObject *obj;
-  TpStreamEngineChannel *self;
-  TpStreamEngineChannelPrivate *priv;
+  TpmediaChannel *self;
+  TpmediaChannelPrivate *priv;
 
-  obj = G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->
+  obj = G_OBJECT_CLASS (tpmedia_channel_parent_class)->
            constructor (type, n_props, props);
-  self = (TpStreamEngineChannel *) obj;
+  self = (TpmediaChannel *) obj;
   priv = CHANNEL_PRIVATE (self);
 
   priv->channel_ready_handler = g_signal_connect (priv->channel_proxy,
@@ -373,10 +373,10 @@ static void stream_closed_cb (TpStreamEngineStream *stream,
     gpointer user_data);
 
 static void
-tp_stream_engine_channel_dispose (GObject *object)
+tpmedia_channel_dispose (GObject *object)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (object);
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   g_debug (G_STRFUNC);
 
@@ -445,24 +445,24 @@ tp_stream_engine_channel_dispose (GObject *object)
   g_free (priv->nat_props.relay_token);
   priv->nat_props.relay_token = NULL;
 
-  if (G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->dispose)
-    G_OBJECT_CLASS (tp_stream_engine_channel_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tpmedia_channel_parent_class)->dispose)
+    G_OBJECT_CLASS (tpmedia_channel_parent_class)->dispose (object);
 }
 
 static void
-tp_stream_engine_channel_class_init (TpStreamEngineChannelClass *klass)
+tpmedia_channel_class_init (TpmediaChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass, sizeof (TpStreamEngineChannelPrivate));
+  g_type_class_add_private (klass, sizeof (TpmediaChannelPrivate));
 
-  object_class->set_property = tp_stream_engine_channel_set_property;
-  object_class->get_property = tp_stream_engine_channel_get_property;
+  object_class->set_property = tpmedia_channel_set_property;
+  object_class->get_property = tpmedia_channel_get_property;
 
-  object_class->constructor = tp_stream_engine_channel_constructor;
+  object_class->constructor = tpmedia_channel_constructor;
 
-  object_class->dispose = tp_stream_engine_channel_dispose;
+  object_class->dispose = tpmedia_channel_dispose;
 
   param_spec = g_param_spec_object ("channel", "TpChannel object",
       "Telepathy channel object which this media channel should operate on.",
@@ -524,8 +524,8 @@ static void
 stream_closed_cb (TpStreamEngineStream *stream,
                   gpointer user_data)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (user_data);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
   guint stream_id;
 
   g_object_get (stream, "stream-id", &stream_id, NULL);
@@ -544,8 +544,8 @@ new_stream_cb (TpStreamEngineSession *session,
                TpMediaStreamDirection direction,
                gpointer user_data)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (user_data);
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (user_data);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpStreamEngineStream *stream;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
@@ -616,11 +616,11 @@ new_stream_cb (TpStreamEngineSession *session,
 }
 
 static void
-add_session (TpStreamEngineChannel *self,
+add_session (TpmediaChannel *self,
              const gchar *object_path,
              const gchar *session_type)
 {
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TpStreamEngineSession *session;
   GError *error = NULL;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
@@ -664,7 +664,7 @@ new_media_session_handler (TpChannel *channel_proxy G_GNUC_UNUSED,
                            gpointer user_data G_GNUC_UNUSED,
                            GObject *weak_object)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (weak_object);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (weak_object);
 
   /* Ignore NewMediaSessionHandler until we've had a reply to
    * GetSessionHandlers; otherwise, if the two cross over in mid-flight,
@@ -676,9 +676,9 @@ new_media_session_handler (TpChannel *channel_proxy G_GNUC_UNUSED,
 }
 
 static void
-shutdown_channel (TpStreamEngineChannel *self)
+shutdown_channel (TpmediaChannel *self)
 {
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   if (priv->channel_proxy != NULL)
     {
@@ -701,7 +701,7 @@ channel_invalidated (TpChannel *channel_proxy,
                      guint domain,
                      gint code,
                      gchar *message,
-                     TpStreamEngineChannel *self)
+                     TpmediaChannel *self)
 {
   GError e = { domain, code, message };
 
@@ -725,7 +725,7 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
                             gpointer user_data G_GNUC_UNUSED,
                             GObject *weak_object)
 {
-  TpStreamEngineChannel *self = TP_STREAM_ENGINE_CHANNEL (weak_object);
+  TpmediaChannel *self = TPMEDIA_CHANNEL (weak_object);
   guint i;
 
   self->priv->sessions = g_ptr_array_sized_new (session_handlers->len);
@@ -762,8 +762,8 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
     }
 }
 
-TpStreamEngineChannel *
-tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
+TpmediaChannel *
+tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
                               const gchar *bus_name,
                               const gchar *connection_path,
                               const gchar *channel_path,
@@ -773,7 +773,7 @@ tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
 {
   TpConnection *connection;
   TpChannel *channel_proxy;
-  TpStreamEngineChannel *ret;
+  TpmediaChannel *ret;
 
   g_return_val_if_fail (bus_name != NULL, NULL);
   g_return_val_if_fail (connection_path != NULL, NULL);
@@ -793,7 +793,7 @@ tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
 
   g_object_unref (connection);
 
-  ret = g_object_new (TP_STREAM_ENGINE_TYPE_CHANNEL,
+  ret = g_object_new (TPMEDIA_TYPE_CHANNEL,
       "channel", channel_proxy,
       NULL);
 
@@ -803,11 +803,11 @@ tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
 }
 
 void
-tp_stream_engine_channel_error (TpStreamEngineChannel *self,
+tpmedia_channel_error (TpmediaChannel *self,
                                 guint error,
                                 const gchar *message)
 {
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
   guint i;
 
   for (i = 0; i < priv->streams->len; i++)
@@ -833,10 +833,10 @@ tp_stream_engine_channel_error (TpStreamEngineChannel *self,
 }
 
 TpStreamEngineStream *
-tp_stream_engine_channel_lookup_stream (TpStreamEngineChannel *self,
+tpmedia_channel_lookup_stream (TpmediaChannel *self,
                                         guint stream_id)
 {
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   if (stream_id >= priv->streams->len)
     return NULL;
@@ -846,11 +846,11 @@ tp_stream_engine_channel_lookup_stream (TpStreamEngineChannel *self,
 
 
 void
-tp_stream_engine_channel_foreach_stream (TpStreamEngineChannel *self,
-                                         TpStreamEngineChannelStreamFunc func,
+tpmedia_channel_foreach_stream (TpmediaChannel *self,
+                                         TpmediaChannelStreamFunc func,
                                          gpointer user_data)
 {
-  TpStreamEngineChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
   guint i;
 
   for (i = 0; i < priv->streams->len; i++)
@@ -864,8 +864,8 @@ tp_stream_engine_channel_foreach_stream (TpStreamEngineChannel *self,
 
 
 /**
- * tp_stream_engine_channel_bus_message:
- * @channel: A #TpStreamEngineChannel
+ * tpmedia_channel_bus_message:
+ * @channel: A #TpmediaChannel
  * @message: A #GstMessage received from the bus
  *
  * You must call this function on call messages received on the async bus.
@@ -875,7 +875,7 @@ tp_stream_engine_channel_foreach_stream (TpStreamEngineChannel *self,
  */
 
 gboolean
-tp_stream_engine_channel_bus_message (TpStreamEngineChannel *channel,
+tpmedia_channel_bus_message (TpmediaChannel *channel,
     GstMessage *message)
 {
   guint i;

@@ -1,5 +1,5 @@
-#ifndef __TP_STREAM_ENGINE_CHANNEL_H__
-#define __TP_STREAM_ENGINE_CHANNEL_H__
+#ifndef __TPMEDIA_CHANNEL_H__
+#define __TPMEDIA_CHANNEL_H__
 
 #include <glib-object.h>
 
@@ -7,43 +7,41 @@
 
 G_BEGIN_DECLS
 
-#define TP_STREAM_ENGINE_TYPE_CHANNEL tp_stream_engine_channel_get_type()
+#define TPMEDIA_TYPE_CHANNEL tpmedia_channel_get_type()
 
-#define TP_STREAM_ENGINE_CHANNEL(obj) \
+#define TPMEDIA_CHANNEL(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TP_STREAM_ENGINE_TYPE_CHANNEL, TpStreamEngineChannel))
+  TPMEDIA_TYPE_CHANNEL, TpmediaChannel))
 
-#define TP_STREAM_ENGINE_CHANNEL_CLASS(klass) \
+#define TPMEDIA_CHANNEL_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TP_STREAM_ENGINE_TYPE_CHANNEL, TpStreamEngineChannelClass))
+  TPMEDIA_TYPE_CHANNEL, TpmediaChannelClass))
 
 #define TP_STREAM_ENGINE_IS_CHANNEL(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-  TP_STREAM_ENGINE_TYPE_CHANNEL))
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPMEDIA_TYPE_CHANNEL))
 
 #define TP_STREAM_ENGINE_IS_CHANNEL_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), \
-  TP_STREAM_ENGINE_TYPE_CHANNEL))
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPMEDIA_TYPE_CHANNEL))
 
-#define TP_STREAM_ENGINE_CHANNEL_GET_CLASS(obj) \
+#define TPMEDIA_CHANNEL_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TP_STREAM_ENGINE_TYPE_CHANNEL, TpStreamEngineChannelClass))
+  TPMEDIA_TYPE_CHANNEL, TpmediaChannelClass))
 
-typedef struct _TpStreamEngineChannelPrivate TpStreamEngineChannelPrivate;
+typedef struct _TpmediaChannelPrivate TpmediaChannelPrivate;
 
 typedef struct {
   GObject parent;
 
-  TpStreamEngineChannelPrivate *priv;
-} TpStreamEngineChannel;
+  TpmediaChannelPrivate *priv;
+} TpmediaChannel;
 
 typedef struct {
   GObjectClass parent_class;
-} TpStreamEngineChannelClass;
+} TpmediaChannelClass;
 
-GType tp_stream_engine_channel_get_type (void);
+GType tpmedia_channel_get_type (void);
 
-TpStreamEngineChannel *tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
+TpmediaChannel *tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
   const gchar *bus_name,
   const gchar *connection_path,
   const gchar *channel_path,
@@ -51,27 +49,27 @@ TpStreamEngineChannel *tp_stream_engine_channel_new (TpDBusDaemon *dbus_daemon,
   guint handle,
   GError **error);
 
-void tp_stream_engine_channel_error (
-  TpStreamEngineChannel *self,
+void tpmedia_channel_error (
+  TpmediaChannel *self,
   guint error,
   const gchar *message);
 
-TpStreamEngineStream *tp_stream_engine_channel_lookup_stream (
-  TpStreamEngineChannel *chan,
+TpStreamEngineStream *tpmedia_channel_lookup_stream (
+  TpmediaChannel *chan,
   guint stream_id);
 
-typedef void (* TpStreamEngineChannelStreamFunc) (TpStreamEngineChannel *chan,
+typedef void (* TpmediaChannelStreamFunc) (TpmediaChannel *chan,
   guint stream_id, TpStreamEngineStream *stream, gpointer user_data);
 
-void tp_stream_engine_channel_foreach_stream (
-  TpStreamEngineChannel *chan,
-  TpStreamEngineChannelStreamFunc func,
+void tpmedia_channel_foreach_stream (
+  TpmediaChannel *chan,
+  TpmediaChannelStreamFunc func,
   gpointer user_data);
 
-gboolean tp_stream_engine_channel_bus_message (TpStreamEngineChannel *channel,
+gboolean tpmedia_channel_bus_message (TpmediaChannel *channel,
     GstMessage *message);
 
 G_END_DECLS
 
-#endif /* __TP_STREAM_ENGINE_CHANNEL_H__ */
+#endif /* __TPMEDIA_CHANNEL_H__ */
 
