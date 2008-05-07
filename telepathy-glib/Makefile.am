@@ -182,7 +182,9 @@ distclean-local:
 check_c_sources = \
     $(tpginclude_HEADERS) \
     $(libtelepathy_glib_la_SOURCES)
+
 include $(top_srcdir)/tools/check-coding-style.mk
+check-local: check-coding-style
 
 libtelepathy_glib_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_internal_la_SOURCES = \

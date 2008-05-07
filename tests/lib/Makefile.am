@@ -13,6 +13,7 @@ libtp_glib_tests_la_SOURCES = \
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
+check-local: check-coding-style
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \

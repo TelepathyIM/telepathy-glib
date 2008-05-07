@@ -66,6 +66,7 @@ test_unsupported_interface_SOURCES = unsupported-interface.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
+check-local: check-coding-style
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
