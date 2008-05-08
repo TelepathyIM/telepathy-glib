@@ -177,7 +177,7 @@ typedef struct {
     TpHandle sender;
     time_t timestamp;
     TpChannelTextMessageType message_type;
-    GPtrArray *content;
+    GPtrArray *parts;
     TpChannelTextMessageFlags old_flags;
     gchar *old_text;
     /* A non-NULL reference until we have been queued, NULL afterwards */
@@ -205,14 +205,14 @@ pending_item_free (PendingItem *pending,
   if (pending->sender != 0)
     tp_handle_unref (contact_repo, pending->sender);
 
-  if (pending->content != NULL)
+  if (pending->parts != NULL)
     {
-      for (i = 0; i < pending->content->len; i++)
+      for (i = 0; i < pending->parts->len; i++)
         {
-          g_hash_table_destroy (g_ptr_array_index (pending->content, i));
+          g_hash_table_destroy (g_ptr_array_index (pending->parts, i));
         }
 
-      g_ptr_array_free (pending->content, TRUE);
+      g_ptr_array_free (pending->parts, TRUE);
     }
 
   g_free (pending->old_text);
@@ -551,7 +551,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
       GString *text;
 
       text = g_string_new ("");
-      flags = parts_to_text (msg->content, text);
+      flags = parts_to_text (msg->parts, text);
 
       g_value_init (&val, pending_type);
       g_value_take_boxed (&val,
@@ -643,7 +643,7 @@ tp_message_mixin_get_pending_message_content_async (
     {
       guint part = g_array_index (part_numbers, guint, i);
 
-      if (part >= item->content->len)
+      if (part >= item->parts->len)
         {
           GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "part number %u out of range", part);
@@ -663,8 +663,8 @@ tp_message_mixin_get_pending_message_content_async (
       GHashTable *part_data;
       GValue *content;
 
-      g_assert (part < item->content->len);
-      part_data = g_ptr_array_index (item->content, part);
+      g_assert (part < item->parts->len);
+      part_data = g_ptr_array_index (item->parts, part);
 
       content = g_hash_table_lookup (part_data, "content");
 
@@ -708,7 +708,7 @@ queue_pending (gpointer data)
 
   tp_svc_channel_interface_messages_emit_message_received (object,
       pending->id, pending->timestamp, pending->sender, pending->message_type,
-      pending->content);
+      pending->parts);
 
   g_object_unref (object);
 
@@ -759,7 +759,7 @@ tp_message_mixin_take_received (GObject *object,
   pending->sender = sender;
   pending->timestamp = timestamp;
   pending->message_type = message_type;
-  pending->content = content;
+  pending->parts = content;
   text = g_string_new ("");
   pending->old_flags = parts_to_text (content, text);
   pending->old_text = g_string_free (text, FALSE);
