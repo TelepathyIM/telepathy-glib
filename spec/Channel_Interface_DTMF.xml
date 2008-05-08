@@ -20,8 +20,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Channel.Interface.DTMF">
     <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.StreamedMedia"/>
+
     <method name="StartTone">
-      <arg direction="in" name="stream_id" type="u">
+      <arg direction="in" name="stream_id" type="u" tp:type="Stream_ID">
         <tp:docstring>A stream ID as defined in the StreamedMedia channel type.</tp:docstring>
       </arg>
       <arg direction="in" name="event" type="y" tp:type="DTMF_Event">
@@ -48,8 +49,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="StopTone">
-      <arg direction="in" name="stream_id" type="u">
+      <arg direction="in" name="stream_id" type="u" tp:type="Stream_ID">
         <tp:docstring>A stream ID as defined in the StreamedMedia channel type.</tp:docstring>
       </arg>
       <tp:docstring>
@@ -70,6 +72,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <tp:enum name="DTMF_Event" type="y">
       <tp:enumvalue suffix="Digit_0" value="0">
         <tp:docstring>0</tp:docstring>
@@ -120,6 +123,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring>D</tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       An interface that gives a Channel the ability to send DTMF events over
       audio streams which have been established using the StreamedMedia channel
@@ -127,6 +131,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       href="http://www.rfc-editor.org/rfc/rfc4733.txt">RFC4733</a>, and are
       listed in the DTMF_Event enumeration.
     </tp:docstring>
+
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->
