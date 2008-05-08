@@ -1,3 +1,22 @@
+telepathy-glib 0.7.8 (unreleased)
+=================================
+
+Enhancements:
+
+* Update to telepathy-spec 0.17.4
+  - add Hold API to code-generation
+
+Fixes:
+
+* Make coding-style check less fragile
+
+Recommended updates for projects using check-coding-style.mk:
+
+* Update check-coding-style.mk
+
+* In every Makefile where check-coding-style.mk is used, make check-local
+  depend on check-coding-style (this is no longer done automatically)
+
 telepathy-glib 0.7.7 (2008-05-02)
 =================================
 
