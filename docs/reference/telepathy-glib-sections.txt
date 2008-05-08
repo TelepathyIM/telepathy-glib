@@ -1385,6 +1385,10 @@ TpTubeState
 NUM_TP_TUBE_TYPES
 TpTubeType
 TpChannelCallStateFlags
+NUM_TP_LOCAL_HOLD_STATES
+TpLocalHoldState
+NUM_TP_LOCAL_HOLD_STATE_REASONS
+TpLocalHoldStateReason
 </SECTION>
 
 <SECTION>
