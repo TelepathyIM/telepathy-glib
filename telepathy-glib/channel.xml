@@ -16,6 +16,7 @@
 <xi:include href="../spec/Channel_Interface_Chat_State.xml"/>
 <xi:include href="../spec/Channel_Interface_DTMF.xml"/>
 <xi:include href="../spec/Channel_Interface_Group.xml"/>
+<xi:include href="../spec/Channel_Interface_Hold.xml"/>
 <xi:include href="../spec/Channel_Interface_Media_Signalling.xml"/>
 <xi:include href="../spec/Channel_Interface_Password.xml"/>
 
