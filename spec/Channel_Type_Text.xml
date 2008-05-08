@@ -84,7 +84,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
       <arg direction="out" type="a(uuuuus)" tp:type="Pending_Text_Message[]">
-        <tp:docstring>
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structs representing the pending queue. Each contains:
           <ul>
             <li>a numeric identifier</li>
