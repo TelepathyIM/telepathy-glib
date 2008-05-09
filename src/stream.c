@@ -386,15 +386,15 @@ tpmedia_stream_constructor (GType type,
           g_value_set_uint (&params[n_args].value, conn_timeout);
           n_args++;
         }
+    }
 
-      if (preferred_local_candidates)
-        {
-          params[n_args].name = "preferred-local-candidates";
-          g_value_init (&params[n_args].value, FS_TYPE_CANDIDATE_LIST);
-          g_value_take_boxed (&params[n_args].value,
-              preferred_local_candidates);
-          n_args++;
-        }
+  if (preferred_local_candidates)
+    {
+      params[n_args].name = "preferred-local-candidates";
+      g_value_init (&params[n_args].value, FS_TYPE_CANDIDATE_LIST);
+      g_value_take_boxed (&params[n_args].value,
+          preferred_local_candidates);
+      n_args++;
     }
 
   stream->priv->fs_session = fs_conference_new_session (
