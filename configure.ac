@@ -29,9 +29,9 @@ m4_define([tp_glib_nano_version], [1])
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
-m4_define([tp_glib_lt_current], [10])
+m4_define([tp_glib_lt_current], [11])
 m4_define([tp_glib_lt_revision], [0])
-m4_define([tp_glib_lt_age], [10])
+m4_define([tp_glib_lt_age], [11])
 
 # Some magic
 m4_define([tp_glib_base_version],
