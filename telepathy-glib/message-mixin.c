@@ -58,15 +58,6 @@
 #include "debug-internal.h"
 
 /**
- * TpMessageMixinClass:
- *
- * Structure to be included in the class structure of objects that
- * use this mixin. Initialize it with tp_message_mixin_class_init().
- *
- * There are no public fields.
- */
-
-/**
  * TpMessageMixin:
  *
  * Structure to be included in the instance structure of objects that
