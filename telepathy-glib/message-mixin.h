@@ -27,15 +27,8 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpMessageMixinClass TpMessageMixinClass;
-typedef struct _TpMessageMixinClassPrivate TpMessageMixinClassPrivate;
 typedef struct _TpMessageMixin TpMessageMixin;
 typedef struct _TpMessageMixinPrivate TpMessageMixinPrivate;
-
-struct _TpMessageMixinClass {
-    /*<private>*/
-    TpMessageMixinClassPrivate *priv;
-};
 
 struct _TpMessageMixin {
   /*<private>*/
