@@ -315,3 +315,43 @@
    fun:dynamic_ensure_handle
    fun:tp_handle_ensure
 }
+
+{
+   ld.so initialization + selinux
+   Memcheck:Leak
+   fun:malloc
+   obj:/lib/libselinux.so.*
+   obj:/lib/libselinux.so.*
+   obj:/lib/libselinux.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-*.so
+}
+
+{
+   ld.so initialization + selinux
+   Memcheck:Leak
+   fun:malloc
+   fun:vasprintf
+   fun:asprintf
+   obj:/lib/libselinux.so.*
+   obj:/lib/libselinux.so.*
+   obj:/lib/libselinux.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-*.so
+}
+
+{
+   ld.so initialization + selinux
+   Memcheck:Leak
+   fun:realloc
+   fun:vasprintf
+   fun:asprintf
+   obj:/lib/libselinux.so.*
+   obj:/lib/libselinux.so.*
+   obj:/lib/libselinux.so.*
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/ld-*.so
+}
