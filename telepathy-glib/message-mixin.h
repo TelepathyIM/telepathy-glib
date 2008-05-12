@@ -45,9 +45,11 @@ struct _TpMessageMixin {
 
 /* Receiving */
 
-guint tp_message_mixin_take_received (GObject *object,
-    time_t timestamp, TpHandle sender, TpChannelTextMessageType message_type,
-    GPtrArray *content);
+typedef void (*TpMessageMixinCleanUpReceivedImpl) (GObject *object,
+    GPtrArray *parts, gpointer user_data);
+
+guint tp_message_mixin_take_received (GObject *object, GPtrArray *parts,
+    gpointer user_data);
 
 
 /* Sending */
@@ -57,7 +59,6 @@ typedef struct _TpMessageMixinOutgoingMessagePrivate
 
 typedef struct _TpMessageMixinOutgoingMessage {
     guint flags;
-    guint message_type;
     GPtrArray *parts;
     TpMessageMixinOutgoingMessagePrivate *priv;
 } TpMessageMixinOutgoingMessage;
@@ -70,7 +71,8 @@ void tp_message_mixin_sent (GObject *object,
     const GError *error);
 
 void tp_message_mixin_implement_sending (GObject *object,
-    TpMessageMixinSendImpl send);
+    TpMessageMixinSendImpl send, guint n_types,
+    const TpChannelTextMessageType *types);
 
 
 /* Initialization */
@@ -78,10 +80,8 @@ void tp_message_mixin_text_iface_init (gpointer g_iface, gpointer iface_data);
 void tp_message_mixin_messages_iface_init (gpointer g_iface,
     gpointer iface_data);
 
-void tp_message_mixin_class_init (GObjectClass *obj_cls, gsize offset);
-
 void tp_message_mixin_init (GObject *obj, gsize offset,
-    TpHandleRepoIface *contact_repo);
+    TpMessageMixinCleanUpReceivedImpl clean_up_received);
 void tp_message_mixin_finalize (GObject *obj);
 
 G_END_DECLS
