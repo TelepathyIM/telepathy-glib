@@ -1532,10 +1532,8 @@ tp_heap_size
 <INCLUDE>telepathy-glib/message-mixin.h</INCLUDE>
 <TITLE>TpMessageMixin</TITLE>
 TpMessageMixin
-TpMessageMixinClass
 TpMessageMixinOutgoingMessage
 TpMessageMixinSendImpl
-tp_message_mixin_class_init
 tp_message_mixin_finalize
 tp_message_mixin_implement_sending
 tp_message_mixin_init
@@ -1545,7 +1543,6 @@ tp_message_mixin_take_received
 tp_message_mixin_text_iface_init
 <SUBSECTION Private>
 TpMessageMixinPrivate
-TpMessageMixinClassPrivate
 </SECTION>
 
 <SECTION>
