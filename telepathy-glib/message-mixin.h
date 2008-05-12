@@ -51,7 +51,7 @@ typedef struct _TpMessageMixinOutgoingMessagePrivate
     TpMessageMixinOutgoingMessagePrivate;
 
 typedef struct _TpMessageMixinOutgoingMessage {
-    guint flags;
+    TpMessageSendingFlags flags;
     GPtrArray *parts;
     TpMessageMixinOutgoingMessagePrivate *priv;
 } TpMessageMixinOutgoingMessage;
