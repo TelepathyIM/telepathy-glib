@@ -64,10 +64,13 @@
  * use this mixin. Initialize it with tp_message_mixin_init().
  *
  * There are no public fields.
+ *
+ * @since 0.7.9
  */
 
 struct _TpMessageMixinPrivate
 {
+  /* Sending */
   TpMessageMixinSendImpl send_message;
   GArray *msg_types;
 
@@ -468,6 +471,7 @@ parts_to_text (const GPtrArray *parts,
  * Set the callback used to implement SendMessage, and the types of message
  * that can be sent
  *
+ * @since 0.7.9
  */
 void
 tp_message_mixin_implement_sending (GObject *object,
@@ -524,6 +528,8 @@ tp_message_mixin_implement_sending (GObject *object,
  *     self->contact_repo,
  *     some_object_clean_up_received);
  * </programlisting></informalexample>
+ *
+ * @since 0.7.9
  */
 void
 tp_message_mixin_init (GObject *obj,
@@ -566,6 +572,8 @@ tp_message_mixin_clear (GObject *obj)
  * @obj: An object with this mixin.
  *
  * Free resources held by the text mixin.
+ *
+ * @since 0.7.9
  */
 void
 tp_message_mixin_finalize (GObject *obj)
@@ -844,6 +852,8 @@ queue_pending (gpointer data)
  * #TpMessageMixinCleanUpReceivedImpl was passed to tp_message_mixin_init().
  *
  * Returns: the message ID
+ *
+ * @since 0.7.9
  */
 guint
 tp_message_mixin_take_received (GObject *object,
@@ -1191,6 +1201,8 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
  * In addition to calling this function during interface initialization, the
  * implementor is expected to call tp_svc_channel_type_text_implement_send(),
  * providing a Send implementation.
+ *
+ * @since 0.7.9
  */
 void
 tp_message_mixin_text_iface_init (gpointer g_iface, gpointer iface_data)
