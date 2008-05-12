@@ -56,7 +56,7 @@ typedef struct _TpMessageMixinOutgoingMessage {
     TpMessageMixinOutgoingMessagePrivate *priv;
 } TpMessageMixinOutgoingMessage;
 
-typedef gboolean (*TpMessageMixinSendImpl) (GObject *object,
+typedef void (*TpMessageMixinSendImpl) (GObject *object,
     TpMessageMixinOutgoingMessage *message);
 
 void tp_message_mixin_sent (GObject *object,

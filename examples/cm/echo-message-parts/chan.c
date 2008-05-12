@@ -80,7 +80,7 @@ example_echo_2_channel_init (ExampleEcho2Channel *self)
 }
 
 
-static gboolean
+static void
 send_message (GObject *object,
               TpMessageMixinOutgoingMessage *message)
 {
@@ -92,7 +92,7 @@ send_message (GObject *object,
   gboolean valid;
   guint i;
 
-  g_return_val_if_fail (message->parts->len >= 1, FALSE);
+  g_return_if_fail (message->parts->len >= 1);
 
   parts = g_ptr_array_sized_new (message->parts->len);
 
@@ -192,8 +192,6 @@ send_message (GObject *object,
    * the parts array is owned by the mixin, and must not be modified or freed
    * until clean_up_received() is called */
   tp_message_mixin_take_received (object, parts, NULL);
-
-  return TRUE;
 }
 
 
