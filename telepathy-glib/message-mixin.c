@@ -21,25 +21,26 @@
 /**
  * SECTION:message-mixin
  * @title: TpMessageMixin
- * @short_description: a mixin implementation of the text channel type
- * @see_also: #TpSvcChannelTypeText
+ * @short_description: a mixin implementation of the text channel type and the
+ *  Messages mixin
+ * @see_also: #TpSvcChannelTypeText, #TpSvcChannelInterfaceMessages
  *
  * This mixin can be added to a channel GObject class to implement the
- * text channel type in a general way. It implements the pending message
- * queue and GetMessageTypes, so the implementation should only need to
- * implement Send.
+ * text channel type (with the Messages interface) in a general way.
  *
- * To use the text mixin, include a #TpMessageMixinClass somewhere in your
- * class structure and a #TpMessageMixin somewhere in your instance structure,
- * and call tp_message_mixin_class_init() from your class_init function,
- * tp_message_mixin_init() from your init function or constructor, and
- * tp_message_mixin_finalize() from your dispose or finalize function.
+ * To use the messages mixin, include a #TpMessageMixin somewhere in your
+ * instance structure, and call tp_message_mixin_init() from your init
+ * function or constructor, and tp_message_mixin_finalize() from your dispose
+ * or finalize function.
  *
- * To use the text mixin as the implementation of
- * #TpSvcTextInterface, in the function you pass to G_IMPLEMENT_INTERFACE,
- * you should first call tp_message_mixin_iface_init(), then call
- * tp_svc_channel_type_text_implement_send() to register your implementation
- * of the Send method.
+ * Also pass tp_message_mixin_text_iface_init() and
+ * tp_message_mixin_messages_iface_init() to G_IMPLEMENT_INTERFACE().
+ *
+ * To support sending messages, you must call
+ * tp_message_mixin_implement_sending(). If you do not, any attempt to send a
+ * message will fail with NotImplemented.
+ *
+ * @since 0.7.9
  */
 
 #include <telepathy-glib/message-mixin.h>
