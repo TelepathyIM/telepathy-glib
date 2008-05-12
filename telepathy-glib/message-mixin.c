@@ -123,14 +123,6 @@ static const char * const headers_only_incoming[] = {
     NULL
 };
 
-#define TP_MESSAGE_MIXIN_CLASS_OFFSET_QUARK \
-  (tp_message_mixin_class_get_offset_quark ())
-#define TP_MESSAGE_MIXIN_CLASS_OFFSET(o) \
-  (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_CLASS_TYPE (o), \
-                                       TP_MESSAGE_MIXIN_CLASS_OFFSET_QUARK)))
-#define TP_MESSAGE_MIXIN_CLASS(o) \
-  ((TpMessageMixinClass *) tp_mixin_offset_cast (o, \
-    TP_MESSAGE_MIXIN_CLASS_OFFSET (o)))
 
 #define TP_MESSAGE_MIXIN_OFFSET_QUARK (tp_message_mixin_get_offset_quark ())
 #define TP_MESSAGE_MIXIN_OFFSET(o) \
@@ -139,24 +131,6 @@ static const char * const headers_only_incoming[] = {
 #define TP_MESSAGE_MIXIN(o) \
   ((TpMessageMixin *) tp_mixin_offset_cast (o, TP_MESSAGE_MIXIN_OFFSET (o)))
 
-/**
- * tp_message_mixin_class_get_offset_quark:
- *
- * <!--no documentation beyond Returns: needed-->
- *
- * Returns: the quark used for storing mixin offset on a GObjectClass
- */
-static GQuark
-tp_message_mixin_class_get_offset_quark (void)
-{
-  static GQuark offset_quark = 0;
-
-  if (G_UNLIKELY (offset_quark == 0))
-    offset_quark = g_quark_from_static_string (
-        "tp_message_mixin_class_get_offset_quark@0.7.7");
-
-  return offset_quark;
-}
 
 /**
  * tp_message_mixin_get_offset_quark:
@@ -177,37 +151,6 @@ tp_message_mixin_get_offset_quark (void)
         "tp_message_mixin_get_offset_quark@0.7.7");
 
   return offset_quark;
-}
-
-
-/**
- * tp_message_mixin_class_init:
- * @obj_cls: The class of the implementation that uses this mixin
- * @offset: The byte offset of the TpMessageMixinClass within the class
- *  structure
- *
- * Initialize the mixin. Should be called from the implementation's
- * class_init function like so:
- *
- * <informalexample><programlisting>
- * tp_message_mixin_class_init ((GObjectClass *) klass,
- *     G_STRUCT_OFFSET (SomeObjectClass, message_mixin));
- * </programlisting></informalexample>
- */
-
-void
-tp_message_mixin_class_init (GObjectClass *obj_cls,
-                             gsize offset)
-{
-  TpMessageMixinClass *mixin_cls;
-
-  g_assert (G_IS_OBJECT_CLASS (obj_cls));
-
-  g_type_set_qdata (G_OBJECT_CLASS_TYPE (obj_cls),
-      TP_MESSAGE_MIXIN_CLASS_OFFSET_QUARK,
-      GINT_TO_POINTER (offset));
-
-  mixin_cls = TP_MESSAGE_MIXIN_CLASS (obj_cls);
 }
 
 
@@ -936,15 +879,6 @@ tp_message_mixin_take_received (GObject *object,
 
   return pending->id;
 }
-
-
-#if 0
-void
-tp_message_mixin_take_delivery_report (GObject *object,
-                                       GHashTable *report)
-{
-}
-#endif
 
 
 struct _TpMessageMixinOutgoingMessagePrivate {
