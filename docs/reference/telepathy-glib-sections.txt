@@ -1533,6 +1533,7 @@ tp_heap_size
 <TITLE>TpMessageMixin</TITLE>
 TpMessageMixin
 TpMessageMixinOutgoingMessage
+TpMessageMixinCleanUpReceivedImpl
 TpMessageMixinSendImpl
 tp_message_mixin_finalize
 tp_message_mixin_implement_sending

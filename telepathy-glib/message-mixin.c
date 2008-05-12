@@ -405,14 +405,27 @@ parts_to_text (const GPtrArray *parts,
 
 
 /**
+ * TpMessageMixinSendImpl:
+ * @object: An instance of the implementation that uses this mixin
+ * @message: An outgoing message
+ *
+ * Signature of a virtual method which may be implemented to allow messages
+ * to be sent. It must arrange for tp_message_mixin_sent() to be called when
+ * the message has submitted or when message submission has failed.
+ */
+
+
+/**
  * tp_message_mixin_implement_sending:
- * @obj: An instance of the implementation that uses this mixin
+ * @object: An instance of the implementation that uses this mixin
  * @send: An implementation of SendMessage()
  * @n_types: Number of supported message types
  * @types: @n_types supported message types
  *
  * Set the callback used to implement SendMessage, and the types of message
- * that can be sent
+ * that can be sent. This must be called from the init, constructor or
+ * constructed callback, after tp_message_mixin_init(), and may only be called
+ * once per object.
  *
  * @since 0.7.9
  */
@@ -440,6 +453,8 @@ tp_message_mixin_implement_sending (GObject *object,
  * TpMessageMixinCleanUpReceivedImpl:
  * @object: An instance of the implementation that uses this mixin
  * @parts: An array of GHashTable containing a message
+ * @user_data: The same pointer that was passed to
+ *  tp_message_mixin_take_received()
  *
  * Assume that @parts was passed to tp_message_mixin_take_received(),
  * clean up any allocations or handle references that would have occurred
@@ -452,6 +467,8 @@ tp_message_mixin_implement_sending (GObject *object,
  * (The #TpMessageMixin code can't do this automatically, because the
  * extensibility of the API means that the mixin doesn't
  * know which integers are handles and which are just numbers.)
+ *
+ * @since 0.7.9
  */
 
 
@@ -459,8 +476,9 @@ tp_message_mixin_implement_sending (GObject *object,
  * tp_message_mixin_init:
  * @obj: An instance of the implementation that uses this mixin
  * @offset: The byte offset of the TpMessageMixin within the object structure
- * @contact_repo: The connection's %TP_HANDLE_TYPE_CONTACT repository
- * @clean_up_received:
+ * @clean_up_received: A function used to free messages when they are removed
+ *  from the incoming queue; may be %NULL, but if so,
+ *  tp_message_mixin_take_received() must never be called
  *
  * Initialize the mixin. Should be called from the implementation's
  * instance init function like so:
@@ -881,12 +899,52 @@ tp_message_mixin_take_received (GObject *object,
 }
 
 
+/**
+ * TpMessageMixinOutgoingMessage:
+ * @flags: Flags indicating how this message should be sent
+ * @parts: The parts that make up the message (an array of #GHashTable,
+ *  with the first one containing message headers)
+ * @priv: Pointer to opaque private data used by the messages mixin
+ *
+ * Structure representing a message which is to be sent.
+ *
+ * Connection managers may (and should) edit the @parts in-place to remove
+ * keys that could not be sent, using g_hash_table_remove(). Connection
+ * managers may also alter @parts to include newly allocated GHashTable
+ * structures.
+ *
+ * However, they must not add keys to an existing GHashTable (this is because
+ * the connection manager has no way to know how the keys and values will be
+ * freed).
+ *
+ * @since 0.7.9
+ */
+
+
 struct _TpMessageMixinOutgoingMessagePrivate {
     DBusGMethodInvocation *context;
     gboolean messages:1;
 };
 
 
+/**
+ * tp_message_mixin_sent:
+ * @object: An object implementing the Text and Messages interfaces with this
+ *  mixin
+ * @message: The outgoing message
+ * @token: A token representing the sent message (see the Telepathy D-Bus API
+ *  specification), or an empty string if no suitable identifier is available,
+ *  or %NULL on error
+ * @error: %NULL on success, or the error with which message submission failed
+ *
+ * Indicate to the message mixin that message submission to the IM server has
+ * succeeded or failed.
+ *
+ * After this function is called, @message will have been freed, and must not
+ * be dereferenced.
+ *
+ * @since 0.7.9
+ */
 void
 tp_message_mixin_sent (GObject *object,
                        TpMessageMixinOutgoingMessage *message,
@@ -1126,20 +1184,18 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
 
 
 /**
- * tp_message_mixin_iface_init:
+ * tp_message_mixin_text_iface_init:
  * @g_iface: A pointer to the #TpSvcChannelTypeTextClass in an object class
  * @iface_data: Ignored
  *
- * Fill in this mixin's AcknowledgePendingMessages, GetMessageTypes and
- * ListPendingMessages implementations in the given interface vtable.
- * In addition to calling this function during interface initialization, the
- * implementor is expected to call tp_svc_channel_type_text_implement_send(),
- * providing a Send implementation.
+ * Fill in this mixin's Text method implementations in the given interface
+ * vtable.
  *
  * @since 0.7.9
  */
 void
-tp_message_mixin_text_iface_init (gpointer g_iface, gpointer iface_data)
+tp_message_mixin_text_iface_init (gpointer g_iface,
+                                  gpointer iface_data)
 {
   TpSvcChannelTypeTextClass *klass = g_iface;
 
@@ -1152,9 +1208,20 @@ tp_message_mixin_text_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
+/**
+ * tp_message_mixin_messages_iface_init:
+ * @g_iface: A pointer to the #TpSvcChannelInterfaceMessagesClass in an object
+ *  class
+ * @iface_data: Ignored
+ *
+ * Fill in this mixin's Messages method implementations in the given interface
+ * vtable.
+ *
+ * @since 0.7.9
+ */
 void
 tp_message_mixin_messages_iface_init (gpointer g_iface,
-                                           gpointer iface_data)
+                                      gpointer iface_data)
 {
   TpSvcChannelInterfaceMessagesClass *klass = g_iface;
 
