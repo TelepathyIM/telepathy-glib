@@ -44,6 +44,11 @@ gpointer tp_mixin_offset_cast (gpointer instance, guint offset);
 
 gchar *tp_escape_as_identifier (const gchar *name);
 
+gboolean tp_asv_get_boolean (GHashTable *asv, const gchar *key,
+    gboolean *valid);
+guint32 tp_asv_get_uint32 (GHashTable *asv, const gchar *key, gboolean *valid);
+const gchar *tp_asv_get_string (GHashTable *asv, const gchar *key);
+
 G_END_DECLS
 
 #endif /* __TP_UTIL_H__ */
