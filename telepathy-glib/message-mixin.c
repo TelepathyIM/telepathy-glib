@@ -132,6 +132,460 @@ static const char * const headers_only_incoming[] = {
   ((TpMessageMixin *) tp_mixin_offset_cast (o, TP_MESSAGE_MIXIN_OFFSET (o)))
 
 
+struct _TpMessage {
+    gsize refs;
+
+    TpBaseConnection *connection;
+
+    /* array of hash tables, allocated string => sliced GValue */
+    GPtrArray *parts;
+
+    /* handles referenced by this message */
+    TpHandleSet *reffed_handles[NUM_TP_HANDLE_TYPES];
+
+    /* from here down is implementation-specific for TpMessageMixin */
+
+    /* for sending */
+    DBusGMethodInvocation *context;
+    TpMessageSendingFlags sending_flags;
+    gboolean text_api:1;
+};
+
+
+/**
+ * tp_message_new:
+ * @connection: a connection on which to reference handles
+ * @initial_parts: number of parts to create (at least 1)
+ * @size_hint: preallocate space for this many parts (at least @initial_parts)
+ *
+ * <!-- nothing more to say -->
+ *
+ * Returns: a newly allocated message with one reference
+ *
+ * @since 0.7.9
+ */
+TpMessage *
+tp_message_new (TpBaseConnection *connection,
+                guint initial_parts,
+                guint size_hint)
+{
+  TpMessage *self;
+  guint i;
+
+  g_return_val_if_fail (connection != NULL, NULL);
+  g_return_val_if_fail (initial_parts >= 1, NULL);
+  g_return_val_if_fail (size_hint >= initial_parts, NULL);
+
+  self = g_slice_new0 (TpMessage);
+  self->refs = 1;
+  self->connection = g_object_ref (connection);
+  self->parts = g_ptr_array_sized_new (size_hint);
+
+  for (i = 0; i < initial_parts; i++)
+    {
+      g_ptr_array_add (self->parts, g_hash_table_new_full (g_str_hash,
+            g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
+    }
+
+  return self;
+}
+
+
+/**
+ * tp_message_unref:
+ * @self: a message
+ *
+ * Remove a reference to @self. If its reference count reaches zero as a
+ * result, free it.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_unref (TpMessage *self)
+{
+  guint i;
+
+  if (--self->refs > 0)
+    return;
+
+  for (i = 0; i < self->parts->len; i++)
+    {
+      g_hash_table_destroy (g_ptr_array_index (self->parts, i));
+    }
+
+  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
+    {
+      tp_handle_set_destroy (self->reffed_handles[i]);
+    }
+
+  g_object_unref (self->connection);
+}
+
+
+/**
+ * tp_message_count_parts:
+ * @self: a message
+ *
+ * <!-- nothing more to say -->
+ *
+ * Returns: the number of parts in the message, including the headers in
+ * part 0
+ *
+ * @since 0.7.9
+ */
+guint
+tp_message_count_parts (TpMessage *self)
+{
+  return self->parts->len;
+}
+
+
+/**
+ * tp_message_peek:
+ * @self: a message
+ * @part: a part number
+ *
+ * <!-- nothing more to say -->
+ *
+ * Returns: the #GHashTable used to implement the given part, or %NULL if the
+ *  part number is out of range. The hash table is only valid as long as the
+ *  message is valid and the part is not deleted.
+ *
+ * @since 0.7.9
+ */
+const GHashTable *
+tp_message_peek (TpMessage *self,
+                 guint part)
+{
+  if (part >= self->parts->len)
+    return NULL;
+
+  return g_ptr_array_index (self->parts, part);
+}
+
+
+/**
+ * tp_message_delete_part:
+ * @self: a message
+ * @part: a part number, which must be strictly greater than 0, and strictly
+ *  less than the number returned by tp_message_count_parts()
+ *
+ * Delete the given body part from the message.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_delete_part (TpMessage *self,
+                        guint part)
+{
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (part > 0);
+
+  g_hash_table_unref (g_ptr_array_remove_index (self->parts, part));
+}
+
+
+/**
+ * tp_message_ref_handle:
+ * @self: a message
+ * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less than
+ *  %NUM_TP_HANDLE_TYPES
+ * @handle: a handle of the given type
+ *
+ * Reference the given handle until this message is destroyed.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_ref_handle (TpMessage *self,
+                       TpHandleType handle_type,
+                       TpHandle handle)
+{
+  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (handle != 0);
+
+  if (self->reffed_handles[handle_type] == NULL)
+    {
+      TpHandleRepoIface *handles = tp_base_connection_get_handles (
+          self->connection, handle_type);
+
+      g_return_if_fail (handles != NULL);
+
+      self->reffed_handles[handle_type] = tp_handle_set_new (handles);
+    }
+
+  tp_handle_set_add (self->reffed_handles[handle_type], handle);
+}
+
+
+/**
+ * tp_message_delete_key:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ *
+ * Remove the given key and its value from the given part.
+ *
+ * Returns: %TRUE if the key previously existed
+ *
+ * @since 0.7.9
+ */
+gboolean
+tp_message_delete_key (TpMessage *self,
+                       guint part,
+                       const gchar *key)
+{
+  g_return_val_if_fail (part < self->parts->len, FALSE);
+
+  return g_hash_table_remove (g_ptr_array_index (self->parts, part), key);
+}
+
+
+/**
+ * tp_message_set_handle:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @handle_type: a handle type
+ * @handle_or_0: a handle of that type, or 0
+ *
+ * If @handle_or_0 is not zero, reference it with tp_message_ref_handle().
+ *
+ * Set @key in part @part of @self to have @handle_or_0 as an unsigned integer
+ * value.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_set_handle (TpMessage *self,
+                       guint part,
+                       const gchar *key,
+                       TpHandleType handle_type,
+                       TpHandle handle_or_0)
+{
+  if (handle_or_0 != 0)
+    tp_message_ref_handle (self, handle_type, handle_or_0);
+
+  tp_message_set_uint32 (self, part, key, handle_or_0);
+}
+
+
+/**
+ * tp_message_set_boolean:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @b: a boolean value
+ *
+ * Set @key in part @part of @self to have @b as a boolean value.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_set_boolean (TpMessage *self,
+                        guint part,
+                        const gchar *key,
+                        gboolean b)
+{
+  GValue *value;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+
+  value = tp_g_value_slice_new (G_TYPE_BOOLEAN);
+  g_value_set_boolean (value, b);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+}
+
+
+/**
+ * tp_message_set_int16:
+ * @s: a message
+ * @p: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @k: a key in the mapping representing the part
+ * @i: an integer value
+ *
+ * Set @key in part @part of @self to have @i as a signed integer value.
+ *
+ * @since 0.7.9
+ */
+
+/**
+ * tp_message_set_int32:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @i: an integer value
+ *
+ * Set @key in part @part of @self to have @i as a signed integer value.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_set_int32 (TpMessage *self,
+                      guint part,
+                      const gchar *key,
+                      gint32 i)
+{
+  GValue *value;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+
+  value = tp_g_value_slice_new (G_TYPE_INT);
+  g_value_set_boolean (value, i);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+}
+
+
+/**
+ * tp_message_set_uint16:
+ * @s: a message
+ * @p: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @k: a key in the mapping representing the part
+ * @u: an unsigned integer value
+ *
+ * Set @key in part @part of @self to have @u as an unsigned integer value.
+ *
+ * @since 0.7.9
+ */
+
+/**
+ * tp_message_set_uint32:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @u: an unsigned integer value
+ *
+ * Set @key in part @part of @self to have @u as an unsigned integer value.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_set_uint32 (TpMessage *self,
+                       guint part,
+                       const gchar *key,
+                       guint32 u)
+{
+  GValue *value;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+
+  value = tp_g_value_slice_new (G_TYPE_UINT);
+  g_value_set_boolean (value, u);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+}
+
+
+/**
+ * tp_message_set_string:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @s: a string value
+ *
+ * Set @key in part @part of @self to have @s as a string value.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_set_string (TpMessage *self,
+                       guint part,
+                       const gchar *key,
+                       const gchar *s)
+{
+  GValue *value;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (s != NULL);
+
+  value = tp_g_value_slice_new (G_TYPE_STRING);
+  g_value_set_string (value, s);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+}
+
+
+/**
+ * tp_message_set_bytes:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @len: a number of bytes
+ * @bytes: an array of @len bytes
+ *
+ * Set @key in part @part of @self to have @bytes as a byte-array value.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_set_bytes (TpMessage *self,
+                      guint part,
+                      const gchar *key,
+                      guint len,
+                      gconstpointer bytes)
+{
+  GValue *value;
+  GArray *array;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (bytes != NULL);
+
+  array = g_array_sized_new (FALSE, FALSE, sizeof (guchar), len);
+  g_array_append_vals (array, bytes, len);
+  value = tp_g_value_slice_new (DBUS_TYPE_G_UCHAR_ARRAY);
+  g_value_take_boxed (value, array);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+}
+
+
+/**
+ * tp_message_set:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @source: a value
+ *
+ * Set @key in part @part of @self to have a copy of @source as its value.
+ *
+ * If @source represents a data structure containing handles, they should
+ * all be referenced with tp_message_ref_handle() first.
+ *
+ * @since 0.7.9
+ */
+void
+tp_message_set (TpMessage *self,
+                guint part,
+                const gchar *key,
+                const GValue *source)
+{
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (source != NULL);
+
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), tp_g_value_slice_dup (source));
+}
+
+
 /**
  * tp_message_mixin_get_offset_quark:
  *

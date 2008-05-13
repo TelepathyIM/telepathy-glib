@@ -21,6 +21,7 @@
 #ifndef TP_MESSAGE_MIXIN_H
 #define TP_MESSAGE_MIXIN_H
 
+#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/handle-repo.h>
 #include <telepathy-glib/svc-channel.h>
 #include "util.h"
@@ -36,13 +37,37 @@ struct _TpMessageMixin {
 };
 
 
-/* Receiving */
+typedef struct _TpMessage TpMessage;
 
-typedef void (*TpMessageMixinCleanUpReceivedImpl) (GObject *object,
-    GPtrArray *parts, gpointer user_data);
+TpMessage *tp_message_new (TpBaseConnection *connection, guint initial_parts,
+    guint size_hint);
+void tp_message_unref (TpMessage *self);
+TpMessage *tp_message_copy (const TpMessage *self);
+guint tp_message_count_parts (TpMessage *self);
+const GHashTable *tp_message_peek (TpMessage *self, guint part);
+void tp_message_delete_part (TpMessage *self, guint part);
+void tp_message_ref_handle (TpMessage *self, TpHandleType handle_type,
+    TpHandle handle_or_0);
 
-guint tp_message_mixin_take_received (GObject *object, GPtrArray *parts,
-    gpointer user_data);
+gboolean tp_message_delete_key (TpMessage *self, guint part, const gchar *key);
+void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
+    TpHandleType handle_type, TpHandle handle_or_0);
+void tp_message_set_boolean (TpMessage *self, guint part, const gchar *key,
+    gboolean b);
+void tp_message_set_int32 (TpMessage *self, guint part, const gchar *key,
+    gint32 i);
+#define tp_message_set_int16(s, p, k, i) \
+    tp_message_set_int32 (s, p, k, (gint16) i)
+void tp_message_set_uint32 (TpMessage *self, guint part, const gchar *key,
+    guint32 u);
+#define tp_message_set_uint16(s, p, k, u) \
+    tp_message_set_uint32 (s, p, k, (guint16) u)
+void tp_message_set_string (TpMessage *self, guint part, const gchar *key,
+    const gchar *s);
+void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
+    guint len, gconstpointer bytes);
+void tp_message_set (TpMessage *self, guint part, const gchar *key,
+    const GValue *source);
 
 
 /* Sending */
