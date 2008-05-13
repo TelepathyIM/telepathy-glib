@@ -317,11 +317,11 @@ tp_escape_as_identifier (const gchar *name)
  * @since 0.7.8
  */
 gboolean
-tp_asv_get_boolean (GHashTable *asv,
+tp_asv_get_boolean (const GHashTable *asv,
                     const gchar *key,
                     gboolean *valid)
 {
-  GValue *value = g_hash_table_lookup (asv, key);
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL || !G_VALUE_HOLDS_BOOLEAN (value))
     {
@@ -355,10 +355,10 @@ tp_asv_get_boolean (GHashTable *asv,
  * @since 0.7.8
  */
 const gchar *
-tp_asv_get_string (GHashTable *asv,
+tp_asv_get_string (const GHashTable *asv,
                    const gchar *key)
 {
-  GValue *value = g_hash_table_lookup (asv, key);
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL || !G_VALUE_HOLDS_STRING (value))
     return NULL;
@@ -385,13 +385,13 @@ tp_asv_get_string (GHashTable *asv,
  * @since 0.7.8
  */
 guint32
-tp_asv_get_uint32 (GHashTable *asv,
+tp_asv_get_uint32 (const GHashTable *asv,
                    const gchar *key,
                    gboolean *valid)
 {
   union { gint64 i; guint64 u; } tmp;
   guint32 ret;
-  GValue *value = g_hash_table_lookup (asv, key);
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL)
     goto return_invalid;
