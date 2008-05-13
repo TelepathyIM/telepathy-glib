@@ -46,9 +46,11 @@ gchar *tp_escape_as_identifier (const gchar *name);
 
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
     gboolean *valid);
+const GArray *tp_asv_get_bytes (const GHashTable *asv, const gchar *key);
+const gchar *tp_asv_get_string (const GHashTable *asv, const gchar *key);
 guint32 tp_asv_get_uint32 (const GHashTable *asv, const gchar *key,
     gboolean *valid);
-const gchar *tp_asv_get_string (const GHashTable *asv, const gchar *key);
+const GValue *tp_asv_lookup (const GHashTable *asv, const gchar *key);
 
 G_END_DECLS
 

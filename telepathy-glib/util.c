@@ -32,6 +32,8 @@
 
 #include <string.h>
 
+#include <dbus/dbus-glib.h>
+
 
 /**
  * tp_g_ptr_array_contains:
@@ -314,7 +316,7 @@ tp_escape_as_identifier (const gchar *name)
  * (FIXME: should we also allow 'i' and 'u' with nonzero <=> True?)
  *
  * Returns: a boolean value for @key
- * @since 0.7.8
+ * @since 0.7.9
  */
 gboolean
 tp_asv_get_boolean (const GHashTable *asv,
@@ -339,6 +341,37 @@ tp_asv_get_boolean (const GHashTable *asv,
 
 
 /**
+ * tp_asv_get_bytes:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ *
+ * If a value for @key in @asv is present and is an array of bytes
+ * (its GType is %DBUS_TYPE_G_UCHAR_ARRAY), return it.
+ *
+ * Otherwise return %NULL.
+ *
+ * The returned value is not copied, and is only valid as long as the value
+ * for @key in @asv is not removed or altered. Copy it with
+ * g_boxed_copy (DBUS_TYPE_G_UCHAR_ARRAY, ...) if you need to keep
+ * it for longer.
+ *
+ * Returns: the string value of @key, or %NULL
+ * @since 0.7.9
+ */
+const GArray *
+tp_asv_get_bytes (const GHashTable *asv,
+                   const gchar *key)
+{
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+
+  if (value == NULL || !G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY))
+    return NULL;
+
+  return g_value_get_boxed (value);
+}
+
+
+/**
  * tp_asv_get_string:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
@@ -352,7 +385,7 @@ tp_asv_get_boolean (const GHashTable *asv,
  * need to keep it for longer.
  *
  * Returns: the string value of @key, or %NULL
- * @since 0.7.8
+ * @since 0.7.9
  */
 const gchar *
 tp_asv_get_string (const GHashTable *asv,
@@ -382,7 +415,7 @@ tp_asv_get_string (const GHashTable *asv,
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 32-bit unsigned integer value of @key, or 0
- * @since 0.7.8
+ * @since 0.7.9
  */
 guint32
 tp_asv_get_uint32 (const GHashTable *asv,
@@ -447,4 +480,26 @@ return_invalid:
     *valid = FALSE;
 
   return 0;
+}
+
+
+/**
+ * tp_asv_lookup:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ *
+ * If a value for @key in @asv is present, return it. Otherwise return %NULL.
+ *
+ * The returned value is not copied, and is only valid as long as the value
+ * for @key in @asv is not removed or altered. Copy it with (for instance)
+ * g_value_copy() if you need to keep it for longer.
+ *
+ * Returns: the value of @key, or %NULL
+ * @since 0.7.9
+ */
+const GValue *
+tp_asv_lookup (const GHashTable *asv,
+               const gchar *key)
+{
+  return g_hash_table_lookup ((GHashTable *) asv, key);
 }
