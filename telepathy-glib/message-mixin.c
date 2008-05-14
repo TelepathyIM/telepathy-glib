@@ -133,6 +133,16 @@ static const char * const headers_only_incoming[] = {
   ((TpMessageMixin *) tp_mixin_offset_cast (o, TP_MESSAGE_MIXIN_OFFSET (o)))
 
 
+/**
+ * TpMessage:
+ *
+ * Opaque structure representing a message in the Telepathy messages interface
+ * (an array of at least one mapping from string to variant, where the first
+ * mapping contains message headers and subsequent mappings contain the
+ * message body).
+ */
+
+
 struct _TpMessage {
     TpBaseConnection *connection;
 
@@ -849,6 +859,7 @@ parts_to_text (const GPtrArray *parts,
  * TpMessageMixinSendImpl:
  * @object: An instance of the implementation that uses this mixin
  * @message: An outgoing message
+ * @flags: flags with which to send the message
  *
  * Signature of a virtual method which may be implemented to allow messages
  * to be sent. It must arrange for tp_message_mixin_sent() to be called when
@@ -888,29 +899,6 @@ tp_message_mixin_implement_sending (GObject *object,
   g_assert (mixin->priv->msg_types->len == 0);
   g_array_append_vals (mixin->priv->msg_types, types, n_types);
 }
-
-
-/**
- * TpMessageMixinCleanUpReceivedImpl:
- * @object: An instance of the implementation that uses this mixin
- * @parts: An array of GHashTable containing a message
- * @user_data: The same pointer that was passed to
- *  tp_message_mixin_take_received()
- *
- * Assume that @parts was passed to tp_message_mixin_take_received(),
- * clean up any allocations or handle references that would have occurred
- * when the message was received, and free the parts and the array.
- *
- * This typically means unreferencing any handles in the array of hash tables
- * (notably "message-sender"), destroying the hash tables, and freeing the
- * pointer array.
- *
- * (The #TpMessageMixin code can't do this automatically, because the
- * extensibility of the API means that the mixin doesn't
- * know which integers are handles and which are just numbers.)
- *
- * @since 0.7.9
- */
 
 
 /**
@@ -1237,20 +1225,12 @@ queue_pending (gpointer data)
 /**
  * tp_message_mixin_take_received:
  * @object: a channel with this mixin
- * @parts: the content of the message, which is stolen by the message mixin and
- *  must not be modified or freed until the
- *  #TpMessageMixinCleanUpReceivedImpl is called. This is a non-empty array of
- *  GHashTables, the first of which contains headers (which must not include
- *  "pending-message-id").
- * @user_data: implementation-specific data which will be passed to the
- *  #TpMessageMixinCleanUpReceivedImpl
+ * @message: the message. Its ownership is claimed by the message
+ *  mixin, so it must no longer be modified or freed
  *
  * Receive a message into the pending messages queue, where it will stay
  * until acknowledged, and emit the ReceivedMessage signal. Also emit the
  * Received signal if appropriate.
- *
- * It is an error to call this method if a %NULL
- * #TpMessageMixinCleanUpReceivedImpl was passed to tp_message_mixin_init().
  *
  * Returns: the message ID
  *

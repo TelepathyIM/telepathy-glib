@@ -47,7 +47,7 @@ const GHashTable *tp_message_peek (TpMessage *self, guint part);
 guint tp_message_append_part (TpMessage *self);
 void tp_message_delete_part (TpMessage *self, guint part);
 void tp_message_ref_handle (TpMessage *self, TpHandleType handle_type,
-    TpHandle handle_or_0);
+    TpHandle handle);
 
 gboolean tp_message_delete_key (TpMessage *self, guint part, const gchar *key);
 void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
