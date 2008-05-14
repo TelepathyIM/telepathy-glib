@@ -41,10 +41,10 @@ typedef struct _TpMessage TpMessage;
 
 TpMessage *tp_message_new (TpBaseConnection *connection, guint initial_parts,
     guint size_hint);
-void tp_message_unref (TpMessage *self);
-TpMessage *tp_message_copy (const TpMessage *self);
+void tp_message_destroy (TpMessage *self);
 guint tp_message_count_parts (TpMessage *self);
 const GHashTable *tp_message_peek (TpMessage *self, guint part);
+guint tp_message_append_part (TpMessage *self);
 void tp_message_delete_part (TpMessage *self, guint part);
 void tp_message_ref_handle (TpMessage *self, TpHandleType handle_type,
     TpHandle handle_or_0);
@@ -70,22 +70,18 @@ void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
 
 
+/* Receiving */
+
+guint tp_message_mixin_take_received (GObject *object, TpMessage *message);
+
+
 /* Sending */
 
-typedef struct _TpMessageMixinOutgoingMessagePrivate
-    TpMessageMixinOutgoingMessagePrivate;
-
-typedef struct _TpMessageMixinOutgoingMessage {
-    TpMessageSendingFlags flags;
-    GPtrArray *parts;
-    TpMessageMixinOutgoingMessagePrivate *priv;
-} TpMessageMixinOutgoingMessage;
-
 typedef void (*TpMessageMixinSendImpl) (GObject *object,
-    TpMessageMixinOutgoingMessage *message);
+    TpMessage *message, TpMessageSendingFlags flags);
 
 void tp_message_mixin_sent (GObject *object,
-    TpMessageMixinOutgoingMessage *message, const gchar *token,
+    TpMessage *message, const gchar *token,
     const GError *error);
 
 void tp_message_mixin_implement_sending (GObject *object,
@@ -99,7 +95,7 @@ void tp_message_mixin_messages_iface_init (gpointer g_iface,
     gpointer iface_data);
 
 void tp_message_mixin_init (GObject *obj, gsize offset,
-    TpMessageMixinCleanUpReceivedImpl clean_up_received);
+    TpBaseConnection *connection);
 void tp_message_mixin_finalize (GObject *obj);
 
 G_END_DECLS
