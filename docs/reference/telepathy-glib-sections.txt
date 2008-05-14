@@ -1550,8 +1550,6 @@ tp_message_set_string
 tp_message_set_uint16
 tp_message_set_uint32
 TpMessageMixin
-TpMessageMixinOutgoingMessage
-TpMessageMixinCleanUpReceivedImpl
 TpMessageMixinSendImpl
 tp_message_mixin_finalize
 tp_message_mixin_implement_sending
