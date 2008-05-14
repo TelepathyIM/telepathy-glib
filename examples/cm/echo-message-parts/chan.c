@@ -82,32 +82,24 @@ example_echo_2_channel_init (ExampleEcho2Channel *self)
 
 static void
 send_message (GObject *object,
-              TpMessageMixinOutgoingMessage *message)
+              TpMessage *message,
+              TpMessageSendingFlags flags)
 {
   ExampleEcho2Channel *self = EXAMPLE_ECHO_2_CHANNEL (object);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   time_t timestamp = time (NULL);
-  GPtrArray *parts;
-  gboolean valid;
+  guint len = tp_message_count_parts (message);
+  TpMessage *received = tp_message_new (self->priv->conn, 1, len);
   guint i;
-
-  g_return_if_fail (message->parts->len >= 1);
-
-  parts = g_ptr_array_sized_new (message->parts->len);
 
   /* Copy/modify the headers for the "received" message */
     {
-      GHashTable *header = g_hash_table_new_full (g_str_hash, g_str_equal,
-            NULL, (GDestroyNotify) tp_g_value_slice_free);
       TpChannelTextMessageType message_type;
+      gboolean valid;
 
-      tp_handle_ref (contact_repo, self->priv->handle);
+      tp_message_set_handle (received, 0, "message-sender",
+          TP_HANDLE_TYPE_CONTACT, self->priv->handle);
 
-      g_hash_table_insert (header, "message-sender",
-          tp_g_value_slice_new_uint (self->priv->handle));
-
-      message_type = tp_asv_get_uint32 (g_ptr_array_index (message->parts, 0),
+      message_type = tp_asv_get_uint32 (tp_message_peek (message, 0),
           "message-type", &valid);
 
       /* The check for 'valid' means that if message-type is missing or of the
@@ -115,25 +107,19 @@ send_message (GObject *object,
        * NORMAL == 0 and tp_asv_get_uint32 returns 0 on missing or wrongly
        * typed values) */
       if (valid && message_type != TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL)
-        g_hash_table_insert (header, "message-type",
-            tp_g_value_slice_new_uint (message_type));
+        tp_message_set_uint32 (received, 0, "message-type", message_type);
 
-      g_hash_table_insert (header, "message-sent",
-          tp_g_value_slice_new_uint (timestamp));
-
-      g_hash_table_insert (header, "message-received",
-          tp_g_value_slice_new_uint (timestamp));
-
-      g_ptr_array_add (parts, header);
+      tp_message_set_uint32 (received, 0, "message-sent", timestamp);
+      tp_message_set_uint32 (received, 0, "message-received", timestamp);
     }
 
   /* Copy the content for the "received" message */
-  for (i = 1; i < message->parts->len; i++)
+  for (i = 1; i < len; i++)
     {
-      GHashTable *input = g_ptr_array_index (message->parts, i);
-      GHashTable *output;
+      const GHashTable *input = tp_message_peek (message, i);
       const gchar *s;
-      GValue *value;
+      const GValue *value;
+      guint j;
 
       /* in this example we ignore interface-specific parts */
 
@@ -149,39 +135,31 @@ send_message (GObject *object,
 
       /* OK, we want to copy this part */
 
-      output = g_hash_table_new_full (g_str_hash, g_str_equal,
-            NULL, (GDestroyNotify) tp_g_value_slice_free);
+      j = tp_message_append_part (received);
 
       s = tp_asv_get_string (input, "type");
       g_assert (s != NULL);   /* already checked */
-      g_hash_table_insert (output, "type",
-          tp_g_value_slice_new_string (s));
+      tp_message_set_string (received, j, "type", s);
 
       s = tp_asv_get_string (input, "identifier");
 
       if (s != NULL)
-        g_hash_table_insert (output, "identifier",
-            tp_g_value_slice_new_string (s));
+        tp_message_set_string (received, j, "identifier", s);
 
       s = tp_asv_get_string (input, "alternative");
 
       if (s != NULL)
-        g_hash_table_insert (output, "alternative",
-            tp_g_value_slice_new_string (s));
+        tp_message_set_string (received, j, "alternative", s);
 
       s = tp_asv_get_string (input, "lang");
 
       if (s != NULL)
-        g_hash_table_insert (output, "lang",
-            tp_g_value_slice_new_string (s));
+        tp_message_set_string (received, j, "lang", s);
 
-      value = g_hash_table_lookup (input, "content");
+      value = tp_asv_lookup (input, "content");
 
       if (value != NULL)
-        g_hash_table_insert (output, "content",
-            tp_g_value_slice_dup (value));
-
-      g_ptr_array_add (parts, output);
+        tp_message_set (received, j, "content", value);
     }
 
   /* "OK, we've sent the message" (after calling this, message must not be
@@ -189,32 +167,8 @@ send_message (GObject *object,
   tp_message_mixin_sent (object, message, "", NULL);
 
   /* Pretend the other user sent us back the same message. After this call,
-   * the parts array is owned by the mixin, and must not be modified or freed
-   * until clean_up_received() is called */
-  tp_message_mixin_take_received (object, parts, NULL);
-}
-
-
-static void
-clean_up_received (GObject *obj,
-                   GPtrArray *parts,
-                   gpointer user_data)
-{
-  ExampleEcho2Channel *self = EXAMPLE_ECHO_2_CHANNEL (obj);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpHandle sender;
-
-  /* this is what we passed to tp_message_mixin_take_received() */
-  g_assert (user_data == NULL);
-
-  sender = tp_asv_get_uint32 (g_ptr_array_index (parts, 0), "sender", NULL);
-
-  if (sender != 0)
-    tp_handle_unref (contact_repo, sender);
-
-  g_ptr_array_foreach (parts, (GFunc) g_hash_table_destroy, NULL);
-  g_ptr_array_free (parts, TRUE);
+   * the received message is owned by the mixin */
+  tp_message_mixin_take_received (object, received);
 }
 
 
@@ -245,7 +199,7 @@ constructor (GType type,
   dbus_g_connection_register_g_object (bus, self->priv->object_path, object);
 
   tp_message_mixin_init (object, G_STRUCT_OFFSET (ExampleEcho2Channel, text),
-      clean_up_received);
+      self->priv->conn);
 
   tp_message_mixin_implement_sending (object, send_message,
       (sizeof (types) / sizeof (types[0])), types);
