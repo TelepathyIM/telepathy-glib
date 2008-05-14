@@ -816,8 +816,10 @@ tp_strdiff
 tp_mixin_offset_cast
 tp_escape_as_identifier
 tp_asv_get_boolean
+tp_asv_get_bytes
 tp_asv_get_string
 tp_asv_get_uint32
+tp_asv_lookup
 </SECTION>
 
 <SECTION>
