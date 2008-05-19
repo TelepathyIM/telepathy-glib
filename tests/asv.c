@@ -238,6 +238,14 @@ int main (int argc, char **argv)
   MYASSERT (tp_asv_get_string (hash, "i32:0") == NULL, "");
   MYASSERT (tp_asv_get_string (hash, "u32:0") == NULL, "");
 
+  /* Tests: tp_asv_lookup */
+
+  MYASSERT (G_VALUE_HOLDS_STRING (tp_asv_lookup (hash, "s")));
+  MYASSERT (G_VALUE_HOLDS_UINT (tp_asv_lookup (hash, "u32:0")));
+  MYASSERT (G_VALUE_HOLDS_BOOLEAN (tp_asv_lookup (hash, "b:TRUE")));
+  MYASSERT (G_VALUE_HOLDS_INT (tp_asv_lookup (hash, "i32:0")));
+  MYASSERT (tp_asv_lookup (hash, "not-there") == NULL);
+
   /* Teardown */
 
   g_hash_table_destroy (hash);
