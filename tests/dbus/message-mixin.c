@@ -883,7 +883,7 @@ main (int argc,
 
       i = 2;
       g_array_append_val (part_numbers, i);
-      i = 0;
+      i = 1;
       g_array_append_val (part_numbers, i);
 
       tp_cli_channel_interface_messages_run_get_pending_message_content (chan,
