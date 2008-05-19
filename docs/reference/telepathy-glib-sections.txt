@@ -1055,6 +1055,9 @@ TP_HASH_TYPE_CHANNEL_CALL_STATE_MAP
 # Channel - Room List
 TP_ARRAY_TYPE_ROOM_INFO_LIST
 TP_STRUCT_TYPE_ROOM_INFO
+<SUBSECTION>
+# Channel - Messages
+TP_HASH_TYPE_MESSAGE_PART
 <SUBSECTION Private>
 tp_type_dbus_array_a_7bsv_7das
 tp_type_dbus_array_oa_7bsv_7d
