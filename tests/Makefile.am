@@ -5,6 +5,7 @@ SUBDIRS = \
     tools
 
 DYNAMIC_TESTS = \
+    test-asv \
     test-heap \
     test-intset \
     test-util
@@ -33,6 +34,11 @@ check-valgrind:
 	$(MAKE) -C dbus check-valgrind
 
 EXTRA_DIST = README
+
+test_asv_SOURCES = \
+    asv.c
+test_asv_LDADD = \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 test_heap_SOURCES = \
     test-heap.c
