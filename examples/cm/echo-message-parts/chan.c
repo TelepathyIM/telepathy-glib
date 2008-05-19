@@ -189,6 +189,7 @@ constructor (GType type,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE
   };
+  static const char * const content_types[] = { "*/*", NULL };
 
   tp_handle_ref (contact_repo, self->priv->handle);
 
@@ -202,7 +203,11 @@ constructor (GType type,
       self->priv->conn);
 
   tp_message_mixin_implement_sending (object, send_message,
-      (sizeof (types) / sizeof (types[0])), types);
+      (sizeof (types) / sizeof (types[0])), types,
+      TP_MESSAGE_PART_SUPPORT_FLAG_DATA_ONLY |
+      TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT |
+      TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS,
+      content_types);
 
   return object;
 }
@@ -384,6 +389,10 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
   };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
+  static TpDBusPropertiesMixinIfaceImpl interfaces[] = {
+      { NULL /* initialized with tp_message_mixin_init_dbus_properties() */ },
+      { NULL }
+  };
 
   g_type_class_add_private (klass, sizeof (ExampleEcho2ChannelPrivate));
 
@@ -448,6 +457,7 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
       G_STRUCT_OFFSET (ExampleEcho2ChannelClass, text_class));
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
+  tp_message_mixin_init_dbus_properties (prop_interfaces + 0);
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleEcho2ChannelClass, dbus_properties_class));
 }
