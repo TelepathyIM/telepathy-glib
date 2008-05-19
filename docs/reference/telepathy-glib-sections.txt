@@ -815,11 +815,6 @@ tp_g_value_slice_dup
 tp_strdiff
 tp_mixin_offset_cast
 tp_escape_as_identifier
-tp_asv_get_boolean
-tp_asv_get_bytes
-tp_asv_get_string
-tp_asv_get_uint32
-tp_asv_lookup
 </SECTION>
 
 <SECTION>
@@ -1185,6 +1180,12 @@ tp_dbus_check_valid_bus_name
 tp_dbus_check_valid_interface_name
 tp_dbus_check_valid_member_name
 tp_dbus_check_valid_object_path
+<SUBSECTION>
+tp_asv_get_boolean
+tp_asv_get_bytes
+tp_asv_get_string
+tp_asv_get_uint32
+tp_asv_lookup
 <SUBSECTION>
 TpDBusDaemon
 TpDBusDaemonClass

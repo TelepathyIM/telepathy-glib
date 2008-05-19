@@ -87,9 +87,16 @@ gboolean tp_dbus_check_valid_member_name (const gchar *name,
 gboolean tp_dbus_check_valid_object_path (const gchar *path,
     GError **error);
 
+gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
+    gboolean *valid);
+const GArray *tp_asv_get_bytes (const GHashTable *asv, const gchar *key);
+const gchar *tp_asv_get_string (const GHashTable *asv, const gchar *key);
+guint32 tp_asv_get_uint32 (const GHashTable *asv, const gchar *key,
+    gboolean *valid);
+const GValue *tp_asv_lookup (const GHashTable *asv, const gchar *key);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
 
 #endif /* __TELEPATHY_DBUS_H__ */
-
