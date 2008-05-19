@@ -23,22 +23,26 @@
  * @title: TpMessageMixin
  * @short_description: a mixin implementation of the text channel type and the
  *  Messages mixin
- * @see_also: #TpSvcChannelTypeText, #TpSvcChannelInterfaceMessages
+ * @see_also: #TpSvcChannelTypeText, #TpSvcChannelInterfaceMessages,
+ *  #TpDBusPropertiesMixin
  *
  * This mixin can be added to a channel GObject class to implement the
  * text channel type (with the Messages interface) in a general way.
+ * The channel class should also have a #TpDBusPropertiesMixinClass.
  *
  * To use the messages mixin, include a #TpMessageMixin somewhere in your
- * instance structure, and call tp_message_mixin_init() from your init
- * function or constructor, and tp_message_mixin_finalize() from your dispose
- * or finalize function.
+ * instance structure, and call tp_message_mixin_init() from your
+ * constructor function, and tp_message_mixin_finalize() from your dispose
+ * or finalize function. In the class_init function, call
+ * tp_message_mixin_init_dbus_properties to hook this mixin into the D-Bus
+ * properties mixin class.
  *
  * Also pass tp_message_mixin_text_iface_init() and
  * tp_message_mixin_messages_iface_init() to G_IMPLEMENT_INTERFACE().
  *
  * To support sending messages, you must call
- * tp_message_mixin_implement_sending(). If you do not, any attempt to send a
- * message will fail with NotImplemented.
+ * tp_message_mixin_implement_sending() in the constructor function. If you do
+ * not, any attempt to send a message will fail with NotImplemented.
  *
  * @since 0.7.9
  */
@@ -52,6 +56,7 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 
 #define DEBUG_FLAG TP_DEBUG_IM
 
@@ -75,6 +80,8 @@ struct _TpMessageMixinPrivate
   /* Sending */
   TpMessageMixinSendImpl send_message;
   GArray *msg_types;
+  TpMessagePartSupportFlags message_part_support_flags;
+  gchar **supported_content_types;
 
   /* Receiving */
   guint recv_id;
@@ -873,6 +880,9 @@ parts_to_text (const GPtrArray *parts,
  * @send: An implementation of SendMessage()
  * @n_types: Number of supported message types
  * @types: @n_types supported message types
+ * @message_part_support_flags: Flags indicating what message part structures
+ *  are supported
+ * @supported_content_types: The supported content types
  *
  * Set the callback used to implement SendMessage, and the types of message
  * that can be sent. This must be called from the init, constructor or
@@ -885,7 +895,11 @@ void
 tp_message_mixin_implement_sending (GObject *object,
                                     TpMessageMixinSendImpl send,
                                     guint n_types,
-                                    const TpChannelTextMessageType *types)
+                                    const TpChannelTextMessageType *types,
+                                    TpMessagePartSupportFlags
+                                        message_part_support_flags,
+                                    const gchar * const *
+                                        supported_content_types)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
 
@@ -898,6 +912,12 @@ tp_message_mixin_implement_sending (GObject *object,
 
   g_assert (mixin->priv->msg_types->len == 0);
   g_array_append_vals (mixin->priv->msg_types, types, n_types);
+
+  mixin->priv->message_part_support_flags = message_part_support_flags;
+
+  g_strfreev (mixin->priv->supported_content_types);
+  mixin->priv->supported_content_types = g_strdupv (
+      (gchar **) supported_content_types);
 }
 
 
@@ -940,6 +960,8 @@ tp_message_mixin_init (GObject *obj,
   mixin->priv->msg_types = g_array_sized_new (FALSE, FALSE, sizeof (guint),
       NUM_TP_CHANNEL_TEXT_MESSAGE_TYPES);
   mixin->priv->connection = connection;
+
+  mixin->priv->supported_content_types = g_new0 (gchar *, 1);
 }
 
 static void
@@ -1510,6 +1532,107 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
   message->outgoing_text_api = FALSE;
 
   mixin->priv->send_message ((GObject *) iface, message, flags);
+}
+
+
+/**
+ * tp_message_mixin_init_dbus_properties:
+ * @impl: An empty entry in a static array of #TpDBusPropertiesMixinIfaceImpl
+ *
+ * Set up a #TpDBusPropertiesMixinClass to use this mixin's implementation
+ * of the Messages interface's properties.
+ *
+ * This uses tp_message_mixin_get_dbus_property() as the property getter
+ * and sets a list of the supported properties for it.
+ */
+void
+tp_message_mixin_init_dbus_properties (TpDBusPropertiesMixinIfaceImpl *impl)
+{
+  static TpDBusPropertiesMixinPropImpl props[] = {
+      { "PendingMessages", NULL, NULL },
+      { "SupportedContentTypes", NULL, NULL },
+      { "MessagePartSupportFlags", NULL, NULL },
+      { NULL }
+  };
+
+  memset (impl, '\0', sizeof (TpDBusPropertiesMixinIfaceImpl));
+  impl->name = TP_IFACE_CHANNEL_INTERFACE_MESSAGES;
+  impl->getter = tp_message_mixin_get_dbus_property;
+  impl->setter = NULL;
+  impl->props = props;
+}
+
+
+/**
+ * tp_message_mixin_get_dbus_property:
+ * @object: An object with this mixin
+ * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES
+ * @name: A quark representing the D-Bus property name, either
+ *  "PendingMessages", "SupportedContentTypes" or "MessagePartSupportFlags"
+ * @value: A GValue pre-initialized to the right type, into which to put
+ *  the value
+ * @unused: Ignored
+ *
+ * An implementation of #TpDBusPropertiesMixinGetter which assumes that
+ * the @object has the messages mixin. It can only be used for the Messages
+ * interface.
+ */
+void
+tp_message_mixin_get_dbus_property (GObject *object,
+                                    GQuark interface,
+                                    GQuark name,
+                                    GValue *value,
+                                    gpointer unused G_GNUC_UNUSED)
+{
+  TpMessageMixin *mixin;
+  static GQuark q_pending_messages = 0;
+  static GQuark q_supported_content_types = 0;
+  static GQuark q_message_part_support_flags = 0;
+
+  if (G_UNLIKELY (q_pending_messages == 0))
+    {
+      q_pending_messages = g_quark_from_static_string ("PendingMessages");
+      q_supported_content_types =
+          g_quark_from_static_string ("SupportedContentTypes");
+      q_message_part_support_flags =
+          g_quark_from_static_string ("MessagePartSupportFlags");
+    }
+
+  mixin = TP_MESSAGE_MIXIN (object);
+
+  g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES);
+  g_return_if_fail (object != NULL);
+  g_return_if_fail (name != 0);
+  g_return_if_fail (value != NULL);
+  g_return_if_fail (mixin != NULL);
+
+  if (name == q_pending_messages)
+    {
+      GPtrArray *arrays = g_ptr_array_sized_new (g_queue_get_length (
+            mixin->priv->pending));
+      GList *link;
+      GType type = dbus_g_type_get_collection ("GPtrArray",
+          TP_HASH_TYPE_MESSAGE_PART);
+
+      for (link = g_queue_peek_head_link (mixin->priv->pending);
+           link != NULL;
+           link = g_list_next(link))
+        {
+          TpMessage *msg = link->data;
+
+          g_ptr_array_add (arrays, g_boxed_copy (type, msg->parts));
+        }
+
+      g_value_take_boxed (value, arrays);
+    }
+  else if (name == q_message_part_support_flags)
+    {
+      g_value_set_uint (value, mixin->priv->message_part_support_flags);
+    }
+  else if (name == q_supported_content_types)
+    {
+      g_value_set_boxed (value, mixin->priv->supported_content_types);
+    }
 }
 
 

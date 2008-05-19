@@ -69,6 +69,8 @@ void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
 void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
 
+void tp_message_mixin_get_dbus_property (GObject *object, GQuark interface,
+    GQuark name, GValue *value, gpointer unused);
 
 /* Receiving */
 
@@ -86,7 +88,9 @@ void tp_message_mixin_sent (GObject *object,
 
 void tp_message_mixin_implement_sending (GObject *object,
     TpMessageMixinSendImpl send, guint n_types,
-    const TpChannelTextMessageType *types);
+    const TpChannelTextMessageType *types,
+    TpMessagePartSupportFlags message_part_support_flags,
+    const gchar * const * supported_content_types);
 
 
 /* Initialization */
@@ -96,6 +100,8 @@ void tp_message_mixin_messages_iface_init (gpointer g_iface,
 
 void tp_message_mixin_init (GObject *obj, gsize offset,
     TpBaseConnection *connection);
+void tp_message_mixin_init_dbus_properties (
+    TpDBusPropertiesMixinIfaceImpl *impl);
 void tp_message_mixin_finalize (GObject *obj);
 
 G_END_DECLS
