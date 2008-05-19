@@ -1143,10 +1143,6 @@ tp_message_mixin_get_pending_message_content_async (
   TpMessage *item;
   GHashTable *ret;
   guint i;
-  GValue empty = { 0 };
-
-  g_value_init (&empty, G_TYPE_STRING);
-  g_value_set_static_string (&empty, "");
 
   node = g_queue_find_custom (mixin->priv->pending,
       GUINT_TO_POINTER (message_id), pending_item_id_equals_data);
@@ -1168,7 +1164,7 @@ tp_message_mixin_get_pending_message_content_async (
     {
       guint part = g_array_index (part_numbers, guint, i);
 
-      if (part >= item->parts->len)
+      if (part == 0 || part >= item->parts->len)
         {
           GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "part number %u out of range", part);
@@ -1180,23 +1176,31 @@ tp_message_mixin_get_pending_message_content_async (
         }
     }
 
-  ret = g_hash_table_new (NULL, NULL);
+  /* no free callbacks set - we borrow the content from the message */
+  ret = g_hash_table_new (g_direct_hash, g_direct_equal);
+
+  /* FIXME: later, need a way to support streaming content */
 
   for (i = 0; i < part_numbers->len; i++)
     {
       guint part = g_array_index (part_numbers, guint, i);
       GHashTable *part_data;
-      GValue *content;
+      GValue *value;
 
-      g_assert (part < item->parts->len);
+      g_assert (part != 0 && part < item->parts->len);
       part_data = g_ptr_array_index (item->parts, part);
 
-      content = g_hash_table_lookup (part_data, "content");
+      /* skip parts with no type (reserved) */
+      if (tp_asv_get_string (part_data, "type") == NULL)
+        continue;
 
-      if (content == NULL)
-        content = &empty;
+      value = g_hash_table_lookup (part_data, "content");
 
-      g_hash_table_insert (ret, GUINT_TO_POINTER (part), content);
+      /* skip parts with no content */
+      if (value == NULL)
+        continue;
+
+      g_hash_table_insert (ret, GUINT_TO_POINTER (part), value);
     }
 
   tp_svc_channel_interface_messages_return_from_get_pending_message_content (
