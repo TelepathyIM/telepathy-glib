@@ -303,6 +303,42 @@ main (int argc,
       tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
         chan, on_messages_removed, NULL, NULL, NULL, NULL) != NULL, "");
 
+  /* Get the initial properties */
+
+    {
+      const GValue *value;
+      gchar *contents;
+      GPtrArray *messages;
+      GHashTable *properties = NULL;
+
+      tp_cli_dbus_properties_run_get_all (chan, -1,
+          TP_IFACE_CHANNEL_INTERFACE_MESSAGES, &properties, &error, NULL);
+      MYASSERT_NO_ERROR (error);
+
+      g_print ("\n\n==== Examining properties ====\n\n");
+
+      MYASSERT (g_hash_table_size (properties) == 3, "%u",
+          g_hash_table_size (properties));
+
+      MYASSERT (tp_asv_get_uint32 (properties, "MessagePartSupportFlags", NULL)
+          == 7, "");
+
+      MYASSERT ((value = tp_asv_lookup (properties, "SupportedContentTypes"))
+          != NULL, "");
+      MYASSERT (G_VALUE_HOLDS (value, G_TYPE_STRV), "");
+      contents = g_strdup_value_contents (value);
+      g_message ("%s", contents);
+      g_free (contents);
+
+      MYASSERT ((value = tp_asv_lookup (properties, "PendingMessages"))
+          != NULL, "");
+      MYASSERT (G_VALUE_HOLDS_BOXED (value), "");
+      messages = g_value_get_boxed (value);
+      MYASSERT (messages->len == 0, "%u", messages->len);
+
+      g_hash_table_destroy (properties);
+    }
+
   /* Send three messages using the old Text API:
    *
    * (normal) Hello, world!
@@ -911,8 +947,59 @@ main (int argc,
 
       g_array_free (ids, TRUE);
 
-      /* The next test, "Acknowledging one message", will fail if the
+      /* The test "Acknowledging one message", will fail if the
        * last_received_id was acknowledged despite the error */
+
+  g_print ("\n\n==== Getting properties again ====\n");
+
+    {
+      const GValue *value;
+      gchar *contents;
+      GPtrArray *messages;
+      GHashTable *properties = NULL;
+      guint i;
+
+      tp_cli_dbus_properties_run_get_all (chan, -1,
+          TP_IFACE_CHANNEL_INTERFACE_MESSAGES, &properties, &error, NULL);
+      MYASSERT_NO_ERROR (error);
+
+      g_print ("\n\n==== Examining properties ====\n\n");
+
+      MYASSERT (g_hash_table_size (properties) == 3, "%u",
+          g_hash_table_size (properties));
+
+      MYASSERT (tp_asv_get_uint32 (properties, "MessagePartSupportFlags", NULL)
+          == 7, "");
+
+      MYASSERT ((value = tp_asv_lookup (properties, "SupportedContentTypes"))
+          != NULL, "");
+      MYASSERT (G_VALUE_HOLDS (value, G_TYPE_STRV), "");
+      contents = g_strdup_value_contents (value);
+      g_message ("%s", contents);
+      g_free (contents);
+
+      MYASSERT ((value = tp_asv_lookup (properties, "PendingMessages"))
+          != NULL, "");
+      MYASSERT (G_VALUE_HOLDS_BOXED (value), "");
+      messages = g_value_get_boxed (value);
+      MYASSERT (messages->len == 7, ": %u", messages->len);
+
+      for (i = 0; i < messages->len; i++)
+        {
+          GPtrArray *message = g_ptr_array_index (messages, i);
+          guint j;
+
+          g_print ("Message %u:\n", i);
+
+          for (j = 0; j < message->len; j++)
+            {
+              g_print ("    Part %u:\n", j);
+              g_hash_table_foreach (g_ptr_array_index (message, j),
+                  print_part, NULL);
+            }
+        }
+
+      g_hash_table_destroy (properties);
     }
 
   g_print ("\n\n==== Acknowledging one message ====\n");
