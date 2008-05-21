@@ -349,6 +349,14 @@ tp_dbus_check_valid_interface_name (const gchar *name,
                   name);
               return FALSE;
             }
+          else if (last == '.')
+            {
+              g_set_error (error, TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
+                  "Invalid interface name '%s': a digit must not follow '.'",
+                  name);
+              return FALSE;
+            }
         }
       else if (!g_ascii_isalpha (*ptr) && *ptr != '_')
         {
