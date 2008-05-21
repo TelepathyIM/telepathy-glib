@@ -90,10 +90,23 @@ gboolean tp_dbus_check_valid_object_path (const gchar *path,
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 const GArray *tp_asv_get_bytes (const GHashTable *asv, const gchar *key);
+gdouble tp_asv_get_double (const GHashTable *asv, const gchar *key,
+    gboolean *valid);
+gint32 tp_asv_get_int32 (const GHashTable *asv, const gchar *key,
+    gboolean *valid);
+gint64 tp_asv_get_int64 (const GHashTable *asv, const gchar *key,
+    gboolean *valid);
+const gchar *tp_asv_get_object_path (const GHashTable *asv, const gchar *key);
 const gchar *tp_asv_get_string (const GHashTable *asv, const gchar *key);
 guint32 tp_asv_get_uint32 (const GHashTable *asv, const gchar *key,
     gboolean *valid);
+guint64 tp_asv_get_uint64 (const GHashTable *asv, const gchar *key,
+    gboolean *valid);
 const GValue *tp_asv_lookup (const GHashTable *asv, const gchar *key);
+
+const gchar * const *
+/* this comment stops gtkdoc denying that this function exists */
+tp_asv_get_strv (const GHashTable *asv, const gchar *key);
 
 G_END_DECLS
 

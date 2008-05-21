@@ -1036,6 +1036,90 @@ tp_asv_get_string (const GHashTable *asv,
 
 
 /**
+ * tp_asv_get_int32:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ * @valid: Either %NULL, or a location in which to store %TRUE on success or
+ *    %FALSE on failure
+ *
+ * If a value for @key in @asv is present, has an integer type used by
+ * dbus-glib (guchar, gint, guint, gint64 or guint64) and fits in the
+ * range of a gint32, return it, and if @valid is not %NULL, set *@valid to
+ * %TRUE.
+ *
+ * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the 32-bit signed integer value of @key, or 0
+ * @since 0.7.9
+ */
+gint32
+tp_asv_get_int32 (const GHashTable *asv,
+                  const gchar *key,
+                  gboolean *valid)
+{
+  gint64 i;
+  guint64 u;
+  gint32 ret;
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+
+  if (value == NULL)
+    goto return_invalid;
+
+  switch (G_VALUE_TYPE (value))
+    {
+    case G_TYPE_UCHAR:
+      ret = g_value_get_uchar (value);
+      break;
+
+    case G_TYPE_UINT:
+      u = g_value_get_uint (value);
+
+      if (G_UNLIKELY (u > G_MAXINT32))
+        goto return_invalid;
+
+      ret = u;
+      break;
+
+    case G_TYPE_INT:
+      ret = g_value_get_int (value);
+      break;
+
+    case G_TYPE_INT64:
+      i = g_value_get_int64 (value);
+
+      if (G_UNLIKELY (i < G_MININT32 || i > G_MAXINT32))
+        goto return_invalid;
+
+      ret = i;
+      break;
+
+    case G_TYPE_UINT64:
+      u = g_value_get_uint64 (value);
+
+      if (G_UNLIKELY (u > G_MAXINT32))
+        goto return_invalid;
+
+      ret = u;
+      break;
+
+    default:
+      goto return_invalid;
+    }
+
+  if (valid != NULL)
+    *valid = TRUE;
+
+  return ret;
+
+return_invalid:
+  if (valid != NULL)
+    *valid = FALSE;
+
+  return 0;
+}
+
+
+/**
  * tp_asv_get_uint32:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
@@ -1057,7 +1141,8 @@ tp_asv_get_uint32 (const GHashTable *asv,
                    const gchar *key,
                    gboolean *valid)
 {
-  union { gint64 i; guint64 u; } tmp;
+  gint64 i;
+  guint64 u;
   guint32 ret;
   GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
 
@@ -1075,30 +1160,30 @@ tp_asv_get_uint32 (const GHashTable *asv,
       break;
 
     case G_TYPE_INT:
-      tmp.i = g_value_get_int (value);
+      i = g_value_get_int (value);
 
-      if (G_UNLIKELY (tmp.i < 0 || tmp.i > G_MAXUINT32))
+      if (G_UNLIKELY (i < 0))
         goto return_invalid;
 
-      ret = tmp.i;
+      ret = i;
       break;
 
     case G_TYPE_INT64:
-      tmp.i = g_value_get_int64 (value);
+      i = g_value_get_int64 (value);
 
-      if (G_UNLIKELY (tmp.i < 0 || tmp.i > G_MAXUINT32))
+      if (G_UNLIKELY (i < 0 || i > G_MAXUINT32))
         goto return_invalid;
 
-      ret = tmp.i;
+      ret = i;
       break;
 
     case G_TYPE_UINT64:
-      tmp.u = g_value_get_uint64 (value);
+      u = g_value_get_uint64 (value);
 
-      if (tmp.u > G_MAXUINT32)
+      if (G_UNLIKELY (u > G_MAXUINT32))
         goto return_invalid;
 
-      ret = tmp.u;
+      ret = u;
       break;
 
     default:
@@ -1115,6 +1200,287 @@ return_invalid:
     *valid = FALSE;
 
   return 0;
+}
+
+
+/**
+ * tp_asv_get_int64:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ * @valid: Either %NULL, or a location in which to store %TRUE on success or
+ *    %FALSE on failure
+ *
+ * If a value for @key in @asv is present, has an integer type used by
+ * dbus-glib (guchar, gint, guint, gint64 or guint64) and fits in the
+ * range of a gint64, return it, and if @valid is not %NULL, set *@valid to
+ * %TRUE.
+ *
+ * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the 64-bit signed integer value of @key, or 0
+ * @since 0.7.9
+ */
+gint64
+tp_asv_get_int64 (const GHashTable *asv,
+                  const gchar *key,
+                  gboolean *valid)
+{
+  gint64 ret;
+  guint64 u;
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+
+  if (value == NULL)
+    goto return_invalid;
+
+  switch (G_VALUE_TYPE (value))
+    {
+    case G_TYPE_UCHAR:
+      ret = g_value_get_uchar (value);
+      break;
+
+    case G_TYPE_UINT:
+      ret = g_value_get_uint (value);
+      break;
+
+    case G_TYPE_INT:
+      ret = g_value_get_int (value);
+      break;
+
+    case G_TYPE_INT64:
+      ret = g_value_get_int64 (value);
+      break;
+
+    case G_TYPE_UINT64:
+      u = g_value_get_uint64 (value);
+
+      if (G_UNLIKELY (u > G_MAXINT64))
+        goto return_invalid;
+
+      ret = u;
+      break;
+
+    default:
+      goto return_invalid;
+    }
+
+  if (valid != NULL)
+    *valid = TRUE;
+
+  return ret;
+
+return_invalid:
+  if (valid != NULL)
+    *valid = FALSE;
+
+  return 0;
+}
+
+
+/**
+ * tp_asv_get_uint64:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ * @valid: Either %NULL, or a location in which to store %TRUE on success or
+ *    %FALSE on failure
+ *
+ * If a value for @key in @asv is present, has an integer type used by
+ * dbus-glib (guchar, gint, guint, gint64 or guint64) and is non-negative,
+ * return it, and if @valid is not %NULL, set *@valid to %TRUE.
+ *
+ * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the 64-bit unsigned integer value of @key, or 0
+ * @since 0.7.9
+ */
+guint64
+tp_asv_get_uint64 (const GHashTable *asv,
+                   const gchar *key,
+                   gboolean *valid)
+{
+  gint64 tmp;
+  guint64 ret;
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+
+  if (value == NULL)
+    goto return_invalid;
+
+  switch (G_VALUE_TYPE (value))
+    {
+    case G_TYPE_UCHAR:
+      ret = g_value_get_uchar (value);
+      break;
+
+    case G_TYPE_UINT:
+      ret = g_value_get_uint (value);
+      break;
+
+    case G_TYPE_INT:
+      tmp = g_value_get_int (value);
+
+      if (G_UNLIKELY (tmp < 0))
+        goto return_invalid;
+
+      ret = tmp;
+      break;
+
+    case G_TYPE_INT64:
+      tmp = g_value_get_int64 (value);
+
+      if (G_UNLIKELY (tmp < 0))
+        goto return_invalid;
+
+      ret = tmp;
+      break;
+
+    case G_TYPE_UINT64:
+      ret = g_value_get_uint64 (value);
+      break;
+
+    default:
+      goto return_invalid;
+    }
+
+  if (valid != NULL)
+    *valid = TRUE;
+
+  return ret;
+
+return_invalid:
+  if (valid != NULL)
+    *valid = FALSE;
+
+  return 0;
+}
+
+
+/* FIXME: reviewers: should this succeed on all numeric types, or just on
+ * doubles? */
+/**
+ * tp_asv_get_double:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ * @valid: Either %NULL, or a location in which to store %TRUE on success or
+ *    %FALSE on failure
+ *
+ * If a value for @key in @asv is present and has any numeric type used by
+ * dbus-glib (guchar, gint, guint, gint64, guint64 or gdouble),
+ * return it as a double, and if @valid is not %NULL, set *@valid to %TRUE.
+ *
+ * Otherwise, return 0.0, and if @valid is not %NULL, set *@valid to %FALSE.
+ *
+ * Returns: the double precision floating-point value of @key, or 0.0
+ * @since 0.7.9
+ */
+gdouble
+tp_asv_get_double (const GHashTable *asv,
+                   const gchar *key,
+                   gboolean *valid)
+{
+  gdouble ret;
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+
+  if (value == NULL)
+    goto return_invalid;
+
+  switch (G_VALUE_TYPE (value))
+    {
+    case G_TYPE_DOUBLE:
+      ret = g_value_get_double (value);
+      break;
+
+    case G_TYPE_UCHAR:
+      ret = g_value_get_uchar (value);
+      break;
+
+    case G_TYPE_UINT:
+      ret = g_value_get_uint (value);
+      break;
+
+    case G_TYPE_INT:
+      ret = g_value_get_int (value);
+      break;
+
+    case G_TYPE_INT64:
+      ret = g_value_get_int64 (value);
+      break;
+
+    case G_TYPE_UINT64:
+      ret = g_value_get_uint64 (value);
+      break;
+
+    default:
+      goto return_invalid;
+    }
+
+  if (valid != NULL)
+    *valid = TRUE;
+
+  return ret;
+
+return_invalid:
+  if (valid != NULL)
+    *valid = FALSE;
+
+  return 0;
+}
+
+
+/**
+ * tp_asv_get_object_path:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ *
+ * If a value for @key in @asv is present and is an object path, return it.
+ *
+ * Otherwise return %NULL.
+ *
+ * The returned value is not copied, and is only valid as long as the value
+ * for @key in @asv is not removed or altered. Copy it with g_strdup() if you
+ * need to keep it for longer.
+ *
+ * Returns: the object-path value of @key, or %NULL
+ * @since 0.7.9
+ */
+const gchar *
+tp_asv_get_object_path (const GHashTable *asv,
+                        const gchar *key)
+{
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+
+  if (value == NULL || !G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+    return NULL;
+
+  return g_value_get_boxed (value);
+}
+
+
+/**
+ * tp_asv_get_strv:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ *
+ * If a value for @key in @asv is present and is an array of strings (strv),
+ * return it.
+ *
+ * Otherwise return %NULL.
+ *
+ * The returned value is not copied, and is only valid as long as the value
+ * for @key in @asv is not removed or altered. Copy it with g_strdupv() if you
+ * need to keep it for longer.
+ *
+ * Returns: the %NULL-terminated string-array value of @key, or %NULL
+ * @since 0.7.9
+ */
+const gchar * const *
+tp_asv_get_strv (const GHashTable *asv,
+                 const gchar *key)
+{
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+
+  if (value == NULL || !G_VALUE_HOLDS (value, G_TYPE_STRV))
+    return NULL;
+
+  return g_value_get_boxed (value);
 }
 
 
