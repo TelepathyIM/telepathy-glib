@@ -88,8 +88,16 @@ send_message (GObject *object,
   ExampleEcho2Channel *self = EXAMPLE_ECHO_2_CHANNEL (object);
   time_t timestamp = time (NULL);
   guint len = tp_message_count_parts (message);
-  TpMessage *received = tp_message_new (self->priv->conn, 1, len);
+  TpMessage *received = NULL;
   guint i;
+
+  if (tp_asv_get_string (tp_message_peek (message, 0), "interface") != NULL)
+    {
+      /* this message is interface-specific - let's not echo it */
+      goto finally;
+    }
+
+  received = tp_message_new (self->priv->conn, 1, len);
 
   /* Copy/modify the headers for the "received" message */
     {
@@ -162,13 +170,17 @@ send_message (GObject *object,
         tp_message_set (received, j, "content", value);
     }
 
+finally:
   /* "OK, we've sent the message" (after calling this, message must not be
    * dereferenced) */
   tp_message_mixin_sent (object, message, "", NULL);
 
-  /* Pretend the other user sent us back the same message. After this call,
-   * the received message is owned by the mixin */
-  tp_message_mixin_take_received (object, received);
+  if (received != NULL)
+    {
+      /* Pretend the other user sent us back the same message. After this call,
+       * the received message is owned by the mixin */
+      tp_message_mixin_take_received (object, received);
+    }
 }
 
 
