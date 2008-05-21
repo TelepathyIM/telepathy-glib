@@ -1183,8 +1183,14 @@ tp_dbus_check_valid_object_path
 <SUBSECTION>
 tp_asv_get_boolean
 tp_asv_get_bytes
+tp_asv_get_double
+tp_asv_get_int32
+tp_asv_get_int64
+tp_asv_get_object_path
 tp_asv_get_string
+tp_asv_get_strv
 tp_asv_get_uint32
+tp_asv_get_uint64
 tp_asv_lookup
 <SUBSECTION>
 TpDBusDaemon
