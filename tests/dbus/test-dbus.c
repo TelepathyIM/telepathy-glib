@@ -96,6 +96,31 @@ main (int argc,
   MYASSERT (!tp_dbus_check_valid_object_path ("/a//b", NULL), "");
   MYASSERT (tp_dbus_check_valid_object_path ("/a/b", NULL), "");
   MYASSERT (!tp_dbus_check_valid_object_path ("/a/b/", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_object_path ("a/b", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_object_path ("/*a", NULL), "");
+
+#define TEST_LONG_BIT "excessively.long.name.longer.than._255.characters"
+#define TEST_LONG (TEST_LONG_BIT TEST_LONG_BIT TEST_LONG_BIT TEST_LONG_BIT \
+    TEST_LONG_BIT TEST_LONG_BIT TEST_LONG_BIT TEST_LONG_BIT)
+
+  MYASSERT (!tp_dbus_check_valid_member_name ("", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_member_name ("123abc", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_member_name ("a.b", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_member_name ("a*b", NULL), "");
+  MYASSERT (tp_dbus_check_valid_member_name ("example", NULL), "");
+  MYASSERT (tp_dbus_check_valid_member_name ("_1", NULL), "");
+
+  MYASSERT (!tp_dbus_check_valid_interface_name ("", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_interface_name (TEST_LONG, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_interface_name ("hasnodot", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_interface_name ("123abc.example", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_interface_name ("com.1", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_interface_name ("com.e*ample", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_interface_name ("com..example", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_interface_name (".com.example", NULL), "");
+  MYASSERT (!tp_dbus_check_valid_interface_name ("com.example.", NULL), "");
+  MYASSERT (tp_dbus_check_valid_interface_name ("com.example", NULL), "");
+  MYASSERT (tp_dbus_check_valid_interface_name ("com._1", NULL), "");
 
   MYASSERT (tp_dbus_check_valid_bus_name (":1.1", TP_DBUS_NAME_TYPE_ANY,
         NULL), "");
@@ -132,6 +157,16 @@ main (int argc,
   MYASSERT (!tp_dbus_check_valid_bus_name (DBUS_SERVICE_DBUS,
         TP_DBUS_NAME_TYPE_UNIQUE, NULL), "");
 
+  MYASSERT (tp_dbus_check_valid_bus_name ("com._1",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name ("",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name (TEST_LONG,
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name ("hasnodot",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
+  MYASSERT (!tp_dbus_check_valid_bus_name ("123abc.example",
+        TP_DBUS_NAME_TYPE_ANY, NULL), "");
   MYASSERT (!tp_dbus_check_valid_bus_name ("com.1",
         TP_DBUS_NAME_TYPE_ANY, NULL), "");
   MYASSERT (!tp_dbus_check_valid_bus_name ("com.e*ample",
