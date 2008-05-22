@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       implementations are not guaranteed to generate status 180 Ringing,
       so a call can be accepted without the Ringing flag ever having been set).
     </tp:docstring>
+    <tp:added version="0.17.2"/>
 
     <method name="GetCallStates">
       <tp:docstring>
