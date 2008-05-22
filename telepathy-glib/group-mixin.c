@@ -56,10 +56,12 @@
 
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <telepathy-glib/debug-ansi.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 
 #define DEBUG_FLAG TP_DEBUG_GROUPS
 
@@ -1179,8 +1181,8 @@ member_array_to_string (TpHandleRepoIface *repo,
   return g_string_free (str, FALSE);
 }
 
-static void remove_handle_owners_if_exist (GObject *obj,
-    GArray *array);
+static GArray *remove_handle_owners_if_exist (GObject *obj,
+    GArray *array) G_GNUC_WARN_UNUSED_RESULT;
 
 typedef struct {
     TpGroupMixin *mixin;
@@ -1372,7 +1374,7 @@ tp_group_mixin_change_members (GObject *obj,
       tp_intset_size (new_remote_pending) > 0)
     {
       GArray *arr_add, *arr_remove, *arr_local, *arr_remote;
-      gchar *add_str, *rem_str, *local_str, *remote_str;
+      GArray *arr_owners_removed;
 
       /* translate intsets to arrays */
       arr_add = tp_intset_to_array (new_add);
@@ -1381,10 +1383,12 @@ tp_group_mixin_change_members (GObject *obj,
       arr_remote = tp_intset_to_array (new_remote_pending);
 
       /* remove any handle owner mappings */
-      remove_handle_owners_if_exist (obj, arr_remove);
+      arr_owners_removed = remove_handle_owners_if_exist (obj, arr_remove);
 
       if (DEBUGGING)
         {
+          gchar *add_str, *rem_str, *local_str, *remote_str;
+
           add_str = member_array_to_string (mixin->handle_repo, arr_add);
           rem_str = member_array_to_string (mixin->handle_repo, arr_remove);
           local_str = member_array_to_string (mixin->handle_repo, arr_local);
@@ -1427,11 +1431,34 @@ tp_group_mixin_change_members (GObject *obj,
             }
         }
 
+      if (arr_owners_removed->len > 0)
+        {
+          GHashTable *empty_hash_table = g_hash_table_new (NULL, NULL);
+
+          tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
+              empty_hash_table, arr_owners_removed);
+
+          if (mixin->priv->externals != NULL)
+            {
+              guint i;
+
+              for (i = 0; i < mixin->priv->externals->len; i++)
+                {
+                  tp_svc_channel_interface_group_emit_handle_owners_changed (
+                      g_ptr_array_index (mixin->priv->externals, i),
+                      empty_hash_table, arr_owners_removed);
+                }
+            }
+
+          g_hash_table_destroy (empty_hash_table);
+        }
+
       /* free arrays */
       g_array_free (arr_add, TRUE);
       g_array_free (arr_remove, TRUE);
       g_array_free (arr_local, TRUE);
       g_array_free (arr_remote, TRUE);
+      g_array_free (arr_owners_removed, TRUE);
 
       ret = TRUE;
     }
@@ -1456,11 +1483,17 @@ tp_group_mixin_change_members (GObject *obj,
  * tp_group_mixin_add_handle_owner:
  * @obj: A GObject implementing the group interface with this mixin
  * @local_handle: A contact handle valid within this group (may not be 0)
- * @owner_handle: A contact handle valid globally (may not be 0)
+ * @owner_handle: A contact handle valid globally, or 0 if the owner of the
+ *  @local_handle is unknown
  *
  * Note that the given local handle is an alias within this group
  * for the given globally-valid handle. It will be returned from subsequent
  * GetHandleOwner queries where appropriate.
+ *
+ * Changed in 0.7.9: The @owner_handle may be 0. To comply with telepathy-spec
+ *  0.17.6, before adding any channel-specific handle to the members,
+ *  local-pending members or remote-pending members, you must call either
+ *  this function or tp_group_mixin_add_handle_owners().
  */
 void
 tp_group_mixin_add_handle_owner (GObject *obj,
@@ -1469,24 +1502,99 @@ tp_group_mixin_add_handle_owner (GObject *obj,
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   TpGroupMixinPrivate *priv = mixin->priv;
+  GArray *empty_array;
+  GHashTable *added;
 
   g_return_if_fail (local_handle != 0);
   g_return_if_fail (owner_handle != 0);
 
   g_hash_table_insert (priv->handle_owners, GUINT_TO_POINTER (local_handle),
-                       GUINT_TO_POINTER (owner_handle));
+      GUINT_TO_POINTER (owner_handle));
 
   tp_handle_ref (mixin->handle_repo, local_handle);
   tp_handle_ref (mixin->handle_repo, owner_handle);
+
+  added = g_hash_table_new (g_direct_hash, g_direct_equal);
+  empty_array = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+  g_hash_table_insert (added, GUINT_TO_POINTER (local_handle),
+      GUINT_TO_POINTER (owner_handle));
+
+  tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
+      added, empty_array);
+
+  g_array_free (empty_array, TRUE);
+  g_hash_table_destroy (added);
 }
 
-static void
+
+/**
+ * tp_group_mixin_add_handle_owners:
+ * @obj: A GObject implementing the group interface with this mixin
+ * @n_handles: Number of elements in both @local_handles and @owner_handles
+ * @local_handles: Contact handles valid within this group (may not be 0)
+ * @owner_handles: Contact handles valid globally, corresponding to the
+ *  elements of @local_handles, or 0 if the owner of the
+ *  corresponding element of @local_handles is unknown
+ *
+ * Note that the given local handles are aliases within this group
+ * for the given globally-valid handles.
+ *
+ * To comply with telepathy-spec 0.17.6, before adding any channel-specific
+ * handle to the members, local-pending members or remote-pending members, you
+ * must call either this function or tp_group_mixin_add_handle_owner().
+ *
+ * @since 0.7.9
+ */
+void
+tp_group_mixin_add_handle_owners (GObject *obj,
+                                  guint n_handles,
+                                  TpHandle *local_handles,
+                                  TpHandle *owner_handles)
+{
+  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
+  TpGroupMixinPrivate *priv = mixin->priv;
+  GArray *empty_array;
+  GHashTable *added;
+  guint i;
+
+  if (n_handles == 0)
+    return;
+
+  empty_array = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+  added = g_hash_table_new (g_direct_hash, g_direct_equal);
+
+  for (i = 0; i < n_handles; i++)
+    {
+      g_return_if_fail (local_handles[i] != 0);
+
+      g_hash_table_insert (priv->handle_owners,
+          GUINT_TO_POINTER (local_handles[i]),
+          GUINT_TO_POINTER (owner_handles[i]));
+      g_hash_table_insert (added, GUINT_TO_POINTER (local_handles[i]),
+          GUINT_TO_POINTER (owner_handles[i]));
+
+      tp_handle_ref (mixin->handle_repo, local_handles[i]);
+      tp_handle_ref (mixin->handle_repo, owner_handles[i]);
+    }
+
+  tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
+      added, empty_array);
+
+  g_hash_table_destroy (added);
+  g_array_free (empty_array, TRUE);
+}
+
+
+static GArray *
 remove_handle_owners_if_exist (GObject *obj,
                                GArray *array)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   TpGroupMixinPrivate *priv = mixin->priv;
   guint i;
+  GArray *ret;
+
+  ret = g_array_sized_new (FALSE, FALSE, sizeof (guint), array->len);
 
   for (i = 0; i < array->len; i++)
     {
@@ -1498,14 +1606,17 @@ remove_handle_owners_if_exist (GObject *obj,
                                         &local_handle,
                                         &owner_handle))
         {
-          tp_handle_unref (mixin->handle_repo,
-              GPOINTER_TO_UINT (local_handle));
+          g_assert (GPOINTER_TO_UINT (local_handle) == handle);
+          g_array_append_val (ret, handle);
+          tp_handle_unref (mixin->handle_repo, handle);
           tp_handle_unref (mixin->handle_repo,
               GPOINTER_TO_UINT (owner_handle));
 
           g_hash_table_remove (priv->handle_owners, GUINT_TO_POINTER (handle));
         }
     }
+
+  return ret;
 }
 
 /**
@@ -1538,6 +1649,122 @@ tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(remove_members_with_reason);
 #undef IMPLEMENT
 }
+
+
+enum {
+    MIXIN_DP_GROUP_FLAGS,
+    MIXIN_DP_HANDLE_OWNERS,
+    MIXIN_DP_LOCAL_PENDING_MEMBERS,
+    MIXIN_DP_MEMBERS,
+    MIXIN_DP_REMOTE_PENDING_MEMBERS,
+    MIXIN_DP_SELF_HANDLE,
+    NUM_MIXIN_DBUS_PROPERTIES
+};
+
+
+void
+tp_group_mixin_get_dbus_property (GObject *object,
+                                  GQuark interface,
+                                  GQuark name,
+                                  GValue *value,
+                                  gpointer getter_data)
+{
+  TpGroupMixin *mixin;
+  static GQuark q[NUM_MIXIN_DBUS_PROPERTIES] = { 0 };
+
+  if (G_UNLIKELY (q[0] == 0))
+    {
+      q[MIXIN_DP_GROUP_FLAGS] = g_quark_from_static_string ("GroupFlags");
+      q[MIXIN_DP_HANDLE_OWNERS] = g_quark_from_static_string ("HandleOwners");
+      q[MIXIN_DP_LOCAL_PENDING_MEMBERS] = g_quark_from_static_string (
+          "LocalPendingMembers");
+      q[MIXIN_DP_MEMBERS] = g_quark_from_static_string ("Members");
+      q[MIXIN_DP_REMOTE_PENDING_MEMBERS] = g_quark_from_static_string (
+          "RemotePendingMembers");
+      q[MIXIN_DP_SELF_HANDLE] = g_quark_from_static_string ("SelfHandle");
+    }
+
+  g_return_if_fail (object != NULL);
+  mixin = TP_GROUP_MIXIN (object);
+  g_return_if_fail (mixin != NULL);
+  g_return_if_fail (interface == TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP);
+  g_return_if_fail (name != 0);
+  g_return_if_fail (value != NULL);
+
+  if (name == q[MIXIN_DP_GROUP_FLAGS])
+    {
+      g_return_if_fail (G_VALUE_HOLDS_UINT (value));
+      g_value_set_uint (value, mixin->group_flags);
+    }
+  else if (name == q[MIXIN_DP_HANDLE_OWNERS])
+    {
+      g_return_if_fail (G_VALUE_HOLDS (value, TP_HASH_TYPE_HANDLE_OWNER_MAP));
+      g_value_set_boxed (value, mixin->priv->handle_owners);
+    }
+  else if (name == q[MIXIN_DP_LOCAL_PENDING_MEMBERS])
+    {
+      GPtrArray *ret = NULL;
+      gboolean success;
+
+      g_return_if_fail (G_VALUE_HOLDS_BOXED (value));
+      success = tp_group_mixin_get_local_pending_members_with_info (object,
+          &ret, NULL);
+      g_assert (success);     /* as of 0.7.8, cannot fail */
+      g_value_take_boxed (value, ret);
+    }
+  else if (name == q[MIXIN_DP_MEMBERS])
+    {
+      GArray *ret = NULL;
+      gboolean success;
+
+      g_return_if_fail (G_VALUE_HOLDS_BOXED (value));
+      success = tp_group_mixin_get_members (object, &ret, NULL);
+      g_assert (success);     /* as of 0.7.8, cannot fail */
+      g_value_take_boxed (value, ret);
+    }
+  else if (name == q[MIXIN_DP_REMOTE_PENDING_MEMBERS])
+    {
+      GArray *ret = NULL;
+      gboolean success;
+
+      g_return_if_fail (G_VALUE_HOLDS_BOXED (value));
+      success = tp_group_mixin_get_remote_pending_members (object,
+          &ret, NULL);
+      g_assert (success);     /* as of 0.7.8, cannot fail */
+      g_value_take_boxed (value, ret);
+    }
+  else if (name == q[MIXIN_DP_SELF_HANDLE])
+    {
+      g_return_if_fail (G_VALUE_HOLDS_UINT (value));
+      g_value_set_uint (value, mixin->self_handle);
+    }
+  else
+    {
+      g_return_if_reached ();
+    }
+}
+
+
+void
+tp_group_mixin_init_dbus_properties (TpDBusPropertiesMixinIfaceImpl *impl)
+{
+  static TpDBusPropertiesMixinPropImpl props[] = {
+      { "GroupFlags", NULL, NULL },
+      { "HandleOwners", NULL, NULL },
+      { "LocalPendingMembers", NULL, NULL },
+      { "Members", NULL, NULL },
+      { "RemotePendingMembers", NULL, NULL },
+      { "SelfHandle", NULL, NULL },
+      { NULL }
+  };
+
+  memset (impl, '\0', sizeof (TpDBusPropertiesMixinIfaceImpl));
+  impl->name = TP_IFACE_CHANNEL_INTERFACE_GROUP;
+  impl->getter = tp_group_mixin_get_dbus_property;
+  impl->setter = NULL;
+  impl->props = props;
+}
+
 
 #define TP_EXTERNAL_GROUP_MIXIN_OBJ(o) \
     ((GObject *) g_object_get_qdata (o, \

@@ -23,6 +23,7 @@
 #ifndef __TP_GROUP_MIXIN_H__
 #define __TP_GROUP_MIXIN_H__
 
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/handle-repo.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/util.h>
@@ -207,6 +208,13 @@ gboolean tp_group_mixin_change_members (GObject *obj,
 
 void tp_group_mixin_add_handle_owner (GObject *obj,
     TpHandle local_handle, TpHandle owner_handle);
+void tp_group_mixin_add_handle_owners (GObject *obj, guint n_handles,
+    TpHandle *local_handles, TpHandle *owner_handles);
+
+void tp_group_mixin_get_dbus_property (GObject *object,
+    GQuark interface, GQuark name, GValue *value, gpointer getter_data);
+void tp_group_mixin_init_dbus_properties (
+    TpDBusPropertiesMixinIfaceImpl *impl);
 
 void tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 
