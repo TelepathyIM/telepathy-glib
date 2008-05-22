@@ -67,6 +67,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.Channel.Banned"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetAllMembers">
       <arg direction="out" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
@@ -92,6 +93,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
+
     <tp:flags name="Channel_Group_Flags" value-prefix="Channel_Group_Flag" type="u">
       <tp:flag suffix="Can_Add" value="1">
         <tp:docstring>
@@ -176,6 +178,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
     </tp:flags>
+
     <method name="GetGroupFlags">
       <arg direction="out" type="u" tp:type="Channel_Group_Flags">
         <tp:docstring>
@@ -192,6 +195,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetHandleOwners">
       <arg direction="in" name="handles" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
@@ -231,6 +235,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <method name="GetLocalPendingMembers">
       <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
       <tp:docstring>
@@ -242,6 +247,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetLocalPendingMembersWithInfo">
       <tp:added version="0.15.0" />
       <tp:docstring>
@@ -276,6 +282,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetMembers">
       <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
       <tp:docstring>
@@ -286,6 +293,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetRemotePendingMembers">
       <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
       <tp:docstring>
@@ -297,6 +305,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
+
     <method name="GetSelfHandle">
       <arg direction="out" type="u" tp:type="Contact_Handle"/>
       <tp:docstring>
@@ -312,6 +321,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
       </tp:possible-errors>
     </method>
+
     <signal name="GroupFlagsChanged">
       <arg name="added" type="u" tp:type="Channel_Group_Flags">
         <tp:docstring>
@@ -328,6 +338,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         The user interface should be updated as appropriate.
       </tp:docstring>
     </signal>
+
     <tp:enum name="Channel_Group_Change_Reason" type="u">
       <tp:enumvalue suffix="None" value="0">
         <tp:docstring>
@@ -415,6 +426,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <signal name="MembersChanged">
       <arg name="message" type="s">
         <tp:docstring>
@@ -461,6 +473,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         displayed to the user if desired.
       </tp:docstring>
     </signal>
+
     <method name="RemoveMembers">
       <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
@@ -490,6 +503,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
       </tp:possible-errors>
     </method>
+
     <method name="RemoveMembersWithReason">
       <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
@@ -526,6 +540,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>Interface for channels which have multiple members, and where the members
     of the channel can change during its lifetime. Your presence in the channel
