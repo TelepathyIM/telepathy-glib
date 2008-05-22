@@ -198,14 +198,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         them), the StreamDirectionChanged signal will be emitted with the
         MEDIA_STREAM_PENDING_REMOTE_SEND flag set, and the signal emitted again
         with the flag cleared when the remote end has replied.</p>
-
-        <p>As of version 0.17.2, it is valid to use a handle which is neither
+      </tp:docstring>
+      <tp:changed version="0.17.2">
+        <p>It is valid to use a handle which is neither
           a current nor pending member in this channel's Group interface. If
           so, that handle will be added to the remote-pending set only when
           an attempt has actually been made to contact them. For further
           call-state notification, use the CallState interface, if
-          supported.</p>
-      </tp:docstring>
+          supported. This usage was not allowed in spec versions below
+          0.17.2.</p>
+      </tp:changed>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
