@@ -27,6 +27,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Info"/>
     </tp:struct>
 
+    <property name="Server" type="s" access="read">
+      <tp:docstring>
+        <p>For protocols with a concept of chatrooms on multiple servers
+          with different DNS names (like XMPP), the DNS name of the server
+          whose rooms are listed by this channel, e.g. "conference.jabber.org".
+          Otherwise, the empty string.</p>
+
+        <p>This property cannot change during the lifetime of the channel.</p>
+      </tp:docstring>
+    </property>
+
     <method name="GetListingRooms">
       <arg direction="out" type="b">
         <tp:docstring>
@@ -38,6 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         on this channel.
       </tp:docstring>
     </method>
+
     <signal name="GotRooms">
       <arg name="rooms" type="a(usa{sv})" tp:type="Room_Info[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
