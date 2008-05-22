@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         /org/freedesktop/Telepathy/AccountManager object with the
         AccountManager interface.</p>
     </tp:docstring>
+    <tp:added version="0.17.2"/>
 
     <!-- Missing functionality compared with NMC 4.x:
     * look up accounts by conditions (can be done client-side, less

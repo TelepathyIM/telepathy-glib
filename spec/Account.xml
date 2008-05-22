@@ -72,6 +72,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
     </tp:docstring>
 
+    <tp:added version="0.17.2"/>
+
     <!-- Missing functionality compared with NMC 4.x account + profile,
     apart from as listed above:
 
