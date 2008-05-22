@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         prefix removed, and any hyphen/minus signs replaced by
         underscores.
       </tp:docstring>
+      <tp:changed version="0.17.1">Prior to version 0.17.1, the allowed
+        characters were not specified</tp:changed>
     </tp:simple-type>
 
     <tp:simple-type name="Protocol" type="s">
@@ -58,6 +60,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <li>zephyr - Zephyr</li>
         </ul>
       </tp:docstring>
+      <tp:changed version="0.17.1">Prior to version 0.17.1, the allowed
+        characters were not specified</tp:changed>
     </tp:simple-type>
 
     <tp:struct name="Param_Spec" array-name="Param_Spec_List">
@@ -110,6 +114,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             any parameter whose name contains "password" as though it had this
             flag.)</p>
         </tp:docstring>
+        <tp:added version="0.17.2"/>
       </tp:flag>
     </tp:flags>
 
@@ -399,6 +404,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     well-known bus name, causing a new connection manager to be activated when
     somebody attempts to make a new connection.</p>
     </tp:docstring>
+
+    <tp:changed version="0.17.2">Prior to version 0.17.2, support for
+      CMs with no .manager file was not explicitly required.</tp:changed>
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->
