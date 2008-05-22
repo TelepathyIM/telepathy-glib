@@ -246,16 +246,28 @@ USA.</p>
       </arg>
 
       <arg name="suppress_handler" type="b">
-        <tp:docstring>
-          A boolean indicating that the channel was requested by a client that intends to display it to the user, so no handler needs to be launched
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>If true, the channel was requested by a client that intends to
+            present it to the user itself (i.e. it passed suppress_handler=TRUE
+            to the RequestChannel method), so no other handler should be
+            launched.</p>
+
+          <p>If false, either the channel was created due to incoming
+            information from the service, or the channel was requested by
+            a local client that does not intend to handle the channel itself
+            (a typical use-case is an address-book viewer that does not itself
+            implement chat or VoIP functionality, starting a channel that
+            will be handled by the same user interface that would handle
+            incoming channels).</p>
+
+          <p>Clients MUST NOT assume that only incoming channels will have
+            this flag set to false.</p>
         </tp:docstring>
       </arg>
 
       <tp:docstring>
         Emitted when a new Channel object is created, either through user
-        request or incoming information from the service. The suppress_handler
-        boolean indicates if the channel was requested by an existing client,
-        or is an incoming communication and needs to have a handler launched.
+        request or incoming information from the service.
       </tp:docstring>
     </signal>
 
