@@ -338,6 +338,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             contact will never even be told that we tried to acquire it.</p>
         </tp:rationale>
       </tp:docstring>
+      <tp:added version="0.17.3"/>
+
       <arg name="Held" type="b">
         <tp:docstring>
           If true, the stream is to be placed on hold.
@@ -350,6 +352,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Notify the connection manager that the stream's hold state has
         been changed successfully in response to SetStreamHeld.
       </tp:docstring>
+      <tp:added version="0.17.3"/>
       <arg direction="in" name="Held" type="b">
         <tp:docstring>
           If true, the stream is now on hold.
@@ -363,6 +366,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         necessary hardware or software resources to unhold the stream,
         in response to SetStreamHeld, has failed.
       </tp:docstring>
+      <tp:added version="0.17.3"/>
     </method>
 
     <tp:docstring>
