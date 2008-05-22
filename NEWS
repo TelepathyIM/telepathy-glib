@@ -1,6 +1,14 @@
 telepathy-glib 0.7.9 (unreleased)
 =================================
 
+Enhancements:
+
+* Update to telepathy-spec 0.17.5
+  - RoomList gained a read-only Server property
+  - Text gained TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT,
+    TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT to support the future
+    Messages and DeliveryReporting interfaces
+
 telepathy-glib 0.7.8 (2008-05-09)
 =================================
 
