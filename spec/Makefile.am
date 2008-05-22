@@ -4,9 +4,12 @@ EXTRA_DIST = \
     Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
     Channel_Interface_DTMF.xml \
+    Channel_Interface_Delivery_Reporting.xml \
     Channel_Interface_Group.xml \
     Channel_Interface_Hold.xml \
+    Channel_Interface_HTML.xml \
     Channel_Interface_Media_Signalling.xml \
+    Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
     Channel_Interface_Transfer.xml \
     Channel_Type_Contact_List.xml \
