@@ -1252,6 +1252,8 @@ _build_base_video_elements (TpStreamEngine *self)
     {
 #ifdef MAEMO_OSSO_SUPPORT
       videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
+      if (!videosrc)
+        g_error ("Could make video source");
 #else
       if (priv->force_fakesrc)
         {
@@ -1267,7 +1269,6 @@ _build_base_video_elements (TpStreamEngine *self)
 
       if (videosrc == NULL)
         videosrc = gst_element_factory_make ("v4lsrc", NULL);
-#endif
 
       if (videosrc != NULL)
         {
@@ -1280,6 +1281,7 @@ _build_base_video_elements (TpStreamEngine *self)
             g_error ("failed to create any video source");
           g_object_set (videosrc, "is-live", TRUE, NULL);
         }
+#endif
     }
 
   if ((caps_str = getenv ("FS_VIDEO_SRC_CAPS")) || (caps_str = getenv ("FS_VIDEOSRC_CAPS")))
