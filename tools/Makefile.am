@@ -16,7 +16,7 @@ EXTRA_DIST = \
     doc-generator.xsl \
     glib-client-gen.py \
     glib-client-marshaller-gen.py \
-    glib-errors-enum-body.xsl \
+    glib-errors-enum-body-gen.py \
     glib-errors-enum-header.xsl \
     glib-interfaces-generator.xsl \
     glib-interfaces-body-generator.xsl \
@@ -34,7 +34,11 @@ CLEANFILES = libglibcodegen.pyc libglibcodegen.pyo $(noinst_SCRIPTS)
 
 all: $(EXTRA_DIST)
 
+libglibcodegen.py: libtpcodegen.py
+	touch $@
 glib-client-marshaller-gen.py: libglibcodegen.py
+	touch $@
+glib-errors-enum-body-gen.py: libglibcodegen.py
 	touch $@
 glib-ginterface-gen.py: libglibcodegen.py
 	touch $@
