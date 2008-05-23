@@ -1276,9 +1276,9 @@ _build_base_video_elements (TpStreamEngine *self)
       else
         {
           videosrc = gst_element_factory_make ("videotestsrc", NULL);
-          g_object_set (videosrc, "is-live", TRUE, NULL);
           if (videosrc == NULL)
             g_error ("failed to create any video source");
+          g_object_set (videosrc, "is-live", TRUE, NULL);
         }
     }
 
