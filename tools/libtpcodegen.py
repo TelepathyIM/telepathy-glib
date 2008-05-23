@@ -114,6 +114,18 @@ def get_docstring(element):
     return docstring
 
 
+def get_descendant_text(element):
+    parts = []
+    for x in element.childNodes:
+        if x.nodeType == x.TEXT_NODE:
+            parts.append(x.nodeValue)
+        elif x.nodeType == x.ELEMENT_NODE:
+            parts.append(get_descendant_text(x))
+        else:
+            pass
+    return ''.join(parts)
+
+
 class _SignatureIter:
     """Iterator over a D-Bus signature. Copied from dbus-python 0.71 so we
     can run genginterface in a limited environment with only Python
