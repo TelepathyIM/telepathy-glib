@@ -261,6 +261,9 @@ tp_group_mixin_init (GObject *obj,
   mixin->handle_repo = handle_repo;
   mixin->self_handle = self_handle;
 
+  if (mixin->self_handle != 0)
+    tp_handle_ref (handle_repo, mixin->self_handle);
+
   mixin->group_flags = 0;
 
   mixin->members = tp_handle_set_new (handle_repo);
@@ -333,6 +336,9 @@ tp_group_mixin_finalize (GObject *obj)
 
   g_slice_free (TpGroupMixinPrivate, mixin->priv);
 
+  if (mixin->self_handle != 0)
+    tp_handle_unref (mixin->handle_repo, mixin->self_handle);
+
   tp_handle_set_destroy (mixin->members);
   tp_handle_set_destroy (mixin->local_pending);
   tp_handle_set_destroy (mixin->remote_pending);
@@ -369,6 +375,37 @@ tp_group_mixin_get_self_handle (GObject *obj,
 
   return TRUE;
 }
+
+
+/**
+ * tp_group_mixin_change_self_handle:
+ * @obj: An object implementing the group interface using this mixin
+ * @new_self_handle: The new self-handle for this group
+ *
+ * Change the self-handle for this group to the given value.
+ */
+void
+tp_group_mixin_change_self_handle (GObject *obj,
+                                   TpHandle new_self_handle)
+{
+  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
+  TpHandle old_self_handle = mixin->self_handle;
+
+  DEBUG ("%u '%s'", new_self_handle,
+      tp_handle_inspect (mixin->handle_repo, new_self_handle));
+
+  if (new_self_handle != 0)
+    tp_handle_ref (mixin->handle_repo, new_self_handle);
+
+  mixin->self_handle = new_self_handle;
+
+  tp_svc_channel_interface_group_emit_self_handle_changed (obj,
+      new_self_handle);
+
+  if (old_self_handle != 0)
+    tp_handle_unref (mixin->handle_repo, old_self_handle);
+}
+
 
 static void
 tp_group_mixin_get_self_handle_async (TpSvcChannelInterfaceGroup *obj,

@@ -115,7 +115,7 @@ struct _TpGroupMixinClass {
  * TpGroupMixin:
  * @handle_repo: The connection's contact handle repository
  * @self_handle: The local user's handle within this group, or 0 if none.
- *  Set using (FIXME: how do we do self-renaming?)
+ *  Set using tp_group_mixin_init() and tp_group_mixin_change_self_handle().
  * @group_flags: This group's flags. Set using tp_group_mixin_change_flags();
  *  defaults to 0.
  * @members: The members of the group. Alter using
@@ -205,6 +205,8 @@ gboolean tp_group_mixin_change_members (GObject *obj,
     const gchar *message, TpIntSet *add, TpIntSet *del,
     TpIntSet *add_local_pending, TpIntSet *add_remote_pending, TpHandle actor,
     TpChannelGroupChangeReason reason);
+void tp_group_mixin_change_self_handle (GObject *obj,
+    TpHandle new_self_handle);
 
 void tp_group_mixin_add_handle_owner (GObject *obj,
     TpHandle local_handle, TpHandle owner_handle);
