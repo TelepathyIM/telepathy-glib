@@ -1605,8 +1605,10 @@ remove_handle_owners_if_exist (GObject *obj,
           g_assert (GPOINTER_TO_UINT (local_handle) == handle);
           g_array_append_val (ret, handle);
           tp_handle_unref (mixin->handle_repo, handle);
-          tp_handle_unref (mixin->handle_repo,
-              GPOINTER_TO_UINT (owner_handle));
+
+          if (GPOINTER_TO_UINT (owner_handle) != 0)
+            tp_handle_unref (mixin->handle_repo,
+                GPOINTER_TO_UINT (owner_handle));
 
           g_hash_table_remove (priv->handle_owners, GUINT_TO_POINTER (handle));
         }
