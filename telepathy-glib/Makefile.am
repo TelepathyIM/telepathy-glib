@@ -294,9 +294,8 @@ _gen/telepathy-errors.c: _gen/stable-spec.xml \
 		$< > $@
 
 _gen/telepathy-errors.h: _gen/stable-spec.xml \
-	../tools/glib-errors-enum-header.xsl
-	$(XSLTPROC) $(XSLTPROCFLAGS) \
-		$(srcdir)/../tools/glib-errors-enum-header.xsl \
+	../tools/glib-errors-enum-header-gen.py
+	$(PYTHON) $(top_srcdir)/tools/glib-errors-enum-header-gen.py \
 		$< > $@
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \

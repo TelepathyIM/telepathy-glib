@@ -17,7 +17,7 @@ EXTRA_DIST = \
     glib-client-gen.py \
     glib-client-marshaller-gen.py \
     glib-errors-enum-body-gen.py \
-    glib-errors-enum-header.xsl \
+    glib-errors-enum-header-gen.py \
     glib-interfaces-generator.xsl \
     glib-interfaces-body-generator.xsl \
     glib-ginterface-gen.py \
@@ -39,6 +39,8 @@ libglibcodegen.py: libtpcodegen.py
 glib-client-marshaller-gen.py: libglibcodegen.py
 	touch $@
 glib-errors-enum-body-gen.py: libglibcodegen.py
+	touch $@
+glib-errors-enum-header-gen.py: libglibcodegen.py
 	touch $@
 glib-ginterface-gen.py: libglibcodegen.py
 	touch $@
