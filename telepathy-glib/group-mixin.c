@@ -1501,7 +1501,6 @@ tp_group_mixin_add_handle_owner (GObject *obj,
                                  TpHandle owner_handle)
 {
   g_return_if_fail (local_handle != 0);
-  g_return_if_fail (owner_handle != 0);
 
   tp_group_mixin_add_handle_owners (obj, 1, &local_handle, &owner_handle);
 }
