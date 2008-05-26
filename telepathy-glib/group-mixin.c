@@ -107,7 +107,8 @@ local_pending_info_new (TpHandleRepoIface *repo,
   info->reason = reason;
   info->message = g_strdup (message);
   info->repo = repo;
-  if (actor)
+
+  if (actor != 0)
     tp_handle_ref (repo, actor);
 
   return info;
@@ -117,8 +118,10 @@ static void
 local_pending_info_free (LocalPendingInfo *info)
 {
   g_free ((gchar *)info->message);
-  if (info->actor)
+
+  if (info->actor != 0)
     tp_handle_unref (info->repo, info->actor);
+
   g_slice_free (LocalPendingInfo, info);
 }
 
