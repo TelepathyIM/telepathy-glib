@@ -303,7 +303,9 @@ handle_owners_foreach_unref (gpointer key,
   TpGroupMixin *mixin = user_data;
 
   tp_handle_unref (mixin->handle_repo, GPOINTER_TO_UINT (key));
-  tp_handle_unref (mixin->handle_repo, GPOINTER_TO_UINT (value));
+
+  if (GPOINTER_TO_UINT (value) != 0)
+    tp_handle_unref (mixin->handle_repo, GPOINTER_TO_UINT (value));
 }
 
 /**
