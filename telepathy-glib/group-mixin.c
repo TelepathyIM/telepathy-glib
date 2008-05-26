@@ -1656,12 +1656,26 @@ enum {
 };
 
 
+/**
+ * tp_group_mixin_get_dbus_property:
+ * @object: An object with this mixin
+ * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP
+ * @name: A quark representing the D-Bus property name, either
+ *  "GroupFlags", "HandleOwners", "LocalPendingMembers", "Members",
+ *  "RemotePendingMembers" or "SelfHandle"
+ * @value: A GValue pre-initialized to the right type, into which to put the
+ *  value
+ * @unused: Ignored
+ *
+ * An implementation of #TpDBusPropertiesMixinGetter which assumes that the
+ * @object has the group mixin. It can only be used for the Group interface.
+ */
 void
 tp_group_mixin_get_dbus_property (GObject *object,
                                   GQuark interface,
                                   GQuark name,
                                   GValue *value,
-                                  gpointer getter_data)
+                                  gpointer unused G_GNUC_UNUSED)
 {
   TpGroupMixin *mixin;
   static GQuark q[NUM_MIXIN_DBUS_PROPERTIES] = { 0 };
@@ -1739,6 +1753,16 @@ tp_group_mixin_get_dbus_property (GObject *object,
 }
 
 
+/**
+ * tp_group_mixin_init_dbus_properties:
+ * @impl: An empty entry in a static array of #TpDBusPropertiesMixinIfaceImpl
+ *
+ * Set up a #TpDBusPropertiesMixinClass to use this mixin's implementation of
+ * the Group interface's properties.
+ *
+ * This uses tp_group_mixin_get_dbus_property() as the property getter and
+ * sets up a list of the supported properties for it.
+ */
 void
 tp_group_mixin_init_dbus_properties (TpDBusPropertiesMixinIfaceImpl *impl)
 {

@@ -212,7 +212,7 @@ void tp_group_mixin_add_handle_owners (GObject *obj, guint n_handles,
     TpHandle *local_handles, TpHandle *owner_handles);
 
 void tp_group_mixin_get_dbus_property (GObject *object,
-    GQuark interface, GQuark name, GValue *value, gpointer getter_data);
+    GQuark interface, GQuark name, GValue *value, gpointer unused);
 void tp_group_mixin_init_dbus_properties (
     TpDBusPropertiesMixinIfaceImpl *impl);
 
