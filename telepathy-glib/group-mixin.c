@@ -1500,30 +1500,10 @@ tp_group_mixin_add_handle_owner (GObject *obj,
                                  TpHandle local_handle,
                                  TpHandle owner_handle)
 {
-  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
-  TpGroupMixinPrivate *priv = mixin->priv;
-  GArray *empty_array;
-  GHashTable *added;
-
   g_return_if_fail (local_handle != 0);
   g_return_if_fail (owner_handle != 0);
 
-  g_hash_table_insert (priv->handle_owners, GUINT_TO_POINTER (local_handle),
-      GUINT_TO_POINTER (owner_handle));
-
-  tp_handle_ref (mixin->handle_repo, local_handle);
-  tp_handle_ref (mixin->handle_repo, owner_handle);
-
-  added = g_hash_table_new (g_direct_hash, g_direct_equal);
-  empty_array = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
-  g_hash_table_insert (added, GUINT_TO_POINTER (local_handle),
-      GUINT_TO_POINTER (owner_handle));
-
-  tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
-      added, empty_array);
-
-  g_array_free (empty_array, TRUE);
-  g_hash_table_destroy (added);
+  tp_group_mixin_add_handle_owners (obj, 1, &local_handle, &owner_handle);
 }
 
 
