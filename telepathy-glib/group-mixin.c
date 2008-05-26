@@ -1545,16 +1545,26 @@ tp_group_mixin_add_handle_owners (GObject *obj,
 
   for (i = 0; i < n_handles; i++)
     {
+      gpointer orig_key, orig_value;
+
       g_return_if_fail (local_handles[i] != 0);
+
+      tp_handle_ref (mixin->handle_repo, local_handles[i]);
+      tp_handle_ref (mixin->handle_repo, owner_handles[i]);
+
+      if (g_hash_table_lookup_extended (priv->handle_owners,
+            GUINT_TO_POINTER (local_handles[i]), &orig_key, &orig_value))
+        {
+          g_hash_table_remove (priv->handle_owners, orig_key);
+          tp_handle_unref (mixin->handle_repo, local_handles[i]);
+          tp_handle_unref (mixin->handle_repo, GPOINTER_TO_UINT (orig_value));
+        }
 
       g_hash_table_insert (priv->handle_owners,
           GUINT_TO_POINTER (local_handles[i]),
           GUINT_TO_POINTER (owner_handles[i]));
       g_hash_table_insert (added, GUINT_TO_POINTER (local_handles[i]),
           GUINT_TO_POINTER (owner_handles[i]));
-
-      tp_handle_ref (mixin->handle_repo, local_handles[i]);
-      tp_handle_ref (mixin->handle_repo, owner_handles[i]);
     }
 
   tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
