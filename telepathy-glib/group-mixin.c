@@ -1539,20 +1539,58 @@ tp_group_mixin_add_handle_owner (GObject *obj,
                                  TpHandle local_handle,
                                  TpHandle owner_handle)
 {
+  GHashTable *tmp;
+
   g_return_if_fail (local_handle != 0);
 
-  tp_group_mixin_add_handle_owners (obj, 1, &local_handle, &owner_handle);
+  tmp = g_hash_table_new (g_direct_hash, g_direct_equal);
+  g_hash_table_insert (tmp, GUINT_TO_POINTER (local_handle),
+      GUINT_TO_POINTER (owner_handle));
+
+  tp_group_mixin_add_handle_owners (obj, tmp);
+
+  g_hash_table_destroy (tmp);
+}
+
+
+static void
+add_handle_owners_helper (gpointer key,
+                          gpointer value,
+                          gpointer user_data)
+{
+  TpHandle local_handle = GPOINTER_TO_UINT (key);
+  TpHandle owner_handle = GPOINTER_TO_UINT (value);
+  TpGroupMixin *mixin = user_data;
+  gpointer orig_key, orig_value;
+
+  g_return_if_fail (local_handle != 0);
+
+  tp_handle_ref (mixin->handle_repo, local_handle);
+
+  if (owner_handle != 0)
+    tp_handle_ref (mixin->handle_repo, owner_handle);
+
+  if (g_hash_table_lookup_extended (mixin->priv->handle_owners,
+        GUINT_TO_POINTER (local_handle), &orig_key, &orig_value))
+    {
+      g_hash_table_remove (mixin->priv->handle_owners, orig_key);
+      tp_handle_unref (mixin->handle_repo, local_handle);
+
+      if (GPOINTER_TO_UINT (orig_value) != 0)
+        tp_handle_unref (mixin->handle_repo, GPOINTER_TO_UINT (orig_value));
+    }
+
+  g_hash_table_insert (mixin->priv->handle_owners, key, value);
 }
 
 
 /**
  * tp_group_mixin_add_handle_owners:
  * @obj: A GObject implementing the group interface with this mixin
- * @n_handles: Number of elements in both @local_handles and @owner_handles
- * @local_handles: Contact handles valid within this group (may not be 0)
- * @owner_handles: Contact handles valid globally, corresponding to the
- *  elements of @local_handles, or 0 if the owner of the
- *  corresponding element of @local_handles is unknown
+ * @local_to_owner_handle: A map from contact handles valid within this group
+ *  (which may not be 0) to either contact handles valid globally, or 0 if the
+ *  owner of the corresponding key is unknown; all handles are stored using
+ *  GUINT_TO_POINTER
  *
  * Note that the given local handles are aliases within this group
  * for the given globally-valid handles.
@@ -1565,55 +1603,22 @@ tp_group_mixin_add_handle_owner (GObject *obj,
  */
 void
 tp_group_mixin_add_handle_owners (GObject *obj,
-                                  guint n_handles,
-                                  TpHandle *local_handles,
-                                  TpHandle *owner_handles)
+                                  GHashTable *local_to_owner_handle)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
-  TpGroupMixinPrivate *priv = mixin->priv;
   GArray *empty_array;
-  GHashTable *added;
-  guint i;
 
-  if (n_handles == 0)
+  if (g_hash_table_size (local_to_owner_handle) == 0)
     return;
 
   empty_array = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
-  added = g_hash_table_new (g_direct_hash, g_direct_equal);
 
-  for (i = 0; i < n_handles; i++)
-    {
-      gpointer orig_key, orig_value;
-
-      g_return_if_fail (local_handles[i] != 0);
-
-      tp_handle_ref (mixin->handle_repo, local_handles[i]);
-
-      if (owner_handles[i] != 0)
-        tp_handle_ref (mixin->handle_repo, owner_handles[i]);
-
-      if (g_hash_table_lookup_extended (priv->handle_owners,
-            GUINT_TO_POINTER (local_handles[i]), &orig_key, &orig_value))
-        {
-          g_hash_table_remove (priv->handle_owners, orig_key);
-          tp_handle_unref (mixin->handle_repo, local_handles[i]);
-
-          if (GPOINTER_TO_UINT (orig_value) != 0)
-            tp_handle_unref (mixin->handle_repo,
-                GPOINTER_TO_UINT (orig_value));
-        }
-
-      g_hash_table_insert (priv->handle_owners,
-          GUINT_TO_POINTER (local_handles[i]),
-          GUINT_TO_POINTER (owner_handles[i]));
-      g_hash_table_insert (added, GUINT_TO_POINTER (local_handles[i]),
-          GUINT_TO_POINTER (owner_handles[i]));
-    }
+  g_hash_table_foreach (local_to_owner_handle, add_handle_owners_helper,
+      mixin);
 
   tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
-      added, empty_array);
+      local_to_owner_handle, empty_array);
 
-  g_hash_table_destroy (added);
   g_array_free (empty_array, TRUE);
 }
 
