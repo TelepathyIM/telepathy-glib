@@ -430,9 +430,59 @@ _tp_channel_get_group_flags_0_16 (TpChannel *self)
 
 
 static void
+tp_channel_got_all_members_0_16_cb (TpChannel *self,
+                                    const GArray *members,
+                                    const GArray *local_pending,
+                                    const GArray *remote_pending,
+                                    const GError *error,
+                                    gpointer user_data G_GNUC_UNUSED,
+                                    GObject *weak_object G_GNUC_UNUSED)
+{
+  if (error == NULL)
+    {
+      DEBUG ("%p GetAllMembers returned %u members + %u LP + %u RP",
+          self, members->len, local_pending->len, remote_pending->len);
+
+      /* FIXME: do something with the info */
+    }
+  else
+    {
+      DEBUG ("%p GetAllMembers failed, assuming empty: %s", self,
+          error->message);
+    }
+
+  _tp_channel_continue_introspection (self);
+}
+
+
+static void
 _tp_channel_get_all_members_0_16 (TpChannel *self)
 {
-  /* FIXME */
+  tp_cli_channel_interface_group_call_get_all_members (self, -1,
+      tp_channel_got_all_members_0_16_cb, NULL, NULL, NULL);
+}
+
+
+static void
+tp_channel_glpmwi_0_16_cb (TpChannel *self,
+                           const GPtrArray *info,
+                           const GError *error,
+                           gpointer user_data G_GNUC_UNUSED,
+                           GObject *object G_GNUC_UNUSED)
+{
+  if (error == NULL)
+    {
+      DEBUG ("%p GetLocalPendingMembersWithInfo returned %u records",
+          self, info->len);
+
+      /* FIXME: do something with the info */
+    }
+  else
+    {
+      DEBUG ("%p GetLocalPendingMembersWithInfo failed, keeping result of "
+          "GetAllMembers instead: %s", self, error->message);
+    }
+
   _tp_channel_continue_introspection (self);
 }
 
@@ -440,8 +490,8 @@ _tp_channel_get_all_members_0_16 (TpChannel *self)
 static void
 _tp_channel_glpmwi_0_16 (TpChannel *self)
 {
-  /* FIXME */
-  _tp_channel_continue_introspection (self);
+  tp_cli_channel_interface_group_call_get_local_pending_members_with_info (
+      self, -1, tp_channel_glpmwi_0_16_cb, NULL, NULL, NULL);
 }
 
 
