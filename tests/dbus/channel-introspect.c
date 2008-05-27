@@ -54,6 +54,23 @@ channel_ready (TpChannel *channel,
     g_main_loop_quit (mainloop);
 }
 
+static void
+assert_chan_sane (TpChannel *chan,
+                  TpHandle handle)
+{
+  TpHandleType type;
+
+  MYASSERT (tp_channel_is_ready (chan), "");
+  MYASSERT (tp_channel_get_handle (chan, NULL) == handle, "");
+  MYASSERT (tp_channel_get_handle (chan, &type) == handle, "");
+  MYASSERT (type == TP_HANDLE_TYPE_CONTACT, "%u", type);
+  MYASSERT (g_str_equal (tp_channel_get_channel_type (chan),
+        TP_IFACE_CHANNEL_TYPE_TEXT), "");
+  MYASSERT (tp_channel_get_channel_type_id (chan) ==
+        TP_IFACE_QUARK_CHANNEL_TYPE_TEXT, "");
+  MYASSERT (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)), "");
+}
+
 int
 main (int argc,
       char **argv)
@@ -159,6 +176,8 @@ main (int argc,
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
 
+  assert_chan_sane (chan, handle);
+
   g_object_unref (chan);
   chan = NULL;
 
@@ -171,6 +190,8 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
+
+  assert_chan_sane (chan, handle);
 
   g_object_unref (chan);
   chan = NULL;
@@ -185,6 +206,8 @@ main (int argc,
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
 
+  assert_chan_sane (chan, handle);
+
   g_object_unref (chan);
   chan = NULL;
 
@@ -197,6 +220,8 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
+
+  assert_chan_sane (chan, handle);
 
   g_object_unref (chan);
   chan = NULL;
@@ -215,6 +240,8 @@ main (int argc,
   MYASSERT (was_ready == TRUE, "");
   MYASSERT_NO_ERROR (invalidated);
 
+  assert_chan_sane (chan, handle);
+
   /* ... keep the same channel for the next test */
 
   /* Channel already ready, so we are called back synchronously */
@@ -223,6 +250,8 @@ main (int argc,
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
   MYASSERT (was_ready == TRUE, "");
   MYASSERT_NO_ERROR (invalidated);
+
+  assert_chan_sane (chan, handle);
 
   /* ... keep the same channel for the next test */
 
