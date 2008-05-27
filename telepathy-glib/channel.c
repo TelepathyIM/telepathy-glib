@@ -128,8 +128,13 @@ struct _TpChannel {
     TpChannelPrivate *priv;
 };
 
+typedef void (*TpChannelProc) (TpChannel *self);
+
 struct _TpChannelPrivate {
     gulong conn_invalidated_id;
+
+    /* GQueue of TpChannelProc */
+    GQueue *introspect_needed;
 };
 
 enum
@@ -146,6 +151,7 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
     tp_channel,
     TP_TYPE_PROXY,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL));
+
 
 static void
 tp_channel_get_property (GObject *object,
@@ -209,6 +215,33 @@ tp_channel_set_property (GObject *object,
   }
 }
 
+
+/* Introspection etc. */
+
+
+static void
+_tp_channel_continue_introspection (TpChannel *self)
+{
+  g_assert (self->priv->introspect_needed != NULL);
+
+  if (g_queue_peek_head (self->priv->introspect_needed) == NULL)
+    {
+      g_queue_free (self->priv->introspect_needed);
+      self->priv->introspect_needed = NULL;
+
+      DEBUG ("%p: channel ready", self);
+      self->ready = TRUE;
+      g_object_notify ((GObject *) self, "channel-ready");
+    }
+  else
+    {
+      TpChannelProc next = g_queue_pop_head (self->priv->introspect_needed);
+
+      next (self);
+    }
+}
+
+
 static void
 tp_channel_got_interfaces_cb (TpChannel *self,
                               const gchar **interfaces,
@@ -242,9 +275,8 @@ tp_channel_got_interfaces_cb (TpChannel *self,
         }
     }
 
-  DEBUG ("%p: channel ready", self);
-  self->ready = TRUE;
-  g_object_notify ((GObject *) self, "channel-ready");
+  self->priv->introspect_needed = g_queue_new ();
+  _tp_channel_continue_introspection (self);
 }
 
 static void
