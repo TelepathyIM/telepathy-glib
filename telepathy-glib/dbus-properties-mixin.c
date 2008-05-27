@@ -291,7 +291,7 @@ tp_dbus_properties_mixin_setter_gobject_properties (GObject *object,
  */
 
 static GQuark
-_mixin_quark (void)
+_class_prop_impls_quark (void)
 {
   static GQuark q = 0;
 
@@ -324,7 +324,7 @@ void
 tp_dbus_properties_mixin_class_init (GObjectClass *cls,
                                      gsize offset)
 {
-  GQuark q = _mixin_quark ();
+  GQuark q = _class_prop_impls_quark ();
   GType type = G_OBJECT_CLASS_TYPE (cls);
   TpDBusPropertiesMixinClass *mixin;
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
@@ -416,7 +416,7 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
                                            DBusGMethodInvocation *context)
 {
   GType type;
-  GQuark q = _mixin_quark ();
+  GQuark q = _class_prop_impls_quark ();
   GQuark iface_quark = g_quark_try_string (name);
 
   if (iface_quark == 0)
