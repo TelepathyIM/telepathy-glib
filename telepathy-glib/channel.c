@@ -125,6 +125,9 @@ struct _TpChannel {
     TpHandleType handle_type;
     TpHandle handle;
 
+    TpHandle group_self_handle;
+    TpChannelGroupFlags group_flags;
+
     TpChannelPrivate *priv;
 };
 
@@ -135,6 +138,8 @@ struct _TpChannelPrivate {
 
     /* GQueue of TpChannelProc */
     GQueue *introspect_needed;
+
+    gboolean have_group_flags:1;
 };
 
 enum
@@ -349,6 +354,239 @@ _tp_channel_continue_introspection (TpChannel *self)
 
 
 static void
+tp_channel_got_group_flags_0_16_cb (TpChannel *self,
+                                    guint flags,
+                                    const GError *error,
+                                    gpointer user_data G_GNUC_UNUSED,
+                                    GObject *weak_object G_GNUC_UNUSED)
+{
+  if (error != NULL)
+    {
+      DEBUG ("%p GetGroupFlags() failed, assuming initial flags 0: %s", self,
+          error->message);
+      self->group_flags = 0;
+    }
+  else
+    {
+      self->group_flags = flags;
+      DEBUG ("Initial GroupFlags: %u", flags);
+    }
+
+  self->priv->have_group_flags = 1;
+  _tp_channel_continue_introspection (self);
+}
+
+
+static void
+tp_channel_group_self_handle_changed_cb (TpChannel *self,
+                                         guint self_handle,
+                                         gpointer unused G_GNUC_UNUSED,
+                                         GObject *unused_object G_GNUC_UNUSED)
+{
+  DEBUG ("%p SelfHandle changed to %u", self, self_handle);
+
+  self->group_self_handle = self_handle;
+  /* FIXME: emit a signal or something */
+}
+
+
+static void
+tp_channel_got_self_handle_0_16_cb (TpChannel *self,
+                                    guint self_handle,
+                                    const GError *error,
+                                    gpointer user_data G_GNUC_UNUSED,
+                                    GObject *weak_object G_GNUC_UNUSED)
+{
+  if (error != NULL)
+    {
+      DEBUG ("%p Group.GetSelfHandle() failed, assuming 0: %s", self,
+          error->message);
+      tp_channel_group_self_handle_changed_cb (self, 0, NULL, NULL);
+    }
+  else
+    {
+      DEBUG ("Initial Group.SelfHandle: %u", self_handle);
+      tp_channel_group_self_handle_changed_cb (self, self_handle, NULL, NULL);
+    }
+
+  _tp_channel_continue_introspection (self);
+}
+
+
+static void
+_tp_channel_get_self_handle_0_16 (TpChannel *self)
+{
+  tp_cli_channel_interface_group_call_get_self_handle (self, -1,
+      tp_channel_got_self_handle_0_16_cb, NULL, NULL, NULL);
+}
+
+
+static void
+_tp_channel_get_group_flags_0_16 (TpChannel *self)
+{
+  tp_cli_channel_interface_group_call_get_group_flags (self, -1,
+      tp_channel_got_group_flags_0_16_cb, NULL, NULL, NULL);
+}
+
+
+static void
+_tp_channel_get_all_members_0_16 (TpChannel *self)
+{
+  /* FIXME */
+  _tp_channel_continue_introspection (self);
+}
+
+
+static void
+_tp_channel_glpmwi_0_16 (TpChannel *self)
+{
+  /* FIXME */
+  _tp_channel_continue_introspection (self);
+}
+
+
+static void
+tp_channel_got_group_properties_cb (TpProxy *proxy,
+                                    GHashTable *asv,
+                                    const GError *error,
+                                    gpointer unused G_GNUC_UNUSED,
+                                    GObject *unused_object G_GNUC_UNUSED)
+{
+  TpChannel *self = TP_CHANNEL (proxy);
+
+  if (error != NULL)
+    {
+      DEBUG ("Error getting group properties, falling back to 0.16 API: %s",
+          error->message);
+    }
+  else if ((tp_asv_get_uint32 (asv, "GroupFlags", NULL)
+      & TP_CHANNEL_GROUP_FLAG_PROPERTIES) == 0)
+    {
+      DEBUG ("Got group properties, but no Properties flag: assuming a "
+          "broken implementation and falling back to 0.16 API");
+    }
+  else
+    {
+      DEBUG ("Received %u group properties", g_hash_table_size (asv));
+
+      self->group_flags = tp_asv_get_uint32 (asv, "GroupFlags", NULL);
+      DEBUG ("Initial GroupFlags: %u", self->group_flags);
+      self->priv->have_group_flags = 1;
+
+      tp_channel_group_self_handle_changed_cb (self,
+          tp_asv_get_uint32 (asv, "SelfHandle", NULL), NULL, NULL);
+
+      /* FIXME: handle owners */
+      /* FIXME: 3 sets of members */
+
+      _tp_channel_continue_introspection (self);
+      return;
+    }
+
+  /* Failure case: fall back. This is quite annoying, as we need to combine:
+   *
+   * - GetGroupFlags
+   * - GetAllMembers
+   * - GetLocalPendingMembersWithInfo
+   *
+   * Channel-specific handles can't really have a sane client API (without
+   * lots of silly round-trips) unless the CM implements the HandleOwners
+   * property, so I intend to ignore this in the fallback case.
+   */
+
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_get_group_flags_0_16);
+
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_get_self_handle_0_16);
+
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_get_all_members_0_16);
+
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_glpmwi_0_16);
+
+  _tp_channel_continue_introspection (self);
+}
+
+
+static void
+tp_channel_group_members_changed_cb (TpChannel *self,
+                                     const gchar *message,
+                                     const GArray *added,
+                                     const GArray *removed,
+                                     const GArray *local_pending,
+                                     const GArray *remote_pending,
+                                     guint actor,
+                                     guint reason,
+                                     gpointer unused G_GNUC_UNUSED,
+                                     GObject *unused_object G_GNUC_UNUSED)
+{
+  DEBUG ("%p MembersChanged: added %u, removed %u, "
+      "moved %u to LP and %u to RP, actor %u, reason %u, message %s",
+      self, added->len, removed->len, local_pending->len, remote_pending->len,
+      actor, reason, message);
+
+  if (DEBUGGING)
+    {
+      guint i;
+
+      for (i = 0; i < added->len; i++)
+        DEBUG ("+++ contact#%u", g_array_index (added, guint, i));
+
+      for (i = 0; i < removed->len; i++)
+        DEBUG ("--- contact#%u", g_array_index (added, guint, i));
+
+      for (i = 0; i < local_pending->len; i++)
+        DEBUG ("+LP contact#%u", g_array_index (added, guint, i));
+
+      for (i = 0; i < remote_pending->len; i++)
+        DEBUG ("+RP contact#%u", g_array_index (added, guint, i));
+    }
+
+  /* FIXME: actually populate some data structures */
+}
+
+
+static void
+tp_channel_group_flags_changed_cb (TpChannel *self,
+                                   guint added,
+                                   guint removed,
+                                   gpointer unused G_GNUC_UNUSED,
+                                   GObject *unused_object G_GNUC_UNUSED)
+{
+  DEBUG ("%p GroupFlagsChanged: +%u -%u", self, added, removed);
+
+  if (self->priv->have_group_flags)
+    {
+      self->group_flags |= added;
+      self->group_flags &= ~removed;
+
+      /* FIXME: emit a signal or something */
+    }
+}
+
+
+static void
+_tp_channel_get_group_properties (TpChannel *self)
+{
+  tp_cli_channel_interface_group_connect_to_members_changed (self,
+      tp_channel_group_members_changed_cb, NULL, NULL, NULL, NULL);
+
+  tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
+      tp_channel_group_flags_changed_cb, NULL, NULL, NULL, NULL);
+
+  tp_cli_channel_interface_group_connect_to_self_handle_changed (self,
+      tp_channel_group_self_handle_changed_cb, NULL, NULL, NULL, NULL);
+
+  /* First try the 0.17 API (properties). If this fails we'll fall back */
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CHANNEL_INTERFACE_GROUP, tp_channel_got_group_properties_cb,
+      NULL, NULL, NULL);
+}
+
+
+static void
 tp_channel_got_interfaces_cb (TpChannel *self,
                               const gchar **interfaces,
                               const GError *error,
@@ -371,8 +609,14 @@ tp_channel_got_interfaces_cb (TpChannel *self,
 
           if (tp_dbus_check_valid_interface_name (*iter, NULL))
             {
-              tp_proxy_add_interface_by_id ((TpProxy *) self,
-                  g_quark_from_string (*iter));
+              GQuark q = g_quark_from_string (*iter);
+              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
+
+              if (q == TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)
+                {
+                  g_queue_push_tail (self->priv->introspect_needed,
+                      _tp_channel_get_group_properties);
+                }
             }
           else
             {
