@@ -1801,16 +1801,16 @@ tp_group_mixin_get_dbus_property (GObject *object,
 
 /**
  * tp_group_mixin_init_dbus_properties:
- * @impl: An empty entry in a static array of #TpDBusPropertiesMixinIfaceImpl
+ * @cls: The class of an object with this mixin
  *
- * Set up a #TpDBusPropertiesMixinClass to use this mixin's implementation of
+ * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
  * the Group interface's properties.
  *
  * This uses tp_group_mixin_get_dbus_property() as the property getter and
  * sets up a list of the supported properties for it.
  */
 void
-tp_group_mixin_init_dbus_properties (TpDBusPropertiesMixinIfaceImpl *impl)
+tp_group_mixin_init_dbus_properties (GObjectClass *cls)
 {
   static TpDBusPropertiesMixinPropImpl props[] = {
       { "GroupFlags", NULL, NULL },
@@ -1822,11 +1822,9 @@ tp_group_mixin_init_dbus_properties (TpDBusPropertiesMixinIfaceImpl *impl)
       { NULL }
   };
 
-  memset (impl, '\0', sizeof (TpDBusPropertiesMixinIfaceImpl));
-  impl->name = TP_IFACE_CHANNEL_INTERFACE_GROUP;
-  impl->getter = tp_group_mixin_get_dbus_property;
-  impl->setter = NULL;
-  impl->props = props;
+  tp_dbus_properties_mixin_implement_interface (cls,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP, tp_group_mixin_get_dbus_property,
+      NULL, props);
 }
 
 

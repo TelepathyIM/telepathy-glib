@@ -215,8 +215,7 @@ void tp_group_mixin_add_handle_owners (GObject *obj,
 
 void tp_group_mixin_get_dbus_property (GObject *object,
     GQuark interface, GQuark name, GValue *value, gpointer unused);
-void tp_group_mixin_init_dbus_properties (
-    TpDBusPropertiesMixinIfaceImpl *impl);
+void tp_group_mixin_init_dbus_properties (GObjectClass *cls);
 
 void tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 
