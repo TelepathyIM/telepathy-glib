@@ -269,7 +269,7 @@ tp_dbus_properties_mixin_setter_gobject_properties (GObject *object,
  *
  * Structure representing an implementation of an interface's properties.
  *
- * In addition to the documented fields, there are three pointers which must
+ * In addition to the documented fields, there are four pointers which must
  * be initialized to %NULL.
  *
  * This structure must either be statically allocated, or duplicated and never
