@@ -105,7 +105,7 @@
  */
 
 static GQuark
-_info_quark (void)
+_iface_prop_info_quark (void)
 {
   static GQuark q = 0;
 
@@ -131,7 +131,7 @@ void
 tp_svc_interface_set_dbus_properties_info (GType g_interface,
     TpDBusPropertiesMixinIfaceInfo *info)
 {
-  GQuark q = _info_quark ();
+  GQuark q = _iface_prop_info_quark ();
   TpDBusPropertiesMixinPropInfo *prop;
 
   g_return_if_fail (G_TYPE_IS_INTERFACE (g_interface));
@@ -156,7 +156,7 @@ tp_svc_interface_set_dbus_properties_info (GType g_interface,
 static TpDBusPropertiesMixinIfaceInfo *
 tp_svc_interface_get_dbus_properties_info (GType g_interface)
 {
-  return g_type_get_qdata (g_interface, _info_quark ());
+  return g_type_get_qdata (g_interface, _iface_prop_info_quark ());
 }
 
 /**
