@@ -153,6 +153,112 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL));
 
 
+/* Convenient property accessors for C (these duplicate the properties) */
+
+
+/**
+ * tp_channel_get_channel_type:
+ * @self: a channel
+ *
+ * Get the D-Bus interface name representing this channel's type,
+ * if it has been discovered.
+ *
+ * This is the same as the #TpChannel:channel-type property.
+ *
+ * Returns: the channel type, if the channel is ready; either the channel
+ *  type or %NULL, if the channel is not yet ready.
+ */
+const gchar *
+tp_channel_get_channel_type (TpChannel *self)
+{
+  return g_quark_to_string (self->channel_type);
+}
+
+
+/**
+ * tp_channel_get_channel_type_id:
+ * @self: a channel
+ *
+ * Get the D-Bus interface name representing this channel's type, as a GQuark,
+ * if it has been discovered.
+ *
+ * This is the same as the #TpChannel:channel-type property, except that it
+ * is a GQuark rather than a string.
+ *
+ * Returns: the channel type, if the channel is ready; either the channel
+ *  type or 0, if the channel is not yet ready.
+ */
+GQuark
+tp_channel_get_channel_type_id (TpChannel *self)
+{
+  return self->channel_type;
+}
+
+
+/**
+ * tp_channel_get_handle:
+ * @self: a channel
+ * @handle_type: if not %NULL, used to return the type of this handle
+ *
+ * Get the handle representing the contact, chatroom, etc. with which this
+ * channel communicates for its whole lifetime, or 0 if there is no such
+ * handle or it has not yet been discovered.
+ *
+ * This is the same as the #TpChannel:handle property.
+ *
+ * If %handle_type is not %NULL, the type of handle is written into it.
+ * This will be %TP_UNKNOWN_HANDLE_TYPE if the handle has not yet been
+ * discovered, or %TP_HANDLE_TYPE_NONE if there is no handle with which this
+ * channel will always communicate. This is the same as the
+ * #TpChannel:handle-type property.
+ *
+ * Returns: the handle
+ */
+TpHandle
+tp_channel_get_handle (TpChannel *self,
+                       TpHandleType *handle_type)
+{
+  if (handle_type != NULL)
+    {
+      *handle_type = self->handle_type;
+    }
+
+  return self->handle;
+}
+
+
+/**
+ * tp_channel_is_ready:
+ * @self: a channel
+ *
+ * Returns the same thing as the #TpChannel:channel-ready property.
+ *
+ * Returns: %TRUE if introspection has completed
+ */
+gboolean
+tp_channel_is_ready (TpChannel *self)
+{
+  return self->ready;
+}
+
+
+/**
+ * tp_channel_borrow_connection:
+ * @self: a channel
+ *
+ * Returns the connection for this channel. The returned pointer is only valid
+ * while this channel is valid - reference it with g_object_ref() if needed.
+ *
+ * Returns: a #TpConnection representing the connection to which this channel
+ *  is attached.
+ */
+TpConnection *
+tp_channel_borrow_connection (TpChannel *self)
+{
+  return self->connection;
+}
+
+
 static void
 tp_channel_get_property (GObject *object,
                          guint property_id,

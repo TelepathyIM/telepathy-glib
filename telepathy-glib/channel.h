@@ -70,6 +70,12 @@ void tp_channel_call_when_ready (TpChannel *self,
 
 void tp_channel_init_known_interfaces (void);
 
+gboolean tp_channel_is_ready (TpChannel *self);
+const gchar *tp_channel_get_channel_type (TpChannel *self);
+GQuark tp_channel_get_channel_type_id (TpChannel *self);
+TpHandle tp_channel_get_handle (TpChannel *self, TpHandleType *handle_type);
+TpConnection *tp_channel_borrow_connection (TpChannel *self);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel.h>
