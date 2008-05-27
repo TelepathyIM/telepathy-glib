@@ -321,6 +321,22 @@ tp_channel_got_channel_type_cb (TpChannel *self,
 
 
 static void
+_tp_channel_get_channel_type (TpChannel *self)
+{
+  if (self->channel_type == 0)
+    {
+      tp_cli_channel_call_get_channel_type (self, -1,
+          tp_channel_got_channel_type_cb, NULL, NULL, NULL);
+    }
+  else
+    {
+      tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
+      _tp_channel_continue_introspection (self);
+    }
+}
+
+
+static void
 tp_channel_got_handle_cb (TpChannel *self,
                           guint handle_type,
                           guint handle,
@@ -427,6 +443,9 @@ tp_channel_constructor (GType type,
   self->priv->introspect_needed = g_queue_new ();
 
   g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_get_channel_type);
+
+  g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_get_interfaces);
 
   if (self->handle_type == TP_UNKNOWN_HANDLE_TYPE
@@ -435,15 +454,8 @@ tp_channel_constructor (GType type,
       tp_cli_channel_call_get_handle (self, -1,
           tp_channel_got_handle_cb, NULL, NULL, NULL);
     }
-  else if (self->channel_type == 0)
-    {
-      tp_cli_channel_call_get_channel_type (self, -1,
-          tp_channel_got_channel_type_cb, NULL, NULL, NULL);
-    }
   else
     {
-      tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
-
       _tp_channel_continue_introspection (self);
     }
 
