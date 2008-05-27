@@ -162,6 +162,45 @@ main (int argc,
   g_object_unref (chan);
   chan = NULL;
 
+  /* Channel becomes ready while we wait (in the case where we have to discover
+   * the channel type) */
+
+  chan = tp_channel_new (conn, chan_path, NULL,
+      TP_HANDLE_TYPE_CONTACT, handle, &error);
+  MYASSERT_NO_ERROR (error);
+
+  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
+  MYASSERT_NO_ERROR (error);
+
+  g_object_unref (chan);
+  chan = NULL;
+
+  /* Channel becomes ready while we wait (in the case where we have to discover
+   * the handle type) */
+
+  chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+  MYASSERT_NO_ERROR (error);
+
+  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
+  MYASSERT_NO_ERROR (error);
+
+  g_object_unref (chan);
+  chan = NULL;
+
+  /* Channel becomes ready while we wait (in the case where we have to discover
+   * the handle) */
+
+  chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_HANDLE_TYPE_CONTACT, 0, &error);
+  MYASSERT_NO_ERROR (error);
+
+  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
+  MYASSERT_NO_ERROR (error);
+
+  g_object_unref (chan);
+  chan = NULL;
+
   /* Channel becomes ready and we are called back */
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
