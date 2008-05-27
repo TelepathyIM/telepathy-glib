@@ -358,19 +358,25 @@ tp_channel_got_handle_cb (TpChannel *self,
       DEBUG ("%p: GetHandle() failed: %s", self, error->message);
     }
 
-  if (self->channel_type == 0)
+  _tp_channel_continue_introspection (self);
+}
+
+
+static void
+_tp_channel_get_handle (TpChannel *self)
+{
+  if (self->handle_type == TP_UNKNOWN_HANDLE_TYPE
+      || (self->handle == 0 && self->handle_type != TP_HANDLE_TYPE_NONE))
     {
-      tp_cli_channel_call_get_channel_type (self, -1,
-          tp_channel_got_channel_type_cb, NULL, NULL, NULL);
+      tp_cli_channel_call_get_handle (self, -1,
+          tp_channel_got_handle_cb, NULL, NULL, NULL);
     }
   else
     {
-      tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
-
-      tp_cli_channel_call_get_interfaces (self, -1,
-          tp_channel_got_interfaces_cb, NULL, NULL, NULL);
+      _tp_channel_continue_introspection (self);
     }
 }
+
 
 static void
 tp_channel_closed_cb (TpChannel *self,
@@ -448,16 +454,10 @@ tp_channel_constructor (GType type,
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_get_interfaces);
 
-  if (self->handle_type == TP_UNKNOWN_HANDLE_TYPE
-      || (self->handle == 0 && self->handle_type != TP_HANDLE_TYPE_NONE))
-    {
-      tp_cli_channel_call_get_handle (self, -1,
-          tp_channel_got_handle_cb, NULL, NULL, NULL);
-    }
-  else
-    {
-      _tp_channel_continue_introspection (self);
-    }
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_get_handle);
+
+  _tp_channel_continue_introspection (self);
 
   return (GObject *) self;
 }
