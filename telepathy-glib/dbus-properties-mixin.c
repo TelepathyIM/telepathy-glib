@@ -18,6 +18,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "config.h"
+
 #include <telepathy-glib/dbus-properties-mixin.h>
 
 #include <telepathy-glib/svc-generic.h>
@@ -291,7 +293,7 @@ tp_dbus_properties_mixin_setter_gobject_properties (GObject *object,
  */
 
 static GQuark
-_class_prop_impls_quark (void)
+_prop_mixin_offset_quark (void)
 {
   static GQuark q = 0;
 
@@ -301,6 +303,213 @@ _class_prop_impls_quark (void)
 
   return q;
 }
+
+static GQuark
+_extra_prop_impls_quark (void)
+{
+  static GQuark q = 0;
+
+  if (G_UNLIKELY (q == 0))
+    q = g_quark_from_static_string
+        ("tp_dbus_properties_mixin_implement_interface@TELEPATHY_GLIB_0.7.3");
+
+  return q;
+}
+
+
+static gboolean
+link_interface (GType type,
+                const GType *interfaces,
+                GQuark iface_quark,
+                TpDBusPropertiesMixinIfaceImpl *iface_impl)
+{
+  TpDBusPropertiesMixinIfaceInfo *iface_info = NULL;
+  TpDBusPropertiesMixinPropImpl *prop_impl;
+
+  g_return_val_if_fail (iface_impl->props != NULL, FALSE);
+
+  /* no point bothering if there is no quark for the interface name */
+  if (iface_quark != 0)
+    {
+      const GType *iface;
+
+      for (iface = interfaces; *iface != 0; iface++)
+        {
+          iface_info = tp_svc_interface_get_dbus_properties_info (*iface);
+
+          if (iface_info != NULL &&
+              iface_info->dbus_interface == iface_quark)
+            break;
+          else
+            iface_info = NULL;
+        }
+    }
+
+  if (iface_info == NULL)
+    {
+      g_critical ("%s tried to implement undefined interface %s",
+          g_type_name (type), iface_impl->name);
+      return FALSE;
+    }
+
+  iface_impl->mixin_priv = iface_info;
+
+  for (prop_impl = iface_impl->props; prop_impl->name != NULL; prop_impl++)
+    {
+      TpDBusPropertiesMixinPropInfo *prop_info;
+      GQuark name_quark = g_quark_try_string (prop_impl->name);
+
+      prop_impl->mixin_priv = NULL;
+
+      /* no point bothering if there is no quark for this name */
+      if (name_quark != 0)
+        {
+          for (prop_info = iface_info->props;
+               prop_info->name != 0;
+               prop_info++)
+            {
+              if (prop_info->name == name_quark)
+                {
+                  prop_impl->mixin_priv = prop_info;
+                  break;
+                }
+            }
+        }
+
+      if (prop_impl->mixin_priv == NULL)
+        {
+          g_critical ("%s tried to implement nonexistent property %s"
+              "on interface %s", g_type_name (type), prop_impl->name,
+              iface_impl->name);
+          return FALSE;
+        }
+    }
+
+  return TRUE;
+}
+
+
+/**
+ * tp_dbus_properties_mixin_implement_interface:
+ * @cls: a subclass of #GObjectClass
+ * @iface: a quark representing the the name of the interface to implement
+ * @getter: a callback to get properties on this interface, or %NULL if they
+ *  are all write-only
+ * @setter: a callback to set properties on this interface, or %NULL if they
+ *  are all read-only
+ * @props: an array of #TpDBusPropertiesMixinPropImpl representing individual
+ *  properties, terminated by one with @name == %NULL
+ *
+ * Declare that, in addition to any interfaces set in
+ * tp_dbus_properties_mixin_class_init(), the given class (and its subclasses)
+ * will implement the properties of the interface @iface using the callbacks
+ * @getter and @setter and the properties given by @props.
+ *
+ * This function should be called from the class_init callback in such a way
+ * that it will only be called once, even if the class is subclassed.
+ *
+ * Typically, the static array @interfaces in the #TpDBusPropertiesMixinClass
+ * should be used for interfaces whose properties are implemented directly by
+ * the class @cls, and this function should be used for interfaces whose
+ * properties are implemented by mixins.
+ *
+ * It is an error for the same interface to appear in the array @interfaces
+ * in the #TpDBusPropertiesMixinClass, and also be set up by this function.
+ *
+ * If a class C and a subclass S both implement the properties of the same
+ * interface, only the implementations from the subclass S will be used,
+ * regardless of whether the implementations in C and/or S were set up by
+ * this function or via the array @interfaces in the
+ * #TpDBusPropertiesMixinClass.
+ */
+void
+tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
+    GQuark iface,
+    TpDBusPropertiesMixinGetter getter,
+    TpDBusPropertiesMixinSetter setter,
+    TpDBusPropertiesMixinPropImpl *props)
+{
+  GQuark offset_quark = _prop_mixin_offset_quark ();
+  GQuark extras_quark = _extra_prop_impls_quark ();
+  GType type = G_OBJECT_CLASS_TYPE (cls);
+  GType *interfaces = g_type_interfaces (type, NULL);
+  TpDBusPropertiesMixinClass *mixin;
+  gpointer offset_qdata;
+  TpDBusPropertiesMixinIfaceImpl *iface_impl;
+
+  g_return_if_fail (G_IS_OBJECT_CLASS (cls));
+
+  offset_qdata = g_type_get_qdata (type, offset_quark);
+
+  g_return_if_fail (offset_qdata != NULL);
+
+  mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls,
+      GPOINTER_TO_SIZE (offset_qdata));
+
+  /* never freed - intentional per-class leak */
+  iface_impl = g_new0 (TpDBusPropertiesMixinIfaceImpl, 1);
+  iface_impl->name = g_quark_to_string (iface);
+  iface_impl->getter = getter;
+  iface_impl->setter = setter;
+  iface_impl->props = props;
+
+  /* align property implementations with abstract properties */
+  if (G_LIKELY (link_interface (type, interfaces, iface, iface_impl)))
+    {
+      TpDBusPropertiesMixinIfaceImpl *next = g_type_get_qdata (type,
+          extras_quark);
+#ifdef ENABLE_DEBUG
+      TpDBusPropertiesMixinIfaceImpl *iter;
+
+      /* assert that we're not trying to implement the same interface twice */
+      for (iter = next;
+           iter != NULL && iter->name != NULL;
+           iter = iter->mixin_next.priv)
+        {
+          TpDBusPropertiesMixinIfaceInfo *other_info = iter->mixin_priv;
+
+          g_assert (other_info != NULL);
+
+          if (G_UNLIKELY (other_info->dbus_interface == iface))
+            {
+              g_critical ("type %s tried to implement interface %s with %s "
+                  "twice", g_type_name (type), g_quark_to_string (iface),
+                  G_STRFUNC);
+              goto out;
+            }
+        }
+
+      /* assert that we're not trying to implement the same interface via
+       * this function and the static data */
+      for (iter = mixin->interfaces;
+           iter != NULL && iter->name != NULL;
+           iter++)
+        {
+          TpDBusPropertiesMixinIfaceInfo *other_info = iter->mixin_priv;
+
+          g_assert (other_info != NULL);
+
+          if (G_UNLIKELY (other_info->dbus_interface == iface))
+            {
+              g_critical ("type %s tried to implement interface %s with %s "
+                  "and also in static data", g_type_name (type),
+                  g_quark_to_string (iface), G_STRFUNC);
+              goto out;
+            }
+        }
+#endif
+
+      /* form a linked list */
+      iface_impl->mixin_next.priv = next;
+      g_type_set_qdata (type, extras_quark, iface_impl);
+    }
+
+#ifdef ENABLE_DEBUG
+out:
+#endif
+  g_free (interfaces);
+}
+
 
 /**
  * tp_dbus_properties_mixin_class_init:
@@ -315,8 +524,16 @@ _class_prop_impls_quark (void)
  * a GInterface implemented by @cls, using
  * tp_svc_interface_set_dbus_properties_info().
  *
- * Before calling this function, the array of interfaces must have been
- * placed in the TpDBusPropertiesMixinClass structure.
+ * Before calling this function, the array @interfaces must have been
+ * placed in the #TpDBusPropertiesMixinClass structure; if it would be empty,
+ * it may instead be %NULL.
+ *
+ * This function should be called from the class_init callback in such a way
+ * that it will only be called once, even if the class is subclassed.
+ *
+ * Changed in 0.7.9: TpDBusPropertiesMixinClass::interfaces may now be %NULL,
+ * which means that only interfaces whose properties are set up using
+ * tp_dbus_properties_mixin_implement_interface() will be used.
  *
  * Since: 0.7.3
  */
@@ -324,11 +541,11 @@ void
 tp_dbus_properties_mixin_class_init (GObjectClass *cls,
                                      gsize offset)
 {
-  GQuark q = _class_prop_impls_quark ();
+  GQuark q = _prop_mixin_offset_quark ();
   GType type = G_OBJECT_CLASS_TYPE (cls);
   TpDBusPropertiesMixinClass *mixin;
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
-  GType *interfaces, *iface;
+  GType *interfaces;
 
   g_return_if_fail (G_IS_OBJECT_CLASS (cls));
   g_return_if_fail (g_type_get_qdata (type, q) == NULL);
@@ -336,77 +553,40 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
 
   mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls, offset);
 
-  g_return_if_fail (mixin->interfaces != NULL);
-
   interfaces = g_type_interfaces (type, NULL);
 
   for (iface_impl = mixin->interfaces;
-       iface_impl->name != NULL;
+       iface_impl != NULL && iface_impl->name != NULL;
        iface_impl++)
     {
-      TpDBusPropertiesMixinIfaceInfo *iface_info = NULL;
-      TpDBusPropertiesMixinPropImpl *prop_impl;
       GQuark iface_quark = g_quark_try_string (iface_impl->name);
+#ifdef ENABLE_DEBUG
+      TpDBusPropertiesMixinIfaceImpl *other_impl;
+#endif
 
-      g_return_if_fail (iface_impl->props != NULL);
+      if (G_UNLIKELY (!link_interface (type, interfaces, iface_quark,
+              iface_impl)))
+        goto out;
 
-      /* no point bothering if there is no quark for the interface name */
-      if (iface_quark != 0)
+#ifdef ENABLE_DEBUG
+      for (other_impl = mixin->interfaces;
+           other_impl != iface_impl;
+           other_impl++)
         {
-          for (iface = interfaces; *iface != 0; iface++)
+          TpDBusPropertiesMixinIfaceInfo *other_info = other_impl->mixin_priv;
+
+          if (G_UNLIKELY (iface_quark == other_info->dbus_interface))
             {
-              iface_info = tp_svc_interface_get_dbus_properties_info (*iface);
-
-              if (iface_info != NULL &&
-                  iface_info->dbus_interface == iface_quark)
-                break;
-              else
-                iface_info = NULL;
-            }
-        }
-
-      if (iface_info == NULL)
-        {
-          g_critical ("%s tried to implement undefined interface %s",
-              g_type_name (type), iface_impl->name);
-          goto out;
-        }
-
-      iface_impl->mixin_priv = iface_info;
-
-      for (prop_impl = iface_impl->props; prop_impl->name != NULL; prop_impl++)
-        {
-          TpDBusPropertiesMixinPropInfo *prop_info;
-          GQuark name_quark = g_quark_try_string (prop_impl->name);
-
-          prop_impl->mixin_priv = NULL;
-
-          /* no point bothering if there is no quark for this name */
-          if (name_quark != 0)
-            {
-              for (prop_info = iface_info->props;
-                   prop_info->name != 0;
-                   prop_info++)
-                {
-                  if (prop_info->name == name_quark)
-                    {
-                      prop_impl->mixin_priv = prop_info;
-                      break;
-                    }
-                }
-            }
-
-          if (prop_impl->mixin_priv == NULL)
-            {
-              g_critical ("%s tried to implement nonexistent property %s"
-                  "on interface %s", g_type_name (type), prop_impl->name,
-                  iface_impl->name);
+              g_critical ("type %s tried to implement interface %s in static "
+                  "data twice", g_type_name (type), iface_impl->name);
               goto out;
             }
         }
+#endif
     }
 
 out:
+
   g_free (interfaces);
 }
 
@@ -416,7 +596,8 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
                                            DBusGMethodInvocation *context)
 {
   GType type;
-  GQuark q = _class_prop_impls_quark ();
+  GQuark offset_quark = _prop_mixin_offset_quark ();
+  GQuark extras_quark = _extra_prop_impls_quark ();
   GQuark iface_quark = g_quark_try_string (name);
 
   if (iface_quark == 0)
@@ -426,7 +607,7 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
        type != 0;
        type = g_type_parent (type))
     {
-      gpointer offset = g_type_get_qdata (type, q);
+      gpointer offset = g_type_get_qdata (type, offset_quark);
       TpDBusPropertiesMixinClass *mixin;
       TpDBusPropertiesMixinIfaceImpl *iface_impl;
       TpDBusPropertiesMixinIfaceInfo *iface_info;
@@ -438,8 +619,18 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
           G_OBJECT_GET_CLASS (self), GPOINTER_TO_SIZE (offset));
 
       for (iface_impl = mixin->interfaces;
-           iface_impl->name != NULL;
+           iface_impl != NULL && iface_impl->name != NULL;
            iface_impl++)
+        {
+          iface_info = iface_impl->mixin_priv;
+
+          if (iface_info->dbus_interface == iface_quark)
+            return iface_impl;
+        }
+
+      for (iface_impl = g_type_get_qdata (type, extras_quark);
+           iface_impl != NULL;
+           iface_impl = iface_impl->mixin_next.priv)
         {
           iface_info = iface_impl->mixin_priv;
 

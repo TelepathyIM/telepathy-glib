@@ -79,6 +79,12 @@ typedef struct {
     gpointer mixin_priv;
 } TpDBusPropertiesMixinPropImpl;
 
+/* this union is to keep ABI if sizeof (GCallback) > sizeof (void *) */
+typedef union {
+    GCallback _padding;
+    gpointer priv;
+} _TpDBusPropertiesMixinPaddedPointer;
+
 typedef struct {
     const gchar *name;
     TpDBusPropertiesMixinGetter getter;
@@ -87,7 +93,7 @@ typedef struct {
     /*<private>*/
     GCallback _1;
     GCallback _2;
-    GCallback _3;
+    _TpDBusPropertiesMixinPaddedPointer mixin_next;
     gpointer mixin_priv;
 } TpDBusPropertiesMixinIfaceImpl;
 
@@ -107,6 +113,10 @@ typedef struct _TpDBusPropertiesMixinClass TpDBusPropertiesMixinClass;
 
 void tp_dbus_properties_mixin_class_init (GObjectClass *cls,
     gsize offset);
+
+void tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
+    GQuark iface, TpDBusPropertiesMixinGetter getter,
+    TpDBusPropertiesMixinSetter setter, TpDBusPropertiesMixinPropImpl *props);
 
 void tp_dbus_properties_mixin_iface_init (gpointer g_iface,
     gpointer iface_data);
