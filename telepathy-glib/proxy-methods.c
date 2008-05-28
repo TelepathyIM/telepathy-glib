@@ -413,7 +413,7 @@ tp_proxy_pending_call_v0_completed (gpointer p)
 
   /* dbus-glib frees its user_data *before* it emits destroy; if we
    * haven't yet queued the callback, assume that's what's going on. */
-  if (pc->idle_source != 0 && pc->iface_proxy != NULL)
+  if (pc->idle_source == 0 && pc->iface_proxy != NULL)
     {
       MORE_DEBUG ("Looks like this pending call hasn't finished, assuming "
           "the DBusGProxy is about to die");
