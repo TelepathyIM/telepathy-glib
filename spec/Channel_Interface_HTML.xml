@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.Text"/>
     <tp:requires
       interface="org.freedesktop.Telepathy.Channel.Interface.Messages"/>
+    <tp:added version="0.17.5">(draft version, not API-stable)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface extends the Messages interface to support

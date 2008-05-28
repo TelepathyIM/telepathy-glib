@@ -20,8 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
 USA.</p>
   </tp:license>
   <interface
-    name="org.freedesktop.Telepathy.Channel.Interface.Messages.DRAFT">
+    name="org.freedesktop.Telepathy.Channel.Interface.Messages.DRAFT"
+    tp:causes-havoc="experimental">
     <tp:requires interface="org.freedesktop.Telepathy.Channel.Type.Text"/>
+    <tp:added version="0.17.5">(draft version, not API-stable)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface extends the Text interface to support more general
@@ -135,7 +137,7 @@ USA.</p>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Part of a message's content. In practice, this mapping never
           appears in isolation - messages are represented by a list of
-          Message_Part mappings.</p>
+          <tp:type>Message_Part</tp:type> mappings.</p>
 
         <p>An example of how a message might
           look, in a Python-like syntax:</p>
@@ -188,30 +190,31 @@ USA.</p>
               identifier.</dd>
             -->
 
-            <dt>message-sent (u - Unix_Timestamp)</dt>
+            <dt>message-sent (u - <tp:type>Unix_Timestamp</tp:type>)</dt>
             <dd>The time the message was sent (if unavailable, the time
               it arrived at a central server MAY be used). Omitted if no
               reasonable approximation is available</dd>
 
-            <dt>message-received (u - Unix_Timestamp)</dt>
+            <dt>message-received (u - <tp:type>Unix_Timestamp</tp:type>)</dt>
             <dd>The time the message was received locally. SHOULD always
               be present.</dd>
 
-            <dt>message-sender (u - Contact_Handle)</dt>
+            <dt>message-sender (u - <tp:type>Contact_Handle</tp:type>)</dt>
             <dd>The contact who sent the message. If 0 or omitted, the contact
               who sent the message could not be determined.</dd>
 
-            <dt>message-type (u - Channel_Text_Message_Type)</dt>
+            <dt>message-type (u - <tp:type>Channel_Text_Message_Type</tp:type>)
+            </dt>
             <dd>The type of message; if omitted,
               Channel_Text_Message_Type_Normal MUST be assumed. SHOULD
               be omitted for normal chat messages.</dd>
 
-            <dt>pending-message-id (u - Message_ID)</dt>
+            <dt>pending-message-id (u - <tp:type>Message_ID</tp:type>)</dt>
             <dd>The incoming message ID. This MUST NOT be present on outgoing
               messages. Clients SHOULD NOT store this key - it is only valid
               for as long as the message remains unacknowledged.</dd>
 
-            <dt>interface (s - DBus_Interface_Name)</dt>
+            <dt>interface (s - <tp:type>DBus_Interface</tp:type>)</dt>
             <dd>This message is specific to the given interface, which is
               neither Text nor Messages. It SHOULD be ignored if that
               interface is not supported. (Note that an 'interface' key
@@ -366,7 +369,7 @@ USA.</p>
               defined; we should add some API so clients can tell the
                 CM how large a message it should emit in the signal.-->
 
-            <dt>interface (s - DBus_Interface_Name)</dt>
+            <dt>interface (s - <tp:type>DBus_Interface</tp:type>)</dt>
             <dd>This part is specific to the given interface, which is
               neither Text nor Messages. It SHOULD be ignored if that
               interface is not supported. (Note that an 'interface' key
@@ -375,8 +378,9 @@ USA.</p>
           </dl>
 
           <p>It is an error for a connection manager to put these keys
-            in the first Message_Part, but clients MUST be able to recover
-            from this error by ignoring these keys in the first part.</p>
+            in the first <tp:type>Message_Part</tp:type>, but clients MUST be
+            able to recover from this error by ignoring these keys in the
+            first part.</p>
 
         </div>
       </tp:docstring>
@@ -504,7 +508,7 @@ USA.</p>
 
       <arg type="aa{sv}" tp:type="Message_Part[]" name="Content">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          The message content (see Message_Part for full
+          The message content (see <tp:type>Message_Part</tp:type> for full
           details). If the message that was passed to SendMessage has a
           formatted text part that the connection manager recognises, but no
           text/plain alternative, the CM MUST use the formatted text part to
@@ -583,7 +587,7 @@ USA.</p>
             are positions in the array of message parts; the values are
             either of type 's' or 'ay' (UTF-8 text string, or byte array),
             following the same rules as for the value of the 'content' key in
-            the Message_Part mappings.</p>
+            the <tp:type>Message_Part</tp:type> mappings.</p>
 
           <p>If the one of the requested part numbers was greater than zero
             but referred to a part that had no content (i.e. it had no 'type'

@@ -303,8 +303,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       processes are intended to be started by D-Bus service activation.</p>
 
     <p>For service discovery, each Telepathy connection manager must have
-      a <em>connection manager name</em> (see Connection_Manager_Name for
-      syntax).</p>
+      a <em>connection manager name</em> (see
+      <tp:type>Connection_Manager_Name</tp:type> for syntax).</p>
 
     <p>The connection manager must then provide a well-known bus name of
       <code>org.freedesktop.Telepathy.ConnectionManager.<em>cmname</em></code>

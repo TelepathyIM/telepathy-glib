@@ -105,7 +105,7 @@ USA.</p>
         Get the handle which represents the user on this connection, which will
         remain valid for the lifetime of this connection, or until a change
         in the user's identifier is signalled by the Renamed signal on the
-        Renaming interface (if present). This is always a CONTACT type handle.
+        Renaming interface (if present).
       </tp:docstring>
 
       <tp:possible-errors>

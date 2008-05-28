@@ -215,9 +215,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </tp:enum>
 
     <signal name="SendError">
-      <arg name="error" type="u">
+      <arg name="error" type="u" tp:type="Channel_Text_Send_Error">
         <tp:docstring>
-          One of the values of ChannelTextSendError
+          The error that occurred
         </tp:docstring>
       </arg>
       <arg name="timestamp" type="u" tp:type="Unix_Timestamp">
@@ -227,7 +227,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
       <arg name="type" type="u" tp:type="Channel_Text_Message_Type">
         <tp:docstring>
-          The message type from ChannelTextMessageType
+          The message type
         </tp:docstring>
       </arg>
       <arg name="text" type="s">
