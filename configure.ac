@@ -218,6 +218,7 @@ AC_OUTPUT( Makefile \
 	   examples/Makefile \
 	   examples/client/Makefile \
 	   examples/cm/Makefile \
+	   examples/cm/channelspecific/Makefile \
 	   examples/cm/echo/Makefile \
 	   examples/cm/extended/Makefile \
 	   examples/cm/no-protocols/Makefile \
