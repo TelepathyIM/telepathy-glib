@@ -994,9 +994,12 @@ tp_channel_closed_cb (TpChannel *self,
   GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
       "Channel was closed" };
 
-  /* FIXME: if it's a group, watch for MembersChanged: if we're removed
-   * for a reason, we can use that reason in the TP_ERRORS_REMOVED_FROM_GROUP
-   * domain */
+  if (self->priv->group_remove_message != NULL)
+    {
+      e.domain = TP_ERRORS_REMOVED_FROM_GROUP;
+      e.code = self->priv->group_remove_reason;
+      e.message = self->priv->group_remove_message;
+    }
 
   tp_proxy_invalidate ((TpProxy *) self, &e);
 }
