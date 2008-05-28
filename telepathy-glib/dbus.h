@@ -89,6 +89,8 @@ gboolean tp_dbus_check_valid_object_path (const gchar *path,
 
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
     gboolean *valid);
+gpointer tp_asv_get_boxed (const GHashTable *asv, const gchar *key,
+    GType type);
 const GArray *tp_asv_get_bytes (const GHashTable *asv, const gchar *key);
 gdouble tp_asv_get_double (const GHashTable *asv, const gchar *key,
     gboolean *valid);

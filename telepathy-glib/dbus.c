@@ -1455,6 +1455,41 @@ tp_asv_get_object_path (const GHashTable *asv,
 
 
 /**
+ * tp_asv_get_boxed:
+ * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @key: The key to look up
+ * @type: The type that the key's value should have, which must be derived
+ *  from %G_TYPE_BOXED
+ *
+ * If a value for @key in @asv is present and is of the desired type,
+ * return it.
+ *
+ * Otherwise return %NULL.
+ *
+ * The returned value is not copied, and is only valid as long as the value
+ * for @key in @asv is not removed or altered. Copy it, for instance with
+ * g_boxed_copy(), if you need to keep it for longer.
+ *
+ * Returns: the value of @key, or %NULL
+ * @since 0.7.9
+ */
+gpointer
+tp_asv_get_boxed (const GHashTable *asv,
+                  const gchar *key,
+                  GType type)
+{
+  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+
+  g_return_val_if_fail (G_TYPE_FUNDAMENTAL (type) == G_TYPE_BOXED, NULL);
+
+  if (value == NULL || !G_VALUE_HOLDS (value, type))
+    return NULL;
+
+  return g_value_get_boxed (value);
+}
+
+
+/**
  * tp_asv_get_strv:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
