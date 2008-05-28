@@ -406,6 +406,14 @@ tp_channel_got_group_flags_0_16_cb (TpChannel *self,
     }
   else
     {
+      /* If we reach this point, GetAll has already failed... */
+      if (flags & TP_CHANNEL_GROUP_FLAG_PROPERTIES)
+        {
+          DEBUG ("Treason uncloaked! The channel claims to support Group "
+              "properties, but GetAll didn't work");
+          flags &= ~TP_CHANNEL_GROUP_FLAG_PROPERTIES;
+        }
+
       self->group_flags = flags;
       DEBUG ("Initial GroupFlags: %u", flags);
     }
