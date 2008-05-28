@@ -187,6 +187,8 @@ enum
   PROP_HANDLE_TYPE,
   PROP_HANDLE,
   PROP_CHANNEL_READY,
+  PROP_GROUP_SELF_HANDLE,
+  PROP_GROUP_FLAGS,
   N_PROPS
 };
 
@@ -292,13 +294,114 @@ tp_channel_is_ready (TpChannel *self)
  * Returns the connection for this channel. The returned pointer is only valid
  * while this channel is valid - reference it with g_object_ref() if needed.
  *
- * Returns: a #TpConnection representing the connection to which this channel
- *  is attached.
+ * Returns: the value of #TpChannel:connection
  */
 TpConnection *
 tp_channel_borrow_connection (TpChannel *self)
 {
   return self->connection;
+}
+
+
+/**
+ * tp_channel_group_get_self_handle:
+ * @self: a channel
+ *
+ * Return the #TpChannel:group-self-handle property (see the description
+ * of that property for notes on validity).
+ *
+ * Returns: the handle representing the user, or 0
+ */
+TpHandle
+tp_channel_group_get_self_handle (TpChannel *self)
+{
+  return self->group_self_handle;
+}
+
+
+/**
+ * tp_channel_group_get_flags:
+ * @self: a channel
+ *
+ * Return the #TpChannel:group-flags property (see the description
+ * of that property for notes on validity).
+ *
+ * Returns: the group flags, or 0
+ */
+TpChannelGroupFlags
+tp_channel_group_get_flags (TpChannel *self)
+{
+  return self->group_flags;
+}
+
+
+/**
+ * tp_channel_group_get_handle_owner:
+ * @self: a channel
+ * @handle: a handle which is a member of this channel
+ *
+ * Synopsis (see below for further explanation):
+ *
+ * - if @self is not a group or @handle is not a member of this channel,
+ *   result is undefined;
+ * - if @self does not have #TpChannel:ready = TRUE, result is undefined;
+ * - if @self does not have flags that include %TP_CHANNEL_FLAG_PROPERTIES,
+ *   result is undefined;
+ * - if @handle is channel-specific and its globally valid "owner" is known,
+ *   return that owner;
+ * - if @handle is channel-specific and its globally valid "owner" is unknown,
+ *   return zero;
+ * - if @handle is globally valid, return @handle itself
+ *
+ * Some channels (those with flags that include
+ * %TP_CHANNEL_FLAG_CHANNEL_SPECIFIC_HANDLES) have a concept of
+ * "channel-specific handles". These are handles that only have meaning within
+ * the context of the channel - for instance, in XMPP Multi-User Chat,
+ * participants in a chatroom are identified by an in-room JID consisting
+ * of the JID of the chatroom plus a local nickname.
+ *
+ * Depending on the protocol and configuration, it might be possible to find
+ * out what globally valid handle (i.e. an identifier that you could add to
+ * your contact list) "owns" a channel-specific handle. For instance, in
+ * most XMPP MUC chatrooms, normal users cannot see what global JID
+ * corresponds to an in-room JID, but moderators can.
+ *
+ * This is further complicated by the fact that channels with channel-specific
+ * handles can sometimes have members with globally valid handles (for
+ * instance, if you invite someone to an XMPP MUC using their globally valid
+ * JID, you would expect to see the handle representing that JID in the
+ * Group's remote-pending set).
+ *
+ * This function's result is undefined unless the channel is ready
+ * and its flags include %TP_CHANNEL_FLAG_PROPERTIES (an implementation
+ * without extra D-Bus round trips is not possible using the older API).
+ *
+ * Returns: the global handle that owns the given handle, or 0
+ */
+TpHandle
+tp_channel_group_get_handle_owner (TpChannel *self,
+                                   TpHandle handle)
+{
+  gpointer key, value;
+
+  if (self->priv->group_handle_owners == NULL)
+    {
+      /* undefined result - pretending it's global is probably as good as
+       * any other behaviour, since we can't know either way */
+      return handle;
+    }
+
+  if (g_hash_table_lookup_extended (self->priv->group_handle_owners,
+        GUINT_TO_POINTER (handle), &key, &value))
+    {
+      /* channel-specific, value is either owner or 0 if unknown */
+      return GPOINTER_TO_UINT (value);
+    }
+  else
+    {
+      /* either already globally valid, or not a member */
+      return handle;
+    }
 }
 
 
@@ -327,6 +430,12 @@ tp_channel_get_property (GObject *object,
       break;
     case PROP_HANDLE:
       g_value_set_uint (value, self->handle);
+      break;
+    case PROP_GROUP_SELF_HANDLE:
+      g_value_set_uint (value, self->group_self_handle);
+      break;
+    case PROP_GROUP_FLAGS:
+      g_value_set_uint (value, self->group_flags);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -398,11 +507,12 @@ tp_channel_got_group_flags_0_16_cb (TpChannel *self,
                                     gpointer user_data G_GNUC_UNUSED,
                                     GObject *weak_object G_GNUC_UNUSED)
 {
+  g_assert (self->group_flags == 0);
+
   if (error != NULL)
     {
       DEBUG ("%p GetGroupFlags() failed, assuming initial flags 0: %s", self,
           error->message);
-      self->group_flags = 0;
     }
   else
     {
@@ -416,6 +526,9 @@ tp_channel_got_group_flags_0_16_cb (TpChannel *self,
 
       self->group_flags = flags;
       DEBUG ("Initial GroupFlags: %u", flags);
+
+      if (flags != 0)
+        g_object_notify ((GObject *) self, "group-flags");
     }
 
   self->priv->have_group_flags = 1;
@@ -429,10 +542,13 @@ tp_channel_group_self_handle_changed_cb (TpChannel *self,
                                          gpointer unused G_GNUC_UNUSED,
                                          GObject *unused_object G_GNUC_UNUSED)
 {
+  if (self_handle == self->group_self_handle)
+    return;
+
   DEBUG ("%p SelfHandle changed to %u", self, self_handle);
 
   self->group_self_handle = self_handle;
-  /* FIXME: emit a signal or something */
+  g_object_notify ((GObject *) self, "group-self-handle");
 }
 
 
@@ -675,6 +791,9 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
       DEBUG ("Initial GroupFlags: %u", self->group_flags);
       self->priv->have_group_flags = 1;
 
+      if (self->group_flags != 0)
+        g_object_notify ((GObject *) self, "group-flags");
+
       tp_channel_group_self_handle_changed_cb (self,
           tp_asv_get_uint32 (asv, "SelfHandle", NULL), NULL, NULL);
 
@@ -857,14 +976,21 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
                                    gpointer unused G_GNUC_UNUSED,
                                    GObject *unused_object G_GNUC_UNUSED)
 {
-  DEBUG ("%p GroupFlagsChanged: +%u -%u", self, added, removed);
-
   if (self->priv->have_group_flags)
     {
+      DEBUG ("%p GroupFlagsChanged: +%u -%u", self, added, removed);
+
+      added &= ~(self->group_flags);
+      removed &= self->group_flags;
+
+      DEBUG ("%p GroupFlagsChanged (after filtering): +%u -%u",
+          self, added, removed);
+
       self->group_flags |= added;
       self->group_flags &= ~removed;
 
-      /* FIXME: emit a signal or something */
+      if (added != 0 || removed != 0)
+        g_object_notify ((GObject *) self, "group-flags");
     }
 }
 
@@ -1243,10 +1369,20 @@ tp_channel_class_init (TpChannelClass *klass)
    * Initially %FALSE; changes to %TRUE when introspection of the channel
    * has finished and it's ready for use.
    *
-   * By the time this property becomes %TRUE, the #TpChannel:channel-type,
-   * #TpChannel:handle-type and #TpChannel:handle properties will have been
-   * set (if introspection did not fail), and any extra interfaces will
-   * have been set up.
+   * By the time this property becomes %TRUE, the following will be true:
+   *
+   * - #TpChannel:channel-type set, unless introspection failed
+   * - #TpChannel:handle-type and #TpChannel:handle set, unless introspection
+   *   failed
+   * - any extra interfaces will have been set up in TpProxy (i.e.
+   *   #TpProxy:interfaces contains at least all extra Channel interfaces)
+   *
+   * In addition, if #TpProxy:interfaces includes the Group interface:
+   *
+   * - the initial value of the #TpChannel:group-self-handle property will
+   *   have been fetched and change notification will have been set up
+   * - the initial value of the #TpChannel:group-flags property will
+   *   have been fetched and change notification will have been set up
    */
   param_spec = g_param_spec_boolean ("channel-ready", "Channel ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
@@ -1266,6 +1402,37 @@ tp_channel_class_init (TpChannelClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_CONNECTION,
+      param_spec);
+
+  /**
+   * TpChannel:group-self-handle:
+   *
+   * If this channel is ready (#TpChannel:channel-ready) and is a group, and
+   * the user is a member of it, the #TpHandle representing them in this group.
+   *
+   * Otherwise, either a handle representing the user, or 0.
+   */
+  param_spec = g_param_spec_uint ("group-self-handle", "Group.SelfHandle",
+      "Undefined if not a group", 0, G_MAXUINT32, 0,
+      G_PARAM_READABLE
+      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+  g_object_class_install_property (object_class, PROP_GROUP_SELF_HANDLE,
+      param_spec);
+
+  /**
+   * TpChannel:group-flags:
+   *
+   * If this channel is ready (#TpChannel:channel-ready) and is a group,
+   * #TpChannelGroupFlags indicating the capabilities and behaviour of that
+   * group.
+   *
+   * Otherwise, 0.
+   */
+  param_spec = g_param_spec_uint ("group-flags", "Group.GroupFlags",
+      "0 if not a group", 0, G_MAXUINT32, 0,
+      G_PARAM_READABLE
+      | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
+  g_object_class_install_property (object_class, PROP_GROUP_FLAGS,
       param_spec);
 }
 

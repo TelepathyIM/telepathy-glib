@@ -23,6 +23,7 @@
 #define __TP_CHANNEL_H__
 
 #include <telepathy-glib/connection.h>
+#include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/proxy.h>
 
@@ -75,6 +76,10 @@ const gchar *tp_channel_get_channel_type (TpChannel *self);
 GQuark tp_channel_get_channel_type_id (TpChannel *self);
 TpHandle tp_channel_get_handle (TpChannel *self, TpHandleType *handle_type);
 TpConnection *tp_channel_borrow_connection (TpChannel *self);
+
+TpHandle tp_channel_group_get_self_handle (TpChannel *self);
+TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);
+TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
 
 G_END_DECLS
 
