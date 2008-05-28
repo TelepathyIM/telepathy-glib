@@ -1182,6 +1182,7 @@ tp_dbus_check_valid_member_name
 tp_dbus_check_valid_object_path
 <SUBSECTION>
 tp_asv_get_boolean
+tp_asv_get_boxed
 tp_asv_get_bytes
 tp_asv_get_double
 tp_asv_get_int32
