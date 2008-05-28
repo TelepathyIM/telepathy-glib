@@ -27,6 +27,7 @@
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/dbus-internal.h"
@@ -173,6 +174,8 @@ struct _TpChannelPrivate {
     /* reason the self-handle left, message == NULL if not removed */
     gchar *group_remove_message;
     TpChannelGroupChangeReason group_remove_reason;
+    /* guint => guint, NULL if not discovered yet */
+    GHashTable *group_handle_owners;
 
     gboolean have_group_flags:1;
 };
@@ -656,6 +659,8 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
     }
   else
     {
+      GHashTable *handle_owners;
+
       DEBUG ("Received %u group properties", g_hash_table_size (asv));
 
       self->group_flags = tp_asv_get_uint32 (asv, "GroupFlags", NULL);
@@ -681,7 +686,15 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
           tp_asv_get_boxed (asv, "LocalPendingMembers",
               TP_ARRAY_TYPE_LOCAL_PENDING_INFO_LIST));
 
-      /* FIXME: handle owners */
+      handle_owners = tp_asv_get_boxed (asv, "HandleOwners",
+          TP_HASH_TYPE_HANDLE_OWNER_MAP);
+
+      self->priv->group_handle_owners = g_hash_table_new (g_direct_hash,
+          g_direct_equal);
+
+      if (handle_owners != NULL)
+        tp_g_hash_table_update (self->priv->group_handle_owners,
+            handle_owners, NULL, NULL);
 
       _tp_channel_continue_introspection (self);
       return;
@@ -807,6 +820,29 @@ tp_channel_group_members_changed_cb (TpChannel *self,
 
 
 static void
+tp_channel_handle_owners_changed_cb (TpChannel *self,
+                                     GHashTable *added,
+                                     const GArray *removed,
+                                     gpointer unused G_GNUC_UNUSED,
+                                     GObject *unused_object G_GNUC_UNUSED)
+{
+  guint i;
+
+  /* ignore the signal if we don't have the initial set yet */
+  if (self->priv->group_handle_owners == NULL)
+    return;
+
+  tp_g_hash_table_update (self->priv->group_handle_owners, added, NULL, NULL);
+
+  for (i = 0; i < removed->len; i++)
+    {
+      g_hash_table_remove (self->priv->group_handle_owners,
+          GUINT_TO_POINTER (g_array_index (removed, guint, i)));
+    }
+}
+
+
+static void
 tp_channel_group_flags_changed_cb (TpChannel *self,
                                    guint added,
                                    guint removed,
@@ -836,6 +872,9 @@ _tp_channel_get_group_properties (TpChannel *self)
 
   tp_cli_channel_interface_group_connect_to_self_handle_changed (self,
       tp_channel_group_self_handle_changed_cb, NULL, NULL, NULL, NULL);
+
+  tp_cli_channel_interface_group_connect_to_handle_owners_changed (self,
+      tp_channel_handle_owners_changed_cb, NULL, NULL, NULL, NULL);
 
   /* First try the 0.17 API (properties). If this fails we'll fall back */
   tp_cli_dbus_properties_call_get_all (self, -1,
