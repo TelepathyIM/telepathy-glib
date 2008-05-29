@@ -188,16 +188,46 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
                                          TpChannelGroupChangeReason *reason,
                                          const gchar **message)
 {
+  gboolean ret = FALSE;
+  TpHandle a = 0;
+  TpChannelGroupChangeReason r = TP_CHANNEL_GROUP_CHANGE_REASON_NONE;
+  const gchar *m = "";
+
+  if (self->priv->group_local_pending != NULL)
+    {
+      /* it could conceivably be someone who is local-pending */
+
+      ret = tp_intset_is_member (self->priv->group_local_pending,
+          local_pending);
+
+      if (ret && self->priv->group_local_pending_info != NULL)
+        {
+          /* we might even have information about them */
+          LocalPendingInfo *info = g_hash_table_lookup (
+              self->priv->group_local_pending_info, GUINT_TO_POINTER (actor));
+
+          if (info != NULL)
+            {
+              a = info->actor;
+              r = info->reason;
+
+              if (info->message != NULL)
+                m = info->message;
+            }
+          /* else we have no info, which means (0, NONE, NULL) */
+        }
+    }
+
   if (actor != NULL)
-    *actor = 0;
+    *actor = a;
 
   if (message != NULL)
-    *message = "";
+    *message = m;
 
   if (reason != NULL)
-    *reason = TP_CHANNEL_GROUP_CHANGE_REASON_NONE;
+    *reason = r;
 
-  return TRUE;
+  return ret;
 }
 
 
