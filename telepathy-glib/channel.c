@@ -26,6 +26,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/intset.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 
@@ -136,30 +137,20 @@ struct _TpChannel {
 typedef void (*TpChannelProc) (TpChannel *self);
 
 
-/* These have char-like values so we can use them in debug messages */
-typedef enum {
-    GROUP_NONE = '\0',
-    GROUP_LOCAL_PENDING = 'L',
-    GROUP_REMOTE_PENDING = 'R',
-    GROUP_MEMBER = 'M'
-} GroupMembership;
-
-
 typedef struct {
-    GroupMembership state;
     /* these three are only populated for local-pending members - we don't
      * expose them in our API for full or remote-pending members anyway */
     TpHandle actor;
     TpChannelGroupChangeReason reason;
     gchar *message;
-} GroupMemberInfo;
+} LocalPendingInfo;
 
 
 static void
-group_member_info_free (GroupMemberInfo *gmi)
+local_pending_info_free (LocalPendingInfo *info)
 {
-  g_free (gmi->message);
-  g_slice_free (GroupMemberInfo, gmi);
+  g_free (info->message);
+  g_slice_free (LocalPendingInfo, info);
 }
 
 
@@ -169,8 +160,13 @@ struct _TpChannelPrivate {
     /* GQueue of TpChannelProc */
     GQueue *introspect_needed;
 
-    /* (TpHandle => GroupMemberInfo), or NULL if members not discovered yet */
-    GHashTable *group;
+    /* NULL if members not discovered yet */
+    TpIntSet *group_members;
+    TpIntSet *group_local_pending;
+    TpIntSet *group_remote_pending;
+    /* (TpHandle => LocalPendingInfo), or NULL if members not discovered yet */
+    GHashTable *group_local_pending_info;
+
     /* reason the self-handle left, message == NULL if not removed */
     gchar *group_remove_message;
     TpChannelGroupChangeReason group_remove_reason;
@@ -696,25 +692,53 @@ _tp_channel_get_group_flags_0_16 (TpChannel *self)
 
 
 static void
-_tp_channel_group_set (TpChannel *self,
-                       TpHandle handle,
-                       GroupMembership state,
-                       TpHandle actor,
-                       TpChannelGroupChangeReason reason,
-                       const gchar *message)
+_tp_channel_group_set_one_lp (TpChannel *self,
+                              TpHandle handle,
+                              TpHandle actor,
+                              TpChannelGroupChangeReason reason,
+                              const gchar *message)
 {
-  GroupMemberInfo *info;
+  LocalPendingInfo *info = NULL;
 
-  g_return_if_fail (self->priv->group != NULL);
+  g_assert (self->priv->group_local_pending != NULL);
 
-  info = g_hash_table_lookup (self->priv->group, GUINT_TO_POINTER (handle));
+  tp_intset_add (self->priv->group_local_pending, handle);
+
+  if (actor == 0 && reason == TP_CHANNEL_GROUP_CHANGE_REASON_NONE &&
+      (message == NULL || message[0] == '\0'))
+    {
+      /* we just don't bother storing informationless local-pending */
+      if (self->priv->group_local_pending_info != NULL)
+        {
+          g_hash_table_remove (self->priv->group_local_pending_info,
+              GUINT_TO_POINTER (handle));
+        }
+
+      return;
+    }
+
+  if (self->priv->group_local_pending_info == NULL)
+    {
+      self->priv->group_local_pending_info = g_hash_table_new_full (
+          g_direct_hash, g_direct_equal, NULL,
+          (GDestroyNotify) local_pending_info_free);
+    }
+  else
+    {
+      info = g_hash_table_lookup (self->priv->group_local_pending_info,
+          GUINT_TO_POINTER (handle));
+    }
 
   if (info == NULL)
-    info = g_slice_new0 (GroupMemberInfo);
+    {
+      info = g_slice_new0 (LocalPendingInfo);
+    }
   else
-    g_hash_table_steal (self->priv->group, GUINT_TO_POINTER (handle));
+    {
+      g_hash_table_steal (self->priv->group_local_pending_info,
+          GUINT_TO_POINTER (handle));
+    }
 
-  info->state = state;
   info->actor = actor;
   info->reason = reason;
   g_free (info->message);
@@ -724,31 +748,8 @@ _tp_channel_group_set (TpChannel *self,
   else
     info->message = g_strdup (message);
 
-  g_hash_table_insert (self->priv->group, GUINT_TO_POINTER (handle), info);
-}
-
-
-static void
-_tp_channel_group_set_many (TpChannel *self,
-                            const GArray *handles,
-                            GroupMembership state,
-                            TpHandle actor,
-                            TpChannelGroupChangeReason reason,
-                            const gchar *message)
-{
-  guint i;
-
-  /* must be NULL-safe for ease of use with tp_asv_get_boxed */
-  if (handles == NULL)
-    return;
-
-  for (i = 0; i < handles->len; i++)
-    {
-      TpHandle handle = g_array_index (handles, guint, i);
-
-      DEBUG ("+%c %u", state, handle);
-      _tp_channel_group_set (self, handle, GROUP_MEMBER, 0, 0, NULL);
-    }
+  g_hash_table_insert (self->priv->group_local_pending_info,
+      GUINT_TO_POINTER (handle), info);
 }
 
 
@@ -758,9 +759,17 @@ _tp_channel_group_set_lp (TpChannel *self,
 {
   guint i;
 
-  /* must be NULL-safe for ease of use with tp_asv_get_boxed */
+  /* should only be called during initialization */
+  g_assert (self->priv->group_local_pending != NULL);
+  g_assert (self->priv->group_local_pending_info == NULL);
+
+  tp_intset_clear (self->priv->group_local_pending);
+
+  /* NULL-safe for ease of use with tp_asv_get_boxed */
   if (info == NULL)
-    return;
+    {
+      return;
+    }
 
   for (i = 0; i < info->len; i++)
     {
@@ -773,7 +782,7 @@ _tp_channel_group_set_lp (TpChannel *self,
 
       DEBUG ("+L %u, actor=%u, reason=%u, message=%s", handle,
           actor, reason, message);
-      _tp_channel_group_set (self, handle, GROUP_LOCAL_PENDING, actor,
+      _tp_channel_group_set_one_lp (self, handle, actor,
           reason, message);
     }
 }
@@ -788,30 +797,37 @@ tp_channel_got_all_members_0_16_cb (TpChannel *self,
                                     gpointer user_data G_GNUC_UNUSED,
                                     GObject *weak_object G_GNUC_UNUSED)
 {
-  g_assert (self->priv->group == NULL);
-
-  self->priv->group = g_hash_table_new_full (g_direct_hash,
-      g_direct_equal, NULL, (GDestroyNotify) group_member_info_free);
+  g_assert (self->priv->group_local_pending == NULL);
+  g_assert (self->priv->group_local_pending_info == NULL);
+  g_assert (self->priv->group_members == NULL);
+  g_assert (self->priv->group_remote_pending == NULL);
 
   if (error == NULL)
     {
       DEBUG ("%p GetAllMembers returned %u members + %u LP + %u RP",
           self, members->len, local_pending->len, remote_pending->len);
 
-      _tp_channel_group_set_many (self, members, GROUP_MEMBER, 0,
-          TP_CHANNEL_GROUP_CHANGE_REASON_NONE, NULL);
-      /* the local-pending members will be overwritten by the result of
+      self->priv->group_local_pending = tp_intset_from_array (local_pending);
+      self->priv->group_members = tp_intset_from_array (members);
+      self->priv->group_remote_pending = tp_intset_from_array (remote_pending);
+
+      /* the local-pending info will be filled in with the result of
        * GetLocalPendingMembersWithInfo, if it succeeds */
-      _tp_channel_group_set_many (self, local_pending, GROUP_LOCAL_PENDING, 0,
-          TP_CHANNEL_GROUP_CHANGE_REASON_NONE, NULL);
-      _tp_channel_group_set_many (self, remote_pending, GROUP_REMOTE_PENDING,
-          0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE, NULL);
     }
   else
     {
       DEBUG ("%p GetAllMembers failed, assuming empty: %s", self,
           error->message);
+
+      self->priv->group_local_pending = tp_intset_new ();
+      self->priv->group_members = tp_intset_new ();
+      self->priv->group_remote_pending = tp_intset_new ();
     }
+
+  g_assert (self->priv->group_local_pending != NULL);
+  g_assert (self->priv->group_local_pending_info != NULL);
+  g_assert (self->priv->group_members != NULL);
+  g_assert (self->priv->group_remote_pending != NULL);
 
   _tp_channel_continue_introspection (self);
 }
@@ -833,7 +849,8 @@ tp_channel_glpmwi_0_16_cb (TpChannel *self,
                            GObject *object G_GNUC_UNUSED)
 {
   /* this should always run after tp_channel_got_all_members_0_16 */
-  g_assert (self->priv->group != NULL);
+  g_assert (self->priv->group_local_pending != NULL);
+  g_assert (self->priv->group_local_pending_info != NULL);
 
   if (error == NULL)
     {
@@ -888,6 +905,7 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
   else
     {
       GHashTable *handle_owners;
+      GArray *arr;
 
       DEBUG ("Received %u group properties", g_hash_table_size (asv));
 
@@ -901,18 +919,29 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
       tp_channel_group_self_handle_changed_cb (self,
           tp_asv_get_uint32 (asv, "SelfHandle", NULL), NULL, NULL);
 
-      g_assert (self->priv->group == NULL);
+      g_assert (self->priv->group_members == NULL);
+      g_assert (self->priv->group_remote_pending == NULL);
 
-      self->priv->group = g_hash_table_new_full (g_direct_hash,
-          g_direct_equal, NULL, (GDestroyNotify) group_member_info_free);
+      arr = tp_asv_get_boxed (asv, "Members", au_type);
 
-      /* all of these are NULL-safe for the handles array */
-      _tp_channel_group_set_many (self,
-          tp_asv_get_boxed (asv, "Members", au_type),
-          GROUP_MEMBER, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE, NULL);
-      _tp_channel_group_set_many (self,
-          tp_asv_get_boxed (asv, "RemotePendingMembers", au_type),
-          GROUP_REMOTE_PENDING, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE, NULL);
+      if (arr == NULL)
+        self->priv->group_members = tp_intset_new ();
+      else
+        self->priv->group_members = tp_intset_from_array (arr);
+
+      arr = tp_asv_get_boxed (asv, "RemotePendingMembers", au_type);
+
+      if (arr == NULL)
+        self->priv->group_remote_pending = tp_intset_new ();
+      else
+        self->priv->group_remote_pending = tp_intset_from_array (arr);
+
+      g_assert (self->priv->group_local_pending == NULL);
+      g_assert (self->priv->group_local_pending_info == NULL);
+
+      self->priv->group_local_pending = tp_intset_new ();
+
+      /* this is NULL-safe with respect to the array */
       _tp_channel_group_set_lp (self,
           tp_asv_get_boxed (asv, "LocalPendingMembers",
               TP_ARRAY_TYPE_LOCAL_PENDING_INFO_LIST));
@@ -977,15 +1006,18 @@ tp_channel_group_members_changed_cb (TpChannel *self,
       self, added->len, removed->len, local_pending->len, remote_pending->len,
       actor, reason, message);
 
-  if (self->priv->group != NULL)
+  if (self->priv->group_members != NULL)
     {
+      g_assert (self->priv->group_members != NULL);
+      g_assert (self->priv->group_local_pending != NULL);
+      g_assert (self->priv->group_remote_pending != NULL);
+
       for (i = 0; i < added->len; i++)
         {
           TpHandle handle = g_array_index (added, guint, i);
 
           DEBUG ("+++ contact#%u", handle);
-          _tp_channel_group_set (self, handle, GROUP_MEMBER, 0, 0,
-              NULL);
+          tp_intset_add (self->priv->group_members, handle);
         }
 
       for (i = 0; i < local_pending->len; i++)
@@ -1001,21 +1033,24 @@ tp_channel_group_members_changed_cb (TpChannel *self,
               added->len == 0 &&
               local_pending->len == 1 &&
               remote_pending->len == 0 &&
-              removed->len == 1)
+              removed->len == 1 &&
+              self->priv->group_local_pending_info != NULL)
             {
               TpHandle old = g_array_index (removed, guint, 0);
-              GroupMemberInfo *info = g_hash_table_lookup (self->priv->group,
+              LocalPendingInfo *info = g_hash_table_lookup (
+                  self->priv->group_local_pending_info,
                   GUINT_TO_POINTER (old));
 
-              if (info != NULL && info->state == GROUP_LOCAL_PENDING)
+              if (info != NULL)
                 {
-                  _tp_channel_group_set (self, handle, GROUP_LOCAL_PENDING,
+                  _tp_channel_group_set_one_lp (self, handle,
                       info->actor, info->reason, info->message);
                   continue;
                 }
             }
 
-          _tp_channel_group_set (self, handle, GROUP_LOCAL_PENDING, actor,
+          /* not reached if the Renamed special case occurred */
+          _tp_channel_group_set_one_lp (self, handle, actor,
               reason, message);
         }
 
@@ -1024,8 +1059,7 @@ tp_channel_group_members_changed_cb (TpChannel *self,
           TpHandle handle = g_array_index (remote_pending, guint, i);
 
           DEBUG ("+RP contact#%u", handle);
-          _tp_channel_group_set (self, handle, GROUP_REMOTE_PENDING, 0,
-              0, NULL);
+          tp_intset_add (self->priv->group_remote_pending, handle);
         }
 
       for (i = 0; i < removed->len; i++)
@@ -1033,7 +1067,14 @@ tp_channel_group_members_changed_cb (TpChannel *self,
           TpHandle handle = g_array_index (removed, guint, i);
 
           DEBUG ("--- contact#%u", handle);
-          g_hash_table_remove (self->priv->group, GUINT_TO_POINTER (handle));
+
+          if (self->priv->group_local_pending_info != NULL)
+            g_hash_table_remove (self->priv->group_local_pending_info,
+                GUINT_TO_POINTER (handle));
+
+          tp_intset_remove (self->priv->group_members, handle);
+          tp_intset_remove (self->priv->group_local_pending, handle);
+          tp_intset_remove (self->priv->group_remote_pending, handle);
 
           if (handle == self->group_self_handle)
             {
@@ -1391,10 +1432,28 @@ tp_channel_finalize (GObject *object)
   g_free (self->priv->group_remove_message);
   self->priv->group_remove_message = NULL;
 
-  if (self->priv->group != NULL)
+  if (self->priv->group_local_pending_info != NULL)
     {
-      g_hash_table_destroy (self->priv->group);
-      self->priv->group = NULL;
+      g_hash_table_destroy (self->priv->group_local_pending_info);
+      self->priv->group_local_pending_info = NULL;
+    }
+
+  if (self->priv->group_members != NULL)
+    {
+      tp_intset_destroy (self->priv->group_members);
+      self->priv->group_members = NULL;
+    }
+
+  if (self->priv->group_local_pending != NULL)
+    {
+      tp_intset_destroy (self->priv->group_local_pending);
+      self->priv->group_local_pending = NULL;
+    }
+
+  if (self->priv->group_remote_pending != NULL)
+    {
+      tp_intset_destroy (self->priv->group_remote_pending);
+      self->priv->group_remote_pending = NULL;
     }
 
   if (self->priv->introspect_needed != NULL)
