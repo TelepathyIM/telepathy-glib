@@ -336,6 +336,110 @@ tp_channel_group_get_flags (TpChannel *self)
 
 
 /**
+ * tp_channel_group_dup_members_array:
+ * @self: a channel
+ *
+ * If @self is ready and is a group, return a non-%NULL #GArray containing
+ * its members in sorted order.
+ *
+ * If @self is a group but is not ready, the result may either be an array
+ * of members, or %NULL.
+ *
+ * If @self is not a group, return %NULL.
+ *
+ * Returns: the members, or %NULL
+ */
+GArray *
+tp_channel_group_dup_members_array (TpChannel *self)
+{
+  return g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+}
+
+
+/**
+ * tp_channel_group_dup_local_pending_array:
+ * @self: a channel
+ *
+ * If @self is ready and is a group, return a non-%NULL #GArray containing
+ * its local-pending members in sorted order.
+ *
+ * If @self is a group but is not ready, the result may either be an array
+ * of local-pending members, or %NULL.
+ *
+ * If @self is not a group, return %NULL.
+ *
+ * Returns: the local-pending members, or %NULL
+ */
+GArray *
+tp_channel_group_dup_local_pending_array (TpChannel *self)
+{
+  return g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+}
+
+
+/**
+ * tp_channel_group_dup_remote_pending_array:
+ * @self: a channel
+ *
+ * If @self is ready and is a group, return a non-%NULL #GArray containing
+ * its remote-pending members in sorted order.
+ *
+ * If @self is a group but is not ready, the result may either be an array
+ * of remote-pending members, or %NULL.
+ *
+ * If @self is not a group, return %NULL.
+ *
+ * Returns: the remote-pending members, or %NULL
+  */
+GArray *
+tp_channel_group_dup_remote_pending_array (TpChannel *self)
+{
+  return g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+}
+
+
+/**
+ * tp_channel_group_get_local_pending_info:
+ * @self: a channel
+ * @local_pending: the handle of a local-pending contact about whom more
+ *  information is needed
+ * @actor: either %NULL or a location to return the contact who requested
+ *  the change
+ * @reason: either %NULL or a location to return the reason for the change
+ * @message: either %NULL or a location to return the user-supplied message
+ *
+ * If @local_pending is actually the handle of a local-pending contact,
+ * write additional information into @actor, @reason and @message and return
+ * %TRUE. The handle and message are not referenced or copied, and can only be
+ * assumed to remain valid until the main loop is re-entered.
+ *
+ * If @local_pending is not the handle of a local-pending contact,
+ * write 0 into @actor, %TP_CHANNEL_GROUP_CHANGE_REASON_NONE into @reason
+ * and "" into @message, and return %FALSE.
+ *
+ * Returns: %TRUE if the contact is in fact local-pending
+ */
+gboolean
+tp_channel_group_get_local_pending_info (TpChannel *self,
+                                         TpHandle local_pending,
+                                         TpHandle *actor,
+                                         TpChannelGroupChangeReason *reason,
+                                         const gchar **message)
+{
+  if (actor != NULL)
+    *actor = 0;
+
+  if (message != NULL)
+    *message = "";
+
+  if (reason != NULL)
+    *reason = TP_CHANNEL_GROUP_CHANGE_REASON_NONE;
+
+  return TRUE;
+}
+
+
+/**
  * tp_channel_group_get_handle_owner:
  * @self: a channel
  * @handle: a handle which is a member of this channel
