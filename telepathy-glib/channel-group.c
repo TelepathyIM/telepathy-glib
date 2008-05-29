@@ -526,7 +526,6 @@ tp_channel_got_all_members_0_16_cb (TpChannel *self,
     }
 
   g_assert (self->priv->group_local_pending != NULL);
-  g_assert (self->priv->group_local_pending_info != NULL);
   g_assert (self->priv->group_members != NULL);
   g_assert (self->priv->group_remote_pending != NULL);
 
@@ -551,7 +550,7 @@ tp_channel_glpmwi_0_16_cb (TpChannel *self,
 {
   /* this should always run after tp_channel_got_all_members_0_16 */
   g_assert (self->priv->group_local_pending != NULL);
-  g_assert (self->priv->group_local_pending_info != NULL);
+  g_assert (self->priv->group_local_pending_info == NULL);
 
   if (error == NULL)
     {
