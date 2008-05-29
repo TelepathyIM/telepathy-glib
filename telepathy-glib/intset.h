@@ -55,7 +55,7 @@ gboolean tp_intset_is_member (const TpIntSet *set, guint element);
 void tp_intset_foreach (const TpIntSet *set, TpIntFunc func,
     gpointer userdata);
 GArray *tp_intset_to_array (TpIntSet *set);
-TpIntSet *tp_intset_from_array (GArray *array);
+TpIntSet *tp_intset_from_array (const GArray *array);
 
 guint tp_intset_size (const TpIntSet *set);
 

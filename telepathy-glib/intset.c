@@ -280,7 +280,7 @@ tp_intset_to_array (TpIntSet *set)
  */
 
 TpIntSet *
-tp_intset_from_array (GArray *array)
+tp_intset_from_array (const GArray *array)
 {
   TpIntSet *set;
   guint max, i;
