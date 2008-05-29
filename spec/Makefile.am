@@ -1,10 +1,14 @@
 EXTRA_DIST = \
+    Account_Interface_Avatar.xml \
+    Account_Manager.xml \
+    Account.xml \
     all.xml \
     Channel_Handler.xml \
+    Channel_Interface_Call_Merging.xml \
     Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
-    Channel_Interface_DTMF.xml \
     Channel_Interface_Delivery_Reporting.xml \
+    Channel_Interface_DTMF.xml \
     Channel_Interface_Group.xml \
     Channel_Interface_Hold.xml \
     Channel_Interface_HTML.xml \
