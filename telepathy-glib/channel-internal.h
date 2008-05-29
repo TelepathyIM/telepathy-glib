@@ -23,8 +23,6 @@
 #define TP_CHANNEL_INTERNAL_H
 
 #include <telepathy-glib/channel.h>
-#include <telepathy-glib/handle.h>
-#include <telepathy-glib/intset.h>
 
 G_BEGIN_DECLS
 

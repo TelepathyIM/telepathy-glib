@@ -25,6 +25,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>
+#include <telepathy-glib/intset.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -79,13 +80,9 @@ TpConnection *tp_channel_borrow_connection (TpChannel *self);
 
 TpHandle tp_channel_group_get_self_handle (TpChannel *self);
 TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);
-
-/* hedge our bets by duplicating, so we can use a different internal
- * representation if I get TpIntSet to work... */
-GArray *tp_channel_group_dup_members_array (TpChannel *self);
-GArray *tp_channel_group_dup_local_pending_array (TpChannel *self);
-GArray *tp_channel_group_dup_remote_pending_array (TpChannel *self);
-
+const TpIntSet *tp_channel_group_get_members (TpChannel *self);
+const TpIntSet *tp_channel_group_get_local_pending (TpChannel *self);
+const TpIntSet *tp_channel_group_get_remote_pending (TpChannel *self);
 gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
     TpHandle local_pending, TpHandle *actor,
     TpChannelGroupChangeReason *reason, const gchar **message);

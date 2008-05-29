@@ -98,65 +98,65 @@ tp_channel_group_get_flags (TpChannel *self)
 
 
 /**
- * tp_channel_group_dup_members_array:
+ * tp_channel_group_get_members:
  * @self: a channel
  *
- * If @self is ready and is a group, return a non-%NULL #GArray containing
- * its members in sorted order.
+ * If @self is ready and is a group, return a #TpIntSet containing
+ * its members.
  *
- * If @self is a group but is not ready, the result may either be an array
+ * If @self is a group but is not ready, the result may either be a set
  * of members, or %NULL.
  *
  * If @self is not a group, return %NULL.
  *
  * Returns: the members, or %NULL
  */
-GArray *
-tp_channel_group_dup_members_array (TpChannel *self)
+const TpIntSet *
+tp_channel_group_get_members (TpChannel *self)
 {
-  return g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+  return self->priv->group_members;
 }
 
 
 /**
- * tp_channel_group_dup_local_pending_array:
+ * tp_channel_group_get_local_pending:
  * @self: a channel
  *
- * If @self is ready and is a group, return a non-%NULL #GArray containing
- * its local-pending members in sorted order.
+ * If @self is ready and is a group, return a #TpIntSet containing
+ * its local-pending members.
  *
- * If @self is a group but is not ready, the result may either be an array
+ * If @self is a group but is not ready, the result may either be a set
  * of local-pending members, or %NULL.
  *
  * If @self is not a group, return %NULL.
  *
  * Returns: the local-pending members, or %NULL
  */
-GArray *
-tp_channel_group_dup_local_pending_array (TpChannel *self)
+const TpIntSet *
+tp_channel_group_get_local_pending (TpChannel *self)
 {
-  return g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+  return self->priv->group_local_pending;
 }
 
 
 /**
- * tp_channel_group_dup_remote_pending_array:
+ * tp_channel_group_get_remote_pending:
  * @self: a channel
  *
- * If @self is ready and is a group, return a non-%NULL #GArray containing
- * its remote-pending members in sorted order.
+ * If @self is ready and is a group, return a #TpIntSet containing
+ * its remote-pending members.
  *
- * If @self is a group but is not ready, the result may either be an array
+ * If @self is a group but is not ready, the result may either be a set
  * of remote-pending members, or %NULL.
  *
  * If @self is not a group, return %NULL.
  *
  * Returns: the remote-pending members, or %NULL
   */
-GArray *
-tp_channel_group_dup_remote_pending_array (TpChannel *self)
+const TpIntSet *
+tp_channel_group_get_remote_pending (TpChannel *self)
 {
-  return g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+  return self->priv->group_remote_pending;
 }
 
 
