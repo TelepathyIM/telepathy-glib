@@ -786,7 +786,8 @@ tp_channel_group_members_changed_cb (TpChannel *self,
            * after I add that API */
         }
 
-      /* FIXME: emit a signal or something */
+      g_signal_emit_by_name (self, "group-members-changed", message,
+          added, removed, local_pending, remote_pending, actor, reason);
     }
 }
 
@@ -835,7 +836,10 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
       self->group_flags &= ~removed;
 
       if (added != 0 || removed != 0)
-        g_object_notify ((GObject *) self, "group-flags");
+        {
+          g_object_notify ((GObject *) self, "group-flags");
+          g_signal_emit_by_name (self, "group-flags-changed", added, removed);
+        }
     }
 }
 

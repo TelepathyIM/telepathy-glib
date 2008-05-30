@@ -98,6 +98,15 @@ enum
   N_PROPS
 };
 
+enum {
+  SIGNAL_GROUP_FLAGS_CHANGED,
+  SIGNAL_GROUP_MEMBERS_CHANGED,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
+
+
 G_DEFINE_TYPE_WITH_CODE (TpChannel,
     tp_channel,
     TP_TYPE_PROXY,
@@ -613,6 +622,7 @@ tp_channel_class_init (TpChannelClass *klass)
   GParamSpec *param_spec;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
+  GType au_type = dbus_g_type_get_collection ("GArray", G_TYPE_UINT);
 
   tp_channel_init_known_interfaces ();
 
@@ -688,6 +698,8 @@ tp_channel_class_init (TpChannelClass *klass)
    *   have been fetched and change notification will have been set up
    * - the initial value of the #TpChannel:group-flags property will
    *   have been fetched and change notification will have been set up
+   *
+   * Change notification is via notify::channel-ready.
    */
   param_spec = g_param_spec_boolean ("channel-ready", "Channel ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
@@ -716,6 +728,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * the user is a member of it, the #TpHandle representing them in this group.
    *
    * Otherwise, either a handle representing the user, or 0.
+   *
+   * Change notification is via notify::group-self-handle.
    */
   param_spec = g_param_spec_uint ("group-self-handle", "Group.SelfHandle",
       "Undefined if not a group", 0, G_MAXUINT32, 0,
@@ -732,6 +746,9 @@ tp_channel_class_init (TpChannelClass *klass)
    * group.
    *
    * Otherwise, 0.
+   *
+   * Change notification is via notify::group-flags or
+   * TpChannel::group-flags-changed.
    */
   param_spec = g_param_spec_uint ("group-flags", "Group.GroupFlags",
       "0 if not a group", 0, G_MAXUINT32, 0,
@@ -739,6 +756,49 @@ tp_channel_class_init (TpChannelClass *klass)
       | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_GROUP_FLAGS,
       param_spec);
+
+  /**
+   * TpChannel::group-flags-changed:
+   * @self: a channel
+   * @added: #TpChannelGroupFlags which are newly set
+   * @removed: #TpChannelGroupFlags which are no longer set
+   *
+   * Emitted when the #TpChannel:group-flags property changes while the
+   * channel is ready.
+   */
+  signals[SIGNAL_GROUP_FLAGS_CHANGED] = g_signal_new ("group-flags-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__UINT_UINT,
+      G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+
+  /**
+   * TpChannel::group-members-changed:
+   * @self: a channel
+   * @message: an optional textual message
+   * @added: a #GArray of #guint containing the full members added
+   * @removed: a #GArray of #guint containing the members (full,
+   *  local-pending or remote-pending) removed
+   * @local_pending: a #GArray of #guint containing the local-pending
+   *  members added
+   * @remote_pending: a #GArray of #guint containing the remote-pending
+   *  members added
+   * @actor: the #TpHandle of the contact causing the change, or 0
+   * @reason: the reason for the change as a #TpChannelGroupChangeReason
+   *
+   * Emitted when the group members change in a Group channel that is ready.
+   */
+  signals[SIGNAL_GROUP_MEMBERS_CHANGED] = g_signal_new (
+      "group-members-changed", G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__STRING_BOXED_BOXED_BOXED_BOXED_UINT_UINT,
+      G_TYPE_NONE, 7,
+      G_TYPE_STRING, au_type, au_type, au_type, au_type, G_TYPE_UINT,
+      G_TYPE_UINT);
 }
 
 /**
