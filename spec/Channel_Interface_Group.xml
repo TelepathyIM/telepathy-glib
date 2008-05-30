@@ -84,7 +84,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </method>
 
     <method name="GetAllMembers">
-      <tp:deprecated version="0.17.UNRELEASED">Use GetAll on the D-Bus
+      <tp:deprecated version="0.17.6">Use GetAll on the D-Bus
         Properties D-Bus interface to get properties including Members,
         RemotePendingMembers and LocalPendingMembers instead, falling back to
         this method and GetLocalPendingMembers if necessary.</tp:deprecated>
@@ -200,7 +200,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:flag suffix="Properties" value="2048">
         <tp:docstring>
           This flag indicates that all the properties introduced in
-          specification 0.17.UNRELEASED are fully supported.
+          specification 0.17.6 are fully supported.
         </tp:docstring>
       </tp:flag>
     </tp:flags>
@@ -213,7 +213,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         which operations are currently valid. Change notification is via
         the GroupFlagsChanged signal.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED">For backwards compatibility,
+      <tp:added version="0.17.6">For backwards compatibility,
         clients should fall back to calling GetGroupFlags if
         Channel_Group_Flag_Properties is not present.</tp:added>
     </property>
@@ -227,7 +227,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Returns the value of the GroupFlags property.
       </tp:docstring>
-      <tp:deprecated version="0.17.UNRELEASED">Use GetAll on the D-Bus
+      <tp:deprecated version="0.17.6">Use GetAll on the D-Bus
         Properties D-Bus interface to get properties including GroupFlags
         instead, falling back to this method if necessary.</tp:deprecated>
       <tp:possible-errors>
@@ -240,7 +240,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         A map from channel-specific handles to their owners.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED">For backwards compatibility,
+      <tp:added version="0.17.6">For backwards compatibility,
         clients should fall back to calling GetHandleOwners if
         Channel_Group_Flag_Properties is not present.</tp:added>
 
@@ -269,14 +269,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         unknown, MUST appear in this mapping with 0 as owner. Change
         notification is via the HandleOwnersChanged signal.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED"/>
+      <tp:added version="0.17.6"/>
     </property>
 
     <signal name="HandleOwnersChanged">
       <tp:docstring>
         Emitted whenever the HandleOwners property changes.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED">This signal should not be relied on
+      <tp:added version="0.17.6">This signal should not be relied on
         unless Channel_Group_Flag_Properties is present.</tp:added>
 
       <arg name="Added" type="a{uu}" tp:type="Handle_Owner_Map">
@@ -317,7 +317,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         the owner of the handle if it can be discovered in this channel,
         or 0 if the owner is not available.
       </tp:docstring>
-      <tp:deprecated version="0.17.UNRELEASED">Clients should use the
+      <tp:deprecated version="0.17.6">Clients should use the
         HandleOwners property and HandleOwnersChanged signal if
         Channel_Group_Flag_Properties is present.</tp:deprecated>
       <tp:possible-errors>
@@ -345,7 +345,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Returns the To_Be_Added handle (only) for each structure in the
         LocalPendingMembers property.
       </tp:docstring>
-      <tp:deprecated version="0.17.UNRELEASED">Use the LocalPendingMembers
+      <tp:deprecated version="0.17.6">Use the LocalPendingMembers
         property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -358,7 +358,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Returns the LocalPendingMembers property.
       </tp:docstring>
-      <tp:deprecated version="0.17.UNRELEASED">Use the LocalPendingMembers
+      <tp:deprecated version="0.17.6">Use the LocalPendingMembers
         property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
       <arg direction="out" type="a(uuus)" tp:type="Local_Pending_Info[]">
         <tp:docstring>
@@ -395,7 +395,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         requesting channel membership and awaiting local approval with
         AddMembers.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED">If Channel_Group_Flag_Properties is
+      <tp:added version="0.17.6">If Channel_Group_Flag_Properties is
         not present, clients should fall back to using the
         deprecated GetLocalPendingMembersWithInfo method, or fall back
         from that to the deprecated GetAllMembers method.</tp:added>
@@ -405,7 +405,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         The members of this channel.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED">If Channel_Group_Flag_Properties
+      <tp:added version="0.17.6">If Channel_Group_Flag_Properties
         is not set, fall back to calling GetAllMembers.</tp:added>
     </property>
 
@@ -414,7 +414,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Returns the Members property.
       </tp:docstring>
-      <tp:deprecated version="0.17.UNRELEASED">Use the Members
+      <tp:deprecated version="0.17.6">Use the Members
         property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -428,7 +428,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         An array of handles representing contacts who have been
         invited to the channel and are awaiting remote approval.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED">If Channel_Group_Flag_Properties
+      <tp:added version="0.17.6">If Channel_Group_Flag_Properties
         is not set, fall back to calling GetAllMembers.</tp:added>
     </property>
 
@@ -438,7 +438,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Returns an array of handles representing contacts who have been
         invited to the channel and are awaiting remote approval.
       </tp:docstring>
-      <tp:deprecated version="0.17.UNRELEASED">Use the RemotePendingMembers
+      <tp:deprecated version="0.17.6">Use the RemotePendingMembers
         property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -450,7 +450,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Emitted whenever the SelfHandle property changes.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED">This signal should not be relied on
+      <tp:added version="0.17.6">This signal should not be relied on
         unless Channel_Group_Flag_Properties is present.</tp:added>
 
       <arg type="u" tp:type="Contact_Handle" name="Self_Handle">
@@ -470,7 +470,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         GetSelfHandle on some protocols, so the value of this handle should
         always be used with the methods of this interface.
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED">For backwards compatibility,
+      <tp:added version="0.17.6">For backwards compatibility,
         clients should fall back to calling GetSelfHandle if
         Channel_Group_Flag_Properties is not present.</tp:added>
     </property>
@@ -480,7 +480,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:docstring>
         Returns the value of the SelfHandle property.
       </tp:docstring>
-      <tp:deprecated version="0.17.UNRELEASED">Clients should retrieve the
+      <tp:deprecated version="0.17.6">Clients should retrieve the
         SelfHandle property using GetAll instead,
         if Channel_Group_Flag_Properties is present.</tp:deprecated>
       <tp:possible-errors>
