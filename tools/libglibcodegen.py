@@ -21,7 +21,15 @@ please make any changes there.
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-from libtpcodegen import *
+from libtpcodegen import NS_TP, \
+                         Signature, \
+                         camelcase_to_lower, \
+                         camelcase_to_upper, \
+                         cmp_by_name, \
+                         escape_as_identifier, \
+                         get_descendant_text, \
+                         get_docstring, \
+                         xml_escape
 
 def dbus_gutils_wincaps_to_uscore(s):
     """Bug-for-bug compatible Python port of _dbus_gutils_wincaps_to_uscore
