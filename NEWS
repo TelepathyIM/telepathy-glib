@@ -20,6 +20,8 @@ Enhancements:
 * Enhance TpDBusPropertiesMixin so that mixins can provide properties more
   easily
 
+* Start porting the remaining XSLT to Python for better maintainability
+
 Fixes:
 
 * TpProxy: Avoid a misleading debug message every time a pending call
@@ -30,6 +32,12 @@ Fixes:
 
 * Add a Valgrind suppression for SELinux-related ld.so initialization (not our
   problem)
+
+Release notes for projects using code-generation:
+
+* When you update tools copied from telepathy-glib, be aware that
+  libglibcodegen.py now depends on libtpcodegen.py, and that some of the
+  formerly-XSLT tools have been replaced by Python versions
 
 telepathy-glib 0.7.8 (2008-05-09)
 =================================
