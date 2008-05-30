@@ -17,6 +17,9 @@ Enhancements:
 * New functions tp_asv_get_uint32() etc. to make it easier to use a{sv}
   hash tables (implemented in dbus-glib as gchar * => GHashTable *)
 
+* Enhance TpDBusPropertiesMixin so that mixins can provide properties more
+  easily
+
 Fixes:
 
 * TpProxy: Avoid a misleading debug message every time a pending call
