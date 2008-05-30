@@ -401,10 +401,7 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
   };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
-  static TpDBusPropertiesMixinIfaceImpl interfaces[] = {
-      { NULL /* initialized with tp_message_mixin_init_dbus_properties() */ },
-      { NULL }
-  };
+  static gboolean initialized = FALSE;
 
   g_type_class_add_private (klass, sizeof (ExampleEcho2ChannelPrivate));
 
@@ -469,9 +466,10 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
       G_STRUCT_OFFSET (ExampleEcho2ChannelClass, text_class));
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
-  tp_message_mixin_init_dbus_properties (prop_interfaces + 0);
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleEcho2ChannelClass, dbus_properties_class));
+
+  tp_message_mixin_init_dbus_properties (object_class);
 }
 
 static void
