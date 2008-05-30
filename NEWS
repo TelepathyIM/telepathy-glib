@@ -1,5 +1,10 @@
-telepathy-glib 0.7.9 (unreleased)
+telepathy-glib 0.7.9 (2008-05-30)
 =================================
+
+The "scaffolding" release.
+
+This version mostly contains infrastructure to support APIs that are coming
+soon, but haven't got through the review process yet.
 
 Enhancements:
 
