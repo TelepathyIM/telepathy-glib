@@ -12,7 +12,8 @@ ABI_LISTS = \
     versions/0.7.5.abi \
     versions/0.7.6.abi \
     versions/0.7.7.abi \
-    versions/0.7.8.abi
+    versions/0.7.8.abi \
+    versions/0.7.9.abi
 
 EXTRA_DIST = \
     $(ABI_LISTS) \
