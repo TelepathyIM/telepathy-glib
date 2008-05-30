@@ -100,8 +100,7 @@ void tp_message_mixin_messages_iface_init (gpointer g_iface,
 
 void tp_message_mixin_init (GObject *obj, gsize offset,
     TpBaseConnection *connection);
-void tp_message_mixin_init_dbus_properties (
-    TpDBusPropertiesMixinIfaceImpl *impl);
+void tp_message_mixin_init_dbus_properties (GObjectClass *cls);
 void tp_message_mixin_finalize (GObject *obj);
 
 G_END_DECLS
