@@ -311,7 +311,7 @@ _extra_prop_impls_quark (void)
 
   if (G_UNLIKELY (q == 0))
     q = g_quark_from_static_string
-        ("tp_dbus_properties_mixin_implement_interface@TELEPATHY_GLIB_0.7.3");
+        ("tp_dbus_properties_mixin_implement_interface@TELEPATHY_GLIB_0.7.9");
 
   return q;
 }
