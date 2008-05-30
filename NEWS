@@ -9,6 +9,25 @@ Enhancements:
     TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT to support the future
     Messages and DeliveryReporting interfaces
 
+* Update to telepathy-spec 0.17.6
+  - Group properties (but the group mixin does not yet implement them)
+  - Group HandleOwnersChanged, SelfHandleChanged
+  - TP_HASH_TYPE_CHANNEL_OWNER_MAP
+
+* New functions tp_asv_get_uint32() etc. to make it easier to use a{sv}
+  hash tables (implemented in dbus-glib as gchar * => GHashTable *)
+
+Fixes:
+
+* TpProxy: Avoid a misleading debug message every time a pending call
+  completes, and probably fix detection of crashing services
+
+* tp_dbus_check_valid_interface_name: correctly detect that a name with a
+  dot followed by a digit is invalid
+
+* Add a Valgrind suppression for SELinux-related ld.so initialization (not our
+  problem)
+
 telepathy-glib 0.7.8 (2008-05-09)
 =================================
 
