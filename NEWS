@@ -15,7 +15,7 @@ Enhancements:
   - TP_HASH_TYPE_CHANNEL_OWNER_MAP
 
 * New functions tp_asv_get_uint32() etc. to make it easier to use a{sv}
-  hash tables (implemented in dbus-glib as gchar * => GHashTable *)
+  hash tables (implemented in dbus-glib as a GHashTable of gchar * => GValue *)
 
 * Enhance TpDBusPropertiesMixin so that mixins can provide properties more
   easily
