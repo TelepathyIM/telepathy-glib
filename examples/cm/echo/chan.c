@@ -198,7 +198,6 @@ finalize (GObject *object)
 static void
 example_echo_channel_class_init (ExampleEchoChannelClass *klass)
 {
-  static gboolean initialized;
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
       { "TargetHandleType", "handle-type", NULL },
       { "TargetHandle", "handle", NULL },
@@ -250,13 +249,9 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleEchoChannelClass, text_class));
 
-  if (!initialized)
-    {
-      initialized = TRUE;
-      klass->dbus_properties_class.interfaces = prop_interfaces;
-      tp_dbus_properties_mixin_class_init (object_class,
-          G_STRUCT_OFFSET (ExampleEchoChannelClass, dbus_properties_class));
-    }
+  klass->dbus_properties_class.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleEchoChannelClass, dbus_properties_class));
 }
 
 static void
