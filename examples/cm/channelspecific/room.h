@@ -47,7 +47,7 @@ struct _ExampleCSHRoomChannelClass {
 
     TpTextMixinClass text_class;
     TpGroupMixinClass group_class;
-    TpDBusPropertiesMixinClass props_class;
+    TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
 struct _ExampleCSHRoomChannel {
