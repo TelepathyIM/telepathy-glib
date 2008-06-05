@@ -3,6 +3,7 @@ EXTRA_DIST = \
     Account_Manager.xml \
     Account.xml \
     all.xml \
+    Channel_Future.xml \
     Channel_Handler.xml \
     Channel_Interface_Call_Merging.xml \
     Channel_Interface_Call_State.xml \
