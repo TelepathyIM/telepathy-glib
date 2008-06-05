@@ -112,7 +112,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
       <tp:docstring>
         Request that the alias of the given contact be changed. Success will be
-        indicated by emitting an AliasUpdate signal. On connections where the
+        indicated by emitting an AliasesChanged signal. On connections where the
         CONNECTION_ALIAS_FLAG_USER_SET flag is not set, this method will only
         ever succeed if the contact is the user's own handle (as returned by
         GetSelfHandle on the Connection interface).
@@ -122,7 +122,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
         <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
       </tp:possible-errors>
     </method>

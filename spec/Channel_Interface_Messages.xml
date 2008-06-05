@@ -536,7 +536,6 @@ USA.</p>
       </tp:docstring>
     </property>
 
-    <!-- FIXME: should we add this signal to the Text interface instead? -->
     <signal name="PendingMessagesRemoved">
       <tp:docstring>
         The messages with the given IDs have been removed from the

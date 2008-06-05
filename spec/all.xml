@@ -3,7 +3,7 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>Telepathy D-Bus Interface Specification</tp:title>
-<tp:version>0.17.6</tp:version>
+<tp:version>0.17.6.1</tp:version>
 
 <tp:copyright>Copyright (C) 2005-2008 Collabora Limited</tp:copyright>
 <tp:copyright>Copyright (C) 2005-2008 Nokia Corporation</tp:copyright>
@@ -40,6 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 <xi:include href="Connection_Interface_Renaming.xml"/>
 
 <xi:include href="Channel.xml"/>
+<xi:include href="Channel_Future.xml"/>
 <xi:include href="Channel_Type_Contact_List.xml"/>
 <!-- Never implemented, can't be implemented with current dbus-glib, vague
 <xi:include href="Channel_Type_Contact_Search.xml"/> -->

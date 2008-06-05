@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <node name="/Channel" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright>Copyright (C) 2005, 2006 Collabora Limited</tp:copyright>
-  <tp:copyright>Copyright (C) 2005, 2006 Nokia Corporation</tp:copyright>
+  <tp:copyright>Copyright (C) 2005-2008 Collabora Limited</tp:copyright>
+  <tp:copyright>Copyright (C) 2005-2008 Nokia Corporation</tp:copyright>
   <tp:copyright>Copyright (C) 2006 INdT</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
     <p>This library is free software; you can redistribute it and/or
@@ -19,6 +19,77 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Channel">
+
+    <property name="ChannelType" type="s" tp:type="DBus_Interface"
+      access="read">
+      <tp:added version="0.17.7"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>The channel's type. This cannot change once the channel has
+          been created.</p>
+
+        <p>For compatibility between older connection managers and newer
+          clients, if this is unavailable or is an empty string,
+          clients MUST use the result of calling GetChannelType.</p>
+
+        <tp:rationale>
+          The GetAll method lets clients retrieve all properties in one
+          round-trip, which is desirable.
+        </tp:rationale>
+      </tp:docstring>
+    </property>
+
+    <property name="Interfaces" type="as" tp:type="DBus_Interface[]"
+      access="read">
+      <tp:added version="0.17.7"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Extra interfaces provided by this channel. This SHOULD NOT include
+          the channel type and the Channel interface itself, and cannot
+          change once the channel has been created.</p>
+
+        <p>For compatibility between older connection managers and newer
+          clients, if this is unavailable, or if this is an empty list and
+          ChannelType is an empty string, clients MUST use the result of
+          calling GetInterfaces instead. If this is an empty list but
+          ChannelType is non-empty, clients SHOULD NOT call GetInterfaces;
+          this implies that connection managers that implement the
+          ChannelType property MUST also implement the Interfaces property
+          correctly.</p>
+
+        <tp:rationale>
+          The GetAll method lets clients retrieve all properties in one
+          round-trip, which is desirable.
+        </tp:rationale>
+      </tp:docstring>
+    </property>
+
+    <property name="TargetHandle" type="u" access="read" tp:type="Handle">
+      <tp:added version="0.17.7"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>The handle (a representation for the identifier) of the contact,
+          chatroom, etc. with which this handle communicates. Its type
+          is given by the TargetHandleType property.</p>
+
+        <p>This is fixed for the lifetime of the channel, so channels which
+          could potentially be used to communicate with multiple contacts
+          (such as streamed media calls defined by their members, or ad-hoc
+          chatrooms like MSN switchboards) must have TargetHandleType set
+          to Handle_Type_None and TargetHandle set to 0.</p>
+
+        <p>Unlike in the telepathy-spec 0.16 API, there is no particular
+          uniqueness guarantee - there can be many channels with the same
+          (channel type, handle type, handle) tuple. This is necessary
+          to support conversation threads in XMPP and SIP, for example.</p>
+      </tp:docstring>
+    </property>
+
+    <property name="TargetHandleType" type="u" access="read"
+      tp:type="Handle_Type">
+      <tp:added version="0.17.7"/>
+      <tp:docstring>
+        The type of TargetHandle.
+      </tp:docstring>
+    </property>
+
     <method name="Close">
       <tp:docstring>
         Request that the channel be closed. This is not the case until
@@ -54,35 +125,53 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </signal>
 
     <method name="GetChannelType">
+      <tp:deprecated version="0.17.7">Use the ChannelType
+        property if possible.</tp:deprecated>
       <arg direction="out" type="s" tp:type="DBus_Interface">
         <tp:docstring>The interface name</tp:docstring>
       </arg>
       <tp:docstring>
         Returns the interface name for the type of this channel.
+        Clients SHOULD use the ChannelType property instead, falling back
+        to this method only if necessary.
+
+        <tp:rationale>
+          The GetAll method lets clients retrieve all properties in one
+          round-trip.
+        </tp:rationale>
       </tp:docstring>
     </method>
 
     <method name="GetHandle">
+      <tp:deprecated version="0.17.7">Use the TargetHandleType
+        and TargetHandle properties if possible.</tp:deprecated>
       <arg direction="out" type="u" tp:type="Handle_Type">
         <tp:docstring>
-        The handle type, or zero if this channel does not correspond to any
-        particular handle
+          The same as TargetHandleType.
         </tp:docstring>
       </arg>
       <arg direction="out" type="u" tp:type="Handle">
         <tp:docstring>
-        The handle, or zero if this channel does not correspond to any
-        particular handle
+          The same as TargetHandle.
         </tp:docstring>
       </arg>
       <tp:docstring>
         Returns the handle type and number if this channel represents a
         communication with a particular contact, room or server-stored list, or
-        zero if it is transient and defined only by its contents.
+        zero if it is transient and defined only by its contents. Clients
+        SHOULD use the TargetHandle and TargetHandleType properties instead,
+        falling back to this method only if necessary.
+
+        <tp:rationale>
+          The GetAll method lets clients retrieve all properties in one
+          round-trip.
+        </tp:rationale>
       </tp:docstring>
     </method>
 
     <method name="GetInterfaces">
+      <tp:deprecated version="0.17.7">Use the Interfaces
+        property if possible.</tp:deprecated>
       <arg direction="out" type="as" tp:type="DBus_Interface[]">
         <tp:docstring>
           An array of the D-Bus interface names
@@ -90,6 +179,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
       <tp:docstring>
         Get the optional interfaces implemented by the channel.
+        Clients SHOULD use the Interfaces property instead, falling back
+        to this method only if necessary.
+
+        <tp:rationale>
+          The GetAll method lets clients retrieve all properties in one
+          round-trip.
+        </tp:rationale>
       </tp:docstring>
     </method>
 
@@ -103,15 +199,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <p>Each channel may have an immutable handle associated with it, which
       may be any handle type, such as a contact, room or list handle,
-      indicating that the channel is for communicating with that handle.
-      There can be at most one channel for each combination of
-      (channel type, handle type, handle) with nonzero handle type.</p>
-    
-    <p>If a channel does not have a handle (an "anonymous channel"), it
+      indicating that the channel is for communicating with that handle.</p>
+
+    <p>If a channel does not have a handle (an "anonymous channel" with
+      Target_Handle = 0 and Target_Handle_Type = Handle_Type_None), it
       means that the channel is defined by some other terms, such as it
       may be a transient group defined only by its members as visible
-      through the Channel.Interface.Group interface. There can be any number
-      of anonymous channels of the same channel type.</p>
+      through the Channel.Interface.Group interface.</p>
 
     <p>Other optional interfaces can be implemented to indicate other available
     functionality, such as Channel.Interface.Group if the channel contains
@@ -131,6 +225,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     methods or signals with conflicting names, the D-Bus interface names should
     always be used to invoke methods and bind signals.</p>
     </tp:docstring>
+
+    <tp:changed version="0.17.7">Previously we guaranteed that, for
+      any handle type other than Handle_Type_None, and for any channel type
+      and any handle, there would be no more than one channel with that
+      combination of channel type, handle type and handle. This guarantee
+      has now been removed in order to accommodate features like message
+      threads.
+    </tp:changed>
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->

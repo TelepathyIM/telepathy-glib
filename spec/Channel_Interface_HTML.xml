@@ -49,11 +49,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <p>Client authors SHOULD pay careful attention to the security
         considerations in XEP-0071, "XHTML-IM", to avoid exposing client users
-        to security risks.
-        (FIXME: or should the presence of this interface act as a guarantee
-        that the CM will perform filtering on "text/html" parts? In practice
-        that would mean all CMs had to link against a tag-soup parser like
-        libxml2)</p>
+        to security risks. Clients MUST NOT assume that connection managers
+        will filter messages to remove unsafe HTML.</p>
+
+      <tp:rationale>
+        <p>Connection managers are the components in Telepathy that are most
+          likely to be exploitable by a remote attacker to run malicious code
+          (since they are network-facing), so any filtering that the CM does
+          might be subverted.</p>
+      </tp:rationale>
 
       <p>To avoid misleading users, clients SHOULD only present UI for the
         subset of HTML that is indicated to be supported by this
@@ -71,8 +75,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Clients SHOULD attempt to parse messages as XHTML, but fall back
         to using a permissive "tag-soup" HTML parser if that fails.
         (FIXME: or should the presence of this interface imply that the
-        CM filters and fixes up "text/html"? In practice that would result
-        in all the CMs having to link against libxml2 or something)</p>
+        CM fixes up "text/html" to be XHTML? In practice that would result
+        in all the CMs having to link against libxml2 or something... the
+        rationale above no longer applies here, since dropping a malformed
+        message is "safe")</p>
     </tp:docstring>
 
   </interface>

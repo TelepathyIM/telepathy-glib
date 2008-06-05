@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     of this channel type should be created by the connection manager at
     connection time if the list exists on the server, or may be requested
     by using the appropriate handle.  These handles can be obtained using
-    RequestHandle with a handle type of HANDLE_TYPE_LIST and
+    RequestHandles with a handle type of HANDLE_TYPE_LIST and
     one of the following identifiers:</p>
 
     <ul>
@@ -53,7 +53,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <p>For user-defined contact groups, instances of this channel type should
     be created by the connection manager at connection time for each group
     that exists on the server. New, empty groups can be created by calling
-    RequestHandle with a handle type of
+    RequestHandles with a handle type of
     HANDLE_TYPE_GROUP and with the name set to the
     human-readable UTF-8 name of the group.</p>
 
