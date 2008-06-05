@@ -444,7 +444,7 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "Additional Channel.Interface.* interfaces",
       G_TYPE_STRV,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READABLE |
+      G_PARAM_READABLE |
       G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
 
