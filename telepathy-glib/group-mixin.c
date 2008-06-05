@@ -1570,10 +1570,11 @@ add_handle_owners_helper (gpointer key,
   if (owner_handle != 0)
     tp_handle_ref (mixin->handle_repo, owner_handle);
 
-  if (g_hash_table_lookup_extended (mixin->priv->handle_owners,
-        GUINT_TO_POINTER (local_handle), &orig_key, &orig_value))
+  if (g_hash_table_lookup_extended (mixin->priv->handle_owners, key,
+        &orig_key, &orig_value))
     {
-      g_hash_table_remove (mixin->priv->handle_owners, orig_key);
+      /* no need to actually remove - we're about to overwrite them anyway */
+
       tp_handle_unref (mixin->handle_repo, local_handle);
 
       if (GPOINTER_TO_UINT (orig_value) != 0)
