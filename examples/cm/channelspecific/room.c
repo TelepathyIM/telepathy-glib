@@ -41,6 +41,7 @@ enum
   PROP_HANDLE_TYPE,
   PROP_HANDLE,
   PROP_CONNECTION,
+  PROP_INTERFACES,
   N_PROPS
 };
 
@@ -53,6 +54,13 @@ struct _ExampleCSHRoomChannelPrivate
   gboolean closed:1;
   gboolean disposed:1;
 };
+
+
+static const char * example_csh_room_channel_interfaces[] = {
+    TP_IFACE_CHANNEL_INTERFACE_GROUP,
+    NULL
+};
+
 
 static void
 example_csh_room_channel_init (ExampleCSHRoomChannel *self)
@@ -299,6 +307,9 @@ get_property (GObject *object,
     case PROP_CONNECTION:
       g_value_set_object (value, self->priv->conn);
       break;
+    case PROP_INTERFACES:
+      g_value_set_boxed (value, example_csh_room_channel_interfaces);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -415,6 +426,13 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
       G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
+  param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
+      "Additional Channel.Interface.* interfaces",
+      G_TYPE_STRV,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READABLE |
+      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
+
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, text_class));
 
@@ -465,9 +483,8 @@ static void
 channel_get_interfaces (TpSvcChannel *iface,
                         DBusGMethodInvocation *context)
 {
-  const char *interfaces[] = { TP_IFACE_CHANNEL_INTERFACE_GROUP, NULL };
-
-  tp_svc_channel_return_from_get_interfaces (context, interfaces);
+  tp_svc_channel_return_from_get_interfaces (context,
+      example_csh_room_channel_interfaces);
 }
 
 
