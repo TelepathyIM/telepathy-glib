@@ -400,6 +400,21 @@ add_member (GObject *object,
 static void
 example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
 {
+  static TpDBusPropertiesMixinPropImpl channel_props[] = {
+      { "TargetHandleType", "handle-type", NULL },
+      { "TargetHandle", "handle", NULL },
+      { "ChannelType", "channel-type", NULL },
+      { "Interfaces", "interfaces", NULL },
+      { NULL }
+  };
+  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+      { TP_IFACE_CHANNEL,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        channel_props,
+      },
+      { NULL }
+  };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
@@ -440,6 +455,10 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
       G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, group_class),
       add_member,
       NULL);
+
+  klass->dbus_properties_class.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleEchoChannelClass, dbus_properties_class));
 }
 
 
