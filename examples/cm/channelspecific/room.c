@@ -451,14 +451,15 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, text_class));
 
+  klass->dbus_properties_class.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, dbus_properties_class));
+
   tp_group_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, group_class),
       add_member,
       NULL);
-
-  klass->dbus_properties_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleEchoChannelClass, dbus_properties_class));
+  tp_group_mixin_init_dbus_properties (object_class);
 }
 
 
