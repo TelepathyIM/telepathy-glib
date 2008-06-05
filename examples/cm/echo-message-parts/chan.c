@@ -401,7 +401,6 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
   };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
-  static gboolean initialized = FALSE;
 
   g_type_class_add_private (klass, sizeof (ExampleEcho2ChannelPrivate));
 
