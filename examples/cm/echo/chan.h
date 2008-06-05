@@ -43,6 +43,7 @@ GType example_echo_channel_get_type (void);
 struct _ExampleEchoChannelClass {
     GObjectClass parent_class;
     TpTextMixinClass text_class;
+    TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
 struct _ExampleEchoChannel {

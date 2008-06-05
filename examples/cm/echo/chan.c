@@ -18,6 +18,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-generic.h>
 
 static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
@@ -25,6 +26,8 @@ static void channel_iface_init (gpointer iface, gpointer data);
 G_DEFINE_TYPE_WITH_CODE (ExampleEchoChannel,
     example_echo_channel,
     G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL))
@@ -195,6 +198,10 @@ finalize (GObject *object)
 static void
 example_echo_channel_class_init (ExampleEchoChannelClass *klass)
 {
+  static gboolean initialized;
+  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+      { NULL }
+  };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
@@ -230,6 +237,14 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
 
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleEchoChannelClass, text_class));
+
+  if (!initialized)
+    {
+      initialized = TRUE;
+      klass->dbus_properties_class.interfaces = prop_interfaces;
+      tp_dbus_properties_mixin_class_init (object_class,
+          G_STRUCT_OFFSET (ExampleEchoChannelClass, dbus_properties_class));
+    }
 }
 
 static void
