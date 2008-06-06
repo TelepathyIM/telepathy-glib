@@ -1489,6 +1489,8 @@ tp_group_mixin_change_members (GObject *obj,
                 }
             }
 
+          tp_handles_unref (mixin->handle_repo, arr_owners_removed);
+
           g_hash_table_destroy (empty_hash_table);
         }
 
@@ -1640,6 +1642,8 @@ remove_handle_owners_if_exist (GObject *obj,
       TpHandle handle = g_array_index (array, guint, i);
       gpointer local_handle, owner_handle;
 
+      g_assert (handle != 0);
+
       if (g_hash_table_lookup_extended (priv->handle_owners,
                                         GUINT_TO_POINTER (handle),
                                         &local_handle,
@@ -1647,7 +1651,7 @@ remove_handle_owners_if_exist (GObject *obj,
         {
           g_assert (GPOINTER_TO_UINT (local_handle) == handle);
           g_array_append_val (ret, handle);
-          tp_handle_unref (mixin->handle_repo, handle);
+          /* don't unref local_handle - ownership is transferred to ret */
 
           if (GPOINTER_TO_UINT (owner_handle) != 0)
             tp_handle_unref (mixin->handle_repo,
