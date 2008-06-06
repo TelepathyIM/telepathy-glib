@@ -127,7 +127,7 @@ example_csh_room_factory_class_init (ExampleCSHRoomFactoryClass *klass)
 }
 
 static void
-close_all (TpChannelFactoryIface *iface)
+example_csh_room_factory_close_all (TpChannelFactoryIface *iface)
 {
   ExampleCSHRoomFactory *self = EXAMPLE_CSH_ROOM_FACTORY (iface);
 
@@ -147,9 +147,9 @@ struct _ForeachData
 };
 
 static void
-_foreach (gpointer key,
-          gpointer value,
-          gpointer user_data)
+foreach_helper (gpointer key,
+                gpointer value,
+                gpointer user_data)
 {
   struct _ForeachData *data = user_data;
   TpChannelIface *chan = TP_CHANNEL_IFACE (value);
@@ -158,14 +158,14 @@ _foreach (gpointer key,
 }
 
 static void
-foreach (TpChannelFactoryIface *iface,
-         TpChannelFunc callback,
-         gpointer user_data)
+example_csh_room_factory_foreach (TpChannelFactoryIface *iface,
+                                  TpChannelFunc callback,
+                                  gpointer user_data)
 {
   ExampleCSHRoomFactory *self = EXAMPLE_CSH_ROOM_FACTORY (iface);
   struct _ForeachData data = { user_data, callback };
 
-  g_hash_table_foreach (self->priv->channels, _foreach, &data);
+  g_hash_table_foreach (self->priv->channels, foreach_helper, &data);
 }
 
 static void
@@ -211,13 +211,13 @@ new_channel (ExampleCSHRoomFactory *self, TpHandle handle)
 }
 
 static TpChannelFactoryRequestStatus
-request (TpChannelFactoryIface *iface,
-         const gchar *chan_type,
-         TpHandleType handle_type,
-         guint handle,
-         gpointer request_id,
-         TpChannelIface **ret,
-         GError **error)
+example_csh_room_factory_request (TpChannelFactoryIface *iface,
+                                  const gchar *chan_type,
+                                  TpHandleType handle_type,
+                                  guint handle,
+                                  gpointer request_id,
+                                  TpChannelIface **ret,
+                                  GError **error)
 {
   ExampleCSHRoomFactory *self = EXAMPLE_CSH_ROOM_FACTORY (iface);
   ExampleCSHRoomChannel *chan;
@@ -254,7 +254,7 @@ iface_init (gpointer iface,
 {
   TpChannelFactoryIfaceClass *klass = iface;
 
-  klass->close_all = close_all;
-  klass->foreach = foreach;
-  klass->request = request;
+  klass->close_all = example_csh_room_factory_close_all;
+  klass->foreach = example_csh_room_factory_foreach;
+  klass->request = example_csh_room_factory_request;
 }
