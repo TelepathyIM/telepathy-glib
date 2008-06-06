@@ -50,6 +50,10 @@
  * <literal>G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
  * tp_external_group_mixin_iface_init)</literal> in the fourth argument to
  * <literal>G_DEFINE_TYPE_WITH_CODE</literal>.
+ *
+ * Since 0.7.10 you can also implement the properties of Group channels,
+ * by calling tp_group_mixin_init_dbus_properties() or
+ * tp_external_group_mixin_init_dbus_properties() (as appropriate).
  */
 
 #include <telepathy-glib/group-mixin.h>
@@ -1531,7 +1535,7 @@ tp_group_mixin_change_members (GObject *obj,
  * for the given globally-valid handle. It will be returned from subsequent
  * GetHandleOwner queries where appropriate.
  *
- * Changed in 0.7.9: The @owner_handle may be 0. To comply with telepathy-spec
+ * Changed in 0.7.10: The @owner_handle may be 0. To comply with telepathy-spec
  *  0.17.6, before adding any channel-specific handle to the members,
  *  local-pending members or remote-pending members, you must call either
  *  this function or tp_group_mixin_add_handle_owners().
@@ -1602,7 +1606,7 @@ add_handle_owners_helper (gpointer key,
  * handle to the members, local-pending members or remote-pending members, you
  * must call either this function or tp_group_mixin_add_handle_owner().
  *
- * @since 0.7.9
+ * @since 0.7.10
  */
 void
 tp_group_mixin_add_handle_owners (GObject *obj,
@@ -1720,6 +1724,8 @@ enum {
  *
  * An implementation of #TpDBusPropertiesMixinGetter which assumes that the
  * @object has the group mixin. It can only be used for the Group interface.
+ *
+ * Since: 0.7.10
  */
 void
 tp_group_mixin_get_dbus_property (GObject *object,
@@ -1822,6 +1828,8 @@ static TpDBusPropertiesMixinPropImpl known_group_props[] = {
  *
  * This uses tp_group_mixin_get_dbus_property() as the property getter and
  * sets up a list of the supported properties for it.
+ *
+ * Since: 0.7.10
  */
 void
 tp_group_mixin_init_dbus_properties (GObjectClass *cls)
