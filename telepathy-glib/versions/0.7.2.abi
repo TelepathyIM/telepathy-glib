@@ -1,5 +1,6 @@
 Version: TELEPATHY_GLIB_0.7.2
 Extends: TELEPATHY_GLIB_0.7.1
+Release: 0.7.2
 
 tp_cli_dbus_introspectable_call_introspect
 tp_cli_dbus_introspectable_run_introspect

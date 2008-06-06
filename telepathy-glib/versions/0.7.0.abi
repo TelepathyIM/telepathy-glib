@@ -1,5 +1,6 @@
 Version: TELEPATHY_GLIB_0.7.0
 Extends: -
+Release: 0.7.1
 
 tp_base_connection_add_interfaces
 tp_base_connection_change_status

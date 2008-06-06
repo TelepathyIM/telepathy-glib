@@ -1,5 +1,6 @@
 Version: TELEPATHY_GLIB_0.7.6
 Extends: TELEPATHY_GLIB_0.7.5
+Release: 0.7.6
 
 tp_channel_init_known_interfaces
 tp_cli_channel_interface_call_state_call_get_call_states

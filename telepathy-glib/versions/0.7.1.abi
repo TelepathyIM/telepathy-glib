@@ -1,5 +1,6 @@
 Version: TELEPATHY_GLIB_0.7.1
 Extends: TELEPATHY_GLIB_0.7.0
+Release: 0.7.1
 
 tp_channel_get_type
 tp_channel_new

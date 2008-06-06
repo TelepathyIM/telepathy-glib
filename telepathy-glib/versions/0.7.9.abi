@@ -1,5 +1,6 @@
 Version: TELEPATHY_GLIB_0.7.9
 Extends: TELEPATHY_GLIB_0.7.8
+Release: 0.7.9
 
 tp_asv_get_boolean
 tp_asv_get_boxed

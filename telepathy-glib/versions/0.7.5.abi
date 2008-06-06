@@ -1,5 +1,6 @@
 Version: TELEPATHY_GLIB_0.7.5
 Extends: TELEPATHY_GLIB_0.7.3
+Release: 0.7.5
 
 tp_type_dbus_array_os
 tp_type_dbus_struct_os

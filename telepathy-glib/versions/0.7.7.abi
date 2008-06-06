@@ -1,5 +1,6 @@
 Version: TELEPATHY_GLIB_0.7.7
 Extends: TELEPATHY_GLIB_0.7.6
+Release: 0.7.7
 
 tp_channel_call_when_ready
 tp_connection_call_when_ready
