@@ -72,6 +72,9 @@ def main(abifiles, symbols=None, unreleased_version=None):
                 line = line[8:].strip()
                 extends = line
                 continue
+            elif line.lower().startswith('release:'):
+                # skip it
+                continue
             else:
                 e('Could not understand line in %s header: %s', filename, line)
                 raise SystemExit(1)
