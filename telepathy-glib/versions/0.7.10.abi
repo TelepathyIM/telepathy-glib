@@ -1,0 +1,9 @@
+Version: TELEPATHY_GLIB_0.7.10
+Extends: TELEPATHY_GLIB_0.7.9
+
+tp_external_group_mixin_get_dbus_property
+tp_external_group_mixin_init_dbus_properties
+tp_group_mixin_add_handle_owners
+tp_group_mixin_change_self_handle
+tp_group_mixin_get_dbus_property
+tp_group_mixin_init_dbus_properties
