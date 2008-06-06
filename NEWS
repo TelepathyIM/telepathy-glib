@@ -1,3 +1,23 @@
+telepathy-glib 0.7.10 (2008-06-06)
+==================================
+
+The "properties everywhere" release.
+
+Again, this version mainly contains infrastructure to support future APIs,
+like the planned Requests API.
+
+Enhancements:
+
+* Update to telepathy-spec 0.17.7
+  - Channel gained immutable/read-only ChannelType, TargetHandleType,
+    TargetHandle and Interfaces properties
+
+* TpGroupMixin now supports the Group properties introduced in the previous
+  version
+
+* Added an example connection manager with channel-specific handles in
+  chatrooms
+
 telepathy-glib 0.7.9 (2008-05-30)
 =================================
 
