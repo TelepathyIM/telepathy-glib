@@ -21,8 +21,10 @@ the library (one per line). If --unreleased-version is given, any symbols
 in SYMBOLS but not in FILES are assigned to that version; otherwise, any
 such symbols cause an error.
 
-If --dpkg is given, produce a Debian dpkg symbols file instead of a
-
+If --dpkg is given, produce a Debian dpkg-gensymbols file instead of a
+GNU ld version-script. The argument to --dpkg is the first line of the
+resulting symbols file, and --dpkg-build-depends-package can optionally
+be used to set the Build-Depends-Package field.
 
 This script originates in telepathy-glib <http://telepathy.freedesktop.org/> -
 please send us any changes that are needed.
