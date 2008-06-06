@@ -122,7 +122,7 @@ example_echo_factory_class_init (ExampleEchoFactoryClass *klass)
       "The connection that owns this channel factory",
       TP_TYPE_BASE_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
   g_type_class_add_private (klass, sizeof (ExampleEchoFactoryPrivate));
