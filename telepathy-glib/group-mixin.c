@@ -1803,6 +1803,15 @@ tp_group_mixin_get_dbus_property (GObject *object,
     }
 }
 
+static TpDBusPropertiesMixinPropImpl known_group_props[] = {
+    { "GroupFlags", NULL, NULL },
+    { "HandleOwners", NULL, NULL },
+    { "LocalPendingMembers", NULL, NULL },
+    { "Members", NULL, NULL },
+    { "RemotePendingMembers", NULL, NULL },
+    { "SelfHandle", NULL, NULL },
+    { NULL }
+};
 
 /**
  * tp_group_mixin_init_dbus_properties:
@@ -1817,19 +1826,10 @@ tp_group_mixin_get_dbus_property (GObject *object,
 void
 tp_group_mixin_init_dbus_properties (GObjectClass *cls)
 {
-  static TpDBusPropertiesMixinPropImpl props[] = {
-      { "GroupFlags", NULL, NULL },
-      { "HandleOwners", NULL, NULL },
-      { "LocalPendingMembers", NULL, NULL },
-      { "Members", NULL, NULL },
-      { "RemotePendingMembers", NULL, NULL },
-      { "SelfHandle", NULL, NULL },
-      { NULL }
-  };
 
   tp_dbus_properties_mixin_implement_interface (cls,
       TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP, tp_group_mixin_get_dbus_property,
-      NULL, props);
+      NULL, known_group_props);
 }
 
 
@@ -1886,6 +1886,72 @@ tp_external_group_mixin_finalize (GObject *obj)
 
   tp_group_mixin_remove_external (obj_with_mixin, obj);
   g_object_unref (obj_with_mixin);
+}
+
+/**
+ * tp_external_group_mixin_init_dbus_properties:
+ * @cls: The class of an object with this mixin
+ *
+ * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
+ * the Group interface's properties.
+ *
+ * This uses tp_group_mixin_get_dbus_property() as the property getter and
+ * sets up a list of the supported properties for it.
+ *
+ * Since: 0.7.10
+ */
+void
+tp_external_group_mixin_init_dbus_properties (GObjectClass *cls)
+{
+
+  tp_dbus_properties_mixin_implement_interface (cls,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP,
+      tp_external_group_mixin_get_dbus_property,
+      NULL, known_group_props);
+}
+
+/**
+ * tp_external_group_mixin_get_dbus_property:
+ * @object: An object with this mixin
+ * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP
+ * @name: A quark representing the D-Bus property name, either
+ *  "GroupFlags", "HandleOwners", "LocalPendingMembers", "Members",
+ *  "RemotePendingMembers" or "SelfHandle"
+ * @value: A GValue pre-initialized to the right type, into which to put the
+ *  value
+ * @unused: Ignored
+ *
+ * An implementation of #TpDBusPropertiesMixinGetter which assumes that the
+ * @object has the external group mixin. It can only be used for the Group
+ * interface.
+ *
+ * Since: 0.7.10
+ */
+void
+tp_external_group_mixin_get_dbus_property (GObject *object,
+                                           GQuark interface,
+                                           GQuark name,
+                                           GValue *value,
+                                           gpointer unused G_GNUC_UNUSED)
+{
+  GObject *group = TP_EXTERNAL_GROUP_MIXIN_OBJ (object);
+
+  if (group != NULL)
+    {
+      tp_group_mixin_get_dbus_property (group, interface, name, value, NULL);
+    }
+  else if (G_VALUE_HOLDS_BOXED (value))
+    {
+      /* for certain boxed types we need to supply an empty value */
+
+      if (G_VALUE_HOLDS (value, TP_HASH_TYPE_HANDLE_OWNER_MAP))
+        g_value_take_boxed (value, g_hash_table_new (NULL, NULL));
+      else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY))
+        g_value_take_boxed (value, g_array_sized_new (FALSE, FALSE,
+              sizeof (guint), 0));
+      else if (G_VALUE_HOLDS (value, TP_ARRAY_TYPE_LOCAL_PENDING_INFO_LIST))
+        g_value_take_boxed (value, g_ptr_array_sized_new (0));
+    }
 }
 
 #define EXTERNAL_OR_DIE(var) \

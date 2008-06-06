@@ -224,6 +224,10 @@ void tp_external_group_mixin_finalize (GObject *obj);
 void tp_external_group_mixin_iface_init (gpointer g_iface,
     gpointer iface_data);
 
+void tp_external_group_mixin_get_dbus_property (GObject *object,
+    GQuark interface, GQuark name, GValue *value, gpointer unused);
+void tp_external_group_mixin_init_dbus_properties (GObjectClass *cls);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_GROUP_MIXIN_H__ */
