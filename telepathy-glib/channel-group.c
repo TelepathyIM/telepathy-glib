@@ -575,6 +575,39 @@ _tp_channel_glpmwi_0_16 (TpChannel *self)
       self, -1, tp_channel_glpmwi_0_16_cb, NULL, NULL, NULL);
 }
 
+static void
+_tp_channel_emit_initial_sets (TpChannel *self)
+{
+  GArray *added, *remote_pending;
+  GArray empty_array = {NULL, 0};
+  TpIntSetIter iter = TP_INTSET_ITER_INIT (self->priv->group_local_pending);
+
+  added = tp_intset_to_array (self->priv->group_members);
+  remote_pending = tp_intset_to_array (self->priv->group_remote_pending);
+
+  g_signal_emit_by_name (self, "group-members-changed", "",
+      added, &empty_array, &empty_array, remote_pending, 0, 0);
+
+  while (tp_intset_iter_next (&iter))
+    {
+      TpHandle handle;
+      GArray local_pending = {(gchar*) &handle, 1};
+      TpHandle actor;
+      TpChannelGroupChangeReason reason;
+      const gchar *message;
+
+      handle = iter.element;
+      tp_channel_group_get_local_pending_info (self, handle, &actor, &reason,
+          &message);
+
+      g_signal_emit_by_name (self, "group-members-changed", message,
+          &empty_array, &empty_array, &local_pending, &empty_array, actor,
+          reason);
+    }
+
+  g_array_free (added, TRUE);
+  g_array_free (remote_pending, TRUE);
+}
 
 static void
 tp_channel_got_group_properties_cb (TpProxy *proxy,
@@ -656,8 +689,7 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
         tp_g_hash_table_update (self->priv->group_handle_owners,
             handle_owners, NULL, NULL);
 
-      _tp_channel_continue_introspection (self);
-      return;
+      goto OUT;
     }
 
   /* Failure case: fall back. This is quite annoying, as we need to combine:
@@ -682,6 +714,11 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
 
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_glpmwi_0_16);
+
+OUT:
+
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_emit_initial_sets);
 
   _tp_channel_continue_introspection (self);
 }
