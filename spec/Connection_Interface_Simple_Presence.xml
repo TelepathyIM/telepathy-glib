@@ -43,7 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <tp:mapping name="Simple_Contact_Presences">
       <tp:docstring>Mapping returned by GetPresence and signalled by
-        PresenceUpdate, where the keys are contacts and the values represent
+        PresencesUpdated, where the keys are contacts and the values represent
         their presence.</tp:docstring>
       <tp:member type="u" tp:type="Contact_Handle" name="Contact"/>
       <tp:member type="(ss)" tp:type="Simple_Presence" name="Presence"/>
@@ -52,7 +52,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <tp:struct name="Simple_Status_Spec">
       <tp:docstring>Mapping returned by GetPresence and signalled by
-        PresenceUpdate, where the keys are contacts and the values represent
+        PresencesUpdated, where the keys are contacts and the values represent
         their presence.</tp:docstring>
       <tp:member type="u" tp:type="Connection_Presence_Type" name="Type"/>
       <tp:member type="b" name="May_Set_On_Self"/>
@@ -80,7 +80,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </arg>
       <tp:docstring>
         Request that the presence status and status message are published for
-        the connection.  Changes will be indicated by PresenceUpdate signals
+        the connection.  Changes will be indicated by PresencesUpdated signals
         being emitted. On certain protocols, this method may be called on a
         newly-created connection which is still in the DISCONNECTED state, and
         will sign on with the requested status. If the requested status is not
@@ -105,16 +105,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <arg direction="out" name="presence" type="a{u(ss)}"
         tp:type="Simple_Contact_Presences">
         <tp:docstring>
-          Presence information in the same format as for the PresenceUpdate
+          Presence information in the same format as for the PresencesUpdated
           signal
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Get presence previously emitted by PresenceUpdate for the given
-        contacts. Data is returned in the same structure as the PresenceUpdate
-        signal. Using this method in favour of RequestPresence has the
-        advantage that it will not wake up each client connected to the
-        PresenceUpdate signal.
+        Get presence previously emitted by PresencesUpdated for the given
+        contacts. Data is returned in the same structure as the
+        PresencesUpdated signal.
       </tp:docstring>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
@@ -136,7 +134,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <signal name="PresenceUpdate">
+    <signal name="PresencesUpdated">
       <arg name="presence" type="a{u(ss)}" tp:type="Contact_Presences">
         <tp:docstring>
         A dictionary of contact handles mapped to the status and status message
@@ -148,32 +146,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         been changed, or when the presence requested by RequestPresence is available.
       </tp:docstring>
     </signal>
-
-    <method name="RequestPresence">
-      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
-          An array of the contacts whose presence should be obtained
-        </tp:docstring>
-      </arg>
-      <tp:docstring>
-        Request the presence for contacts on this connection. A PresenceUpdate
-        signal will be emitted when they are received. This is not the same as
-        subscribing to the presence of a contact, which must be done using the
-        'subscription' Channel.Type.ContactList, and on some protocols presence
-        information may not be available unless a subscription exists.
-      </tp:docstring>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
-          <tp:docstring>
-            The presence of the requested contacts is not reported to this connection
-          </tp:docstring>
-        </tp:error>
-      </tp:possible-errors>
-    </method>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface is for services which have a concept of presence which can
@@ -212,9 +184,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     the user to set on themselves, it may display an approximation of the
     presence if it is set on a contact.</p>
 
-    <p>If the connection has a 'subscribe' contact list, PresenceUpdate signals
-    should be emitted to indicate changes of contacts on this list, and should
-    also be emitted for changes in your own presence. Depending on the
+    <p>If the connection has a 'subscribe' contact list, PresencesUpdated 
+    signals should be emitted to indicate changes of contacts on this list, and
+    should also be emitted for changes in your own presence. Depending on the
     protocol, the signal may also be emitted for others such as people with
     whom you are communicating, and any user interface should be updated
     accordingly.</p>
