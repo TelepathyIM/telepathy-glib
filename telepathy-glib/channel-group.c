@@ -607,6 +607,8 @@ _tp_channel_emit_initial_sets (TpChannel *self)
 
   g_array_free (added, TRUE);
   g_array_free (remote_pending, TRUE);
+
+  _tp_channel_continue_introspection (self);
 }
 
 static void
