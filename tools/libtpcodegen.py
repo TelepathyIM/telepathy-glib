@@ -115,6 +115,8 @@ def get_docstring(element):
 
 
 def get_descendant_text(element):
+    if not element:
+        return ''
     parts = []
     for x in element.childNodes:
         if x.nodeType == x.TEXT_NODE:
