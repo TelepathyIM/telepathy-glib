@@ -850,10 +850,11 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
    */
    status = check_for_status (data->obj, (const gchar *) key, data->error);
 
-   if (status == -1) {
-     data->retval = FALSE;
-     return;
-   }
+   if (status == -1)
+     {
+       data->retval = FALSE;
+       return;
+     }
 
    DEBUG ("The status is available.");
 
