@@ -1,6 +1,6 @@
 /*
  * presence-mixin.c - Source for TpPresenceMixin
- * Copyright (C) 2005-2007 Collabora Ltd.
+ * Copyright (C) 2005-2008 Collabora Ltd.
  * Copyright (C) 2005-2007 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
@@ -48,6 +48,16 @@
  * TpPresenceMixin implements all of the D-Bus methods in the Presence
  * interface.
  *
+ * Since 0.7.Unreleased you can also implement
+ * #TpSvcConnectionInterfaceSimplePresence by using this mixin, in this case
+ * you should pass tp_presence_mixin_iface_init as an argument to
+ * G_IMPLEMENT_INTERFACE. Note that this can cause the status_available
+ * callback to be called while disconnected. Also to fully implement this
+ * interface some dbus properties need to be supported. To do that using this
+ * mixin the instance needs to use the dbus properties mixin and call
+ * tp_presence_mixin_simple_init_dbus_properties in the class init function
+ *
+ *
  * Since: 0.5.13
  */
 
@@ -60,6 +70,7 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 
 #define DEBUG_FLAG TP_DEBUG_PRESENCE
 
@@ -71,6 +82,9 @@ struct _TpPresenceMixinPrivate
   /* ... */
 };
 
+static GHashTable *
+construct_simple_presence_hash (const TpPresenceStatusSpec *supported_statuses,
+                         GHashTable *contact_statuses);
 
 /**
  * deep_copy_hashtable
@@ -370,6 +384,17 @@ tp_presence_mixin_emit_presence_update (GObject *obj,
       presence_hash);
 
   g_hash_table_destroy (presence_hash);
+
+  if (g_type_interface_peek (G_OBJECT_GET_CLASS (obj),
+      TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE) != NULL)
+    {
+      presence_hash = construct_simple_presence_hash (mixin_cls->statuses,
+        contact_statuses);
+      tp_svc_connection_interface_simple_presence_emit_presences_changed (obj,
+        presence_hash);
+
+      g_hash_table_destroy (presence_hash);
+    }
 }
 
 
@@ -765,6 +790,46 @@ struct _i_hate_g_hash_table_foreach {
 };
 
 
+static int
+check_for_status (GObject *object, const gchar *status, GError **error)
+{
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (object));
+  int i;
+
+  for (i = 0; mixin_cls->statuses[i].name != NULL; i++)
+    {
+      if (!tp_strdiff (mixin_cls->statuses[i].name, status))
+        break;
+    }
+
+  if (mixin_cls->statuses[i].name != NULL)
+    {
+      DEBUG ("Found status \"%s\", checking if it's available...",
+          (const gchar *) status);
+
+      if (mixin_cls->status_available
+          && !mixin_cls->status_available (object, i))
+        {
+          DEBUG ("requested status %s is not available",
+              (const gchar *) status);
+          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "requested status '%s' is not available on this connection",
+              (const gchar *) status);
+          return -1;
+        }
+    }
+  else
+    {
+      DEBUG ("got unknown status identifier %s", status);
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "unknown status identifier: %s", status);
+      return -1;
+    }
+
+  return i;
+}
+
 static void
 set_status_foreach (gpointer key, gpointer value, gpointer user_data)
 {
@@ -773,7 +838,8 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (data->obj));
   TpPresenceStatus status_to_set = { 0, };
-  int i;
+  int status;
+  GHashTable *optional_arguments = NULL;
 
   DEBUG ("called.");
 
@@ -782,89 +848,64 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
    * tp_presence_mixin_set_status(). Therefore there are no problems with
    * sharing the foreach data like this.
    */
+   status = check_for_status (data->obj, (const gchar *) key, data->error);
 
-  for (i = 0; mixin_cls->statuses[i].name != NULL; i++)
+   if (status == -1) {
+     data->retval = FALSE;
+     return;
+   }
+
+   DEBUG ("The status is available.");
+
+  if (value)
     {
-      if (!tp_strdiff (mixin_cls->statuses[i].name, (const gchar *) key))
-        break;
-    }
+      GHashTable *provided_arguments = (GHashTable *) value;
+      int j;
+      const TpPresenceStatusOptionalArgumentSpec *specs =
+        mixin_cls->statuses[status].optional_arguments;
 
-  if (mixin_cls->statuses[i].name != NULL)
-    {
-      GHashTable *optional_arguments = NULL;
-
-      DEBUG ("Found status \"%s\", checking if it's available...",
-          (const gchar *) key);
-
-      if (mixin_cls->status_available
-          && !mixin_cls->status_available (data->obj, i))
+      for (j=0; specs != NULL && specs[j].name != NULL; j++)
         {
-          DEBUG ("requested status %s is not available", (const gchar *) key);
-          g_set_error (data->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "requested status '%s' is not available on this connection",
-              (const gchar *) key);
-          data->retval = FALSE;
-          return;
-        }
+          GValue *provided_value =
+            g_hash_table_lookup (provided_arguments, specs[j].name);
+          GValue *new_value;
 
-      DEBUG ("The status is available.");
+          if (!provided_value)
+            continue;
+          new_value = tp_g_value_slice_dup (provided_value);
 
-      if (value)
-        {
-          GHashTable *provided_arguments = (GHashTable *) value;
-          int j;
-          const TpPresenceStatusOptionalArgumentSpec *specs =
-            mixin_cls->statuses[i].optional_arguments;
+          if (!optional_arguments)
+            optional_arguments =
+              g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+                  (GDestroyNotify) tp_g_value_slice_free);
 
-          for (j=0; specs != NULL && specs[j].name != NULL; j++)
+          if (DEBUGGING)
             {
-              GValue *provided_value =
-                g_hash_table_lookup (provided_arguments, specs[j].name);
-              GValue *new_value;
-
-              if (!provided_value)
-                continue;
-              new_value = tp_g_value_slice_dup (provided_value);
-
-              if (!optional_arguments)
-                optional_arguments =
-                  g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-                      (GDestroyNotify) tp_g_value_slice_free);
-
-              if (DEBUGGING)
-                {
-                  gchar *value_contents = g_strdup_value_contents (new_value);
-                  DEBUG ("Got optional argument (\"%s\", %s)", specs[j].name,
-                      value_contents);
-                  g_free (value_contents);
-                }
-
-              g_hash_table_insert (optional_arguments,
-                  (gpointer) specs[j].name, new_value);
+              gchar *value_contents = g_strdup_value_contents (new_value);
+              DEBUG ("Got optional argument (\"%s\", %s)", specs[j].name,
+                  value_contents);
+              g_free (value_contents);
             }
+
+          g_hash_table_insert (optional_arguments,
+              (gpointer) specs[j].name, new_value);
         }
-
-      status_to_set.index = i;
-      status_to_set.optional_arguments = optional_arguments;
-
-      DEBUG ("About to try setting status \"%s\"", mixin_cls->statuses[i].name);
-
-      if (!mixin_cls->set_own_status (data->obj, &status_to_set, data->error))
-        {
-          DEBUG ("failed to set status");
-          data->retval = FALSE;
-        }
-
-      if (optional_arguments)
-        g_hash_table_destroy (optional_arguments);
     }
-  else
+
+  status_to_set.index = status;
+  status_to_set.optional_arguments = optional_arguments;
+
+  DEBUG ("About to try setting status \"%s\"",
+      mixin_cls->statuses[status].name);
+
+  if (!mixin_cls->set_own_status (data->obj, &status_to_set, data->error))
     {
-      DEBUG ("got unknown status identifier %s", (const gchar *) key);
-      g_set_error (data->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "unknown status identifier: %s", (const gchar *) key);
+      DEBUG ("failed to set status");
       data->retval = FALSE;
     }
+
+  if (optional_arguments)
+    g_hash_table_destroy (optional_arguments);
 }
 
 
@@ -942,5 +983,305 @@ tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(request_presence);
   IMPLEMENT(set_last_activity_time);
   IMPLEMENT(set_status);
+#undef IMPLEMENT
+}
+
+enum {
+  MIXIN_DP_SIMPLE_STATUSES,
+  NUM_MIXIN_SIMPLE_DBUS_PROPERTIES
+};
+
+static TpDBusPropertiesMixinPropImpl known_simple_presence_props[] = {
+  { "Statuses", NULL, NULL },
+  { NULL }
+};
+
+static void
+tp_presence_mixin_get_simple_dbus_property (GObject *object,
+                                            GQuark interface,
+                                            GQuark name,
+                                            GValue *value,
+                                            gpointer unused G_GNUC_UNUSED)
+{
+  static GQuark q[NUM_MIXIN_SIMPLE_DBUS_PROPERTIES] = { 0, };
+
+  DEBUG ("called.");
+
+  if (G_UNLIKELY (q[0] == 0))
+    {
+      q[MIXIN_DP_SIMPLE_STATUSES] = g_quark_from_static_string ("Statuses");
+    }
+
+  g_return_if_fail (object != NULL);
+
+  if (name == q[MIXIN_DP_SIMPLE_STATUSES])
+    {
+      TpPresenceMixinClass *mixin_cls =
+        TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (object));
+      GHashTable *ret;
+      GValueArray *status;
+      int i;
+
+      g_return_if_fail (G_VALUE_HOLDS_BOXED (value));
+
+      ret = g_hash_table_new_full (g_str_hash, g_str_equal,
+                               NULL, (GDestroyNotify) g_value_array_free);
+
+      for (i=0; mixin_cls->statuses[i].name != NULL; i++)
+        {
+          if (mixin_cls->status_available
+              && !mixin_cls->status_available(object, i))
+            continue;
+
+         status = g_value_array_new (2);
+
+         g_value_array_append (status, NULL);
+         g_value_init (g_value_array_get_nth (status, 0), G_TYPE_UINT);
+         g_value_set_uint (g_value_array_get_nth (status, 0),
+             mixin_cls->statuses[i].presence_type);
+
+         g_value_array_append (status, NULL);
+         g_value_init (g_value_array_get_nth (status, 1), G_TYPE_BOOLEAN);
+         g_value_set_boolean (g_value_array_get_nth (status, 1),
+             mixin_cls->statuses[i].self);
+
+         g_hash_table_insert (ret, (gchar*) mixin_cls->statuses[i].name,
+             status);
+       }
+       g_value_take_boxed (value, ret);
+    }
+  else
+    {
+      g_return_if_reached ();
+    }
+
+}
+
+/**
+ * tp_presence_mixin_init_dbus_properties:
+ * @cls: The class of an object with this mixin
+ *
+ * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
+ * the SimplePresence interface's properties.
+ *
+ * This uses tp_presence_mixin_get_simple_dbus_property() as the property
+ * getter and sets up a list of the supported properties for it.
+ *
+ * Since: 0.7.Unreleased
+ */
+void
+tp_presence_mixin_simple_init_dbus_properties (GObjectClass *cls)
+{
+
+  tp_dbus_properties_mixin_implement_interface (cls,
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+      tp_presence_mixin_get_simple_dbus_property,
+      NULL, known_simple_presence_props);
+}
+
+/**
+ * tp_presence_mixin_simple_set_presence
+ *
+ * Implements D-Bus method SetPresence
+ * on interface org.freedesktop.Telepathy.Connection.Interface.SimplePresence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
+ */
+static void
+tp_presence_mixin_simple_set_presence (
+    TpSvcConnectionInterfaceSimplePresence *iface,
+    const gchar *status,
+    const gchar *message,
+    DBusGMethodInvocation *context)
+{
+  GObject *obj = (GObject *) iface;
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  TpPresenceStatus status_to_set = { 0, };
+  int s;
+  GError *error = NULL;
+  GHashTable *optional_arguments = NULL;
+  GValue vmessage = { 0, };
+
+  DEBUG ("called.");
+
+  s = check_for_status (obj, status, &error);
+  if (s == -1)
+    goto error;
+
+  status_to_set.index = s;
+
+  if (*message != '\0')
+    {
+      g_value_init (&vmessage, G_TYPE_STRING);
+      g_value_set_string (&vmessage, message);
+
+      optional_arguments = g_hash_table_new (g_str_hash, g_str_equal);
+
+      g_hash_table_insert (optional_arguments, "message", &vmessage);
+
+      status_to_set.optional_arguments = optional_arguments;
+    }
+
+  if (!mixin_cls->set_own_status (obj, &status_to_set, &error))
+    goto error;
+
+  tp_svc_connection_interface_simple_presence_return_from_set_presence (
+      context);
+
+out:
+  if (optional_arguments != NULL)
+    g_hash_table_destroy (optional_arguments);
+
+  return;
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
+  goto out;
+}
+
+static void
+construct_simple_presence_hash_foreach (gpointer key,
+                                        gpointer value,
+                                        gpointer user_data)
+{
+  TpHandle handle = GPOINTER_TO_UINT (key);
+  TpPresenceStatus *status = (TpPresenceStatus *) value;
+  struct _i_absolutely_love_g_hash_table_foreach *data =
+    (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
+  GValueArray *presence;
+  const gchar *status_name;
+  const gchar *message = NULL;
+
+  status_name = data->supported_statuses[status->index].name;
+
+  if (status->optional_arguments != NULL)
+    {
+      GValue *val;
+      val = g_hash_table_lookup (status->optional_arguments, "message");
+      if (val != NULL)
+        message = g_value_get_string (val);
+    }
+
+  if (message == NULL)
+    message = "";
+
+  presence = g_value_array_new (2);
+
+  g_value_array_append (presence, NULL);
+  g_value_init (g_value_array_get_nth (presence, 0), G_TYPE_STRING);
+  g_value_set_string (g_value_array_get_nth (presence, 0), status_name);
+
+  g_value_array_append (presence, NULL);
+  g_value_init (g_value_array_get_nth (presence, 1), G_TYPE_STRING);
+  g_value_set_string (g_value_array_get_nth (presence, 1), message);
+
+  g_hash_table_insert (data->presence_hash, GUINT_TO_POINTER (handle),
+      presence);
+}
+
+static GHashTable *
+construct_simple_presence_hash (const TpPresenceStatusSpec *supported_statuses,
+                         GHashTable *contact_statuses)
+{
+  struct _i_absolutely_love_g_hash_table_foreach data = { supported_statuses,
+    contact_statuses, NULL };
+
+  DEBUG ("called.");
+
+  data.presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) (GDestroyNotify) g_value_array_free);
+
+  g_hash_table_foreach (contact_statuses,
+      construct_simple_presence_hash_foreach, &data);
+
+  return data.presence_hash;
+}
+
+/**
+ * tp_presence_mixin_get_simple_presence:
+ *
+ * Implements D-Bus method GetPresence
+ * on interface org.freedesktop.Telepathy.Connection.Interface.SimplePresence
+ *
+ * @context: The D-Bus invocation context to use to return values
+ *           or throw an error.
+ */
+static void
+tp_presence_mixin_simple_get_presences (
+    TpSvcConnectionInterfaceSimplePresence *iface,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  GObject *obj = (GObject *) iface;
+  TpBaseConnection *conn = TP_BASE_CONNECTION (obj);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
+      TP_HANDLE_TYPE_CONTACT);
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  GHashTable *contact_statuses;
+  GHashTable *presence_hash;
+  GError *error = NULL;
+
+  DEBUG ("called.");
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
+
+  if (contacts->len == 0)
+    {
+      presence_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
+      tp_svc_connection_interface_presence_return_from_get_presence (context,
+          presence_hash);
+      g_hash_table_destroy (presence_hash);
+      return;
+    }
+
+  if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, &error);
+
+  if (!contact_statuses)
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free(error);
+      return;
+    }
+
+  presence_hash = construct_simple_presence_hash (mixin_cls->statuses,
+      contact_statuses);
+  tp_svc_connection_interface_simple_presence_return_from_get_presences (
+      context, presence_hash);
+  g_hash_table_destroy (presence_hash);
+  g_hash_table_destroy (contact_statuses);
+}
+
+/**
+ * tp_presence_mixin_simple_iface_init:
+ * @g_iface: A pointer to the #TpSvcConnectionInterfaceSimplePresenceClass in
+ * an object class
+ * @iface_data: Ignored
+ *
+ * Fill in the vtable entries needed to implement the simple presence interface
+ * using this mixin. This function should usually be called via
+ * G_IMPLEMENT_INTERFACE.
+ *
+ * Since: 0.7.Unreleased
+ */
+void
+tp_presence_mixin_simple_iface_init (gpointer g_iface, gpointer iface_data)
+{
+  TpSvcConnectionInterfaceSimplePresenceClass *klass =
+    (TpSvcConnectionInterfaceSimplePresenceClass *)g_iface;
+
+#define IMPLEMENT(x) tp_svc_connection_interface_simple_presence_implement_##x\
+ (klass, tp_presence_mixin_simple_##x)
+  IMPLEMENT(set_presence);
+  IMPLEMENT(get_presences);
 #undef IMPLEMENT
 }

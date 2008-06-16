@@ -117,6 +117,11 @@ void tp_presence_status_free (TpPresenceStatus *status);
  * Signature of the callback used to determine if a given status is currently
  * available to be set on the connection.
  *
+ * When implementing the
+ * org.freedesktop.Telepathy.Connection.Interface.SimplePresence interface can
+ * be called while DISCONNECTED to determine which statuses can be set in that
+ * state.
+ *
  * Returns: %TRUE if the status is available, %FALSE if not.
  */
 typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
@@ -251,6 +256,8 @@ void tp_presence_mixin_emit_one_presence_update (GObject *obj,
     TpHandle handle, const TpPresenceStatus *status);
 
 void tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data);
+void tp_presence_mixin_simple_iface_init (gpointer g_iface, gpointer iface_data);
+void tp_presence_mixin_simple_init_dbus_properties (GObjectClass *cls);
 
 G_END_DECLS
 
