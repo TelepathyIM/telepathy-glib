@@ -351,6 +351,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           Busy, Do Not Disturb.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="Unknown" value="7">
+        <tp:added version="0.17.unreleased"/>
+        <tp:docstring>
+          Unknown, unable to determine presence.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="Error" value="8">
+        <tp:added version="0.17.unreleased"/>
+        <tp:docstring>
+          Error, error while trying to determine presence.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
   </interface>
 </node>
