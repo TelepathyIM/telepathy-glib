@@ -70,7 +70,7 @@ struct _TpmediaStreamPrivate
   TpMediaStreamType media_type;
   TpMediaStreamDirection direction;
   const TpStreamEngineNatProperties *nat_props;
-  GList *local_codecs_config;
+  GList *local_preferences;
 
   GError *construction_error;
 
@@ -106,7 +106,7 @@ enum
   PROP_DIRECTION,
   PROP_NAT_PROPERTIES,
   PROP_SINK_PAD,
-  PROP_LOCAL_CODECS_CONFIG
+  PROP_LOCAL_PREFERENCES
 };
 
 
@@ -218,8 +218,8 @@ tpmedia_stream_get_property (GObject    *object,
       g_object_get_property (G_OBJECT (self->priv->fs_session),
           "sink-pad", value);
       break;
-    case PROP_LOCAL_CODECS_CONFIG:
-      g_value_set_boxed (value, self->priv->local_codecs_config);
+    case PROP_LOCAL_PREFERENCES:
+      g_value_set_boxed (value, self->priv->local_preferences);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -265,8 +265,8 @@ tpmedia_stream_set_property (GObject      *object,
     case PROP_NAT_PROPERTIES:
       self->priv->nat_props = g_value_get_pointer (value);
       break;
-    case PROP_LOCAL_CODECS_CONFIG:
-      self->priv->local_codecs_config = g_value_dup_boxed (value);
+    case PROP_LOCAL_PREFERENCES:
+      self->priv->local_preferences = g_value_dup_boxed (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -416,9 +416,9 @@ tpmedia_stream_constructor (GType type,
   if (!stream->priv->fs_stream)
     return obj;
 
-  if (stream->priv->local_codecs_config)
-    if (!fs_session_set_local_codecs_config (stream->priv->fs_session,
-            stream->priv->local_codecs_config,
+  if (stream->priv->local_preferences)
+    if (!fs_session_set_codec_preferences (stream->priv->fs_session,
+            stream->priv->local_preferences,
             &stream->priv->construction_error))
       return obj;
 
@@ -481,10 +481,10 @@ tpmedia_stream_dispose (GObject *object)
       priv->fs_session = NULL;
     }
 
-  if (priv->local_codecs_config)
+  if (priv->local_preferences)
     {
-      fs_codec_list_destroy (priv->local_codecs_config);
-      priv->local_codecs_config = NULL;
+      fs_codec_list_destroy (priv->local_preferences);
+      priv->local_preferences = NULL;
     }
 
   if (G_OBJECT_CLASS (tpmedia_stream_parent_class)->dispose)
@@ -607,15 +607,15 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
       param_spec);
 
 
-  param_spec = g_param_spec_boxed ("local-codecs-config",
-                                   "Local codecs config",
-                                   "A GList of FsCodec representing preferences to be passed to the fs_session_set_local_codecs_config() function",
+  param_spec = g_param_spec_boxed ("codec-preferences",
+                                   "Local codec preferences",
+                                   "A GList of FsCodec representing preferences to be passed to the fs_session_set_local_preferences() function",
                                     FS_TYPE_CODEC_LIST,
                                     G_PARAM_CONSTRUCT_ONLY |
                                     G_PARAM_READWRITE |
                                     G_PARAM_STATIC_NICK |
                                     G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_LOCAL_CODECS_CONFIG,
+  g_object_class_install_property (object_class, PROP_LOCAL_PREFERENCES,
       param_spec);
 
 
@@ -1628,7 +1628,7 @@ tpmedia_stream_new (gpointer channel,
     TpMediaStreamType media_type,
     TpMediaStreamDirection direction,
     TpStreamEngineNatProperties *nat_props,
-    GList *local_codecs_config,
+    GList *local_preferences,
     GError **error)
 
 {
@@ -1643,7 +1643,7 @@ tpmedia_stream_new (gpointer channel,
       "media-type", media_type,
       "direction", direction,
       "nat-properties", nat_props,
-      "local-codecs-config", local_codecs_config,
+      "codec-preferences", local_preferences,
       NULL);
 
   if (self->priv->construction_error)
