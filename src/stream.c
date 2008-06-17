@@ -1710,6 +1710,7 @@ tpmedia_stream_try_sending_codecs (TpmediaStream *stream)
           stream->priv->stream_handler_proxy,
           -1, tpcodecs, async_method_callback,
           "Media.StreamHandler::SupportedCodecs", NULL, (GObject *) stream);
+      stream->priv->send_supported_codecs = FALSE;
     }
 
   fs_codec_list_destroy (fscodecs);
