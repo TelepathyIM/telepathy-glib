@@ -1680,7 +1680,7 @@ tpmedia_stream_try_sending_codecs (TpmediaStream *stream)
   if (!stream->priv->send_supported_codecs && !stream->priv->send_local_codecs)
     return;
 
-  g_object_get (stream->priv->fs_session, "ready", &ready, NULL);
+  g_object_get (stream->priv->fs_session, "codecs-ready", &ready, NULL);
 
   if (!ready)
     return;
