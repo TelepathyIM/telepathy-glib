@@ -1663,6 +1663,7 @@ tpmedia_stream_new (gpointer channel,
 
   if (self->priv->construction_error)
     {
+      tpmedia_stream_error (self, 0, self->priv->construction_error->message);
       g_propagate_error (error, self->priv->construction_error);
       g_object_unref (self);
       return NULL;
