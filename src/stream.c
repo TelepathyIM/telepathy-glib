@@ -1595,10 +1595,28 @@ tpmedia_stream_bus_message (TpmediaStream *stream,
 
       tpmedia_stream_try_sending_codecs (stream);
     }
+  else if (gst_structure_has_name (s, "farsight-send-codec-changed"))
+    {
+      FsSession *fssession;
+      const GValue *value;
+      FsCodec *codec = NULL;
 
-  /*
-   * We ignore the farsight-send-codec-changed message from the FsSession
-   */
+      value = gst_structure_get_value (s, "session");
+      fssession = g_value_get_object (value);
+
+      if (fssession != stream->priv->fs_session)
+        return FALSE;
+
+      g_object_get (fssession, "current-send-codec", &codec, NULL);
+
+      if (codec)
+        {
+          DEBUG (stream, "Send codec changed: " FS_CODEC_FORMAT,
+              FS_CODEC_ARGS (codec));
+
+          fs_codec_destroy (codec);
+        }
+    }
 
   return FALSE;
 }
