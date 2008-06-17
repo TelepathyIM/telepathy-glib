@@ -1495,7 +1495,7 @@ tpmedia_stream_bus_message (TpmediaStream *stream,
            * We ignore the Unknown Cname error because current signalling
            * does no provide us with a cname
            */
-          if (errno == FS_ERROR_UNKNOWN_CNAME)
+          if (errorno == FS_ERROR_UNKNOWN_CNAME)
             return TRUE;
 
 
