@@ -430,7 +430,7 @@ tpmedia_stream_constructor (GType type,
   g_signal_connect (stream->priv->fs_stream, "src-pad-added",
       G_CALLBACK (cb_fs_stream_src_pad_added), stream);
 
-  g_object_get (stream->priv->fs_session, "local-codecs", &fscodecs, NULL);
+  g_object_get (stream->priv->fs_session, "codecs", &fscodecs, NULL);
 
   tpcodecs = fs_codecs_to_tp (stream, fscodecs);
 
