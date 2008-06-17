@@ -1119,7 +1119,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   }
 
   g_object_get (self->priv->fs_session,
-      "negotiated-codecs", &negotiated_codecs,
+      "codecs", &negotiated_codecs,
       NULL);
 
   supp_codecs = fs_codecs_to_tp (self, negotiated_codecs);
