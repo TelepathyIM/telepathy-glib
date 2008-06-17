@@ -114,11 +114,13 @@ def get_docstring(element):
     return docstring
 
 
-def get_descendant_text(element):
-    if not element:
+def get_descendant_text(element_or_elements):
+    if not element_or_elements:
         return ''
+    if isinstance(element_or_elements, list):
+        return ''.join(map(get_descendant_text, element_or_elements))
     parts = []
-    for x in element.childNodes:
+    for x in element_or_elements.childNodes:
         if x.nodeType == x.TEXT_NODE:
             parts.append(x.nodeValue)
         elif x.nodeType == x.ELEMENT_NODE:
