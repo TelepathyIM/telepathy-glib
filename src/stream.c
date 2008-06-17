@@ -79,6 +79,10 @@ struct _TpmediaStreamPrivate
   FsStreamDirection desired_direction;
   gboolean held;
   TpMediaStreamDirection has_resource;
+
+
+  gboolean send_local_codecs;
+  gboolean send_supported_codecs;
 };
 
 enum
@@ -167,6 +171,8 @@ static void cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     GstPad *pad,
     FsCodec *codec,
     gpointer user_data);
+static void
+tpmedia_stream_try_sending_codecs (TpmediaStream *stream);
 
 
 static void
@@ -285,8 +291,6 @@ tpmedia_stream_constructor (GType type,
   TpmediaStream *stream;
   TpmediaStreamPrivate *priv;
   TpmediaStreamClass *klass = NULL;
-  GList *fscodecs = NULL;
-  GPtrArray *tpcodecs = NULL;
   gchar *transmitter;
   guint n_args = 0;
   GList *preferred_local_candidates = NULL;
@@ -430,17 +434,8 @@ tpmedia_stream_constructor (GType type,
   g_signal_connect (stream->priv->fs_stream, "src-pad-added",
       G_CALLBACK (cb_fs_stream_src_pad_added), stream);
 
-  g_object_get (stream->priv->fs_session, "codecs", &fscodecs, NULL);
-
-  tpcodecs = fs_codecs_to_tp (stream, fscodecs);
-
-  fs_codec_list_destroy (fscodecs);
-
-  DEBUG (stream, "calling MediaStreamHandler::Ready");
-
-  tp_cli_media_stream_handler_call_ready (stream->priv->stream_handler_proxy,
-      -1, tpcodecs, async_method_callback, "Media.StreamHandler::Ready",
-      NULL, obj);
+  stream->priv->send_local_codecs = TRUE;
+  tpmedia_stream_try_sending_codecs (stream);
 
   return obj;
 }
@@ -1062,8 +1057,6 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   GList *fs_params = NULL;
   GList *fs_remote_codecs = NULL;
   guint i;
-  GList *negotiated_codecs = NULL;
-  GPtrArray *supp_codecs;
   GError *error = NULL;
 
   DEBUG (self, "called");
@@ -1118,17 +1111,8 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     return;
   }
 
-  g_object_get (self->priv->fs_session,
-      "codecs", &negotiated_codecs,
-      NULL);
-
-  supp_codecs = fs_codecs_to_tp (self, negotiated_codecs);
-
-  fs_codec_list_destroy (negotiated_codecs);
-
-  tp_cli_media_stream_handler_call_supported_codecs
-    (self->priv->stream_handler_proxy, -1, supp_codecs, async_method_callback,
-     "Media.StreamHandler::SupportedCodecs", NULL, (GObject *) self);
+  self->priv->send_supported_codecs = TRUE;
+  tpmedia_stream_try_sending_codecs (self);
 }
 
 static void
@@ -1598,6 +1582,19 @@ tpmedia_stream_bus_message (TpmediaStream *stream,
       cb_fs_recv_codecs_changed (stream, codecs);
       return TRUE;
     }
+  else if (gst_structure_has_name (s, "farsight-codecs-changed"))
+    {
+      FsSession *fssession;
+      const GValue *value;
+
+      value = gst_structure_get_value (s, "session");
+      fssession = g_value_get_object (value);
+
+      if (fssession != stream->priv->fs_session)
+        return FALSE;
+
+      tpmedia_stream_try_sending_codecs (stream);
+    }
 
   /*
    * We ignore the farsight-send-codec-changed message from the FsSession
@@ -1654,4 +1651,48 @@ tpmedia_stream_new (gpointer channel,
     }
 
   return self;
+}
+
+static void
+tpmedia_stream_try_sending_codecs (TpmediaStream *stream)
+{
+  gboolean ready = FALSE;
+  GList *fscodecs = NULL;
+
+  if (!stream->priv->send_supported_codecs && !stream->priv->send_local_codecs)
+    return;
+
+  g_object_get (stream->priv->fs_session, "ready", &ready, NULL);
+
+  if (!ready)
+    return;
+
+  g_object_get (stream->priv->fs_session, "codecs", &fscodecs, NULL);
+
+
+  if (stream->priv->send_local_codecs)
+    {
+      GPtrArray *tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+
+      DEBUG (stream, "calling MediaStreamHandler::Ready");
+      tp_cli_media_stream_handler_call_ready (
+          stream->priv->stream_handler_proxy,
+          -1, tpcodecs, async_method_callback, "Media.StreamHandler::Ready",
+          NULL, (GObject *) stream);
+      stream->priv->send_local_codecs = FALSE;
+    }
+
+
+  if (stream->priv->send_supported_codecs)
+    {
+      GPtrArray *tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+
+      DEBUG (stream, "calling MediaStreamHandler::SupportedCodecs");
+      tp_cli_media_stream_handler_call_supported_codecs (
+          stream->priv->stream_handler_proxy,
+          -1, tpcodecs, async_method_callback,
+          "Media.StreamHandler::SupportedCodecs", NULL, (GObject *) stream);
+    }
+
+  fs_codec_list_destroy (fscodecs);
 }
