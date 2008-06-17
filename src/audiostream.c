@@ -33,16 +33,16 @@
 G_DEFINE_TYPE (TpStreamEngineAudioStream, tp_stream_engine_audio_stream,
     G_TYPE_OBJECT);
 
-#define DEBUG(stream, format, ...)          \
-  g_debug ("stream %d (audio) %s: " format,             \
-      ((TpmediaStream *)stream)->stream_id,      \
-      G_STRFUNC,                                        \
+#define DEBUG(stream, format, ...)              \
+  g_debug ("stream %d (audio) %s: " format,     \
+      ((TpmediaStream *)stream)->stream_id,     \
+      G_STRFUNC,                                \
       ##__VA_ARGS__)
 
-#define WARNING(stream, format, ...)          \
-  g_warning ("stream %d (audio) %s: " format,             \
-      ((TpmediaStream *)stream)->stream_id,      \
-      G_STRFUNC,                                        \
+#define WARNING(stream, format, ...)            \
+  g_warning ("stream %d (audio) %s: " format,   \
+      ((TpmediaStream *)stream)->stream_id,     \
+      G_STRFUNC,                                \
       ##__VA_ARGS__)
 
 
