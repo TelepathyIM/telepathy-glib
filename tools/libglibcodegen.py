@@ -27,6 +27,7 @@ from libtpcodegen import NS_TP, \
                          camelcase_to_upper, \
                          cmp_by_name, \
                          escape_as_identifier, \
+                         get_by_path, \
                          get_descendant_text, \
                          get_docstring, \
                          xml_escape
