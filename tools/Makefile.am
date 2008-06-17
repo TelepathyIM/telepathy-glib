@@ -31,7 +31,7 @@ EXTRA_DIST = \
     telepathy-glib-env.in \
     with-session-bus.sh
 
-CLEANFILES = libglibcodegen.pyc libglibcodegen.pyo $(noinst_SCRIPTS)
+CLEANFILES = libtpcodegen.pyc libtpcodegen.pyo libglibcodegen.pyc libglibcodegen.pyo $(noinst_SCRIPTS)
 
 all: $(EXTRA_DIST)
 
