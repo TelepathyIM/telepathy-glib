@@ -7,7 +7,7 @@ telepathy-glib-env: telepathy-glib-env.in Makefile
 	chmod +x $@
 
 EXTRA_DIST = \
-    c-constants-generator.xsl \
+    c-constants-gen.py \
     check-coding-style.mk \
     check-c-style.sh \
     check-misc.sh \
