@@ -37,6 +37,8 @@ all: $(EXTRA_DIST)
 
 libglibcodegen.py: libtpcodegen.py
 	touch $@
+c-constants-gen.py: libglibcodegen.py
+	touch $@
 glib-client-marshaller-gen.py: libglibcodegen.py
 	touch $@
 glib-errors-enum-body-gen.py: libglibcodegen.py

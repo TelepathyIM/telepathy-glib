@@ -91,10 +91,10 @@ _gen/register-dbus-glib-marshallers-body.h: _gen/all.xml \
 	$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< \
 		_example_ext > $@
 
-_gen/enums.h: _gen/all.xml $(tools_dir)/c-constants-generator.xsl
-	$(XSLTPROC) $(XSLTPROCFLAGS) \
-		--stringparam mixed-case-prefix Example \
-		$(tools_dir)/c-constants-generator.xsl \
+_gen/enums.h: _gen/all.xml \
+	$(tools_dir)/c-constants-gen.py
+	$(PYTHON) $(tools_dir)/c-constants-gen.py \
+		Example \
 		$< > $@
 
 _gen/interfaces.h: _gen/all.xml \

@@ -273,11 +273,10 @@ _gen/gtypes.h _gen/gtypes-body.h: _gen/stable-spec.xml \
 		_gen/gtypes Tp
 
 _gen/telepathy-enums.h: _gen/stable-spec.xml \
-	../tools/c-constants-generator.xsl
-	$(XSLTPROC) $(XSLTPROCFLAGS) \
-		--stringparam mixed-case-prefix Tp \
-		$(srcdir)/../tools/c-constants-generator.xsl \
-		_gen/stable-spec.xml > $@
+	../tools/c-constants-gen.py
+	$(PYTHON) $(top_srcdir)/tools/c-constants-gen.py \
+		Tp \
+		$< > $@
 
 _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
 	../tools/glib-interfaces-generator.xsl \
