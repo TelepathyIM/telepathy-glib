@@ -109,7 +109,7 @@ def get_by_path(element, path):
     # Find matching children for the branch
     children = []
     if branch == '..':
-        children += element.parentNode
+        children.append(element.parentNode)
     else:
         for x in element.childNodes:
             if x.localName == branch:
@@ -123,8 +123,8 @@ def get_by_path(element, path):
             add = get_by_path(x, '/'.join(branches[1:]))
             if isinstance(add, list):
                 ret += add
-            elif add != None:
-                ret.append(add)
+            else:
+                return add
     else:
         ret = children
 
