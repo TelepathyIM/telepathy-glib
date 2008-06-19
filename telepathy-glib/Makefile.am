@@ -278,21 +278,10 @@ _gen/telepathy-enums.h: _gen/stable-spec.xml \
 		Tp \
 		$< > $@
 
-_gen/telepathy-interfaces.h: _gen/stable-spec.xml \
-	../tools/glib-interfaces-generator.xsl \
-	../tools/c-interfaces-generator.xsl
-	$(XSLTPROC) $(XSLTPROCFLAGS) \
-		--stringparam mixed-case-prefix Tp \
-		$(srcdir)/../tools/glib-interfaces-generator.xsl \
-		_gen/stable-spec.xml > $@
-
-_gen/interfaces-body.h: _gen/stable-spec.xml \
-	../tools/glib-interfaces-body-generator.xsl \
-	../tools/c-interfaces-generator.xsl
-	$(XSLTPROC) $(XSLTPROCFLAGS) \
-		--stringparam mixed-case-prefix Tp \
-		$(srcdir)/../tools/glib-interfaces-body-generator.xsl \
-		_gen/stable-spec.xml > $@
+_gen/interfaces-body.h _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
+	../tools/glib-interfaces-gen.py
+	$(PYTHON) ../tools/glib-interfaces-gen.py \
+		Tp _gen/interfaces-body.h _gen/telepathy-interfaces.h $<
 
 _gen/telepathy-errors.c: _gen/stable-spec.xml \
 	../tools/glib-errors-enum-body-gen.py

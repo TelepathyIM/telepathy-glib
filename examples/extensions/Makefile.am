@@ -97,21 +97,10 @@ _gen/enums.h: _gen/all.xml \
 		Example \
 		$< > $@
 
-_gen/interfaces.h: _gen/all.xml \
-	$(tools_dir)/glib-interfaces-generator.xsl \
-	$(tools_dir)/c-interfaces-generator.xsl
-	$(XSLTPROC) $(XSLTPROCFLAGS) \
-		--stringparam mixed-case-prefix Example \
-		$(tools_dir)/glib-interfaces-generator.xsl \
-		$< > $@
-
-_gen/interfaces-body.h: _gen/all.xml \
-	$(tools_dir)/glib-interfaces-body-generator.xsl \
-	$(tools_dir)/c-interfaces-generator.xsl
-	$(XSLTPROC) $(XSLTPROCFLAGS) \
-		--stringparam mixed-case-prefix Example \
-		$(tools_dir)/glib-interfaces-body-generator.xsl \
-		$< > $@
+_gen/interfaces-body.h _gen/interfaces.h: _gen/all.xml \
+	$(tools_dir)/glib-interfaces-gen.py
+	$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
+		Example _gen/interfaces-body.h _gen/interfaces.h $<
 
 # Generated files which must be generated per "category". Each TpProxy
 # subclass you want to use with --subclass will need to have its own category,

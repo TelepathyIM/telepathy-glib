@@ -12,16 +12,14 @@ EXTRA_DIST = \
     check-c-style.sh \
     check-misc.sh \
     check-whitespace.sh \
-    c-interfaces-generator.xsl \
     doc-generator.xsl \
     glib-client-gen.py \
     glib-client-marshaller-gen.py \
     glib-errors-enum-body-gen.py \
     glib-errors-enum-header-gen.py \
-    glib-interfaces-generator.xsl \
-    glib-interfaces-body-generator.xsl \
     glib-ginterface-gen.py \
     glib-gtypes-generator.py \
+    glib-interfaces-gen.py \
     glib-signals-marshal-gen.py \
     gobject-foo.py \
     identity.xsl \
@@ -48,6 +46,8 @@ glib-errors-enum-header-gen.py: libglibcodegen.py
 glib-ginterface-gen.py: libglibcodegen.py
 	touch $@
 glib-gtypes-generator.py: libglibcodegen.py
+	touch $@
+glib-interfaces-gen.py: libglibcodegen.py
 	touch $@
 glib-signals-marshal-gen.py: libglibcodegen.py
 	touch $@
