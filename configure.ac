@@ -14,9 +14,6 @@ m4_define([tp_glib_minor_version], [7])
 m4_define([tp_glib_micro_version], [10])
 m4_define([tp_glib_nano_version], [1])
 
-# When deciding the following, only consider the shared library, not the
-# -unstable library.
-
 # If library source has changed since last release, increment revision
 # If interfaces have been added, removed or changed since last release,
 #  increment current and set revision to 0
