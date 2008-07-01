@@ -35,12 +35,6 @@ G_DEFINE_TYPE_WITH_CODE (Bug16307Connection,
 
 enum
 {
-  PROP_CONNECT = 1,
-  N_PROPS
-};
-
-enum
-{
   SIGNAL_GET_STATUS_RECEIVED,
   N_SIGNALS
 };
@@ -52,18 +46,12 @@ struct _Bug16307ConnectionPrivate
   /* In a real connection manager, the underlying implementation start
    * connecting, then go to state CONNECTED when finished. Here there isn't
    * actually a connection, so the connection process is fake and the time
-   * when it connects can controlled by the code using Bug16307Connection.
+   * when it connects is, for this test purpose, when the D-Bus method GetStatus
+   * is called.
    *
-   * - If the connect property is not set, the default is to connect after
-   *   a timeout of 500ms.
-   * - If connect is "inject", it connects when
-   *   bug16307_connection_inject_connect_succeed() is called
-   * - If connect is "get_status", it connects the first time get_status is
-   *   called
+   * Also, the GetStatus D-Bus reply is retarded until
+   * bug16307_connection_inject_get_status_return() is called
    */
-  gchar *connect;
-
-  /* get_status is run lately */
   DBusGMethodInvocation *get_status_invocation;
 };
 
@@ -75,47 +63,8 @@ bug16307_connection_init (Bug16307Connection *self)
 }
 
 static void
-get_property (GObject *object,
-              guint property_id,
-              GValue *value,
-              GParamSpec *spec)
-{
-  Bug16307Connection *self = BUG16307_CONNECTION (object);
-
-  switch (property_id) {
-    case PROP_CONNECT:
-      g_value_set_string (value, self->priv->connect);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
-  }
-}
-
-static void
-set_property (GObject *object,
-              guint property_id,
-              const GValue *value,
-              GParamSpec *spec)
-{
-  Bug16307Connection *self = BUG16307_CONNECTION (object);
-
-  switch (property_id) {
-    case PROP_CONNECT:
-      g_free (self->priv->connect);
-      self->priv->connect = g_utf8_strdown (g_value_get_string (value), -1);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
-  }
-}
-
-static void
 finalize (GObject *object)
 {
-  Bug16307Connection *self = BUG16307_CONNECTION (object);
-
-  g_free (self->priv->connect);
-
   G_OBJECT_CLASS (bug16307_connection_parent_class)->finalize (object);
 }
 
@@ -144,7 +93,6 @@ pretend_connected (gpointer data)
 void
 bug16307_connection_inject_connect_succeed (Bug16307Connection *self)
 {
-  g_assert (!tp_strdiff ("inject", self->priv->connect));
   pretend_connected (self);
 }
 
@@ -189,17 +137,8 @@ static gboolean
 start_connecting (TpBaseConnection *conn,
                   GError **error)
 {
-  Bug16307Connection *self = BUG16307_CONNECTION (conn);
-
   tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTING,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
-
-  /* In a real connection manager we'd ask the underlying implementation to
-   * start connecting, then go to state CONNECTED when finished. Here there
-   * isn't actually a connection, so we'll fake a connection process that
-   * takes half a second. */
-  if (self->priv->connect == NULL)
-    g_timeout_add (500, pretend_connected, self);
 
   return TRUE;
 }
@@ -210,7 +149,6 @@ bug16307_connection_class_init (Bug16307ConnectionClass *klass)
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
-  GParamSpec *param_spec;
   static const gchar *interfaces_always_present[] = {
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       TP_IFACE_CONNECTION_INTERFACE_CAPABILITIES,
@@ -218,20 +156,12 @@ bug16307_connection_class_init (Bug16307ConnectionClass *klass)
       TP_IFACE_CONNECTION_INTERFACE_AVATARS,
       NULL };
 
-  object_class->get_property = get_property;
-  object_class->set_property = set_property;
   object_class->finalize = finalize;
   g_type_class_add_private (klass, sizeof (Bug16307ConnectionPrivate));
 
   base_class->start_connecting = start_connecting;
 
   base_class->interfaces_always_present = interfaces_always_present;
-
-  param_spec = g_param_spec_string ("connect", "Connection type",
-      "Connection type", NULL,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_CONNECT, param_spec);
 
   signals[SIGNAL_GET_STATUS_RECEIVED] = g_signal_new ("get-status-received",
       G_OBJECT_CLASS_TYPE (klass),
@@ -255,10 +185,8 @@ bug16307_connection_get_status (TpSvcConnection *iface,
   TpBaseConnection *self_base = TP_BASE_CONNECTION (iface);
   Bug16307Connection *self = BUG16307_CONNECTION (iface);
 
-  /* auto-connect on get_status: it's the only difference with the base
-   * implementation */
-  if (!tp_strdiff ("get_status", self->priv->connect) &&
-      (self_base->status == TP_INTERNAL_CONNECTION_STATUS_NEW ||
+  /* auto-connect on get_status */
+  if ((self_base->status == TP_INTERNAL_CONNECTION_STATUS_NEW ||
        self_base->status == TP_CONNECTION_STATUS_DISCONNECTED))
     {
       pretend_connected (self);

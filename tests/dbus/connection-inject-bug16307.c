@@ -58,7 +58,6 @@ main (int argc,
         BUG16307_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
-        "connect", "get_status",
         NULL));
   service_conn_as_base = TP_BASE_CONNECTION (service_conn);
   MYASSERT (service_conn != NULL, "");
