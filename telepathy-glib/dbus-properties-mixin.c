@@ -785,7 +785,13 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
       interface_name, context);
 
   if (iface_impl == NULL)
-    return;
+    {
+      GError e = { DBUS_GERROR, DBUS_GERROR_INVALID_ARGS,
+          "No properties known for that interface" };
+
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
 
   iface_info = iface_impl->mixin_priv;
 
@@ -793,7 +799,13 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
       property_name, context);
 
   if (prop_impl == NULL)
-    return;
+    {
+      GError e = { DBUS_GERROR, DBUS_GERROR_INVALID_ARGS,
+          "Unknown property" };
+
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
 
   prop_info = prop_impl->mixin_priv;
 
