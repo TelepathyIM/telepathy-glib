@@ -834,6 +834,9 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
           g_error_free (error);
           goto out;
         }
+
+      /* use copy instead of value from now on */
+      value = &copy;
     }
 
   if (iface_impl->setter (self, iface_info->dbus_interface,
