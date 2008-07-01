@@ -842,7 +842,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
   if (iface_impl->setter (self, iface_info->dbus_interface,
         prop_info->name, value, prop_impl->setter_data, &error))
     {
-      tp_svc_dbus_properties_return_from_get (context, value);
+      tp_svc_dbus_properties_return_from_set (context);
     }
   else
     {
