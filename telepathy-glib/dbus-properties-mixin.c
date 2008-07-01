@@ -741,7 +741,7 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
       interface_name, context);
 
   if (iface_impl == NULL)
-    return;
+    goto out;   /* no properties, but we need to return that */
 
   iface_info = iface_impl->mixin_priv;
 
@@ -761,6 +761,7 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
       g_hash_table_insert (values, (gchar *) prop_impl->name, value);
     }
 
+out:
   tp_svc_dbus_properties_return_from_get_all (context, values);
   g_hash_table_destroy (values);
 }
