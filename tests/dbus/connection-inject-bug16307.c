@@ -25,9 +25,6 @@ myassert_failed (void)
   fail = 1;
 }
 
-static GError invalidated_for_test = { 0, TP_ERROR_PERMISSION_DENIED,
-      "No connection for you!" };
-
 typedef struct {
     gboolean ready;
     GError *error /* initialized to NULL statically */;
@@ -45,8 +42,6 @@ main (int argc,
   gchar *conn_path;
   GError *error = NULL;
   TpConnection *conn;
-
-  invalidated_for_test.domain = TP_ERRORS;
 
   g_type_init ();
   tp_debug_set_flags ("all");
