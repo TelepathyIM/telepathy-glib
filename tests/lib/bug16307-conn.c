@@ -58,7 +58,7 @@ struct _Bug16307ConnectionPrivate
    *
    * - If the connect property is not set, the default is to connect after
    *   a timeout of 500ms.
-   * - If connect is "inject", it connects when 
+   * - If connect is "inject", it connects when
    *   bug16307_connection_inject_connect_succeed() is called
    * - If connect is "get_status", it connects the first time get_status is
    *   called
