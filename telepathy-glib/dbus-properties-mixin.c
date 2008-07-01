@@ -832,6 +832,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 
           dbus_g_method_return_error (context, error);
           g_error_free (error);
+          goto out;
         }
     }
 
@@ -846,6 +847,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
       g_error_free (error);
     }
 
+out:
   if (G_IS_VALUE (&copy))
     g_value_unset (&copy);
 }
