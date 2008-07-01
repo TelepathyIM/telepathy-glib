@@ -48,7 +48,7 @@ struct _Bug16307ConnectionPrivate
    * when it connects is, for this test purpose, when the D-Bus method GetStatus
    * is called.
    *
-   * Also, the GetStatus D-Bus reply is retarded until
+   * Also, the GetStatus D-Bus reply is delayed until
    * bug16307_connection_inject_get_status_return() is called
    */
   DBusGMethodInvocation *get_status_invocation;
