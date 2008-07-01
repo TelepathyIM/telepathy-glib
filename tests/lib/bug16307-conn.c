@@ -8,8 +8,6 @@
  * are permitted in any medium without royalty provided the copyright
  * notice and this notice are preserved.
  */
-#include <stdio.h>
-
 #include "bug16307-conn.h"
 
 #include <dbus/dbus-glib.h>
@@ -173,7 +171,6 @@ bug16307_connection_inject_get_status_return (Bug16307Connection *self)
   context = self->priv->get_status_invocation;
   g_assert (context != NULL);
 
-  printf ("returning status %d\n", self_base->status);
   if (self_base->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
     {
       tp_svc_connection_return_from_get_status (
@@ -258,12 +255,6 @@ bug16307_connection_get_status (TpSvcConnection *iface,
   TpBaseConnection *self_base = TP_BASE_CONNECTION (iface);
   Bug16307Connection *self = BUG16307_CONNECTION (iface);
 
-  printf ("get_status: connect='%s'\n", self->priv->connect);
-  printf ("status=%d (%d)(%d)\n",
-      self_base->status,
-      TP_INTERNAL_CONNECTION_STATUS_NEW,
-      TP_CONNECTION_STATUS_DISCONNECTED);
-
   /* auto-connect on get_status: it's the only difference with the base
    * implementation */
   if (!tp_strdiff ("get_status", self->priv->connect) &&
@@ -272,11 +263,6 @@ bug16307_connection_get_status (TpSvcConnection *iface,
     {
       pretend_connected (self);
     }
-
-  printf ("...status=%d (%d)(%d)\n",
-      self_base->status,
-      TP_INTERNAL_CONNECTION_STATUS_NEW,
-      TP_CONNECTION_STATUS_DISCONNECTED);
 
   /* D-Bus return call later */
   g_assert (self->priv->get_status_invocation == NULL);

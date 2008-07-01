@@ -7,8 +7,6 @@
  * are permitted in any medium without royalty provided the copyright
  * notice and this notice are preserved.
  */
-#include <stdio.h>
-
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
@@ -71,7 +69,6 @@ main (int argc,
   MYASSERT_NO_ERROR (error);
 
   /* client side */
-  printf ("conn = tp_connection_new\n");
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
   MYASSERT_NO_ERROR (error);
