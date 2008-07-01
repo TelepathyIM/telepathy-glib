@@ -331,7 +331,14 @@ tp_connection_status_changed_cb (TpConnection *self,
                                  gpointer user_data,
                                  GObject *weak_object)
 {
-  tp_connection_status_changed (self, status, reason);
+  /* GetStatus is called in the TpConnection constructor. If we don't have the
+   * reply for this GetStatus call yet, ignore this signal StatusChanged in
+   * order to run the interface introspection only one time. We will get the
+   * GetStatus reply later anyway. */
+  if (self->status != TP_UNKNOWN_CONNECTION_STATUS)
+    {
+      tp_connection_status_changed (self, status, reason);
+    }
 
   /* we only want to run this in response to a StatusChanged signal,
    * not if the initial status is DISCONNECTED */
