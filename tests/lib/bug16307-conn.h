@@ -54,8 +54,6 @@ GType bug16307_connection_get_type (void);
 
 /* Cause "network events", for debugging/testing */
 
-void bug16307_connection_inject_connect_succeed (Bug16307Connection *self);
-
 void bug16307_connection_inject_get_status_return (Bug16307Connection *self);
 
 G_END_DECLS

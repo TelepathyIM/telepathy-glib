@@ -91,12 +91,6 @@ pretend_connected (gpointer data)
 }
 
 void
-bug16307_connection_inject_connect_succeed (Bug16307Connection *self)
-{
-  pretend_connected (self);
-}
-
-void
 bug16307_connection_inject_get_status_return (Bug16307Connection *self)
 {
   TpBaseConnection *self_base = TP_BASE_CONNECTION (self);
