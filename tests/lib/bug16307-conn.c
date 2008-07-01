@@ -20,7 +20,6 @@
 #include <telepathy-glib/util.h>
 
 static void service_iface_init (gpointer, gpointer);
-static void aliasing_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (Bug16307Connection,
     bug16307_connection,
@@ -28,7 +27,7 @@ G_DEFINE_TYPE_WITH_CODE (Bug16307Connection,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION,
       service_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,
-      aliasing_iface_init);
+      NULL);
     );
 
 /* type definition stuff */
@@ -204,12 +203,5 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
     bug16307_connection_##prefix##x)
   IMPLEMENT(,get_status);
 #undef IMPLEMENT
-}
-
-
-static void
-aliasing_iface_init (gpointer g_iface, gpointer iface_data)
-{
-  /* not implemented, just advertised */
 }
 
