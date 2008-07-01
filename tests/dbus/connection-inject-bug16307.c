@@ -82,8 +82,6 @@ main (int argc,
       "");
   MYASSERT_NO_ERROR (error);
 
-  //g_main_loop_run (mainloop);
-
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
 
