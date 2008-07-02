@@ -249,6 +249,7 @@ ALL_LIBS = \
 
 DROP_NAMESPACE = sed -e 's@xmlns:tp="http://telepathy\.freedesktop\.org/wiki/DbusSpec.extensions-v0"@@g'
 XSLTPROCFLAGS = --nonet --novalid
+tools_dir = $(top_srcdir)/tools
 
 # Bootstrapping
 
@@ -261,45 +262,45 @@ _gen/stable-stamp: $(wildcard *.xml) _gen/spec-stamp
 
 _gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
-		$(srcdir)/../tools/identity.xsl \
+		$(tools_dir)/identity.xsl \
 		$< > $@
 
 # Things generated from the whole spec at once
 
 _gen/gtypes.h _gen/gtypes-body.h: _gen/stable-spec.xml \
-	../tools/glib-gtypes-generator.py
-	$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
+	$(tools_dir)/glib-gtypes-generator.py
+	$(PYTHON) $(tools_dir)/glib-gtypes-generator.py \
 		_gen/stable-spec.xml \
 		_gen/gtypes Tp
 
 _gen/telepathy-enums.h: _gen/stable-spec.xml \
-	../tools/c-constants-gen.py
-	$(PYTHON) $(top_srcdir)/tools/c-constants-gen.py \
+	$(tools_dir)/c-constants-gen.py
+	$(PYTHON) $(tools_dir)/c-constants-gen.py \
 		Tp \
 		$< > $@
 
 _gen/interfaces-body.h _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
-	../tools/glib-interfaces-gen.py
-	$(PYTHON) ../tools/glib-interfaces-gen.py \
+	$(tools_dir)/glib-interfaces-gen.py
+	$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
 		Tp _gen/interfaces-body.h _gen/telepathy-interfaces.h $<
 
 _gen/telepathy-errors.c: _gen/stable-spec.xml \
-	../tools/glib-errors-enum-body-gen.py
-	$(PYTHON) $(top_srcdir)/tools/glib-errors-enum-body-gen.py \
+	$(tools_dir)/glib-errors-enum-body-gen.py
+	$(PYTHON) $(tools_dir)/glib-errors-enum-body-gen.py \
 		$< > $@
 
 _gen/telepathy-errors.h: _gen/stable-spec.xml \
-	../tools/glib-errors-enum-header-gen.py
-	$(PYTHON) $(top_srcdir)/tools/glib-errors-enum-header-gen.py \
+	$(tools_dir)/glib-errors-enum-header-gen.py
+	$(PYTHON) $(tools_dir)/glib-errors-enum-header-gen.py \
 		$< > $@
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \
-	../tools/glib-client-marshaller-gen.py
-	$(PYTHON) $(srcdir)/../tools/glib-client-marshaller-gen.py $< _tp > $@
+	$(tools_dir)/glib-client-marshaller-gen.py
+	$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< _tp > $@
 
-_gen/tp-signals-marshal.list: ../tools/glib-signals-marshal-gen.py \
+_gen/tp-signals-marshal.list: $(tools_dir)/glib-signals-marshal-gen.py \
 	_gen/stable-spec.xml
-	$(PYTHON) $(srcdir)/../tools/glib-signals-marshal-gen.py \
+	$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py \
 		_gen/stable-spec.xml > $@
 
 _gen/signals-marshal.list: signals-marshal.list _gen/tp-signals-marshal.list
@@ -314,15 +315,15 @@ _gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
 
 # Things generated per interface
 
-_gen/tp-spec-%.xml: %.xml ../tools/identity.xsl _gen/spec-stamp
+_gen/tp-spec-%.xml: %.xml $(tools_dir)/identity.xsl _gen/spec-stamp
 	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
-		$(srcdir)/../tools/identity.xsl \
+		$(tools_dir)/identity.xsl \
 		$< > $@
 
 _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
-	../tools/glib-ginterface-gen.py \
+	$(tools_dir)/glib-ginterface-gen.py \
 	Makefile.am
-	$(PYTHON) $(srcdir)/../tools/glib-ginterface-gen.py \
+	$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
 		--filename=_gen/tp-svc-$* \
 		--signal-marshal-prefix=_tp \
 		--include='<telepathy-glib/dbus.h>' \
@@ -331,7 +332,7 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 		$< Tp_Svc_
 
 _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
-	../tools/glib-client-gen.py \
+	$(tools_dir)/glib-client-gen.py \
 	Makefile.am
 	set -e; \
 	subclass= ; \
@@ -362,7 +363,7 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 			subclass_assert=--subclass-assert=TP_IS_DBUS_DAEMON; \
 			;; \
 	esac; \
-	$(PYTHON) $(srcdir)/../tools/glib-client-gen.py \
+	$(PYTHON) $(tools_dir)/glib-client-gen.py \
 		$$subclass $$subclass_assert \
 		--group `echo $* | tr - _` \
 		--iface-quark-prefix=TP_IFACE_QUARK \
