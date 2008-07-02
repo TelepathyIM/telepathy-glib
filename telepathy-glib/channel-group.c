@@ -579,7 +579,7 @@ static void
 _tp_channel_emit_initial_sets (TpChannel *self)
 {
   GArray *added, *remote_pending;
-  GArray empty_array = {NULL, 0};
+  GArray empty_array = { NULL, 0 };
   TpIntSetIter iter = TP_INTSET_ITER_INIT (self->priv->group_local_pending);
 
   added = tp_intset_to_array (self->priv->group_members);
@@ -591,7 +591,7 @@ _tp_channel_emit_initial_sets (TpChannel *self)
   while (tp_intset_iter_next (&iter))
     {
       TpHandle handle;
-      GArray local_pending = {(gchar*) &handle, 1};
+      GArray local_pending = { (gchar *) &handle, 1 };
       TpHandle actor;
       TpChannelGroupChangeReason reason;
       const gchar *message;
