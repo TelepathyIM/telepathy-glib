@@ -1,3 +1,35 @@
+telepathy-glib 0.7.11 (2008-07-02)
+==================================
+
+The "design is hard" release.
+
+This is mainly a bugfix release.
+
+Fixes:
+
+* fd.o #16307: in TpConnection, don't assert when a connection goes CONNECTED
+  while a GetStatus call is pending
+
+* In TpDBusPropertiesMixin: return properly if Get, Set or GetAll are called
+  on nonexistent interfaces or properties; if the wrong type is passed to Set,
+  coerce it to the right type (if possible) and actually use the right type;
+  and if the coercion fails, don't leak memory
+
+* In libglibcodegen (code generation), use the right GType for arrays of
+  object-path
+
+Enhancements:
+
+* Use Python rather than XSLT for code generation, for improved maintainability
+
+Release notes for projects using code generation:
+
+* All the XSLT (except doc-generator.xsl and identity.xsl) has been rewritten
+  in Python. It should produce identical results, but be careful when updating!
+
+* You must update libglibcodegen to this version if there are arrays of
+  object-path in your API, otherwise it just won't work
+
 telepathy-glib 0.7.10 (2008-06-06)
 ==================================
 
