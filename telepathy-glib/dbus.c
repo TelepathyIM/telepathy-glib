@@ -76,6 +76,8 @@
  *
  * The only difference is that this version takes a const #GHashTable and
  * casts it.
+ *
+ * Since: 0.7.12
  */
 /* (#define + static inline in dbus.h) */
 
