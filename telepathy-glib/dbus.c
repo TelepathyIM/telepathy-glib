@@ -47,6 +47,8 @@
  *
  * Parts of telepathy-glib return const pointers to #GHashTable, to encourage
  * the use of this API.
+ *
+ * Since: 0.7.9
  */
 
 #include <telepathy-glib/dbus.h>
