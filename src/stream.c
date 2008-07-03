@@ -922,28 +922,16 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   TpmediaStream *self = TPMEDIA_STREAM (object);
   GError *error = NULL;
   GList *fscandidates;
-  GList *item;
-
-  fscandidates = tp_transports_to_fs (candidate, transports);
 
   DEBUG (self, "adding remote candidate %s", candidate);
 
-  for (item = fscandidates;
-       item;
-       item = g_list_next (item))
-    {
-      FsCandidate *fscandidate = item->data;
+  fscandidates = tp_transports_to_fs (candidate, transports);
 
-      fs_stream_remote_candidates_added (self->priv->fs_stream);
+  if (!fs_stream_set_remote_candidates (self->priv->fs_stream,
+          fscandidates, &error))
+      tpmedia_stream_error (self, 0, error->message);
 
-      if (!fs_stream_add_remote_candidate (self->priv->fs_stream,
-              fscandidate, &error))
-        {
-          tpmedia_stream_error (self, 0, error->message);
-          break;
-        }
-    }
-
+  fs_candidate_list_destroy (fscandidates);
   g_clear_error (&error);
 }
 
@@ -991,15 +979,14 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 {
   TpmediaStream *self = TPMEDIA_STREAM (object);
   guint i;
+  GList *fs_candidates = NULL;
+  GError *error = NULL;
 
   for (i = 0; i < candidates->len; i++)
     {
-      GList *fs_candidates = NULL;
       GPtrArray *transports = NULL;
       gchar *foundation;
       GValueArray *candidate;
-      GList *item;
-      GError *error = NULL;
 
       candidate = g_ptr_array_index (candidates, i);
 
@@ -1012,27 +999,16 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       transports =
           g_value_get_boxed (g_value_array_get_nth (candidate, 1));
 
-      fs_candidates =
-          tp_transports_to_fs (foundation, transports);
-
-      for (item = fs_candidates;
-           item;
-           item = g_list_next (item))
-        {
-          FsCandidate *fscandidate = item->data;
-
-          if (!fs_stream_add_remote_candidate (self->priv->fs_stream,
-                  fscandidate, &error))
-            {
-              tpmedia_stream_error (self, 0, error->message);
-              g_clear_error (&error);
-              fs_candidate_list_destroy (fs_candidates);
-              return;
-            }
-        }
+      fs_candidates = g_list_concat (fs_candidates,
+          tp_transports_to_fs (foundation, transports));
     }
 
-  fs_stream_remote_candidates_added (self->priv->fs_stream);
+  if (!fs_stream_set_remote_candidates (self->priv->fs_stream,
+                  fs_candidates, &error))
+    tpmedia_stream_error (self, 0, error->message);
+
+  g_clear_error (&error);
+  fs_candidate_list_destroy (fs_candidates);
 }
 
 static void
@@ -1677,6 +1653,7 @@ tpmedia_stream_try_sending_codecs (TpmediaStream *stream)
 {
   gboolean ready = FALSE;
   GList *fscodecs = NULL;
+  GList *item = NULL;
 
   if (!stream->priv->send_supported_codecs && !stream->priv->send_local_codecs)
     return;
@@ -1688,6 +1665,12 @@ tpmedia_stream_try_sending_codecs (TpmediaStream *stream)
 
   g_object_get (stream->priv->fs_session, "codecs", &fscodecs, NULL);
 
+  for(item = fscodecs; item; item = g_list_next (item))
+    {
+      gchar *tmp = fs_codec_to_string (item->data);
+      DEBUG (stream, "%s", tmp);
+      g_free (tmp);
+    }
 
   if (stream->priv->send_local_codecs)
     {
