@@ -29,15 +29,21 @@ int main (int argc, char **argv)
   hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
 
+  MYASSERT (tp_asv_size (hash) == 0, "%u != 0", tp_asv_size (hash));
+
   value = tp_g_value_slice_new (G_TYPE_DOUBLE);
   g_value_set_double (value, 0.0);
   g_hash_table_insert (hash, "d:0", value);
   value = NULL;
 
+  MYASSERT (tp_asv_size (hash) == 1, "%u != 1", tp_asv_size (hash));
+
   value = tp_g_value_slice_new (G_TYPE_DOUBLE);
   g_value_set_double (value, -123.0);
   g_hash_table_insert (hash, "d:-123", value);
   value = NULL;
+
+  MYASSERT (tp_asv_size (hash) == 2, "%u != 2", tp_asv_size (hash));
 
   value = tp_g_value_slice_new (G_TYPE_BOOLEAN);
   g_value_set_boolean (value, TRUE);
