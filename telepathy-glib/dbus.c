@@ -45,6 +45,17 @@
 #include "telepathy-glib/_gen/tp-cli-dbus-daemon-body.h"
 
 /**
+ * tp_asv_size:
+ * @asv: a GHashTable
+ *
+ * Return the size of @asv as if via g_hash_table_size().
+ *
+ * The only difference is that this version takes a const #GHashTable and
+ * casts it.
+ */
+/* (#define + static inline in dbus.h) */
+
+/**
  * tp_dbus_g_method_return_not_implemented:
  * @context: The D-Bus method invocation context
  *

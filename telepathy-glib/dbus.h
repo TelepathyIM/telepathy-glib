@@ -87,6 +87,13 @@ gboolean tp_dbus_check_valid_member_name (const gchar *name,
 gboolean tp_dbus_check_valid_object_path (const gchar *path,
     GError **error);
 
+#define tp_asv_size(asv) _tp_asv_size_inline (asv)
+static inline guint
+_tp_asv_size_inline (const GHashTable *asv)
+{
+  return g_hash_table_size ((GHashTable *) asv);
+}
+
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 gpointer tp_asv_get_boxed (const GHashTable *asv, const gchar *key,
