@@ -12,6 +12,7 @@
     <xi:include href="xml/proxy-dbus-core.xml"/>
     <xi:include href="xml/proxy-tp-properties.xml"/>
     <xi:include href="xml/dbus.xml"/>
+    <xi:include href="xml/asv.xml"/>
     <xi:include href="xml/proxy-subclass.xml"/>
   </chapter>
   <chapter id="ch-protocol">
