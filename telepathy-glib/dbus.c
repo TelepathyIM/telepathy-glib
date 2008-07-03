@@ -27,6 +27,28 @@
  * D-Bus utility functions used in telepathy-glib.
  */
 
+/**
+ * SECTION:asv
+ * @title: Manipulating a{sv} mappings
+ * @short_description: Functions to manipulate mappings from string to
+ *  variant, as represented in dbus-glib by a #GHashTable from string
+ *  to #GValue
+ *
+ * Mappings from string to variant (D-Bus signature a{sv}) are commonly used
+ * to provide extensibility, but in dbus-glib they're somewhat awkward to deal
+ * with.
+ *
+ * These functions (tp_asv_*) provide convenient access to the values in such
+ * a mapping.
+ *
+ * They also work around the fact that none of the #GHashTable public API
+ * takes a const pointer to a #GHashTable, even the read-only methods that
+ * logically ought to.
+ *
+ * Parts of telepathy-glib return const pointers to #GHashTable, to encourage
+ * the use of this API.
+ */
+
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dbus-internal.h>
 
