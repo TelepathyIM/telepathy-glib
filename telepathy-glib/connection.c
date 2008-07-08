@@ -92,45 +92,22 @@ tp_errors_disconnected_quark (void)
 /**
  * TpConnectionClass:
  * @parent_class: the parent class
- * @priv: pointer to opaque private data
  *
- * The class of a #TpConnection.
+ * The class of a #TpConnection. In addition to @parent_class there are four
+ * pointers reserved for possible future use.
  *
- * Since: 0.7.1
+ * Since: 0.7.1; structure layout visible since 0.7.12
  */
-struct _TpConnectionClass {
-    TpProxyClass parent_class;
-    gpointer priv;
-};
 
 /**
  * TpConnection:
  * @parent: the parent class instance
- * @status: same as #TpConnection:status, should be considered read-only
- * @status_reason: same as #TpConnection:status-reason, should be considered
- *  read-only
- * @_reserved_for_self_handle: reserved, currently always 0
- * @ready: the same as #TpConnection:connection-ready; should be considered
- *  read-only
- * @_reserved_flags: (private, reserved for future use)
  * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy connection.
  *
- * Since: 0.7.1
+ * Since: 0.7.1; structure layout visible since 0.7.12
  */
-struct _TpConnection {
-    TpProxy parent;
-
-    TpConnectionStatus status;
-    TpConnectionStatusReason status_reason;
-    TpHandle _reserved_for_self_handle;
-
-    gboolean ready:1;
-    gboolean _reserved_flags:31;
-
-    TpConnectionPrivate *priv;
-};
 
 typedef void (*TpConnectionProc) (TpConnection *self);
 
@@ -138,8 +115,11 @@ struct _TpConnectionPrivate {
     /* GArray of TpConnectionProc */
     GArray *introspect_needed;
 
+    TpConnectionStatus status;
+    TpConnectionStatusReason status_reason;
     TpConnectionAliasFlags alias_flags;
-    /* other stuff could go here */
+
+    gboolean ready:1;
 };
 
 enum
@@ -165,13 +145,13 @@ tp_connection_get_property (GObject *object,
   switch (property_id)
     {
     case PROP_CONNECTION_READY:
-      g_value_set_boolean (value, self->ready);
+      g_value_set_boolean (value, self->priv->ready);
       break;
     case PROP_STATUS:
-      g_value_set_uint (value, self->status);
+      g_value_set_uint (value, self->priv->status);
       break;
     case PROP_STATUS_REASON:
-      g_value_set_uint (value, self->status_reason);
+      g_value_set_uint (value, self->priv->status_reason);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -190,7 +170,7 @@ tp_connection_continue_introspection (TpConnection *self)
       self->priv->introspect_needed = NULL;
 
       DEBUG ("%p: connection ready", self);
-      self->ready = TRUE;
+      self->priv->ready = TRUE;
       g_object_notify ((GObject *) self, "connection-ready");
     }
   else
@@ -302,6 +282,9 @@ tp_connection_got_interfaces_cb (TpConnection *self,
         }
     }
 
+  /* FIXME: give subclasses a chance to influence the definition of "ready"
+   * now that we have our interfaces? */
+
   tp_connection_continue_introspection (self);
 }
 
@@ -310,10 +293,10 @@ tp_connection_status_changed (TpConnection *self,
                               guint status,
                               guint reason)
 {
-  DEBUG ("%p: %d -> %d because %d", self, self->status, status, reason);
+  DEBUG ("%p: %d -> %d because %d", self, self->priv->status, status, reason);
 
-  self->status = status;
-  self->status_reason = reason;
+  self->priv->status = status;
+  self->priv->status_reason = reason;
   g_object_notify ((GObject *) self, "status");
   g_object_notify ((GObject *) self, "status-reason");
 
@@ -335,7 +318,7 @@ tp_connection_status_changed_cb (TpConnection *self,
    * reply for this GetStatus call yet, ignore this signal StatusChanged in
    * order to run the interface introspection only one time. We will get the
    * GetStatus reply later anyway. */
-  if (self->status != TP_UNKNOWN_CONNECTION_STATUS)
+  if (self->priv->status != TP_UNKNOWN_CONNECTION_STATUS)
     {
       tp_connection_status_changed (self, status, reason);
     }
@@ -409,8 +392,8 @@ tp_connection_init (TpConnection *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONNECTION,
       TpConnectionPrivate);
 
-  self->status = TP_UNKNOWN_CONNECTION_STATUS;
-  self->status_reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
+  self->priv->status = TP_UNKNOWN_CONNECTION_STATUS;
+  self->priv->status_reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
 }
 
 static void
@@ -634,7 +617,7 @@ tp_connection_run_until_ready (TpConnection *self,
   if (as_proxy->invalidated)
     goto raise_invalidated;
 
-  if (self->ready)
+  if (self->priv->ready)
     return TRUE;
 
   data.loop = g_main_loop_new (NULL, FALSE);
@@ -644,7 +627,7 @@ tp_connection_run_until_ready (TpConnection *self,
   ready_id = g_signal_connect_swapped (self, "notify::connection-ready",
       G_CALLBACK (g_main_loop_quit), data.loop);
 
-  if (self->status != TP_CONNECTION_STATUS_CONNECTED &&
+  if (self->priv->status != TP_CONNECTION_STATUS_CONNECTED &&
       connect)
     {
       data.pc = tp_cli_connection_call_connect (self, -1,
@@ -679,7 +662,7 @@ tp_connection_run_until_ready (TpConnection *self,
   if (as_proxy->invalidated != NULL)
     goto raise_invalidated;
 
-  if (self->ready)
+  if (self->priv->ready)
     return TRUE;
 
   g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_CANCELLED,
@@ -996,7 +979,7 @@ tp_connection_call_when_ready (TpConnection *self,
 
   g_return_if_fail (callback != NULL);
 
-  if (self->ready || as_proxy->invalidated != NULL)
+  if (self->priv->ready || as_proxy->invalidated != NULL)
     {
       DEBUG ("already ready or invalidated");
       callback (self, as_proxy->invalidated, user_data);

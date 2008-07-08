@@ -30,6 +30,20 @@ typedef struct _TpConnection TpConnection;
 typedef struct _TpConnectionPrivate TpConnectionPrivate;
 typedef struct _TpConnectionClass TpConnectionClass;
 
+struct _TpConnectionClass {
+    TpProxyClass parent_class;
+    /*<private>*/
+    GCallback _1;
+    GCallback _2;
+    GCallback _3;
+    GCallback _4;
+};
+
+struct _TpConnection {
+    TpProxy parent;
+    TpConnectionPrivate *priv;
+};
+
 GType tp_connection_get_type (void);
 
 #define TP_ERRORS_DISCONNECTED (tp_errors_disconnected_quark ())
