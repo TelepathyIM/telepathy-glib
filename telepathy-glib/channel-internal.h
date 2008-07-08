@@ -28,22 +28,15 @@ G_BEGIN_DECLS
 
 struct _TpChannelClass {
     TpProxyClass parent_class;
-    gpointer priv;
+    /*<private>*/
+    GCallback _1;
+    GCallback _2;
+    GCallback _3;
+    GCallback _4;
 };
 
 struct _TpChannel {
     TpProxy parent;
-
-    TpConnection *connection;
-
-    gboolean ready:1;
-    gboolean _reserved_flags:31;
-    GQuark channel_type;
-    TpHandleType handle_type;
-    TpHandle handle;
-
-    TpHandle group_self_handle;
-    TpChannelGroupFlags group_flags;
 
     TpChannelPrivate *priv;
 };
@@ -59,9 +52,17 @@ typedef struct {
 struct _TpChannelPrivate {
     gulong conn_invalidated_id;
 
+    TpConnection *connection;
+
     /* GQueue of TpChannelProc */
     GQueue *introspect_needed;
 
+    GQuark channel_type;
+    TpHandleType handle_type;
+    TpHandle handle;
+
+    TpHandle group_self_handle;
+    TpChannelGroupFlags group_flags;
     /* NULL if members not discovered yet */
     TpIntSet *group_members;
     TpIntSet *group_local_pending;
@@ -75,6 +76,7 @@ struct _TpChannelPrivate {
     /* guint => guint, NULL if not discovered yet */
     GHashTable *group_handle_owners;
 
+    gboolean ready:1;
     gboolean have_group_flags:1;
 };
 

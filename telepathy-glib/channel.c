@@ -57,32 +57,22 @@
 /**
  * TpChannelClass:
  * @parent_class: parent class
- * @priv: pointer to opaque private data
  *
- * The class of a #TpChannel.
+ * The class of a #TpChannel. In addition to @parent_class there are four
+ * pointers reserved for possible future use.
  *
- * Since: 0.7.1
+ * Since: 0.7.1; structure layout visible since 0.7.12
  */
 
 
 /**
  * TpChannel:
  * @parent: parent class instance
- * @ready: the same as #TpChannel:channel-ready; should be considered
- *  read-only
- * @_reserved_flags: (private, reserved for future use)
- * @channel_type: quark representing the channel type; should be considered
- *  read-only
- * @handle_type: the handle type (%TP_UNKNOWN_HANDLE_TYPE if not yet known);
- *  should be considered read-only
- * @handle: the handle with which this channel communicates (0 if
- *  not yet known or if @handle_type is %TP_HANDLE_TYPE_NONE); should be
- *  considered read-only
  * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy channel.
  *
- * Since: 0.7.1
+ * Since: 0.7.1; structure layout visible since 0.7.12
  */
 
 
@@ -131,7 +121,7 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
 const gchar *
 tp_channel_get_channel_type (TpChannel *self)
 {
-  return g_quark_to_string (self->channel_type);
+  return g_quark_to_string (self->priv->channel_type);
 }
 
 
@@ -151,7 +141,7 @@ tp_channel_get_channel_type (TpChannel *self)
 GQuark
 tp_channel_get_channel_type_id (TpChannel *self)
 {
-  return self->channel_type;
+  return self->priv->channel_type;
 }
 
 
@@ -180,10 +170,10 @@ tp_channel_get_handle (TpChannel *self,
 {
   if (handle_type != NULL)
     {
-      *handle_type = self->handle_type;
+      *handle_type = self->priv->handle_type;
     }
 
-  return self->handle;
+  return self->priv->handle;
 }
 
 
@@ -198,7 +188,7 @@ tp_channel_get_handle (TpChannel *self,
 gboolean
 tp_channel_is_ready (TpChannel *self)
 {
-  return self->ready;
+  return self->priv->ready;
 }
 
 
@@ -214,7 +204,7 @@ tp_channel_is_ready (TpChannel *self)
 TpConnection *
 tp_channel_borrow_connection (TpChannel *self)
 {
-  return self->connection;
+  return self->priv->connection;
 }
 
 
@@ -229,26 +219,26 @@ tp_channel_get_property (GObject *object,
   switch (property_id)
     {
     case PROP_CONNECTION:
-      g_value_set_object (value, self->connection);
+      g_value_set_object (value, self->priv->connection);
       break;
     case PROP_CHANNEL_READY:
-      g_value_set_boolean (value, self->ready);
+      g_value_set_boolean (value, self->priv->ready);
       break;
     case PROP_CHANNEL_TYPE:
       g_value_set_static_string (value,
-          g_quark_to_string (self->channel_type));
+          g_quark_to_string (self->priv->channel_type));
       break;
     case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, self->handle_type);
+      g_value_set_uint (value, self->priv->handle_type);
       break;
     case PROP_HANDLE:
-      g_value_set_uint (value, self->handle);
+      g_value_set_uint (value, self->priv->handle);
       break;
     case PROP_GROUP_SELF_HANDLE:
-      g_value_set_uint (value, self->group_self_handle);
+      g_value_set_uint (value, self->priv->group_self_handle);
       break;
     case PROP_GROUP_FLAGS:
-      g_value_set_uint (value, self->group_flags);
+      g_value_set_uint (value, self->priv->group_flags);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -267,18 +257,19 @@ tp_channel_set_property (GObject *object,
   switch (property_id)
     {
     case PROP_CONNECTION:
-      self->connection = TP_CONNECTION (g_value_dup_object (value));
+      self->priv->connection = TP_CONNECTION (g_value_dup_object (value));
       break;
     case PROP_CHANNEL_TYPE:
       /* can only be set in constructor */
-      g_assert (self->channel_type == 0);
-      self->channel_type = g_quark_from_string (g_value_get_string (value));
+      g_assert (self->priv->channel_type == 0);
+      self->priv->channel_type = g_quark_from_string (g_value_get_string (
+            value));
       break;
     case PROP_HANDLE_TYPE:
-      self->handle_type = g_value_get_uint (value);
+      self->priv->handle_type = g_value_get_uint (value);
       break;
     case PROP_HANDLE:
-      self->handle = g_value_get_uint (value);
+      self->priv->handle = g_value_get_uint (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -301,7 +292,7 @@ _tp_channel_continue_introspection (TpChannel *self)
       self->priv->introspect_needed = NULL;
 
       DEBUG ("%p: channel ready", self);
-      self->ready = TRUE;
+      self->priv->ready = TRUE;
       g_object_notify ((GObject *) self, "channel-ready");
     }
   else
@@ -380,10 +371,11 @@ tp_channel_got_channel_type_cb (TpChannel *self,
   else if (tp_dbus_check_valid_interface_name (channel_type, &err2))
     {
       DEBUG ("%p: Introspected channel type %s", self, channel_type);
-      self->channel_type = g_quark_from_string (channel_type);
+      self->priv->channel_type = g_quark_from_string (channel_type);
       g_object_notify ((GObject *) self, "channel-type");
 
-      tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
+      tp_proxy_add_interface_by_id ((TpProxy *) self,
+          self->priv->channel_type);
 
     }
   else
@@ -400,14 +392,15 @@ tp_channel_got_channel_type_cb (TpChannel *self,
 static void
 _tp_channel_get_channel_type (TpChannel *self)
 {
-  if (self->channel_type == 0)
+  if (self->priv->channel_type == 0)
     {
       tp_cli_channel_call_get_channel_type (self, -1,
           tp_channel_got_channel_type_cb, NULL, NULL, NULL);
     }
   else
     {
-      tp_proxy_add_interface_by_id ((TpProxy *) self, self->channel_type);
+      tp_proxy_add_interface_by_id ((TpProxy *) self,
+          self->priv->channel_type);
       _tp_channel_continue_introspection (self);
     }
 }
@@ -425,8 +418,8 @@ tp_channel_got_handle_cb (TpChannel *self,
     {
       DEBUG ("%p: Introspected handle #%d of type %d", self, handle,
           handle_type);
-      self->handle_type = handle_type;
-      self->handle = handle;
+      self->priv->handle_type = handle_type;
+      self->priv->handle = handle;
       g_object_notify ((GObject *) self, "handle-type");
       g_object_notify ((GObject *) self, "handle");
     }
@@ -442,8 +435,9 @@ tp_channel_got_handle_cb (TpChannel *self,
 static void
 _tp_channel_get_handle (TpChannel *self)
 {
-  if (self->handle_type == TP_UNKNOWN_HANDLE_TYPE
-      || (self->handle == 0 && self->handle_type != TP_HANDLE_TYPE_NONE))
+  if (self->priv->handle_type == TP_UNKNOWN_HANDLE_TYPE
+      || (self->priv->handle == 0 &&
+          self->priv->handle_type != TP_HANDLE_TYPE_NONE))
     {
       tp_cli_channel_call_get_handle (self, -1,
           tp_channel_got_handle_cb, NULL, NULL, NULL);
@@ -492,9 +486,9 @@ tp_channel_connection_invalidated_cb (TpConnection *conn,
   tp_proxy_invalidate ((TpProxy *) self, &e);
 
   /* this channel's handle is now meaningless */
-  if (self->handle != 0)
+  if (self->priv->handle != 0)
     {
-      self->handle = 0;
+      self->priv->handle = 0;
       g_object_notify ((GObject *) self, "handle");
     }
 
@@ -511,7 +505,7 @@ tp_channel_constructor (GType type,
         n_params, params));
 
   /* If our TpConnection dies, so do we. */
-  self->priv->conn_invalidated_id = g_signal_connect (self->connection,
+  self->priv->conn_invalidated_id = g_signal_connect (self->priv->connection,
       "invalidated", G_CALLBACK (tp_channel_connection_invalidated_cb),
       self);
 
@@ -522,9 +516,11 @@ tp_channel_constructor (GType type,
       NULL, NULL);
 
   DEBUG ("%p: constructed with channel type \"%s\", handle #%d of type %d",
-      self, (self->channel_type != 0) ? g_quark_to_string (self->channel_type)
-                                      : "(null)",
-      self->handle, self->handle_type);
+      self,
+      (self->priv->channel_type != 0)
+          ? g_quark_to_string (self->priv->channel_type)
+          : "(null)",
+      self->priv->handle, self->priv->handle_type);
 
   self->priv->introspect_needed = g_queue_new ();
 
@@ -547,11 +543,11 @@ tp_channel_init (TpChannel *self)
 {
   DEBUG ("%p", self);
 
-  self->channel_type = 0;
-  self->handle_type = TP_UNKNOWN_HANDLE_TYPE;
-  self->handle = 0;
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CHANNEL,
       TpChannelPrivate);
+  self->priv->channel_type = 0;
+  self->priv->handle_type = TP_UNKNOWN_HANDLE_TYPE;
+  self->priv->handle = 0;
 }
 
 static void
@@ -562,13 +558,13 @@ tp_channel_dispose (GObject *object)
   DEBUG ("%p", self);
 
   if (self->priv->conn_invalidated_id != 0)
-    g_signal_handler_disconnect (self->connection,
+    g_signal_handler_disconnect (self->priv->connection,
         self->priv->conn_invalidated_id);
 
   self->priv->conn_invalidated_id = 0;
 
-  g_object_unref (self->connection);
-  self->connection = NULL;
+  g_object_unref (self->priv->connection);
+  self->priv->connection = NULL;
 
   ((GObjectClass *) tp_channel_parent_class)->dispose (object);
 }
@@ -908,7 +904,7 @@ tp_channel_run_until_ready (TpChannel *self,
   if (as_proxy->invalidated)
     goto raise_invalidated;
 
-  if (self->ready)
+  if (self->priv->ready)
     return TRUE;
 
   my_loop = g_main_loop_new (NULL, FALSE);
@@ -932,7 +928,7 @@ tp_channel_run_until_ready (TpChannel *self,
   if (as_proxy->invalidated)
     goto raise_invalidated;
 
-  g_assert (self->ready);
+  g_assert (self->priv->ready);
   return TRUE;
 
 raise_invalidated:
@@ -1032,7 +1028,7 @@ tp_channel_call_when_ready (TpChannel *self,
 
   g_return_if_fail (callback != NULL);
 
-  if (self->ready || as_proxy->invalidated != NULL)
+  if (self->priv->ready || as_proxy->invalidated != NULL)
     {
       DEBUG ("already ready or invalidated");
       callback (self, as_proxy->invalidated, user_data);

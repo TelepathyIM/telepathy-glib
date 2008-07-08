@@ -77,7 +77,7 @@ local_pending_info_free (LocalPendingInfo *info)
 TpHandle
 tp_channel_group_get_self_handle (TpChannel *self)
 {
-  return self->group_self_handle;
+  return self->priv->group_self_handle;
 }
 
 
@@ -93,7 +93,7 @@ tp_channel_group_get_self_handle (TpChannel *self)
 TpChannelGroupFlags
 tp_channel_group_get_flags (TpChannel *self)
 {
-  return self->group_flags;
+  return self->priv->group_flags;
 }
 
 
@@ -308,7 +308,7 @@ tp_channel_got_group_flags_0_16_cb (TpChannel *self,
                                     gpointer user_data G_GNUC_UNUSED,
                                     GObject *weak_object G_GNUC_UNUSED)
 {
-  g_assert (self->group_flags == 0);
+  g_assert (self->priv->group_flags == 0);
 
   if (error != NULL)
     {
@@ -325,7 +325,7 @@ tp_channel_got_group_flags_0_16_cb (TpChannel *self,
           flags &= ~TP_CHANNEL_GROUP_FLAG_PROPERTIES;
         }
 
-      self->group_flags = flags;
+      self->priv->group_flags = flags;
       DEBUG ("Initial GroupFlags: %u", flags);
 
       if (flags != 0)
@@ -343,12 +343,12 @@ tp_channel_group_self_handle_changed_cb (TpChannel *self,
                                          gpointer unused G_GNUC_UNUSED,
                                          GObject *unused_object G_GNUC_UNUSED)
 {
-  if (self_handle == self->group_self_handle)
+  if (self_handle == self->priv->group_self_handle)
     return;
 
   DEBUG ("%p SelfHandle changed to %u", self, self_handle);
 
-  self->group_self_handle = self_handle;
+  self->priv->group_self_handle = self_handle;
   g_object_notify ((GObject *) self, "group-self-handle");
 }
 
@@ -644,11 +644,11 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
 
       DEBUG ("Received %u group properties", g_hash_table_size (asv));
 
-      self->group_flags = tp_asv_get_uint32 (asv, "GroupFlags", NULL);
-      DEBUG ("Initial GroupFlags: %u", self->group_flags);
+      self->priv->group_flags = tp_asv_get_uint32 (asv, "GroupFlags", NULL);
+      DEBUG ("Initial GroupFlags: %u", self->priv->group_flags);
       self->priv->have_group_flags = 1;
 
-      if (self->group_flags != 0)
+      if (self->priv->group_flags != 0)
         g_object_notify ((GObject *) self, "group-flags");
 
       tp_channel_group_self_handle_changed_cb (self,
@@ -815,7 +815,7 @@ tp_channel_group_members_changed_cb (TpChannel *self,
           tp_intset_remove (self->priv->group_local_pending, handle);
           tp_intset_remove (self->priv->group_remote_pending, handle);
 
-          if (handle == self->group_self_handle)
+          if (handle == self->priv->group_self_handle)
             {
               self->priv->group_remove_reason = reason;
               g_free (self->priv->group_remove_message);
@@ -865,14 +865,14 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
     {
       DEBUG ("%p GroupFlagsChanged: +%u -%u", self, added, removed);
 
-      added &= ~(self->group_flags);
-      removed &= self->group_flags;
+      added &= ~(self->priv->group_flags);
+      removed &= self->priv->group_flags;
 
       DEBUG ("%p GroupFlagsChanged (after filtering): +%u -%u",
           self, added, removed);
 
-      self->group_flags |= added;
-      self->group_flags &= ~removed;
+      self->priv->group_flags |= added;
+      self->priv->group_flags &= ~removed;
 
       if (added != 0 || removed != 0)
         {
