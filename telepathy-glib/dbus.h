@@ -88,10 +88,13 @@ gboolean tp_dbus_check_valid_object_path (const gchar *path,
     GError **error);
 
 #define tp_asv_size(asv) _tp_asv_size_inline (asv)
+
 static inline guint
 _tp_asv_size_inline (const GHashTable *asv)
 {
-  return g_hash_table_size ((GHashTable *) asv);
+  /* The empty comment here is to stop gtkdoc thinking g_hash_table_size is
+   * a declaration. */
+  return g_hash_table_size /* */ ((GHashTable *) asv);
 }
 
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
