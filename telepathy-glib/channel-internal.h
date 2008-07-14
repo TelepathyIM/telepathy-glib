@@ -26,21 +26,6 @@
 
 G_BEGIN_DECLS
 
-struct _TpChannelClass {
-    TpProxyClass parent_class;
-    /*<private>*/
-    GCallback _1;
-    GCallback _2;
-    GCallback _3;
-    GCallback _4;
-};
-
-struct _TpChannel {
-    TpProxy parent;
-
-    TpChannelPrivate *priv;
-};
-
 typedef void (*TpChannelProc) (TpChannel *self);
 
 typedef struct {

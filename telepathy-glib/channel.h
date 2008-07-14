@@ -34,6 +34,21 @@ typedef struct _TpChannel TpChannel;
 typedef struct _TpChannelPrivate TpChannelPrivate;
 typedef struct _TpChannelClass TpChannelClass;
 
+struct _TpChannelClass {
+    TpProxyClass parent_class;
+    /*<private>*/
+    GCallback _1;
+    GCallback _2;
+    GCallback _3;
+    GCallback _4;
+};
+
+struct _TpChannel {
+    TpProxy parent;
+
+    TpChannelPrivate *priv;
+};
+
 GType tp_channel_get_type (void);
 
 #define TP_ERRORS_REMOVED_FROM_GROUP (tp_errors_removed_from_group_quark ())

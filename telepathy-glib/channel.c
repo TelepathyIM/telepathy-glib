@@ -343,6 +343,9 @@ tp_channel_got_interfaces_cb (TpChannel *self,
         }
     }
 
+  /* FIXME: give subclasses a chance to influence the definition of "ready"
+   * now that we have our interfaces? */
+
   _tp_channel_continue_introspection (self);
 }
 
