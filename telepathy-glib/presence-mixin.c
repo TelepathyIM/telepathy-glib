@@ -1193,7 +1193,7 @@ construct_simple_presence_hash_foreach (gpointer key,
 
   g_value_array_append (presence, NULL);
   g_value_init (g_value_array_get_nth (presence, 0), G_TYPE_UINT);
-  g_value_set_string (g_value_array_get_nth (presence, 0), status_type);
+  g_value_set_uint (g_value_array_get_nth (presence, 0), status_type);
 
   g_value_array_append (presence, NULL);
   g_value_init (g_value_array_get_nth (presence, 1), G_TYPE_STRING);
