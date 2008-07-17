@@ -1153,9 +1153,11 @@ construct_simple_presence_hash_foreach (gpointer key,
     (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
   GValueArray *presence;
   const gchar *status_name;
+  TpConnectionPresenceType status_type;
   const gchar *message = NULL;
 
   status_name = data->supported_statuses[status->index].name;
+  status_type = data->supported_statuses[status->index].presence_type;
 
   if (status->optional_arguments != NULL)
     {
@@ -1168,15 +1170,19 @@ construct_simple_presence_hash_foreach (gpointer key,
   if (message == NULL)
     message = "";
 
-  presence = g_value_array_new (2);
+  presence = g_value_array_new (3);
 
   g_value_array_append (presence, NULL);
-  g_value_init (g_value_array_get_nth (presence, 0), G_TYPE_STRING);
-  g_value_set_string (g_value_array_get_nth (presence, 0), status_name);
+  g_value_init (g_value_array_get_nth (presence, 0), G_TYPE_UINT);
+  g_value_set_string (g_value_array_get_nth (presence, 0), status_type);
 
   g_value_array_append (presence, NULL);
   g_value_init (g_value_array_get_nth (presence, 1), G_TYPE_STRING);
-  g_value_set_string (g_value_array_get_nth (presence, 1), message);
+  g_value_set_string (g_value_array_get_nth (presence, 1), status_name);
+
+  g_value_array_append (presence, NULL);
+  g_value_init (g_value_array_get_nth (presence, 2), G_TYPE_STRING);
+  g_value_set_string (g_value_array_get_nth (presence, 2), message);
 
   g_hash_table_insert (data->presence_hash, GUINT_TO_POINTER (handle),
       presence);
