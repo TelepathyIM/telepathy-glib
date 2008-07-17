@@ -81,7 +81,7 @@ USA.</p>
     </property>
 
     <tp:flags name="Message_Part_Support_Flags"
-      value-prefix="Message_Part_Support_Flag">
+      value-prefix="Message_Part_Support_Flag" type="u">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Flags indicating the level of support for message parts on this
           channel. They are designed such that setting more flags always
@@ -471,7 +471,8 @@ USA.</p>
       </tp:possible-errors>
     </method>
 
-    <tp:flags name="Message_Sending_Flags" value-prefix="Message_Sending_Flag">
+    <tp:flags name="Message_Sending_Flags" value-prefix="Message_Sending_Flag"
+      type="u">
       <tp:docstring>
         Flags altering the way a message is sent. The "most usual" action
         should always be to have these flags unset.

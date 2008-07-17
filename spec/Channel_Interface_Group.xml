@@ -192,9 +192,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:flag suffix="Handle_Owners_Not_Available" value="1024">
         <tp:docstring>
           In rooms with channel specific handles (ie Channel_Specific_Handles
-          flag is set), this flag indicates that none of the handle owners are
-          available, and that GetHandleOwners method will always return 0 for
-          channel members other than the self handle.
+          flag is set), this flag indicates that no handle owners are
+          available, apart from the owner of the SelfHandle.
+
+          <tp:rationale>
+            This used to be an important optimization to avoid repeated
+            GetHandleOwners calls, before we introduced the HandleOwner
+            property and HandleOwnerChanged signal.
+          </tp:rationale>
         </tp:docstring>
       </tp:flag>
       <tp:flag suffix="Properties" value="2048">

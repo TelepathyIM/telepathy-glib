@@ -457,7 +457,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <p>On protocols where a conversation with a user is actually just
         a nameless chat room starting with exactly two members, to which
-        more members can be invited, calling RequestChannel with type Text
+        more members can be invited, calling
+        <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection">RequestChannel</tp:dbus-ref>
+        with type Text
         and handle type CONTACT should continue to succeed, but may return
         a channel with handle type 0, handle 0, the group interface,
         and the local and remote contacts in its members.</p>

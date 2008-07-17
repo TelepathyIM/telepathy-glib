@@ -249,7 +249,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </dl>
     </tp:docstring>
 
-    <tp:enum name="Delivery_Status" value-prefix="Delivery_Status">
+    <tp:enum name="Delivery_Status" value-prefix="Delivery_Status" type="u">
       <tp:docstring>
         <p>The status of a message as indicated by a delivery report.</p>
 
@@ -304,7 +304,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </tp:enum>
 
     <tp:flags name="Delivery_Reporting_Support_Flags"
-      value-prefix="Delivery_Reporting_Support_Flag">
+      value-prefix="Delivery_Reporting_Support_Flag" type="u">
       <tp:docstring>
         Flags indicating the level of support for delivery reporting on this
         channel. Any future flags added to this set will conform to the

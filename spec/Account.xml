@@ -298,36 +298,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:possible-errors>
     </method>
 
-    <tp:struct name="Account_Presence">
-      <tp:docstring>
-        A simplified form of the presence statuses seen in the Presence
-        interface.
-      </tp:docstring>
-
-      <tp:member name="Type" type="u" tp:type="Connection_Presence_Type">
-        <tp:docstring>
-          The presence type, e.g. Connection_Presence_Type_Away.
-        </tp:docstring>
-      </tp:member>
-
-      <tp:member name="Status" type="s">
-        <tp:docstring>
-          The connection-manager-specific string identifier of the presence
-          status, e.g. "brb".
-        </tp:docstring>
-      </tp:member>
-
-      <tp:member name="Message" type="s">
-        <tp:docstring>
-          The user-defined status message, e.g. "Back soon!". This will be
-          used as the value for the 'message' keyword in the Presence
-          interface's dictionary, if possible.
-        </tp:docstring>
-      </tp:member>
-    </tp:struct>
-
     <property name="AutomaticPresence" type="(uss)" access="readwrite"
-      tp:type="Account_Presence">
+      tp:type="Simple_Presence">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The presence status that this account should have if it is brought
           online.</p>
@@ -405,7 +377,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </property>
 
     <property name="CurrentPresence" type="(uss)" access="read"
-      tp:type="Account_Presence">
+      tp:type="Simple_Presence">
       <tp:docstring>
         The actual presence. If the connection is not online, this should be
         (Connection_Presence_Type_Offline, "", "").
@@ -421,7 +393,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </property>
 
     <property name="RequestedPresence" type="(uss)" access="readwrite"
-      tp:type="Account_Presence">
+      tp:type="Simple_Presence">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The requested presence for this account. When this is changed, the
           account manager should attempt to manipulate the connection manager

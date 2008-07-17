@@ -21,13 +21,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.ConnectionManager">
 
     <tp:simple-type name="Connection_Manager_Name" type="s">
-      <tp:docstring>
-        The name of a connection manager, found in its well-known
-        bus name and object path. This must be a non-empty string of
-        ASCII letters, digits and underscores, starting with a letter.
-        This is typically the name of the executable with any "telepathy-"
-        prefix removed, and any hyphen/minus signs replaced by
-        underscores.
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>The name of a connection manager, found in its well-known
+          bus name and object path. This must be a non-empty string of
+          ASCII letters, digits and underscores, starting with a letter.
+          This is typically the name of the executable with any "telepathy-"
+          prefix removed, and any hyphen/minus signs replaced by
+          underscores.</p>
+
+        <p>Connection manager names SHOULD NOT be the same as the name of
+          the protocol they implement.</p>
+
+        <tp:rationale>
+          <p>This is likely to lead to conflicts between different
+            implementations of the same protocol (or indeed inability
+            to distinguish between the different implementations!). The
+            Telepathy project traditionally uses some sort of pun (Haze is
+            based on libpurple, Salut implements a protocol often called
+            Bonjour, and Wilde implements the OSCAR protocol).</p>
+        </tp:rationale>
+
+        <p>Connection manager names SHOULD NOT be the same as the name of
+          a library on which they are based.</p>
+
+        <tp:rationale>
+          <p>We often abbreviate, for instance, telepathy-haze as "Haze",
+            but abbreviating telepathy-sofiasip to "Sofia-SIP" would cause
+            confusion between the connection manager and the library it
+            uses. Please don't repeat that mistake.</p>
+        </tp:rationale>
       </tp:docstring>
       <tp:changed version="0.17.1">Prior to version 0.17.1, the allowed
         characters were not specified</tp:changed>
@@ -297,6 +319,30 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:error>
       </tp:possible-errors>
     </method>
+
+    <property name="Interfaces" type="as" access="read">
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>A list of the extra interfaces provided by this connection manager
+          (i.e. extra functionality that can be provided even before a
+          connection has been created).</p>
+
+        <p>No interfaces suitable for listing in this property are currently
+          defined; it's provided as a hook for possible future
+          functionality.</p>
+
+        <p>To be compatible with older connection managers, if retrieving
+          this property fails, clients SHOULD assume that its value is
+          an empty list.</p>
+      </tp:docstring>
+      <tp:added version="0.17.UNRELEASED"/>
+    </property>
+
+    <!-- FIXME: One thing we could perhaps use Interfaces for would be a
+    ConnectionManager.Interface.Capabilities that can give hints regarding
+    the capabilities (in the sense of
+    Connection.Interface.Requests.AvailableChannelClasses and/or
+    Connection.GetInterfaces()) that a Connection from this CM is likely
+    to have -->
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
     <p>A D-Bus service which allows connections to be created. The manager
