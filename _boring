@@ -68,8 +68,8 @@
 \-gen.h$
 \.pc$
 (^|/)_gen(/|$)
-^tests/test-[-a-z]+$
-^tests/[-a-z]+/test-[-a-z]+$
+^tests/test-[-a-z9-9]+$
+^tests/[-a-z]+/test-[-a-z0-9]+$
 (^|/)cscope\.out$
 (^|/)core$
 ^debian($|/)
