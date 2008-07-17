@@ -1040,9 +1040,9 @@ tp_presence_mixin_get_simple_dbus_property (GObject *object,
 
           specs = mixin_cls->statuses[i].optional_arguments;
 
-          for (j = 0; specs != NULL && spec[j].name != NULL; j++)
+          for (j = 0; specs != NULL && specs[j].name != NULL; j++)
             {
-              if (!tp_strdiff (spec[j].name, "message"))
+              if (!tp_strdiff (specs[j].name, "message"))
                 {
                   message = TRUE;
                   break;
