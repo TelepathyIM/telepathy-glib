@@ -3,9 +3,19 @@ telepathy-glib 0.7.12 (unreleased)
 
 Enhancements:
 
-Fixes:
+* TpChannel and TpConnection can be subclassed (fd.o #14828, #14829)
 
-Release notes for projects using code generation:
+* TpChannel has various convenience methods like tp_channel_get_channel_type(),
+  which can be used as an alternative to its GObject properties
+
+* Internally, TpChannel tries to use D-Bus core Properties (the GetAll
+  method) to reduce round-trips; if that fails, it will automatically fall
+  back to a series of normal method calls
+
+* TpChannel tracks the Group interface automatically (fd.o #14180)
+
+* tp_asv_size() has been added to the a{sv} convenience API, which now has
+  its own file in the documentation
 
 telepathy-glib 0.7.11 (2008-07-02)
 ==================================
