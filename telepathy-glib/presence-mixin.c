@@ -1030,11 +1030,26 @@ tp_presence_mixin_get_simple_dbus_property (GObject *object,
 
       for (i=0; mixin_cls->statuses[i].name != NULL; i++)
         {
+          const TpPresenceStatusOptionalArgumentSpec *specs;
+          int j;
+          gboolean message = FALSE;
+
           if (mixin_cls->status_available
               && !mixin_cls->status_available(object, i))
             continue;
 
-         status = g_value_array_new (2);
+          specs = mixin_cls->statuses[i].optional_arguments;
+
+          for (j = 0; specs != NULL && spec[j].name != NULL; j++)
+            {
+              if (!tp_strdiff (spec[j].name, "message"))
+                {
+                  message = TRUE;
+                  break;
+                }
+            }
+
+         status = g_value_array_new (3);
 
          g_value_array_append (status, NULL);
          g_value_init (g_value_array_get_nth (status, 0), G_TYPE_UINT);
@@ -1045,6 +1060,10 @@ tp_presence_mixin_get_simple_dbus_property (GObject *object,
          g_value_init (g_value_array_get_nth (status, 1), G_TYPE_BOOLEAN);
          g_value_set_boolean (g_value_array_get_nth (status, 1),
              mixin_cls->statuses[i].self);
+
+         g_value_array_append (status, NULL);
+         g_value_init (g_value_array_get_nth (status, 2), G_TYPE_BOOLEAN);
+         g_value_set_boolean (g_value_array_get_nth (status, 2), message);
 
          g_hash_table_insert (ret, (gchar*) mixin_cls->statuses[i].name,
              status);
