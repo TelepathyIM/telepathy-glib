@@ -1260,8 +1260,8 @@ tp_presence_mixin_simple_presence_get_presences (
   if (contacts->len == 0)
     {
       presence_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
-      tp_svc_connection_interface_presence_return_from_get_presence (context,
-          presence_hash);
+      tp_svc_connection_interface_simple_presence_return_from_get_presences (
+        context, presence_hash);
       g_hash_table_destroy (presence_hash);
       return;
     }
