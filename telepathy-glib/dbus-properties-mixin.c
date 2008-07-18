@@ -22,6 +22,7 @@
 
 #include <telepathy-glib/dbus-properties-mixin.h>
 
+#include <telepathy-glib/errors.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
 
@@ -685,7 +686,7 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
 
   if (iface_impl == NULL)
     {
-      GError e = { DBUS_GERROR, DBUS_GERROR_INVALID_ARGS,
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "No properties known for that interface" };
 
       dbus_g_method_return_error (context, &e);
@@ -699,7 +700,7 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
 
   if (prop_impl == NULL)
     {
-      GError e = { DBUS_GERROR, DBUS_GERROR_INVALID_ARGS,
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Unknown property" };
 
       dbus_g_method_return_error (context, &e);
@@ -710,7 +711,7 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
 
   if ((prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_READ) == 0)
     {
-      GError e = { DBUS_GERROR, DBUS_GERROR_NOT_SUPPORTED,
+      GError e = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
           "This property is write-only" };
 
       dbus_g_method_return_error (context, &e);
@@ -786,7 +787,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 
   if (iface_impl == NULL)
     {
-      GError e = { DBUS_GERROR, DBUS_GERROR_INVALID_ARGS,
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "No properties known for that interface" };
 
       dbus_g_method_return_error (context, &e);
@@ -800,7 +801,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 
   if (prop_impl == NULL)
     {
-      GError e = { DBUS_GERROR, DBUS_GERROR_INVALID_ARGS,
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Unknown property" };
 
       dbus_g_method_return_error (context, &e);
@@ -811,7 +812,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 
   if ((prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE) == 0)
     {
-      GError e = { DBUS_GERROR, DBUS_GERROR_NOT_SUPPORTED,
+      GError e = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
           "This property is read-only" };
 
       dbus_g_method_return_error (context, &e);
@@ -824,7 +825,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 
       if (!g_value_transform (value, &copy))
         {
-          error = g_error_new (DBUS_GERROR, DBUS_GERROR_NOT_SUPPORTED,
+          error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "Cannot convert %s to %s for property %s",
               g_type_name (G_VALUE_TYPE (value)),
               g_type_name (prop_info->type),
