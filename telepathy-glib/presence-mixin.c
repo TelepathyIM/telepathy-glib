@@ -55,7 +55,8 @@
  * callback to be called while disconnected. Also to fully implement this
  * interface some dbus properties need to be supported. To do that using this
  * mixin the instance needs to use the dbus properties mixin and call
- * tp_presence_mixin_simple_init_dbus_properties in the class init function
+ * tp_presence_mixin_simple_presence_init_dbus_properties in the class init
+ * function
  *
  *
  * Since: 0.5.13
@@ -998,11 +999,12 @@ static TpDBusPropertiesMixinPropImpl known_simple_presence_props[] = {
 };
 
 static void
-tp_presence_mixin_get_simple_dbus_property (GObject *object,
-                                            GQuark interface,
-                                            GQuark name,
-                                            GValue *value,
-                                            gpointer unused G_GNUC_UNUSED)
+tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
+                                                     GQuark interface,
+                                                     GQuark name,
+                                                     GValue *value,
+                                                     gpointer unused
+                                                       G_GNUC_UNUSED)
 {
   static GQuark q[NUM_MIXIN_SIMPLE_DBUS_PROPERTIES] = { 0, };
 
@@ -1090,17 +1092,17 @@ tp_presence_mixin_get_simple_dbus_property (GObject *object,
  * Since: 0.7.Unreleased
  */
 void
-tp_presence_mixin_simple_init_dbus_properties (GObjectClass *cls)
+tp_presence_mixin_simple_presence_init_dbus_properties (GObjectClass *cls)
 {
 
   tp_dbus_properties_mixin_implement_interface (cls,
       TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
-      tp_presence_mixin_get_simple_dbus_property,
+      tp_presence_mixin_get_simple_presence_dbus_property,
       NULL, known_simple_presence_props);
 }
 
 /**
- * tp_presence_mixin_simple_set_presence
+ * tp_presence_mixin_simple_presence_set_presence
  *
  * Implements D-Bus method SetPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.SimplePresence
@@ -1109,7 +1111,7 @@ tp_presence_mixin_simple_init_dbus_properties (GObjectClass *cls)
  *           or throw an error.
  */
 static void
-tp_presence_mixin_simple_set_presence (
+tp_presence_mixin_simple_presence_set_presence (
     TpSvcConnectionInterfaceSimplePresence *iface,
     const gchar *status,
     const gchar *message,
@@ -1235,7 +1237,7 @@ construct_simple_presence_hash (const TpPresenceStatusSpec *supported_statuses,
  *           or throw an error.
  */
 static void
-tp_presence_mixin_simple_get_presences (
+tp_presence_mixin_simple_presence_get_presences (
     TpSvcConnectionInterfaceSimplePresence *iface,
     const GArray *contacts,
     DBusGMethodInvocation *context)
@@ -1288,7 +1290,7 @@ tp_presence_mixin_simple_get_presences (
 }
 
 /**
- * tp_presence_mixin_simple_iface_init:
+ * tp_presence_mixin_simple_presence_iface_init:
  * @g_iface: A pointer to the #TpSvcConnectionInterfaceSimplePresenceClass in
  * an object class
  * @iface_data: Ignored
@@ -1300,13 +1302,14 @@ tp_presence_mixin_simple_get_presences (
  * Since: 0.7.Unreleased
  */
 void
-tp_presence_mixin_simple_iface_init (gpointer g_iface, gpointer iface_data)
+tp_presence_mixin_simple_presence_iface_init (gpointer g_iface,
+                                              gpointer iface_data)
 {
   TpSvcConnectionInterfaceSimplePresenceClass *klass =
     (TpSvcConnectionInterfaceSimplePresenceClass *)g_iface;
 
 #define IMPLEMENT(x) tp_svc_connection_interface_simple_presence_implement_##x\
- (klass, tp_presence_mixin_simple_##x)
+ (klass, tp_presence_mixin_simple_presence_##x)
   IMPLEMENT(set_presence);
   IMPLEMENT(get_presences);
 #undef IMPLEMENT

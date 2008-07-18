@@ -256,8 +256,8 @@ void tp_presence_mixin_emit_one_presence_update (GObject *obj,
     TpHandle handle, const TpPresenceStatus *status);
 
 void tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data);
-void tp_presence_mixin_simple_iface_init (gpointer g_iface, gpointer iface_data);
-void tp_presence_mixin_simple_init_dbus_properties (GObjectClass *cls);
+void tp_presence_mixin_simple_presence_iface_init (gpointer g_iface, gpointer iface_data);
+void tp_presence_mixin_simple_presence_init_dbus_properties (GObjectClass *cls);
 
 G_END_DECLS
 
