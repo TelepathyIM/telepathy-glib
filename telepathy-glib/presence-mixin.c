@@ -1130,7 +1130,7 @@ tp_presence_mixin_simple_presence_set_presence (
 
   s = check_for_status (obj, status, &error);
   if (s == -1)
-    goto error;
+    goto out;
 
   status_to_set.index = s;
 
@@ -1146,21 +1146,22 @@ tp_presence_mixin_simple_presence_set_presence (
       status_to_set.optional_arguments = optional_arguments;
     }
 
-  if (!mixin_cls->set_own_status (obj, &status_to_set, &error))
-    goto error;
-
-  tp_svc_connection_interface_simple_presence_return_from_set_presence (
-      context);
+  mixin_cls->set_own_status (obj, &status_to_set, &error)
 
 out:
+  if (error == NULL)
+    {
+      tp_svc_connection_interface_simple_presence_return_from_set_presence (
+          context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+    }
+
   if (optional_arguments != NULL)
     g_hash_table_destroy (optional_arguments);
-
-  return;
-error:
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-  goto out;
 }
 
 static void
