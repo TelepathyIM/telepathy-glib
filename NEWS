@@ -17,6 +17,23 @@ Enhancements:
 * tp_asv_size() has been added to the a{sv} convenience API, which now has
   its own file in the documentation
 
+Fixes:
+
+* For the moment, TpDBusPropertiesMixin raises Telepathy errors rather than
+  D-Bus core errors on failure, due to fd.o #16776 in dbus-glib causing an
+  assertion when DBUS_GERROR errors are raised
+
+* TpConnectionManager no longer causes a crash if destroyed before it has
+  read the .manager file (fd.o #16774, thanks to Sunil Mohan Adapa for the
+  patch)
+
+Dependencies:
+
+* We no longer support automake 1.8.x, since even Maemo has had 1.9 for a
+  while. We don't yet use any automake 1.9 features, but we will no longer
+  test with 1.8 unless someone explains to me why a 4 year old version is
+  still relevant :-)
+
 telepathy-glib 0.7.11 (2008-07-02)
 ==================================
 
