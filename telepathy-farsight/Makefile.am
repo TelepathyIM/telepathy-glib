@@ -4,6 +4,9 @@ BUILT_SOURCES = \
 
 CLEANFILES = $(BUILT_SOURCES)
 
+
+tfincludedir = $(includedir)/telepathy-1.0/telepathy-farsight
+
 libstreamengine_la_SOURCES = \
 	stream.c \
 	stream.h \
@@ -11,6 +14,8 @@ libstreamengine_la_SOURCES = \
 	session.h \
 	channel.c \
 	channel.h
+
+tfinclude_HEADERS = channel.h stream.h
 
 nodist_libstreamengine_la_SOURCES = $(BUILT_SOURCES)
 
