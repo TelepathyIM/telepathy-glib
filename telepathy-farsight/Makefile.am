@@ -44,7 +44,10 @@ libtelepathy_farsight_la_LIBADD = \
 	$(FARSIGHT2_LIBS) \
 	$(TELEPATHY_LIBS)
 
-libtelepathy_farsight_la_LDFLAGS =  -no-undefined -export-symbols-regex "^tf_(channel|stream).*"
+libtelepathy_farsight_la_LDFLAGS =  -no-undefined \
+	-export-symbols-regex "^tf_(channel|stream).*" \
+	-version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
+
 
 # rules to generate signal marshallers
 %-signals-marshal.h: %-signals-marshal.list Makefile.in

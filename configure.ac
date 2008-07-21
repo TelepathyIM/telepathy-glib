@@ -12,6 +12,11 @@ m4_define([stream_engine_minor_version], [5])
 m4_define([stream_engine_micro_version], [0])
 m4_define([stream_engine_nano_version], [1])
 
+m4_define([tp_farsight_lt_current], [0])
+m4_define([tp_farsight_lt_revision], [0])
+m4_define([tp_farsight_lt_age], [0])
+
+
 # Some magic
 m4_define([stream_engine_base_version],
           [stream_engine_major_version.stream_engine_minor_version.stream_engine_micro_version])
@@ -138,6 +143,14 @@ fi
 AM_CONDITIONAL(MAEMO_OSSO_SUPPORT, test x$MAEMO_OSSO_SUPPORT = xyes)
 
 GTK_DOC_CHECK([1.10])
+
+LT_CURRENT=tp_farsight_lt_current
+LT_REVISION=tp_farsight_lt_revision
+LT_AGE=tp_farsight_lt_age
+AC_SUBST([LT_CURRENT])
+AC_SUBST([LT_REVISION])
+AC_SUBST([LT_AGE])
+
 
 AC_OUTPUT( Makefile \
           api/Makefile \
