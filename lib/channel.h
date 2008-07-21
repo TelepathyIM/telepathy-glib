@@ -43,33 +43,33 @@ typedef struct {
 
 GType tpmedia_channel_get_type (void);
 
-TpmediaChannel *tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
-  const gchar *bus_name,
-  const gchar *connection_path,
-  const gchar *channel_path,
-  guint handle_type,
-  guint handle,
-  GError **error);
+TpmediaChannel *tpmedia_channel_new (
+    TpDBusDaemon *dbus_daemon,
+    const gchar *bus_name,
+    const gchar *connection_path,
+    const gchar *channel_path,
+    guint handle_type,
+    guint handle,
+    GError **error);
 
 TpmediaChannel *tpmedia_channel_new_from_proxy (TpChannel *channel_proxy);
 
 
-void tpmedia_channel_error (
-  TpmediaChannel *chan,
+void tpmedia_channel_error (TpmediaChannel *chan,
   guint error,
   const gchar *message);
 
-TpmediaStream *tpmedia_channel_lookup_stream (
-  TpmediaChannel *chan,
+TpmediaStream *tpmedia_channel_lookup_stream (TpmediaChannel *chan,
   guint stream_id);
 
 typedef void (* TpmediaChannelStreamFunc) (TpmediaChannel *chan,
-  guint stream_id, TpmediaStream *stream, gpointer user_data);
+    guint stream_id,
+    TpmediaStream *stream,
+    gpointer user_data);
 
-void tpmedia_channel_foreach_stream (
-  TpmediaChannel *chan,
-  TpmediaChannelStreamFunc func,
-  gpointer user_data);
+void tpmedia_channel_foreach_stream (TpmediaChannel *chan,
+    TpmediaChannelStreamFunc func,
+    gpointer user_data);
 
 gboolean tpmedia_channel_bus_message (TpmediaChannel *channel,
     GstMessage *message);
