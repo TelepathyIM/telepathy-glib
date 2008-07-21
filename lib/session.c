@@ -154,7 +154,7 @@ tpmedia_session_constructor (GType type,
 
   self->priv->fs_participant =
       fs_conference_new_participant (self->priv->fs_conference,
-          "whaterver-cname@1.2.3.4",
+          "whatever-cname@1.2.3.4",
           &self->priv->construction_error);
 
   g_signal_connect (self->priv->session_handler_proxy, "invalidated",
