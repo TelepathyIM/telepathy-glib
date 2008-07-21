@@ -87,7 +87,7 @@ struct _TpmediaStreamPrivate
 enum
 {
   CLOSED,
-  ERROR,
+  ERROR_SIGNAL,
   REQUEST_RESOURCE,
   FREE_RESOURCE,
   SRC_PAD_ADDED,
@@ -623,7 +623,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
 
-  signals[ERROR] =
+  signals[ERROR_SIGNAL] =
     g_signal_new ("error",
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST,
@@ -672,7 +672,7 @@ async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   if (error != NULL)
     {
       g_warning ("Error calling %s: %s", (gchar *) user_data, error->message);
-      g_signal_emit (self, signals[ERROR], 0);
+      g_signal_emit (self, signals[ERROR_SIGNAL], 0);
     }
 }
 
@@ -1421,7 +1421,7 @@ tpmedia_stream_error (TpmediaStream *self,
   tp_cli_media_stream_handler_call_error (self->priv->stream_handler_proxy,
       -1, error, message, NULL, NULL, NULL, NULL);
 
-  g_signal_emit (self, signals[ERROR], 0);
+  g_signal_emit (self, signals[ERROR_SIGNAL], 0);
 }
 
 
