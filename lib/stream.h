@@ -33,7 +33,15 @@ G_BEGIN_DECLS
 
 typedef struct _TpmediaStreamPrivate TpmediaStreamPrivate;
 
-typedef struct {
+/**
+ * TpmediaStream:
+ * @parent: the parent #GObject
+ * @stream_id: the ID of the stream (READ-ONLY)
+ *
+ * All other members are privated
+ */
+
+typedef struct _TpmediaStream {
   GObject parent;
 
   /* Read-only */
@@ -42,9 +50,18 @@ typedef struct {
   TpmediaStreamPrivate *priv;
 } TpmediaStream;
 
-typedef struct {
+/**
+ * TpmediaStreamClass:
+ *
+ * There are no overridable functions
+ */
+
+typedef struct _TpmediaStreamClass {
   GObjectClass parent_class;
 
+  /* < private > */
+
+  gpointer unused[4];
 } TpmediaStreamClass;
 
 
