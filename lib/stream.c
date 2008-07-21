@@ -1426,7 +1426,7 @@ tpmedia_stream_error (TpmediaStream *self,
 
 
 /**
- * tpmedia_stream_bus_message:
+ * _tpmedia_stream_bus_message:
  * @stream: A #TpmediaStream
  * @message: A #GstMessage received from the bus
  *
@@ -1437,7 +1437,7 @@ tpmedia_stream_error (TpmediaStream *self,
  */
 
 gboolean
-tpmedia_stream_bus_message (TpmediaStream *stream,
+_tpmedia_stream_bus_message (TpmediaStream *stream,
     GstMessage *message)
 {
   const gchar *debug = NULL;
@@ -1611,7 +1611,7 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
 }
 
 TpmediaStream *
-tpmedia_stream_new (gpointer channel,
+_tpmedia_stream_new (gpointer channel,
     FsConference *conference,
     FsParticipant *participant,
     TpMediaStreamHandler *proxy,

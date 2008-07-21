@@ -577,7 +577,7 @@ new_stream_cb (TpmediaSession *session,
       "farsight-participant", &fs_participant,
       NULL);
 
-  stream = tpmedia_stream_new ((gpointer) self, fs_conference,
+  stream = _tpmedia_stream_new ((gpointer) self, fs_conference,
       fs_participant, proxy, stream_id, media_type, direction,
       &priv->nat_props, local_codec_config, &error);
 
@@ -643,7 +643,7 @@ add_session (TpmediaChannel *self,
       return;
     }
 
-  session = tpmedia_session_new (proxy, session_type, &error);
+  session = _tpmedia_session_new (proxy, session_type, &error);
 
   if (session == NULL)
     {
@@ -900,7 +900,7 @@ tpmedia_channel_bus_message (TpmediaChannel *channel,
           channel->priv->sessions, i);
 
       if (session != NULL)
-        if (tpmedia_session_bus_message (session, message))
+        if (_tpmedia_session_bus_message (session, message))
           ret = TRUE;
     }
 
@@ -910,7 +910,7 @@ tpmedia_channel_bus_message (TpmediaChannel *channel,
           channel->priv->streams, i);
 
       if (stream != NULL)
-        if (tpmedia_stream_bus_message (stream, message))
+        if (_tpmedia_stream_bus_message (stream, message))
           ret = TRUE;
     }
 

@@ -340,7 +340,7 @@ new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
 }
 
 TpmediaSession *
-tpmedia_session_new (TpMediaSessionHandler *proxy,
+_tpmedia_session_new (TpMediaSessionHandler *proxy,
                               const gchar *session_type,
                               GError **error)
 {
@@ -365,7 +365,7 @@ tpmedia_session_new (TpMediaSessionHandler *proxy,
 }
 
 /**
- * tpmedia_session_bus_message:
+ * _tpmedia_session_bus_message:
  * @session: A #TpmediaSession
  * @message: A #GstMessage received from the bus
  *
@@ -376,7 +376,7 @@ tpmedia_session_new (TpMediaSessionHandler *proxy,
  */
 
 gboolean
-tpmedia_session_bus_message (TpmediaSession *session,
+_tpmedia_session_bus_message (TpmediaSession *session,
     GstMessage *message)
 {
   GError *error = NULL;
