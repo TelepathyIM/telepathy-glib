@@ -501,7 +501,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
   signals[CLOSED] =
     g_signal_new ("closed",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
@@ -519,7 +519,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
   signals[STREAM_CREATED] =
     g_signal_new ("stream-created",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
@@ -540,7 +540,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
   signals[SESSION_CREATED] =
     g_signal_new ("session-created",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   _tpmedia_marshal_VOID__OBJECT_OBJECT,
@@ -560,7 +560,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
   signals[SESSION_INVALIDATED] =
     g_signal_new ("session-invalidated",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   _tpmedia_marshal_VOID__OBJECT_OBJECT,
@@ -1042,7 +1042,7 @@ tpmedia_channel_bus_message (TpmediaChannel *channel,
           channel->priv->sessions, i);
 
       if (session != NULL)
-        if (_tpmedia_session_bus_message (session, message))
+        if (tpmedia_session_bus_message (session, message))
           ret = TRUE;
     }
 

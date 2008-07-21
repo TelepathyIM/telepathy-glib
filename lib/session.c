@@ -284,7 +284,7 @@ tpmedia_session_class_init (TpmediaSessionClass *klass)
   signals[NEW_STREAM] =
     g_signal_new ("new-stream",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   _tpmedia_marshal_VOID__BOXED_UINT_UINT_UINT,
@@ -293,7 +293,7 @@ tpmedia_session_class_init (TpmediaSessionClass *klass)
   signals[INVALIDATED] =
     g_signal_new ("invalidated",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
@@ -353,7 +353,7 @@ new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
 }
 
 TpmediaSession *
-_tpmedia_session_new (TpMediaSessionHandler *proxy,
+tpmedia_session_new (TpMediaSessionHandler *proxy,
                               const gchar *conference_type,
                               GError **error)
 {
@@ -389,7 +389,7 @@ _tpmedia_session_new (TpMediaSessionHandler *proxy,
  */
 
 gboolean
-_tpmedia_session_bus_message (TpmediaSession *session,
+tpmedia_session_bus_message (TpmediaSession *session,
     GstMessage *message)
 {
   GError *error = NULL;

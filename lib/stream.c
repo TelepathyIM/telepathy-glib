@@ -617,7 +617,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
   signals[CLOSED] =
     g_signal_new ("closed",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
@@ -626,7 +626,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
   signals[ERROR] =
     g_signal_new ("error",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
@@ -635,7 +635,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
   signals[REQUEST_RESOURCE] =
     g_signal_new ("request-resource",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   g_signal_accumulator_true_handled, NULL,
                   _tpmedia_marshal_BOOLEAN__UINT,
@@ -644,7 +644,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
   signals[FREE_RESOURCE] =
     g_signal_new ("free-resource",
                   G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__UINT,
