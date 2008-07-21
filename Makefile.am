@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = tools api src test doc data
+SUBDIRS = tools lib api src test doc data
 
 confdir = $(sysconfdir)/xdg/stream-engine
 

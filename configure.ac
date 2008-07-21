@@ -141,6 +141,7 @@ AC_OUTPUT( Makefile \
           api/Makefile \
           data/Makefile \
           doc/Makefile \
+          lib/Makefile  \
           src/Makefile  \
           test/Makefile \
           test/python/Makefile \
