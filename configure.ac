@@ -137,10 +137,13 @@ fi
 
 AM_CONDITIONAL(MAEMO_OSSO_SUPPORT, test x$MAEMO_OSSO_SUPPORT = xyes)
 
+GTK_DOC_CHECK([1.10])
+
 AC_OUTPUT( Makefile \
           api/Makefile \
           data/Makefile \
           doc/Makefile \
+	  doc/lib/Makefile \
           lib/Makefile  \
           src/Makefile  \
           test/Makefile \

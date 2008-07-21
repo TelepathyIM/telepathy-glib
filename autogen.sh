@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+gtkdocize --copy
+
 autoreconf -i
 
 run_configure=true

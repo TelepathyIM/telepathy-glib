@@ -1,3 +1,5 @@
+SUBDIRS = lib
+
 CLEANFILES =
 EXTRA_DIST = make-call.pic sequence.pic
 
