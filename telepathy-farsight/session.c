@@ -1,5 +1,5 @@
 /*
- * session.c - Source for TpmediaSession
+ * session.c - Source for TfSession
  * Copyright (C) 2006-2007 Collabora Ltd.
  * Copyright (C) 2006-2007 Nokia Corporation
  *
@@ -28,9 +28,9 @@
 #include "session-priv.h"
 #include "tf-signals-marshal.h"
 
-G_DEFINE_TYPE (TpmediaSession, tpmedia_session, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TfSession, tf_session, G_TYPE_OBJECT);
 
-struct _TpmediaSessionPrivate
+struct _TfSessionPrivate
 {
   GError *construction_error;
 
@@ -59,21 +59,21 @@ enum
 static guint signals[SIGNAL_COUNT] = { 0 };
 
 static void
-tpmedia_session_init (TpmediaSession *self)
+tf_session_init (TfSession *self)
 {
-  TpmediaSessionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TPMEDIA_TYPE_SESSION, TpmediaSessionPrivate);
+  TfSessionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TF_TYPE_SESSION, TfSessionPrivate);
 
   self->priv = priv;
 }
 
 static void
-tpmedia_session_get_property (GObject    *object,
+tf_session_get_property (GObject    *object,
                                        guint       property_id,
                                        GValue     *value,
                                        GParamSpec *pspec)
 {
-  TpmediaSession *self = TPMEDIA_SESSION (object);
+  TfSession *self = TF_SESSION (object);
 
   switch (property_id)
     {
@@ -96,12 +96,12 @@ tpmedia_session_get_property (GObject    *object,
 }
 
 static void
-tpmedia_session_set_property (GObject      *object,
+tf_session_set_property (GObject      *object,
                                        guint         property_id,
                                        const GValue *value,
                                        GParamSpec   *pspec)
 {
-  TpmediaSession *self = TPMEDIA_SESSION (object);
+  TfSession *self = TF_SESSION (object);
 
   switch (property_id)
     {
@@ -129,17 +129,17 @@ static void invalidated_cb (TpMediaSessionHandler *proxy, guint domain,
     gint code, gchar *message, gpointer user_data);
 
 static GObject *
-tpmedia_session_constructor (GType type,
+tf_session_constructor (GType type,
                                       guint n_props,
                                       GObjectConstructParam *props)
 {
   GObject *obj;
-  TpmediaSession *self;
+  TfSession *self;
   gchar *conftype;
 
-  obj = G_OBJECT_CLASS (tpmedia_session_parent_class)->
+  obj = G_OBJECT_CLASS (tf_session_parent_class)->
            constructor (type, n_props, props);
-  self = (TpmediaSession *) obj;
+  self = (TfSession *) obj;
 
   conftype = g_strdup_printf ("fs%sconference", self->priv->session_type);
   self->priv->fs_conference = FS_CONFERENCE (gst_object_ref (
@@ -174,9 +174,9 @@ tpmedia_session_constructor (GType type,
 }
 
 static void
-tpmedia_session_dispose (GObject *object)
+tf_session_dispose (GObject *object)
 {
-  TpmediaSession *self = TPMEDIA_SESSION (object);
+  TfSession *self = TF_SESSION (object);
 
   g_debug (G_STRFUNC);
 
@@ -209,24 +209,24 @@ tpmedia_session_dispose (GObject *object)
   g_free (self->priv->session_type);
   self->priv->session_type = NULL;
 
-  if (G_OBJECT_CLASS (tpmedia_session_parent_class)->dispose)
-    G_OBJECT_CLASS (tpmedia_session_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tf_session_parent_class)->dispose)
+    G_OBJECT_CLASS (tf_session_parent_class)->dispose (object);
 }
 
 static void
-tpmedia_session_class_init (TpmediaSessionClass *klass)
+tf_session_class_init (TfSessionClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass, sizeof (TpmediaSessionPrivate));
+  g_type_class_add_private (klass, sizeof (TfSessionPrivate));
 
-  object_class->set_property = tpmedia_session_set_property;
-  object_class->get_property = tpmedia_session_get_property;
+  object_class->set_property = tf_session_set_property;
+  object_class->get_property = tf_session_get_property;
 
-  object_class->constructor = tpmedia_session_constructor;
+  object_class->constructor = tf_session_constructor;
 
-  object_class->dispose = tpmedia_session_dispose;
+  object_class->dispose = tf_session_dispose;
 
   param_spec = g_param_spec_string ("conference-type",
                                     "Farsight conference type",
@@ -268,16 +268,16 @@ tpmedia_session_class_init (TpmediaSessionClass *klass)
   g_object_class_install_property (object_class, PROP_PROXY, param_spec);
 
   /**
-   * TpmediaSession::new-stream:
-   * @session: the #TpmediaSession which has a new stream
+   * TfSession::new-stream:
+   * @session: the #TfSession which has a new stream
    * @object_path: The object-path of the new stream
    * @stream_id: The stream id of the new strema
    * @media_type: The media type of the new stream
    * @direction: The direction of the new stream
    *
    * This is emitted when a new stream is created and should only be used
-   * by the #TpmediaChannel.
-   * One should connect to the #TpmediaChannel::channel-new-stream signal
+   * by the #TfChannel.
+   * One should connect to the #TfChannel::channel-new-stream signal
    * instead.
    */
 
@@ -320,7 +320,7 @@ invalidated_cb (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
                 gchar *message G_GNUC_UNUSED,
                 gpointer user_data)
 {
-  TpmediaSession *self = TPMEDIA_SESSION (user_data);
+  TfSession *self = TF_SESSION (user_data);
 
   if (self->priv->session_handler_proxy)
     {
@@ -343,7 +343,7 @@ new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
                           gpointer user_data G_GNUC_UNUSED,
                           GObject *object)
 {
-  TpmediaSession *self = TPMEDIA_SESSION (object);
+  TfSession *self = TF_SESSION (object);
 
   g_debug ("New stream, stream_id=%d, media_type=%d, direction=%d",
       stream_id, media_type, direction);
@@ -352,17 +352,17 @@ new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
       media_type, direction);
 }
 
-TpmediaSession *
-tpmedia_session_new (TpMediaSessionHandler *proxy,
+TfSession *
+tf_session_new (TpMediaSessionHandler *proxy,
                               const gchar *conference_type,
                               GError **error)
 {
-  TpmediaSession *self;
+  TfSession *self;
 
   g_return_val_if_fail (proxy != NULL, NULL);
   g_return_val_if_fail (conference_type != NULL, NULL);
 
-  self = g_object_new (TPMEDIA_TYPE_SESSION,
+  self = g_object_new (TF_TYPE_SESSION,
       "proxy", proxy,
       "conference-type", conference_type,
       NULL);
@@ -378,8 +378,8 @@ tpmedia_session_new (TpMediaSessionHandler *proxy,
 }
 
 /**
- * _tpmedia_session_bus_message:
- * @session: A #TpmediaSession
+ * _tf_session_bus_message:
+ * @session: A #TfSession
  * @message: A #GstMessage received from the bus
  *
  * You must call this function on call messages received on the async bus.
@@ -389,7 +389,7 @@ tpmedia_session_new (TpMediaSessionHandler *proxy,
  */
 
 gboolean
-tpmedia_session_bus_message (TpmediaSession *session,
+tf_session_bus_message (TfSession *session,
     GstMessage *message)
 {
   GError *error = NULL;

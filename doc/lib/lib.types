@@ -1,2 +1,2 @@
-tpmedia_stream_get_type
-tpmedia_channel_get_type
+tf_stream_get_type
+tf_channel_get_type

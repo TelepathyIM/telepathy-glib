@@ -49,7 +49,7 @@ GType tp_stream_engine_video_stream_get_type (void);
 
 TpStreamEngineVideoStream *
 tp_stream_engine_video_stream_new (
-  TpmediaStream *stream,
+  TfStream *stream,
   GstBin *bin,
   GstPad *pad,
   GError **error);

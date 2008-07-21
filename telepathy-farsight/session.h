@@ -1,38 +1,38 @@
-#ifndef __TPMEDIA_SESSION_H__
-#define __TPMEDIA_SESSION_H__
+#ifndef __TF_SESSION_H__
+#define __TF_SESSION_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/media-interfaces.h>
 
 G_BEGIN_DECLS
 
-#define TPMEDIA_TYPE_SESSION tpmedia_session_get_type()
+#define TF_TYPE_SESSION tf_session_get_type()
 
-#define TPMEDIA_SESSION(obj) \
+#define TF_SESSION(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TPMEDIA_TYPE_SESSION, TpmediaSession))
+  TF_TYPE_SESSION, TfSession))
 
-#define TPMEDIA_SESSION_CLASS(klass) \
+#define TF_SESSION_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TPMEDIA_TYPE_SESSION, TpmediaSessionClass))
+  TF_TYPE_SESSION, TfSessionClass))
 
 #define TP_STREAM_ENGINE_IS_SESSION(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-  TPMEDIA_TYPE_SESSION))
+  TF_TYPE_SESSION))
 
 #define TP_STREAM_ENGINE_IS_SESSION_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), \
-  TPMEDIA_TYPE_SESSION))
+  TF_TYPE_SESSION))
 
-#define TPMEDIA_SESSION_GET_CLASS(obj) \
+#define TF_SESSION_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TPMEDIA_TYPE_SESSION, TpmediaSessionClass))
+  TF_TYPE_SESSION, TfSessionClass))
 
-typedef struct _TpmediaSessionPrivate TpmediaSessionPrivate;
+typedef struct _TfSessionPrivate TfSessionPrivate;
 
 
 /**
- * TpmediaSession:
+ * TfSession:
  *
  * All members of the object are private
  */
@@ -40,32 +40,32 @@ typedef struct _TpmediaSessionPrivate TpmediaSessionPrivate;
 typedef struct {
   GObject parent;
 
-  TpmediaSessionPrivate *priv;
-} TpmediaSession;
+  TfSessionPrivate *priv;
+} TfSession;
 
 /**
- * TpmediaSessionClass:
+ * TfSessionClass:
  *
  * There are no overridable functions
  */
 
 typedef struct {
   GObjectClass parent_class;
-} TpmediaSessionClass;
+} TfSessionClass;
 
-GType tpmedia_session_get_type (void);
+GType tf_session_get_type (void);
 
-TpmediaSession *
-tpmedia_session_new (TpMediaSessionHandler *proxy,
+TfSession *
+tf_session_new (TpMediaSessionHandler *proxy,
                               const gchar *conference_type,
                               GError **error);
 
-gboolean tpmedia_session_bus_message (TpmediaSession *session,
+gboolean tf_session_bus_message (TfSession *session,
     GstMessage *message);
 
 
 
 G_END_DECLS
 
-#endif /* __TPMEDIA_SESSION_H__ */
+#endif /* __TF_SESSION_H__ */
 

@@ -1,5 +1,5 @@
 /*
- * stream.c - Source for TpmediaStream
+ * stream.c - Source for TfStream
  * Copyright (C) 2006-2008 Collabora Ltd.
  * Copyright (C) 2006-2008 Nokia Corporation
  *
@@ -39,7 +39,7 @@
 #include "channel.h"
 #include "tf-signals-marshal.h"
 
-G_DEFINE_TYPE (TpmediaStream, tpmedia_stream, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TfStream, tf_stream, G_TYPE_OBJECT);
 
 #define DEBUG(stream, format, ...) \
   g_debug ("stream %d (%s) %s: " format, \
@@ -59,16 +59,16 @@ G_DEFINE_TYPE (TpmediaStream, tpmedia_stream, G_TYPE_OBJECT);
 
 #define STREAM_PRIVATE(o) ((o)->priv)
 
-struct _TpmediaStreamPrivate
+struct _TfStreamPrivate
 {
-  TpmediaChannel *channel;
+  TfChannel *channel;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
   FsSession *fs_session;
   FsStream *fs_stream;
   TpMediaStreamType media_type;
   TpMediaStreamDirection direction;
-  const TpmediaNatProperties *nat_props;
+  const TfNatProperties *nat_props;
   GList *local_preferences;
 
   GError *construction_error;
@@ -113,10 +113,10 @@ enum
 };
 
 
-static gboolean tpmedia_stream_request_resource (
-    TpmediaStream *self,
+static gboolean tf_stream_request_resource (
+    TfStream *self,
     TpMediaStreamDirection dir);
-static void tpmedia_stream_free_resource (TpmediaStream *self,
+static void tf_stream_free_resource (TfStream *self,
     TpMediaStreamDirection dir);
 
 static void add_remote_candidate (TpMediaStreamHandler *proxy,
@@ -159,7 +159,7 @@ static void invalidated_cb (TpMediaStreamHandler *proxy,
 
 static FsMediaType tp_media_type_to_fs (TpMediaStreamType type);
 
-static GPtrArray *fs_codecs_to_tp (TpmediaStream *stream,
+static GPtrArray *fs_codecs_to_tp (TfStream *stream,
     const GList *codecs);
 static void async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     const GError *error,
@@ -171,26 +171,26 @@ static void cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     FsCodec *codec,
     gpointer user_data);
 static void
-tpmedia_stream_try_sending_codecs (TpmediaStream *stream);
+tf_stream_try_sending_codecs (TfStream *stream);
 
 
 static void
-tpmedia_stream_init (TpmediaStream *self)
+tf_stream_init (TfStream *self)
 {
-  TpmediaStreamPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TPMEDIA_TYPE_STREAM, TpmediaStreamPrivate);
+  TfStreamPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TF_TYPE_STREAM, TfStreamPrivate);
 
   self->priv = priv;
   priv->has_resource = TP_MEDIA_STREAM_DIRECTION_NONE;
 }
 
 static void
-tpmedia_stream_get_property (GObject    *object,
+tf_stream_get_property (GObject    *object,
                                       guint       property_id,
                                       GValue     *value,
                                       GParamSpec *pspec)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
 
   switch (property_id)
     {
@@ -217,7 +217,7 @@ tpmedia_stream_get_property (GObject    *object,
       break;
     case PROP_NAT_PROPERTIES:
       g_value_set_pointer (value,
-          (TpmediaNatProperties *) self->priv->nat_props);
+          (TfNatProperties *) self->priv->nat_props);
       break;
     case PROP_SINK_PAD:
       g_object_get_property (G_OBJECT (self->priv->fs_session),
@@ -233,18 +233,18 @@ tpmedia_stream_get_property (GObject    *object,
 }
 
 static void
-tpmedia_stream_set_property (GObject      *object,
+tf_stream_set_property (GObject      *object,
                                       guint         property_id,
                                       const GValue *value,
                                       GParamSpec   *pspec)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
 
   switch (property_id)
     {
     case PROP_CHANNEL:
       self->priv->channel =
-          TPMEDIA_CHANNEL (g_value_get_object (value));
+          TF_CHANNEL (g_value_get_object (value));
       break;
     case PROP_FARSIGHT_CONFERENCE:
       self->priv->fs_conference =
@@ -282,24 +282,24 @@ tpmedia_stream_set_property (GObject      *object,
 #define MAX_STREAM_TRANS_PARAMS 6
 
 static GObject *
-tpmedia_stream_constructor (GType type,
+tf_stream_constructor (GType type,
                                      guint n_props,
                                      GObjectConstructParam *props)
 {
   GObject *obj;
-  TpmediaStream *stream;
-  TpmediaStreamPrivate *priv;
-  TpmediaStreamClass *klass = NULL;
+  TfStream *stream;
+  TfStreamPrivate *priv;
+  TfStreamClass *klass = NULL;
   gchar *transmitter;
   guint n_args = 0;
   GList *preferred_local_candidates = NULL;
   GParameter params[MAX_STREAM_TRANS_PARAMS];
 
-  obj = G_OBJECT_CLASS (tpmedia_stream_parent_class)->
+  obj = G_OBJECT_CLASS (tf_stream_parent_class)->
             constructor (type, n_props, props);
-  stream = (TpmediaStream *) obj;
+  stream = (TfStream *) obj;
   priv = stream->priv;
-  klass = TPMEDIA_STREAM_GET_CLASS(obj);
+  klass = TF_STREAM_GET_CLASS(obj);
 
   g_signal_connect (priv->stream_handler_proxy, "invalidated",
       G_CALLBACK (invalidated_cb), obj);
@@ -435,16 +435,16 @@ tpmedia_stream_constructor (GType type,
       G_CALLBACK (cb_fs_stream_src_pad_added), stream);
 
   stream->priv->send_local_codecs = TRUE;
-  tpmedia_stream_try_sending_codecs (stream);
+  tf_stream_try_sending_codecs (stream);
 
   return obj;
 }
 
 static void
-tpmedia_stream_dispose (GObject *object)
+tf_stream_dispose (GObject *object)
 {
-  TpmediaStream *stream = TPMEDIA_STREAM (object);
-  TpmediaStreamPrivate *priv = stream->priv;
+  TfStream *stream = TF_STREAM (object);
+  TfStreamPrivate *priv = stream->priv;
 
   if (priv->stream_handler_proxy)
     {
@@ -459,12 +459,12 @@ tpmedia_stream_dispose (GObject *object)
 
   if (priv->fs_stream)
     {
-      tpmedia_stream_free_resource (stream,
+      tf_stream_free_resource (stream,
           TP_MEDIA_STREAM_DIRECTION_SEND);
 
       g_object_unref (priv->fs_stream);
 
-      tpmedia_stream_free_resource (stream,
+      tf_stream_free_resource (stream,
           TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
       priv->fs_stream = NULL;
@@ -482,27 +482,27 @@ tpmedia_stream_dispose (GObject *object)
       priv->local_preferences = NULL;
     }
 
-  if (G_OBJECT_CLASS (tpmedia_stream_parent_class)->dispose)
-    G_OBJECT_CLASS (tpmedia_stream_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tf_stream_parent_class)->dispose)
+    G_OBJECT_CLASS (tf_stream_parent_class)->dispose (object);
 }
 
 static void
-tpmedia_stream_class_init (TpmediaStreamClass *klass)
+tf_stream_class_init (TfStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass, sizeof (TpmediaStreamPrivate));
+  g_type_class_add_private (klass, sizeof (TfStreamPrivate));
 
-  object_class->set_property = tpmedia_stream_set_property;
-  object_class->get_property = tpmedia_stream_get_property;
-  object_class->constructor = tpmedia_stream_constructor;
-  object_class->dispose = tpmedia_stream_dispose;
+  object_class->set_property = tf_stream_set_property;
+  object_class->get_property = tf_stream_get_property;
+  object_class->constructor = tf_stream_constructor;
+  object_class->dispose = tf_stream_dispose;
 
   param_spec = g_param_spec_object ("channel",
                                     "Telepathy channel",
-                                    "The TpmediaChannel this stream is in",
-                                    TPMEDIA_TYPE_CHANNEL,
+                                    "The TfChannel this stream is in",
+                                    TF_TYPE_CHANNEL,
                                     G_PARAM_CONSTRUCT_ONLY |
                                     G_PARAM_READWRITE |
                                     G_PARAM_STATIC_NICK |
@@ -581,7 +581,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
   param_spec = g_param_spec_pointer ("nat-properties",
                                      "NAT properties",
                                      "A pointer to a "
-                                     "TpmediaNatProperties structure "
+                                     "TfNatProperties structure "
                                      "detailing which NAT traversal method "
                                      "and parameters to use for this stream.",
                                      G_PARAM_CONSTRUCT_ONLY |
@@ -617,7 +617,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
       param_spec);
 
   /**
-   * TpmediaStream::closed:
+   * TfStream::closed:
    * @stream: the stream that has been closed
    *
    * This signal is emitted when the Close() signal is received from the
@@ -634,7 +634,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   G_TYPE_NONE, 0);
 
   /**
-   * TpmediaStream::error:
+   * TfStream::error:
    * @stream: the stream that has been errored
    *
    * This signal is emitted when there is an error on this stream
@@ -650,7 +650,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   G_TYPE_NONE, 0);
 
   /**
-   * TpmediaStream::request-resource:
+   * TfStream::request-resource:
    * @stream: the stream requesting the resources
    * @direction: The direction for which this resource is requested
    *  (as a #TpMediaDirection
@@ -673,7 +673,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   /**
-   * TpmediaStream::free-resource:
+   * TfStream::free-resource:
    * @stream: the stream for which resources can be freed
    * @direction: The direction for which this resource is freed
    *  (as a #TpMediaDirection
@@ -691,7 +691,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   G_TYPE_NONE, 1, G_TYPE_UINT);
 
   /**
-   * TpmediaStream::src-pad-added:
+   * TfStream::src-pad-added:
    * @stream: the stream which has a new pad
    * @pad: The new src pad
    * @codec: the codec for which data is coming out
@@ -717,7 +717,7 @@ async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                        gpointer user_data,
                        GObject *weak_object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (weak_object);
+  TfStream *self = TF_STREAM (weak_object);
 
   if (error != NULL)
     {
@@ -727,7 +727,7 @@ async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 }
 
 static void
-cb_fs_new_local_candidate (TpmediaStream *self,
+cb_fs_new_local_candidate (TfStream *self,
     FsCandidate *candidate)
 {
   GPtrArray *transports;
@@ -899,7 +899,7 @@ tp_media_type_to_fs (TpMediaStreamType type)
  * to a Telepathy codec list.
  */
 static GPtrArray *
-fs_codecs_to_tp (TpmediaStream *stream,
+fs_codecs_to_tp (TfStream *stream,
                  const GList *codecs)
 {
   GPtrArray *tp_codecs;
@@ -969,7 +969,7 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                       gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
   GError *error = NULL;
   GList *fscandidates;
 
@@ -979,7 +979,7 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   if (!fs_stream_set_remote_candidates (self->priv->fs_stream,
           fscandidates, &error))
-      tpmedia_stream_error (self, 0, error->message);
+      tf_stream_error (self, 0, error->message);
 
   fs_candidate_list_destroy (fscandidates);
   g_clear_error (&error);
@@ -991,9 +991,9 @@ remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                          gpointer user_data G_GNUC_UNUSED,
                          GObject *object G_GNUC_UNUSED)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
 
-  tpmedia_stream_error (self, 0,
+  tf_stream_error (self, 0,
       "RemoveRemoteCandidate is NOT implemented by plugin");
 }
 
@@ -1004,7 +1004,7 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                            gpointer user_data G_GNUC_UNUSED,
                            GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
   GError *error = NULL;
 
   if (!fs_stream_select_candidate_pair (self->priv->fs_stream,
@@ -1015,7 +1015,7 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       if (error->domain == FS_ERROR && error->code == FS_ERROR_NOT_IMPLEMENTED)
         DEBUG (self, "Called not implemented SetActiveCandidatePair");
       else
-        tpmedia_stream_error (self, 0, error->message);
+        tf_stream_error (self, 0, error->message);
     }
 
   g_clear_error (&error);
@@ -1027,7 +1027,7 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                            gpointer user_data G_GNUC_UNUSED,
                            GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
   guint i;
   GList *fs_candidates = NULL;
   GError *error = NULL;
@@ -1055,7 +1055,7 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   if (!fs_stream_set_remote_candidates (self->priv->fs_stream,
                   fs_candidates, &error))
-    tpmedia_stream_error (self, 0, error->message);
+    tf_stream_error (self, 0, error->message);
 
   g_clear_error (&error);
   fs_candidate_list_destroy (fs_candidates);
@@ -1077,7 +1077,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                    gpointer user_data G_GNUC_UNUSED,
                    GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
   GValueArray *codec;
   GHashTable *params = NULL;
   GList *fs_params = NULL;
@@ -1132,13 +1132,13 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
      */
     gchar *str = g_strdup_printf ("Codec negotiation failed: %s",
         error->message);
-    tpmedia_stream_error (self, 0, str);
+    tf_stream_error (self, 0, str);
     g_free (str);
     return;
   }
 
   self->priv->send_supported_codecs = TRUE;
-  tpmedia_stream_try_sending_codecs (self);
+  tf_stream_try_sending_codecs (self);
 }
 
 static void
@@ -1147,7 +1147,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     gpointer user_data G_GNUC_UNUSED,
                     GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
   FsStreamDirection current_direction;
   gboolean playing;
 
@@ -1166,7 +1166,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   if (play)
     {
       if (!self->priv->held) {
-        if (tpmedia_stream_request_resource (self,
+        if (tf_stream_request_resource (self,
                 TP_MEDIA_STREAM_DIRECTION_RECEIVE))
           {
             g_object_set (self->priv->fs_stream,
@@ -1175,7 +1175,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           }
         else
           {
-            tpmedia_stream_error (self, 0, "Resource Unavailable");
+            tf_stream_error (self, 0, "Resource Unavailable");
           }
       }
       self->priv->desired_direction |= FS_DIRECTION_RECV;
@@ -1183,7 +1183,7 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else
     {
       if (!self->priv->held) {
-        tpmedia_stream_free_resource (self,
+        tf_stream_free_resource (self,
             TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
         g_object_set (self->priv->fs_stream,
@@ -1200,7 +1200,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                     gpointer user_data G_GNUC_UNUSED,
                     GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
   FsStreamDirection current_direction;
   gboolean sending;
 
@@ -1220,7 +1220,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   if (send)
     {
       if (!self->priv->held) {
-        if (tpmedia_stream_request_resource (self,
+        if (tf_stream_request_resource (self,
                 TP_MEDIA_STREAM_DIRECTION_SEND))
           {
             g_object_set (self->priv->fs_stream,
@@ -1229,7 +1229,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           }
         else
           {
-            tpmedia_stream_error (self, 0, "Resource Unavailable");
+            tf_stream_error (self, 0, "Resource Unavailable");
           }
       }
       self->priv->desired_direction |= FS_DIRECTION_SEND;
@@ -1237,7 +1237,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else
     {
       if (!self->priv->held) {
-        tpmedia_stream_free_resource (self,
+        tf_stream_free_resource (self,
             TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
         g_object_set (self->priv->fs_stream,
@@ -1249,7 +1249,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 }
 
 static gboolean
-tpmedia_stream_request_resource (TpmediaStream *self,
+tf_stream_request_resource (TfStream *self,
                                           TpMediaStreamDirection dir)
 {
   gboolean resource_available = FALSE;
@@ -1274,7 +1274,7 @@ tpmedia_stream_request_resource (TpmediaStream *self,
 }
 
 static void
-tpmedia_stream_free_resource (TpmediaStream *self,
+tf_stream_free_resource (TfStream *self,
     TpMediaStreamDirection dir)
 {
   if ((self->priv->has_resource & dir) == 0)
@@ -1291,7 +1291,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                  gpointer user_data G_GNUC_UNUSED,
                  GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
 
   DEBUG (self, "Holding : %d", held);
 
@@ -1304,7 +1304,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
             "direction", FS_DIRECTION_NONE,
             NULL);
 
-       tpmedia_stream_free_resource (self,
+       tf_stream_free_resource (self,
                 TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
        /* Send success message */
        if (self->priv->stream_handler_proxy)
@@ -1317,7 +1317,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
   else
     {
-      if (tpmedia_stream_request_resource (self,
+      if (tf_stream_request_resource (self,
               self->priv->desired_direction))
         {
            g_object_set (self->priv->fs_stream,
@@ -1330,7 +1330,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
         }
       else
         {
-          tpmedia_stream_error (self, 0, "Error unholding stream");
+          tf_stream_error (self, 0, "Error unholding stream");
         }
     }
 }
@@ -1341,7 +1341,7 @@ start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                        gpointer user_data G_GNUC_UNUSED,
                        GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
 
   g_assert (self->priv->fs_session != NULL);
 
@@ -1359,7 +1359,7 @@ stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                       gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
 
   g_assert (self->priv->fs_session  != NULL);
 
@@ -1375,21 +1375,21 @@ close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
        gpointer user_data G_GNUC_UNUSED,
        GObject *object)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (object);
+  TfStream *self = TF_STREAM (object);
 
   DEBUG (self, "close requested by connection manager");
 
   g_object_set (self->priv->fs_stream,
             "direction", FS_DIRECTION_NONE,
             NULL);
-  tpmedia_stream_free_resource (self,
+  tf_stream_free_resource (self,
       TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
 
   g_signal_emit (self, signals[CLOSED], 0);
 }
 
 static void
-cb_fs_recv_codecs_changed (TpmediaStream *self,
+cb_fs_recv_codecs_changed (TfStream *self,
     GList *codecs)
 {
   guint id;
@@ -1414,7 +1414,7 @@ cb_fs_recv_codecs_changed (TpmediaStream *self,
 }
 
 static void
-cb_fs_new_active_candidate_pair (TpmediaStream *self,
+cb_fs_new_active_candidate_pair (TfStream *self,
     FsCandidate *local_candidate,
     FsCandidate *remote_candidate)
 {
@@ -1433,7 +1433,7 @@ cb_fs_new_active_candidate_pair (TpmediaStream *self,
 }
 
 static void
-cb_fs_local_candidates_prepared (TpmediaStream *self)
+cb_fs_local_candidates_prepared (TfStream *self)
 {
   DEBUG (self, "called");
 
@@ -1450,7 +1450,7 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                 gchar *message G_GNUC_UNUSED,
                 gpointer user_data)
 {
-  TpmediaStream *stream = TPMEDIA_STREAM (user_data);
+  TfStream *stream = TF_STREAM (user_data);
 
   if (stream->priv->stream_handler_proxy)
     {
@@ -1462,8 +1462,8 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 }
 
 /**
- * tpmedia_stream_error:
- * @self: a #TpmediaStream
+ * tf_stream_error:
+ * @self: a #TfStream
  * @error: the error number as a #TpMediaStreamError
  * @message: the message for this error
  *
@@ -1472,7 +1472,7 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
  */
 
 void
-tpmedia_stream_error (TpmediaStream *self,
+tf_stream_error (TfStream *self,
     guint error,
     const gchar *message)
 {
@@ -1486,8 +1486,8 @@ tpmedia_stream_error (TpmediaStream *self,
 
 
 /**
- * _tpmedia_stream_bus_message:
- * @stream: A #TpmediaStream
+ * _tf_stream_bus_message:
+ * @stream: A #TfStream
  * @message: A #GstMessage received from the bus
  *
  * You must call this function on call messages received on the async bus.
@@ -1497,7 +1497,7 @@ tpmedia_stream_error (TpmediaStream *self,
  */
 
 gboolean
-_tpmedia_stream_bus_message (TpmediaStream *stream,
+_tf_stream_bus_message (TfStream *stream,
     GstMessage *message)
 {
   const gchar *debug = NULL;
@@ -1541,7 +1541,7 @@ _tpmedia_stream_bus_message (TpmediaStream *stream,
               enumvalue->value_nick, errorno, msg, debug);
           g_type_class_unref (enumclass);
 
-          tpmedia_stream_error (stream, 0, msg);
+          tf_stream_error (stream, 0, msg);
           return TRUE;
         }
     }
@@ -1629,7 +1629,7 @@ _tpmedia_stream_bus_message (TpmediaStream *stream,
       if (fssession != stream->priv->fs_session)
         return FALSE;
 
-      tpmedia_stream_try_sending_codecs (stream);
+      tf_stream_try_sending_codecs (stream);
     }
   else if (gst_structure_has_name (s, "farsight-send-codec-changed"))
     {
@@ -1663,29 +1663,29 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     FsCodec *codec,
     gpointer user_data)
 {
-  TpmediaStream *self = TPMEDIA_STREAM (user_data);
+  TfStream *self = TF_STREAM (user_data);
 
   DEBUG (self, "New pad");
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
 }
 
-TpmediaStream *
-_tpmedia_stream_new (gpointer channel,
+TfStream *
+_tf_stream_new (gpointer channel,
     FsConference *conference,
     FsParticipant *participant,
     TpMediaStreamHandler *proxy,
     guint stream_id,
     TpMediaStreamType media_type,
     TpMediaStreamDirection direction,
-    TpmediaNatProperties *nat_props,
+    TfNatProperties *nat_props,
     GList *local_preferences,
     GError **error)
 
 {
-  TpmediaStream *self = NULL;
+  TfStream *self = NULL;
 
-  self = g_object_new (TPMEDIA_TYPE_STREAM,
+  self = g_object_new (TF_TYPE_STREAM,
       "channel", channel,
       "farsight-conference", conference,
       "farsight-participant", participant,
@@ -1699,7 +1699,7 @@ _tpmedia_stream_new (gpointer channel,
 
   if (self->priv->construction_error)
     {
-      tpmedia_stream_error (self, 0, self->priv->construction_error->message);
+      tf_stream_error (self, 0, self->priv->construction_error->message);
       g_propagate_error (error, self->priv->construction_error);
       g_object_unref (self);
       return NULL;
@@ -1709,7 +1709,7 @@ _tpmedia_stream_new (gpointer channel,
 }
 
 static void
-tpmedia_stream_try_sending_codecs (TpmediaStream *stream)
+tf_stream_try_sending_codecs (TfStream *stream)
 {
   gboolean ready = FALSE;
   GList *fscodecs = NULL;

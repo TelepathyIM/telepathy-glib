@@ -1,41 +1,41 @@
 <SECTION>
 <FILE>stream</FILE>
-<TITLE>TpmediaStream</TITLE>
-TpmediaStream
-TpmediaStreamClass
-tpmedia_stream_error
+<TITLE>TfStream</TITLE>
+TfStream
+TfStreamClass
+tf_stream_error
 <SUBSECTION Private>
-TpmediaStreamPrivate
+TfStreamPrivate
 <SUBSECTION Standard>
-TPMEDIA_STREAM
+TF_STREAM
 TP_STREAM_ENGINE_IS_STREAM
-TPMEDIA_TYPE_STREAM
-tpmedia_stream_get_type
-TPMEDIA_STREAM_CLASS
+TF_TYPE_STREAM
+tf_stream_get_type
+TF_STREAM_CLASS
 TP_STREAM_ENGINE_IS_STREAM_CLASS
-TPMEDIA_STREAM_GET_CLASS
+TF_STREAM_GET_CLASS
 </SECTION>
 
 <SECTION>
 <FILE>channel</FILE>
-<TITLE>TpmediaChannel</TITLE>
-TpmediaChannel
-TpmediaChannelClass
-tpmedia_channel_new
-tpmedia_channel_new_from_proxy
-tpmedia_channel_error
-tpmedia_channel_lookup_stream
-TpmediaChannelStreamFunc
-tpmedia_channel_foreach_stream
-tpmedia_channel_bus_message
+<TITLE>TfChannel</TITLE>
+TfChannel
+TfChannelClass
+tf_channel_new
+tf_channel_new_from_proxy
+tf_channel_error
+tf_channel_lookup_stream
+TfChannelStreamFunc
+tf_channel_foreach_stream
+tf_channel_bus_message
 <SUBSECTION Private>
-TpmediaChannelPrivate
+TfChannelPrivate
 <SUBSECTION Standard>
-TPMEDIA_CHANNEL
+TF_CHANNEL
 TP_STREAM_ENGINE_IS_CHANNEL
-TPMEDIA_TYPE_CHANNEL
-tpmedia_channel_get_type
-TPMEDIA_CHANNEL_CLASS
+TF_TYPE_CHANNEL
+tf_channel_get_type
+TF_CHANNEL_CLASS
 TP_STREAM_ENGINE_IS_CHANNEL_CLASS
-TPMEDIA_CHANNEL_GET_CLASS
+TF_CHANNEL_GET_CLASS
 </SECTION>

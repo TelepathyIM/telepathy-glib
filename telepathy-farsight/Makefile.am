@@ -37,7 +37,7 @@ libstreamengine_la_LIBADD = \
 	$(FARSIGHT2_LIBS) \
 	$(TELEPATHY_LIBS)
 
-libstreamengine_la_LDFLAGS =  -no-undefined -export-symbols-regex "^tpmedia_(channel|stream).*"
+libstreamengine_la_LDFLAGS =  -no-undefined -export-symbols-regex "^tf_(channel|stream).*"
 
 # rules to generate signal marshallers
 %-signals-marshal.h: %-signals-marshal.list Makefile.in

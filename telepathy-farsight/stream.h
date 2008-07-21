@@ -1,5 +1,5 @@
-#ifndef __TPMEDIA_STREAM_H__
-#define __TPMEDIA_STREAM_H__
+#ifndef __TF_STREAM_H__
+#define __TF_STREAM_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/enums.h>
@@ -9,39 +9,39 @@
 
 G_BEGIN_DECLS
 
-#define TPMEDIA_TYPE_STREAM tpmedia_stream_get_type()
+#define TF_TYPE_STREAM tf_stream_get_type()
 
-#define TPMEDIA_STREAM(obj) \
+#define TF_STREAM(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TPMEDIA_TYPE_STREAM, TpmediaStream))
+  TF_TYPE_STREAM, TfStream))
 
-#define TPMEDIA_STREAM_CLASS(klass) \
+#define TF_STREAM_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TPMEDIA_TYPE_STREAM, TpmediaStreamClass))
+  TF_TYPE_STREAM, TfStreamClass))
 
 #define TP_STREAM_ENGINE_IS_STREAM(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-  TPMEDIA_TYPE_STREAM))
+  TF_TYPE_STREAM))
 
 #define TP_STREAM_ENGINE_IS_STREAM_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), \
-  TPMEDIA_TYPE_STREAM))
+  TF_TYPE_STREAM))
 
-#define TPMEDIA_STREAM_GET_CLASS(obj) \
+#define TF_STREAM_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TPMEDIA_TYPE_STREAM, TpmediaStreamClass))
+  TF_TYPE_STREAM, TfStreamClass))
 
-typedef struct _TpmediaStreamPrivate TpmediaStreamPrivate;
+typedef struct _TfStreamPrivate TfStreamPrivate;
 
 /**
- * TpmediaStream:
+ * TfStream:
  * @parent: the parent #GObject
  * @stream_id: the ID of the stream (READ-ONLY)
  *
  * All other members are privated
  */
 
-typedef struct _TpmediaStream {
+typedef struct _TfStream {
   GObject parent;
 
   /* Read-only */
@@ -49,32 +49,32 @@ typedef struct _TpmediaStream {
 
   /*< private >*/
 
-  TpmediaStreamPrivate *priv;
-} TpmediaStream;
+  TfStreamPrivate *priv;
+} TfStream;
 
 /**
- * TpmediaStreamClass:
+ * TfStreamClass:
  * @parent_class: the parent #GObjecClass
  *
  * There are no overridable functions
  */
 
-typedef struct _TpmediaStreamClass {
+typedef struct _TfStreamClass {
   GObjectClass parent_class;
 
   /*< private >*/
 
   gpointer unused[4];
-} TpmediaStreamClass;
+} TfStreamClass;
 
 
-GType tpmedia_stream_get_type (void);
+GType tf_stream_get_type (void);
 
-void tpmedia_stream_error (
-  TpmediaStream *self,
+void tf_stream_error (
+  TfStream *self,
   guint error,
   const gchar *message);
 
 G_END_DECLS
 
-#endif /* __TPMEDIA_STREAM_H__ */
+#endif /* __TF_STREAM_H__ */

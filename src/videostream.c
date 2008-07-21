@@ -38,13 +38,13 @@ G_DEFINE_TYPE (TpStreamEngineVideoStream, tp_stream_engine_video_stream,
 
 #define DEBUG(stream, format, ...) \
   g_debug ("stream %d (video) %s: " format, \
-      ((TpmediaStream *) stream)->stream_id,     \
+      ((TfStream *) stream)->stream_id,     \
       G_STRFUNC,                            \
       ##__VA_ARGS__)
 
 struct _TpStreamEngineVideoStreamPrivate
 {
-  TpmediaStream *stream;
+  TfStream *stream;
 
   gulong src_pad_added_handler_id;
 
@@ -92,7 +92,7 @@ static GstElement *
 tp_stream_engine_video_stream_make_sink (TpStreamEngineVideoStream *stream,
                                          GstPad **pad);
 
-static void src_pad_added_cb (TpmediaStream *stream, GstPad *pad,
+static void src_pad_added_cb (TfStream *stream, GstPad *pad,
     FsCodec *codec, gpointer user_data);
 
 
@@ -448,7 +448,7 @@ tp_stream_engine_video_stream_class_init (TpStreamEngineVideoStreamClass *klass)
   param_spec = g_param_spec_object ("stream",
       "Tp StreamEngine Stream",
       "The Telepathy Stream Engine Stream",
-      TPMEDIA_TYPE_STREAM,
+      TF_TYPE_STREAM,
       G_PARAM_CONSTRUCT_ONLY |
       G_PARAM_READWRITE |
       G_PARAM_STATIC_NICK |
@@ -491,7 +491,7 @@ src_pad_added_idle_error (gpointer user_data)
 {
   TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (user_data);
 
-  tpmedia_stream_error (self->priv->stream, 0,
+  tf_stream_error (self->priv->stream, 0,
       "Error setting up video reception");
 
 
@@ -503,7 +503,7 @@ src_pad_added_idle_error (gpointer user_data)
 }
 
 static void
-src_pad_added_cb (TpmediaStream *stream, GstPad *pad, FsCodec *codec,
+src_pad_added_cb (TfStream *stream, GstPad *pad, FsCodec *codec,
     gpointer user_data)
 {
   TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (user_data);
@@ -565,7 +565,7 @@ src_pad_added_cb (TpmediaStream *stream, GstPad *pad, FsCodec *codec,
 
 TpStreamEngineVideoStream *
 tp_stream_engine_video_stream_new (
-  TpmediaStream *stream,
+  TfStream *stream,
   GstBin *bin,
   GstPad *pad,
   GError **error)

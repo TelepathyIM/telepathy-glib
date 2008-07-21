@@ -1,5 +1,5 @@
-#ifndef __TPMEDIA_CHANNEL_H__
-#define __TPMEDIA_CHANNEL_H__
+#ifndef __TF_CHANNEL_H__
+#define __TF_CHANNEL_H__
 
 #include <glib-object.h>
 
@@ -9,30 +9,30 @@
 
 G_BEGIN_DECLS
 
-#define TPMEDIA_TYPE_CHANNEL tpmedia_channel_get_type()
+#define TF_TYPE_CHANNEL tf_channel_get_type()
 
-#define TPMEDIA_CHANNEL(obj) \
+#define TF_CHANNEL(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TPMEDIA_TYPE_CHANNEL, TpmediaChannel))
+  TF_TYPE_CHANNEL, TfChannel))
 
-#define TPMEDIA_CHANNEL_CLASS(klass) \
+#define TF_CHANNEL_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TPMEDIA_TYPE_CHANNEL, TpmediaChannelClass))
+  TF_TYPE_CHANNEL, TfChannelClass))
 
 #define TP_STREAM_ENGINE_IS_CHANNEL(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPMEDIA_TYPE_CHANNEL))
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TF_TYPE_CHANNEL))
 
 #define TP_STREAM_ENGINE_IS_CHANNEL_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPMEDIA_TYPE_CHANNEL))
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TF_TYPE_CHANNEL))
 
-#define TPMEDIA_CHANNEL_GET_CLASS(obj) \
+#define TF_CHANNEL_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TPMEDIA_TYPE_CHANNEL, TpmediaChannelClass))
+  TF_TYPE_CHANNEL, TfChannelClass))
 
-typedef struct _TpmediaChannelPrivate TpmediaChannelPrivate;
+typedef struct _TfChannelPrivate TfChannelPrivate;
 
 /**
- * TpmediaChannel:
+ * TfChannel:
  *
  * All members of the object are private
  */
@@ -42,11 +42,11 @@ typedef struct {
 
   /*< private >*/
 
-  TpmediaChannelPrivate *priv;
-} TpmediaChannel;
+  TfChannelPrivate *priv;
+} TfChannel;
 
 /**
- * TpmediaChannelClass:
+ * TfChannelClass:
  * @parent_class: the parent #GObjecClass
  *
  * There are no overridable functions
@@ -58,11 +58,11 @@ typedef struct {
   /*< private >*/
 
   gpointer unused[4];
-} TpmediaChannelClass;
+} TfChannelClass;
 
-GType tpmedia_channel_get_type (void);
+GType tf_channel_get_type (void);
 
-TpmediaChannel *tpmedia_channel_new (
+TfChannel *tf_channel_new (
     TpDBusDaemon *dbus_daemon,
     const gchar *bus_name,
     const gchar *connection_path,
@@ -71,39 +71,39 @@ TpmediaChannel *tpmedia_channel_new (
     guint handle,
     GError **error);
 
-TpmediaChannel *tpmedia_channel_new_from_proxy (TpChannel *channel_proxy);
+TfChannel *tf_channel_new_from_proxy (TpChannel *channel_proxy);
 
 
-void tpmedia_channel_error (TpmediaChannel *chan,
+void tf_channel_error (TfChannel *chan,
   guint error,
   const gchar *message);
 
-TpmediaStream *tpmedia_channel_lookup_stream (TpmediaChannel *chan,
+TfStream *tf_channel_lookup_stream (TfChannel *chan,
   guint stream_id);
 
 /**
- * TpmediaChannelStreamFunc:
+ * TfChannelStreamFunc:
  * @chan: The #TpMediaChannel
  * @stream_id: the id of the stream
- * @stream: the #TpmediaStream
+ * @stream: the #TfStream
  * @user_data: the passed user data
  *
- * Callback function called on every stream by tpmedia_channel_foreach_stream()
+ * Callback function called on every stream by tf_channel_foreach_stream()
  */
 
-typedef void (* TpmediaChannelStreamFunc) (TpmediaChannel *chan,
+typedef void (* TfChannelStreamFunc) (TfChannel *chan,
     guint stream_id,
-    TpmediaStream *stream,
+    TfStream *stream,
     gpointer user_data);
 
-void tpmedia_channel_foreach_stream (TpmediaChannel *chan,
-    TpmediaChannelStreamFunc func,
+void tf_channel_foreach_stream (TfChannel *chan,
+    TfChannelStreamFunc func,
     gpointer user_data);
 
-gboolean tpmedia_channel_bus_message (TpmediaChannel *channel,
+gboolean tf_channel_bus_message (TfChannel *channel,
     GstMessage *message);
 
 G_END_DECLS
 
-#endif /* __TPMEDIA_CHANNEL_H__ */
+#endif /* __TF_CHANNEL_H__ */
 

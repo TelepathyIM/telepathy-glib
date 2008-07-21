@@ -1,5 +1,5 @@
 /*
- * channel.c - Source for TpmediaChannel
+ * channel.c - Source for TfChannel
  * Copyright (C) 2006-2007 Collabora Ltd.
  * Copyright (C) 2006-2007 Nokia Corporation
  *
@@ -36,16 +36,16 @@
 #include "stream-priv.h"
 #include "tf-signals-marshal.h"
 
-G_DEFINE_TYPE (TpmediaChannel, tpmedia_channel, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TfChannel, tf_channel, G_TYPE_OBJECT);
 
 #define CHANNEL_PRIVATE(o) ((o)->priv)
 
-struct _TpmediaChannelPrivate
+struct _TfChannelPrivate
 {
   TpChannel *channel_proxy;
   DBusGProxy *media_signalling_proxy;
 
-  TpmediaNatProperties nat_props;
+  TfNatProperties nat_props;
   guint prop_id_nat_traversal;
   guint prop_id_stun_server;
   guint prop_id_stun_port;
@@ -88,10 +88,10 @@ enum
 };
 
 static void
-tpmedia_channel_init (TpmediaChannel *self)
+tf_channel_init (TfChannel *self)
 {
-  TpmediaChannelPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TPMEDIA_TYPE_CHANNEL, TpmediaChannelPrivate);
+  TfChannelPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TF_TYPE_CHANNEL, TfChannelPrivate);
 
   self->priv = priv;
 
@@ -100,13 +100,13 @@ tpmedia_channel_init (TpmediaChannel *self)
 }
 
 static void
-tpmedia_channel_get_property (GObject    *object,
+tf_channel_get_property (GObject    *object,
                                        guint       property_id,
                                        GValue     *value,
                                        GParamSpec *pspec)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TfChannel *self = TF_CHANNEL (object);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   switch (property_id)
     {
@@ -127,13 +127,13 @@ tpmedia_channel_get_property (GObject    *object,
 }
 
 static void
-tpmedia_channel_set_property (GObject      *object,
+tf_channel_set_property (GObject      *object,
                                        guint         property_id,
                                        const GValue *value,
                                        GParamSpec   *pspec)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TfChannel *self = TF_CHANNEL (object);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   switch (property_id)
     {
@@ -147,7 +147,7 @@ tpmedia_channel_set_property (GObject      *object,
 }
 
 static void channel_invalidated (TpChannel *channel_proxy,
-    guint domain, gint code, gchar *message, TpmediaChannel *self);
+    guint domain, gint code, gchar *message, TfChannel *self);
 
 static void new_media_session_handler (TpChannel *channel_proxy,
     const gchar *session_handler_path, const gchar *type,
@@ -163,7 +163,7 @@ cb_properties_changed (TpProxy *proxy G_GNUC_UNUSED,
                        gpointer user_data G_GNUC_UNUSED,
                        GObject *object)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
+  TfChannel *self = TF_CHANNEL (object);
   guint i;
 
   for (i = 0; i < structs->len; i++)
@@ -234,7 +234,7 @@ cb_properties_listed (TpProxy *proxy,
                       gpointer user_data G_GNUC_UNUSED,
                       GObject *object)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
+  TfChannel *self = TF_CHANNEL (object);
   guint i;
   GArray *get_properties;
 
@@ -299,7 +299,7 @@ cb_properties_listed (TpProxy *proxy,
 static void
 channel_ready (TpChannel *channel_proxy,
                GParamSpec *unused G_GNUC_UNUSED,
-               TpmediaChannel *self)
+               TfChannel *self)
 {
   TpProxy *as_proxy = (TpProxy *) channel_proxy;
 
@@ -346,17 +346,17 @@ channel_ready (TpChannel *channel_proxy,
 }
 
 static GObject *
-tpmedia_channel_constructor (GType type,
+tf_channel_constructor (GType type,
                                       guint n_props,
                                       GObjectConstructParam *props)
 {
   GObject *obj;
-  TpmediaChannel *self;
-  TpmediaChannelPrivate *priv;
+  TfChannel *self;
+  TfChannelPrivate *priv;
 
-  obj = G_OBJECT_CLASS (tpmedia_channel_parent_class)->
+  obj = G_OBJECT_CLASS (tf_channel_parent_class)->
            constructor (type, n_props, props);
-  self = (TpmediaChannel *) obj;
+  self = (TfChannel *) obj;
   priv = CHANNEL_PRIVATE (self);
 
   priv->channel_ready_handler = g_signal_connect (priv->channel_proxy,
@@ -368,18 +368,18 @@ tpmedia_channel_constructor (GType type,
   return obj;
 }
 
-static void new_stream_cb (TpmediaSession *session, gchar *object_path,
+static void new_stream_cb (TfSession *session, gchar *object_path,
     guint stream_id, TpMediaStreamType media_type,
     TpMediaStreamDirection direction, gpointer user_data);
 
-static void stream_closed_cb (TpmediaStream *stream,
+static void stream_closed_cb (TfStream *stream,
     gpointer user_data);
 
 static void
-tpmedia_channel_dispose (GObject *object)
+tf_channel_dispose (GObject *object)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (object);
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TfChannel *self = TF_CHANNEL (object);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   g_debug (G_STRFUNC);
 
@@ -448,24 +448,24 @@ tpmedia_channel_dispose (GObject *object)
   g_free (priv->nat_props.relay_token);
   priv->nat_props.relay_token = NULL;
 
-  if (G_OBJECT_CLASS (tpmedia_channel_parent_class)->dispose)
-    G_OBJECT_CLASS (tpmedia_channel_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tf_channel_parent_class)->dispose)
+    G_OBJECT_CLASS (tf_channel_parent_class)->dispose (object);
 }
 
 static void
-tpmedia_channel_class_init (TpmediaChannelClass *klass)
+tf_channel_class_init (TfChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass, sizeof (TpmediaChannelPrivate));
+  g_type_class_add_private (klass, sizeof (TfChannelPrivate));
 
-  object_class->set_property = tpmedia_channel_set_property;
-  object_class->get_property = tpmedia_channel_get_property;
+  object_class->set_property = tf_channel_set_property;
+  object_class->get_property = tf_channel_get_property;
 
-  object_class->constructor = tpmedia_channel_constructor;
+  object_class->constructor = tf_channel_constructor;
 
-  object_class->dispose = tpmedia_channel_dispose;
+  object_class->dispose = tf_channel_dispose;
 
   param_spec = g_param_spec_object ("channel", "TpChannel object",
       "Telepathy channel object which this media channel should operate on.",
@@ -491,7 +491,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
       G_TYPE_NONE, 1, G_TYPE_POINTER);
 
   /**
-   * TpmediaChannel::closed:
+   * TfChannel::closed:
    *
    * This function is called after a channel is closed, either because
    * it has been closed by the connection manager or because we had a locally
@@ -508,9 +508,9 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   G_TYPE_NONE, 0);
 
   /**
-   * TpmediaChannel::stream-created:
-   * @tpmediachannel: the #TpmediaChannel which has a new stream
-   * @stream: The new #TpmediaStream
+   * TfChannel::stream-created:
+   * @tfchannel: the #TfChannel which has a new stream
+   * @stream: The new #TfStream
    *
    * This signal is emitted when a new stream has been created in the connection
    * manager and a local proxy has been generated.
@@ -523,11 +523,11 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   0,
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1, TPMEDIA_TYPE_STREAM);
+                  G_TYPE_NONE, 1, TF_TYPE_STREAM);
 
   /**
-   * TpmediaChannel::session-created:
-   * @tpmediachannel: the #TpmediaChannel which has a new stream
+   * TfChannel::session-created:
+   * @tfchannel: the #TfChannel which has a new stream
    * @conference: the #FsConference of the new session
    * @participant: the #FsParticipant of the new session
    *
@@ -547,8 +547,8 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
 
   /**
-   * TpmediaChannel::session-invalidated:
-   * @tpmediachannel: the #TpmediaChannel which has a new stream
+   * TfChannel::session-invalidated:
+   * @tfchannel: the #TfChannel which has a new stream
    * @conference: the #FsConference of the new session
    * @participant: the #FsParticipant of the new session
    *
@@ -567,8 +567,8 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
 
   /**
-   * TpmediaChannel::stream-get-codec-config:
-   * @tpmediachannel: the #TpmediaChannel
+   * TfChannel::stream-get-codec-config:
+   * @tfchannel: the #TfChannel
    * @stream_id: The ID of the stream which is requestiing new codec config
    * @media_type: The #TpMediaStreamType of the stream
    * @direction: The #TpMediaStreamDirection of the stream
@@ -590,11 +590,11 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
 }
 
 static void
-stream_closed_cb (TpmediaStream *stream,
+stream_closed_cb (TfStream *stream,
                   gpointer user_data)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (user_data);
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TfChannel *self = TF_CHANNEL (user_data);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
   guint stream_id;
 
   g_object_get (stream, "stream-id", &stream_id, NULL);
@@ -606,16 +606,16 @@ stream_closed_cb (TpmediaStream *stream,
 }
 
 static void
-new_stream_cb (TpmediaSession *session,
+new_stream_cb (TfSession *session,
                gchar *object_path,
                guint stream_id,
                TpMediaStreamType media_type,
                TpMediaStreamDirection direction,
                gpointer user_data)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (user_data);
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpmediaStream *stream;
+  TfChannel *self = TF_CHANNEL (user_data);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TfStream *stream;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
@@ -644,7 +644,7 @@ new_stream_cb (TpmediaSession *session,
       "farsight-participant", &fs_participant,
       NULL);
 
-  stream = _tpmedia_stream_new ((gpointer) self, fs_conference,
+  stream = _tf_stream_new ((gpointer) self, fs_conference,
       fs_participant, proxy, stream_id, media_type, direction,
       &priv->nat_props, local_codec_config, &error);
 
@@ -669,7 +669,7 @@ new_stream_cb (TpmediaSession *session,
       g_warning ("connection manager gave us a new stream with existing id "
           "%u, sending error!", stream_id);
 
-      tpmedia_stream_error (stream, 0,
+      tf_stream_error (stream, 0,
           "already have a stream with this ID");
 
       g_object_unref (stream);
@@ -685,9 +685,9 @@ new_stream_cb (TpmediaSession *session,
 }
 
 static void
-session_invalidated_cb (TpmediaSession *session, gpointer user_data)
+session_invalidated_cb (TfSession *session, gpointer user_data)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (user_data);
+  TfChannel *self = TF_CHANNEL (user_data);
   FsConference *conf = NULL;
   FsParticipant *part = NULL;
 
@@ -700,12 +700,12 @@ session_invalidated_cb (TpmediaSession *session, gpointer user_data)
 }
 
 static void
-add_session (TpmediaChannel *self,
+add_session (TfChannel *self,
              const gchar *object_path,
              const gchar *session_type)
 {
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
-  TpmediaSession *session;
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TfSession *session;
   GError *error = NULL;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
   TpMediaSessionHandler *proxy;
@@ -727,7 +727,7 @@ add_session (TpmediaChannel *self,
       return;
     }
 
-  session = tpmedia_session_new (proxy, session_type, &error);
+  session = tf_session_new (proxy, session_type, &error);
 
   if (session == NULL)
     {
@@ -756,7 +756,7 @@ new_media_session_handler (TpChannel *channel_proxy G_GNUC_UNUSED,
                            gpointer user_data G_GNUC_UNUSED,
                            GObject *weak_object)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (weak_object);
+  TfChannel *self = TF_CHANNEL (weak_object);
 
   /* Ignore NewMediaSessionHandler until we've had a reply to
    * GetSessionHandlers; otherwise, if the two cross over in mid-flight,
@@ -768,9 +768,9 @@ new_media_session_handler (TpChannel *channel_proxy G_GNUC_UNUSED,
 }
 
 static void
-shutdown_channel (TpmediaChannel *self)
+shutdown_channel (TfChannel *self)
 {
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   if (priv->channel_proxy != NULL)
     {
@@ -793,7 +793,7 @@ channel_invalidated (TpChannel *channel_proxy,
                      guint domain,
                      gint code,
                      gchar *message,
-                     TpmediaChannel *self)
+                     TfChannel *self)
 {
   GError e = { domain, code, message };
 
@@ -817,7 +817,7 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
                             gpointer user_data G_GNUC_UNUSED,
                             GObject *weak_object)
 {
-  TpmediaChannel *self = TPMEDIA_CHANNEL (weak_object);
+  TfChannel *self = TF_CHANNEL (weak_object);
   guint i;
 
   self->priv->sessions = g_ptr_array_sized_new (session_handlers->len);
@@ -855,24 +855,24 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
 }
 
 /**
- * tpmedia_channel_new_from_proxy:
+ * tf_channel_new_from_proxy:
  * @channel_proxy: a #TpChannel proxy
  *
- * Creates a new #TpmediaChannel from an existing channel proxy
+ * Creates a new #TfChannel from an existing channel proxy
  *
- * Returns: a new #TpmediaChannel
+ * Returns: a new #TfChannel
  */
 
-TpmediaChannel *
-tpmedia_channel_new_from_proxy (TpChannel *channel_proxy)
+TfChannel *
+tf_channel_new_from_proxy (TpChannel *channel_proxy)
 {
-  return g_object_new (TPMEDIA_TYPE_CHANNEL,
+  return g_object_new (TF_TYPE_CHANNEL,
       "channel", channel_proxy,
       NULL);
 }
 
 /**
- * tpmedia_channel_new:
+ * tf_channel_new:
  * @dbus_daemon: a #TpDBusDaemon
  * @bus_name: the name of the bus to connect to
  * @connection_path: the connection path to connect to
@@ -881,15 +881,15 @@ tpmedia_channel_new_from_proxy (TpChannel *channel_proxy)
  * @handle: the handle
  * @error: The location of a %GError or %NULL
  *
- * Creates a new #TpmediaChannel by connecting to the D-Bus bus and finding
+ * Creates a new #TfChannel by connecting to the D-Bus bus and finding
  * an already existing channel object. This API would normally be used with the
  * HandleChannel method.
  *
- * Returns: a new #TpmediaChannel
+ * Returns: a new #TfChannel
  */
 
-TpmediaChannel *
-tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
+TfChannel *
+tf_channel_new (TpDBusDaemon *dbus_daemon,
                               const gchar *bus_name,
                               const gchar *connection_path,
                               const gchar *channel_path,
@@ -899,7 +899,7 @@ tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
 {
   TpConnection *connection;
   TpChannel *channel_proxy;
-  TpmediaChannel *ret;
+  TfChannel *ret;
 
   g_return_val_if_fail (bus_name != NULL, NULL);
   g_return_val_if_fail (connection_path != NULL, NULL);
@@ -919,7 +919,7 @@ tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
 
   g_object_unref (connection);
 
-  ret = g_object_new (TPMEDIA_TYPE_CHANNEL,
+  ret = g_object_new (TF_TYPE_CHANNEL,
       "channel", channel_proxy,
       NULL);
 
@@ -929,8 +929,8 @@ tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
 }
 
 /**
- * tpmedia_channel_error:
- * @chan: a #TpmediaChannel
+ * tf_channel_error:
+ * @chan: a #TfChannel
  * @error: the error number of type #TpMediaStreamError
  * @message: the error message
  *
@@ -939,16 +939,16 @@ tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
  */
 
 void
-tpmedia_channel_error (TpmediaChannel *chan,
+tf_channel_error (TfChannel *chan,
                                 guint error,
                                 const gchar *message)
 {
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (chan);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (chan);
   guint i;
 
   for (i = 0; i < priv->streams->len; i++)
     if (g_ptr_array_index (priv->streams, i) != NULL)
-      tpmedia_stream_error (g_ptr_array_index (priv->streams, i),
+      tf_stream_error (g_ptr_array_index (priv->streams, i),
           error, message);
 
   if (chan->priv->channel_ready_handler != 0)
@@ -969,20 +969,20 @@ tpmedia_channel_error (TpmediaChannel *chan,
 }
 
 /**
- * tpmedia_channel_lookup_stream:
- * @chan: a #TpmediaChannel
+ * tf_channel_lookup_stream:
+ * @chan: a #TfChannel
  * @stream_id: the stream id to look for
  *
  * Finds the stream with the specified id if it exists.
  *
- * Returns: a #TpmediaStream or %NULL
+ * Returns: a #TfStream or %NULL
  */
 
-TpmediaStream *
-tpmedia_channel_lookup_stream (TpmediaChannel *chan,
+TfStream *
+tf_channel_lookup_stream (TfChannel *chan,
                                         guint stream_id)
 {
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (chan);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (chan);
 
   if (stream_id >= priv->streams->len)
     return NULL;
@@ -991,24 +991,24 @@ tpmedia_channel_lookup_stream (TpmediaChannel *chan,
 }
 
 /**
- * tpmedia_channel_foreach_stream:
- * @chan: a #TpmediaChannel
+ * tf_channel_foreach_stream:
+ * @chan: a #TfChannel
  * @func: the function to call on every stream in this channel
  * @user_data: data that will be passed to the function
  *
  * Calls the function func on every stream inside this channel.
  */
 void
-tpmedia_channel_foreach_stream (TpmediaChannel *chan,
-                                         TpmediaChannelStreamFunc func,
+tf_channel_foreach_stream (TfChannel *chan,
+                                         TfChannelStreamFunc func,
                                          gpointer user_data)
 {
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (chan);
+  TfChannelPrivate *priv = CHANNEL_PRIVATE (chan);
   guint i;
 
   for (i = 0; i < priv->streams->len; i++)
     {
-      TpmediaStream *stream = g_ptr_array_index (priv->streams, i);
+      TfStream *stream = g_ptr_array_index (priv->streams, i);
 
       if (stream != NULL)
         func (chan, i, stream, user_data);
@@ -1017,8 +1017,8 @@ tpmedia_channel_foreach_stream (TpmediaChannel *chan,
 
 
 /**
- * tpmedia_channel_bus_message:
- * @channel: A #TpmediaChannel
+ * tf_channel_bus_message:
+ * @channel: A #TfChannel
  * @message: A #GstMessage received from the bus
  *
  * You must call this function on call messages received on the async bus.
@@ -1028,7 +1028,7 @@ tpmedia_channel_foreach_stream (TpmediaChannel *chan,
  */
 
 gboolean
-tpmedia_channel_bus_message (TpmediaChannel *channel,
+tf_channel_bus_message (TfChannel *channel,
     GstMessage *message)
 {
   guint i;
@@ -1039,21 +1039,21 @@ tpmedia_channel_bus_message (TpmediaChannel *channel,
 
   for (i = 0; i < channel->priv->sessions->len; i++)
     {
-      TpmediaSession *session = g_ptr_array_index (
+      TfSession *session = g_ptr_array_index (
           channel->priv->sessions, i);
 
       if (session != NULL)
-        if (tpmedia_session_bus_message (session, message))
+        if (tf_session_bus_message (session, message))
           ret = TRUE;
     }
 
   for (i = 0; i < channel->priv->streams->len; i++)
     {
-      TpmediaStream *stream = g_ptr_array_index (
+      TfStream *stream = g_ptr_array_index (
           channel->priv->streams, i);
 
       if (stream != NULL)
-        if (_tpmedia_stream_bus_message (stream, message))
+        if (_tf_stream_bus_message (stream, message))
           ret = TRUE;
     }
 
