@@ -45,7 +45,7 @@ AM_LDFLAGS = \
 	$(TELEPATHY_LIBS) \
 	$(FARSIGHT2_LIBS) \
 	$(top_builddir)/api/libstream-engine-api.la \
-	$(top_builddir)/telepathy-farsight/libstreamengine.la
+	$(top_builddir)/telepathy-farsight/libtelepathy-farsight.la
 
 # rules to generate signal marshallers
 %-signals-marshal.h: %-signals-marshal.list Makefile.in

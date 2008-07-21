@@ -6,8 +6,9 @@ CLEANFILES = $(BUILT_SOURCES)
 
 
 tfincludedir = $(includedir)/telepathy-1.0/telepathy-farsight
+tfinclude_HEADERS = channel.h stream.h
 
-libstreamengine_la_SOURCES = \
+libtelepathy_farsight_la_SOURCES = \
 	stream.c \
 	stream.h \
 	session.c \
@@ -15,11 +16,9 @@ libstreamengine_la_SOURCES = \
 	channel.c \
 	channel.h
 
-tfinclude_HEADERS = channel.h stream.h
+nodist_libtelepathy_farsight_la_SOURCES = $(BUILT_SOURCES)
 
-nodist_libstreamengine_la_SOURCES = $(BUILT_SOURCES)
-
-lib_LTLIBRARIES = libstreamengine.la
+lib_LTLIBRARIES = libtelepathy-farsight.la
 
 pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-farsight.pc
@@ -36,7 +35,7 @@ AM_CFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_builddir)
 
-libstreamengine_la_LIBADD = \
+libtelepathy_farsight_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(X11_LIBS) \
@@ -45,7 +44,7 @@ libstreamengine_la_LIBADD = \
 	$(FARSIGHT2_LIBS) \
 	$(TELEPATHY_LIBS)
 
-libstreamengine_la_LDFLAGS =  -no-undefined -export-symbols-regex "^tf_(channel|stream).*"
+libtelepathy_farsight_la_LDFLAGS =  -no-undefined -export-symbols-regex "^tf_(channel|stream).*"
 
 # rules to generate signal marshallers
 %-signals-marshal.h: %-signals-marshal.list Makefile.in

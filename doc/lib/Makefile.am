@@ -86,7 +86,7 @@ GTKDOC_LIBS= \
 	$(GST_INTERFACES_LIBS) \
 	$(TELEPATHY_LIBS) \
 	$(FARSIGHT2_LIBS) \
-	$(top_builddir)/telepathy-farsight/libstreamengine.la
+	$(top_builddir)/telepathy-farsight/libtelepathy-farsight.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
