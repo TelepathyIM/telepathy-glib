@@ -485,6 +485,14 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
       0, NULL, NULL, g_cclosure_marshal_VOID__POINTER, G_TYPE_NONE,
       1, G_TYPE_POINTER);
 
+  /**
+   * TpmediaChannel::closed:
+   *
+   * This function is called after a channel is closed, either because
+   * it has been closed by the connection manager or because we had a locally
+   * generated error.
+   */
+
   signals[CLOSED] =
     g_signal_new ("closed",
                   G_OBJECT_CLASS_TYPE (klass),
@@ -493,6 +501,15 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  /**
+   * TpmediaChannel::stream-created:
+   * @tpmediachannel: the #TpmediaChannel which has a new stream
+   * @stream: The new #TpmediaStream
+   *
+   * This signal is emitted when a new stream has been created in the connection
+   * manager and a local proxy has been generated.
+   */
 
   signals[STREAM_CREATED] =
     g_signal_new ("stream-created",
@@ -503,6 +520,15 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, TPMEDIA_TYPE_STREAM);
 
+  /**
+   * TpmediaChannel::session-created:
+   * @tpmediachannel: the #TpmediaChannel which has a new stream
+   * @session: The new #TpmediaSession
+   *
+   * This signal is emitted when a new session has been created in the
+   * connection manager and a local proxy has been generated.
+   */
+
   signals[SESSION_CREATED] =
     g_signal_new ("session-created",
                   G_OBJECT_CLASS_TYPE (klass),
@@ -511,6 +537,19 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, TPMEDIA_TYPE_SESSION);
+
+  /**
+   * TpmediaChannel::stream-get-codec-config:
+   * @tpmediachannel: the #TpmediaChannel
+   * @stream_id: The ID of the stream which is requestiing new codec config
+   * @media_type: The #TpMediaStreamType of the stream
+   * @direction: The #TpMediaStreamDirection of the stream
+   *
+   * This is emitted when a new stream is created and allows the caller to
+   * specify his codec preferences.
+   *
+   * Returns: a #GList of #FsCodec
+   */
 
   signals[STREAM_GET_CODEC_CONFIG] =
     g_signal_new ("stream-get-codec-config",
@@ -764,6 +803,15 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
     }
 }
 
+/**
+ * tpmedia_channel_new_from_proxy:
+ * @channel_proxy: a #TpChannel proxy
+ *
+ * Creates a new #TpmediaChannel from an existing channel proxy
+ *
+ * Returns: a new #TpmediaChannel
+ */
+
 TpmediaChannel *
 tpmedia_channel_new_from_proxy (TpChannel *channel_proxy)
 {
@@ -771,6 +819,22 @@ tpmedia_channel_new_from_proxy (TpChannel *channel_proxy)
       "channel", channel_proxy,
       NULL);
 }
+
+/**
+ * tpmedia_channel_new:
+ * @dbus_daemon: a #TpDBusDaemon
+ * @bus_name: the name of the bus to connect to
+ * @connection_path: the connection path to connect to
+ * @channel_path: the path of the channel to connect to
+ * @handle_type: the type of handle
+ * @handle: the handle
+ *
+ * Creates a new #TpmediaChannel by connecting to the D-Bus bus and finding
+ * an already existing channel object. This API would normally be used with the
+ * HandleChannel method.
+ *
+ * Returns: a new #TpmediaChannel
+ */
 
 TpmediaChannel *
 tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
@@ -812,6 +876,16 @@ tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
   return ret;
 }
 
+/**
+ * tpmedia_channel_error:
+ * @self: a #TpmediaChannel:
+ * @error: the error number of type #TpMediaStreamError
+ * @message: the error message
+ *
+ * Stops the channel and all stream related to it and sends an error to the
+ * connection manager.
+ */
+
 void
 tpmedia_channel_error (TpmediaChannel *self,
                                 guint error,
@@ -842,6 +916,16 @@ tpmedia_channel_error (TpmediaChannel *self,
   shutdown_channel (self);
 }
 
+/**
+ * tpmedia_channel_lookup_stream:
+ * @self: a #TpmediaChannel
+ * @stream_id: the stream id to look for
+ *
+ * Finds the stream with the specified id if it exists.
+ *
+ * Returns: a #TpmediaStream or %NULL
+ */
+
 TpmediaStream *
 tpmedia_channel_lookup_stream (TpmediaChannel *self,
                                         guint stream_id)
@@ -854,7 +938,14 @@ tpmedia_channel_lookup_stream (TpmediaChannel *self,
   return g_ptr_array_index (priv->streams, stream_id);
 }
 
-
+/**
+ * tpmedia_channel_foreach_stream:
+ * @self: a #TpmediaChannel
+ * @func: the function to call on every stream in this channel
+ * @user_data: data that will be passed to the function
+ *
+ * Calls the function func on every stream inside this channel.
+ */
 void
 tpmedia_channel_foreach_stream (TpmediaChannel *self,
                                          TpmediaChannelStreamFunc func,
