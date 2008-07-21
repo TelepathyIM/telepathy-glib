@@ -252,8 +252,7 @@ tpmedia_session_class_init (TpmediaSessionClass *klass)
 
   param_spec = g_param_spec_object ("farsight-participant",
                                     "Farsight participant",
-                                    "The Farsight participant which streams "
-                                    "should be created within.",
+                                    "The Farsight participant for this session",
                                     FS_TYPE_PARTICIPANT,
                                     G_PARAM_READABLE |
                                     G_PARAM_STATIC_NICK |
@@ -267,6 +266,20 @@ tpmedia_session_class_init (TpmediaSessionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_PROXY, param_spec);
+
+  /**
+   * TpmediaSession::new-stream:
+   * @session: the #TpmediaSession which has a new stream
+   * @object_path: The object-path of the new stream
+   * @stream_id: The stream id of the new strema
+   * @media_type: The media type of the new stream
+   * @direction: The direction of the new stream
+   *
+   * This is emitted when a new stream is created and should only be used
+   * by the #TpmediaChannel.
+   * One should connect to the #TpmediaChannel::channel-new-stream signal
+   * instead.
+   */
 
   signals[NEW_STREAM] =
     g_signal_new ("new-stream",

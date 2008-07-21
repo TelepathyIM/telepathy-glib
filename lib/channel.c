@@ -73,6 +73,7 @@ enum
   CLOSED,
   STREAM_CREATED,
   SESSION_CREATED,
+  SESSION_INVALIDATED,
   HANDLER_RESULT,
   STREAM_GET_CODEC_CONFIG,
   SIGNAL_COUNT
@@ -523,10 +524,13 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
   /**
    * TpmediaChannel::session-created:
    * @tpmediachannel: the #TpmediaChannel which has a new stream
-   * @session: The new #TpmediaSession
+   * @conference: the #FsConference of the new session
+   * @participant: the #FsParticipant of the new session
    *
    * This signal is emitted when a new session has been created in the
-   * connection manager and a local proxy has been generated.
+   * connection manager. The user should add the new #FsConference to a pipeline
+   * and set it to playing. The user should also set any property he wants to
+   * set.
    */
 
   signals[SESSION_CREATED] =
@@ -535,8 +539,28 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   NULL, NULL,
-                  g_cclosure_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1, TPMEDIA_TYPE_SESSION);
+                  _tpmedia_marshal_VOID__OBJECT_OBJECT,
+                  G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
+
+  /**
+   * TpmediaChannel::session-invalidated:
+   * @tpmediachannel: the #TpmediaChannel which has a new stream
+   * @conference: the #FsConference of the new session
+   * @participant: the #FsParticipant of the new session
+   *
+   * This signal is emitted when a session has been invalidated.
+   * The #FsConference and #FsParticipant for this session are returned.
+   * The #FsConference should be removed from the pipeline.
+   */
+
+  signals[SESSION_INVALIDATED] =
+    g_signal_new ("session-invalidated",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  _tpmedia_marshal_VOID__OBJECT_OBJECT,
+                  G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
 
   /**
    * TpmediaChannel::stream-get-codec-config:
@@ -657,6 +681,21 @@ new_stream_cb (TpmediaSession *session,
 }
 
 static void
+session_invalidated_cb (TpmediaSession *session, gpointer user_data)
+{
+  TpmediaChannel *self = TPMEDIA_CHANNEL (user_data);
+  FsConference *conf = NULL;
+  FsParticipant *part = NULL;
+
+  g_object_get (session, "conference", &conf, "participant", &part, NULL);
+
+  g_signal_emit (self, signals[SESSION_INVALIDATED], 0, conf, part);
+
+  g_object_unref (conf);
+  g_object_unref (part);
+}
+
+static void
 add_session (TpmediaChannel *self,
              const gchar *object_path,
              const gchar *session_type)
@@ -666,6 +705,8 @@ add_session (TpmediaChannel *self,
   GError *error = NULL;
   TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
   TpMediaSessionHandler *proxy;
+  FsConference *conf = NULL;
+  FsParticipant *part = NULL;
 
   g_debug ("adding session handler %s, type %s", object_path, session_type);
 
@@ -692,10 +733,16 @@ add_session (TpmediaChannel *self,
     }
 
   g_signal_connect (session, "new-stream", G_CALLBACK (new_stream_cb), self);
+  g_signal_connect (session, "invalidated",
+      G_CALLBACK (session_invalidated_cb), self);
 
   g_ptr_array_add (priv->sessions, session);
 
-  g_signal_emit (self, signals[SESSION_CREATED], 0, session);
+  g_object_get (session, "conference", &conf, "participant", &part, NULL);
+
+  g_signal_emit (self, signals[SESSION_CREATED], 0, conf, part);
+  g_object_unref (conf);
+  g_object_unref (part);
 }
 
 static void

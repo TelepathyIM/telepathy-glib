@@ -548,44 +548,38 @@ stream_request_resource (TpmediaStream *stream,
   return TRUE;
 }
 
-
 static void
-session_invalidated (TpmediaSession *session G_GNUC_UNUSED,
+channel_session_created (TpmediaChannel *chan G_GNUC_UNUSED,
+    FsConference *conference, FsParticipant *participant G_GNUC_UNUSED,
     gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
-  GstElement *conf;
 
-  g_object_get (session, "farsight-conference", &conf, NULL);
+  g_return_if_fail (conference);
 
-  gst_element_set_locked_state (conf, TRUE);
-  gst_element_set_state (conf, GST_STATE_NULL);
-  gst_element_get_state (conf, NULL, NULL, GST_CLOCK_TIME_NONE);
+  if (g_object_has_property (G_OBJECT (conference), "latency"))
+    g_object_set (conference, "latency", 100, NULL);
 
-  gst_bin_remove (GST_BIN (self->priv->pipeline), conf);
+  if (!gst_bin_add (GST_BIN (self->priv->pipeline), GST_ELEMENT (conference)))
+    g_error ("Could not add conference to pipeline");
+
+  gst_element_set_state (GST_ELEMENT (conference), GST_STATE_PLAYING);
 }
 
 static void
-channel_session_created (TpmediaChannel *chan G_GNUC_UNUSED,
-    TpmediaSession *session, gpointer user_data)
+channel_session_invalidated (TpmediaChannel *channel G_GNUC_UNUSED,
+    FsConference *conference, FsParticipant *participant G_GNUC_UNUSED,
+    gpointer user_data)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
-  GstElement *conf;
 
-  g_object_get (session, "farsight-conference", &conf, NULL);
+  g_return_if_fail (conference);
 
-  if (g_object_has_property ((GObject *)conf, "latency"))
-    g_object_set (conf, "latency", 100, NULL);
+  gst_element_set_locked_state (GST_ELEMENT (conference), TRUE);
+  gst_element_set_state (GST_ELEMENT (conference), GST_STATE_NULL);
 
-  if (!gst_bin_add (GST_BIN (self->priv->pipeline), conf))
-    g_error ("Could not add conference to pipeline");
-
-  gst_element_set_state (conf, GST_STATE_PLAYING);
-
-  g_signal_connect (session, "invalidated", G_CALLBACK (session_invalidated),
-      user_data);
+  gst_bin_remove (GST_BIN (self->priv->pipeline), GST_ELEMENT (conference));
 }
-
 
 
 static void
@@ -1718,6 +1712,8 @@ tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
   g_signal_connect (chan, "closed", G_CALLBACK (channel_closed), self);
   g_signal_connect (chan, "session-created",
       G_CALLBACK (channel_session_created), self);
+  g_signal_connect (chan, "session-invalidated",
+      G_CALLBACK (channel_session_invalidated), self);
   g_signal_connect (chan, "stream-created",
       G_CALLBACK (channel_stream_created), self);
   g_signal_connect (chan, "stream-get-codec-config",
