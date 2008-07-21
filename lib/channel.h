@@ -31,14 +31,28 @@ G_BEGIN_DECLS
 
 typedef struct _TpmediaChannelPrivate TpmediaChannelPrivate;
 
+/**
+ * TpmediaChannel:
+ *
+ * All members of the object are private
+ */
+
 typedef struct {
   GObject parent;
 
   TpmediaChannelPrivate *priv;
 } TpmediaChannel;
 
+/**
+ * TpmediaChannelClass:
+ *
+ * There are no overridable functions
+ */
+
 typedef struct {
   GObjectClass parent_class;
+
+  gpointer unused[4];
 } TpmediaChannelClass;
 
 GType tpmedia_channel_get_type (void);
@@ -61,6 +75,16 @@ void tpmedia_channel_error (TpmediaChannel *chan,
 
 TpmediaStream *tpmedia_channel_lookup_stream (TpmediaChannel *chan,
   guint stream_id);
+
+/**
+ * TpmediaChannelStreamFunc:
+ * @chan: The #TpMediaChannel
+ * @stream_id: the id of the stream
+ * @stream: the #TpmediaStream
+ * @user_data: the passed user data
+ *
+ * Callback function called on every stream by tpmedia_channel_foreach_stream()
+ */
 
 typedef void (* TpmediaChannelStreamFunc) (TpmediaChannel *chan,
     guint stream_id,

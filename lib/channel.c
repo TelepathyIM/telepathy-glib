@@ -878,7 +878,7 @@ tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
 
 /**
  * tpmedia_channel_error:
- * @chan: a #TpmediaChannel:
+ * @chan: a #TpmediaChannel
  * @error: the error number of type #TpMediaStreamError
  * @message: the error message
  *
