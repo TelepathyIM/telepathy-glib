@@ -3,6 +3,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/channel.h>
+
 #include "stream.h"
 
 G_BEGIN_DECLS
@@ -48,6 +50,9 @@ TpmediaChannel *tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
   guint handle_type,
   guint handle,
   GError **error);
+
+TpmediaChannel *tpmedia_channel_new_from_proxy (TpChannel *channel_proxy);
+
 
 void tpmedia_channel_error (
   TpmediaChannel *self,

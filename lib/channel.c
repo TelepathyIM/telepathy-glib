@@ -763,6 +763,14 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
 }
 
 TpmediaChannel *
+tpmedia_channel_new_from_proxy (TpChannel *channel_proxy)
+{
+  return g_object_new (TPMEDIA_TYPE_CHANNEL,
+      "channel", channel_proxy,
+      NULL);
+}
+
+TpmediaChannel *
 tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
                               const gchar *bus_name,
                               const gchar *connection_path,
