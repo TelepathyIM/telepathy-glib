@@ -7,12 +7,6 @@ CLEANFILES = $(BUILT_SOURCES)
 libexec_PROGRAMS = telepathy-stream-engine
 
 libstreamengine_convenience_la_SOURCES = \
-	channel.h \
-	channel.c \
-	session.h \
-	session.c \
-	stream.h \
-	stream.c \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
 	util.h \
@@ -48,7 +42,8 @@ AM_CFLAGS = \
 	$(FARSIGHT2_CFLAGS) \
 	$(TELEPATHY_CFLAGS) \
 	-I$(top_srcdir) \
-	-I$(top_builddir)
+	-I$(top_builddir) \
+	-I$(top_srcdir)/lib
 
 AM_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -58,7 +53,8 @@ AM_LDFLAGS = \
 	$(GST_INTERFACES_LIBS) \
 	$(TELEPATHY_LIBS) \
 	$(FARSIGHT2_LIBS) \
-	$(top_builddir)/api/libstream-engine-api.la
+	$(top_builddir)/api/libstream-engine-api.la \
+	$(top_builddir)/lib/libstreamengine.la
 
 # rules to generate signal marshallers
 %-signals-marshal.h: %-signals-marshal.list Makefile.in

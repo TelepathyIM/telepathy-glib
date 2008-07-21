@@ -25,7 +25,7 @@
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "session.h"
-#include "tp-stream-engine-signals-marshal.h"
+#include "tpmedia-signals-marshal.h"
 
 G_DEFINE_TYPE (TpmediaSession, tpmedia_session, G_TYPE_OBJECT);
 
@@ -273,7 +273,7 @@ tpmedia_session_class_init (TpmediaSessionClass *klass)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   NULL, NULL,
-                  tp_stream_engine_marshal_VOID__BOXED_UINT_UINT_UINT,
+                  _tpmedia_marshal_VOID__BOXED_UINT_UINT_UINT,
                   G_TYPE_NONE, 4,
                   DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
   signals[INVALIDATED] =

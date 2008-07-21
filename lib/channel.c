@@ -32,7 +32,7 @@
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
-#include "tp-stream-engine-signals-marshal.h"
+#include "tpmedia-signals-marshal.h"
 
 G_DEFINE_TYPE (TpmediaChannel, tpmedia_channel, G_TYPE_OBJECT);
 
@@ -516,7 +516,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   NULL, NULL,
-                  tp_stream_engine_marshal_BOXED__UINT_UINT_UINT,
+                  _tpmedia_marshal_BOXED__UINT_UINT_UINT,
                   FS_TYPE_CODEC_LIST, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 

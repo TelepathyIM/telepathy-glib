@@ -36,9 +36,7 @@
 
 #include "stream.h"
 #include "channel.h"
-#include "tp-stream-engine.h"
-#include "tp-stream-engine-signals-marshal.h"
-#include "util.h"
+#include "tpmedia-signals-marshal.h"
 
 G_DEFINE_TYPE (TpmediaStream, tpmedia_stream, G_TYPE_OBJECT);
 
@@ -427,7 +425,8 @@ tpmedia_stream_constructor (GType type,
       return obj;
 
 
-  if (g_object_has_property ((GObject *) stream->priv->fs_session,
+  if (g_object_class_find_property (
+          G_OBJECT_GET_CLASS (stream->priv->fs_session),
           "no-rtcp-timeout"))
     g_object_set (stream->priv->fs_session, "no-rtcp-timeout", 0, NULL);
 
@@ -638,7 +637,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   g_signal_accumulator_true_handled, NULL,
-                  tp_stream_engine_marshal_BOOLEAN__UINT,
+                  _tpmedia_marshal_BOOLEAN__UINT,
                   G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   signals[FREE_RESOURCE] =
@@ -656,7 +655,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
-                  tp_stream_engine_marshal_VOID__OBJECT_BOXED,
+                  _tpmedia_marshal_VOID__OBJECT_BOXED,
                   G_TYPE_NONE, 2, GST_TYPE_PAD, FS_TYPE_CODEC);
 }
 

@@ -1,10 +1,16 @@
 BUILT_SOURCES = \
-    tp-stream-engine-signals-marshal.h \
-    tp-stream-engine-signals-marshal.c
+    tpmedia-signals-marshal.h \
+    tpmedia-signals-marshal.c
 
 CLEANFILES = $(BUILT_SOURCES)
 
-libstreamengine_la_SOURCES = 
+libstreamengine_la_SOURCES = \
+	channel.c \
+	channel.h \
+	session.c \
+	session.h \
+	stream.c \
+	stream.h
 
 nodist_libstreamengine_la_SOURCES = $(BUILT_SOURCES)
 
@@ -31,9 +37,11 @@ libstreamengine_la_LIBADD = \
 	$(FARSIGHT2_LIBS) \
 	$(TELEPATHY_LIBS)
 
+libstreamengine_la_LDFLAGS = "-export-symbols-regex ^tpmedia_.*"
+
 # rules to generate signal marshallers
 %-signals-marshal.h: %-signals-marshal.list Makefile.in
-	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-signals-marshal.h
+	glib-genmarshal --header --prefix=_$(subst -,_,$*)_marshal $< > $*-signals-marshal.h
 
 %-signals-marshal.c: %-signals-marshal.list Makefile.in
-	glib-genmarshal --body --prefix=$(subst -,_,$*)_marshal $< > $*-signals-marshal.c
+	glib-genmarshal --body --prefix=_$(subst -,_,$*)_marshal $< > $*-signals-marshal.c
