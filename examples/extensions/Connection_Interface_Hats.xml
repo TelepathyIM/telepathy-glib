@@ -91,7 +91,7 @@
       <tp:docstring>
         Request a list of the hats worn by the given contacts.
       </tp:docstring>
-      <arg direction="in" name="Contact" type="au" tp:type="Contact_Handle">
+      <arg direction="in" name="Contact" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           The handles of the contacts whose hats are requested
         </tp:docstring>
@@ -116,17 +116,18 @@
         Indicate that the hat currently being worn by the local user
         has changed.
       </tp:docstring>
-      <arg name="Color" type="s">
+      <arg name="Color" type="s" direction="in">
         <tp:docstring>
           The color of the contact's hat.
         </tp:docstring>
       </arg>
-      <arg name="Style" type="u" tp:type="Hat_Style">
+      <arg name="Style" type="u" tp:type="Hat_Style" direction="in">
         <tp:docstring>
           The style of the contact's hat.
         </tp:docstring>
       </arg>
-      <arg name="Properties" type="a{sv}" tp:type="String_Variant_Map">
+      <arg name="Properties" type="a{sv}" tp:type="String_Variant_Map"
+        direction="in">
         <tp:docstring>
           There's always an a{sv}...
         </tp:docstring>
