@@ -30,11 +30,24 @@ G_BEGIN_DECLS
 
 typedef struct _TpmediaSessionPrivate TpmediaSessionPrivate;
 
+
+/**
+ * TpmediaSession:
+ *
+ * All members of the object are private
+ */
+
 typedef struct {
   GObject parent;
 
   TpmediaSessionPrivate *priv;
 } TpmediaSession;
+
+/**
+ * TpmediaSessionClass:
+ *
+ * There are no overridable functions
+ */
 
 typedef struct {
   GObjectClass parent_class;
