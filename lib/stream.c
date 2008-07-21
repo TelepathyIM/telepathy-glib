@@ -501,8 +501,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
 
   param_spec = g_param_spec_object ("channel",
                                     "Telepathy channel",
-                                    "The TpmediaChannel this stream"
-                                    " is in",
+                                    "The TpmediaChannel this stream is in",
                                     TPMEDIA_TYPE_CHANNEL,
                                     G_PARAM_CONSTRUCT_ONLY |
                                     G_PARAM_READWRITE |
@@ -555,8 +554,8 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
 
   param_spec = g_param_spec_uint ("media-type",
                                   "stream media type",
-                                  "The Telepathy stream media type (ie audio "
-                                  "or video)",
+                                  "The Telepathy stream media type"
+                                   " (as a TpStreamMediaType",
                                   TP_MEDIA_STREAM_TYPE_AUDIO,
                                   TP_MEDIA_STREAM_TYPE_VIDEO,
                                   TP_MEDIA_STREAM_TYPE_AUDIO,
@@ -568,7 +567,8 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
 
   param_spec = g_param_spec_uint ("direction",
                                   "stream direction",
-                                  "The Telepathy stream direction",
+                                  "The Telepathy stream direction"
+                                  " (a TpMediaStreamDirection)",
                                   TP_MEDIA_STREAM_DIRECTION_NONE,
                                   TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
                                   TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
@@ -585,7 +585,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                                      "detailing which NAT traversal method "
                                      "and parameters to use for this stream.",
                                      G_PARAM_CONSTRUCT_ONLY |
-                                     G_PARAM_READWRITE |
+                                     G_PARAM_WRITABLE |
                                      G_PARAM_STATIC_NICK |
                                      G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_NAT_PROPERTIES,
@@ -604,7 +604,10 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
 
   param_spec = g_param_spec_boxed ("codec-preferences",
                                    "Local codec preferences",
-                                   "A GList of FsCodec representing preferences to be passed to the fs_session_set_local_preferences() function",
+                                   "A GList of FsCodec representing preferences"
+                                   " to be passed to the"
+                                   " fs_session_set_local_preferences()"
+                                   " function",
                                     FS_TYPE_CODEC_LIST,
                                     G_PARAM_CONSTRUCT_ONLY |
                                     G_PARAM_READWRITE |
@@ -613,6 +616,13 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
   g_object_class_install_property (object_class, PROP_LOCAL_PREFERENCES,
       param_spec);
 
+  /**
+   * TpmediaStream::closed:
+   * @stream: the stream that has been closed
+   *
+   * This signal is emitted when the Close() signal is received from the
+   * connection manager.
+   */
 
   signals[CLOSED] =
     g_signal_new ("closed",
@@ -623,6 +633,13 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
 
+  /**
+   * TpmediaStream::error:
+   * @stream: the stream that has been errored
+   *
+   * This signal is emitted when there is an error on this stream
+   */
+
   signals[ERROR_SIGNAL] =
     g_signal_new ("error",
                   G_OBJECT_CLASS_TYPE (klass),
@@ -631,6 +648,20 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  /**
+   * TpmediaStream::request-resource:
+   * @stream: the stream requesting the resources
+   * @direction: The direction for which this resource is requested
+   *  (as a #TpMediaDirection
+   *
+   * This signal is emitted when the connection manager ask to send or receive
+   * media. For example, this can be used allocated an X window or open a
+   * camera.
+   *
+   * Returns: %TRUE if the resources requested could be allocated or %FALSE
+   * otherwise
+   */
 
   signals[REQUEST_RESOURCE] =
     g_signal_new ("request-resource",
@@ -641,6 +672,15 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   _tpmedia_marshal_BOOLEAN__UINT,
                   G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
+  /**
+   * TpmediaStream::free-resource:
+   * @stream: the stream for which resources can be freed
+   * @direction: The direction for which this resource is freed
+   *  (as a #TpMediaDirection
+   *
+   * Emitted when the stream no longer needs a resource and it can be freed.
+   */
+
   signals[FREE_RESOURCE] =
     g_signal_new ("free-resource",
                   G_OBJECT_CLASS_TYPE (klass),
@@ -649,6 +689,16 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__UINT,
                   G_TYPE_NONE, 1, G_TYPE_UINT);
+
+  /**
+   * TpmediaStream::src-pad-added:
+   * @stream: the stream which has a new pad
+   * @pad: The new src pad
+   * @codec: the codec for which data is coming out
+   *
+   * This is emitted when a new src pad comes out. The user must connect
+   * this pad to his pipeline.
+   */
 
   signals[SRC_PAD_ADDED] =
     g_signal_new ("src-pad-added",
@@ -1411,10 +1461,20 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
 }
 
+/**
+ * tpmedia_stream_error:
+ * @self: a #TpmediaStream
+ * @error: the error number as a #TpMediaStreamError
+ * @message: the message for this error
+ *
+ * This function can be used to tell the connection manager that an error
+ * has happened on a specific stream.
+ */
+
 void
 tpmedia_stream_error (TpmediaStream *self,
-                               guint error,
-                               const gchar *message)
+    guint error,
+    const gchar *message)
 {
   g_message ("%s: stream error errorno=%d error=%s", G_STRFUNC, error, message);
 
