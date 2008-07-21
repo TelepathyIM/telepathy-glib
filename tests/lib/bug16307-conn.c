@@ -197,7 +197,7 @@ bug16307_connection_get_status (TpSvcConnection *iface,
 static void
 service_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcConnectionClass *klass = (TpSvcConnectionClass *)g_iface;
+  TpSvcConnectionClass *klass = g_iface;
 
 #define IMPLEMENT(prefix,x) tp_svc_connection_implement_##x (klass, \
     bug16307_connection_##prefix##x)
