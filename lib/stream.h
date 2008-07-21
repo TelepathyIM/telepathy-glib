@@ -47,11 +47,14 @@ typedef struct _TpmediaStream {
   /* Read-only */
   guint stream_id;
 
+  /*< private >*/
+
   TpmediaStreamPrivate *priv;
 } TpmediaStream;
 
 /**
  * TpmediaStreamClass:
+ * @parent_class: the parent #GObjecClass
  *
  * There are no overridable functions
  */
@@ -59,7 +62,7 @@ typedef struct _TpmediaStream {
 typedef struct _TpmediaStreamClass {
   GObjectClass parent_class;
 
-  /* < private > */
+  /*< private >*/
 
   gpointer unused[4];
 } TpmediaStreamClass;

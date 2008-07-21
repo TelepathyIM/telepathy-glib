@@ -879,6 +879,7 @@ tpmedia_channel_new_from_proxy (TpChannel *channel_proxy)
  * @channel_path: the path of the channel to connect to
  * @handle_type: the type of handle
  * @handle: the handle
+ * @error: The location of a %GError or %NULL
  *
  * Creates a new #TpmediaChannel by connecting to the D-Bus bus and finding
  * an already existing channel object. This API would normally be used with the

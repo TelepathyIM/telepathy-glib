@@ -40,17 +40,22 @@ typedef struct _TpmediaChannelPrivate TpmediaChannelPrivate;
 typedef struct {
   GObject parent;
 
+  /*< private >*/
+
   TpmediaChannelPrivate *priv;
 } TpmediaChannel;
 
 /**
  * TpmediaChannelClass:
+ * @parent_class: the parent #GObjecClass
  *
  * There are no overridable functions
  */
 
 typedef struct {
   GObjectClass parent_class;
+
+  /*< private >*/
 
   gpointer unused[4];
 } TpmediaChannelClass;
