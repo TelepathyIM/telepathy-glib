@@ -6,7 +6,8 @@ CLEANFILES = $(BUILT_SOURCES)
 
 libexec_PROGRAMS = telepathy-stream-engine
 
-libstreamengine_convenience_la_SOURCES = \
+telepathy_stream_engine_SOURCES = \
+	stream-engine-main.c \
 	tp-stream-engine.h \
 	tp-stream-engine.c \
 	util.h \
@@ -21,16 +22,7 @@ libstreamengine_convenience_la_SOURCES = \
 	videopreview.h \
 	tp-stream-engine-signals-marshal.list
 
-nodist_libstreamengine_convenience_la_SOURCES = \
-	$(BUILT_SOURCES)
-
-telepathy_stream_engine_SOURCES = \
-	stream-engine-main.c
-
-telepathy_stream_engine_LDADD = \
-	libstreamengine-convenience.la
-
-noinst_LTLIBRARIES = libstreamengine-convenience.la
+nodist_telepathy_stream_engine_SOURCES = $(BUILT_SOURCES)
 
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
