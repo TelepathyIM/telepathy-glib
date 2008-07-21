@@ -44,12 +44,12 @@ FIXXREF_OPTIONS=
 # Used for dependencies. The docs will be rebuilt if any of these change.
 # e.g. HFILE_GLOB=$(top_srcdir)/gtk/*.h
 # e.g. CFILE_GLOB=$(top_srcdir)/gtk/*.c
-HFILE_GLOB=$(top_srcdir)/lib/*.h
-CFILE_GLOB=$(top_srcdir)/lib/*.c
+HFILE_GLOB=$(top_srcdir)/lib/channel.h $(top_srcdir)/lib/stream.h
+CFILE_GLOB=$(top_srcdir)/lib/channel.c $(top_srcdir)/lib/stream.c
 
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
-IGNORE_HFILES=*-priv.h *marshal.h
+IGNORE_HFILES=*-priv.h *marshal.h session.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png

@@ -727,7 +727,7 @@ add_session (TpmediaChannel *self,
       return;
     }
 
-  session = _tpmedia_session_new (proxy, session_type, &error);
+  session = tpmedia_session_new (proxy, session_type, &error);
 
   if (session == NULL)
     {
