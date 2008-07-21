@@ -5,7 +5,7 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/media-interfaces.h>
 
-#include "stream.h"
+#include <telepathy-farsight/stream.h>
 
 G_BEGIN_DECLS
 

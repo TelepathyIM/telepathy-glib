@@ -144,7 +144,7 @@ AC_OUTPUT( Makefile \
           data/Makefile \
           doc/Makefile \
 	  doc/lib/Makefile \
-          lib/Makefile  \
+          telepathy-farsight/Makefile  \
           src/Makefile  \
           test/Makefile \
           test/python/Makefile \

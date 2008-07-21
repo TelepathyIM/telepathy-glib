@@ -3,7 +3,7 @@
 
 #include <glib-object.h>
 
-#include "stream.h"
+#include <telepathy-farsight/stream.h>
 
 #include "videosink.h"
 

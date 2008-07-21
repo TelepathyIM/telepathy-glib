@@ -20,7 +20,7 @@ DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
 # gtk-doc will search all .c & .h files beneath here for inline comments
 # documenting the functions and macros.
 # e.g. DOC_SOURCE_DIR=../../../gtk
-DOC_SOURCE_DIR=../../lib
+DOC_SOURCE_DIR=../../telepathy-farsight
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
 SCANGOBJ_OPTIONS=
@@ -44,8 +44,8 @@ FIXXREF_OPTIONS=
 # Used for dependencies. The docs will be rebuilt if any of these change.
 # e.g. HFILE_GLOB=$(top_srcdir)/gtk/*.h
 # e.g. CFILE_GLOB=$(top_srcdir)/gtk/*.c
-HFILE_GLOB=$(top_srcdir)/lib/channel.h $(top_srcdir)/lib/stream.h
-CFILE_GLOB=$(top_srcdir)/lib/channel.c $(top_srcdir)/lib/stream.c
+HFILE_GLOB=$(top_srcdir)/telepathy-farsight/channel.h $(top_srcdir)/telepathy-farsight/stream.h
+CFILE_GLOB=$(top_srcdir)/telepathy-farsight/channel.c $(top_srcdir)/telepathy-farsight/stream.c
 
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
@@ -77,7 +77,7 @@ INCLUDES= \
 	$(GST_INTERFACES_CFLAGS) \
 	$(FARSIGHT2_CFLAGS) \
 	$(TELEPATHY_CFLAGS) \
-	-I$(top_srcdir) -I$(top_builddir) -I$(top_srcdir)/lib
+	-I$(top_srcdir) -I$(top_builddir)
 GTKDOC_LIBS= \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
@@ -86,7 +86,7 @@ GTKDOC_LIBS= \
 	$(GST_INTERFACES_LIBS) \
 	$(TELEPATHY_LIBS) \
 	$(FARSIGHT2_LIBS) \
-	$(top_builddir)/lib/libstreamengine.la
+	$(top_builddir)/telepathy-farsight/libstreamengine.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
