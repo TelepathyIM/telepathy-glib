@@ -7,7 +7,7 @@ G_BEGIN_DECLS
 
 TpmediaSession *
 _tpmedia_session_new (TpMediaSessionHandler *proxy,
-                              const gchar *session_type,
+                              const gchar *conference_type,
                               GError **error);
 
 gboolean _tpmedia_session_bus_message (TpmediaSession *session,

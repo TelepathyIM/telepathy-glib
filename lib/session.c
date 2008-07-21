@@ -228,10 +228,10 @@ tpmedia_session_class_init (TpmediaSessionClass *klass)
 
   object_class->dispose = tpmedia_session_dispose;
 
-  param_spec = g_param_spec_string ("session-type",
-                                    "Farsight session type",
-                                    "Name of the Farsight session type this "
-                                    "session will create.",
+  param_spec = g_param_spec_string ("conference-type",
+                                    "Farsight conference type",
+                                    "Name of the Farsight conference type this "
+                                    "session will create (rtp, msn, etc).",
                                     NULL,
                                     G_PARAM_CONSTRUCT_ONLY |
                                     G_PARAM_READWRITE |
@@ -341,17 +341,17 @@ new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
 
 TpmediaSession *
 _tpmedia_session_new (TpMediaSessionHandler *proxy,
-                              const gchar *session_type,
+                              const gchar *conference_type,
                               GError **error)
 {
   TpmediaSession *self;
 
   g_return_val_if_fail (proxy != NULL, NULL);
-  g_return_val_if_fail (session_type != NULL, NULL);
+  g_return_val_if_fail (conference_type != NULL, NULL);
 
   self = g_object_new (TPMEDIA_TYPE_SESSION,
       "proxy", proxy,
-      "session-type", session_type,
+      "conference-type", conference_type,
       NULL);
 
   if (self->priv->construction_error)
