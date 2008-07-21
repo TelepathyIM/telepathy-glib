@@ -34,7 +34,7 @@
 #include "stream.h"
 #include "session-priv.h"
 #include "stream-priv.h"
-#include "tpmedia-signals-marshal.h"
+#include "tf-signals-marshal.h"
 
 G_DEFINE_TYPE (TpmediaChannel, tpmedia_channel, G_TYPE_OBJECT);
 
@@ -543,7 +543,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
-                  _tpmedia_marshal_VOID__OBJECT_OBJECT,
+                  _tf_marshal_VOID__OBJECT_OBJECT,
                   G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
 
   /**
@@ -563,7 +563,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
-                  _tpmedia_marshal_VOID__OBJECT_OBJECT,
+                  _tf_marshal_VOID__OBJECT_OBJECT,
                   G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
 
   /**
@@ -585,7 +585,7 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   0,
                   NULL, NULL,
-                  _tpmedia_marshal_BOXED__UINT_UINT_UINT,
+                  _tf_marshal_BOXED__UINT_UINT_UINT,
                   FS_TYPE_CODEC_LIST, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 

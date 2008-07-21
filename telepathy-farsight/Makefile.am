@@ -1,6 +1,6 @@
 BUILT_SOURCES = \
-    tpmedia-signals-marshal.h \
-    tpmedia-signals-marshal.c
+    tf-signals-marshal.h \
+    tf-signals-marshal.c
 
 CLEANFILES = $(BUILT_SOURCES)
 

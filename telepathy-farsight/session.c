@@ -26,7 +26,7 @@
 
 #include "session.h"
 #include "session-priv.h"
-#include "tpmedia-signals-marshal.h"
+#include "tf-signals-marshal.h"
 
 G_DEFINE_TYPE (TpmediaSession, tpmedia_session, G_TYPE_OBJECT);
 
@@ -287,7 +287,7 @@ tpmedia_session_class_init (TpmediaSessionClass *klass)
                   G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
-                  _tpmedia_marshal_VOID__BOXED_UINT_UINT_UINT,
+                  _tf_marshal_VOID__BOXED_UINT_UINT_UINT,
                   G_TYPE_NONE, 4,
                   DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
   signals[INVALIDATED] =

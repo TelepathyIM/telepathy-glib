@@ -37,7 +37,7 @@
 #include "stream.h"
 #include "stream-priv.h"
 #include "channel.h"
-#include "tpmedia-signals-marshal.h"
+#include "tf-signals-marshal.h"
 
 G_DEFINE_TYPE (TpmediaStream, tpmedia_stream, G_TYPE_OBJECT);
 
@@ -669,7 +669,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   G_SIGNAL_RUN_LAST,
                   0,
                   g_signal_accumulator_true_handled, NULL,
-                  _tpmedia_marshal_BOOLEAN__UINT,
+                  _tf_marshal_BOOLEAN__UINT,
                   G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   /**
@@ -706,7 +706,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
                   G_SIGNAL_RUN_LAST,
                   0,
                   NULL, NULL,
-                  _tpmedia_marshal_VOID__OBJECT_BOXED,
+                  _tf_marshal_VOID__OBJECT_BOXED,
                   G_TYPE_NONE, 2, GST_TYPE_PAD, FS_TYPE_CODEC);
 }
 
