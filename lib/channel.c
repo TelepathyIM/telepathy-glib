@@ -45,7 +45,7 @@ struct _TpmediaChannelPrivate
   TpChannel *channel_proxy;
   DBusGProxy *media_signalling_proxy;
 
-  TpStreamEngineNatProperties nat_props;
+  TpmediaNatProperties nat_props;
   guint prop_id_nat_traversal;
   guint prop_id_stun_server;
   guint prop_id_stun_port;

@@ -52,7 +52,7 @@ typedef struct {
   gchar *stun_server;
   guint16 stun_port;
   gchar *relay_token;
-} TpStreamEngineNatProperties;
+} TpmediaNatProperties;
 
 GType tpmedia_stream_get_type (void);
 

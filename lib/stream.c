@@ -68,7 +68,7 @@ struct _TpmediaStreamPrivate
   FsStream *fs_stream;
   TpMediaStreamType media_type;
   TpMediaStreamDirection direction;
-  const TpStreamEngineNatProperties *nat_props;
+  const TpmediaNatProperties *nat_props;
   GList *local_preferences;
 
   GError *construction_error;
@@ -217,7 +217,7 @@ tpmedia_stream_get_property (GObject    *object,
       break;
     case PROP_NAT_PROPERTIES:
       g_value_set_pointer (value,
-          (TpStreamEngineNatProperties *) self->priv->nat_props);
+          (TpmediaNatProperties *) self->priv->nat_props);
       break;
     case PROP_SINK_PAD:
       g_object_get_property (G_OBJECT (self->priv->fs_session),
@@ -581,7 +581,7 @@ tpmedia_stream_class_init (TpmediaStreamClass *klass)
   param_spec = g_param_spec_pointer ("nat-properties",
                                      "NAT properties",
                                      "A pointer to a "
-                                     "TpStreamEngineNatProperties structure "
+                                     "TpmediaNatProperties structure "
                                      "detailing which NAT traversal method "
                                      "and parameters to use for this stream.",
                                      G_PARAM_CONSTRUCT_ONLY |
@@ -1618,7 +1618,7 @@ _tpmedia_stream_new (gpointer channel,
     guint stream_id,
     TpMediaStreamType media_type,
     TpMediaStreamDirection direction,
-    TpStreamEngineNatProperties *nat_props,
+    TpmediaNatProperties *nat_props,
     GList *local_preferences,
     GError **error)
 
