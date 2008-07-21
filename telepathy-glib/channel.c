@@ -117,6 +117,7 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
  *
  * Returns: the channel type, if the channel is ready; either the channel
  *  type or %NULL, if the channel is not yet ready.
+ * Since: 0.7.12
  */
 const gchar *
 tp_channel_get_channel_type (TpChannel *self)
@@ -137,6 +138,7 @@ tp_channel_get_channel_type (TpChannel *self)
  *
  * Returns: the channel type, if the channel is ready; either the channel
  *  type or 0, if the channel is not yet ready.
+ * Since: 0.7.12
  */
 GQuark
 tp_channel_get_channel_type_id (TpChannel *self)
@@ -163,6 +165,7 @@ tp_channel_get_channel_type_id (TpChannel *self)
  * #TpChannel:handle-type property.
  *
  * Returns: the handle
+ * Since: 0.7.12
  */
 TpHandle
 tp_channel_get_handle (TpChannel *self,
@@ -184,6 +187,7 @@ tp_channel_get_handle (TpChannel *self,
  * Returns the same thing as the #TpChannel:channel-ready property.
  *
  * Returns: %TRUE if introspection has completed
+ * Since: 0.7.12
  */
 gboolean
 tp_channel_is_ready (TpChannel *self)
@@ -200,6 +204,7 @@ tp_channel_is_ready (TpChannel *self)
  * while this channel is valid - reference it with g_object_ref() if needed.
  *
  * Returns: the value of #TpChannel:connection
+ * Since: 0.7.12
  */
 TpConnection *
 tp_channel_borrow_connection (TpChannel *self)
@@ -729,6 +734,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * Otherwise, either a handle representing the user, or 0.
    *
    * Change notification is via notify::group-self-handle.
+   *
+   * Since: 0.7.12
    */
   param_spec = g_param_spec_uint ("group-self-handle", "Group.SelfHandle",
       "Undefined if not a group", 0, G_MAXUINT32, 0,
@@ -748,6 +755,8 @@ tp_channel_class_init (TpChannelClass *klass)
    *
    * Change notification is via notify::group-flags or
    * TpChannel::group-flags-changed.
+   *
+   * Since: 0.7.12
    */
   param_spec = g_param_spec_uint ("group-flags", "Group.GroupFlags",
       "0 if not a group", 0, G_MAXUINT32, 0,
@@ -764,6 +773,8 @@ tp_channel_class_init (TpChannelClass *klass)
    *
    * Emitted when the #TpChannel:group-flags property changes while the
    * channel is ready.
+   *
+   * Since: 0.7.12
    */
   signals[SIGNAL_GROUP_FLAGS_CHANGED] = g_signal_new ("group-flags-changed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -788,6 +799,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * @reason: the reason for the change as a #TpChannelGroupChangeReason
    *
    * Emitted when the group members change in a Group channel that is ready.
+   *
+   * Since: 0.7.12
    */
   signals[SIGNAL_GROUP_MEMBERS_CHANGED] = g_signal_new (
       "group-members-changed", G_OBJECT_CLASS_TYPE (klass),

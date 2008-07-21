@@ -73,6 +73,7 @@ local_pending_info_free (LocalPendingInfo *info)
  * of that property for notes on validity).
  *
  * Returns: the handle representing the user, or 0
+ * Since: 0.7.12
  */
 TpHandle
 tp_channel_group_get_self_handle (TpChannel *self)
@@ -89,6 +90,7 @@ tp_channel_group_get_self_handle (TpChannel *self)
  * of that property for notes on validity).
  *
  * Returns: the group flags, or 0
+ * Since: 0.7.12
  */
 TpChannelGroupFlags
 tp_channel_group_get_flags (TpChannel *self)
@@ -110,6 +112,7 @@ tp_channel_group_get_flags (TpChannel *self)
  * If @self is not a group, return %NULL.
  *
  * Returns: the members, or %NULL
+ * Since: 0.7.12
  */
 const TpIntSet *
 tp_channel_group_get_members (TpChannel *self)
@@ -131,6 +134,7 @@ tp_channel_group_get_members (TpChannel *self)
  * If @self is not a group, return %NULL.
  *
  * Returns: the local-pending members, or %NULL
+ * Since: 0.7.12
  */
 const TpIntSet *
 tp_channel_group_get_local_pending (TpChannel *self)
@@ -152,6 +156,7 @@ tp_channel_group_get_local_pending (TpChannel *self)
  * If @self is not a group, return %NULL.
  *
  * Returns: the remote-pending members, or %NULL
+ * Since: 0.7.12
   */
 const TpIntSet *
 tp_channel_group_get_remote_pending (TpChannel *self)
@@ -180,6 +185,7 @@ tp_channel_group_get_remote_pending (TpChannel *self)
  * and "" into @message, and return %FALSE.
  *
  * Returns: %TRUE if the contact is in fact local-pending
+ * Since: 0.7.12
  */
 gboolean
 tp_channel_group_get_local_pending_info (TpChannel *self,
@@ -273,6 +279,7 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
  * without extra D-Bus round trips is not possible using the older API).
  *
  * Returns: the global handle that owns the given handle, or 0
+ * Since: 0.7.12
  */
 TpHandle
 tp_channel_group_get_handle_owner (TpChannel *self,
