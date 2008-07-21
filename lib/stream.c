@@ -35,6 +35,7 @@
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "stream.h"
+#include "stream-priv.h"
 #include "channel.h"
 #include "tpmedia-signals-marshal.h"
 

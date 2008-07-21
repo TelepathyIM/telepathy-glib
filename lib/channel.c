@@ -32,6 +32,8 @@
 #include "channel.h"
 #include "session.h"
 #include "stream.h"
+#include "session-priv.h"
+#include "stream-priv.h"
 #include "tpmedia-signals-marshal.h"
 
 G_DEFINE_TYPE (TpmediaChannel, tpmedia_channel, G_TYPE_OBJECT);

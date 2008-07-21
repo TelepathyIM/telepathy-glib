@@ -56,26 +56,10 @@ typedef struct {
 
 GType tpmedia_stream_get_type (void);
 
-TpmediaStream *
-tpmedia_stream_new (gpointer channel,
-    FsConference *conference,
-    FsParticipant *participant,
-    TpMediaStreamHandler *proxy,
-    guint stream_id,
-    TpMediaStreamType media_type,
-    TpMediaStreamDirection direction,
-    TpStreamEngineNatProperties *nat_props,
-    GList *local_codecs_config,
-    GError **error);
-
-
 void tpmedia_stream_error (
   TpmediaStream *self,
   guint error,
   const gchar *message);
-
-gboolean tpmedia_stream_bus_message (TpmediaStream *stream,
-    GstMessage *message);
 
 G_END_DECLS
 

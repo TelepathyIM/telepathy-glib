@@ -42,15 +42,6 @@ typedef struct {
 
 GType tpmedia_session_get_type (void);
 
-TpmediaSession *
-tpmedia_session_new (TpMediaSessionHandler *proxy,
-                              const gchar *session_type,
-                              GError **error);
-
-gboolean tpmedia_session_bus_message (TpmediaSession *session,
-    GstMessage *message);
-
-
 G_END_DECLS
 
 #endif /* __TPMEDIA_SESSION_H__ */

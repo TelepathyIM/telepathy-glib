@@ -25,6 +25,7 @@
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "session.h"
+#include "session-priv.h"
 #include "tpmedia-signals-marshal.h"
 
 G_DEFINE_TYPE (TpmediaSession, tpmedia_session, G_TYPE_OBJECT);
