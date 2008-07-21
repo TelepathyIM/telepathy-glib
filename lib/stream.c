@@ -744,7 +744,7 @@ cb_fs_new_local_candidate (TpmediaStream *self,
       NULL, (GObject *) self);
 }
 
-/**
+/*
  * small helper function to help converting a
  * telepathy dbus candidate to a list of FarsightTransportInfos
  * nothing is copied, so always keep the usage of this within a function
@@ -844,7 +844,7 @@ tp_media_type_to_fs (TpMediaStreamType type)
     }
 }
 
-/**
+/*
  * Small helper function to help converting a list of FarsightCodecs
  * to a Telepathy codec list.
  */
