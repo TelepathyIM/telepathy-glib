@@ -40,12 +40,11 @@ noinst_LTLIBRARIES = libstreamengine-convenience.la
 
 AM_CFLAGS = $(ERROR_CFLAGS) \
 	@DBUS_CFLAGS@ @GLIB_CFLAGS@ @TELEPATHY_CFLAGS@ \
-	@FARSIGHT2_CFLAGS@ @GST_PLUGINS_BASE_CFLAGS@ @X11_CFLAGS@ \
+	@FARSIGHT2_CFLAGS@ @GST_INTERFACES_CFLAGS@ @X11_CFLAGS@ \
 	-I$(top_srcdir) -I$(top_builddir)
 
 AM_LDFLAGS = @DBUS_LIBS@ @GLIB_LIBS@ @TELEPATHY_LIBS@ \
-	@FARSIGHT2_LIBS@ @GST_PLUGINS_BASE_LIBS@ @X11_LIBS@ \
-	-lgstinterfaces-0.10 \
+	@FARSIGHT2_LIBS@ @GST_INTERFACES_LIBS@ @X11_LIBS@ \
 	$(top_builddir)/api/libstream-engine-api.la
 
 # rules to generate signal marshallers

@@ -114,10 +114,12 @@ PKG_CHECK_MODULES(FARSIGHT2, [farsight2-0.10])
 AC_SUBST(FARSIGHT2_CFLAGS)
 AC_SUBST(FARSIGHT2_LIBS)
 
-dnl Check for gst-plugins-base
-PKG_CHECK_MODULES(GST_PLUGINS_BASE, [gstreamer-plugins-base-0.10])
-AC_SUBST(GST_PLUGINS_BASE_CFLAGS)
-AC_SUBST(GST_PLUGINS_BASE_LIBS)
+dnl Check for gst-interfaces or gst-plugins-base
+PKG_CHECK_MODULES(GST_INTERFACES, [gstreamer-interfaces-0.10 >= 0.10.18],[],
+       [AC_MSG_ERROR([gst-plugins-base-0.10.18. is required])])
+AC_SUBST(GST_INTERFACES_CFLAGS)
+AC_SUBST(GST_INTERFACES_LIBS)
+
 
 dnl libx11
 PKG_CHECK_MODULES(X11, [x11 gtk+-2.0])
