@@ -12,7 +12,7 @@
 
   <chapter>
     <title>Objects</title>
-    <xi:include href="xml/stream.xml"/>
     <xi:include href="xml/channel.xml"/>
+    <xi:include href="xml/stream.xml"/>
   </chapter>
 </book>
