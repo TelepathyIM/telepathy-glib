@@ -16,6 +16,9 @@ nodist_libstreamengine_la_SOURCES = $(BUILT_SOURCES)
 
 lib_LTLIBRARIES = libstreamengine.la
 
+pkgconfigdir = ${libdir}/pkgconfig
+pkgconfig_DATA = telepathy-farsight.pc
+
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
 	$(GLIB_CFLAGS) \
