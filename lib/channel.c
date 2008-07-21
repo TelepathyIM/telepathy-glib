@@ -482,9 +482,13 @@ tpmedia_channel_class_init (TpmediaChannelClass *klass)
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
   signals[HANDLER_RESULT] = g_signal_new ("handler-result",
-      G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0, NULL, NULL, g_cclosure_marshal_VOID__POINTER, G_TYPE_NONE,
-      1, G_TYPE_POINTER);
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL,
+      NULL,
+      g_cclosure_marshal_VOID__POINTER,
+      G_TYPE_NONE, 1, G_TYPE_POINTER);
 
   /**
    * TpmediaChannel::closed:
