@@ -39,7 +39,6 @@
 
 #include "api/api.h"
 #include "channel.h"
-#include "session.h"
 #include "stream.h"
 #include "audiostream.h"
 #include "videosink.h"
