@@ -1,11 +1,12 @@
 <SECTION>
 <FILE>stream</FILE>
-TpmediaStreamPrivate
 <TITLE>TpmediaStream</TITLE>
 TpmediaStream
 TpmediaStreamClass
 TpmediaNatProperties
 tpmedia_stream_error
+<SUBSECTION Private>
+TpmediaStreamPrivate
 <SUBSECTION Standard>
 TPMEDIA_STREAM
 TP_STREAM_ENGINE_IS_STREAM
@@ -18,7 +19,6 @@ TPMEDIA_STREAM_GET_CLASS
 
 <SECTION>
 <FILE>channel</FILE>
-TpmediaChannelPrivate
 <TITLE>TpmediaChannel</TITLE>
 TpmediaChannel
 TpmediaChannelClass
@@ -29,6 +29,8 @@ tpmedia_channel_lookup_stream
 TpmediaChannelStreamFunc
 tpmedia_channel_foreach_stream
 tpmedia_channel_bus_message
+<SUBSECTION Private>
+TpmediaChannelPrivate
 <SUBSECTION Standard>
 TPMEDIA_CHANNEL
 TP_STREAM_ENGINE_IS_CHANNEL
@@ -41,10 +43,11 @@ TPMEDIA_CHANNEL_GET_CLASS
 
 <SECTION>
 <FILE>session</FILE>
-TpmediaSessionPrivate
 <TITLE>TpmediaSession</TITLE>
 TpmediaSession
 TpmediaSessionClass
+<SUBSECTION Private>
+TpmediaSessionPrivate
 <SUBSECTION Standard>
 TPMEDIA_SESSION
 TP_STREAM_ENGINE_IS_SESSION
