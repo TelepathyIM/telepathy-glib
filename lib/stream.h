@@ -47,12 +47,6 @@ typedef struct {
 
 } TpmediaStreamClass;
 
-typedef struct {
-  gchar *nat_traversal;
-  gchar *stun_server;
-  guint16 stun_port;
-  gchar *relay_token;
-} TpmediaNatProperties;
 
 GType tpmedia_stream_get_type (void);
 

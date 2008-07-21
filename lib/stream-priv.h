@@ -5,6 +5,12 @@
 
 G_BEGIN_DECLS
 
+typedef struct {
+  gchar *nat_traversal;
+  gchar *stun_server;
+  guint16 stun_port;
+  gchar *relay_token;
+} TpmediaNatProperties;
 
 TpmediaStream *
 _tpmedia_stream_new (gpointer channel,

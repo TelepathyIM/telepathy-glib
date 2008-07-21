@@ -3,7 +3,6 @@
 <TITLE>TpmediaStream</TITLE>
 TpmediaStream
 TpmediaStreamClass
-TpmediaNatProperties
 tpmedia_stream_error
 <SUBSECTION Private>
 TpmediaStreamPrivate
