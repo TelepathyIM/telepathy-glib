@@ -55,7 +55,7 @@ TpmediaChannel *tpmedia_channel_new_from_proxy (TpChannel *channel_proxy);
 
 
 void tpmedia_channel_error (
-  TpmediaChannel *self,
+  TpmediaChannel *chan,
   guint error,
   const gchar *message);
 

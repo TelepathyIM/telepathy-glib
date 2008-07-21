@@ -878,7 +878,7 @@ tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
 
 /**
  * tpmedia_channel_error:
- * @self: a #TpmediaChannel:
+ * @chan: a #TpmediaChannel:
  * @error: the error number of type #TpMediaStreamError
  * @message: the error message
  *
@@ -887,11 +887,11 @@ tpmedia_channel_new (TpDBusDaemon *dbus_daemon,
  */
 
 void
-tpmedia_channel_error (TpmediaChannel *self,
+tpmedia_channel_error (TpmediaChannel *chan,
                                 guint error,
                                 const gchar *message)
 {
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (chan);
   guint i;
 
   for (i = 0; i < priv->streams->len; i++)
@@ -899,26 +899,26 @@ tpmedia_channel_error (TpmediaChannel *self,
       tpmedia_stream_error (g_ptr_array_index (priv->streams, i),
           error, message);
 
-  if (self->priv->channel_ready_handler != 0)
+  if (chan->priv->channel_ready_handler != 0)
     {
       /* we haven't yet decided whether we're handling this channel. This
        * seems an unlikely situation at this point, but for the sake of
        * returning *something* from HandleChannel, let's claim we are */
 
-      g_signal_emit (self, signals[HANDLER_RESULT], 0, NULL);
+      g_signal_emit (chan, signals[HANDLER_RESULT], 0, NULL);
 
       /* if the channel becomes ready, we no longer want to know */
-      g_signal_handler_disconnect (self->priv->channel_proxy,
-          self->priv->channel_ready_handler);
-      self->priv->channel_ready_handler = 0;
+      g_signal_handler_disconnect (chan->priv->channel_proxy,
+          chan->priv->channel_ready_handler);
+      chan->priv->channel_ready_handler = 0;
     }
 
-  shutdown_channel (self);
+  shutdown_channel (chan);
 }
 
 /**
  * tpmedia_channel_lookup_stream:
- * @self: a #TpmediaChannel
+ * @chan: a #TpmediaChannel
  * @stream_id: the stream id to look for
  *
  * Finds the stream with the specified id if it exists.
@@ -927,10 +927,10 @@ tpmedia_channel_error (TpmediaChannel *self,
  */
 
 TpmediaStream *
-tpmedia_channel_lookup_stream (TpmediaChannel *self,
+tpmedia_channel_lookup_stream (TpmediaChannel *chan,
                                         guint stream_id)
 {
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (chan);
 
   if (stream_id >= priv->streams->len)
     return NULL;
@@ -940,18 +940,18 @@ tpmedia_channel_lookup_stream (TpmediaChannel *self,
 
 /**
  * tpmedia_channel_foreach_stream:
- * @self: a #TpmediaChannel
+ * @chan: a #TpmediaChannel
  * @func: the function to call on every stream in this channel
  * @user_data: data that will be passed to the function
  *
  * Calls the function func on every stream inside this channel.
  */
 void
-tpmedia_channel_foreach_stream (TpmediaChannel *self,
+tpmedia_channel_foreach_stream (TpmediaChannel *chan,
                                          TpmediaChannelStreamFunc func,
                                          gpointer user_data)
 {
-  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (self);
+  TpmediaChannelPrivate *priv = CHANNEL_PRIVATE (chan);
   guint i;
 
   for (i = 0; i < priv->streams->len; i++)
@@ -959,7 +959,7 @@ tpmedia_channel_foreach_stream (TpmediaChannel *self,
       TpmediaStream *stream = g_ptr_array_index (priv->streams, i);
 
       if (stream != NULL)
-        func (self, i, stream, user_data);
+        func (chan, i, stream, user_data);
     }
 }
 
