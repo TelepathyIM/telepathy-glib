@@ -555,7 +555,7 @@ tf_stream_class_init (TfStreamClass *klass)
   param_spec = g_param_spec_uint ("media-type",
                                   "stream media type",
                                   "The Telepathy stream media type"
-                                   " (as a TpStreamMediaType",
+                                   " (as a TpStreamMediaType)",
                                   TP_MEDIA_STREAM_TYPE_AUDIO,
                                   TP_MEDIA_STREAM_TYPE_VIDEO,
                                   TP_MEDIA_STREAM_TYPE_AUDIO,
