@@ -583,7 +583,7 @@ tf_stream_class_init (TfStreamClass *klass)
                                      "A pointer to a "
                                      "TfNatProperties structure "
                                      "detailing which NAT traversal method "
-                                     "and parameters to use for this stream.",
+                                     "and parameters to use for this stream",
                                      G_PARAM_CONSTRUCT_ONLY |
                                      G_PARAM_WRITABLE |
                                      G_PARAM_STATIC_NICK |
@@ -657,7 +657,7 @@ tf_stream_class_init (TfStreamClass *klass)
    *
    * This signal is emitted when the connection manager ask to send or receive
    * media. For example, this can be used allocated an X window or open a
-   * camera.
+   * camera. The resouces can later be freed on #TfStream::free-resource
    *
    * Returns: %TRUE if the resources requested could be allocated or %FALSE
    * otherwise
@@ -678,7 +678,8 @@ tf_stream_class_init (TfStreamClass *klass)
    * @direction: The direction for which this resource is freed
    *  (as a #TpMediaDirection
    *
-   * Emitted when the stream no longer needs a resource and it can be freed.
+   * Emitted when the stream no longer needs a resource allocated
+   * from #TfStream::request-resource and it can be freed.
    */
 
   signals[FREE_RESOURCE] =
