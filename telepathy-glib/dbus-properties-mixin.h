@@ -121,6 +121,10 @@ void tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
 void tp_dbus_properties_mixin_iface_init (gpointer g_iface,
     gpointer iface_data);
 
+gboolean tp_dbus_properties_mixin_get (GObject *self,
+    const gchar *interface_name, const gchar *property_name,
+    GValue *value, GError **error);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_DBUS_PROPERTIES_MIXIN_H__ */
