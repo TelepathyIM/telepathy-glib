@@ -593,8 +593,7 @@ out:
 
 static TpDBusPropertiesMixinIfaceImpl *
 _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
-                                           const gchar *name,
-                                           DBusGMethodInvocation *context)
+                                           const gchar *name)
 {
   GType type;
   GQuark offset_quark = _prop_mixin_offset_quark ();
@@ -646,8 +645,7 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
 static TpDBusPropertiesMixinPropImpl *
 _tp_dbus_properties_mixin_find_prop_impl
     (TpDBusPropertiesMixinIfaceImpl *iface_impl,
-     const gchar *name,
-     DBusGMethodInvocation *context)
+     const gchar *name)
 {
   GQuark prop_quark = g_quark_try_string (name);
   TpDBusPropertiesMixinPropImpl *prop_impl;
@@ -682,7 +680,7 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
   GValue value = { 0 };
 
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
-      interface_name, context);
+      interface_name);
 
   if (iface_impl == NULL)
     {
@@ -696,7 +694,7 @@ _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
   iface_info = iface_impl->mixin_priv;
 
   prop_impl = _tp_dbus_properties_mixin_find_prop_impl (iface_impl,
-      property_name, context);
+      property_name);
 
   if (prop_impl == NULL)
     {
@@ -739,7 +737,7 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
       (GDestroyNotify) tp_g_value_slice_free);
 
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
-      interface_name, context);
+      interface_name);
 
   if (iface_impl == NULL)
     goto out;   /* no properties, but we need to return that */
@@ -783,7 +781,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
   GError *error = NULL;
 
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
-      interface_name, context);
+      interface_name);
 
   if (iface_impl == NULL)
     {
@@ -797,7 +795,7 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
   iface_info = iface_impl->mixin_priv;
 
   prop_impl = _tp_dbus_properties_mixin_find_prop_impl (iface_impl,
-      property_name, context);
+      property_name);
 
   if (prop_impl == NULL)
     {
