@@ -48,7 +48,7 @@
  * TpPresenceMixin implements all of the D-Bus methods in the Presence
  * interface.
  *
- * Since 0.7.Unreleased you can also implement
+ * Since 0.7.UNRELEASED you can also implement
  * #TpSvcConnectionInterfaceSimplePresence by using this mixin, in this case
  * you should pass tp_presence_mixin_iface_init as an argument to
  * G_IMPLEMENT_INTERFACE. Note that this can cause the status_available
@@ -1089,7 +1089,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
  * This uses tp_presence_mixin_get_simple_dbus_property() as the property
  * getter and sets up a list of the supported properties for it.
  *
- * Since: 0.7.Unreleased
+ * Since: 0.7.UNRELEASED
  */
 void
 tp_presence_mixin_simple_presence_init_dbus_properties (GObjectClass *cls)
@@ -1300,7 +1300,7 @@ tp_presence_mixin_simple_presence_get_presences (
  * using this mixin. This function should usually be called via
  * G_IMPLEMENT_INTERFACE.
  *
- * Since: 0.7.Unreleased
+ * Since: 0.7.UNRELEASED
  */
 void
 tp_presence_mixin_simple_presence_iface_init (gpointer g_iface,
