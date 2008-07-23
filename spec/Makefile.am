@@ -28,6 +28,7 @@ EXTRA_DIST = \
     Connection_Interface_Avatars.xml \
     Connection_Interface_Capabilities.xml \
     Connection_Interface_Contact_Info.xml \
+    Connection_Interface_Contacts.xml \
     Connection_Interface_Forwarding.xml \
     Connection_Interface_Simple_Presence.xml \
     Connection_Interface_Presence.xml \
