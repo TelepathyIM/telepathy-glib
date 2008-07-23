@@ -1146,7 +1146,7 @@ tp_presence_mixin_simple_presence_set_presence (
       status_to_set.optional_arguments = optional_arguments;
     }
 
-  mixin_cls->set_own_status (obj, &status_to_set, &error)
+  mixin_cls->set_own_status (obj, &status_to_set, &error);
 
 out:
   if (error == NULL)
