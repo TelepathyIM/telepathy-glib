@@ -118,7 +118,7 @@ void tp_presence_status_free (TpPresenceStatus *status);
  * available to be set on the connection.
  *
  * When implementing the
- * org.freedesktop.Telepathy.Connection.Interface.SimplePresence interface 
+ * org.freedesktop.Telepathy.Connection.Interface.SimplePresence interface
  * this can be called while DISCONNECTED to determine which statuses can be set
  * in that state.
  *
