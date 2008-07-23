@@ -83,9 +83,9 @@ struct _TpPresenceMixinPrivate
   /* ... */
 };
 
-static GHashTable *
-construct_simple_presence_hash (const TpPresenceStatusSpec *supported_statuses,
-                         GHashTable *contact_statuses);
+static GHashTable * construct_simple_presence_hash (
+  const TpPresenceStatusSpec *supported_statuses,
+  GHashTable *contact_statuses);
 
 /**
  * deep_copy_hashtable
