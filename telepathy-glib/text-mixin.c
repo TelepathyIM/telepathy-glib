@@ -577,6 +577,33 @@ tp_text_mixin_clear (GObject *obj)
 }
 
 /**
+ * tp_text_mixin_has_pending_messages:
+ * @obj: An object with this mixin
+ * @first_sender: If not %NULL, used to store the sender of the oldest pending
+ *  message
+ *
+ * Return whether the channel @obj has unacknowledged messages. If so, and
+ * @first_sender is not %NULL, the handle of the sender of the first message
+ * is placed in it, without incrementing the handle's reference count.
+ *
+ * Returns: %TRUE if there are pending messages
+ */
+gboolean
+tp_text_mixin_has_pending_messages (GObject *obj,
+                                    TpHandle *first_sender)
+{
+  TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
+  _PendingMessage *msg = g_queue_peek_head (mixin->priv->pending);
+
+  if (msg != NULL && first_sender != NULL)
+    {
+      *first_sender = msg->sender;
+    }
+
+  return (msg != NULL);
+}
+
+/**
  * tp_text_mixin_iface_init:
  * @g_iface: A pointer to the #TpSvcChannelTypeTextClass in an object class
  * @iface_data: Ignored

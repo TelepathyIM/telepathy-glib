@@ -1379,6 +1379,7 @@ tp_text_mixin_acknowledge_pending_messages
 tp_text_mixin_list_pending_messages
 tp_text_mixin_get_message_types
 tp_text_mixin_clear
+tp_text_mixin_has_pending_messages
 tp_text_mixin_iface_init
 <SUBSECTION Private>
 TP_TEXT_MIXIN_CLASS_OFFSET_QUARK
