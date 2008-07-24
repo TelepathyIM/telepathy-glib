@@ -1080,7 +1080,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
 }
 
 /**
- * tp_presence_mixin_init_dbus_properties:
+ * tp_presence_mixin_simple_presence_init_dbus_properties:
  * @cls: The class of an object with this mixin
  *
  * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
