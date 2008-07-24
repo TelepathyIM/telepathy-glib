@@ -32,6 +32,7 @@
     <xi:include href="xml/connection-aliasing.xml"/>
     <xi:include href="xml/connection-avatars.xml"/>
     <xi:include href="xml/connection-caps.xml"/>
+    <xi:include href="xml/connection-simple-presence.xml"/>
     <xi:include href="xml/connection-presence.xml"/>
     <xi:include href="xml/channel.xml"/>
     <xi:include href="xml/channel-group.xml"/>

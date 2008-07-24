@@ -2024,10 +2024,9 @@ tp_cli_connection_interface_capabilities_signal_callback_capabilities_changed
 </SECTION>
 
 <SECTION>
-<FILE>connection-presence</FILE>
-<TITLE>connection-presence</TITLE>
+<FILE>connection-simple-presence</FILE>
+<TITLE>connection-simple-presence</TITLE>
 <INCLUDE>telepathy-glib/connection.h</INCLUDE>
-<SUBSECTION Simple presence>
 tp_cli_connection_interface_simple_presence_run_get_presences
 tp_cli_connection_interface_simple_presence_run_set_presence
 tp_cli_connection_interface_simple_presence_call_get_presences
@@ -2036,7 +2035,12 @@ tp_cli_connection_interface_simple_presence_callback_for_get_presences
 tp_cli_connection_interface_simple_presence_callback_for_set_presence
 tp_cli_connection_interface_simple_presence_connect_to_presences_changed
 tp_cli_connection_interface_simple_presence_signal_callback_presences_changed
-<SUBSECTION Presence>
+</SECTION>
+
+<SECTION>
+<FILE>connection-presence</FILE>
+<TITLE>connection-presence</TITLE>
+<INCLUDE>telepathy-glib/connection.h</INCLUDE>
 tp_cli_connection_interface_presence_run_add_status
 tp_cli_connection_interface_presence_run_clear_status
 tp_cli_connection_interface_presence_run_get_presence
