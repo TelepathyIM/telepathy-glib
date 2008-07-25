@@ -691,7 +691,10 @@ session_invalidated_cb (TfSession *session, gpointer user_data)
   FsConference *conf = NULL;
   FsParticipant *part = NULL;
 
-  g_object_get (session, "conference", &conf, "participant", &part, NULL);
+  g_object_get (session,
+      "farsight-conference", &conf,
+      "farsight-participant", &part,
+      NULL);
 
   g_signal_emit (self, signals[SESSION_INVALIDATED], 0, conf, part);
 
@@ -742,7 +745,10 @@ add_session (TfChannel *self,
 
   g_ptr_array_add (priv->sessions, session);
 
-  g_object_get (session, "conference", &conf, "participant", &part, NULL);
+  g_object_get (session,
+      "farsight-conference", &conf,
+      "farsight-participant", &part,
+      NULL);
 
   g_signal_emit (self, signals[SESSION_CREATED], 0, conf, part);
   g_object_unref (conf);
