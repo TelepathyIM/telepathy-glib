@@ -82,6 +82,8 @@ struct _TfStreamPrivate
 
   gboolean send_local_codecs;
   gboolean send_supported_codecs;
+
+  gboolean gathering;
 };
 
 enum
@@ -1238,8 +1240,9 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else
     {
       if (!self->priv->held) {
-        tf_stream_free_resource (self,
-            TP_MEDIA_STREAM_DIRECTION_RECEIVE);
+        if (!self->priv->gathering)
+          tf_stream_free_resource (self,
+              TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
         g_object_set (self->priv->fs_stream,
             "direction", current_direction & ~(FS_DIRECTION_SEND),
@@ -1251,7 +1254,7 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static gboolean
 tf_stream_request_resource (TfStream *self,
-                                          TpMediaStreamDirection dir)
+    TpMediaStreamDirection dir)
 {
   gboolean resource_available = FALSE;
 
@@ -1318,8 +1321,12 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
   else
     {
-      if (tf_stream_request_resource (self,
-              self->priv->desired_direction))
+      FsStreamDirection desired_direction = self->priv->desired_direction;
+
+      if (self->priv->gathering)
+        desired_direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
+
+      if (tf_stream_request_resource (self, desired_direction))
         {
            g_object_set (self->priv->fs_stream,
                "direction", self->priv->desired_direction,
@@ -1630,6 +1637,8 @@ _tf_stream_bus_message (TfStream *stream,
       if (fssession != stream->priv->fs_session)
         return FALSE;
 
+      DEBUG (stream, "Codecs changed");
+
       tf_stream_try_sending_codecs (stream);
     }
   else if (gst_structure_has_name (s, "farsight-send-codec-changed"))
@@ -1716,15 +1725,44 @@ tf_stream_try_sending_codecs (TfStream *stream)
   GList *fscodecs = NULL;
   GList *item = NULL;
 
+  DEBUG (stream, "called (send_local:%d send_supported:%d)",
+      stream->priv->send_local_codecs, stream->priv->send_supported_codecs);
+
   if (!stream->priv->send_supported_codecs && !stream->priv->send_local_codecs)
     return;
 
   g_object_get (stream->priv->fs_session, "codecs-ready", &ready, NULL);
 
   if (!ready)
-    return;
+    {
+      if (!stream->priv->gathering)
+        {
+          DEBUG (stream, "Enabling resources to gather codecs");
+          stream->priv->gathering = TRUE;
+
+          if (stream->priv->held)
+            return;
+
+          if (!tf_stream_request_resource (stream,
+                  TP_MEDIA_STREAM_DIRECTION_SEND))
+            {
+              DEBUG (stream, "Could not get resource, sending may not work");
+              stream->priv->gathering = FALSE;
+              goto ignore_ready;
+            }
+        }
+      return;
+    }
+
+ ignore_ready:
 
   g_object_get (stream->priv->fs_session, "codecs", &fscodecs, NULL);
+
+  if (stream->priv->gathering)
+    {
+      if (!(stream->priv->desired_direction & TP_MEDIA_STREAM_DIRECTION_SEND))
+        tf_stream_free_resource (stream, TP_MEDIA_STREAM_DIRECTION_SEND);
+    }
 
   for(item = fscodecs; item; item = g_list_next (item))
     {
@@ -1744,7 +1782,6 @@ tf_stream_try_sending_codecs (TfStream *stream)
           NULL, (GObject *) stream);
       stream->priv->send_local_codecs = FALSE;
     }
-
 
   if (stream->priv->send_supported_codecs)
     {
