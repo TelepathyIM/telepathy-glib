@@ -1353,7 +1353,7 @@ simple_presence_get_attributes_foreach (gpointer key,
     val);
 }
 
-void
+static void
 tp_presence_mixin_simple_presence_get_attributes (GObject *obj,
   const GArray *contacts, GHashTable *attributes_hash)
 {
@@ -1373,3 +1373,21 @@ tp_presence_mixin_simple_presence_get_attributes (GObject *obj,
 
   g_hash_table_destroy (contact_statuses);
 }
+
+/**
+ * tp_presence_mixin_simple_presence_register_with_contacts_iface:
+ * @obj: An instance that of the implementation that uses both the Contacts
+ * mixin and this mixin
+ *
+ * Register the SimplePresence interface with the Contacts interface to make it
+ * inspectable. The Contacts mixin should be initialized before this function
+ * is called
+ */
+void
+tp_presence_mixin_simple_presence_register_with_contacts_iface (GObject *obj)
+{
+  tp_contacts_mixin_add_inspectable_iface (obj,
+      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+      tp_presence_mixin_simple_presence_get_attributes);
+}
+
