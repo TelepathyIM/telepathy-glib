@@ -242,7 +242,7 @@ tp_contacts_mixin_inspect_contacts (
   TpContactsMixin *self = TP_CONTACTS_MIXIN (iface);
   GHashTable *result;
   guint i;
-  TpBaseConnection *conn = TP_BASE_CONNECTION (self);
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
         TP_HANDLE_TYPE_CONTACT);
   GArray *valid_handles;
