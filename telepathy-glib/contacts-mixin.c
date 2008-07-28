@@ -318,10 +318,12 @@ tp_contacts_mixin_inspect_contacts (
       func (G_OBJECT(iface), valid_handles, result);
     }
 
-  tp_handles_unref (contact_repo, valid_handles);
-
   tp_svc_connection_interface_contacts_return_from_inspect_contacts (context,
       result);
+
+  g_hash_table_destroy (result);
+
+  tp_handles_unref (contact_repo, valid_handles);
 }
 
 /**
