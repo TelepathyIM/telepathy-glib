@@ -27,7 +27,24 @@
  * @see_also: #TpSvcConnectionInterfaceContacts
  *
  * This mixin can be added to a #TpBaseConnection subclass to implement the
- * Contacts interface in a generic way. FIXME
+ * Contacts interface in a generic way.
+ *
+ * To use the contacts mixin, include a #TpContactsMixinClass somewhere in
+ * your class structure and a #TpContactsMixin somewhere in your instance
+ * structure, and call tp_contacts_mixin_class_init() from your class_init
+ * function, tp_contacts_mixin_init() from your init function or constructor,
+ * and tp_contacts_mixin_finalize() from your dispose or finalize function.
+ *
+ * To use the contacts mixin as the implementation of
+ * #TpSvcConnectionInterfaceContacts, in the function you pass to
+ * G_IMPLEMENT_INTERFACE, you should call tp_contacts_mixin_iface_init.
+ * TpContactsMixin implements all of the D-Bus methods and properties in the
+ * Contacts interface.
+ *
+ * To add inspectable interface call tp_contacts_mixin_set_contact_attribute.
+ *
+ * Since: 0.7.UNRELEASED
+ *
  */
 
 #include <telepathy-glib/contacts-mixin.h>
@@ -220,7 +237,7 @@ tp_contacts_mixin_init (GObject *obj,
  * tp_contacts_mixin_finalize:
  * @obj: An object with this mixin.
  *
- * Free resources held by the text mixin.
+ * Free resources held by the contacts mixin.
  */
 void
 tp_contacts_mixin_finalize (GObject *obj)
@@ -313,7 +330,9 @@ tp_contacts_mixin_inspect_contacts (
  * class
  * @iface_data: Ignored
  *
- * FIXME
+ * Fill in the vtable entries needed to implement the simple presence
+ * interface *  using this mixin. This function should usually be called via
+ * G_IMPLEMENT_INTERFACE.
  */
 void
 tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
@@ -327,6 +346,17 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
+/**
+ * tp_contacts_mixin_add_inspectable_iface:
+ * @obj: An instance of the implementation that uses this mixin
+ * @interface: Name of the interface to make inspectable
+ * @get_attributes: Attribute getter function
+ *
+ * Make the given interface inspectable via the contacts interface using the
+ * get_attributes function to get the attributes.
+ *
+ */
+
 void
 tp_contacts_mixin_add_inspectable_iface (GObject *obj, const gchar *interface,
     TpContactsMixinGetAttributesFunc get_attributes)
@@ -339,6 +369,19 @@ tp_contacts_mixin_add_inspectable_iface (GObject *obj, const gchar *interface,
   g_hash_table_insert (self->priv->interfaces, g_strdup (interface),
     get_attributes);
 }
+
+/**
+ * tp_contacts_mixin_set_contact_attribute:
+ * @contact_attributes: contacts attribute hash for as passed to
+ *   TpContactsMixinGetAttributesFunc
+ * @handle: Handle to set the attribute on
+ * @attribute: attribute name
+ * @value: slice allocated GValue containing the value of the attribute
+ *
+ * Utility function to set attribute for handle to value in the attributes hash
+ * as passed to a TpContactsMixinGetAttributesFunc
+ *
+ */
 
 void
 tp_contacts_mixin_set_contact_attribute (GHashTable *contact_attributes,
