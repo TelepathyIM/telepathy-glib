@@ -1349,7 +1349,7 @@ simple_presence_get_attributes_foreach (gpointer key,
 
   tp_contacts_mixin_set_contact_attribute (data->presence_hash,
     handle,
-    "org.freedesktop.Telepathy.Connection.Interface.SimplePresence/presence",
+    TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE"/presence",
     val);
 }
 
