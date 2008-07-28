@@ -351,8 +351,6 @@ tp_contacts_mixin_set_contact_attribute (GHashTable *contact_attributes,
 
   g_assert (attributes != NULL);
 
-  g_hash_table_insert (attributes, g_strdup (attribute),
-    tp_g_value_slice_dup (value));
-
+  g_hash_table_insert (attributes, g_strdup (attribute), value);
 }
 
