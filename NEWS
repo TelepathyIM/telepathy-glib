@@ -1,3 +1,32 @@
+telepathy-glib 0.7.13 (2008-07-29)
+==================================
+
+The "presence made easy" release.
+
+Enhancements:
+
+* TpPresenceMixin implements the new SimplePresence interface
+
+* The spec text and doc-generator.xsl have been updated
+
+* The coding-style checks have been removed
+
+* A couple of supporting functions for Requests API development have
+  been added (tp_text_mixin_has_pending_messages and
+  tp_dbus_properties_mixin_get)
+
+Release notes for projects using code generation:
+
+* We now ship the more pedantic doc-generator.xsl from telepathy-spec 0.17.8:
+  - you'll probably need to clean up your spec markup!
+  - set the allow-undefined-interfaces XSLT parameter to a true value (e.g.
+    run xsltproc with --param allow-undefined-interfaces "true()") if you are
+    compiling documentation for interfaces that are not self-contained
+    (e.g. Telepathy extensions that reference the main Telepathy spec)
+
+* If you're trying to use Telepathy coding style, upgrading the coding-style
+  checks is recommended, but might require you to make code changes
+
 telepathy-glib 0.7.12 (2008-07-21)
 ==================================
 
