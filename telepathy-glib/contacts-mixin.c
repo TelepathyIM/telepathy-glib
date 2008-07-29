@@ -378,7 +378,8 @@ tp_contacts_mixin_add_inspectable_iface (GObject *obj, const gchar *interface,
  *   TpContactsMixinGetAttributesFunc
  * @handle: Handle to set the attribute on
  * @attribute: attribute name
- * @value: slice allocated GValue containing the value of the attribute
+ * @value: slice allocated GValue containing the value of the attribute,
+ * ownership of the GValue is taken by the mixin
  *
  * Utility function to set attribute for handle to value in the attributes hash
  * as passed to a TpContactsMixinGetAttributesFunc

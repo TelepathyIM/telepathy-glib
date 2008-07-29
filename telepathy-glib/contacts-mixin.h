@@ -33,6 +33,16 @@ typedef struct _TpContactsMixinClassPrivate TpContactsMixinClassPrivate;
 typedef struct _TpContactsMixin TpContactsMixin;
 typedef struct _TpContactsMixinPrivate TpContactsMixinPrivate;
 
+/**
+ * TpContactsMixinGetAttributesFunc:
+ * @obj: An object implementing the presence interface with this mixin
+ * @contacts: The contacts for which attributes are requested
+ * @attributes_hash: hash of handle => hash of attributes, containing all the
+ * contacts in the contacts array
+ *
+ * This function is called to add attributes of contacts
+ *
+ */
 typedef void (*TpContactsMixinGetAttributesFunc) (GObject *obj,
   const GArray *contacts, GHashTable *attributes_hash);
 
