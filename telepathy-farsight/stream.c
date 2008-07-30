@@ -1007,6 +1007,7 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                            gpointer user_data G_GNUC_UNUSED,
                            GObject *object)
 {
+  /*
   TfStream *self = TF_STREAM (object);
   GError *error = NULL;
 
@@ -1022,6 +1023,7 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
 
   g_clear_error (&error);
+  */
 }
 
 static void
