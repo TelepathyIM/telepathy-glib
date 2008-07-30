@@ -1261,9 +1261,14 @@ tf_stream_request_resource (TfStream *self,
   if ((self->priv->has_resource & dir) == dir)
     return TRUE;
 
+  DEBUG (self, "Requesting resource for direction %d", dir);
+
   g_signal_emit (self, signals[REQUEST_RESOURCE], 0,
       dir & ~self->priv->has_resource,
       &resource_available);
+
+  DEBUG (self, "Requesting resource for direction %d returned %d", dir,
+      resource_available);
 
   /* Make sure we have access to the resource */
   if (resource_available)

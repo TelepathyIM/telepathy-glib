@@ -428,7 +428,7 @@ tp_stream_engine_error (TpStreamEngine *self, int error, const char *message)
       g_ptr_array_index (self->priv->channels, i), error, message);
 }
 
-static void
+static gboolean
 tp_stream_engine_start_video_source (TpStreamEngine *self)
 {
   GstStateChangeReturn state_ret;
@@ -437,7 +437,7 @@ tp_stream_engine_start_video_source (TpStreamEngine *self)
   if (self->priv->force_fakesrc)
     {
       g_debug ("Don't have a video source, not starting it");
-      return;
+      return FALSE;
     }
 
   g_debug ("Starting video source");
@@ -448,6 +448,8 @@ tp_stream_engine_start_video_source (TpStreamEngine *self)
 
   if (state_ret == GST_STATE_CHANGE_FAILURE)
     g_error ("Error starting the video source");
+
+  return TRUE;
 }
 
 
@@ -541,7 +543,7 @@ stream_request_resource (TfStream *stream,
   g_object_get (stream, "media-type", &media_type, NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-    tp_stream_engine_start_video_source (self);
+    return tp_stream_engine_start_video_source (self);
   else if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
     tp_stream_engine_start_audio_source (self);
 
