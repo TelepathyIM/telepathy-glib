@@ -322,7 +322,7 @@ tp_debug_divert_messages (const gchar *filename)
   if (filename == NULL)
     return;
 
-  if (g_str_has_prefix (filename, "+"))
+  if (filename[0] == '+')
     {
       /* open in append mode */
       fd = g_open (filename + 1, O_WRONLY | O_CREAT | O_APPEND, 0644);
