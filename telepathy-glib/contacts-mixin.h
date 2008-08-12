@@ -34,7 +34,7 @@ typedef struct _TpContactsMixin TpContactsMixin;
 typedef struct _TpContactsMixinPrivate TpContactsMixinPrivate;
 
 /**
- * TpContactsMixinGetAttributesFunc:
+ * TpContactsMixinFillContactAttributesFunc:
  * @obj: An object implementing the presence interface with this mixin
  * @contacts: The contacts for which attributes are requested
  * @attributes_hash: hash of handle => hash of attributes, containing all the
@@ -43,7 +43,7 @@ typedef struct _TpContactsMixinPrivate TpContactsMixinPrivate;
  * This function is called to add attributes of contacts
  *
  */
-typedef void (*TpContactsMixinGetAttributesFunc) (GObject *obj,
+typedef void (*TpContactsMixinFillContactAttributesFunc) (GObject *obj,
   const GArray *contacts, GHashTable *attributes_hash);
 
 /**
@@ -100,7 +100,8 @@ void tp_contacts_mixin_finalize (GObject *obj);
 void tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 
 void tp_contacts_mixin_add_inspectable_iface (GObject *obj,
-    const gchar *interface, TpContactsMixinGetAttributesFunc get_attributes);
+    const gchar *interface,
+    TpContactsMixinFillContactAttributesFunc fill_attributes);
 
 void tp_contacts_mixin_set_contact_attribute (GHashTable *contact_attributes,
     TpHandle handle, gchar *attribute, GValue *value);

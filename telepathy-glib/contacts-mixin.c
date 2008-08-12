@@ -309,7 +309,7 @@ tp_contacts_mixin_get_contact_attributes (
 
   for (i = 0; interfaces[i] != NULL; i++)
     {
-      TpContactsMixinGetAttributesFunc func;
+      TpContactsMixinFillContactAttributesFunc func;
 
       func = g_hash_table_lookup (self->priv->interfaces, interfaces[i]);
 
@@ -361,7 +361,7 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 
 void
 tp_contacts_mixin_add_inspectable_iface (GObject *obj, const gchar *interface,
-    TpContactsMixinGetAttributesFunc get_attributes)
+    TpContactsMixinFillContactAttributesFunc get_attributes)
 {
   TpContactsMixin *self = TP_CONTACTS_MIXIN (obj);
 
