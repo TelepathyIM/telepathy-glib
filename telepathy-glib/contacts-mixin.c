@@ -303,7 +303,7 @@ tp_contacts_mixin_get_contact_attributes (
       tp_handles_client_hold (contact_repo, sender, valid_handles, NULL);
     }
 
-  /* ensure the handles don't dissappear while calling out to various functions
+  /* ensure the handles don't disappear while calling out to various functions
    */
   tp_handles_ref (contact_repo, valid_handles);
 
@@ -332,8 +332,8 @@ tp_contacts_mixin_get_contact_attributes (
  * class
  * @iface_data: Ignored
  *
- * Fill in the vtable entries needed to implement the simple presence
- * interface *  using this mixin. This function should usually be called via
+ * Fill in the vtable entries needed to implement the simple presence interface
+ * using this mixin. This function should usually be called via
  * G_IMPLEMENT_INTERFACE.
  */
 void
@@ -374,7 +374,7 @@ tp_contacts_mixin_add_inspectable_iface (GObject *obj, const gchar *interface,
 
 /**
  * tp_contacts_mixin_set_contact_attribute:
- * @contact_attributes: contacts attribute hash for as passed to
+ * @contact_attributes: contacts attribute hash as passed to
  *   TpContactsMixinGetAttributesFunc
  * @handle: Handle to set the attribute on
  * @attribute: attribute name
