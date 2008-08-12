@@ -70,12 +70,12 @@ struct _TpContactsMixinPrivate
 };
 
 enum {
-  MIXIN_DP_CONTACTS_INSPECTABLE_INTERFACES,
+  MIXIN_DP_CONTACT_ATTRIBUTE_INTERFACES,
   NUM_MIXIN_CONTACTS_DBUS_PROPERTIES
 };
 
 static TpDBusPropertiesMixinPropImpl known_contacts_props[] = {
-  { "InspectableInterfaces", NULL, NULL },
+  { "ContactAttributeInterfaces", NULL, NULL },
   { NULL }
 };
 
@@ -94,13 +94,13 @@ tp_presence_mixin_get_contacts_dbus_property (GObject *object,
 
   if (G_UNLIKELY (q[0] == 0))
     {
-      q[MIXIN_DP_CONTACTS_INSPECTABLE_INTERFACES] =
-        g_quark_from_static_string ("InspectableInterfaces");
+      q[MIXIN_DP_CONTACT_ATTRIBUTE_INTERFACES] =
+        g_quark_from_static_string ("ContactAttributeInterfaces");
     }
 
   g_return_if_fail (object != NULL);
 
-  if (name == q[MIXIN_DP_CONTACTS_INSPECTABLE_INTERFACES])
+  if (name == q[MIXIN_DP_CONTACT_ATTRIBUTE_INTERFACES])
     {
       gchar **interfaces;
       GHashTableIter iter;
@@ -252,7 +252,7 @@ tp_contacts_mixin_finalize (GObject *obj)
 }
 
 static void
-tp_contacts_mixin_inspect_contacts (
+tp_contacts_mixin_get_contact_attributes (
   TpSvcConnectionInterfaceContacts *iface, const GArray *handles,
   const char **interfaces, gboolean hold, DBusGMethodInvocation *context)
 {
@@ -318,8 +318,8 @@ tp_contacts_mixin_inspect_contacts (
       func (G_OBJECT(iface), valid_handles, result);
     }
 
-  tp_svc_connection_interface_contacts_return_from_inspect_contacts (context,
-      result);
+  tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
+    context, result);
 
   g_hash_table_destroy (result);
 
@@ -344,7 +344,7 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 
 #define IMPLEMENT(x) tp_svc_connection_interface_contacts_implement_##x ( \
     klass, tp_contacts_mixin_##x)
-  IMPLEMENT(inspect_contacts);
+  IMPLEMENT(get_contact_attributes);
 #undef IMPLEMENT
 }
 
