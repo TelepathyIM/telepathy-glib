@@ -1330,9 +1330,9 @@ tp_presence_mixin_simple_presence_iface_init (gpointer g_iface,
 }
 
 static void
-simple_presence_get_attributes_foreach (gpointer key,
-                                        gpointer value,
-                                        gpointer user_data)
+simple_presence_fill_contact_attributes_foreach (gpointer key,
+                                                 gpointer value,
+                                                 gpointer user_data)
 {
   TpHandle handle = GPOINTER_TO_UINT (key);
   TpPresenceStatus *status = (TpPresenceStatus *) value;
@@ -1354,7 +1354,7 @@ simple_presence_get_attributes_foreach (gpointer key,
 }
 
 static void
-tp_presence_mixin_simple_presence_get_attributes (GObject *obj,
+tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
   const GArray *contacts, GHashTable *attributes_hash)
 {
   TpPresenceMixinClass *mixin_cls =
@@ -1369,7 +1369,7 @@ tp_presence_mixin_simple_presence_get_attributes (GObject *obj,
 
   data.contact_statuses = contact_statuses;
   g_hash_table_foreach (contact_statuses,
-      simple_presence_get_attributes_foreach, &data);
+      simple_presence_fill_contact_attributes_foreach, &data);
 
   g_hash_table_destroy (contact_statuses);
 }
@@ -1388,6 +1388,6 @@ tp_presence_mixin_simple_presence_register_with_contacts_iface (GObject *obj)
 {
   tp_contacts_mixin_add_inspectable_iface (obj,
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
-      tp_presence_mixin_simple_presence_get_attributes);
+      tp_presence_mixin_simple_presence_fill_contact_attributes);
 }
 
