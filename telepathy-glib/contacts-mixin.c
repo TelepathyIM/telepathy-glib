@@ -420,6 +420,7 @@ tp_contacts_mixin_set_contact_attribute (GHashTable *contact_attributes,
     GUINT_TO_POINTER (handle));
 
   g_assert (attributes != NULL);
+  g_assert (G_IS_VALUE (value));
 
   g_hash_table_insert (attributes, g_strdup (attribute), value);
 }
