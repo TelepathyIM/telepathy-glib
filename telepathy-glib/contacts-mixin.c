@@ -388,10 +388,10 @@ tp_contacts_mixin_add_contact_attributes_iface (GObject *obj,
   TpContactsMixin *self = TP_CONTACTS_MIXIN (obj);
 
   g_assert (g_hash_table_lookup (self->priv->interfaces, interface) == NULL);
-  g_assert (fill_attributes != NULL);
+  g_assert (fill_contact_attributes != NULL);
 
   g_hash_table_insert (self->priv->interfaces, g_strdup (interface),
-    fill_attributes);
+    fill_contact_attributes);
 }
 
 /**
