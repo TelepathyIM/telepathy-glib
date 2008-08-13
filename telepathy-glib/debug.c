@@ -299,6 +299,11 @@ tp_debug_set_persistent (gboolean persistent)
  * stdout and stderr, and sending all messages that would have gone there
  * to the given file instead.
  *
+ * By default the file is truncated and hence overwritten each time the
+ * process is executed.
+ * Since version 0.7.UNRELEASED, if the filename is prefixed with '+' then the
+ * file is not truncated and output is added at the end of the file.
+ *
  * Passing %NULL to this function is guaranteed to have no effect. This is
  * so you can call it with the recommended usage
  * <literal>tp_debug_divert_messages (g_getenv ("MYAPP_LOGFILE"))</literal>
@@ -317,7 +322,16 @@ tp_debug_divert_messages (const gchar *filename)
   if (filename == NULL)
     return;
 
-  fd = g_open (filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  if (filename[0] == '+')
+    {
+      /* open in append mode */
+      fd = g_open (filename + 1, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    }
+  else
+    {
+      /* open in trunc mode */
+      fd = g_open (filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    }
 
   if (fd == -1)
     {

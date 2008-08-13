@@ -635,7 +635,7 @@ parse_parameters (const TpCMParamSpec *paramspec,
 
       DEBUG ("%s", error_txt);
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          error_txt);
+          "%s", error_txt);
       g_free (error_txt);
       return FALSE;
     }
