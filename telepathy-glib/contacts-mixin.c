@@ -371,7 +371,7 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
  * tp_contacts_mixin_add_contact_attributes_iface:
  * @obj: An instance of the implementation that uses this mixin
  * @interface: Name of the interface that has ContactAttributes
- * @fill_attributes: Attribute filler function
+ * @fill_contact_attributes: Contact attribute filler function
  *
  * Declare that the given interface has contact attributes which can be added
  * to the attributes hash using the filler function
