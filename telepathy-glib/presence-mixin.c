@@ -1386,7 +1386,7 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
 void
 tp_presence_mixin_simple_presence_register_with_contacts_iface (GObject *obj)
 {
-  tp_contacts_mixin_add_inspectable_iface (obj,
+  tp_contacts_mixin_add_contact_attributes_iface (obj,
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
       tp_presence_mixin_simple_presence_fill_contact_attributes);
 }

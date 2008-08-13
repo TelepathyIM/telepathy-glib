@@ -1762,7 +1762,7 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
 void
 tp_base_connection_register_with_contacts_iface (TpBaseConnection *self)
 {
-  tp_contacts_mixin_add_inspectable_iface (G_OBJECT (self),
+  tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
       TP_IFACE_CONNECTION,
       tp_base_connection_fill_contact_attributes);
 }

@@ -99,9 +99,9 @@ void tp_contacts_mixin_finalize (GObject *obj);
 
 void tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 
-void tp_contacts_mixin_add_inspectable_iface (GObject *obj,
+void tp_contacts_mixin_add_contact_attributes_iface (GObject *obj,
     const gchar *interface,
-    TpContactsMixinFillContactAttributesFunc fill_attributes);
+    TpContactsMixinFillContactAttributesFunc fill_contact_attributes);
 
 void tp_contacts_mixin_set_contact_attribute (GHashTable *contact_attributes,
     TpHandle handle, gchar *attribute, GValue *value);

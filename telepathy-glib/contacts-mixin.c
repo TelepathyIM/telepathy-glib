@@ -41,7 +41,8 @@
  * TpContactsMixin implements all of the D-Bus methods and properties in the
  * Contacts interface.
  *
- * To add inspectable interface call tp_contacts_mixin_set_contact_attribute.
+ * To add interfaces with contact attributes to this interface use
+ * tp_contacts_mixin_add_contact_attributes_iface:
  *
  * Since: 0.7.UNRELEASED
  *
@@ -65,7 +66,7 @@
 
 struct _TpContactsMixinPrivate
 {
-  /* String interface name -> GetAttributes func */
+  /* String interface name -> FillContactAttributes func */
   GHashTable *interfaces;
 };
 
@@ -119,7 +120,7 @@ tp_presence_mixin_get_contacts_dbus_property (GObject *object,
             interfaces[i] = g_strdup ((gchar *) key);
             i++;
           }
-      g_value_set_boxed (value, interfaces);
+      g_value_take_boxed (value, interfaces);
     }
   else
     {
@@ -134,6 +135,9 @@ tp_presence_mixin_get_contacts_dbus_property (GObject *object,
  * <!--no documentation beyond Returns: needed-->
  *
  * Returns: the quark used for storing mixin offset on a GObjectClass
+ *
+ * Since: 0.7.UNRELEASED
+ *
  */
 GQuark
 tp_contacts_mixin_class_get_offset_quark ()
@@ -153,6 +157,9 @@ tp_contacts_mixin_class_get_offset_quark ()
  * <!--no documentation beyond Returns: needed-->
  *
  * Returns: the quark used for storing mixin offset on a GObject
+ *
+ * Since: 0.7.UNRELEASED
+ *
  */
 GQuark
 tp_contacts_mixin_get_offset_quark ()
@@ -179,6 +186,9 @@ tp_contacts_mixin_get_offset_quark ()
  * tp_contacts_mixin_class_init ((GObjectClass *)klass,
  *                          G_STRUCT_OFFSET (SomeObjectClass, contacts_mixin));
  * </programlisting></informalexample>
+ *
+ * Since: 0.7.UNRELEASED
+ *
  */
 
 void
@@ -213,6 +223,9 @@ tp_contacts_mixin_class_init (GObjectClass *obj_cls, glong offset)
  * tp_contacts_mixin_init ((GObject *)self,
  *                     G_STRUCT_OFFSET (SomeObject, text_mixin));
  * </programlisting></informalexample>
+ *
+ * Since: 0.7.UNRELEASED
+ *
  */
 void
 tp_contacts_mixin_init (GObject *obj,
@@ -238,6 +251,9 @@ tp_contacts_mixin_init (GObject *obj,
  * @obj: An object with this mixin.
  *
  * Free resources held by the contacts mixin.
+ *
+ * Since: 0.7.UNRELEASED
+ *
  */
 void
 tp_contacts_mixin_finalize (GObject *obj)
@@ -332,9 +348,12 @@ tp_contacts_mixin_get_contact_attributes (
  * class
  * @iface_data: Ignored
  *
- * Fill in the vtable entries needed to implement the simple presence interface
+ * Fill in the vtable entries needed to implement the contacts interface
  * using this mixin. This function should usually be called via
  * G_IMPLEMENT_INTERFACE.
+ *
+ * Since: 0.7.UNRELEASED
+ *
  */
 void
 tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
@@ -349,40 +368,45 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 }
 
 /**
- * tp_contacts_mixin_add_inspectable_iface:
+ * tp_contacts_mixin_add_contact_attributes_iface:
  * @obj: An instance of the implementation that uses this mixin
- * @interface: Name of the interface to make inspectable
- * @get_attributes: Attribute getter function
+ * @interface: Name of the interface that has ContactAttributes
+ * @fill_attributes: Attribute filler function
  *
- * Make the given interface inspectable via the contacts interface using the
- * get_attributes function to get the attributes.
+ * Declare that the given interface has contact attributes which can be added
+ * to the attributes hash using the filler function
+ *
+ * Since: 0.7.UNRELEASED
  *
  */
 
 void
-tp_contacts_mixin_add_inspectable_iface (GObject *obj, const gchar *interface,
-    TpContactsMixinFillContactAttributesFunc get_attributes)
+tp_contacts_mixin_add_contact_attributes_iface (GObject *obj,
+    const gchar *interface,
+    TpContactsMixinFillContactAttributesFunc fill_contact_attributes)
 {
   TpContactsMixin *self = TP_CONTACTS_MIXIN (obj);
 
   g_assert (g_hash_table_lookup (self->priv->interfaces, interface) == NULL);
-  g_assert (get_attributes != NULL);
+  g_assert (fill_attributes != NULL);
 
   g_hash_table_insert (self->priv->interfaces, g_strdup (interface),
-    get_attributes);
+    fill_attributes);
 }
 
 /**
  * tp_contacts_mixin_set_contact_attribute:
  * @contact_attributes: contacts attribute hash as passed to
- *   TpContactsMixinGetAttributesFunc
+ *   TpContactsMixinFillContactAttributesFunc
  * @handle: Handle to set the attribute on
  * @attribute: attribute name
  * @value: slice allocated GValue containing the value of the attribute,
  * ownership of the GValue is taken by the mixin
  *
  * Utility function to set attribute for handle to value in the attributes hash
- * as passed to a TpContactsMixinGetAttributesFunc
+ * as passed to a TpContactsMixinFillContactAttributesFunc
+ *
+ * Since: 0.7.UNRELEASED
  *
  */
 
