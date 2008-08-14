@@ -374,7 +374,9 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
  * @fill_contact_attributes: Contact attribute filler function
  *
  * Declare that the given interface has contact attributes which can be added
- * to the attributes hash using the filler function
+ * to the attributes hash using the filler function. All the handles in the
+ * handle array passed to the filler function are guaranteed to be valid and
+ * referenced.
  *
  * Since: 0.7.UNRELEASED
  *
@@ -404,7 +406,8 @@ tp_contacts_mixin_add_contact_attributes_iface (GObject *obj,
  * ownership of the GValue is taken by the mixin
  *
  * Utility function to set attribute for handle to value in the attributes hash
- * as passed to a TpContactsMixinFillContactAttributesFunc
+ * as passed to a TpContactsMixinFillContactAttributesFunc. @value should be
+ * allocated using tp_g_value_slice_new
  *
  * Since: 0.7.UNRELEASED
  *
