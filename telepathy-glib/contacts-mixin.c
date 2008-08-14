@@ -287,6 +287,7 @@ tp_contacts_mixin_get_contact_attributes (
       {
         GError einval = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Non-inspectable Interface given" };
+
         dbus_g_method_return_error (context, &einval);
         return;
       }
