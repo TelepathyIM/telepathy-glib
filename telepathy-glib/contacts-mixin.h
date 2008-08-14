@@ -1,5 +1,5 @@
 /*
- * text-mixin.h - Header for TpContactsMixin
+ * contacts-mixin.h - Header for TpContactsMixin
  * Copyright (C) 2008 Collabora Ltd.
  * Copyright (C) 2008 Nokia Corporation
  *
