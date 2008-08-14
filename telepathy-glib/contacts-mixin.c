@@ -228,8 +228,7 @@ tp_contacts_mixin_class_init (GObjectClass *obj_cls, glong offset)
  *
  */
 void
-tp_contacts_mixin_init (GObject *obj,
-                    glong offset)
+tp_contacts_mixin_init (GObject *obj, gsize offset)
 {
   TpContactsMixin *mixin;
 
@@ -237,7 +236,7 @@ tp_contacts_mixin_init (GObject *obj,
 
   g_type_set_qdata (G_OBJECT_TYPE (obj),
                     TP_CONTACTS_MIXIN_OFFSET_QUARK,
-                    GINT_TO_POINTER (offset));
+                    GSIZE_TO_POINTER (offset));
 
   mixin = TP_CONTACTS_MIXIN (obj);
 

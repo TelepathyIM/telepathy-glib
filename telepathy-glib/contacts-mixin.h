@@ -94,7 +94,7 @@ GQuark tp_contacts_mixin_get_offset_quark (void);
 
 void tp_contacts_mixin_class_init (GObjectClass *obj_cls, glong offset);
 
-void tp_contacts_mixin_init (GObject *obj, glong offset);
+void tp_contacts_mixin_init (GObject *obj, gsize offset);
 void tp_contacts_mixin_finalize (GObject *obj);
 
 void tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data);
