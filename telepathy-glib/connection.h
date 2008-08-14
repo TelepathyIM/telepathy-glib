@@ -22,6 +22,7 @@
 #ifndef __TP_CONNECTION_H__
 #define __TP_CONNECTION_H__
 
+#include <telepathy-glib/enums.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -70,6 +71,9 @@ GQuark tp_errors_disconnected_quark (void);
 
 TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
     const gchar *object_path, GError **error);
+
+TpConnectionStatus tp_connection_get_status (TpConnection *self,
+    TpConnectionStatusReason *reason);
 
 gboolean tp_connection_run_until_ready (TpConnection *self,
     gboolean connect, GError **error,

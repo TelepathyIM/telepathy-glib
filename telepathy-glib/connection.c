@@ -555,6 +555,31 @@ finally:
 }
 
 /**
+ * tp_connection_get_status:
+ * @self: a connection
+ * @reason: a TpConnectionStatusReason, or %NULL
+ *
+ * If @reason is not %NULL it is set to the reason why "status" changed to its
+ * current value, or %TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED if unknown.
+ *
+ * Returns: This connection's status, or %TP_UNKNOWN_CONNECTION_STATUS if we
+ * don't know yet.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+TpConnectionStatus
+tp_connection_get_status (TpConnection *self,
+                          TpConnectionStatusReason *reason)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), TP_UNKNOWN_CONNECTION_STATUS);
+
+  if (reason != NULL)
+    *reason = self->priv->status_reason;
+
+  return self->priv->status;
+}
+
+/**
  * tp_connection_run_until_ready:
  * @self: a connection
  * @connect: if %TRUE, call Connect() if it appears to be necessary;
