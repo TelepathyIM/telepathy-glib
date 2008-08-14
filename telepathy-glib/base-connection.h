@@ -263,7 +263,7 @@ void tp_base_connection_add_interfaces (TpBaseConnection *self,
 void tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
     guint handle_type, const gchar **names, DBusGMethodInvocation *context);
 
-void tp_base_connection_register_with_contacts_iface (TpBaseConnection *self);
+void tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self);
 
 /* TYPE MACROS */
 #define TP_TYPE_BASE_CONNECTION \

@@ -1375,7 +1375,7 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
 }
 
 /**
- * tp_presence_mixin_simple_presence_register_with_contacts_iface:
+ * tp_presence_mixin_simple_presence_register_with_contacts_mixin:
  * @obj: An instance that of the implementation that uses both the Contacts
  * mixin and this mixin
  *
@@ -1384,7 +1384,7 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
  * is called
  */
 void
-tp_presence_mixin_simple_presence_register_with_contacts_iface (GObject *obj)
+tp_presence_mixin_simple_presence_register_with_contacts_mixin (GObject *obj)
 {
   tp_contacts_mixin_add_contact_attributes_iface (obj,
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,

@@ -1751,7 +1751,7 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
 }
 
 /**
- * tp_base_connection_register_with_contacts_iface:
+ * tp_base_connection_register_with_contacts_mixin:
  * @self: An instance of the #TpBaseConnections that uses the Contacts
  * mixin
  *
@@ -1760,7 +1760,7 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
  * is called
  */
 void
-tp_base_connection_register_with_contacts_iface (TpBaseConnection *self)
+tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
 {
   tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
       TP_IFACE_CONNECTION,
