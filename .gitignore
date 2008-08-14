@@ -16,7 +16,7 @@ Makefile
 *.loT
 .semanticache
 _gen
-
+FIXME.out
 INSTALL
 aclocal.m4
 autom4te.cache
@@ -28,6 +28,20 @@ config.status
 config.sub
 configure
 depcomp
+docs/reference/*-decl.txt
+docs/reference/*-decl-list.txt
+docs/reference/*-undeclared.txt
+docs/reference/*-undocumented.txt
+docs/reference/*-unused.txt
+docs/reference/*.args
+docs/reference/*.hierarchy
+docs/reference/*.interfaces
+docs/reference/*.prerequisites
+docs/reference/*.signals
+docs/reference/*.stamp
+docs/reference/html
+docs/reference/tmpl/*.sgml
+docs/reference/xml
 gtk-doc.make
 install-sh
 libtool
@@ -40,4 +54,3 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 missing
 stamp-h1
-
