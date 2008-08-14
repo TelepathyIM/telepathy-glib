@@ -568,12 +568,13 @@ finally:
  * Since: 0.7.UNRELEASED
  */
 TpConnectionStatus
-tp_connection_get_status (TpConnection *self, TpConnectionStatusReason *reason)
+tp_connection_get_status (TpConnection *self,
+                          TpConnectionStatusReason *reason)
 {
   g_return_val_if_fail (TP_IS_CONNECTION (self), TP_UNKNOWN_CONNECTION_STATUS);
 
   if (reason != NULL)
-      *reason = self->priv->status_reason;
+    *reason = self->priv->status_reason;
 
   return self->priv->status;
 }
