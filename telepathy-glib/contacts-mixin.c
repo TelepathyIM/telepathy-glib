@@ -402,12 +402,12 @@ tp_contacts_mixin_add_contact_attributes_iface (GObject *obj,
  *   TpContactsMixinFillContactAttributesFunc
  * @handle: Handle to set the attribute on
  * @attribute: attribute name
- * @value: slice allocated GValue containing the value of the attribute,
- * ownership of the GValue is taken by the mixin
+ * @value: slice allocated GValue containing the value of the attribute, for
+ * instance with tp_g_value_slice_new. Ownership of the GValue is taken over by
+ * the mixin
  *
  * Utility function to set attribute for handle to value in the attributes hash
- * as passed to a TpContactsMixinFillContactAttributesFunc. @value should be
- * allocated using tp_g_value_slice_new
+ * as passed to a TpContactsMixinFillContactAttributesFunc.
  *
  * Since: 0.7.UNRELEASED
  *
