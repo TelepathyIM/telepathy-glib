@@ -259,6 +259,9 @@ void tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 void tp_presence_mixin_simple_presence_iface_init (gpointer g_iface, gpointer iface_data);
 void tp_presence_mixin_simple_presence_init_dbus_properties (GObjectClass *cls);
 
+void tp_presence_mixin_simple_presence_register_with_contacts_mixin (
+    GObject *obj);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_PRESENCE_MIXIN_H__ */

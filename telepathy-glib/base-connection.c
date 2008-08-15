@@ -42,10 +42,12 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/connection-manager.h>
+#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/channel-factory-iface.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/interfaces.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "debug-internal.h"
@@ -1719,3 +1721,49 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(dbus_,request_handles);
 #undef IMPLEMENT
 }
+
+static void
+tp_base_connection_fill_contact_attributes (GObject *obj,
+  const GArray *contacts, GHashTable *attributes_hash)
+{
+  TpBaseConnection *self = TP_BASE_CONNECTION (obj);
+  TpBaseConnectionPrivate *priv =
+    TP_BASE_CONNECTION_GET_PRIVATE (self);
+  guint i;
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpHandle handle;
+      const gchar *tmp;
+      GValue *val;
+
+
+      handle = g_array_index (contacts, TpHandle, i);
+      tmp = tp_handle_inspect (priv->handles[TP_HANDLE_TYPE_CONTACT], handle);
+      g_assert (tmp != NULL);
+
+      val = tp_g_value_slice_new (G_TYPE_STRING);
+      g_value_set_static_string (val, tmp);
+
+      tp_contacts_mixin_set_contact_attribute (attributes_hash,
+          handle, TP_IFACE_CONNECTION"/contact-id", val);
+    }
+}
+
+/**
+ * tp_base_connection_register_with_contacts_mixin:
+ * @self: An instance of the #TpBaseConnections that uses the Contacts
+ * mixin
+ *
+ * Register the Connection interface with the Contacts interface to make it
+ * inspectable. The Contacts mixin should be initialized before this function
+ * is called
+ */
+void
+tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
+{
+  tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
+      TP_IFACE_CONNECTION,
+      tp_base_connection_fill_contact_attributes);
+}
+

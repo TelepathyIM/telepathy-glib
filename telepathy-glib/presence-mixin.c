@@ -72,6 +72,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/contacts-mixin.h>
 
 #define DEBUG_FLAG TP_DEBUG_PRESENCE
 
@@ -1164,22 +1165,17 @@ out:
     g_hash_table_destroy (optional_arguments);
 }
 
-static void
-construct_simple_presence_hash_foreach (gpointer key,
-                                        gpointer value,
-                                        gpointer user_data)
+static GValueArray *
+construct_simple_presence_value_array (TpPresenceStatus *status,
+    const TpPresenceStatusSpec *supported_statuses)
 {
-  TpHandle handle = GPOINTER_TO_UINT (key);
-  TpPresenceStatus *status = (TpPresenceStatus *) value;
-  struct _i_absolutely_love_g_hash_table_foreach *data =
-    (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
-  GValueArray *presence;
-  const gchar *status_name;
   TpConnectionPresenceType status_type;
+  const gchar *status_name;
   const gchar *message = NULL;
+  GValueArray *presence;
 
-  status_name = data->supported_statuses[status->index].name;
-  status_type = data->supported_statuses[status->index].presence_type;
+  status_name = supported_statuses[status->index].name;
+  status_type = supported_statuses[status->index].presence_type;
 
   if (status->optional_arguments != NULL)
     {
@@ -1205,6 +1201,23 @@ construct_simple_presence_hash_foreach (gpointer key,
   g_value_array_append (presence, NULL);
   g_value_init (g_value_array_get_nth (presence, 2), G_TYPE_STRING);
   g_value_set_string (g_value_array_get_nth (presence, 2), message);
+
+  return presence;
+}
+
+static void
+construct_simple_presence_hash_foreach (gpointer key,
+                                        gpointer value,
+                                        gpointer user_data)
+{
+  TpHandle handle = GPOINTER_TO_UINT (key);
+  TpPresenceStatus *status = (TpPresenceStatus *) value;
+  struct _i_absolutely_love_g_hash_table_foreach *data =
+    (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
+  GValueArray *presence;
+
+  presence = construct_simple_presence_value_array (status,
+    data->supported_statuses);
 
   g_hash_table_insert (data->presence_hash, GUINT_TO_POINTER (handle),
       presence);
@@ -1315,3 +1328,66 @@ tp_presence_mixin_simple_presence_iface_init (gpointer g_iface,
   IMPLEMENT(get_presences);
 #undef IMPLEMENT
 }
+
+static void
+simple_presence_fill_contact_attributes_foreach (gpointer key,
+                                                 gpointer value,
+                                                 gpointer user_data)
+{
+  TpHandle handle = GPOINTER_TO_UINT (key);
+  TpPresenceStatus *status = (TpPresenceStatus *) value;
+  struct _i_absolutely_love_g_hash_table_foreach *data =
+    (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
+  GValue *val;
+  GValueArray *presence;
+
+  presence = construct_simple_presence_value_array (status,
+    data->supported_statuses);
+
+  val = tp_g_value_slice_new (G_TYPE_VALUE_ARRAY);
+  g_value_set_boxed (val, presence);
+
+  tp_contacts_mixin_set_contact_attribute (data->presence_hash,
+    handle,
+    TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE"/presence",
+    val);
+}
+
+static void
+tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
+  const GArray *contacts, GHashTable *attributes_hash)
+{
+  TpPresenceMixinClass *mixin_cls =
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
+  struct _i_absolutely_love_g_hash_table_foreach data = {
+        mixin_cls->statuses, NULL, attributes_hash };
+  GHashTable *contact_statuses;
+
+  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, NULL);
+
+  g_assert (contact_statuses != NULL);
+
+  data.contact_statuses = contact_statuses;
+  g_hash_table_foreach (contact_statuses,
+      simple_presence_fill_contact_attributes_foreach, &data);
+
+  g_hash_table_destroy (contact_statuses);
+}
+
+/**
+ * tp_presence_mixin_simple_presence_register_with_contacts_mixin:
+ * @obj: An instance that of the implementation that uses both the Contacts
+ * mixin and this mixin
+ *
+ * Register the SimplePresence interface with the Contacts interface to make it
+ * inspectable. The Contacts mixin should be initialized before this function
+ * is called
+ */
+void
+tp_presence_mixin_simple_presence_register_with_contacts_mixin (GObject *obj)
+{
+  tp_contacts_mixin_add_contact_attributes_iface (obj,
+      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+      tp_presence_mixin_simple_presence_fill_contact_attributes);
+}
+
