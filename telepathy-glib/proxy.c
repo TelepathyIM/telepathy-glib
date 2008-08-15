@@ -1044,6 +1044,88 @@ tp_proxy_class_init (TpProxyClass *klass)
 }
 
 /**
+ * tp_proxy_get_dbus_daemon:
+ * @self: a proxy object
+ *
+ * <!-- -->
+ *
+ * Returns: the #TpDBusDaemon for this object, if any; always %NULL
+ *  if this object is itself a #TpDBusDaemon
+ *
+ * Since: 0.7.UNRELEASED
+ */
+TpDBusDaemon *
+tp_proxy_get_dbus_daemon (TpProxy *self)
+{
+    return self->dbus_daemon;
+}
+
+/**
+ * tp_proxy_get_dbus_connection:
+ * @self: a proxy object
+ *
+ * <!-- -->
+ *
+ * Returns: the D-Bus connection used by this object
+ *
+ * Since: 0.7.UNRELEASED
+ */
+DBusGConnection *
+tp_proxy_get_dbus_connection (TpProxy *self)
+{
+    return self->dbus_connection;
+}
+
+/**
+ * tp_proxy_get_bus_name:
+ * @self: a proxy object
+ *
+ * <!-- -->
+ *
+ * Returns: the bus name of the application exporting the object
+ *
+ * Since: 0.7.UNRELEASED
+ */
+const gchar *
+tp_proxy_get_bus_name (TpProxy *self)
+{
+    return self->bus_name;
+}
+
+/**
+ * tp_proxy_get_object_path:
+ * @self: a proxy object
+ *
+ * <!-- -->
+ *
+ * Returns: the object path of the remote object
+ *
+ * Since: 0.7.UNRELEASED
+ */
+const gchar *
+tp_proxy_get_object_path (TpProxy *self)
+{
+    return self->object_path;
+}
+
+/**
+ * tp_proxy_get_invalidated:
+ * @self: a proxy object
+ *
+ * <!-- -->
+ *
+ * Returns: the reason this proxy was invalidated, or %NULL if has not been
+ *  invalidated
+ *
+ * Since: 0.7.UNRELEASED
+ */
+const GError *
+tp_proxy_get_invalidated (TpProxy *self)
+{
+    return self->invalidated;
+}
+
+/**
  * tp_proxy_dbus_g_proxy_claim_for_signal_adding:
  * @proxy: a #DBusGProxy
  *

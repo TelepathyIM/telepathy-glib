@@ -120,6 +120,16 @@ _tp_proxy_inline_has_interface (gpointer self, const gchar *interface)
 #define tp_proxy_has_interface(self, interface) \
     (_tp_proxy_inline_has_interface (self, interface))
 
+TpDBusDaemon *tp_proxy_get_dbus_daemon (TpProxy *self);
+
+DBusGConnection *tp_proxy_get_dbus_connection (TpProxy *self);
+
+const gchar *tp_proxy_get_bus_name (TpProxy *self);
+
+const gchar *tp_proxy_get_object_path (TpProxy *self);
+
+const GError *tp_proxy_get_invalidated (TpProxy *self);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-generic.h>

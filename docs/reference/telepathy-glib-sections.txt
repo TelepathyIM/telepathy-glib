@@ -1693,6 +1693,11 @@ TpProxyPendingCall
 tp_proxy_pending_call_cancel
 TpProxySignalConnection
 tp_proxy_signal_connection_disconnect
+tp_proxy_get_dbus_daemon
+tp_proxy_get_dbus_connection
+tp_proxy_get_bus_name
+tp_proxy_get_object_path
+tp_proxy_get_invalidated
 TP_DBUS_ERRORS
 TpDBusError
 <SUBSECTION Standard>
