@@ -1827,7 +1827,10 @@ static TpDBusPropertiesMixinPropImpl known_group_props[] = {
  * the Group interface's properties.
  *
  * This uses tp_group_mixin_get_dbus_property() as the property getter and
- * sets up a list of the supported properties for it.
+ * sets up a list of the supported properties for it.  Having called this, you
+ * should add #TP_CHANNEL_GROUP_FLAG_PROPERTIES to any channels of this class
+ * with tp_group_mixin_change_flags() to indicate that the DBus properties are
+ * available.
  *
  * Since: 0.7.10
  */
@@ -1904,7 +1907,10 @@ tp_external_group_mixin_finalize (GObject *obj)
  * the Group interface's properties.
  *
  * This uses tp_group_mixin_get_dbus_property() as the property getter and
- * sets up a list of the supported properties for it.
+ * sets up a list of the supported properties for it.  Having called this, you
+ * should add #TP_CHANNEL_GROUP_FLAG_PROPERTIES to channels containing the
+ * mixin used by this class with tp_group_mixin_change_flags() to indicate that
+ * the DBus properties are available.
  *
  * Since: 0.7.10
  */
