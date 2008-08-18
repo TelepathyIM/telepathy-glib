@@ -14,9 +14,13 @@ check-local::
 	egrep -A 5 '[F]IXME|[T]ODO|[X]XX' $(srcdir)/telepathy-glib/*.[ch] \
 		> FIXME.out || true
 
+# Use git log --stat if it works, else plain git log
 dist-hook:
 	chmod u+w ${distdir}/ChangeLog
-	if test -d _darcs; then darcs changes >${distdir}/ChangeLog; fi
+	if test -d ${top_srcdir}/.git; then \
+		git log --stat > ${distdir}/ChangeLog || \
+		git log > ${distdir}/ChangeLog; \
+	fi
 
 maintainer-upload-docs:
 	rsync -rtvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
