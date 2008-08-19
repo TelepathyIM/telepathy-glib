@@ -565,7 +565,7 @@ finally:
  * Returns: This connection's status, or %TP_UNKNOWN_CONNECTION_STATUS if we
  * don't know yet.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  */
 TpConnectionStatus
 tp_connection_get_status (TpConnection *self,

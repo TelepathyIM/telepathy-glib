@@ -44,7 +44,7 @@
  * To add interfaces with contact attributes to this interface use
  * tp_contacts_mixin_add_contact_attributes_iface:
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 
@@ -136,7 +136,7 @@ tp_presence_mixin_get_contacts_dbus_property (GObject *object,
  *
  * Returns: the quark used for storing mixin offset on a GObjectClass
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 GQuark
@@ -158,7 +158,7 @@ tp_contacts_mixin_class_get_offset_quark ()
  *
  * Returns: the quark used for storing mixin offset on a GObject
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 GQuark
@@ -187,7 +187,7 @@ tp_contacts_mixin_get_offset_quark ()
  *                          G_STRUCT_OFFSET (SomeObjectClass, contacts_mixin));
  * </programlisting></informalexample>
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 
@@ -224,7 +224,7 @@ tp_contacts_mixin_class_init (GObjectClass *obj_cls, glong offset)
  *                     G_STRUCT_OFFSET (SomeObject, text_mixin));
  * </programlisting></informalexample>
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 void
@@ -251,7 +251,7 @@ tp_contacts_mixin_init (GObject *obj, gsize offset)
  *
  * Free resources held by the contacts mixin.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 void
@@ -352,7 +352,7 @@ tp_contacts_mixin_get_contact_attributes (
  * using this mixin. This function should usually be called via
  * G_IMPLEMENT_INTERFACE.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 void
@@ -378,7 +378,7 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
  * handle array passed to the filler function are guaranteed to be valid and
  * referenced.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 
@@ -409,7 +409,7 @@ tp_contacts_mixin_add_contact_attributes_iface (GObject *obj,
  * Utility function to set attribute for handle to value in the attributes hash
  * as passed to a TpContactsMixinFillContactAttributesFunc.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.14
  *
  */
 

@@ -301,7 +301,7 @@ tp_debug_set_persistent (gboolean persistent)
  *
  * By default the file is truncated and hence overwritten each time the
  * process is executed.
- * Since version 0.7.UNRELEASED, if the filename is prefixed with '+' then the
+ * Since version 0.7.14, if the filename is prefixed with '+' then the
  * file is not truncated and output is added at the end of the file.
  *
  * Passing %NULL to this function is guaranteed to have no effect. This is
