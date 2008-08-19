@@ -19,7 +19,7 @@ Enhancements:
 
 * Altered tp_debug_divert_messages() to support a "+" prefix to filenames,
   which changes the mode from truncate to append: you can now set something
-  like GABBLE_DEBUG=+gabble.log
+  like GABBLE_LOGFILE="+gabble.log" to append to an existing log
 
 * Updated AUTHORS
 
