@@ -380,7 +380,7 @@ link_interface (GType type,
       if (prop_impl->mixin_priv == NULL)
         {
           g_critical ("%s tried to implement nonexistent property %s"
-              "on interface %s", g_type_name (type), prop_impl->name,
+              " on interface %s", g_type_name (type), prop_impl->name,
               iface_impl->name);
           return FALSE;
         }
