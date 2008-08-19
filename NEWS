@@ -1,17 +1,27 @@
-telepathy-glib 0.7.14 (unreleased)
+telepathy-glib 0.7.14 (2008-08-19)
 ==================================
+
+The "M'era Luna" release.
 
 Enhancements:
 
-*
+* Updated to specification 0.17.9
+  - Connection.Interface.Contacts interface ("the inspectotron"), which allows
+    mass contact-handle holding and inspection in a single round-trip
+  - Channel.TargetID property, for further round-trip reduction
 
-Fixes:
+* Added TpContactsMixin, a generic implementation of the Contacts interface
 
-*
+* Moved source code control from darcs to git (see README for details)
 
-Release notes for projects using code generation:
+* Added tp_connection_get_status() convenience accessor for status and
+  status-reason properties
 
-*
+* Altered tp_debug_divert_messages() to support a "+" prefix to filenames,
+  which changes the mode from truncate to append: you can now set something
+  like GABBLE_DEBUG=+gabble.log
+
+* Updated AUTHORS
 
 telepathy-glib 0.7.13 (2008-07-29)
 ==================================
