@@ -1,18 +1,22 @@
+(In alphabetical order by last name)
+
+Sunil Mohan Adapa <sunil synovel com>
+Emanuele Aina <em@nerd.ocracy.org>
 Ross Burton <ross@burtonini.com>
+Xavier Claessens <xclaesse@gmail.com>
+Alban Crequy <alban.crequy@collabora.co.uk>
 Guillaume Desmottes <guillaume.desmottes@collabora.co.uk>
 Dafydd Harries <dafydd.harries@collabora.co.uk>
+Pkilippe Kalaf <philippe.kalaf@collabora.co.uk>
+Alberto Mardegan <mardy@users.sourceforge.net>
 Robert McQueen <robert.mcqueen@collabora.co.uk>
 Simon McVittie <simon.mcvittie@collabora.co.uk>
 Mads Chr. Olesen <shiyee@shiyee.dk>
+Pekka Pessi <ppessi gmail com>
 Senko Rasic <senko.rasic@collabora.co.uk>
 Ole André Ravnaas <ole.andre.ravnaas@collabora.co.uk>
 Olli Salli <olli.salli@collabora.co.uk>
 Sjoerd Simons <sjoerd@luon.net>
 Rob Taylor <rob.taylor@collabora.co.uk>
-
-The Gabble source distribution includes the following third-party code:
-
-* src/libmd5-rfc by L. Peter Deutsch <ghost@aladdin.com>, taken from
-  <http://sourceforge.net/projects/libmd5-rfc/>
-* src/sha1 by Allan Saddi <allan@saddi.com>, taken from
-  sha v1.0.4 <http://sourceforge.net/projects/sha/>
+Will Thompson <will.thompson@collabora.co.uk>
+Mikhail Zabaluev <mikhail.zabaluev@nokia.com>
