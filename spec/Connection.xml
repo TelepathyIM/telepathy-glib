@@ -100,7 +100,7 @@ USA.</p>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected">
           <tp:docstring>
-             Before version 0.17.UNRELEASED calling GetInterfaces while
+             Before version 0.17.8 calling GetInterfaces while
              on a connection that is not yet CONNECTED wasn't allowed. If a
              CM returns this error, its list of interfaces should be regarded
              as empty until it becomes CONNECTED.
@@ -657,9 +657,8 @@ USA.</p>
     functionality, such as the Connection.Interface.Presence for receiving and
     reporting presence information, and Connection.Interface.Aliasing for
     connections where contacts may set and change an alias for themselves.
-    These interfaces can be discovered using GetInterfaces after the
-    connection, has been established and must not change subsequently at
-    runtime.</p>
+    These interfaces can be discovered using the
+    <tp:member-ref>GetInterfaces</tp:member-ref> method.</p>
 
     <p>Contacts, rooms, and server-stored lists (such as subscribed contacts,
     block lists, or allow lists) on a service are all represented by

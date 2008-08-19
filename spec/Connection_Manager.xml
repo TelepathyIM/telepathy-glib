@@ -334,7 +334,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           this property fails, clients SHOULD assume that its value is
           an empty list.</p>
       </tp:docstring>
-      <tp:added version="0.17.UNRELEASED"/>
+      <tp:added version="0.17.8"/>
     </property>
 
     <!-- FIXME: One thing we could perhaps use Interfaces for would be a
