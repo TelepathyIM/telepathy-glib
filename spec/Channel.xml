@@ -35,6 +35,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           The GetAll method lets clients retrieve all properties in one
           round-trip, which is desirable.
         </tp:rationale>
+
+        <p>When requesting a channel, the request MUST specify a channel
+          type, and the request MUST fail if the specified channel type
+          cannot be supplied.</p>
+
+        <tp:rationale>
+          Common sense.
+        </tp:rationale>
       </tp:docstring>
     </property>
 
@@ -59,6 +67,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           The GetAll method lets clients retrieve all properties in one
           round-trip, which is desirable.
         </tp:rationale>
+
+        <p>When requesting a channel with a particular value for this
+          property, the request must fail without side-effects unless the
+          connection manager expects to be able to provide a channel whose
+          interfaces include at least the interfaces requested.</p>
       </tp:docstring>
     </property>
 
@@ -79,14 +92,84 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           uniqueness guarantee - there can be many channels with the same
           (channel type, handle type, handle) tuple. This is necessary
           to support conversation threads in XMPP and SIP, for example.</p>
+
+        <p>If this is present in a channel request, it must be nonzero,
+          <tp:member-ref>TargetHandleType</tp:member-ref>
+          MUST be present and not Handle_Type_None, and
+          <tp:member-ref>TargetID</tp:member-ref> MUST NOT be
+          present.</p>
+
+        <p>The channel that satisfies the request MUST either:</p>
+
+        <ul>
+          <li>have the specified TargetHandle property; or</li>
+          <li>have <tp:member-ref>TargetHandleType</tp:member-ref> =
+            Handle_Type_None, TargetHandle = 0, and be configured such that
+            it could communicate with the specified handle in some other way
+            (e.g. have the requested contact handle in its Group
+            interface)</li>
+        </ul>
+      </tp:docstring>
+    </property>
+
+    <property name="TargetID" type="s" access="read">
+      <tp:added version="0.17.9"/>
+
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>The string that would result from inspecting the
+          <tp:member-ref>TargetHandle</tp:member-ref>
+          property (i.e. the identifier in the IM protocol of the contact,
+          room, etc. with which this channel communicates), or the empty
+          string if the TargetHandle is 0.</p>
+
+        <tp:rationale>
+          <p>The presence of this property avoids the following race
+            condition:</p>
+
+          <ul>
+            <li>New channel C is signalled with target handle T</li>
+            <li>Client calls InspectHandles(CONTACT, [T])</li>
+            <li>Channel C closes, removing the last reference to handle T</li>
+            <li>InspectHandles(CONTACT, [T]) returns an error</li>
+          </ul>
+        </tp:rationale>
+
+        <p>If this is present in a channel request,
+          <tp:member-ref>TargetHandleType</tp:member-ref>
+          MUST be present and not Handle_Type_None, and
+          <tp:member-ref>TargetHandle</tp:member-ref> MUST NOT be
+          present. The request MUST fail with error InvalidHandle, without
+          side-effects, if the requested TargetID would not be accepted by
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection">RequestHandles</tp:dbus-ref>.</p>
+
+        <p>The returned channel must be related to the handle corresponding
+          to the given identifier, in the same way as if TargetHandle
+          had been part of the request instead.</p>
+
+        <tp:rationale>
+          <p>Requesting channels with a string identifier saves a round-trip
+            (the call to RequestHandles). It also allows the channel
+            dispatcher to accept a channel request for an account that is not
+            yet connected (and thus has no valid handles), bring the account
+            online, and pass on the same parameters to the new connection's
+            CreateChannel method.</p>
+        </tp:rationale>
       </tp:docstring>
     </property>
 
     <property name="TargetHandleType" type="u" access="read"
       tp:type="Handle_Type">
       <tp:added version="0.17.7"/>
-      <tp:docstring>
-        The type of TargetHandle.
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>The type of TargetHandle.</p>
+
+        <p>If this is omitted from a channel request, connection managers
+          SHOULD treat this as equivalent to Handle_Type_None.</p>
+
+        <p>If this is omitted or is Handle_Type_None,
+          <tp:member-ref>TargetHandle</tp:member-ref> and
+          <tp:member-ref>TargetID</tp:member-ref> MUST be omitted from the
+          request.</p>
       </tp:docstring>
     </property>
 

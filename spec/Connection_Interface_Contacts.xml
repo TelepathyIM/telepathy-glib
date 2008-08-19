@@ -20,6 +20,7 @@
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Contacts">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
+    <tp:added version="0.17.9"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface allows many attributes of many contacts to be
@@ -29,10 +30,7 @@
         (<tp:type>Contact_Attribute</tp:type>), which is namespaced
         by the D-Bus interface which defines it.</p>
 
-      <p>While this interface is a draft, an initial set of contact
-        attributes is defined here. The definitions of these attributes
-        will be moved to the spec for individual interfaces when this interface
-        is finalized.</p>
+      <p>An initial set of contact attributes is defined here:</p>
 
       <dl>
         <dt>org.freedesktop.Telepathy.Connection/contact-id
@@ -50,7 +48,7 @@
           Aliasing interface was requested)
         </dd>
         <dt>org.freedesktop.Telepathy.Connection.Interface.Avatars/token
-          (type s</dt>
+          (type s)</dt>
         <dd>The same string that would be returned by <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.Connection.Interface.Avatars">GetKnownAvatarTokens</tp:dbus-ref>
           (omitted from the result if the contact's avatar token is not known,

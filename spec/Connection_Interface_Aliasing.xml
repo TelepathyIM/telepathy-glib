@@ -118,7 +118,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         Request the value of several contacts' aliases at once. This SHOULD
         only return cached aliases, falling back on the handle name if none is
         present. Also if there was no cached alias, a request SHOULD be started
-        of which the result is later signal by
+        of which the result is later signalled by
         <tp:member-ref>AliasesChanged</tp:member-ref>.
       </tp:docstring>
       <tp:possible-errors>
