@@ -35,7 +35,7 @@ See configure.ac for full details, including versions required.
 Of the packages listed above, only GLib, GObject, libdbus and dbus-glib are
 required at runtime.
 
-Building from Darcs also requires the GNU build system (Autoconf, Automake,
+Building from git also requires the GNU build system (Autoconf, Automake,
 libtool).
 
 Bugs, feature requests and to-do list
@@ -62,7 +62,7 @@ In a development (odd) branch, if we make incompatible ABI changes
 between one release tarball and the next, we will change the SONAME of the
 library; we will attempt to avoid incompatible API or ABI changes.
 
-Unreleased builds straight from Darcs identify themselves as version
+Unreleased builds straight from git identify themselves as version
 "x.y.z.1". We DO NOT make any API guarantees about unreleased builds:
 any binary relying on new functionality from an unreleased build is not
 guaranteed to work with any subsequent release or unreleased build, and on
@@ -88,8 +88,14 @@ Telepathy development is supported by Collabora Ltd.
 Hacking
 =======
 
-The current version of telepathy-glib is always available from:
-  <http://darcs.collabora.co.uk/darcs/telepathy-glib/>
+The current development version of telepathy-glib is available from the
+'master' branch in the git repository:
+  <git://git.collabora.co.uk/git/telepathy-glib.git>
+  <git+ssh://git.collabora.co.uk/git/telepathy-glib.git> (for committers)
+  <http://git.collabora.co.uk/?p=telepathy-glib.git> (gitweb)
+
+Stable branches are available from branches with names like
+'telepathy-glib-0.6' in the same repository.
 
 Proposed patches awaiting review can usually be found in Merge Monkey:
   <http://monkey.collabora.co.uk/>
