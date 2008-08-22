@@ -893,7 +893,7 @@ tp_media_type_to_fs (TpMediaStreamType type)
     case TP_MEDIA_STREAM_TYPE_VIDEO:
       return FS_MEDIA_TYPE_VIDEO;
     default:
-      return FS_MEDIA_TYPE_APPLICATION;
+      g_return_val_if_reached(0);
     }
 }
 
