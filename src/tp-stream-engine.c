@@ -1246,11 +1246,6 @@ _build_base_video_elements (TpStreamEngine *self)
     }
   else
     {
-#ifdef MAEMO_OSSO_SUPPORT
-      videosrc = gst_element_factory_make ("gconfv4l2src", NULL);
-      if (!videosrc)
-        g_error ("Could make video source");
-#else
       if (priv->force_fakesrc)
         {
           videosrc = gst_element_factory_make ("fakesrc", NULL);
@@ -1277,15 +1272,15 @@ _build_base_video_elements (TpStreamEngine *self)
             g_error ("failed to create any video source");
           g_object_set (videosrc, "is-live", TRUE, NULL);
         }
-#endif
     }
 
-  if ((caps_str = getenv ("FS_VIDEO_SRC_CAPS")) || (caps_str = getenv ("FS_VIDEOSRC_CAPS")))
+  if ((caps_str = getenv ("FS_VIDEO_SRC_CAPS")) != NULL ||
+      (caps_str = getenv ("FS_VIDEOSRC_CAPS")) != NULL)
     {
       filter = gst_caps_from_string (caps_str);
+      g_debug ("applying custom caps '%s' on the video source", caps_str);
     }
-
-  if (!filter)
+  else
     {
       filter = gst_caps_new_simple ("video/x-raw-yuv",
 #ifdef MAEMO_OSSO_SUPPORT
@@ -1297,10 +1292,6 @@ _build_base_video_elements (TpStreamEngine *self)
           "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
 #endif
           NULL);
-    }
-  else
-    {
-      g_debug ("applying custom caps '%s' on the video source\n", caps_str);
     }
 
   fakesink = gst_element_factory_make ("fakesink", NULL);
@@ -1413,14 +1404,15 @@ _make_audio_src (void)
     }
   else
     {
+
 #ifdef MAEMO_OSSO_SUPPORT
-      src = gst_element_factory_make ("dsppcmsrc", NULL);
-#else
+      src = gst_element_factory_make ("pulsesrc", NULL);
+      if (src == NULL)
+#endif
       src = gst_element_factory_make ("gconfaudiosrc", NULL);
 
       if (src == NULL)
         src = gst_element_factory_make ("alsasrc", NULL);
-#endif
     }
 
   if (src == NULL)
