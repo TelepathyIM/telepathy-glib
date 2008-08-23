@@ -997,7 +997,7 @@ remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   TfStream *self = TF_STREAM (object);
 
   tf_stream_error (self, 0,
-      "RemoveRemoteCandidate is NOT implemented by plugin");
+      "RemoveRemoteCandidate is DEPRECATED");
 }
 
 static void
