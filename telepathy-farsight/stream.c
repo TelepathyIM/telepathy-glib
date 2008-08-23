@@ -79,6 +79,7 @@ struct _TfStreamPrivate
   gboolean held;
   TpMediaStreamDirection has_resource;
 
+  GList *local_candidates;
 
   gboolean send_local_codecs;
   gboolean send_supported_codecs;
@@ -484,6 +485,9 @@ tf_stream_dispose (GObject *object)
       priv->local_preferences = NULL;
     }
 
+  fs_candidate_list_destroy (priv->local_candidates);
+  priv->local_candidates = NULL;
+
   if (G_OBJECT_CLASS (tf_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tf_stream_parent_class)->dispose (object);
 }
@@ -729,73 +733,124 @@ async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
 }
 
+
 static void
 cb_fs_new_local_candidate (TfStream *self,
     FsCandidate *candidate)
 {
-  GPtrArray *transports;
-  GValue transport = { 0, };
-  TpMediaStreamBaseProto proto;
-  TpMediaStreamTransportType type;
+  DEBUG (self, "called");
 
-  transports = g_ptr_array_new ();
-
-  g_value_init (&transport, TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT);
-  g_value_set_static_boxed (&transport,
-      dbus_g_type_specialized_construct (TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT));
-
-  switch (candidate->proto) {
-  case FS_NETWORK_PROTOCOL_UDP:
-    proto = TP_MEDIA_STREAM_BASE_PROTO_UDP;
-    break;
-  case FS_NETWORK_PROTOCOL_TCP:
-    proto = TP_MEDIA_STREAM_BASE_PROTO_TCP;
-    break;
-  default:
-    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
-        G_STRFUNC);
-    return;
-  }
-
-  switch (candidate->type) {
-  case FS_CANDIDATE_TYPE_HOST:
-    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
-    break;
-  case FS_CANDIDATE_TYPE_SRFLX:
-  case FS_CANDIDATE_TYPE_PRFLX:
-    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
-    break;
-  case FS_CANDIDATE_TYPE_RELAY:
-    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
-    break;
-  default:
-    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
-        G_STRFUNC);
-    return;
-  }
-
-  DEBUG (self, "candidate->ip = '%s'", candidate->ip);
-
-  dbus_g_type_struct_set (&transport,
-      0, candidate->component_id,
-      1, candidate->ip,
-      2, candidate->port,
-      3, proto,
-      4, "RTP",
-      5, "AVP",
-      6, (double) candidate->priority / 65536.0,
-      7, type,
-      8, candidate->username,
-      9, candidate->password,
-      G_MAXUINT);
-
-      g_ptr_array_add (transports, g_value_get_boxed (&transport));
-
-  tp_cli_media_stream_handler_call_new_native_candidate (
-      self->priv->stream_handler_proxy, -1, candidate->foundation, transports,
-      async_method_callback, "Media.StreamHandler::NativeCandidatesPrepared",
-      NULL, (GObject *) self);
+  self->priv->local_candidates = g_list_append (self->priv->local_candidates,
+      fs_candidate_copy (candidate));
 }
+
+static void
+cb_fs_local_candidates_prepared (TfStream *self)
+{
+  DEBUG (self, "called");
+
+  while (self->priv->local_candidates)
+    {
+      GPtrArray *transports = g_ptr_array_new ();
+      FsCandidate *candidate =
+          g_list_first (self->priv->local_candidates)->data;
+      gchar *foundation = g_strdup (candidate->foundation);
+
+      while (candidate)
+        {
+          GValue transport = { 0, };
+          TpMediaStreamBaseProto proto;
+          TpMediaStreamTransportType type;
+          GList *item = NULL;
+
+          g_value_init (&transport,
+              TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT);
+          g_value_set_static_boxed (&transport,
+              dbus_g_type_specialized_construct (
+                  TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT));
+
+          switch (candidate->proto) {
+          case FS_NETWORK_PROTOCOL_UDP:
+            proto = TP_MEDIA_STREAM_BASE_PROTO_UDP;
+            break;
+          case FS_NETWORK_PROTOCOL_TCP:
+            proto = TP_MEDIA_STREAM_BASE_PROTO_TCP;
+            break;
+          default:
+            g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+                G_STRFUNC);
+            return;
+          }
+
+          switch (candidate->type) {
+          case FS_CANDIDATE_TYPE_HOST:
+            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
+            break;
+          case FS_CANDIDATE_TYPE_SRFLX:
+          case FS_CANDIDATE_TYPE_PRFLX:
+            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
+            break;
+          case FS_CANDIDATE_TYPE_RELAY:
+            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
+            break;
+          default:
+            g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+                G_STRFUNC);
+            return;
+          }
+
+          DEBUG (self, "candidate->ip = '%s'", candidate->ip);
+
+          dbus_g_type_struct_set (&transport,
+              0, candidate->component_id,
+              1, candidate->ip,
+              2, candidate->port,
+              3, proto,
+              4, "RTP",
+              5, "AVP",
+              6, (double) candidate->priority / 65536.0,
+              7, type,
+              8, candidate->username,
+              9, candidate->password,
+              G_MAXUINT);
+
+          g_ptr_array_add (transports, g_value_dup_boxed (&transport));
+
+          self->priv->local_candidates = g_list_remove (
+              self->priv->local_candidates, candidate);
+
+          fs_candidate_destroy (candidate);
+
+          for (item = self->priv->local_candidates;
+               item;
+               item = g_list_next (item))
+            {
+              FsCandidate *tmpcand = item->data;
+              if (!strcmp (tmpcand->foundation, foundation))
+                break;
+            }
+          if (item)
+            candidate = item->data;
+          else
+            candidate = NULL;
+        }
+
+      tp_cli_media_stream_handler_call_new_native_candidate (
+          self->priv->stream_handler_proxy, -1, foundation, transports,
+          async_method_callback,
+          "Media.StreamHandler::NativeCandidatesPrepared",
+          NULL, (GObject *) self);
+
+      g_free (foundation);
+    }
+
+  tp_cli_media_stream_handler_call_native_candidates_prepared (
+    self->priv->stream_handler_proxy, -1, async_method_callback,
+    "Media.StreamHandler::NativeCandidatesPrepared",
+    NULL, (GObject *) self);
+}
+
+
 
 /*
  * small helper function to help converting a
@@ -1444,17 +1499,6 @@ cb_fs_new_active_candidate_pair (TfStream *self,
   tp_cli_media_stream_handler_call_stream_state (
     self->priv->stream_handler_proxy, -1, TP_MEDIA_STREAM_STATE_CONNECTED,
     async_method_callback, "Media.StreamHandler::SetStreamState",
-    NULL, (GObject *) self);
-}
-
-static void
-cb_fs_local_candidates_prepared (TfStream *self)
-{
-  DEBUG (self, "called");
-
-  tp_cli_media_stream_handler_call_native_candidates_prepared (
-    self->priv->stream_handler_proxy, -1, async_method_callback,
-    "Media.StreamHandler::NativeCandidatesPrepared",
     NULL, (GObject *) self);
 }
 
