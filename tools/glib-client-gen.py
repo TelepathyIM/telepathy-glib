@@ -199,7 +199,7 @@ class Generator(object):
                     self.b('  g_value_set_int (args->values + %d, %s);'
                            % (i, name))
                 elif gtype == 'G_TYPE_UINT64':
-                    self.b('  g_value_set_uint (args->values + %d, %s);'
+                    self.b('  g_value_set_uint64 (args->values + %d, %s);'
                            % (i, name))
                 elif gtype == 'G_TYPE_DOUBLE':
                     self.b('  g_value_set_double (args->values + %d, %s);'
