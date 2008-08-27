@@ -10,7 +10,6 @@ AM_CFLAGS = \
 EXTRA_DIST = \
     all.xml \
     misc.xml \
-    Channel_Handler.xml \
     Stream_Engine.xml
 
 noinst_LTLIBRARIES = libstream-engine-api.la

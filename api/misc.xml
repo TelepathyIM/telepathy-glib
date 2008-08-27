@@ -4,7 +4,6 @@
 
 <tp:title>Stream Engine API</tp:title>
 
-<xi:include href="Channel_Handler.xml"/>
 <xi:include href="Stream_Engine.xml"/>
 
 </tp:spec>

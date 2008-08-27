@@ -88,12 +88,9 @@ register_dbus_signal_marshallers()
      TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, G_TYPE_INVALID);
 }
 
-static void ch_iface_init (gpointer, gpointer);
 static void se_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (TpStreamEngine, tp_stream_engine, G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (STREAM_ENGINE_TYPE_SVC_CHANNEL_HANDLER,
-      ch_iface_init);
     G_IMPLEMENT_INTERFACE (STREAM_ENGINE_TYPE_SVC_STREAM_ENGINE,
       se_iface_init))
 
@@ -1650,26 +1647,26 @@ handler_result (TfChannel *chan G_GNUC_UNUSED,
                 DBusGMethodInvocation *context)
 {
   if (error == NULL)
-    stream_engine_svc_channel_handler_return_from_handle_channel (context);
+    stream_engine_svc_stream_engine_return_from_attach_to_channel (context);
   else
     dbus_g_method_return_error (context, error);
 }
 
 /**
- * tp_stream_engine_handle_channel
+ * tp_stream_engine_attach_to_channel
  *
- * Implements DBus method HandleChannel
- * on interface org.freedesktop.Telepathy.ChannelHandler
+ * Implements DBus method AttachToChannel
+ * on interface org.freedesktop.Telepathy.StreamEngine
  */
 static void
-tp_stream_engine_handle_channel (StreamEngineSvcChannelHandler *iface,
-                                 const gchar *bus_name,
-                                 const gchar *connection,
-                                 const gchar *channel_type,
-                                 const gchar *channel,
-                                 guint handle_type,
-                                 guint handle,
-                                 DBusGMethodInvocation *context)
+tp_stream_engine_attach_to_channel (StreamEngineSvcStreamEngine *iface,
+                                    const gchar *bus_name,
+                                    const gchar *connection,
+                                    const gchar *channel_type,
+                                    const gchar *channel,
+                                    guint handle_type,
+                                    guint handle,
+                                    DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TfChannel *chan = NULL;
@@ -2088,16 +2085,6 @@ se_iface_init (gpointer iface, gpointer data G_GNUC_UNUSED)
   IMPLEMENT (get_output_window);
   IMPLEMENT (create_preview_window);
   IMPLEMENT (shutdown);
-#undef IMPLEMENT
-}
-
-static void
-ch_iface_init (gpointer iface, gpointer data G_GNUC_UNUSED)
-{
-  StreamEngineSvcChannelHandlerClass *klass = iface;
-
-#define IMPLEMENT(x) stream_engine_svc_channel_handler_implement_##x (\
-    klass, tp_stream_engine_##x)
-  IMPLEMENT (handle_channel);
+  IMPLEMENT (attach_to_channel);
 #undef IMPLEMENT
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
-<node name="/Stream_Engine">
+<node name="/Stream_Engine" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.Telepathy.StreamEngine">
     <method name="SetOutputVolume">
       <arg direction="in" type="o" name="channel_path" />
@@ -35,6 +35,41 @@
       <arg type="b" name="state" />
     </signal>
     <method name="Shutdown">
+    </method>
+
+    <method name="AttachToChannel">
+      <arg direction="in" type="s" name="Bus_Name" tp:type="DBus_Bus_Name">
+        <tp:docstring>
+          The bus name of the connection and channel
+        </tp:docstring>
+      </arg>
+      <arg direction="in" type="o" name="Connection">
+        <tp:docstring>
+          The object-path of the connection that owns the channel
+        </tp:docstring>
+      </arg>
+      <arg direction="in" type="s" tp:type="DBus_Interface" name="Channel_Type">
+        <tp:docstring>
+          The channel type
+        </tp:docstring>
+      </arg>
+      <arg direction="in" type="o" name="Channel">
+        <tp:docstring>
+          The object-path of the channel
+        </tp:docstring>
+      </arg>
+      <arg direction="in" type="u" tp:type="Handle_Type" name="Handle_Type">
+        <tp:docstring>The type of the handle that the channel communicates
+          with, or 0 if there is no associated handle</tp:docstring>
+      </arg>
+      <arg direction="in" type="u" tp:type="Handle" name="Handle">
+        <tp:docstring>The handle that the channel communicates with,
+          or 0 if there is no associated handle</tp:docstring>
+      </arg>
+      <tp:docstring>
+	Called to tell Stream Engine to Attach itself to a channel.
+      </tp:docstring>
+      <!-- FIXME: possible errors? -->
     </method>
   </interface>
 </node>
