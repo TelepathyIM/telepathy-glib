@@ -255,6 +255,11 @@ gboolean tp_base_connection_register (TpBaseConnection *self,
 void tp_base_connection_change_status (TpBaseConnection *self,
     TpConnectionStatus status, TpConnectionStatusReason reason);
 
+TpHandle tp_base_connection_get_self_handle (TpBaseConnection *self);
+
+void tp_base_connection_set_self_handle (TpBaseConnection *self,
+    TpHandle self_handle);
+
 void tp_base_connection_finish_shutdown (TpBaseConnection *self);
 
 void tp_base_connection_add_interfaces (TpBaseConnection *self,

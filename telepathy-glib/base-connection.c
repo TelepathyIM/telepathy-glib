@@ -1469,6 +1469,38 @@ tp_base_connection_get_handles (TpBaseConnection *self,
   return priv->handles[handle_type];
 }
 
+
+/**
+ * tp_base_connection_get_self_handle:
+ * @self: A connection
+ *
+ * Returns the #TpBaseConnection:self-handle property, which is guaranteed not
+ * to be 0 once the connection has moved to the CONNECTED state.
+ *
+ * Returns: the current self handle of the connection.
+ */
+TpHandle
+tp_base_connection_get_self_handle (TpBaseConnection *self)
+{
+  return self->self_handle;
+}
+
+/**
+ * tp_base_connection_set_self_handle:
+ * @self: A connection
+ * @self_handle: The new self handle for the connection.
+ *
+ * Sets the #TpBaseConnection:self-handle property.  self_handle may not be 0
+ * once the connection has moved to the CONNECTED state.
+ */
+void
+tp_base_connection_set_self_handle (TpBaseConnection *self,
+                                    TpHandle self_handle)
+{
+  g_object_set (self, "self-handle", self_handle, NULL);
+}
+
+
 /**
  * tp_base_connection_finish_shutdown:
  * @self: The connection
