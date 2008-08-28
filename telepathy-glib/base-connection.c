@@ -63,6 +63,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
 enum
 {
     PROP_PROTOCOL = 1,
+    PROP_SELF_HANDLE,
 };
 
 /* signal enum */
@@ -187,6 +188,10 @@ tp_base_connection_get_property (GObject *object,
       g_value_set_string (value, priv->protocol);
       break;
 
+    case PROP_SELF_HANDLE:
+      g_value_set_uint (value, self->self_handle);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -208,6 +213,15 @@ tp_base_connection_set_property (GObject      *object,
       priv->protocol = g_value_dup_string (value);
       g_assert (priv->protocol != NULL);
       break;
+
+    case PROP_SELF_HANDLE:
+      tp_handle_unref (priv->handles[TP_HANDLE_TYPE_CONTACT],
+          self->self_handle);
+      self->self_handle = g_value_get_uint (value);
+      tp_handle_ref (priv->handles[TP_HANDLE_TYPE_CONTACT],
+          self->self_handle);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -533,6 +547,20 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_PROTOCOL, param_spec);
+
+  /**
+   * TpBaseConnection:self-handle:
+   *
+   * The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.
+   * Must be set nonzero by the subclass before moving to state CONNECTED.
+   */
+  param_spec = g_param_spec_uint ("self-handle",
+      "Connection.SelfHandle",
+      "The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.",
+      0, G_MAXUINT, 0,
+      G_PARAM_READWRITE |
+      G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_SELF_HANDLE, param_spec);
 
   /* signal definitions */
 
