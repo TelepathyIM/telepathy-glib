@@ -299,7 +299,7 @@ void tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self);
     if (c->status != TP_CONNECTION_STATUS_CONNECTED) \
       { \
         GError e = { TP_ERRORS, TP_ERROR_DISCONNECTED, \
-            "Connection is disconnected" }; \
+            (gchar *) "Connection is disconnected" }; \
         \
         dbus_g_method_return_error ((context), &e); \
         return; \
