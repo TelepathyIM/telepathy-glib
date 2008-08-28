@@ -45,6 +45,7 @@
 #include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/channel-factory-iface.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
@@ -1834,3 +1835,26 @@ tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
       tp_base_connection_fill_contact_attributes);
 }
 
+
+static TpDBusPropertiesMixinPropImpl connection_properties[] = {
+    { "SelfHandle", "self-handle", NULL },
+    { NULL }
+};
+
+/**
+ * tp_base_connection_class_register_with_dbus_properties_mixin:
+ * @cls: A subclass of #TpBaseConnectionClass which uses the D-Bus properties
+ *  mixin.
+ *
+ * Implements the Connection D-Bus properties of instances of this subclass
+ * using the D-Bus properties mixin.  The D-Bus properties mixin should be
+ * initialized before this function is called, and this function must only
+ * be called once.
+ */
+void
+tp_base_connection_class_register_with_dbus_properties_mixin (GObjectClass *cls)
+{
+  tp_dbus_properties_mixin_implement_interface (cls, TP_IFACE_QUARK_CONNECTION,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      connection_properties);
+}
