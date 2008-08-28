@@ -292,6 +292,7 @@ void tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self);
  * #TP_ERROR_DISCONNECTED, and return from the current function (which
  * must be void). For use in D-Bus method implementations.
  */
+/* The cast of a string literal to (gchar *) is to keep C++ compilers happy */
 #define TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(conn, context) \
   G_STMT_START { \
     TpBaseConnection *c = (conn); \
