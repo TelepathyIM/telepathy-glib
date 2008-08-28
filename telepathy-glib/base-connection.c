@@ -215,11 +215,18 @@ tp_base_connection_set_property (GObject      *object,
       break;
 
     case PROP_SELF_HANDLE:
-      tp_handle_unref (priv->handles[TP_HANDLE_TYPE_CONTACT],
-          self->self_handle);
-      self->self_handle = g_value_get_uint (value);
-      tp_handle_ref (priv->handles[TP_HANDLE_TYPE_CONTACT],
-          self->self_handle);
+      {
+        TpHandle new_self_handle = g_value_get_uint (value);
+
+        if (self->status == TP_CONNECTION_STATUS_CONNECTED)
+          g_return_if_fail (new_self_handle != 0);
+
+        tp_handle_unref (priv->handles[TP_HANDLE_TYPE_CONTACT],
+            self->self_handle);
+        self->self_handle = new_self_handle;
+        tp_handle_ref (priv->handles[TP_HANDLE_TYPE_CONTACT],
+            self->self_handle);
+      }
       break;
 
     default:
