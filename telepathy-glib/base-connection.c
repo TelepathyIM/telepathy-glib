@@ -924,14 +924,14 @@ tp_base_connection_get_protocol (TpSvcConnection *iface,
 }
 
 /**
- * tp_base_connection_get_self_handle
+ * tp_base_connection_dbus_get_self_handle
  *
  * Implements D-Bus method GetSelfHandle
  * on interface org.freedesktop.Telepathy.Connection
  */
 static void
-tp_base_connection_get_self_handle (TpSvcConnection *iface,
-                                    DBusGMethodInvocation *context)
+tp_base_connection_dbus_get_self_handle (TpSvcConnection *iface,
+                                         DBusGMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
 
@@ -1739,7 +1739,7 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(,disconnect);
   IMPLEMENT(,get_interfaces);
   IMPLEMENT(,get_protocol);
-  IMPLEMENT(,get_self_handle);
+  IMPLEMENT(dbus_,get_self_handle);
   IMPLEMENT(,get_status);
   IMPLEMENT(,hold_handles);
   IMPLEMENT(,inspect_handles);
