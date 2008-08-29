@@ -222,6 +222,9 @@ tp_base_connection_set_property (GObject      *object,
         if (self->status == TP_CONNECTION_STATUS_CONNECTED)
           g_return_if_fail (new_self_handle != 0);
 
+        if (self->self_handle == new_self_handle)
+          return;
+
         tp_handle_unref (priv->handles[TP_HANDLE_TYPE_CONTACT],
             self->self_handle);
         self->self_handle = new_self_handle;
