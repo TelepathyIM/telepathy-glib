@@ -230,6 +230,8 @@ tp_base_connection_set_property (GObject      *object,
         self->self_handle = new_self_handle;
         tp_handle_ref (priv->handles[TP_HANDLE_TYPE_CONTACT],
             self->self_handle);
+
+        tp_svc_connection_emit_self_handle_changed (self, self->self_handle);
       }
       break;
 
