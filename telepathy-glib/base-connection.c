@@ -1850,6 +1850,11 @@ static TpDBusPropertiesMixinPropImpl connection_properties[] = {
  * using the D-Bus properties mixin.  The D-Bus properties mixin should be
  * initialized before this function is called, and this function must only
  * be called once.
+ *
+ * Having called this function, you must use
+ * tp_base_connection_set_self_handle() rather than modifying the self_handle
+ * field directly so that changes to the self handle can be correctly
+ * signalled on the bus.
  */
 void
 tp_base_connection_class_register_with_dbus_properties_mixin (GObjectClass *cls)
