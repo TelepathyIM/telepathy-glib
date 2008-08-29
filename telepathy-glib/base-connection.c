@@ -561,6 +561,8 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    *
    * The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.
    * Must be set nonzero by the subclass before moving to state CONNECTED.
+   *
+   * Since: 0.7.UNRELEASED
    */
   param_spec = g_param_spec_uint ("self-handle",
       "Connection.SelfHandle",
@@ -1479,6 +1481,8 @@ tp_base_connection_get_handles (TpBaseConnection *self,
  * to be 0 once the connection has moved to the CONNECTED state.
  *
  * Returns: the current self handle of the connection.
+ *
+ * Since: 0.7.UNRELEASED
  */
 TpHandle
 tp_base_connection_get_self_handle (TpBaseConnection *self)
@@ -1493,6 +1497,8 @@ tp_base_connection_get_self_handle (TpBaseConnection *self)
  *
  * Sets the #TpBaseConnection:self-handle property.  self_handle may not be 0
  * once the connection has moved to the CONNECTED state.
+ *
+ * Since: 0.7.UNRELEASED
  */
 void
 tp_base_connection_set_self_handle (TpBaseConnection *self,
@@ -1855,6 +1861,8 @@ static TpDBusPropertiesMixinPropImpl connection_properties[] = {
  * tp_base_connection_set_self_handle() rather than modifying the self_handle
  * field directly so that changes to the self handle can be correctly
  * signalled on the bus.
+ *
+ * Since: 0.7.UNRELEASED
  */
 void
 tp_base_connection_class_register_with_dbus_properties_mixin (GObjectClass *cls)
