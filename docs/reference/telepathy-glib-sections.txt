@@ -849,6 +849,7 @@ tp_g_value_slice_dup
 tp_strdiff
 tp_mixin_offset_cast
 tp_escape_as_identifier
+tp_strv_contains
 </SECTION>
 
 <SECTION>

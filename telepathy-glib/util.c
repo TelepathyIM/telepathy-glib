@@ -297,3 +297,31 @@ tp_escape_as_identifier (const gchar *name)
     }
   return g_string_free (op, FALSE);
 }
+
+
+/**
+ * tp_strv_contains:
+ * @strv: a NULL-terminated array of strings
+ * @str: a non-NULL string
+ *
+ * <!-- -->
+ * Returns: TRUE if @str is an element of @strv, according to strcmp().
+ *
+ * Since: 0.7.UNRELEASED
+ */
+gboolean
+tp_strv_contains (const gchar * const *strv,
+                  const gchar *str)
+{
+  g_return_val_if_fail (str != NULL, FALSE);
+  g_return_val_if_fail (strv != NULL, FALSE);
+
+  while (*strv != NULL)
+    {
+      if (!strcmp (str, *strv))
+        return TRUE;
+      strv++;
+    }
+
+  return FALSE;
+}

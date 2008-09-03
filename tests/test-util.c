@@ -4,6 +4,23 @@
 
 #include <telepathy-glib/util.h>
 
+void test_strv_contains (void);
+
+void
+test_strv_contains (void)
+{
+  const gchar * const strv[] = {
+      "Pah",
+      "Pah",
+      "Pah-pah-pah",
+      "Patrick!",
+      NULL
+  };
+
+  g_assert (tp_strv_contains (strv, "Patrick!"));
+  g_assert (!tp_strv_contains (strv, "Snakes!"));
+}
+
 int main (int argc, char **argv)
 {
   GPtrArray *ptrarray;

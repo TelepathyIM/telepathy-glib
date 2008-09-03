@@ -44,6 +44,8 @@ gpointer tp_mixin_offset_cast (gpointer instance, guint offset);
 
 gchar *tp_escape_as_identifier (const gchar *name);
 
+gboolean tp_strv_contains (const gchar * const *strv, const gchar *str);
+
 G_END_DECLS
 
 #endif /* __TP_UTIL_H__ */
