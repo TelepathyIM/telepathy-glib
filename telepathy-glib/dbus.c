@@ -988,7 +988,7 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
  * (FIXME: should we also allow 'i' and 'u' with nonzero <=> True?)
  *
  * Returns: a boolean value for @key
- * @since 0.7.9
+ * Since: 0.7.9
  */
 gboolean
 tp_asv_get_boolean (const GHashTable *asv,
@@ -1028,7 +1028,7 @@ tp_asv_get_boolean (const GHashTable *asv,
  * it for longer.
  *
  * Returns: the string value of @key, or %NULL
- * @since 0.7.9
+ * Since: 0.7.9
  */
 const GArray *
 tp_asv_get_bytes (const GHashTable *asv,
@@ -1057,7 +1057,7 @@ tp_asv_get_bytes (const GHashTable *asv,
  * need to keep it for longer.
  *
  * Returns: the string value of @key, or %NULL
- * @since 0.7.9
+ * Since: 0.7.9
  */
 const gchar *
 tp_asv_get_string (const GHashTable *asv,
@@ -1087,7 +1087,7 @@ tp_asv_get_string (const GHashTable *asv,
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 32-bit signed integer value of @key, or 0
- * @since 0.7.9
+ * Since: 0.7.9
  */
 gint32
 tp_asv_get_int32 (const GHashTable *asv,
@@ -1171,7 +1171,7 @@ return_invalid:
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 32-bit unsigned integer value of @key, or 0
- * @since 0.7.9
+ * Since: 0.7.9
  */
 guint32
 tp_asv_get_uint32 (const GHashTable *asv,
@@ -1255,7 +1255,7 @@ return_invalid:
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 64-bit signed integer value of @key, or 0
- * @since 0.7.9
+ * Since: 0.7.9
  */
 gint64
 tp_asv_get_int64 (const GHashTable *asv,
@@ -1327,7 +1327,7 @@ return_invalid:
  * Otherwise, return 0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the 64-bit unsigned integer value of @key, or 0
- * @since 0.7.9
+ * Since: 0.7.9
  */
 guint64
 tp_asv_get_uint64 (const GHashTable *asv,
@@ -1406,7 +1406,7 @@ return_invalid:
  * Otherwise, return 0.0, and if @valid is not %NULL, set *@valid to %FALSE.
  *
  * Returns: the double precision floating-point value of @key, or 0.0
- * @since 0.7.9
+ * Since: 0.7.9
  */
 gdouble
 tp_asv_get_double (const GHashTable *asv,
@@ -1476,7 +1476,7 @@ return_invalid:
  * need to keep it for longer.
  *
  * Returns: the object-path value of @key, or %NULL
- * @since 0.7.9
+ * Since: 0.7.9
  */
 const gchar *
 tp_asv_get_object_path (const GHashTable *asv,
@@ -1508,7 +1508,7 @@ tp_asv_get_object_path (const GHashTable *asv,
  * g_boxed_copy(), if you need to keep it for longer.
  *
  * Returns: the value of @key, or %NULL
- * @since 0.7.9
+ * Since: 0.7.9
  */
 gpointer
 tp_asv_get_boxed (const GHashTable *asv,
@@ -1541,7 +1541,7 @@ tp_asv_get_boxed (const GHashTable *asv,
  * need to keep it for longer.
  *
  * Returns: the %NULL-terminated string-array value of @key, or %NULL
- * @since 0.7.9
+ * Since: 0.7.9
  */
 const gchar * const *
 tp_asv_get_strv (const GHashTable *asv,
@@ -1568,7 +1568,7 @@ tp_asv_get_strv (const GHashTable *asv,
  * g_value_copy() if you need to keep it for longer.
  *
  * Returns: the value of @key, or %NULL
- * @since 0.7.9
+ * Since: 0.7.9
  */
 const GValue *
 tp_asv_lookup (const GHashTable *asv,
