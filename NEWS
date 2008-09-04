@@ -1,11 +1,33 @@
 telepathy-glib 0.7.15 (UNRELEASED)
 ==================================
 
+Dependencies:
+
+* GLib and GObject must be at least version 2.16 (this was accidentally the
+  case in 0.7.14 too, but the dependency is now official). (fd.o #17213)
+
 Enhancements:
+
+* telepathy-glib-uninstalled.pc is generated in source builds. It's now
+  easier to compile dependent projects against an uninstalled copy of
+  telepathy-glib >= 0.7.15, like this:
+
+  PKG_CONFIG_PATH=$HOME/src/telepathy-glib/telepathy-glib ./autogen.sh
+
+  (if $HOME/src/telepathy-glib is the directory containing this file)
 
 Fixes:
 
+* TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED no longer causes compiler warnings
+  when used from a C++ source file
+
+* glib-client-gen.py generates correct code for 64-bit unsigned integers
+
 Release notes for projects using code generation:
+
+* If you generate client-side code, update glib-client-gen.py to avoid wrong
+  code generation for unsigned 64-bit integer arguments. This will cause your
+  project to require telepathy-glib >= 0.7.3
 
 telepathy-glib 0.7.14 (2008-08-19)
 ==================================
