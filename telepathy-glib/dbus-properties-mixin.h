@@ -125,6 +125,10 @@ gboolean tp_dbus_properties_mixin_get (GObject *self,
     const gchar *interface_name, const gchar *property_name,
     GValue *value, GError **error);
 
+GHashTable *tp_dbus_properties_mixin_make_properties_hash (
+    GObject *object, const gchar *first_interface,
+    const gchar *first_property, ...) G_GNUC_NULL_TERMINATED;
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_DBUS_PROPERTIES_MIXIN_H__ */
