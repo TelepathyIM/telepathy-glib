@@ -112,6 +112,7 @@ tpginclude_HEADERS = \
     debug-ansi.h \
     enums.h \
     errors.h \
+    exportable-channel.h \
     group-mixin.h \
     gtypes.h \
     handle.h \
@@ -215,6 +216,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     interfaces.c \
     debug-internal.h \
     errors.c \
+    exportable-channel.c \
     group-mixin.c \
     gtypes.c \
     handle.c \
