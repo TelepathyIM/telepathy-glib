@@ -101,6 +101,7 @@ tpginclude_HEADERS = \
     channel.h \
     channel-iface.h \
     channel-factory-iface.h \
+    channel-manager.h \
     media-interfaces.h \
     connection.h \
     connection-manager.h \
@@ -206,6 +207,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel.c \
     channel-group.c \
     channel-internal.h \
+    channel-manager.c \
     connection.c \
     connection-manager.c \
     contacts-mixin.c \
