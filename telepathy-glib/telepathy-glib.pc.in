@@ -7,6 +7,6 @@ Name: Telepathy-GLib
 Description: GLib utility library for the Telepathy framework
 Version: @VERSION@
 Requires: pkg-config >= 0.21
-Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.10, gobject-2.0 >= 2.10
+Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.16, gobject-2.0 >= 2.16
 Libs: -L${libdir} -ltelepathy-glib
 Cflags: -I${includedir}/telepathy-1.0
