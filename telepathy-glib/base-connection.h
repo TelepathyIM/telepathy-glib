@@ -95,7 +95,7 @@ typedef void (*TpBaseConnectionCreateHandleReposImpl) (TpBaseConnection *self,
  * TpBaseConnectionCreateChannelFactoriesImpl:
  * @self: The implementation, a subclass of TpBaseConnection
  *
- * Signature of an implementation of the create_handle_repos method
+ * Signature of an implementation of the create_channel_factories method
  * of #TpBaseConnection.
  *
  * Returns: a GPtrArray of objects implementing #TpChannelFactoryIface
@@ -103,6 +103,20 @@ typedef void (*TpBaseConnectionCreateHandleReposImpl) (TpBaseConnection *self,
  * supports.
  */
 typedef GPtrArray *(*TpBaseConnectionCreateChannelFactoriesImpl) (
+    TpBaseConnection *self);
+
+/**
+ * TpBaseConnectionCreateChannelManagersImpl:
+ * @self: The implementation, a subclass of TpBaseConnection
+ *
+ * Signature of an implementation of the create_channel_managers method
+ * of #TpBaseConnection.
+ *
+ * Returns: a GPtrArray of objects implementing #TpChannelManager
+ * which, between them, implement all channel types this Connection
+ * supports.
+ */
+typedef GPtrArray *(*TpBaseConnectionCreateChannelManagersImpl) (
     TpBaseConnection *self);
 
 /**
@@ -127,7 +141,8 @@ typedef gchar *(*TpBaseConnectionGetUniqueConnectionNameImpl) (
  *  Must be set by subclasses to a non-%NULL value; the function must create
  *  at least a CONTACT handle repository (failing to do so will cause a crash).
  * @create_channel_factories: Create an array of channel factories for this
- *  Connection. Must be set by subclasses to a non-%NULL value.
+ *  Connection. At least one of this or @create_channel_managers must be set by
+ *  subclasses to a non-%NULL value.
  * @get_unique_connection_name: Construct a unique name for this connection
  *  (for example using the protocol's format for usernames). If %NULL (the
  *  default), a unique name will be generated. Subclasses should usually
@@ -153,11 +168,15 @@ typedef gchar *(*TpBaseConnectionGetUniqueConnectionNameImpl) (
  *  Individual instances may detect which additional interfaces they support
  *  and signal them before going to state CONNECTED by calling
  *  tp_base_connection_add_interfaces().
+ * @create_channel_managers: Create an array of channel managers for this
+ *  Connection. At least one of this or @create_channel_factories must be set
+ *  by subclasses to a non-%NULL value.
+ *  Since: 0.7.UNRELEASED
  *
  * The class of a #TpBaseConnection. Many members are virtual methods etc.
  * to be filled in in the subclass' class_init function.
  *
- * In addition to the fields documented here, there are four gpointer fields
+ * In addition to the fields documented here, there are three gpointer fields
  * which must currently be %NULL (a meaning may be defined for these in a
  * future version of telepathy-glib), and a pointer to opaque private data.
  */
@@ -180,8 +199,9 @@ struct _TpBaseConnectionClass {
 
     const gchar **interfaces_always_present;
 
+    TpBaseConnectionCreateChannelManagersImpl create_channel_managers;
+
     /*<private>*/
-    gpointer _future1;
     gpointer _future2;
     gpointer _future3;
     gpointer _future4;
@@ -274,6 +294,11 @@ void tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
     guint handle_type, const gchar **names, DBusGMethodInvocation *context);
 
 void tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self);
+
+void tp_base_connection_requests_iface_init (gpointer g_iface,
+    gpointer iface_data);
+
+void tp_base_connection_register_requests_dbus_properties (GObjectClass *cls);
 
 /* TYPE MACROS */
 #define TP_TYPE_BASE_CONNECTION \
