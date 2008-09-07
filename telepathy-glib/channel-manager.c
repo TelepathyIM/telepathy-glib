@@ -24,7 +24,9 @@
 #include "channel-manager.h"
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/errors.h>
 #include <telepathy-glib/exportable-channel.h>
+#include <telepathy-glib/util.h>
 
 #include "_gen/signals-marshal.h"
 
@@ -415,4 +417,50 @@ tp_channel_manager_request_channel (TpChannelManager *manager,
     return method (manager, request_token, request_properties);
   else
     return FALSE;
+}
+
+
+/**
+ * tp_channel_manager_asv_has_unknown_properties:
+ * @properties: a table mapping (const gchar *) property names to GValues,
+ *              as passed to methods of #TpChannelManager
+ * @fixed: a %NULL-terminated array of property names
+ * @allowed: a %NULL-terminated array of property names
+ * @error: an address at which to store an error suitable for returning from
+ *         the D-Bus method when @properties contains unknown properties
+ *
+ * Checks whether the keys of @properties are elements of one of @fixed and
+ * @allowed.  This is intended to be used by channel managers which have
+ * decided to accept a request, to conform with the specification's
+ * requirement that unknown properties must be rejected, not silently ignored.
+ *
+ * On encountering unknown properties, this function will return %FALSE, and
+ * set @error to a #GError that could be used as a D-Bus method error.
+ *
+ * Returns: %TRUE if all of the keys of @properties are elements of @fixed or
+ *          @allowed.
+ */
+gboolean
+tp_channel_manager_asv_has_unknown_properties (GHashTable *properties,
+                                               const gchar * const *fixed,
+                                               const gchar * const *allowed,
+                                               GError **error)
+{
+  GHashTableIter iter;
+  gpointer key;
+  const gchar *property_name;
+
+  g_hash_table_iter_init (&iter, properties);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
+    {
+      property_name = key;
+      if (!tp_strv_contains (fixed, property_name) &&
+          !tp_strv_contains (allowed, property_name))
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+              "Request contained unknown property '%s'", property_name);
+          return TRUE;
+        }
+    }
+  return FALSE;
 }

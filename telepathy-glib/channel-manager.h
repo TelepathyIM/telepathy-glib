@@ -124,6 +124,12 @@ void tp_channel_manager_emit_request_failed_printf (gpointer instance,
     gpointer request_token, GQuark domain, gint code, const gchar *format,
     ...) G_GNUC_PRINTF (5, 6);
 
+
+/* helper functions */
+
+gboolean tp_channel_manager_asv_has_unknown_properties (GHashTable *properties,
+    const gchar * const *fixed, const gchar * const *allowed, GError **error);
+
 G_END_DECLS
 
 #endif
