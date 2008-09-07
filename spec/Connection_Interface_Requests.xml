@@ -21,8 +21,7 @@
       USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.Requests.DRAFT"
-    tp:causes-havoc="experimental">
+  <interface name="org.freedesktop.Telepathy.Connection.Interface.Requests.DRAFT">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
     <tp:added version="0.17.9"/>
 
