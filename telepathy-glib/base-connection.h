@@ -273,9 +273,6 @@ void tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
 
 void tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self);
 
-void tp_base_connection_class_register_with_dbus_properties_mixin (
-    GObjectClass *cls);
-
 /* TYPE MACROS */
 #define TP_TYPE_BASE_CONNECTION \
   (tp_base_connection_get_type ())

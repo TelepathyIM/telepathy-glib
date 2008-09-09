@@ -536,6 +536,13 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   return (GObject *)self;
 }
 
+
+static TpDBusPropertiesMixinPropImpl connection_properties[] = {
+    { "SelfHandle", "self-handle", NULL },
+    { NULL }
+};
+
+
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
@@ -599,6 +606,12 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CONNECTION,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      connection_properties);
 }
 
 static void
@@ -1848,35 +1861,4 @@ tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
   tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
       TP_IFACE_CONNECTION,
       tp_base_connection_fill_contact_attributes);
-}
-
-
-static TpDBusPropertiesMixinPropImpl connection_properties[] = {
-    { "SelfHandle", "self-handle", NULL },
-    { NULL }
-};
-
-/**
- * tp_base_connection_class_register_with_dbus_properties_mixin:
- * @cls: A subclass of #TpBaseConnectionClass which uses the D-Bus properties
- *  mixin.
- *
- * Implements the Connection D-Bus properties of instances of this subclass
- * using the D-Bus properties mixin.  The D-Bus properties mixin should be
- * initialized before this function is called, and this function must only
- * be called once.
- *
- * Having called this function, you must use
- * tp_base_connection_set_self_handle() rather than modifying the self_handle
- * field directly so that changes to the self handle can be correctly
- * signalled on the bus.
- *
- * Since: 0.7.UNRELEASED
- */
-void
-tp_base_connection_class_register_with_dbus_properties_mixin (GObjectClass *cls)
-{
-  tp_dbus_properties_mixin_implement_interface (cls, TP_IFACE_QUARK_CONNECTION,
-      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
-      connection_properties);
 }
