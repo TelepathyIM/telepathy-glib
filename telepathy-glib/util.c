@@ -318,7 +318,7 @@ tp_strv_contains (const gchar * const *strv,
 
   while (*strv != NULL)
     {
-      if (!strcmp (str, *strv))
+      if (!tp_strdiff (str, *strv))
         return TRUE;
       strv++;
     }
