@@ -301,7 +301,8 @@ tp_escape_as_identifier (const gchar *name)
 
 /**
  * tp_strv_contains:
- * @strv: a NULL-terminated array of strings
+ * @strv: a NULL-terminated array of strings, or %NULL (which is treated as an
+ *        empty strv)
  * @str: a non-NULL string
  *
  * <!-- -->
@@ -314,7 +315,9 @@ tp_strv_contains (const gchar * const *strv,
                   const gchar *str)
 {
   g_return_val_if_fail (str != NULL, FALSE);
-  g_return_val_if_fail (strv != NULL, FALSE);
+
+  if (strv == NULL)
+    return FALSE;
 
   while (*strv != NULL)
     {
