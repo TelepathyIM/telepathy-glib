@@ -481,10 +481,10 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
 
       /* assert that we're not trying to implement the same interface via
        * this function and the static data */
-      if (mixin != NULL)
+      if (mixin != NULL && mixin->interfaces != NULL)
         {
           for (iter = mixin->interfaces;
-               iter != NULL && iter->name != NULL;
+               iter->name != NULL;
                iter++)
             {
               TpDBusPropertiesMixinIfaceInfo *other_info = iter->mixin_priv;
@@ -565,10 +565,13 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
 
   mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls, offset);
 
+  if (mixin->interfaces == NULL)
+    return;
+
   interfaces = g_type_interfaces (type, NULL);
 
   for (iface_impl = mixin->interfaces;
-       iface_impl != NULL && iface_impl->name != NULL;
+       iface_impl->name != NULL;
        iface_impl++)
     {
       GQuark iface_quark = g_quark_try_string (iface_impl->name);
@@ -619,17 +622,18 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
        type = g_type_parent (type))
     {
       gpointer offset = g_type_get_qdata (type, offset_quark);
-      TpDBusPropertiesMixinClass *mixin;
+      TpDBusPropertiesMixinClass *mixin = NULL;
       TpDBusPropertiesMixinIfaceImpl *iface_impl;
       TpDBusPropertiesMixinIfaceInfo *iface_info;
 
       if (offset != NULL)
-        {
-          mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass,
-              G_OBJECT_GET_CLASS (self), GPOINTER_TO_SIZE (offset));
+        mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass,
+            G_OBJECT_GET_CLASS (self), GPOINTER_TO_SIZE (offset));
 
+      if (mixin != NULL && mixin->interfaces != NULL)
+        {
           for (iface_impl = mixin->interfaces;
-               iface_impl != NULL && iface_impl->name != NULL;
+               iface_impl->name != NULL;
                iface_impl++)
             {
               iface_info = iface_impl->mixin_priv;
