@@ -538,6 +538,12 @@ out:
  * which means that only interfaces whose properties are set up using
  * tp_dbus_properties_mixin_implement_interface() will be used.
  *
+ * Changed in 0.7.UNRELEASED: @offset may now be 0, in which case the
+ * #TpDBusPropertiesMixinClass can be omitted from @cls.  It is treated as if
+ * it were present, but with TpDBusPropertiesMixinClass::interfaces being
+ * %NULL, so only interfaces whose properties are set using
+ * tp_dbus_properties_mixin_implement_interface() will be used.
+ *
  * Since: 0.7.3
  */
 void
