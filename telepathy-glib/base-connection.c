@@ -540,15 +540,13 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
 }
 
 
-static TpDBusPropertiesMixinPropImpl connection_properties[] = {
-    { "SelfHandle", "self-handle", NULL },
-    { NULL }
-};
-
-
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
+  static TpDBusPropertiesMixinPropImpl connection_properties[] = {
+      { "SelfHandle", "self-handle", NULL },
+      { NULL }
+  };
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
