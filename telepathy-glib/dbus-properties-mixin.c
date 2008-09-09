@@ -434,7 +434,7 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
   GQuark extras_quark = _extra_prop_impls_quark ();
   GType type = G_OBJECT_CLASS_TYPE (cls);
   GType *interfaces = g_type_interfaces (type, NULL);
-  TpDBusPropertiesMixinClass *mixin;
+  TpDBusPropertiesMixinClass *mixin = NULL;
   gpointer offset_qdata;
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
 
@@ -442,10 +442,9 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
 
   offset_qdata = g_type_get_qdata (type, offset_quark);
 
-  g_return_if_fail (offset_qdata != NULL);
-
-  mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls,
-      GPOINTER_TO_SIZE (offset_qdata));
+  if (offset_qdata != NULL)
+    mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls,
+        GPOINTER_TO_SIZE (offset_qdata));
 
   /* never freed - intentional per-class leak */
   iface_impl = g_new0 (TpDBusPropertiesMixinIfaceImpl, 1);
@@ -482,20 +481,23 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
 
       /* assert that we're not trying to implement the same interface via
        * this function and the static data */
-      for (iter = mixin->interfaces;
-           iter != NULL && iter->name != NULL;
-           iter++)
+      if (mixin != NULL)
         {
-          TpDBusPropertiesMixinIfaceInfo *other_info = iter->mixin_priv;
-
-          g_assert (other_info != NULL);
-
-          if (G_UNLIKELY (other_info->dbus_interface == iface))
+          for (iter = mixin->interfaces;
+               iter != NULL && iter->name != NULL;
+               iter++)
             {
-              g_critical ("type %s tried to implement interface %s with %s "
-                  "and also in static data", g_type_name (type),
-                  g_quark_to_string (iface), G_STRFUNC);
-              goto out;
+              TpDBusPropertiesMixinIfaceInfo *other_info = iter->mixin_priv;
+
+              g_assert (other_info != NULL);
+
+              if (G_UNLIKELY (other_info->dbus_interface == iface))
+                {
+                  g_critical ("type %s tried to implement interface %s with %s "
+                      "and also in static data", g_type_name (type),
+                      g_quark_to_string (iface), G_STRFUNC);
+                  goto out;
+                }
             }
         }
 #endif
@@ -551,6 +553,9 @@ tp_dbus_properties_mixin_class_init (GObjectClass *cls,
   g_return_if_fail (G_IS_OBJECT_CLASS (cls));
   g_return_if_fail (g_type_get_qdata (type, q) == NULL);
   g_type_set_qdata (type, q, GSIZE_TO_POINTER (offset));
+
+  if (offset == 0)
+    return;
 
   mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls, offset);
 
@@ -612,20 +617,20 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
       TpDBusPropertiesMixinIfaceImpl *iface_impl;
       TpDBusPropertiesMixinIfaceInfo *iface_info;
 
-      if (offset == NULL)
-        continue;
-
-      mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass,
-          G_OBJECT_GET_CLASS (self), GPOINTER_TO_SIZE (offset));
-
-      for (iface_impl = mixin->interfaces;
-           iface_impl != NULL && iface_impl->name != NULL;
-           iface_impl++)
+      if (offset != NULL)
         {
-          iface_info = iface_impl->mixin_priv;
+          mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass,
+              G_OBJECT_GET_CLASS (self), GPOINTER_TO_SIZE (offset));
 
-          if (iface_info->dbus_interface == iface_quark)
-            return iface_impl;
+          for (iface_impl = mixin->interfaces;
+               iface_impl != NULL && iface_impl->name != NULL;
+               iface_impl++)
+            {
+              iface_info = iface_impl->mixin_priv;
+
+              if (iface_info->dbus_interface == iface_quark)
+                return iface_impl;
+            }
         }
 
       for (iface_impl = g_type_get_qdata (type, extras_quark);
