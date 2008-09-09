@@ -218,7 +218,9 @@ struct _TpBaseConnectionClass {
  *  CONNECTED. Since 0.7.UNRELEASED, setting this property directly is
  *  deprecated, in favour of tp_base_connection_set_self_handle(); if this
  *  property is set directly, the connection must ensure it holds a reference
- *  to the handle.
+ *  to the handle. Changing this property directly having moved to state
+ *  CONNECTED is very strongly discouraged, as this will prevent the
+ *  SelfHandleChanged signal being emitted.
  *
  * Data structure representing a generic #TpSvcConnection implementation.
  *
