@@ -55,7 +55,7 @@ exportable_channel_base_init (gpointer klass)
        *
        * The D-Bus properties to be announced in the NewChannels signal
        * and in the Channels property, as a map from
-       * inter.face.name.propertyname to GValue.
+       * interface.name.propertyname to GValue.
        *
        * A channel's properties are constant for its lifetime on the bus, so
        * this property should only change when the closed signal is emitted (so
