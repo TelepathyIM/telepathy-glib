@@ -601,7 +601,6 @@ tp_svc_connection_return_from_request_handles
 tp_svc_connection_emit_new_channel
 tp_svc_connection_emit_self_handle_changed
 tp_svc_connection_emit_status_changed
-tp_svc_connection_emit_self_handle_changed
 <SUBSECTION Standard>
 TP_SVC_CONNECTION
 TP_IS_SVC_CONNECTION
