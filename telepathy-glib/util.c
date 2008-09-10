@@ -158,6 +158,7 @@ tp_g_hash_table_update (GHashTable *target,
 
   g_return_if_fail (target != NULL);
   g_return_if_fail (source != NULL);
+  g_return_if_fail (target != source);
 
   g_hash_table_foreach (source, _tp_g_hash_table_update_helper, &data);
 }
