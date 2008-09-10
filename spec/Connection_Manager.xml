@@ -140,8 +140,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:flag>
     </tp:flags>
 
-    <method name="GetParameters">
-      <arg direction="in" name="proto" type="s" tp:type="Protocol">
+    <method name="GetParameters" tp:name-for-bindings="Get_Parameters">
+      <arg direction="in" name="Protocol" type="s" tp:type="Protocol">
         <tp:docstring>
           The required protocol name
         </tp:docstring>
@@ -164,7 +164,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <method name="ListProtocols">
+    <method name="ListProtocols" tp:name-for-bindings="List_Protocols">
       <arg direction="out" type="as" tp:type="Protocol[]">
         <tp:docstring>
           A array of string protocol identifiers supported by this manager
@@ -176,18 +176,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
-    <signal name="NewConnection">
-      <arg name="bus_name" type="s" tp:type="DBus_Bus_Name">
+    <signal name="NewConnection" tp:name-for-bindings="New_Connection">
+      <arg name="Bus_Name" type="s" tp:type="DBus_Bus_Name">
         <tp:docstring>
           The D-Bus service where the connection object can be found
         </tp:docstring>
       </arg>
-      <arg name="object_path" type="o">
+      <arg name="Object_Path" type="o">
         <tp:docstring>
           The object path of the Connection object on this service
         </tp:docstring>
       </arg>
-      <arg name="proto" type="s" tp:type="Protocol">
+      <arg name="Protocol" type="s" tp:type="Protocol">
         <tp:docstring>
           The identifier for the protocol this connection uses
         </tp:docstring>
@@ -197,13 +197,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
 
-    <method name="RequestConnection">
-      <arg direction="in" name="proto" type="s" tp:type="Protocol">
+    <method name="RequestConnection" tp:name-for-bindings="Request_Connection">
+      <arg direction="in" name="Protocol" type="s" tp:type="Protocol">
         <tp:docstring>
           The protocol identifier
         </tp:docstring>
       </arg>
-      <arg direction="in" name="parameters" type="a{sv}"
+      <arg direction="in" name="Parameters" type="a{sv}"
         tp:type="String_Variant_Map">
         <tp:docstring>
           A dictionary mapping parameter name to the variant boxed value
@@ -220,39 +220,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>Request a Connection object representing a given account on a given
-        protocol with the given parameters. The method returns the bus name
-        and the object path where the new Connection object can be found, which
-        should have the status of Connection_Status_Disconnected, to allow
-        signal handlers to be attached before connecting is started with the
-        Connect method.</p>
-
-        <p>In order to allow Connection objects to be discovered by new clients,
-        the object path and well-known bus name must be of the form
-        <code>/org/freedesktop/Telepathy/Connection/cmname/proto/account</code>
-        and
-        <code>org.freedesktop.Telepathy.Connection.cmname.proto.account</code>
-        where:</p>
-
-        <ul>
-          <li><em>cmname</em> is the same connection manager name that appears
-            in the connection manager's object path and well-known bus name</li>
-          <li><em>proto</em> is the protocol name as seen in
-            ListProtocols, but with "-" replaced with "_" to get a valid
-            object path/bus name</li>
-          <li><em>account</em> SHOULD be a series of elements formed such that
-            any valid distinct connection instance on this protocol has a
-            distinct name; this might be formed by including the server name
-            followed by the user name (escaped via some suitable mechanism like
-            telepathy-glib's tp_escape_as_identifier() function to preserve
-            uniqueness), or on protocols where connecting multiple times
-            is permissable, a per-connection identifier might be necessary to
-            ensure uniqueness</li>
-        </ul>
-
-        <p>Clients MUST NOT attempt to parse the <em>account</em> part of the
-          bus name. Connection managers MAY use any unique string for this
-          part.</p>
+        <p>Request a
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Connection</tp:dbus-ref>
+          object representing a given account on a given
+          protocol with the given parameters. The method returns the bus name
+          and the object path where the new Connection object can be found,
+          which should have the status of Connection_Status_Disconnected, to
+          allow signal handlers to be attached before connecting is started
+          with the
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection">Connect</tp:dbus-ref>
+          method.</p>
 
         <p>The parameters which must and may be provided in the parameters
         dictionary can be discovered with the GetParameters method. These
@@ -320,7 +297,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <property name="Interfaces" type="as" access="read">
+    <property name="Interfaces" tp:name-for-bindings="Interfaces"
+      type="as" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>A list of the extra interfaces provided by this connection manager
           (i.e. extra functionality that can be provided even before a

@@ -128,7 +128,8 @@
     </tp:mapping>
 
     <property name="ContactAttributeInterfaces" access="read" type="as"
-      tp:type="DBus_Interface[]">
+      tp:type="DBus_Interface[]"
+      tp:name-for-bindings="Contact_Attribute_Interfaces">
       <tp:docstring>
         A list of D-Bus interfaces for which
         <tp:member-ref>GetContactAttributes</tp:member-ref> is expected to work.
@@ -136,7 +137,8 @@
       </tp:docstring>
     </property>
 
-    <method name="GetContactAttributes">
+    <method name="GetContactAttributes"
+      tp:name-for-bindings="Get_Contact_Attributes">
       <tp:docstring>
         Return any number of contact attributes for the given handles.
       </tp:docstring>

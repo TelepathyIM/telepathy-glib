@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface name="org.freedesktop.Telepathy.Channel">
 
     <property name="ChannelType" type="s" tp:type="DBus_Interface"
-      access="read">
+      access="read" tp:name-for-bindings="Channel_Type">
       <tp:added version="0.17.7"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The channel's type. This cannot change once the channel has
@@ -46,8 +46,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </property>
 
-    <property name="Interfaces" type="as" tp:type="DBus_Interface[]"
-      access="read">
+    <property name="Interfaces" tp:name-for-bindings="Interfaces"
+      type="as" tp:type="DBus_Interface[]" access="read">
       <tp:added version="0.17.7"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Extra interfaces provided by this channel. This SHOULD NOT include
@@ -75,7 +75,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </property>
 
-    <property name="TargetHandle" type="u" access="read" tp:type="Handle">
+    <property name="TargetHandle" type="u" access="read" tp:type="Handle"
+      tp:name-for-bindings="Target_Handle">
       <tp:added version="0.17.7"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The handle (a representation for the identifier) of the contact,
@@ -112,7 +113,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </property>
 
-    <property name="TargetID" type="s" access="read">
+    <property name="TargetID" tp:name-for-bindings="Target_ID"
+      type="s" access="read">
       <tp:added version="0.17.9"/>
 
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -158,7 +160,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </property>
 
     <property name="TargetHandleType" type="u" access="read"
-      tp:type="Handle_Type">
+      tp:type="Handle_Type" tp:name-for-bindings="Target_Handle_Type">
       <tp:added version="0.17.7"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The type of TargetHandle.</p>
@@ -173,7 +175,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </property>
 
-    <method name="Close">
+    <method name="Close" tp:name-for-bindings="Close">
       <tp:docstring>
         Request that the channel be closed. This is not the case until
         the Closed signal has been emitted, and depending on the connection
@@ -198,7 +200,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <signal name="Closed">
+    <signal name="Closed" tp:name-for-bindings="Closed">
       <tp:docstring>
         Emitted when the channel has been closed. Method calls on the
         channel are no longer valid after this signal has been emitted,
@@ -207,7 +209,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
 
-    <method name="GetChannelType">
+    <method name="GetChannelType" tp:name-for-bindings="Get_Channel_Type">
       <tp:deprecated version="0.17.7">Use the ChannelType
         property if possible.</tp:deprecated>
       <arg direction="out" type="s" tp:type="DBus_Interface">
@@ -225,7 +227,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
-    <method name="GetHandle">
+    <method name="GetHandle" tp:name-for-bindings="Get_Handle">
       <tp:deprecated version="0.17.7">Use the TargetHandleType
         and TargetHandle properties if possible.</tp:deprecated>
       <arg direction="out" type="u" tp:type="Handle_Type">
@@ -252,7 +254,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
-    <method name="GetInterfaces">
+    <method name="GetInterfaces" tp:name-for-bindings="Get_Interfaces">
       <tp:deprecated version="0.17.7">Use the Interfaces
         property if possible.</tp:deprecated>
       <arg direction="out" type="as" tp:type="DBus_Interface[]">
@@ -279,6 +281,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     such as Channel.Type.ContactList which represents a list of people (such
     as a buddy list) or a Channel.Type.Text which represents a channel over
     which textual messages are sent and received.</p>
+
+    <p>Each Channel's object path MUST start with the object path of
+      its associated Connection, followed by '/'. There MAY be any number
+      of additional object-path components, which clients MUST NOT attempt
+      to parse.</p>
+
+    <tp:rationale>
+      <p>This ensures that Channel object paths are unique, even between
+        Connections and CMs, because Connection object paths are
+        guaranteed-unique via their link to the well-known bus name.</p>
+
+      <p>If all connection managers in use are known to comply with at least
+        spec version 0.17.10, then the Connection's object path can
+        even be determined from the Channel's without any additional
+        information, by taking the first 7 components.</p>
+    </tp:rationale>
 
     <p>Each channel may have an immutable handle associated with it, which
       may be any handle type, such as a contact, room or list handle,
@@ -315,6 +333,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       combination of channel type, handle type and handle. This guarantee
       has now been removed in order to accommodate features like message
       threads.
+    </tp:changed>
+
+    <tp:changed version="0.17.10">Previously we did not explicitly
+      guarantee that Channels' object paths had the Connection's object path
+      as a prefix.
     </tp:changed>
   </interface>
 </node>

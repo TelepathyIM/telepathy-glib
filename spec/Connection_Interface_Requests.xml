@@ -94,7 +94,7 @@
       </tp:member>
     </tp:struct>
 
-    <method name="CreateChannel">
+    <method name="CreateChannel" tp:name-for-bindings="Create_Channel">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Request that channels are created.</p>
 
@@ -200,7 +200,7 @@
       </tp:possible-errors>
     </method>
 
-    <signal name="NewChannels">
+    <signal name="NewChannels" tp:name-for-bindings="New_Channels">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>New channels have been created. The connection manager SHOULD emit
           a single signal for any group of closely related channels that are
@@ -230,8 +230,8 @@
       </arg>
     </signal>
 
-    <property name="Channels" type="a(oa{sv})" access="read"
-      tp:type="Channel_Details[]">
+    <property name="Channels" tp:name-for-bindings="Channels"
+      type="a(oa{sv})" access="read" tp:type="Channel_Details[]">
       <tp:docstring>
         A list of all the channels which currently exist on this connection.
         Change notification is via the
@@ -240,7 +240,7 @@
       </tp:docstring>
     </property>
 
-    <signal name="ChannelClosed">
+    <signal name="ChannelClosed" tp:name-for-bindings="Channel_Closed">
       <tp:docstring>
         Emitted when a channel is closed and hence disappears from the
         Channels property.
@@ -371,7 +371,8 @@
     </tp:struct>
 
     <property name="RequestableChannelClasses" access="read"
-      type="a(a{sv}as)" tp:type="Requestable_Channel_Class[]">
+      type="a(a{sv}as)" tp:type="Requestable_Channel_Class[]"
+      tp:name-for-bindings="Requestable_Channel_Classes">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The classes of channel that are expected to be available on this
           connection, i.e. those for which

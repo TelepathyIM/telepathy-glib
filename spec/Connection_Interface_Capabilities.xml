@@ -109,8 +109,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:member type="u" name="New_Type_Specific_Flags"/>
     </tp:struct>
 
-    <method name="AdvertiseCapabilities">
-      <arg direction="in" name="add" type="a(su)" tp:type="Capability_Pair[]">
+    <method name="AdvertiseCapabilities"
+      tp:name-for-bindings="Advertise_Capabilities">
+      <arg direction="in" name="Add" type="a(su)" tp:type="Capability_Pair[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structures containing:
           <ul>
@@ -119,7 +120,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           </ul>
         </tp:docstring>
       </arg>
-      <arg direction="in" name="remove" type="as" tp:type="DBus_Interface[]">
+      <arg direction="in" name="Remove" type="as" tp:type="DBus_Interface[]">
         <tp:docstring>
           An array of D-Bus interface names of channel types to remove
         </tp:docstring>
@@ -158,8 +159,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <signal name="CapabilitiesChanged">
-      <arg name="caps" type="a(usuuuu)" tp:type="Capability_Change[]">
+    <signal name="CapabilitiesChanged"
+      tp:name-for-bindings="Capabilities_Changed">
+      <arg name="Caps" type="a(usuuuu)" tp:type="Capability_Change[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structures containing:
           <ul>
@@ -182,8 +184,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
 
-    <method name="GetCapabilities">
-      <arg direction="in" name="handles" type="au" tp:type="Contact_Handle[]">
+    <method name="GetCapabilities" tp:name-for-bindings="Get_Capabilities">
+      <arg direction="in" name="Handles" type="au" tp:type="Contact_Handle[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>An array of contact handles for this connection.</p>
 

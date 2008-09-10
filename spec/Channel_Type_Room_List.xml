@@ -27,7 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:member type="a{sv}" tp:type="String_Variant_Map" name="Info"/>
     </tp:struct>
 
-    <property name="Server" type="s" access="read">
+    <property name="Server" tp:name-for-bindings="Server"
+      type="s" access="read">
       <tp:docstring>
         <p>For protocols with a concept of chatrooms on multiple servers
           with different DNS names (like XMPP), the DNS name of the server
@@ -38,7 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </property>
 
-    <method name="GetListingRooms">
+    <method name="GetListingRooms" tp:name-for-bindings="Get_Listing_Rooms">
       <arg direction="out" type="b">
         <tp:docstring>
           A boolean indicating if room listing is in progress
@@ -50,8 +51,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
-    <signal name="GotRooms">
-      <arg name="rooms" type="a(usa{sv})" tp:type="Room_Info[]">
+    <signal name="GotRooms" tp:name-for-bindings="Got_Rooms">
+      <arg name="Rooms" type="a(usa{sv})" tp:type="Room_Info[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structs containing:
           <ul>
@@ -80,7 +81,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </dl>
       </tp:docstring>
     </signal>
-    <method name="ListRooms">
+    <method name="ListRooms" tp:name-for-bindings="List_Rooms">
       <tp:docstring>
         Request the list of rooms from the server. The ListingRooms signal
         should be emitted when this request is being processed, GotRooms when
@@ -94,14 +95,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
       </tp:possible-errors>
     </method>
-    <method name="StopListing">
+    <method name="StopListing" tp:name-for-bindings="Stop_Listing">
       <tp:docstring>
         Stop the room listing if it's in progress, but don't close the channel.
         The ListingRooms signal should be emitted when the listing stops.
       </tp:docstring>
     </method>
-    <signal name="ListingRooms">
-      <arg name="listing" type="b">
+    <signal name="ListingRooms" tp:name-for-bindings="Listing_Rooms">
+      <arg name="Listing" type="b">
         <tp:docstring>A boolean indicating if room listing is in progress</tp:docstring>
       </arg>
       <tp:docstring>

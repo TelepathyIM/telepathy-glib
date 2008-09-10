@@ -45,8 +45,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:member type="s" name="Text"/>
     </tp:struct>
 
-    <method name="AcknowledgePendingMessages">
-      <arg direction="in" name="ids" type="au" tp:type="Message_ID[]">
+    <method name="AcknowledgePendingMessages"
+      tp:name-for-bindings="Acknowledge_Pending_Messages">
+      <arg direction="in" name="IDs" type="au" tp:type="Message_ID[]">
         <tp:docstring>
           The IDs of the messages to acknowledge
         </tp:docstring>
@@ -64,7 +65,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <method name="GetMessageTypes">
+    <method name="GetMessageTypes" tp:name-for-bindings="Get_Message_Types">
       <arg direction="out" type="au" tp:type="Channel_Text_Message_Type[]">
         <tp:docstring>
           An array of integer message types (ChannelTextMessageType)
@@ -76,8 +77,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
-    <method name="ListPendingMessages">
-      <arg direction="in" name="clear" type="b">
+    <method name="ListPendingMessages"
+      tp:name-for-bindings="List_Pending_Messages">
+      <arg direction="in" name="Clear" type="b">
         <tp:docstring>
           If true, behave as if AcknowledgePendingMessages had also been
           called.
@@ -107,7 +109,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
-    <signal name="LostMessage">
+    <signal name="LostMessage" tp:name-for-bindings="Lost_Message">
       <tp:docstring>
         This signal is emitted to indicate that an incoming message was
         not able to be stored and forwarded by the connection manager
@@ -115,33 +117,33 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
 
-    <signal name="Received">
-      <arg name="id" type="u">
+    <signal name="Received" tp:name-for-bindings="Received">
+      <arg name="ID" type="u">
         <tp:docstring>
           A numeric identifier for acknowledging the message
         </tp:docstring>
       </arg>
-      <arg name="timestamp" type="u" tp:type="Unix_Timestamp">
+      <arg name="Timestamp" type="u" tp:type="Unix_Timestamp">
         <tp:docstring>
           A Unix timestamp indicating when the message was received
         </tp:docstring>
       </arg>
-      <arg name="sender" type="u" tp:type="Contact_Handle">
+      <arg name="Sender" type="u" tp:type="Contact_Handle">
         <tp:docstring>
           The handle of the contact who sent the message
         </tp:docstring>
       </arg>
-      <arg name="type" type="u" tp:type="Channel_Text_Message_Type">
+      <arg name="Type" type="u" tp:type="Channel_Text_Message_Type">
         <tp:docstring>
           The type of the message (normal, action, notice, etc.)
         </tp:docstring>
       </arg>
-      <arg name="flags" type="u" tp:type="Channel_Text_Message_Flags">
+      <arg name="Flags" type="u" tp:type="Channel_Text_Message_Flags">
         <tp:docstring>
           A bitwise OR of the message flags
         </tp:docstring>
       </arg>
-      <arg name="text" type="s">
+      <arg name="Text" type="s">
         <tp:docstring>
           The text of the message
         </tp:docstring>
@@ -155,13 +157,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </signal>
 
-    <method name="Send">
-      <arg direction="in" name="type" type="u" tp:type="Channel_Text_Message_Type">
+    <method name="Send" tp:name-for-bindings="Send">
+      <arg direction="in" name="Type" type="u" tp:type="Channel_Text_Message_Type">
         <tp:docstring>
           An integer indicating the type of the message
         </tp:docstring>
       </arg>
-      <arg direction="in" name="text" type="s">
+      <arg direction="in" name="Text" type="s">
         <tp:docstring>
           The message to send
         </tp:docstring>
@@ -214,23 +216,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:enumvalue>
     </tp:enum>
 
-    <signal name="SendError">
-      <arg name="error" type="u" tp:type="Channel_Text_Send_Error">
+    <signal name="SendError" tp:name-for-bindings="Send_Error">
+      <arg name="Error" type="u" tp:type="Channel_Text_Send_Error">
         <tp:docstring>
           The error that occurred
         </tp:docstring>
       </arg>
-      <arg name="timestamp" type="u" tp:type="Unix_Timestamp">
+      <arg name="Timestamp" type="u" tp:type="Unix_Timestamp">
         <tp:docstring>
           The Unix timestamp indicating when the message was sent
         </tp:docstring>
       </arg>
-      <arg name="type" type="u" tp:type="Channel_Text_Message_Type">
+      <arg name="Type" type="u" tp:type="Channel_Text_Message_Type">
         <tp:docstring>
           The message type
         </tp:docstring>
       </arg>
-      <arg name="text" type="s">
+      <arg name="Text" type="s">
         <tp:docstring>
           The text of the message
         </tp:docstring>
@@ -249,19 +251,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         actually implemented.</tp:changed>
     </signal>
 
-    <signal name="Sent">
-      <arg name="timestamp" type="u" tp:type="Unix_Timestamp">
+    <signal name="Sent" tp:name-for-bindings="Sent">
+      <arg name="Timestamp" type="u" tp:type="Unix_Timestamp">
         <tp:docstring>
           Unix timestamp indicating when the message was sent
         </tp:docstring>
       </arg>
-      <arg name="type" type="u" tp:type="Channel_Text_Message_Type">
+      <arg name="Type" type="u" tp:type="Channel_Text_Message_Type">
         <tp:docstring>
           The message type (normal, action, notice, etc) from
           ChannelTextMessageType
         </tp:docstring>
       </arg>
-      <arg name="text" type="s">
+      <arg name="Text" type="s">
         <tp:docstring>
           The text of the message
         </tp:docstring>
@@ -463,6 +465,42 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         and handle type CONTACT should continue to succeed, but may return
         a channel with handle type 0, handle 0, the group interface,
         and the local and remote contacts in its members.</p>
+
+      <p>If a channel of type Text is closed while it has pending messages,
+        the connection manager MUST allow this, but SHOULD open a new,
+        identical channel to deliver those messages, signalling it as a new
+        channel with the
+        <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection">NewChannel</tp:dbus-ref>
+        signal (with the suppress_handler parameter set to FALSE).</p>
+
+      <tp:rationale>
+        <p>In effect, this turns this situation, in which a client
+          is likely to lose messages:</p>
+
+        <ul>
+          <li>UI window is closed</li>
+          <li>message arrives</li>
+          <li>text channel emits Received</li>
+          <li>UI calls Close on text channel before it has seen the
+            Received signal</li>
+          <li>text channel emits Closed and closes</li>
+        </ul>
+
+        <p>into something nearly equivalent to this situation, which is
+          fine:</p>
+
+        <ul>
+          <li>UI window is closed</li>
+          <li>UI calls Close on text channel</li>
+          <li>text channel emits Closed and closes</li>
+          <li>message arrives</li>
+          <li>new text channel is created, connection emits NewChannel</li>
+          <li>(the same or a different) UI handles it</li>
+        </ul>
+
+        <p>suppress_handler must be set to FALSE so the replacement channel
+          will be handled by something.</p>
+      </tp:rationale>
     </tp:docstring>
   </interface>
 </node>

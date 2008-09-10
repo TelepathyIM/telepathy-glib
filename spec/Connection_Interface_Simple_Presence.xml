@@ -55,8 +55,8 @@
             translation of "Available" from a menu.
             It is more informative for his English-speaking colleagues
             to see the English translation of "Available" (as localized
-            by their own clients) than to see the Welsh version (which they
-            don't understand anyway).
+            by their own clients) than to see "Ar Gael" (which they don't
+            understand anyway).
           </tp:rationale>
         </tp:docstring>
       </tp:member>
@@ -129,8 +129,8 @@
       </tp:member>
     </tp:mapping>
 
-    <method name="SetPresence">
-      <arg direction="in" name="status" type="s">
+    <method name="SetPresence" tp:name-for-bindings="Set_Presence">
+      <arg direction="in" name="Status" type="s">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The string identifier of the desired status. Possible status
             identifiers are defined in the
@@ -153,7 +153,7 @@
           </tp:rationale>
         </tp:docstring>
       </arg>
-      <arg direction="in" name="status_message" type="s">
+      <arg direction="in" name="Status_Message" type="s">
         <tp:docstring>
           The status message associated with the current status.
         </tp:docstring>
@@ -189,13 +189,13 @@
       </tp:possible-errors>
     </method>
 
-    <method name="GetPresences">
-      <arg direction="in" name="contacts" type="au" tp:type="Contact_Handle[]">
+    <method name="GetPresences" tp:name-for-bindings="Get_Presences">
+      <arg direction="in" name="Contacts" type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           An array of the contacts whose presence should be obtained.
         </tp:docstring>
       </arg>
-      <arg direction="out" name="presence" type="a{u(uss)}"
+      <arg direction="out" name="Presence" type="a{u(uss)}"
         tp:type="Simple_Contact_Presences">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>Presence information in the same format as for the
@@ -228,7 +228,7 @@
       </tp:possible-errors>
     </method>
 
-    <property name="Statuses" access="read"
+    <property name="Statuses" tp:name-for-bindings="Statuses" access="read"
       type="a{s(ubb)}" tp:type="Simple_Status_Spec_Map">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>A dictionary where the keys are the presence statuses that the user
@@ -265,8 +265,8 @@
       </tp:docstring>
     </property>
 
-    <signal name="PresencesChanged">
-      <arg name="presence" type="a{u(uss)}" tp:type="Simple_Contact_Presences">
+    <signal name="PresencesChanged" tp:name-for-bindings="Presences_Changed">
+      <arg name="Presence" type="a{u(uss)}" tp:type="Simple_Contact_Presences">
         <tp:docstring>
           A dictionary of contact handles mapped to the status,
           presence type and status message.

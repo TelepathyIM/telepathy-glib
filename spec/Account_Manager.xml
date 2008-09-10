@@ -29,6 +29,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         the session bus. This process must export an
         /org/freedesktop/Telepathy/AccountManager object with the
         AccountManager interface.</p>
+
+      <p>Until a mechanism exists for making a reasonable automatic choice
+        of AccountManager implementation, implementations SHOULD NOT
+        register as an activatable service for the AccountManager's
+        well-known bus name. Instead, it is RECOMMENDED that some component
+        of the user's session will select and activate a particular
+        implementation, and that other Telepathy-enabled programs can
+        detect whether Telepathy is in use by checking whether the
+        AccountManager's well-known name is in use at runtime.</p>
     </tp:docstring>
     <tp:added version="0.17.2"/>
 
@@ -43,13 +52,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     * register filters (completely out of scope: Channel Dispatcher again)
     -->
 
-    <property name="Interfaces" type="as" access="read">
+    <property name="Interfaces" tp:name-for-bindings="Interfaces"
+      type="as" tp:type="DBus_Interface[]" access="read">
       <tp:docstring>
         A list of the interfaces provided by the account manager object.
       </tp:docstring>
     </property>
 
-    <property name="ValidAccounts" type="ao" access="read">
+    <property name="ValidAccounts" type="ao" access="read"
+      tp:name-for-bindings="Valid_Accounts">
       <tp:docstring>
         A list of the valid (complete, usable) accounts. Change notification
         is via AccountValidityChanged.
@@ -63,14 +74,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </property>
 
-    <property name="InvalidAccounts" type="ao" access="read">
+    <property name="InvalidAccounts" type="ao" access="read"
+      tp:name-for-bindings="Invalid_Accounts">
       <tp:docstring>
         A list of incomplete or otherwise unusable accounts. Change
         notification is via AccountValidityChanged.
       </tp:docstring>
     </property>
 
-    <signal name="AccountRemoved">
+    <signal name="AccountRemoved" tp:name-for-bindings="Account_Removed">
       <tp:docstring>
         The given account has been removed.
 
@@ -87,7 +99,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </arg>
     </signal>
 
-    <signal name="AccountValidityChanged">
+    <signal name="AccountValidityChanged"
+      tp:name-for-bindings="Account_Validity_Changed">
       <tp:docstring>
         The validity of the given account has changed. New accounts are
         also indicated by this signal, as an account validity change
@@ -112,7 +125,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </arg>
     </signal>
 
-    <method name="CreateAccount">
+    <method name="CreateAccount" tp:name-for-bindings="Create_Account">
       <tp:docstring>
         Request the creation of a new account. The account manager SHOULD NOT
         allow invalid accounts to be created. Accounts created through this

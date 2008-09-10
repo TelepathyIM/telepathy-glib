@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         another call).</p>
     </tp:docstring>
 
-    <method name="GetHoldState">
+    <method name="GetHoldState" tp:name-for-bindings="Get_Hold_State">
       <tp:docstring>
         Return whether the local user has placed the channel on hold.
       </tp:docstring>
@@ -57,7 +57,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </arg>
     </method>
 
-    <signal name="HoldStateChanged">
+    <signal name="HoldStateChanged" tp:name-for-bindings="Hold_State_Changed">
       <tp:docstring>
         Emitted to indicate that the hold state has changed for this channel.
         This may occur as a consequence of you requesting a change with
@@ -140,7 +140,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:enumvalue>
     </tp:enum>
 
-    <method name="RequestHold">
+    <method name="RequestHold" tp:name-for-bindings="Request_Hold">
       <arg direction="in" name="Hold" type="b">
         <tp:docstring>
           A boolean indicating whether or not the channel should be on hold
