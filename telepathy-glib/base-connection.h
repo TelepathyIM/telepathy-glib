@@ -215,7 +215,12 @@ struct _TpBaseConnectionClass {
  *  subclasses: use tp_base_connection_change_status() to set it.
  * @self_handle: The handle of type %TP_HANDLE_TYPE_CONTACT representing the
  *  local user. Must be set nonzero by the subclass before moving to state
- *  CONNECTED. If nonzero, the connection must hold a reference to the handle.
+ *  CONNECTED. Since 0.7.UNRELEASED, setting this property directly is
+ *  deprecated, in favour of tp_base_connection_set_self_handle(); if this
+ *  property is set directly, the connection must ensure it holds a reference
+ *  to the handle. Changing this property directly having moved to state
+ *  CONNECTED is very strongly discouraged, as this will prevent the
+ *  SelfHandleChanged signal being emitted.
  *
  * Data structure representing a generic #TpSvcConnection implementation.
  *
@@ -254,6 +259,11 @@ gboolean tp_base_connection_register (TpBaseConnection *self,
 
 void tp_base_connection_change_status (TpBaseConnection *self,
     TpConnectionStatus status, TpConnectionStatusReason reason);
+
+TpHandle tp_base_connection_get_self_handle (TpBaseConnection *self);
+
+void tp_base_connection_set_self_handle (TpBaseConnection *self,
+    TpHandle self_handle);
 
 void tp_base_connection_finish_shutdown (TpBaseConnection *self);
 

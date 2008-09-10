@@ -45,7 +45,9 @@
 #include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/channel-factory-iface.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
 
@@ -58,11 +60,14 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
     tp_base_connection,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION,
-      service_iface_init))
+      service_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init))
 
 enum
 {
     PROP_PROTOCOL = 1,
+    PROP_SELF_HANDLE,
 };
 
 /* signal enum */
@@ -187,6 +192,10 @@ tp_base_connection_get_property (GObject *object,
       g_value_set_string (value, priv->protocol);
       break;
 
+    case PROP_SELF_HANDLE:
+      g_value_set_uint (value, self->self_handle);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -208,6 +217,31 @@ tp_base_connection_set_property (GObject      *object,
       priv->protocol = g_value_dup_string (value);
       g_assert (priv->protocol != NULL);
       break;
+
+    case PROP_SELF_HANDLE:
+      {
+        TpHandle new_self_handle = g_value_get_uint (value);
+
+        if (self->status == TP_CONNECTION_STATUS_CONNECTED)
+          g_return_if_fail (new_self_handle != 0);
+
+        if (self->self_handle == new_self_handle)
+          return;
+
+        if (self->self_handle != 0)
+          tp_handle_unref (priv->handles[TP_HANDLE_TYPE_CONTACT],
+              self->self_handle);
+
+        self->self_handle = new_self_handle;
+
+        if (self->self_handle != 0)
+          tp_handle_ref (priv->handles[TP_HANDLE_TYPE_CONTACT],
+              self->self_handle);
+
+        tp_svc_connection_emit_self_handle_changed (self, self->self_handle);
+      }
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -505,9 +539,14 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   return (GObject *)self;
 }
 
+
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
+  static TpDBusPropertiesMixinPropImpl connection_properties[] = {
+      { "SelfHandle", "self-handle", NULL },
+      { NULL }
+  };
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -534,6 +573,22 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_PROTOCOL, param_spec);
 
+  /**
+   * TpBaseConnection:self-handle:
+   *
+   * The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.
+   * Must be set nonzero by the subclass before moving to state CONNECTED.
+   *
+   * Since: 0.7.UNRELEASED
+   */
+  param_spec = g_param_spec_uint ("self-handle",
+      "Connection.SelfHandle",
+      "The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.",
+      0, G_MAXUINT, 0,
+      G_PARAM_READWRITE |
+      G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_SELF_HANDLE, param_spec);
+
   /* signal definitions */
 
   /**
@@ -552,6 +607,12 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CONNECTION,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      connection_properties);
 }
 
 static void
@@ -896,14 +957,14 @@ tp_base_connection_get_protocol (TpSvcConnection *iface,
 }
 
 /**
- * tp_base_connection_get_self_handle
+ * tp_base_connection_dbus_get_self_handle
  *
  * Implements D-Bus method GetSelfHandle
  * on interface org.freedesktop.Telepathy.Connection
  */
 static void
-tp_base_connection_get_self_handle (TpSvcConnection *iface,
-                                    DBusGMethodInvocation *context)
+tp_base_connection_dbus_get_self_handle (TpSvcConnection *iface,
+                                         DBusGMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
 
@@ -1434,6 +1495,42 @@ tp_base_connection_get_handles (TpBaseConnection *self,
   return priv->handles[handle_type];
 }
 
+
+/**
+ * tp_base_connection_get_self_handle:
+ * @self: A connection
+ *
+ * Returns the #TpBaseConnection:self-handle property, which is guaranteed not
+ * to be 0 once the connection has moved to the CONNECTED state.
+ *
+ * Returns: the current self handle of the connection.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+TpHandle
+tp_base_connection_get_self_handle (TpBaseConnection *self)
+{
+  return self->self_handle;
+}
+
+/**
+ * tp_base_connection_set_self_handle:
+ * @self: A connection
+ * @self_handle: The new self handle for the connection.
+ *
+ * Sets the #TpBaseConnection:self-handle property.  self_handle may not be 0
+ * once the connection has moved to the CONNECTED state.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_base_connection_set_self_handle (TpBaseConnection *self,
+                                    TpHandle self_handle)
+{
+  g_object_set (self, "self-handle", self_handle, NULL);
+}
+
+
 /**
  * tp_base_connection_finish_shutdown:
  * @self: The connection
@@ -1711,7 +1808,7 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(,disconnect);
   IMPLEMENT(,get_interfaces);
   IMPLEMENT(,get_protocol);
-  IMPLEMENT(,get_self_handle);
+  IMPLEMENT(dbus_,get_self_handle);
   IMPLEMENT(,get_status);
   IMPLEMENT(,hold_handles);
   IMPLEMENT(,inspect_handles);
@@ -1766,4 +1863,3 @@ tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
       TP_IFACE_CONNECTION,
       tp_base_connection_fill_contact_attributes);
 }
-
