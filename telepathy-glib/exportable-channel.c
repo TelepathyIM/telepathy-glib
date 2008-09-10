@@ -73,8 +73,10 @@ exportable_channel_base_init (gpointer klass)
        * If true, the closed signal on the Channel interface indicates that
        * the channel can go away.
        *
-       * If false, the closed signal indicates that the channel should
-       * appear to go away and be re-created.
+       * If false, the closed signal indicates to the channel manager that the
+       * channel should appear to go away and be re-created, by emitting Closed
+       * followed by NewChannel. (This is to support the "respawning" of  Text
+       * channels which are closed with unacknowledged messages.)
        */
       param_spec = g_param_spec_boolean ("channel-destroyed",
           "Destroyed?",
