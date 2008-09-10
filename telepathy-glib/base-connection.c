@@ -916,12 +916,142 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
 }
 
 
+/* D-Bus properties for the Requests interface */
+
+static void
+factory_get_channel_details_foreach (TpChannelIface *chan,
+                                     gpointer data)
+{
+  GPtrArray *details = data;
+
+  g_ptr_array_add (details, get_channel_details (G_OBJECT (chan)));
+}
+
+
+static void
+manager_get_channel_details_foreach (TpExportableChannel *chan,
+                                     gpointer data)
+{
+  GPtrArray *details = data;
+
+  g_ptr_array_add (details, get_channel_details (G_OBJECT (chan)));
+}
+
+
+static GPtrArray *
+conn_requests_get_channel_details (TpBaseConnection *self)
+{
+  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  /* guess that each ChannelManager and each ChannelFactory has two
+   * channels, on average */
+  GPtrArray *details = g_ptr_array_sized_new (priv->channel_managers->len * 2
+      + priv->channel_factories->len * 2);
+  guint i;
+
+  for (i = 0; i < priv->channel_factories->len; i++)
+    {
+      TpChannelFactoryIface *factory = TP_CHANNEL_FACTORY_IFACE (
+          g_ptr_array_index (priv->channel_factories, i));
+
+      tp_channel_factory_iface_foreach (factory,
+          factory_get_channel_details_foreach, details);
+    }
+
+  for (i = 0; i < priv->channel_managers->len; i++)
+    {
+      TpChannelManager *manager = TP_CHANNEL_MANAGER (
+          g_ptr_array_index (priv->channel_managers, i));
+
+      tp_channel_manager_foreach_channel (manager,
+          manager_get_channel_details_foreach, details);
+    }
+
+  return details;
+}
+
+
+static void
+get_requestables_foreach (TpChannelManager *manager,
+                          GHashTable *fixed_properties,
+                          const gchar * const *allowed_properties,
+                          gpointer user_data)
+{
+  GPtrArray *details = user_data;
+  GValueArray *requestable = g_value_array_new (2);
+  GValue *value;
+
+  g_value_array_append (requestable, NULL);
+  value = g_value_array_get_nth (requestable, 0);
+  g_value_init (value, TP_HASH_TYPE_CHANNEL_CLASS);
+  g_value_set_boxed (value, fixed_properties);
+
+  g_value_array_append (requestable, NULL);
+  value = g_value_array_get_nth (requestable, 1);
+  g_value_init (value, G_TYPE_STRV);
+  g_value_set_boxed (value, allowed_properties);
+
+  g_ptr_array_add (details, requestable);
+}
+
+
+static GPtrArray *
+conn_requests_get_requestables (TpBaseConnection *self)
+{
+  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  /* generously guess that each ChannelManager has about 2 ChannelClasses */
+  GPtrArray *details = g_ptr_array_sized_new (priv->channel_managers->len * 2);
+  guint i;
+
+  for (i = 0; i < priv->channel_managers->len; i++)
+    {
+      TpChannelManager *manager = TP_CHANNEL_MANAGER (
+          g_ptr_array_index (priv->channel_managers, i));
+
+      tp_channel_manager_foreach_channel_class (manager,
+          get_requestables_foreach, details);
+    }
+
+  return details;
+}
+
+
+static void
+conn_requests_get_dbus_property (GObject *object,
+                                 GQuark interface,
+                                 GQuark name,
+                                 GValue *value,
+                                 gpointer unused G_GNUC_UNUSED)
+{
+  TpBaseConnection *self = TP_BASE_CONNECTION (object);
+
+  g_return_if_fail (interface == TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS);
+
+  if (name == g_quark_from_static_string ("Channels"))
+    {
+      g_value_take_boxed (value, conn_requests_get_channel_details (self));
+    }
+  else if (name == g_quark_from_static_string ("RequestableChannelClasses"))
+    {
+      g_value_take_boxed (value, conn_requests_get_requestables (self));
+    }
+  else
+    {
+      g_return_if_reached ();
+    }
+}
+
+
 static void
 tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl connection_properties[] = {
       { "SelfHandle", "self-handle", NULL },
       { NULL }
+  };
+  static TpDBusPropertiesMixinPropImpl requests_properties[] = {
+        { "Channels", NULL, NULL },
+        { "RequestableChannelClasses", NULL, NULL },
+        { NULL }
   };
   GParamSpec *param_spec;
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -989,6 +1119,10 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       TP_IFACE_QUARK_CONNECTION,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL,
       connection_properties);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS,
+      conn_requests_get_dbus_property, NULL,
+      requests_properties);
 }
 
 static void
@@ -2576,169 +2710,4 @@ tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
   tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
       TP_IFACE_CONNECTION,
       tp_base_connection_fill_contact_attributes);
-}
-
-
-/* D-Bus properties for the Requests interface */
-
-static void
-factory_get_channel_details_foreach (TpChannelIface *chan,
-                                     gpointer data)
-{
-  GPtrArray *details = data;
-
-  g_ptr_array_add (details, get_channel_details (G_OBJECT (chan)));
-}
-
-
-static void
-manager_get_channel_details_foreach (TpExportableChannel *chan,
-                                     gpointer data)
-{
-  GPtrArray *details = data;
-
-  g_ptr_array_add (details, get_channel_details (G_OBJECT (chan)));
-}
-
-
-static GPtrArray *
-conn_requests_get_channel_details (TpBaseConnection *self)
-{
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
-  /* guess that each ChannelManager and each ChannelFactory has two
-   * channels, on average */
-  GPtrArray *details = g_ptr_array_sized_new (priv->channel_managers->len * 2
-      + priv->channel_factories->len * 2);
-  guint i;
-
-  for (i = 0; i < priv->channel_factories->len; i++)
-    {
-      TpChannelFactoryIface *factory = TP_CHANNEL_FACTORY_IFACE (
-          g_ptr_array_index (priv->channel_factories, i));
-
-      tp_channel_factory_iface_foreach (factory,
-          factory_get_channel_details_foreach, details);
-    }
-
-  for (i = 0; i < priv->channel_managers->len; i++)
-    {
-      TpChannelManager *manager = TP_CHANNEL_MANAGER (
-          g_ptr_array_index (priv->channel_managers, i));
-
-      tp_channel_manager_foreach_channel (manager,
-          manager_get_channel_details_foreach, details);
-    }
-
-  return details;
-}
-
-
-static void
-get_requestables_foreach (TpChannelManager *manager,
-                          GHashTable *fixed_properties,
-                          const gchar * const *allowed_properties,
-                          gpointer user_data)
-{
-  GPtrArray *details = user_data;
-  GValueArray *requestable = g_value_array_new (2);
-  GValue *value;
-
-  g_value_array_append (requestable, NULL);
-  value = g_value_array_get_nth (requestable, 0);
-  g_value_init (value, TP_HASH_TYPE_CHANNEL_CLASS);
-  g_value_set_boxed (value, fixed_properties);
-
-  g_value_array_append (requestable, NULL);
-  value = g_value_array_get_nth (requestable, 1);
-  g_value_init (value, G_TYPE_STRV);
-  g_value_set_boxed (value, allowed_properties);
-
-  g_ptr_array_add (details, requestable);
-}
-
-
-static GPtrArray *
-conn_requests_get_requestables (TpBaseConnection *self)
-{
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
-  /* generously guess that each ChannelManager has about 2 ChannelClasses */
-  GPtrArray *details = g_ptr_array_sized_new (priv->channel_managers->len * 2);
-  guint i;
-
-  for (i = 0; i < priv->channel_managers->len; i++)
-    {
-      TpChannelManager *manager = TP_CHANNEL_MANAGER (
-          g_ptr_array_index (priv->channel_managers, i));
-
-      tp_channel_manager_foreach_channel_class (manager,
-          get_requestables_foreach, details);
-    }
-
-  return details;
-}
-
-
-static void
-conn_requests_get_dbus_property (GObject *object,
-                                 GQuark interface,
-                                 GQuark name,
-                                 GValue *value,
-                                 gpointer unused G_GNUC_UNUSED)
-{
-  TpBaseConnection *self = TP_BASE_CONNECTION (object);
-
-  g_return_if_fail (interface == TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS);
-
-  if (name == g_quark_from_static_string ("Channels"))
-    {
-      g_value_take_boxed (value, conn_requests_get_channel_details (self));
-    }
-  else if (name == g_quark_from_static_string ("RequestableChannelClasses"))
-    {
-      g_value_take_boxed (value, conn_requests_get_requestables (self));
-    }
-  else
-    {
-      g_return_if_reached ();
-    }
-}
-
-
-static TpDBusPropertiesMixinPropImpl requests_properties[] = {
-      { "Channels", NULL, NULL },
-      { "RequestableChannelClasses", NULL, NULL },
-      { NULL }
-};
-
-
-/**
- * tp_base_connection_register_requests_dbus_properties:
- * @cls: A subclass of #TpBaseConnectionClass featuring the D-Bus properties
- *  mixin, which must also implement
- *  #TpBaseConnectionClass::create_channel_managers and include
- *  #TP_SVC_CONNECTION_INTERFACE_REQUESTS in
- *  #TpBaseConnectionClass::interfaces_always_present
- *
- * Implements Connection.Interface.Requests' D-Bus properties for instances of
- * this subclass, using the subclass' D-Bus properties mixin.  Before calling
- * this function, the subclass must have initialized the D-Bus properties
- * mixin, implemented #TpBaseConnectionClass::create_channel_managers and
- * included #TP_SVC_CONNECTION_INTERFACE_REQUESTS in
- * #TpBaseConnectionClass::interfaces_always_present.
- */
-void
-tp_base_connection_register_requests_dbus_properties (GObjectClass *cls)
-{
-  TpBaseConnectionClass *base_class = TP_BASE_CONNECTION_CLASS (cls);
-
-  /* We need some channel managers... */
-  g_assert (base_class->create_channel_managers != NULL);
-  /* ...and to advertise that Requests is supported. */
-  g_assert (tp_strv_contains (base_class->interfaces_always_present,
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS));
-
-  tp_dbus_properties_mixin_implement_interface (cls,
-      TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS,
-      conn_requests_get_dbus_property, NULL,
-      requests_properties);
 }
