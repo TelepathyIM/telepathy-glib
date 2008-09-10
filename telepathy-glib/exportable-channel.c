@@ -57,7 +57,10 @@ exportable_channel_base_init (gpointer klass)
        * and in the Channels property, as a map from
        * inter.face.name.propertyname to GValue.
        *
-       * This can only change when the closed signal is emitted.
+       * A channel's properties are constant for its lifetime on the bus, so
+       * this property should only change when the closed signal is emitted (so
+       * that respawned channels can reappear on the bus with different
+       * properties).
        */
       param_spec = g_param_spec_boxed ("channel-properties",
           "Channel properties",
