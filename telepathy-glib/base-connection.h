@@ -295,9 +295,6 @@ void tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
 
 void tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self);
 
-void tp_base_connection_requests_iface_init (gpointer g_iface,
-    gpointer iface_data);
-
 void tp_base_connection_register_requests_dbus_properties (GObjectClass *cls);
 
 /* TYPE MACROS */

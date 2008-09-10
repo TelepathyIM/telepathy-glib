@@ -57,6 +57,7 @@
 #include "debug-internal.h"
 
 static void service_iface_init (gpointer, gpointer);
+static void requests_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
     tp_base_connection,
@@ -64,7 +65,9 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION,
       service_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      tp_dbus_properties_mixin_iface_init));
+      tp_dbus_properties_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS,
+      requests_iface_init));
 
 enum
 {
@@ -2513,9 +2516,9 @@ conn_requests_ensure_channel (TpSvcConnectionInterfaceRequests *svc,
 #endif
 
 
-void
-tp_base_connection_requests_iface_init (gpointer g_iface,
-                                        gpointer iface_data G_GNUC_UNUSED)
+static void
+requests_iface_init (gpointer g_iface,
+                     gpointer iface_data G_GNUC_UNUSED)
 {
   TpSvcConnectionInterfaceRequestsClass *iface = g_iface;
 
