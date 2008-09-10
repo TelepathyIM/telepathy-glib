@@ -20,8 +20,10 @@ usage ()
 {
   echo "usage: $me [options] -- program [program_options]" >&2
   echo "Requires write access to the current directory." >&2
-  echo "If \$WITH_SESSION_BUS_FORK_DBUS_MONITOR is set, fork dbus-monitor:" >&2
-  echo "  dbus-monitor \$WITH_SESSION_BUS_FORK_DBUS_MONITOR_OPT" >&2
+  echo "" >&2
+  echo "If \$WITH_SESSION_BUS_FORK_DBUS_MONITOR is set, fork dbus-monitor" >&2
+  echo "with the arguments in \$WITH_SESSION_BUS_FORK_DBUS_MONITOR_OPT." >&2
+  echo "The output of dbus-monitor is saved in $me-<pid>.dbus-monitor-logs" >&2
   exit 2
 }
 
