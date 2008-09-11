@@ -40,12 +40,32 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
   TP_TYPE_EXPORTABLE_CHANNEL, TpExportableChannelIface))
 
+/**
+ * TpExportableChannel:
+ *
+ * Opaque typedef representing a channel with several standard properties.
+ */
 typedef struct _TpExportableChannel TpExportableChannel;
+
 typedef struct _TpExportableChannelIface TpExportableChannelIface;
 
+
+/**
+ * TpExportableChannelFunc:
+ * @channel: An object implementing the exportable channel interface
+ * @user_data: Arbitrary user-supplied data
+ *
+ * A callback for functions which act on exportable channels.
+ */
 typedef void (*TpExportableChannelFunc) (TpExportableChannel *channel,
     gpointer user_data);
 
+/**
+ * TpExportableChannelIface:
+ * @parent: The parent interface
+ *
+ * The interface for #TpExportableChannel objects.
+ */
 struct _TpExportableChannelIface {
     GTypeInterface parent;
 };

@@ -109,6 +109,21 @@ TP_CHANNEL_FACTORY_IFACE_GET_CLASS
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/exportable-channel.h</INCLUDE>
+<FILE>exportable-channel</FILE>
+TpExportableChannelFunc
+<TITLE>TpExportableChannel</TITLE>
+TpExportableChannel
+TpExportableChannelIface
+<SUBSECTION Standard>
+TP_EXPORTABLE_CHANNEL
+TP_IS_EXPORTABLE_CHANNEL
+TP_TYPE_EXPORTABLE_CHANNEL
+tp_exportable_channel_get_type
+TP_EXPORTABLE_CHANNEL_GET_INTERFACE
+</SECTION>
+
+<SECTION>
 <FILE>handle-repo</FILE>
 <INCLUDE>telepathy-glib/handle-repo.h</INCLUDE>
 <TITLE>handle-repo</TITLE>

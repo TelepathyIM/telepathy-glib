@@ -19,6 +19,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:exportable-channel
+ * @title: TpExportableChannel
+ * @short_description: interface representing channels with several standard
+ *                     properties
+ * @see_also: #TpChannelIface, #TpChannelManager, #TpSvcChannel
+ *
+ * This interface defines a set of channel properties on top of those of
+ * #TpChannelIface. It's mainly used by #TpChannelManager to represent the
+ * returned and managed channel objects.
+ */
+
 #include "config.h"
 #include "exportable-channel.h"
 
