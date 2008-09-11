@@ -47,8 +47,8 @@
 #include "videopreview.h"
 #include "util.h"
 
-#define BUS_NAME        "org.freedesktop.Telepathy.StreamEngine"
-#define OBJECT_PATH     "/org/freedesktop/Telepathy/StreamEngine"
+#define BUS_NAME        "org.maemo.Telepathy.StreamEngine"
+#define OBJECT_PATH     "/org/maemo/Telepathy/StreamEngine"
 
 static void
 _create_pipeline (TpStreamEngine *self);
@@ -1585,7 +1585,7 @@ _preview_window_plug_deleted (TpStreamEngineVideoPreview *preview,
  * tp_stream_engine_create_preview_window
  *
  * Implements DBus method CreatePreviewWindow
- * on interface org.freedesktop.Telepathy.StreamEngine
+ * on interface org.maemo.Telepathy.StreamEngine
  */
 static void
 tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
@@ -1656,7 +1656,7 @@ handler_result (TfChannel *chan G_GNUC_UNUSED,
  * tp_stream_engine_attach_to_channel
  *
  * Implements DBus method AttachToChannel
- * on interface org.freedesktop.Telepathy.StreamEngine
+ * on interface org.maemo.Telepathy.StreamEngine
  */
 static void
 tp_stream_engine_attach_to_channel (StreamEngineSvcStreamEngine *iface,
@@ -1776,7 +1776,7 @@ _lookup_stream (TpStreamEngine *self,
  * tp_stream_engine_mute_input
  *
  * Implements DBus method MuteInput
- * on interface org.freedesktop.Telepathy.StreamEngine
+ * on interface org.maemo.Telepathy.StreamEngine
  */
 
 static void
@@ -1826,7 +1826,7 @@ tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
  * tp_stream_engine_mute_output
  *
  * Implements DBus method MuteOutput
- * on interface org.freedesktop.Telepathy.StreamEngine
+ * on interface org.maemo.Telepathy.StreamEngine
  */
 
 static void
@@ -1878,7 +1878,7 @@ tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
  * tp_stream_engine_set_output_volume
  *
  * Implements DBus method SetOutputVolume
- * on interface org.freedesktop.Telepathy.StreamEngine
+ * on interface org.maemo.Telepathy.StreamEngine
  */
 static void
 tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
@@ -1930,7 +1930,7 @@ tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
  * tp_stream_engine_set_input_volume
  *
  * Implements DBus method SetInputVolume
- * on interface org.freedesktop.Telepathy.StreamEngine
+ * on interface org.maemo.Telepathy.StreamEngine
  */
 static void
 tp_stream_engine_set_input_volume (StreamEngineSvcStreamEngine *iface,
@@ -1980,7 +1980,7 @@ tp_stream_engine_set_input_volume (StreamEngineSvcStreamEngine *iface,
  * tp_stream_engine_get_output_window
  *
  * Implements DBus method SetOutputWindow
- * on interface org.freedesktop.Telepathy.StreamEngine
+ * on interface org.maemo.Telepathy.StreamEngine
  */
 static void
 tp_stream_engine_get_output_window (StreamEngineSvcStreamEngine *iface,
@@ -2060,7 +2060,7 @@ tp_stream_engine_get ()
  * tp_stream_engine_shutdown
  *
  * Implements DBus method Shutdown
- * on interface org.freedesktop.Telepathy.StreamEngine
+ * on interface org.maemo.Telepathy.StreamEngine
  */
 static void
 tp_stream_engine_shutdown (StreamEngineSvcStreamEngine *iface,

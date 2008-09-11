@@ -1,6 +1,6 @@
 <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node name="/Stream_Engine" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <interface name="org.freedesktop.Telepathy.StreamEngine">
+  <interface name="org.maemo.Telepathy.StreamEngine">
     <method name="SetOutputVolume">
       <arg direction="in" type="o" name="channel_path" />
       <arg direction="in" type="u" name="stream_id" />

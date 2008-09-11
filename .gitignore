@@ -14,7 +14,7 @@ Makefile.in
 
 api/_gen
 api/api.html
-data/org.freedesktop.Telepathy.StreamEngine.service
+data/org.maemo.Telepathy.StreamEngine.service
 
 src/telepathy-stream-engine
 
