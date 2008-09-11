@@ -95,7 +95,6 @@ struct _TpChannelManagerIface {
     /* in principle we could have EnsureChannel here too */
 
     GCallback _future[8];
-    gpointer priv;
 };
 
 
