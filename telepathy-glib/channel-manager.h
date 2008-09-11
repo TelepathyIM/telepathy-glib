@@ -94,6 +94,9 @@ struct _TpChannelManagerIface {
     TpChannelManagerRequestFunc request_channel;
     /* in principle we could have EnsureChannel here too */
 
+    /* ensure_channel and two caps-related methods */
+    GCallback _near_future[3];
+
     GCallback _future[8];
 };
 
