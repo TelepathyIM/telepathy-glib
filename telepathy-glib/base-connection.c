@@ -2512,6 +2512,15 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
   target_id = tp_asv_get_string (requested_properties,
       TP_IFACE_CHANNEL ".TargetID");
 
+  /* Allow TargetID to be missing, but not to be otherwise broken */
+  if (target_id == NULL && tp_asv_lookup (requested_properties,
+          TP_IFACE_CHANNEL ".TargetID") != NULL)
+    {
+      e.message = "TargetID must be a string";
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
   /* FIXME: when InitiatorHandle, InitiatorID and Requested are officially
    * supported, if the request has any of them, raise an error */
 
