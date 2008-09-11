@@ -109,6 +109,36 @@ TP_CHANNEL_FACTORY_IFACE_GET_CLASS
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/channel-manager.h</INCLUDE>
+<FILE>channel-manager</FILE>
+TpChannelManagerChannelClassFunc
+TpChannelManagerForeachChannelClassFunc
+TpChannelManagerForeachChannelFunc
+TpChannelManagerRequestFunc
+<TITLE>TpChannelManager</TITLE>
+TpChannelManager
+TpChannelManagerIface
+tp_channel_manager_asv_has_unknown_properties
+tp_channel_manager_create_channel
+tp_channel_manager_emit_channel_closed
+tp_channel_manager_emit_channel_closed_for_object
+tp_channel_manager_emit_new_channel
+tp_channel_manager_emit_new_channels
+tp_channel_manager_emit_request_already_satisfied
+tp_channel_manager_emit_request_failed
+tp_channel_manager_emit_request_failed_printf
+tp_channel_manager_foreach_channel
+tp_channel_manager_foreach_channel_class
+tp_channel_manager_request_channel
+<SUBSECTION Standard>
+TP_CHANNEL_MANAGER
+TP_IS_CHANNEL_MANAGER
+TP_TYPE_CHANNEL_MANAGER
+tp_channel_manager_get_type
+TP_CHANNEL_MANAGER_GET_INTERFACE
+</SECTION>
+
+<SECTION>
 <INCLUDE>telepathy-glib/exportable-channel.h</INCLUDE>
 <FILE>exportable-channel</FILE>
 TpExportableChannelFunc

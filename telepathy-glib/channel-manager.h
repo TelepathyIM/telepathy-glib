@@ -43,12 +43,28 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
   TP_TYPE_CHANNEL_MANAGER, TpChannelManagerIface))
 
+/**
+ * TpChannelManager:
+ *
+ * Opaque typedef representing any channel manager implementation.
+ */
 typedef struct _TpChannelManager TpChannelManager;
+
+/* documented below */
 typedef struct _TpChannelManagerIface TpChannelManagerIface;
 
 
 /* virtual methods */
 
+/**
+ * TpChannelManagerForeachChannelFunc:
+ * @manager: an object implementing #TpChannelManager
+ * @func: A function
+ * @user_data: Arbitrary data to be passed as the second argument of @func
+ *
+ * Signature of an implementation of foreach_channel, which must call
+ * func(channel, user_data) for each channel managed by this channel manager.
+ */
 typedef void (*TpChannelManagerForeachChannelFunc) (
     TpChannelManager *manager, TpExportableChannelFunc func,
     gpointer user_data);
@@ -57,12 +73,34 @@ void tp_channel_manager_foreach_channel (TpChannelManager *manager,
     TpExportableChannelFunc func, gpointer user_data);
 
 
+/**
+ * TpChannelManagerChannelClassFunc:
+ * @manager: An object implementing #TpChannelManager
+ * @fixed_properties: A table mapping (const gchar *) property names to
+ *  GValues, representing the values those properties must take to request
+ *  channels of a particular class.
+ * @allowed_properties: A %NULL-terminated array of property names which may
+ *  appear in requests for a particular channel class.
+ * @user_data: Arbitrary user-supplied data.
+ *
+ * Signature of callbacks which act on each channel class supported by @manager.
+ */
 typedef void (*TpChannelManagerChannelClassFunc) (
     TpChannelManager *manager,
     GHashTable *fixed_properties,
     const gchar * const *allowed_properties,
     gpointer user_data);
 
+/**
+ * TpChannelManagerForeachChannelClassFunc:
+ * @manager: An object implementing #TpChannelManager
+ * @func: A function
+ * @user_data: Arbitrary data to be passed as the final argument of @func
+ *
+ * Signature of an implementation of foreach_channel_class, which must call
+ * func(manager, fixed, allowed, user_data) for each channel class understood
+ * by @manager.
+ */
 typedef void (*TpChannelManagerForeachChannelClassFunc) (
     TpChannelManager *manager, TpChannelManagerChannelClassFunc func,
     gpointer user_data);
@@ -72,6 +110,30 @@ void tp_channel_manager_foreach_channel_class (
     TpChannelManagerChannelClassFunc func, gpointer user_data);
 
 
+/**
+ * TpChannelManagerRequestFunc:
+ * @manager: An object implementing #TpChannelManager
+ * @request_token: An opaque pointer representing this pending request.
+ * @request_properties: A table mapping (const gchar *) property names to
+ *  GValue, representing the desired properties of a channel requested by a
+ *  Telepathy client.
+ *
+ * Signature of an implementation of #TpChannelManagerIface::create_channel and
+ * #TpChannelManagerIface::request_channel.
+ *
+ * Implementations should inspect the contents of @request_properties to see if
+ * it matches a channel class handled by this manager.  If so, they should
+ * return %TRUE to accept responsibility for the request, and ultimately emit
+ * exactly one of the #TpChannelManagerIface::new-channels,
+ * #TpChannelManagerIface::already-satisfied and
+ * #TpChannelManagerIface::request-failed signals (including @request_token in
+ * the appropriate argument).
+ *
+ * If the implementation does not want to handle the request, it should return
+ * %FALSE to allow the request to be offered to another channel manager.
+ *
+ * Returns: %TRUE if @manager will handle this request, else %FALSE.
+ */
 typedef gboolean (*TpChannelManagerRequestFunc) (
     TpChannelManager *manager, gpointer request_token,
     GHashTable *request_properties);
@@ -83,6 +145,27 @@ gboolean tp_channel_manager_request_channel (TpChannelManager *manager,
     gpointer request_token, GHashTable *request_properties);
 
 
+/**
+ * TpChannelManagerIface:
+ * @parent: Fields shared with GTypeInterface.
+ * @foreach_channel: Call func(channel, user_data) for each channel managed by
+ *  this manager. If not implemented, the manager is assumed to manage no
+ *  channels.
+ * @foreach_channel_class: Call func(manager, fixed, allowed, user_data) for
+ *  each class of channel that this manager can create. If not implemented, the
+ *  manager is assumed to be able to create no classes of channels.
+ * @create_channel: Respond to a request for a new channel made with the
+ *  Connection.Interface.Requests.CreateChannel method. See
+ *  #TpChannelManagerRequestFunc for details.
+ * @request_channel: Respond to a request for a (new or existing) channel made
+ *  with the Connection.RequestChannel method. See #TpChannelManagerRequestFunc
+ *  for details.
+ *
+ * The vtable for a channel manager implementation.
+ *
+ * In addition to the fields documented here there are thirteen GCallback
+ * fields which must currently be %NULL.
+ */
 struct _TpChannelManagerIface {
     GTypeInterface parent;
 
@@ -94,7 +177,10 @@ struct _TpChannelManagerIface {
     TpChannelManagerRequestFunc request_channel;
     /* in principle we could have EnsureChannel here too */
 
-    /* ensure_channel and two caps-related methods */
+    /*<private>*/
+    /* extra spaces left for ensure_channel and two caps-related methods, which
+     * will be added in the near future.
+     */
     GCallback _near_future[3];
 
     GCallback _future[8];

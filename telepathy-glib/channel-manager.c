@@ -20,6 +20,32 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:channel-manager
+ * @title: TpChannelManager
+ * @short_description: interface for creating and tracking channels
+ * @see_also: #TpSvcConnection
+ *
+ * A channel manager is attached to a connection. It carries out channel
+ * requests from the connection, and responds to channel-related events on the
+ * underlying network connection, for particular classes of channel (for
+ * example, incoming and outgoing calls, respectively). It also tracks
+ * currently-open channels of the relevant kinds.
+ *
+ * The connection has an array of channel managers. In response to a call to
+ * CreateChannel or RequestChannel, the channel request is offered to each
+ * channel manager in turn, until one accepts the request. In a trivial
+ * implementation there might be a single channel manager which handles all
+ * requests and all incoming events, but in general, there will be multiple
+ * channel managers handling different types of channel.
+ *
+ * For example, at the time of writing, Gabble has a roster channel manager
+ * which handles contact lists and groups, an IM channel manager which
+ * handles one-to-one messaging, a MUC channel manager which handles
+ * multi-user chat rooms and the index of chat rooms, and a media channel
+ * manager which handles VoIP calls.
+ */
+
 #include "config.h"
 #include "channel-manager.h"
 
@@ -197,7 +223,8 @@ tp_channel_manager_emit_new_channels (gpointer instance,
  * tp_channel_manager_emit_new_channel:
  * @instance: An object implementing #TpChannelManager
  * @channel: A #TpExportableChannel
- * @requests: the request tokens (opaque pointers) satisfied by this channel
+ * @request_tokens: the request tokens (opaque pointers) satisfied by this
+ *                  channel
  *
  * Emit the #TpChannelManager::new-channels signal indicating that the
  * channel has been created. (This is a convenient shortcut for calling
@@ -350,6 +377,14 @@ tp_channel_manager_emit_request_failed_printf (gpointer instance,
 /* Virtual-method wrappers */
 
 
+/**
+ * tp_channel_manager_foreach_channel:
+ * @manager: an object implementing #TpChannelManager
+ * @func: A function
+ * @user_data: Arbitrary data to be passed as the second argument of @func
+ *
+ * Calls func(channel, user_data) for each channel managed by @manager.
+ */
 void
 tp_channel_manager_foreach_channel (TpChannelManager *manager,
                                     TpExportableChannelFunc func,
@@ -367,6 +402,15 @@ tp_channel_manager_foreach_channel (TpChannelManager *manager,
 }
 
 
+/**
+ * tp_channel_manager_foreach_channel_class:
+ * @manager: An object implementing #TpChannelManager
+ * @func: A function
+ * @user_data: Arbitrary data to be passed as the final argument of @func
+ *
+ * Calls func(manager, fixed, allowed, user_data) for each channel class
+ * understood by @manager.
+ */
 void
 tp_channel_manager_foreach_channel_class (TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func,
@@ -385,6 +429,18 @@ tp_channel_manager_foreach_channel_class (TpChannelManager *manager,
 }
 
 
+/**
+ * tp_channel_manager_create_channel:
+ * @manager: An object implementing #TpChannelManager
+ * @request_token: An opaque pointer representing this pending request.
+ * @request_properties: A table mapping (const gchar *) property names to
+ *  GValue, representing the desired properties of a channel requested by a
+ *  Telepathy client.
+ *
+ * Offers an incoming CreateChannel call to @manager.
+ *
+ * Returns: %TRUE if this request will be handled by @manager; else %FALSE.
+ */
 gboolean
 tp_channel_manager_create_channel (TpChannelManager *manager,
                                    gpointer request_token,
@@ -403,6 +459,18 @@ tp_channel_manager_create_channel (TpChannelManager *manager,
 }
 
 
+/**
+ * tp_channel_manager_request_channel:
+ * @manager: An object implementing #TpChannelManager
+ * @request_token: An opaque pointer representing this pending request.
+ * @request_properties: A table mapping (const gchar *) property names to
+ *  GValue, representing the desired properties of a channel requested by a
+ *  Telepathy client.
+ *
+ * Offers an incoming RequestChannel call to @manager.
+ *
+ * Returns: %TRUE if this request will be handled by @manager; else %FALSE.
+ */
 gboolean
 tp_channel_manager_request_channel (TpChannelManager *manager,
                                     gpointer request_token,
@@ -431,15 +499,16 @@ tp_channel_manager_request_channel (TpChannelManager *manager,
  *         the D-Bus method when @properties contains unknown properties
  *
  * Checks whether the keys of @properties are elements of one of @fixed and
- * @allowed.  This is intended to be used by channel managers which have
- * decided to accept a request, to conform with the specification's
- * requirement that unknown properties must be rejected, not silently ignored.
+ * @allowed.  This is intended to be used by implementations of
+ * #TpChannelManager::create_channel which have decided to accept a request,
+ * to conform with the specification's requirement that unknown requested
+ * properties must cause a request to fail, not be silently ignored.
  *
  * On encountering unknown properties, this function will return %FALSE, and
  * set @error to a #GError that could be used as a D-Bus method error.
  *
  * Returns: %TRUE if all of the keys of @properties are elements of @fixed or
- *          @allowed.
+ *          @allowed; else %FALSE.
  */
 gboolean
 tp_channel_manager_asv_has_unknown_properties (GHashTable *properties,
