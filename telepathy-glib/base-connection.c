@@ -2427,93 +2427,133 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
 }
 
 
+/* Prototypes for stages of requestotron */
+static void conn_requests_check_basic_properties (TpBaseConnection *self,
+    GHashTable *requested_properties, ChannelRequestMethod method,
+    DBusGMethodInvocation *context);
+
+static void
+conn_requests_requestotron_validate_handle (TpBaseConnection *self,
+    GHashTable *requested_properties, ChannelRequestMethod method,
+    const gchar *type, TpHandleType target_handle_type,
+    TpHandle target_handle, const gchar *target_id,
+    DBusGMethodInvocation *context);
+
+static void conn_requests_offer_request (TpBaseConnection *self,
+    GHashTable *requested_properties, ChannelRequestMethod method,
+    const gchar *type, TpHandleType target_handle_type,
+    TpHandle target_handle, DBusGMethodInvocation *context);
+
+
 static void
 conn_requests_requestotron (TpBaseConnection *self,
                             GHashTable *requested_properties,
                             ChannelRequestMethod method,
                             DBusGMethodInvocation *context)
 {
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
-  TpHandleRepoIface *handles;
-  guint i;
-  ChannelRequest *request = NULL;
-  GHashTable *altered_properties = NULL;
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
+
+  conn_requests_check_basic_properties (self, requested_properties, method,
+      context);
+}
+
+
+static void
+conn_requests_check_basic_properties (TpBaseConnection *self,
+                                      GHashTable *requested_properties,
+                                      ChannelRequestMethod method,
+                                      DBusGMethodInvocation *context)
+{
+  /* Step 1:
+   *  Check that ChannelType, TargetHandleType, TargetHandle, TargetID have
+   *  the correct types, and that ChannelType is not omitted.
+   */
   const gchar *type;
-  TpChannelManagerRequestFunc func;
-  gboolean suppress_handler;
   TpHandleType target_handle_type;
   TpHandle target_handle;
-  GValue *target_handle_value = NULL;
   const gchar *target_id;
   gboolean valid;
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
+  GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, NULL };
 
   type = tp_asv_get_string (requested_properties,
         TP_IFACE_CHANNEL ".ChannelType");
 
   if (type == NULL)
     {
-      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "ChannelType is required" };
-
+      e.message = "ChannelType is required";
       dbus_g_method_return_error (context, &e);
-      goto out;
+      return;
     }
 
   target_handle_type = tp_asv_get_uint32 (requested_properties,
       TP_IFACE_CHANNEL ".TargetHandleType", &valid);
 
-  /* Allow it to be missing, but not to be otherwise broken */
+  /* Allow TargetHandleType to be missing, but not to be otherwise broken */
   if (!valid && tp_asv_lookup (requested_properties,
           TP_IFACE_CHANNEL ".TargetHandleType") != NULL)
     {
-      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "TargetHandleType must be an integer in range 0 to 2**32-1" };
-
+      e.message = "TargetHandleType must be an integer in range 0 to 2**32-1";
       dbus_g_method_return_error (context, &e);
-      goto out;
+      return;
     }
 
   target_handle = tp_asv_get_uint32 (requested_properties,
       TP_IFACE_CHANNEL ".TargetHandle", &valid);
 
-  /* Allow it to be missing, but not to be otherwise broken */
+  /* Allow TargetHandle to be missing, but not to be otherwise broken */
   if (!valid && tp_asv_lookup (requested_properties,
           TP_IFACE_CHANNEL ".TargetHandle") != NULL)
     {
-      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "TargetHandle must be an integer in range 0 to 2**32-1" };
-
+      e.message = "TargetHandle must be an integer in range 0 to 2**32-1";
       dbus_g_method_return_error (context, &e);
-      goto out;
+      return;
     }
 
   target_id = tp_asv_get_string (requested_properties,
       TP_IFACE_CHANNEL ".TargetID");
 
+  /* FIXME: when InitiatorHandle, InitiatorID and Requested are officially
+   * supported, if the request has any of them, raise an error */
+
+  conn_requests_requestotron_validate_handle (self,
+      requested_properties, method,
+      type, target_handle_type, target_handle, target_id,
+      context);
+}
+
+
+static void
+conn_requests_requestotron_validate_handle (TpBaseConnection *self,
+                                            GHashTable *requested_properties,
+                                            ChannelRequestMethod method,
+                                            const gchar *type,
+                                            TpHandleType target_handle_type,
+                                            TpHandle target_handle,
+                                            const gchar *target_id,
+                                            DBusGMethodInvocation *context)
+{
+  /* Step 2: Validate the supplied set of Handle properties */
+  TpHandleRepoIface *handles = NULL;
+  GHashTable *altered_properties = NULL;
+  GValue *target_handle_value = NULL;
+  GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT };
+
   /* Handle type 0 cannot have a handle */
   if (target_handle_type == TP_HANDLE_TYPE_NONE && target_handle != 0)
     {
-      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "When TargetHandleType is NONE, TargetHandle must be omitted or 0" };
-
+      e.message =
+        "When TargetHandleType is NONE, TargetHandle must be omitted or 0";
       dbus_g_method_return_error (context, &e);
-      goto out;
+      return;
     }
 
   /* Handle type 0 cannot have a target id */
   if (target_handle_type == TP_HANDLE_TYPE_NONE && target_id != NULL)
     {
-      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "When TargetHandleType is NONE, TargetID must be omitted" };
-
+      e.message = "When TargetHandleType is NONE, TargetID must be omitted";
       dbus_g_method_return_error (context, &e);
-      goto out;
+      return;
     }
-
-  /* FIXME: when InitiatorHandle, InitiatorID and Requested are officially
-   * supported, if the request has any of them, raise an error */
 
   if (target_handle_type != TP_HANDLE_TYPE_NONE)
     {
@@ -2522,11 +2562,10 @@ conn_requests_requestotron (TpBaseConnection *self,
       if ((target_handle == 0 && target_id == NULL) ||
           (target_handle != 0 && target_id != NULL))
         {
-          GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "Exactly one of TargetHandle and TargetID must be supplied" };
-
+          e.message = "Exactly one of TargetHandle and TargetID must be "
+              "supplied if TargetHandleType is not None";
           dbus_g_method_return_error (context, &e);
-          goto out;
+          return;
         }
 
       handles = tp_base_connection_get_handles (self, target_handle_type);
@@ -2540,7 +2579,7 @@ conn_requests_requestotron (TpBaseConnection *self,
             {
               dbus_g_method_return_error (context, error);
               g_error_free (error);
-              goto out;
+              return;
             }
 
           altered_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -2565,13 +2604,53 @@ conn_requests_requestotron (TpBaseConnection *self,
             {
               dbus_g_method_return_error (context, error);
               g_error_free (error);
-              goto out;
+              return;
             }
 
           tp_handle_ref (handles, target_handle);
         }
     }
 
+  conn_requests_offer_request (self, requested_properties, method, type,
+      target_handle_type, target_handle, context);
+
+  /* If HandleType was not None, we got the relevant repo and took a reference
+   * to target_handle; release it before returning
+   */
+  if (handles != NULL)
+    {
+      tp_handle_unref (handles, target_handle);
+    }
+
+  /* If we made a new table, we should destroy it, and the GValue holding
+   * TargetHandle.  The other GValues are borrowed from the supplied
+   * requested_properties table.
+   */
+  if (altered_properties != NULL)
+    {
+      g_hash_table_destroy (altered_properties);
+      tp_g_value_slice_free (target_handle_value);
+    }
+}
+
+
+static void
+conn_requests_offer_request (TpBaseConnection *self,
+                             GHashTable *requested_properties,
+                             ChannelRequestMethod method,
+                             const gchar *type,
+                             TpHandleType target_handle_type,
+                             TpHandle target_handle,
+                             DBusGMethodInvocation *context)
+{
+  /* Step 3: offer the incoming, vaguely sanitized request to the channel
+   * managers.
+   */
+  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpChannelManagerRequestFunc func;
+  ChannelRequest *request;
+  gboolean suppress_handler;
+  guint i;
 
   switch (method)
     {
@@ -2601,7 +2680,7 @@ conn_requests_requestotron (TpBaseConnection *self,
           g_ptr_array_index (priv->channel_managers, i));
 
       if (func (manager, request, requested_properties))
-        goto out;
+        return;
     }
 
   /* Nobody accepted the request */
@@ -2610,17 +2689,6 @@ conn_requests_requestotron (TpBaseConnection *self,
   request->context = NULL;
   g_ptr_array_remove (priv->channel_requests, request);
   channel_request_free (request);
-
-
-out:
-  if (target_handle != 0)
-    tp_handle_unref (handles, target_handle);
-  if (altered_properties != NULL)
-    g_hash_table_destroy (altered_properties);
-  if (target_handle_value != NULL)
-    tp_g_value_slice_free (target_handle_value);
-
-  return;
 }
 
 
