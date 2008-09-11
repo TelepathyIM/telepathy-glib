@@ -57,8 +57,8 @@ channel_manager_base_init (gpointer klass)
        * @channels: a #GHashTable where the keys are
        *  #TpExportableChannel instances (hashed and compared
        *  by g_direct_hash() and g_direct_equal()) and the values are
-       *  linked lists (#GSList) of requests (opaque pointers) satisfied by
-       *  these channels
+       *  linked lists (#GSList) of request tokens (opaque pointers) satisfied
+       *  by these channels
        *
        * Emitted when new channels have been created. The Connection should
        * generally emit NewChannels (and NewChannel) in response to this
@@ -174,7 +174,7 @@ tp_channel_manager_get_type (void)
  * @channels: a #GHashTable where the keys are
  *  #TpExportableChannel instances (hashed and compared
  *  by g_direct_hash() and g_direct_equal()) and the values are
- *  linked lists (#GSList) of requests (opaque pointers) satisfied by
+ *  linked lists (#GSList) of request tokens (opaque pointers) satisfied by
  *  these channels
  *
  * If @channels is non-empty, emit the #TpChannelManager::new-channels
@@ -197,6 +197,7 @@ tp_channel_manager_emit_new_channels (gpointer instance,
  * tp_channel_manager_emit_new_channel:
  * @instance: An object implementing #TpChannelManager
  * @channel: A #TpExportableChannel
+ * @requests: the request tokens (opaque pointers) satisfied by this channel
  *
  * Emit the #TpChannelManager::new-channels signal indicating that the
  * channel has been created. (This is a convenient shortcut for calling
@@ -205,7 +206,7 @@ tp_channel_manager_emit_new_channels (gpointer instance,
 void
 tp_channel_manager_emit_new_channel (gpointer instance,
                                      TpExportableChannel *channel,
-                                     GSList *requests)
+                                     GSList *request_tokens)
 {
   GHashTable *channels;
 
@@ -214,7 +215,7 @@ tp_channel_manager_emit_new_channel (gpointer instance,
 
   channels = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, NULL);
-  g_hash_table_insert (channels, channel, requests);
+  g_hash_table_insert (channels, channel, request_tokens);
   g_signal_emit (instance, signals[S_NEW_CHANNELS], 0, channels);
   g_hash_table_destroy (channels);
 }

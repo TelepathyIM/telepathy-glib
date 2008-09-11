@@ -107,7 +107,7 @@ GType tp_channel_manager_get_type (void);
 /* signal emission */
 
 void tp_channel_manager_emit_new_channel (gpointer instance,
-    TpExportableChannel *channel, GSList *requests);
+    TpExportableChannel *channel, GSList *request_tokens);
 void tp_channel_manager_emit_new_channels (gpointer instance,
     GHashTable *channels);
 
