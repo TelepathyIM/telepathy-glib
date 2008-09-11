@@ -753,6 +753,24 @@ tp_dbus_properties_mixin_get (GObject *self,
 }
 
 
+/**
+ * tp_dbus_properties_mixin_make_properties_hash:
+ * @object: an object which uses the D-Bus properties mixin
+ * @first_interface: the interface of the first property to be retrieved
+ * @first_property: the name of the first property to be retrieved
+ * @...: more (interface name, property name) pairs, terminated by %NULL.
+ *
+ * Retrieves the values of several D-Bus properties from an object, and builds
+ * a hash mapping the fully-qualified name of the property to its value.  This
+ * is equivalent to calling tp_dbus_properties_mixin_get() for each property
+ * and building the table yourself, with the proviso that this function will
+ * g_assert() if retrieving a property fails (for instance, because it does not
+ * exist).
+ *
+ * Returns: a hash table mapping (gchar *) fully-qualified property names to
+ *          GValues, which must be freed by the caller (at which point its
+ *          contents will also be freed).
+ */
 GHashTable *
 tp_dbus_properties_mixin_make_properties_hash (
     GObject *object,

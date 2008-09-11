@@ -1458,6 +1458,7 @@ tp_dbus_properties_mixin_class_init
 tp_dbus_properties_mixin_implement_interface
 tp_dbus_properties_mixin_iface_init
 tp_dbus_properties_mixin_get
+tp_dbus_properties_mixin_make_properties_hash
 </SECTION>
 
 <SECTION>
