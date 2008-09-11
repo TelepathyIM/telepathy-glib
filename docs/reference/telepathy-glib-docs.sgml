@@ -33,6 +33,7 @@
     <xi:include href="xml/connection-avatars.xml"/>
     <xi:include href="xml/connection-contacts.xml"/>
     <xi:include href="xml/connection-caps.xml"/>
+    <xi:include href="xml/connection-requests.xml"/>
     <xi:include href="xml/connection-simple-presence.xml"/>
     <xi:include href="xml/connection-presence.xml"/>
     <xi:include href="xml/channel.xml"/>

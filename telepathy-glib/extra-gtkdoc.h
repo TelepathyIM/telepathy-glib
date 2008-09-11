@@ -411,6 +411,20 @@
  */
 
 /**
+ * SECTION:connection-requests
+ * @title: Connection Requests interface
+ * @short_description: client-side wrappers for the Requests interface
+ * @see_also: #TpConnection
+ *
+ * This interface allows a client to request new channels from a connection,
+ * and to listen to signals indicating that channels have been created and
+ * closed.
+ *
+ * This section documents the auto-generated C wrappers for the Requests
+ * interface, used with #TpConnection objects.
+ */
+
+/**
  * SECTION:connection-simple-presence
  * @title: Connection SimplePresence interface
  * @short_description: client-side wrappers for the SimplePresence interface
