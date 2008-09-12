@@ -25,6 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
+#include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle-repo.h>
@@ -294,6 +295,31 @@ void tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
     guint handle_type, const gchar **names, DBusGMethodInvocation *context);
 
 void tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self);
+
+
+typedef struct _TpChannelManagerIter TpChannelManagerIter;
+
+/**
+ * TpChannelManagerIter:
+ * @see_also: tp_base_connection_channel_manager_iter_init(),
+ *            tp_base_connection_channel_manager_iter_next()
+ *
+ * An iterator over the #TpChannelManager objects known to a #TpBaseConnection.
+ * It has no public fields.
+ */
+struct _TpChannelManagerIter {
+    /*<private>*/
+    TpBaseConnection *self;
+    guint index;
+    gpointer _future[2];
+};
+
+void tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
+    TpBaseConnection *self);
+
+gboolean tp_base_connection_channel_manager_iter_next (
+    TpChannelManagerIter *iter, TpChannelManager **manager_out);
+
 
 /* TYPE MACROS */
 #define TP_TYPE_BASE_CONNECTION \

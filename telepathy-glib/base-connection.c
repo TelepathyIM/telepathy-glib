@@ -2725,6 +2725,70 @@ requests_iface_init (gpointer g_iface,
 }
 
 
+/**
+ * tp_base_connection_channel_manager_iter_init:
+ * @iter: an uninitialized #TpChannelManagerIter
+ * @self: a connection
+ *
+ * Initializes an iterator over the #TpChannelManager objects known to
+ * @self.  It is intended to be used as followed:
+ *
+ * <informalexample><programlisting>
+ * TpChannelManagerIter iter;
+ * TpChannelManager manager;
+ *
+ * tp_base_connection_channel_manager_iter_init (&iter, base_conn);
+ * while (tp_base_connection_channel_manager_iter_next (&iter, &manager))
+ *   {
+ *     ...do something with manager...
+ *   }
+ * </programlisting></informalexample>
+ */
+void
+tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
+                                              TpBaseConnection *self)
+{
+  iter->self = self;
+  iter->index = 0;
+}
+
+
+/**
+ * tp_base_connection_channel_manager_iter_next:
+ * @iter: an initialized #TpChannelManagerIter
+ * @manager_out: a location to store the channel manager, or %NULL.
+ *
+ * Advances @iter, and retrieves the #TpChannelManager it now points to.  If
+ * there are no more channel managers, @manager_out is not set and %FALSE is
+ * returned.
+ *
+ * Returns: %FALSE if there are no more channel managers; else %TRUE.
+ */
+gboolean
+tp_base_connection_channel_manager_iter_next (TpChannelManagerIter *iter,
+                                              TpChannelManager **manager_out)
+{
+  TpBaseConnectionPrivate *priv;
+
+  /* Check the caller initialized the iterator properly. */
+  g_assert (TP_IS_BASE_CONNECTION (iter->self));
+
+  priv = TP_BASE_CONNECTION_GET_PRIVATE (iter->self);
+
+  /* Be noisy if something's gone really wrong */
+  g_return_val_if_fail (iter->index <= priv->channel_managers->len, FALSE);
+
+  if (iter->index == priv->channel_managers->len)
+    return FALSE;
+
+  if (manager_out != NULL)
+    *manager_out = TP_CHANNEL_MANAGER (
+        g_ptr_array_index (priv->channel_managers, iter->index));
+  iter->index++;
+  return TRUE;
+}
+
+
 static void
 tp_base_connection_fill_contact_attributes (GObject *obj,
   const GArray *contacts, GHashTable *attributes_hash)
