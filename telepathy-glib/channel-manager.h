@@ -132,6 +132,28 @@ void tp_channel_manager_foreach_channel_class (
  * If the implementation does not want to handle the request, it should return
  * %FALSE to allow the request to be offered to another channel manager.
  *
+ * Implementations may assume the following of @request_properties:
+ *
+ * <itemizedlist>
+ *   <listitem>
+ *      the ChannelType property is present, and is a (const gchar *)
+ *   </listitem>
+ *   <listitem>
+ *     the TargetHandleType property is a valid #TpHandleType, if present
+ *   </listitem>
+ *   <listitem>
+ *     if TargetHandleType is None, TargetHandle is 0 or omitted
+ *   </listitem>
+ *   <listitem>
+ *     if TargetHandleType is not None, TargetHandle is a valid #TpHandle of
+ *     that #TpHandleType
+ *   </listitem>
+ *   <listitem>
+ *     the TargetID property is not present (if supplied by the client, it will
+ *     be converted to a TargetHandle before being passed to this function)
+ *   </listitem>
+ * </itemizedlist>
+ *
  * Returns: %TRUE if @manager will handle this request, else %FALSE.
  */
 typedef gboolean (*TpChannelManagerRequestFunc) (
