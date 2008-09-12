@@ -2735,7 +2735,7 @@ requests_iface_init (gpointer g_iface,
  *
  * <informalexample><programlisting>
  * TpChannelManagerIter iter;
- * TpChannelManager manager;
+ * TpChannelManager *manager;
  *
  * tp_base_connection_channel_manager_iter_init (&iter, base_conn);
  * while (tp_base_connection_channel_manager_iter_next (&iter, &manager))
