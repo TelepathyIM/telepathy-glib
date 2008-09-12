@@ -2445,6 +2445,14 @@ static void conn_requests_offer_request (TpBaseConnection *self,
     TpHandle target_handle, DBusGMethodInvocation *context);
 
 
+#define RETURN_INVALID_ARGUMENT(message) \
+  { \
+    GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, message }; \
+    dbus_g_method_return_error (context, &e); \
+    return; \
+  }
+
+
 static void
 conn_requests_requestotron (TpBaseConnection *self,
                             GHashTable *requested_properties,
@@ -2473,17 +2481,12 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
   TpHandle target_handle;
   const gchar *target_id;
   gboolean valid;
-  GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, NULL };
 
   type = tp_asv_get_string (requested_properties,
         TP_IFACE_CHANNEL ".ChannelType");
 
   if (type == NULL)
-    {
-      e.message = "ChannelType is required";
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
+    RETURN_INVALID_ARGUMENT ("ChannelType is required");
 
   target_handle_type = tp_asv_get_uint32 (requested_properties,
       TP_IFACE_CHANNEL ".TargetHandleType", &valid);
@@ -2491,11 +2494,8 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
   /* Allow TargetHandleType to be missing, but not to be otherwise broken */
   if (!valid && tp_asv_lookup (requested_properties,
           TP_IFACE_CHANNEL ".TargetHandleType") != NULL)
-    {
-      e.message = "TargetHandleType must be an integer in range 0 to 2**32-1";
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
+    RETURN_INVALID_ARGUMENT (
+        "TargetHandleType must be an integer in range 0 to 2**32-1");
 
   target_handle = tp_asv_get_uint32 (requested_properties,
       TP_IFACE_CHANNEL ".TargetHandle", &valid);
@@ -2503,11 +2503,8 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
   /* Allow TargetHandle to be missing, but not to be otherwise broken */
   if (!valid && tp_asv_lookup (requested_properties,
           TP_IFACE_CHANNEL ".TargetHandle") != NULL)
-    {
-      e.message = "TargetHandle must be an integer in range 0 to 2**32-1";
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
+    RETURN_INVALID_ARGUMENT (
+      "TargetHandle must be an integer in range 0 to 2**32-1");
 
   target_id = tp_asv_get_string (requested_properties,
       TP_IFACE_CHANNEL ".TargetID");
@@ -2515,11 +2512,7 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
   /* Allow TargetID to be missing, but not to be otherwise broken */
   if (target_id == NULL && tp_asv_lookup (requested_properties,
           TP_IFACE_CHANNEL ".TargetID") != NULL)
-    {
-      e.message = "TargetID must be a string";
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
+    RETURN_INVALID_ARGUMENT ("TargetID must be a string");
 
   /* FIXME: when InitiatorHandle, InitiatorID and Requested are officially
    * supported, if the request has any of them, raise an error */
@@ -2545,24 +2538,16 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
   TpHandleRepoIface *handles = NULL;
   GHashTable *altered_properties = NULL;
   GValue *target_handle_value = NULL;
-  GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT };
 
   /* Handle type 0 cannot have a handle */
   if (target_handle_type == TP_HANDLE_TYPE_NONE && target_handle != 0)
-    {
-      e.message =
-        "When TargetHandleType is NONE, TargetHandle must be omitted or 0";
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
+    RETURN_INVALID_ARGUMENT (
+        "When TargetHandleType is NONE, TargetHandle must be omitted or 0");
 
   /* Handle type 0 cannot have a target id */
   if (target_handle_type == TP_HANDLE_TYPE_NONE && target_id != NULL)
-    {
-      e.message = "When TargetHandleType is NONE, TargetID must be omitted";
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
+    RETURN_INVALID_ARGUMENT (
+      "When TargetHandleType is NONE, TargetID must be omitted");
 
   if (target_handle_type != TP_HANDLE_TYPE_NONE)
     {
@@ -2570,12 +2555,8 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
 
       if ((target_handle == 0 && target_id == NULL) ||
           (target_handle != 0 && target_id != NULL))
-        {
-          e.message = "Exactly one of TargetHandle and TargetID must be "
-              "supplied if TargetHandleType is not None";
-          dbus_g_method_return_error (context, &e);
-          return;
-        }
+        RETURN_INVALID_ARGUMENT ("Exactly one of TargetHandle and TargetID "
+            "must be supplied if TargetHandleType is not None");
 
       handles = tp_base_connection_get_handles (self, target_handle_type);
 
