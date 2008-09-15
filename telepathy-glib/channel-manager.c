@@ -42,8 +42,8 @@
  * For example, at the time of writing, Gabble has a roster channel manager
  * which handles contact lists and groups, an IM channel manager which
  * handles one-to-one messaging, a MUC channel manager which handles
- * multi-user chat rooms and the index of chat rooms, and a media channel
- * manager which handles VoIP calls.
+ * multi-user chat rooms, the index of chat rooms and MUC tubes, a media
+ * channel manager which handles VoIP calls, and a 1-1 tubes channel manager.
  *
  * Since: 0.7.UNRELEASED
  */
