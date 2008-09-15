@@ -34,13 +34,12 @@
  * all requests and all incoming events, but in general, there will be
  * multiple channel factories handling different types of channel.
  *
- * For example, at the time of writing, Gabble has a roster channel factory
- * which handles contact lists and groups, an IM channel factory which
- * handles one-to-one messaging, a MUC channel factory which handles
- * multi-user chat rooms and the index of chat rooms, and a media channel
- * factory which handles VoIP calls.
- *
- * @deprecated since 0.7.UNRELEASED; use #TpChannelManager instead.
+ * @deprecated since 0.7.UNRELEASED. #TpChannelManager is a newer interface for
+ *             allocating and tracking channels which supports the Requests
+ *             D-Bus interface introduced in version 0.17.11 of the
+ *             specification.  New connection managers should implement that
+ *             interface instead, and existing connection managers should
+ *             migrate to it.
  */
 
 #include <telepathy-glib/channel-factory-iface.h>
