@@ -104,7 +104,6 @@ struct _ChannelRequest
   DBusGMethodInvocation *context;
   ChannelRequestMethod method;
 
-  /* relevant if the method is METHOD_REQUEST_CHANNEL */
   gchar *channel_type;
   guint handle_type;
   guint handle;
