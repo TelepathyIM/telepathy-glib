@@ -1796,6 +1796,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
   ChannelRequest *request;
   GHashTable *request_properties;
   GValue *v;
+  gboolean claimed_by_channel_manager = FALSE;
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
@@ -1833,10 +1834,16 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
 
       if (tp_channel_manager_request_channel (manager, request,
             request_properties))
-        return;
+        {
+          claimed_by_channel_manager = TRUE;
+          break;
+        }
     }
 
   g_hash_table_destroy (request_properties);
+
+  if (claimed_by_channel_manager)
+    return;
 
   /* OK, none of them wanted it. Now try the channel factories */
 
