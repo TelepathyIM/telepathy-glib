@@ -307,6 +307,8 @@ typedef struct _TpChannelManagerIter TpChannelManagerIter;
  *
  * An iterator over the #TpChannelManager objects known to a #TpBaseConnection.
  * It has no public fields.
+ *
+ * Since: 0.7.UNRELEASED
  */
 struct _TpChannelManagerIter {
     /*<private>*/

@@ -2758,6 +2758,8 @@ requests_iface_init (gpointer g_iface,
  *     ...do something with manager...
  *   }
  * </programlisting></informalexample>
+ *
+ * Since: 0.7.UNRELEASED
  */
 void
 tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
@@ -2778,6 +2780,8 @@ tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
  * returned.
  *
  * Returns: %FALSE if there are no more channel managers; else %TRUE.
+ *
+ * Since: 0.7.UNRELEASED
  */
 gboolean
 tp_base_connection_channel_manager_iter_next (TpChannelManagerIter *iter,
