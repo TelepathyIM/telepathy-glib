@@ -344,12 +344,15 @@ tp_base_connection_finalize (GObject *object)
 /**
  * exportable_channel_get_old_info:
  * @channel: a channel
- * @object_path_out:  address at which to store the channel's object path
- * @channel_type_out: address at which to store the channel's type
+ * @object_path_out:  address at which to store the channel's object path,
+ *                    which the caller should g_free()
+ * @channel_type_out: address at which to store the channel's type, which the
+ *                    caller should g_free()
  * @handle_type_out:  address at which to store the channel's associated handle
  *                    type
  * @handle_out:       address at which to store the channel's associated
- *                    handle, if any
+ *                    handle, if any.  This is a borrowed reference; the caller
+ *                    does not need to tp_handle_unref() it.
  *
  * Given a new-style exportable channel, as used by the Requests interface's
  * API, fetches the information needed for the old-style ListChannels method
