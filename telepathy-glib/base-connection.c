@@ -2436,7 +2436,10 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
 }
 
 
-/* Prototypes for stages of requestotron */
+/* The handling of calls to Connection.Interface.Requests.CreateChannel is
+ * split into three chained functions, which each call the next function in
+ * the chain unless an error has occured.
+ */
 static void conn_requests_check_basic_properties (TpBaseConnection *self,
     GHashTable *requested_properties, ChannelRequestMethod method,
     DBusGMethodInvocation *context);
@@ -2470,6 +2473,9 @@ conn_requests_requestotron (TpBaseConnection *self,
 {
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
+  /* Call the first function in the chain handling incoming requests; it will
+   * call the next steps.
+   */
   conn_requests_check_basic_properties (self, requested_properties, method,
       context);
 }
