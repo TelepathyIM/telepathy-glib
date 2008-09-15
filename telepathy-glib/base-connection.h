@@ -143,7 +143,8 @@ typedef gchar *(*TpBaseConnectionGetUniqueConnectionNameImpl) (
  *  at least a CONTACT handle repository (failing to do so will cause a crash).
  * @create_channel_factories: Create an array of channel factories for this
  *  Connection. At least one of this or @create_channel_managers must be set by
- *  subclasses to a non-%NULL value.
+ *  subclasses to a non-%NULL value; this method is deprecated in favour of
+ *  @create_channel_managers since 0.7.UNRELEASED.
  * @get_unique_connection_name: Construct a unique name for this connection
  *  (for example using the protocol's format for usernames). If %NULL (the
  *  default), a unique name will be generated. Subclasses should usually
