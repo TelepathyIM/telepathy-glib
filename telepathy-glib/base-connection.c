@@ -1282,8 +1282,8 @@ tp_base_connection_close_all_channels (TpBaseConnection *self)
       TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
 
   /* We deliberately don't iterate over channel managers here -
-   * they don't need this, and are expected to listen to status-changed
-   * for themselves.
+   * they don't need this, and are expected to listen to
+   * TpSvcConnection::status-changed on the connection for themselves.
    */
 
   /* trigger close_all on all channel factories */
