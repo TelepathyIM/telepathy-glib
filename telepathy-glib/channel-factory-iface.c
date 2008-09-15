@@ -39,6 +39,8 @@
  * handles one-to-one messaging, a MUC channel factory which handles
  * multi-user chat rooms and the index of chat rooms, and a media channel
  * factory which handles VoIP calls.
+ *
+ * @deprecated since 0.7.UNRELEASED; use #TpChannelManager instead.
  */
 
 #include <telepathy-glib/channel-factory-iface.h>
