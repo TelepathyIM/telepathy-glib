@@ -116,7 +116,8 @@ void tp_channel_manager_foreach_channel_class (
  * @request_token: An opaque pointer representing this pending request.
  * @request_properties: A table mapping (const gchar *) property names to
  *  GValue, representing the desired properties of a channel requested by a
- *  Telepathy client.
+ *  Telepathy client. The hash table will be freed after the function returns;
+ *  if the channel manager wants to keep it around, it must copy it.
  *
  * Signature of an implementation of #TpChannelManagerIface::create_channel and
  * #TpChannelManagerIface::request_channel.
