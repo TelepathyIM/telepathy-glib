@@ -2519,7 +2519,11 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
   if (!valid && tp_asv_lookup (requested_properties,
           TP_IFACE_CHANNEL ".TargetHandle") != NULL)
     RETURN_INVALID_ARGUMENT (
-      "TargetHandle must be an integer in range 0 to 2**32-1");
+      "TargetHandle must be an integer in range 1 to 2**32-1");
+
+  /* TargetHandle may not be 0 */
+  if (valid && target_handle == 0)
+    RETURN_INVALID_ARGUMENT ("TargetHandle may not be 0");
 
   target_id = tp_asv_get_string (requested_properties,
       TP_IFACE_CHANNEL ".TargetID");
@@ -2539,6 +2543,10 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
 }
 
 
+/**
+ * @target_handle: non-zero if a TargetHandle property was in the request;
+ *                 zero if TargetHandle was not in the request.
+ */
 static void
 conn_requests_requestotron_validate_handle (TpBaseConnection *self,
                                             GHashTable *requested_properties,
@@ -2557,7 +2565,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
   /* Handle type 0 cannot have a handle */
   if (target_handle_type == TP_HANDLE_TYPE_NONE && target_handle != 0)
     RETURN_INVALID_ARGUMENT (
-        "When TargetHandleType is NONE, TargetHandle must be omitted or 0");
+        "When TargetHandleType is NONE, TargetHandle must be omitted");
 
   /* Handle type 0 cannot have a target id */
   if (target_handle_type == TP_HANDLE_TYPE_NONE && target_id != NULL)
