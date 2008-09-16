@@ -1822,10 +1822,13 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
   g_hash_table_insert (request_properties,
       TP_IFACE_CHANNEL ".TargetHandleType", v);
 
-  v = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (v, handle);
-  g_hash_table_insert (request_properties,
-      TP_IFACE_CHANNEL ".TargetHandle", v);
+  if (handle != 0)
+    {
+      v = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (v, handle);
+      g_hash_table_insert (request_properties,
+          TP_IFACE_CHANNEL ".TargetHandle", v);
+    }
 
   for (i = 0; i < priv->channel_managers->len; i++)
     {
