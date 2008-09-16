@@ -143,7 +143,7 @@ void tp_channel_manager_foreach_channel_class (
  *     the TargetHandleType property is a valid #TpHandleType, if present
  *   </listitem>
  *   <listitem>
- *     if TargetHandleType is None, TargetHandle is 0 or omitted
+ *     if TargetHandleType is None, TargetHandle is omitted
  *   </listitem>
  *   <listitem>
  *     if TargetHandleType is not None, TargetHandle is a valid #TpHandle of
