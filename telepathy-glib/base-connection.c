@@ -631,6 +631,26 @@ factory_satisfy_requests (TpBaseConnection *conn,
 }
 
 
+static void
+fail_channel_request (TpBaseConnection *conn,
+                      ChannelRequest *request,
+                      GError *error)
+{
+  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (conn);
+  DEBUG ("completing queued request %p with error, channel_type=%s, "
+      "handle_type=%u, handle=%u, suppress_handler=%u",
+      request, request->channel_type,
+      request->handle_type, request->handle, request->suppress_handler);
+
+  dbus_g_method_return_error (request->context, error);
+  request->context = NULL;
+
+  g_ptr_array_remove (priv->channel_requests, request);
+
+  channel_request_free (request);
+}
+
+
 /* Channel factory signal handlers */
 
 static void
@@ -660,26 +680,6 @@ factory_new_channel_cb (TpChannelFactoryIface *factory,
 
   g_signal_connect (chan, "closed", (GCallback) factory_channel_closed_cb,
       data);
-}
-
-
-static void
-fail_channel_request (TpBaseConnection *conn,
-                      ChannelRequest *request,
-                      GError *error)
-{
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (conn);
-  DEBUG ("completing queued request %p with error, channel_type=%s, "
-      "handle_type=%u, handle=%u, suppress_handler=%u",
-      request, request->channel_type,
-      request->handle_type, request->handle, request->suppress_handler);
-
-  dbus_g_method_return_error (request->context, error);
-  request->context = NULL;
-
-  g_ptr_array_remove (priv->channel_requests, request);
-
-  channel_request_free (request);
 }
 
 
