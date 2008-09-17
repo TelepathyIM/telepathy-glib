@@ -781,17 +781,33 @@ tp_dbus_properties_mixin_make_properties_hash (
   va_list ap;
   GHashTable *table;
   const gchar *interface, *property;
+  gboolean first = TRUE;
 
   table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       (GDestroyNotify) tp_g_value_slice_free);
 
   va_start (ap, first_property);
 
-  for (interface = first_interface, property = first_property;
+  for (interface = first_interface;
        interface != NULL;
-       interface = va_arg (ap, gchar *), property = va_arg (ap, gchar *))
+       interface = va_arg (ap, gchar *))
     {
       GValue *value = g_slice_new0 (GValue);
+
+      if (first)
+        {
+          property = first_property;
+          first = FALSE;
+        }
+      else
+        {
+          property = va_arg (ap, gchar *);
+        }
+
+      /* If property is NULL, the caller might have omitted a comma or
+       * something; in any case, it shouldn't be.
+       */
+      g_assert (property != NULL);
 
       tp_dbus_properties_mixin_get (object, interface, property,
             value, NULL);
