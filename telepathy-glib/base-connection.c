@@ -304,6 +304,12 @@ struct _ChannelRequest
   guint handle;
   /* always TRUE for CREATE */
   gboolean suppress_handler;
+
+  /* only meaningful for METHOD_ENSURE_CHANNEL; only true if this is the first
+   * request to be satisfied with a particular channel, and no other request
+   * satisfied by that channel has a different method.
+   */
+  gboolean yours;
 };
 
 static ChannelRequest *
@@ -327,6 +333,7 @@ channel_request_new (DBusGMethodInvocation *context,
   ret->handle_type = handle_type;
   ret->handle = handle;
   ret->suppress_handler = suppress_handler;
+  ret->yours = FALSE;
 
   DEBUG("New channel request at %p: ctype=%s htype=%d handle=%d suppress=%d",
         ret, channel_type, handle_type, handle, suppress_handler);
