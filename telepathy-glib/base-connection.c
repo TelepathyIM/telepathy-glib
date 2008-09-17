@@ -2588,10 +2588,13 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
     {
       GError *error = NULL;
 
-      if ((target_handle == 0 && target_id == NULL) ||
-          (target_handle != 0 && target_id != NULL))
-        RETURN_INVALID_ARGUMENT ("Exactly one of TargetHandle and TargetID "
-            "must be supplied if TargetHandleType is not None");
+      if (target_handle == 0 && target_id == NULL)
+        RETURN_INVALID_ARGUMENT ("When TargetHandleType is not None, either "
+            "TargetHandle or TargetID must also be given");
+
+      if (target_handle != 0 && target_id != NULL)
+        RETURN_INVALID_ARGUMENT (
+            "TargetHandle and TargetID must not both be given");
 
       handles = tp_base_connection_get_handles (self, target_handle_type);
 
