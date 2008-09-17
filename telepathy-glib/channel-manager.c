@@ -151,6 +151,10 @@
  * @request_channel: Respond to a request for a (new or existing) channel made
  *  with the Connection.RequestChannel method. See #TpChannelManagerRequestFunc
  *  for details.
+ * @ensure_channel: Respond to a request for a (new or existing) channel made
+ *  with the Connection.Interface.Requests.EnsureChannel method. See
+ *  #TpChannelManagerRequestFunc for details.
+ *  Since: 0.7.UNRELEASED+1
  *
  * The vtable for a channel manager implementation.
  *
@@ -613,6 +617,38 @@ tp_channel_manager_request_channel (TpChannelManager *manager,
   TpChannelManagerIface *iface = TP_CHANNEL_MANAGER_GET_INTERFACE (
       manager);
   TpChannelManagerRequestFunc method = iface->request_channel;
+
+  /* A missing implementation is equivalent to one that always returns FALSE,
+   * meaning "can't do that, ask someone else" */
+  if (method != NULL)
+    return method (manager, request_token, request_properties);
+  else
+    return FALSE;
+}
+
+
+/**
+ * tp_channel_manager_ensure_channel:
+ * @manager: An object implementing #TpChannelManager
+ * @request_token: An opaque pointer representing this pending request.
+ * @request_properties: A table mapping (const gchar *) property names to
+ *  GValue, representing the desired properties of a channel requested by a
+ *  Telepathy client.
+ *
+ * Offers an incoming EnsureChannel call to @manager.
+ *
+ * Returns: %TRUE if this request will be handled by @manager; else %FALSE.
+ *
+ * Since: 0.7.UNRELEASED+1
+ */
+gboolean
+tp_channel_manager_ensure_channel (TpChannelManager *manager,
+                                   gpointer request_token,
+                                   GHashTable *request_properties)
+{
+  TpChannelManagerIface *iface = TP_CHANNEL_MANAGER_GET_INTERFACE (
+      manager);
+  TpChannelManagerRequestFunc method = iface->ensure_channel;
 
   /* A missing implementation is equivalent to one that always returns FALSE,
    * meaning "can't do that, ask someone else" */

@@ -82,6 +82,9 @@ gboolean tp_channel_manager_create_channel (TpChannelManager *manager,
 gboolean tp_channel_manager_request_channel (TpChannelManager *manager,
     gpointer request_token, GHashTable *request_properties);
 
+gboolean tp_channel_manager_ensure_channel (TpChannelManager *manager,
+    gpointer request_token, GHashTable *request_properties);
+
 
 struct _TpChannelManagerIface {
     GTypeInterface parent;
@@ -92,13 +95,12 @@ struct _TpChannelManagerIface {
 
     TpChannelManagerRequestFunc create_channel;
     TpChannelManagerRequestFunc request_channel;
-    /* in principle we could have EnsureChannel here too */
+    TpChannelManagerRequestFunc ensure_channel;
 
     /*<private>*/
-    /* We know that these three methods will be added in the near future, so
+    /* We know that these two methods will be added in the near future, so
      * reserve extra space for them.
      */
-    GCallback _reserved_for_ensure_channel;
     GCallback _reserved_for_foreach_contact_channel_class;
     GCallback _reserved_for_add_cap;
 
