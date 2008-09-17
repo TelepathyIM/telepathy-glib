@@ -41,16 +41,16 @@
 
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/channel-factory-iface.h>
 #include <telepathy-glib/channel-manager.h>
-#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/connection-manager.h>
+#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
