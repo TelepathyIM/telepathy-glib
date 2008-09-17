@@ -1,8 +1,8 @@
 /*
  * base-connection.c - Source for TpBaseConnection
  *
- * Copyright (C) 2005, 2006, 2007, 2008 Collabora Ltd.
- * Copyright (C) 2005, 2006, 2007, 2008 Nokia Corporation
+ * Copyright (C) 2005-2008 Collabora Ltd.
+ * Copyright (C) 2005-2008 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
