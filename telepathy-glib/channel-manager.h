@@ -201,10 +201,12 @@ struct _TpChannelManagerIface {
     /* in principle we could have EnsureChannel here too */
 
     /*<private>*/
-    /* extra spaces left for ensure_channel and two caps-related methods, which
-     * will be added in the near future.
+    /* We know that these three methods will be added in the near future, so
+     * reserve extra space for them.
      */
-    GCallback _near_future[3];
+    GCallback _reserved_for_ensure_channel;
+    GCallback _reserved_for_foreach_contact_channel_class;
+    GCallback _reserved_for_add_cap;
 
     GCallback _future[8];
 };
