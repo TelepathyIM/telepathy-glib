@@ -427,7 +427,7 @@ exportable_channel_get_old_info (TpExportableChannel *channel,
 static GValueArray *
 get_channel_details (GObject *obj)
 {
-  GValueArray *structure = g_value_array_new (1);
+  GValueArray *structure = g_value_array_new (2);
   GHashTable *table;
   GValue *value;
   gchar *object_path;
