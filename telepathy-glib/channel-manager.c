@@ -48,6 +48,117 @@
  * Since: 0.7.UNRELEASED
  */
 
+/**
+ * TpChannelManager:
+ *
+ * Opaque typedef representing any channel manager implementation.
+ */
+
+/**
+ * TpChannelManagerForeachChannelFunc:
+ * @manager: an object implementing #TpChannelManager
+ * @func: A function
+ * @user_data: Arbitrary data to be passed as the second argument of @func
+ *
+ * Signature of an implementation of foreach_channel, which must call
+ * func(channel, user_data) for each channel managed by this channel manager.
+ */
+
+/**
+ * TpChannelManagerChannelClassFunc:
+ * @manager: An object implementing #TpChannelManager
+ * @fixed_properties: A table mapping (const gchar *) property names to
+ *  GValues, representing the values those properties must take to request
+ *  channels of a particular class.
+ * @allowed_properties: A %NULL-terminated array of property names which may
+ *  appear in requests for a particular channel class.
+ * @user_data: Arbitrary user-supplied data.
+ *
+ * Signature of callbacks which act on each channel class supported by @manager.
+ */
+
+/**
+ * TpChannelManagerForeachChannelClassFunc:
+ * @manager: An object implementing #TpChannelManager
+ * @func: A function
+ * @user_data: Arbitrary data to be passed as the final argument of @func
+ *
+ * Signature of an implementation of foreach_channel_class, which must call
+ * func(manager, fixed, allowed, user_data) for each channel class understood
+ * by @manager.
+ */
+
+/**
+ * TpChannelManagerRequestFunc:
+ * @manager: An object implementing #TpChannelManager
+ * @request_token: An opaque pointer representing this pending request.
+ * @request_properties: A table mapping (const gchar *) property names to
+ *  GValue, representing the desired properties of a channel requested by a
+ *  Telepathy client. The hash table will be freed after the function returns;
+ *  if the channel manager wants to keep it around, it must copy it.
+ *
+ * Signature of an implementation of #TpChannelManagerIface::create_channel and
+ * #TpChannelManagerIface::request_channel.
+ *
+ * Implementations should inspect the contents of @request_properties to see if
+ * it matches a channel class handled by this manager.  If so, they should
+ * return %TRUE to accept responsibility for the request, and ultimately emit
+ * exactly one of the #TpChannelManagerIface::new-channels,
+ * #TpChannelManagerIface::already-satisfied and
+ * #TpChannelManagerIface::request-failed signals (including @request_token in
+ * the appropriate argument).
+ *
+ * If the implementation does not want to handle the request, it should return
+ * %FALSE to allow the request to be offered to another channel manager.
+ *
+ * Implementations may assume the following of @request_properties:
+ *
+ * <itemizedlist>
+ *   <listitem>
+ *      the ChannelType property is present, and is a (const gchar *)
+ *   </listitem>
+ *   <listitem>
+ *     the TargetHandleType property is a valid #TpHandleType, if present
+ *   </listitem>
+ *   <listitem>
+ *     if TargetHandleType is None, TargetHandle is omitted
+ *   </listitem>
+ *   <listitem>
+ *     if TargetHandleType is not None, TargetHandle is a valid #TpHandle of
+ *     that #TpHandleType
+ *   </listitem>
+ *   <listitem>
+ *     the TargetID property is not present (if supplied by the client, it will
+ *     be converted to a TargetHandle before being passed to this function)
+ *   </listitem>
+ * </itemizedlist>
+ *
+ * Returns: %TRUE if @manager will handle this request, else %FALSE.
+ */
+
+/**
+ * TpChannelManagerIface:
+ * @parent: Fields shared with GTypeInterface.
+ * @foreach_channel: Call func(channel, user_data) for each channel managed by
+ *  this manager. If not implemented, the manager is assumed to manage no
+ *  channels.
+ * @foreach_channel_class: Call func(manager, fixed, allowed, user_data) for
+ *  each class of channel that this manager can create. If not implemented, the
+ *  manager is assumed to be able to create no classes of channels.
+ * @create_channel: Respond to a request for a new channel made with the
+ *  Connection.Interface.Requests.CreateChannel method. See
+ *  #TpChannelManagerRequestFunc for details.
+ * @request_channel: Respond to a request for a (new or existing) channel made
+ *  with the Connection.RequestChannel method. See #TpChannelManagerRequestFunc
+ *  for details.
+ *
+ * The vtable for a channel manager implementation.
+ *
+ * In addition to the fields documented here there are several GCallback
+ * fields which must currently be %NULL.
+ */
+
+
 #include "config.h"
 #include "channel-manager.h"
 
