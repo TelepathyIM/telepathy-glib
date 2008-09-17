@@ -2828,6 +2828,7 @@ tp_base_connection_channel_manager_iter_next (TpChannelManagerIter *iter,
   if (manager_out != NULL)
     *manager_out = TP_CHANNEL_MANAGER (
         g_ptr_array_index (priv->channel_managers, iter->index));
+
   iter->index++;
   return TRUE;
 }
