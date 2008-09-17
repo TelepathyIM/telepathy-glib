@@ -312,7 +312,9 @@
         <tp:docstring>
           True if the channel was created afresh to satisfy the caller's
           request, and hence the caller should take responsibility for it as if
-          it had called CreateChannel.
+          it had called CreateChannel.  This parameter MUST NOT be True for
+          more than one call of EnsureChannel per channel, and MUST NOT be True
+          if the channel is also returned to a caller of CreateChannel.
         </tp:docstring>
       </arg>
     </method>
