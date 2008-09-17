@@ -470,7 +470,7 @@ get_channel_details (GObject *obj)
 
   g_value_array_append (structure, NULL);
   value = g_value_array_get_nth (structure, 1);
-  g_value_init (value, TP_HASH_TYPE_STRING_VARIANT_MAP);
+  g_value_init (value, TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP);
   g_value_take_boxed (value, table);
 
   return structure;
