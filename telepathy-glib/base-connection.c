@@ -2605,6 +2605,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
 
           if (target_handle == 0)
             {
+              error->code = TP_ERROR_INVALID_HANDLE;
               dbus_g_method_return_error (context, error);
               g_error_free (error);
               return;
@@ -2630,6 +2631,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
           /* Check the supplied TargetHandle is valid */
           if (!tp_handle_is_valid (handles, target_handle, &error))
             {
+              error->code = TP_ERROR_INVALID_HANDLE;
               dbus_g_method_return_error (context, error);
               g_error_free (error);
               return;
