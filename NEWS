@@ -16,6 +16,14 @@ Enhancements:
 
   (if $HOME/src/telepathy-glib is the directory containing this file)
 
+* Updated to specification 0.17.11, which includes the undrafted Requests
+  interface with the CreateChannel method (but not EnsureChannel, which is
+  planned for a future spec.).
+
+* Added support for the Requests interface to TpBaseConnection, using the new
+  interfaces TpChannelManager and TpExportableChannel (which are intended to
+  replace TpChannelFactoryIface and TpChannelIface).
+
 Fixes:
 
 * TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED no longer causes compiler warnings
