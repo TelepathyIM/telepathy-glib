@@ -582,11 +582,11 @@ satisfy_request (TpBaseConnection *conn,
 
 
 static void
-satisfy_requests (TpBaseConnection *conn,
-                  TpChannelFactoryIface *factory,
-                  TpChannelIface *chan,
-                  ChannelRequest *channel_request,
-                  gboolean is_new)
+factory_satisfy_requests (TpBaseConnection *conn,
+                          TpChannelFactoryIface *factory,
+                          TpChannelIface *chan,
+                          ChannelRequest *channel_request,
+                          gboolean is_new)
 {
   gchar *object_path = NULL, *channel_type = NULL;
   guint handle_type = 0, handle = 0;
@@ -634,8 +634,8 @@ satisfy_requests (TpBaseConnection *conn,
 /* Channel factory signal handlers */
 
 static void
-channel_closed_cb (GObject *channel,
-                   TpBaseConnection *conn)
+factory_channel_closed_cb (GObject *channel,
+                           TpBaseConnection *conn)
 {
   gchar *object_path;
 
@@ -650,15 +650,16 @@ channel_closed_cb (GObject *channel,
 }
 
 static void
-connection_new_channel_cb (TpChannelFactoryIface *factory,
-                           GObject *chan,
-                           ChannelRequest *channel_request,
-                           gpointer data)
+factory_new_channel_cb (TpChannelFactoryIface *factory,
+                        GObject *chan,
+                        ChannelRequest *channel_request,
+                        gpointer data)
 {
-  satisfy_requests (TP_BASE_CONNECTION (data), factory,
+  factory_satisfy_requests (TP_BASE_CONNECTION (data), factory,
       TP_CHANNEL_IFACE (chan), channel_request, TRUE);
 
-  g_signal_connect (chan, "closed", (GCallback) channel_closed_cb, data);
+  g_signal_connect (chan, "closed", (GCallback) factory_channel_closed_cb,
+      data);
 }
 
 
@@ -683,11 +684,11 @@ fail_channel_request (TpBaseConnection *conn,
 
 
 static void
-connection_channel_error_cb (TpChannelFactoryIface *factory,
-                             GObject *chan,
-                             GError *error,
-                             ChannelRequest *channel_request,
-                             gpointer data)
+factory_channel_error_cb (TpChannelFactoryIface *factory,
+                          GObject *chan,
+                          GError *error,
+                          ChannelRequest *channel_request,
+                          gpointer data)
 {
   TpBaseConnection *conn = TP_BASE_CONNECTION (data);
   gchar *channel_type = NULL;
@@ -892,9 +893,9 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
       GObject *factory = g_ptr_array_index (priv->channel_factories, i);
       DEBUG("Channel factory #%u at %p", i, factory);
       g_signal_connect (factory, "new-channel", G_CALLBACK
-          (connection_new_channel_cb), self);
+          (factory_new_channel_cb), self);
       g_signal_connect (factory, "channel-error", G_CALLBACK
-          (connection_channel_error_cb), self);
+          (factory_channel_error_cb), self);
     }
 
   for (i = 0; i < priv->channel_managers->len; i++)
@@ -1865,8 +1866,8 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
         case TP_CHANNEL_FACTORY_REQUEST_STATUS_EXISTING:
           {
             g_assert (NULL != chan);
-            satisfy_requests (self, factory, chan, request, FALSE);
-            /* satisfy_requests should remove the request */
+            factory_satisfy_requests (self, factory, chan, request, FALSE);
+            /* factory_satisfy_requests should remove the request */
             g_assert (!tp_g_ptr_array_contains (priv->channel_requests,
                   request));
             return;
