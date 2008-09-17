@@ -186,7 +186,7 @@ gboolean tp_channel_manager_request_channel (TpChannelManager *manager,
  *
  * The vtable for a channel manager implementation.
  *
- * In addition to the fields documented here there are thirteen GCallback
+ * In addition to the fields documented here there are several GCallback
  * fields which must currently be %NULL.
  */
 struct _TpChannelManagerIface {
