@@ -2470,11 +2470,11 @@ static void conn_requests_offer_request (TpBaseConnection *self,
 
 
 #define RETURN_INVALID_ARGUMENT(message) \
-  { \
+  G_STMT_START { \
     GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, message }; \
     dbus_g_method_return_error (context, &e); \
     return; \
-  }
+  } G_STMT_END
 
 
 static void
