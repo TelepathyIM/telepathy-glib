@@ -2893,6 +2893,11 @@ conn_requests_offer_request (TpBaseConnection *self,
 #if 0
     case METHOD_ENSURE_CHANNEL:
       func = tp_channel_manager_ensure_channel;
+      /* FIXME: This is questionable in the case where Yours=True is
+       *        ultimately returned to a caller; that caller will believe it
+       *        owns the channel, but the old-world dispatcher will redispatch
+       *        the channel.
+       */
       suppress_handler = FALSE;
       break;
 #endif
