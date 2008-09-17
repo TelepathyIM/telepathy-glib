@@ -31,6 +31,27 @@
  * returned and managed channel objects.
  */
 
+/**
+ * TpExportableChannel:
+ *
+ * Opaque typedef representing a channel with several standard properties.
+ */
+
+/**
+ * TpExportableChannelFunc:
+ * @channel: An object implementing the exportable channel interface
+ * @user_data: Arbitrary user-supplied data
+ *
+ * A callback for functions which act on exportable channels.
+ */
+
+/**
+ * TpExportableChannelIface:
+ * @parent: The parent interface
+ *
+ * The interface for #TpExportableChannel objects.
+ */
+
 #include "config.h"
 #include "exportable-channel.h"
 
