@@ -2715,8 +2715,8 @@ conn_requests_offer_request (TpBaseConnection *self,
 
   /* Nobody accepted the request */
   tp_dbus_g_method_return_not_implemented (context);
-
   request->context = NULL;
+
   g_ptr_array_remove (priv->channel_requests, request);
   channel_request_free (request);
 }
