@@ -964,11 +964,6 @@ TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST
 TP_HASH_TYPE_CHANNEL_CLASS
 TP_STRUCT_TYPE_CHANNEL_DETAILS
 TP_STRUCT_TYPE_REQUESTABLE_CHANNEL_CLASS
-<SUBSECTION Private>
-tp_type_dbus_array_a_7bsv_7das
-tp_type_dbus_array_oa_7bsv_7d
-tp_type_dbus_struct_a_7bsv_7das
-tp_type_dbus_struct_oa_7bsv_7d
 <SUBSECTION>
 # Connection - SimplePresence
 TP_HASH_TYPE_SIMPLE_CONTACT_PRESENCES
@@ -1028,10 +1023,11 @@ TP_HASH_TYPE_CHANNEL_CALL_STATE_MAP
 TP_ARRAY_TYPE_ROOM_INFO_LIST
 TP_STRUCT_TYPE_ROOM_INFO
 <SUBSECTION Private>
-tp_type_dbus_array_sa_28usuussduss_29
-tp_type_dbus_hash_us
-tp_type_dbus_struct_sa_28usuussduss_29
+tp_type_dbus_array_a_7bsv_7das
+tp_type_dbus_array_oa_7bsv_7d
+tp_type_dbus_array_os
 tp_type_dbus_array_osuu
+tp_type_dbus_array_sa_28usuussduss_29
 tp_type_dbus_array_su
 tp_type_dbus_array_susv
 tp_type_dbus_array_us
@@ -1047,16 +1043,22 @@ tp_type_dbus_array_uuusa_7bsv_7du
 tp_type_dbus_array_uuuuus
 tp_type_dbus_array_uuuuuu
 tp_type_dbus_array_uv
-tp_type_dbus_hash_ua_7bsv_7d
+tp_type_dbus_hash_s_28ubb_29
 tp_type_dbus_hash_s_28ubba_7bss_7d_29
 tp_type_dbus_hash_sa_7bsv_7d
-tp_type_dbus_hash_s_28ubb_29
 tp_type_dbus_hash_ss
 tp_type_dbus_hash_sv
 tp_type_dbus_hash_u_28ua_7bsa_7bsv_7d_7d_29
 tp_type_dbus_hash_u_28uss_29
+tp_type_dbus_hash_ua_7bsv_7d
 tp_type_dbus_hash_uau
+tp_type_dbus_hash_us
+tp_type_dbus_hash_uu
+tp_type_dbus_struct_a_7bsv_7das
+tp_type_dbus_struct_oa_7bsv_7d
+tp_type_dbus_struct_os
 tp_type_dbus_struct_osuu
+tp_type_dbus_struct_sa_28usuussduss_29
 tp_type_dbus_struct_sq
 tp_type_dbus_struct_su
 tp_type_dbus_struct_susv
@@ -1065,8 +1067,8 @@ tp_type_dbus_struct_ua_7bsa_7bsv_7d_7d
 tp_type_dbus_struct_ubb
 tp_type_dbus_struct_ubba_7bss_7d
 tp_type_dbus_struct_us
-tp_type_dbus_struct_uss
 tp_type_dbus_struct_usa_7bsv_7d
+tp_type_dbus_struct_uss
 tp_type_dbus_struct_ussu
 tp_type_dbus_struct_usuu
 tp_type_dbus_struct_usuussduss
@@ -1078,9 +1080,6 @@ tp_type_dbus_struct_uuusa_7bsv_7du
 tp_type_dbus_struct_uuuuus
 tp_type_dbus_struct_uuuuuu
 tp_type_dbus_struct_uv
-tp_type_dbus_array_os
-tp_type_dbus_struct_os
-tp_type_dbus_hash_uu
 </SECTION>
 
 <SECTION>
