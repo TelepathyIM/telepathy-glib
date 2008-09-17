@@ -247,6 +247,76 @@
       </arg>
     </signal>
 
+    <method name="EnsureChannel" tp:name-for-bindings="Ensure_Channel">
+      <tp:added version="0.17.UNRELEASED"/>
+
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Request a channel with certain properties; whether or not the
+          channel existed before this method call, it should exist when it
+          returns.</p>
+      </tp:docstring>
+
+      <arg direction="in" name="Request" type="a{sv}"
+        tp:type="Qualified_Property_Value_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>A dictionary containing desirable properties. Some properties
+            are defined such that only an exact match makes sense, and
+            connection managers MUST NOT satisfy a request with a channel
+            where that property does not match; some properties are defined
+            such that the connection manager MAY treat the request as merely
+            a hint, and make a best-effort attempt to satisfy it. This is
+            documented separately for each property.</p>
+
+          <p>If this dictionary contains a property whose semantics
+            are not known to the connection manager, this method MUST fail
+            without side-effects (in particular it must not create a new
+            channel).</p>
+
+          <tp:rationale>
+            <p>This is necessary if we want to be able to invent properties
+              in future that, when used in a request, are hard requirements
+              rather than just hints. A connection manager that did not know
+              the semantics of those properties could incorrectly return a
+              new channel that did not satisfy the requirements.</p>
+          </tp:rationale>
+
+          <p>The connection manager MUST NOT respond successfully,
+            and SHOULD NOT create a new channel or cause any other
+            side-effects, unless it can create a new channel or return an
+            existing channel that satisfies the client's requirements.</p>
+
+          <p>Properties that will be set by this argument need not have write
+            access on the returned channel - indeed, it is
+            expected that most will be read-only.</p>
+        </tp:docstring>
+      </arg>
+
+      <arg name="Channel" direction="out" type="o">
+        <tp:docstring>
+          The Channel object.
+        </tp:docstring>
+      </arg>
+
+      <arg name="Properties" direction="out" type="a{sv}"
+        tp:type="Qualified_Property_Value_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>Properties of the channel that was produced, equivalent to
+            the properties in <tp:type>Channel_Details</tp:type>.
+            Connection managers MUST NOT include properties here whose
+            values can change, for the same reasons as in
+            <tp:type>Channel_Details</tp:type>.</p>
+        </tp:docstring>
+      </arg>
+
+      <arg name="Yours" direction="out" type="b">
+        <tp:docstring>
+          True if the channel was created afresh to satisfy the caller's
+          request, and hence the caller should take responsibility for it as if
+          it had called CreateChannel.
+        </tp:docstring>
+      </arg>
+    </method>
+
     <property name="Channels" tp:name-for-bindings="Channels"
       type="a(oa{sv})" access="read" tp:type="Channel_Details[]">
       <tp:added version="0.17.11">(as stable API)</tp:added>
