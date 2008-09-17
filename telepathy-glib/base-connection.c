@@ -416,6 +416,14 @@ exportable_channel_get_old_info (TpExportableChannel *channel,
 }
 
 
+/**
+ * get_channel_details:
+ * @obj: a channel, which must implement one of #TpExportableChannel and
+ *       #TpChannelIface
+ *
+ * Returns: (oa{sv}: o.fd.T.Conn.Iface.Requests.Channel_Details), suitable for
+ *          inclusion in the NewChannels signal.
+ */
 static GValueArray *
 get_channel_details (GObject *obj)
 {
