@@ -290,9 +290,7 @@ typedef struct _ChannelRequest ChannelRequest;
 typedef enum {
     METHOD_REQUEST_CHANNEL,
     METHOD_CREATE_CHANNEL,
-#if 0
     METHOD_ENSURE_CHANNEL,
-#endif
     NUM_METHODS
 } ChannelRequestMethod;
 
@@ -771,6 +769,24 @@ satisfy_request (TpBaseConnection *conn,
               NULL);
           tp_svc_connection_interface_requests_return_from_create_channel (
               request->context, object_path, properties);
+          g_hash_table_destroy (properties);
+        }
+        break;
+
+    case METHOD_ENSURE_CHANNEL:
+        {
+          GHashTable *properties;
+
+          g_assert (TP_IS_EXPORTABLE_CHANNEL (channel));
+          g_object_get (channel,
+              "channel-properties", &properties,
+              NULL);
+          /* FIXME: return yours=TRUE for exactly one EnsureChannel call if
+           * this channel is new and no CreateChannel or RequestChannel calls
+           * are involved.
+           */
+          tp_svc_connection_interface_requests_return_from_ensure_channel (
+              request->context, object_path, properties, FALSE);
           g_hash_table_destroy (properties);
         }
         break;
@@ -2890,7 +2906,6 @@ conn_requests_offer_request (TpBaseConnection *self,
       suppress_handler = TRUE;
       break;
 
-#if 0
     case METHOD_ENSURE_CHANNEL:
       func = tp_channel_manager_ensure_channel;
       /* FIXME: This is questionable in the case where Yours=True is
@@ -2900,7 +2915,6 @@ conn_requests_offer_request (TpBaseConnection *self,
        */
       suppress_handler = FALSE;
       break;
-#endif
 
     default:
       g_assert_not_reached ();
@@ -2940,7 +2954,6 @@ conn_requests_create_channel (TpSvcConnectionInterfaceRequests *svc,
 }
 
 
-#if 0
 static void
 conn_requests_ensure_channel (TpSvcConnectionInterfaceRequests *svc,
                               GHashTable *requested_properties,
@@ -2951,7 +2964,6 @@ conn_requests_ensure_channel (TpSvcConnectionInterfaceRequests *svc,
   return conn_requests_requestotron (self, requested_properties,
       METHOD_ENSURE_CHANNEL, context);
 }
-#endif
 
 
 static void
@@ -2964,9 +2976,7 @@ requests_iface_init (gpointer g_iface,
     tp_svc_connection_interface_requests_implement_##x (\
         iface, conn_requests_##x)
   IMPLEMENT (create_channel);
-#if 0
   IMPLEMENT (ensure_channel);
-#endif
 #undef IMPLEMENT
 }
 
