@@ -56,14 +56,14 @@
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "debug-internal.h"
 
-static void service_iface_init (gpointer, gpointer);
+static void conn_iface_init (gpointer, gpointer);
 static void requests_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnection,
     tp_base_connection,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION,
-      service_iface_init);
+      conn_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_REQUESTS,
@@ -2426,7 +2426,7 @@ tp_base_connection_add_interfaces (TpBaseConnection *self,
 
 
 static void
-service_iface_init (gpointer g_iface, gpointer iface_data)
+conn_iface_init (gpointer g_iface, gpointer iface_data)
 {
   TpSvcConnectionClass *klass = (TpSvcConnectionClass *)g_iface;
 
