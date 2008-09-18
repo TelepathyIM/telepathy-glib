@@ -788,12 +788,8 @@ satisfy_request (TpBaseConnection *conn,
           g_object_get (channel,
               "channel-properties", &properties,
               NULL);
-          /* FIXME: return yours=TRUE for exactly one EnsureChannel call if
-           * this channel is new and no CreateChannel or RequestChannel calls
-           * are involved.
-           */
           tp_svc_connection_interface_requests_return_from_ensure_channel (
-              request->context, object_path, properties, FALSE);
+              request->context, object_path, properties, request->yours);
           g_hash_table_destroy (properties);
         }
         break;
@@ -959,6 +955,7 @@ manager_new_channel (gpointer key,
   guint handle_type, handle;
   GSList *iter;
   gboolean suppress_handler = FALSE;
+  ChannelRequest *first_ensure = NULL;
 
   exportable_channel_get_old_info (channel, &object_path, &channel_type,
       &handle_type, &handle);
@@ -976,6 +973,27 @@ manager_new_channel (gpointer key,
 
   tp_svc_connection_emit_new_channel (self, object_path, channel_type,
       handle_type, handle, suppress_handler);
+
+
+  /* If the only type of request satisfied by this new channel is
+   * EnsureChannel, give exactly one request Yours=True.
+   * If other kinds of requests are involved, don't give anyone Yours=True.
+   */
+  first_ensure = g_slist_nth_data (request_tokens, 0);
+
+  for (iter = request_tokens; iter != NULL; iter = iter->next)
+    {
+      ChannelRequest *req = iter->data;
+      if (req->method != METHOD_ENSURE_CHANNEL)
+        {
+          first_ensure = NULL;
+          break;
+        }
+    }
+
+  if (first_ensure != NULL)
+    first_ensure->yours = TRUE;
+
 
   for (iter = request_tokens; iter != NULL; iter = iter->next)
     {
