@@ -189,7 +189,6 @@ channel_manager_base_init (gpointer klass)
     {
       initialized = TRUE;
 
-      /* FIXME: should probably have a better GType for @channels */
       /**
        * TpChannelManager::new-channels:
        * @self: the channel manager
