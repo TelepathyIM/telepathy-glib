@@ -160,7 +160,7 @@
  * @create_channel_managers: Create an array of channel managers for this
  *  Connection. At least one of this or @create_channel_factories must be set
  *  by subclasses to a non-%NULL value.
- *  Since: 0.7.UNRELEASED
+ *  Since: 0.7.15
  *
  * The class of a #TpBaseConnection. Many members are virtual methods etc.
  * to be filled in in the subclass' class_init function.
@@ -195,7 +195,7 @@
  *  subclasses: use tp_base_connection_change_status() to set it.
  * @self_handle: The handle of type %TP_HANDLE_TYPE_CONTACT representing the
  *  local user. Must be set nonzero by the subclass before moving to state
- *  CONNECTED. Since 0.7.UNRELEASED, setting this property directly is
+ *  CONNECTED. Since 0.7.15, setting this property directly is
  *  deprecated, in favour of tp_base_connection_set_self_handle(); if this
  *  property is set directly, the connection must ensure it holds a reference
  *  to the handle. Changing this property directly having moved to state
@@ -217,7 +217,7 @@
  * An iterator over the #TpChannelManager objects known to a #TpBaseConnection.
  * It has no public fields.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 
 /**
@@ -1293,7 +1293,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.
    * Must be set nonzero by the subclass before moving to state CONNECTED.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.7.15
    */
   param_spec = g_param_spec_uint ("self-handle",
       "Connection.SelfHandle",
@@ -2330,7 +2330,7 @@ tp_base_connection_get_handles (TpBaseConnection *self,
  *
  * Returns: the current self handle of the connection.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 TpHandle
 tp_base_connection_get_self_handle (TpBaseConnection *self)
@@ -2346,7 +2346,7 @@ tp_base_connection_get_self_handle (TpBaseConnection *self)
  * Sets the #TpBaseConnection:self-handle property.  self_handle may not be 0
  * once the connection has moved to the CONNECTED state.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_base_connection_set_self_handle (TpBaseConnection *self,
@@ -2985,7 +2985,7 @@ requests_iface_init (gpointer g_iface,
  *   }
  * </programlisting></informalexample>
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
@@ -3007,7 +3007,7 @@ tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
  *
  * Returns: %FALSE if there are no more channel managers; else %TRUE.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 gboolean
 tp_base_connection_channel_manager_iter_next (TpChannelManagerIter *iter,

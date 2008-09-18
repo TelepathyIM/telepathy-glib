@@ -1,12 +1,38 @@
-telepathy-glib 0.7.15 (UNRELEASED)
+telepathy-glib 0.7.15 (2008-09-18)
 ==================================
+
+The "plumbing" release.
 
 Dependencies:
 
 * GLib and GObject must be at least version 2.16 (this was accidentally the
   case in 0.7.14 too, but the dependency is now official). (fd.o #17213)
 
+Deprecations:
+
+* TpBaseConnection implementations should use the new method
+  tp_base_connection_set_self_handle instead of setting the self_handle member
+  directly. To comply with spec 0.17.10, if the self-handle changes after the
+  status becomes CONNECTED, tp_base_connection_set_self_handle *must* be used.
+
 Enhancements:
+
+* Updated to specification 0.17.10, which includes the SelfHandleChanged signal
+  and SelfHandle property...
+
+* ... and then to specification 0.17.11, which includes the stable Requests
+  interface with the CreateChannel method (but not EnsureChannel, which is
+  planned for a future spec.).
+
+* Added support for the Requests interface to TpBaseConnection, using the new
+  interfaces TpChannelManager and TpExportableChannel (which are intended to
+  replace TpChannelFactoryIface and TpChannelIface).
+
+* Added some utility functions: tp_dbus_properties_mixin_make_properties_hash,
+  tp_strv_contains
+
+* with-session-bus.sh (used for the tests) optionally records dbus-monitor
+  output
 
 * telepathy-glib-uninstalled.pc is generated in source builds. It's now
   easier to compile dependent projects against an uninstalled copy of
@@ -15,14 +41,6 @@ Enhancements:
   PKG_CONFIG_PATH=$HOME/src/telepathy-glib/telepathy-glib ./autogen.sh
 
   (if $HOME/src/telepathy-glib is the directory containing this file)
-
-* Updated to specification 0.17.11, which includes the undrafted Requests
-  interface with the CreateChannel method (but not EnsureChannel, which is
-  planned for a future spec.).
-
-* Added support for the Requests interface to TpBaseConnection, using the new
-  interfaces TpChannelManager and TpExportableChannel (which are intended to
-  replace TpChannelFactoryIface and TpChannelIface).
 
 Fixes:
 
@@ -36,6 +54,9 @@ Release notes for projects using code generation:
 * If you generate client-side code, update glib-client-gen.py to avoid wrong
   code generation for unsigned 64-bit integer arguments. This will cause your
   project to require telepathy-glib >= 0.7.3
+
+* If you use a copy of with-session-bus.sh for regression tests, consider
+  updating it to add support for logging dbus-monitor
 
 telepathy-glib 0.7.14 (2008-08-19)
 ==================================

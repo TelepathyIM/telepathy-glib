@@ -35,7 +35,7 @@
  * multiple channel factories handling different types of channel.
  *
  * #TpChannelManager is a newer interface (introduced in telepathy-glib
- * 0.7.UNRELEASED) for allocating and tracking channels which supports the
+ * 0.7.15) for allocating and tracking channels which supports the
  * Requests D-Bus interface introduced in version 0.17.11 of the
  * specification.  New connection managers should implement that interface
  * instead, and existing connection managers should migrate to it.

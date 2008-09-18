@@ -309,7 +309,7 @@ tp_escape_as_identifier (const gchar *name)
  * <!-- -->
  * Returns: TRUE if @str is an element of @strv, according to strcmp().
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 gboolean
 tp_strv_contains (const gchar * const *strv,

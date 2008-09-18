@@ -45,7 +45,7 @@
  * multi-user chat rooms, the index of chat rooms and MUC tubes, a media
  * channel manager which handles VoIP calls, and a 1-1 tubes channel manager.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 
 /**
@@ -318,7 +318,7 @@ tp_channel_manager_get_type (void)
  * If @channels is non-empty, emit the #TpChannelManager::new-channels
  * signal indicating that those channels have been created.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_new_channels (gpointer instance,
@@ -344,7 +344,7 @@ tp_channel_manager_emit_new_channels (gpointer instance,
  * channel has been created. (This is a convenient shortcut for calling
  * tp_channel_manager_emit_new_channels() with a one-entry hash table.)
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_new_channel (gpointer instance,
@@ -372,7 +372,7 @@ tp_channel_manager_emit_new_channel (gpointer instance,
  * Emit the #TpChannelManager::channel-closed signal indicating that
  * the channel at the given object path has been closed.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_channel_closed (gpointer instance,
@@ -395,7 +395,7 @@ tp_channel_manager_emit_channel_closed (gpointer instance,
  * calling tp_channel_manager_emit_channel_closed() with the
  * #TpExportableChannel:object-path property of @channel.)
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_channel_closed_for_object (gpointer instance,
@@ -422,7 +422,7 @@ tp_channel_manager_emit_channel_closed_for_object (gpointer instance,
  * Emit the #TpChannelManager::request-already-satisfied signal indicating
  * that the pre-existing channel @channel satisfies @request_token.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_request_already_satisfied (gpointer instance,
@@ -448,7 +448,7 @@ tp_channel_manager_emit_request_already_satisfied (gpointer instance,
  * Emit the #TpChannelManager::request-failed signal indicating that
  * the request @request_token failed for the given reason.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_request_failed (gpointer instance,
@@ -476,7 +476,7 @@ tp_channel_manager_emit_request_failed (gpointer instance,
  * Emit the #TpChannelManager::request-failed signal indicating that
  * the request @request_token failed for the given reason.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_emit_request_failed_printf (gpointer instance,
@@ -511,7 +511,7 @@ tp_channel_manager_emit_request_failed_printf (gpointer instance,
  *
  * Calls func(channel, user_data) for each channel managed by @manager.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_foreach_channel (TpChannelManager *manager,
@@ -539,7 +539,7 @@ tp_channel_manager_foreach_channel (TpChannelManager *manager,
  * Calls func(manager, fixed, allowed, user_data) for each channel class
  * understood by @manager.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 void
 tp_channel_manager_foreach_channel_class (TpChannelManager *manager,
@@ -571,7 +571,7 @@ tp_channel_manager_foreach_channel_class (TpChannelManager *manager,
  *
  * Returns: %TRUE if this request will be handled by @manager; else %FALSE.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 gboolean
 tp_channel_manager_create_channel (TpChannelManager *manager,
@@ -603,7 +603,7 @@ tp_channel_manager_create_channel (TpChannelManager *manager,
  *
  * Returns: %TRUE if this request will be handled by @manager; else %FALSE.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 gboolean
 tp_channel_manager_request_channel (TpChannelManager *manager,
@@ -644,7 +644,7 @@ tp_channel_manager_request_channel (TpChannelManager *manager,
  * Returns: %TRUE if all of the keys of @properties are elements of @fixed or
  *          @allowed; else %FALSE.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.15
  */
 gboolean
 tp_channel_manager_asv_has_unknown_properties (GHashTable *properties,
