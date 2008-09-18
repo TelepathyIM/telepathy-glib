@@ -2802,6 +2802,10 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
 
           if (target_handle == 0)
             {
+              /* tp_handle_ensure can return any error in any domain; force
+               * the domain and code to be as documented for CreateChannel.
+               */
+              error->domain = TP_ERRORS;
               error->code = TP_ERROR_INVALID_HANDLE;
               dbus_g_method_return_error (context, error);
               g_error_free (error);
