@@ -22,6 +22,12 @@ dist-hook:
 		git log > ${distdir}/ChangeLog; \
 	fi
 
-maintainer-upload-docs:
+if OFFICIAL_RELEASE
+maintainer-upload-release:
+	test -f telepathy-glib-@VERSION@.tar.gz
+	test -f telepathy-glib-@VERSION@.tar.gz.asc
+	gpg --verify telepathy-glib-@VERSION@.tar.gz.asc
 	rsync -rtvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
 		telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib
+	rsync -vzP telepathy-glib-@VERSION@.tar.gz telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/telepathy-glib/
+endif
