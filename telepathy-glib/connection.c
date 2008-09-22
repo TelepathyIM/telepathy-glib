@@ -1025,9 +1025,8 @@ tp_connection_call_when_ready (TpConnection *self,
 }
 
 static guint
-fix_presence_type_order (TpConnectionPresenceType type)
+get_presence_type_availability (TpConnectionPresenceType type)
 {
-  /* available > busy > away > xa > hidden > offline > error > unknown > unset */
   switch (type)
     {
       case TP_CONNECTION_PRESENCE_TYPE_UNSET:
@@ -1049,35 +1048,40 @@ fix_presence_type_order (TpConnectionPresenceType type)
       case TP_CONNECTION_PRESENCE_TYPE_AVAILABLE:
         return 8;
     }
-  g_assert_not_reached ();
+
+  /* This is an unexpected presence type, treat it like UNKNOWN */
+  return 1;
 }
 
 /**
- * tp_connection_presence_type_cmp:
+ * tp_connection_presence_type_cmp_availability:
  * @p1: a #TpConnectionPresenceType
  * @p2: a #TpConnectionPresenceType
  *
  * Compares @p1 and @p2 like strcmp(). @p1 > @p2 means @p1 is more available
  * than @p2.
  *
- * Returns: -1, 0 or 1, if p1 is <, == or > than p2.
+ * The order used is: available > busy > away > xa > hidden > offline > error >
+ * unknown > unset
+ *
+ * Returns: -1, 0 or 1, if @p1 is <, == or > than @p2.
  *
  * Since: 0.7.UNRELEASED
  */
 gint
-tp_connection_presence_type_cmp (TpConnectionPresenceType p1,
-                                 TpConnectionPresenceType p2)
+tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
+                                              TpConnectionPresenceType p2)
 {
-  guint fixed_p1;
-  guint fixed_p2;
+  guint availability1;
+  guint availability2;
 
-  fixed_p1 = fix_presence_type_order (p1);
-  fixed_p2 = fix_presence_type_order (p2);
+  availability1 = get_presence_type_availability (p1);
+  availability2 = get_presence_type_availability (p2);
 
-  if (fixed_p1 < fixed_p2)
+  if (availability1 < availability2)
     return -1;
 
-  if (fixed_p1 > fixed_p2)
+  if (availability1 > availability2)
     return +1;
 
   return 0;
