@@ -1023,3 +1023,62 @@ tp_connection_call_when_ready (TpConnection *self,
           G_CALLBACK (cwr_ready), ctx);
     }
 }
+
+static guint
+fix_presence_type_order (TpConnectionPresenceType type)
+{
+  /* available > busy > away > xa > hidden > offline > error > unknown > unset */
+  switch (type)
+    {
+      case TP_CONNECTION_PRESENCE_TYPE_UNSET:
+        return 0;
+      case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
+        return 1;
+      case TP_CONNECTION_PRESENCE_TYPE_ERROR:
+        return 2;
+      case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
+        return 3;
+      case TP_CONNECTION_PRESENCE_TYPE_HIDDEN:
+        return 4;
+      case TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY:
+        return 5;
+      case TP_CONNECTION_PRESENCE_TYPE_AWAY:
+        return 6;
+      case TP_CONNECTION_PRESENCE_TYPE_BUSY:
+        return 7;
+      case TP_CONNECTION_PRESENCE_TYPE_AVAILABLE:
+        return 8;
+    }
+  g_assert_not_reached ();
+}
+
+/**
+ * tp_connection_presence_type_cmp:
+ * @p1: a #TpConnectionPresenceType
+ * @p2: a #TpConnectionPresenceType
+ *
+ * Compares @p1 and @p2 like strcmp(). @p1 > @p2 means @p1 is more available
+ * than @p2.
+ *
+ * Returns: -1, 0 or 1, if p1 is <, == or > than p2.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+gint
+tp_connection_presence_type_cmp (TpConnectionPresenceType p1,
+                                 TpConnectionPresenceType p2)
+{
+  guint fixed_p1;
+  guint fixed_p2;
+
+  fixed_p1 = fix_presence_type_order (p1);
+  fixed_p2 = fix_presence_type_order (p2);
+
+  if (fixed_p1 < fixed_p2)
+    return -1;
+
+  if (fixed_p1 > fixed_p2)
+    return +1;
+
+  return 0;
+}

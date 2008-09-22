@@ -2044,6 +2044,7 @@ TpConnectionWhenReadyCb
 tp_connection_call_when_ready
 tp_connection_get_status
 tp_connection_init_known_interfaces
+tp_connection_presence_type_cmp
 TpConnection
 TpConnectionClass
 TP_UNKNOWN_CONNECTION_STATUS

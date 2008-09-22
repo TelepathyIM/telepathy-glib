@@ -97,6 +97,9 @@ void tp_list_connection_names (TpDBusDaemon *bus_daemon,
 
 void tp_connection_init_known_interfaces (void);
 
+gint tp_connection_presence_type_cmp (TpConnectionPresenceType p1,
+  TpConnectionPresenceType p2);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection.h>
