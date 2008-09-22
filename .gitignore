@@ -71,6 +71,7 @@ tests/dbus/test-invalidated-while-invoking-signals
 tests/dbus/test-properties
 tests/dbus/test-unsupported-interface
 tests/test-asv
+tests/test-availability-cmp
 tests/test-heap
 tests/test-internal-debug
 tests/test-intset

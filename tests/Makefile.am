@@ -6,6 +6,7 @@ SUBDIRS = \
 
 DYNAMIC_TESTS = \
     test-asv \
+    test-availability-cmp \
     test-heap \
     test-intset \
     test-util
@@ -53,6 +54,11 @@ test_util_LDADD = \
 test_intset_SOURCES = \
     test-intset.c
 test_intset_LDADD = \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+
+test_availability_cmp_SOURCES = \
+    test-availability-cmp.c
+test_availability_cmp_LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 # this needs to link against the static convenience library so that
