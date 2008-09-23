@@ -298,7 +298,7 @@ tp_base_connection_manager_init (TpBaseConnectionManager *self)
 
 /**
  * connection_shutdown_finished_cb:
- * @conn: #GabbleConnection
+ * @conn: #TpBaseConnection
  * @data: data passed in callback
  *
  * Signal handler called when a connection object disconnects.
