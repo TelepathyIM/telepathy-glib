@@ -2381,6 +2381,13 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 
   g_ptr_array_free (contexts, TRUE);
 
+  if (self->self_handle != 0)
+    {
+      tp_handle_unref (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
+          self->self_handle);
+      self->self_handle = 0;
+    }
+
   g_signal_emit (self, signals[SHUTDOWN_FINISHED], 0);
 }
 
@@ -2498,13 +2505,6 @@ tp_base_connection_change_status (TpBaseConnection *self,
        * after we've started disconnecting
        */
       tp_base_connection_close_all_channels (self);
-
-      if (self->self_handle)
-        {
-          tp_handle_unref (priv->handles[TP_HANDLE_TYPE_CONTACT],
-              self->self_handle);
-          self->self_handle = 0;
-        }
     }
 
   DEBUG("emitting status-changed to %u, for reason %u", status, reason);
