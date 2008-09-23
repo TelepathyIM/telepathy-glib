@@ -76,6 +76,12 @@ on_status_changed (TpConnection *connection,
                    GObject *weak_object)
 {
   MYASSERT (status == TP_CONNECTION_STATUS_DISCONNECTED, "%u", status);
+}
+
+static void
+on_shutdown_finished (TpBaseConnection *base_conn,
+                      gpointer user_data)
+{
   g_main_loop_quit (mainloop);
 }
 
@@ -103,6 +109,9 @@ main (int argc,
   service_conn_as_base = TP_BASE_CONNECTION (service_conn);
   MYASSERT (service_conn != NULL, "");
   MYASSERT (service_conn_as_base != NULL, "");
+
+  g_signal_connect (service_conn, "shutdown-finished",
+      G_CALLBACK (on_shutdown_finished), NULL);
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");

@@ -39,8 +39,6 @@ on_status_changed (TpConnection *connection,
   MYASSERT (*client == connection, "%p vs %p", *client, connection);
   g_object_unref (*client);
   *client = NULL;
-
-  g_main_loop_quit (mainloop);
 }
 
 static gboolean
@@ -49,6 +47,13 @@ disconnect (gpointer data)
   simple_connection_inject_disconnect (data);
 
   return FALSE;
+}
+
+static void
+on_shutdown_finished (TpBaseConnection *base_conn,
+                      gpointer user_data)
+{
+  g_main_loop_quit (mainloop);
 }
 
 int
@@ -74,6 +79,9 @@ main (int argc,
   service_as_base = TP_BASE_CONNECTION (service);
   MYASSERT (service != NULL, "");
   MYASSERT (service_as_base != NULL, "");
+
+  g_signal_connect (service, "shutdown-finished",
+      G_CALLBACK (on_shutdown_finished), NULL);
 
   MYASSERT (tp_base_connection_register (service_as_base, "simple",
         &name, &path, &error), "");
