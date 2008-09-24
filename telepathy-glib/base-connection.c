@@ -2498,13 +2498,6 @@ tp_base_connection_change_status (TpBaseConnection *self,
        * after we've started disconnecting
        */
       tp_base_connection_close_all_channels (self);
-
-      if (self->self_handle)
-        {
-          tp_handle_unref (priv->handles[TP_HANDLE_TYPE_CONTACT],
-              self->self_handle);
-          self->self_handle = 0;
-        }
     }
 
   DEBUG("emitting status-changed to %u, for reason %u", status, reason);
@@ -2535,6 +2528,13 @@ tp_base_connection_change_status (TpBaseConnection *self,
       break;
 
     case TP_CONNECTION_STATUS_DISCONNECTED:
+      if (self->self_handle != 0)
+        {
+          tp_handle_unref (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
+              self->self_handle);
+          self->self_handle = 0;
+        }
+
       if (prev_status != TP_INTERNAL_CONNECTION_STATUS_NEW)
         {
           if (klass->disconnected)
