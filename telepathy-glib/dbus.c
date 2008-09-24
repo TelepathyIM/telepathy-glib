@@ -710,7 +710,7 @@ _tp_dbus_daemon_got_name_owner (TpDBusDaemon *self,
 
 /**
  * TpDBusDaemonNameOwnerChangedCb:
- * @daemon: The D-Bus daemon
+ * @bus_daemon: The D-Bus daemon
  * @name: The name whose ownership has changed or been discovered
  * @new_owner: The unique name that now owns @name
  * @user_data: Arbitrary user-supplied data as passed to
