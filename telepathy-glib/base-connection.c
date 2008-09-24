@@ -2980,8 +2980,8 @@ requests_iface_init (gpointer g_iface,
  * TpChannelManagerIter iter;
  * TpChannelManager *manager;
  *
- * tp_base_connection_channel_manager_iter_init (&iter, base_conn);
- * while (tp_base_connection_channel_manager_iter_next (&iter, &manager))
+ * tp_base_connection_channel_manager_iter_init (&amp;iter, base_conn);
+ * while (tp_base_connection_channel_manager_iter_next (&amp;iter, &amp;manager))
  *   {
  *     ...do something with manager...
  *   }

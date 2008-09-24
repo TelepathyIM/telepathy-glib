@@ -65,6 +65,24 @@ tp_channel_factory_iface_base_init (gpointer klass)
   if (!initialized) {
     initialized = TRUE;
 
+    /**
+     * TpChannelFactoryIface::new-channel:
+     * @self: an object implementing #TpChannelFactoryIface
+     * @channel: a new channel (an object implementing #TpChannelIface)
+     * @request_context: a request context as passed to
+     *  tp_channel_factory_iface_request(), or %NULL
+     *
+     * Emitted when a new channel has been created.
+     *
+     * If the @channel was created in response to a channel request, the
+     * request was for a nonzero handle type, and the channel has zero handle
+     * type, @request_context will be the request context passed to
+     * tp_channel_factory_iface_request().
+     *
+     * Otherwise, request may either be %NULL or a request that led to
+     * @channel's creation; callers are expected to determine which channels
+     * satisfy which requests based on the handle and handle-type.
+     */
     signals[NEW_CHANNEL] = g_signal_new ("new-channel",
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
@@ -73,6 +91,19 @@ tp_channel_factory_iface_base_init (gpointer klass)
                   _tp_marshal_VOID__OBJECT_POINTER,
                   G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_POINTER);
 
+    /**
+     * TpChannelFactoryIface::channel-error:
+     * @self: an object implementing #TpChannelFactoryIface
+     * @channel: an object implementing #TpChannelIface
+     * @error: the #GError that made the channel request fail
+     * @request_context: a request context as passed to
+     *  tp_channel_factory_iface_request(), or %NULL
+     *
+     * Emitted when a new channel has been created, but an error occurred
+     * before it could become useful.
+     *
+     * @request is the same as for #TpChannelFactoryIface::new-channel.
+     */
     signals[CHANNEL_ERROR] = g_signal_new ("channel-error",
                   G_OBJECT_CLASS_TYPE (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
@@ -241,11 +272,14 @@ tp_channel_factory_iface_request (TpChannelFactoryIface *self,
  *           or %NULL
  *
  * Signal that a new channel has been created (new-channel signal).
+ *
  * If the channel was created in response to a channel request, the request
  * was for a nonzero handle type, and the channel has zero handle type,
  * request will be the request context passed to
- * tp_channel_factory_iface_request(). Otherwise, request may either be
- * NULL or a request that led to the channel's creation; callers are expected
+ * tp_channel_factory_iface_request().
+ *
+ * Otherwise, request may either be
+ * %NULL or a request that led to the channel's creation; callers are expected
  * to determine which channels satisfy which requests based on the handle
  * and handle-type.
  */
@@ -262,13 +296,13 @@ tp_channel_factory_iface_emit_new_channel (gpointer instance,
  * @instance: An object implementing #TpChannelFactoryIface
  * @channel: The new channel
  * @error: The error that made the channel request fail
- * @request: A request context as passed to #tp_channel_factory_iface_request,
+ * @request: A request context as passed to tp_channel_factory_iface_request(),
  *           or %NULL
  *
  * Signal that a new channel was created, but an error occurred before it
  * could become useful.
  *
- * request is as for #tp_channel_factory_iface_emit_new_channel.
+ * request is as for tp_channel_factory_iface_emit_new_channel().
  */
 void
 tp_channel_factory_iface_emit_channel_error (gpointer instance,
