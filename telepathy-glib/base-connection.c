@@ -1495,15 +1495,6 @@ tp_base_connection_close_all_channels (TpBaseConnection *self)
   /* trigger close_all on all channel factories */
   g_ptr_array_foreach (priv->channel_factories, (GFunc)
       tp_channel_factory_iface_close_all, NULL);
-
-  /* cancel all queued channel requests */
-  if (priv->channel_requests->len > 0)
-    {
-      g_ptr_array_foreach (priv->channel_requests, (GFunc)
-        channel_request_cancel, NULL);
-      g_ptr_array_remove_range (priv->channel_requests, 0,
-        priv->channel_requests->len);
-    }
 }
 
 /* D-Bus methods on Connection interface ----------------------------*/
@@ -2533,6 +2524,17 @@ tp_base_connection_change_status (TpBaseConnection *self,
           tp_handle_unref (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
               self->self_handle);
           self->self_handle = 0;
+        }
+
+      /* cancel all queued channel requests that weren't already cancelled by
+       * the channel managers.
+       */
+      if (priv->channel_requests->len > 0)
+        {
+          g_ptr_array_foreach (priv->channel_requests, (GFunc)
+            channel_request_cancel, NULL);
+          g_ptr_array_remove_range (priv->channel_requests, 0,
+            priv->channel_requests->len);
         }
 
       if (prev_status != TP_INTERNAL_CONNECTION_STATUS_NEW)
