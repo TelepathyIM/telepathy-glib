@@ -2381,13 +2381,6 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 
   g_ptr_array_free (contexts, TRUE);
 
-  if (self->self_handle != 0)
-    {
-      tp_handle_unref (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
-          self->self_handle);
-      self->self_handle = 0;
-    }
-
   g_signal_emit (self, signals[SHUTDOWN_FINISHED], 0);
 }
 
@@ -2535,6 +2528,13 @@ tp_base_connection_change_status (TpBaseConnection *self,
       break;
 
     case TP_CONNECTION_STATUS_DISCONNECTED:
+      if (self->self_handle != 0)
+        {
+          tp_handle_unref (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
+              self->self_handle);
+          self->self_handle = 0;
+        }
+
       if (prev_status != TP_INTERNAL_CONNECTION_STATUS_NEW)
         {
           if (klass->disconnected)
