@@ -302,7 +302,7 @@ struct _ChannelRequest
   gchar *channel_type;
   guint handle_type;
   guint handle;
-  /* always TRUE for CREATE */
+  /* always TRUE for CREATE; always FALSE for ENSURE */
   gboolean suppress_handler;
 
   /* only meaningful for METHOD_ENSURE_CHANNEL; only true if this is the first
@@ -789,7 +789,7 @@ satisfy_request (TpBaseConnection *conn,
               "channel-properties", &properties,
               NULL);
           tp_svc_connection_interface_requests_return_from_ensure_channel (
-              request->context, object_path, properties, request->yours);
+              request->context, request->yours, object_path, properties);
           g_hash_table_destroy (properties);
         }
         break;
@@ -955,21 +955,59 @@ manager_new_channel (gpointer key,
   guint handle_type, handle;
   GSList *iter;
   gboolean suppress_handler = FALSE;
+  gboolean satisfies_create_channel = FALSE;
+  gboolean satisfies_request_channel = FALSE;
   ChannelRequest *first_ensure = NULL;
 
   exportable_channel_get_old_info (channel, &object_path, &channel_type,
       &handle_type, &handle);
 
+  /* suppress_handler on Connection.NewChannel should be TRUE if:
+   *   - any satisfied requests were calls to CreateChannel; or
+   *   - at least one satisfied RequestChannel call had suppress_handler=TRUE;
+   *     or
+   *   - any EnsureChannel call will receive Yours=TRUE (that is, if the
+   *     channel satisfies no CreateChannel or RequestChannel calls).
+   *
+   * So, it should be FALSE if:
+   *   - all the requests were RequestChannel(..., suppress_handler=FALSE) or
+   *     EnsureChannel and there was at least one RequestChannel; or
+   *   - no requests were satisfied by the channel.
+   */
   for (iter = request_tokens; iter != NULL; iter = iter->next)
     {
       ChannelRequest *request = iter->data;
 
-      if (request->suppress_handler)
+      switch (request->method)
         {
-          suppress_handler = TRUE;
-          break;
+          case METHOD_REQUEST_CHANNEL:
+            satisfies_request_channel = TRUE;
+            if (request->suppress_handler)
+              {
+                suppress_handler = TRUE;
+                goto break_loop_early;
+              }
+            break;
+
+          case METHOD_CREATE_CHANNEL:
+            satisfies_create_channel = TRUE;
+            goto break_loop_early;
+            break;
+
+          case METHOD_ENSURE_CHANNEL:
+            if (first_ensure == NULL)
+              first_ensure = request;
+            break;
+
+          case NUM_METHODS:
+            g_assert_not_reached ();
         }
+
     }
+break_loop_early:
+
+  if (satisfies_create_channel || !satisfies_request_channel)
+    suppress_handler = TRUE;
 
   tp_svc_connection_emit_new_channel (self, object_path, channel_type,
       handle_type, handle, suppress_handler);
@@ -979,20 +1017,12 @@ manager_new_channel (gpointer key,
    * EnsureChannel, give exactly one request Yours=True.
    * If other kinds of requests are involved, don't give anyone Yours=True.
    */
-  first_ensure = g_slist_nth_data (request_tokens, 0);
-
-  for (iter = request_tokens; iter != NULL; iter = iter->next)
+  if (!satisfies_request_channel
+      && !satisfies_create_channel
+      && first_ensure != NULL)
     {
-      ChannelRequest *req = iter->data;
-      if (req->method != METHOD_ENSURE_CHANNEL)
-        {
-          first_ensure = NULL;
-          break;
-        }
+      first_ensure->yours = TRUE;
     }
-
-  if (first_ensure != NULL)
-    first_ensure->yours = TRUE;
 
 
   for (iter = request_tokens; iter != NULL; iter = iter->next)
@@ -2933,11 +2963,6 @@ conn_requests_offer_request (TpBaseConnection *self,
 
     case METHOD_ENSURE_CHANNEL:
       func = tp_channel_manager_ensure_channel;
-      /* FIXME: This is questionable in the case where Yours=True is
-       *        ultimately returned to a caller; that caller will believe it
-       *        owns the channel, but the old-world dispatcher will redispatch
-       *        the channel.
-       */
       suppress_handler = FALSE;
       break;
 
