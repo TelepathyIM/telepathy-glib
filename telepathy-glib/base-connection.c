@@ -2828,6 +2828,15 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
 
       handles = tp_base_connection_get_handles (self, target_handle_type);
 
+      if (handles == NULL)
+        {
+          GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "Handle type not supported by this connection manager" };
+
+          dbus_g_method_return_error (context, &e);
+          return;
+        }
+
       if (target_handle == 0)
         {
           /* Turn TargetID into TargetHandle */
