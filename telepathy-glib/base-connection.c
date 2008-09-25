@@ -2010,6 +2010,39 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
+  if (handle_type == TP_HANDLE_TYPE_NONE)
+    {
+      if (handle != 0)
+        {
+          GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "When handle type is NONE, handle must be 0" };
+
+          dbus_g_method_return_error (context, &e);
+          return;
+        }
+    }
+  else
+    {
+      TpHandleRepoIface *handle_repo = tp_base_connection_get_handles (self,
+          handle_type);
+
+      if (handle_repo == NULL)
+        {
+          GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "Handle type not supported by this connection manager" };
+
+          dbus_g_method_return_error (context, &e);
+          return;
+        }
+
+      if (!tp_handle_is_valid (handle_repo, handle, &error))
+        {
+          dbus_g_method_return_error (context, error);
+          g_error_free (error);
+          return;
+        }
+    }
+
   request = channel_request_new (context, METHOD_REQUEST_CHANNEL,
       type, handle_type, handle, suppress_handler);
   g_ptr_array_add (priv->channel_requests, request);
