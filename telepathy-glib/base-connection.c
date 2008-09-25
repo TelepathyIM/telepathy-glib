@@ -1006,7 +1006,8 @@ manager_new_channel (gpointer key,
     }
 break_loop_early:
 
-  if (satisfies_create_channel || !satisfies_request_channel)
+  if (request_tokens != NULL &&
+      (satisfies_create_channel || !satisfies_request_channel))
     suppress_handler = TRUE;
 
   tp_svc_connection_emit_new_channel (self, object_path, channel_type,
