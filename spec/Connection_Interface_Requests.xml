@@ -201,12 +201,106 @@
                 time</li>
               <li>a channel matching the request has already been requested
                 (by a previous call to CreateChannel,
+                <tp:member-ref>EnsureChannel</tp:member-ref>,
                 <tp:dbus-ref
                   namespace="org.freedesktop.Telepathy">Connection.RequestChannel</tp:dbus-ref>
-                or some future channel-requesting method)
-                and the protocol requires that only one such channel can exist
-                at a time</li>
+                or similar) and the protocol requires that only one such
+                channel can exist at a time</li>
             </ul>
+          </tp:docstring>
+        </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.Channel.Banned"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.Channel.Full"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.Channel.InviteOnly"/>
+      </tp:possible-errors>
+    </method>
+
+    <method name="EnsureChannel" tp:name-for-bindings="Ensure_Channel">
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Request that channels are ensured to exist.</p>
+
+        <tp:rationale>
+          <p>The connection manager is in the best position to determine which
+            existing channels could satisfy which requests.</p>
+        </tp:rationale>
+
+      </tp:docstring>
+
+      <arg direction="in" name="Request" type="a{sv}"
+        tp:type="Qualified_Property_Value_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>A dictionary containing desirable properties, with the same
+            semantics as the corresponding parameter to
+            <tp:member-ref>CreateChannel</tp:member-ref>.</p>
+        </tp:docstring>
+      </arg>
+
+      <arg name="Yours" direction="out" type="b">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>If false, the caller of EnsureChannel MUST assume that some
+            other process is handling this channel; if true, the caller of
+            EnsureChannel SHOULD handle it themselves or delegate it to another
+            client.</p>
+
+          <p>If the creation of a channel makes several calls to EnsureChannel
+            (and no other requests) successful, exactly one of those calls MUST
+            return a true value for this argument.</p>
+
+          <p>If the creation of a channel makes other requests successful,
+            the value returned for this argument MUST be such that exactly
+            one of the clients making requests ends up responsible for the
+            channel. In particular, if CreateChannel returns a channel
+            <em>C</em>, any EnsureChannel calls that also return <em>C</em>
+            MUST return a false value for this argument.</p>
+        </tp:docstring>
+      </arg>
+
+      <arg name="Channel" direction="out" type="o">
+        <tp:docstring>
+          The Channel object, which MUST already have been signalled with
+          <tp:member-ref>NewChannels</tp:member-ref> by the time this method
+          returns.
+        </tp:docstring>
+      </arg>
+
+      <arg name="Properties" direction="out" type="a{sv}"
+        tp:type="Qualified_Property_Value_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>Properties of the channel that was produced, equivalent to
+            the properties in <tp:type>Channel_Details</tp:type>.
+            Connection managers MUST NOT include properties here whose
+            values can change, for the same reasons as in
+            <tp:type>Channel_Details</tp:type>.</p>
+        </tp:docstring>
+      </arg>
+
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented">
+          <tp:docstring>
+            The channel request was one that can never succeed,
+            such as requesting an unsupported channel type, or requesting
+            a channel type which this connection manager does not support with
+            the given target handle type.
+          </tp:docstring>
+        </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle">
+          <tp:docstring>
+            An invalid handle was requested as the value of a property whose
+            value is a handle (like
+            <tp:dbus-ref namespace="org.freedesktop.Telepathy">Channel.TargetHandle</tp:dbus-ref>),
+            or a syntactically invalid identifier was requested as the value
+            of a property whose value is the string corresponding to a handle
+            (like TargetID).
+          </tp:docstring>
+        </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
+          <tp:docstring>
+            The requested channel cannot be created, but in
+            principle, a similar request might succeed in future. For instance,
+            this might be because the requested contact is using a client
+            that lacks a particular feature.
           </tp:docstring>
         </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.Channel.Banned"/>
@@ -277,7 +371,7 @@
       </arg>
     </signal>
 
-    <tp:mapping name="Channel_Class">
+    <tp:mapping name="Channel_Class" array-name="Channel_Class_List">
       <tp:added version="0.17.11">(as stable API)</tp:added>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Mapping representing a class of channels that can be requested
