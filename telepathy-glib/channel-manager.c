@@ -154,12 +154,14 @@
  * @ensure_channel: Respond to a request for a (new or existing) channel made
  *  with the Connection.Interface.Requests.EnsureChannel method. See
  *  #TpChannelManagerRequestFunc for details.
- *  Since: 0.7.UNRELEASED+1
+ *  Since: 0.7.16
  *
  * The vtable for a channel manager implementation.
  *
  * In addition to the fields documented here there are several GCallback
  * fields which must currently be %NULL.
+ *
+ * Since: 0.7.15
  */
 
 
@@ -639,7 +641,7 @@ tp_channel_manager_request_channel (TpChannelManager *manager,
  *
  * Returns: %TRUE if this request will be handled by @manager; else %FALSE.
  *
- * Since: 0.7.UNRELEASED+1
+ * Since: 0.7.16
  */
 gboolean
 tp_channel_manager_ensure_channel (TpChannelManager *manager,

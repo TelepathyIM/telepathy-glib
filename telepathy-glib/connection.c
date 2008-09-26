@@ -1066,7 +1066,7 @@ get_presence_type_availability (TpConnectionPresenceType type)
  *
  * Returns: -1, 0 or 1, if @p1 is <, == or > than @p2.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.16
  */
 gint
 tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,

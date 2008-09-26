@@ -1,15 +1,37 @@
-telepathy-glib 0.7.16 (UNRELEASED)
+telepathy-glib 0.7.16 (2008-09-26)
 ==================================
+
+The "could you say that again? I was looking at that bee" release.
 
 Dependencies:
 
-Deprecations:
+* To use --enable-gtk-doc you must now have at least gtkdoc 1.10
 
 Enhancements:
 
+* Updated to spec 0.17.12, mainly featuring EnsureChannel
+
+* We now support EnsureChannel on the Requests interface - to implement this,
+  put a suitable function pointer in TpChannelManagerIface::ensure_channel
+
+* Channel factories' RequestChannel implementations no longer need to
+  validate handles - TpBaseConnection now does this automatically
+
+* Added a function to compare presence types in order of "availability"
+
 Fixes:
 
-Release notes for projects using code generation:
+* The gtkdoc now documents GInterfaces' signals and properties (fd.o #16995,
+  fd.o #17308)
+
+* TpBaseConnection::self_handle is unreffed and cleared slightly later,
+  for the benefit of channel managers that want to use it in their
+  status-changed(Disconnected) callback
+
+* Fixed a compiler warning on platforms with daemon(3) in their libc
+
+* TpChannelManager can no longer be crashed by asking for unsupported
+  handle types
 
 telepathy-glib 0.7.15 (2008-09-18)
 ==================================

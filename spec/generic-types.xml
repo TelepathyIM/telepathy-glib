@@ -67,7 +67,8 @@
       "org.freedesktop.DBus.Peer.Ping".</tp:docstring>
   </tp:simple-type>
 
-  <tp:mapping name="Qualified_Property_Value_Map">
+  <tp:mapping name="Qualified_Property_Value_Map"
+    array-name="Qualified_Property_Value_Map_List">
     <tp:docstring>A mapping from strings representing D-Bus
       properties (by their namespaced names) to their values.</tp:docstring>
     <tp:member type="s" name="Key" tp:type="DBus_Qualified_Member">

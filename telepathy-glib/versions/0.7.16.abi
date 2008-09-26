@@ -1,0 +1,9 @@
+Version: TELEPATHY_GLIB_0.7.16
+Extends: TELEPATHY_GLIB_0.7.15
+Release: 0.7.16
+
+tp_channel_manager_ensure_channel
+tp_cli_connection_interface_requests_call_ensure_channel
+tp_cli_connection_interface_requests_run_ensure_channel
+tp_connection_presence_type_cmp_availability
+tp_svc_connection_interface_requests_implement_ensure_channel
