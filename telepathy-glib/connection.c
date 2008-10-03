@@ -1197,3 +1197,19 @@ _tp_connection_get_contact_attribute_interfaces (TpConnection *self)
 {
   return self->priv->contact_attribute_interfaces;
 }
+
+
+/**
+ * tp_connection_is_ready:
+ * @self: a connection
+ *
+ * Returns the same thing as the #TpConnection:connection-ready property.
+ *
+ * Returns: %TRUE if introspection has completed
+ * Since: 0.7.UNRELEASED
+ */
+gboolean
+tp_connection_is_ready (TpConnection *self)
+{
+  return self->priv->ready;
+}

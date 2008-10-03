@@ -2051,6 +2051,7 @@ tp_connection_new
 tp_connection_run_until_ready
 TpConnectionWhenReadyCb
 tp_connection_call_when_ready
+tp_connection_is_ready
 tp_connection_get_status
 tp_connection_init_known_interfaces
 tp_connection_presence_type_cmp_availability
