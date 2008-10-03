@@ -1041,8 +1041,9 @@ tp_proxy_class_init (TpProxyClass *klass)
  *
  * <!-- -->
  *
- * Returns: the #TpDBusDaemon for this object, if any; always %NULL
- *  if this object is itself a #TpDBusDaemon
+ * Returns: a borrowed reference to the #TpDBusDaemon for this object, if any;
+ *  always %NULL if this object is itself a #TpDBusDaemon. The caller must
+ *  reference the returned object with g_object_ref() if it will be kept.
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1058,7 +1059,9 @@ tp_proxy_get_dbus_daemon (TpProxy *self)
  *
  * <!-- -->
  *
- * Returns: the D-Bus connection used by this object
+ * Returns: a borrowed reference to the D-Bus connection used by this object.
+ *  The caller must reference the returned pointer with
+ *  dbus_g_connection_ref() if it will be kept.
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1074,7 +1077,8 @@ tp_proxy_get_dbus_connection (TpProxy *self)
  *
  * <!-- -->
  *
- * Returns: the bus name of the application exporting the object
+ * Returns: the bus name of the application exporting the object. The caller
+ *  must copy the string with g_strdup() if it will be kept.
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1090,7 +1094,8 @@ tp_proxy_get_bus_name (TpProxy *self)
  *
  * <!-- -->
  *
- * Returns: the object path of the remote object
+ * Returns: the object path of the remote object. The caller must copy the
+ *  string with g_strdup() if it will be kept.
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1107,7 +1112,8 @@ tp_proxy_get_object_path (TpProxy *self)
  * <!-- -->
  *
  * Returns: the reason this proxy was invalidated, or %NULL if has not been
- *  invalidated
+ *  invalidated. The caller must copy the error, for instance with
+ *  g_error_copy(), if it will be kept.
  *
  * Since: 0.7.UNRELEASED
  */
