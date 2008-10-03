@@ -34,6 +34,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
+#include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
@@ -1189,4 +1190,10 @@ tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
     return +1;
 
   return 0;
+}
+
+const GArray *
+_tp_connection_get_contact_attribute_interfaces (TpConnection *self)
+{
+  return self->priv->contact_attribute_interfaces;
 }

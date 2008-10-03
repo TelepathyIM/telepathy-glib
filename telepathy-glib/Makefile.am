@@ -211,6 +211,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel-internal.h \
     channel-manager.c \
     connection.c \
+    connection-internal.h \
     connection-manager.c \
     contacts-mixin.c \
     dbus.c \
