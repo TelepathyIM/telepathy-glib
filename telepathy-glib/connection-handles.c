@@ -285,8 +285,10 @@ tp_connection_unref_handles (TpConnection *self,
         }
     }
 
-  /* fire off the unref call asynchronously, ignore error if any.
-   * FIXME: perhaps this should be done idly, so we can combine unrefs? */
+  /* Fire off the unref call asynchronously, ignore error if any.
+   * This can't be done idly (so we can combine unrefs) without additional
+   * checks, since that would introduce a race between the idle handler
+   * running, and someone else holding the handles again. */
   if (unref->len > 0)
     {
       DEBUG ("releasing %u handles", unref->len);
