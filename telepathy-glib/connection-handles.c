@@ -295,7 +295,7 @@ tp_connection_unref_handles (TpConnection *self,
       return;
     }
 
-  g_assert (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
 
   /* MT: libdbus protects us, if so configured */
   if (!dbus_connection_allocate_data_slot (&connection_handle_refs_slot))
