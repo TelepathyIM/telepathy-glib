@@ -1,6 +1,8 @@
 *.[oa]
 *.lo
 *.la
+*.gcda
+*.gcno
 Makefile.in
 Makefile
 .deps
