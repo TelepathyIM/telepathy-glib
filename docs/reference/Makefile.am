@@ -61,6 +61,7 @@ CFILE_GLOB=$(top_srcdir)/telepathy-glib/*.c $(top_builddir)/telepathy-glib/_gen/
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES=\
     channel-internal.h \
+    connection-internal.h \
     debug-internal.h \
     handle-repo-internal.h \
     proxy-internal.h
