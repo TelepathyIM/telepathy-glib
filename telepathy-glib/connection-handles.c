@@ -39,7 +39,10 @@
  */
 
 typedef struct {
-    GHashTable *refcounts[NUM_TP_HANDLE_TYPES];
+    /* number of TpConnection objects sharing this bucket */
+    gsize refcount;
+    /* guint handle => gsize refcount */
+    GHashTable *handle_refs[NUM_TP_HANDLE_TYPES];
 } Bucket;
 
 static inline void oom (void) G_GNUC_NORETURN;
@@ -57,12 +60,12 @@ bucket_free (gpointer p)
   guint i;
 
   /* [0] is never allocated (handle type NONE), so start at [1] */
-  g_assert (b->refcounts[0] == NULL);
+  g_assert (b->handle_refs[0] == NULL);
 
   for (i = 1; i < NUM_TP_HANDLE_TYPES; i++)
     {
-      if (b->refcounts[i] != NULL)
-        g_hash_table_destroy (b->refcounts[i]);
+      if (b->handle_refs[i] != NULL)
+        g_hash_table_destroy (b->handle_refs[i]);
     }
 
   g_slice_free (Bucket, p);
@@ -71,7 +74,10 @@ bucket_free (gpointer p)
 static Bucket *
 bucket_new (void)
 {
-  return g_slice_new0 (Bucket);
+  Bucket *b = g_slice_new0 (Bucket);
+  b->refcount = 1;
+
+  return b;
 }
 
 static dbus_int32_t connection_handle_refs_slot = -1;
@@ -84,7 +90,7 @@ _tp_connection_ref_handles (TpConnection *connection,
   TpProxy *as_proxy = (TpProxy *) connection;
   DBusGConnection *g_connection = as_proxy->dbus_connection;
   const gchar *object_path = as_proxy->object_path;
-  GHashTable *table, *refcounts;
+  GHashTable *table, *handle_refs;
   Bucket *bucket = NULL;
   guint i;
 
@@ -122,18 +128,18 @@ _tp_connection_ref_handles (TpConnection *connection,
       g_hash_table_insert (table, g_strdup (object_path), bucket);
     }
 
-  if (bucket->refcounts[handle_type] == NULL)
-    bucket->refcounts[handle_type] = g_hash_table_new (g_direct_hash,
+  if (bucket->handle_refs[handle_type] == NULL)
+    bucket->handle_refs[handle_type] = g_hash_table_new (g_direct_hash,
         g_direct_equal);
 
-  refcounts = bucket->refcounts[handle_type];
+  handle_refs = bucket->handle_refs[handle_type];
 
   for (i = 0; i < handles->len; i++)
     {
       gpointer handle = GUINT_TO_POINTER (g_array_index (handles, guint, i));
-      gsize r = GPOINTER_TO_SIZE (g_hash_table_lookup (refcounts, handle));
+      gsize r = GPOINTER_TO_SIZE (g_hash_table_lookup (handle_refs, handle));
 
-      g_hash_table_insert (refcounts, handle, GSIZE_TO_POINTER (r + 1));
+      g_hash_table_insert (handle_refs, handle, GSIZE_TO_POINTER (r + 1));
     }
 }
 
@@ -173,6 +179,52 @@ array_free_TRUE (gpointer p)
 }
 
 
+void
+_tp_connection_init_handle_refs (TpConnection *self)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+  DBusGConnection *g_connection = as_proxy->dbus_connection;
+  const gchar *object_path = as_proxy->object_path;
+  GHashTable *table;
+  Bucket *bucket = NULL;
+
+  g_assert (as_proxy->invalidated == NULL);
+
+  /* MT: libdbus protects us, if so configured */
+  if (!dbus_connection_allocate_data_slot (&connection_handle_refs_slot))
+    oom ();
+
+  /* MT: if we become thread safe, the rest of this function needs a lock */
+  table = dbus_connection_get_data (dbus_g_connection_get_connection (
+        g_connection), connection_handle_refs_slot);
+
+  if (table == NULL)
+    {
+      table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+          bucket_free);
+
+      if (!dbus_connection_set_data (dbus_g_connection_get_connection (
+              g_connection), connection_handle_refs_slot, table,
+            (DBusFreeFunction) g_hash_table_destroy))
+        oom ();
+    }
+  else
+    {
+      bucket = g_hash_table_lookup (table, object_path);
+    }
+
+  if (bucket == NULL)
+    {
+      bucket = bucket_new ();
+      g_hash_table_insert (table, g_strdup (object_path), bucket);
+    }
+  else
+    {
+      bucket->refcount++;
+    }
+}
+
+
 /* Clean up after the connection is invalidated */
 void
 _tp_connection_clean_up_handle_refs (TpConnection *self)
@@ -181,6 +233,7 @@ _tp_connection_clean_up_handle_refs (TpConnection *self)
   DBusGConnection *g_connection = as_proxy->dbus_connection;
   const gchar *object_path = as_proxy->object_path;
   GHashTable *table;
+  Bucket *bucket;
 
   DEBUG ("%p", self);
 
@@ -194,6 +247,11 @@ _tp_connection_clean_up_handle_refs (TpConnection *self)
         g_connection), connection_handle_refs_slot);
 
   if (table == NULL)
+    return;
+
+  bucket = g_hash_table_lookup (table, object_path);
+
+  if ((--bucket->refcount) > 0)
     return;
 
   if (g_hash_table_remove (table, object_path) &&
@@ -225,7 +283,7 @@ tp_connection_unref_handles (TpConnection *self,
   TpProxy *as_proxy = (TpProxy *) self;
   DBusGConnection *g_connection = as_proxy->dbus_connection;
   const gchar *object_path = as_proxy->object_path;
-  GHashTable *table, *refcounts;
+  GHashTable *table, *handle_refs;
   Bucket *bucket = NULL;
   guint i;
   GArray *unref;
@@ -256,16 +314,16 @@ tp_connection_unref_handles (TpConnection *self,
   /* if there's no bucket, then we can't have a ref to the handles -
    * user error */
   g_return_if_fail (bucket != NULL);
-  g_return_if_fail (bucket->refcounts[handle_type] != NULL);
+  g_return_if_fail (bucket->handle_refs[handle_type] != NULL);
 
-  refcounts = bucket->refcounts[handle_type];
+  handle_refs = bucket->handle_refs[handle_type];
 
   unref = g_array_sized_new (FALSE, FALSE, sizeof (guint), n_handles);
 
   for (i = 0; i < n_handles; i++)
     {
       gpointer handle = GUINT_TO_POINTER (handles[i]);
-      gsize r = GPOINTER_TO_SIZE (g_hash_table_lookup (refcounts, handle));
+      gsize r = GPOINTER_TO_SIZE (g_hash_table_lookup (handle_refs, handle));
 
       g_return_if_fail (handles[i] != 0);
       /* if we have no refs, it's user error */
@@ -275,13 +333,13 @@ tp_connection_unref_handles (TpConnection *self,
         {
           DEBUG ("releasing handle %u", handles[i]);
           g_array_append_val (unref, handles[i]);
-          g_hash_table_remove (refcounts, handle);
+          g_hash_table_remove (handle_refs, handle);
         }
       else
         {
           DEBUG ("decrementing handle %u to %" G_GSIZE_FORMAT, handles[i],
               r - 1);
-          g_hash_table_insert (refcounts, handle, GSIZE_TO_POINTER (r - 1));
+          g_hash_table_insert (handle_refs, handle, GSIZE_TO_POINTER (r - 1));
         }
     }
 
