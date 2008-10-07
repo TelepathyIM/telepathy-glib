@@ -26,25 +26,26 @@
  * telepathy-glib has an internal mechanism for debug messages and filtering.
  * Connection managers written with telepathy-glib are expected to connect
  * this to their own debugging mechanisms: when the CM's debugging mechanism
- * is activated, it should call tp_debug_set_flags_from_string(),
- * tp_debug_set_flags_from_env() or tp_debug_set_all_flags().
+ * is activated, it should call tp_debug_set_flags() and/or
+ * tp_debug_set_persistent().
  *
- * The supported debug-mode keywords are subject to change, but currently
- * include:
+ * The supported debug-mode keywords and the debug messages that they enable
+ * are subject to change, but currently include:
  *
  * <itemizedlist>
- * <listitem><literal>manager</literal> - output debug messages regarding
- * #TpConnectionManager (client)</listitem>
- * <listitem><literal>connection</literal> - output debug messages regarding
- * #TpBaseConnection (service) and #TpConnection (client)</listitem>
- * <listitem><literal>channel</literal> - output debug messages regarding
- * #TpChannel (client)</listitem>
- * <listitem><literal>im</literal> - output debug messages regarding
- * (text) instant messaging (service)</listitem>
- * <listitem><literal>properties</literal> - output debug messages regarding
- * #TpPropertiesMixin (service)</listitem>
- * <listitem><literal>params</literal> - output debug messages regarding
- * connection manager parameters (service)</listitem>
+ * <listitem><literal>manager</literal> -
+ *    #TpConnectionManager (client)</listitem>
+ * <listitem><literal>connection</literal> - #TpBaseConnection (service)
+ *    and #TpConnection (client)</listitem>
+ * <listitem><literal>channel</literal> - #TpChannel (client)</listitem>
+ * <listitem><literal>im</literal> - (text) instant messaging
+ *    (service)</listitem>
+ * <listitem><literal>properties</literal> -
+ *    #TpPropertiesMixin (service)</listitem>
+ * <listitem><literal>params</literal> - connection manager parameters
+ *    (service)</listitem>
+ * <listitem><literal>handles</literal> - handle reference tracking tracking
+ *    in #TpBaseConnection (service) and #TpConnection (client)</listitem>
  * <listitem><literal>all</literal> - all of the above</listitem>
  * </itemizedlist>
  */
@@ -98,6 +99,7 @@ static GDebugKey keys[] = {
   { "manager",       TP_DEBUG_MANAGER },
   { "channel",       TP_DEBUG_CHANNEL },
   { "proxy",         TP_DEBUG_PROXY },
+  { "handles",       TP_DEBUG_HANDLES },
   { 0, }
 };
 
