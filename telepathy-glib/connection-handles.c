@@ -619,7 +619,7 @@ connection_requested_handles (TpConnection *self,
  * @timeout_ms: the timeout in milliseconds, or -1 to use the default
  * @handle_type: the handle type
  * @ids: an array of string identifiers for which handles are required,
- *  terminated by %NULL
+ *  terminated by %NULL (must not be %NULL or empty)
  * @callback: called on success or failure (unless @weak_object has become
  *  unreferenced)
  * @user_data: arbitrary user-supplied data
@@ -647,16 +647,16 @@ tp_connection_request_handles (TpConnection *self,
 {
   RequestHandlesContext *context;
 
+  g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (ids != NULL);
+  g_return_if_fail (ids[0] != NULL);
+  g_return_if_fail (callback != NULL);
+
   context = g_slice_new0 (RequestHandlesContext);
   context->handle_type = handle_type;
-
-  /* g_strv_length is not NULL-safe - it's simpler to ensure that
-   * context->ids is not NULL */
-  if (ids == NULL)
-    context->ids = g_new0 (gchar *, 1);
-  else
-    context->ids = g_strdupv ((GStrv) ids);
-
+  context->ids = g_strdupv ((GStrv) ids);
   context->user_data = user_data;
   context->destroy = destroy;
   context->callback = callback;
