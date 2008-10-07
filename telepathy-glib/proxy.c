@@ -90,7 +90,11 @@ tp_dbus_errors_quark (void)
  *  is available.
  * @TP_DBUS_ERROR_CANCELLED: Raised from calls that re-enter the main
  *  loop (*_run_*) if they are cancelled
- * @NUM_TP_DBUS_ERRORS: 1 more than the highest valid #TpDBusError
+ * @TP_DBUS_ERROR_INCONSISTENT: Raised if information received from a remote
+ *  object is inconsistent or otherwise obviously wrong
+ *  (added in 0.7.UNRELEASED)
+ * @NUM_TP_DBUS_ERRORS: 1 more than the highest valid #TpDBusError at the
+ *  time of compilation
  *
  * #GError codes for use with the %TP_DBUS_ERRORS domain.
  *
