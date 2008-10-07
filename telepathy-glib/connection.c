@@ -261,6 +261,11 @@ got_contact_attribute_interfaces (TpProxy *proxy,
           g_assert (self->priv->contact_attribute_interfaces == NULL);
           self->priv->contact_attribute_interfaces = arr;
         }
+      else
+        {
+          DEBUG ("%p: ContactAttributeInterfaces had wrong type %s, "
+              "ignoring", self, G_VALUE_TYPE_NAME (value));
+        }
     }
   else
     {
