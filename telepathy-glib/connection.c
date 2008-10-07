@@ -232,17 +232,11 @@ got_contact_attribute_interfaces (TpProxy *proxy,
       if (G_VALUE_HOLDS (value, G_TYPE_STRV))
         {
           GArray *arr;
-          guint i = 0;
           gchar **interfaces = g_value_get_boxed (value);
           gchar **iter;
 
-          if (interfaces != NULL)
-            {
-              for (iter = interfaces; *iter != NULL; iter++)
-                i++;
-            }
-
-          arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark), i);
+          arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark),
+              interfaces == NULL ? 0 : g_strv_length (interfaces));
 
           if (interfaces != NULL)
             {
