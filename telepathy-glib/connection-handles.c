@@ -273,6 +273,8 @@ _tp_connection_clean_up_handle_refs (TpConnection *self)
  *
  * Release the reference to the handles in @handles that was obtained by
  * calling tp_connection_hold_handles() or tp_connection_request_handles().
+ *
+ * If @self has already become invalid, this function does nothing.
  */
 void
 tp_connection_unref_handles (TpConnection *self,
@@ -290,12 +292,14 @@ tp_connection_unref_handles (TpConnection *self,
 
   DEBUG ("%p: %u handles of type %u", self, n_handles, handle_type);
 
+  g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+
   if (as_proxy->invalidated != NULL)
     {
       return;
     }
-
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
 
   /* MT: libdbus protects us, if so configured */
   if (!dbus_connection_allocate_data_slot (&connection_handle_refs_slot))
