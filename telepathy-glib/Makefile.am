@@ -108,6 +108,7 @@ tpginclude_HEADERS = \
     media-interfaces.h \
     connection.h \
     connection-manager.h \
+    contact.h \
     contacts-mixin.h \
     dbus.h \
     dbus-properties-mixin.h \
@@ -215,6 +216,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     connection-internal.h \
     connection-handles.c \
     connection-manager.c \
+    contact.c \
     contacts-mixin.c \
     dbus.c \
     dbus-internal.h \
