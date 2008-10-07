@@ -296,28 +296,6 @@ tp_connection_unref_handles (TpConnection *self,
       tp_cli_connection_call_release_handles (self, -1,
           handle_type, unref, post_unref, unref, array_free_TRUE, NULL);
     }
-
-  if (g_hash_table_size (refcounts) == 0)
-    {
-      g_hash_table_destroy (refcounts);
-      bucket->refcounts[handle_type] = NULL;
-
-      for (i = 1; i < NUM_TP_HANDLE_TYPES; i++)
-        {
-          if (bucket->refcounts[handle_type] != NULL)
-            return;
-        }
-
-      /* if still here, then there are no refs left on this connection */
-      g_hash_table_remove (table, object_path);
-
-      if (g_hash_table_size (table) == 0)
-        {
-          /* this calls the destructor, g_hash_table_destroy */
-          dbus_connection_set_data (dbus_g_connection_get_connection (
-                g_connection), connection_handle_refs_slot, NULL, NULL);
-        }
-    }
 }
 
 
