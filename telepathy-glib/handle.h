@@ -48,12 +48,6 @@ typedef guint TpHandle;
  */
 #define TP_TYPE_HANDLE G_TYPE_UINT
 
-/* Must be static inline because it references NUM_TP_HANDLE_TYPES -
- * if it wasn't inlined, a newer libtelepathy-glib with a larger number
- * of handle types might accept handle types that won't fit in the
- * connection manager's array of length NUM_TP_HANDLE_TYPES
- */
-
 /**
  * TP_UNKNOWN_HANDLE_TYPE
  *
@@ -77,6 +71,12 @@ typedef guint TpHandle;
 static inline
 /* spacer so gtkdoc documents this function as though not static */
 gboolean tp_handle_type_is_valid (TpHandleType type, GError **error);
+
+/* Must be static inline because it references NUM_TP_HANDLE_TYPES -
+ * if it wasn't inlined, a newer libtelepathy-glib with a larger number
+ * of handle types might accept handle types that won't fit in the
+ * connection manager's array of length NUM_TP_HANDLE_TYPES
+ */
 
 static inline gboolean
 tp_handle_type_is_valid (TpHandleType type, GError **error)
