@@ -29,6 +29,8 @@ G_BEGIN_DECLS
 const GArray *_tp_connection_get_contact_attribute_interfaces (
     TpConnection *self);
 
+void _tp_connection_clean_up_handle_refs (TpConnection *self);
+
 G_END_DECLS
 
 #endif

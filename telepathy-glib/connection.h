@@ -23,6 +23,7 @@
 #define __TP_CONNECTION_H__
 
 #include <telepathy-glib/enums.h>
+#include <telepathy-glib/handle.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -101,6 +102,30 @@ void tp_connection_init_known_interfaces (void);
 
 gint tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
   TpConnectionPresenceType p2);
+
+/* connection-handles.c */
+
+typedef void (*TpConnectionHoldHandlesCb) (TpConnection *connection,
+    TpHandleType handle_type, guint n_handles, const TpHandle *handles,
+    const GError *error, gpointer user_data, GObject *weak_object);
+
+void tp_connection_hold_handles (TpConnection *self, gint timeout_ms,
+    TpHandleType handle_type, guint n_handles, const TpHandle *handles,
+    TpConnectionHoldHandlesCb callback,
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+
+typedef void (*TpConnectionRequestHandlesCb) (TpConnection *connection,
+    TpHandleType handle_type,
+    guint n_handles, const TpHandle *handles, const gchar * const *ids,
+    const GError *error, gpointer user_data, GObject *weak_object);
+
+void tp_connection_request_handles (TpConnection *self, gint timeout_ms,
+    TpHandleType handle_type, const gchar * const *ids,
+    TpConnectionRequestHandlesCb callback,
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+
+void tp_connection_unref_handles (TpConnection *self,
+    TpHandleType handle_type, guint n_handles, const TpHandle *handles);
 
 G_END_DECLS
 
