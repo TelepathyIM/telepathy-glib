@@ -1826,6 +1826,9 @@ tp_base_connection_hold_handles (TpSvcConnection *iface,
     }
 
   sender = dbus_g_method_get_sender (context);
+
+  DEBUG ("%u handles of type %u, for %s", handles->len, handle_type, sender);
+
   if (!tp_handles_client_hold (priv->handles[handle_type], sender,
         handles, &error))
     {
@@ -2284,6 +2287,8 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
     }
 
   sender = dbus_g_method_get_sender (context);
+  DEBUG ("%u handles of type %u, for %s", handles->len, handle_type, sender);
+
   if (!tp_handles_client_release (priv->handles[handle_type],
         sender, handles, &error))
     {
@@ -2382,6 +2387,8 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
     }
 
   sender = dbus_g_method_get_sender (context);
+  DEBUG ("%u handles of type %u, for %s", handles->len, handle_type, sender);
+
   if (!tp_handles_client_hold (handle_repo, sender, handles, &error))
     {
       g_assert (error != NULL);
