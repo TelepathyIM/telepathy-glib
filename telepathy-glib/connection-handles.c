@@ -452,7 +452,7 @@ connection_held_handles (TpConnection *self,
  * @self: a connection
  * @timeout_ms: the timeout in milliseconds, or -1 to use the default
  * @handle_type: the handle type
- * @n_handles: the number of handles in @handles
+ * @n_handles: the number of handles in @handles (must be at least 1)
  * @handles: an array of handles
  * @callback: called on success or failure (unless @weak_object has become
  *  unreferenced)
@@ -480,6 +480,12 @@ tp_connection_hold_handles (TpConnection *self,
                             GObject *weak_object)
 {
   HoldHandlesContext *context;
+
+  g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (n_handles >= 1);
+  g_return_if_fail (callback != NULL);
 
   context = g_slice_new0 (HoldHandlesContext);
   context->handle_type = handle_type;
