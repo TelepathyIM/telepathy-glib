@@ -1,6 +1,7 @@
 noinst_LTLIBRARIES = libtp-glib-tests.la
 
 libtp_glib_tests_la_SOURCES = \
+    debug.h \
     myassert.h \
     simple-conn.c \
     simple-conn.h \
