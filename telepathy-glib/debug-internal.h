@@ -50,13 +50,13 @@ G_END_DECLS
  * more than once. So you can do:
  *
  * #define DEBUG_FLAG TP_DEBUG_ONE_THING
- * #include "internal-debug.h"
+ * #include "telepathy-glib/debug-internal.h"
  * ...
  * DEBUG ("if we're debugging one thing");
  * ...
  * #undef DEBUG_FLAG
  * #define DEBUG_FLAG TP_DEBUG_OTHER_THING
- * #include "internal-debug.h"
+ * #include "telepathy-glib/debug-internal.h"
  * ...
  * DEBUG ("if we're debugging the other thing");
  * ...
