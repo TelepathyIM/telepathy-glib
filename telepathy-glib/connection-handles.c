@@ -82,16 +82,37 @@ bucket_new (void)
 
 static dbus_int32_t connection_handle_refs_slot = -1;
 
+static Bucket *
+connection_get_bucket (TpConnection *connection)
+{
+  TpProxy *as_proxy = (TpProxy *) connection;
+  DBusGConnection *g_connection = as_proxy->dbus_connection;
+  const gchar *object_path = as_proxy->object_path;
+  GHashTable *table;
+  Bucket *bucket = NULL;
+
+  /* _tp_connection_init_handle_refs should have already ensured that the
+   * assertions in this function will succeed. */
+  g_assert (connection_handle_refs_slot != -1);
+
+  table = dbus_connection_get_data (dbus_g_connection_get_connection (
+        g_connection), connection_handle_refs_slot);
+  g_assert (table != NULL);
+
+  bucket = g_hash_table_lookup (table, object_path);
+  g_assert (bucket != NULL);
+
+  return bucket;
+}
+
 static void
 _tp_connection_ref_handles (TpConnection *connection,
                             TpHandleType handle_type,
                             const GArray *handles)
 {
   TpProxy *as_proxy = (TpProxy *) connection;
-  DBusGConnection *g_connection = as_proxy->dbus_connection;
-  const gchar *object_path = as_proxy->object_path;
-  GHashTable *table, *handle_refs;
-  Bucket *bucket = NULL;
+  GHashTable *handle_refs;
+  Bucket *bucket;
   guint i;
 
   g_assert (as_proxy->invalidated == NULL);
@@ -99,34 +120,7 @@ _tp_connection_ref_handles (TpConnection *connection,
 
   DEBUG ("%p: %u handles of type %u", connection, handles->len, handle_type);
 
-  /* MT: libdbus protects us, if so configured */
-  if (!dbus_connection_allocate_data_slot (&connection_handle_refs_slot))
-    oom ();
-
-  /* MT: if we become thread safe, the rest of this function needs a lock */
-  table = dbus_connection_get_data (dbus_g_connection_get_connection (
-        g_connection), connection_handle_refs_slot);
-
-  if (table == NULL)
-    {
-      table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
-          bucket_free);
-
-      if (!dbus_connection_set_data (dbus_g_connection_get_connection (
-              g_connection), connection_handle_refs_slot, table,
-            (DBusFreeFunction) g_hash_table_destroy))
-        oom ();
-    }
-  else
-    {
-      bucket = g_hash_table_lookup (table, object_path);
-    }
-
-  if (bucket == NULL)
-    {
-      bucket = bucket_new ();
-      g_hash_table_insert (table, g_strdup (object_path), bucket);
-    }
+  bucket = connection_get_bucket (connection);
 
   if (bucket->handle_refs[handle_type] == NULL)
     bucket->handle_refs[handle_type] = g_hash_table_new (g_direct_hash,
@@ -283,10 +277,8 @@ tp_connection_unref_handles (TpConnection *self,
                              const TpHandle *handles)
 {
   TpProxy *as_proxy = (TpProxy *) self;
-  DBusGConnection *g_connection = as_proxy->dbus_connection;
-  const gchar *object_path = as_proxy->object_path;
-  GHashTable *table, *handle_refs;
-  Bucket *bucket = NULL;
+  GHashTable *handle_refs;
+  Bucket *bucket;
   guint i;
   GArray *unref;
 
@@ -301,23 +293,10 @@ tp_connection_unref_handles (TpConnection *self,
       return;
     }
 
-  /* MT: libdbus protects us, if so configured */
-  if (!dbus_connection_allocate_data_slot (&connection_handle_refs_slot))
-    oom ();
+  bucket = connection_get_bucket (self);
 
-  /* MT: if we become thread safe, the rest of this function needs a lock */
-  table = dbus_connection_get_data (dbus_g_connection_get_connection (
-        g_connection), connection_handle_refs_slot);
-
-  /* if there's no table, then we can't have a ref to the handles -
+  /* if there's no hash table, then we can't have a ref to the handles -
    * user error */
-  g_return_if_fail (table != NULL);
-
-  bucket = g_hash_table_lookup (table, object_path);
-
-  /* if there's no bucket, then we can't have a ref to the handles -
-   * user error */
-  g_return_if_fail (bucket != NULL);
   g_return_if_fail (bucket->handle_refs[handle_type] != NULL);
 
   handle_refs = bucket->handle_refs[handle_type];
