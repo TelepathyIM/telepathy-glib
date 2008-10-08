@@ -340,6 +340,7 @@ tp_contacts_mixin_get_contact_attributes (
   g_hash_table_destroy (result);
 
   tp_handles_unref (contact_repo, valid_handles);
+  g_array_free (valid_handles, TRUE);
 }
 
 /**
