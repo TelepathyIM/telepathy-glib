@@ -15,6 +15,7 @@
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
+#include "tests/lib/util.h"
 
 static int fail = 0;
 
@@ -99,13 +100,6 @@ finish (gpointer r)
   g_main_loop_quit (result->loop);
 }
 
-static gboolean
-quit_when_idle (gpointer p)
-{
-  g_main_loop_quit (p);
-  return FALSE;
-}
-
 /*
  * Assert that RequestHandles + unref releases the handles.
  */
@@ -160,11 +154,7 @@ test_request_and_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-
-  /* synchronize state of D-Bus connection */
-  g_idle_add_full (G_PRIORITY_LOW, quit_when_idle, result.loop, NULL);
-  g_main_loop_run (result.loop);
-  tp_cli_connection_run_get_protocol (client_conn, -1, NULL, NULL, NULL);
+  test_connection_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have been released */
 
@@ -268,11 +258,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-
-  /* synchronize state of D-Bus connection */
-  g_idle_add_full (G_PRIORITY_LOW, quit_when_idle, result.loop, NULL);
-  g_main_loop_run (result.loop);
-  tp_cli_connection_run_get_protocol (client_conn, -1, NULL, NULL, NULL);
+  test_connection_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have not been released */
 
@@ -291,11 +277,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-
-  /* synchronize state of D-Bus connection */
-  g_idle_add_full (G_PRIORITY_LOW, quit_when_idle, result.loop, NULL);
-  g_main_loop_run (result.loop);
-  tp_cli_connection_run_get_protocol (client_conn, -1, NULL, NULL, NULL);
+  test_connection_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have been released */
 
