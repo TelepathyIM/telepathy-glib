@@ -154,13 +154,13 @@ post_unref (TpConnection *connection,
     {
       guint i;
 
-      g_message ("Failed to release %u handles: %s %u: %s",
+      DEBUG ("Failed to release %u handles: %s %u: %s",
           arr->len, g_quark_to_string (error->domain), error->code,
           error->message);
 
       for (i = 0; i < arr->len; i++)
         {
-          g_message ("   %u", g_array_index (arr, guint, i));
+          DEBUG ("   %u", g_array_index (arr, guint, i));
         }
     }
 }
