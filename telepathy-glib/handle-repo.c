@@ -491,9 +491,6 @@ tp_handle_lookup (TpHandleRepoIface *self,
  * Associates a blob of data with a given handle and a given key
  *
  * If @destroy is set, then the data is freed when the handle is freed.
- *
- * Inspecting the return value from this function is deprecated; it will
- * be declared void in a future release.
  */
 
 void
