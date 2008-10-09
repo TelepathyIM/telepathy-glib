@@ -49,6 +49,8 @@ examples/cm/*/telepathy-example-*
 examples/extensions/extensions.html
 gtk-doc.make
 install-sh
+lcov.info
+lcov.html
 libtool
 ltmain.sh
 m4/gtk-doc.m4

@@ -14,4 +14,5 @@ check-local::
 	egrep -A 5 '[F]IXME|[T]ODO|[X]XX' $(srcdir)/telepathy-glib/*.[ch] \
 		> FIXME.out || true
 
+include tools/lcov.am
 include tools/telepathy.am
