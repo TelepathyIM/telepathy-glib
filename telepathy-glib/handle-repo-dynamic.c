@@ -561,7 +561,7 @@ dynamic_handle_is_valid (TpHandleRepoIface *irepo, TpHandle handle,
 
   if (handle_priv_lookup (self, handle) == NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
           "handle %u is not currently a valid %s handle (type %u)",
           handle, tp_handle_type_to_string (self->handle_type),
           self->handle_type);
