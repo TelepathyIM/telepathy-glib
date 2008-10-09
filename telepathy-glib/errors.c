@@ -21,6 +21,7 @@
 #include <telepathy-glib/errors.h>
 
 #include <glib.h>
+#include <dbus/dbus-glib.h>
 
 /**
  * TP_ERROR_PREFIX:
@@ -67,15 +68,28 @@ tp_g_set_error_unsupported_handle_type (guint type, GError **error)
 /**
  * tp_errors_quark:
  *
- * <!--no need for more documentation, Returns: says it all-->
+ * Return the Telepathy error domain. Since 0.7.UNRELEASED this function
+ * automatically registers the domain with dbus-glib for server-side use
+ * (using dbus_g_error_domain_register()) when called.
  *
  * Returns: the Telepathy error domain.
  */
 GQuark
 tp_errors_quark (void)
 {
-  static GQuark quark = 0;
-  if (!quark)
-    quark = g_quark_from_static_string ("tp_errors");
-  return quark;
+  static gsize quark = 0;
+
+  if (g_once_init_enter (&quark))
+    {
+      GQuark domain = g_quark_from_static_string ("tp_errors");
+
+      g_assert (sizeof (GQuark) <= sizeof (gsize));
+
+      g_type_init ();
+      dbus_g_error_domain_register (domain, TP_ERROR_PREFIX,
+          TP_TYPE_ERROR);
+      g_once_init_leave (&quark, domain);
+    }
+
+  return (GQuark) quark;
 }
