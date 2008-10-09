@@ -14,20 +14,4 @@ check-local::
 	egrep -A 5 '[F]IXME|[T]ODO|[X]XX' $(srcdir)/telepathy-glib/*.[ch] \
 		> FIXME.out || true
 
-# Use git log --stat if it works, else plain git log
-dist-hook:
-	chmod u+w ${distdir}/ChangeLog
-	if test -d ${top_srcdir}/.git; then \
-		git log --stat > ${distdir}/ChangeLog || \
-		git log > ${distdir}/ChangeLog; \
-	fi
-
-if OFFICIAL_RELEASE
-maintainer-upload-release:
-	test -f telepathy-glib-@VERSION@.tar.gz
-	test -f telepathy-glib-@VERSION@.tar.gz.asc
-	gpg --verify telepathy-glib-@VERSION@.tar.gz.asc
-	rsync -rtvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
-		telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib
-	rsync -vzP telepathy-glib-@VERSION@.tar.gz telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/telepathy-glib/
-endif
+include tools/telepathy.am
