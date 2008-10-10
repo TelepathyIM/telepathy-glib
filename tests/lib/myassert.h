@@ -37,4 +37,11 @@ static void myassert_failed (void);
         g_quark_to_string ((right)->domain), (right)->code, (right)->message);\
   } G_STMT_END
 
+#define MYASSERT_SAME_STRING(left, right) \
+  MYASSERT (!tp_strdiff ((left), (right)), ": \"%s\" != \"%s\"", \
+      (left), (right))
+
+#define MYASSERT_SAME_UINT(left, right) \
+  MYASSERT ((left) == (right), ": %u != %u", (left), (right))
+
 #endif
