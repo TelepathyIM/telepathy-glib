@@ -20,6 +20,10 @@
 
 #include <telepathy-glib/contact.h>
 
+#include <telepathy-glib/util.h>
+
+#include "telepathy-glib/connection-internal.h"
+
 
 /**
  * SECTION:contact
@@ -291,6 +295,17 @@ tp_contact_get_presence_message (TpContact *self)
 }
 
 
+void
+_tp_contact_connection_invalidated (TpContact *contact)
+{
+  /* The connection has gone away, so we no longer have a meaningful handle,
+   * and will never have one again. */
+  g_assert (contact->priv->handle != 0);
+  contact->priv->handle = 0;
+  g_object_notify ((GObject *) contact, "handle");
+}
+
+
 static void
 tp_contact_dispose (GObject *object)
 {
@@ -300,6 +315,8 @@ tp_contact_dispose (GObject *object)
     {
       g_assert (self->priv->connection != NULL);
 
+      _tp_connection_remove_contact (self->priv->connection,
+          self->priv->handle, self);
       tp_connection_unref_handles (self->priv->connection,
           TP_HANDLE_TYPE_CONTACT, 1, &self->priv->handle);
 
@@ -540,9 +557,548 @@ tp_contact_class_init (TpContactClass *klass)
 }
 
 
+/* Consumes one reference to @handle. */
+static TpContact *
+tp_contact_ensure (TpConnection *connection,
+                   TpHandle handle)
+{
+  TpContact *self = _tp_connection_lookup_contact (connection, handle);
+
+  if (self != NULL)
+    {
+      g_assert (self->priv->handle == handle);
+
+      /* we have one ref to this handle more than we need, so consume it */
+      tp_connection_unref_handles (self->priv->connection,
+          TP_HANDLE_TYPE_CONTACT, 1, &self->priv->handle);
+
+      return g_object_ref (self);
+    }
+
+  self = TP_CONTACT (g_object_new (TP_TYPE_CONTACT, NULL));
+
+  self->priv->handle = handle;
+  _tp_connection_add_contact (connection, handle, self);
+  self->priv->connection = g_object_ref (connection);
+
+  return self;
+}
+
+
 static void
 tp_contact_init (TpContact *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONTACT,
       TpContactPrivate);
+}
+
+/* Here's what needs to happen when we create contacts, in pseudocode:
+ *
+ * if we started from IDs:
+ *    request all the handles
+ *    if it fails with NotAvailable, at least one of them is invalid:
+ *        request the first handle
+ *        request the second handle
+ *        ...
+ *    else if it fails for any other reason:
+ *        abort
+ *
+ * (by now, ->handles is populated)
+ *
+ * if contact attributes are supported:
+ *    (the fast path)
+ *    get the contact attributes (and simultaneously hold the handles)
+ *    if it failed, goto abort
+ *    if none are missing, goto done
+ * else if we started from handles:
+ *    try to hold all the handles
+ *    if it fails with InvalidHandle:
+ *        hold the first handle
+ *        hold the second handle
+ *        ...
+ *    else if it fails for any other reason:
+ *        abort
+ *
+ * (the slow path)
+ * get the avatar tokens if we want them - if it fails, goto abort
+ * get the aliases if we want them - if it fails, goto abort
+ * ...
+ *
+ * Most of this is actually implemented by popping callbacks (ContactsProc)
+ * from a queue.
+ */
+
+typedef struct _ContactsContext ContactsContext;
+typedef void (*ContactsProc) (ContactsContext *self);
+
+struct _ContactsContext {
+    gsize refcount;
+
+    /* owned */
+    TpConnection *connection;
+    /* array of owned TpContact; preallocated but empty until handles have
+     * been held or requested */
+    GPtrArray *contacts;
+    /* array of handles; empty until RequestHandles has returned, if we
+     * started from IDs */
+    GArray *handles;
+    /* array of IDs; empty until handles have been inspected, if we started
+     * from handles */
+    GPtrArray *ids;
+    /* array of handles; empty until RequestHandles has returned, if we
+     * started from IDs */
+    GArray *invalid;
+
+    /* features we need before this request can finish */
+    ContactFeatureFlags wanted;
+
+    /* callback for when we've finished, plus the usual misc */
+    TpConnectionContactsByHandleCb callback;
+    gpointer user_data;
+    GDestroyNotify destroy;
+    GObject *weak_object;
+
+    /* queue of ContactsProc */
+    GQueue todo;
+
+    /* index into handles or ids, only used when the first HoldHandles call
+     * failed with InvalidHandle, or the RequestHandles call failed with
+     * NotAvailable */
+    guint next_index;
+};
+
+
+static ContactsContext *
+contacts_context_new (TpConnection *connection,
+                      guint n_contacts,
+                      ContactFeatureFlags want_features,
+                      TpConnectionContactsByHandleCb callback,
+                      gpointer user_data,
+                      GDestroyNotify destroy,
+                      GObject *weak_object)
+{
+  ContactsContext *c = g_slice_new0 (ContactsContext);
+
+  c->refcount = 1;
+  c->connection = g_object_ref (connection);
+  c->contacts = g_ptr_array_sized_new (n_contacts);
+  c->handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
+  c->invalid = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
+  c->ids = g_ptr_array_sized_new (n_contacts);
+
+  c->wanted = want_features;
+  c->callback = callback;
+  c->user_data = user_data;
+  c->destroy = destroy;
+  c->weak_object = weak_object;
+
+  /* This code (and lots of telepathy-glib, really) won't work if this
+   * assertion fails, because we put function pointers in a GQueue. If anyone
+   * cares about platforms where this fails, fixing this would involve
+   * slice-allocating sizeof (GCallback) bytes repeatedly, and putting *those*
+   * in the queue. */
+  g_assert (sizeof (GCallback) == sizeof (gpointer));
+  g_queue_init (&c->todo);
+
+  return c;
+}
+
+
+static void
+contacts_context_unref (gpointer p)
+{
+  ContactsContext *c = p;
+
+  if ((--c->refcount) > 0)
+    return;
+
+  g_assert (c->connection != NULL);
+  g_object_unref (c->connection);
+  c->connection = NULL;
+
+  g_queue_clear (&c->todo);
+
+  g_assert (c->contacts != NULL);
+  g_ptr_array_foreach (c->contacts, (GFunc) g_object_unref, NULL);
+  g_ptr_array_free (c->contacts, TRUE);
+  c->contacts = NULL;
+
+  g_assert (c->handles != NULL);
+  g_array_free (c->handles, TRUE);
+  c->handles = NULL;
+
+  g_assert (c->invalid != NULL);
+  g_array_free (c->invalid, TRUE);
+  c->invalid = NULL;
+
+  if (c->destroy != NULL)
+    c->destroy (c->user_data);
+
+  c->destroy = NULL;
+  c->user_data = NULL;
+
+  c->weak_object = NULL;
+
+  g_slice_free (ContactsContext, c);
+}
+
+
+static void
+contacts_context_fail (ContactsContext *c,
+                       const GError *error)
+{
+  c->callback (c->connection, 0, NULL, 0, NULL, error, c->user_data,
+      c->weak_object);
+}
+
+
+/**
+ * TpConnectionContactsByHandleCb:
+ * @connection: The connection
+ * @n_contacts: The number of TpContact objects successfully created
+ *  (one per valid handle), or 0 on unrecoverable errors
+ * @contacts: An array of @n_contacts TpContact objects (this callback is
+ *  given one reference to each of these objects, and must unref any that
+ *  are not needed with g_object_unref()), or %NULL on unrecoverable errors
+ * @n_invalid: The number of invalid handles that were passed to
+ *  tp_connection_get_contacts_by_handle(), or 0 on unrecoverable errors
+ * @invalid: An array of @n_invalid handles that were passed to
+ *  tp_connection_get_contacts_by_handle() but turned out to be invalid,
+ *  or %NULL on unrecoverable errors
+ * @error: %NULL on success, or an unrecoverable error that caused everything
+ *  to fail
+ * @user_data: the @user_data that was passed to
+ *  tp_connection_get_contacts_by_handle()
+ * @weak_object: the @weak_object that was passed to
+ *  tp_connection_get_contacts_by_handle()
+ *
+ * Signature of a callback used to receive the result of
+ * tp_connection_get_contacts_by_handle().
+ *
+ * If an unrecoverable error occurs (for instance, if @connection
+ * becomes disconnected) the whole operation fails, and no contacts or
+ * invalid handles are returned.
+ *
+ * If some or even all of the @handles passed to
+ * tp_connection_get_contacts_by_handle() were not valid, this is not
+ * considered to be a failure. @error will be %NULL in this situation,
+ * @contacts will contain contact objects for those handles that were
+ * valid (possibly none of them), and @invalid will contain the handles
+ * that were not valid.
+ */
+
+
+static void
+contacts_context_continue (ContactsContext *c)
+{
+  if (g_queue_is_empty (&c->todo))
+    {
+      /* do some final sanity checking then hand over the contacts to the
+       * library user */
+      guint i;
+
+      g_assert (c->contacts != NULL);
+      g_assert (c->invalid != NULL);
+
+      for (i = 0; i < c->contacts->len; i++)
+        {
+          TpContact *contact = TP_CONTACT (g_ptr_array_index (c->contacts, i));
+
+          g_assert (contact->priv->identifier != NULL);
+          g_assert (contact->priv->handle != 0);
+        }
+
+      c->callback (c->connection,
+          c->contacts->len, (TpContact * const *) c->contacts->pdata,
+          c->invalid->len, (const TpHandle *) c->invalid->data,
+          NULL, c->user_data, c->weak_object);
+      /* we've given the TpContact refs to the callback, so: */
+      g_ptr_array_remove_range (c->contacts, 0, c->contacts->len);
+    }
+  else
+    {
+      /* bah! */
+      ContactsProc next = g_queue_pop_head (&c->todo);
+
+      next (c);
+    }
+}
+
+
+static void
+contacts_held_one (TpConnection *connection,
+                   TpHandleType handle_type,
+                   guint n_handles,
+                   const TpHandle *handles,
+                   const GError *error,
+                   gpointer user_data,
+                   GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  g_assert (handle_type == TP_HANDLE_TYPE_CONTACT);
+  g_assert (c->next_index < c->handles->len);
+
+  if (error == NULL)
+    {
+      /* I have a handle of my very own. Just what I always wanted! */
+      TpContact *contact;
+
+      g_assert (n_handles == 1);
+      g_assert (handles[0] != 0);
+      g_debug ("%u vs %u", g_array_index (c->handles, TpHandle, c->next_index),
+          handles[0]);
+      g_assert (g_array_index (c->handles, TpHandle, c->next_index)
+          == handles[0]);
+
+      contact = tp_contact_ensure (connection, handles[0]);
+      g_ptr_array_add (c->contacts, contact);
+      c->next_index++;
+    }
+  else if (error->domain == TP_ERRORS &&
+      error->code == TP_ERROR_INVALID_HANDLE)
+    {
+      g_array_append_val (c->invalid,
+          g_array_index (c->handles, TpHandle, c->next_index));
+      /* ignore the bad handle - we just won't return a TpContact for it */
+      g_array_remove_index_fast (c->handles, c->next_index);
+      /* do not increment next_index - another handle has been moved into that
+       * position */
+    }
+  else
+    {
+      /* the connection fell down a well or something */
+      contacts_context_fail (c, error);
+      return;
+    }
+
+  /* Either continue to hold handles, or proceed along the slow path. */
+  contacts_context_continue (c);
+}
+
+
+static void
+contacts_hold_one (ContactsContext *c)
+{
+  c->refcount++;
+  tp_connection_hold_handles (c->connection, -1,
+      TP_HANDLE_TYPE_CONTACT, 1,
+      &g_array_index (c->handles, TpHandle, c->next_index),
+      contacts_held_one, c, contacts_context_unref, c->weak_object);
+}
+
+
+static void
+contacts_held_handles (TpConnection *connection,
+                       TpHandleType handle_type,
+                       guint n_handles,
+                       const TpHandle *handles,
+                       const GError *error,
+                       gpointer user_data,
+                       GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  g_assert (handle_type == TP_HANDLE_TYPE_CONTACT);
+  g_assert (weak_object == c->weak_object);
+
+  if (error == NULL)
+    {
+      /* I now own all n handles. It's like Christmas morning! */
+      guint i;
+
+      g_assert (n_handles == c->handles->len);
+
+      for (i = 0; i < c->handles->len; i++)
+        {
+          g_ptr_array_add (c->contacts,
+              tp_contact_ensure (connection,
+                g_array_index (c->handles, TpHandle, i)));
+        }
+    }
+  else if (error->domain == TP_ERRORS &&
+      error->code == TP_ERROR_INVALID_HANDLE)
+    {
+      /* One of the handles is bad. We don't know which one :-( so split
+       * the batch into a chain of calls. */
+      guint i;
+
+      for (i = 0; i < c->handles->len; i++)
+        {
+          g_queue_push_head (&c->todo, contacts_hold_one);
+        }
+
+      g_assert (c->next_index == 0);
+    }
+  else
+    {
+      /* the connection fell down a well or something */
+      contacts_context_fail (c, error);
+      return;
+    }
+
+  /* Either hold the handles individually, or proceed along the slow path. */
+  contacts_context_continue (c);
+}
+
+
+static void
+contacts_inspected (TpConnection *connection,
+                    const gchar **ids,
+                    const GError *error,
+                    gpointer user_data,
+                    GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  g_assert (weak_object == c->weak_object);
+  g_assert (c->handles->len == c->contacts->len);
+
+  if (error != NULL)
+    {
+      /* the connection fell down a well or something */
+      contacts_context_fail (c, error);
+      return;
+    }
+  else if (G_UNLIKELY (g_strv_length ((GStrv) ids) != c->handles->len))
+    {
+      GError *e = g_error_new (TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "Connection manager %s is broken: we inspected %u "
+          "handles but InspectHandles returned %u strings",
+          tp_proxy_get_bus_name (connection), c->handles->len,
+          g_strv_length ((GStrv) ids));
+
+      g_warning ("%s", e->message);
+      contacts_context_fail (c, e);
+      g_error_free (e);
+      return;
+    }
+  else
+    {
+      guint i;
+
+      for (i = 0; i < c->contacts->len; i++)
+        {
+          TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+          g_assert (ids[i] != NULL);
+
+          if (contact->priv->identifier == NULL)
+            {
+              contact->priv->identifier = g_strdup (ids[i]);
+            }
+          else if (tp_strdiff (contact->priv->identifier, ids[i]))
+            {
+              GError *e = g_error_new (TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INCONSISTENT,
+                  "Connection manager %s is broken: contact handle %u "
+                  "identifier changed from %s to %s",
+                  tp_proxy_get_bus_name (connection), contact->priv->handle,
+                  contact->priv->identifier, ids[i]);
+
+              g_warning ("%s", e->message);
+              contacts_context_fail (c, e);
+              g_error_free (e);
+              return;
+            }
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+
+static void
+contacts_inspect (ContactsContext *c)
+{
+  guint i;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  for (i = 0; i < c->contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+      if (contact->priv->identifier == NULL)
+        {
+          c->refcount++;
+          tp_cli_connection_call_inspect_handles (c->connection, -1,
+              TP_HANDLE_TYPE_CONTACT, c->handles, contacts_inspected,
+              c, contacts_context_unref, c->weak_object);
+          return;
+        }
+    }
+
+  /* else there's no need to inspect the contacts' handles, because we already
+   * know all their identifiers */
+  contacts_context_continue (c);
+}
+
+
+/**
+ * tp_connection_get_contacts_by_handle:
+ * @self: A connection, which must be ready (#TpConnection:connection-ready
+ *  must be %TRUE)
+ * @n_handles: The number of handles in @handles (must be at least 1)
+ * @handles: An array of handles of type %TP_HANDLE_TYPE_CONTACT representing
+ *  the desired contacts
+ * @n_features: The number of features in @features (may be 0)
+ * @features: An array of features that must be ready for use (if supported)
+ *  before the callback is called (may be %NULL if @n_features is 0)
+ * @callback: A user callback to call when the contacts are ready
+ * @user_data: Data to pass to the callback
+ * @destroy: Called to destroy @user_data either after @callback has been
+ *  called, or if the operation is cancelled
+ * @weak_object: An object to pass to the callback, which will be weakly
+ *  referenced; if this object is destroyed, the operation will be cancelled
+ *
+ * Create a number of #TpContact objects and make asynchronous method calls
+ * to hold their handles and ensure that all the features specified in
+ * @features are ready for use (if they are supported at all).
+ *
+ * It is not an error to put features in @features even if the connection
+ * manager doesn't support them - users of this method should have a static
+ * list of features they would like to use if possible, and use it for all
+ * connection managers.
+ */
+void
+tp_connection_get_contacts_by_handle (TpConnection *self,
+                                      guint n_handles,
+                                      const TpHandle *handles,
+                                      guint n_features,
+                                      const TpContactFeature *features,
+                                      TpConnectionContactsByHandleCb callback,
+                                      gpointer user_data,
+                                      GDestroyNotify destroy,
+                                      GObject *weak_object)
+{
+  ContactFeatureFlags feature_flags = 0;
+  ContactsContext *context;
+  guint i;
+
+  g_return_if_fail (tp_connection_is_ready (self));
+  g_return_if_fail (tp_proxy_get_invalidated (self) == NULL);
+  g_return_if_fail (n_handles >= 1);
+  g_return_if_fail (handles != NULL);
+  g_return_if_fail (n_features == 0 || features != NULL);
+  g_return_if_fail (callback != NULL);
+
+  for (i = 0; i < n_features; i++)
+    {
+      g_return_if_fail (features[i] < NUM_TP_CONTACT_FEATURES);
+      feature_flags |= (1 << features[i]);
+    }
+
+  context = contacts_context_new (self, n_handles, feature_flags,
+      callback, user_data, destroy, weak_object);
+
+  g_array_append_vals (context->handles, handles, n_handles);
+
+  /* Before we return anything we'll want to inspect the handles */
+  g_queue_push_head (&context->todo, contacts_inspect);
+
+  /* but first, we need to hold onto them */
+  tp_connection_hold_handles (self, -1,
+      TP_HANDLE_TYPE_CONTACT, n_handles, handles,
+      contacts_held_handles, context, contacts_context_unref, weak_object);
 }

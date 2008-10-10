@@ -2395,6 +2395,8 @@ tp_cli_media_stream_handler_signal_callback_set_stream_held
 <TITLE>contact</TITLE>
 TpContact
 TpContactFeature
+TpConnectionContactsByHandleCb
+tp_connection_get_contacts_by_handle
 tp_contact_get_alias
 tp_contact_get_avatar_token
 tp_contact_get_connection

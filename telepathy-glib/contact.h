@@ -85,6 +85,18 @@ TpConnectionPresenceType tp_contact_get_presence_type (TpContact *self);
 const gchar *tp_contact_get_presence_status (TpContact *self);
 const gchar *tp_contact_get_presence_message (TpContact *self);
 
+
+typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
+    guint n_contacts, TpContact * const *contacts,
+    guint n_invalid, const TpHandle *invalid,
+    const GError *error, gpointer user_data, GObject *weak_object);
+
+void tp_connection_get_contacts_by_handle (TpConnection *self,
+    guint n_handles, const TpHandle *handles,
+    guint n_features, const TpContactFeature *features,
+    TpConnectionContactsByHandleCb callback,
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+
 G_END_DECLS
 
 #endif
