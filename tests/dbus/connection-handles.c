@@ -1,5 +1,11 @@
 /* Feature test for handle reference tracking.
  *
+ * Code missing coverage in connection-handles.c:
+ * - having two connections, one of them becoming invalid
+ * - unreffing handles on a dead connection
+ * - failing to request handles
+ * - inconsistent CMs
+ *
  * Copyright (C) 2008 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2008 Nokia Corporation
  *
