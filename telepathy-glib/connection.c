@@ -608,7 +608,7 @@ tp_connection_new (TpDBusDaemon *dbus,
   gchar *dup_unique_name = NULL;
   TpConnection *ret = NULL;
 
-  g_return_val_if_fail (dbus != NULL, NULL);
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (dbus), NULL);
   g_return_val_if_fail (object_path != NULL ||
                         (bus_name != NULL && bus_name[0] != ':'), NULL);
 
@@ -742,6 +742,8 @@ tp_connection_run_until_ready (TpConnection *self,
   TpProxy *as_proxy = (TpProxy *) self;
   gulong invalidated_id, ready_id;
   RunUntilReadyData data = { NULL, NULL, NULL };
+
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
 
   if (as_proxy->invalidated)
     goto raise_invalidated;
@@ -971,6 +973,9 @@ tp_list_connection_names (TpDBusDaemon *bus_daemon,
 {
   _ListContext *list_context = g_slice_new0 (_ListContext);
 
+  g_return_if_fail (TP_IS_DBUS_DAEMON (bus_daemon));
+  g_return_if_fail (callback != NULL);
+
   list_context->base_len = strlen (TP_CONN_BUS_NAME_BASE);
   list_context->callback = callback;
   list_context->user_data = user_data;
@@ -1106,6 +1111,7 @@ tp_connection_call_when_ready (TpConnection *self,
 {
   TpProxy *as_proxy = (TpProxy *) self;
 
+  g_return_if_fail (TP_IS_CONNECTION (self));
   g_return_if_fail (callback != NULL);
 
   if (self->priv->ready || as_proxy->invalidated != NULL)
@@ -1210,5 +1216,7 @@ _tp_connection_get_contact_attribute_interfaces (TpConnection *self)
 gboolean
 tp_connection_is_ready (TpConnection *self)
 {
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
   return self->priv->ready;
 }

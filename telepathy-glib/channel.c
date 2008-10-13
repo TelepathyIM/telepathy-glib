@@ -122,6 +122,8 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
 const gchar *
 tp_channel_get_channel_type (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
   return g_quark_to_string (self->priv->channel_type);
 }
 
@@ -143,6 +145,8 @@ tp_channel_get_channel_type (TpChannel *self)
 GQuark
 tp_channel_get_channel_type_id (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
+
   return self->priv->channel_type;
 }
 
@@ -171,6 +175,8 @@ TpHandle
 tp_channel_get_handle (TpChannel *self,
                        TpHandleType *handle_type)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
+
   if (handle_type != NULL)
     {
       *handle_type = self->priv->handle_type;
@@ -192,6 +198,8 @@ tp_channel_get_handle (TpChannel *self,
 gboolean
 tp_channel_is_ready (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), FALSE);
+  
   return self->priv->ready;
 }
 
@@ -209,6 +217,8 @@ tp_channel_is_ready (TpChannel *self)
 TpConnection *
 tp_channel_borrow_connection (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
   return self->priv->connection;
 }
 
@@ -843,7 +853,7 @@ tp_channel_new (TpConnection *conn,
   TpProxy *conn_proxy = (TpProxy *) conn;
   gchar *dup = NULL;
 
-  g_return_val_if_fail (conn != NULL, NULL);
+  g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
 
   /* TpConnection always has a unique name, so we can assert this */
@@ -916,6 +926,8 @@ tp_channel_run_until_ready (TpChannel *self,
   TpProxy *as_proxy = (TpProxy *) self;
   GMainLoop *my_loop;
   gulong invalidated_id, ready_id;
+
+  g_return_val_if_fail (TP_IS_CHANNEL (self), FALSE);
 
   if (as_proxy->invalidated)
     goto raise_invalidated;
@@ -1042,6 +1054,7 @@ tp_channel_call_when_ready (TpChannel *self,
 {
   TpProxy *as_proxy = (TpProxy *) self;
 
+  g_return_if_fail (TP_IS_CHANNEL (self));
   g_return_if_fail (callback != NULL);
 
   if (self->priv->ready || as_proxy->invalidated != NULL)
