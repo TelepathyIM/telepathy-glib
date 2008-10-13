@@ -37,6 +37,8 @@
  *    #TpConnectionManager (client)</listitem>
  * <listitem><literal>connection</literal> - #TpBaseConnection (service)
  *    and #TpConnection (client)</listitem>
+ * <listitem><literal>contacts</literal> - #TpContact objects
+ *    (client)</listitem>
  * <listitem><literal>channel</literal> - #TpChannel (client)</listitem>
  * <listitem><literal>im</literal> - (text) instant messaging
  *    (service)</listitem>
@@ -100,6 +102,7 @@ static GDebugKey keys[] = {
   { "channel",       TP_DEBUG_CHANNEL },
   { "proxy",         TP_DEBUG_PROXY },
   { "handles",       TP_DEBUG_HANDLES },
+  { "contacts",      TP_DEBUG_CONTACTS },
   { 0, }
 };
 
