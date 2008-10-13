@@ -199,6 +199,8 @@ tp_dbus_check_valid_bus_name (const gchar *name,
   gchar last;
   const gchar *ptr;
 
+  g_return_val_if_fail (name != NULL, FALSE);
+
   if (name[0] == '\0')
     {
       g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_BUS_NAME,
@@ -338,6 +340,8 @@ tp_dbus_check_valid_interface_name (const gchar *name,
   gchar last;
   const gchar *ptr;
 
+  g_return_val_if_fail (name != NULL, FALSE);
+
   if (name[0] == '\0')
     {
       g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_INTERFACE_NAME,
@@ -442,6 +446,8 @@ tp_dbus_check_valid_member_name (const gchar *name,
 {
   const gchar *ptr;
 
+  g_return_val_if_fail (name != NULL, FALSE);
+
   if (name[0] == '\0')
     {
       g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INVALID_MEMBER_NAME,
@@ -499,6 +505,8 @@ gboolean
 tp_dbus_check_valid_object_path (const gchar *path, GError **error)
 {
   const gchar *ptr;
+
+  g_return_val_if_fail (path != NULL, FALSE);
 
   if (path[0] != '/')
     {
@@ -749,6 +757,10 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
   _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
 
+  g_return_if_fail (TP_IS_DBUS_DAEMON (self));
+  g_return_if_fail (name != NULL);
+  g_return_if_fail (callback != NULL);
+
   if (watch == NULL)
     {
       /* Allocate a single watch (common case) */
@@ -829,6 +841,10 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
 {
   _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
+
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (name != NULL, FALSE);
+  g_return_val_if_fail (callback != NULL, FALSE);
 
   if (watch == NULL)
     {
@@ -995,7 +1011,12 @@ tp_asv_get_boolean (const GHashTable *asv,
                     const gchar *key,
                     gboolean *valid)
 {
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, FALSE);
+  g_return_val_if_fail (key != NULL, FALSE);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL || !G_VALUE_HOLDS_BOOLEAN (value))
     {
@@ -1034,7 +1055,12 @@ const GArray *
 tp_asv_get_bytes (const GHashTable *asv,
                    const gchar *key)
 {
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL || !G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY))
     return NULL;
@@ -1063,7 +1089,12 @@ const gchar *
 tp_asv_get_string (const GHashTable *asv,
                    const gchar *key)
 {
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL || !G_VALUE_HOLDS_STRING (value))
     return NULL;
@@ -1097,7 +1128,12 @@ tp_asv_get_int32 (const GHashTable *asv,
   gint64 i;
   guint64 u;
   gint32 ret;
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, 0);
+  g_return_val_if_fail (key != NULL, 0);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL)
     goto return_invalid;
@@ -1181,7 +1217,12 @@ tp_asv_get_uint32 (const GHashTable *asv,
   gint64 i;
   guint64 u;
   guint32 ret;
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, 0);
+  g_return_val_if_fail (key != NULL, 0);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL)
     goto return_invalid;
@@ -1264,7 +1305,12 @@ tp_asv_get_int64 (const GHashTable *asv,
 {
   gint64 ret;
   guint64 u;
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, 0);
+  g_return_val_if_fail (key != NULL, 0);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL)
     goto return_invalid;
@@ -1336,7 +1382,12 @@ tp_asv_get_uint64 (const GHashTable *asv,
 {
   gint64 tmp;
   guint64 ret;
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, 0);
+  g_return_val_if_fail (key != NULL, 0);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL)
     goto return_invalid;
@@ -1414,7 +1465,12 @@ tp_asv_get_double (const GHashTable *asv,
                    gboolean *valid)
 {
   gdouble ret;
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, 0.0);
+  g_return_val_if_fail (key != NULL, 0.0);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL)
     goto return_invalid;
@@ -1482,7 +1538,12 @@ const gchar *
 tp_asv_get_object_path (const GHashTable *asv,
                         const gchar *key)
 {
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, 0);
+  g_return_val_if_fail (key != NULL, 0);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL || !G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
     return NULL;
@@ -1515,9 +1576,13 @@ tp_asv_get_boxed (const GHashTable *asv,
                   const gchar *key,
                   GType type)
 {
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
 
+  g_return_val_if_fail (asv != NULL, NULL);
+  g_return_val_if_fail (key != NULL, NULL);
   g_return_val_if_fail (G_TYPE_FUNDAMENTAL (type) == G_TYPE_BOXED, NULL);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL || !G_VALUE_HOLDS (value, type))
     return NULL;
@@ -1547,7 +1612,12 @@ const gchar * const *
 tp_asv_get_strv (const GHashTable *asv,
                  const gchar *key)
 {
-  GValue *value = g_hash_table_lookup ((GHashTable *) asv, key);
+  GValue *value;
+
+  g_return_val_if_fail (asv != NULL, NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+
+  value = g_hash_table_lookup ((GHashTable *) asv, key);
 
   if (value == NULL || !G_VALUE_HOLDS (value, G_TYPE_STRV))
     return NULL;
@@ -1574,5 +1644,8 @@ const GValue *
 tp_asv_lookup (const GHashTable *asv,
                const gchar *key)
 {
+  g_return_val_if_fail (asv != NULL, NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+
   return g_hash_table_lookup ((GHashTable *) asv, key);
 }
