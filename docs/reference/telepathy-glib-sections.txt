@@ -1446,7 +1446,7 @@ TpDBusDaemonPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/dbus_properties-mixin.h</INCLUDE>
+<INCLUDE>telepathy-glib/dbus-properties-mixin.h</INCLUDE>
 <FILE>dbus-properties-mixin</FILE>
 <TITLE>dbus-properties-mixin</TITLE>
 TpDBusPropertiesMixinFlags
