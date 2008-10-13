@@ -297,7 +297,8 @@ tp_connection_unref_handles (TpConnection *self,
 
   /* if there's no hash table, then we can't have a ref to the handles -
    * user error */
-  g_return_if_fail (bucket->handle_refs[handle_type] != NULL);
+  g_return_if_fail (((void)"no refs exist to any handle of that type",
+        bucket->handle_refs[handle_type] != NULL));
 
   handle_refs = bucket->handle_refs[handle_type];
 
@@ -310,7 +311,7 @@ tp_connection_unref_handles (TpConnection *self,
 
       g_return_if_fail (handles[i] != 0);
       /* if we have no refs, it's user error */
-      g_return_if_fail (r != 0);
+      g_return_if_fail (((void)"no refs exist to one of the handles", r != 0));
 
       if (r == 1)
         {
