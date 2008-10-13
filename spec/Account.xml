@@ -346,10 +346,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </property>
 
     <property name="Connection" tp:name-for-bindings="Connection"
-      type="s" access="read">
+      type="o" access="read">
       <tp:docstring>
-        Either the well-known bus name of the connection to this account,
-        or the empty string if there is no connection.
+        Either the object path of the connection to this account,
+        or the special value '/' if there is no connection.
+
+        <tp:rationale>
+          Object paths aren't nullable, so we can't use an empty string.
+        </tp:rationale>
       </tp:docstring>
     </property>
 

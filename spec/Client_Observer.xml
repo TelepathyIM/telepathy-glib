@@ -22,7 +22,7 @@
 
   <interface name="org.freedesktop.Telepathy.Client.Observer.DRAFT"
     tp:causes-havoc="experimental">
-    <tp:added version="0.17.UNRELEASED"/>
+    <tp:added version="0.17.12">(as a draft)</tp:added>
 
     <tp:requires interface="org.freedesktop.Telepathy.Client.DRAFT"/>
 
@@ -76,7 +76,7 @@
         although of course the ObserverChannelFilter property can be set
         to filter on the
         <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy">Channel.FUTURE.Requested</tp:dbus-ref>
+          namespace="org.freedesktop.Telepathy.Channel">Requested</tp:dbus-ref>
         property.</p>
     </tp:docstring>
 
@@ -144,12 +144,12 @@ Interfaces=org.freedesktop.Telepathy.Client.Observer.DRAFT;
 [org.freedesktop.Telepathy.Client.Observer.DRAFT.ObserverChannelFilter 0]
 org.freedesktop.Telepathy.Channel.Type s=org.freedesktop.Telepathy.Channel.Type.Text
 org.freedesktop.Telepathy.Channel.TargetHandleType u=1
-org.freedesktop.Telepathy.Channel.FUTURE.Requested b=true
+org.freedesktop.Telepathy.Channel.Requested b=true
 
 [org.freedesktop.Telepathy.Client.Observer.DRAFT.ObserverChannelFilter 1]
 org.freedesktop.Telepathy.Channel.Type s=org.freedesktop.Telepathy.Channel.Type.Text
 org.freedesktop.Telepathy.Channel.TargetHandleType u=2
-org.freedesktop.Telepathy.Channel.FUTURE.Requested b=true
+org.freedesktop.Telepathy.Channel.Requested b=true
 </pre>
 
       </tp:docstring>

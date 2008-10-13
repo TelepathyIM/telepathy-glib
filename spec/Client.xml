@@ -22,7 +22,7 @@
 
   <interface name="org.freedesktop.Telepathy.Client.DRAFT"
     tp:causes-havoc="experimental">
-    <tp:added version="0.17.UNRELEASED"/>
+    <tp:added version="0.17.12">(as a draft)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>Telepathy clients use connection managers, the channel dispatcher

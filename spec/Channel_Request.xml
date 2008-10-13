@@ -125,10 +125,7 @@
 
         <p>If the connection manager has already returned a channel, but the
           channel has not yet been dispatched to a handler
-          (e.g. if <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy">Connection.Interface.Requests.CreateChannel</tp:dbus-ref>
-          has returned a channel, but the dispatch operation is waiting for
-          approvers) then the channel dispatcher will not dispatch that
+          then the channel dispatcher will not dispatch that
           channel to a handler. If the channel was newly created for this
           request, the channel dispatcher will close it with Close; otherwise,
           the channel dispatcher will ignore it. In either case,

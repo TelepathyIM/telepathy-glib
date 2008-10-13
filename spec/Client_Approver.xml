@@ -22,7 +22,7 @@
 
   <interface name="org.freedesktop.Telepathy.Client.Approver.DRAFT"
     tp:causes-havoc="experimental">
-    <tp:added version="0.17.UNRELEASED"/>
+    <tp:added version="0.17.12">(as a draft)</tp:added>
 
     <tp:requires interface="org.freedesktop.Telepathy.Client.DRAFT"/>
 
@@ -87,7 +87,9 @@
       tp:name-for-bindings="Add_Dispatch_Operation">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Called by the channel dispatcher when a ChannelDispatchOperation
-          in which the approver has registered an interest is created.</p>
+          in which the approver has registered an interest is created,
+          or when the approver starts up while such channel dispatch
+          operations already exist.</p>
 
         <p>The channel dispatcher SHOULD call this method on all approvers
           at the same time. If no approvers return from this method
