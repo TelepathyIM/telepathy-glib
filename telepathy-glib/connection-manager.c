@@ -527,7 +527,7 @@ init_gvalue_from_dbus_sig (const gchar *sig,
 
     case 'o':
       g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-      g_value_set_static_string (value, "/");
+      g_value_set_static_boxed (value, "/");
       return TRUE;
 
     case 'd':
