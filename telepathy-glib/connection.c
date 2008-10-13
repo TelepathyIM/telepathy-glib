@@ -460,6 +460,11 @@ tp_connection_constructor (GType type,
   tp_cli_connection_call_get_status (self, -1,
       tp_connection_got_status_cb, NULL, NULL, NULL);
 
+  _tp_connection_init_handle_refs (self);
+
+  g_signal_connect (self, "invalidated",
+      G_CALLBACK (_tp_connection_clean_up_handle_refs), NULL);
+
   DEBUG ("Returning %p", self);
   return (GObject *) self;
 }

@@ -2,6 +2,7 @@ noinst_PROGRAMS = \
     test-call-cancellation \
     test-channel-introspect \
     test-connection \
+    test-connection-handles \
     test-connection-inject-bug16307 \
     test-connection-getinterfaces-failure \
     test-dbus \
@@ -28,6 +29,11 @@ test_connection_LDADD = \
     $(TP_GLIB_LIBS) \
     ../lib/libtp-glib-tests.la
 test_connection_SOURCES = connection.c
+
+test_connection_handles_LDADD = \
+    $(TP_GLIB_LIBS) \
+    ../lib/libtp-glib-tests.la
+test_connection_handles_SOURCES = connection-handles.c
 
 test_connection_inject_bug16307_LDADD = \
     $(TP_GLIB_LIBS) \
