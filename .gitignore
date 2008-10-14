@@ -50,6 +50,7 @@ examples/extensions/extensions.html
 gtk-doc.make
 install-sh
 lcov.info
+lcov.info.tmp
 lcov.html
 libtool
 ltmain.sh
