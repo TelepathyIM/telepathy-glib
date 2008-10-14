@@ -366,7 +366,7 @@ tf_session_new (TpMediaSessionHandler *proxy,
 }
 
 /**
- * _tf_session_bus_message:
+ * tf_session_bus_message:
  * @session: A #TfSession
  * @message: A #GstMessage received from the bus
  *
