@@ -460,7 +460,6 @@ tp_stream_engine_audio_stream_set_property  (GObject *object,
       }
       break;
     case PROP_INPUT_VOLUME:
-      g_debug ("set input volume");
       gst_child_proxy_set_property (GST_OBJECT (self->priv->srcbin),
           "volume::volume", value);
       break;
