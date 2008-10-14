@@ -830,11 +830,9 @@ cb_fs_local_candidates_prepared (TfStream *self)
 
 /*
  * small helper function to help converting a
- * telepathy dbus candidate to a list of FarsightTransportInfos
+ * telepathy dbus candidate to a list of FsCandidate.
  * nothing is copied, so always keep the usage of this within a function
- * if you need to do multiple candidates, call this repeatedly and
- * g_list_join them together.
- * Free the list using free_fs_transports
+ * Free the result with fs_candidate_list_destroy()
  */
 static GList *
 tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
