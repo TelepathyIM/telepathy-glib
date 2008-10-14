@@ -121,15 +121,15 @@ _tp_proxy_inline_has_interface (gpointer self, const gchar *interface)
 #define tp_proxy_has_interface(self, interface) \
     (_tp_proxy_inline_has_interface (self, interface))
 
-TpDBusDaemon *tp_proxy_get_dbus_daemon (TpProxy *self);
+TpDBusDaemon *tp_proxy_get_dbus_daemon (gpointer self);
 
-DBusGConnection *tp_proxy_get_dbus_connection (TpProxy *self);
+DBusGConnection *tp_proxy_get_dbus_connection (gpointer self);
 
-const gchar *tp_proxy_get_bus_name (TpProxy *self);
+const gchar *tp_proxy_get_bus_name (gpointer self);
 
-const gchar *tp_proxy_get_object_path (TpProxy *self);
+const gchar *tp_proxy_get_object_path (gpointer self);
 
-const GError *tp_proxy_get_invalidated (TpProxy *self);
+const GError *tp_proxy_get_invalidated (gpointer self);
 
 G_END_DECLS
 
