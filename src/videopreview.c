@@ -206,7 +206,7 @@ tp_stream_engine_video_preview_constructor (GType type,
       GST_STATE_CHANGE_FAILURE)
     {
       self->priv->construction_error = g_error_new (TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
-          "Could set sink to playing");
+          "Could not set sink to playing");
       return obj;
     }
 
