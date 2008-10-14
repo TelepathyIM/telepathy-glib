@@ -38,8 +38,6 @@
 
 G_DEFINE_TYPE (TfChannel, tf_channel, G_TYPE_OBJECT);
 
-#define CHANNEL_PRIVATE(o) ((o)->priv)
-
 struct _TfChannelPrivate
 {
   TpChannel *channel_proxy;
@@ -97,16 +95,15 @@ tf_channel_get_property (GObject    *object,
                                        GParamSpec *pspec)
 {
   TfChannel *self = TF_CHANNEL (object);
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   switch (property_id)
     {
     case PROP_CHANNEL:
-      g_value_set_object (value, priv->channel_proxy);
+      g_value_set_object (value, self->priv->channel_proxy);
       break;
     case PROP_OBJECT_PATH:
         {
-          TpProxy *as_proxy = (TpProxy *) priv->channel_proxy;
+          TpProxy *as_proxy = (TpProxy *) self->priv->channel_proxy;
 
           g_value_set_string (value, as_proxy->object_path);
         }
@@ -124,12 +121,11 @@ tf_channel_set_property (GObject      *object,
                                        GParamSpec   *pspec)
 {
   TfChannel *self = TF_CHANNEL (object);
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   switch (property_id)
     {
     case PROP_CHANNEL:
-      priv->channel_proxy = TP_CHANNEL (g_value_dup_object (value));
+      self->priv->channel_proxy = TP_CHANNEL (g_value_dup_object (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -343,17 +339,17 @@ tf_channel_constructor (GType type,
 {
   GObject *obj;
   TfChannel *self;
-  TfChannelPrivate *priv;
 
   obj = G_OBJECT_CLASS (tf_channel_parent_class)->
            constructor (type, n_props, props);
   self = (TfChannel *) obj;
-  priv = CHANNEL_PRIVATE (self);
 
-  priv->channel_ready_handler = g_signal_connect (priv->channel_proxy,
+  self->priv->channel_ready_handler = g_signal_connect (
+      self->priv->channel_proxy,
       "notify::channel-ready", G_CALLBACK (channel_ready), obj);
 
-  priv->channel_invalidated_handler = g_signal_connect (priv->channel_proxy,
+  self->priv->channel_invalidated_handler = g_signal_connect (
+      self->priv->channel_proxy,
       "invalidated", G_CALLBACK (channel_invalidated), obj);
 
   return obj;
@@ -370,34 +366,33 @@ static void
 tf_channel_dispose (GObject *object)
 {
   TfChannel *self = TF_CHANNEL (object);
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
 
   g_debug (G_STRFUNC);
 
-  if (priv->sessions != NULL)
+  if (self->priv->sessions != NULL)
     {
       guint i;
 
-      for (i = 0; i < priv->sessions->len; i++)
+      for (i = 0; i < self->priv->sessions->len; i++)
         {
-          GObject *obj = g_ptr_array_index (priv->sessions, i);
+          GObject *obj = g_ptr_array_index (self->priv->sessions, i);
 
           g_signal_handlers_disconnect_by_func (obj, new_stream_cb, self);
 
-          g_object_unref (g_ptr_array_index (priv->sessions, i));
+          g_object_unref (g_ptr_array_index (self->priv->sessions, i));
         }
 
-      g_ptr_array_free (priv->sessions, TRUE);
-      priv->sessions = NULL;
+      g_ptr_array_free (self->priv->sessions, TRUE);
+      self->priv->sessions = NULL;
     }
 
-  if (priv->streams)
+  if (self->priv->streams)
     {
       guint i;
 
-      for (i = 0; i < priv->streams->len; i++)
+      for (i = 0; i < self->priv->streams->len; i++)
         {
-          GObject *obj = g_ptr_array_index (priv->streams, i);
+          GObject *obj = g_ptr_array_index (self->priv->streams, i);
 
           if (obj != NULL)
             {
@@ -409,35 +404,35 @@ tf_channel_dispose (GObject *object)
             }
         }
 
-      g_ptr_array_free (priv->streams, TRUE);
-      priv->streams = NULL;
+      g_ptr_array_free (self->priv->streams, TRUE);
+      self->priv->streams = NULL;
     }
 
-  if (priv->channel_proxy)
+  if (self->priv->channel_proxy)
     {
       TpChannel *tmp;
 
-      if (priv->channel_ready_handler != 0)
-        g_signal_handler_disconnect (priv->channel_proxy,
-            priv->channel_ready_handler);
+      if (self->priv->channel_ready_handler != 0)
+        g_signal_handler_disconnect (self->priv->channel_proxy,
+            self->priv->channel_ready_handler);
 
-      if (priv->channel_invalidated_handler != 0)
-        g_signal_handler_disconnect (priv->channel_proxy,
-            priv->channel_invalidated_handler);
+      if (self->priv->channel_invalidated_handler != 0)
+        g_signal_handler_disconnect (self->priv->channel_proxy,
+            self->priv->channel_invalidated_handler);
 
-      tmp = priv->channel_proxy;
-      priv->channel_proxy = NULL;
+      tmp = self->priv->channel_proxy;
+      self->priv->channel_proxy = NULL;
       g_object_unref (tmp);
     }
 
-  g_free (priv->nat_props.nat_traversal);
-  priv->nat_props.nat_traversal = NULL;
+  g_free (self->priv->nat_props.nat_traversal);
+  self->priv->nat_props.nat_traversal = NULL;
 
-  g_free (priv->nat_props.stun_server);
-  priv->nat_props.stun_server = NULL;
+  g_free (self->priv->nat_props.stun_server);
+  self->priv->nat_props.stun_server = NULL;
 
-  g_free (priv->nat_props.relay_token);
-  priv->nat_props.relay_token = NULL;
+  g_free (self->priv->nat_props.relay_token);
+  self->priv->nat_props.relay_token = NULL;
 
   if (G_OBJECT_CLASS (tf_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tf_channel_parent_class)->dispose (object);
@@ -585,15 +580,14 @@ stream_closed_cb (TfStream *stream,
                   gpointer user_data)
 {
   TfChannel *self = TF_CHANNEL (user_data);
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
   guint stream_id;
 
   g_object_get (stream, "stream-id", &stream_id, NULL);
 
-  g_assert (stream == g_ptr_array_index (priv->streams, stream_id));
+  g_assert (stream == g_ptr_array_index (self->priv->streams, stream_id));
 
   g_object_unref (stream);
-  g_ptr_array_index (priv->streams, stream_id) = NULL;
+  g_ptr_array_index (self->priv->streams, stream_id) = NULL;
 }
 
 static void
@@ -605,11 +599,10 @@ new_stream_cb (TfSession *session,
                gpointer user_data)
 {
   TfChannel *self = TF_CHANNEL (user_data);
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TfStream *stream;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
-  TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
+  TpProxy *channel_as_proxy = (TpProxy *) self->priv->channel_proxy;
   TpMediaStreamHandler *proxy;
   GError *error = NULL;
   GList *local_codec_config = NULL;
@@ -637,7 +630,7 @@ new_stream_cb (TfSession *session,
 
   stream = _tf_stream_new ((gpointer) self, fs_conference,
       fs_participant, proxy, stream_id, media_type, direction,
-      &priv->nat_props, local_codec_config, &error);
+      &self->priv->nat_props, local_codec_config, &error);
 
   fs_codec_list_destroy (local_codec_config);
 
@@ -652,10 +645,10 @@ new_stream_cb (TfSession *session,
   g_object_unref (fs_conference);
   g_object_unref (fs_participant);
 
-  if (priv->streams->len <= stream_id)
-    g_ptr_array_set_size (priv->streams, stream_id + 1);
+  if (self->priv->streams->len <= stream_id)
+    g_ptr_array_set_size (self->priv->streams, stream_id + 1);
 
-  if (g_ptr_array_index (priv->streams, stream_id) != NULL)
+  if (g_ptr_array_index (self->priv->streams, stream_id) != NULL)
     {
       g_warning ("connection manager gave us a new stream with existing id "
           "%u, sending error!", stream_id);
@@ -668,7 +661,7 @@ new_stream_cb (TfSession *session,
       return;
     }
 
-  g_ptr_array_index (priv->streams, stream_id) = stream;
+  g_ptr_array_index (self->priv->streams, stream_id) = stream;
   g_signal_connect (stream, "closed", G_CALLBACK (stream_closed_cb),
       self);
 
@@ -698,10 +691,9 @@ add_session (TfChannel *self,
              const gchar *object_path,
              const gchar *session_type)
 {
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
   TfSession *session;
   GError *error = NULL;
-  TpProxy *channel_as_proxy = (TpProxy *) priv->channel_proxy;
+  TpProxy *channel_as_proxy = (TpProxy *) self->priv->channel_proxy;
   TpMediaSessionHandler *proxy;
   FsConference *conf = NULL;
   FsParticipant *part = NULL;
@@ -734,7 +726,7 @@ add_session (TfChannel *self,
   g_signal_connect (session, "invalidated",
       G_CALLBACK (session_invalidated_cb), self);
 
-  g_ptr_array_add (priv->sessions, session);
+  g_ptr_array_add (self->priv->sessions, session);
 
   g_object_get (session,
       "farsight-conference", &conf,
@@ -767,18 +759,16 @@ new_media_session_handler (TpChannel *channel_proxy G_GNUC_UNUSED,
 static void
 shutdown_channel (TfChannel *self)
 {
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (self);
-
-  if (priv->channel_proxy != NULL)
+  if (self->priv->channel_proxy != NULL)
     {
       /* I've ensured that this is true everywhere this function is called */
-      g_assert (priv->channel_ready_handler == 0);
+      g_assert (self->priv->channel_ready_handler == 0);
 
-      if (priv->channel_invalidated_handler)
+      if (self->priv->channel_invalidated_handler)
         {
           g_signal_handler_disconnect (
-            priv->channel_proxy, priv->channel_invalidated_handler);
-          priv->channel_invalidated_handler = 0;
+            self->priv->channel_proxy, self->priv->channel_invalidated_handler);
+          self->priv->channel_invalidated_handler = 0;
         }
     }
 
@@ -940,12 +930,11 @@ tf_channel_error (TfChannel *chan,
                                 guint error,
                                 const gchar *message)
 {
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (chan);
   guint i;
 
-  for (i = 0; i < priv->streams->len; i++)
-    if (g_ptr_array_index (priv->streams, i) != NULL)
-      tf_stream_error (g_ptr_array_index (priv->streams, i),
+  for (i = 0; i < chan->priv->streams->len; i++)
+    if (g_ptr_array_index (chan->priv->streams, i) != NULL)
+      tf_stream_error (g_ptr_array_index (chan->priv->streams, i),
           error, message);
 
   if (chan->priv->channel_ready_handler != 0)
@@ -979,12 +968,10 @@ TfStream *
 tf_channel_lookup_stream (TfChannel *chan,
                                         guint stream_id)
 {
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (chan);
-
-  if (stream_id >= priv->streams->len)
+  if (stream_id >= chan->priv->streams->len)
     return NULL;
 
-  return g_ptr_array_index (priv->streams, stream_id);
+  return g_ptr_array_index (chan->priv->streams, stream_id);
 }
 
 /**
@@ -1000,12 +987,11 @@ tf_channel_foreach_stream (TfChannel *chan,
                                          TfChannelStreamFunc func,
                                          gpointer user_data)
 {
-  TfChannelPrivate *priv = CHANNEL_PRIVATE (chan);
   guint i;
 
-  for (i = 0; i < priv->streams->len; i++)
+  for (i = 0; i < chan->priv->streams->len; i++)
     {
-      TfStream *stream = g_ptr_array_index (priv->streams, i);
+      TfStream *stream = g_ptr_array_index (chan->priv->streams, i);
 
       if (stream != NULL)
         func (chan, i, stream, user_data);
