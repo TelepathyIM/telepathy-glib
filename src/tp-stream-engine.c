@@ -1084,7 +1084,7 @@ channel_closed (TfChannel *chan, gpointer user_data)
 }
 
 static void
-close_one_stream (TfChannel *chan G_GNUC_UNUSED,
+error_one_stream (TfChannel *chan G_GNUC_UNUSED,
     guint stream_id G_GNUC_UNUSED,
     TfStream *stream,
     gpointer user_data)
@@ -1097,7 +1097,7 @@ close_one_stream (TfChannel *chan G_GNUC_UNUSED,
 
 
 static void
-close_all_streams (TpStreamEngine *self, const gchar *message)
+error_all_streams (TpStreamEngine *self, const gchar *message)
 {
   guint i;
 
@@ -1108,7 +1108,7 @@ close_all_streams (TpStreamEngine *self, const gchar *message)
       TfChannel *channel = g_ptr_array_index (self->priv->channels,
           i);
       tf_channel_foreach_stream (channel,
-          close_one_stream, (gpointer) message);
+          error_one_stream, (gpointer) message);
     }
 }
 
@@ -1140,7 +1140,7 @@ bus_async_handler (GstBus *bus G_GNUC_UNUSED,
             G_STRFUNC, name, error->message, error_string,
             error->domain, error->code);
 
-        close_all_streams (engine, error->message);
+        error_all_streams (engine, error->message);
 
         gst_element_set_state (engine->priv->pipeline, GST_STATE_NULL);
         gst_element_set_state (engine->priv->videosrc, GST_STATE_NULL);
