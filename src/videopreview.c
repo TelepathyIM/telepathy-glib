@@ -1,5 +1,5 @@
 /*
- * stream.c - Source for TpStreamEngineVideoStream
+ * videopreview.c - Source for TpStreamEngineVideoPreview
  * Copyright (C) 2006-2008 Collabora Ltd.
  * Copyright (C) 2006-2008 Nokia Corporation
  *
