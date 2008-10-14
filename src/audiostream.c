@@ -184,8 +184,6 @@ tp_stream_engine_audio_stream_constructor (GType type,
   gst_object_unref (src_pad);
   gst_object_unref (sink_pad);
 
-
-
   sink_pad = gst_element_get_static_pad (self->priv->srcbin, "sink");
 
   if (!sink_pad)
