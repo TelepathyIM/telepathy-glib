@@ -621,6 +621,12 @@ tp_channel_finalize (GObject *object)
       self->priv->group_remote_pending = NULL;
     }
 
+  if (self->priv->group_handle_owners != NULL)
+    {
+      g_hash_table_destroy (self->priv->group_handle_owners);
+      self->priv->group_handle_owners = NULL;
+    }
+
   if (self->priv->introspect_needed != NULL)
     {
       g_queue_free (self->priv->introspect_needed);
