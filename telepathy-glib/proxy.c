@@ -1041,7 +1041,7 @@ tp_proxy_class_init (TpProxyClass *klass)
 
 /**
  * tp_proxy_get_dbus_daemon:
- * @self: a proxy object
+ * @self: a #TpProxy or subclass
  *
  * <!-- -->
  *
@@ -1052,14 +1052,16 @@ tp_proxy_class_init (TpProxyClass *klass)
  * Since: 0.7.UNRELEASED
  */
 TpDBusDaemon *
-tp_proxy_get_dbus_daemon (TpProxy *self)
+tp_proxy_get_dbus_daemon (gpointer self)
 {
-    return self->dbus_daemon;
+  TpProxy *proxy = TP_PROXY (self);
+
+  return proxy->dbus_daemon;
 }
 
 /**
  * tp_proxy_get_dbus_connection:
- * @self: a proxy object
+ * @self: a #TpProxy or subclass
  *
  * <!-- -->
  *
@@ -1070,14 +1072,16 @@ tp_proxy_get_dbus_daemon (TpProxy *self)
  * Since: 0.7.UNRELEASED
  */
 DBusGConnection *
-tp_proxy_get_dbus_connection (TpProxy *self)
+tp_proxy_get_dbus_connection (gpointer self)
 {
-    return self->dbus_connection;
+  TpProxy *proxy = TP_PROXY (self);
+
+  return proxy->dbus_connection;
 }
 
 /**
  * tp_proxy_get_bus_name:
- * @self: a proxy object
+ * @self: a #TpProxy or subclass
  *
  * <!-- -->
  *
@@ -1087,14 +1091,16 @@ tp_proxy_get_dbus_connection (TpProxy *self)
  * Since: 0.7.UNRELEASED
  */
 const gchar *
-tp_proxy_get_bus_name (TpProxy *self)
+tp_proxy_get_bus_name (gpointer self)
 {
-    return self->bus_name;
+  TpProxy *proxy = TP_PROXY (self);
+
+  return proxy->bus_name;
 }
 
 /**
  * tp_proxy_get_object_path:
- * @self: a proxy object
+ * @self: a #TpProxy or subclass
  *
  * <!-- -->
  *
@@ -1104,14 +1110,16 @@ tp_proxy_get_bus_name (TpProxy *self)
  * Since: 0.7.UNRELEASED
  */
 const gchar *
-tp_proxy_get_object_path (TpProxy *self)
+tp_proxy_get_object_path (gpointer self)
 {
-    return self->object_path;
+  TpProxy *proxy = TP_PROXY (self);
+
+  return proxy->object_path;
 }
 
 /**
  * tp_proxy_get_invalidated:
- * @self: a proxy object
+ * @self: a #TpProxy or subclass
  *
  * <!-- -->
  *
@@ -1122,9 +1130,11 @@ tp_proxy_get_object_path (TpProxy *self)
  * Since: 0.7.UNRELEASED
  */
 const GError *
-tp_proxy_get_invalidated (TpProxy *self)
+tp_proxy_get_invalidated (gpointer self)
 {
-    return self->invalidated;
+  TpProxy *proxy = TP_PROXY (self);
+
+  return proxy->invalidated;
 }
 
 /**
