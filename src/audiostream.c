@@ -681,7 +681,7 @@ src_pad_added_cb (TfStream *stream, GstPad *pad, FsCodec *codec,
 
   bin = gst_bin_new (NULL);
 
-    audioconvert = gst_element_factory_make ("audioconvert", NULL);
+  audioconvert = gst_element_factory_make ("audioconvert", NULL);
   if (!audioconvert)
     {
       WARNING (self, "Could not create audioconvert");
