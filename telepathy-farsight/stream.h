@@ -19,11 +19,11 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
   TF_TYPE_STREAM, TfStreamClass))
 
-#define TP_STREAM_ENGINE_IS_STREAM(obj) \
+#define TF_IS_STREAM(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
   TF_TYPE_STREAM))
 
-#define TP_STREAM_ENGINE_IS_STREAM_CLASS(klass) \
+#define TF_IS_STREAM_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), \
   TF_TYPE_STREAM))
 

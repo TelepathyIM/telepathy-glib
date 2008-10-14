@@ -612,7 +612,7 @@ tp_stream_engine_audio_stream_new (TfStream *stream,
 {
   TpStreamEngineAudioStream *self = NULL;
 
-  g_return_val_if_fail (TP_STREAM_ENGINE_IS_STREAM (stream) &&
+  g_return_val_if_fail (TF_IS_STREAM (stream) &&
       GST_IS_BIN (bin) &&
       GST_IS_PAD (pad), NULL);
 
