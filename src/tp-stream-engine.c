@@ -1602,12 +1602,11 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
 
   if (self->priv->force_fakesrc)
     {
-      GError *error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Could not get a video source");
-      g_debug ("%s", error->message);
+      GError error = {TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+                      "Could not get a video source"};
+      g_debug ("%s", error.message);
 
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
+      dbus_g_method_return_error (context, &error);
       return;
     }
 
