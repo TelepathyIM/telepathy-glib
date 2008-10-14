@@ -91,8 +91,7 @@ tp_dbus_errors_quark (void)
  * @TP_DBUS_ERROR_CANCELLED: Raised from calls that re-enter the main
  *  loop (*_run_*) if they are cancelled
  * @TP_DBUS_ERROR_INCONSISTENT: Raised if information received from a remote
- *  object is inconsistent or otherwise obviously wrong
- *  (added in 0.7.UNRELEASED)
+ *  object is inconsistent or otherwise obviously wrong (added in 0.7.17)
  * @NUM_TP_DBUS_ERRORS: 1 more than the highest valid #TpDBusError at the
  *  time of compilation
  *
@@ -1049,7 +1048,7 @@ tp_proxy_class_init (TpProxyClass *klass)
  *  always %NULL if this object is itself a #TpDBusDaemon. The caller must
  *  reference the returned object with g_object_ref() if it will be kept.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.17
  */
 TpDBusDaemon *
 tp_proxy_get_dbus_daemon (gpointer self)
@@ -1069,7 +1068,7 @@ tp_proxy_get_dbus_daemon (gpointer self)
  *  The caller must reference the returned pointer with
  *  dbus_g_connection_ref() if it will be kept.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.17
  */
 DBusGConnection *
 tp_proxy_get_dbus_connection (gpointer self)
@@ -1088,7 +1087,7 @@ tp_proxy_get_dbus_connection (gpointer self)
  * Returns: the bus name of the application exporting the object. The caller
  *  must copy the string with g_strdup() if it will be kept.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.17
  */
 const gchar *
 tp_proxy_get_bus_name (gpointer self)
@@ -1107,7 +1106,7 @@ tp_proxy_get_bus_name (gpointer self)
  * Returns: the object path of the remote object. The caller must copy the
  *  string with g_strdup() if it will be kept.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.17
  */
 const gchar *
 tp_proxy_get_object_path (gpointer self)
@@ -1127,7 +1126,7 @@ tp_proxy_get_object_path (gpointer self)
  *  invalidated. The caller must copy the error, for instance with
  *  g_error_copy(), if it will be kept.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.17
  */
 const GError *
 tp_proxy_get_invalidated (gpointer self)

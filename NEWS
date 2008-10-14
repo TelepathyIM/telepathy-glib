@@ -1,15 +1,49 @@
-telepathy-glib 0.7.17 (UNRELEASED)
+telepathy-glib 0.7.17 (2008-10-14)
 ==================================
 
-Dependencies:
-
-Deprecations:
+The "inexplicable bonus pizza" release.
 
 Enhancements:
 
+* Updated to spec 0.17.13, which adds Requested, InitiatorHandle and
+  InitiatorID properties to Channel
+
+* Updated two example CMs (echo and channelspecific) to spec 0.17.13 too
+
+* Added handle reference-counting helpers, which should be used instead
+  of using the HoldHandles, RequestHandles and ReleaseHandles D-Bus API
+  directly
+
+* Added C accessors for TpProxy's read-only properties, and for
+  TpConnection's connection-ready property
+
+* Added some infrastructure for test coverage analysis using lcov
+
+* Moved some of the release/checking machinery to tools/telepathy.am
+  for easy pasting into other Telepathy projects
+
+* The first time TP_ERRORS is used, the error domain is now automatically
+  registered with dbus-glib
+
+* Added sanity checks (g_return_if_fail/g_critical) to TpConnection,
+  TpProxy, TpDBusDaemon and tp_dbus_check_* public API
+
 Fixes:
 
-Release notes for projects using code generation:
+* tp_handle_is_valid and tp_handles_are_valid raise InvalidHandle on failure,
+  not InvalidArgument (numerous methods in telepathy-spec require
+  InvalidHandle to be raised, so this should make most CMs more
+  spec-compliant)
+
+* The test and example CMs raise NotAvailable on syntactically incorrect
+  strings, rather than InvalidArgument (which is not spec-compliant)
+
+* The example valgrind suppressions file now works if libdbus was not
+  installed in /usr, or if glibc is version 2.7
+
+* fd.o #17502: fixed documentation of the #include for TpDBusPropertiesMixin
+
+* Fixed a memory leak in TpContactsMixin
 
 telepathy-glib 0.7.16 (2008-09-26)
 ==================================

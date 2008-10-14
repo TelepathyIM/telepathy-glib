@@ -1216,7 +1216,7 @@ _tp_connection_get_contact_attribute_interfaces (TpConnection *self)
  * Returns the same thing as the #TpConnection:connection-ready property.
  *
  * Returns: %TRUE if introspection has completed
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.17
  */
 gboolean
 tp_connection_is_ready (TpConnection *self)

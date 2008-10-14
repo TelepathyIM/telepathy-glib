@@ -68,7 +68,7 @@ tp_g_set_error_unsupported_handle_type (guint type, GError **error)
 /**
  * tp_errors_quark:
  *
- * Return the Telepathy error domain. Since 0.7.UNRELEASED this function
+ * Return the Telepathy error domain. Since 0.7.17 this function
  * automatically registers the domain with dbus-glib for server-side use
  * (using dbus_g_error_domain_register()) when called.
  *
