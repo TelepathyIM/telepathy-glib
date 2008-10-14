@@ -866,7 +866,7 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
           break;
         case TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED:
           type = FS_CANDIDATE_TYPE_SRFLX;
-          /* or S_CANDIDATE_TYPE_PRFLX .. if can't know */
+          /* or FS_CANDIDATE_TYPE_PRFLX .. the TP spec doesn't differentiate */
           break;
         case TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY:
           type = FS_CANDIDATE_TYPE_RELAY;
