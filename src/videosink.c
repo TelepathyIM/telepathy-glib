@@ -150,7 +150,7 @@ make_video_sink (gboolean is_preview)
   tmp = gst_element_factory_make ("videoscale", NULL);
   if (tmp != NULL)
     {
-      g_object_set (G_OBJECT (tmp), "qos", FALSE, NULL);
+      g_object_set (tmp, "qos", FALSE, NULL);
       g_debug ("linking videoscale");
       if (!gst_bin_add (GST_BIN (bin), tmp))
         {
@@ -171,7 +171,7 @@ make_video_sink (gboolean is_preview)
   tmp = gst_element_factory_make ("ffmpegcolorspace", NULL);
   if (tmp != NULL)
     {
-      g_object_set (G_OBJECT (tmp), "qos", FALSE, NULL);
+      g_object_set (tmp, "qos", FALSE, NULL);
       g_debug ("linking ffmpegcolorspace");
 
       if (!gst_bin_add (GST_BIN (bin), tmp))

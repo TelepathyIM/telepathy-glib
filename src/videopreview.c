@@ -66,9 +66,9 @@ set_preview_props (FsElementAddedNotifier *notifier,
     gpointer user_data)
 {
   if (g_object_has_property ((GObject *) element, "sync"))
-    g_object_set ((GObject *) element, "sync", FALSE, NULL);
+    g_object_set (element, "sync", FALSE, NULL);
   if (g_object_has_property ((GObject *) element, "async"))
-    g_object_set ((GObject *) element, "async", FALSE, NULL);
+    g_object_set (element, "async", FALSE, NULL);
 }
 
 

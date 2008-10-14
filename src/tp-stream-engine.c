@@ -158,10 +158,10 @@ set_element_props (FsElementAddedNotifier *notifier,
     gpointer user_data)
 {
   if (g_object_has_property ((GObject *) element, "min-ptime"))
-    g_object_set ((GObject *) element, "min-ptime", GST_MSECOND * 20, NULL);
+    g_object_set (element, "min-ptime", GST_MSECOND * 20, NULL);
 
   if (g_object_has_property ((GObject *) element, "max-ptime"))
-    g_object_set ((GObject *) element, "max-ptime", GST_MSECOND * 50, NULL);
+    g_object_set (element, "max-ptime", GST_MSECOND * 50, NULL);
 }
 
 static void
@@ -919,7 +919,7 @@ channel_stream_created (TfChannel *chan G_GNUC_UNUSED,
   GError *error = NULL;
   TpStreamEngine *self = TP_STREAM_ENGINE (user_data);
 
-  g_object_get (G_OBJECT (stream), "media-type", &media_type, NULL);
+  g_object_get (stream, "media-type", &media_type, NULL);
 
   if (media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
     {
@@ -938,7 +938,7 @@ channel_stream_created (TfChannel *chan G_GNUC_UNUSED,
           return;
         }
       g_clear_error (&error);
-      g_object_set_data ((GObject*) stream, "se-stream", audiostream);
+      g_object_set_data (G_OBJECT (stream), "se-stream", audiostream);
 
       g_signal_connect (audiostream, "request-pad",
           G_CALLBACK (audiostream_request_pad), self);
@@ -963,7 +963,7 @@ channel_stream_created (TfChannel *chan G_GNUC_UNUSED,
           return;
         }
       g_clear_error (&error);
-      g_object_set_data ((GObject*) stream, "se-stream", videostream);
+      g_object_set_data (G_OBJECT (stream), "se-stream", videostream);
 
       g_mutex_lock (self->priv->mutex);
       self->priv->output_sinks = g_list_prepend (self->priv->output_sinks,
