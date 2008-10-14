@@ -59,6 +59,15 @@ GType tp_stream_engine_get_type(void);
 #define TP_STREAM_ENGINE_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_STREAM_ENGINE, TpStreamEngineClass))
 
+GQuark tp_stream_engine_error_quark (void);
+
+#define TP_STREAM_ENGINE_ERROR (tp_stream_engine_error_quark ())
+
+typedef enum
+{
+  TP_STREAM_ENGINE_ERROR_CONSTRUCTION,
+} TpStreamEngineError;
+
 void
 tp_stream_engine_register (TpStreamEngine *self);
 

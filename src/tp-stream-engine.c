@@ -88,6 +88,12 @@ register_dbus_signal_marshallers()
      TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, G_TYPE_INVALID);
 }
 
+GQuark
+tp_stream_engine_error_quark (void)
+{
+  return g_quark_from_static_string ("telepathy-stream-engine-error");
+}
+
 static void se_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (TpStreamEngine, tp_stream_engine, G_TYPE_OBJECT,
