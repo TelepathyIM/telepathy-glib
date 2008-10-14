@@ -67,7 +67,7 @@
           or 0 if there is no associated handle</tp:docstring>
       </arg>
       <tp:docstring>
-	Called to tell Stream Engine to Attach itself to a channel.
+        Called to tell Stream Engine to Attach itself to a channel.
       </tp:docstring>
       <!-- FIXME: possible errors? -->
     </method>
