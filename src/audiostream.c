@@ -26,6 +26,8 @@
 
 #include <gst/farsight/fs-conference-iface.h>
 
+#include "tp-stream-engine.h"
+
 #include "audiostream.h"
 #include "tp-stream-engine-signals-marshal.h"
 #include "util.h"
@@ -94,7 +96,8 @@ enum
 static guint signals[SIGNAL_COUNT] = {0};
 
 static GstElement *
-tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self);
+tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self,
+    GError **error);
 
 
 static void tp_stream_engine_audio_stream_set_property  (GObject *object,
@@ -140,17 +143,16 @@ tp_stream_engine_audio_stream_constructor (GType type,
 
   self = (TpStreamEngineAudioStream *) obj;
 
-  srcbin = tp_stream_engine_audio_stream_make_src_bin (self);
+  srcbin = tp_stream_engine_audio_stream_make_src_bin (self,
+      &self->priv->construction_error);
   if (!srcbin)
-    {
-      WARNING (self, "Could not make source");
-      goto out;
-    }
+    goto out;
 
   if (!gst_bin_add (GST_BIN (self->priv->bin), srcbin))
     {
       gst_object_unref (srcbin);
-      WARNING (self, "Could not add src to bin");
+      self->priv->construction_error = g_error_new (TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION, "Could not add src to bin");
       goto out;
     }
   self->priv->srcbin = srcbin;
@@ -160,7 +162,8 @@ tp_stream_engine_audio_stream_constructor (GType type,
 
   if (!sink_pad)
     {
-      WARNING (self, "Could not get stream sink pad");
+      self->priv->construction_error = g_error_new (TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION, "Could not get stream sink pad");
       goto out;
     }
 
@@ -168,14 +171,17 @@ tp_stream_engine_audio_stream_constructor (GType type,
 
   if (!src_pad)
     {
-      WARNING (self, "Could not get src pad from src");
+      self->priv->construction_error = g_error_new (TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION,
+          "Could not get src pad from src");
       gst_object_unref (sink_pad);
       goto out;
     }
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (src_pad, sink_pad)))
     {
-      WARNING (self, "Could not link src to stream");
+      self->priv->construction_error = g_error_new (TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION, "Could not link src to stream");
       gst_object_unref (src_pad);
       gst_object_unref (sink_pad);
       goto out;
@@ -188,13 +194,16 @@ tp_stream_engine_audio_stream_constructor (GType type,
 
   if (!sink_pad)
     {
-      WARNING (self, "Could not get sink pad from srcbin");
+      self->priv->construction_error = g_error_new (TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION,
+          "Could not get sink pad from srcbin");
       goto out;
     }
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (self->priv->pad, sink_pad)))
     {
-      WARNING (self, "Could not link src to srcbin");
+      self->priv->construction_error = g_error_new (TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION, "Could not link src to srcbin");
       gst_object_unref (sink_pad);
       goto out;
     }
@@ -513,7 +522,8 @@ tp_stream_engine_audio_stream_get_property  (GObject *object,
 }
 
 static GstElement *
-tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
+tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self,
+    GError **error)
 {
   GstElement *bin = NULL;
   GstElement *queue = NULL;
@@ -531,7 +541,8 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
     {
       gst_object_unref (queue);
       gst_object_unref (bin);
-      WARNING (self, "Could not add queue to bin");
+      g_set_error (error, TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION, "Could not add queue to bin");
       return NULL;
     }
 
@@ -540,7 +551,9 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
     {
       gst_object_unref (audioconvert);
       gst_object_unref (bin);
-      WARNING (self, "Could not add audioconvert to bin");
+      g_set_error (error, TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION,
+          "Could not add audioconvert to bin");
       return NULL;
     }
 
@@ -549,14 +562,17 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
     {
       gst_object_unref (volume);
       gst_object_unref (bin);
-      WARNING (self, "Could not add volume to bin");
+      g_set_error (error, TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION, "Could not add volume to bin");
       return NULL;
     }
 
   if (!gst_element_link_many (queue, audioconvert, volume, NULL))
     {
       gst_object_unref (bin);
-      WARNING (self, "Could not link queue, audioconvert and volume elements");
+      g_set_error (error, TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION,
+          "Could not link queue, audioconvert and volume elements");
       return NULL;
     }
 
@@ -565,7 +581,9 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
   if (!pad)
     {
       gst_object_unref (bin);
-      WARNING (self, "Could not find unconnected sink pad in src bin");
+      g_set_error (error, TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION,
+          "Could not find unconnected sink pad in src bin");
       return NULL;
     }
 
@@ -574,7 +592,8 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
     {
       gst_object_unref (ghostpad);
       gst_object_unref (bin);
-      WARNING (self, "Could not add pad to bin");
+      g_set_error (error, TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION, "Could not add pad to bin");
       return NULL;
     }
 
@@ -585,7 +604,9 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
   if (!pad)
     {
       gst_object_unref (bin);
-      WARNING (self, "Could not find unconnected sink pad in sink bin");
+      g_set_error (error, TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION,
+          "Could not find unconnected sink pad in sink bin");
       return NULL;
     }
 
@@ -594,7 +615,8 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
     {
       gst_object_unref (ghostpad);
       gst_object_unref (bin);
-      WARNING (self, "Could not add pad to bin");
+      g_set_error (error, TP_STREAM_ENGINE_ERROR,
+          TP_STREAM_ENGINE_ERROR_CONSTRUCTION, "Could not add pad to bin");
       return NULL;
     }
 
