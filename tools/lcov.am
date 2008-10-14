@@ -3,7 +3,10 @@ lcov-reset:
 
 lcov-report:
 	lcov --directory @top_srcdir@ --capture \
-		--output-file @top_builddir@/lcov.info
+		--output-file @top_builddir@/lcov.info.tmp
+	lcov --directory @top_srcdir@ --output-file @top_builddir@/lcov.info \
+		--remove @top_builddir@/lcov.info.tmp telepathy-glib-scan.c
+	rm @top_builddir@/lcov.info.tmp
 	$(mkdir_p) @top_builddir@/lcov.html
 	genhtml --title telepathy-glib \
 		--output-directory @top_builddir@/lcov.html lcov.info
