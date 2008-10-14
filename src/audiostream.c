@@ -520,6 +520,7 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
   GstElement *audioconvert = NULL;
   GstElement *volume = NULL;
   GstPad *pad;
+  GstPad *ghostpad;
 
   bin = gst_bin_new (NULL);
 
@@ -568,8 +569,10 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
       return NULL;
     }
 
-  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("src", pad)))
+  ghostpad = gst_ghost_pad_new ("src", pad);
+  if (!gst_element_add_pad (bin, ghostpad))
     {
+      gst_object_unref (ghostpad);
       gst_object_unref (bin);
       WARNING (self, "Could not add pad to bin");
       return NULL;
@@ -586,8 +589,10 @@ tp_stream_engine_audio_stream_make_src_bin (TpStreamEngineAudioStream *self)
       return NULL;
     }
 
-  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
+  ghostpad = gst_ghost_pad_new ("sink", pad);
+  if (!gst_element_add_pad (bin, ghostpad))
     {
+      gst_object_unref (ghostpad);
       gst_object_unref (bin);
       WARNING (self, "Could not add pad to bin");
       return NULL;

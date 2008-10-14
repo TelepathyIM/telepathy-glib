@@ -95,6 +95,7 @@ make_sink (TpStreamEngineVideoPreview *self)
   GstElement *queue;
   GstElement *sink;
   GstPad *pad;
+  GstPad *ghostpad;
 
   g_object_get (self, "sink", &sink, NULL);
 
@@ -142,8 +143,10 @@ make_sink (TpStreamEngineVideoPreview *self)
       goto error;
     }
 
-  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
+  ghostpad = gst_ghost_pad_new ("sink", pad);
+  if (!gst_element_add_pad (bin, ghostpad))
     {
+      gst_object_unref (ghostpad);
       g_warning ("Could not add ghostpad to bin");
       goto error;
     }

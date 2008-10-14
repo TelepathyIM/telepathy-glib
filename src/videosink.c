@@ -91,6 +91,7 @@ make_video_sink (gboolean is_preview)
 #ifndef MAEMO_OSSO_SUPPORT
   GstElement *bin, *tmp;
   GstPad *pad;
+  GstPad *ghostpad;
 #endif
 
   if ((videosink_name = getenv ("PREVIEW_VIDEO_SINK")) ||
@@ -198,8 +199,10 @@ make_video_sink (gboolean is_preview)
       return NULL;
     }
 
-  if (!gst_element_add_pad (bin, gst_ghost_pad_new ("sink", pad)))
+  ghostpad = gst_ghost_pad_new ("sink", pad);
+  if (!gst_element_add_pad (bin, ghostpad))
     {
+      gst_object_unref (ghostpad);
       g_warning ("Could not add sink ghostpad to the source bin");
       gst_object_unref (bin);
       return NULL;
