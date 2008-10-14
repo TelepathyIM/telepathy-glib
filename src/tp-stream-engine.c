@@ -277,7 +277,6 @@ static void
 tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (tp_stream_engine_class);
-  GParamSpec *param_spec;
 
   g_type_class_add_private (tp_stream_engine_class,
       sizeof (TpStreamEnginePrivate));
@@ -329,15 +328,13 @@ tp_stream_engine_class_init (TpStreamEngineClass *tp_stream_engine_class)
         g_cclosure_marshal_VOID__VOID,
         G_TYPE_NONE, 0);
 
-  param_spec = g_param_spec_object ("pipeline",
-      "The GstPipeline",
-      "The GstPipeline that all the objects here live in",
-      GST_TYPE_PIPELINE,
-      G_PARAM_READABLE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_PIPELINE, param_spec);
-
+  g_object_class_install_property (object_class, PROP_PIPELINE,
+      g_param_spec_object ("pipeline",
+          "The GstPipeline",
+          "The GstPipeline that all the objects here live in",
+          GST_TYPE_PIPELINE,
+          G_PARAM_READABLE |
+          G_PARAM_STATIC_STRINGS));
 }
 
 static void

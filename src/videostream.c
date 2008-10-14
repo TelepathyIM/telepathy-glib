@@ -436,7 +436,6 @@ static void
 tp_stream_engine_video_stream_class_init (TpStreamEngineVideoStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineVideoStreamPrivate));
   object_class->dispose = tp_stream_engine_video_stream_dispose;
@@ -445,44 +444,41 @@ tp_stream_engine_video_stream_class_init (TpStreamEngineVideoStreamClass *klass)
   object_class->set_property = tp_stream_engine_video_stream_set_property;
   object_class->get_property = tp_stream_engine_video_stream_get_property;
 
-  param_spec = g_param_spec_object ("stream",
-      "Tp StreamEngine Stream",
-      "The Telepathy Stream Engine Stream",
-      TF_TYPE_STREAM,
-      G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_STREAM, param_spec);
+  g_object_class_install_property (object_class, PROP_STREAM,
+      g_param_spec_object ("stream",
+          "Tp StreamEngine Stream",
+          "The Telepathy Stream Engine Stream",
+          TF_TYPE_STREAM,
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("bin",
-      "The Bin to add stuff to",
-      "The Bin to add the elements to",
-      GST_TYPE_BIN,
-      G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_BIN, param_spec);
+  g_object_class_install_property (object_class, PROP_BIN,
+      g_param_spec_object ("bin",
+          "The Bin to add stuff to",
+          "The Bin to add the elements to",
+          GST_TYPE_BIN,
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("pad",
-      "The pad to get the data from",
-      "the GstPad the data comes from",
-      GST_TYPE_PAD,
-      G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_PAD, param_spec);
+  g_object_class_install_property (object_class, PROP_PAD,
+      g_param_spec_object ("pad",
+          "The pad to get the data from",
+          "the GstPad the data comes from",
+          GST_TYPE_PAD,
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 
   signals[RECEIVING] =
-    g_signal_new ("receiving",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
+      g_signal_new ("receiving",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          g_cclosure_marshal_VOID__VOID,
+          G_TYPE_NONE, 0);
 }
 
 

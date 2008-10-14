@@ -334,7 +334,6 @@ static void
 tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineAudioStreamPrivate));
   object_class->dispose = tp_stream_engine_audio_stream_dispose;
@@ -343,71 +342,54 @@ tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
   object_class->set_property = tp_stream_engine_audio_stream_set_property;
   object_class->get_property = tp_stream_engine_audio_stream_get_property;
 
-  param_spec = g_param_spec_object ("stream",
-      "Tp StreamEngine Stream",
-      "The Telepathy Stream Engine Stream",
-      TF_TYPE_STREAM,
-      G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_STREAM, param_spec);
+  g_object_class_install_property (object_class, PROP_STREAM,
+      g_param_spec_object ("stream",
+          "Tp StreamEngine Stream",
+          "The Telepathy Stream Engine Stream",
+          TF_TYPE_STREAM,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("bin",
-      "The Bin to add stuff to",
-      "The Bin to add the elements to",
-      GST_TYPE_BIN,
-      G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_BIN, param_spec);
+  g_object_class_install_property (object_class, PROP_BIN,
+      g_param_spec_object ("bin",
+          "The Bin to add stuff to",
+          "The Bin to add the elements to",
+          GST_TYPE_BIN,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("pad",
-      "The pad that the src data comes from",
-      "The GstPad the src data comes from",
-      GST_TYPE_PAD,
-      G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_PAD, param_spec);
+  g_object_class_install_property (object_class, PROP_PAD,
+      g_param_spec_object ("pad",
+          "The pad that the src data comes from",
+          "The GstPad the src data comes from",
+          GST_TYPE_PAD,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_double ("output-volume",
-      "Output volume",
-      "The output volume for this stream.",
-      0, 10, 1,
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_OUTPUT_VOLUME,
-      param_spec);
+      g_param_spec_double ("output-volume",
+          "Output volume",
+          "The output volume for this stream.",
+          0, 10, 1,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_boolean ("output-mute",
-      "Output volume",
-      "Mute stream",
-      FALSE,
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_OUTPUT_MUTE,
-      param_spec);
+      g_param_spec_boolean ("output-mute",
+          "Output volume",
+          "Mute stream",
+          FALSE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_double ("input-volume",
-      "Input volume",
-      "The input volume for this stream.",
-      0, 10, 1,
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_INPUT_VOLUME,
-      param_spec);
+      g_param_spec_double ("input-volume",
+          "Input volume",
+          "The input volume for this stream.",
+          0, 10, 1,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_boolean ("input-mute",
-      "Input volume",
-      "Mute stream",
-      FALSE,
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_INPUT_MUTE,
-      param_spec);
+      g_param_spec_boolean ("input-mute",
+          "Input volume",
+          "Mute stream",
+          FALSE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /*
    * BEWARE:
@@ -415,20 +397,20 @@ tp_stream_engine_audio_stream_class_init (TpStreamEngineAudioStreamClass *klass)
    */
 
   signals[REQUEST_PAD] = g_signal_new ("request-pad",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  request_pad_accumulator, NULL,
-                  tp_stream_engine_marshal_OBJECT__VOID,
-                  GST_TYPE_PAD, 0);
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      request_pad_accumulator, NULL,
+      tp_stream_engine_marshal_OBJECT__VOID,
+      GST_TYPE_PAD, 0);
 
   signals[RELEASE_PAD] = g_signal_new ("release-pad",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1, GST_TYPE_PAD);
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1, GST_TYPE_PAD);
 
 }
 

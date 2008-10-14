@@ -323,7 +323,6 @@ static void
 tp_stream_engine_video_preview_class_init (TpStreamEngineVideoPreviewClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineVideoPreviewPrivate));
   object_class->dispose = tp_stream_engine_video_preview_dispose;
@@ -332,24 +331,22 @@ tp_stream_engine_video_preview_class_init (TpStreamEngineVideoPreviewClass *klas
   object_class->set_property = tp_stream_engine_video_preview_set_property;
   object_class->get_property = tp_stream_engine_video_preview_get_property;
 
-  param_spec = g_param_spec_object ("bin",
-      "The Bin to add stuff to",
-      "The Bin to add the elements to",
-      GST_TYPE_BIN,
-      G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_BIN, param_spec);
+  g_object_class_install_property (object_class, PROP_BIN,
+      g_param_spec_object ("bin",
+          "The Bin to add stuff to",
+          "The Bin to add the elements to",
+          GST_TYPE_BIN,
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("pad",
-      "The pad to get the data from",
-      "the GstPad the data comes from",
-      GST_TYPE_PAD,
-      G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_PAD, param_spec);
+  g_object_class_install_property (object_class, PROP_PAD,
+      g_param_spec_object ("pad",
+          "The pad to get the data from",
+          "the GstPad the data comes from",
+          GST_TYPE_PAD,
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 }
 
 

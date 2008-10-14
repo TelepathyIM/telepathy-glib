@@ -217,7 +217,6 @@ static void
 tf_session_class_init (TfSessionClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TfSessionPrivate));
 
@@ -228,44 +227,33 @@ tf_session_class_init (TfSessionClass *klass)
 
   object_class->dispose = tf_session_dispose;
 
-  param_spec = g_param_spec_string ("conference-type",
-                                    "Farsight conference type",
-                                    "Name of the Farsight conference type this "
-                                    "session will create (rtp, msn, etc).",
-                                    NULL,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_SESSION_TYPE,
-      param_spec);
+      g_param_spec_string ("conference-type",
+          "Farsight conference type",
+          "Name of the Farsight conference type this "
+          "session will create (rtp, msn, etc).",
+          NULL,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("farsight-conference",
-                                    "Farsight conference",
-                                    "The Farsight conference to add to the pipeline",
-                                    FS_TYPE_CONFERENCE,
-                                    G_PARAM_READABLE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_FARSIGHT_CONFERENCE,
-      param_spec);
+      g_param_spec_object ("farsight-conference",
+          "Farsight conference",
+          "The Farsight conference to add to the pipeline",
+          FS_TYPE_CONFERENCE,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("farsight-participant",
-                                    "Farsight participant",
-                                    "The Farsight participant for this session",
-                                    FS_TYPE_PARTICIPANT,
-                                    G_PARAM_READABLE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_FARSIGHT_PARTICIPANT,
-      param_spec);
+      g_param_spec_object ("farsight-participant",
+          "Farsight participant",
+          "The Farsight participant for this session",
+          FS_TYPE_PARTICIPANT,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("proxy", "TpMediaSessionHandler proxy",
-      "The session handler proxy which this session interacts with.",
-      TP_TYPE_MEDIA_SESSION_HANDLER,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_PROXY, param_spec);
+  g_object_class_install_property (object_class, PROP_PROXY,
+      g_param_spec_object ("proxy", "TpMediaSessionHandler proxy",
+          "The session handler proxy which this session interacts with.",
+          TP_TYPE_MEDIA_SESSION_HANDLER,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TfSession::new-stream:
@@ -282,22 +270,22 @@ tf_session_class_init (TfSessionClass *klass)
    */
 
   signals[NEW_STREAM] =
-    g_signal_new ("new-stream",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  _tf_marshal_VOID__BOXED_UINT_UINT_UINT,
-                  G_TYPE_NONE, 4,
-                  DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+      g_signal_new ("new-stream",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          _tf_marshal_VOID__BOXED_UINT_UINT_UINT,
+          G_TYPE_NONE, 4,
+          DBUS_TYPE_G_OBJECT_PATH, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
   signals[INVALIDATED] =
-    g_signal_new ("invalidated",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
+      g_signal_new ("invalidated",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          g_cclosure_marshal_VOID__VOID,
+          G_TYPE_NONE, 0);
 }
 
 /* dummy callback handler for async calling calls with no return values */

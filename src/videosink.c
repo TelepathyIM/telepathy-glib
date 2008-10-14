@@ -334,7 +334,6 @@ static void
 tp_stream_engine_video_sink_class_init (TpStreamEngineVideoSinkClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpStreamEngineVideoSinkPrivate));
   object_class->dispose = tp_stream_engine_video_sink_dispose;
@@ -342,32 +341,26 @@ tp_stream_engine_video_sink_class_init (TpStreamEngineVideoSinkClass *klass)
   object_class->set_property = tp_stream_engine_video_sink_set_property;
   object_class->get_property = tp_stream_engine_video_sink_get_property;
 
-  param_spec = g_param_spec_object ("sink",
-      "The video sink element",
-      "The GstElement that is used as videosink",
-      GST_TYPE_ELEMENT,
-      G_PARAM_READABLE |
-      G_PARAM_STATIC_NICK |
-      G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_SINK, param_spec);
+  g_object_class_install_property (object_class, PROP_SINK,
+      g_param_spec_object ("sink",
+          "The video sink element",
+          "The GstElement that is used as videosink",
+          GST_TYPE_ELEMENT,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_uint ("window-id",
-      "Window id",
-      "The window id to Xembed",
-      0, G_MAXUINT, 0,
-      G_PARAM_READABLE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_WINDOW_ID,
-      param_spec);
+      g_param_spec_uint ("window-id",
+          "Window id",
+          "The window id to Xembed",
+          0, G_MAXUINT, 0,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_boolean ("is-preview",
-      "Window id",
-      "The window id to Xembed",
-      FALSE,
-      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_IS_PREVIEW,
-      param_spec);
+      g_param_spec_boolean ("is-preview",
+          "Window id",
+          "The window id to Xembed",
+          FALSE,
+          G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
   signals[PLUG_DELETED] =
       g_signal_new ("plug-deleted",

@@ -447,7 +447,6 @@ static void
 tf_channel_class_init (TfChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TfChannelPrivate));
 
@@ -458,19 +457,20 @@ tf_channel_class_init (TfChannelClass *klass)
 
   object_class->dispose = tf_channel_dispose;
 
-  param_spec = g_param_spec_object ("channel", "TpChannel object",
-      "Telepathy channel object which this media channel should operate on.",
-      TP_TYPE_CHANNEL,
-      (G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NICK |
-        G_PARAM_STATIC_BLURB));
-  g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
+  g_object_class_install_property (object_class, PROP_CHANNEL,
+      g_param_spec_object ("channel",
+          "TpChannel object",
+          "Telepathy channel object which this media channel should operate on",
+          TP_TYPE_CHANNEL,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_string ("object-path", "channel object path",
-      "D-Bus object path of the Telepathy channel which this channel operates "
-      "on.",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH,
+      g_param_spec_string ("object-path",
+          "channel object path",
+          "D-Bus object path of the Telepathy channel which this channel"
+          " operates on",
+          NULL,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   signals[HANDLER_RESULT] = g_signal_new ("handler-result",
       G_OBJECT_CLASS_TYPE (klass),
@@ -490,13 +490,13 @@ tf_channel_class_init (TfChannelClass *klass)
    */
 
   signals[CLOSED] =
-    g_signal_new ("closed",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
+      g_signal_new ("closed",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          g_cclosure_marshal_VOID__VOID,
+          G_TYPE_NONE, 0);
 
   /**
    * TfChannel::stream-created:
@@ -508,13 +508,13 @@ tf_channel_class_init (TfChannelClass *klass)
    */
 
   signals[STREAM_CREATED] =
-    g_signal_new ("stream-created",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1, TF_TYPE_STREAM);
+      g_signal_new ("stream-created",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          g_cclosure_marshal_VOID__OBJECT,
+          G_TYPE_NONE, 1, TF_TYPE_STREAM);
 
   /**
    * TfChannel::session-created:
@@ -529,13 +529,13 @@ tf_channel_class_init (TfChannelClass *klass)
    */
 
   signals[SESSION_CREATED] =
-    g_signal_new ("session-created",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  _tf_marshal_VOID__OBJECT_OBJECT,
-                  G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
+      g_signal_new ("session-created",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          _tf_marshal_VOID__OBJECT_OBJECT,
+          G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
 
   /**
    * TfChannel::session-invalidated:
@@ -549,13 +549,13 @@ tf_channel_class_init (TfChannelClass *klass)
    */
 
   signals[SESSION_INVALIDATED] =
-    g_signal_new ("session-invalidated",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  _tf_marshal_VOID__OBJECT_OBJECT,
-                  G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
+      g_signal_new ("session-invalidated",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          _tf_marshal_VOID__OBJECT_OBJECT,
+          G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
 
   /**
    * TfChannel::stream-get-codec-config:
@@ -571,13 +571,13 @@ tf_channel_class_init (TfChannelClass *klass)
    */
 
   signals[STREAM_GET_CODEC_CONFIG] =
-    g_signal_new ("stream-get-codec-config",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-                  0,
-                  NULL, NULL,
-                  _tf_marshal_BOXED__UINT_UINT_UINT,
-                  FS_TYPE_CODEC_LIST, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+      g_signal_new ("stream-get-codec-config",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+          0,
+          NULL, NULL,
+          _tf_marshal_BOXED__UINT_UINT_UINT,
+          FS_TYPE_CODEC_LIST, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 static void

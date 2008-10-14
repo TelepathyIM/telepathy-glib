@@ -495,7 +495,6 @@ static void
 tf_stream_class_init (TfStreamClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TfStreamPrivate));
 
@@ -504,122 +503,100 @@ tf_stream_class_init (TfStreamClass *klass)
   object_class->constructor = tf_stream_constructor;
   object_class->dispose = tf_stream_dispose;
 
-  param_spec = g_param_spec_object ("channel",
-                                    "Telepathy channel",
-                                    "The TfChannel this stream is in",
-                                    TF_TYPE_CHANNEL,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CHANNEL,
-      param_spec);
+      g_param_spec_object ("channel",
+          "Telepathy channel",
+          "The TfChannel this stream is in",
+          TF_TYPE_CHANNEL,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("farsight-conference",
-                                    "Farsight conference",
-                                    "The Farsight conference this stream will "
-                                    "create streams within.",
-                                    FS_TYPE_CONFERENCE,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_FARSIGHT_CONFERENCE,
-      param_spec);
+      g_param_spec_object ("farsight-conference",
+          "Farsight conference",
+          "The Farsight conference this stream will "
+          "create streams within.",
+          FS_TYPE_CONFERENCE,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("farsight-participant",
-                                    "Farsight participant",
-                                    "The Farsight participant this stream will "
-                                    "create streams for.",
-                                    FS_TYPE_PARTICIPANT,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_FARSIGHT_PARTICIPANT,
-      param_spec);
+      g_param_spec_object ("farsight-participant",
+          "Farsight participant",
+          "The Farsight participant this stream will "
+          "create streams for.",
+          FS_TYPE_PARTICIPANT,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("proxy", "TpMediaStreamHandler proxy",
-      "The stream handler proxy which this stream interacts with.",
-      TP_TYPE_MEDIA_STREAM_HANDLER,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_PROXY, param_spec);
+  g_object_class_install_property (object_class, PROP_PROXY,
+      g_param_spec_object ("proxy",
+          "TpMediaStreamHandler proxy",
+          "The stream handler proxy which this stream interacts with.",
+          TP_TYPE_MEDIA_STREAM_HANDLER,
+          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_uint ("stream-id",
-                                  "stream ID",
-                                  "A number identifying this stream within "
-                                  "its channel.",
-                                  0, G_MAXUINT, 0,
-                                  G_PARAM_CONSTRUCT_ONLY |
-                                  G_PARAM_READWRITE |
-                                  G_PARAM_STATIC_NICK |
-                                  G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_STREAM_ID, param_spec);
+  g_object_class_install_property (object_class, PROP_STREAM_ID,
+      g_param_spec_uint ("stream-id",
+          "stream ID",
+          "A number identifying this stream within "
+          "its channel.",
+          0, G_MAXUINT, 0,
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_uint ("media-type",
-                                  "stream media type",
-                                  "The Telepathy stream media type"
-                                   " (as a TpStreamMediaType)",
-                                  TP_MEDIA_STREAM_TYPE_AUDIO,
-                                  TP_MEDIA_STREAM_TYPE_VIDEO,
-                                  TP_MEDIA_STREAM_TYPE_AUDIO,
-                                  G_PARAM_CONSTRUCT_ONLY |
-                                  G_PARAM_READWRITE |
-                                  G_PARAM_STATIC_NICK |
-                                  G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_MEDIA_TYPE, param_spec);
+  g_object_class_install_property (object_class, PROP_MEDIA_TYPE,
+      g_param_spec_uint ("media-type",
+          "stream media type",
+          "The Telepathy stream media type"
+          " (as a TpStreamMediaType)",
+          TP_MEDIA_STREAM_TYPE_AUDIO,
+          TP_MEDIA_STREAM_TYPE_VIDEO,
+          TP_MEDIA_STREAM_TYPE_AUDIO,
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_uint ("direction",
-                                  "stream direction",
-                                  "The Telepathy stream direction"
-                                  " (a TpMediaStreamDirection)",
-                                  TP_MEDIA_STREAM_DIRECTION_NONE,
-                                  TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
-                                  TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
-                                  G_PARAM_CONSTRUCT_ONLY |
-                                  G_PARAM_READWRITE |
-                                  G_PARAM_STATIC_NICK |
-                                  G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_DIRECTION, param_spec);
+  g_object_class_install_property (object_class, PROP_DIRECTION,
+      g_param_spec_uint ("direction",
+          "stream direction",
+          "The Telepathy stream direction"
+          " (a TpMediaStreamDirection)",
+          TP_MEDIA_STREAM_DIRECTION_NONE,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_pointer ("nat-properties",
-                                     "NAT properties",
-                                     "A pointer to a "
-                                     "TfNatProperties structure "
-                                     "detailing which NAT traversal method "
-                                     "and parameters to use for this stream",
-                                     G_PARAM_CONSTRUCT_ONLY |
-                                     G_PARAM_WRITABLE |
-                                     G_PARAM_STATIC_NICK |
-                                     G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_NAT_PROPERTIES,
-      param_spec);
+      g_param_spec_pointer ("nat-properties",
+          "NAT properties",
+          "A pointer to a "
+          "TfNatProperties structure "
+          "detailing which NAT traversal method "
+          "and parameters to use for this stream",
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_WRITABLE |
+          G_PARAM_STATIC_STRINGS));
 
-  param_spec = g_param_spec_object ("sink-pad",
-                                    "Sink pad for this stream",
-                                    "This sink pad that data has to be sent",
-                                     GST_TYPE_PAD,
-                                     G_PARAM_READABLE |
-                                     G_PARAM_STATIC_NICK |
-                                     G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_SINK_PAD,
-      param_spec);
+      g_param_spec_object ("sink-pad",
+          "Sink pad for this stream",
+          "This sink pad that data has to be sent",
+          GST_TYPE_PAD,
+          G_PARAM_READABLE |
+          G_PARAM_STATIC_STRINGS));
 
-
-  param_spec = g_param_spec_boxed ("codec-preferences",
-                                   "Local codec preferences",
-                                   "A GList of FsCodec representing preferences"
-                                   " to be passed to the"
-                                   " fs_session_set_local_preferences()"
-                                   " function",
-                                    FS_TYPE_CODEC_LIST,
-                                    G_PARAM_CONSTRUCT_ONLY |
-                                    G_PARAM_READWRITE |
-                                    G_PARAM_STATIC_NICK |
-                                    G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_LOCAL_PREFERENCES,
-      param_spec);
+      g_param_spec_boxed ("codec-preferences",
+          "Local codec preferences",
+          "A GList of FsCodec representing preferences"
+          " to be passed to the"
+          " fs_session_set_local_preferences()"
+          " function",
+          FS_TYPE_CODEC_LIST,
+          G_PARAM_CONSTRUCT_ONLY |
+          G_PARAM_READWRITE |
+          G_PARAM_STATIC_STRINGS));
 
   /**
    * TfStream::closed:
@@ -630,13 +607,13 @@ tf_stream_class_init (TfStreamClass *klass)
    */
 
   signals[CLOSED] =
-    g_signal_new ("closed",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
+      g_signal_new ("closed",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          g_cclosure_marshal_VOID__VOID,
+          G_TYPE_NONE, 0);
 
   /**
    * TfStream::error:
@@ -646,13 +623,13 @@ tf_stream_class_init (TfStreamClass *klass)
    */
 
   signals[ERROR_SIGNAL] =
-    g_signal_new ("error",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
+      g_signal_new ("error",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          g_cclosure_marshal_VOID__VOID,
+          G_TYPE_NONE, 0);
 
   /**
    * TfStream::request-resource:
@@ -669,13 +646,13 @@ tf_stream_class_init (TfStreamClass *klass)
    */
 
   signals[REQUEST_RESOURCE] =
-    g_signal_new ("request-resource",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  g_signal_accumulator_true_handled, NULL,
-                  _tf_marshal_BOOLEAN__UINT,
-                  G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
+      g_signal_new ("request-resource",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          g_signal_accumulator_true_handled, NULL,
+          _tf_marshal_BOOLEAN__UINT,
+          G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   /**
    * TfStream::free-resource:
@@ -688,13 +665,13 @@ tf_stream_class_init (TfStreamClass *klass)
    */
 
   signals[FREE_RESOURCE] =
-    g_signal_new ("free-resource",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__UINT,
-                  G_TYPE_NONE, 1, G_TYPE_UINT);
+      g_signal_new ("free-resource",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          g_cclosure_marshal_VOID__UINT,
+          G_TYPE_NONE, 1, G_TYPE_UINT);
 
   /**
    * TfStream::src-pad-added:
@@ -707,13 +684,13 @@ tf_stream_class_init (TfStreamClass *klass)
    */
 
   signals[SRC_PAD_ADDED] =
-    g_signal_new ("src-pad-added",
-                  G_OBJECT_CLASS_TYPE (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0,
-                  NULL, NULL,
-                  _tf_marshal_VOID__OBJECT_BOXED,
-                  G_TYPE_NONE, 2, GST_TYPE_PAD, FS_TYPE_CODEC);
+      g_signal_new ("src-pad-added",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          _tf_marshal_VOID__OBJECT_BOXED,
+          G_TYPE_NONE, 2, GST_TYPE_PAD, FS_TYPE_CODEC);
 }
 
 /* dummy callback handler for async calling calls with no return values */
