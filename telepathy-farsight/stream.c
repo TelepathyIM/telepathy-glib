@@ -102,8 +102,7 @@ static guint signals[SIGNAL_COUNT] = {0};
 /* properties */
 enum
 {
-  PROP_0,
-  PROP_CHANNEL,
+  PROP_CHANNEL = 1,
   PROP_FARSIGHT_CONFERENCE,
   PROP_FARSIGHT_PARTICIPANT,
   PROP_PROXY,
