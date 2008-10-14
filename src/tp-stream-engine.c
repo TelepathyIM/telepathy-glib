@@ -585,56 +585,56 @@ stream_closed (TfStream *stream, gpointer user_data)
   GObject *sestream = NULL;
 
   sestream = g_object_get_data (G_OBJECT (stream), "se-stream");
-  if (sestream)
+  if (!sestream)
+    return;
+
+  if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream))
     {
-      if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream))
-        {
-          TpStreamEngineVideoStream *videostream =
-              (TpStreamEngineVideoStream *) sestream;
+      TpStreamEngineVideoStream *videostream =
+          (TpStreamEngineVideoStream *) sestream;
 
-          g_mutex_lock (self->priv->mutex);
-          self->priv->output_sinks = g_list_remove (self->priv->output_sinks,
-              videostream);
-          g_mutex_unlock (self->priv->mutex);
+      g_mutex_lock (self->priv->mutex);
+      self->priv->output_sinks = g_list_remove (self->priv->output_sinks,
+          videostream);
+      g_mutex_unlock (self->priv->mutex);
 
-        }
-
-      if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream) ||
-          TP_STREAM_ENGINE_IS_AUDIO_STREAM (sestream))
-        {
-          GstPad *pad, *peer;
-
-          g_object_get (sestream, "pad", &pad, NULL);
-
-
-          /* Take the stream lock to make sure nothing is flowing through the
-           * pad
-           * We can only do that because we have no blocking elements before
-           * a queue in our pipeline after the pads.
-           */
-          peer = gst_pad_get_peer (pad);
-          GST_PAD_STREAM_LOCK(pad);
-          if (peer)
-            {
-              gst_pad_unlink (pad, peer);
-              gst_object_unref (peer);
-            }
-          /*
-           * Releasing request pads currently fail cause stuff like
-           * alloc_buffer() does take any lock and there is no way to prevent it
-           * ??? or something like that
-
-          if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream))
-            gst_element_release_request_pad (self->priv->videotee, pad);
-          else if (TP_STREAM_ENGINE_IS_AUDIO_STREAM (sestream))
-            gst_element_release_request_pad (self->priv->audiotee, pad);
-          */
-          GST_PAD_STREAM_UNLOCK(pad);
-
-          gst_object_unref (pad);
-        }
-      g_object_unref (sestream);
     }
+
+  if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream) ||
+      TP_STREAM_ENGINE_IS_AUDIO_STREAM (sestream))
+    {
+      GstPad *pad, *peer;
+
+      g_object_get (sestream, "pad", &pad, NULL);
+
+
+      /* Take the stream lock to make sure nothing is flowing through the
+       * pad
+       * We can only do that because we have no blocking elements before
+       * a queue in our pipeline after the pads.
+       */
+      peer = gst_pad_get_peer (pad);
+      GST_PAD_STREAM_LOCK(pad);
+      if (peer)
+        {
+          gst_pad_unlink (pad, peer);
+          gst_object_unref (peer);
+        }
+      /*
+       * Releasing request pads currently fail cause stuff like
+       * alloc_buffer() does take any lock and there is no way to prevent it
+       * ??? or something like that
+
+       if (TP_STREAM_ENGINE_IS_VIDEO_STREAM (sestream))
+       gst_element_release_request_pad (self->priv->videotee, pad);
+       else if (TP_STREAM_ENGINE_IS_AUDIO_STREAM (sestream))
+       gst_element_release_request_pad (self->priv->audiotee, pad);
+      */
+      GST_PAD_STREAM_UNLOCK(pad);
+
+      gst_object_unref (pad);
+    }
+  g_object_unref (sestream);
 }
 
 static void
