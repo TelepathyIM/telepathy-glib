@@ -180,7 +180,7 @@ add_gstelements_conf_to_notifier (FsElementAddedNotifier *notifier)
   if (!g_key_file_load_from_file (keyfile, filename, G_KEY_FILE_NONE, &error))
     {
       g_debug ("Could not read element properties config at %s: %s", filename,
-          error ? error->message : "");
+          error ? error->message : "(no error message set)");
     }
   else
     {
@@ -200,7 +200,7 @@ add_gstelements_conf_to_notifier (FsElementAddedNotifier *notifier)
         {
           g_debug ("Could not read element properties config file %s from any"
               "of the XDG system config directories: %s", filename,
-              error ? error->message : "");
+              error ? error->message : "(no error message set)");
         }
       else
         {
@@ -1003,7 +1003,7 @@ stream_get_codec_config (TfChannel *chan,
   if (!codec_config)
     {
       g_debug ("Could not read local codecs config at %s: %s", filename,
-          error ? error->message : "");
+          error ? error->message : "(no error message set)");
       g_free (filename);
     }
   g_clear_error (&error);
@@ -1019,7 +1019,7 @@ stream_get_codec_config (TfChannel *chan,
       if (!codec_config)
         {
           g_debug ("Could not read global codecs config at %s: %s", filename,
-              error ? error->message : "");
+              error ? error->message : "(no error message set)");
           g_free (filename);
         }
       g_clear_error (&error);
