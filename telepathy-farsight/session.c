@@ -148,7 +148,8 @@ tf_session_constructor (GType type,
 
   if (!self->priv->fs_conference)
     {
-      g_error ("Invalid session");
+      self->priv->construction_error = g_error_new (FS_ERROR,
+          FS_ERROR_CONSTRUCTION, "Invalid session type");
       return obj;
     }
 
