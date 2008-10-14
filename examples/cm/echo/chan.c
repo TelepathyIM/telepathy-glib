@@ -40,6 +40,10 @@ enum
   PROP_CHANNEL_TYPE,
   PROP_HANDLE_TYPE,
   PROP_HANDLE,
+  PROP_TARGET_ID,
+  PROP_REQUESTED,
+  PROP_INITIATOR_HANDLE,
+  PROP_INITIATOR_ID,
   PROP_CONNECTION,
   PROP_INTERFACES,
   N_PROPS
@@ -115,6 +119,39 @@ get_property (GObject *object,
       break;
     case PROP_HANDLE:
       g_value_set_uint (value, self->priv->handle);
+      break;
+    case PROP_TARGET_ID:
+        {
+          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+
+          g_value_set_string (value,
+              tp_handle_inspect (contact_repo, self->priv->handle));
+        }
+      break;
+    case PROP_REQUESTED:
+      /* this example CM doesn't yet support other contacts initiating
+       * chats with us, so the only way a channel can exist is if the
+       * user asked for it */
+      g_value_set_boolean (value, TRUE);
+      break;
+    case PROP_INITIATOR_HANDLE:
+      /* this example CM doesn't yet support other contacts initiating
+       * chats with us, so the only way a channel can exist is if the
+       * user asked for it */
+      g_value_set_uint (value, self->priv->conn->self_handle);
+      break;
+    case PROP_INITIATOR_ID:
+        {
+          /* this example CM doesn't yet support other contacts initiating
+           * chats with us, so the only way a channel can exist is if the
+           * user asked for it */
+          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+
+          g_value_set_string (value,
+              tp_handle_inspect (contact_repo, self->priv->conn->self_handle));
+        }
       break;
     case PROP_CONNECTION:
       g_value_set_object (value, self->priv->conn);
@@ -203,6 +240,10 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
       { "TargetHandle", "handle", NULL },
       { "ChannelType", "channel-type", NULL },
       { "Interfaces", "interfaces", NULL },
+      { "TargetID", "target-id", NULL },
+      { "Requested", "requested", NULL },
+      { "InitiatorHandle", "initiator-handle", NULL },
+      { "InitiatorID", "initiator-id", NULL },
       { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
@@ -235,16 +276,40 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
   param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
       "Connection object that owns this channel",
       TP_TYPE_BASE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NAME);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "Additional Channel.Interface.* interfaces",
       G_TYPE_STRV,
-      G_PARAM_READABLE |
-      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NAME);
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
+
+  param_spec = g_param_spec_string ("target-id", "Peer's ID",
+      "The string obtained by inspecting the target handle",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TARGET_ID, param_spec);
+
+  param_spec = g_param_spec_uint ("initiator-handle", "Initiator's handle",
+      "The contact who initiated the channel",
+      0, G_MAXUINT32, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIATOR_HANDLE,
+      param_spec);
+
+  param_spec = g_param_spec_string ("initiator-id", "Initiator's ID",
+      "The string obtained by inspecting the initiator-handle",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIATOR_ID,
+      param_spec);
+
+  param_spec = g_param_spec_boolean ("requested", "Requested?",
+      "True if this channel was requested by the local user",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
 
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleEchoChannelClass, text_class));
