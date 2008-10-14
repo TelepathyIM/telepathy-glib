@@ -1079,9 +1079,9 @@ channel_closed (TfChannel *chan, gpointer user_data)
 
 static void
 close_one_stream (TfChannel *chan G_GNUC_UNUSED,
-                        guint stream_id G_GNUC_UNUSED,
-                        TfStream *stream,
-                        gpointer user_data)
+    guint stream_id G_GNUC_UNUSED,
+    TfStream *stream,
+    gpointer user_data)
 {
   const gchar *message = (const gchar *) user_data;
 
@@ -1108,8 +1108,8 @@ close_all_streams (TpStreamEngine *self, const gchar *message)
 
 static gboolean
 bus_async_handler (GstBus *bus G_GNUC_UNUSED,
-                   GstMessage *message,
-                   gpointer data)
+    GstMessage *message,
+    gpointer data)
 {
   TpStreamEngine *engine = TP_STREAM_ENGINE (data);
   TpStreamEnginePrivate *priv = engine->priv;
