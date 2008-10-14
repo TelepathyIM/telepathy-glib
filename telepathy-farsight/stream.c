@@ -188,9 +188,9 @@ tf_stream_init (TfStream *self)
 
 static void
 tf_stream_get_property (GObject    *object,
-                                      guint       property_id,
-                                      GValue     *value,
-                                      GParamSpec *pspec)
+    guint       property_id,
+    GValue     *value,
+    GParamSpec *pspec)
 {
   TfStream *self = TF_STREAM (object);
 
@@ -236,9 +236,9 @@ tf_stream_get_property (GObject    *object,
 
 static void
 tf_stream_set_property (GObject      *object,
-                                      guint         property_id,
-                                      const GValue *value,
-                                      GParamSpec   *pspec)
+    guint         property_id,
+    const GValue *value,
+    GParamSpec   *pspec)
 {
   TfStream *self = TF_STREAM (object);
 
@@ -285,8 +285,8 @@ tf_stream_set_property (GObject      *object,
 
 static GObject *
 tf_stream_constructor (GType type,
-                                     guint n_props,
-                                     GObjectConstructParam *props)
+    guint n_props,
+    GObjectConstructParam *props)
 {
   GObject *obj;
   TfStream *stream;
@@ -696,9 +696,9 @@ tf_stream_class_init (TfStreamClass *klass)
 /* dummy callback handler for async calling calls with no return values */
 static void
 async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                       const GError *error,
-                       gpointer user_data,
-                       GObject *weak_object)
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
   TfStream *self = TF_STREAM (weak_object);
 
@@ -934,7 +934,7 @@ tp_media_type_to_fs (TpMediaStreamType type)
  */
 static GPtrArray *
 fs_codecs_to_tp (TfStream *stream,
-                 const GList *codecs)
+    const GList *codecs)
 {
   GPtrArray *tp_codecs;
   const GList *el;
@@ -998,10 +998,10 @@ fs_codecs_to_tp (TfStream *stream,
 
 static void
 add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                      const gchar *candidate,
-                      const GPtrArray *transports,
-                      gpointer user_data G_GNUC_UNUSED,
-                      GObject *object)
+    const gchar *candidate,
+    const GPtrArray *transports,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfStream *self = TF_STREAM (object);
   GError *error = NULL;
@@ -1021,9 +1021,9 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static void
 remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                         const gchar *candidate G_GNUC_UNUSED,
-                         gpointer user_data G_GNUC_UNUSED,
-                         GObject *object G_GNUC_UNUSED)
+    const gchar *candidate G_GNUC_UNUSED,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object G_GNUC_UNUSED)
 {
   TfStream *self = TF_STREAM (object);
 
@@ -1033,10 +1033,10 @@ remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static void
 set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                           const gchar *native_candidate,
-                           const gchar *remote_candidate,
-                           gpointer user_data G_GNUC_UNUSED,
-                           GObject *object)
+    const gchar *native_candidate,
+    const gchar *remote_candidate,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   /*
   TfStream *self = TF_STREAM (object);
@@ -1059,9 +1059,9 @@ set_active_candidate_pair (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static void
 set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                           const GPtrArray *candidates,
-                           gpointer user_data G_GNUC_UNUSED,
-                           GObject *object)
+    const GPtrArray *candidates,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfStream *self = TF_STREAM (object);
   guint i;
@@ -1109,9 +1109,9 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 
 static void
 set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                   const GPtrArray *codecs,
-                   gpointer user_data G_GNUC_UNUSED,
-                   GObject *object)
+    const GPtrArray *codecs,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfStream *self = TF_STREAM (object);
   GValueArray *codec;
@@ -1179,9 +1179,9 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static void
 set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                    gboolean play,
-                    gpointer user_data G_GNUC_UNUSED,
-                    GObject *object)
+    gboolean play,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfStream *self = TF_STREAM (object);
   FsStreamDirection current_direction;
@@ -1232,9 +1232,9 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static void
 set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                    gboolean send,
-                    gpointer user_data G_GNUC_UNUSED,
-                    GObject *object)
+    gboolean send,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfStream *self = TF_STREAM (object);
   FsStreamDirection current_direction;
@@ -1329,9 +1329,9 @@ tf_stream_free_resource (TfStream *self,
 
 static void
 set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                 gboolean held,
-                 gpointer user_data G_GNUC_UNUSED,
-                 GObject *object)
+    gboolean held,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfStream *self = TF_STREAM (object);
 
@@ -1383,9 +1383,9 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static void
 start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                       guchar event,
-                       gpointer user_data G_GNUC_UNUSED,
-                       GObject *object)
+    guchar event,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfStream *self = TF_STREAM (object);
 
@@ -1402,8 +1402,8 @@ start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 static void
 stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                      gpointer user_data G_GNUC_UNUSED,
-                      GObject *object)
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfStream *self = TF_STREAM (object);
 
@@ -1480,10 +1480,10 @@ cb_fs_new_active_candidate_pair (TfStream *self,
 
 static void
 invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
-                guint domain G_GNUC_UNUSED,
-                gint code G_GNUC_UNUSED,
-                gchar *message G_GNUC_UNUSED,
-                gpointer user_data)
+    guint domain G_GNUC_UNUSED,
+    gint code G_GNUC_UNUSED,
+    gchar *message G_GNUC_UNUSED,
+    gpointer user_data)
 {
   TfStream *stream = TF_STREAM (user_data);
 

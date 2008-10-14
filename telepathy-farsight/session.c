@@ -69,9 +69,9 @@ tf_session_init (TfSession *self)
 
 static void
 tf_session_get_property (GObject    *object,
-                                       guint       property_id,
-                                       GValue     *value,
-                                       GParamSpec *pspec)
+    guint       property_id,
+    GValue     *value,
+    GParamSpec *pspec)
 {
   TfSession *self = TF_SESSION (object);
 
@@ -97,9 +97,9 @@ tf_session_get_property (GObject    *object,
 
 static void
 tf_session_set_property (GObject      *object,
-                                       guint         property_id,
-                                       const GValue *value,
-                                       GParamSpec   *pspec)
+    guint         property_id,
+    const GValue *value,
+    GParamSpec   *pspec)
 {
   TfSession *self = TF_SESSION (object);
 
@@ -130,8 +130,8 @@ static void invalidated_cb (TpMediaSessionHandler *proxy, guint domain,
 
 static GObject *
 tf_session_constructor (GType type,
-                                      guint n_props,
-                                      GObjectConstructParam *props)
+    guint n_props,
+    GObjectConstructParam *props)
 {
   GObject *obj;
   TfSession *self;
@@ -291,9 +291,9 @@ tf_session_class_init (TfSessionClass *klass)
 /* dummy callback handler for async calling calls with no return values */
 static void
 dummy_callback (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
-                const GError *error,
-                gpointer user_data,
-                GObject *weak_object G_GNUC_UNUSED)
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
 {
   if (error != NULL)
     {
@@ -303,10 +303,10 @@ dummy_callback (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
 
 static void
 invalidated_cb (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
-                guint domain G_GNUC_UNUSED,
-                gint code G_GNUC_UNUSED,
-                gchar *message G_GNUC_UNUSED,
-                gpointer user_data)
+    guint domain G_GNUC_UNUSED,
+    gint code G_GNUC_UNUSED,
+    gchar *message G_GNUC_UNUSED,
+    gpointer user_data)
 {
   TfSession *self = TF_SESSION (user_data);
 
@@ -324,12 +324,12 @@ invalidated_cb (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
 
 static void
 new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
-                          const gchar *object_path,
-                          guint stream_id,
-                          guint media_type,
-                          guint direction,
-                          gpointer user_data G_GNUC_UNUSED,
-                          GObject *object)
+    const gchar *object_path,
+    guint stream_id,
+    guint media_type,
+    guint direction,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfSession *self = TF_SESSION (object);
 
@@ -342,8 +342,8 @@ new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
 
 TfSession *
 tf_session_new (TpMediaSessionHandler *proxy,
-                              const gchar *conference_type,
-                              GError **error)
+    const gchar *conference_type,
+    GError **error)
 {
   TfSession *self;
 

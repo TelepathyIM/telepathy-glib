@@ -146,9 +146,9 @@ static void get_session_handlers_reply (TpChannel *channel_proxy,
 
 static void
 cb_properties_changed (TpProxy *proxy G_GNUC_UNUSED,
-                       const GPtrArray *structs,
-                       gpointer user_data G_GNUC_UNUSED,
-                       GObject *object)
+    const GPtrArray *structs,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfChannel *self = TF_CHANNEL (object);
   guint i;
@@ -216,10 +216,10 @@ cb_properties_got (TpProxy *proxy,
 
 static void
 cb_properties_listed (TpProxy *proxy,
-                      const GPtrArray *structs,
-                      const GError *error,
-                      gpointer user_data G_GNUC_UNUSED,
-                      GObject *object)
+    const GPtrArray *structs,
+    const GError *error,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *object)
 {
   TfChannel *self = TF_CHANNEL (object);
   guint i;
@@ -334,8 +334,8 @@ channel_ready (TpChannel *channel_proxy,
 
 static GObject *
 tf_channel_constructor (GType type,
-                                      guint n_props,
-                                      GObjectConstructParam *props)
+    guint n_props,
+    GObjectConstructParam *props)
 {
   GObject *obj;
   TfChannel *self;
@@ -592,11 +592,11 @@ stream_closed_cb (TfStream *stream,
 
 static void
 new_stream_cb (TfSession *session,
-               gchar *object_path,
-               guint stream_id,
-               TpMediaStreamType media_type,
-               TpMediaStreamDirection direction,
-               gpointer user_data)
+    gchar *object_path,
+    guint stream_id,
+    TpMediaStreamType media_type,
+    TpMediaStreamDirection direction,
+    gpointer user_data)
 {
   TfChannel *self = TF_CHANNEL (user_data);
   TfStream *stream;
@@ -688,8 +688,8 @@ session_invalidated_cb (TfSession *session, gpointer user_data)
 
 static void
 add_session (TfChannel *self,
-             const gchar *object_path,
-             const gchar *session_type)
+    const gchar *object_path,
+    const gchar *session_type)
 {
   TfSession *session;
   GError *error = NULL;
@@ -740,10 +740,10 @@ add_session (TfChannel *self,
 
 static void
 new_media_session_handler (TpChannel *channel_proxy G_GNUC_UNUSED,
-                           const gchar *session_handler_path,
-                           const gchar *type,
-                           gpointer user_data G_GNUC_UNUSED,
-                           GObject *weak_object)
+    const gchar *session_handler_path,
+    const gchar *type,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *weak_object)
 {
   TfChannel *self = TF_CHANNEL (weak_object);
 
@@ -777,10 +777,10 @@ shutdown_channel (TfChannel *self)
 
 static void
 channel_invalidated (TpChannel *channel_proxy,
-                     guint domain,
-                     gint code,
-                     gchar *message,
-                     TfChannel *self)
+    guint domain,
+    gint code,
+    gchar *message,
+    TfChannel *self)
 {
   GError e = { domain, code, message };
 
@@ -799,10 +799,10 @@ channel_invalidated (TpChannel *channel_proxy,
 
 static void
 get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
-                            const GPtrArray *session_handlers,
-                            const GError *error,
-                            gpointer user_data G_GNUC_UNUSED,
-                            GObject *weak_object)
+    const GPtrArray *session_handlers,
+    const GError *error,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *weak_object)
 {
   TfChannel *self = TF_CHANNEL (weak_object);
   guint i;
@@ -877,12 +877,12 @@ tf_channel_new_from_proxy (TpChannel *channel_proxy)
 
 TfChannel *
 tf_channel_new (TpDBusDaemon *dbus_daemon,
-                              const gchar *bus_name,
-                              const gchar *connection_path,
-                              const gchar *channel_path,
-                              guint handle_type,
-                              guint handle,
-                              GError **error)
+    const gchar *bus_name,
+    const gchar *connection_path,
+    const gchar *channel_path,
+    guint handle_type,
+    guint handle,
+    GError **error)
 {
   TpConnection *connection;
   TpChannel *channel_proxy;
@@ -927,8 +927,8 @@ tf_channel_new (TpDBusDaemon *dbus_daemon,
 
 void
 tf_channel_error (TfChannel *chan,
-                                guint error,
-                                const gchar *message)
+    guint error,
+    const gchar *message)
 {
   guint i;
 
@@ -966,7 +966,7 @@ tf_channel_error (TfChannel *chan,
 
 TfStream *
 tf_channel_lookup_stream (TfChannel *chan,
-                                        guint stream_id)
+    guint stream_id)
 {
   if (stream_id >= chan->priv->streams->len)
     return NULL;
@@ -984,8 +984,8 @@ tf_channel_lookup_stream (TfChannel *chan,
  */
 void
 tf_channel_foreach_stream (TfChannel *chan,
-                                         TfChannelStreamFunc func,
-                                         gpointer user_data)
+    TfChannelStreamFunc func,
+    gpointer user_data)
 {
   guint i;
 

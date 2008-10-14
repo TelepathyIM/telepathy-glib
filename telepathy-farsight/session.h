@@ -57,8 +57,8 @@ GType tf_session_get_type (void);
 
 TfSession *
 tf_session_new (TpMediaSessionHandler *proxy,
-                              const gchar *conference_type,
-                              GError **error);
+    const gchar *conference_type,
+    GError **error);
 
 gboolean tf_session_bus_message (TfSession *session,
     GstMessage *message);
