@@ -1592,7 +1592,7 @@ _preview_window_plug_deleted (TpStreamEngineVideoPreview *preview,
  */
 static void
 tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
-                                        DBusGMethodInvocation *context)
+    DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   GError *error = NULL;
@@ -1645,8 +1645,8 @@ tp_stream_engine_create_preview_window (StreamEngineSvcStreamEngine *iface,
 
 static void
 handler_result (TfChannel *chan G_GNUC_UNUSED,
-                GError *error,
-                DBusGMethodInvocation *context)
+    GError *error,
+    DBusGMethodInvocation *context)
 {
   if (error == NULL)
     stream_engine_svc_stream_engine_return_from_attach_to_channel (context);
@@ -1662,13 +1662,13 @@ handler_result (TfChannel *chan G_GNUC_UNUSED,
  */
 static void
 tp_stream_engine_attach_to_channel (StreamEngineSvcStreamEngine *iface,
-                                    const gchar *bus_name,
-                                    const gchar *connection,
-                                    const gchar *channel_type,
-                                    const gchar *channel,
-                                    guint handle_type,
-                                    guint handle,
-                                    DBusGMethodInvocation *context)
+    const gchar *bus_name,
+    const gchar *connection,
+    const gchar *channel_type,
+    const gchar *channel,
+    guint handle_type,
+    guint handle,
+    DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TfChannel *chan = NULL;
@@ -1745,9 +1745,9 @@ tp_stream_engine_register (TpStreamEngine *self)
 
 static TfStream *
 _lookup_stream (TpStreamEngine *self,
-                const gchar *path,
-                guint stream_id,
-                GError **error)
+    const gchar *path,
+    guint stream_id,
+    GError **error)
 {
   TfChannel *channel;
   TfStream *stream;
@@ -1783,10 +1783,10 @@ _lookup_stream (TpStreamEngine *self,
 
 static void
 tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
-                             const gchar *channel_path,
-                             guint stream_id,
-                             gboolean mute_state,
-                             DBusGMethodInvocation *context)
+    const gchar *channel_path,
+    guint stream_id,
+    gboolean mute_state,
+    DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TfStream *stream;
@@ -1833,10 +1833,10 @@ tp_stream_engine_mute_input (StreamEngineSvcStreamEngine *iface,
 
 static void
 tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
-                             const gchar *channel_path,
-                             guint stream_id,
-                             gboolean mute_state,
-                             DBusGMethodInvocation *context)
+    const gchar *channel_path,
+    guint stream_id,
+    gboolean mute_state,
+    DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TfStream *stream;
@@ -1884,10 +1884,10 @@ tp_stream_engine_mute_output (StreamEngineSvcStreamEngine *iface,
  */
 static void
 tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
-                                    const gchar *channel_path,
-                                    guint stream_id,
-                                    guint volume,
-                                    DBusGMethodInvocation *context)
+    const gchar *channel_path,
+    guint stream_id,
+    guint volume,
+    DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TfStream *stream;
@@ -1936,10 +1936,10 @@ tp_stream_engine_set_output_volume (StreamEngineSvcStreamEngine *iface,
  */
 static void
 tp_stream_engine_set_input_volume (StreamEngineSvcStreamEngine *iface,
-                                    const gchar *channel_path,
-                                    guint stream_id,
-                                    guint volume,
-                                    DBusGMethodInvocation *context)
+    const gchar *channel_path,
+    guint stream_id,
+    guint volume,
+    DBusGMethodInvocation *context)
 {
   TpStreamEngine *self = TP_STREAM_ENGINE (iface);
   TfStream *stream;
@@ -2066,7 +2066,7 @@ tp_stream_engine_get ()
  */
 static void
 tp_stream_engine_shutdown (StreamEngineSvcStreamEngine *iface,
-                           DBusGMethodInvocation *context)
+    DBusGMethodInvocation *context)
 {
   g_debug ("%s: Emitting shutdown signal", G_STRFUNC);
   g_signal_emit (iface, signals[SHUTDOWN_REQUESTED], 0);
