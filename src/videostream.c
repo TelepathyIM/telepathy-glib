@@ -380,6 +380,9 @@ tp_stream_engine_video_stream_finalize (GObject *object)
   TpStreamEngineVideoStream *self = TP_STREAM_ENGINE_VIDEO_STREAM (object);
 
   g_mutex_free (self->priv->mutex);
+
+  if (G_OBJECT_CLASS (tp_stream_engine_video_stream_parent_class)->finalize)
+    G_OBJECT_CLASS (tp_stream_engine_video_stream_parent_class)->finalize (object);
 }
 
 static void
