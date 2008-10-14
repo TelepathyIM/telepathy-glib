@@ -447,9 +447,14 @@ tp_stream_engine_start_video_source (TpStreamEngine *self)
   state_ret = gst_element_set_state (self->priv->videosrc, GST_STATE_PLAYING);
 
   if (state_ret == GST_STATE_CHANGE_FAILURE)
-    g_error ("Error starting the video source");
-
-  return TRUE;
+    {
+      g_warning ("Error starting the video source");
+      return FALSE;
+    }
+  else
+    {
+      return TRUE;
+    }
 }
 
 
