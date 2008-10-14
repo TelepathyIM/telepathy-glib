@@ -107,7 +107,8 @@ make_video_sink (gboolean is_preview)
       if (is_preview) {
         /* hack to leave an xvimage free for the bigger output.
          * Most machines only have one xvport, so this helps in the majority of
-         * cases. More intelligent widgets
+         * cases. More intelligent widgets could do it for us? Maybe know
+         * how many Xv ports there are and do a more educated guess
          * */
         sink = gst_element_factory_make ("ximagesink", NULL);
       }
