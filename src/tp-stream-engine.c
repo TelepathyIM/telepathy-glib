@@ -37,8 +37,8 @@
 
 #include <gst/farsight/fs-element-added-notifier.h>
 
-#include <telepathy-farsight/channel.h>
-#include <telepathy-farsight/stream.h>
+#include "telepathy-farsight/channel.h"
+#include "telepathy-farsight/stream.h"
 
 #include "api/api.h"
 #include "audiostream.h"
