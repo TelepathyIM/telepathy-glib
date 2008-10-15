@@ -55,8 +55,9 @@ struct _ExampleCSHRoomChannelPrivate
   gchar *object_path;
   TpHandle handle;
 
-  gboolean closed:1;
-  gboolean disposed:1;
+  /* These are really booleans, but gboolean is signed. Thanks, GLib */
+  unsigned closed:1;
+  unsigned disposed:1;
 };
 
 
