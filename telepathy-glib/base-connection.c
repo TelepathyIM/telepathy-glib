@@ -303,13 +303,13 @@ struct _ChannelRequest
   guint handle_type;
   guint handle;
   /* always TRUE for CREATE; always FALSE for ENSURE */
-  gboolean suppress_handler : 1;
+  unsigned suppress_handler : 1;
 
   /* only meaningful for METHOD_ENSURE_CHANNEL; only true if this is the first
    * request to be satisfied with a particular channel, and no other request
    * satisfied by that channel has a different method.
    */
-  gboolean yours : 1;
+  unsigned yours : 1;
 };
 
 static ChannelRequest *
