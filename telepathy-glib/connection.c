@@ -712,7 +712,7 @@ tp_connection_get_status (TpConnection *self,
 typedef struct {
     GMainLoop *loop;
     TpProxyPendingCall *pc;
-    GError *connect_error;
+    GError *connect_error /* gets initialized */;
 } RunUntilReadyData;
 
 static void
