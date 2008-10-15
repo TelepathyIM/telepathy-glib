@@ -18,5 +18,6 @@ maintainer-upload-release:
 	test -f @PACKAGE@-@VERSION@.tar.gz.asc
 	gpg --verify @PACKAGE@-@VERSION@.tar.gz.asc
 	rsync -vzP @PACKAGE@-@VERSION@.tar.gz telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.gz
+	rsync -vzP @PACKAGE@-@VERSION@.tar.gz.asc telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.gz.asc
 
 ## vim:set ft=automake:
