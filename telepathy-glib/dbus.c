@@ -38,7 +38,7 @@
  * to provide extensibility, but in dbus-glib they're somewhat awkward to deal
  * with.
  *
- * These functions (tp_asv_*) provide convenient access to the values in such
+ * These functions provide convenient access to the values in such
  * a mapping.
  *
  * They also work around the fact that none of the #GHashTable public API
