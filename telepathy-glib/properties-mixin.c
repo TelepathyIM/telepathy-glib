@@ -116,7 +116,7 @@ tp_properties_mixin_get_offset_quark ()
  * class_init function like so:
  *
  * <informalexample><programlisting>
- * tp_properties_mixin_class_init ((GObjectClass *)klass,
+ * tp_properties_mixin_class_init ((GObjectClass *) klass,
  *                                 G_STRUCT_OFFSET (SomeObjectClass,
  *                                  properties_mixin));
  * </programlisting></informalexample>
@@ -156,7 +156,7 @@ tp_properties_mixin_class_init (GObjectClass *obj_cls,
  * instance init function like so:
  *
  * <informalexample><programlisting>
- * tp_properties_mixin_init ((GObject *)self,
+ * tp_properties_mixin_init ((GObject *) self,
  *                           G_STRUCT_OFFSET (SomeObject, properties_mixin),
  *                           self->contact_repo);
  * </programlisting></informalexample>
@@ -918,7 +918,7 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntSet *props)
     }
 
   tp_svc_properties_interface_emit_properties_changed (
-      (TpSvcPropertiesInterface *)obj, prop_arr);
+      (TpSvcPropertiesInterface *) obj, prop_arr);
 
   g_value_init (&prop_list, TP_ARRAY_TYPE_PROPERTY_VALUE_LIST);
   g_value_take_boxed (&prop_list, prop_arr);
@@ -996,7 +996,7 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntSet *props)
     }
 
   tp_svc_properties_interface_emit_property_flags_changed (
-      (TpSvcPropertiesInterface *)obj, prop_arr);
+      (TpSvcPropertiesInterface *) obj, prop_arr);
 
   g_value_init (&prop_list, TP_ARRAY_TYPE_PROPERTY_FLAGS_CHANGE_LIST);
   g_value_take_boxed (&prop_list, prop_arr);
@@ -1150,8 +1150,7 @@ set_properties (TpSvcPropertiesInterface *iface,
 void
 tp_properties_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcPropertiesInterfaceClass *klass =
-    (TpSvcPropertiesInterfaceClass *)g_iface;
+  TpSvcPropertiesInterfaceClass *klass = g_iface;
 
 #define IMPLEMENT(x) tp_svc_properties_interface_implement_##x (klass, x)
   IMPLEMENT(get_properties);
