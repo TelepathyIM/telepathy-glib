@@ -550,7 +550,7 @@ _tp_proxy_take_and_remap_error (TpProxy *self,
     }
   else
     {
-      GError *replacement;
+      GError *replacement = NULL;
       const gchar *dbus = dbus_g_error_get_name (error);
       GType proxy_type = TP_TYPE_PROXY;
       GType type;

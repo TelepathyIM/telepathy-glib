@@ -80,7 +80,7 @@ struct _TpProxyPendingCall {
 
     /* arguments for invoke_callback supplied by _take_results, by
      * cancellation or by the destroy signal */
-    GError *error;
+    GError *error /* implicitly initialized */;
     GValueArray *args;
 
     /* user-supplied arguments for invoke_callback */
