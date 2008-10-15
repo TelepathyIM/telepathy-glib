@@ -123,7 +123,7 @@ local_pending_info_new (TpHandleRepoIface *repo,
 static void
 local_pending_info_free (LocalPendingInfo *info)
 {
-  g_free ((gchar *)info->message);
+  g_free ((gchar *) info->message);
 
   if (info->actor != 0)
     tp_handle_unref (info->repo, info->actor);
@@ -418,7 +418,7 @@ tp_group_mixin_get_self_handle_async (TpSvcChannelInterfaceGroup *obj,
   guint ret;
   GError *error = NULL;
 
-  if (tp_group_mixin_get_self_handle ((GObject *)obj, &ret, &error))
+  if (tp_group_mixin_get_self_handle ((GObject *) obj, &ret, &error))
     {
       tp_svc_channel_interface_group_return_from_get_self_handle (
           context, ret);
@@ -460,7 +460,7 @@ tp_group_mixin_get_group_flags_async (TpSvcChannelInterfaceGroup *obj,
   guint ret;
   GError *error = NULL;
 
-  if (tp_group_mixin_get_group_flags ((GObject *)obj, &ret, &error))
+  if (tp_group_mixin_get_group_flags ((GObject *) obj, &ret, &error))
     {
       tp_svc_channel_interface_group_return_from_get_group_flags (
           context, ret);
@@ -550,7 +550,7 @@ tp_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
 {
   GError *error = NULL;
 
-  if (tp_group_mixin_add_members ((GObject *)obj, contacts, message, &error))
+  if (tp_group_mixin_add_members ((GObject *) obj, contacts, message, &error))
     {
       tp_svc_channel_interface_group_return_from_add_members (context);
     }
@@ -700,7 +700,7 @@ tp_group_mixin_remove_members_with_reason_async
 {
   GError *error = NULL;
 
-  if (tp_group_mixin_remove_members_with_reason ((GObject *)obj, contacts,
+  if (tp_group_mixin_remove_members_with_reason ((GObject *) obj, contacts,
         message, reason, &error))
     {
       tp_svc_channel_interface_group_return_from_remove_members_with_reason
@@ -721,7 +721,7 @@ tp_group_mixin_remove_members_async (TpSvcChannelInterfaceGroup *obj,
 {
   GError *error = NULL;
 
-  if (tp_group_mixin_remove_members_with_reason ((GObject *)obj, contacts,
+  if (tp_group_mixin_remove_members_with_reason ((GObject *) obj, contacts,
         message, TP_CHANNEL_GROUP_CHANGE_REASON_NONE, &error))
     {
       tp_svc_channel_interface_group_return_from_remove_members (context);
@@ -762,7 +762,7 @@ tp_group_mixin_get_members_async (TpSvcChannelInterfaceGroup *obj,
   GArray *ret;
   GError *error = NULL;
 
-  if (tp_group_mixin_get_members ((GObject *)obj, &ret, &error))
+  if (tp_group_mixin_get_members ((GObject *) obj, &ret, &error))
     {
       tp_svc_channel_interface_group_return_from_get_members (
           context, ret);
@@ -804,7 +804,7 @@ tp_group_mixin_get_local_pending_members_async (TpSvcChannelInterfaceGroup *obj,
   GArray *ret;
   GError *error = NULL;
 
-  if (tp_group_mixin_get_local_pending_members ((GObject *)obj, &ret, &error))
+  if (tp_group_mixin_get_local_pending_members ((GObject *) obj, &ret, &error))
     {
       tp_svc_channel_interface_group_return_from_get_local_pending_members (
           context, ret);
@@ -827,7 +827,7 @@ local_pending_members_with_info_foreach (TpHandleSet *set,
                                          TpHandle i,
                                          gpointer userdata)
 {
-  _mixin_and_array_of_info *data = (_mixin_and_array_of_info *)userdata;
+  _mixin_and_array_of_info *data = userdata;
   TpGroupMixinPrivate *priv = data->mixin->priv;
   GType info_type = TP_STRUCT_TYPE_LOCAL_PENDING_INFO;
   GValue entry = { 0, };
@@ -888,8 +888,8 @@ tp_group_mixin_get_local_pending_members_with_info_async (
   GPtrArray *ret;
   GError *error = NULL;
 
-  if (tp_group_mixin_get_local_pending_members_with_info ((GObject *)obj, &ret,
-        &error))
+  if (tp_group_mixin_get_local_pending_members_with_info ((GObject *) obj,
+        &ret, &error))
     {
       guint i;
       tp_svc_channel_interface_group_return_from_get_local_pending_members_with_info (
@@ -936,7 +936,8 @@ tp_group_mixin_get_remote_pending_members_async (TpSvcChannelInterfaceGroup *obj
   GArray *ret;
   GError *error = NULL;
 
-  if (tp_group_mixin_get_remote_pending_members ((GObject *)obj, &ret, &error))
+  if (tp_group_mixin_get_remote_pending_members ((GObject *) obj,
+        &ret, &error))
     {
       tp_svc_channel_interface_group_return_from_get_remote_pending_members (
           context, ret);
@@ -987,7 +988,7 @@ tp_group_mixin_get_all_members_async (TpSvcChannelInterfaceGroup *obj,
   GArray *mem, *local, *remote;
   GError *error = NULL;
 
-  if (tp_group_mixin_get_all_members ((GObject *)obj, &mem, &local, &remote,
+  if (tp_group_mixin_get_all_members ((GObject *) obj, &mem, &local, &remote,
         &error))
     {
       tp_svc_channel_interface_group_return_from_get_all_members (
@@ -1078,7 +1079,8 @@ tp_group_mixin_get_handle_owners_async (TpSvcChannelInterfaceGroup *obj,
   GArray *ret;
   GError *error = NULL;
 
-  if (tp_group_mixin_get_handle_owners ((GObject *)obj, handles, &ret, &error))
+  if (tp_group_mixin_get_handle_owners ((GObject *) obj, handles,
+        &ret, &error))
     {
       tp_svc_channel_interface_group_return_from_get_handle_owners (
           context, ret);
@@ -1236,7 +1238,7 @@ static void
 local_pending_added_foreach (guint i,
                              gpointer userdata)
 {
-  _mixin_and_info *data = (_mixin_and_info *)userdata;
+  _mixin_and_info *data = userdata;
   TpGroupMixinPrivate *priv = data->mixin->priv;
 
   g_hash_table_insert (priv->local_pending_info,
@@ -1680,8 +1682,7 @@ remove_handle_owners_if_exist (GObject *obj,
 void
 tp_group_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcChannelInterfaceGroupClass *klass =
-    (TpSvcChannelInterfaceGroupClass *)g_iface;
+  TpSvcChannelInterfaceGroupClass *klass = g_iface;
 
 #define IMPLEMENT(x) tp_svc_channel_interface_group_implement_##x (klass,\
     tp_group_mixin_##x##_async)
@@ -1969,7 +1970,7 @@ tp_external_group_mixin_get_dbus_property (GObject *object,
 }
 
 #define EXTERNAL_OR_DIE(var) \
-    GObject *var = TP_EXTERNAL_GROUP_MIXIN_OBJ ((GObject *)obj); \
+    GObject *var = TP_EXTERNAL_GROUP_MIXIN_OBJ ((GObject *) obj); \
     \
     if (var == NULL) \
       { \
@@ -1987,7 +1988,7 @@ tp_external_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
                                            DBusGMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
-  tp_group_mixin_add_members_async ((TpSvcChannelInterfaceGroup *)group,
+  tp_group_mixin_add_members_async ((TpSvcChannelInterfaceGroup *) group,
       contacts, message, context);
 }
 
@@ -1996,7 +1997,7 @@ tp_external_group_mixin_get_self_handle_async (TpSvcChannelInterfaceGroup *obj,
                                                DBusGMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_self_handle_async ((TpSvcChannelInterfaceGroup *)group,
+  tp_group_mixin_get_self_handle_async ((TpSvcChannelInterfaceGroup *) group,
       context);
 }
 
@@ -2005,7 +2006,7 @@ tp_external_group_mixin_get_group_flags_async (TpSvcChannelInterfaceGroup *obj,
                                                DBusGMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_group_flags_async ((TpSvcChannelInterfaceGroup *)group,
+  tp_group_mixin_get_group_flags_async ((TpSvcChannelInterfaceGroup *) group,
       context);
 }
 
@@ -2014,7 +2015,7 @@ tp_external_group_mixin_get_members_async (TpSvcChannelInterfaceGroup *obj,
                                                DBusGMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_members_async ((TpSvcChannelInterfaceGroup *)group,
+  tp_group_mixin_get_members_async ((TpSvcChannelInterfaceGroup *) group,
       context);
 }
 
@@ -2024,7 +2025,7 @@ tp_external_group_mixin_get_local_pending_members_async
 {
   EXTERNAL_OR_DIE (group)
   tp_group_mixin_get_local_pending_members_async
-      ((TpSvcChannelInterfaceGroup *)group, context);
+      ((TpSvcChannelInterfaceGroup *) group, context);
 }
 
 static void
@@ -2033,7 +2034,7 @@ tp_external_group_mixin_get_local_pending_members_with_info_async
 {
   EXTERNAL_OR_DIE (group)
   tp_group_mixin_get_local_pending_members_with_info_async
-      ((TpSvcChannelInterfaceGroup *)group, context);
+      ((TpSvcChannelInterfaceGroup *) group, context);
 }
 
 static void
@@ -2042,7 +2043,7 @@ tp_external_group_mixin_get_remote_pending_members_async
 {
   EXTERNAL_OR_DIE (group)
   tp_group_mixin_get_remote_pending_members_async
-      ((TpSvcChannelInterfaceGroup *)group, context);
+      ((TpSvcChannelInterfaceGroup *) group, context);
 }
 
 static void
@@ -2050,7 +2051,7 @@ tp_external_group_mixin_get_all_members_async (TpSvcChannelInterfaceGroup *obj,
                                                DBusGMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_all_members_async ((TpSvcChannelInterfaceGroup *)group,
+  tp_group_mixin_get_all_members_async ((TpSvcChannelInterfaceGroup *) group,
       context);
 }
 
@@ -2061,7 +2062,7 @@ tp_external_group_mixin_get_handle_owners_async
      DBusGMethodInvocation *context)
 {
   EXTERNAL_OR_DIE (group)
-  tp_group_mixin_get_handle_owners_async ((TpSvcChannelInterfaceGroup *)group,
+  tp_group_mixin_get_handle_owners_async ((TpSvcChannelInterfaceGroup *) group,
       handles, context);
 }
 
@@ -2073,7 +2074,7 @@ tp_external_group_mixin_remove_members_async (TpSvcChannelInterfaceGroup *obj,
 {
   EXTERNAL_OR_DIE (group)
   tp_group_mixin_remove_members_with_reason_async
-      ((TpSvcChannelInterfaceGroup *)group, contacts, message,
+      ((TpSvcChannelInterfaceGroup *) group, contacts, message,
        TP_CHANNEL_GROUP_CHANGE_REASON_NONE, context);
 }
 
@@ -2088,7 +2089,7 @@ tp_external_group_mixin_remove_members_with_reason_async
 {
   EXTERNAL_OR_DIE (group)
   tp_group_mixin_remove_members_with_reason_async
-      ((TpSvcChannelInterfaceGroup *)group, contacts, message, reason,
+      ((TpSvcChannelInterfaceGroup *) group, contacts, message, reason,
        context);
 }
 /**
@@ -2106,8 +2107,7 @@ void
 tp_external_group_mixin_iface_init (gpointer g_iface,
                                     gpointer iface_data)
 {
-  TpSvcChannelInterfaceGroupClass *klass =
-    (TpSvcChannelInterfaceGroupClass *)g_iface;
+  TpSvcChannelInterfaceGroupClass *klass = g_iface;
 
 #define IMPLEMENT(x) tp_svc_channel_interface_group_implement_##x (klass,\
     tp_external_group_mixin_##x##_async)
