@@ -165,7 +165,7 @@ typedef struct __foreach_data
 static void
 foreach_helper (guint i, gpointer userdata)
 {
-  _foreach_data *data = (_foreach_data*) userdata;
+  _foreach_data *data = userdata;
 
   data->func (data->set, i, data->userdata);
 }
