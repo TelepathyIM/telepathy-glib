@@ -283,7 +283,7 @@ enum
 static guint signals[N_SIGNALS] = {0};
 
 #define TP_BASE_CONNECTION_GET_PRIVATE(obj) \
-    ((TpBaseConnectionPrivate *)obj->priv)
+    ((TpBaseConnectionPrivate *) obj->priv)
 
 typedef struct _ChannelRequest ChannelRequest;
 
@@ -515,7 +515,7 @@ tp_base_connection_dispose (GObject *object)
     {
       if (priv->handles[i])
         {
-          g_object_unref ((GObject *)priv->handles[i]);
+          g_object_unref ((GObject *) priv->handles[i]);
           priv->handles[i] = NULL;
         }
     }
@@ -1192,7 +1192,7 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
           (GCallback) manager_channel_closed_cb, self);
     }
 
-  return (GObject *)self;
+  return (GObject *) self;
 }
 
 
@@ -2755,7 +2755,7 @@ tp_base_connection_add_interfaces (TpBaseConnection *self,
 static void
 conn_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcConnectionClass *klass = (TpSvcConnectionClass *)g_iface;
+  TpSvcConnectionClass *klass = g_iface;
 
 #define IMPLEMENT(prefix,x) tp_svc_connection_implement_##x (klass, \
     tp_base_connection_##prefix##x)
