@@ -250,7 +250,7 @@ struct _TpProxyPrivate {
      * the DBusGProxy has not been needed yet */
     GData *interfaces;
 
-    gboolean dispose_has_run:1;
+    unsigned dispose_has_run:1;
 };
 
 G_DEFINE_TYPE (TpProxy,

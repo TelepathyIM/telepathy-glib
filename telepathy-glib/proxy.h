@@ -74,7 +74,7 @@ struct _TpProxyClass {
 
     GQuark interface;
 
-    gboolean must_have_unique_name:1;
+    unsigned must_have_unique_name:1;
     guint _reserved_flags:31;
 
     GCallback _reserved[4];

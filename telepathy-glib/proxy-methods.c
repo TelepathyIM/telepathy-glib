@@ -99,12 +99,12 @@ struct _TpProxyPendingCall {
     guint idle_source;
 
     /* If TRUE, invoke the callback even on cancellation */
-    gboolean cancel_must_raise:1;
+    unsigned cancel_must_raise:1;
 
     /* If TRUE, the idle_invoke callback has either run or been cancelled */
-    gboolean idle_completed:1;
+    unsigned idle_completed:1;
     /* If TRUE, dbus-glib no longer holds a reference to us */
-    gboolean dbus_completed:1;
+    unsigned dbus_completed:1;
 
     /* Marker to indicate that this is, in fact, a valid TpProxyPendingCall */
     gconstpointer priv;
