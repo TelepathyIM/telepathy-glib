@@ -45,8 +45,8 @@ struct _TestTextChannelNullPrivate
   gchar *object_path;
   TpHandle handle;
 
-  gboolean closed:1;
-  gboolean disposed:1;
+  unsigned closed:1;
+  unsigned disposed:1;
 };
 
 static void
