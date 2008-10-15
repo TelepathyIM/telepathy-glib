@@ -88,8 +88,8 @@ struct _TpConnectionManager {
     const TpConnectionManagerProtocol * const *protocols;
 
     /* These are really booleans, but gboolean is signed. Thanks, GLib */
-    unsigned running:1;
-    unsigned always_introspect:1;
+    unsigned int running:1;
+    unsigned int always_introspect:1;
     TpCMInfoSource info_source:2;
     guint reserved_flags:28;
 
