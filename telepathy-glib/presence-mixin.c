@@ -148,7 +148,7 @@ tp_presence_status_free (TpPresenceStatus *status)
   if (status->optional_arguments)
     g_hash_table_destroy (status->optional_arguments);
 
-  g_slice_free(TpPresenceStatus, status);
+  g_slice_free (TpPresenceStatus, status);
 }
 
 
@@ -206,7 +206,7 @@ tp_presence_mixin_get_offset_quark ()
  * class_init function like so:
  *
  * <informalexample><programlisting>
- * tp_presence_mixin_class_init ((GObjectClass *)klass,
+ * tp_presence_mixin_class_init ((GObjectClass *) klass,
  *                               G_STRUCT_OFFSET (SomeObjectClass,
  *                                                presence_mixin));
  * </programlisting></informalexample>
@@ -252,7 +252,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
  * instance init function like so:
  *
  * <informalexample><programlisting>
- * tp_presence_mixin_init ((GObject *)self,
+ * tp_presence_mixin_init ((GObject *) self,
  *                         G_STRUCT_OFFSET (SomeObject, presence_mixin));
  * </programlisting></informalexample>
  */
@@ -537,7 +537,7 @@ tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
   if (!contact_statuses)
     {
       dbus_g_method_return_error (context, error);
-      g_error_free(error);
+      g_error_free (error);
       return;
     }
 
@@ -594,7 +594,7 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
 
   for (i=0; mixin_cls->statuses[i].name != NULL; i++)
     {
-      if (mixin_cls->status_available && !mixin_cls->status_available(obj, i))
+      if (mixin_cls->status_available && !mixin_cls->status_available (obj, i))
         continue;
 
       status = g_value_array_new (5);
@@ -621,7 +621,7 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
       g_value_set_static_boxed (g_value_array_get_nth (status, 3),
           get_statuses_arguments (mixin_cls->statuses[i].optional_arguments));
 
-      g_hash_table_insert (ret, (gchar*) mixin_cls->statuses[i].name,
+      g_hash_table_insert (ret, (gchar *) mixin_cls->statuses[i].name,
           status);
     }
 
@@ -680,7 +680,7 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
-  self_contacts = g_array_sized_new (TRUE, TRUE, sizeof(TpHandle), 1);
+  self_contacts = g_array_sized_new (TRUE, TRUE, sizeof (TpHandle), 1);
   g_array_append_val (self_contacts, conn->self_handle);
   self_contact_statuses = mixin_cls->get_contact_statuses (obj, self_contacts,
       &error);
@@ -774,7 +774,7 @@ tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
   if (!contact_statuses)
     {
       dbus_g_method_return_error (context, error);
-      g_error_free(error);
+      g_error_free (error);
       return;
     }
 
@@ -973,8 +973,7 @@ tp_presence_mixin_set_status (TpSvcConnectionInterfacePresence *iface,
 void
 tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcConnectionInterfacePresenceClass *klass =
-    (TpSvcConnectionInterfacePresenceClass *)g_iface;
+  TpSvcConnectionInterfacePresenceClass *klass = g_iface;
 
 #define IMPLEMENT(x) tp_svc_connection_interface_presence_implement_##x (klass,\
     tp_presence_mixin_##x)
@@ -1038,7 +1037,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
           gboolean message = FALSE;
 
           if (mixin_cls->status_available
-              && !mixin_cls->status_available(object, i))
+              && !mixin_cls->status_available (object, i))
             continue;
 
           specs = mixin_cls->statuses[i].optional_arguments;
@@ -1068,7 +1067,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
          g_value_init (g_value_array_get_nth (status, 2), G_TYPE_BOOLEAN);
          g_value_set_boolean (g_value_array_get_nth (status, 2), message);
 
-         g_hash_table_insert (ret, (gchar*) mixin_cls->statuses[i].name,
+         g_hash_table_insert (ret, (gchar *) mixin_cls->statuses[i].name,
              status);
        }
        g_value_take_boxed (value, ret);
@@ -1291,7 +1290,7 @@ tp_presence_mixin_simple_presence_get_presences (
   if (!contact_statuses)
     {
       dbus_g_method_return_error (context, error);
-      g_error_free(error);
+      g_error_free (error);
       return;
     }
 
@@ -1319,8 +1318,7 @@ void
 tp_presence_mixin_simple_presence_iface_init (gpointer g_iface,
                                               gpointer iface_data)
 {
-  TpSvcConnectionInterfaceSimplePresenceClass *klass =
-    (TpSvcConnectionInterfaceSimplePresenceClass *)g_iface;
+  TpSvcConnectionInterfaceSimplePresenceClass *klass = g_iface;
 
 #define IMPLEMENT(x) tp_svc_connection_interface_simple_presence_implement_##x\
  (klass, tp_presence_mixin_simple_presence_##x)
