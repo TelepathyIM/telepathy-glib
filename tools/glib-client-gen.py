@@ -813,8 +813,8 @@ class Generator(object):
 
             self.b('    %s*%s;' % (ctype, name))
 
-        self.b('    gboolean success:1;')
-        self.b('    gboolean completed:1;')
+        self.b('    unsigned success:1;')
+        self.b('    unsigned completed:1;')
         self.b('} _%s_%s_run_state_%s;'
                % (self.prefix_lc, iface_lc, member_lc))
 
