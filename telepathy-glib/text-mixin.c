@@ -138,7 +138,7 @@ tp_text_mixin_get_offset_quark ()
  * class_init function like so:
  *
  * <informalexample><programlisting>
- * tp_text_mixin_class_init ((GObjectClass *)klass,
+ * tp_text_mixin_class_init ((GObjectClass *) klass,
  *                           G_STRUCT_OFFSET (SomeObjectClass, text_mixin));
  * </programlisting></informalexample>
  */
@@ -168,7 +168,7 @@ tp_text_mixin_class_init (GObjectClass *obj_cls, glong offset)
  * instance init function like so:
  *
  * <informalexample><programlisting>
- * tp_text_mixin_init ((GObject *)self,
+ * tp_text_mixin_init ((GObject *) self,
  *                     G_STRUCT_OFFSET (SomeObject, text_mixin),
  *                     self->contact_repo);
  * </programlisting></informalexample>
