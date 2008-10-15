@@ -186,7 +186,7 @@ struct _TpConnectionManagerPrivate {
     guint introspect_idle_id;
 
     /* TRUE if we're waiting for ListProtocols */
-    gboolean listing_protocols:1;
+    unsigned listing_protocols:1;
 
     /* GPtrArray of TpConnectionManagerProtocol *. This is the implementation
      * for self->protocols.
@@ -1260,7 +1260,7 @@ typedef struct
   GDestroyNotify destroy;
   TpProxyPendingCall *pending_call;
   size_t base_len;
-  gboolean getting_names:1;
+  unsigned getting_names:1;
   guint refcount:2;
 } _ListContext;
 
