@@ -68,8 +68,8 @@ test_invalidated_while_invoking_signals_SOURCES = \
     invalidated-while-invoking-signals.c
 
 test_properties_LDADD = $(TP_GLIB_LIBS)
-test_properties_SOURCES = \
-    properties.c \
+test_properties_SOURCES = properties.c
+nodist_test_properties_SOURCES = \
     _gen/svc.h \
     _gen/svc.c
 
