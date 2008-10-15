@@ -194,7 +194,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnectionManager,
         service_iface_init))
 
 #define TP_BASE_CONNECTION_MANAGER_GET_PRIVATE(obj) \
-    ((TpBaseConnectionManagerPrivate *)obj->priv)
+    ((TpBaseConnectionManagerPrivate *) obj->priv)
 
 typedef struct _TpBaseConnectionManagerPrivate
 {
@@ -800,15 +800,15 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
       goto ERROR;
     }
 
-  conn = (cls->new_connection)(self, proto, params_present, params, &error);
+  conn = (cls->new_connection) (self, proto, params_present, params, &error);
   if (!conn)
     {
       goto ERROR;
     }
 
   /* register on bus and save bus name and object path */
-  if (!tp_base_connection_register ((TpBaseConnection *)conn,
-        cls->cm_dbus_name, &bus_name, &object_path, &error))
+  if (!tp_base_connection_register (conn, cls->cm_dbus_name,
+        &bus_name, &object_path, &error))
     {
       DEBUG ("failed: %s", error->message);
 
@@ -906,7 +906,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 static void
 service_iface_init (gpointer g_iface, gpointer iface_data)
 {
-  TpSvcConnectionManagerClass *klass = (TpSvcConnectionManagerClass *)g_iface;
+  TpSvcConnectionManagerClass *klass = g_iface;
 
 #define IMPLEMENT(x) tp_svc_connection_manager_implement_##x (klass, \
     tp_base_connection_manager_##x)
