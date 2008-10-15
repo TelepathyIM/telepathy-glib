@@ -124,7 +124,7 @@ struct _TpConnectionPrivate {
     /* GArray of GQuark */
     GArray *contact_attribute_interfaces;
 
-    gboolean ready:1;
+    unsigned ready:1;
 };
 
 enum
