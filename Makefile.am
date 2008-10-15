@@ -14,5 +14,10 @@ check-local::
 	egrep -A 5 '[F]IXME|[T]ODO|[X]XX' $(srcdir)/telepathy-glib/*.[ch] \
 		> FIXME.out || true
 
+maintainer-upload-release: _maintainer-upload-release-local
+_maintainer-upload-release-local: _maintainer-upload-release-check
+	rsync -rtvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
+	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib/
+
 include tools/lcov.am
 include tools/telepathy.am
