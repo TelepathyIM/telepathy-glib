@@ -199,7 +199,7 @@ gboolean
 tp_channel_is_ready (TpChannel *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), FALSE);
-  
+
   return self->priv->ready;
 }
 
