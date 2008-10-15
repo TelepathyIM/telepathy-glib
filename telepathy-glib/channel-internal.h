@@ -61,8 +61,9 @@ struct _TpChannelPrivate {
     /* guint => guint, NULL if not discovered yet */
     GHashTable *group_handle_owners;
 
-    gboolean ready:1;
-    gboolean have_group_flags:1;
+    /* These are really booleans, but gboolean is signed. Thanks, GLib */
+    unsigned ready:1;
+    unsigned have_group_flags:1;
 };
 
 /* channel.c internals */
