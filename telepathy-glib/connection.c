@@ -110,26 +110,6 @@ tp_errors_disconnected_quark (void)
  * Since: 0.7.1; structure layout visible since 0.7.12
  */
 
-typedef void (*TpConnectionProc) (TpConnection *self);
-
-struct _TpConnectionPrivate {
-    /* GArray of TpConnectionProc */
-    GArray *introspect_needed;
-
-    TpConnectionStatus status;
-    TpConnectionStatusReason status_reason;
-
-    TpConnectionAliasFlags alias_flags;
-
-    /* GArray of GQuark */
-    GArray *contact_attribute_interfaces;
-
-    /* TpHandle => weak ref to TpContact */
-    GHashTable *contacts;
-
-    unsigned ready:1;
-};
-
 enum
 {
   PROP_STATUS = 1,
@@ -1224,12 +1204,6 @@ tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
     return +1;
 
   return 0;
-}
-
-const GArray *
-_tp_connection_get_contact_attribute_interfaces (TpConnection *self)
-{
-  return self->priv->contact_attribute_interfaces;
 }
 
 
