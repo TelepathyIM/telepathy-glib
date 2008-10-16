@@ -8,6 +8,10 @@ noinst_PROGRAMS += telepathy-example-inspect-connection
 telepathy_example_inspect_connection_SOURCES = inspect-connection.c
 telepathy_example_inspect_connection_LDADD = $(ALL_LIBS)
 
+noinst_PROGRAMS += telepathy-example-inspect-contact
+telepathy_example_inspect_contact_SOURCES = inspect-contact.c
+telepathy_example_inspect_contact_LDADD = $(ALL_LIBS)
+
 noinst_PROGRAMS += telepathy-example-inspect-cm
 telepathy_example_inspect_cm_SOURCES = inspect-cm.c
 telepathy_example_inspect_cm_LDADD = $(ALL_LIBS)
