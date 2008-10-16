@@ -34,7 +34,7 @@
  * instance structure, and call tp_message_mixin_init() from your
  * constructor function, and tp_message_mixin_finalize() from your dispose
  * or finalize function. In the class_init function, call
- * tp_message_mixin_init_dbus_properties to hook this mixin into the D-Bus
+ * tp_message_mixin_init_dbus_properties() to hook this mixin into the D-Bus
  * properties mixin class.
  *
  * Also pass tp_message_mixin_text_iface_init() and
