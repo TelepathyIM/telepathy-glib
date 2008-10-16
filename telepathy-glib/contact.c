@@ -20,9 +20,12 @@
 
 #include <telepathy-glib/contact.h>
 
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
+#define DEBUG_FLAG TP_DEBUG_CONTACTS
 #include "telepathy-glib/connection-internal.h"
+#include "telepathy-glib/debug-internal.h"
 
 
 /**
@@ -1035,6 +1038,179 @@ contacts_inspect (ContactsContext *c)
 }
 
 
+static void
+contacts_requested_aliases (TpConnection *connection,
+                            const gchar **aliases,
+                            const GError *error,
+                            gpointer user_data,
+                            GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  if (error == NULL)
+    {
+      guint i;
+
+      if (G_UNLIKELY (g_strv_length ((GStrv) aliases) != c->contacts->len))
+        {
+          g_warning ("Connection manager %s is broken: we requested %u "
+              "handles' aliases but got %u strings back",
+              tp_proxy_get_bus_name (connection), c->contacts->len,
+              g_strv_length ((GStrv) aliases));
+
+          /* give up on the possibility of getting aliases, and just
+           * move on */
+          contacts_context_continue (c);
+          return;
+        }
+
+      for (i = 0; i < c->contacts->len; i++)
+        {
+          TpContact *contact = g_ptr_array_index (c->contacts, i);
+          const gchar *alias = aliases[i];
+
+          contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
+          g_free (contact->priv->alias);
+          contact->priv->alias = g_strdup (alias);
+          g_object_notify ((GObject *) contact, "alias");
+        }
+    }
+  else
+    {
+      /* never mind, we can live without aliases */
+      DEBUG ("GetAliases failed with %s %u: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+
+  contacts_context_continue (c);
+}
+
+
+static void
+contacts_got_aliases (TpConnection *connection,
+                      GHashTable *handle_to_alias,
+                      const GError *error,
+                      gpointer user_data,
+                      GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  if (error == NULL)
+    {
+      guint i;
+
+      for (i = 0; i < c->contacts->len; i++)
+        {
+          TpContact *contact = g_ptr_array_index (c->contacts, i);
+          const gchar *alias = g_hash_table_lookup (handle_to_alias,
+              GUINT_TO_POINTER (contact->priv->handle));
+
+          contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
+          g_free (contact->priv->alias);
+          contact->priv->alias = NULL;
+
+          if (alias != NULL)
+            {
+              contact->priv->alias = g_strdup (alias);
+            }
+          else
+            {
+              g_warning ("No alias returned for %u, will use ID instead",
+                  contact->priv->handle);
+            }
+
+          g_object_notify ((GObject *) contact, "alias");
+        }
+    }
+  else if ((error->domain == TP_ERRORS &&
+      error->code == TP_ERROR_NOT_IMPLEMENTED) ||
+      (error->domain == DBUS_GERROR &&
+       error->code == DBUS_GERROR_UNKNOWN_METHOD))
+    {
+      /* GetAliases not implemented, fall back to (slow?) RequestAliases */
+      c->refcount++;
+      tp_cli_connection_interface_aliasing_call_request_aliases (connection,
+          -1, c->handles, contacts_requested_aliases,
+          c, contacts_context_unref, weak_object);
+      return;
+    }
+  else
+    {
+      /* never mind, we can live without aliases */
+      DEBUG ("GetAliases failed with %s %u: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+
+  contacts_context_continue (c);
+}
+
+
+static void
+contacts_aliases_changed (TpConnection *connection,
+                          const GPtrArray *alias_structs,
+                          gpointer user_data G_GNUC_UNUSED,
+                          GObject *weak_object G_GNUC_UNUSED)
+{
+  guint i;
+
+  for (i = 0; i < alias_structs->len; i++)
+    {
+      GValueArray *pair = g_ptr_array_index (alias_structs, i);
+      TpHandle handle = g_value_get_uint (pair->values + 0);
+      const gchar *alias = g_value_get_string (pair->values + 1);
+      TpContact *contact = _tp_connection_lookup_contact (connection, handle);
+
+      if (contact != NULL)
+        {
+          contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
+          DEBUG ("Contact \"%s\" alias changed from \"%s\" to \"%s\"",
+              contact->priv->identifier, contact->priv->alias, alias);
+          g_free (contact->priv->alias);
+          contact->priv->alias = g_strdup (alias);
+          g_object_notify ((GObject *) contact, "alias");
+        }
+    }
+}
+
+
+static void
+contacts_get_aliases (ContactsContext *c)
+{
+  guint i;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  /* ensure we'll get told about alias changes */
+  if (!c->connection->priv->tracking_aliases_changed)
+    {
+      c->connection->priv->tracking_aliases_changed = TRUE;
+
+      tp_cli_connection_interface_aliasing_connect_to_aliases_changed (
+          c->connection, contacts_aliases_changed, NULL, NULL, NULL, NULL);
+    }
+
+  for (i = 0; i < c->contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_ALIAS) == 0)
+        {
+          c->refcount++;
+          tp_cli_connection_interface_aliasing_call_get_aliases (c->connection,
+              -1, c->handles, contacts_got_aliases, c, contacts_context_unref,
+              c->weak_object);
+          return;
+        }
+    }
+
+  /* else there's no need to get the contacts' aliases, because we already
+   * know them all */
+  contacts_context_continue (c);
+}
+
+
 /**
  * tp_connection_get_contacts_by_handle:
  * @self: A connection, which must be ready (#TpConnection:connection-ready
@@ -1096,6 +1272,13 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
 
   /* Before we return anything we'll want to inspect the handles */
   g_queue_push_head (&context->todo, contacts_inspect);
+
+  if ((feature_flags & CONTACT_FEATURE_FLAG_ALIAS) != 0 &&
+      tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING))
+    {
+      g_queue_push_tail (&context->todo, contacts_get_aliases);
+    }
 
   /* but first, we need to hold onto them */
   tp_connection_hold_handles (self, -1,

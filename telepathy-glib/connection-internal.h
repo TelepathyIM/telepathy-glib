@@ -45,6 +45,7 @@ struct _TpConnectionPrivate {
     GHashTable *contacts;
 
     unsigned ready:1;
+    unsigned tracking_aliases_changed:1;
 };
 
 void _tp_connection_init_handle_refs (TpConnection *self);
