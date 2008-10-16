@@ -22,7 +22,7 @@
  * SECTION:message-mixin
  * @title: TpMessageMixin
  * @short_description: a mixin implementation of the text channel type and the
- *  Messages mixin
+ *  Messages interface
  * @see_also: #TpSvcChannelTypeText, #TpSvcChannelInterfaceMessages,
  *  #TpDBusPropertiesMixin
  *
