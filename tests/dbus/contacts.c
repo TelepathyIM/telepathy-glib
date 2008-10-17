@@ -229,6 +229,77 @@ test_by_handle (ContactsConnection *service_conn,
   g_assert (result.error == NULL);
 }
 
+static void
+test_no_features (ContactsConnection *service_conn,
+                  TpConnection *client_conn)
+{
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  const gchar * const ids[] = { "alice", "bob", "chris" };
+  TpHandle handles[3] = { 0, 0, 0 };
+  TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
+      (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
+  TpContact *contacts[3];
+  guint i;
+
+  g_message (G_STRFUNC);
+
+  for (i = 0; i < 3; i++)
+    handles[i] = tp_handle_ensure (service_repo, ids[i], NULL, NULL);
+
+  tp_connection_get_contacts_by_handle (client_conn,
+      3, handles,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+
+  g_main_loop_run (result.loop);
+
+  MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
+  MYASSERT (result.invalid->len == 0, ": %u", result.invalid->len);
+  MYASSERT_NO_ERROR (result.error);
+
+  MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
+
+  for (i = 0; i < 3; i++)
+    contacts[i] = g_ptr_array_index (result.contacts, i);
+
+  for (i = 0; i < 3; i++)
+    {
+      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[i]), ids[i]);
+      MYASSERT_SAME_STRING (tp_contact_get_alias (contacts[i]),
+          tp_contact_get_identifier (contacts[i]));
+      MYASSERT (tp_contact_get_avatar_token (contacts[i]) == NULL,
+          ": %s", tp_contact_get_avatar_token (contacts[i]));
+      MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[i]),
+          TP_CONNECTION_PRESENCE_TYPE_UNSET);
+      MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[i]), "");
+      MYASSERT_SAME_STRING (tp_contact_get_presence_message (contacts[i]), "");
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_ALIAS), "");
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_PRESENCE), "");
+    }
+
+  for (i = 0; i < 3; i++)
+    {
+      g_object_unref (contacts[i]);
+      test_connection_run_until_dbus_queue_processed (client_conn);
+      tp_handle_unref (service_repo, handles[i]);
+      MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
+    }
+
+  /* remaining cleanup */
+  g_main_loop_unref (result.loop);
+  g_array_free (result.invalid, TRUE);
+  g_ptr_array_free (result.contacts, TRUE);
+  g_assert (result.error == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -270,6 +341,7 @@ main (int argc,
   /* Tests */
 
   test_by_handle (service_conn, client_conn);
+  test_no_features (service_conn, client_conn);
 
   /* Teardown */
 
