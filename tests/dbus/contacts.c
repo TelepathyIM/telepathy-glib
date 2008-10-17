@@ -18,9 +18,9 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
 
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
-#include "tests/lib/simple-conn.h"
 #include "tests/lib/util.h"
 
 static int fail = 0;
@@ -91,7 +91,7 @@ finish (gpointer r)
 }
 
 static void
-test_by_handle (SimpleConnection *service_conn,
+test_by_handle (ContactsConnection *service_conn,
                 TpConnection *client_conn)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
@@ -234,7 +234,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  SimpleConnection *service_conn;
+  ContactsConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -247,8 +247,8 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = tp_dbus_daemon_new (tp_get_bus ());
 
-  service_conn = SIMPLE_CONNECTION (g_object_new (
-        SIMPLE_TYPE_CONNECTION,
+  service_conn = CONTACTS_CONNECTION (g_object_new (
+        CONTACTS_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
