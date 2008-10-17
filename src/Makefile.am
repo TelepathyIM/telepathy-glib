@@ -20,8 +20,7 @@ telepathy_stream_engine_SOURCES = \
 	videosink.c \
 	videosink.h \
 	videopreview.c \
-	videopreview.h \
-	tp-stream-engine-signals-marshal.list
+	videopreview.h
 
 nodist_telepathy_stream_engine_SOURCES = $(BUILT_SOURCES)
 
