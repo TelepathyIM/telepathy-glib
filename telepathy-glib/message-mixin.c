@@ -493,6 +493,36 @@ tp_message_set_int32 (TpMessage *self,
 
 
 /**
+ * tp_message_set_int64:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @i: an integer value
+ *
+ * Set @key in part @part of @self to have @i as a signed integer value.
+ *
+ * @since 0.7.UNRELEASED
+ */
+void
+tp_message_set_int64 (TpMessage *self,
+                      guint part,
+                      const gchar *key,
+                      gint64 i)
+{
+  GValue *value;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+
+  value = tp_g_value_slice_new (G_TYPE_INT64);
+  g_value_set_int64 (value, i);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+}
+
+
+/**
  * tp_message_set_uint16:
  * @s: a message
  * @p: a part number, which must be strictly less than the number
@@ -530,6 +560,36 @@ tp_message_set_uint32 (TpMessage *self,
 
   value = tp_g_value_slice_new (G_TYPE_UINT);
   g_value_set_uint (value, u);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+}
+
+
+/**
+ * tp_message_set_uint64:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @u: an unsigned integer value
+ *
+ * Set @key in part @part of @self to have @u as an unsigned integer value.
+ *
+ * @since 0.7.UNRELEASED
+ */
+void
+tp_message_set_uint64 (TpMessage *self,
+                       guint part,
+                       const gchar *key,
+                       guint64 u)
+{
+  GValue *value;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+
+  value = tp_g_value_slice_new (G_TYPE_UINT64);
+  g_value_set_uint64 (value, u);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), value);
 }

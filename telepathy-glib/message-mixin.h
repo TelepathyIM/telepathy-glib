@@ -58,10 +58,14 @@ void tp_message_set_int32 (TpMessage *self, guint part, const gchar *key,
     gint32 i);
 #define tp_message_set_int16(s, p, k, i) \
     tp_message_set_int32 (s, p, k, (gint16) i)
+void tp_message_set_int64 (TpMessage *self, guint part, const gchar *key,
+    gint64 i);
 void tp_message_set_uint32 (TpMessage *self, guint part, const gchar *key,
     guint32 u);
 #define tp_message_set_uint16(s, p, k, u) \
     tp_message_set_uint32 (s, p, k, (guint16) u)
+void tp_message_set_uint64 (TpMessage *self, guint part, const gchar *key,
+    guint64 u);
 void tp_message_set_string (TpMessage *self, guint part, const gchar *key,
     const gchar *s);
 void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
