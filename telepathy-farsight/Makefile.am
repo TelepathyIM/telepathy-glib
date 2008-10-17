@@ -14,7 +14,9 @@ libtelepathy_farsight_la_SOURCES = \
 	session.c \
 	session.h \
 	channel.c \
-	channel.h
+	channel.h \
+	stream-priv.h \
+	session-priv.h
 
 nodist_libtelepathy_farsight_la_SOURCES = $(BUILT_SOURCES)
 
