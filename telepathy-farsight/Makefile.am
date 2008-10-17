@@ -2,7 +2,7 @@ BUILT_SOURCES = \
     tf-signals-marshal.h \
     tf-signals-marshal.c
 
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = $(BUILT_SOURCES) tf-signals-marshal.list
 
 
 tfincludedir = $(includedir)/telepathy-1.0/telepathy-farsight
@@ -50,6 +50,18 @@ libtelepathy_farsight_la_LDFLAGS =  -no-undefined \
 
 
 # rules to generate signal marshallers
+tf-signals-marshal.list: $(libtelepathy_farsight_la_SOURCES) Makefile.am
+	( cd $(srcdir) && \
+	sed -n -e 's/.*_tf_marshal_\([[:upper:][:digit:]]*__[[:upper:][:digit:]_]*\).*/\1/p' \
+	$(libtelepathy_farsight_la_SOURCES) ) \
+	| sed -e 's/__/:/' -e 'y/_/,/' | sort -u > $@.tmp
+	if cmp -s $@.tmp $@; then \
+		rm $@.tmp; \
+		touch $@; \
+	else \
+		mv $@.tmp $@; \
+	fi
+
 %-signals-marshal.h: %-signals-marshal.list Makefile.in
 	glib-genmarshal --header --prefix=_$(subst -,_,$*)_marshal $< > $*-signals-marshal.h
 

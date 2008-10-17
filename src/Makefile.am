@@ -2,7 +2,8 @@ BUILT_SOURCES = \
     tp-stream-engine-signals-marshal.h \
     tp-stream-engine-signals-marshal.c
 
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = $(BUILT_SOURCES) tp-stream-engine-signals-marshal.list
+
 
 libexec_PROGRAMS = telepathy-stream-engine
 
@@ -48,6 +49,18 @@ AM_LDFLAGS = \
 	$(top_builddir)/telepathy-farsight/libtelepathy-farsight.la
 
 # rules to generate signal marshallers
+tp-stream-engine-signals-marshal.list: $(telepathy_stream_engine_SOURCES) Makefile.am
+	( cd $(srcdir) && \
+	sed -n -e 's/.*tp_stream_engine_marshal_\([[:upper:][:digit:]]*__[[:upper:][:digit:]_]*\).*/\1/p' \
+	$(telepathy_stream_engine_SOURCES) ) \
+	| sed -e 's/__/:/' -e 'y/_/,/' | sort -u > $@.tmp
+	if cmp -s $@.tmp $@; then \
+		rm $@.tmp; \
+		touch $@; \
+	else \
+		mv $@.tmp $@; \
+	fi
+
 %-signals-marshal.h: %-signals-marshal.list Makefile.in
 	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-signals-marshal.h
 

@@ -19,7 +19,9 @@ data/org.maemo.Telepathy.StreamEngine.service
 src/telepathy-stream-engine
 
 src/tp-stream-engine-signals-marshal.[ch]
+src/tp-stream-engine-signals-marshal.list
 telepathy-farsight/tf-signals-marshal.[ch]
+telepathy-farsight/tf-signals-marshal.list
 
 telepathy-farsight/telepathy-farsight.pc
 
