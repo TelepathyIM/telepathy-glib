@@ -71,6 +71,15 @@ by_handle_cb (TpConnection *connection,
           TpContact *contact = contacts[i];
 
           DEBUG ("contact #%u: %p", i, contact);
+          DEBUG ("contact #%u alias: %s", i, tp_contact_get_alias (contact));
+          DEBUG ("contact #%u avatar token: %s", i,
+              tp_contact_get_avatar_token (contact));
+          DEBUG ("contact #%u presence type: %u", i,
+              tp_contact_get_presence_type (contact));
+          DEBUG ("contact #%u presence status: %s", i,
+              tp_contact_get_presence_status (contact));
+          DEBUG ("contact #%u presence message: %s", i,
+              tp_contact_get_presence_message (contact));
           g_ptr_array_add (result->contacts, contact);
         }
     }
@@ -300,6 +309,150 @@ test_no_features (ContactsConnection *service_conn,
   g_assert (result.error == NULL);
 }
 
+static void
+test_features (ContactsConnection *service_conn,
+               TpConnection *client_conn)
+{
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TpHandle handles[] = { 0, 0, 0 };
+  static const gchar * const ids[] = { "alice", "bob", "chris" };
+  static const gchar * const aliases[] = { "Alice in Wonderland",
+      "Bob the Builder", "Christopher Robin" };
+  static const gchar * const tokens[] = { "aaaaa", "bbbbb", "ccccc" };
+  static ContactsConnectionPresenceStatusIndex statuses[] = {
+      CONTACTS_CONNECTION_STATUS_AVAILABLE, CONTACTS_CONNECTION_STATUS_BUSY,
+      CONTACTS_CONNECTION_STATUS_AWAY };
+  static const gchar * const messages[] = { "", "Fixing it",
+      "GON OUT BACKSON" };
+  static const gchar * const new_aliases[] = { "Alice [at a tea party]",
+      "Bob the Plumber" };
+  static const gchar * const new_tokens[] = { "AAAA", "BBBB" };
+  static ContactsConnectionPresenceStatusIndex new_statuses[] = {
+      CONTACTS_CONNECTION_STATUS_AWAY, CONTACTS_CONNECTION_STATUS_AVAILABLE };
+  static const gchar * const new_messages[] = { "At the Mad Hatter's",
+      "It'll cost you" };
+  TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
+      (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
+  TpContact *contacts[3];
+  TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE };
+  guint i;
+
+  g_message (G_STRFUNC);
+
+  for (i = 0; i < 3; i++)
+    handles[i] = tp_handle_ensure (service_repo, ids[i], NULL, NULL);
+
+  contacts_connection_change_aliases (service_conn, 3, handles, aliases);
+  contacts_connection_change_presences (service_conn, 3, handles,
+      statuses, messages);
+  contacts_connection_change_avatar_tokens (service_conn, 3, handles, tokens);
+
+  tp_connection_get_contacts_by_handle (client_conn,
+      3, handles,
+      sizeof (features) / sizeof (features[0]), features,
+      by_handle_cb,
+      &result, finish, NULL);
+
+  g_main_loop_run (result.loop);
+
+  MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
+  MYASSERT (result.invalid->len == 0, ": %u", result.invalid->len);
+  MYASSERT_NO_ERROR (result.error);
+
+  MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
+
+  for (i = 0; i < 3; i++)
+    contacts[i] = g_ptr_array_index (result.contacts, i);
+
+  for (i = 0; i < 3; i++)
+    {
+      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[i]), ids[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_ALIAS), "");
+      MYASSERT_SAME_STRING (tp_contact_get_alias (contacts[i]), aliases[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
+      MYASSERT_SAME_STRING (tp_contact_get_avatar_token (contacts[i]),
+          tokens[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_PRESENCE), "");
+      MYASSERT_SAME_STRING (tp_contact_get_presence_message (contacts[i]),
+          messages[i]);
+    }
+
+  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
+      TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[0]),
+      "available");
+  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[1]),
+      TP_CONNECTION_PRESENCE_TYPE_BUSY);
+  MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[1]),
+      "busy");
+  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[2]),
+      TP_CONNECTION_PRESENCE_TYPE_AWAY);
+  MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[2]),
+      "away");
+
+  /* Change Alice and Bob's contact info, leave Chris as-is */
+  contacts_connection_change_aliases (service_conn, 2, handles, new_aliases);
+  contacts_connection_change_presences (service_conn, 2, handles,
+      new_statuses, new_messages);
+  contacts_connection_change_avatar_tokens (service_conn, 2, handles,
+      new_tokens);
+  test_connection_run_until_dbus_queue_processed (client_conn);
+
+  for (i = 0; i < 2; i++)
+    {
+      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[i]), ids[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_ALIAS), "");
+      MYASSERT_SAME_STRING (tp_contact_get_alias (contacts[i]),
+          new_aliases[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
+      MYASSERT_SAME_STRING (tp_contact_get_avatar_token (contacts[i]),
+          new_tokens[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_PRESENCE), "");
+      MYASSERT_SAME_STRING (tp_contact_get_presence_message (contacts[i]),
+          new_messages[i]);
+    }
+
+  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
+      TP_CONNECTION_PRESENCE_TYPE_AWAY);
+  MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[0]),
+      "away");
+  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[1]),
+      TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[1]),
+      "available");
+
+  for (i = 0; i < 3; i++)
+    {
+      g_object_unref (contacts[i]);
+      test_connection_run_until_dbus_queue_processed (client_conn);
+      tp_handle_unref (service_repo, handles[i]);
+      MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
+    }
+
+  /* remaining cleanup */
+  g_main_loop_unref (result.loop);
+  g_array_free (result.invalid, TRUE);
+  g_ptr_array_free (result.contacts, TRUE);
+  g_assert (result.error == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -342,6 +495,7 @@ main (int argc,
 
   test_by_handle (service_conn, client_conn);
   test_no_features (service_conn, client_conn);
+  test_features (service_conn, client_conn);
 
   /* Teardown */
 
