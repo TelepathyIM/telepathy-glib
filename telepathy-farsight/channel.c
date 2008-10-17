@@ -18,6 +18,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:channel
+ * @short_description: Handle the MediaSignalling interface on a Channel
+ *
+ * This class handles the
+ * org.freedesktop.Telepathy.Channel.Interface.MediaSignalling on a
+ * channel using Farsight2.
+ */
+
 #include <stdlib.h>
 
 #include <telepathy-glib/channel.h>
@@ -466,6 +475,14 @@ tf_channel_class_init (TfChannelClass *klass)
           " operates on",
           NULL,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TfChannel::handler-result:
+   * @error: a #GError containing the error or %NULL if there was no error
+   *
+   * This message is emitted when we are ready to handle the channel with %NULL
+   * or with an #GError if we can not handle the channel.
+   */
 
   signals[HANDLER_RESULT] = g_signal_new ("handler-result",
       G_OBJECT_CLASS_TYPE (klass),

@@ -18,6 +18,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:stream
+ * @short_description: Handles a media Stream
+ *
+ * These objects handle media streams and wrap the appropriate Farsight 2
+ * objects. It is used to interact on a stream level with the other parts
+ * of the media pipeline and the proper UI.
+ */
+
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
