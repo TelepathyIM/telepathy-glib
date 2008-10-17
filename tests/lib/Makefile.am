@@ -1,12 +1,14 @@
 noinst_LTLIBRARIES = libtp-glib-tests.la
 
 libtp_glib_tests_la_SOURCES = \
+    bug16307-conn.c \
+    bug16307-conn.h \
+    contacts-conn.c \
+    contacts-conn.h \
     debug.h \
     myassert.h \
     simple-conn.c \
     simple-conn.h \
-    bug16307-conn.c \
-    bug16307-conn.h \
     simple-manager.c \
     simple-manager.h \
     stub-object.c \
