@@ -80,6 +80,9 @@ void tp_message_mixin_get_dbus_property (GObject *object, GQuark interface,
 
 guint tp_message_mixin_take_received (GObject *object, TpMessage *message);
 
+gboolean tp_message_mixin_has_pending_messages (GObject *object,
+    TpHandle *first_sender);
+
 
 /* Sending */
 

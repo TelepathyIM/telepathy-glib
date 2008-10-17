@@ -1360,6 +1360,41 @@ tp_message_mixin_take_received (GObject *object,
 
 
 /**
+ * tp_message_mixin_has_pending_messages:
+ * @object: An object with this mixin
+ * @first_sender: If not %NULL, used to store the sender of the oldest pending
+ *  message
+ *
+ * Return whether the channel @obj has unacknowledged messages. If so, and
+ * @first_sender is not %NULL, the handle of the sender of the first message
+ * is placed in it, without incrementing the handle's reference count.
+ *
+ * Returns: %TRUE if there are pending messages
+ */
+gboolean
+tp_message_mixin_has_pending_messages (GObject *object,
+                                       TpHandle *first_sender)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+  TpMessage *msg = g_queue_peek_head (mixin->priv->pending);
+
+  if (msg != NULL && first_sender != NULL)
+    {
+      const GHashTable *header = tp_message_peek (msg, 0);
+      gboolean valid = TRUE;
+      TpHandle h = tp_asv_get_uint32 (header, "message-sender", &valid);
+
+      if (valid)
+        *first_sender = h;
+      else
+        g_warning ("%s: oldest message's message-sender is mistyped", G_STRFUNC);
+    }
+
+  return (msg != NULL);
+}
+
+
+/**
  * TpMessageMixinOutgoingMessage:
  * @flags: Flags indicating how this message should be sent
  * @parts: The parts that make up the message (an array of #GHashTable,
