@@ -8,4 +8,4 @@ conf_DATA = gstcodecs.conf
 
 dist-hook:
 	chmod a+w ${distdir}/ChangeLog
-	darcs changes >${distdir}/ChangeLog
+	git log >${distdir}/ChangeLog
