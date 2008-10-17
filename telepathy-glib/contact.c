@@ -1211,6 +1211,192 @@ contacts_get_aliases (ContactsContext *c)
 }
 
 
+static void
+contacts_presences_changed (TpConnection *connection,
+                            GHashTable *presences,
+                            gpointer user_data G_GNUC_UNUSED,
+                            GObject *weak_object G_GNUC_UNUSED)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+
+  g_hash_table_iter_init (&iter, presences);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpContact *contact = _tp_connection_lookup_contact (connection,
+          GPOINTER_TO_UINT (key));
+      GValueArray *presence = value;
+
+      if (contact == NULL)
+        continue;
+
+      contact->priv->has_features |= CONTACT_FEATURE_FLAG_PRESENCE;
+      contact->priv->presence_type = g_value_get_uint (presence->values + 0);
+      g_free (contact->priv->presence_status);
+      contact->priv->presence_status = g_value_dup_string (
+          presence->values + 1);
+      g_free (contact->priv->presence_message);
+      contact->priv->presence_message = g_value_dup_string (
+          presence->values + 2);
+
+      g_object_notify ((GObject *) contact, "presence-type");
+      g_object_notify ((GObject *) contact, "presence-status");
+      g_object_notify ((GObject *) contact, "presence-message");
+    }
+}
+
+
+static void
+contacts_got_simple_presence (TpConnection *connection,
+                              GHashTable *presences,
+                              const GError *error,
+                              gpointer user_data,
+                              GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  if (error == NULL)
+    {
+      contacts_presences_changed (connection, presences, NULL, NULL);
+    }
+  else
+    {
+      /* never mind, we can live without presences */
+      DEBUG ("GetPresences failed with %s %u: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+
+  contacts_context_continue (c);
+}
+
+
+static void
+contacts_get_simple_presence (ContactsContext *c)
+{
+  guint i;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  if (!c->connection->priv->tracking_presences_changed)
+    {
+      c->connection->priv->tracking_presences_changed = TRUE;
+
+      tp_cli_connection_interface_simple_presence_connect_to_presences_changed
+        (c->connection, contacts_presences_changed, NULL, NULL, NULL, NULL);
+    }
+
+  for (i = 0; i < c->contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_PRESENCE) == 0)
+        {
+          c->refcount++;
+          tp_cli_connection_interface_simple_presence_call_get_presences (
+              c->connection, -1,
+              c->handles, contacts_got_simple_presence,
+              c, contacts_context_unref, c->weak_object);
+          return;
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+
+static void
+contacts_avatar_updated (TpConnection *connection,
+                         TpHandle handle,
+                         const gchar *new_token,
+                         gpointer user_data G_GNUC_UNUSED,
+                         GObject *weak_object G_GNUC_UNUSED)
+{
+  TpContact *contact = _tp_connection_lookup_contact (connection, handle);
+
+  DEBUG ("contact#%u token is %s", handle, new_token);
+
+  if (contact == NULL)
+    return;
+
+  contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
+  g_free (contact->priv->avatar_token);
+  contact->priv->avatar_token = g_strdup (new_token);
+  g_object_notify ((GObject *) contact, "avatar-token");
+}
+
+
+static void
+contacts_got_known_avatar_tokens (TpConnection *connection,
+                                  GHashTable *handle_to_token,
+                                  const GError *error,
+                                  gpointer user_data,
+                                  GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+  GHashTableIter iter;
+  gpointer key, value;
+
+  if (error == NULL)
+    {
+      g_hash_table_iter_init (&iter, handle_to_token);
+
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          contacts_avatar_updated (connection, GPOINTER_TO_UINT (key), value,
+              NULL, NULL);
+        }
+
+    }
+  /* FIXME: perhaps we could fall back to GetAvatarTokens (which should have
+   * been called RequestAvatarTokens, because it blocks on network traffic)
+   * if GetKnownAvatarTokens doesn't work? */
+  else
+    {
+      /* never mind, we can live without avatar tokens */
+      DEBUG ("GetKnownAvatarTokens failed with %s %u: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+
+  contacts_context_continue (c);
+}
+
+
+static void
+contacts_get_avatar_tokens (ContactsContext *c)
+{
+  guint i;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  if (!c->connection->priv->tracking_avatar_updated)
+    {
+      c->connection->priv->tracking_avatar_updated = TRUE;
+
+      tp_cli_connection_interface_avatars_connect_to_avatar_updated
+        (c->connection, contacts_avatar_updated, NULL, NULL, NULL, NULL);
+    }
+
+  for (i = 0; i < c->contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
+          == 0)
+        {
+          c->refcount++;
+          tp_cli_connection_interface_avatars_call_get_known_avatar_tokens (
+              c->connection, -1,
+              c->handles, contacts_got_known_avatar_tokens,
+              c, contacts_context_unref, c->weak_object);
+          return;
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+
 /**
  * tp_connection_get_contacts_by_handle:
  * @self: A connection, which must be ready (#TpConnection:connection-ready
@@ -1278,6 +1464,31 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING))
     {
       g_queue_push_tail (&context->todo, contacts_get_aliases);
+    }
+
+  if ((feature_flags & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
+    {
+      if (tp_proxy_has_interface_by_id (self,
+            TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE))
+        {
+          g_queue_push_tail (&context->todo, contacts_get_simple_presence);
+        }
+#if 0
+      /* FIXME: Before doing this for the first time, we'd need to download
+       * from the CM the definition of what each status actually *means* */
+      else if (tp_proxy_has_interface_by_id (self,
+            TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE))
+        {
+          g_queue_push_tail (&context->todo, contacts_get_complex_presence);
+        }
+#endif
+    }
+
+  if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0 &&
+      tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
+    {
+      g_queue_push_tail (&context->todo, contacts_get_avatar_tokens);
     }
 
   /* but first, we need to hold onto them */
