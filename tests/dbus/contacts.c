@@ -1,9 +1,11 @@
 /* Feature test for TpContact creation.
  *
  * Code missing coverage in contact.c:
- * - all optional features
  * - connection becoming invalid
  * - fatal error on the connection
+ * - inconsistent CM
+ * - having to fall back to RequestAliases
+ * - get_contacts_by_id with features (but it's trivial)
  *
  * Copyright (C) 2008 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2008 Nokia Corporation
@@ -36,6 +38,8 @@ typedef struct {
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
     GArray *invalid;
+    gchar **good_ids;
+    GHashTable *bad_ids;
 } Result;
 
 static void
@@ -53,6 +57,8 @@ by_handle_cb (TpConnection *connection,
   g_assert (result->invalid == NULL);
   g_assert (result->contacts == NULL);
   g_assert (result->error == NULL);
+  g_assert (result->good_ids == NULL);
+  g_assert (result->bad_ids == NULL);
 
   if (error == NULL)
     {
@@ -311,6 +317,200 @@ test_no_features (ContactsConnection *service_conn,
 }
 
 static void
+upgrade_cb (TpConnection *connection,
+            guint n_contacts,
+            TpContact * const *contacts,
+            const GError *error,
+            gpointer user_data,
+            GObject *weak_object)
+{
+  Result *result = user_data;
+
+  g_assert (result->invalid == NULL);
+  g_assert (result->contacts == NULL);
+  g_assert (result->error == NULL);
+  g_assert (result->good_ids == NULL);
+  g_assert (result->bad_ids == NULL);
+
+  if (error == NULL)
+    {
+      guint i;
+
+      DEBUG ("got %u contacts", n_contacts);
+
+      result->contacts = g_ptr_array_sized_new (n_contacts);
+
+      for (i = 0; i < n_contacts; i++)
+        {
+          TpContact *contact = contacts[i];
+
+          DEBUG ("contact #%u: %p", i, contact);
+          DEBUG ("contact #%u alias: %s", i, tp_contact_get_alias (contact));
+          DEBUG ("contact #%u avatar token: %s", i,
+              tp_contact_get_avatar_token (contact));
+          DEBUG ("contact #%u presence type: %u", i,
+              tp_contact_get_presence_type (contact));
+          DEBUG ("contact #%u presence status: %s", i,
+              tp_contact_get_presence_status (contact));
+          DEBUG ("contact #%u presence message: %s", i,
+              tp_contact_get_presence_message (contact));
+          g_ptr_array_add (result->contacts, contact);
+        }
+    }
+  else
+    {
+      DEBUG ("got an error: %s %u: %s", g_quark_to_string (error->domain),
+          error->code, error->message);
+      result->error = g_error_copy (error);
+    }
+}
+
+static void
+test_upgrade (ContactsConnection *service_conn,
+              TpConnection *client_conn)
+{
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TpHandle handles[] = { 0, 0, 0 };
+  static const gchar * const ids[] = { "alice", "bob", "chris" };
+  static const gchar * const aliases[] = { "Alice in Wonderland",
+      "Bob the Builder", "Christopher Robin" };
+  static const gchar * const tokens[] = { "aaaaa", "bbbbb", "ccccc" };
+  static ContactsConnectionPresenceStatusIndex statuses[] = {
+      CONTACTS_CONNECTION_STATUS_AVAILABLE, CONTACTS_CONNECTION_STATUS_BUSY,
+      CONTACTS_CONNECTION_STATUS_AWAY };
+  static const gchar * const messages[] = { "", "Fixing it",
+      "GON OUT BACKSON" };
+  TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
+      (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
+  TpContact *contacts[3];
+  TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE };
+  guint i;
+
+  g_message (G_STRFUNC);
+
+  for (i = 0; i < 3; i++)
+    handles[i] = tp_handle_ensure (service_repo, ids[i], NULL, NULL);
+
+  contacts_connection_change_aliases (service_conn, 3, handles, aliases);
+  contacts_connection_change_presences (service_conn, 3, handles,
+      statuses, messages);
+  contacts_connection_change_avatar_tokens (service_conn, 3, handles, tokens);
+
+  tp_connection_get_contacts_by_handle (client_conn,
+      3, handles,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+
+  g_main_loop_run (result.loop);
+
+  MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
+  MYASSERT (result.invalid->len == 0, ": %u", result.invalid->len);
+  MYASSERT_NO_ERROR (result.error);
+
+  MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
+
+  for (i = 0; i < 3; i++)
+    contacts[i] = g_ptr_array_index (result.contacts, i);
+
+  for (i = 0; i < 3; i++)
+    {
+      MYASSERT (tp_contact_get_connection (contacts[i]) == client_conn, "");
+      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[i]), ids[i]);
+      MYASSERT_SAME_STRING (tp_contact_get_alias (contacts[i]),
+          tp_contact_get_identifier (contacts[i]));
+      MYASSERT (tp_contact_get_avatar_token (contacts[i]) == NULL,
+          ": %s", tp_contact_get_avatar_token (contacts[i]));
+      MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[i]),
+          TP_CONNECTION_PRESENCE_TYPE_UNSET);
+      MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[i]), "");
+      MYASSERT_SAME_STRING (tp_contact_get_presence_message (contacts[i]), "");
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_ALIAS), "");
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_PRESENCE), "");
+    }
+
+  /* clean up before doing the second request */
+  g_array_free (result.invalid, TRUE);
+  result.invalid = NULL;
+  g_ptr_array_free (result.contacts, TRUE);
+  result.contacts = NULL;
+  g_assert (result.error == NULL);
+
+  tp_connection_upgrade_contacts (client_conn,
+      3, contacts,
+      sizeof (features) / sizeof (features[0]), features,
+      upgrade_cb,
+      &result, finish, NULL);
+
+  g_main_loop_run (result.loop);
+
+  MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
+  MYASSERT (result.invalid == NULL, "");
+  MYASSERT_NO_ERROR (result.error);
+
+  for (i = 0; i < 3; i++)
+    {
+      MYASSERT (g_ptr_array_index (result.contacts, 0) == contacts[0], "");
+      g_object_unref (g_ptr_array_index (result.contacts, i));
+    }
+
+  for (i = 0; i < 3; i++)
+    {
+      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[i]), ids[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_ALIAS), "");
+      MYASSERT_SAME_STRING (tp_contact_get_alias (contacts[i]), aliases[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
+      MYASSERT_SAME_STRING (tp_contact_get_avatar_token (contacts[i]),
+          tokens[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_PRESENCE), "");
+      MYASSERT_SAME_STRING (tp_contact_get_presence_message (contacts[i]),
+          messages[i]);
+    }
+
+  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
+      TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[0]),
+      "available");
+  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[1]),
+      TP_CONNECTION_PRESENCE_TYPE_BUSY);
+  MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[1]),
+      "busy");
+  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[2]),
+      TP_CONNECTION_PRESENCE_TYPE_AWAY);
+  MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[2]),
+      "away");
+
+  for (i = 0; i < 3; i++)
+    {
+      g_object_unref (contacts[i]);
+      test_connection_run_until_dbus_queue_processed (client_conn);
+      tp_handle_unref (service_repo, handles[i]);
+      MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
+    }
+
+  /* remaining cleanup */
+  g_main_loop_unref (result.loop);
+  g_ptr_array_free (result.contacts, TRUE);
+  g_assert (result.invalid == NULL);
+  g_assert (result.error == NULL);
+}
+
+static void
 test_features (ContactsConnection *service_conn,
                TpConnection *client_conn)
 {
@@ -491,6 +691,182 @@ test_features (ContactsConnection *service_conn,
   g_assert (result.error == NULL);
 }
 
+static void
+by_id_cb (TpConnection *connection,
+          guint n_contacts,
+          TpContact * const *contacts,
+          const gchar * const *good_ids,
+          GHashTable *bad_ids,
+          const GError *error,
+          gpointer user_data,
+          GObject *weak_object)
+{
+  Result *result = user_data;
+
+  g_assert (result->invalid == NULL);
+  g_assert (result->contacts == NULL);
+  g_assert (result->error == NULL);
+  g_assert (result->good_ids == NULL);
+  g_assert (result->bad_ids == NULL);
+
+  if (error == NULL)
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+      guint i;
+
+      DEBUG ("got %u contacts and %u bad IDs", n_contacts,
+          g_hash_table_size (bad_ids));
+
+      result->bad_ids = g_hash_table_new_full (g_str_hash, g_str_equal,
+          g_free, (GDestroyNotify) g_error_free);
+      tp_g_hash_table_update (result->bad_ids, bad_ids,
+          (GBoxedCopyFunc) g_strdup, (GBoxedCopyFunc) g_error_copy);
+
+      g_hash_table_iter_init (&iter, result->bad_ids);
+
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          gchar *id = key;
+          GError *e = value;
+
+          DEBUG ("bad ID %s: %s %u: %s", id, g_quark_to_string (e->domain),
+              e->code, e->message);
+        }
+
+      result->good_ids = g_strdupv ((GStrv) good_ids);
+
+      result->contacts = g_ptr_array_sized_new (n_contacts);
+
+      for (i = 0; i < n_contacts; i++)
+        {
+          TpContact *contact = contacts[i];
+
+          DEBUG ("contact #%u: %p", i, contact);
+          DEBUG ("contact #%u we asked for ID %s", i, good_ids[i]);
+          DEBUG ("contact #%u we got ID %s", i,
+              tp_contact_get_identifier (contact));
+          DEBUG ("contact #%u alias: %s", i, tp_contact_get_alias (contact));
+          DEBUG ("contact #%u avatar token: %s", i,
+              tp_contact_get_avatar_token (contact));
+          DEBUG ("contact #%u presence type: %u", i,
+              tp_contact_get_presence_type (contact));
+          DEBUG ("contact #%u presence status: %s", i,
+              tp_contact_get_presence_status (contact));
+          DEBUG ("contact #%u presence message: %s", i,
+              tp_contact_get_presence_message (contact));
+          g_ptr_array_add (result->contacts, contact);
+        }
+    }
+  else
+    {
+      DEBUG ("got an error: %s %u: %s", g_quark_to_string (error->domain),
+          error->code, error->message);
+      result->error = g_error_copy (error);
+    }
+}
+
+static void
+test_by_id (TpConnection *client_conn)
+{
+  Result result = { g_main_loop_new (NULL, FALSE) };
+  static const gchar * const ids[] = { "Alice", "Bob", "Not valid", "Chris",
+      "not valid either", NULL };
+  TpContact *contacts[3];
+  guint i;
+  GError *e /* no initialization needed */;
+
+  g_message ("%s: all good", G_STRFUNC);
+
+  tp_connection_get_contacts_by_id (client_conn,
+      2, ids,
+      0, NULL,
+      by_id_cb,
+      &result, finish, NULL);
+
+  g_main_loop_run (result.loop);
+
+  MYASSERT (result.contacts->len == 2, ": %u", result.contacts->len);
+  MYASSERT (g_hash_table_size (result.bad_ids) == 0, ": %u",
+      g_hash_table_size (result.bad_ids));
+  MYASSERT_NO_ERROR (result.error);
+
+  MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
+  contacts[0] = g_ptr_array_index (result.contacts, 0);
+  MYASSERT_SAME_STRING (result.good_ids[0], "Alice");
+  MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[0]), "alice");
+  contacts[1] = g_ptr_array_index (result.contacts, 1);
+  MYASSERT_SAME_STRING (result.good_ids[1], "Bob");
+  MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[1]), "bob");
+
+  for (i = 0; i < 2; i++)
+    {
+      g_object_unref (contacts[i]);
+    }
+
+  g_ptr_array_free (result.contacts, TRUE);
+  result.contacts = NULL;
+  g_strfreev (result.good_ids);
+  result.good_ids = NULL;
+  g_hash_table_destroy (result.bad_ids);
+  result.bad_ids = NULL;
+
+  g_message ("%s: not all good", G_STRFUNC);
+
+  tp_connection_get_contacts_by_id (client_conn,
+      5, ids,
+      0, NULL,
+      by_id_cb,
+      &result, finish, NULL);
+
+  g_main_loop_run (result.loop);
+
+  MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
+  MYASSERT (g_hash_table_size (result.bad_ids) == 2, ": %u",
+      g_hash_table_size (result.bad_ids));
+  MYASSERT_NO_ERROR (result.error);
+
+  e = g_hash_table_lookup (result.bad_ids, "Not valid");
+  MYASSERT (e != NULL, "");
+
+  e = g_hash_table_lookup (result.bad_ids, "not valid either");
+  MYASSERT (e != NULL, "");
+
+  MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
+  contacts[0] = g_ptr_array_index (result.contacts, 0);
+  MYASSERT_SAME_STRING (result.good_ids[0], "Alice");
+  MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[0]), "alice");
+  contacts[1] = g_ptr_array_index (result.contacts, 1);
+  MYASSERT_SAME_STRING (result.good_ids[1], "Bob");
+  MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[1]), "bob");
+  contacts[2] = g_ptr_array_index (result.contacts, 2);
+  MYASSERT_SAME_STRING (result.good_ids[2], "Chris");
+  MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[2]), "chris");
+
+  /* clean up refs to contacts */
+
+  for (i = 0; i < 3; i++)
+    {
+      g_object_unref (contacts[i]);
+    }
+
+  /* wait for ReleaseHandles to run */
+  test_connection_run_until_dbus_queue_processed (client_conn);
+
+  /* remaining cleanup */
+  g_main_loop_unref (result.loop);
+
+  g_ptr_array_free (result.contacts, TRUE);
+  result.contacts = NULL;
+  g_strfreev (result.good_ids);
+  result.good_ids = NULL;
+  g_hash_table_destroy (result.bad_ids);
+  result.bad_ids = NULL;
+}
+
 int
 main (int argc,
       char **argv)
@@ -534,6 +910,8 @@ main (int argc,
   test_by_handle (service_conn, client_conn);
   test_no_features (service_conn, client_conn);
   test_features (service_conn, client_conn);
+  test_upgrade (service_conn, client_conn);
+  test_by_id (client_conn);
 
   /* Teardown */
 
