@@ -11,6 +11,8 @@
 
 #include "simple-conn.h"
 
+#include <string.h>
+
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/dbus.h>
@@ -107,6 +109,13 @@ simple_normalize_contact (TpHandleRepoIface *repo,
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "ID must not be empty");
+      return NULL;
+    }
+
+  if (strchr (id, ' ') != NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "ID must not contain spaces");
       return NULL;
     }
 
