@@ -97,6 +97,27 @@ void tp_connection_get_contacts_by_handle (TpConnection *self,
     TpConnectionContactsByHandleCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
+typedef void (*TpConnectionUpgradeContactsCb) (TpConnection *connection,
+    guint n_contacts, TpContact * const *contacts,
+    const GError *error, gpointer user_data, GObject *weak_object);
+
+void tp_connection_upgrade_contacts (TpConnection *self,
+    guint n_contacts, TpContact * const *contacts,
+    guint n_features, const TpContactFeature *features,
+    TpConnectionUpgradeContactsCb callback,
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+
+typedef void (*TpConnectionContactsByIdCb) (TpConnection *connection,
+    guint n_contacts, TpContact * const *contacts,
+    const gchar * const *requested_ids, GHashTable *invalid_id_errors,
+    const GError *error, gpointer user_data, GObject *weak_object);
+
+void tp_connection_get_contacts_by_id (TpConnection *self,
+    guint n_ids, const gchar * const *ids,
+    guint n_features, const TpContactFeature *features,
+    TpConnectionContactsByIdCb callback,
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+
 G_END_DECLS
 
 #endif
