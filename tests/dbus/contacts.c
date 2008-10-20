@@ -276,6 +276,7 @@ test_no_features (ContactsConnection *service_conn,
 
   for (i = 0; i < 3; i++)
     {
+      MYASSERT (tp_contact_get_connection (contacts[i]) == client_conn, "");
       MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
       MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[i]), ids[i]);
       MYASSERT_SAME_STRING (tp_contact_get_alias (contacts[i]),
@@ -337,6 +338,16 @@ test_features (ContactsConnection *service_conn,
   TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE };
   guint i;
+  struct {
+      TpConnection *connection;
+      TpHandle handle;
+      gchar *identifier;
+      gchar *alias;
+      gchar *avatar_token;
+      TpConnectionPresenceType presence_type;
+      gchar *presence_status;
+      gchar *presence_message;
+  } from_gobject;
 
   g_message (G_STRFUNC);
 
@@ -399,6 +410,33 @@ test_features (ContactsConnection *service_conn,
       TP_CONNECTION_PRESENCE_TYPE_AWAY);
   MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[2]),
       "away");
+
+  /* exercise GObject properties in a basic way */
+  g_object_get (contacts[0],
+      "connection", &from_gobject.connection,
+      "handle", &from_gobject.handle,
+      "identifier", &from_gobject.identifier,
+      "alias", &from_gobject.alias,
+      "avatar-token", &from_gobject.avatar_token,
+      "presence-type", &from_gobject.presence_type,
+      "presence-status", &from_gobject.presence_status,
+      "presence-message", &from_gobject.presence_message,
+      NULL);
+  MYASSERT (from_gobject.connection == client_conn, "");
+  MYASSERT_SAME_UINT (from_gobject.handle, handles[0]);
+  MYASSERT_SAME_STRING (from_gobject.identifier, "alice");
+  MYASSERT_SAME_STRING (from_gobject.alias, "Alice in Wonderland");
+  MYASSERT_SAME_STRING (from_gobject.avatar_token, "aaaaa");
+  MYASSERT_SAME_UINT (from_gobject.presence_type,
+      TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  MYASSERT_SAME_STRING (from_gobject.presence_status, "available");
+  MYASSERT_SAME_STRING (from_gobject.presence_message, "");
+  g_object_unref (from_gobject.connection);
+  g_free (from_gobject.identifier);
+  g_free (from_gobject.alias);
+  g_free (from_gobject.avatar_token);
+  g_free (from_gobject.presence_status);
+  g_free (from_gobject.presence_message);
 
   /* Change Alice and Bob's contact info, leave Chris as-is */
   contacts_connection_change_aliases (service_conn, 2, handles, new_aliases);
