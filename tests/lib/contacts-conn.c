@@ -76,6 +76,14 @@ contacts_connection_init (ContactsConnection *self)
 static void
 finalize (GObject *object)
 {
+  ContactsConnection *self = CONTACTS_CONNECTION (object);
+
+  tp_contacts_mixin_finalize (object);
+  g_hash_table_destroy (self->priv->aliases);
+  g_hash_table_destroy (self->priv->avatar_tokens);
+  g_hash_table_destroy (self->priv->presence_statuses);
+  g_hash_table_destroy (self->priv->presence_messages);
+
   G_OBJECT_CLASS (contacts_connection_parent_class)->finalize (object);
 }
 
