@@ -107,6 +107,8 @@ bug16307_connection_inject_get_status_return (Bug16307Connection *self)
       g_main_loop_run (loop);
 
       g_signal_handler_disconnect (self, get_signal_id);
+
+      g_main_loop_unref (loop);
     }
 
   context = self->priv->get_status_invocation;
