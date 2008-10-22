@@ -338,6 +338,10 @@ tp_connection_unref_handles (TpConnection *self,
       tp_cli_connection_call_release_handles (self, -1,
           handle_type, unref, post_unref, unref, array_free_TRUE, NULL);
     }
+  else
+    {
+      g_array_free (unref, TRUE);
+    }
 }
 
 
