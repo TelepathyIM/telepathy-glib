@@ -6,6 +6,7 @@
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-manager.h>
+#include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/exportable-channel.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
@@ -27,6 +28,7 @@ tp_channel_iface_get_type
 tp_channel_manager_get_type
 tp_connection_get_type
 tp_connection_manager_get_type
+tp_contact_get_type
 tp_dbus_daemon_get_type
 tp_dynamic_handle_repo_get_type
 tp_error_get_type
