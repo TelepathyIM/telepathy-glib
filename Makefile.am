@@ -19,5 +19,12 @@ _maintainer-upload-release-local: _maintainer-upload-release-check
 	rsync -rtvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
 	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib/
 
+BRANCH = misc
+UPLOAD_BRANCH_TO = people.freedesktop.org:public_html/telepathy-glib
+
+upload-branch-docs: all
+	rsync -rtzvPp --chmod=a+rX docs/reference/html/ \
+		$(UPLOAD_BRANCH_TO)-$(BRANCH)/
+
 include tools/lcov.am
 include tools/telepathy.am
