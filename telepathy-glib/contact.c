@@ -43,7 +43,8 @@
  * An object representing a contact on a #TpConnection.
  *
  * Contact objects are instantiated using
- * tp_connection_get_contacts_by_handle().
+ * tp_connection_get_contacts_by_handle() or
+ * tp_connection_get_contacts_by_id().
  */
 
 /**
