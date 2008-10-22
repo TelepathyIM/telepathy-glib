@@ -47,6 +47,17 @@
  * tp_connection_get_contacts_by_id().
  */
 
+struct _TpContactClass {
+    /*<private>*/
+    GObjectClass parent_class;
+};
+
+struct _TpContact {
+    /*<private>*/
+    GObject parent;
+    TpContactPrivate *priv;
+};
+
 /**
  * TpContactFeature:
  * @TP_CONTACT_FEATURE_ALIAS: #TpContact:alias

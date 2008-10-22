@@ -32,17 +32,6 @@ typedef struct _TpContact TpContact;
 typedef struct _TpContactClass TpContactClass;
 typedef struct _TpContactPrivate TpContactPrivate;
 
-struct _TpContactClass {
-    /*<private>*/
-    GObjectClass parent_class;
-};
-
-struct _TpContact {
-    /*<private>*/
-    GObject parent;
-    TpContactPrivate *priv;
-};
-
 GType tp_contact_get_type (void) G_GNUC_CONST;
 
 #define TP_TYPE_CONTACT \
