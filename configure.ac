@@ -131,6 +131,9 @@ PKG_CHECK_MODULES(X11, [x11 gtk+-2.0])
 AC_SUBST(X11_CFLAGS)
 AC_SUBST(X11_LIBS)
 
+AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
+AC_DEFINE_UNQUOTED(SYSCONFDIR, "$SYSCONFDIR", [System configuration directory])
+
 dnl maemo support
 AC_ARG_ENABLE( maemo-support,
   AC_HELP_STRING([--enable-maemo-support],[compile with Maemo support]),

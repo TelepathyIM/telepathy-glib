@@ -170,18 +170,15 @@ set_element_props (FsElementAddedNotifier *notifier,
     g_object_set (element, "max-ptime", GST_MSECOND * 50, NULL);
 }
 
-static void
-add_gstelements_conf_to_notifier (FsElementAddedNotifier *notifier)
+static gboolean
+load_keyfile (GKeyFile *keyfile, const gchar *path, const gchar *subdir)
 {
-  GKeyFile *keyfile = NULL;
   gchar *filename;
   gboolean loaded = FALSE;
   GError *error = NULL;
 
-  keyfile = g_key_file_new ();
 
-  filename = g_build_filename (g_get_user_config_dir (), "stream-engine",
-      "gstelements.conf", NULL);
+  filename = g_build_filename (path, subdir, "gstelements.conf", NULL);
 
   if (!g_key_file_load_from_file (keyfile, filename, G_KEY_FILE_NONE, &error))
     {
@@ -195,39 +192,30 @@ add_gstelements_conf_to_notifier (FsElementAddedNotifier *notifier)
   g_free (filename);
   g_clear_error (&error);
 
-  if (!loaded)
-    {
-      gchar *path = NULL;
-      filename = g_build_filename ("stream-engine", "gstelements.conf", NULL);
+  return loaded;
+}
 
-      if (!g_key_file_load_from_dirs (keyfile, filename,
-              (const char **) g_get_system_config_dirs (),
-              &path, G_KEY_FILE_NONE, &error))
+static void
+add_gstelements_conf_to_notifier (FsElementAddedNotifier *notifier)
+{
+  GKeyFile *keyfile = g_key_file_new ();
+  const gchar *home = NULL;
+
+  home = g_getenv ("HOME");
+  if (!home)
+    home = g_get_home_dir ();
+
+  if (!load_keyfile (keyfile, home, ".stream-engine"))
+    {
+      if (!load_keyfile (keyfile, SYSCONFDIR, "stream-engine"))
         {
-          g_debug ("Could not read element properties config file %s from any"
-              "of the XDG system config directories: %s", filename,
-              error ? error->message : "(no error message set)");
+          g_key_file_free (keyfile);
+          return;
         }
-      else
-        {
-          g_debug ("Loaded element properties from %s", path);
-          g_free (path);
-          loaded = TRUE;
-        }
-      g_free (filename);
     }
 
-  g_clear_error (&error);
-
-  if (loaded)
-    {
-      fs_element_added_notifier_set_properties_from_keyfile (notifier,
-          keyfile);
-    }
-  else
-    {
-      g_key_file_free (keyfile);
-    }
+  fs_element_added_notifier_set_properties_from_keyfile (notifier,
+      keyfile);
 }
 
 static void
@@ -994,6 +982,27 @@ channel_stream_created (TfChannel *chan G_GNUC_UNUSED,
 }
 
 static GList *
+load_codecs_config (const gchar *path, const gchar *subdir)
+{
+  gchar *filename;
+  GError *error = NULL;
+  GList *codec_config = NULL;
+
+  filename = g_build_filename (path, subdir, "gstcodecs.conf", NULL);
+
+  codec_config = fs_codec_list_from_keyfile (filename, &error);
+
+  if (!codec_config)
+      g_debug ("Could not read local codecs config at %s: %s", filename,
+          error ? error->message : "(no error message set)");
+
+  g_clear_error (&error);
+  g_free (filename);
+
+  return codec_config;
+}
+
+static GList *
 stream_get_codec_config (TfChannel *chan,
     guint stream_id,
     TpMediaStreamType media_type,
@@ -1001,51 +1010,20 @@ stream_get_codec_config (TfChannel *chan,
     TpStreamEngine *self)
 {
   GList *codec_config = NULL;
-  gchar *filename;
-  gint i;
-  GError *error = NULL;
-  const gchar * const *system_config_dirs = g_get_system_config_dirs ();
+  const gchar *home = NULL;
 
-  filename = g_build_filename (g_get_user_config_dir (), "stream-engine",
-      "gstcodecs.conf", NULL);
+  home = g_getenv ("HOME");
+  if (!home)
+    home = g_get_home_dir ();
 
-  codec_config = fs_codec_list_from_keyfile (filename, &error);
-
-  if (!codec_config)
-    {
-      g_debug ("Could not read local codecs config at %s: %s", filename,
-          error ? error->message : "(no error message set)");
-      g_free (filename);
-    }
-  g_clear_error (&error);
-
-  for (i = 0; system_config_dirs[i] && codec_config == NULL; i++)
-    {
-      filename = g_build_filename (system_config_dirs[i],
-          "stream-engine",
-          "gstcodecs.conf", NULL);
-
-      codec_config = fs_codec_list_from_keyfile (filename, &error);
-
-      if (!codec_config)
-        {
-          g_debug ("Could not read global codecs config at %s: %s", filename,
-              error ? error->message : "(no error message set)");
-          g_free (filename);
-        }
-      g_clear_error (&error);
-    }
-
+  codec_config = load_codecs_config (home, ".stream-engine");
   if (codec_config)
-    {
-      g_debug ("Loaded codec config from %s", filename);
-      g_free (filename);
-    }
+    return codec_config;
+
+  codec_config = load_codecs_config (SYSCONFDIR, "stream-engine");
 
   return codec_config;
 }
-
-
 
 static void
 check_if_busy (TpStreamEngine *self)
