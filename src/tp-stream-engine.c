@@ -680,17 +680,16 @@ _make_audio_sink (void)
     }
   else
     {
-#ifdef MAEMO_OSSO_SUPPORT
-      sink = gst_element_factory_make ("dsppcmsink", NULL);
-#else
       sink = gst_element_factory_make ("gconfaudiosink", NULL);
 
       if (sink == NULL)
         sink = gst_element_factory_make ("autoaudiosink", NULL);
 
       if (sink == NULL)
+        sink = gst_element_factory_make ("pulsesink", NULL);
+
+      if (sink == NULL)
         sink = gst_element_factory_make ("alsasink", NULL);
-#endif
     }
 
   if (sink == NULL)
@@ -1391,12 +1390,10 @@ _make_audio_src (void)
     }
   else
     {
-
-#ifdef MAEMO_OSSO_SUPPORT
-      src = gst_element_factory_make ("pulsesrc", NULL);
-      if (src == NULL)
-#endif
       src = gst_element_factory_make ("gconfaudiosrc", NULL);
+
+      if (src == NULL)
+        src = gst_element_factory_make ("pulsesrc", NULL);
 
       if (src == NULL)
         src = gst_element_factory_make ("alsasrc", NULL);
