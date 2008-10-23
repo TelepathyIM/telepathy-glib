@@ -376,6 +376,14 @@ tp_stream_engine_video_sink_class_init (TpStreamEngineVideoSinkClass *klass)
           G_TYPE_NONE, 0);
 }
 
+static void
+set_window_xid (gpointer data, gpointer user_data)
+{
+  GstXOverlay *xov = GST_X_OVERLAY (data);
+  gulong xid = GPOINTER_TO_UINT (user_data);
+
+  gst_x_overlay_set_xwindow_id (xov, xid);
+}
 
 gboolean
 tp_stream_engine_video_sink_bus_sync_message (
@@ -385,9 +393,7 @@ tp_stream_engine_video_sink_bus_sync_message (
   const GstStructure *s;
   gboolean found = FALSE;
 #ifndef MAEMO_OSSO_SUPPORT
-  gboolean done = FALSE;
   GstIterator *it = NULL;
-  gpointer item;
 #endif
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
@@ -410,32 +416,9 @@ tp_stream_engine_video_sink_bus_sync_message (
 
   it = gst_bin_iterate_all_by_interface (GST_BIN (self->priv->sink),
       GST_TYPE_X_OVERLAY);
-
-  while (!done) {
-    switch (gst_iterator_next (it, &item)) {
-    case GST_ITERATOR_OK:
-      if (GST_MESSAGE_SRC (message) == item)
-        {
-          GstXOverlay *xov = item;
-          g_debug ("Setting window id on sink");
-          gst_x_overlay_set_xwindow_id (xov, self->priv->window_id);
-          done = TRUE;
-          found = TRUE;
-        }
-      gst_object_unref (item);
-      break;
-    case GST_ITERATOR_RESYNC:
-      gst_iterator_resync (it);
-      break;
-    case GST_ITERATOR_ERROR:
-      g_warning ("Error finding interface");
-      done = TRUE;
-      break;
-    case GST_ITERATOR_DONE:
-      done = TRUE;
-      break;
-    }
-  }
+  while (gst_iterator_foreach (it, set_window_xid,
+          GUINT_TO_POINTER (self->priv->window_id)) == GST_ITERATOR_RESYNC)
+    gst_iterator_resync (it);
   gst_iterator_free (it);
 
 #endif
