@@ -29,9 +29,7 @@ AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(X11_CFLAGS) \
 	$(GST_CFLAGS) \
-	$(GST_INTERFACES_CFLAGS) \
 	$(FARSIGHT2_CFLAGS) \
 	$(TELEPATHY_CFLAGS) \
 	-I$(top_srcdir) \
@@ -40,8 +38,6 @@ AM_CFLAGS = \
 libtelepathy_farsight_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
-	$(X11_LIBS) \
-	$(GST_INTERFACES_LIB) \
 	$(GST_LIBS) \
 	$(FARSIGHT2_LIBS) \
 	$(TELEPATHY_LIBS)

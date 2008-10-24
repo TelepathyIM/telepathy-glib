@@ -1,9 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = tools telepathy-farsight api src test doc data
-
-confdir = $(sysconfdir)/stream-engine
-conf_DATA = gstcodecs.conf
+SUBDIRS = telepathy-farsight doc
 
 EXTRA_DIST = $(conf_DATA)
 

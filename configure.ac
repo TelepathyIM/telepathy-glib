@@ -5,12 +5,12 @@ AC_PREREQ([2.59])
 #     odd minor -> development series
 #     even minor -> stable series
 #     increment micro for each release within a series
-#   set stream_engine_release to 1.
+#   set tp_farsight_release to 1
 
-m4_define([stream_engine_major_version], [0])
-m4_define([stream_engine_minor_version], [5])
-m4_define([stream_engine_micro_version], [0])
-m4_define([stream_engine_nano_version], [1])
+m4_define([tp_farsight_major_version], [0])
+m4_define([tp_farsight_minor_version], [0])
+m4_define([tp_farsight_micro_version], [0])
+m4_define([tp_farsight_nano_version], [1])
 
 m4_define([tp_farsight_lt_current], [0])
 m4_define([tp_farsight_lt_revision], [0])
@@ -18,13 +18,13 @@ m4_define([tp_farsight_lt_age], [0])
 
 
 # Some magic
-m4_define([stream_engine_base_version],
-          [stream_engine_major_version.stream_engine_minor_version.stream_engine_micro_version])
-m4_define([stream_engine_version],
-          [m4_if(stream_engine_nano_version, 0, [stream_engine_base_version],
-              [stream_engine_base_version].[stream_engine_nano_version])])
+m4_define([tp_farsight_base_version],
+          [tp_farsight_major_version.tp_farsight_minor_version.tp_farsight_micro_version])
+m4_define([tp_farsight_version],
+          [m4_if(tp_farsight_nano_version, 0, [tp_farsight_base_version],
+              [tp_farsight_base_version].[tp_farsight_nano_version])])
 
-AC_INIT([Telepathy Stream Engine], [stream_engine_version],
+AC_INIT([Telepathy-Farsight], [tp_farsight_version],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy])
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -37,18 +37,6 @@ AC_PROG_CC
 AC_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
-
-dnl Check for code generation tools
-XSLTPROC=
-AC_CHECK_PROGS([XSLTPROC], [xsltproc])
-if test -z "$XSLTPROC"; then
-  AC_MSG_ERROR([xsltproc (from the libxslt source package) is required])
-fi
-PYTHON=
-AC_CHECK_PROGS([PYTHON], [python2.3 python2.4 python2.5 python])
-if test -z "$PYTHON"; then
-  AC_MSG_ERROR([Python is required to compile this package])
-fi
 
 dnl decide error flags
 AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
@@ -66,7 +54,7 @@ AS_COMPILER_FLAG(-Wno-unused-parameter,
         wno_unused_parameter=yes,
         wno_unused_parameter=no)
 
-ifelse(stream_engine_nano_version, 0, [],
+ifelse(tp_farsight_nano_version, 0, [],
     [
         if test x$werror = xyes; then
             ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
@@ -85,9 +73,6 @@ if test "x$enable_coverage" = "xyes"; then
        CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"
 fi
 
-dnl options for building sequence diagrams
-SEQ_DIAS
-
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB, gobject-2.0 >= 2.4)
 
@@ -101,11 +86,6 @@ PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.60, dbus-glib-1 >= 0.60])
 
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
-
-AS_AC_EXPAND(DATADIR, $datadir)
-DBUS_SERVICES_DIR="$DATADIR/dbus-1/services"
-AC_SUBST(DBUS_SERVICES_DIR)
-AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [DBus services directory])
 
 dnl Check for Telepathy libraries
 PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.7.8])
@@ -125,26 +105,6 @@ PKG_CHECK_MODULES(GST_INTERFACES, [gstreamer-interfaces-0.10 >= 0.10.18],[],
 AC_SUBST(GST_INTERFACES_CFLAGS)
 AC_SUBST(GST_INTERFACES_LIBS)
 
-
-dnl libx11
-PKG_CHECK_MODULES(X11, [x11 gtk+-2.0])
-AC_SUBST(X11_CFLAGS)
-AC_SUBST(X11_LIBS)
-
-AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
-AC_DEFINE_UNQUOTED(SYSCONFDIR, "$SYSCONFDIR", [System configuration directory])
-
-dnl maemo support
-AC_ARG_ENABLE( maemo-support,
-  AC_HELP_STRING([--enable-maemo-support],[compile with Maemo support]),
-  maemo_support=$enableval, maemo_support=no )
-
-if test x$maemo_support = xyes; then
-  AC_DEFINE(MAEMO_OSSO_SUPPORT, , [Enable Maemo support])
-fi
-
-AM_CONDITIONAL(MAEMO_OSSO_SUPPORT, test x$MAEMO_OSSO_SUPPORT = xyes)
-
 GTK_DOC_CHECK([1.10])
 
 LT_CURRENT=tp_farsight_lt_current
@@ -156,15 +116,9 @@ AC_SUBST([LT_AGE])
 
 
 AC_OUTPUT( Makefile \
-          api/Makefile \
-          data/Makefile \
           doc/Makefile \
           doc/lib/Makefile \
           telepathy-farsight/Makefile  \
-          telepathy-farsight/telepathy-farsight.pc \
-          src/Makefile  \
-          test/Makefile \
-          test/python/Makefile \
-          tools/Makefile
+          telepathy-farsight/telepathy-farsight.pc
 )
 
