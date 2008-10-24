@@ -1687,14 +1687,14 @@ tp_connection_upgrade_contacts (TpConnection *self,
 
 
 static void
-contacts_requested_one (TpConnection *connection,
-                        TpHandleType handle_type,
-                        guint n_handles,
-                        const TpHandle *handles,
-                        const gchar * const *ids,
-                        const GError *error,
-                        gpointer user_data,
-                        GObject *weak_object)
+contacts_requested_one_handle (TpConnection *connection,
+                               TpHandleType handle_type,
+                               guint n_handles,
+                               const TpHandle *handles,
+                               const gchar * const *ids,
+                               const GError *error,
+                               gpointer user_data,
+                               GObject *weak_object)
 {
   ContactsContext *c = user_data;
 
@@ -1735,7 +1735,7 @@ contacts_requested_one (TpConnection *connection,
 
 
 static void
-contacts_request_one (ContactsContext *c)
+contacts_request_one_handle (ContactsContext *c)
 {
   const gchar *ids[] = { NULL, NULL };
 
@@ -1745,7 +1745,8 @@ contacts_request_one (ContactsContext *c)
   c->refcount++;
   tp_connection_request_handles (c->connection, -1,
       TP_HANDLE_TYPE_CONTACT, ids,
-      contacts_requested_one, c, contacts_context_unref, c->weak_object);
+      contacts_requested_one_handle, c, contacts_context_unref,
+      c->weak_object);
 }
 
 
@@ -1789,7 +1790,7 @@ contacts_requested_handles (TpConnection *connection,
       /* -1 because NULL terminator is explicit */
       for (i = 0; i < c->request_ids->len - 1; i++)
         {
-          g_queue_push_head (&c->todo, contacts_request_one);
+          g_queue_push_head (&c->todo, contacts_request_one_handle);
         }
 
       g_assert (c->next_index == 0);
