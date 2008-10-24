@@ -540,8 +540,6 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * This may be an empty string if this #TpContact object has not been set up
    * to track %TP_CONTACT_FEATURE_PRESENCE.
-   *
-   * FIXME: reviewers, should this be "" or NULL when not available?
    */
   param_spec = g_param_spec_string ("presence-status",
       "Presence status",
