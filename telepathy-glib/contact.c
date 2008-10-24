@@ -607,41 +607,6 @@ tp_contact_init (TpContact *self)
       TpContactPrivate);
 }
 
-/* Here's what needs to happen when we create contacts, in pseudocode:
- *
- * if we started from IDs:
- *    request all the handles
- *    if it fails with NotAvailable, at least one of them is invalid:
- *        request the first handle
- *        request the second handle
- *        ...
- *    else if it fails for any other reason:
- *        abort
- *
- * (by now, ->handles is populated)
- *
- * if contact attributes are supported:
- *    (the fast path)
- *    get the contact attributes (and simultaneously hold the handles)
- *    if it failed, goto abort
- *    if none are missing, goto done
- * else if we started from handles:
- *    try to hold all the handles
- *    if it fails with InvalidHandle:
- *        hold the first handle
- *        hold the second handle
- *        ...
- *    else if it fails for any other reason:
- *        abort
- *
- * (the slow path)
- * get the avatar tokens if we want them - if it fails, goto abort
- * get the aliases if we want them - if it fails, goto abort
- * ...
- *
- * Most of this is actually implemented by popping callbacks (ContactsProc)
- * from a queue.
- */
 
 typedef struct _ContactsContext ContactsContext;
 typedef void (*ContactsProc) (ContactsContext *self);
