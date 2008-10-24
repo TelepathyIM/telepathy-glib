@@ -638,7 +638,6 @@ struct _ContactsContext {
     /* callback for when we've finished, plus the usual misc */
     ContactsSignature signature;
     union {
-        GCallback generic;
         TpConnectionContactsByHandleCb by_handle;
         TpConnectionContactsByIdCb by_id;
         TpConnectionUpgradeContactsCb upgrade;
@@ -662,7 +661,6 @@ contacts_context_new (TpConnection *connection,
                       guint n_contacts,
                       ContactFeatureFlags want_features,
                       ContactsSignature signature,
-                      GCallback callback,
                       gpointer user_data,
                       GDestroyNotify destroy,
                       GObject *weak_object)
@@ -677,7 +675,6 @@ contacts_context_new (TpConnection *connection,
 
   c->wanted = want_features;
   c->signature = signature;
-  c->callback.generic = callback;
   c->user_data = user_data;
   c->destroy = destroy;
   c->weak_object = weak_object;
@@ -1583,7 +1580,8 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
     }
 
   context = contacts_context_new (self, n_handles, feature_flags,
-      CB_BY_HANDLE, G_CALLBACK (callback), user_data, destroy, weak_object);
+      CB_BY_HANDLE, user_data, destroy, weak_object);
+  context->callback.by_handle = callback;
 
   g_array_append_vals (context->handles, handles, n_handles);
 
@@ -1667,7 +1665,8 @@ tp_connection_upgrade_contacts (TpConnection *self,
     }
 
   context = contacts_context_new (self, n_contacts, feature_flags,
-      CB_UPGRADE, G_CALLBACK (callback), user_data, destroy, weak_object);
+      CB_UPGRADE, user_data, destroy, weak_object);
+  context->callback.upgrade = callback;
 
   for (i = 0; i < n_contacts; i++)
     {
@@ -1864,7 +1863,8 @@ tp_connection_get_contacts_by_id (TpConnection *self,
     }
 
   context = contacts_context_new (self, n_ids, feature_flags,
-      CB_BY_ID, G_CALLBACK (callback), user_data, destroy, weak_object);
+      CB_BY_ID, user_data, destroy, weak_object);
+  context->callback.by_id = callback;
   context->request_errors = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) g_error_free);
 
