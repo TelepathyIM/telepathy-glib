@@ -15,10 +15,26 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
 
-static const gchar *
-nonnull (const gchar *s)
+static void
+display_contact (TpContact *contact)
 {
-  return s == NULL ? "(null)" : s;
+  const gchar *avatar_token;
+
+  g_message ("Handle %u, \"%s\":", tp_contact_get_handle (contact),
+      tp_contact_get_identifier (contact));
+  g_message ("\tAlias: \"%s\"", tp_contact_get_alias (contact));
+
+  avatar_token = tp_contact_get_avatar_token (contact);
+
+  if (avatar_token == NULL)
+    g_message ("\tAvatar token not known");
+  else
+    g_message ("\tAvatar token: \"%s\"", avatar_token);
+
+  g_message ("\tPresence: type #%i \"%s\": \"%s\"",
+      tp_contact_get_presence_type (contact),
+      tp_contact_get_presence_status (contact),
+      tp_contact_get_presence_message (contact));
 }
 
 static void
@@ -37,21 +53,55 @@ got_contacts_by_handle (TpConnection *connection,
     {
       guint i;
 
-      g_message ("Got %u contact(s)", n_contacts);
+      for (i = 0; i < n_contacts; i++)
+        {
+          display_contact (contacts[i]);
+        }
+
+      for (i = 0; i < n_invalid; i++)
+        {
+          g_warning ("Invalid handle %u", invalid[i]);
+        }
+    }
+  else
+    {
+      g_warning ("Error getting contacts: %s", error->message);
+    }
+
+  g_main_loop_quit (mainloop);
+}
+
+static void
+got_contacts_by_id (TpConnection *connection,
+                    guint n_contacts,
+                    TpContact * const *contacts,
+                    const gchar * const *good_ids,
+                    GHashTable *bad_ids,
+                    const GError *error,
+                    gpointer user_data,
+                    GObject *weak_object)
+{
+  GMainLoop *mainloop = user_data;
+
+  if (error == NULL)
+    {
+      guint i;
+      GHashTableIter hash_iter;
+      gpointer key, value;
 
       for (i = 0; i < n_contacts; i++)
         {
-          TpContact *contact = contacts[i];
+          display_contact (contacts[i]);
+        }
 
-          g_message ("Handle %u, %s:", tp_contact_get_handle (contact),
-              tp_contact_get_identifier (contact));
-          g_message ("\tAlias: %s", nonnull (tp_contact_get_alias (contact)));
-          g_message ("\tAvatar token: %s",
-              nonnull (tp_contact_get_avatar_token (contact)));
-          g_message ("\tPresence: type #%i %s: %s",
-              tp_contact_get_presence_type (contact),
-              nonnull (tp_contact_get_presence_status (contact)),
-              nonnull (tp_contact_get_avatar_token (contact)));
+      g_hash_table_iter_init (&hash_iter, bad_ids);
+
+      while (g_hash_table_iter_next (&hash_iter, &key, &value))
+        {
+          gchar *id = key;
+          GError *e = value;
+
+          g_warning ("Invalid ID \"%s\": %s", id, e->message);
         }
     }
   else
@@ -71,9 +121,11 @@ main (int argc,
   GMainLoop *mainloop;
   TpDBusDaemon *daemon;
   GError *error = NULL;
-#define n_features 1
-  static TpContactFeature features[n_features] = {
-      TP_CONTACT_FEATURE_ALIAS };
+  static TpContactFeature features[] = {
+      TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN,
+      TP_CONTACT_FEATURE_PRESENCE
+  };
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -137,18 +189,21 @@ main (int argc,
 
       tp_connection_get_contacts_by_handle (connection,
           1, &self_handle,
-          n_features, features,
+          sizeof (features) / sizeof (features[0]), features,
           got_contacts_by_handle,
           g_main_loop_ref (mainloop),
           (GDestroyNotify) g_main_loop_unref, NULL);
     }
   else
     {
-      g_warning ("Getting contacts by ID not yet implemented");
-      g_main_loop_unref (mainloop);
-      g_object_unref (connection);
-      g_object_unref (daemon);
-      return 1;
+      const gchar *contacts[] = { argv[2], NULL };
+
+      tp_connection_get_contacts_by_id (connection,
+          1, contacts,
+          sizeof (features) / sizeof (features[0]), features,
+          got_contacts_by_id,
+          g_main_loop_ref (mainloop),
+          (GDestroyNotify) g_main_loop_unref, NULL);
     }
 
   g_main_loop_run (mainloop);
