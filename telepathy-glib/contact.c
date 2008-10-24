@@ -123,9 +123,9 @@ struct _TpContactPrivate {
  *
  * <!-- nothing more to say -->
  *
- * Returns: a borrowed reference to the connection associated with this
- *  contact (it must be referenced with g_object_ref if it must remain valid
- *  longer than the contact).
+ * Returns: a borrowed reference to the #TpContact:connection
+ *  (it must be referenced with g_object_ref if it must remain valid
+ *  longer than the contact)
  */
 TpConnection *
 tp_contact_get_connection (TpContact *self)
@@ -140,10 +140,17 @@ tp_contact_get_connection (TpContact *self)
  * tp_contact_get_handle:
  * @self: a contact
  *
- * <!-- nothing more to say -->
+ * Return the contact's handle, which is of type %TP_HANDLE_TYPE_CONTACT,
+ * or 0 if the #TpContact:connection has become invalid.
  *
- * Returns: the contact's handle, or 0 if the contact belongs to a connection
- *  that has become invalid.
+ * This handle is referenced using the Telepathy D-Bus API and remains
+ * referenced for as long as @self exists and the
+ * #TpContact:connection remains valid.
+ *
+ * However, the caller of this function does not gain an additional reference
+ * to the handle.
+ *
+ * Returns: the same handle as the #TpContact:handle property
  */
 TpHandle
 tp_contact_get_handle (TpContact *self)
@@ -157,10 +164,11 @@ tp_contact_get_handle (TpContact *self)
  * tp_contact_get_identifier:
  * @self: a contact
  *
- * <!-- nothing more to say -->
+ * Return the contact's identifier. This remains valid for as long as @self
+ * exists; if the caller requires a string that will persist for longer than
+ * that, it must be copied with g_strdup().
  *
- * Returns: the contact's identifier (XMPP JID, MSN Passport, AOL screen-name,
- *  etc. - whatever the underlying protocol uses to identify a user).
+ * Returns: the same identifier as the #TpContact:identifier property
  */
 const gchar *
 tp_contact_get_identifier (TpContact *self)
@@ -197,13 +205,11 @@ tp_contact_has_feature (TpContact *self,
  * tp_contact_get_alias:
  * @self: a contact
  *
- * If this object has been set up to track %TP_CONTACT_FEATURE_ALIAS
- * and the underlying connection supports the Aliasing interface, return
- * this contact's alias.
+ * Return the contact's alias. This remains valid until the main loop
+ * is re-entered; if the caller requires a string that will persist for
+ * longer than that, it must be copied with g_strdup().
  *
- * Otherwise, return this contact's identifier in the IM protocol.
- *
- * Returns: a reasonable name or alias to display for this contact
+ * Returns: the same alias as the #TpContact:alias
  */
 const gchar *
 tp_contact_get_alias (TpContact *self)
@@ -224,14 +230,11 @@ tp_contact_get_alias (TpContact *self)
  * tp_contact_get_avatar_token:
  * @self: a contact
  *
- * If this object has been set up to track %TP_CONTACT_FEATURE_AVATAR_TOKEN,
- * return the token identifying this contact's avatar, an empty string if they
- * are known to have no avatar, or %NULL if it is unknown whether they have
- * an avatar.
+ * Return the contact's avatar token. This remains valid until the main loop
+ * is re-entered; if the caller requires a string that will persist for
+ * longer than that, it must be copied with g_strdup().
  *
- * Otherwise, return %NULL in all cases.
- *
- * Returns: either the avatar token, an empty string, or %NULL
+ * Returns: the same token as the #TpContact:avatar-token property
  */
 const gchar *
 tp_contact_get_avatar_token (TpContact *self)
@@ -252,7 +255,7 @@ tp_contact_get_avatar_token (TpContact *self)
  *
  * Otherwise, return %TP_CONNECTION_PRESENCE_TYPE_UNSET.
  *
- * Returns: #TpContact:presence-type
+ * Returns: the same presence type as the #TpContact:presence-type property
  */
 TpConnectionPresenceType
 tp_contact_get_presence_type (TpContact *self)
@@ -267,15 +270,12 @@ tp_contact_get_presence_type (TpContact *self)
  * tp_contact_get_presence_status:
  * @self: a contact
  *
- * If this object has been set up to track %TP_CONTACT_FEATURE_PRESENCE
- * and the underlying connection supports either the Presence or
- * SimplePresence interfaces, return the presence status, which may either
- * take a well-known value like "available", or a protocol-specific
- * (or even connection-manager-specific) value like "out-to-lunch".
+ * Return the name of the contact's presence status, or an empty string.
+ * This remains valid until the main loop is re-entered; if the caller
+ * requires a string that will persist for longer than that, it must be
+ * copied with g_strdup().
  *
- * Otherwise, return an empty string.
- *
- * Returns: #TpContact:presence-status
+ * Returns: the same status name as the #TpContact:presence-status property
  */
 const gchar *
 tp_contact_get_presence_status (TpContact *self)
@@ -291,14 +291,12 @@ tp_contact_get_presence_status (TpContact *self)
  * tp_contact_get_presence_message:
  * @self: a contact
  *
- * If this object has been set up to track %TP_CONTACT_FEATURE_PRESENCE,
- * the underlying connection supports either the Presence or
- * SimplePresence interfaces, and the contact has set a message more specific
- * than the presence type or presence status, return that message.
+ * Return the contact's user-defined status message, or an empty string.
+ * This remains valid until the main loop is re-entered; if the caller
+ * requires a string that will persist for longer than that, it must be
+ * copied with g_strdup().
  *
- * Otherwise, return an empty string.
- *
- * Returns: #TpContact:presence-message
+ * Returns: the same message as the #TpContact:presence-message property
  */
 const gchar *
 tp_contact_get_presence_message (TpContact *self)
@@ -448,6 +446,9 @@ tp_contact_class_init (TpContactClass *klass)
    * referenced for as long as the #TpContact exists and the
    * #TpContact:connection remains valid.
    *
+   * However, getting this property does not cause an additional reference
+   * to the handle to be held.
+   *
    * If the #TpContact:connection becomes invalid, this property is no longer
    * meaningful and will be set to 0.
    */
@@ -462,7 +463,8 @@ tp_contact_class_init (TpContactClass *klass)
    * TpContact:identifier:
    *
    * The contact's identifier in the instant messaging protocol (e.g.
-   * XMPP JID, SIP URI, AOL screenname or IRC nick).
+   * XMPP JID, SIP URI, AOL screenname or IRC nick - whatever the underlying
+   * protocol uses to identify a user).
    */
   param_spec = g_param_spec_string ("identifier",
       "IM protocol identifier",
