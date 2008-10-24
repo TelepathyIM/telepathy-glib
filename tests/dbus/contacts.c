@@ -86,7 +86,7 @@ by_handle_cb (TpConnection *connection,
               tp_contact_get_presence_status (contact));
           DEBUG ("contact #%u presence message: %s", i,
               tp_contact_get_presence_message (contact));
-          g_ptr_array_add (result->contacts, contact);
+          g_ptr_array_add (result->contacts, g_object_ref (contact));
         }
     }
   else
@@ -354,7 +354,7 @@ upgrade_cb (TpConnection *connection,
               tp_contact_get_presence_status (contact));
           DEBUG ("contact #%u presence message: %s", i,
               tp_contact_get_presence_message (contact));
-          g_ptr_array_add (result->contacts, contact);
+          g_ptr_array_add (result->contacts, g_object_ref (contact));
         }
     }
   else
@@ -755,7 +755,7 @@ by_id_cb (TpConnection *connection,
               tp_contact_get_presence_status (contact));
           DEBUG ("contact #%u presence message: %s", i,
               tp_contact_get_presence_message (contact));
-          g_ptr_array_add (result->contacts, contact);
+          g_ptr_array_add (result->contacts, g_object_ref (contact));
         }
     }
   else

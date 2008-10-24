@@ -77,7 +77,7 @@ const gchar *tp_contact_get_presence_message (TpContact *self);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,
-    guint n_invalid, const TpHandle *invalid,
+    guint n_failed, const TpHandle *failed,
     const GError *error, gpointer user_data, GObject *weak_object);
 
 void tp_connection_get_contacts_by_handle (TpConnection *self,
@@ -98,7 +98,7 @@ void tp_connection_upgrade_contacts (TpConnection *self,
 
 typedef void (*TpConnectionContactsByIdCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,
-    const gchar * const *requested_ids, GHashTable *invalid_id_errors,
+    const gchar * const *requested_ids, GHashTable *failed_id_errors,
     const GError *error, gpointer user_data, GObject *weak_object);
 
 void tp_connection_get_contacts_by_id (TpConnection *self,

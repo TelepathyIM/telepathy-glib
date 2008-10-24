@@ -747,19 +747,36 @@ static void
 contacts_context_fail (ContactsContext *c,
                        const GError *error)
 {
+  guint i;
+
   switch (c->signature)
     {
     case CB_BY_HANDLE:
-      c->callback.by_handle (c->connection, 0, NULL, 0, NULL, error,
-          c->user_data, c->weak_object);
+      g_array_append_vals (c->invalid, c->handles->data, c->handles->len);
+
+      c->callback.by_handle (c->connection, 0, NULL,
+          c->invalid->len, (const TpHandle *) c->invalid->data,
+          error, c->user_data, c->weak_object);
       return;
     case CB_BY_ID:
-      c->callback.by_id (c->connection, 0, NULL, NULL, NULL, error,
-          c->user_data, c->weak_object);
+      for (i = 0; i < c->request_ids->len; i++)
+        {
+          const gchar *id = g_ptr_array_index (c->request_ids, i);
+
+          if (!g_hash_table_lookup (c->request_errors, id))
+            {
+              g_hash_table_insert (c->request_errors,
+                  g_strdup (id), g_error_copy (error));
+            }
+        }
+
+      c->callback.by_id (c->connection, 0, NULL, NULL,
+          c->request_errors, error, c->user_data, c->weak_object);
       return;
     case CB_UPGRADE:
-      c->callback.upgrade (c->connection, 0, NULL, error,
-          c->user_data, c->weak_object);
+      c->callback.upgrade (c->connection,
+          c->contacts->len, (TpContact * const *) c->contacts->pdata,
+          error, c->user_data, c->weak_object);
       return;
     default:
       g_assert_not_reached ();
@@ -773,13 +790,14 @@ contacts_context_fail (ContactsContext *c,
  * @n_contacts: The number of TpContact objects successfully created
  *  (one per valid handle), or 0 on unrecoverable errors
  * @contacts: An array of @n_contacts TpContact objects (this callback is
- *  given one reference to each of these objects, and must unref any that
- *  are not needed with g_object_unref()), or %NULL on unrecoverable errors
- * @n_invalid: The number of invalid handles that were passed to
- *  tp_connection_get_contacts_by_handle(), or 0 on unrecoverable errors
- * @invalid: An array of @n_invalid handles that were passed to
- *  tp_connection_get_contacts_by_handle() but turned out to be invalid,
- *  or %NULL on unrecoverable errors
+ *  not given a reference to any of these objects, and must call g_object_ref()
+ *  on any that it will keep), or %NULL on unrecoverable errors
+ * @n_failed: The number of invalid handles that were passed to
+ *  tp_connection_get_contacts_by_handle() (or on unrecoverable errors,
+ *  the total number of handles that were given)
+ * @failed: An array of @n_failed handles that were passed to
+ *  tp_connection_get_contacts_by_handle() but turned out to be invalid
+ *  (or on unrecoverable errors, all the handles that were given)
  * @error: %NULL on success, or an unrecoverable error that caused everything
  *  to fail
  * @user_data: the @user_data that was passed to
@@ -808,14 +826,13 @@ contacts_context_fail (ContactsContext *c,
  * @n_contacts: The number of TpContact objects successfully created
  *  (one per valid ID), or 0 on unrecoverable errors
  * @contacts: An array of @n_contacts TpContact objects (this callback is
- *  given one reference to each of these objects, and must unref any that
- *  are not needed with g_object_unref()), or %NULL on unrecoverable errors
+ *  not given a reference to any of these objects, and must call
+ *  g_object_ref() on any that it will keep), or %NULL on unrecoverable errors
  * @requested_ids: An array of @n_contacts valid IDs (JIDs, SIP URIs etc.)
  *  that were passed to tp_connection_get_contacts_by_id(), in an order
  *  corresponding to @contacts, or %NULL on unrecoverable errors
- * @invalid_id_errors: A hash table in which the keys are IDs that were
- *  passed to tp_connection_get_contacts_by_id() but turned out to be invalid,
- *  and the values are the corresponding #GError; %NULL on unrecoverable errors
+ * @failed_id_errors: A hash table in which the keys are IDs
+ *  and the values are errors (#GError)
  * @error: %NULL on success, or an unrecoverable error that caused everything
  *  to fail
  * @user_data: the @user_data that was passed to
@@ -826,41 +843,47 @@ contacts_context_fail (ContactsContext *c,
  * Signature of a callback used to receive the result of
  * tp_connection_get_contacts_by_id().
  *
- * If an unrecoverable error occurs (for instance, if @connection
- * becomes disconnected) the whole operation fails, and no contacts,
- * requested IDs or invalid IDs are returned.
+ * @requested_ids contains the IDs that were converted to handles successfully.
+ * The normalized form of requested_ids[i] is
+ * tp_contact_get_identifier (contacts[i]).
  *
  * If some or even all of the @ids passed to
  * tp_connection_get_contacts_by_id() were not valid, this is not
- * considered to be a failure. @error will be %NULL in this situation,
+ * considered to be a fatal error. @error will be %NULL in this situation,
  * @contacts will contain contact objects for those IDs that were
- * valid (possibly none of them), and @invalid_id_errors will map the IDs
- * that were not valid to a corresponding #GError.
+ * valid (it may be empty), and @failed_id_errors will map the IDs
+ * that were not valid to a corresponding #GError (if the connection manager
+ * complies with the Telepathy spec, it will have domain %TP_ERRORS and code
+ * %TP_ERROR_NOT_AVAILABLE).
  *
- * @requested_ids contains the IDs that were requested. The
- * normalized form of requested_ids[i] can be obtained by calling
- * tp_contact_get_identifier (contacts[i]).
+ * If an unrecoverable error occurs (for instance, if @connection
+ * becomes disconnected) the whole operation fails, and no contacts
+ * or requested IDs are returned. @failed_id_errors will contain all the IDs
+ * that were requested, mapped to a corresponding #GError (either one
+ * indicating that the ID was invalid, if that was determined before the
+ * fatal error occurred, or a copy of @error).
  */
 
 /**
  * TpConnectionUpgradeContactsCb:
  * @connection: The connection
  * @n_contacts: The number of TpContact objects for which an upgrade was
- *  requested, or 0 on unrecoverable errors
+ *  requested
  * @contacts: An array of @n_contacts TpContact objects (this callback is
- *  given one reference to each of these objects, and must unref any that
- *  are not needed with g_object_unref()), or %NULL on unrecoverable errors
+ *  not given an extra reference to any of these objects, and must call
+ *  g_object_ref() on any that it will keep)
  * @error: An unrecoverable error, or %NULL if the connection remains valid
  * @user_data: the @user_data that was passed to
- *  tp_connection_get_contacts_by_handle()
+ *  tp_connection_upgrade_contacts()
  * @weak_object: the @weak_object that was passed to
- *  tp_connection_get_contacts_by_handle()
+ *  tp_connection_upgrade_contacts()
  *
  * Signature of a callback used to receive the result of
  * tp_connection_upgrade_contacts().
  *
  * If an unrecoverable error occurs (for instance, if @connection becomes
- * disconnected) the whole operation fails, and no contacts are returned.
+ * disconnected) it is indicated by @error, but the contacts in @contacts
+ * are still provided.
  */
 
 
@@ -906,10 +929,6 @@ contacts_context_continue (ContactsContext *c)
         default:
           g_assert_not_reached ();
         }
-
-      /* we've given the TpContact refs to the callback, so: */
-      if (c->contacts->len > 0)
-        g_ptr_array_remove_range (c->contacts, 0, c->contacts->len);
     }
   else
     {
