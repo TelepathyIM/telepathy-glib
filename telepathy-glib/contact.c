@@ -168,7 +168,7 @@ tp_contact_get_handle (TpContact *self)
  * exists; if the caller requires a string that will persist for longer than
  * that, it must be copied with g_strdup().
  *
- * Returns: the same identifier as the #TpContact:identifier property
+ * Returns: the same non-%NULL identifier as the #TpContact:identifier property
  */
 const gchar *
 tp_contact_get_identifier (TpContact *self)
@@ -209,7 +209,7 @@ tp_contact_has_feature (TpContact *self,
  * is re-entered; if the caller requires a string that will persist for
  * longer than that, it must be copied with g_strdup().
  *
- * Returns: the same alias as the #TpContact:alias
+ * Returns: the same non-%NULL alias as the #TpContact:alias
  */
 const gchar *
 tp_contact_get_alias (TpContact *self)
@@ -235,6 +235,7 @@ tp_contact_get_alias (TpContact *self)
  * longer than that, it must be copied with g_strdup().
  *
  * Returns: the same token as the #TpContact:avatar-token property
+ *  (possibly %NULL)
  */
 const gchar *
 tp_contact_get_avatar_token (TpContact *self)
@@ -275,7 +276,8 @@ tp_contact_get_presence_type (TpContact *self)
  * requires a string that will persist for longer than that, it must be
  * copied with g_strdup().
  *
- * Returns: the same status name as the #TpContact:presence-status property
+ * Returns: the same non-%NULL status name as the #TpContact:presence-status
+ *  property
  */
 const gchar *
 tp_contact_get_presence_status (TpContact *self)
@@ -296,7 +298,8 @@ tp_contact_get_presence_status (TpContact *self)
  * requires a string that will persist for longer than that, it must be
  * copied with g_strdup().
  *
- * Returns: the same message as the #TpContact:presence-message property
+ * Returns: the same non-%NULL message as the #TpContact:presence-message
+ *  property
  */
 const gchar *
 tp_contact_get_presence_message (TpContact *self)
@@ -464,7 +467,7 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * The contact's identifier in the instant messaging protocol (e.g.
    * XMPP JID, SIP URI, AOL screenname or IRC nick - whatever the underlying
-   * protocol uses to identify a user).
+   * protocol uses to identify a user). This is never %NULL.
    */
   param_spec = g_param_spec_string ("identifier",
       "IM protocol identifier",
@@ -479,7 +482,7 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * The contact's alias if available, falling back to their
    * #TpContact:identifier if no alias is available or if the #TpContact has
-   * not been set up to track %TP_CONTACT_FEATURE_ALIAS.
+   * not been set up to track %TP_CONTACT_FEATURE_ALIAS. This is never %NULL.
    *
    * This alias may have been supplied by the contact themselves, or by the
    * local user, so it does not necessarily unambiguously identify the contact.
@@ -539,7 +542,7 @@ tp_contact_class_init (TpContactClass *klass)
    * or a connection-manager-specific string, like "out-to-lunch".
    *
    * This may be an empty string if this #TpContact object has not been set up
-   * to track %TP_CONTACT_FEATURE_PRESENCE.
+   * to track %TP_CONTACT_FEATURE_PRESENCE. It is never %NULL.
    */
   param_spec = g_param_spec_string ("presence-status",
       "Presence status",
@@ -560,7 +563,7 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * This may be an empty string even if the contact has set a message,
    * if this #TpContact object has not been set up to track
-   * %TP_CONTACT_FEATURE_PRESENCE.
+   * %TP_CONTACT_FEATURE_PRESENCE. It is never %NULL.
    */
   param_spec = g_param_spec_string ("presence-message",
       "Presence message",
