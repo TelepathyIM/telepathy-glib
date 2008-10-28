@@ -1,7 +1,22 @@
 telepathy-glib 0.7.18 (UNRELEASED)
 ==================================
 
-...
+Enhancements:
+
+* Add TpContact, an object representing a contact, with inspection of various
+  attributes (e.g. alias, avatar token and SimplePresence)
+
+Fixes:
+
+* Use unsigned int (rather than gboolean, which is signed!) for bitfields
+
+* Fix a memory leak when a TpChannel with the Group interface is freed
+
+* Fix a memory leak in tp_connection_unref_handles when no handles are released
+
+* Fix some memory leaks in the regression tests
+
+* Re-enable the coding style check and fix various things it complained about
 
 telepathy-glib 0.7.17 (2008-10-14)
 ==================================
