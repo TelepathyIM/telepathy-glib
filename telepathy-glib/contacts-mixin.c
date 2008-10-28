@@ -216,12 +216,12 @@ tp_contacts_mixin_class_init (GObjectClass *obj_cls, glong offset)
  * @obj: An instance of the implementation that uses this mixin
  * @offset: The byte offset of the TpContactsMixin within the object structure
  *
- * Initialize the text mixin. Should be called from the implementation's
+ * Initialize the contacts mixin. Should be called from the implementation's
  * instance init function like so:
  *
  * <informalexample><programlisting>
  * tp_contacts_mixin_init ((GObject *) self,
- *                     G_STRUCT_OFFSET (SomeObject, text_mixin));
+ *                     G_STRUCT_OFFSET (SomeObject, contacts_mixin));
  * </programlisting></informalexample>
  *
  * Since: 0.7.14
