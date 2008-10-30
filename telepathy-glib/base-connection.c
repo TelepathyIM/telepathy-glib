@@ -943,6 +943,13 @@ factory_channel_error_cb (TpChannelFactoryIface *factory,
 
 /* Channel manager signal handlers */
 
+typedef struct {
+    TpBaseConnection *self;
+    /* borrowed TpExportableChannel => itself if suppress_handler,
+     * omitted otherwise */
+    GHashTable *suppress_handler;
+} ManagerNewChannelContext;
+
 static void
 manager_new_channel (gpointer key,
                      gpointer value,
@@ -950,17 +957,18 @@ manager_new_channel (gpointer key,
 {
   TpExportableChannel *channel = TP_EXPORTABLE_CHANNEL (key);
   GSList *request_tokens = value;
-  TpBaseConnection *self = TP_BASE_CONNECTION (data);
-  gchar *object_path, *channel_type;
-  guint handle_type, handle;
+  ManagerNewChannelContext *context = data;
+  TpBaseConnection *self = TP_BASE_CONNECTION (context->self);
+  gchar *object_path;
   GSList *iter;
   gboolean suppress_handler = FALSE;
   gboolean satisfies_create_channel = FALSE;
   gboolean satisfies_request_channel = FALSE;
   ChannelRequest *first_ensure = NULL;
 
-  exportable_channel_get_old_info (channel, &object_path, &channel_type,
-      &handle_type, &handle);
+  g_object_get (channel,
+      "object-path", &object_path,
+      NULL);
 
   /* suppress_handler on Connection.NewChannel should be TRUE if:
    *   - any satisfied requests were calls to CreateChannel; or
@@ -1006,13 +1014,11 @@ manager_new_channel (gpointer key,
     }
 break_loop_early:
 
+  /* put the channel in the suppress_handler hash table if it needs
+   * suppress_handler set when signalling NewChannel */
   if (request_tokens != NULL &&
       (satisfies_create_channel || !satisfies_request_channel))
-    suppress_handler = TRUE;
-
-  tp_svc_connection_emit_new_channel (self, object_path, channel_type,
-      handle_type, handle, suppress_handler);
-
+    g_hash_table_insert (context->suppress_handler, channel, channel);
 
   /* If the only type of request satisfied by this new channel is
    * EnsureChannel, give exactly one request Yours=True.
@@ -1033,18 +1039,6 @@ break_loop_early:
     }
 
   g_free (object_path);
-  g_free (channel_type);
-}
-
-
-static void
-manager_new_channels_foreach (gpointer key,
-                              gpointer value,
-                              gpointer data)
-{
-  GPtrArray *details = data;
-
-  g_ptr_array_add (details, get_channel_details (G_OBJECT (key)));
 }
 
 
@@ -1054,18 +1048,54 @@ manager_new_channels_cb (TpChannelManager *manager,
                          TpBaseConnection *self)
 {
   GPtrArray *array;
+  ManagerNewChannelContext context = { self, g_hash_table_new (NULL, NULL) };
+  GHashTableIter iter;
+  gpointer key, value;
 
   g_assert (TP_IS_CHANNEL_MANAGER (manager));
   g_assert (TP_IS_BASE_CONNECTION (self));
 
+  /* satisfy the RequestChannel/CreateChannel/EnsureChannel calls; as
+   * a side-effect, fill in context.suppress_handler with those channels
+   * that will have to be signalled with suppress_handler = TRUE */
+  g_hash_table_foreach (channels, manager_new_channel, &context);
+
+  /* Emit NewChannels */
   array = g_ptr_array_sized_new (g_hash_table_size (channels));
-  g_hash_table_foreach (channels, manager_new_channels_foreach, array);
+  g_hash_table_iter_init (&iter, channels);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      g_ptr_array_add (array, get_channel_details (G_OBJECT (key)));
+    }
+
   tp_svc_connection_interface_requests_emit_new_channels (self,
       array);
+
   g_ptr_array_foreach (array, (GFunc) g_value_array_free, NULL);
   g_ptr_array_free (array, TRUE);
 
-  g_hash_table_foreach (channels, manager_new_channel, self);
+  /* Emit NewChannel */
+  g_hash_table_iter_init (&iter, channels);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      gboolean suppress_handler = (
+          g_hash_table_lookup (context.suppress_handler, key) != NULL);
+      gchar *object_path, *channel_type;
+      guint handle_type, handle;
+
+      exportable_channel_get_old_info (TP_EXPORTABLE_CHANNEL (key),
+          &object_path, &channel_type, &handle_type, &handle);
+
+      tp_svc_connection_emit_new_channel (self, object_path, channel_type,
+          handle_type, handle, suppress_handler);
+
+      g_free (object_path);
+      g_free (channel_type);
+    }
+
+  g_hash_table_destroy (context.suppress_handler);
 }
 
 
