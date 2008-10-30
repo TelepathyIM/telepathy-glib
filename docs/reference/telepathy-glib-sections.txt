@@ -1521,6 +1521,7 @@ tp_text_mixin_class_init
 tp_text_mixin_init
 tp_text_mixin_set_message_types
 tp_text_mixin_finalize
+tp_text_mixin_receive_with_flags
 tp_text_mixin_receive
 tp_text_mixin_acknowledge_pending_messages
 tp_text_mixin_list_pending_messages

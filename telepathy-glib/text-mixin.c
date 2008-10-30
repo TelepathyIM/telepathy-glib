@@ -267,12 +267,13 @@ tp_text_mixin_finalize (GObject *obj)
 }
 
 /**
- * tp_text_mixin_receive:
+ * tp_text_mixin_receive_with_flags:
  * @obj: An object with the text mixin
  * @type: The type of message received from the underlying protocol
  * @sender: The handle of the message sender
  * @timestamp: The time the message was received
  * @text: The text of the message
+ * @flags: the message's flags
  *
  * Add a message to the pending queue and emit Received.
  *
@@ -280,11 +281,12 @@ tp_text_mixin_finalize (GObject *obj)
  * limit.
  */
 gboolean
-tp_text_mixin_receive (GObject *obj,
-                       TpChannelTextMessageType type,
-                       TpHandle sender,
-                       time_t timestamp,
-                       const char *text)
+tp_text_mixin_receive_with_flags (GObject *obj,
+                                  TpChannelTextMessageType type,
+                                  TpHandle sender,
+                                  time_t timestamp,
+                                  const char *text,
+                                  TpChannelTextMessageFlags flags)
 {
   TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
   _PendingMessage *msg;
@@ -298,6 +300,7 @@ tp_text_mixin_receive (GObject *obj,
   msg->id = mixin->priv->recv_id++;
   msg->timestamp = timestamp;
   msg->type = type;
+  msg->flags = flags;
 
   len = strlen (text);
   msg->text = g_try_malloc (len + 1);
@@ -334,6 +337,32 @@ tp_text_mixin_receive (GObject *obj,
   mixin->priv->message_lost = FALSE;
 
   return TRUE;
+}
+
+
+/**
+ * tp_text_mixin_receive:
+ * @obj: An object with the text mixin
+ * @type: The type of message received from the underlying protocol
+ * @sender: The handle of the message sender
+ * @timestamp: The time the message was received
+ * @text: The text of the message
+ *
+ * Add a message to the pending queue and emit Received. Exactly equivalent
+ * to tp_text_mixin_receive_with_flags() with @flags == 0.
+ *
+ * Returns: %TRUE on success; %FALSE if the message was lost due to the memory
+ * limit.
+ */
+gboolean
+tp_text_mixin_receive (GObject *obj,
+                       TpChannelTextMessageType type,
+                       TpHandle sender,
+                       time_t timestamp,
+                       const char *text)
+{
+  return tp_text_mixin_receive_with_flags (obj, type, sender, timestamp, text,
+      0);
 }
 
 static gint

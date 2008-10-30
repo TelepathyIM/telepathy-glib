@@ -467,8 +467,9 @@ text_send (TpSvcChannelTypeText *iface,
   /* Tell the client that the message was submitted for sending */
   tp_svc_channel_type_text_emit_sent ((GObject *) self, timestamp, type, text);
 
-  /* Pretend that the remote contact has replied. Normally,
-   * you'd call tp_text_mixin_receive in response to network events */
+  /* Pretend that the remote contact has replied. Normally, you'd
+   * call tp_text_mixin_receive or tp_text_mixin_receive_with_flags
+   * in response to network events */
 
   switch (type)
     {
