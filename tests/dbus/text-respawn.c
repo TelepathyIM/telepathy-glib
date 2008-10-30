@@ -207,9 +207,6 @@ main (int argc,
 
   g_print ("\n\n==== Listing messages ====\n");
 
-/* FIXME: when we merge spec 0.17.14, use the proper constant */
-#define TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED ((TpChannelTextMessageFlags) 8)
-
     {
       GPtrArray *messages;
       GValueArray *structure;
@@ -237,26 +234,13 @@ main (int argc,
       g_boxed_free (TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST, messages);
     }
 
-  g_print ("\n\n==== Acknowledging the message ====\n");
-
-    {
-      GArray *ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
-
-      g_array_append_val (ids, last_received_id);
-
-      tp_cli_channel_type_text_run_acknowledge_pending_messages (chan, -1,
-          ids, &error, NULL);
-      MYASSERT_NO_ERROR (error);
-
-      g_array_free (ids, TRUE);
-    }
-
-  g_print ("\n\n==== Closing channel again ====\n");
+  g_print ("\n\n==== Destroying channel ====\n");
 
     {
       gboolean dead;
 
-      MYASSERT (tp_cli_channel_run_close (chan, -1, &error, NULL), "");
+      MYASSERT (tp_cli_channel_interface_destroyable_run_destroy (chan, -1,
+            &error, NULL), "");
       MYASSERT_NO_ERROR (error);
       MYASSERT (tp_proxy_get_invalidated (chan) != NULL, "");
 
