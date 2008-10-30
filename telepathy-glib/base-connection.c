@@ -831,22 +831,22 @@ factory_satisfy_requests (TpBaseConnection *conn,
                                         handle, channel_request,
                                         &suppress_handler);
 
+  for (i = 0; i < tmp->len; i++)
+    satisfy_request (conn, g_ptr_array_index (tmp, i), G_OBJECT (chan),
+        object_path);
+
   if (is_new)
     {
       GPtrArray *array = g_ptr_array_sized_new (1);
-
-      tp_svc_connection_emit_new_channel (conn, object_path, channel_type,
-          handle_type, handle, suppress_handler);
 
       g_ptr_array_add (array, get_channel_details (G_OBJECT (chan)));
       tp_svc_connection_interface_requests_emit_new_channels (conn, array);
       g_value_array_free (g_ptr_array_index (array, 0));
       g_ptr_array_free (array, TRUE);
-    }
 
-  for (i = 0; i < tmp->len; i++)
-    satisfy_request (conn, g_ptr_array_index (tmp, i), G_OBJECT (chan),
-        object_path);
+      tp_svc_connection_emit_new_channel (conn, object_path, channel_type,
+          handle_type, handle, suppress_handler);
+    }
 
   g_ptr_array_free (tmp, TRUE);
 
