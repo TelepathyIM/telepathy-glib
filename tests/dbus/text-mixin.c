@@ -228,6 +228,34 @@ main (int argc,
       g_boxed_free (TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST, messages);
     }
 
+  g_print ("\n\n==== Acknowledging messages using a wrong ID ====\n");
+
+    {
+      GArray *ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
+      /* we assume this ID won't be valid (implementation detail: message
+       * IDs are increasing integers) */
+      guint bad_id = 31337;
+
+      g_array_append_val (ids, last_received_id);
+      g_array_append_val (ids, bad_id);
+
+      MYASSERT (
+          !tp_cli_channel_type_text_run_acknowledge_pending_messages (chan, -1,
+          ids, &error, NULL),
+          "");
+      MYASSERT (error != NULL, "");
+      MYASSERT (error->domain == TP_ERRORS, "%s",
+          g_quark_to_string (error->domain));
+      MYASSERT (error->code == TP_ERROR_INVALID_ARGUMENT, "%u", error->code);
+      g_error_free (error);
+      error = NULL;
+
+      g_array_free (ids, TRUE);
+
+      /* The next test, "Acknowledging one message", will fail if the
+       * last_received_id was acknowledged despite the error */
+    }
+
   g_print ("\n\n==== Acknowledging one message ====\n");
 
     {
