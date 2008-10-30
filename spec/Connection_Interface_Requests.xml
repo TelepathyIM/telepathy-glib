@@ -96,6 +96,9 @@
 
     <method name="CreateChannel" tp:name-for-bindings="Create_Channel">
       <tp:added version="0.17.11">(as stable API)</tp:added>
+      <tp:changed version="0.17.14">It is now guaranteed that
+        CreateChannel returns the channel before NewChannels announces it
+        (the reverse was previously guaranteed).</tp:changed>
 
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Request that an entirely new channel is created.</p>
@@ -147,10 +150,16 @@
       </arg>
 
       <arg name="Channel" direction="out" type="o">
-        <tp:docstring>
-          The Channel object, which MUST already have been signalled with
-          <tp:member-ref>NewChannels</tp:member-ref> by the time this method
-          returns.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The Channel object, which MUST NOT be signalled with
+            <tp:member-ref>NewChannels</tp:member-ref> until after this method
+            returns.</p>
+
+          <tp:rationale>
+            <p>This allows the requester to alter its handling of
+              NewChannels by knowing whether one of the channels satisfied
+              a request it made.</p>
+          </tp:rationale>
         </tp:docstring>
       </arg>
 
@@ -215,6 +224,12 @@
     </method>
 
     <method name="EnsureChannel" tp:name-for-bindings="Ensure_Channel">
+      <tp:added version="0.17.12"/>
+      <tp:changed version="0.17.14">It is now guaranteed that if
+        the channel was created by this call to EnsureChannel, it's returned
+        before NewChannels announces it (the reverse was previously
+        guaranteed).</tp:changed>
+
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Request that channels are ensured to exist.</p>
 
@@ -256,9 +271,16 @@
 
       <arg name="Channel" direction="out" type="o">
         <tp:docstring>
-          The Channel object, which MUST already have been signalled with
-          <tp:member-ref>NewChannels</tp:member-ref> by the time this method
+          The Channel object. If it was created as a result of this method
+          call, it MUST NOT be signalled by
+          <tp:member-ref>NewChannels</tp:member-ref> until after this method
           returns.
+
+          <tp:rationale>
+            <p>This allows the requester to alter its handling of
+              NewChannels by knowing whether one of the channels satisfied
+              a request it made.</p>
+          </tp:rationale>
         </tp:docstring>
       </arg>
 
@@ -310,6 +332,8 @@
 
     <signal name="NewChannels" tp:name-for-bindings="New_Channels">
       <tp:added version="0.17.11">(as stable API)</tp:added>
+      <tp:changed version="0.17.14">Added a guarantee of ordering
+        relative to NewChannel</tp:changed>
 
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>New channels have been created. The connection manager SHOULD emit
@@ -326,6 +350,23 @@
           <p>Joining a MUC Tube in XMPP requires joining the corresponding
             MUC (chatroom), so a Text channel can be created as a
             side-effect.</p>
+        </tp:rationale>
+
+        <p>Every time NewChannels is emitted, it MUST be followed by
+          a <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy">Connection.NewChannel</tp:dbus-ref>
+          signal for each channel.</p>
+
+        <tp:rationale>
+          <p>The double signal emission is for the benefit of older Telepathy
+            clients, which won't be listening for NewChannels.</p>
+
+          <p>The more informative NewChannels signal comes first so that
+            clients that did not examine the connection to find
+            out whether Requests is supported will see the more informative
+            signal for each channel first, and then ignore the less
+            informative signal because it announces a new channel of which
+            they are already aware.</p>
         </tp:rationale>
       </tp:docstring>
 

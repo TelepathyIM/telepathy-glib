@@ -116,7 +116,7 @@
             namespace="org.freedesktop.Telepathy">Channel.Close</tp:dbus-ref>,
           but resorts to calling
           <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy">Channel.Interface.Destroyable.DRAFT.Destroy</tp:dbus-ref>
+            namespace="org.freedesktop.Telepathy">Channel.Interface.Destroyable.Destroy</tp:dbus-ref>
           (if available) or ignoring the channel (if not) if the same handler
           repeatedly fails to handle channels.</p>
       </tp:docstring>
