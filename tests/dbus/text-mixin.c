@@ -284,6 +284,22 @@ main (int argc,
       g_boxed_free (TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST, messages);
     }
 
+  g_print ("\n\n==== Closing channel ====\n");
+
+    {
+      gboolean dead;
+
+      MYASSERT (tp_cli_channel_run_close (chan, -1, &error, NULL), "");
+      MYASSERT_NO_ERROR (error);
+      MYASSERT (tp_proxy_get_invalidated (chan) != NULL, "");
+
+      g_object_get (service_chan,
+          "channel-destroyed", &dead,
+          NULL);
+
+      MYASSERT (dead, "");
+    }
+
   g_print ("\n\n==== End of tests ====\n");
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
