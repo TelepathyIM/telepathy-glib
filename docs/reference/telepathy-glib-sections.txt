@@ -318,7 +318,7 @@ TP_SVC_CHANNEL_GET_CLASS
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel-text.h</INCLUDE>
+<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
 <TITLE>svc-channel-text</TITLE>
 <FILE>svc-channel-text</FILE>
 TpSvcChannelTypeText
@@ -377,7 +377,7 @@ TP_SVC_CHANNEL_INTERFACE_PASSWORD_GET_CLASS
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel-tubes.h</INCLUDE>
+<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
 <TITLE>svc-channel-tubes</TITLE>
 <FILE>svc-channel-tubes</FILE>
 <SUBSECTION>
