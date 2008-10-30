@@ -30,7 +30,15 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEchoChannel,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL))
+    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL))
+
+/* FIXME: when supported, add:
+static void channel_iface_init (gpointer iface, gpointer data);
+
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
+      destroyable_iface_init);
+*/
 
 /* type definition stuff */
 
@@ -46,6 +54,8 @@ enum
   PROP_INITIATOR_ID,
   PROP_CONNECTION,
   PROP_INTERFACES,
+  PROP_CHANNEL_DESTROYED,
+  PROP_CHANNEL_PROPERTIES,
   N_PROPS
 };
 
@@ -54,6 +64,7 @@ struct _ExampleEchoChannelPrivate
   TpBaseConnection *conn;
   gchar *object_path;
   TpHandle handle;
+  TpHandle initiator;
 
   /* These are really booleans, but gboolean is signed. Thanks, GLib */
   unsigned closed:1;
@@ -61,6 +72,7 @@ struct _ExampleEchoChannelPrivate
 };
 
 static const char * example_echo_channel_interfaces[] = { NULL };
+/* FIXME: when supported, add TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE */
 
 static void
 example_echo_channel_init (ExampleEchoChannel *self)
@@ -83,6 +95,9 @@ constructor (GType type,
   DBusGConnection *bus;
 
   tp_handle_ref (contact_repo, self->priv->handle);
+
+  if (self->priv->initiator != 0)
+    tp_handle_ref (contact_repo, self->priv->initiator);
 
   bus = tp_get_bus ();
   dbus_g_connection_register_g_object (bus, self->priv->object_path, object);
@@ -131,27 +146,21 @@ get_property (GObject *object,
         }
       break;
     case PROP_REQUESTED:
-      /* this example CM doesn't yet support other contacts initiating
-       * chats with us, so the only way a channel can exist is if the
-       * user asked for it */
-      g_value_set_boolean (value, TRUE);
+      g_value_set_boolean (value,
+          (self->priv->initiator == self->priv->conn->self_handle));
       break;
     case PROP_INITIATOR_HANDLE:
-      /* this example CM doesn't yet support other contacts initiating
-       * chats with us, so the only way a channel can exist is if the
-       * user asked for it */
-      g_value_set_uint (value, self->priv->conn->self_handle);
+      g_value_set_uint (value, self->priv->initiator);
       break;
     case PROP_INITIATOR_ID:
         {
-          /* this example CM doesn't yet support other contacts initiating
-           * chats with us, so the only way a channel can exist is if the
-           * user asked for it */
           TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
               self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
           g_value_set_string (value,
-              tp_handle_inspect (contact_repo, self->priv->conn->self_handle));
+              self->priv->initiator == 0
+                  ? ""
+                  : tp_handle_inspect (contact_repo, self->priv->initiator));
         }
       break;
     case PROP_CONNECTION:
@@ -159,6 +168,22 @@ get_property (GObject *object,
       break;
     case PROP_INTERFACES:
       g_value_set_boxed (value, example_echo_channel_interfaces);
+      break;
+    case PROP_CHANNEL_DESTROYED:
+      g_value_set_boolean (value, self->priv->closed);
+      break;
+    case PROP_CHANNEL_PROPERTIES:
+      g_value_take_boxed (value,
+          tp_dbus_properties_mixin_make_properties_hash (object,
+              TP_IFACE_CHANNEL, "ChannelType",
+              TP_IFACE_CHANNEL, "TargetHandleType",
+              TP_IFACE_CHANNEL, "TargetHandle",
+              TP_IFACE_CHANNEL, "TargetID",
+              TP_IFACE_CHANNEL, "InitiatorHandle",
+              TP_IFACE_CHANNEL, "InitiatorID",
+              TP_IFACE_CHANNEL, "Requested",
+              TP_IFACE_CHANNEL, "Interfaces",
+              NULL));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -186,6 +211,10 @@ set_property (GObject *object,
        */
       self->priv->handle = g_value_get_uint (value);
       break;
+    case PROP_INITIATOR_HANDLE:
+      /* likewise */
+      self->priv->initiator = g_value_get_uint (value);
+      break;
     case PROP_HANDLE_TYPE:
     case PROP_CHANNEL_TYPE:
       /* these properties are writable in the interface, but not actually
@@ -212,6 +241,7 @@ dispose (GObject *object)
 
   if (!self->priv->closed)
     {
+      self->priv->closed = TRUE;
       tp_svc_channel_emit_closed (self);
     }
 
@@ -226,6 +256,10 @@ finalize (GObject *object)
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
   tp_handle_unref (contact_handles, self->priv->handle);
+
+  if (self->priv->initiator != 0)
+    tp_handle_unref (contact_handles, self->priv->initiator);
+
   g_free (self->priv->object_path);
 
   tp_text_mixin_finalize (object);
@@ -274,6 +308,11 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
       "handle-type");
   g_object_class_override_property (object_class, PROP_HANDLE, "handle");
 
+  g_object_class_override_property (object_class, PROP_CHANNEL_DESTROYED,
+      "channel-destroyed");
+  g_object_class_override_property (object_class, PROP_CHANNEL_PROPERTIES,
+      "channel-properties");
+
   param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
       "Connection object that owns this channel",
       TP_TYPE_BASE_CONNECTION,
@@ -295,7 +334,7 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
   param_spec = g_param_spec_uint ("initiator-handle", "Initiator's handle",
       "The contact who initiated the channel",
       0, G_MAXUINT32, 0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INITIATOR_HANDLE,
       param_spec);
 
@@ -321,17 +360,55 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
 }
 
 static void
+example_echo_channel_close (ExampleEchoChannel *self)
+{
+  GObject *object = (GObject *) self;
+
+  if (!self->priv->closed)
+    {
+      TpHandle first_sender;
+
+      /* The factory wants to be able to respawn the channel if it has pending
+       * messages. When respawned, the channel must have the initiator set
+       * to the contact who sent us those messages (if it isn't already),
+       * and the messages must be marked as having been rescued so they
+       * don't get logged twice. */
+      if (tp_text_mixin_has_pending_messages (object, &first_sender))
+        {
+          if (self->priv->initiator != first_sender)
+            {
+              TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
+                (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+              TpHandle old_initiator = self->priv->initiator;
+
+              if (first_sender != 0)
+                tp_handle_ref (contact_repo, first_sender);
+
+              self->priv->initiator = first_sender;
+
+              if (old_initiator != 0)
+                tp_handle_unref (contact_repo, old_initiator);
+            }
+
+          tp_text_mixin_set_rescued (object);
+        }
+      else
+        {
+          /* No pending messages, so it's OK to really close */
+          self->priv->closed = TRUE;
+        }
+
+      tp_svc_channel_emit_closed (self);
+    }
+}
+
+static void
 channel_close (TpSvcChannel *iface,
                DBusGMethodInvocation *context)
 {
   ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (iface);
 
-  if (!self->priv->closed)
-    {
-      self->priv->closed = TRUE;
-      tp_svc_channel_emit_closed (self);
-    }
-
+  example_echo_channel_close (self);
   tp_svc_channel_return_from_close (context);
 }
 
@@ -432,3 +509,30 @@ text_iface_init (gpointer iface,
   IMPLEMENT (send);
 #undef IMPLEMENT
 }
+
+/* FIXME: enable this when Destroyable is supported */
+#if 0
+static void
+destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
+                     DBusGMethodInvocation *context)
+{
+  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (iface);
+
+  tp_text_mixin_clear ((GObject *) self);
+  example_echo_channel_close (self);
+  g_assert (self->priv->closed);
+  tp_svc_channel_return_from_close (context);
+}
+
+static void
+destroyable_iface_init (gpointer iface,
+                        gpointer data)
+{
+  TpSvcChannelInterfaceDestroyableClass *klass = iface;
+
+#define IMPLEMENT(x) \
+  tp_svc_channel_interface_destroyable_implement_##x (klass, destroyable_##x)
+  IMPLEMENT (destroy);
+#undef IMPLEMENT
+}
+#endif

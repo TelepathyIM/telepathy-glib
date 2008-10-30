@@ -603,6 +603,32 @@ tp_text_mixin_has_pending_messages (GObject *obj,
   return (msg != NULL);
 }
 
+/* FIXME: when we merge spec 0.17.14, use the proper constant */
+#define TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED ((TpChannelTextMessageFlags) 8)
+
+/**
+ * tp_text_mixin_set_rescued:
+ * @obj: An object with this mixin
+ *
+ * Mark all pending messages as having been "rescued" from a channel that
+ * previously closed.
+ */
+void
+tp_text_mixin_set_rescued (GObject *obj)
+{
+  TpTextMixin *mixin = TP_TEXT_MIXIN (obj);
+  GList *cur;
+
+  for (cur = g_queue_peek_head_link (mixin->priv->pending);
+       cur != NULL;
+       cur = cur->next)
+    {
+      _PendingMessage *msg = cur->data;
+
+      msg->flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED;
+    }
+}
+
 /**
  * tp_text_mixin_iface_init:
  * @g_iface: A pointer to the #TpSvcChannelTypeTextClass in an object class

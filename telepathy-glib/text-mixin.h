@@ -99,6 +99,7 @@ void tp_text_mixin_clear (GObject *obj);
 
 gboolean tp_text_mixin_has_pending_messages (GObject *obj,
     TpHandle *first_sender);
+void tp_text_mixin_set_rescued (GObject *obj);
 
 void tp_text_mixin_iface_init (gpointer g_iface, gpointer iface_data);
 

@@ -173,20 +173,30 @@ example_echo_factory_foreach (TpChannelFactoryIface *iface,
 static void
 channel_closed_cb (ExampleEchoChannel *chan, ExampleEchoFactory *self)
 {
-  TpHandle handle;
-
   if (self->priv->channels != NULL)
     {
+      TpHandle handle;
+      gboolean really_destroyed;
+
       g_object_get (chan,
           "handle", &handle,
+          "channel-destroyed", &really_destroyed,
           NULL);
 
-      g_hash_table_remove (self->priv->channels, GUINT_TO_POINTER (handle));
+      /* Re-announce the channel if it's not yet ready to go away (pending
+       * messages) */
+      if (really_destroyed)
+        g_hash_table_remove (self->priv->channels, GUINT_TO_POINTER (handle));
+      else
+        tp_channel_manager_emit_new_channel (self,
+            TP_EXPORTABLE_CHANNEL (chan), NULL);
     }
 }
 
 static ExampleEchoChannel *
-new_channel (ExampleEchoFactory *self, TpHandle handle)
+new_channel (ExampleEchoFactory *self,
+             TpHandle handle,
+             TpHandle initiator)
 {
   ExampleEchoChannel *chan;
   gchar *object_path;
@@ -198,6 +208,7 @@ new_channel (ExampleEchoFactory *self, TpHandle handle)
       "connection", self->priv->conn,
       "object-path", object_path,
       "handle", handle,
+      "initiator-handle", initiator,
       NULL);
 
   g_free (object_path);
@@ -242,7 +253,7 @@ example_echo_factory_request (TpChannelFactoryIface *iface,
   if (chan == NULL)
     {
       status = TP_CHANNEL_FACTORY_REQUEST_STATUS_CREATED;
-      chan = new_channel (self, handle);
+      chan = new_channel (self, handle, self->priv->conn->self_handle);
     }
 
   g_assert (chan != NULL);
