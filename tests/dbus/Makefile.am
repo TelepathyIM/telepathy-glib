@@ -13,6 +13,7 @@ noinst_PROGRAMS = \
     test-handle-set \
     test-invalidated-while-invoking-signals \
     test-properties \
+    test-text-mixin \
     test-unsupported-interface
 
 TESTS = $(noinst_PROGRAMS)
@@ -78,6 +79,12 @@ test_properties_SOURCES = properties.c
 nodist_test_properties_SOURCES = \
     _gen/svc.h \
     _gen/svc.c
+
+test_text_mixin_LDADD = \
+    $(TP_GLIB_LIBS) \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
+test_text_mixin_SOURCES = text-mixin.c
 
 test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)
 test_unsupported_interface_SOURCES = unsupported-interface.c
