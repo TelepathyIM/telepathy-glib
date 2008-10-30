@@ -76,6 +76,7 @@ tests/dbus/test-finalized-in-invalidated-handler
 tests/dbus/test-handle-set
 tests/dbus/test-invalidated-while-invoking-signals
 tests/dbus/test-properties
+tests/dbus/test-text-mixin
 tests/dbus/test-unsupported-interface
 tests/test-asv
 tests/test-availability-cmp
