@@ -18,6 +18,7 @@
 #include "examples/cm/echo/chan.h"
 #include "examples/cm/echo/conn.h"
 #include "tests/lib/myassert.h"
+#include "tests/lib/util.h"
 
 static int fail = 0;
 
@@ -159,6 +160,8 @@ main (int argc,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "Hello, world!",
       &error, NULL);
   MYASSERT_NO_ERROR (error);
+
+  test_connection_run_until_dbus_queue_processed (conn);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -179,6 +182,8 @@ main (int argc,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION, "drinks coffee",
       &error, NULL);
   MYASSERT_NO_ERROR (error);
+
+  test_connection_run_until_dbus_queue_processed (conn);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
@@ -200,6 +205,8 @@ main (int argc,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE, "Printer on fire",
       &error, NULL);
   MYASSERT_NO_ERROR (error);
+
+  test_connection_run_until_dbus_queue_processed (conn);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,

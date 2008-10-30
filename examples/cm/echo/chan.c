@@ -461,11 +461,10 @@ text_send (TpSvcChannelTypeText *iface,
   gchar *echo;
   guint echo_type = type;
 
-  /* Tell the client that the message was sent successfully. If it's possible
-   * to tell whether a message has been delivered, you should delay emitting
-   * this signal until it's actually been successful, and emit SendError
-   * instead if there was an error; if you can't tell, emit Sent immediately,
-   * like this */
+  /* Send should return just before Sent is emitted. */
+  tp_svc_channel_type_text_return_from_send (context);
+
+  /* Tell the client that the message was submitted for sending */
   tp_svc_channel_type_text_emit_sent ((GObject *) self, timestamp, type, text);
 
   /* Pretend that the remote contact has replied. Normally,
@@ -492,8 +491,6 @@ text_send (TpSvcChannelTypeText *iface,
       timestamp, echo);
 
   g_free (echo);
-
-  tp_svc_channel_type_text_return_from_send (context);
 }
 
 static void
