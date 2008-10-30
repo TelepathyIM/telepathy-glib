@@ -14,6 +14,7 @@ noinst_PROGRAMS = \
     test-invalidated-while-invoking-signals \
     test-properties \
     test-text-mixin \
+    test-text-respawn \
     test-unsupported-interface
 
 TESTS = $(noinst_PROGRAMS)
@@ -85,6 +86,12 @@ test_text_mixin_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
     $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
 test_text_mixin_SOURCES = text-mixin.c
+
+test_text_respawn_LDADD = \
+    $(TP_GLIB_LIBS) \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
+test_text_respawn_SOURCES = text-respawn.c
 
 test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)
 test_unsupported_interface_SOURCES = unsupported-interface.c
