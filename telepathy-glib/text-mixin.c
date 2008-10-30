@@ -603,9 +603,6 @@ tp_text_mixin_has_pending_messages (GObject *obj,
   return (msg != NULL);
 }
 
-/* FIXME: when we merge spec 0.17.14, use the proper constant */
-#define TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED ((TpChannelTextMessageFlags) 8)
-
 /**
  * tp_text_mixin_set_rescued:
  * @obj: An object with this mixin
