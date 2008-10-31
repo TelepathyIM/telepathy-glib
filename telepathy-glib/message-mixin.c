@@ -1024,7 +1024,7 @@ tp_message_mixin_init (GObject *obj,
   mixin->priv->recv_id = 0;
   mixin->priv->msg_types = g_array_sized_new (FALSE, FALSE, sizeof (guint),
       NUM_TP_CHANNEL_TEXT_MESSAGE_TYPES);
-  mixin->priv->connection = connection;
+  mixin->priv->connection = g_object_ref (connection);
 
   mixin->priv->supported_content_types = g_new0 (gchar *, 1);
 }
@@ -1061,6 +1061,8 @@ tp_message_mixin_finalize (GObject *obj)
   g_queue_free (mixin->priv->pending);
   g_array_free (mixin->priv->msg_types, TRUE);
   g_strfreev (mixin->priv->supported_content_types);
+
+  g_object_unref (mixin->priv->connection);
 
   g_slice_free (TpMessageMixinPrivate, mixin->priv);
 }
