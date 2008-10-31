@@ -1407,6 +1407,30 @@ tp_message_mixin_has_pending_messages (GObject *object,
 
 
 /**
+ * tp_message_mixin_set_rescued:
+ * @obj: An object with this mixin
+ *
+ * Mark all pending messages as having been "rescued" from a channel that
+ * previously closed.
+ */
+void
+tp_message_mixin_set_rescued (GObject *obj)
+{
+  TpMessageMixin *mixin = TP_MESSAGE_MIXIN (obj);
+  GList *cur;
+
+  for (cur = g_queue_peek_head_link (mixin->priv->pending);
+       cur != NULL;
+       cur = cur->next)
+    {
+      TpMessage *msg = cur->data;
+
+      tp_message_set_boolean (msg, 0, "rescued", TRUE);
+    }
+}
+
+
+/**
  * TpMessageMixinOutgoingMessage:
  * @flags: Flags indicating how this message should be sent
  * @parts: The parts that make up the message (an array of #GHashTable,

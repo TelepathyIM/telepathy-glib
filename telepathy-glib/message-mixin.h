@@ -83,6 +83,8 @@ guint tp_message_mixin_take_received (GObject *object, TpMessage *message);
 gboolean tp_message_mixin_has_pending_messages (GObject *object,
     TpHandle *first_sender);
 
+void tp_message_mixin_set_rescued (GObject *obj);
+
 
 /* Sending */
 
