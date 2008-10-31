@@ -35,10 +35,15 @@
  * constructor function, and tp_message_mixin_finalize() from your dispose
  * or finalize function. In the class_init function, call
  * tp_message_mixin_init_dbus_properties() to hook this mixin into the D-Bus
- * properties mixin class.
+ * properties mixin class. Finally, include the following in the fourth
+ * argument of G_DEFINE_TYPE_WITH_CODE():
  *
- * Also pass tp_message_mixin_text_iface_init() and
- * tp_message_mixin_messages_iface_init() to G_IMPLEMENT_INTERFACE().
+ * <informalexample><programlisting>
+ *  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
+ *    tp_message_mixin_text_iface_init);
+ *  G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
+ *    tp_message_mixin_messages_iface_init);
+ * </programlisting></informalexample>
  *
  * To support sending messages, you must call
  * tp_message_mixin_implement_sending() in the constructor function. If you do
