@@ -1006,15 +1006,15 @@ main (int argc,
   g_print ("\n\n==== Acknowledging one message ====\n");
 
     {
-      GArray *ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+      GArray *msgid = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
 
-      g_array_append_val (ids, last_received_id);
+      g_array_append_val (msgid, last_received_id);
 
       tp_cli_channel_type_text_run_acknowledge_pending_messages (chan, -1,
-          ids, &error, NULL);
+          msgid, &error, NULL);
       MYASSERT_NO_ERROR (error);
 
-      g_array_free (ids, TRUE);
+      g_array_free (msgid, TRUE);
     }
 
   g_print ("\n\n==== Acknowledging all remaining messages using deprecated "
