@@ -726,6 +726,9 @@ pending_item_id_equals_data (gconstpointer item,
   const TpMessage *self = item;
   guint id = GPOINTER_TO_UINT (data);
 
+  /* The sense of this comparison is correct: the callback passed to
+   * g_queue_find_custom() should return 0 when the desired item is found.
+   */
   return (self->incoming_id != id);
 }
 
