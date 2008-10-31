@@ -949,6 +949,7 @@ main (int argc,
 
       /* The test "Acknowledging one message", will fail if the
        * last_received_id was acknowledged despite the error */
+    }
 
   g_print ("\n\n==== Getting properties again ====\n");
 
