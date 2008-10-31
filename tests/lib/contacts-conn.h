@@ -81,6 +81,42 @@ void contacts_connection_change_presences (ContactsConnection *self, guint n,
 void contacts_connection_change_avatar_tokens (ContactsConnection *self,
     guint n, const TpHandle *handles, const gchar * const *tokens);
 
+/* Legacy version (no Contacts interface) */
+
+typedef struct _LegacyContactsConnection LegacyContactsConnection;
+typedef struct _LegacyContactsConnectionClass LegacyContactsConnectionClass;
+typedef struct _LegacyContactsConnectionPrivate
+  LegacyContactsConnectionPrivate;
+
+struct _LegacyContactsConnectionClass {
+    ContactsConnectionClass parent_class;
+};
+
+struct _LegacyContactsConnection {
+    ContactsConnection parent;
+
+    LegacyContactsConnectionPrivate *priv;
+};
+
+GType legacy_contacts_connection_get_type (void);
+
+/* TYPE MACROS */
+#define LEGACY_CONTACTS_TYPE_CONNECTION \
+  (legacy_contacts_connection_get_type ())
+#define LEGACY_CONTACTS_CONNECTION(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), LEGACY_CONTACTS_TYPE_CONNECTION, \
+                              LegacyContactsConnection))
+#define LEGACY_CONTACTS_CONNECTION_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), LEGACY_CONTACTS_TYPE_CONNECTION, \
+                           LegacyContactsConnectionClass))
+#define LEGACY_CONTACTS_IS_CONNECTION(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), LEGACY_CONTACTS_TYPE_CONNECTION))
+#define LEGACY_CONTACTS_IS_CONNECTION_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), LEGACY_CONTACTS_TYPE_CONNECTION))
+#define LEGACY_CONTACTS_CONNECTION_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), LEGACY_CONTACTS_TYPE_CONNECTION, \
+                              LegacyContactsConnectionClass))
+
 G_END_DECLS
 
 #endif

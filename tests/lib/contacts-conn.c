@@ -256,6 +256,7 @@ contacts_connection_class_init (ContactsConnectionClass *klass)
   static const gchar *interfaces_always_present[] = {
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
       NULL };
@@ -597,4 +598,33 @@ init_avatars (gpointer g_iface,
   /* IMPLEMENT(set_avatar); */
   /* IMPLEMENT(clear_avatar); */
 #undef IMPLEMENT
+}
+
+
+/* =============== Legacy version (no Contacts interface) ================= */
+
+
+G_DEFINE_TYPE (LegacyContactsConnection, legacy_contacts_connection,
+    CONTACTS_TYPE_CONNECTION);
+
+static void
+legacy_contacts_connection_init (LegacyContactsConnection *self)
+{
+}
+
+static void
+legacy_contacts_connection_class_init (LegacyContactsConnectionClass *klass)
+{
+  /* Leave Contacts out of the interfaces we say are present, so clients
+   * won't use it */
+  static const gchar *interfaces_always_present[] = {
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+      NULL };
+  TpBaseConnectionClass *base_class =
+      (TpBaseConnectionClass *) klass;
+
+  base_class->interfaces_always_present = interfaces_always_present;
 }
