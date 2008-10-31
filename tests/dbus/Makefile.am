@@ -6,6 +6,7 @@ noinst_PROGRAMS = \
     test-connection-inject-bug16307 \
     test-connection-getinterfaces-failure \
     test-contacts \
+    test-contacts-mixin \
     test-dbus \
     test-disconnection \
     test-example-no-protocols \
@@ -53,6 +54,11 @@ test_contacts_LDADD = \
     $(TP_GLIB_LIBS) \
     ../lib/libtp-glib-tests.la
 test_contacts_SOURCES = contacts.c
+
+test_contacts_mixin_LDADD = \
+    $(TP_GLIB_LIBS) \
+    ../lib/libtp-glib-tests.la
+test_contacts_mixin_SOURCES = contacts-mixin.c
 
 test_dbus_LDADD = $(TP_GLIB_LIBS)
 test_disconnection_LDADD = \
