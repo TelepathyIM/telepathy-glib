@@ -1725,7 +1725,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
 
       for (link = g_queue_peek_head_link (mixin->priv->pending);
            link != NULL;
-           link = g_list_next(link))
+           link = g_list_next (link))
         {
           TpMessage *msg = link->data;
 
