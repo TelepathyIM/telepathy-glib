@@ -482,7 +482,7 @@ example_echo_2_channel_close (ExampleEcho2Channel *self)
        * to the contact who sent us those messages (if it isn't already),
        * and the messages must be marked as having been rescued so they
        * don't get logged twice. */
-      if (tp_text_mixin_has_pending_messages (object, &first_sender))
+      if (tp_message_mixin_has_pending_messages (object, &first_sender))
         {
           if (self->priv->initiator != first_sender)
             {
@@ -499,7 +499,7 @@ example_echo_2_channel_close (ExampleEcho2Channel *self)
                 tp_handle_unref (contact_repo, old_initiator);
             }
 
-          tp_text_mixin_set_rescued (object);
+          tp_message_mixin_set_rescued (object);
         }
       else
         {
