@@ -1057,8 +1057,10 @@ tp_message_mixin_finalize (GObject *obj)
   DEBUG ("%p", obj);
 
   tp_message_mixin_clear (obj);
+  g_assert (g_queue_is_empty (mixin->priv->pending));
   g_queue_free (mixin->priv->pending);
   g_array_free (mixin->priv->msg_types, TRUE);
+  g_strfreev (mixin->priv->supported_content_types);
 
   g_slice_free (TpMessageMixinPrivate, mixin->priv);
 }
