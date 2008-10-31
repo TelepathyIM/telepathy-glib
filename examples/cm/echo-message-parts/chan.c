@@ -461,9 +461,6 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
 
-  tp_message_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleEcho2ChannelClass, text_class));
-
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleEcho2ChannelClass, dbus_properties_class));
