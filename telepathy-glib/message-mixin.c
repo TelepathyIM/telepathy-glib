@@ -390,7 +390,6 @@ tp_message_ref_handle (TpMessage *self,
  * @since 0.7.UNRELEASED
  */
 static void
-G_GNUC_UNUSED
 tp_message_ref_handles (TpMessage *self,
                         TpHandleType handle_type,
                         TpIntSet *handles)
@@ -732,6 +731,63 @@ tp_message_set (TpMessage *self,
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_dup (source));
+}
+
+
+/**
+ * tp_message_take_message:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @message: another (distinct) message created for the same #TpBaseConnection
+ *
+ * Set @key in part @part of @self to have @message as an aa{sv} value (that
+ * is, an array of Message_Part), and take ownership of @message.  The caller
+ * should not use @message after passing it to this function.  All handle
+ * references owned by @message will subsequently belong to and be released
+ * with @self.
+ *
+ * @since 0.7.UNRELEASED
+ */
+void
+tp_message_take_message (TpMessage *self,
+                         guint part,
+                         const gchar *key,
+                         TpMessage *message)
+{
+  GValue *value;
+  guint i;
+
+  g_return_if_fail (self != NULL);
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (message != NULL);
+  g_return_if_fail (self != message);
+  g_return_if_fail (self->connection == message->connection);
+
+  /* FIXME: TP_ARRAY_TYPE_MESSAGE_PART_LIST */
+  value = tp_g_value_slice_new (dbus_g_type_get_collection ("GPtrArray",
+      TP_HASH_TYPE_MESSAGE_PART));
+  g_value_take_boxed (value, message->parts);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+
+  /* Now that @self has stolen @message's parts, replace them with a stub to
+   * keep tp_message_destroy happy.
+   */
+  message->parts = g_ptr_array_sized_new (1);
+  g_ptr_array_add (message->parts, g_hash_table_new_full (g_str_hash,
+        g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
+
+  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
+    {
+      if (message->reffed_handles[i] != NULL)
+        tp_message_ref_handles (self, i,
+            tp_handle_set_peek (message->reffed_handles[i]));
+    }
+
+  tp_message_destroy (message);
 }
 
 

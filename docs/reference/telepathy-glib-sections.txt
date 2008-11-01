@@ -1554,6 +1554,7 @@ tp_message_set_string
 tp_message_set_uint16
 tp_message_set_uint32
 tp_message_set_uint64
+tp_message_take_message
 TpMessageMixin
 TpMessageMixinSendImpl
 tp_message_mixin_finalize

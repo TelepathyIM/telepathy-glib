@@ -72,6 +72,8 @@ void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
     guint len, gconstpointer bytes);
 void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
+void tp_message_take_message (TpMessage *self, guint part, const gchar *key,
+    TpMessage *message);
 
 void tp_message_mixin_get_dbus_property (GObject *object, GQuark interface,
     GQuark name, GValue *value, gpointer unused);
