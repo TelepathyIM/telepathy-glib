@@ -336,6 +336,22 @@ tp_message_delete_part (TpMessage *self,
 }
 
 
+static void
+_ensure_handle_set (TpMessage *self,
+                    TpHandleType handle_type)
+{
+  if (self->reffed_handles[handle_type] == NULL)
+    {
+      TpHandleRepoIface *handles = tp_base_connection_get_handles (
+          self->connection, handle_type);
+
+      g_return_if_fail (handles != NULL);
+
+      self->reffed_handles[handle_type] = tp_handle_set_new (handles);
+    }
+}
+
+
 /**
  * tp_message_ref_handle:
  * @self: a message
@@ -356,15 +372,7 @@ tp_message_ref_handle (TpMessage *self,
   g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
   g_return_if_fail (handle != 0);
 
-  if (self->reffed_handles[handle_type] == NULL)
-    {
-      TpHandleRepoIface *handles = tp_base_connection_get_handles (
-          self->connection, handle_type);
-
-      g_return_if_fail (handles != NULL);
-
-      self->reffed_handles[handle_type] = tp_handle_set_new (handles);
-    }
+  _ensure_handle_set (self, handle_type);
 
   tp_handle_set_add (self->reffed_handles[handle_type], handle);
 }
