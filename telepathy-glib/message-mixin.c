@@ -379,6 +379,36 @@ tp_message_ref_handle (TpMessage *self,
 
 
 /**
+ * tp_message_ref_handles:
+ * @self: a message
+ * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less
+ *  than %NUM_TP_HANDLE_TYPES
+ * @handles: a set of handles of the given type
+ *
+ * References all of the given handles until this message is destroyed.
+ *
+ * @since 0.7.UNRELEASED
+ */
+static void
+G_GNUC_UNUSED
+tp_message_ref_handles (TpMessage *self,
+                        TpHandleType handle_type,
+                        TpIntSet *handles)
+{
+  TpIntSet *updated;
+
+  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (!tp_intset_is_member (handles, 0));
+
+  _ensure_handle_set (self, handle_type);
+
+  updated = tp_handle_set_update (self->reffed_handles[handle_type], handles);
+  tp_intset_destroy (updated);
+}
+
+
+/**
  * tp_message_delete_key:
  * @self: a message
  * @part: a part number, which must be strictly less than the number
