@@ -1018,6 +1018,9 @@ break_loop_early:
    * suppress_handler set when signalling NewChannel */
   if (request_tokens != NULL &&
       (satisfies_create_channel || !satisfies_request_channel))
+    suppress_handler = TRUE;
+
+  if (suppress_handler)
     g_hash_table_insert (context->suppress_handler, channel, channel);
 
   /* If the only type of request satisfied by this new channel is
