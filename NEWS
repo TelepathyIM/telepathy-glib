@@ -1,12 +1,16 @@
-telepathy-glib 0.7.18 (UNRELEASED)
+telepathy-glib 0.7.18 (2008-11-03)
 ==================================
+
+The "320 GB" release.
 
 Enhancements:
 
 * Update to spec 0.17.14
   * test, and generate code for, the Destroyable interface
   * add support for the SCROLLBACK and RESCUED message flags in Text
-  * add tp_text_mixin_set_rescued(), for CMs to call when respawning a channel
+  * add tp_text_mixin_set_rescued(), for CMs to call when respawning a channel,
+    and tp_text_mixin_receive_with_flags(), for CMs to call when receiving
+    scrollback messages
   * update echo example CM's Text support to spec 0.17.14
   * CreateChannel etc. return before NewChannels, which is emitted before
     NewChannel
@@ -15,6 +19,11 @@ Enhancements:
   attributes (e.g. alias, avatar token and SimplePresence)
 
 Fixes:
+
+* In TpContactsMixin, always return info from interface TP_IFACE_CONNECTION
+  even if the client didn't ask for it, since the spec says we should
+
+* Add a simple regression test for TpContactsMixin
 
 * Use unsigned int (rather than gboolean, which is signed!) for bitfields
 
