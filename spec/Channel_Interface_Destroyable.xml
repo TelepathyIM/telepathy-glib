@@ -22,16 +22,19 @@
   </tp:license>
 
   <interface
-    name="org.freedesktop.Telepathy.Channel.Interface.Destroyable.DRAFT"
-    tp:causes-havoc="experimental">
+    name="org.freedesktop.Telepathy.Channel.Interface.Destroyable">
     <tp:requires interface="org.freedesktop.Telepathy.Channel"/>
-    <tp:added version="0.17.UNRELEADED">(draft, not API-stable)</tp:added>
+    <tp:added version="0.17.14">(as stable API)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface exists to support channels where
         <tp:dbus-ref
           namespace="org.freedesktop.Telepathy">Channel.Close</tp:dbus-ref>
-        is insufficiently destructive.</p>
+        is insufficiently destructive. At the moment this means
+        <tp:dbus-ref
+          namespace="org.freedesktop.Telepathy">Channel.Type.Text</tp:dbus-ref>,
+        but the existence of this interface means that unsupported channels
+        can be terminated in a non-channel-type-specific way.</p>
     </tp:docstring>
 
     <method name="Destroy" tp:name-for-bindings="Destroy">

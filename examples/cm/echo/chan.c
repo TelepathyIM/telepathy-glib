@@ -22,6 +22,7 @@
 
 static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
+static void destroyable_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleEchoChannel,
     example_echo_channel,
@@ -30,15 +31,10 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEchoChannel,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL))
-
-/* FIXME: when supported, add:
-static void channel_iface_init (gpointer iface, gpointer data);
-
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
       destroyable_iface_init);
-*/
+    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL))
 
 /* type definition stuff */
 
@@ -71,8 +67,10 @@ struct _ExampleEchoChannelPrivate
   unsigned disposed:1;
 };
 
-static const char * example_echo_channel_interfaces[] = { NULL };
-/* FIXME: when supported, add TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE */
+static const char * example_echo_channel_interfaces[] = {
+    TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE,
+    NULL
+};
 
 static void
 example_echo_channel_init (ExampleEchoChannel *self)
@@ -463,15 +461,15 @@ text_send (TpSvcChannelTypeText *iface,
   gchar *echo;
   guint echo_type = type;
 
-  /* Tell the client that the message was sent successfully. If it's possible
-   * to tell whether a message has been delivered, you should delay emitting
-   * this signal until it's actually been successful, and emit SendError
-   * instead if there was an error; if you can't tell, emit Sent immediately,
-   * like this */
+  /* Send should return just before Sent is emitted. */
+  tp_svc_channel_type_text_return_from_send (context);
+
+  /* Tell the client that the message was submitted for sending */
   tp_svc_channel_type_text_emit_sent ((GObject *) self, timestamp, type, text);
 
-  /* Pretend that the remote contact has replied. Normally,
-   * you'd call tp_text_mixin_receive in response to network events */
+  /* Pretend that the remote contact has replied. Normally, you'd
+   * call tp_text_mixin_receive or tp_text_mixin_receive_with_flags
+   * in response to network events */
 
   switch (type)
     {
@@ -494,8 +492,6 @@ text_send (TpSvcChannelTypeText *iface,
       timestamp, echo);
 
   g_free (echo);
-
-  tp_svc_channel_type_text_return_from_send (context);
 }
 
 static void
@@ -510,8 +506,6 @@ text_iface_init (gpointer iface,
 #undef IMPLEMENT
 }
 
-/* FIXME: enable this when Destroyable is supported */
-#if 0
 static void
 destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
                      DBusGMethodInvocation *context)
@@ -535,4 +529,3 @@ destroyable_iface_init (gpointer iface,
   IMPLEMENT (destroy);
 #undef IMPLEMENT
 }
-#endif

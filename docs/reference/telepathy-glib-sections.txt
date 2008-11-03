@@ -309,16 +309,27 @@ tp_svc_channel_get_interfaces_impl
 tp_svc_channel_implement_get_interfaces
 tp_svc_channel_return_from_get_interfaces
 tp_svc_channel_emit_closed
+<SUBSECTION>
+TpSvcChannelInterfaceDestroyable
+TpSvcChannelInterfaceDestroyableClass
+tp_svc_channel_interface_destroyable_destroy_impl
+tp_svc_channel_interface_destroyable_implement_destroy
+tp_svc_channel_interface_destroyable_return_from_destroy
 <SUBSECTION Standard>
 TP_SVC_CHANNEL
 TP_IS_SVC_CHANNEL
 TP_TYPE_SVC_CHANNEL
 tp_svc_channel_get_type
 TP_SVC_CHANNEL_GET_CLASS
+TP_IS_SVC_CHANNEL_INTERFACE_DESTROYABLE
+TP_SVC_CHANNEL_INTERFACE_DESTROYABLE
+TP_SVC_CHANNEL_INTERFACE_DESTROYABLE_GET_CLASS
+tp_svc_channel_interface_destroyable_get_type
+TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel-text.h</INCLUDE>
+<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
 <TITLE>svc-channel-text</TITLE>
 <FILE>svc-channel-text</FILE>
 TpSvcChannelTypeText
@@ -377,7 +388,7 @@ TP_SVC_CHANNEL_INTERFACE_PASSWORD_GET_CLASS
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/svc-channel-tubes.h</INCLUDE>
+<INCLUDE>telepathy-glib/svc-channel.h</INCLUDE>
 <TITLE>svc-channel-tubes</TITLE>
 <FILE>svc-channel-tubes</FILE>
 <SUBSECTION>
@@ -1510,6 +1521,7 @@ tp_text_mixin_class_init
 tp_text_mixin_init
 tp_text_mixin_set_message_types
 tp_text_mixin_finalize
+tp_text_mixin_receive_with_flags
 tp_text_mixin_receive
 tp_text_mixin_acknowledge_pending_messages
 tp_text_mixin_list_pending_messages
@@ -1634,6 +1646,8 @@ TP_IFACE_CHANNEL_INTERFACE_CALL_STATE
 TP_IFACE_QUARK_CHANNEL_INTERFACE_CALL_STATE
 TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE
 TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE
+TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE
+TP_IFACE_QUARK_CHANNEL_INTERFACE_DESTROYABLE
 TP_IFACE_CHANNEL_INTERFACE_DTMF
 TP_IFACE_QUARK_CHANNEL_INTERFACE_DTMF
 TP_IFACE_CHANNEL_INTERFACE_GROUP
@@ -1656,6 +1670,7 @@ tp_iface_quark_dbus_peer
 tp_iface_quark_dbus_properties
 tp_iface_quark_channel
 tp_iface_quark_channel_interface_chat_state
+tp_iface_quark_channel_interface_destroyable
 tp_iface_quark_channel_interface_dtmf
 tp_iface_quark_channel_interface_group
 tp_iface_quark_channel_interface_hold
@@ -1828,6 +1843,10 @@ tp_cli_channel_run_get_handle
 tp_cli_channel_run_get_interfaces
 tp_cli_channel_connect_to_closed
 tp_cli_channel_signal_callback_closed
+<SUBSECTION>
+tp_cli_channel_interface_destroyable_call_destroy
+tp_cli_channel_interface_destroyable_callback_for_destroy
+tp_cli_channel_interface_destroyable_run_destroy
 </SECTION>
 
 <SECTION>

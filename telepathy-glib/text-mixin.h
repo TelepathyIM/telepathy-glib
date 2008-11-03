@@ -87,6 +87,9 @@ void tp_text_mixin_init (GObject *obj, glong offset,
 void tp_text_mixin_set_message_types (GObject *obj, ...);
 void tp_text_mixin_finalize (GObject *obj);
 
+gboolean tp_text_mixin_receive_with_flags (GObject *obj,
+    TpChannelTextMessageType type, TpHandle sender, time_t timestamp,
+    const char *text, TpChannelTextMessageFlags flags);
 gboolean tp_text_mixin_receive (GObject *obj, TpChannelTextMessageType type,
     TpHandle sender, time_t timestamp, const char *text);
 gboolean tp_text_mixin_acknowledge_pending_messages (GObject *obj,

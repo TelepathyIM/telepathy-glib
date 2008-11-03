@@ -11,7 +11,6 @@ EXTRA_DIST = \
     Channel_Interface_Call_Merging.xml \
     Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
-    Channel_Interface_Delivery_Reporting.xml \
     Channel_Interface_Destroyable.xml \
     Channel_Interface_DTMF.xml \
     Channel_Interface_Group.xml \

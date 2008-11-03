@@ -3,6 +3,14 @@ telepathy-glib 0.7.18 (UNRELEASED)
 
 Enhancements:
 
+* Update to spec 0.17.14
+  * test, and generate code for, the Destroyable interface
+  * add support for the SCROLLBACK and RESCUED message flags in Text
+  * add tp_text_mixin_set_rescued(), for CMs to call when respawning a channel
+  * update echo example CM's Text support to spec 0.17.14
+  * CreateChannel etc. return before NewChannels, which is emitted before
+    NewChannel
+
 * Add TpContact, an object representing a contact, with inspection of various
   attributes (e.g. alias, avatar token and SimplePresence)
 
