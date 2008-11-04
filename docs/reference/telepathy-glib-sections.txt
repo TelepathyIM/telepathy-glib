@@ -1642,6 +1642,9 @@ TpChannelGroupFlags
 TpChannelGroupChangeReason
 NUM_TP_CHANNEL_GROUP_CHANGE_REASONS
 TpChannelPasswordFlags
+TpDeliveryReportingSupportFlags
+TpDeliveryStatus
+NUM_TP_DELIVERY_STATUSES
 TpMediaStreamError
 NUM_TP_MEDIA_STREAM_ERRORS
 TpMediaStreamBaseProto
