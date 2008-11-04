@@ -216,7 +216,6 @@ constructor (GType type,
 
   tp_message_mixin_implement_sending (object, send_message,
       (sizeof (types) / sizeof (types[0])), types,
-      TP_MESSAGE_PART_SUPPORT_FLAG_DATA_ONLY |
       TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT |
       TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS,
       content_types);

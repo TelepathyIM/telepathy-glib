@@ -321,7 +321,9 @@ main (int argc,
           g_hash_table_size (properties));
 
       MYASSERT (tp_asv_get_uint32 (properties, "MessagePartSupportFlags", NULL)
-          == 7, "");
+          == ( TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT
+             | TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS
+             ), "");
 
       MYASSERT ((value = tp_asv_lookup (properties, "SupportedContentTypes"))
           != NULL, "");
@@ -970,7 +972,9 @@ main (int argc,
           g_hash_table_size (properties));
 
       MYASSERT (tp_asv_get_uint32 (properties, "MessagePartSupportFlags", NULL)
-          == 7, "");
+          == ( TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT
+             | TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS
+             ), "");
 
       MYASSERT ((value = tp_asv_lookup (properties, "SupportedContentTypes"))
           != NULL, "");
