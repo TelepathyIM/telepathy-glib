@@ -1126,7 +1126,15 @@ tp_message_mixin_init (GObject *obj,
   mixin->priv->supported_content_types = g_new0 (gchar *, 1);
 }
 
-static void
+
+/**
+ * tp_message_mixin_clear:
+ * @obj: An object with this mixin
+ *
+ * Clear the pending message queue, deleting all messages without emitting
+ * PendingMessagesRemoved.
+ */
+void
 tp_message_mixin_clear (GObject *obj)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (obj);
@@ -1137,6 +1145,7 @@ tp_message_mixin_clear (GObject *obj)
       tp_message_destroy (item);
     }
 }
+
 
 /**
  * tp_message_mixin_finalize:

@@ -87,6 +87,7 @@ gboolean tp_message_mixin_has_pending_messages (GObject *object,
 
 void tp_message_mixin_set_rescued (GObject *obj);
 
+void tp_message_mixin_clear (GObject *obj);
 
 /* Sending */
 
