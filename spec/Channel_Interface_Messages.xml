@@ -930,7 +930,8 @@ USA.</p>
       </arg>
     </signal>
 
-    <tp:enum name="Delivery_Status" value-prefix="Delivery_Status" type="u">
+    <tp:enum name="Delivery_Status" value-prefix="Delivery_Status"
+      plural="Delivery_Statuses" type="u">
       <tp:docstring>
         <p>The status of a message as indicated by a delivery report.</p>
 
