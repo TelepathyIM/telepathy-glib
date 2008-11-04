@@ -869,6 +869,12 @@ parts_to_text (const GPtrArray *parts,
   GString *buffer = g_string_new ("");
   TpChannelTextMessageFlags flags = 0;
 
+  if (tp_asv_get_boolean (header, "scrollback", NULL))
+    flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_SCROLLBACK;
+
+  if (tp_asv_get_boolean (header, "rescued", NULL))
+    flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED;
+
   /* If the message is on an extended interface or only contains headers,
    * definitely set the "your client is too old" flag. */
   if (parts->len <= 1 || g_hash_table_lookup (header, "interface") != NULL)
