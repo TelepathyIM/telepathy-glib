@@ -18,6 +18,7 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/textchan-null.h"
+#include "tests/lib/util.h"
 
 static int fail = 0;
 static GError *invalidated = NULL;
@@ -170,12 +171,21 @@ main (int argc,
 
   /* Channel becomes ready while we wait */
 
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  service_chan->get_handle_called = 0;
+  service_chan->get_interfaces_called = 0;
+  service_chan->get_channel_type_called = 0;
+
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   MYASSERT_NO_ERROR (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
+  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
+  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
+  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -185,12 +195,21 @@ main (int argc,
   /* Channel becomes ready while we wait (in the case where we have to discover
    * the channel type) */
 
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  service_chan->get_handle_called = 0;
+  service_chan->get_interfaces_called = 0;
+  service_chan->get_channel_type_called = 0;
+
   chan = tp_channel_new (conn, chan_path, NULL,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   MYASSERT_NO_ERROR (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
+  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
+  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
+  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 1);
 
   assert_chan_sane (chan, handle);
 
@@ -200,12 +219,21 @@ main (int argc,
   /* Channel becomes ready while we wait (in the case where we have to discover
    * the handle type) */
 
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  service_chan->get_handle_called = 0;
+  service_chan->get_interfaces_called = 0;
+  service_chan->get_channel_type_called = 0;
+
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   MYASSERT_NO_ERROR (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
+  MYASSERT_SAME_UINT (service_chan->get_handle_called, 1);
+  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
+  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -215,12 +243,21 @@ main (int argc,
   /* Channel becomes ready while we wait (in the case where we have to discover
    * the handle) */
 
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  service_chan->get_handle_called = 0;
+  service_chan->get_interfaces_called = 0;
+  service_chan->get_channel_type_called = 0;
+
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, 0, &error);
   MYASSERT_NO_ERROR (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
+  MYASSERT_SAME_UINT (service_chan->get_handle_called, 1);
+  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
+  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -274,6 +311,12 @@ main (int argc,
 
   /* Channel becomes ready and we are called back */
 
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  service_chan->get_handle_called = 0;
+  service_chan->get_interfaces_called = 0;
+  service_chan->get_channel_type_called = 0;
+
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   MYASSERT_NO_ERROR (error);
@@ -285,6 +328,9 @@ main (int argc,
   g_message ("Leaving main loop");
   MYASSERT (was_ready == TRUE, "");
   MYASSERT_NO_ERROR (invalidated);
+  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
+  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
+  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
 
   assert_chan_sane (chan, handle);
 
