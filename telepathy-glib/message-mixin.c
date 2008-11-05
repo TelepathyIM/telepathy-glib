@@ -86,6 +86,7 @@ struct _TpMessageMixinPrivate
   TpMessageMixinSendImpl send_message;
   GArray *msg_types;
   TpMessagePartSupportFlags message_part_support_flags;
+  TpDeliveryReportingSupportFlags delivery_reporting_support_flags;
   gchar **supported_content_types;
 
   /* Receiving */
@@ -1095,6 +1096,8 @@ parts_to_text (const GPtrArray *parts,
  * @types: @n_types supported message types
  * @message_part_support_flags: Flags indicating what message part structures
  *  are supported
+ * @delivery_reporting_support_flags: Flags indicating what kind of delivery
+ *  reports are supported
  * @supported_content_types: The supported content types
  *
  * Set the callback used to implement SendMessage, and the types of message
@@ -1111,6 +1114,8 @@ tp_message_mixin_implement_sending (GObject *object,
                                     const TpChannelTextMessageType *types,
                                     TpMessagePartSupportFlags
                                         message_part_support_flags,
+                                    TpDeliveryReportingSupportFlags
+                                        delivery_reporting_support_flags,
                                     const gchar * const *
                                         supported_content_types)
 {
@@ -1127,6 +1132,7 @@ tp_message_mixin_implement_sending (GObject *object,
   g_array_append_vals (mixin->priv->msg_types, types, n_types);
 
   mixin->priv->message_part_support_flags = message_part_support_flags;
+  mixin->priv->delivery_reporting_support_flags = delivery_reporting_support_flags;
 
   g_strfreev (mixin->priv->supported_content_types);
   mixin->priv->supported_content_types = g_strdupv (
@@ -1912,6 +1918,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
   static GQuark q_pending_messages = 0;
   static GQuark q_supported_content_types = 0;
   static GQuark q_message_part_support_flags = 0;
+  static GQuark q_delivery_reporting_support_flags = 0;
 
   if (G_UNLIKELY (q_pending_messages == 0))
     {
@@ -1920,6 +1927,8 @@ tp_message_mixin_get_dbus_property (GObject *object,
           g_quark_from_static_string ("SupportedContentTypes");
       q_message_part_support_flags =
           g_quark_from_static_string ("MessagePartSupportFlags");
+      q_delivery_reporting_support_flags =
+          g_quark_from_static_string ("DeliveryReportingSupportFlags");
     }
 
   mixin = TP_MESSAGE_MIXIN (object);
@@ -1952,6 +1961,10 @@ tp_message_mixin_get_dbus_property (GObject *object,
   else if (name == q_message_part_support_flags)
     {
       g_value_set_uint (value, mixin->priv->message_part_support_flags);
+    }
+  else if (name == q_delivery_reporting_support_flags)
+    {
+      g_value_set_uint (value, mixin->priv->delivery_reporting_support_flags);
     }
   else if (name == q_supported_content_types)
     {

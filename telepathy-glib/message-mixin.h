@@ -104,6 +104,7 @@ void tp_message_mixin_implement_sending (GObject *object,
     TpMessageMixinSendImpl send, guint n_types,
     const TpChannelTextMessageType *types,
     TpMessagePartSupportFlags message_part_support_flags,
+    TpDeliveryReportingSupportFlags delivery_reporting_support_flags,
     const gchar * const * supported_content_types);
 
 
