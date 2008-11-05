@@ -1412,6 +1412,8 @@ queue_pending (gpointer data)
   TpHandle sender;
   guint timestamp;
   gchar *text;
+  const GHashTable *header;
+  TpDeliveryStatus delivery_status;
 
   g_queue_push_tail (mixin->priv->pending, pending);
 
@@ -1422,6 +1424,39 @@ queue_pending (gpointer data)
 
   tp_svc_channel_interface_messages_emit_message_received (object,
       pending->parts);
+
+
+  /* Check if it's a failed delivery report; if so, emit SendError too. */
+  header = tp_message_peek (pending, 0);
+  delivery_status = tp_asv_get_uint32 (header, "delivery-status", NULL);
+
+  if (delivery_status == TP_DELIVERY_STATUS_TEMPORARILY_FAILED ||
+      delivery_status == TP_DELIVERY_STATUS_PERMANENTLY_FAILED)
+    {
+      /* Fallback behaviour here is okay: 0 is Send_Error_Unknown */
+      TpChannelTextSendError send_error = tp_asv_get_uint32 (header,
+          "delivery-status", NULL);
+      GPtrArray *echo = tp_asv_get_boxed (header, "delivery-echo",
+          /* FIXME: TP_ARRAY_TYPE_MESSAGE_PART_LIST */
+          dbus_g_type_get_collection ("GPtrArray", TP_HASH_TYPE_MESSAGE_PART));
+
+      timestamp = 0;
+      type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
+
+      if (echo != NULL)
+        text = parts_to_text (echo, NULL, &type, NULL, &timestamp);
+      else
+        text = "";
+
+      if (timestamp == 0)
+        timestamp = time (NULL);
+
+      tp_svc_channel_type_text_emit_send_error (object, send_error, timestamp,
+          type, text);
+
+      if (*text != '\0')
+        g_free (text);
+    }
 
   g_object_unref (object);
 
@@ -1436,8 +1471,8 @@ queue_pending (gpointer data)
  *  mixin, so it must no longer be modified or freed
  *
  * Receive a message into the pending messages queue, where it will stay
- * until acknowledged, and emit the ReceivedMessage signal. Also emit the
- * Received signal if appropriate.
+ * until acknowledged, and emit the Received and ReceivedMessage signals. Also
+ * emit the SendError signal if the message is a failed delivery report.
  *
  * Returns: the message ID
  *
