@@ -80,6 +80,7 @@ main (int argc,
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
   TestTextChannelNull *service_chan;
+  TestPropsTextChannel *service_props_chan;
   TpDBusDaemon *dbus;
   TpConnection *conn;
   TpChannel *chan;
@@ -87,6 +88,7 @@ main (int argc,
   gchar *name;
   gchar *conn_path;
   gchar *chan_path;
+  gchar *props_chan_path;
   gchar *bad_chan_path;
   TpHandle handle;
   gboolean was_ready;
@@ -130,6 +132,15 @@ main (int argc,
         TEST_TYPE_TEXT_CHANNEL_NULL,
         "connection", service_conn,
         "object-path", chan_path,
+        "handle", handle,
+        NULL));
+
+  props_chan_path = g_strdup_printf ("%s/PropertiesChannel", conn_path);
+
+  service_props_chan = TEST_PROPS_TEXT_CHANNEL (g_object_new (
+        TEST_TYPE_PROPS_TEXT_CHANNEL,
+        "connection", service_conn,
+        "object-path", props_chan_path,
         "handle", handle,
         NULL));
 
@@ -375,6 +386,7 @@ main (int argc,
   tp_handle_unref (contact_repo, handle);
   g_object_unref (conn);
   g_object_unref (service_chan);
+  g_object_unref (service_props_chan);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
