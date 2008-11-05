@@ -86,6 +86,7 @@ main (int argc,
   gchar *name;
   gchar *conn_path;
   gchar *chan_path;
+  gchar *bad_chan_path;
   TpHandle handle;
   gboolean was_ready;
   GError invalidated_for_test = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
@@ -226,6 +227,51 @@ main (int argc,
   g_object_unref (chan);
   chan = NULL;
 
+  /* channel does not, in fact, exist (callback) */
+
+  bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist", conn_path);
+  chan = tp_channel_new (conn, bad_chan_path, NULL,
+      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+  MYASSERT_NO_ERROR (error);
+
+  was_ready = FALSE;
+  tp_channel_call_when_ready (chan, channel_ready, &was_ready);
+  g_main_loop_run (mainloop);
+  MYASSERT (was_ready == TRUE, "");
+  MYASSERT (invalidated != NULL, "");
+  MYASSERT (invalidated->domain == DBUS_GERROR,
+      "%s", g_quark_to_string (invalidated->domain));
+  MYASSERT (invalidated->code == DBUS_GERROR_UNKNOWN_METHOD,
+      "%u", invalidated->code);
+  g_error_free (invalidated);
+  invalidated = NULL;
+
+  g_object_unref (chan);
+  chan = NULL;
+  g_free (bad_chan_path);
+  bad_chan_path = NULL;
+
+  /* channel does not, in fact, exist (run_until_ready) */
+
+  bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist", conn_path);
+  chan = tp_channel_new (conn, bad_chan_path, NULL,
+      TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+  MYASSERT_NO_ERROR (error);
+
+  MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
+  MYASSERT (error != NULL, "");
+  MYASSERT (error->domain == DBUS_GERROR,
+      "%s", g_quark_to_string (error->domain));
+  MYASSERT (error->code == DBUS_GERROR_UNKNOWN_METHOD,
+      "%u", error->code);
+  g_error_free (error);
+  error = NULL;
+
+  g_object_unref (chan);
+  chan = NULL;
+  g_free (bad_chan_path);
+  bad_chan_path = NULL;
+
   /* Channel becomes ready and we are called back */
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -271,11 +317,16 @@ main (int argc,
   g_error_free (invalidated);
   invalidated = NULL;
 
+  g_object_unref (chan);
+  chan = NULL;
+
+  /* clean up */
+
+  g_assert (chan == NULL);
   g_main_loop_unref (mainloop);
   mainloop = NULL;
 
   tp_handle_unref (contact_repo, handle);
-  g_object_unref (chan);
   g_object_unref (conn);
   g_object_unref (service_chan);
 
