@@ -68,6 +68,8 @@ void tp_message_set_uint64 (TpMessage *self, guint part, const gchar *key,
     guint64 u);
 void tp_message_set_string (TpMessage *self, guint part, const gchar *key,
     const gchar *s);
+void tp_message_set_string_printf (TpMessage *self, guint part,
+    const gchar *key, const gchar *fmt, ...) G_GNUC_PRINTF (4, 5);
 void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
     guint len, gconstpointer bytes);
 void tp_message_set (TpMessage *self, guint part, const gchar *key,

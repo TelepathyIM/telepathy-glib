@@ -669,6 +669,46 @@ tp_message_set_string (TpMessage *self,
 
 
 /**
+ * tp_message_set_string_printf:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @fmt: a printf-style format string for the string value
+ * @...: arguments for the format string
+ *
+ * Set @key in part @part of @self to have a string value constructed from a
+ * printf-style format string.
+ *
+ * @since 0.7.UNRELEASED
+ */
+void
+tp_message_set_string_printf (TpMessage *self,
+                              guint part,
+                              const gchar *key,
+                              const gchar *fmt,
+                              ...)
+{
+  va_list va;
+  gchar *s;
+  GValue *value;
+
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (fmt != NULL);
+
+  va_start (va, fmt);
+  s = g_strdup_vprintf (fmt, va);
+  va_end (va);
+
+  value = tp_g_value_slice_new (G_TYPE_STRING);
+  g_value_take_string (value, s);
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key), value);
+}
+
+
+/**
  * tp_message_set_bytes:
  * @self: a message
  * @part: a part number, which must be strictly less than the number
