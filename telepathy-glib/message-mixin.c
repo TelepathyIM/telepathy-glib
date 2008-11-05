@@ -126,6 +126,7 @@ static const char * const headers_only[] = {
     "message-sender",
     "message-sent",
     "message-received",
+    "message-token",
     NULL
 };
 
