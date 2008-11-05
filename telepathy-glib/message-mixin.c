@@ -102,7 +102,8 @@ static const char * const forbidden_keys[] = {
 
 static const char * const body_only[] = {
     "alternative",
-    "type",
+    "content-type",
+    "type",                     /* deprecated in 0.7.14 */
     "content",
     "identifier",
     "needs-retrieval",
@@ -925,8 +926,11 @@ parts_to_text (const GPtrArray *parts,
   for (i = 1; i < parts->len; i++)
     {
       GHashTable *part = g_ptr_array_index (parts, i);
-      const gchar *type = tp_asv_get_string (part, "type");
+      const gchar *type = tp_asv_get_string (part, "content-type");
       const gchar *alternative = tp_asv_get_string (part, "alternative");
+
+      if (type == NULL)
+        tp_asv_get_string (part, "content-type");
 
       DEBUG ("Parsing part %u, type %s, alternative %s", i, type, alternative);
 
@@ -1412,8 +1416,9 @@ tp_message_mixin_get_pending_message_content_async (
       part_data = g_ptr_array_index (item->parts, part);
 
       /* skip parts with no type (reserved) */
-      if (tp_asv_get_string (part_data, "type") == NULL)
-        continue;
+      if (tp_asv_get_string (part_data, "content-type") == NULL)
+        if (tp_asv_get_string (part_data, "type") == NULL)
+          continue;
 
       value = g_hash_table_lookup (part_data, "content");
 
@@ -1738,7 +1743,8 @@ tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
   if (message_type != 0)
     tp_message_set_uint32 (message, 0, "message-type", message_type);
 
-  tp_message_set_string (message, 1, "type", "text/plain");
+  tp_message_set_string (message, 1, "content-type", "text/plain");
+  tp_message_set_string (message, 1, "type", "text/plain"); /* Deprecated in 0.7.14 */
   tp_message_set_string (message, 1, "content", text);
 
   message->outgoing_context = context;
