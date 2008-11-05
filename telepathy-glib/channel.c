@@ -296,6 +296,20 @@ tp_channel_set_property (GObject *object,
 /* Introspection etc. */
 
 
+static void
+_tp_channel_abort_introspection (TpChannel *self,
+                                 const gchar *debug,
+                                 const GError *error)
+{
+  DEBUG ("%p: Introspection failed: %s: %s", self, debug, error->message);
+
+  g_assert (self->priv->introspect_needed != NULL);
+  g_queue_free (self->priv->introspect_needed);
+  self->priv->introspect_needed = NULL;
+  tp_proxy_invalidate ((TpProxy *) self, error);
+}
+
+
 void
 _tp_channel_continue_introspection (TpChannel *self)
 {
@@ -328,8 +342,8 @@ tp_channel_got_interfaces_cb (TpChannel *self,
 {
   if (error != NULL)
     {
-      DEBUG ("%p: GetInterfaces() failed: %s", self, error->message);
-      interfaces = NULL;
+      _tp_channel_abort_introspection (self, "GetInterfaces() failed", error);
+      return;
     }
 
   if (interfaces != NULL)
@@ -353,7 +367,7 @@ tp_channel_got_interfaces_cb (TpChannel *self,
             }
           else
             {
-              DEBUG ("\tInterface %s not valid", *iter);
+              DEBUG ("\tInterface %s not valid, ignoring it", *iter);
             }
         }
     }
@@ -384,7 +398,7 @@ tp_channel_got_channel_type_cb (TpChannel *self,
 
   if (error != NULL)
     {
-      DEBUG ("%p: GetChannelType() failed: %s", self, error->message);
+      _tp_channel_abort_introspection (self, "GetChannelType failed", error);
     }
   else if (tp_dbus_check_valid_interface_name (channel_type, &err2))
     {
@@ -395,15 +409,14 @@ tp_channel_got_channel_type_cb (TpChannel *self,
       tp_proxy_add_interface_by_id ((TpProxy *) self,
           self->priv->channel_type);
 
+      _tp_channel_continue_introspection (self);
     }
   else
     {
-      DEBUG ("%p: channel type %s not valid: %s", self, channel_type,
-          err2->message);
+      _tp_channel_abort_introspection (self,
+          "GetChannelType returned invalid type", err2);
       g_error_free (err2);
     }
-
-  _tp_channel_continue_introspection (self);
 }
 
 
@@ -440,13 +453,13 @@ tp_channel_got_handle_cb (TpChannel *self,
       self->priv->handle = handle;
       g_object_notify ((GObject *) self, "handle-type");
       g_object_notify ((GObject *) self, "handle");
+
+      _tp_channel_continue_introspection (self);
     }
   else
     {
-      DEBUG ("%p: GetHandle() failed: %s", self, error->message);
+      _tp_channel_abort_introspection (self, "GetHandle failed", error);
     }
-
-  _tp_channel_continue_introspection (self);
 }
 
 
