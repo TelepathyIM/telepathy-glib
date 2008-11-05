@@ -1489,7 +1489,7 @@ queue_pending (gpointer data)
     {
       /* Fallback behaviour here is okay: 0 is Send_Error_Unknown */
       TpChannelTextSendError send_error = tp_asv_get_uint32 (header,
-          "delivery-status", NULL);
+          "delivery-error", NULL);
       GPtrArray *echo = tp_asv_get_boxed (header, "delivery-echo",
           /* FIXME: TP_ARRAY_TYPE_MESSAGE_PART_LIST */
           dbus_g_type_get_collection ("GPtrArray", TP_HASH_TYPE_MESSAGE_PART));
