@@ -236,6 +236,10 @@ static void
 channel_get_channel_type (TpSvcChannel *iface,
                           DBusGMethodInvocation *context)
 {
+  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
+
+  self->get_channel_type_called++;
+
   tp_svc_channel_return_from_get_channel_type (context,
       TP_IFACE_CHANNEL_TYPE_TEXT);
 }
@@ -246,6 +250,8 @@ channel_get_handle (TpSvcChannel *iface,
 {
   TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
 
+  self->get_handle_called++;
+
   tp_svc_channel_return_from_get_handle (context, TP_HANDLE_TYPE_CONTACT,
       self->priv->handle);
 }
@@ -255,6 +261,9 @@ channel_get_interfaces (TpSvcChannel *iface,
                         DBusGMethodInvocation *context)
 {
   const char *interfaces[] = { NULL };
+  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
+
+  self->get_interfaces_called++;
 
   tp_svc_channel_return_from_get_interfaces (context, interfaces);
 }

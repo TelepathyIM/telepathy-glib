@@ -49,6 +49,10 @@ struct _TestTextChannelNull {
     GObject parent;
     TpTextMixin text;
 
+    guint get_handle_called;
+    guint get_interfaces_called;
+    guint get_channel_type_called;
+
     TestTextChannelNullPrivate *priv;
 };
 
