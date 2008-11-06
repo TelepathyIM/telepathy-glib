@@ -20,6 +20,8 @@
 
 #include <telepathy-glib/contact.h>
 
+#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
@@ -1573,6 +1575,128 @@ contacts_context_queue_features (ContactsContext *context,
 }
 
 
+static void
+contacts_got_attributes (TpConnection *connection,
+                         GHashTable *attributes,
+                         const GError *error,
+                         gpointer user_data,
+                         GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+  guint i;
+
+  if (error != NULL)
+    {
+      contacts_context_fail (c, error);
+      return;
+    }
+
+  i = 0;
+
+  while (i < c->handles->len)
+    {
+      TpHandle handle = g_array_index (c->handles, guint, i);
+      GHashTable *asv = g_hash_table_lookup (attributes,
+          GUINT_TO_POINTER (handle));
+
+      if (asv == NULL)
+        {
+          /* not in the hash table => not valid */
+          g_array_append_val (c->invalid, handle);
+          g_array_remove_index_fast (c->handles, i);
+        }
+      else
+        {
+          TpContact *contact = NULL;
+          guint j;
+          const gchar *s;
+          gpointer boxed;
+
+          /* we might already have consumed the only reference we have to
+           * the handle - if we have, we must recycle the same object rather
+           * than calling tp_contact_ensure again */
+          for (j = 0; j < i; j++)
+            {
+              if (handle == g_array_index (c->handles, guint, j))
+                {
+                  contact = g_object_ref (g_ptr_array_index (c->contacts, j));
+                }
+            }
+
+          if (contact == NULL)
+            contact = tp_contact_ensure (connection, handle);
+
+          /* set up the contact with its attributes */
+
+          s = tp_asv_get_string (asv,
+              TP_IFACE_CONNECTION "/contact-id");
+
+          if (s == NULL)
+            {
+              GError *e = g_error_new (TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INCONSISTENT,
+                  "Connection manager %s is broken: contact #%u in "
+                  "the GetContactAttributes result has no contact-id",
+                  tp_proxy_get_bus_name (connection), handle);
+
+              contacts_context_fail (c, e);
+              g_error_free (e);
+              g_object_unref (contact);
+              return;
+            }
+          else if (contact->priv->identifier == NULL)
+            {
+              contact->priv->identifier = g_strdup (s);
+            }
+          else if (tp_strdiff (contact->priv->identifier, s))
+            {
+              GError *e = g_error_new (TP_DBUS_ERRORS,
+                  TP_DBUS_ERROR_INCONSISTENT,
+                  "Connection manager %s is broken: contact #%u "
+                  "identifier changed from %s to %s",
+                  tp_proxy_get_bus_name (connection), handle,
+                  contact->priv->identifier, s);
+
+              contacts_context_fail (c, e);
+              g_error_free (e);
+              g_object_unref (contact);
+              return;
+            }
+
+          s = tp_asv_get_string (asv,
+              TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias");
+
+          if (s != NULL)
+            {
+              contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
+              g_free (contact->priv->alias);
+              contact->priv->alias = g_strdup (s);
+              g_object_notify ((GObject *) contact, "alias");
+            }
+
+          s = tp_asv_get_string (asv,
+              TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token");
+
+          if (s != NULL)
+            contacts_avatar_updated (connection, handle, s, NULL, NULL);
+
+          boxed = tp_asv_get_boxed (asv,
+              TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE "/presence",
+              TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+          contact_maybe_set_simple_presence (contact, boxed);
+
+          /* FIXME: TP_IFACE_CONNECTION_INTERFACE_CAPABILITIES "/caps" */
+
+          /* save the contact and move on to the next handle */
+          g_ptr_array_add (c->contacts, contact);
+          i++;
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+
 /**
  * tp_connection_get_contacts_by_handle:
  * @self: A connection, which must be ready (#TpConnection:connection-ready
@@ -1632,6 +1756,68 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   context->callback.by_handle = callback;
 
   g_array_append_vals (context->handles, handles, n_handles);
+
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    {
+      GPtrArray *array = g_ptr_array_sized_new (
+          self->priv->contact_attribute_interfaces->len);
+      const gchar **supported_interfaces;
+
+      for (i = 0; i < self->priv->contact_attribute_interfaces->len; i++)
+        {
+          GQuark q = g_array_index (self->priv->contact_attribute_interfaces,
+              GQuark, i);
+
+          if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
+            {
+              if ((feature_flags & CONTACT_FEATURE_FLAG_ALIAS) != 0)
+                {
+                  g_ptr_array_add (array,
+                      TP_IFACE_CONNECTION_INTERFACE_ALIASING);
+                  contacts_bind_to_aliases_changed (self);
+                }
+            }
+          else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
+            {
+              if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
+                {
+                  g_ptr_array_add (array,
+                      TP_IFACE_CONNECTION_INTERFACE_AVATARS);
+                  contacts_bind_to_avatar_updated (self);
+                }
+            }
+          else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE)
+            {
+              if ((feature_flags & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
+                {
+                  g_ptr_array_add (array,
+                      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
+                  contacts_bind_to_presences_changed (self);
+                }
+            }
+        }
+
+      g_ptr_array_add (array, NULL);
+      supported_interfaces = (const gchar **) g_ptr_array_free (array, FALSE);
+
+      /* we support the Contacts interface, so we can hold the handles and
+       * simultaneously inspect them. After that, we'll fill in any
+       * features that are necessary (this becomes a no-op if Contacts
+       * gave us everything). */
+
+      contacts_context_queue_features (context, feature_flags);
+
+      tp_connection_get_contact_attributes (self, -1,
+          n_handles, handles, supported_interfaces, TRUE,
+          contacts_got_attributes,
+          context, contacts_context_unref, weak_object);
+      g_free (supported_interfaces);
+
+      return;
+    }
+
+  /* if we haven't already returned, we're on the slow path */
 
   /* Before we return anything we'll want to inspect the handles */
   g_queue_push_head (&context->todo, contacts_inspect);
