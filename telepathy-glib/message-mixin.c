@@ -1494,22 +1494,34 @@ queue_pending (gpointer data)
           /* FIXME: TP_ARRAY_TYPE_MESSAGE_PART_LIST */
           dbus_g_type_get_collection ("GPtrArray", TP_HASH_TYPE_MESSAGE_PART));
 
-      timestamp = 0;
       type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
 
       if (echo != NULL)
-        text = parts_to_text (echo, NULL, &type, NULL, &timestamp);
-      else
-        text = "";
+        {
+          const GHashTable *echo_header = g_ptr_array_index (echo, 1);
 
-      if (timestamp == 0)
-        timestamp = time (NULL);
+          /* The specification says that the timestamp in SendError should be the
+           * time at which the original message was sent.  parts_to_text falls
+           * back to setting timestamp to time (NULL) if it can't find out when
+           * the message was sent, but we want to use 0 in that case.  Hence,
+           * we look up timestamp here rather than delegating to parts_to_text.
+           * The fallback behaviour of tp_asv_get_uint32 is correct: we want
+           * timestamp to be 0 if we can't determine when the original message
+           * was sent.
+           */
+          text = parts_to_text (echo, NULL, &type, NULL, NULL);
+          timestamp = tp_asv_get_uint32 (echo_header, "message-sent", NULL);
+        }
+      else
+        {
+          text = NULL;
+          timestamp = 0;
+        }
 
       tp_svc_channel_type_text_emit_send_error (object, send_error, timestamp,
-          type, text);
+          type, text != NULL ? text : "");
 
-      if (*text != '\0')
-        g_free (text);
+      g_free (text);
     }
 
   g_object_unref (object);
