@@ -1708,6 +1708,65 @@ contacts_got_attributes (TpConnection *connection,
 }
 
 
+static void
+contacts_get_attributes (ContactsContext *context)
+{
+  GArray *contact_attribute_interfaces =
+      context->connection->priv->contact_attribute_interfaces;
+  GPtrArray *array = g_ptr_array_sized_new (
+      contact_attribute_interfaces->len);
+  const gchar **supported_interfaces;
+  guint i;
+
+  g_assert (tp_proxy_has_interface_by_id (context->connection,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS));
+  g_assert (contact_attribute_interfaces != NULL);
+
+  for (i = 0; i < contact_attribute_interfaces->len; i++)
+    {
+      GQuark q = g_array_index (contact_attribute_interfaces, GQuark, i);
+
+      if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_ALIAS) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_ALIASING);
+              contacts_bind_to_aliases_changed (context->connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_AVATARS);
+              contacts_bind_to_avatar_updated (context->connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
+              contacts_bind_to_presences_changed (context->connection);
+            }
+        }
+    }
+
+  g_ptr_array_add (array, NULL);
+  supported_interfaces = (const gchar **) g_ptr_array_free (array, FALSE);
+
+  context->refcount++;
+  tp_connection_get_contact_attributes (context->connection, -1,
+      context->handles->len, (const TpHandle *) context->handles->data,
+      supported_interfaces, TRUE, contacts_got_attributes,
+      context, contacts_context_unref, context->weak_object);
+  g_free (supported_interfaces);
+}
+
+
 /**
  * tp_connection_get_contacts_by_handle:
  * @self: A connection, which must be ready (#TpConnection:connection-ready
@@ -1771,60 +1830,15 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   if (tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
     {
-      GPtrArray *array = g_ptr_array_sized_new (
-          self->priv->contact_attribute_interfaces->len);
-      const gchar **supported_interfaces;
-
-      for (i = 0; i < self->priv->contact_attribute_interfaces->len; i++)
-        {
-          GQuark q = g_array_index (self->priv->contact_attribute_interfaces,
-              GQuark, i);
-
-          if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
-            {
-              if ((feature_flags & CONTACT_FEATURE_FLAG_ALIAS) != 0)
-                {
-                  g_ptr_array_add (array,
-                      TP_IFACE_CONNECTION_INTERFACE_ALIASING);
-                  contacts_bind_to_aliases_changed (self);
-                }
-            }
-          else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
-            {
-              if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
-                {
-                  g_ptr_array_add (array,
-                      TP_IFACE_CONNECTION_INTERFACE_AVATARS);
-                  contacts_bind_to_avatar_updated (self);
-                }
-            }
-          else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE)
-            {
-              if ((feature_flags & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
-                {
-                  g_ptr_array_add (array,
-                      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
-                  contacts_bind_to_presences_changed (self);
-                }
-            }
-        }
-
-      g_ptr_array_add (array, NULL);
-      supported_interfaces = (const gchar **) g_ptr_array_free (array, FALSE);
-
       /* we support the Contacts interface, so we can hold the handles and
        * simultaneously inspect them. After that, we'll fill in any
        * features that are necessary (this becomes a no-op if Contacts
        * gave us everything). */
-
+      contacts_get_attributes (context);
       contacts_context_queue_features (context, feature_flags);
-
-      tp_connection_get_contact_attributes (self, -1,
-          n_handles, handles, supported_interfaces, TRUE,
-          contacts_got_attributes,
-          context, contacts_context_unref, weak_object);
-      g_free (supported_interfaces);
-
+      /* we have one excess ref to the context because we create it,
+       * and then contacts_get_attributes refs it */
+      contacts_context_unref (context);
       return;
     }
 
