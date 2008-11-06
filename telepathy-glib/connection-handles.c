@@ -268,6 +268,17 @@ _tp_connection_clean_up_handle_refs (TpConnection *self)
  * Release the reference to the handles in @handles that was obtained by
  * calling tp_connection_hold_handles() or tp_connection_request_handles().
  *
+ * This function might release any references held by calling
+ * tp_cli_connection_call_request_handles(),
+ * tp_cli_connection_run_request_handles(),
+ * tp_cli_connection_call_hold_handles(),
+ * tp_cli_connection_run_hold_handles(),
+ * tp_cli_connection_interface_contacts_call_get_contact_attributes() or
+ * tp_cli_connection_interface_contacts_run_get_contact_attributes() directly.
+ * Those functions should be avoided in favour of using #TpContact,
+ * tp_connection_hold_handles(), tp_connection_request_handles() and
+ * tp_connection_get_contact_attributes().
+ *
  * If @self has already become invalid, this function does nothing.
  */
 void
