@@ -2166,7 +2166,17 @@ tp_connection_get_contacts_by_id (TpConnection *self,
   g_ptr_array_add (context->request_ids, NULL);
 
   /* set up the queue of feature introspection */
-  g_queue_push_head (&context->todo, contacts_inspect);
+
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    {
+      g_queue_push_head (&context->todo, contacts_get_attributes);
+    }
+  else
+    {
+      g_queue_push_head (&context->todo, contacts_inspect);
+    }
+
   contacts_context_queue_features (context, feature_flags);
 
   /* but first, we need to get the handles in the first place */
