@@ -23,8 +23,10 @@
 
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/debug-internal.h"
@@ -83,6 +85,7 @@ enum
   PROP_HANDLE_TYPE,
   PROP_HANDLE,
   PROP_CHANNEL_READY,
+  PROP_CHANNEL_PROPERTIES,
   PROP_GROUP_SELF_HANDLE,
   PROP_GROUP_FLAGS,
   N_PROPS
@@ -223,6 +226,38 @@ tp_channel_borrow_connection (TpChannel *self)
 }
 
 
+/**
+ * tp_channel_borrow_immutable_properties:
+ * @self: a channel
+ *
+ * Returns the immutable D-Bus properties of this channel, the same as
+ * #TpChannel:channel-properties.
+ *
+ * The returned hash table should not be altered, and is not necessarily
+ * valid after the main loop is next re-entered. Copy it with
+ * g_boxed_copy() (its type is %TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP)
+ * if a copy that remains valid must be kept.
+ *
+ * If the #TpChannel:channel-properties property was not set during
+ * construction (e.g. by calling tp_channel_new_from_properties()), a
+ * reasonable but possibly incomplete version will be made up from the values
+ * of individual properties; reading this property repeatedly may yield
+ * progressively more complete values until #TpChannel:channel-ready
+ * becomes %TRUE.
+ *
+ * Returns: a #GHashTable where the keys are strings,
+ *  D-Bus interface name + "." + property name, and the values are #GValue
+ *  instances
+ */
+GHashTable *
+tp_channel_borrow_immutable_properties (TpChannel *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
+  return self->priv->channel_properties;
+}
+
+
 static void
 tp_channel_get_property (GObject *object,
                          guint property_id,
@@ -249,6 +284,9 @@ tp_channel_get_property (GObject *object,
     case PROP_HANDLE:
       g_value_set_uint (value, self->priv->handle);
       break;
+    case PROP_CHANNEL_PROPERTIES:
+      g_value_set_boxed (value, self->priv->channel_properties);
+      break;
     case PROP_GROUP_SELF_HANDLE:
       g_value_set_uint (value, self->priv->group_self_handle);
       break;
@@ -260,6 +298,54 @@ tp_channel_get_property (GObject *object,
       break;
   }
 }
+
+
+static void
+_tp_channel_set_channel_type (TpChannel *self,
+                              GQuark q)
+{
+  GValue *value;
+
+  self->priv->channel_type = q;
+  value = tp_g_value_slice_new (G_TYPE_STRING);
+  g_value_set_static_string (value, g_quark_to_string (q));
+  g_hash_table_insert (self->priv->channel_properties,
+      g_strdup (TP_IFACE_CHANNEL ".ChannelType"), value);
+}
+
+
+static void
+_tp_channel_set_interfaces (TpChannel *self,
+                            const gchar **interfaces)
+{
+  GValue *value;
+  const gchar **iter;
+
+  if (interfaces != NULL)
+    {
+      for (iter = interfaces; *iter != NULL; iter++)
+        {
+          DEBUG ("- %s", *iter);
+
+          if (tp_dbus_check_valid_interface_name (*iter, NULL))
+            {
+              GQuark q = g_quark_from_string (*iter);
+              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
+            }
+          else
+            {
+              DEBUG ("\tInterface %s not valid, ignoring it", *iter);
+            }
+        }
+    }
+
+  value = tp_g_value_slice_new (G_TYPE_STRV);
+  g_value_set_boxed (value, interfaces);
+  g_hash_table_insert (self->priv->channel_properties,
+      g_strdup (TP_IFACE_CHANNEL ".Interfaces"),
+      value);
+}
+
 
 static void
 tp_channel_set_property (GObject *object,
@@ -274,17 +360,77 @@ tp_channel_set_property (GObject *object,
     case PROP_CONNECTION:
       self->priv->connection = TP_CONNECTION (g_value_dup_object (value));
       break;
+
     case PROP_CHANNEL_TYPE:
-      /* can only be set in constructor */
-      g_assert (self->priv->channel_type == 0);
-      self->priv->channel_type = g_quark_from_string (g_value_get_string (
-            value));
+      _tp_channel_set_channel_type (self,
+          g_quark_from_string (g_value_get_string (value)));
       break;
+
     case PROP_HANDLE_TYPE:
-      self->priv->handle_type = g_value_get_uint (value);
+        {
+          guint new_value = g_value_get_uint (value);
+
+          /* An unfortunate collision between the default value in
+           * TpChannelIface (0), and the default we want (-1), means that
+           * we have to pass TP_UNKNOWN_HANDLE_TYPE to the constructor
+           * explicitly, even if providing channel-properties. We don't
+           * want an unknown value from handle-type to override a known value
+           * from channel-properties. */
+          if (new_value != TP_UNKNOWN_HANDLE_TYPE)
+            {
+              self->priv->handle_type = new_value;
+              g_hash_table_insert (self->priv->channel_properties,
+                  g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"),
+                  tp_g_value_slice_dup (value));
+            }
+        }
       break;
+
     case PROP_HANDLE:
       self->priv->handle = g_value_get_uint (value);
+      g_hash_table_insert (self->priv->channel_properties,
+          g_strdup (TP_IFACE_CHANNEL ".TargetHandle"),
+          tp_g_value_slice_dup (value));
+      break;
+
+    case PROP_CHANNEL_PROPERTIES:
+        {
+          GHashTable *asv = g_value_get_boxed (value);
+          gboolean valid;
+
+          /* default value at construct time is NULL, we need to ignore that */
+          if (asv != NULL)
+            {
+              tp_g_hash_table_update (self->priv->channel_properties,
+                  asv, (GBoxedCopyFunc) g_strdup,
+                  (GBoxedCopyFunc) tp_g_value_slice_dup);
+
+              self->priv->handle_type = tp_asv_get_uint32 (
+                  self->priv->channel_properties,
+                  TP_IFACE_CHANNEL ".TargetHandleType", &valid);
+
+              /* 0 is not actually the correct "unknown" value here, so
+               * correct for it */
+              if (!valid)
+                {
+                  self->priv->handle_type = TP_UNKNOWN_HANDLE_TYPE;
+                }
+
+              self->priv->handle = tp_asv_get_uint32 (
+                  self->priv->channel_properties,
+                  TP_IFACE_CHANNEL ".TargetHandle", NULL);
+
+              _tp_channel_set_channel_type (self,
+                  g_quark_from_string (tp_asv_get_string (
+                      self->priv->channel_properties,
+                      TP_IFACE_CHANNEL ".ChannelType")));
+
+              _tp_channel_set_interfaces (self,
+                  tp_asv_get_boxed (self->priv->channel_properties,
+                      TP_IFACE_CHANNEL ".Interfaces",
+                      G_TYPE_STRV));
+            }
+        }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -313,6 +459,8 @@ _tp_channel_abort_introspection (TpChannel *self,
 void
 _tp_channel_continue_introspection (TpChannel *self)
 {
+  DEBUG ("%p", self);
+
   g_assert (self->priv->introspect_needed != NULL);
 
   if (g_queue_peek_head (self->priv->introspect_needed) == NULL)
@@ -346,31 +494,7 @@ tp_channel_got_interfaces_cb (TpChannel *self,
       return;
     }
 
-  if (interfaces != NULL)
-    {
-      const gchar **iter;
-
-      for (iter = interfaces; *iter != NULL; iter++)
-        {
-          DEBUG ("- %s", *iter);
-
-          if (tp_dbus_check_valid_interface_name (*iter, NULL))
-            {
-              GQuark q = g_quark_from_string (*iter);
-              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
-
-              if (q == TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)
-                {
-                  g_queue_push_tail (self->priv->introspect_needed,
-                      _tp_channel_get_group_properties);
-                }
-            }
-          else
-            {
-              DEBUG ("\tInterface %s not valid, ignoring it", *iter);
-            }
-        }
-    }
+  _tp_channel_set_interfaces (self, interfaces);
 
   /* FIXME: give subclasses a chance to influence the definition of "ready"
    * now that we have our interfaces? */
@@ -382,6 +506,8 @@ tp_channel_got_interfaces_cb (TpChannel *self,
 static void
 _tp_channel_get_interfaces (TpChannel *self)
 {
+  DEBUG ("%p", self);
+
   tp_cli_channel_call_get_interfaces (self, -1,
       tp_channel_got_interfaces_cb, NULL, NULL, NULL);
 }
@@ -403,7 +529,7 @@ tp_channel_got_channel_type_cb (TpChannel *self,
   else if (tp_dbus_check_valid_interface_name (channel_type, &err2))
     {
       DEBUG ("%p: Introspected channel type %s", self, channel_type);
-      self->priv->channel_type = g_quark_from_string (channel_type);
+      _tp_channel_set_channel_type (self, g_quark_from_string (channel_type));
       g_object_notify ((GObject *) self, "channel-type");
 
       tp_proxy_add_interface_by_id ((TpProxy *) self,
@@ -425,11 +551,14 @@ _tp_channel_get_channel_type (TpChannel *self)
 {
   if (self->priv->channel_type == 0)
     {
+      DEBUG ("%p: calling GetChannelType", self);
       tp_cli_channel_call_get_channel_type (self, -1,
           tp_channel_got_channel_type_cb, NULL, NULL, NULL);
     }
   else
     {
+      DEBUG ("%p: channel type %s already determined", self,
+          g_quark_to_string (self->priv->channel_type));
       tp_proxy_add_interface_by_id ((TpProxy *) self,
           self->priv->channel_type);
       _tp_channel_continue_introspection (self);
@@ -447,10 +576,23 @@ tp_channel_got_handle_cb (TpChannel *self,
 {
   if (error == NULL)
     {
+      GValue *value;
+
       DEBUG ("%p: Introspected handle #%d of type %d", self, handle,
           handle_type);
       self->priv->handle_type = handle_type;
       self->priv->handle = handle;
+
+      value = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (value, handle_type);
+      g_hash_table_insert (self->priv->channel_properties,
+          g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"), value);
+
+      value = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (value, handle);
+      g_hash_table_insert (self->priv->channel_properties,
+          g_strdup (TP_IFACE_CHANNEL ".TargetHandle"), value);
+
       g_object_notify ((GObject *) self, "handle-type");
       g_object_notify ((GObject *) self, "handle");
 
@@ -470,11 +612,14 @@ _tp_channel_get_handle (TpChannel *self)
       || (self->priv->handle == 0 &&
           self->priv->handle_type != TP_HANDLE_TYPE_NONE))
     {
+      DEBUG ("%p: calling GetHandle", self);
       tp_cli_channel_call_get_handle (self, -1,
           tp_channel_got_handle_cb, NULL, NULL, NULL);
     }
   else
     {
+      DEBUG ("%p: handle already known to be %u of type %u", self,
+          self->priv->handle, self->priv->handle_type);
       _tp_channel_continue_introspection (self);
     }
 }
@@ -555,14 +700,21 @@ tp_channel_constructor (GType type,
 
   self->priv->introspect_needed = g_queue_new ();
 
+  /* this does nothing if we already know the handle */
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_get_handle);
+
+  /* this does nothing if we already know the channel type */
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_get_channel_type);
 
+  /* currently this always runs, regardless of anything else */
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_get_interfaces);
 
+  /* this needs doing *after* GetInterfaces so we know whether we're a group */
   g_queue_push_tail (self->priv->introspect_needed,
-      _tp_channel_get_handle);
+      _tp_channel_get_group_properties);
 
   _tp_channel_continue_introspection (self);
 
@@ -579,6 +731,8 @@ tp_channel_init (TpChannel *self)
   self->priv->channel_type = 0;
   self->priv->handle_type = TP_UNKNOWN_HANDLE_TYPE;
   self->priv->handle = 0;
+  self->priv->channel_properties = g_hash_table_new_full (g_str_hash,
+      g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
 }
 
 static void
@@ -646,6 +800,9 @@ tp_channel_finalize (GObject *object)
       self->priv->introspect_needed = NULL;
     }
 
+  g_assert (self->priv->channel_properties != NULL);
+  g_hash_table_destroy (self->priv->channel_properties);
+
   ((GObjectClass *) tp_channel_parent_class)->finalize (object);
 }
 
@@ -710,6 +867,27 @@ tp_channel_class_init (TpChannelClass *klass)
    */
   g_object_class_override_property (object_class, PROP_HANDLE,
       "handle");
+
+  /**
+   * TpChannel:channel-properties:
+   *
+   * The immutable D-Bus properties of this channel, represented by a
+   * #GHashTable where the keys are D-Bus interface name + "." + property
+   * name, and the values are #GValue instances.
+   *
+   * Read-only except during construction. If this is not provided
+   * during construction, a reasonable (but possibly incomplete) version
+   * will be made up from the values of individual properties; reading this
+   * property repeatedly may yield progressively more complete values until
+   * #TpChannel:channel-ready becomes %TRUE.
+   */
+  param_spec = g_param_spec_boxed ("channel-properties",
+      "Immutable D-Bus properties",
+      "A map D-Bus interface + \".\" + property name => GValue",
+      TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_PROPERTIES,
+      param_spec);
 
   /**
    * TpChannel:channel-ready:
@@ -840,6 +1018,50 @@ tp_channel_class_init (TpChannelClass *klass)
       G_TYPE_NONE, 7,
       G_TYPE_STRING, au_type, au_type, au_type, au_type, G_TYPE_UINT,
       G_TYPE_UINT);
+}
+
+
+/**
+ * tp_channel_new_from_properties:
+ * @conn: a connection; may not be %NULL
+ * @object_path: the object path of the channel; may not be %NULL
+ * @immutable_properties: the immutable properties of the channel,
+ *  as signalled by the NewChannel D-Bus signal or returned by the
+ *  CreateChannel and EnsureChannel D-Bus methods: a mapping from
+ *  strings (D-Bus interface name + "." + property name) to #GValue instances
+ * @error: used to indicate the error if %NULL is returned
+ *
+ * <!-- -->
+ *
+ * Returns: a new channel proxy, or %NULL on invalid arguments
+ */
+TpChannel *
+tp_channel_new_from_properties (TpConnection *conn,
+                                const gchar *object_path,
+                                const GHashTable *immutable_properties,
+                                GError **error)
+{
+  TpProxy *conn_proxy = (TpProxy *) conn;
+  TpChannel *ret = NULL;
+
+  g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
+  g_return_val_if_fail (object_path != NULL, NULL);
+  g_return_val_if_fail (immutable_properties != NULL, NULL);
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    goto finally;
+
+  ret = TP_CHANNEL (g_object_new (TP_TYPE_CHANNEL,
+        "connection", conn,
+        "dbus-daemon", conn_proxy->dbus_daemon,
+        "bus-name", conn_proxy->bus_name,
+        "object-path", object_path,
+        "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
+        "channel-properties", immutable_properties,
+        NULL));
+
+finally:
+  return ret;
 }
 
 /**

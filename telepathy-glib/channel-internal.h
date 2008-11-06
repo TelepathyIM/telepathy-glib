@@ -45,6 +45,8 @@ struct _TpChannelPrivate {
     GQuark channel_type;
     TpHandleType handle_type;
     TpHandle handle;
+    /* owned string (iface + "." + prop) => slice-allocated GValue */
+    GHashTable *channel_properties;
 
     TpHandle group_self_handle;
     TpChannelGroupFlags group_flags;
