@@ -222,6 +222,8 @@ tp_mixin_offset_cast (gpointer instance, guint offset)
  * this indicates a programming error and results are undefined.
  *
  * This is used to implement the telepathy-glib mixin classes.
+ *
+ * Returns: the offset of the mixin
  */
 guint
 tp_mixin_instance_get_offset (gpointer instance,
@@ -253,6 +255,8 @@ tp_mixin_instance_get_offset (gpointer instance,
  * this indicates a programming error and results are undefined.
  *
  * This is used to implement the telepathy-glib mixin classes.
+ *
+ * Returns: the offset of the mixin class
  */
 guint
 tp_mixin_class_get_offset (gpointer klass,
