@@ -515,6 +515,7 @@ tp_channel_got_interfaces_cb (TpChannel *self,
       return;
     }
 
+  self->priv->exists = TRUE;
   _tp_channel_maybe_set_interfaces (self, interfaces);
 
   /* FIXME: give subclasses a chance to influence the definition of "ready"
@@ -529,8 +530,19 @@ _tp_channel_get_interfaces (TpChannel *self)
 {
   DEBUG ("%p", self);
 
-  tp_cli_channel_call_get_interfaces (self, -1,
-      tp_channel_got_interfaces_cb, NULL, NULL, NULL);
+  if (self->priv->exists &&
+      tp_asv_lookup (self->priv->channel_properties,
+          TP_IFACE_CHANNEL ".Interfaces") != NULL)
+    {
+      _tp_channel_continue_introspection (self);
+    }
+  else
+    {
+      /* either we don't know the Interfaces, or we just want to verify the
+       * channel's existence */
+      tp_cli_channel_call_get_interfaces (self, -1,
+          tp_channel_got_interfaces_cb, NULL, NULL, NULL);
+    }
 }
 
 
@@ -549,6 +561,7 @@ tp_channel_got_channel_type_cb (TpChannel *self,
     }
   else if (tp_dbus_check_valid_interface_name (channel_type, &err2))
     {
+      self->priv->exists = TRUE;
       DEBUG ("%p: Introspected channel type %s", self, channel_type);
       _tp_channel_maybe_set_channel_type (self, channel_type);
       g_object_notify ((GObject *) self, "channel-type");
@@ -598,6 +611,8 @@ tp_channel_got_handle_cb (TpChannel *self,
   if (error == NULL)
     {
       GValue *value;
+
+      self->priv->exists = TRUE;
 
       DEBUG ("%p: Introspected handle #%d of type %d", self, handle,
           handle_type);
@@ -664,6 +679,8 @@ _tp_channel_got_properties (TpProxy *proxy,
       gboolean b;
 
       DEBUG ("Received %u channel properties", g_hash_table_size (asv));
+
+      self->priv->exists = TRUE;
 
       _tp_channel_maybe_set_channel_type (self,
           tp_asv_get_string (asv, "ChannelType"));
@@ -863,9 +880,12 @@ tp_channel_constructor (GType type,
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_get_channel_type);
 
-  /* currently this always runs, regardless of anything else;
-   * this means the channel never becomes ready until we re-enter the
-   * main loop, and we always verify that the channel does actually exist */
+  /* This makes a call unless (a) we already know the Interfaces by now, and
+   * (b) priv->exists is TRUE (i.e. either GetAll, GetHandle or GetChannelType
+   * has succeeded).
+   *
+   * This means the channel never becomes ready until we re-enter the
+   * main loop, and we always verify that the channel does actually exist. */
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_get_interfaces);
 
