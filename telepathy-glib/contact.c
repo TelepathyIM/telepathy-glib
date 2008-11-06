@@ -1962,6 +1962,12 @@ tp_connection_upgrade_contacts (TpConnection *self,
 
   g_assert (context->handles->len == n_contacts);
 
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    {
+      g_queue_push_head (&context->todo, contacts_get_attributes);
+    }
+
   contacts_context_queue_features (context, feature_flags);
 
   /* use an idle to make sure the callback is called after we return,
