@@ -1288,20 +1288,26 @@ contacts_aliases_changed (TpConnection *connection,
 
 
 static void
+contacts_bind_to_aliases_changed (TpConnection *connection)
+{
+  if (!connection->priv->tracking_aliases_changed)
+    {
+      connection->priv->tracking_aliases_changed = TRUE;
+
+      tp_cli_connection_interface_aliasing_connect_to_aliases_changed (
+          connection, contacts_aliases_changed, NULL, NULL, NULL, NULL);
+    }
+}
+
+
+static void
 contacts_get_aliases (ContactsContext *c)
 {
   guint i;
 
   g_assert (c->handles->len == c->contacts->len);
 
-  /* ensure we'll get told about alias changes */
-  if (!c->connection->priv->tracking_aliases_changed)
-    {
-      c->connection->priv->tracking_aliases_changed = TRUE;
-
-      tp_cli_connection_interface_aliasing_connect_to_aliases_changed (
-          c->connection, contacts_aliases_changed, NULL, NULL, NULL, NULL);
-    }
+  contacts_bind_to_aliases_changed (c->connection);
 
   for (i = 0; i < c->contacts->len; i++)
     {
@@ -1324,6 +1330,28 @@ contacts_get_aliases (ContactsContext *c)
 
 
 static void
+contact_maybe_set_simple_presence (TpContact *contact,
+                                   GValueArray *presence)
+{
+  if (contact == NULL || presence == NULL)
+    return;
+
+  contact->priv->has_features |= CONTACT_FEATURE_FLAG_PRESENCE;
+  contact->priv->presence_type = g_value_get_uint (presence->values + 0);
+  g_free (contact->priv->presence_status);
+  contact->priv->presence_status = g_value_dup_string (
+      presence->values + 1);
+  g_free (contact->priv->presence_message);
+  contact->priv->presence_message = g_value_dup_string (
+      presence->values + 2);
+
+  g_object_notify ((GObject *) contact, "presence-type");
+  g_object_notify ((GObject *) contact, "presence-status");
+  g_object_notify ((GObject *) contact, "presence-message");
+}
+
+
+static void
 contacts_presences_changed (TpConnection *connection,
                             GHashTable *presences,
                             gpointer user_data G_GNUC_UNUSED,
@@ -1338,23 +1366,8 @@ contacts_presences_changed (TpConnection *connection,
     {
       TpContact *contact = _tp_connection_lookup_contact (connection,
           GPOINTER_TO_UINT (key));
-      GValueArray *presence = value;
 
-      if (contact == NULL)
-        continue;
-
-      contact->priv->has_features |= CONTACT_FEATURE_FLAG_PRESENCE;
-      contact->priv->presence_type = g_value_get_uint (presence->values + 0);
-      g_free (contact->priv->presence_status);
-      contact->priv->presence_status = g_value_dup_string (
-          presence->values + 1);
-      g_free (contact->priv->presence_message);
-      contact->priv->presence_message = g_value_dup_string (
-          presence->values + 2);
-
-      g_object_notify ((GObject *) contact, "presence-type");
-      g_object_notify ((GObject *) contact, "presence-status");
-      g_object_notify ((GObject *) contact, "presence-message");
+      contact_maybe_set_simple_presence (contact, value);
     }
 }
 
@@ -1384,19 +1397,25 @@ contacts_got_simple_presence (TpConnection *connection,
 
 
 static void
+contacts_bind_to_presences_changed (TpConnection *connection)
+{
+  if (!connection->priv->tracking_presences_changed)
+    {
+      connection->priv->tracking_presences_changed = TRUE;
+
+      tp_cli_connection_interface_simple_presence_connect_to_presences_changed
+        (connection, contacts_presences_changed, NULL, NULL, NULL, NULL);
+    }
+}
+
+static void
 contacts_get_simple_presence (ContactsContext *c)
 {
   guint i;
 
   g_assert (c->handles->len == c->contacts->len);
 
-  if (!c->connection->priv->tracking_presences_changed)
-    {
-      c->connection->priv->tracking_presences_changed = TRUE;
-
-      tp_cli_connection_interface_simple_presence_connect_to_presences_changed
-        (c->connection, contacts_presences_changed, NULL, NULL, NULL, NULL);
-    }
+  contacts_bind_to_presences_changed (c->connection);
 
   for (i = 0; i < c->contacts->len; i++)
     {
@@ -1475,19 +1494,26 @@ contacts_got_known_avatar_tokens (TpConnection *connection,
 
 
 static void
+contacts_bind_to_avatar_updated (TpConnection *connection)
+{
+  if (!connection->priv->tracking_avatar_updated)
+    {
+      connection->priv->tracking_avatar_updated = TRUE;
+
+      tp_cli_connection_interface_avatars_connect_to_avatar_updated
+        (connection, contacts_avatar_updated, NULL, NULL, NULL, NULL);
+    }
+}
+
+
+static void
 contacts_get_avatar_tokens (ContactsContext *c)
 {
   guint i;
 
   g_assert (c->handles->len == c->contacts->len);
 
-  if (!c->connection->priv->tracking_avatar_updated)
-    {
-      c->connection->priv->tracking_avatar_updated = TRUE;
-
-      tp_cli_connection_interface_avatars_connect_to_avatar_updated
-        (c->connection, contacts_avatar_updated, NULL, NULL, NULL, NULL);
-    }
+  contacts_bind_to_avatar_updated (c->connection);
 
   for (i = 0; i < c->contacts->len; i++)
     {
