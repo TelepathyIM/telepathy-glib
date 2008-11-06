@@ -149,8 +149,7 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
 #define TP_PROPERTIES_MIXIN_CLASS_OFFSET_QUARK \
   (tp_properties_mixin_class_get_offset_quark ())
 #define TP_PROPERTIES_MIXIN_CLASS_OFFSET(o) \
-  (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_CLASS_TYPE (o), \
-                                      TP_PROPERTIES_MIXIN_CLASS_OFFSET_QUARK)))
+  tp_mixin_class_get_offset (o, TP_PROPERTIES_MIXIN_CLASS_OFFSET_QUARK)
 #define TP_PROPERTIES_MIXIN_CLASS(o) \
   ((TpPropertiesMixinClass *) tp_mixin_offset_cast (o,\
     TP_PROPERTIES_MIXIN_CLASS_OFFSET (o)))
@@ -158,8 +157,7 @@ typedef struct _TpPropertiesMixin TpPropertiesMixin;
 #define TP_PROPERTIES_MIXIN_OFFSET_QUARK \
   (tp_properties_mixin_get_offset_quark ())
 #define TP_PROPERTIES_MIXIN_OFFSET(o) \
-  (GPOINTER_TO_UINT (g_type_get_qdata (G_OBJECT_TYPE (o), \
-                                       TP_PROPERTIES_MIXIN_OFFSET_QUARK)))
+  tp_mixin_instance_get_offset (o, TP_PROPERTIES_MIXIN_OFFSET_QUARK)
 #define TP_PROPERTIES_MIXIN(o) \
   ((TpPropertiesMixin *) tp_mixin_offset_cast (o, \
     TP_PROPERTIES_MIXIN_OFFSET (o)))
