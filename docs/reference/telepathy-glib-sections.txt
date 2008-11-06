@@ -2080,6 +2080,7 @@ tp_connection_get_status
 TpConnectionRequestHandlesCb
 tp_connection_request_handles
 TpConnectionHoldHandlesCb
+tp_connection_get_contact_attributes
 tp_connection_hold_handles
 tp_connection_unref_handles
 tp_connection_init_known_interfaces
