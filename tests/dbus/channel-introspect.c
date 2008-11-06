@@ -233,11 +233,10 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
-  /* FIXME: enable this when the Properties fast-path works
   MYASSERT_SAME_UINT (service_props_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_props_chan->get_interfaces_called, 0);
   MYASSERT_SAME_UINT (service_props_chan->get_channel_type_called, 0);
-  */
+  /* FIXME: with an improved fast-path we could avoid this one too */
+  /* MYASSERT_SAME_UINT (service_props_chan->get_interfaces_called, 0); */
 
   assert_chan_sane (chan, handle);
 
@@ -284,11 +283,10 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
-  /* FIXME: enable this when the Properties based fast-path works
   MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 0);
   MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
-  */
+  /* FIXME: with an improved fast-path we could avoid this one too maybe? */
+  /* MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 0); */
 
   assert_chan_sane (chan, handle);
 
