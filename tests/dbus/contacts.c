@@ -872,12 +872,12 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  ContactsConnection *service_conn;
-  TpBaseConnection *service_conn_as_base;
-  gchar *name;
-  gchar *conn_path;
+  ContactsConnection *service_conn, *legacy_service_conn;
+  TpBaseConnection *service_conn_as_base, *legacy_service_conn_as_base;
+  gchar *name, *legacy_name;
+  gchar *conn_path, *legacy_conn_path;
   GError *error = NULL;
-  TpConnection *client_conn;
+  TpConnection *client_conn, *legacy_client_conn;
 
   /* Setup */
 
@@ -894,8 +894,21 @@ main (int argc,
   MYASSERT (service_conn != NULL, "");
   MYASSERT (service_conn_as_base != NULL, "");
 
+  legacy_service_conn = CONTACTS_CONNECTION (g_object_new (
+        LEGACY_CONTACTS_TYPE_CONNECTION,
+        "account", "legacy@example.com",
+        "protocol", "simple",
+        NULL));
+  legacy_service_conn_as_base = TP_BASE_CONNECTION (legacy_service_conn);
+  MYASSERT (legacy_service_conn != NULL, "");
+  MYASSERT (legacy_service_conn_as_base != NULL, "");
+
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
+  MYASSERT_NO_ERROR (error);
+
+  MYASSERT (tp_base_connection_register (legacy_service_conn_as_base, "simple",
+        &legacy_name, &legacy_conn_path, &error), "");
   MYASSERT_NO_ERROR (error);
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
@@ -903,6 +916,14 @@ main (int argc,
   MYASSERT_NO_ERROR (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
+  MYASSERT_NO_ERROR (error);
+
+  legacy_client_conn = tp_connection_new (dbus, legacy_name, legacy_conn_path,
+      &error);
+  MYASSERT (legacy_client_conn != NULL, "");
+  MYASSERT_NO_ERROR (error);
+  MYASSERT (tp_connection_run_until_ready (legacy_client_conn, TRUE, &error,
+        NULL), "");
   MYASSERT_NO_ERROR (error);
 
   /* Tests */
@@ -913,16 +934,33 @@ main (int argc,
   test_upgrade (service_conn, client_conn);
   test_by_id (client_conn);
 
+  test_by_handle (legacy_service_conn, legacy_client_conn);
+  test_no_features (legacy_service_conn, legacy_client_conn);
+  test_features (legacy_service_conn, legacy_client_conn);
+  test_upgrade (legacy_service_conn, legacy_client_conn);
+  test_by_id (legacy_client_conn);
+
   /* Teardown */
 
   MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
       "");
   MYASSERT_NO_ERROR (error);
+  g_object_unref (client_conn);
+
+  MYASSERT (tp_cli_connection_run_disconnect (legacy_client_conn, -1, &error,
+        NULL), "");
+  MYASSERT_NO_ERROR (error);
+  g_object_unref (legacy_client_conn);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
   g_free (name);
   g_free (conn_path);
+
+  legacy_service_conn_as_base = NULL;
+  g_object_unref (legacy_service_conn);
+  g_free (legacy_name);
+  g_free (legacy_conn_path);
 
   g_object_unref (dbus);
 
