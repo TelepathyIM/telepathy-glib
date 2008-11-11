@@ -1566,8 +1566,8 @@ tp_message_mixin_take_received (GObject *object,
   tp_message_set_uint32 (message, 0, "pending-message-id",
       message->incoming_id);
 
-  if (tp_asv_get_uint32 (header, "message-received", NULL) == 0)
-    tp_message_set_uint32 (message, 0, "message-received",
+  if (tp_asv_get_uint64 (header, "message-received", NULL) == 0)
+    tp_message_set_uint64 (message, 0, "message-received",
         time (NULL));
 
   /* We don't actually add the pending message to the queue immediately,
