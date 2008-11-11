@@ -1715,6 +1715,10 @@ tp_message_mixin_sent (GObject *object,
     {
       TpChannelTextMessageType message_type;
       gchar *string;
+      GHashTable *header = g_ptr_array_index (message->parts, 0);
+
+      if (tp_asv_get_uint64 (header, "message-sent", NULL) == 0)
+        tp_message_set_uint64 (message, 0, "message-sent", time (NULL));
 
       /* emit Sent and MessageSent */
 
