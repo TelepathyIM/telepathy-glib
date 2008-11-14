@@ -39,7 +39,6 @@
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "channel.h"
-#include "session.h"
 #include "stream.h"
 #include "session-priv.h"
 #include "stream-priv.h"
@@ -730,7 +729,7 @@ add_session (TfChannel *self,
       return;
     }
 
-  session = tf_session_new (proxy, session_type, &error);
+  session = _tf_session_new (proxy, session_type, &error);
 
   if (session == NULL)
     {
@@ -1043,7 +1042,7 @@ tf_channel_bus_message (TfChannel *channel,
           channel->priv->sessions, i);
 
       if (session != NULL)
-        if (tf_session_bus_message (session, message))
+        if (_tf_session_bus_message (session, message))
           ret = TRUE;
     }
 

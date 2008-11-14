@@ -24,7 +24,6 @@
 
 #include <gst/farsight/fs-conference-iface.h>
 
-#include "session.h"
 #include "session-priv.h"
 #include "tf-signals-marshal.h"
 
@@ -342,7 +341,7 @@ new_media_stream_handler (TpMediaSessionHandler *proxy G_GNUC_UNUSED,
 }
 
 TfSession *
-tf_session_new (TpMediaSessionHandler *proxy,
+_tf_session_new (TpMediaSessionHandler *proxy,
     const gchar *conference_type,
     GError **error)
 {
@@ -378,7 +377,7 @@ tf_session_new (TpMediaSessionHandler *proxy,
  */
 
 gboolean
-tf_session_bus_message (TfSession *session,
+_tf_session_bus_message (TfSession *session,
     GstMessage *message)
 {
   GError *error = NULL;
