@@ -944,7 +944,7 @@ tf_channel_new (TpDBusDaemon *dbus_daemon,
 
 void
 tf_channel_error (TfChannel *chan,
-    guint error,
+    TpMediaStreamError error,
     const gchar *message)
 {
   guint i;

@@ -1516,7 +1516,7 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
 void
 tf_stream_error (TfStream *self,
-    guint error,
+    TpMediaStreamError error,
     const gchar *message)
 {
   g_message ("%s: stream error errorno=%d error=%s", G_STRFUNC, error, message);

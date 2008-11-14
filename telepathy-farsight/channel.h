@@ -75,7 +75,7 @@ TfChannel *tf_channel_new_from_proxy (TpChannel *channel_proxy);
 
 
 void tf_channel_error (TfChannel *chan,
-  guint error,
+  TpMediaStreamError error,
   const gchar *message);
 
 TfStream *tf_channel_lookup_stream (TfChannel *chan,

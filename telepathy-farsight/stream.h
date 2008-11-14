@@ -72,7 +72,7 @@ GType tf_stream_get_type (void);
 
 void tf_stream_error (
   TfStream *self,
-  guint error,
+  TpMediaStreamError error,
   const gchar *message);
 
 G_END_DECLS
