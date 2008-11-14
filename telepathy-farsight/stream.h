@@ -31,42 +31,21 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
   TF_TYPE_STREAM, TfStreamClass))
 
-typedef struct _TfStreamPrivate TfStreamPrivate;
-
 /**
  * TfStream:
- * @parent: the parent #GObject
- * @stream_id: the ID of the stream (READ-ONLY)
  *
- * All other members are privated
+ * All members are privated
  */
 
-typedef struct _TfStream {
-  GObject parent;
-
-  /* Read-only */
-  guint stream_id;
-
-  /*< private >*/
-
-  TfStreamPrivate *priv;
-} TfStream;
+typedef struct _TfStream TfStream;
 
 /**
  * TfStreamClass:
- * @parent_class: the parent #GObjecClass
  *
- * There are no overridable functions
+ * This class is not subclassable
  */
 
-typedef struct _TfStreamClass {
-  GObjectClass parent_class;
-
-  /*< private >*/
-
-  gpointer unused[4];
-} TfStreamClass;
-
+typedef struct _TfStreamClass TfStreamClass;
 
 GType tf_stream_get_type (void);
 

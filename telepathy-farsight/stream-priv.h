@@ -5,6 +5,43 @@
 
 G_BEGIN_DECLS
 
+typedef struct _TfStreamPrivate TfStreamPrivate;
+
+/**
+ * TfStream:
+ * @parent: the parent #GObject
+ * @stream_id: the ID of the stream (READ-ONLY)
+ *
+ * All other members are privated
+ */
+
+struct _TfStream {
+  GObject parent;
+
+  /* Read-only */
+  guint stream_id;
+
+  /*< private >*/
+
+  TfStreamPrivate *priv;
+};
+
+/**
+ * TfStreamClass:
+ * @parent_class: the parent #GObjecClass
+ *
+ * There are no overridable functions
+ */
+
+struct _TfStreamClass {
+  GObjectClass parent_class;
+
+  /*< private >*/
+
+  gpointer unused[4];
+};
+
+
 typedef struct {
   gchar *nat_traversal;
   gchar *stun_server;
