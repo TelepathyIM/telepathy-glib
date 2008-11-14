@@ -42,7 +42,7 @@ libtelepathy_farsight_la_LIBADD = \
 	$(TELEPATHY_LIBS)
 
 libtelepathy_farsight_la_LDFLAGS =  -no-undefined \
-	-export-symbols-regex "^tf_(channel|stream).*" \
+	-export-symbols-regex "^tf_.*" \
 	-version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
 
 
