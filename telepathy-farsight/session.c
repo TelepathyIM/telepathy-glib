@@ -27,7 +27,7 @@
 #include "session-priv.h"
 #include "tf-signals-marshal.h"
 
-G_DEFINE_TYPE (TfSession, tf_session, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TfSession, _tf_session, G_TYPE_OBJECT);
 
 struct _TfSessionPrivate
 {
@@ -58,7 +58,7 @@ enum
 static guint signals[SIGNAL_COUNT] = { 0 };
 
 static void
-tf_session_init (TfSession *self)
+_tf_session_init (TfSession *self)
 {
   TfSessionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TF_TYPE_SESSION, TfSessionPrivate);
@@ -67,7 +67,7 @@ tf_session_init (TfSession *self)
 }
 
 static void
-tf_session_get_property (GObject    *object,
+_tf_session_get_property (GObject    *object,
     guint       property_id,
     GValue     *value,
     GParamSpec *pspec)
@@ -95,7 +95,7 @@ tf_session_get_property (GObject    *object,
 }
 
 static void
-tf_session_set_property (GObject      *object,
+_tf_session_set_property (GObject      *object,
     guint         property_id,
     const GValue *value,
     GParamSpec   *pspec)
@@ -128,7 +128,7 @@ static void invalidated_cb (TpMediaSessionHandler *proxy, guint domain,
     gint code, gchar *message, gpointer user_data);
 
 static GObject *
-tf_session_constructor (GType type,
+_tf_session_constructor (GType type,
     guint n_props,
     GObjectConstructParam *props)
 {
@@ -136,7 +136,7 @@ tf_session_constructor (GType type,
   TfSession *self;
   gchar *conftype;
 
-  obj = G_OBJECT_CLASS (tf_session_parent_class)->
+  obj = G_OBJECT_CLASS (_tf_session_parent_class)->
            constructor (type, n_props, props);
   self = (TfSession *) obj;
 
@@ -174,7 +174,7 @@ tf_session_constructor (GType type,
 }
 
 static void
-tf_session_dispose (GObject *object)
+_tf_session_dispose (GObject *object)
 {
   TfSession *self = TF_SESSION (object);
 
@@ -209,23 +209,23 @@ tf_session_dispose (GObject *object)
   g_free (self->priv->session_type);
   self->priv->session_type = NULL;
 
-  if (G_OBJECT_CLASS (tf_session_parent_class)->dispose)
-    G_OBJECT_CLASS (tf_session_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (_tf_session_parent_class)->dispose)
+    G_OBJECT_CLASS (_tf_session_parent_class)->dispose (object);
 }
 
 static void
-tf_session_class_init (TfSessionClass *klass)
+_tf_session_class_init (TfSessionClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TfSessionPrivate));
 
-  object_class->set_property = tf_session_set_property;
-  object_class->get_property = tf_session_get_property;
+  object_class->set_property = _tf_session_set_property;
+  object_class->get_property = _tf_session_get_property;
 
-  object_class->constructor = tf_session_constructor;
+  object_class->constructor = _tf_session_constructor;
 
-  object_class->dispose = tf_session_dispose;
+  object_class->dispose = _tf_session_dispose;
 
   g_object_class_install_property (object_class, PROP_SESSION_TYPE,
       g_param_spec_string ("conference-type",
@@ -366,7 +366,7 @@ _tf_session_new (TpMediaSessionHandler *proxy,
 }
 
 /**
- * tf_session_bus_message:
+ * _tf_session_bus_message:
  * @session: A #TfSession
  * @message: A #GstMessage received from the bus
  *

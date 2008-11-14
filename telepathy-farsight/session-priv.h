@@ -6,7 +6,7 @@
 
 G_BEGIN_DECLS
 
-#define TF_TYPE_SESSION tf_session_get_type()
+#define TF_TYPE_SESSION _tf_session_get_type()
 
 #define TF_SESSION(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
@@ -53,7 +53,7 @@ typedef struct {
   GObjectClass parent_class;
 } TfSessionClass;
 
-GType tf_session_get_type (void);
+GType _tf_session_get_type (void);
 
 TfSession *
 _tf_session_new (TpMediaSessionHandler *proxy,
