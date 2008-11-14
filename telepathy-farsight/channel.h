@@ -37,13 +37,7 @@ typedef struct _TfChannelPrivate TfChannelPrivate;
  * All members of the object are private
  */
 
-typedef struct {
-  GObject parent;
-
-  /*< private >*/
-
-  TfChannelPrivate *priv;
-} TfChannel;
+typedef struct _TfChannel TfChannel;
 
 /**
  * TfChannelClass:
@@ -52,13 +46,7 @@ typedef struct {
  * There are no overridable functions
  */
 
-typedef struct {
-  GObjectClass parent_class;
-
-  /*< private >*/
-
-  gpointer unused[4];
-} TfChannelClass;
+typedef struct _TfChannelClass TfChannelClass;
 
 GType tf_channel_get_type (void);
 

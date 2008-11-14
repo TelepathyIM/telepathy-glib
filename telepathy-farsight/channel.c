@@ -40,6 +40,7 @@
 
 #include "channel.h"
 #include "stream.h"
+#include "channel-priv.h"
 #include "session-priv.h"
 #include "stream-priv.h"
 #include "tf-signals-marshal.h"
