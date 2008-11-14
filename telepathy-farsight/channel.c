@@ -64,6 +64,7 @@ struct _TfChannelPrivate
 
   gulong channel_invalidated_handler;
   gulong channel_ready_handler;
+  guint  channel_ready_idle;
 };
 
 enum
@@ -299,8 +300,9 @@ channel_ready (TpChannel *channel_proxy,
 {
   TpProxy *as_proxy = (TpProxy *) channel_proxy;
 
-  g_signal_handler_disconnect (channel_proxy,
-      self->priv->channel_ready_handler);
+  if (self->priv->channel_ready_handler)
+    g_signal_handler_disconnect (channel_proxy,
+        self->priv->channel_ready_handler);
   self->priv->channel_ready_handler = 0;
 
   if (!tp_proxy_has_interface_by_id (as_proxy,
@@ -341,6 +343,20 @@ channel_ready (TpChannel *channel_proxy,
        (GObject *) self);
 }
 
+static gboolean
+channel_ready_idle (gpointer data)
+{
+  TfChannel *self = data;
+
+  if (self->priv->channel_ready_idle)
+    g_source_remove (self->priv->channel_ready_idle);
+  self->priv->channel_ready_idle = 0;
+
+  channel_ready (self->priv->channel_proxy, NULL, self);
+
+  return FALSE;
+}
+
 static GObject *
 tf_channel_constructor (GType type,
     guint n_props,
@@ -348,14 +364,21 @@ tf_channel_constructor (GType type,
 {
   GObject *obj;
   TfChannel *self;
+  gboolean ready;
 
   obj = G_OBJECT_CLASS (tf_channel_parent_class)->
            constructor (type, n_props, props);
   self = (TfChannel *) obj;
 
-  self->priv->channel_ready_handler = g_signal_connect (
-      self->priv->channel_proxy,
-      "notify::channel-ready", G_CALLBACK (channel_ready), obj);
+  g_object_get (obj, "channel-ready", &ready, NULL);
+
+  if (ready)
+    self->priv->channel_ready_idle = g_idle_add (channel_ready_idle,
+        self);
+  else
+    self->priv->channel_ready_handler = g_signal_connect (
+        self->priv->channel_proxy,
+        "notify::channel-ready", G_CALLBACK (channel_ready), obj);
 
   self->priv->channel_invalidated_handler = g_signal_connect (
       self->priv->channel_proxy,
@@ -415,6 +438,12 @@ tf_channel_dispose (GObject *object)
 
       g_ptr_array_free (self->priv->streams, TRUE);
       self->priv->streams = NULL;
+    }
+
+  if (self->priv->channel_ready_idle)
+    {
+      g_source_remove (self->priv->channel_ready_idle);
+      self->priv->channel_ready_idle = 0;
     }
 
   if (self->priv->channel_proxy)
@@ -779,7 +808,8 @@ shutdown_channel (TfChannel *self)
   if (self->priv->channel_proxy != NULL)
     {
       /* I've ensured that this is true everywhere this function is called */
-      g_assert (self->priv->channel_ready_handler == 0);
+      g_assert (self->priv->channel_ready_handler == 0 &&
+          self->priv->channel_ready_idle == 0);
 
       if (self->priv->channel_invalidated_handler)
         {
@@ -809,6 +839,12 @@ channel_invalidated (TpChannel *channel_proxy,
       self->priv->channel_ready_handler = 0;
 
       g_signal_emit (self, signals[HANDLER_RESULT], 0, &e);
+    }
+
+  if (self->priv->channel_ready_idle)
+    {
+      g_source_remove (self->priv->channel_ready_idle);
+      self->priv->channel_ready_idle = 0;
     }
 
   shutdown_channel (self);
@@ -954,7 +990,8 @@ tf_channel_error (TfChannel *chan,
       tf_stream_error (g_ptr_array_index (chan->priv->streams, i),
           error, message);
 
-  if (chan->priv->channel_ready_handler != 0)
+  if (chan->priv->channel_ready_handler != 0 ||
+      chan->priv->channel_ready_idle != 0)
     {
       /* we haven't yet decided whether we're handling this channel. This
        * seems an unlikely situation at this point, but for the sake of
@@ -963,9 +1000,14 @@ tf_channel_error (TfChannel *chan,
       g_signal_emit (chan, signals[HANDLER_RESULT], 0, NULL);
 
       /* if the channel becomes ready, we no longer want to know */
-      g_signal_handler_disconnect (chan->priv->channel_proxy,
-          chan->priv->channel_ready_handler);
+      if (chan->priv->channel_ready_handler)
+        g_signal_handler_disconnect (chan->priv->channel_proxy,
+            chan->priv->channel_ready_handler);
       chan->priv->channel_ready_handler = 0;
+
+      if (chan->priv->channel_ready_idle)
+        g_source_remove (chan->priv->channel_ready_idle);
+      chan->priv->channel_ready_idle = 0;
     }
 
   shutdown_channel (chan);
