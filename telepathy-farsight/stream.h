@@ -49,6 +49,8 @@ typedef struct _TfStreamClass TfStreamClass;
 
 GType tf_stream_get_type (void);
 
+guint tf_stream_get_id (TfStream *stream);
+
 void tf_stream_error (
   TfStream *self,
   TpMediaStreamError error,

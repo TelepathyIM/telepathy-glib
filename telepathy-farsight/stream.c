@@ -1832,3 +1832,20 @@ tf_stream_try_sending_codecs (TfStream *stream)
 
   fs_codec_list_destroy (fscodecs);
 }
+
+/**
+ * tf_stream_get_id
+ * @stream: A #TfStream
+ *
+ * Quick getter for the stream id
+ *
+ * Returns: the stream's id
+ */
+
+guint
+tf_stream_get_id (TfStream *stream)
+{
+  g_return_val_if_fail (TF_IS_STREAM (stream), 0);
+
+  return stream->stream_id;
+}

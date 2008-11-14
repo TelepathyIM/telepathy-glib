@@ -4,6 +4,7 @@
 TfStream
 TfStreamClass
 tf_stream_error
+tf_stream_get_id
 <SUBSECTION Private>
 TfStreamPrivate
 <SUBSECTION Standard>
