@@ -1689,6 +1689,7 @@ struct _TpMessageMixinOutgoingMessagePrivate {
 void
 tp_message_mixin_sent (GObject *object,
                        TpMessage *message,
+                       TpMessageSendingFlags flags,
                        const gchar *token,
                        const GError *error)
 {
@@ -1723,7 +1724,7 @@ tp_message_mixin_sent (GObject *object,
       /* emit Sent and MessageSent */
 
       tp_svc_channel_interface_messages_emit_message_sent (object,
-          message->parts, token);
+          message->parts, flags, token);
       string = parts_to_text (message->parts, NULL, &message_type, NULL, NULL);
       tp_svc_channel_type_text_emit_sent (object, now, message_type,
           string);

@@ -97,8 +97,8 @@ typedef void (*TpMessageMixinSendImpl) (GObject *object,
     TpMessage *message, TpMessageSendingFlags flags);
 
 void tp_message_mixin_sent (GObject *object,
-    TpMessage *message, const gchar *token,
-    const GError *error);
+    TpMessage *message, TpMessageSendingFlags flags,
+    const gchar *token, const GError *error);
 
 void tp_message_mixin_implement_sending (GObject *object,
     TpMessageMixinSendImpl send, guint n_types,
