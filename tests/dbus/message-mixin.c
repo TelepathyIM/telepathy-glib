@@ -155,7 +155,7 @@ on_message_received (TpChannel *chan,
 static void
 on_message_sent (TpChannel *chan,
                  const GPtrArray *parts,
-                 guint32 flags,
+                 guint flags,
                  const gchar *token,
                  gpointer data,
                  GObject *object)
