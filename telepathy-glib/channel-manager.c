@@ -676,10 +676,10 @@ tp_channel_manager_ensure_channel (TpChannelManager *manager,
  * to conform with the specification's requirement that unknown requested
  * properties must cause a request to fail, not be silently ignored.
  *
- * On encountering unknown properties, this function will return %FALSE, and
+ * On encountering unknown properties, this function will return %TRUE, and
  * set @error to a #GError that could be used as a D-Bus method error.
  *
- * Returns: %TRUE if all of the keys of @properties are elements of @fixed or
+ * Returns: %TRUE if @properties contains keys not in either @fixed or
  *          @allowed; else %FALSE.
  *
  * Since: 0.7.15
