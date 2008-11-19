@@ -119,6 +119,7 @@ AC_OUTPUT( Makefile \
           doc/Makefile \
           doc/lib/Makefile \
           telepathy-farsight/Makefile  \
-          telepathy-farsight/telepathy-farsight.pc
+          telepathy-farsight/telepathy-farsight.pc \
+          telepathy-farsight/telepathy-farsight-uninstalled.pc
 )
 
