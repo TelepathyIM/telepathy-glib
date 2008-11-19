@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: Telepathy-Farsight
 Description: Library implementing the Telepathy Media Signalling API using Farsight2
 Version: @VERSION@
-Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.10, gobject-2.0 >= 2.10 farsight2-0.10 > 0.0.2
+Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.10, gobject-2.0 >= 2.10, farsight2-0.10 > 0.0.3
 Libs: -L${libdir} -ltelepathy-farsight
 Cflags: -I${includedir}/telepathy-1.0
