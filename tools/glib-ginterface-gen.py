@@ -619,10 +619,21 @@ class Generator(object):
 
         return in_base_init
 
+    def have_properties(self, nodes):
+        for node in nodes:
+            interface =  node.getElementsByTagName('interface')[0]
+            if interface.getElementsByTagName('property'):
+                return True
+        return False
+
     def __call__(self):
+        nodes = self.dom.getElementsByTagName('node')
+        nodes.sort(cmp_by_name)
+
         self.h('#include <glib-object.h>')
         self.h('#include <dbus/dbus-glib.h>')
-        self.h('#include <telepathy-glib/dbus-properties-mixin.h>')
+        if (self.have_properties (nodes)):
+            self.h('#include <telepathy-glib/dbus-properties-mixin.h>')
         self.h('')
         self.h('G_BEGIN_DECLS')
         self.h('')
@@ -632,9 +643,6 @@ class Generator(object):
         for header in self.headers:
             self.b('#include %s' % header)
         self.b('')
-
-        nodes = self.dom.getElementsByTagName('node')
-        nodes.sort(cmp_by_name)
 
         for node in nodes:
             self.do_node(node)
