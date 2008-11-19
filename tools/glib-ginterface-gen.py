@@ -207,42 +207,45 @@ class Generator(object):
         self.b('%s%s_base_init_once (gpointer klass G_GNUC_UNUSED)'
                % (self.prefix_, node_name_lc))
         self.b('{')
-        self.b('  static TpDBusPropertiesMixinPropInfo properties[%d] = {'
-               % (len(properties) + 1))
 
-        for m in properties:
-            access = m.getAttribute('access')
-            assert access in ('read', 'write', 'readwrite')
+        if properties:
+            self.b('  static TpDBusPropertiesMixinPropInfo properties[%d] = {'
+                   % (len(properties) + 1))
+            
+            for m in properties:
+                access = m.getAttribute('access')
+                assert access in ('read', 'write', 'readwrite')
+                
+                if access == 'read':
+                    flags = 'TP_DBUS_PROPERTIES_MIXIN_FLAG_READ'
+                elif access == 'write':
+                    flags = 'TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE'
+                else:
+                    flags = ('TP_DBUS_PROPERTIES_MIXIN_FLAG_READ | '
+                             'TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE')
+                    
+                self.b('      { 0, %s, "%s", 0, NULL, NULL }, /* %s */'
+                       % (flags, m.getAttribute('type'), m.getAttribute('name')))
+                
+            self.b('      { 0, 0, NULL, 0, NULL, NULL }')
+            self.b('  };')
+            self.b('  static TpDBusPropertiesMixinIfaceInfo interface =')
+            self.b('      { 0, properties, NULL, NULL };')
+            self.b('')
+            self.b('  interface.dbus_interface = g_quark_from_static_string '
+                   '("%s");' % self.iface_name)
+            
+            for i, m in enumerate(properties):
+                self.b('  properties[%d].name = g_quark_from_static_string ("%s");'
+                       % (i, m.getAttribute('name')))
+                self.b('  properties[%d].type = %s;'
+                           % (i, type_to_gtype(m.getAttribute('type'))[1]))
+                
+            self.b('  tp_svc_interface_set_dbus_properties_info (%s, &interface);'
+                   % self.current_gtype)
+            
+            self.b('')
 
-            if access == 'read':
-                flags = 'TP_DBUS_PROPERTIES_MIXIN_FLAG_READ'
-            elif access == 'write':
-                flags = 'TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE'
-            else:
-                flags = ('TP_DBUS_PROPERTIES_MIXIN_FLAG_READ | '
-                         'TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE')
-
-            self.b('      { 0, %s, "%s", 0, NULL, NULL }, /* %s */'
-                   % (flags, m.getAttribute('type'), m.getAttribute('name')))
-
-        self.b('      { 0, 0, NULL, 0, NULL, NULL }')
-        self.b('  };')
-        self.b('  static TpDBusPropertiesMixinIfaceInfo interface =')
-        self.b('      { 0, properties, NULL, NULL };')
-        self.b('')
-        self.b('  interface.dbus_interface = g_quark_from_static_string '
-               '("%s");' % self.iface_name)
-
-        for i, m in enumerate(properties):
-            self.b('  properties[%d].name = g_quark_from_static_string ("%s");'
-                   % (i, m.getAttribute('name')))
-            self.b('  properties[%d].type = %s;'
-                   % (i, type_to_gtype(m.getAttribute('type'))[1]))
-
-        self.b('  tp_svc_interface_set_dbus_properties_info (%s, &interface);'
-               % self.current_gtype)
-
-        self.b('')
         for s in base_init_code:
             self.b(s)
         self.b('  dbus_g_object_type_install_info (%s%s_get_type (),'
