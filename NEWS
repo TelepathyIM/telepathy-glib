@@ -1,3 +1,8 @@
+telepathy-farsight 0.0.2 (21 November 2008)
+===========================================
+
+- Added various makefile niceties from telepathy-glib
+
 telepathy-farsight 0.0.1 (21 November 2008)
 ===========================================
 
