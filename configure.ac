@@ -118,8 +118,10 @@ AC_SUBST([LT_AGE])
 AC_OUTPUT( Makefile \
           doc/Makefile \
           doc/lib/Makefile \
+          m4/Makefile \
           telepathy-farsight/Makefile  \
           telepathy-farsight/telepathy-farsight.pc \
           telepathy-farsight/telepathy-farsight-uninstalled.pc
+          tools/Makefile \
 )
 
