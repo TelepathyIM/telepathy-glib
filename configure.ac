@@ -29,7 +29,7 @@ AC_INIT([Telepathy-Farsight], [tp_farsight_version],
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.8 -Wno-portability])
+AM_INIT_AUTOMAKE([1.9 -Wno-portability])
 AM_CONFIG_HEADER(config.h)
 
 dnl check for tools
@@ -119,6 +119,7 @@ AC_OUTPUT( Makefile \
           doc/Makefile \
           doc/lib/Makefile \
           telepathy-farsight/Makefile  \
-          telepathy-farsight/telepathy-farsight.pc
+          telepathy-farsight/telepathy-farsight.pc \
+          telepathy-farsight/telepathy-farsight-uninstalled.pc
 )
 
