@@ -370,7 +370,7 @@ tf_channel_constructor (GType type,
            constructor (type, n_props, props);
   self = (TfChannel *) obj;
 
-  g_object_get (obj, "channel-ready", &ready, NULL);
+  g_object_get (self->priv->channel_proxy, "channel-ready", &ready, NULL);
 
   if (ready)
     self->priv->channel_ready_idle = g_idle_add (channel_ready_idle,
