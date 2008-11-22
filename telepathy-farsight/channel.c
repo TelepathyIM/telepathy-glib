@@ -895,7 +895,7 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
 }
 
 /**
- * tf_channel_new_from_proxy:
+ * tf_channel_new:
  * @channel_proxy: a #TpChannel proxy
  *
  * Creates a new #TfChannel from an existing channel proxy
@@ -904,68 +904,11 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
  */
 
 TfChannel *
-tf_channel_new_from_proxy (TpChannel *channel_proxy)
+tf_channel_new (TpChannel *channel_proxy)
 {
   return g_object_new (TF_TYPE_CHANNEL,
       "channel", channel_proxy,
       NULL);
-}
-
-/**
- * tf_channel_new:
- * @dbus_daemon: a #TpDBusDaemon
- * @bus_name: the name of the bus to connect to
- * @connection_path: the connection path to connect to
- * @channel_path: the path of the channel to connect to
- * @handle_type: the type of handle
- * @handle: the handle
- * @error: The location of a %GError or %NULL
- *
- * Creates a new #TfChannel by connecting to the D-Bus bus and finding
- * an already existing channel object. This API would normally be used with the
- * HandleChannel method.
- *
- * Returns: a new #TfChannel
- */
-
-TfChannel *
-tf_channel_new (TpDBusDaemon *dbus_daemon,
-    const gchar *bus_name,
-    const gchar *connection_path,
-    const gchar *channel_path,
-    guint handle_type,
-    guint handle,
-    GError **error)
-{
-  TpConnection *connection;
-  TpChannel *channel_proxy;
-  TfChannel *ret;
-
-  g_return_val_if_fail (bus_name != NULL, NULL);
-  g_return_val_if_fail (connection_path != NULL, NULL);
-  g_return_val_if_fail (channel_path != NULL, NULL);
-
-  connection = tp_connection_new (dbus_daemon,
-      bus_name, connection_path, error);
-
-  if (connection == NULL)
-    return NULL;
-
-  channel_proxy = tp_channel_new (connection, channel_path,
-      TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA, handle_type, handle, error);
-
-  if (channel_proxy == NULL)
-    return NULL;
-
-  g_object_unref (connection);
-
-  ret = g_object_new (TF_TYPE_CHANNEL,
-      "channel", channel_proxy,
-      NULL);
-
-  g_object_unref (channel_proxy);
-
-  return ret;
 }
 
 /**

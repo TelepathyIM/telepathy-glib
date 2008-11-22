@@ -23,7 +23,6 @@ TF_IS_STREAM_CLASS
 TfChannel
 TfChannelClass
 tf_channel_new
-tf_channel_new_from_proxy
 tf_channel_error
 tf_channel_lookup_stream
 TfChannelStreamFunc

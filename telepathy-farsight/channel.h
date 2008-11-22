@@ -50,16 +50,7 @@ typedef struct _TfChannelClass TfChannelClass;
 
 GType tf_channel_get_type (void);
 
-TfChannel *tf_channel_new (
-    TpDBusDaemon *dbus_daemon,
-    const gchar *bus_name,
-    const gchar *connection_path,
-    const gchar *channel_path,
-    guint handle_type,
-    guint handle,
-    GError **error);
-
-TfChannel *tf_channel_new_from_proxy (TpChannel *channel_proxy);
+TfChannel *tf_channel_new (TpChannel *channel_proxy);
 
 
 void tf_channel_error (TfChannel *chan,
