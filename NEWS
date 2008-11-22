@@ -1,3 +1,9 @@
+telepathy-farsight 0.0.3 (21 November 2008)
+===========================================
+- Fix small brown-paper bug in last release
+- Rename tf_channel_new_from_proxy to tf_channel_new,
+  and leave the proxy creation to the client
+
 telepathy-farsight 0.0.2 (21 November 2008)
 ===========================================
 
