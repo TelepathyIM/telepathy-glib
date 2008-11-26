@@ -99,12 +99,6 @@ PKG_CHECK_MODULES(FARSIGHT2, [farsight2-0.10 >= 0.0.3])
 AC_SUBST(FARSIGHT2_CFLAGS)
 AC_SUBST(FARSIGHT2_LIBS)
 
-dnl Check for gst-interfaces or gst-plugins-base
-PKG_CHECK_MODULES(GST_INTERFACES, [gstreamer-interfaces-0.10 >= 0.10.18],[],
-       [AC_MSG_ERROR([gst-plugins-base-0.10.18. is required])])
-AC_SUBST(GST_INTERFACES_CFLAGS)
-AC_SUBST(GST_INTERFACES_LIBS)
-
 GTK_DOC_CHECK([1.10])
 
 LT_CURRENT=tp_farsight_lt_current

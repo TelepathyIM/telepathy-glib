@@ -40,8 +40,6 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
-#include <gst/interfaces/xoverlay.h>
-
 #include <gst/farsight/fs-conference-iface.h>
 
 #include "stream.h"
