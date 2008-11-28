@@ -632,7 +632,7 @@ class Generator(object):
 
         self.h('#include <glib-object.h>')
         self.h('#include <dbus/dbus-glib.h>')
-        if (self.have_properties (nodes)):
+        if (self.have_properties(nodes)):
             self.h('#include <telepathy-glib/dbus-properties-mixin.h>')
         self.h('')
         self.h('G_BEGIN_DECLS')
