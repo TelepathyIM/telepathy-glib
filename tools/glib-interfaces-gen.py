@@ -47,7 +47,7 @@ class Generator(object):
         self.decls.write("""\
 /**
  * %(IFACE_DEFINE)s:
- * 
+ *
  * The interface name "%(name)s"
  */
 #define %(IFACE_DEFINE)s \\
@@ -59,7 +59,7 @@ class Generator(object):
         self.decls.write("""
 /**
  * %(IFACE_QUARK_DEFINE)s:
- * 
+ *
  * Expands to a call to a function that returns a quark for the interface \
 name "%(name)s"
  */
