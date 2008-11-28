@@ -76,6 +76,10 @@ TpChannel *tp_channel_new (TpConnection *conn,
     TpHandleType optional_handle_type, TpHandle optional_handle,
     GError **error);
 
+TpChannel *tp_channel_new_from_properties (TpConnection *conn,
+    const gchar *object_path, const GHashTable *immutable_properties,
+    GError **error);
+
 gboolean tp_channel_run_until_ready (TpChannel *self, GError **error,
     GMainLoop **loop);
 
@@ -92,6 +96,7 @@ const gchar *tp_channel_get_channel_type (TpChannel *self);
 GQuark tp_channel_get_channel_type_id (TpChannel *self);
 TpHandle tp_channel_get_handle (TpChannel *self, TpHandleType *handle_type);
 TpConnection *tp_channel_borrow_connection (TpChannel *self);
+GHashTable *tp_channel_borrow_immutable_properties (TpChannel *self);
 
 TpHandle tp_channel_group_get_self_handle (TpChannel *self);
 TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);

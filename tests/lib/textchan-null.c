@@ -14,8 +14,10 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-generic.h>
 
 static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
@@ -27,6 +29,14 @@ G_DEFINE_TYPE_WITH_CODE (TestTextChannelNull,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL))
 
+G_DEFINE_TYPE_WITH_CODE (TestPropsTextChannel,
+    test_props_text_channel,
+    TEST_TYPE_TEXT_CHANNEL_NULL,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init))
+
+static const char *test_text_channel_null_interfaces[] = { NULL };
+
 /* type definition stuff */
 
 enum
@@ -35,7 +45,12 @@ enum
   PROP_CHANNEL_TYPE,
   PROP_HANDLE_TYPE,
   PROP_HANDLE,
+  PROP_TARGET_ID,
   PROP_CONNECTION,
+  PROP_INTERFACES,
+  PROP_REQUESTED,
+  PROP_INITIATOR_HANDLE,
+  PROP_INITIATOR_ID,
   N_PROPS
 };
 
@@ -54,6 +69,11 @@ test_text_channel_null_init (TestTextChannelNull *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TEST_TYPE_TEXT_CHANNEL_NULL,
       TestTextChannelNullPrivate);
+}
+
+static void
+test_props_text_channel_init (TestPropsTextChannel *self)
+{
 }
 
 static GObject *
@@ -107,6 +127,33 @@ get_property (GObject *object,
       break;
     case PROP_HANDLE:
       g_value_set_uint (value, self->priv->handle);
+      break;
+    case PROP_TARGET_ID:
+        {
+          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+
+          g_value_set_string (value,
+              tp_handle_inspect (contact_repo, self->priv->handle));
+        }
+      break;
+    case PROP_REQUESTED:
+      g_value_set_boolean (value, TRUE);
+      break;
+    case PROP_INITIATOR_HANDLE:
+      g_value_set_uint (value, self->priv->conn->self_handle);
+      break;
+    case PROP_INITIATOR_ID:
+        {
+          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+
+          g_value_set_string (value,
+              tp_handle_inspect (contact_repo, self->priv->conn->self_handle));
+        }
+      break;
+    case PROP_INTERFACES:
+      g_value_set_boxed (value, test_text_channel_null_interfaces);
       break;
     case PROP_CONNECTION:
       g_value_set_object (value, self->priv->conn);
@@ -213,8 +260,68 @@ test_text_channel_null_class_init (TestTextChannelNullClass *klass)
       G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
+  param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
+      "Additional Channel.Interface.* interfaces",
+      G_TYPE_STRV,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
+
+  param_spec = g_param_spec_string ("target-id", "Peer's ID",
+      "The string obtained by inspecting the target handle",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TARGET_ID, param_spec);
+
+  param_spec = g_param_spec_uint ("initiator-handle", "Initiator's handle",
+      "The contact who initiated the channel",
+      0, G_MAXUINT32, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIATOR_HANDLE,
+      param_spec);
+
+  param_spec = g_param_spec_string ("initiator-id", "Initiator's ID",
+      "The string obtained by inspecting the initiator-handle",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIATOR_ID,
+      param_spec);
+
+  param_spec = g_param_spec_boolean ("requested", "Requested?",
+      "True if this channel was requested by the local user",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
+
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TestTextChannelNullClass, text_class));
+}
+
+static void
+test_props_text_channel_class_init (TestPropsTextChannelClass *klass)
+{
+  static TpDBusPropertiesMixinPropImpl channel_props[] = {
+      { "TargetHandleType", "handle-type", NULL },
+      { "TargetHandle", "handle", NULL },
+      { "ChannelType", "channel-type", NULL },
+      { "Interfaces", "interfaces", NULL },
+      { "TargetID", "target-id", NULL },
+      { "Requested", "requested", NULL },
+      { "InitiatorHandle", "initiator-handle", NULL },
+      { "InitiatorID", "initiator-id", NULL },
+      { NULL }
+  };
+  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+      { TP_IFACE_CHANNEL,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        channel_props,
+      },
+      { NULL }
+  };
+
+  klass->dbus_properties_class.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init ((GObjectClass *) klass,
+      G_STRUCT_OFFSET (TestPropsTextChannelClass, dbus_properties_class));
 }
 
 static void
@@ -236,6 +343,10 @@ static void
 channel_get_channel_type (TpSvcChannel *iface,
                           DBusGMethodInvocation *context)
 {
+  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
+
+  self->get_channel_type_called++;
+
   tp_svc_channel_return_from_get_channel_type (context,
       TP_IFACE_CHANNEL_TYPE_TEXT);
 }
@@ -246,6 +357,8 @@ channel_get_handle (TpSvcChannel *iface,
 {
   TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
 
+  self->get_handle_called++;
+
   tp_svc_channel_return_from_get_handle (context, TP_HANDLE_TYPE_CONTACT,
       self->priv->handle);
 }
@@ -254,9 +367,12 @@ static void
 channel_get_interfaces (TpSvcChannel *iface,
                         DBusGMethodInvocation *context)
 {
-  const char *interfaces[] = { NULL };
+  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
 
-  tp_svc_channel_return_from_get_interfaces (context, interfaces);
+  self->get_interfaces_called++;
+
+  tp_svc_channel_return_from_get_interfaces (context,
+      test_text_channel_null_interfaces);
 }
 
 static void

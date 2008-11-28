@@ -893,6 +893,16 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
 void
 _tp_channel_get_group_properties (TpChannel *self)
 {
+  if (!tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
+    {
+      DEBUG ("%p: not a Group, continuing", self);
+      _tp_channel_continue_introspection (self);
+      return;
+    }
+
+  DEBUG ("%p", self);
+
   tp_cli_channel_interface_group_connect_to_members_changed (self,
       tp_channel_group_members_changed_cb, NULL, NULL, NULL, NULL);
 

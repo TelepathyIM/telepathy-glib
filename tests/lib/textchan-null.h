@@ -42,6 +42,7 @@ GType test_text_channel_null_get_type (void);
 
 struct _TestTextChannelNullClass {
     GObjectClass parent_class;
+
     TpTextMixinClass text_class;
 };
 
@@ -49,8 +50,45 @@ struct _TestTextChannelNull {
     GObject parent;
     TpTextMixin text;
 
+    guint get_handle_called;
+    guint get_interfaces_called;
+    guint get_channel_type_called;
+
     TestTextChannelNullPrivate *priv;
 };
+
+/* Subclass with D-Bus properties */
+
+typedef struct _TestPropsTextChannel TestPropsTextChannel;
+typedef struct _TestPropsTextChannelClass TestPropsTextChannelClass;
+
+struct _TestPropsTextChannel {
+    TestTextChannelNull parent;
+};
+
+struct _TestPropsTextChannelClass {
+    TestTextChannelNullClass parent;
+
+    TpDBusPropertiesMixinClass dbus_properties_class;
+};
+
+GType test_props_text_channel_get_type (void);
+
+#define TEST_TYPE_PROPS_TEXT_CHANNEL \
+  (test_props_text_channel_get_type ())
+#define TEST_PROPS_TEXT_CHANNEL(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TEST_TYPE_PROPS_TEXT_CHANNEL, \
+                               TestPropsTextChannel))
+#define TEST_PROPS_TEXT_CHANNEL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TEST_TYPE_PROPS_TEXT_CHANNEL, \
+                            TestPropsTextChannelClass))
+#define TEST_IS_PROPS_TEXT_CHANNEL(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TEST_TYPE_PROPS_TEXT_CHANNEL))
+#define TEST_IS_PROPS_TEXT_CHANNEL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TEST_TYPE_PROPS_TEXT_CHANNEL))
+#define TEST_PROPS_TEXT_CHANNEL_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TEST_TYPE_PROPS_TEXT_CHANNEL, \
+                              TestPropsTextChannelClass))
 
 G_END_DECLS
 

@@ -45,6 +45,8 @@ struct _TpChannelPrivate {
     GQuark channel_type;
     TpHandleType handle_type;
     TpHandle handle;
+    /* owned string (iface + "." + prop) => slice-allocated GValue */
+    GHashTable *channel_properties;
 
     TpHandle group_self_handle;
     TpChannelGroupFlags group_flags;
@@ -62,7 +64,13 @@ struct _TpChannelPrivate {
     GHashTable *group_handle_owners;
 
     /* These are really booleans, but gboolean is signed. Thanks, GLib */
+
+    /* channel-ready */
     unsigned ready:1;
+    /* Enough method calls have succeeded that we believe that the channel
+     * exists (implied by ready) */
+    unsigned exists:1;
+    /* GetGroupFlags has returned */
     unsigned have_group_flags:1;
 };
 
