@@ -1,7 +1,7 @@
-telepathy-glib 0.7.19 (UNRELEASED)
+telepathy-glib 0.7.19 (2008-12-01)
 ==================================
 
-Dependencies:
+The "fast path" release.
 
 Enhancements:
 
@@ -18,9 +18,13 @@ Enhancements:
   round trips (if supported); when constructed from a dictionary of immutable
   properties, non-Group channels should become 'ready' in a single round-trip
 
+* Only use the Properties mixin in there are properties defined
+
 Fixes:
 
 * fd.o #15092: mixins in a superclass should now work correctly in subclasses
+
+* fd.o #18151: tp_base_connection_dispose asserts if there are two connections to the same account
 
 telepathy-glib 0.7.18 (2008-11-03)
 ==================================
