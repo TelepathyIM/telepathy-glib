@@ -268,6 +268,17 @@ _tp_connection_clean_up_handle_refs (TpConnection *self)
  * Release the reference to the handles in @handles that was obtained by
  * calling tp_connection_hold_handles() or tp_connection_request_handles().
  *
+ * This function might release any references held by calling
+ * tp_cli_connection_call_request_handles(),
+ * tp_cli_connection_run_request_handles(),
+ * tp_cli_connection_call_hold_handles(),
+ * tp_cli_connection_run_hold_handles(),
+ * tp_cli_connection_interface_contacts_call_get_contact_attributes() or
+ * tp_cli_connection_interface_contacts_run_get_contact_attributes() directly.
+ * Those functions should be avoided in favour of using #TpContact,
+ * tp_connection_hold_handles(), tp_connection_request_handles() and
+ * tp_connection_get_contact_attributes().
+ *
  * If @self has already become invalid, this function does nothing.
  */
 void
@@ -648,4 +659,139 @@ tp_connection_request_handles (TpConnection *self,
   tp_cli_connection_call_request_handles (self, timeout_ms, handle_type,
       (const gchar **) context->ids, connection_requested_handles,
       context, request_handles_context_free, weak_object);
+}
+
+
+typedef struct {
+    tp_cli_connection_interface_contacts_callback_for_get_contact_attributes
+        callback;
+    gpointer user_data;
+    GDestroyNotify destroy;
+    gboolean hold;
+} GetContactAttributesContext;
+
+
+static void
+get_contact_attributes_context_free (gpointer p)
+{
+  GetContactAttributesContext *c = p;
+
+  if (c->destroy != NULL)
+    c->destroy (c->user_data);
+
+  g_slice_free (GetContactAttributesContext, c);
+}
+
+
+static void
+connection_got_contact_attributes (TpConnection *self,
+                                   GHashTable *attributes,
+                                   const GError *error,
+                                   gpointer user_data,
+                                   GObject *weak_object)
+{
+  GetContactAttributesContext *c = user_data;
+
+  DEBUG ("%u handles, hold=%c", g_hash_table_size (attributes),
+      c->hold ? 'T' : 'F');
+
+  if (c->hold)
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+      GArray *handles = g_array_sized_new (FALSE, FALSE, sizeof (guint),
+          g_hash_table_size (attributes));
+
+      g_hash_table_iter_init (&iter, attributes);
+
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          TpHandle handle = GPOINTER_TO_UINT (key);
+
+          DEBUG ("- %u", handle);
+
+          g_array_append_val (handles, handle);
+        }
+
+      /* remember that we have a ref */
+      _tp_connection_ref_handles (self, TP_HANDLE_TYPE_CONTACT, handles);
+      g_array_free (handles, TRUE);
+    }
+
+  c->callback (self, attributes, error, c->user_data, weak_object);
+}
+
+
+/**
+ * tp_connection_get_contact_attributes:
+ * @self: a connection
+ * @timeout_ms: the timeout in milliseconds, or -1 to use the default
+ * @n_handles: the number of handles in @handles (must be at least 1)
+ * @handles: an array of handles
+ * @interfaces: a #GStrv of interfaces
+ * @hold: if %TRUE, the callback will hold one reference to each valid handle
+ * @callback: called on success or failure (unless @weak_object has become
+ *  unreferenced)
+ * @user_data: arbitrary user-supplied data
+ * @destroy: called to destroy @user_data after calling @callback, or when
+ *  @weak_object becomes unreferenced (whichever occurs sooner)
+ * @weak_object: if not %NULL, an object to be weakly referenced: if it is
+ *  destroyed, @callback will not be called
+ *
+ * Return (via a callback) any number of attributes of the given handles, and
+ * if they are valid and @hold is TRUE, hold a reference to them.
+ *
+ * This is a thin wrapper around the GetContactAttributes D-Bus method, and
+ * should be used in preference to
+ * tp_cli_connection_interface_contacts_get_contact_attributes().
+ * The #TpContact API provides a higher-level abstraction which should
+ * usually be used instead.
+ *
+ * @callback will later be called with the attributes of those of the given
+ * handles that were valid. Invalid handles are simply omitted from the
+ * parameter to the callback.
+ *
+ * If @hold is %TRUE, the @callback is given one reference to each handle
+ * that appears as a key in the callback's @attributes parameter.
+ */
+void
+tp_connection_get_contact_attributes (TpConnection *self,
+    gint timeout_ms,
+    guint n_handles,
+    const TpHandle *handles,
+    const gchar * const *interfaces,
+    gboolean hold,
+    tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
+    gpointer user_data,
+    GDestroyNotify destroy,
+    GObject *weak_object)
+{
+  GetContactAttributesContext *c;
+  GArray *a;
+  guint i;
+
+  DEBUG ("%u handles, hold=%c", n_handles, hold ? 'T' : 'F');
+
+  for (i = 0; i < n_handles; i++)
+    DEBUG ("- %u", handles[i]);
+
+  g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (n_handles >= 1);
+  g_return_if_fail (handles != NULL);
+  g_return_if_fail (callback != NULL);
+
+  c = g_slice_new0 (GetContactAttributesContext);
+  a = g_array_sized_new (FALSE, FALSE, sizeof (guint), n_handles);
+
+  g_array_append_vals (a, handles, n_handles);
+
+  c->destroy = destroy;
+  c->user_data = user_data;
+  c->callback = callback;
+  c->hold = hold;
+
+  tp_cli_connection_interface_contacts_call_get_contact_attributes (self, -1,
+      a, (const gchar **) interfaces, hold, connection_got_contact_attributes,
+      c, get_contact_attributes_context_free, weak_object);
+  g_array_free (a, TRUE);
 }

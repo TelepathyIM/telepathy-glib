@@ -211,6 +211,73 @@ tp_mixin_offset_cast (gpointer instance, guint offset)
   return ((guchar *) instance + offset);
 }
 
+
+/**
+ * tp_mixin_instance_get_offset:
+ * @instance: A pointer to a GObject-derived instance structure
+ * @quark: A quark that was used to store the offset with g_type_set_qdata()
+ *
+ * If the type of @instance, or any of its ancestor types, has had an offset
+ * attached using qdata with the given @quark, return that offset. If not,
+ * this indicates a programming error and results are undefined.
+ *
+ * This is used to implement the telepathy-glib mixin classes.
+ *
+ * Returns: the offset of the mixin
+ */
+guint
+tp_mixin_instance_get_offset (gpointer instance,
+                              GQuark quark)
+{
+  GType t;
+
+  for (t = G_OBJECT_TYPE (instance);
+       t != 0;
+       t = g_type_parent (t))
+    {
+      gpointer qdata = g_type_get_qdata (t, quark);
+
+      if (qdata != NULL)
+        return GPOINTER_TO_UINT (qdata);
+    }
+
+  g_return_val_if_reached (0);
+}
+
+
+/**
+ * tp_mixin_class_get_offset:
+ * @klass: A pointer to a GObjectClass-derived class structure
+ * @quark: A quark that was used to store the offset with g_type_set_qdata()
+ *
+ * If the type of @klass, or any of its ancestor types, has had an offset
+ * attached using qdata with the given @quark, return that offset. If not,
+ * this indicates a programming error and results are undefined.
+ *
+ * This is used to implement the telepathy-glib mixin classes.
+ *
+ * Returns: the offset of the mixin class
+ */
+guint
+tp_mixin_class_get_offset (gpointer klass,
+                           GQuark quark)
+{
+  GType t;
+
+  for (t = G_OBJECT_CLASS_TYPE (klass);
+       t != 0;
+       t = g_type_parent (t))
+    {
+      gpointer qdata = g_type_get_qdata (t, quark);
+
+      if (qdata != NULL)
+        return GPOINTER_TO_UINT (qdata);
+    }
+
+  g_return_val_if_reached (0);
+}
+
+
 static inline gboolean
 _esc_ident_bad (gchar c, gboolean is_first)
 {

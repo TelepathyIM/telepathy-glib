@@ -41,6 +41,8 @@ void tp_g_hash_table_update (GHashTable *target, GHashTable *source,
 gboolean tp_strdiff (const gchar *left, const gchar *right);
 
 gpointer tp_mixin_offset_cast (gpointer instance, guint offset);
+guint tp_mixin_instance_get_offset (gpointer instance, GQuark quark);
+guint tp_mixin_class_get_offset (gpointer klass, GQuark quark);
 
 gchar *tp_escape_as_identifier (const gchar *name);
 

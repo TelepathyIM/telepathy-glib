@@ -930,6 +930,8 @@ tp_g_value_slice_free
 tp_g_value_slice_dup
 tp_strdiff
 tp_mixin_offset_cast
+tp_mixin_class_get_offset
+tp_mixin_instance_get_offset
 tp_escape_as_identifier
 tp_strv_contains
 </SECTION>
@@ -2078,6 +2080,7 @@ tp_connection_get_status
 TpConnectionRequestHandlesCb
 tp_connection_request_handles
 TpConnectionHoldHandlesCb
+tp_connection_get_contact_attributes
 tp_connection_hold_handles
 tp_connection_unref_handles
 tp_connection_init_known_interfaces
