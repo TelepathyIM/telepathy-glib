@@ -13,6 +13,7 @@ EXTRA_DIST = \
     check-misc.sh \
     check-whitespace.sh \
     doc-generator.xsl \
+    git-which-branch.sh \
     glib-client-gen.py \
     glib-client-marshaller-gen.py \
     glib-errors-enum-body-gen.py \

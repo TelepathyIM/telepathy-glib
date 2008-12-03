@@ -19,7 +19,7 @@ _maintainer-upload-release-local: _maintainer-upload-release-check
 	rsync -rtvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
 	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib/
 
-BRANCH = misc
+BRANCH = $(shell sh tools/git-which-branch.sh misc | tr -d '\n' | tr -C "[:alnum:]" _)
 UPLOAD_BRANCH_TO = people.freedesktop.org:public_html/telepathy-glib
 
 upload-branch-docs: all
