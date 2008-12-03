@@ -2,39 +2,34 @@ noinst_PROGRAMS =
 
 noinst_PROGRAMS += telepathy-example-inspect-channel
 telepathy_example_inspect_channel_SOURCES = inspect-channel.c
-telepathy_example_inspect_channel_LDADD = $(ALL_LIBS)
 
 noinst_PROGRAMS += telepathy-example-inspect-connection
 telepathy_example_inspect_connection_SOURCES = inspect-connection.c
-telepathy_example_inspect_connection_LDADD = $(ALL_LIBS)
 
 noinst_PROGRAMS += telepathy-example-inspect-contact
 telepathy_example_inspect_contact_SOURCES = inspect-contact.c
-telepathy_example_inspect_contact_LDADD = $(ALL_LIBS)
 
 noinst_PROGRAMS += telepathy-example-inspect-cm
 telepathy_example_inspect_cm_SOURCES = inspect-cm.c
-telepathy_example_inspect_cm_LDADD = $(ALL_LIBS)
 
 noinst_PROGRAMS += telepathy-example-list-connections
 telepathy_example_list_connections_SOURCES = list-connections.c
-telepathy_example_list_connections_LDADD = $(ALL_LIBS)
 
 noinst_PROGRAMS += telepathy-example-list-managers
 telepathy_example_list_managers_SOURCES = list-managers.c
-telepathy_example_list_managers_LDADD = $(ALL_LIBS)
 
 noinst_PROGRAMS += telepathy-example-extended-client
 telepathy_example_extended_client_SOURCES = extended-client.c
 telepathy_example_extended_client_LDADD = \
     $(top_builddir)/examples/extensions/libexample-extensions.la \
-    $(ALL_LIBS)
+    $(LDADD)
 
-# Sadly there is no AM_LDADD
-ALL_LIBS = \
+# In an external project you'd use $(TP_GLIB_LIBS) (obtained from
+# pkg-config via autoconf) instead of the .la path
+LDADD = \
     @DBUS_LIBS@ \
     @GLIB_LIBS@ \
-    @TP_GLIB_LIBS@
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \

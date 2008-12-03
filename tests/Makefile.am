@@ -38,28 +38,18 @@ EXTRA_DIST = README
 
 test_asv_SOURCES = \
     asv.c
-test_asv_LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 test_heap_SOURCES = \
     test-heap.c
-test_heap_LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 test_util_SOURCES = \
     test-util.c
-test_util_LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 test_intset_SOURCES = \
     test-intset.c
-test_intset_LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 test_availability_cmp_SOURCES = \
     test-availability-cmp.c
-test_availability_cmp_LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 # this needs to link against the static convenience library so that
 # _tp_debug is still visible
@@ -71,6 +61,9 @@ test_internal_debug_LDADD = \
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
+
+LDADD = \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \

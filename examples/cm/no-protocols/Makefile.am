@@ -5,10 +5,12 @@ telepathy_example_no_protocols_SOURCES = \
     manager.c \
     manager.h
 
+# In an external project you'd use $(TP_GLIB_LIBS) (obtained from
+# pkg-config via autoconf) instead of the .la path
 telepathy_example_no_protocols_LDADD = \
-    @DBUS_LIBS@ \
-    @GLIB_LIBS@ \
-    @TP_GLIB_LIBS@
+    $(GLIB_LIBS) \
+    $(DBUS_LIBS) \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \

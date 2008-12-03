@@ -20,86 +20,48 @@ noinst_PROGRAMS = \
 
 TESTS = $(noinst_PROGRAMS)
 
-test_call_cancellation_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
+LDADD = \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la
 
-test_channel_introspect_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 test_channel_introspect_SOURCES = channel-introspect.c
 
-test_connection_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 test_connection_SOURCES = connection.c
 
-test_connection_handles_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 test_connection_handles_SOURCES = connection-handles.c
 
-test_connection_inject_bug16307_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 test_connection_inject_bug16307_SOURCES = connection-inject-bug16307.c
 
-test_connection_getinterfaces_failure_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 test_connection_getinterfaces_failure_SOURCES = \
     connection-getinterfaces-failure.c
 
-test_contacts_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 test_contacts_SOURCES = contacts.c
 
-test_contacts_mixin_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 test_contacts_mixin_SOURCES = contacts-mixin.c
-
-test_dbus_LDADD = $(TP_GLIB_LIBS)
-test_disconnection_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
-test_example_no_protocols_LDADD = $(TP_GLIB_LIBS)
 
 test_finalized_in_invalidated_handler_SOURCES = \
     finalized-in-invalidated-handler.c
-test_finalized_in_invalidated_handler_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 
 test_handle_set_SOURCES = handle-set.c
-test_handle_set_LDADD = $(TP_GLIB_LIBS)
 
-test_invalidated_while_invoking_signals_LDADD = \
-    $(TP_GLIB_LIBS) \
-    ../lib/libtp-glib-tests.la
 test_invalidated_while_invoking_signals_SOURCES = \
     invalidated-while-invoking-signals.c
 
-test_properties_LDADD = $(TP_GLIB_LIBS)
 test_properties_SOURCES = properties.c
 nodist_test_properties_SOURCES = \
     _gen/svc.h \
     _gen/svc.c
 
 test_text_mixin_LDADD = \
-    $(TP_GLIB_LIBS) \
-    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(LDADD) \
     $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
 test_text_mixin_SOURCES = text-mixin.c
 
 test_text_respawn_LDADD = \
-    $(TP_GLIB_LIBS) \
-    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(LDADD) \
     $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
 test_text_respawn_SOURCES = text-respawn.c
 
-test_unsupported_interface_LDADD = $(TP_GLIB_LIBS)
 test_unsupported_interface_SOURCES = unsupported-interface.c
 
 check_c_sources = *.c

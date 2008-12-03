@@ -14,8 +14,12 @@ libexample_cm_csh_la_SOURCES = \
     manager.c \
     manager.h
 
+# In an external project you'd use $(TP_GLIB_LIBS) (obtained from
+# pkg-config via autoconf) instead of the .la path
 libexample_cm_csh_la_LIBADD = \
-    $(TP_GLIB_LIBS)
+    $(GLIB_LIBS) \
+    $(DBUS_LIBS) \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 telepathy_example_cm_csh_SOURCES = \
     main.c

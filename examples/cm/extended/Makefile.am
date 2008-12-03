@@ -7,9 +7,13 @@ telepathy_example_cm_extended_SOURCES = \
     manager.c \
     manager.h
 
+# In an external project you'd use $(TP_GLIB_LIBS) (obtained from
+# pkg-config via autoconf) instead of the path to libtelepathy-glib.la
 telepathy_example_cm_extended_LDADD = \
-    $(top_builddir)/examples/extensions/libexample-extensions.la \
-    $(TP_GLIB_LIBS)
+    $(GLIB_LIBS) \
+    $(DBUS_LIBS) \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(top_builddir)/examples/extensions/libexample-extensions.la
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
