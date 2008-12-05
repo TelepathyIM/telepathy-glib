@@ -42,7 +42,6 @@ pytpfarsight.c: pytpfarsight.override pytpfarsight.defs
 EXTRA_DIST =			\
 	pytpfarsight.override	\
 	pytpfarsight.defs		\
-	example.py		\
 	pytpfarsight-filter.defs  \
 	rebuild-defs.sh
 
