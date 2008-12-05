@@ -1341,10 +1341,10 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 {
   TfStream *self = TF_STREAM (object);
 
-  DEBUG (self, "Holding : %d", held);
-
   if (held == self->priv->held)
     return;
+
+  DEBUG (self, "Holding : %d", held);
 
   if (held)
     {
@@ -1362,6 +1362,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
              async_method_callback, "Media.StreamHandler::HoldState",
              NULL, (GObject *) self);
          }
+       self->priv->held = TRUE;
     }
   else
     {
@@ -1379,6 +1380,8 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
              self->priv->stream_handler_proxy, -1, FALSE,
              async_method_callback, "Media.StreamHandler::HoldState",
              NULL, (GObject *) self);
+
+           self->priv->held = FALSE;
         }
       else
         {
