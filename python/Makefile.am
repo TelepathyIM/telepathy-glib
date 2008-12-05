@@ -7,6 +7,7 @@ noinst_HEADERS = pygstminiobject.h common.h
 
 AM_CPPFLAGS =					\
 	-I.						\
+	-I$(top_srcdir) \
 	-DDATADIR=\""$(datadir)"\" \
 	$(TELEPATHY_CFLAGS) \
 	$(PYTHON_INCLUDES) \
