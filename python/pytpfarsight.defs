@@ -1,0 +1,104 @@
+(define-object Channel
+  (in-module "Tf")
+  (parent "GObject")
+  (c-name "TfChannel")
+  (gtype-id "TF_TYPE_CHANNEL")
+)
+
+(define-object Stream
+  (in-module "Tf")
+  (parent "GObject")
+  (c-name "TfStream")
+  (gtype-id "TF_TYPE_STREAM")
+)
+
+(define-function tf_channel_new
+  (c-name "tf_channel_new")
+    (is-constructor-of "TfChannel")
+    (return-type "TfChannel*")
+    (parameters
+         '("const-gchar*" "connection_busname")
+         '("const-gchar*" "connection_path")
+         '("const-gchar*" "channel_path")
+    )
+)
+;; -*- scheme -*-
+; object definitions ...
+;; Enumerations and flags ...
+
+
+;; From channel.h
+
+(define-function tf_channel_get_type
+  (c-name "tf_channel_get_type")
+  (return-type "GType")
+)
+
+(define-method error
+  (of-object "TfChannel")
+  (c-name "tf_channel_error")
+  (return-type "none")
+  (parameters
+    '("TpMediaStreamError" "error")
+    '("const-gchar*" "message")
+  )
+)
+
+(define-method lookup_stream
+  (of-object "TfChannel")
+  (c-name "tf_channel_lookup_stream")
+  (return-type "TfStream*")
+  (parameters
+    '("guint" "stream_id")
+  )
+)
+
+(define-method foreach_stream
+  (of-object "TfChannel")
+  (c-name "tf_channel_foreach_stream")
+  (return-type "none")
+  (parameters
+    '("TfChannelStreamFunc" "func")
+    '("gpointer" "user_data")
+  )
+)
+
+(define-method bus_message
+  (of-object "TfChannel")
+  (c-name "tf_channel_bus_message")
+  (return-type "gboolean")
+  (parameters
+    '("GstMessage*" "message")
+  )
+)
+
+
+;; -*- scheme -*-
+; object definitions ...
+;; Enumerations and flags ...
+
+
+;; From stream.h
+
+(define-function tf_stream_get_type
+  (c-name "tf_stream_get_type")
+  (return-type "GType")
+)
+
+(define-method get_id
+  (of-object "TfStream")
+  (c-name "tf_stream_get_id")
+  (return-type "guint")
+)
+
+(define-method error
+  (of-object "TfStream")
+  (c-name "tf_stream_error")
+  (return-type "none")
+  (parameters
+    '("TpMediaStreamError" "error")
+    '("const-gchar*" "message")
+  )
+)
+
+

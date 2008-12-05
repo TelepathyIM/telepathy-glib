@@ -1,0 +1,24 @@
+(define-object Channel
+  (in-module "Tf")
+  (parent "GObject")
+  (c-name "TfChannel")
+  (gtype-id "TF_TYPE_CHANNEL")
+)
+
+(define-object Stream
+  (in-module "Tf")
+  (parent "GObject")
+  (c-name "TfStream")
+  (gtype-id "TF_TYPE_STREAM")
+)
+
+(define-function tf_channel_new
+  (c-name "tf_channel_new")
+    (is-constructor-of "TfChannel")
+    (return-type "TfChannel*")
+    (parameters
+         '("const-gchar*" "connection_busname")
+         '("const-gchar*" "connection_path")
+         '("const-gchar*" "channel_path")
+    )
+)

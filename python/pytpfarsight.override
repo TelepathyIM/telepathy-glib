@@ -1,0 +1,78 @@
+%%
+headers
+#include <pygobject.h>
+
+#include <gst/gst.h>
+
+#include <telepathy-farsight/stream.h>
+#include <telepathy-farsight/channel.h>
+
+#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/channel.h>
+
+#include "pygstminiobject.h"
+%%
+modulename tf
+%%
+import gobject.GObject as PyGObject_Type
+import gst.Message as PyGstMessage_Type
+%%
+ignore-glob
+  *_get_type
+%%
+override tf_channel_new kwargs
+static int
+_wrap_tf_channel_new(PyGObject *self, PyObject *args, PyObject *kwargs)
+{
+  static char *kwlist[] = { "connection_busname", "connection_path",
+    "channel_path", NULL };
+
+  char *busname, *connection_path, *channel_path;
+  TpChannel *proxy = NULL;
+  TpConnection *connection = NULL;
+  TpDBusDaemon *dbus = NULL;
+  GError *error = NULL;
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwargs, "sss:TfChannel.__init__",
+      kwlist, &busname, &connection_path, &channel_path))
+    return -1;
+
+  dbus = tp_dbus_daemon_new (tp_get_bus ());
+  /* FIXME Throw an exception */
+  if (dbus == NULL)
+    {
+      PyErr_SetString (PyExc_RuntimeError, "Failed to connect to D-Bus");
+      goto out;
+    }
+
+  connection = tp_connection_new (dbus, busname, connection_path, &error);
+  if (connection == NULL)
+    {
+      pyg_error_check (&error);
+      goto out;
+    }
+
+  proxy = tp_channel_new (connection, channel_path, NULL,
+    TP_UNKNOWN_HANDLE_TYPE, 0, &error);
+
+  if (proxy == NULL)
+    {
+      pyg_error_check (&error);
+      goto out;
+    }
+
+  self->obj = G_OBJECT (tf_channel_new (proxy));
+
+out:
+  if (dbus != NULL)
+    g_object_unref (dbus);
+
+  if (connection != NULL)
+    g_object_unref (connection);
+
+  if (proxy != NULL)
+    g_object_unref (proxy);
+
+  return (self->obj == NULL) ? -1 : 0;
+}
+

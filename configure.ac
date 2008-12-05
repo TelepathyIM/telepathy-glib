@@ -99,6 +99,24 @@ PKG_CHECK_MODULES(FARSIGHT2, [farsight2-0.10 >= 0.0.3])
 AC_SUBST(FARSIGHT2_CFLAGS)
 AC_SUBST(FARSIGHT2_LIBS)
 
+AC_ARG_ENABLE([python],
+  AC_HELP_STRING([--disable-python], [Disable Python bindings]),
+  [case "${enableval}" in
+      yes) WANT_PYTHON=yes ;;
+      no)  WANT_PYTHON=no ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-python) ;;
+        esac],
+  WANT_PYTHON=yes)
+
+if test "x$WANT_PYTHON" = "xyes"; then
+   AM_PATH_PYTHON
+   AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(could not find Python headers)])
+   PKG_CHECK_MODULES(PYTPFARSIGHT, [ pygobject-2.0 >= 2.12.0
+      gst-python-0.10 >= 0.10.10
+      pygtk-2.0 >= 2.10 ] )
+fi
+AM_CONDITIONAL(WANT_PYTHON, test "x$WANT_PYTHON" = "xyes")
+
 GTK_DOC_CHECK([1.10])
 
 LT_CURRENT=tp_farsight_lt_current
@@ -117,5 +135,6 @@ AC_OUTPUT( Makefile \
           telepathy-farsight/telepathy-farsight.pc \
           telepathy-farsight/telepathy-farsight-uninstalled.pc
           tools/Makefile \
+          python/Makefile \
+          python/codegen/Makefile \
 )
-

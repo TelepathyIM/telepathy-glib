@@ -1,6 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = m4 tools telepathy-farsight doc
+
+if WANT_PYTHON
+  PYTHON_SUBDIR = python
+endif
+
+SUBDIRS = m4 tools telepathy-farsight doc $(PYTHON_SUBDIR)
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
 
