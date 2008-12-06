@@ -64,6 +64,8 @@ _tf_stream_new (gpointer channel,
 gboolean _tf_stream_bus_message (TfStream *stream,
     GstMessage *message);
 
+void _tf_stream_try_sending_codecs (TfStream *stream);
+
 G_END_DECLS
 
 #endif /* __TF_STREAM_PRIV_H__ */

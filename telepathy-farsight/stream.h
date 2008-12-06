@@ -51,10 +51,10 @@ GType tf_stream_get_type (void);
 
 guint tf_stream_get_id (TfStream *stream);
 
-void tf_stream_error (
-  TfStream *self,
+void tf_stream_error (TfStream *self,
   TpMediaStreamError error,
   const gchar *message);
+
 
 G_END_DECLS
 

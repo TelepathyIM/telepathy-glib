@@ -180,9 +180,6 @@ static void cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     GstPad *pad,
     FsCodec *codec,
     gpointer user_data);
-static void
-tf_stream_try_sending_codecs (TfStream *stream);
-
 
 static void
 tf_stream_init (TfStream *self)
@@ -445,7 +442,6 @@ tf_stream_constructor (GType type,
       G_CALLBACK (cb_fs_stream_src_pad_added), stream);
 
   stream->priv->send_local_codecs = TRUE;
-  tf_stream_try_sending_codecs (stream);
 
   return obj;
 }
@@ -1180,7 +1176,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   }
 
   self->priv->send_supported_codecs = TRUE;
-  tf_stream_try_sending_codecs (self);
+  _tf_stream_try_sending_codecs (self);
 }
 
 static void
@@ -1675,7 +1671,7 @@ _tf_stream_bus_message (TfStream *stream,
 
       DEBUG (stream, "Codecs changed");
 
-      tf_stream_try_sending_codecs (stream);
+      _tf_stream_try_sending_codecs (stream);
     }
   else if (gst_structure_has_name (s, "farsight-send-codec-changed"))
     {
@@ -1754,8 +1750,8 @@ _tf_stream_new (gpointer channel,
   return self;
 }
 
-static void
-tf_stream_try_sending_codecs (TfStream *stream)
+void
+_tf_stream_try_sending_codecs (TfStream *stream)
 {
   gboolean ready = FALSE;
   GList *fscodecs = NULL;

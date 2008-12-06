@@ -712,6 +712,8 @@ new_stream_cb (TfSession *session,
       self);
 
   g_signal_emit (self, signals[STREAM_CREATED], 0, stream);
+
+  _tf_stream_try_sending_codecs (stream);
 }
 
 static void
