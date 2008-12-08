@@ -1,7 +1,7 @@
 #ifndef __TP_INTERFACES_H__
 #define __TP_INTERFACES_H__
 
-#include <glib/gquark.h>
+#include <glib.h>
 
 G_BEGIN_DECLS
 
