@@ -22,6 +22,33 @@
          '("const-gchar*" "channel_path")
     )
 )
+
+
+;; Overide these because TpMediaStreamError is not a real GObject enum
+;
+; Can we directly override it instead ?
+
+
+(define-method error
+  (of-object "TfChannel")
+  (c-name "tf_channel_error")
+  (return-type "none")
+  (parameters
+    '("gint" "error")
+    '("const-gchar*" "message")
+  )
+)
+
+
+(define-method error
+  (of-object "TfStream")
+  (c-name "tf_stream_error")
+  (return-type "none")
+  (parameters
+    '("gint" "error")
+    '("const-gchar*" "message")
+  )
+)
 ;; -*- scheme -*-
 ; object definitions ...
 ;; Enumerations and flags ...
@@ -32,16 +59,6 @@
 (define-function tf_channel_get_type
   (c-name "tf_channel_get_type")
   (return-type "GType")
-)
-
-(define-method error
-  (of-object "TfChannel")
-  (c-name "tf_channel_error")
-  (return-type "none")
-  (parameters
-    '("TpMediaStreamError" "error")
-    '("const-gchar*" "message")
-  )
 )
 
 (define-method lookup_stream
@@ -89,16 +106,6 @@
   (of-object "TfStream")
   (c-name "tf_stream_get_id")
   (return-type "guint")
-)
-
-(define-method error
-  (of-object "TfStream")
-  (c-name "tf_stream_error")
-  (return-type "none")
-  (parameters
-    '("TpMediaStreamError" "error")
-    '("const-gchar*" "message")
-  )
 )
 
 
