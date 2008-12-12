@@ -20,10 +20,14 @@ EXTRA_DIST = \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
     Channel_Interface_Transfer.xml \
+    Channel_Interface_Tube.xml \
     Channel_Request.xml \
     Channel_Type_Contact_List.xml \
     Channel_Type_Contact_Search.xml \
+    Channel_Type_DBus_Tube.xml \
+    Channel_Type_File_Transfer.xml \
     Channel_Type_Room_List.xml \
+    Channel_Type_Stream_Tube.xml \
     Channel_Type_Streamed_Media.xml \
     Channel_Type_Text.xml \
     Channel_Type_Tubes.xml \
@@ -37,6 +41,7 @@ EXTRA_DIST = \
     Connection_Interface_Capabilities.xml \
     Connection_Interface_Contact_Info.xml \
     Connection_Interface_Contacts.xml \
+    Connection_Interface_Contact_Capabilities.xml \
     Connection_Interface_Forwarding.xml \
     Connection_Interface_Simple_Presence.xml \
     Connection_Interface_Presence.xml \
