@@ -7,6 +7,8 @@ Enhancements:
 
 Fixes:
 
+ * fd.o #18845: a CM falling off the bus should not cause TpConnection to critical.
+
 telepathy-glib 0.7.19 (2008-12-01)
 ==================================
 
