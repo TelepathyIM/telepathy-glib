@@ -2,6 +2,7 @@ noinst_PROGRAMS = \
     test-call-cancellation \
     test-channel-introspect \
     test-connection \
+    test-connection-bug-18845 \
     test-connection-handles \
     test-connection-inject-bug16307 \
     test-connection-getinterfaces-failure \
@@ -27,6 +28,8 @@ LDADD = \
 test_channel_introspect_SOURCES = channel-introspect.c
 
 test_connection_SOURCES = connection.c
+
+test_connection_bug_18845_SOURCES = connection-bug-18845.c
 
 test_connection_handles_SOURCES = connection-handles.c
 
