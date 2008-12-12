@@ -412,6 +412,18 @@ tp_proxy_emit_invalidated (gpointer p)
    * to the proxies */
   tp_proxy_lose_interfaces (self);
 
+  if (self->dbus_daemon != NULL)
+    {
+      g_object_unref (self->dbus_daemon);
+      self->dbus_daemon = NULL;
+    }
+
+  if (self->dbus_connection != NULL)
+    {
+      dbus_g_connection_unref (self->dbus_connection);
+      self->dbus_connection = NULL;
+    }
+
   return FALSE;
 }
 
@@ -439,18 +451,6 @@ tp_proxy_invalidate (TpProxy *self, const GError *error)
 
       tp_proxy_emit_invalidated (self);
     }
-
-  if (self->dbus_daemon != NULL)
-    {
-      g_object_unref (self->dbus_daemon);
-      self->dbus_daemon = NULL;
-    }
-
-  if (self->dbus_connection != NULL)
-    {
-      dbus_g_connection_unref (self->dbus_connection);
-      self->dbus_connection = NULL;
-    }
 }
 
 static void
@@ -475,10 +475,6 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
       g_idle_add_full (G_PRIORITY_HIGH, tp_proxy_emit_invalidated,
           g_object_ref (self), g_object_unref);
     }
-
-  /* this won't re-emit 'invalidated' because we already set
-   * self->invalidated */
-  tp_proxy_invalidate (self, self->invalidated);
 }
 
 /**
