@@ -20,6 +20,8 @@
 #include "tests/lib/textchan-null.h"
 #include "tests/lib/util.h"
 
+#define IDENTIFIER "them@example.org"
+
 static int fail = 0;
 static GError *invalidated = NULL;
 static GMainLoop *mainloop;
@@ -71,6 +73,7 @@ assert_chan_sane (TpChannel *chan,
   MYASSERT (tp_channel_get_channel_type_id (chan) ==
         TP_IFACE_QUARK_CHANNEL_TYPE_TEXT, "");
   MYASSERT (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)), "");
+  MYASSERT_SAME_STRING (tp_channel_get_identifier (chan), IDENTIFIER);
 
   asv = tp_channel_borrow_immutable_properties (chan);
   MYASSERT (asv != NULL, "");
@@ -83,6 +86,9 @@ assert_chan_sane (TpChannel *chan,
   MYASSERT_SAME_UINT (
       tp_asv_get_uint32 (asv, TP_IFACE_CHANNEL ".TargetHandle", NULL),
       handle);
+  MYASSERT_SAME_STRING (
+      tp_asv_get_string (asv, TP_IFACE_CHANNEL ".TargetID"),
+      IDENTIFIER);
 }
 
 int
@@ -138,7 +144,7 @@ main (int argc,
       TP_HANDLE_TYPE_CONTACT);
   MYASSERT (contact_repo != NULL, "");
 
-  handle = tp_handle_ensure (contact_repo, "them@example.org", NULL, &error);
+  handle = tp_handle_ensure (contact_repo, IDENTIFIER, NULL, &error);
   MYASSERT_NO_ERROR (error);
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);

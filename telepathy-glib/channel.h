@@ -95,6 +95,7 @@ gboolean tp_channel_is_ready (TpChannel *self);
 const gchar *tp_channel_get_channel_type (TpChannel *self);
 GQuark tp_channel_get_channel_type_id (TpChannel *self);
 TpHandle tp_channel_get_handle (TpChannel *self, TpHandleType *handle_type);
+const gchar *tp_channel_get_identifier (TpChannel *self);
 TpConnection *tp_channel_borrow_connection (TpChannel *self);
 GHashTable *tp_channel_borrow_immutable_properties (TpChannel *self);
 
