@@ -1,13 +1,19 @@
-telepathy-glib 0.7.20 (UNRELEASED)
+telepathy-glib 0.7.20 (2008-12-14)
 ==================================
 
-Dependencies:
+The "xfs_freeze stole the night" release.
 
 Enhancements:
 
+* Updated to spec version 0.17.16
+  - Generate code for the Messages interface, which is now undrafted.
+
 Fixes:
 
- * fd.o #18845: a CM falling off the bus should not cause TpConnection to critical.
+* fd.o #18845: don't throw a critical error from TpConnection if the
+  corresponding CM falls off the bus.
+
+* fd.o #18926: avoid using a non-top-level GLib header
 
 telepathy-glib 0.7.19 (2008-12-01)
 ==================================
