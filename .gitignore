@@ -65,6 +65,7 @@ stamp-h1
 tests/dbus/test-call-cancellation
 tests/dbus/test-channel-introspect
 tests/dbus/test-connection
+tests/dbus/test-connection-bug-18845
 tests/dbus/test-connection-getinterfaces-failure
 tests/dbus/test-connection-handles
 tests/dbus/test-connection-inject-bug16307
