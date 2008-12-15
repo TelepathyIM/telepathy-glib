@@ -210,7 +210,8 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
         {
           /* we might even have information about them */
           LocalPendingInfo *info = g_hash_table_lookup (
-              self->priv->group_local_pending_info, GUINT_TO_POINTER (actor));
+              self->priv->group_local_pending_info,
+              GUINT_TO_POINTER (local_pending));
 
           if (info != NULL)
             {
