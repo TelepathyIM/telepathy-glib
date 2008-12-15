@@ -1794,6 +1794,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
     {
       if (!(stream->priv->desired_direction & TP_MEDIA_STREAM_DIRECTION_SEND))
         tf_stream_free_resource (stream, TP_MEDIA_STREAM_DIRECTION_SEND);
+      stream->priv->gathering = FALSE;
     }
 
   for(item = fscodecs; item; item = g_list_next (item))
