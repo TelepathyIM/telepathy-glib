@@ -466,12 +466,12 @@ tf_stream_dispose (GObject *object)
   if (priv->fs_stream)
     {
       tf_stream_free_resource (stream,
-          TP_MEDIA_STREAM_DIRECTION_SEND);
+          TP_MEDIA_STREAM_DIRECTION_RECEIVE);
 
       g_object_unref (priv->fs_stream);
 
       tf_stream_free_resource (stream,
-          TP_MEDIA_STREAM_DIRECTION_RECEIVE);
+          TP_MEDIA_STREAM_DIRECTION_SEND);
 
       priv->fs_stream = NULL;
     }
