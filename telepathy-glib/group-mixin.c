@@ -1280,6 +1280,65 @@ local_pending_remove (TpGroupMixin *mixin,
   tp_intset_foreach (removed, local_pending_remove_foreach, mixin);
 }
 
+
+static void
+emit_members_changed_signals (GObject *channel,
+                              const gchar *message,
+                              const GArray *add,
+                              const GArray *del,
+                              const GArray *local_pending,
+                              const GArray *remote_pending,
+                              TpHandle actor,
+                              TpChannelGroupChangeReason reason)
+{
+  TpGroupMixin *mixin = TP_GROUP_MIXIN (channel);
+
+  if (DEBUGGING)
+    {
+      gchar *add_str, *rem_str, *local_str, *remote_str;
+
+      add_str = member_array_to_string (mixin->handle_repo, add);
+      rem_str = member_array_to_string (mixin->handle_repo, del);
+      local_str = member_array_to_string (mixin->handle_repo, local_pending);
+      remote_str = member_array_to_string (mixin->handle_repo, remote_pending);
+
+      printf (TP_ANSI_BOLD_ON TP_ANSI_FG_CYAN
+              "%s: emitting members changed\n"
+              "  message       : \"%s\"\n"
+              "  added         : %s\n"
+              "  removed       : %s\n"
+              "  local_pending : %s\n"
+              "  remote_pending: %s\n"
+              "  actor         : %u\n"
+              "  reason        : %u: %s\n" TP_ANSI_RESET,
+              G_STRFUNC, message, add_str, rem_str, local_str, remote_str,
+              actor, reason, group_change_reason_str (reason));
+
+      fflush (stdout);
+
+      g_free (add_str);
+      g_free (rem_str);
+      g_free (local_str);
+      g_free (remote_str);
+    }
+
+  tp_svc_channel_interface_group_emit_members_changed (channel, message,
+      add, del, local_pending, remote_pending, actor, reason);
+
+  if (mixin->priv->externals != NULL)
+    {
+      guint i;
+
+      for (i = 0; i < mixin->priv->externals->len; i++)
+        {
+          tp_svc_channel_interface_group_emit_members_changed (
+              g_ptr_array_index (mixin->priv->externals, i), message,
+              add, del, local_pending, remote_pending, actor, reason);
+        }
+    }
+}
+
+
 /**
  * tp_group_mixin_change_members:
  * @obj: An object implementing the group interface using this mixin
@@ -1430,51 +1489,9 @@ tp_group_mixin_change_members (GObject *obj,
       /* remove any handle owner mappings */
       arr_owners_removed = remove_handle_owners_if_exist (obj, arr_remove);
 
-      if (DEBUGGING)
-        {
-          gchar *add_str, *rem_str, *local_str, *remote_str;
-
-          add_str = member_array_to_string (mixin->handle_repo, arr_add);
-          rem_str = member_array_to_string (mixin->handle_repo, arr_remove);
-          local_str = member_array_to_string (mixin->handle_repo, arr_local);
-          remote_str = member_array_to_string (mixin->handle_repo, arr_remote);
-
-          printf (TP_ANSI_BOLD_ON TP_ANSI_FG_CYAN
-                  "%s: emitting members changed\n"
-                  "  message       : \"%s\"\n"
-                  "  added         : %s\n"
-                  "  removed       : %s\n"
-                  "  local_pending : %s\n"
-                  "  remote_pending: %s\n"
-                  "  actor         : %u\n"
-                  "  reason        : %u: %s\n" TP_ANSI_RESET,
-                  G_STRFUNC, message, add_str, rem_str, local_str, remote_str,
-                  actor, reason, group_change_reason_str (reason));
-
-          fflush (stdout);
-
-          g_free (add_str);
-          g_free (rem_str);
-          g_free (local_str);
-          g_free (remote_str);
-        }
-
-      /* emit signal */
-      tp_svc_channel_interface_group_emit_members_changed (obj, message,
-          arr_add, arr_remove, arr_local, arr_remote, actor, reason);
-
-      if (mixin->priv->externals != NULL)
-        {
-          guint i;
-
-          for (i = 0; i < mixin->priv->externals->len; i++)
-            {
-              tp_svc_channel_interface_group_emit_members_changed
-                ((GObject *) g_ptr_array_index (mixin->priv->externals, i),
-                 message, arr_add, arr_remove, arr_local, arr_remote,
-                 actor, reason);
-            }
-        }
+      /* emit signals */
+      emit_members_changed_signals (obj, message, arr_add, arr_remove,
+          arr_local, arr_remote, actor, reason);
 
       if (arr_owners_removed->len > 0)
         {
