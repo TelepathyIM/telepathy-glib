@@ -1289,7 +1289,8 @@ emit_members_changed_signals (GObject *channel,
                               const GArray *local_pending,
                               const GArray *remote_pending,
                               TpHandle actor,
-                              TpChannelGroupChangeReason reason)
+                              TpChannelGroupChangeReason reason,
+                              GHashTable *details)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (channel);
 
@@ -1324,6 +1325,8 @@ emit_members_changed_signals (GObject *channel,
 
   tp_svc_channel_interface_group_emit_members_changed (channel, message,
       add, del, local_pending, remote_pending, actor, reason);
+  tp_svc_channel_interface_group_emit_members_changed_detailed (channel,
+      add, del, local_pending, remote_pending, details);
 
   if (mixin->priv->externals != NULL)
     {
@@ -1331,9 +1334,12 @@ emit_members_changed_signals (GObject *channel,
 
       for (i = 0; i < mixin->priv->externals->len; i++)
         {
-          tp_svc_channel_interface_group_emit_members_changed (
-              g_ptr_array_index (mixin->priv->externals, i), message,
-              add, del, local_pending, remote_pending, actor, reason);
+          GObject *external = g_ptr_array_index (mixin->priv->externals, i);
+
+          tp_svc_channel_interface_group_emit_members_changed (external,
+              message, add, del, local_pending, remote_pending, actor, reason);
+          tp_svc_channel_interface_group_emit_members_changed_detailed (
+              external, add, del, local_pending, remote_pending, details);
         }
     }
 }
@@ -1479,6 +1485,9 @@ tp_group_mixin_change_members (GObject *obj,
     {
       GArray *arr_add, *arr_remove, *arr_local, *arr_remote;
       GArray *arr_owners_removed;
+      GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
+          NULL, (GDestroyNotify) tp_g_value_slice_free);
+      GValue *detail;
 
       /* translate intsets to arrays */
       arr_add = tp_intset_to_array (new_add);
@@ -1490,8 +1499,29 @@ tp_group_mixin_change_members (GObject *obj,
       arr_owners_removed = remove_handle_owners_if_exist (obj, arr_remove);
 
       /* emit signals */
+      if (actor != 0)
+        {
+          detail = tp_g_value_slice_new (G_TYPE_UINT);
+          g_value_set_uint (detail, actor);
+          g_hash_table_insert (details, "actor", detail);
+        }
+
+      if (reason != TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
+        {
+          detail = tp_g_value_slice_new (G_TYPE_UINT);
+          g_value_set_uint (detail, reason);
+          g_hash_table_insert (details, "change-reason", detail);
+        }
+
+      if (message[0] != '\0')
+        {
+          detail = tp_g_value_slice_new (G_TYPE_STRING);
+          g_value_set_string (detail, message);
+          g_hash_table_insert (details, "message", detail);
+        }
+
       emit_members_changed_signals (obj, message, arr_add, arr_remove,
-          arr_local, arr_remote, actor, reason);
+          arr_local, arr_remote, actor, reason, details);
 
       if (arr_owners_removed->len > 0)
         {
