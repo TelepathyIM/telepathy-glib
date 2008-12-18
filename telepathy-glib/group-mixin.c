@@ -1345,49 +1345,16 @@ emit_members_changed_signals (GObject *channel,
 }
 
 
-/**
- * tp_group_mixin_change_members:
- * @obj: An object implementing the group interface using this mixin
- * @message: A message to be sent to the affected contacts if possible;
- *  %NULL is allowed, and is mapped to an empty string
- * @add: A set of contact handles to be added to the members (if not
- *  already present) and removed from local pending and remote pending
- *  (if present)
- * @del: A set of contact handles to be removed from members,
- *  local pending or remote pending, wherever they are present
- * @add_local_pending: A set of contact handles to be added to local pending,
- *  and removed from members and remote pending
- * @add_remote_pending: A set of contact handles to be added to remote pending,
- *  and removed from members and local pending
- * @actor: The handle of the contact responsible for this change
- * @reason: The reason for this change
- *
- * Change the sets of members as given by the arguments, and emit the
- * MembersChanged signal if the changes were not a no-op.
- *
- * This function must be called in response to events on the underlying
- * IM protocol, and must not be called in direct response to user input;
- * it does not respect the permissions flags, but changes the group directly.
- *
- * If any two of add, del, add_local_pending and add_remote_pending have
- * a non-empty intersection, the result is undefined. Don't do that.
- *
- * Each of the TpIntSet arguments may be %NULL, which is treated as
- * equivalent to an empty set.
- *
- * Returns: %TRUE if the group was changed and the MembersChanged signal
- *  was emitted; %FALSE if nothing actually changed and the signal was
- *  suppressed.
- */
-gboolean
-tp_group_mixin_change_members (GObject *obj,
-                               const gchar *message,
-                               TpIntSet *add,
-                               TpIntSet *del,
-                               TpIntSet *add_local_pending,
-                               TpIntSet *add_remote_pending,
-                               TpHandle actor,
-                               TpChannelGroupChangeReason reason)
+static gboolean
+change_members (GObject *obj,
+                const gchar *message,
+                TpIntSet *add,
+                TpIntSet *del,
+                TpIntSet *add_local_pending,
+                TpIntSet *add_remote_pending,
+                TpHandle actor,
+                TpChannelGroupChangeReason reason,
+                GHashTable *details)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   TpIntSet *new_add, *new_remove, *new_local_pending,
@@ -1485,9 +1452,6 @@ tp_group_mixin_change_members (GObject *obj,
     {
       GArray *arr_add, *arr_remove, *arr_local, *arr_remote;
       GArray *arr_owners_removed;
-      GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
-          NULL, (GDestroyNotify) tp_g_value_slice_free);
-      GValue *detail;
 
       /* translate intsets to arrays */
       arr_add = tp_intset_to_array (new_add);
@@ -1499,27 +1463,6 @@ tp_group_mixin_change_members (GObject *obj,
       arr_owners_removed = remove_handle_owners_if_exist (obj, arr_remove);
 
       /* emit signals */
-      if (actor != 0)
-        {
-          detail = tp_g_value_slice_new (G_TYPE_UINT);
-          g_value_set_uint (detail, actor);
-          g_hash_table_insert (details, "actor", detail);
-        }
-
-      if (reason != TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
-        {
-          detail = tp_g_value_slice_new (G_TYPE_UINT);
-          g_value_set_uint (detail, reason);
-          g_hash_table_insert (details, "change-reason", detail);
-        }
-
-      if (message[0] != '\0')
-        {
-          detail = tp_g_value_slice_new (G_TYPE_STRING);
-          g_value_set_string (detail, message);
-          g_hash_table_insert (details, "message", detail);
-        }
-
       emit_members_changed_signals (obj, message, arr_add, arr_remove,
           arr_local, arr_remote, actor, reason, details);
 
@@ -1570,6 +1513,84 @@ tp_group_mixin_change_members (GObject *obj,
   tp_intset_destroy (new_remote_pending);
   tp_intset_destroy (empty);
 
+  return ret;
+}
+
+
+/**
+ * tp_group_mixin_change_members:
+ * @obj: An object implementing the group interface using this mixin
+ * @message: A message to be sent to the affected contacts if possible;
+ *  %NULL is allowed, and is mapped to an empty string
+ * @add: A set of contact handles to be added to the members (if not
+ *  already present) and removed from local pending and remote pending
+ *  (if present)
+ * @del: A set of contact handles to be removed from members,
+ *  local pending or remote pending, wherever they are present
+ * @add_local_pending: A set of contact handles to be added to local pending,
+ *  and removed from members and remote pending
+ * @add_remote_pending: A set of contact handles to be added to remote pending,
+ *  and removed from members and local pending
+ * @actor: The handle of the contact responsible for this change
+ * @reason: The reason for this change
+ *
+ * Change the sets of members as given by the arguments, and emit the
+ * MembersChanged signal if the changes were not a no-op.
+ *
+ * This function must be called in response to events on the underlying
+ * IM protocol, and must not be called in direct response to user input;
+ * it does not respect the permissions flags, but changes the group directly.
+ *
+ * If any two of add, del, add_local_pending and add_remote_pending have
+ * a non-empty intersection, the result is undefined. Don't do that.
+ *
+ * Each of the TpIntSet arguments may be %NULL, which is treated as
+ * equivalent to an empty set.
+ *
+ * Returns: %TRUE if the group was changed and the MembersChanged signal
+ *  was emitted; %FALSE if nothing actually changed and the signal was
+ *  suppressed.
+ */
+gboolean
+tp_group_mixin_change_members (GObject *obj,
+                               const gchar *message,
+                               TpIntSet *add,
+                               TpIntSet *del,
+                               TpIntSet *add_local_pending,
+                               TpIntSet *add_remote_pending,
+                               TpHandle actor,
+                               TpChannelGroupChangeReason reason)
+{
+  GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, (GDestroyNotify) tp_g_value_slice_free);
+  GValue *detail;
+  gboolean ret;
+
+  if (actor != 0)
+    {
+      detail = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (detail, actor);
+      g_hash_table_insert (details, "actor", detail);
+    }
+
+  if (reason != TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
+    {
+      detail = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (detail, reason);
+      g_hash_table_insert (details, "change-reason", detail);
+    }
+
+  if (message[0] != '\0')
+    {
+      detail = tp_g_value_slice_new (G_TYPE_STRING);
+      g_value_set_string (detail, message);
+      g_hash_table_insert (details, "message", detail);
+    }
+
+  ret = change_members (obj, message, add, del, add_local_pending,
+      add_remote_pending, actor, reason, details);
+
+  g_hash_table_destroy (details);
   return ret;
 }
 
