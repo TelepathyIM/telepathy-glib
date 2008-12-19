@@ -78,6 +78,7 @@ tests/dbus/test-dbus
 tests/dbus/test-disconnection
 tests/dbus/test-example-no-protocols
 tests/dbus/test-finalized-in-invalidated-handler
+tests/dbus/test-group-mixin
 tests/dbus/test-handle-set
 tests/dbus/test-invalidated-while-invoking-signals
 tests/dbus/test-message-mixin

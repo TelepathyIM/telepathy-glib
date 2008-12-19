@@ -13,6 +13,7 @@ noinst_PROGRAMS = \
     test-disconnection \
     test-example-no-protocols \
     test-finalized-in-invalidated-handler \
+    test-group-mixin \
     test-handle-set \
     test-invalidated-while-invoking-signals \
     test-message-mixin \
@@ -48,6 +49,8 @@ test_contacts_mixin_SOURCES = contacts-mixin.c
 
 test_finalized_in_invalidated_handler_SOURCES = \
     finalized-in-invalidated-handler.c
+
+test_group_mixin_SOURCES = group-mixin.c
 
 test_handle_set_SOURCES = handle-set.c
 
