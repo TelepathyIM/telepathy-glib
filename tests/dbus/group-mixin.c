@@ -26,6 +26,7 @@
 static int fail = 0;
 static GMainLoop *mainloop;
 static guint expecting_members_changed = 0;
+static guint expecting_members_changed_detailed = 0;
 
 static void
 myassert_failed (void)
@@ -33,10 +34,17 @@ myassert_failed (void)
   fail = 1;
 }
 
+static void
+expect_signals (guint changed)
+{
+  expecting_members_changed = changed;
+  expecting_members_changed_detailed = changed;
+}
+
 static gboolean
 outstanding_signals (void)
 {
-  return expecting_members_changed > 0;
+  return (expecting_members_changed + expecting_members_changed_detailed > 0);
 }
 
 static void
@@ -58,12 +66,32 @@ on_members_changed (TpChannel *proxy,
                     gpointer user_data,
                     GObject *weak_object)
 {
-  MYASSERT (expecting_members_changed > 0, "got unexpected MembersChanged");
+  MYASSERT (expecting_members_changed > 0, ": got unexpected MembersChanged");
 
   expecting_members_changed--;
 
   if (!outstanding_signals ())
     g_main_loop_quit (mainloop);
+}
+
+static void
+on_members_changed_detailed (TpChannel *proxy,
+                             const GArray *arg_Added,
+                             const GArray *arg_Removed,
+                             const GArray *arg_Local_Pending,
+                             const GArray *arg_Remote_Pending,
+                             GHashTable *arg_Details,
+                             gpointer user_data,
+                             GObject *weak_object)
+{
+  MYASSERT (expecting_members_changed_detailed > 0,
+      ": got unexpected MembersChangedDetailed");
+
+  expecting_members_changed_detailed--;
+
+  if (!outstanding_signals ())
+    g_main_loop_quit (mainloop);
+
 }
 
 static void
@@ -99,7 +127,9 @@ check_initial_properties (TpChannel *chan)
 
   flags = tp_asv_get_uint32 (props, "GroupFlags", &valid);
   MYASSERT (flags, ": GroupFlags property should be defined");
-  MYASSERT_SAME_UINT (flags, TP_CHANNEL_GROUP_FLAG_PROPERTIES);
+  MYASSERT_SAME_UINT (flags,
+      TP_CHANNEL_GROUP_FLAG_PROPERTIES |
+      TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED);
 
   g_hash_table_unref (props);
 }
@@ -115,13 +145,13 @@ check_incoming_invitation (TestTextChannelGroup *service_chan,
     TpIntSet *add_local_pending = tp_intset_new ();
     tp_intset_add (add_local_pending, service_chan->conn->self_handle);
 
-    expecting_members_changed = 1;
+    expect_signals (1);
     tp_group_mixin_change_members ((GObject *) service_chan, "HELLO THAR", NULL,
         NULL, add_local_pending, NULL, 0,
         TP_CHANNEL_GROUP_CHANGE_REASON_INVITED);
     wait_for_outstanding_signals ();
-    MYASSERT (expecting_members_changed == 0,
-        ": MembersChanged should have fired once");
+    MYASSERT (!outstanding_signals (),
+        ": MembersChanged and MembersChangedDetailed should have fired once");
 
     tp_intset_destroy (add_local_pending);
   }
@@ -133,13 +163,13 @@ check_incoming_invitation (TestTextChannelGroup *service_chan,
     GArray *contacts = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
     g_array_append_val (contacts, service_chan->conn->self_handle);
 
-    expecting_members_changed = 1;
+    expect_signals (1);
     MYASSERT (tp_cli_channel_interface_group_run_add_members (chan, -1,
         contacts, "", &error, NULL), "");
     MYASSERT_NO_ERROR (error);
-      wait_for_outstanding_signals ();
-    MYASSERT (expecting_members_changed == 0,
-        ": MembersChanged should have fired once");
+    wait_for_outstanding_signals ();
+    MYASSERT (!outstanding_signals (),
+        ": MembersChanged and MembersChangedDetailed should have fired once");
 
     g_array_free (contacts, TRUE);
   }
@@ -159,6 +189,8 @@ test_group_mixin (TestTextChannelGroup *service_chan,
 
   tp_cli_channel_interface_group_connect_to_members_changed (chan,
       on_members_changed, NULL, NULL, NULL, NULL);
+  tp_cli_channel_interface_group_connect_to_members_changed_detailed (chan,
+      on_members_changed_detailed, NULL, NULL, NULL, NULL);
 
   check_initial_properties (chan);
 

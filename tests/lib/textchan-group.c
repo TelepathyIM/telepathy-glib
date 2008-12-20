@@ -115,7 +115,9 @@ constructor (GType type,
 
   tp_group_mixin_init (object, G_STRUCT_OFFSET (TestTextChannelGroup, group),
       contact_repo, self->conn->self_handle);
-  tp_group_mixin_change_flags (object, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
+  tp_group_mixin_change_flags (object,
+      TP_CHANNEL_GROUP_FLAG_PROPERTIES |
+      TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED, 0);
 
   return object;
 }
