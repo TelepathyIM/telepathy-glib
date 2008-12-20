@@ -25,8 +25,11 @@
 
 static int fail = 0;
 static GMainLoop *mainloop;
-static guint expecting_members_changed = 0;
-static guint expecting_members_changed_detailed = 0;
+static gboolean expecting_members_changed = FALSE;
+static gboolean expecting_members_changed_detailed = FALSE;
+static const gchar *expected_message;
+static TpHandle expected_actor;
+static TpChannelGroupChangeReason expected_reason;
 
 static void
 myassert_failed (void)
@@ -35,16 +38,22 @@ myassert_failed (void)
 }
 
 static void
-expect_signals (guint changed)
+expect_signals (const gchar *message,
+                TpHandle actor,
+                TpChannelGroupChangeReason reason)
 {
-  expecting_members_changed = changed;
-  expecting_members_changed_detailed = changed;
+  expecting_members_changed = TRUE;
+  expecting_members_changed_detailed = TRUE;
+
+  expected_message = message;
+  expected_actor = actor;
+  expected_reason = reason;
 }
 
 static gboolean
 outstanding_signals (void)
 {
-  return (expecting_members_changed + expecting_members_changed_detailed > 0);
+  return (expecting_members_changed || expecting_members_changed_detailed);
 }
 
 static void
@@ -66,9 +75,12 @@ on_members_changed (TpChannel *proxy,
                     gpointer user_data,
                     GObject *weak_object)
 {
-  MYASSERT (expecting_members_changed > 0, ": got unexpected MembersChanged");
+  MYASSERT (expecting_members_changed, ": got unexpected MembersChanged");
+  expecting_members_changed = FALSE;
 
-  expecting_members_changed--;
+  MYASSERT_SAME_STRING (arg_Message, expected_message);
+  MYASSERT_SAME_UINT (arg_Actor, expected_actor);
+  MYASSERT_SAME_UINT (arg_Reason, expected_reason);
 
   if (!outstanding_signals ())
     g_main_loop_quit (mainloop);
@@ -84,14 +96,49 @@ on_members_changed_detailed (TpChannel *proxy,
                              gpointer user_data,
                              GObject *weak_object)
 {
-  MYASSERT (expecting_members_changed_detailed > 0,
-      ": got unexpected MembersChangedDetailed");
+  const gchar *message;
+  TpHandle actor;
+  TpChannelGroupChangeReason reason;
+  gboolean valid;
 
-  expecting_members_changed_detailed--;
+  MYASSERT (expecting_members_changed_detailed,
+      ": got unexpected MembersChangedDetailed");
+  expecting_members_changed_detailed = FALSE;
+
+  message = tp_asv_get_string (arg_Details, "message");
+
+  if (message == NULL)
+    message = "";
+
+  MYASSERT_SAME_STRING (message, expected_message);
+
+  actor = tp_asv_get_uint32 (arg_Details, "actor", &valid);
+  if (valid)
+    {
+      MYASSERT_SAME_UINT (actor, expected_actor);
+    }
+  else
+    {
+      MYASSERT_SAME_UINT (expected_actor, 0);
+      MYASSERT (tp_asv_lookup (arg_Details, "actor") == NULL,
+          ": wanted an actor, not an imposter");
+    }
+
+  reason = tp_asv_get_uint32 (arg_Details, "change-reason", &valid);
+  if (valid)
+    {
+      MYASSERT_SAME_UINT (reason, expected_reason);
+    }
+  else
+    {
+      MYASSERT_SAME_UINT (expected_reason,
+          TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      MYASSERT (tp_asv_lookup (arg_Details, "reason") == NULL,
+          ": utterly unreasonable");
+    }
 
   if (!outstanding_signals ())
     g_main_loop_quit (mainloop);
-
 }
 
 static void
@@ -145,7 +192,7 @@ check_incoming_invitation (TestTextChannelGroup *service_chan,
     TpIntSet *add_local_pending = tp_intset_new ();
     tp_intset_add (add_local_pending, service_chan->conn->self_handle);
 
-    expect_signals (1);
+    expect_signals ("HELLO THAR", 0, TP_CHANNEL_GROUP_CHANGE_REASON_INVITED);
     tp_group_mixin_change_members ((GObject *) service_chan, "HELLO THAR", NULL,
         NULL, add_local_pending, NULL, 0,
         TP_CHANNEL_GROUP_CHANGE_REASON_INVITED);
@@ -163,7 +210,8 @@ check_incoming_invitation (TestTextChannelGroup *service_chan,
     GArray *contacts = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
     g_array_append_val (contacts, service_chan->conn->self_handle);
 
-    expect_signals (1);
+    expect_signals ("", service_chan->conn->self_handle,
+        TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
     MYASSERT (tp_cli_channel_interface_group_run_add_members (chan, -1,
         contacts, "", &error, NULL), "");
     MYASSERT_NO_ERROR (error);
