@@ -27,10 +27,8 @@ G_DEFINE_TYPE_WITH_CODE (TestTextChannelGroup,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
-    /*
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
-      group_iface_init);
-    */
+      tp_group_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init))
@@ -59,12 +57,29 @@ enum
 
 struct _TestTextChannelGroupPrivate
 {
-  TpBaseConnection *conn;
   gchar *object_path;
 
   gboolean closed;
   gboolean disposed;
 };
+
+
+static gboolean
+add_member (GObject *obj,
+            TpHandle handle,
+            const gchar *message,
+            GError **error)
+{
+  TestTextChannelGroup *self = TEST_TEXT_CHANNEL_GROUP (obj);
+  TpIntSet *add = tp_intset_new ();
+
+  tp_intset_add (add, handle);
+  tp_group_mixin_change_members (obj, message, add, NULL, NULL, NULL,
+      self->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_intset_destroy (add);
+
+  return TRUE;
+}
 
 static void
 test_text_channel_group_init (TestTextChannelGroup *self)
@@ -83,7 +98,7 @@ constructor (GType type,
           n_props, props);
   TestTextChannelGroup *self = TEST_TEXT_CHANNEL_GROUP (object);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (self->conn, TP_HANDLE_TYPE_CONTACT);
   DBusGConnection *bus;
 
   bus = tp_get_bus ();
@@ -97,6 +112,10 @@ constructor (GType type,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
       G_MAXUINT);
+
+  tp_group_mixin_init (object, G_STRUCT_OFFSET (TestTextChannelGroup, group),
+      contact_repo, self->conn->self_handle);
+  tp_group_mixin_change_flags (object, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
 
   return object;
 }
@@ -130,22 +149,22 @@ get_property (GObject *object,
       g_value_set_boolean (value, TRUE);
       break;
     case PROP_INITIATOR_HANDLE:
-      g_value_set_uint (value, self->priv->conn->self_handle);
+      g_value_set_uint (value, self->conn->self_handle);
       break;
     case PROP_INITIATOR_ID:
         {
           TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+              self->conn, TP_HANDLE_TYPE_CONTACT);
 
           g_value_set_string (value,
-              tp_handle_inspect (contact_repo, self->priv->conn->self_handle));
+              tp_handle_inspect (contact_repo, self->conn->self_handle));
         }
       break;
     case PROP_INTERFACES:
       g_value_set_boxed (value, test_text_channel_group_interfaces);
       break;
     case PROP_CONNECTION:
-      g_value_set_object (value, self->priv->conn);
+      g_value_set_object (value, self->conn);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -174,7 +193,7 @@ set_property (GObject *object,
        * meaningfully changable on this channel, so we do nothing */
       break;
     case PROP_CONNECTION:
-      self->priv->conn = g_value_get_object (value);
+      self->conn = g_value_get_object (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -208,6 +227,7 @@ finalize (GObject *object)
   g_free (self->priv->object_path);
 
   tp_text_mixin_finalize (object);
+  tp_group_mixin_finalize (object);
 
   ((GObjectClass *) test_text_channel_group_parent_class)->finalize (object);
 }
@@ -295,10 +315,15 @@ test_text_channel_group_class_init (TestTextChannelGroupClass *klass)
 
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TestTextChannelGroupClass, text_class));
+  tp_group_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (TestTextChannelGroupClass, group_class), add_member,
+      NULL);
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TestTextChannelGroupClass, dbus_properties_class));
+
+  tp_group_mixin_init_dbus_properties (object_class);
 }
 
 static void
