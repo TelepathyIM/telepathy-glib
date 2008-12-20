@@ -79,6 +79,7 @@ tests/dbus/test-example-no-protocols
 tests/dbus/test-finalized-in-invalidated-handler
 tests/dbus/test-handle-set
 tests/dbus/test-invalidated-while-invoking-signals
+tests/dbus/test-message-mixin
 tests/dbus/test-properties
 tests/dbus/test-text-mixin
 tests/dbus/test-text-respawn
