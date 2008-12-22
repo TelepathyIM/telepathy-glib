@@ -1536,7 +1536,8 @@ change_members (GObject *obj,
  * @reason: The reason for this change
  *
  * Change the sets of members as given by the arguments, and emit the
- * MembersChanged signal if the changes were not a no-op.
+ * MembersChanged and MembersChangedDetailed signals if the changes were not a
+ * no-op.
  *
  * This function must be called in response to events on the underlying
  * IM protocol, and must not be called in direct response to user input;
@@ -1548,9 +1549,9 @@ change_members (GObject *obj,
  * Each of the TpIntSet arguments may be %NULL, which is treated as
  * equivalent to an empty set.
  *
- * Returns: %TRUE if the group was changed and the MembersChanged signal
- *  was emitted; %FALSE if nothing actually changed and the signal was
- *  suppressed.
+ * Returns: %TRUE if the group was changed and the MembersChanged(Detailed)
+ *  signals were emitted; %FALSE if nothing actually changed and the signals
+ *  were suppressed.
  */
 gboolean
 tp_group_mixin_change_members (GObject *obj,
