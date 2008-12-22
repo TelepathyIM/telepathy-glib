@@ -62,6 +62,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug-ansi.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
@@ -1594,6 +1595,89 @@ tp_group_mixin_change_members (GObject *obj,
 
   g_hash_table_destroy (details);
   return ret;
+}
+
+/**
+ * tp_group_mixin_change_members_detailed:
+ * @obj: An object implementing the group interface using this mixin
+ * @add: A set of contact handles to be added to the members (if not
+ *  already present) and removed from local pending and remote pending
+ *  (if present)
+ * @del: A set of contact handles to be removed from members,
+ *  local pending or remote pending, wherever they are present
+ * @add_local_pending: A set of contact handles to be added to local pending,
+ *  and removed from members and remote pending
+ * @add_remote_pending: A set of contact handles to be added to remote pending,
+ *  and removed from members and local pending
+ * @details: a map from strings to GValues detailing the change
+ *
+ * Change the sets of members as given by the arguments, and emit the
+ * MembersChanged and MembersChangedDetailed signals if the changes were not a
+ * no-op.
+ *
+ * This function must be called in response to events on the underlying
+ * IM protocol, and must not be called in direct response to user input;
+ * it does not respect the permissions flags, but changes the group directly.
+ *
+ * If any two of add, del, add_local_pending and add_remote_pending have
+ * a non-empty intersection, the result is undefined. Don't do that.
+ *
+ * Each of the TpIntSet arguments may be %NULL, which is treated as
+ * equivalent to an empty set.
+ *
+ * details may contain, among other entries, the well-known
+ * keys (and corresponding type, wrapped in a GValue) defined by the
+ * Group.MembersChangedDetailed signal's specification; these include "actor"
+ * (a handle), "change-reason" (an element of #TpChannelGroupChangeReason),
+ * "message" (gchar *), "error" (gchar *), "debug-message" (gchar *).
+ *
+ * If all of the information in details could be passed to
+ * tp_group_mixin_change_members() then calling this function instead provides
+ * no benefit. Calling this function without setting
+ * #TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED with
+ * tp_group_mixin_change_members() first is not very useful, as clients will
+ * not know to listen for MembersChangedDetailed and thus will miss the
+ * details.
+ *
+ * Returns: %TRUE if the group was changed and the MembersChanged(Detailed)
+ *  signals were emitted; %FALSE if nothing actually changed and the signals
+ *  were suppressed.
+ *
+ * @since 0.7.UNRELEASED
+ */
+gboolean
+tp_group_mixin_change_members_detailed (GObject *obj,
+                                        TpIntSet *add,
+                                        TpIntSet *del,
+                                        TpIntSet *add_local_pending,
+                                        TpIntSet *add_remote_pending,
+                                        const GHashTable *details)
+{
+  const gchar *message;
+  TpHandle actor;
+  TpChannelGroupChangeReason reason;
+  gboolean valid;
+
+  g_return_val_if_fail (details != NULL, FALSE);
+
+  /* For each detail we're extracting for the benefit of old-school
+   * MembersChanged, warn if it's present but badly typed.
+   */
+
+  message = tp_asv_get_string (details, "message");
+  g_warn_if_fail (message != NULL || tp_asv_lookup (details, "message") == NULL);
+
+  /* change_members will cry (via tp_handle_set_add) if actor is non-zero and
+   * invalid.
+   */
+  actor = tp_asv_get_uint32 (details, "actor", &valid);
+  g_warn_if_fail (valid || tp_asv_lookup (details, "actor") == NULL);
+
+  reason = tp_asv_get_uint32 (details, "change-reason", &valid);
+  g_warn_if_fail (valid || tp_asv_lookup (details, "change-reason") == NULL);
+
+  return change_members (obj, message, add, del, add_local_pending,
+      add_remote_pending, actor, reason, details);
 }
 
 /**
