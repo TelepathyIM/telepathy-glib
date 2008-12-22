@@ -224,8 +224,131 @@ check_incoming_invitation (TestTextChannelGroup *service_chan,
 }
 
 static void
+in_the_desert (TestTextChannelGroup *service_chan,
+               TpChannel *chan)
+{
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+      service_chan->conn, TP_HANDLE_TYPE_CONTACT);
+  TpHandle camel  = tp_handle_ensure (contact_repo, "camel", NULL, NULL);
+  TpHandle camel2 = tp_handle_ensure (contact_repo, "camel2", NULL, NULL);
+  TpHandle self_handle = service_chan->conn->self_handle;
+
+  /* A camel is approaching */
+  {
+    TpIntSet *add = tp_intset_new ();
+
+    tp_intset_add (add, camel);
+    expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    tp_group_mixin_change_members ((GObject *) service_chan, "", add, NULL,
+        NULL, NULL, camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    wait_for_outstanding_signals ();
+    MYASSERT (!outstanding_signals (),
+        ": MembersChanged and MembersChangedDetailed should have fired once");
+
+    tp_intset_destroy (add);
+  }
+
+  /* A second camel is approaching (invited by the first camel) */
+  {
+    TpIntSet *add = tp_intset_new ();
+    GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
+        NULL, (GDestroyNotify) tp_g_value_slice_free);
+    GValue *v;
+
+    tp_intset_add (add, camel2);
+
+    v = tp_g_value_slice_new (G_TYPE_UINT);
+    g_value_set_uint (v, camel);
+    g_hash_table_insert (details, "actor", v);
+
+    expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    tp_group_mixin_change_members_detailed ((GObject *) service_chan, add,
+        NULL, NULL, NULL, details);
+    wait_for_outstanding_signals ();
+    MYASSERT (!outstanding_signals (),
+        ": MembersChanged and MembersChangedDetailed should have fired once");
+
+    tp_intset_destroy (add);
+    g_hash_table_unref (details);
+  }
+
+  {
+    TpIntSet *del = tp_intset_new ();
+    GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
+        NULL, (GDestroyNotify) tp_g_value_slice_free);
+    GValue *v;
+
+    tp_intset_add (del, camel);
+
+    v = tp_g_value_slice_new (G_TYPE_UINT);
+    g_value_set_uint (v, camel2);
+    g_hash_table_insert (details, "actor", v);
+
+    /* It turns out that spitting was not included in the GroupChangeReason
+     * enum.
+     */
+    v = tp_g_value_slice_new (G_TYPE_STRING);
+    g_value_set_static_string (v, "le.mac.Spat");
+    g_hash_table_insert (details, "error", v);
+
+    v = tp_g_value_slice_new (G_TYPE_STRING);
+    g_value_set_static_string (v, "fluid");
+    g_hash_table_insert (details, "saliva-consistency", v);
+
+    /* Kicking is the closest we have to this .. unsavory act. */
+    v = tp_g_value_slice_new (G_TYPE_UINT);
+    g_value_set_uint (v, TP_CHANNEL_GROUP_CHANGE_REASON_KICKED);
+    g_hash_table_insert (details, "change-reason", v);
+
+    v = tp_g_value_slice_new (G_TYPE_STRING);
+    g_value_set_static_string (v, "*ptooey*");
+    g_hash_table_insert (details, "message", v);
+
+    /* Check that all the right information was extracted from the dict. */
+    expect_signals ("*ptooey*", camel2,
+        TP_CHANNEL_GROUP_CHANGE_REASON_KICKED);
+    tp_group_mixin_change_members_detailed ((GObject *) service_chan, NULL,
+        del, NULL, NULL, details);
+    wait_for_outstanding_signals ();
+    MYASSERT (!outstanding_signals (),
+        ": MembersChanged and MembersChangedDetailed should have fired once");
+
+    tp_intset_destroy (del);
+    g_hash_table_unref (details);
+  }
+
+  /* We and the second camel should be left in the channel */
+  {
+    const TpIntSet *members = tp_channel_group_get_members (chan);
+    GArray *service_members;
+    TpHandle a, b;
+
+    MYASSERT_SAME_UINT (tp_intset_size (members), 2);
+    MYASSERT (tp_intset_is_member (members, self_handle), "");
+    MYASSERT (tp_intset_is_member (members, camel2), ": what a pity");
+
+    /* And let's check that the group mixin agrees, in case that's just the
+     * client binding being wrong.
+     */
+    tp_group_mixin_get_members ((GObject *) service_chan, &service_members,
+        NULL);
+    MYASSERT_SAME_UINT (service_members->len, 2);
+    a = g_array_index (service_members, TpHandle, 0);
+    b = g_array_index (service_members, TpHandle, 1);
+    MYASSERT (a != b, "");
+    MYASSERT (a == self_handle || b == self_handle, "");
+    MYASSERT (a == camel2 || b == camel2, "");
+
+    g_array_free (service_members, TRUE);
+  }
+
+  tp_handle_unref (contact_repo, camel);
+  tp_handle_unref (contact_repo, camel2);
+}
+
+static void
 test_group_mixin (TestTextChannelGroup *service_chan,
-    TpChannel *chan)
+                  TpChannel *chan)
 {
   GError *error = NULL;
 
@@ -243,6 +366,8 @@ test_group_mixin (TestTextChannelGroup *service_chan,
   check_initial_properties (chan);
 
   check_incoming_invitation (service_chan, chan);
+
+  in_the_desert (service_chan, chan);
 }
 
 int
