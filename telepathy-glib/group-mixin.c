@@ -1290,9 +1290,10 @@ emit_members_changed_signals (GObject *channel,
                               const GArray *remote_pending,
                               TpHandle actor,
                               TpChannelGroupChangeReason reason,
-                              GHashTable *details)
+                              const GHashTable *details)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (channel);
+  GHashTable *details_ = (GHashTable *) details; /* Cast the pain away! */
 
   if (DEBUGGING)
     {
@@ -1326,7 +1327,7 @@ emit_members_changed_signals (GObject *channel,
   tp_svc_channel_interface_group_emit_members_changed (channel, message,
       add, del, local_pending, remote_pending, actor, reason);
   tp_svc_channel_interface_group_emit_members_changed_detailed (channel,
-      add, del, local_pending, remote_pending, details);
+      add, del, local_pending, remote_pending, details_);
 
   if (mixin->priv->externals != NULL)
     {
@@ -1339,7 +1340,7 @@ emit_members_changed_signals (GObject *channel,
           tp_svc_channel_interface_group_emit_members_changed (external,
               message, add, del, local_pending, remote_pending, actor, reason);
           tp_svc_channel_interface_group_emit_members_changed_detailed (
-              external, add, del, local_pending, remote_pending, details);
+              external, add, del, local_pending, remote_pending, details_);
         }
     }
 }
@@ -1354,7 +1355,7 @@ change_members (GObject *obj,
                 TpIntSet *add_remote_pending,
                 TpHandle actor,
                 TpChannelGroupChangeReason reason,
-                GHashTable *details)
+                const GHashTable *details)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   TpIntSet *new_add, *new_remove, *new_local_pending,
