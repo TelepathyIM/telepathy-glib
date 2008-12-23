@@ -70,58 +70,26 @@ COMPILER_COVERAGE
 LINKER_OPTIMISATIONS
 LINKER_VERSION_SCRIPT
 
-dnl decide error flags
-AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
-AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
-# never enable -Werror unless -Wno-error=foo also works
-AS_COMPILER_FLAG([-Wno-error=missing-field-initializers], [], [werror=no])
-AS_COMPILER_FLAG([-Wno-error=unused-parameter], [], [werror=no])
-
-AC_ARG_ENABLE(Werror,
-  AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
-    werror=$enableval, :)
-
-AS_COMPILER_FLAG(-Wextra, wextra=yes, wextra=no)
-AS_COMPILER_FLAG(-Wno-missing-field-initializers,
-        wno_missing_field_initializers=yes,
-        wno_missing_field_initializers=no)
-AS_COMPILER_FLAG(-Wno-unused-parameter,
-        wno_unused_parameter=yes,
-        wno_unused_parameter=no)
-
 ifelse(tp_glib_nano_version, 0,
     [ official_release=yes ],
-    [
-        official_release=no
-        if test x$werror = xyes; then
-            ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
-            # We never want missing field initializers or unused parameters
-            # to be an error. We try to turn the warnings off, but CDBS has a
-            # tendency to turn them back on again...
-            ERROR_CFLAGS="$ERROR_CFLAGS -Wno-error=missing-field-initializers"
-            ERROR_CFLAGS="$ERROR_CFLAGS -Wno-error=unused-parameter"
-        fi
-        if test x$wextra = xyes -a \
-            x$wno_missing_field_initializers = xyes -a \
-            x$wno_unused_parameter = xyes; then
-            ERROR_CFLAGS="$ERROR_CFLAGS -Wextra"
-            ERROR_CFLAGS="$ERROR_CFLAGS -Wno-missing-field-initializers"
-            ERROR_CFLAGS="$ERROR_CFLAGS -Wno-unused-parameter"
-        fi
-    ])
+    [ official_release=no ])
 
-AS_COMPILER_FLAG(-Wdeclaration-after-statement, ERROR_CFLAGS="$ERROR_CFLAGS -Wdeclaration-after-statement")
-AS_COMPILER_FLAG(-Wshadow, ERROR_CFLAGS="$ERROR_CFLAGS -Wshadow")
-AS_COMPILER_FLAG(-Wstrict-prototypes, ERROR_CFLAGS="$ERROR_CFLAGS -Wstrict-prototypes")
-AS_COMPILER_FLAG(-Wmissing-prototypes, ERROR_CFLAGS="$ERROR_CFLAGS -Wmissing-prototypes")
-AS_COMPILER_FLAG(-Wmissing-declarations, ERROR_CFLAGS="$ERROR_CFLAGS -Wmissing-declarations")
-AS_COMPILER_FLAG(-Wsign-compare, ERROR_CFLAGS="$ERROR_CFLAGS -Wsign-compare")
-AS_COMPILER_FLAG(-Wnested-externs, ERROR_CFLAGS="$ERROR_CFLAGS -Wnested-externs")
-AS_COMPILER_FLAG(-Wpointer-arith, ERROR_CFLAGS="$ERROR_CFLAGS -Wpointer-arith")
-AS_COMPILER_FLAG(-Wformat-security, ERROR_CFLAGS="$ERROR_CFLAGS -Wformat-security")
-AS_COMPILER_FLAG(-Winit-self, ERROR_CFLAGS="$ERROR_CFLAGS -Winit-self")
+TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
+  [all \
+   extra \
+   declaration-after-statement \
+   shadow \
+   strict-prototypes \
+   missing-prototypes \
+   sign-compare \
+   nested-externs \
+   pointer-arith \
+   format-security \
+   init-self],
+  [missing-field-initializers \
+   unused-parameter])
+AC_SUBST([ERROR_CFLAGS])
 
-AC_SUBST(ERROR_CFLAGS)
 AM_CONDITIONAL([OFFICIAL_RELEASE], [test "x$official_release" = xyes])
 
 AC_ARG_ENABLE(debug,
