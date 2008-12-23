@@ -73,6 +73,9 @@ LINKER_VERSION_SCRIPT
 dnl decide error flags
 AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
 AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
+# never enable -Werror unless -Wno-error=foo also works
+AS_COMPILER_FLAG([-Wno-error=missing-field-initializers], [], [werror=no])
+AS_COMPILER_FLAG([-Wno-error=unused-parameter], [], [werror=no])
 
 AC_ARG_ENABLE(Werror,
   AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
@@ -92,11 +95,18 @@ ifelse(tp_glib_nano_version, 0,
         official_release=no
         if test x$werror = xyes; then
             ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
+            # We never want missing field initializers or unused parameters
+            # to be an error. We try to turn the warnings off, but CDBS has a
+            # tendency to turn them back on again...
+            ERROR_CFLAGS="$ERROR_CFLAGS -Wno-error=missing-field-initializers"
+            ERROR_CFLAGS="$ERROR_CFLAGS -Wno-error=unused-parameter"
         fi
         if test x$wextra = xyes -a \
             x$wno_missing_field_initializers = xyes -a \
             x$wno_unused_parameter = xyes; then
-            ERROR_CFLAGS="$ERROR_CFLAGS -Wextra -Wno-missing-field-initializers -Wno-unused-parameter"
+            ERROR_CFLAGS="$ERROR_CFLAGS -Wextra"
+            ERROR_CFLAGS="$ERROR_CFLAGS -Wno-missing-field-initializers"
+            ERROR_CFLAGS="$ERROR_CFLAGS -Wno-unused-parameter"
         fi
     ])
 
