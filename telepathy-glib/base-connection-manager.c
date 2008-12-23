@@ -415,6 +415,8 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
                            const GValue *value,
                            gpointer params)
 {
+  char *params_mem = params;
+
   if (paramspec->offset == G_MAXSIZE)
     {
       /* quietly ignore any obsolete params provided */
@@ -425,7 +427,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
     {
       case DBUS_TYPE_STRING:
         {
-          gchar **save_to = (gchar **) (params + paramspec->offset);
+          gchar **save_to = (gchar **) (params_mem + paramspec->offset);
           const gchar *str;
 
           g_assert (paramspec->gtype == G_TYPE_STRING);
@@ -451,7 +453,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
       case DBUS_TYPE_INT16:
       case DBUS_TYPE_INT32:
         {
-          gint *save_to = (gint *) (params + paramspec->offset);
+          gint *save_to = (gint *) (params_mem + paramspec->offset);
           gint i = g_value_get_int (value);
 
           g_assert (paramspec->gtype == G_TYPE_INT);
@@ -462,7 +464,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
       case DBUS_TYPE_UINT16:
       case DBUS_TYPE_UINT32:
         {
-          guint *save_to = (guint *) (params + paramspec->offset);
+          guint *save_to = (guint *) (params_mem + paramspec->offset);
           guint i = g_value_get_uint (value);
 
           g_assert (paramspec->gtype == G_TYPE_UINT);
@@ -472,7 +474,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
         break;
       case DBUS_TYPE_BOOLEAN:
         {
-          gboolean *save_to = (gboolean *) (params + paramspec->offset);
+          gboolean *save_to = (gboolean *) (params_mem + paramspec->offset);
           gboolean b = g_value_get_boolean (value);
 
           g_assert (paramspec->gtype == G_TYPE_BOOLEAN);
@@ -486,7 +488,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
           {
             case DBUS_TYPE_BYTE:
               {
-                GArray **save_to = (GArray **) (params + paramspec->offset);
+                GArray **save_to = (GArray **) (params_mem + paramspec->offset);
                 GArray *a = g_value_get_boxed (value);
 
                 if (*save_to != NULL)
