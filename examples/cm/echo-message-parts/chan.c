@@ -22,6 +22,7 @@
 #include <telepathy-glib/svc-generic.h>
 
 static void channel_iface_init (gpointer iface, gpointer data);
+static void destroyable_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
     example_echo_2_channel,
@@ -33,6 +34,8 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
       tp_message_mixin_text_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
       tp_message_mixin_messages_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
+      destroyable_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL))
 
@@ -561,18 +564,16 @@ channel_iface_init (gpointer iface,
 #undef IMPLEMENT
 }
 
-/* FIXME: enable this when Destroyable is supported */
-#if 0
 static void
 destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
                      DBusGMethodInvocation *context)
 {
   ExampleEcho2Channel *self = EXAMPLE_ECHO_2_CHANNEL (iface);
 
-  tp_text_mixin_clear ((GObject *) self);
+  tp_message_mixin_clear ((GObject *) self);
   example_echo_2_channel_close (self);
   g_assert (self->priv->closed);
-  tp_svc_channel_return_from_close (context);
+  tp_svc_channel_interface_destroyable_return_from_destroy (context);
 }
 
 static void
@@ -586,4 +587,3 @@ destroyable_iface_init (gpointer iface,
   IMPLEMENT (destroy);
 #undef IMPLEMENT
 }
-#endif
