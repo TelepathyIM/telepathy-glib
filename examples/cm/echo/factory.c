@@ -16,21 +16,20 @@
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 
 #include "chan.h"
 
-/* FIXME: we really ought to have a base class in the library for this,
- * it's such a common pattern... */
-
-static void iface_init (gpointer iface, gpointer data);
+static void channel_manager_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleEchoFactory,
     example_echo_factory,
     G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_FACTORY_IFACE, iface_init))
+    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_MANAGER,
+      channel_manager_iface_init))
 
 /* type definition stuff */
 
@@ -46,6 +45,7 @@ struct _ExampleEchoFactoryPrivate
 
   /* GUINT_TO_POINTER (handle) => ExampleEchoChannel */
   GHashTable *channels;
+  gulong status_changed_id;
 };
 
 static void
@@ -58,12 +58,14 @@ example_echo_factory_init (ExampleEchoFactory *self)
       NULL, g_object_unref);
 }
 
+static void example_echo_factory_close_all (ExampleEchoFactory *self);
+
 static void
 dispose (GObject *object)
 {
   ExampleEchoFactory *self = EXAMPLE_ECHO_FACTORY (object);
 
-  tp_channel_factory_iface_close_all ((TpChannelFactoryIface *) object);
+  example_echo_factory_close_all (self);
   g_assert (self->priv->channels == NULL);
 
   ((GObjectClass *) example_echo_factory_parent_class)->dispose (object);
@@ -109,11 +111,38 @@ set_property (GObject *object,
 }
 
 static void
+status_changed_cb (TpBaseConnection *conn,
+                   guint status,
+                   guint reason,
+                   ExampleEchoFactory *self)
+{
+  if (status == TP_CONNECTION_STATUS_DISCONNECTED)
+    example_echo_factory_close_all (self);
+}
+
+static void
+constructed (GObject *object)
+{
+  ExampleEchoFactory *self = EXAMPLE_ECHO_FACTORY (object);
+  void (*chain_up) (GObject *) =
+      ((GObjectClass *) example_echo_factory_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    {
+      chain_up (object);
+    }
+
+  self->priv->status_changed_id = g_signal_connect (self->priv->conn,
+      "status-changed", (GCallback) status_changed_cb, self);
+}
+
+static void
 example_echo_factory_class_init (ExampleEchoFactoryClass *klass)
 {
   GParamSpec *param_spec;
   GObjectClass *object_class = (GObjectClass *) klass;
 
+  object_class->constructed = constructed;
   object_class->dispose = dispose;
   object_class->get_property = get_property;
   object_class->set_property = set_property;
@@ -129,10 +158,8 @@ example_echo_factory_class_init (ExampleEchoFactoryClass *klass)
 }
 
 static void
-example_echo_factory_close_all (TpChannelFactoryIface *iface)
+example_echo_factory_close_all (ExampleEchoFactory *self)
 {
-  ExampleEchoFactory *self = EXAMPLE_ECHO_FACTORY (iface);
-
   if (self->priv->channels != NULL)
     {
       GHashTable *tmp = self->priv->channels;
@@ -140,39 +167,39 @@ example_echo_factory_close_all (TpChannelFactoryIface *iface)
       self->priv->channels = NULL;
       g_hash_table_destroy (tmp);
     }
-}
 
-struct _ForeachData
-{
-  gpointer user_data;
-  TpChannelFunc callback;
-};
-
-static void
-foreach_helper (gpointer key,
-                gpointer value,
-                gpointer user_data)
-{
-  struct _ForeachData *data = user_data;
-  TpChannelIface *chan = TP_CHANNEL_IFACE (value);
-
-  data->callback (chan, data->user_data);
+  if (self->priv->status_changed_id != 0)
+    {
+      g_signal_handler_disconnect (self->priv->conn,
+          self->priv->status_changed_id);
+      self->priv->status_changed_id = 0;
+    }
 }
 
 static void
-example_echo_factory_foreach (TpChannelFactoryIface *iface,
-                              TpChannelFunc callback,
-                              gpointer user_data)
+example_echo_factory_foreach_channel (TpChannelManager *iface,
+                                      TpExportableChannelFunc callback,
+                                      gpointer user_data)
 {
   ExampleEchoFactory *self = EXAMPLE_ECHO_FACTORY (iface);
-  struct _ForeachData data = { user_data, callback };
+  GHashTableIter iter;
+  gpointer handle, channel;
 
-  g_hash_table_foreach (self->priv->channels, foreach_helper, &data);
+  g_hash_table_iter_init (&iter, self->priv->channels);
+
+  while (g_hash_table_iter_next (&iter, &handle, &channel))
+    {
+      callback (TP_EXPORTABLE_CHANNEL (channel), user_data);
+    }
 }
 
 static void
-channel_closed_cb (ExampleEchoChannel *chan, ExampleEchoFactory *self)
+channel_closed_cb (ExampleEchoChannel *chan,
+                   ExampleEchoFactory *self)
 {
+  tp_channel_manager_emit_channel_closed_for_object (self,
+      TP_EXPORTABLE_CHANNEL (chan));
+
   if (self->priv->channels != NULL)
     {
       TpHandle handle;
@@ -186,20 +213,27 @@ channel_closed_cb (ExampleEchoChannel *chan, ExampleEchoFactory *self)
       /* Re-announce the channel if it's not yet ready to go away (pending
        * messages) */
       if (really_destroyed)
-        g_hash_table_remove (self->priv->channels, GUINT_TO_POINTER (handle));
+        {
+          g_hash_table_remove (self->priv->channels,
+              GUINT_TO_POINTER (handle));
+        }
       else
-        tp_channel_manager_emit_new_channel (self,
-            TP_EXPORTABLE_CHANNEL (chan), NULL);
+        {
+          tp_channel_manager_emit_new_channel (self,
+              TP_EXPORTABLE_CHANNEL (chan), NULL);
+        }
     }
 }
 
 static ExampleEchoChannel *
 new_channel (ExampleEchoFactory *self,
              TpHandle handle,
-             TpHandle initiator)
+             TpHandle initiator,
+             gpointer request_token)
 {
   ExampleEchoChannel *chan;
   gchar *object_path;
+  GSList *requests = NULL;
 
   object_path = g_strdup_printf ("%s/EchoChannel%u",
       self->priv->conn->object_path, handle);
@@ -217,57 +251,139 @@ new_channel (ExampleEchoFactory *self,
 
   g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (handle), chan);
 
-  tp_channel_factory_iface_emit_new_channel (self, (TpChannelIface *) chan,
-      NULL);
+  if (request_token != NULL)
+    requests = g_slist_prepend (requests, request_token);
+
+  tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
+      requests);
+  g_slist_free (requests);
 
   return chan;
 }
 
-static TpChannelFactoryRequestStatus
-example_echo_factory_request (TpChannelFactoryIface *iface,
-                              const gchar *chan_type,
-                              TpHandleType handle_type,
-                              guint handle,
-                              gpointer request_id,
-                              TpChannelIface **ret,
-                              GError **error)
+static const gchar * const fixed_properties[] = {
+    TP_IFACE_CHANNEL ".ChannelType",
+    TP_IFACE_CHANNEL ".TargetHandleType",
+    NULL
+};
+
+static const gchar * const allowed_properties[] = {
+    TP_IFACE_CHANNEL ".TargetHandle",
+    TP_IFACE_CHANNEL ".TargetID",
+    NULL
+};
+
+static void
+example_echo_factory_foreach_channel_class (TpChannelManager *manager,
+    TpChannelManagerChannelClassFunc func,
+    gpointer user_data)
 {
-  ExampleEchoFactory *self = EXAMPLE_ECHO_FACTORY (iface);
+    GHashTable *table = g_hash_table_new_full (g_str_hash, g_str_equal,
+        NULL, (GDestroyNotify) tp_g_value_slice_free);
+    GValue *value;
+
+    value = tp_g_value_slice_new (G_TYPE_STRING);
+    g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_TEXT);
+    g_hash_table_insert (table, TP_IFACE_CHANNEL ".ChannelType", value);
+
+    value = tp_g_value_slice_new (G_TYPE_UINT);
+    g_value_set_uint (value, TP_HANDLE_TYPE_CONTACT);
+    g_hash_table_insert (table, TP_IFACE_CHANNEL ".TargetHandleType", value);
+
+    func (manager, table, allowed_properties, user_data);
+
+    g_hash_table_destroy (table);
+}
+
+static gboolean
+example_echo_factory_request (ExampleEchoFactory *self,
+                              gpointer request_token,
+                              GHashTable *request_properties,
+                              gboolean require_new)
+{
+  TpHandle handle;
   ExampleEchoChannel *chan;
-  TpChannelFactoryRequestStatus status;
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  GError *error = NULL;
 
-  if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
-    return TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_IMPLEMENTED;
+  if (tp_strdiff (tp_asv_get_string (request_properties,
+          TP_IFACE_CHANNEL ".ChannelType"),
+      TP_IFACE_CHANNEL_TYPE_TEXT))
+    {
+      return FALSE;
+    }
 
-  if (handle_type != TP_HANDLE_TYPE_CONTACT)
-    return TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_IMPLEMENTED;
+  if (tp_asv_get_uint32 (request_properties,
+      TP_IFACE_CHANNEL ".TargetHandleType", NULL) != TP_HANDLE_TYPE_CONTACT)
+    {
+      return FALSE;
+    }
 
-  if (!tp_handle_is_valid (contact_repo, handle, error))
-    return TP_CHANNEL_FACTORY_REQUEST_STATUS_ERROR;
+  handle = tp_asv_get_uint32 (request_properties,
+      TP_IFACE_CHANNEL ".TargetHandle", NULL);
+  g_assert (handle != 0);
+
+  if (tp_channel_manager_asv_has_unknown_properties (request_properties,
+        fixed_properties, allowed_properties, &error))
+    {
+      goto error;
+    }
 
   chan = g_hash_table_lookup (self->priv->channels, GUINT_TO_POINTER (handle));
 
-  status = TP_CHANNEL_FACTORY_REQUEST_STATUS_EXISTING;
   if (chan == NULL)
     {
-      status = TP_CHANNEL_FACTORY_REQUEST_STATUS_CREATED;
-      chan = new_channel (self, handle, self->priv->conn->self_handle);
+      chan = new_channel (self, handle, self->priv->conn->self_handle,
+          request_token);
+    }
+  else if (require_new)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "An echo channel to contact #%u already exists", handle);
+      goto error;
+    }
+  else
+    {
+      tp_channel_manager_emit_request_already_satisfied (self,
+          request_token, TP_EXPORTABLE_CHANNEL (chan));
     }
 
-  g_assert (chan != NULL);
-  *ret = TP_CHANNEL_IFACE (chan);
-  return status;
+  return TRUE;
+
+error:
+  tp_channel_manager_emit_request_failed (self, request_token,
+      error->domain, error->code, error->message);
+  g_error_free (error);
+  return TRUE;
+}
+
+static gboolean
+example_echo_factory_create_channel (TpChannelManager *manager,
+                                     gpointer request_token,
+                                     GHashTable *request_properties)
+{
+    return example_echo_factory_request (EXAMPLE_ECHO_FACTORY (manager),
+        request_token, request_properties, TRUE);
+}
+
+static gboolean
+example_echo_factory_ensure_channel (TpChannelManager *manager,
+                                     gpointer request_token,
+                                     GHashTable *request_properties)
+{
+    return example_echo_factory_request (EXAMPLE_ECHO_FACTORY (manager),
+        request_token, request_properties, FALSE);
 }
 
 static void
-iface_init (gpointer iface,
-            gpointer data)
+channel_manager_iface_init (gpointer g_iface,
+                            gpointer iface_data G_GNUC_UNUSED)
 {
-  TpChannelFactoryIfaceClass *klass = iface;
+  TpChannelManagerIface *iface = g_iface;
 
-  klass->close_all = example_echo_factory_close_all;
-  klass->foreach = example_echo_factory_foreach;
-  klass->request = example_echo_factory_request;
+  iface->foreach_channel = example_echo_factory_foreach_channel;
+  iface->foreach_channel_class = example_echo_factory_foreach_channel_class;
+  iface->create_channel = example_echo_factory_create_channel;
+  iface->ensure_channel = example_echo_factory_ensure_channel;
+  /* In this channel manager, Request has the same semantics as Ensure */
+  iface->request_channel = example_echo_factory_ensure_channel;
 }
