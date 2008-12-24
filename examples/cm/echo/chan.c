@@ -515,7 +515,7 @@ destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
   tp_text_mixin_clear ((GObject *) self);
   example_echo_channel_close (self);
   g_assert (self->priv->closed);
-  tp_svc_channel_return_from_close (context);
+  tp_svc_channel_interface_destroyable_return_from_destroy (context);
 }
 
 static void
