@@ -120,7 +120,7 @@ create_handle_repos (TpBaseConnection *conn,
 }
 
 static GPtrArray *
-create_channel_factories (TpBaseConnection *conn)
+create_channel_managers (TpBaseConnection *conn)
 {
   GPtrArray *ret = g_ptr_array_sized_new (1);
 
@@ -176,7 +176,7 @@ example_echo_2_connection_class_init (ExampleEcho2ConnectionClass *klass)
 
   base_class->create_handle_repos = create_handle_repos;
   base_class->get_unique_connection_name = get_unique_connection_name;
-  base_class->create_channel_factories = create_channel_factories;
+  base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
 
