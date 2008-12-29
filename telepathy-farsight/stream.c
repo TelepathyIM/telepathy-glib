@@ -1291,16 +1291,32 @@ static gboolean
 tf_stream_request_resource (TfStream *self,
     TpMediaStreamDirection dir)
 {
-  gboolean resource_available = FALSE;
+  gboolean resource_available;
+  GValue instance_and_arg[2];
+  GValue resource_avail_val = {0,};
 
   if ((self->priv->has_resource & dir) == dir)
     return TRUE;
 
+  memset (instance_and_arg, 0, sizeof(GValue) * 2);
+
+  g_value_init (&resource_avail_val, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&resource_avail_val, TRUE);
+
+  g_value_init (&instance_and_arg[0], TF_TYPE_STREAM);
+  g_value_set_object (&instance_and_arg[0], self);
+  g_value_init (&instance_and_arg[1], G_TYPE_UINT);
+  g_value_set_uint (&instance_and_arg[1], dir & ~self->priv->has_resource);
+
   DEBUG (self, "Requesting resource for direction %d", dir);
 
-  g_signal_emit (self, signals[REQUEST_RESOURCE], 0,
-      dir & ~self->priv->has_resource,
-      &resource_available);
+  g_signal_emitv (instance_and_arg, signals[REQUEST_RESOURCE], 0,
+      &resource_avail_val);
+  resource_available = g_value_get_boolean (&resource_avail_val);
+
+  g_value_unset (&instance_and_arg[0]);
+  g_value_unset (&instance_and_arg[1]);
+  g_value_unset (&resource_avail_val);
 
   DEBUG (self, "Requesting resource for direction %d returned %d", dir,
       resource_available);
