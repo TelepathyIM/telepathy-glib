@@ -1001,8 +1001,6 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
  *
  * Otherwise return %FALSE, and set *@valid to %FALSE if @valid is not %NULL.
  *
- * (FIXME: should we also allow 'i' and 'u' with nonzero <=> True?)
- *
  * Returns: a boolean value for @key
  * Since: 0.7.9
  */
