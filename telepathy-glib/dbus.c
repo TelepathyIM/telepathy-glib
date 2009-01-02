@@ -1441,8 +1441,6 @@ return_invalid:
 }
 
 
-/* FIXME: reviewers: should this succeed on all numeric types, or just on
- * doubles? */
 /**
  * tp_asv_get_double:
  * @asv: A GHashTable where the keys are strings and the values are GValues
