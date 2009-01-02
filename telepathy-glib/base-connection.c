@@ -2910,8 +2910,17 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
           TP_IFACE_CHANNEL ".TargetID") != NULL)
     RETURN_INVALID_ARGUMENT ("TargetID must be a string");
 
-  /* FIXME: when InitiatorHandle, InitiatorID and Requested are officially
-   * supported, if the request has any of them, raise an error */
+  if (tp_asv_lookup (requested_properties, TP_IFACE_CHANNEL ".InitiatorHandle")
+      != NULL)
+    RETURN_INVALID_ARGUMENT ("InitiatorHandle may not be requested");
+
+  if (tp_asv_lookup (requested_properties, TP_IFACE_CHANNEL ".InitiatorID")
+      != NULL)
+    RETURN_INVALID_ARGUMENT ("InitiatorID may not be requested");
+
+  if (tp_asv_lookup (requested_properties, TP_IFACE_CHANNEL ".Requested")
+      != NULL)
+    RETURN_INVALID_ARGUMENT ("Requested may not be requested");
 
   conn_requests_requestotron_validate_handle (self,
       requested_properties, method,
