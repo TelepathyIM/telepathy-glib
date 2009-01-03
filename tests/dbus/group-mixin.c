@@ -27,12 +27,17 @@ static int fail = 0;
 static GMainLoop *mainloop;
 TestTextChannelGroup *service_chan;
 TpChannel *chan = NULL;
+TpHandle camel, camel2;
+
+typedef void (*diff_checker) (const GArray *added, const GArray *removed,
+    const GArray *local_pending, const GArray *remote_pending);
 
 static gboolean expecting_members_changed = FALSE;
 static gboolean expecting_members_changed_detailed = FALSE;
 static const gchar *expected_message;
 static TpHandle expected_actor;
 static TpChannelGroupChangeReason expected_reason;
+static diff_checker expected_diffs;
 
 static void
 myassert_failed (void)
@@ -43,7 +48,8 @@ myassert_failed (void)
 static void
 expect_signals (const gchar *message,
                 TpHandle actor,
-                TpChannelGroupChangeReason reason)
+                TpChannelGroupChangeReason reason,
+                diff_checker check_diffs)
 {
   expecting_members_changed = TRUE;
   expecting_members_changed_detailed = TRUE;
@@ -51,6 +57,7 @@ expect_signals (const gchar *message,
   expected_message = message;
   expected_actor = actor;
   expected_reason = reason;
+  expected_diffs = check_diffs;
 }
 
 static gboolean
@@ -84,6 +91,9 @@ on_members_changed (TpChannel *proxy,
   MYASSERT_SAME_STRING (arg_Message, expected_message);
   MYASSERT_SAME_UINT (arg_Actor, expected_actor);
   MYASSERT_SAME_UINT (arg_Reason, expected_reason);
+
+  expected_diffs (arg_Added, arg_Removed, arg_Local_Pending,
+      arg_Remote_Pending);
 
   if (!outstanding_signals ())
     g_main_loop_quit (mainloop);
@@ -140,6 +150,9 @@ on_members_changed_detailed (TpChannel *proxy,
           ": utterly unreasonable");
     }
 
+  expected_diffs (arg_Added, arg_Removed, arg_Local_Pending,
+      arg_Remote_Pending);
+
   if (!outstanding_signals ())
     g_main_loop_quit (mainloop);
 }
@@ -185,6 +198,42 @@ check_initial_properties (void)
 }
 
 static void
+self_added_to_lp (const GArray *added,
+                  const GArray *removed,
+                  const GArray *local_pending,
+                  const GArray *remote_pending)
+{
+  TpHandle h;
+
+  MYASSERT (added->len == 0, ": no new added to members");
+  MYASSERT (removed->len == 0, ": no-one removed");
+  MYASSERT (remote_pending->len == 0, ": no new remote pending");
+  MYASSERT (local_pending->len == 1, ": one local pending...");
+
+  /* ...which is us */
+  h = g_array_index (local_pending, TpHandle, 0);
+  MYASSERT_SAME_UINT (h, service_chan->conn->self_handle);
+}
+
+static void
+self_added_to_members (const GArray *added,
+                       const GArray *removed,
+                       const GArray *local_pending,
+                       const GArray *remote_pending)
+{
+  TpHandle h;
+
+  MYASSERT (added->len == 1, ": one added");
+
+  h = g_array_index (added, TpHandle, 0);
+  MYASSERT_SAME_UINT (h, service_chan->conn->self_handle);
+
+  MYASSERT (removed->len == 0, ": no-one removed");
+  MYASSERT (local_pending->len == 0, ": no new local pending");
+  MYASSERT (remote_pending->len == 0, ": no new remote pending");
+}
+
+static void
 check_incoming_invitation (void)
 {
   GError *error = NULL;
@@ -194,7 +243,8 @@ check_incoming_invitation (void)
     TpIntSet *add_local_pending = tp_intset_new ();
     tp_intset_add (add_local_pending, service_chan->conn->self_handle);
 
-    expect_signals ("HELLO THAR", 0, TP_CHANNEL_GROUP_CHANGE_REASON_INVITED);
+    expect_signals ("HELLO THAR", 0, TP_CHANNEL_GROUP_CHANGE_REASON_INVITED,
+        self_added_to_lp);
     tp_group_mixin_change_members ((GObject *) service_chan, "HELLO THAR", NULL,
         NULL, add_local_pending, NULL, 0,
         TP_CHANNEL_GROUP_CHANGE_REASON_INVITED);
@@ -213,7 +263,7 @@ check_incoming_invitation (void)
     g_array_append_val (contacts, service_chan->conn->self_handle);
 
     expect_signals ("", service_chan->conn->self_handle,
-        TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+        TP_CHANNEL_GROUP_CHANGE_REASON_NONE, self_added_to_members);
     MYASSERT (tp_cli_channel_interface_group_run_add_members (chan, -1,
         contacts, "", &error, NULL), "");
     MYASSERT_NO_ERROR (error);
@@ -226,20 +276,76 @@ check_incoming_invitation (void)
 }
 
 static void
+camel_added (const GArray *added,
+             const GArray *removed,
+             const GArray *local_pending,
+             const GArray *remote_pending)
+{
+  TpHandle h;
+
+  MYASSERT (added->len == 1, ": one added");
+
+  h = g_array_index (added, TpHandle, 0);
+  MYASSERT_SAME_UINT (h, camel);
+
+  MYASSERT (removed->len == 0, ": no-one removed");
+  MYASSERT (local_pending->len == 0, ": no new local pending");
+  MYASSERT (remote_pending->len == 0, ": no new remote pending");
+}
+
+static void
+camel2_added (const GArray *added,
+              const GArray *removed,
+              const GArray *local_pending,
+              const GArray *remote_pending)
+{
+  TpHandle h;
+
+  MYASSERT (added->len == 1, ": one added");
+
+  h = g_array_index (added, TpHandle, 0);
+  MYASSERT_SAME_UINT (h, camel2);
+
+  MYASSERT (removed->len == 0, ": no-one removed");
+  MYASSERT (local_pending->len == 0, ": no new local pending");
+  MYASSERT (remote_pending->len == 0, ": no new remote pending");
+}
+
+static void
+camel_removed (const GArray *added,
+               const GArray *removed,
+               const GArray *local_pending,
+               const GArray *remote_pending)
+{
+  TpHandle h;
+
+  MYASSERT (removed->len == 1, ": one removed");
+
+  h = g_array_index (removed, TpHandle, 0);
+  MYASSERT_SAME_UINT (h, camel);
+
+  MYASSERT (added->len == 0, ": no-one added");
+  MYASSERT (local_pending->len == 0, ": no new local pending");
+  MYASSERT (remote_pending->len == 0, ": no new remote pending");
+}
+
+static void
 in_the_desert (void)
 {
+  TpHandle self_handle = service_chan->conn->self_handle;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
       service_chan->conn, TP_HANDLE_TYPE_CONTACT);
-  TpHandle camel  = tp_handle_ensure (contact_repo, "camel", NULL, NULL);
-  TpHandle camel2 = tp_handle_ensure (contact_repo, "camel2", NULL, NULL);
-  TpHandle self_handle = service_chan->conn->self_handle;
+
+  camel  = tp_handle_ensure (contact_repo, "camel", NULL, NULL);
+  camel2 = tp_handle_ensure (contact_repo, "camel2", NULL, NULL);
 
   /* A camel is approaching */
   {
     TpIntSet *add = tp_intset_new ();
 
     tp_intset_add (add, camel);
-    expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+        camel_added);
     tp_group_mixin_change_members ((GObject *) service_chan, "", add, NULL,
         NULL, NULL, camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
     wait_for_outstanding_signals ();
@@ -262,7 +368,8 @@ in_the_desert (void)
     g_value_set_uint (v, camel);
     g_hash_table_insert (details, "actor", v);
 
-    expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+        camel2_added);
     tp_group_mixin_change_members_detailed ((GObject *) service_chan, add,
         NULL, NULL, NULL, details);
     wait_for_outstanding_signals ();
@@ -307,7 +414,7 @@ in_the_desert (void)
 
     /* Check that all the right information was extracted from the dict. */
     expect_signals ("*ptooey*", camel2,
-        TP_CHANNEL_GROUP_CHANGE_REASON_KICKED);
+        TP_CHANNEL_GROUP_CHANGE_REASON_KICKED, camel_removed);
     tp_group_mixin_change_members_detailed ((GObject *) service_chan, NULL,
         del, NULL, NULL, details);
     wait_for_outstanding_signals ();
