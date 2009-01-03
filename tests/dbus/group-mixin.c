@@ -31,7 +31,8 @@ TpHandleRepoIface *contact_repo;
 TpHandle self_handle, camel, camel2;
 
 typedef void (*diff_checker) (const GArray *added, const GArray *removed,
-    const GArray *local_pending, const GArray *remote_pending);
+    const GArray *local_pending, const GArray *remote_pending,
+    const GHashTable *details);
 
 static gboolean expecting_members_changed = FALSE;
 static gboolean expecting_members_changed_detailed = FALSE;
@@ -94,7 +95,7 @@ on_members_changed (TpChannel *proxy,
   MYASSERT_SAME_UINT (arg_Reason, expected_reason);
 
   expected_diffs (arg_Added, arg_Removed, arg_Local_Pending,
-      arg_Remote_Pending);
+      arg_Remote_Pending, NULL);
 
   if (!outstanding_signals ())
     g_main_loop_quit (mainloop);
@@ -152,7 +153,7 @@ on_members_changed_detailed (TpChannel *proxy,
     }
 
   expected_diffs (arg_Added, arg_Removed, arg_Local_Pending,
-      arg_Remote_Pending);
+      arg_Remote_Pending, arg_Details);
 
   if (!outstanding_signals ())
     g_main_loop_quit (mainloop);
@@ -199,12 +200,42 @@ check_initial_properties (void)
 }
 
 static void
+details_contains_ids_for (const GHashTable *details,
+                          TpHandle *hs)
+{
+  const GValue *member_ids_v;
+  GHashTable *member_ids;
+  const gchar *id;
+  guint n = 0;
+  TpHandle *h;
+
+  if (details == NULL)
+    return;
+
+  member_ids_v = tp_asv_lookup (details, "member-ids");
+  member_ids = g_value_get_boxed (member_ids_v);
+
+  for (h = hs; *h != 0; h++)
+    {
+      n++;
+
+      id = g_hash_table_lookup (member_ids, GUINT_TO_POINTER (*h));
+      MYASSERT (id != NULL, ": id for %u in map", *h);
+      MYASSERT_SAME_STRING (id, tp_handle_inspect (contact_repo, *h));
+    }
+
+  MYASSERT (g_hash_table_size (member_ids) == n, ": %u member IDs", n);
+}
+
+static void
 self_added_to_lp (const GArray *added,
                   const GArray *removed,
                   const GArray *local_pending,
-                  const GArray *remote_pending)
+                  const GArray *remote_pending,
+                  const GHashTable *details)
 {
   TpHandle h;
+  TpHandle hs[] = { self_handle, 0 };
 
   MYASSERT (added->len == 0, ": no new added to members");
   MYASSERT (removed->len == 0, ": no-one removed");
@@ -214,15 +245,19 @@ self_added_to_lp (const GArray *added,
   /* ...which is us */
   h = g_array_index (local_pending, TpHandle, 0);
   MYASSERT_SAME_UINT (h, self_handle);
+
+  details_contains_ids_for (details, hs);
 }
 
 static void
 self_added_to_members (const GArray *added,
                        const GArray *removed,
                        const GArray *local_pending,
-                       const GArray *remote_pending)
+                       const GArray *remote_pending,
+                       const GHashTable *details)
 {
   TpHandle h;
+  TpHandle hs[] = { self_handle, 0 };
 
   MYASSERT (added->len == 1, ": one added");
 
@@ -232,6 +267,8 @@ self_added_to_members (const GArray *added,
   MYASSERT (removed->len == 0, ": no-one removed");
   MYASSERT (local_pending->len == 0, ": no new local pending");
   MYASSERT (remote_pending->len == 0, ": no new remote pending");
+
+  details_contains_ids_for (details, hs);
 }
 
 static void
@@ -280,14 +317,18 @@ static void
 camel_added (const GArray *added,
              const GArray *removed,
              const GArray *local_pending,
-             const GArray *remote_pending)
+             const GArray *remote_pending,
+             const GHashTable *details)
 {
   TpHandle h;
+  TpHandle hs[] = { camel, 0 };
 
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
   MYASSERT_SAME_UINT (h, camel);
+
+  details_contains_ids_for (details, hs);
 
   MYASSERT (removed->len == 0, ": no-one removed");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -298,14 +339,19 @@ static void
 camel2_added (const GArray *added,
               const GArray *removed,
               const GArray *local_pending,
-              const GArray *remote_pending)
+              const GArray *remote_pending,
+              const GHashTable *details)
 {
   TpHandle h;
+  /* camel is the actor */
+  TpHandle hs[] = { camel, camel2, 0 };
 
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
   MYASSERT_SAME_UINT (h, camel2);
+
+  details_contains_ids_for (details, hs);
 
   MYASSERT (removed->len == 0, ": no-one removed");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -316,9 +362,16 @@ static void
 camel_removed (const GArray *added,
                const GArray *removed,
                const GArray *local_pending,
-               const GArray *remote_pending)
+               const GArray *remote_pending,
+               const GHashTable *details)
 {
   TpHandle h;
+  /* camel2 is the actor. camel shouldn't be in the ids, because they were
+   * removed and the spec says that you can leave those out, and we want
+   * tp-glib's automatic construction of member-ids to work in the #ubuntu
+   * case.
+   */
+  TpHandle hs[] = { camel2, 0 };
 
   MYASSERT (removed->len == 1, ": one removed");
 
@@ -328,6 +381,8 @@ camel_removed (const GArray *added,
   MYASSERT (added->len == 0, ": no-one added");
   MYASSERT (local_pending->len == 0, ": no new local pending");
   MYASSERT (remote_pending->len == 0, ": no new remote pending");
+
+  details_contains_ids_for (details, hs);
 }
 
 static void
