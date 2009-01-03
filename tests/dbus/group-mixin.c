@@ -25,6 +25,9 @@
 
 static int fail = 0;
 static GMainLoop *mainloop;
+TestTextChannelGroup *service_chan;
+TpChannel *chan = NULL;
+
 static gboolean expecting_members_changed = FALSE;
 static gboolean expecting_members_changed_detailed = FALSE;
 static const gchar *expected_message;
@@ -142,7 +145,7 @@ on_members_changed_detailed (TpChannel *proxy,
 }
 
 static void
-check_initial_properties (TpChannel *chan)
+check_initial_properties (void)
 {
   GHashTable *props = NULL;
   GArray *members;
@@ -182,8 +185,7 @@ check_initial_properties (TpChannel *chan)
 }
 
 static void
-check_incoming_invitation (TestTextChannelGroup *service_chan,
-                           TpChannel *chan)
+check_incoming_invitation (void)
 {
   GError *error = NULL;
 
@@ -224,8 +226,7 @@ check_incoming_invitation (TestTextChannelGroup *service_chan,
 }
 
 static void
-in_the_desert (TestTextChannelGroup *service_chan,
-               TpChannel *chan)
+in_the_desert (void)
 {
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
       service_chan->conn, TP_HANDLE_TYPE_CONTACT);
@@ -347,8 +348,7 @@ in_the_desert (TestTextChannelGroup *service_chan,
 }
 
 static void
-test_group_mixin (TestTextChannelGroup *service_chan,
-                  TpChannel *chan)
+test_group_mixin (void)
 {
   GError *error = NULL;
 
@@ -363,11 +363,11 @@ test_group_mixin (TestTextChannelGroup *service_chan,
   tp_cli_channel_interface_group_connect_to_members_changed_detailed (chan,
       on_members_changed_detailed, NULL, NULL, NULL, NULL);
 
-  check_initial_properties (chan);
+  check_initial_properties ();
 
-  check_incoming_invitation (service_chan, chan);
+  check_incoming_invitation ();
 
-  in_the_desert (service_chan, chan);
+  in_the_desert ();
 }
 
 int
@@ -377,10 +377,8 @@ main (int argc,
   SimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
-  TestTextChannelGroup *service_chan;
   TpDBusDaemon *dbus;
   TpConnection *conn;
-  TpChannel *chan = NULL;
   GError *error = NULL;
   gchar *name;
   gchar *conn_path;
@@ -434,7 +432,7 @@ main (int argc,
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
 
-  test_group_mixin (service_chan, chan);
+  test_group_mixin ();
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
