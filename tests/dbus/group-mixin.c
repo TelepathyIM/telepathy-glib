@@ -27,7 +27,8 @@ static int fail = 0;
 static GMainLoop *mainloop;
 TestTextChannelGroup *service_chan;
 TpChannel *chan = NULL;
-TpHandle camel, camel2;
+TpHandleRepoIface *contact_repo;
+TpHandle self_handle, camel, camel2;
 
 typedef void (*diff_checker) (const GArray *added, const GArray *removed,
     const GArray *local_pending, const GArray *remote_pending);
@@ -212,7 +213,7 @@ self_added_to_lp (const GArray *added,
 
   /* ...which is us */
   h = g_array_index (local_pending, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, service_chan->conn->self_handle);
+  MYASSERT_SAME_UINT (h, self_handle);
 }
 
 static void
@@ -226,7 +227,7 @@ self_added_to_members (const GArray *added,
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, service_chan->conn->self_handle);
+  MYASSERT_SAME_UINT (h, self_handle);
 
   MYASSERT (removed->len == 0, ": no-one removed");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -241,7 +242,7 @@ check_incoming_invitation (void)
   /* We get an invitation to the channel */
   {
     TpIntSet *add_local_pending = tp_intset_new ();
-    tp_intset_add (add_local_pending, service_chan->conn->self_handle);
+    tp_intset_add (add_local_pending, self_handle);
 
     expect_signals ("HELLO THAR", 0, TP_CHANNEL_GROUP_CHANGE_REASON_INVITED,
         self_added_to_lp);
@@ -260,10 +261,10 @@ check_incoming_invitation (void)
    */
   {
     GArray *contacts = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
-    g_array_append_val (contacts, service_chan->conn->self_handle);
+    g_array_append_val (contacts, self_handle);
 
-    expect_signals ("", service_chan->conn->self_handle,
-        TP_CHANNEL_GROUP_CHANGE_REASON_NONE, self_added_to_members);
+    expect_signals ("", self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+        self_added_to_members);
     MYASSERT (tp_cli_channel_interface_group_run_add_members (chan, -1,
         contacts, "", &error, NULL), "");
     MYASSERT_NO_ERROR (error);
@@ -332,10 +333,6 @@ camel_removed (const GArray *added,
 static void
 in_the_desert (void)
 {
-  TpHandle self_handle = service_chan->conn->self_handle;
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-      service_chan->conn, TP_HANDLE_TYPE_CONTACT);
-
   camel  = tp_handle_ensure (contact_repo, "camel", NULL, NULL);
   camel2 = tp_handle_ensure (contact_repo, "camel2", NULL, NULL);
 
@@ -483,7 +480,6 @@ main (int argc,
 {
   SimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
-  TpHandleRepoIface *contact_repo;
   TpDBusDaemon *dbus;
   TpConnection *conn;
   GError *error = NULL;
@@ -518,6 +514,7 @@ main (int argc,
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
   MYASSERT (contact_repo != NULL, "");
+  self_handle = tp_handle_ensure (contact_repo, "me@example.com", NULL, NULL);
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
