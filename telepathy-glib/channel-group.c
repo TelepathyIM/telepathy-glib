@@ -884,6 +884,22 @@ tp_channel_group_members_changed_cb (TpChannel *self,
 
 
 static void
+tp_channel_group_members_changed_detailed_cb (TpChannel *self,
+                                              const GArray *added,
+                                              const GArray *removed,
+                                              const GArray *local_pending,
+                                              const GArray *remote_pending,
+                                              GHashTable *details,
+                                              gpointer unused G_GNUC_UNUSED,
+                                              GObject *weak_obj G_GNUC_UNUSED)
+{
+  DEBUG ("%p MembersChangedDetailed: added %u, removed %u, "
+      "moved %u to LP and %u to RP",
+      self, added->len, removed->len, local_pending->len, remote_pending->len);
+}
+
+
+static void
 tp_channel_handle_owners_changed_cb (TpChannel *self,
                                      GHashTable *added,
                                      const GArray *removed,
@@ -950,6 +966,9 @@ _tp_channel_get_group_properties (TpChannel *self)
 
   tp_cli_channel_interface_group_connect_to_members_changed (self,
       tp_channel_group_members_changed_cb, NULL, NULL, NULL, NULL);
+
+  tp_cli_channel_interface_group_connect_to_members_changed_detailed (self,
+      tp_channel_group_members_changed_detailed_cb, NULL, NULL, NULL, NULL);
 
   tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
       tp_channel_group_flags_changed_cb, NULL, NULL, NULL, NULL);
