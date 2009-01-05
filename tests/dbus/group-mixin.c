@@ -577,6 +577,7 @@ main (int argc,
         TEST_TYPE_TEXT_CHANNEL_GROUP,
         "connection", service_conn,
         "object-path", chan_path,
+        "detailed", TRUE,
         NULL));
 
   mainloop = g_main_loop_new (NULL, FALSE);

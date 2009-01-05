@@ -52,12 +52,15 @@ enum
   PROP_REQUESTED,
   PROP_INITIATOR_HANDLE,
   PROP_INITIATOR_ID,
+  PROP_DETAILED,
   N_PROPS
 };
 
 struct _TestTextChannelGroupPrivate
 {
   gchar *object_path;
+
+  gboolean detailed;
 
   gboolean closed;
   gboolean disposed;
@@ -100,6 +103,7 @@ constructor (GType type,
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->conn, TP_HANDLE_TYPE_CONTACT);
   DBusGConnection *bus;
+  TpChannelGroupFlags flags = TP_CHANNEL_GROUP_FLAG_PROPERTIES;
 
   bus = tp_get_bus ();
   dbus_g_connection_register_g_object (bus, self->priv->object_path, object);
@@ -113,11 +117,12 @@ constructor (GType type,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
       G_MAXUINT);
 
+  if (self->priv->detailed)
+    flags |= TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED;
+
   tp_group_mixin_init (object, G_STRUCT_OFFSET (TestTextChannelGroup, group),
       contact_repo, self->conn->self_handle);
-  tp_group_mixin_change_flags (object,
-      TP_CHANNEL_GROUP_FLAG_PROPERTIES |
-      TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED, 0);
+  tp_group_mixin_change_flags (object, flags, 0);
 
   return object;
 }
@@ -168,6 +173,9 @@ get_property (GObject *object,
     case PROP_CONNECTION:
       g_value_set_object (value, self->conn);
       break;
+    case PROP_DETAILED:
+      g_value_set_boolean (value, self->priv->detailed);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -196,6 +204,9 @@ set_property (GObject *object,
       break;
     case PROP_CONNECTION:
       self->conn = g_value_get_object (value);
+      break;
+    case PROP_DETAILED:
+      self->priv->detailed = g_value_get_boolean (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -314,6 +325,13 @@ test_text_channel_group_class_init (TestTextChannelGroupClass *klass)
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
+
+  param_spec = g_param_spec_boolean ("detailed",
+      "Has the Members_Changed_Detailed flag?",
+      "True if the Members_Changed_Detailed group flag should be set",
+      TRUE,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DETAILED, param_spec);
 
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TestTextChannelGroupClass, text_class));
