@@ -735,6 +735,103 @@ OUT:
 
 
 static void
+handle_members_changed (TpChannel *self,
+                        const gchar *message,
+                        const GArray *added,
+                        const GArray *removed,
+                        const GArray *local_pending,
+                        const GArray *remote_pending,
+                        guint actor,
+                        guint reason)
+{
+  guint i;
+
+  if (self->priv->group_members == NULL)
+    return;
+
+  g_assert (self->priv->group_local_pending != NULL);
+  g_assert (self->priv->group_remote_pending != NULL);
+
+  for (i = 0; i < added->len; i++)
+    {
+      TpHandle handle = g_array_index (added, guint, i);
+
+      DEBUG ("+++ contact#%u", handle);
+      tp_intset_add (self->priv->group_members, handle);
+    }
+
+  for (i = 0; i < local_pending->len; i++)
+    {
+      TpHandle handle = g_array_index (local_pending, guint, i);
+
+      DEBUG ("+LP contact#%u", handle);
+
+      /* Special-case renaming a local-pending contact, if the
+       * signal is spec-compliant. Keep the old actor/reason/message in
+       * this case */
+      if (reason == TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED &&
+          added->len == 0 &&
+          local_pending->len == 1 &&
+          remote_pending->len == 0 &&
+          removed->len == 1 &&
+          self->priv->group_local_pending_info != NULL)
+        {
+          TpHandle old = g_array_index (removed, guint, 0);
+          LocalPendingInfo *info = g_hash_table_lookup (
+              self->priv->group_local_pending_info,
+              GUINT_TO_POINTER (old));
+
+          if (info != NULL)
+            {
+              _tp_channel_group_set_one_lp (self, handle,
+                  info->actor, info->reason, info->message);
+              continue;
+            }
+        }
+
+      /* not reached if the Renamed special case occurred */
+      _tp_channel_group_set_one_lp (self, handle, actor,
+          reason, message);
+    }
+
+  for (i = 0; i < remote_pending->len; i++)
+    {
+      TpHandle handle = g_array_index (remote_pending, guint, i);
+
+      DEBUG ("+RP contact#%u", handle);
+      tp_intset_add (self->priv->group_remote_pending, handle);
+    }
+
+  for (i = 0; i < removed->len; i++)
+    {
+      TpHandle handle = g_array_index (removed, guint, i);
+
+      DEBUG ("--- contact#%u", handle);
+
+      if (self->priv->group_local_pending_info != NULL)
+        g_hash_table_remove (self->priv->group_local_pending_info,
+            GUINT_TO_POINTER (handle));
+
+      tp_intset_remove (self->priv->group_members, handle);
+      tp_intset_remove (self->priv->group_local_pending, handle);
+      tp_intset_remove (self->priv->group_remote_pending, handle);
+
+      if (handle == self->priv->group_self_handle)
+        {
+          self->priv->group_remove_reason = reason;
+          g_free (self->priv->group_remove_message);
+          self->priv->group_remove_message = g_strdup (message);
+        }
+      /* FIXME: should check against the Connection's self-handle too,
+       * after I add that API */
+    }
+
+  g_signal_emit_by_name (self, "group-members-changed", message,
+      added, removed, local_pending, remote_pending, actor, reason);
+}
+
+
+static void
 tp_channel_group_members_changed_cb (TpChannel *self,
                                      const gchar *message,
                                      const GArray *added,
@@ -746,96 +843,14 @@ tp_channel_group_members_changed_cb (TpChannel *self,
                                      gpointer unused G_GNUC_UNUSED,
                                      GObject *unused_object G_GNUC_UNUSED)
 {
-  guint i;
 
   DEBUG ("%p MembersChanged: added %u, removed %u, "
       "moved %u to LP and %u to RP, actor %u, reason %u, message %s",
       self, added->len, removed->len, local_pending->len, remote_pending->len,
       actor, reason, message);
 
-  if (self->priv->group_members != NULL)
-    {
-      g_assert (self->priv->group_members != NULL);
-      g_assert (self->priv->group_local_pending != NULL);
-      g_assert (self->priv->group_remote_pending != NULL);
-
-      for (i = 0; i < added->len; i++)
-        {
-          TpHandle handle = g_array_index (added, guint, i);
-
-          DEBUG ("+++ contact#%u", handle);
-          tp_intset_add (self->priv->group_members, handle);
-        }
-
-      for (i = 0; i < local_pending->len; i++)
-        {
-          TpHandle handle = g_array_index (local_pending, guint, i);
-
-          DEBUG ("+LP contact#%u", handle);
-
-          /* Special-case renaming a local-pending contact, if the
-           * signal is spec-compliant. Keep the old actor/reason/message in
-           * this case */
-          if (reason == TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED &&
-              added->len == 0 &&
-              local_pending->len == 1 &&
-              remote_pending->len == 0 &&
-              removed->len == 1 &&
-              self->priv->group_local_pending_info != NULL)
-            {
-              TpHandle old = g_array_index (removed, guint, 0);
-              LocalPendingInfo *info = g_hash_table_lookup (
-                  self->priv->group_local_pending_info,
-                  GUINT_TO_POINTER (old));
-
-              if (info != NULL)
-                {
-                  _tp_channel_group_set_one_lp (self, handle,
-                      info->actor, info->reason, info->message);
-                  continue;
-                }
-            }
-
-          /* not reached if the Renamed special case occurred */
-          _tp_channel_group_set_one_lp (self, handle, actor,
-              reason, message);
-        }
-
-      for (i = 0; i < remote_pending->len; i++)
-        {
-          TpHandle handle = g_array_index (remote_pending, guint, i);
-
-          DEBUG ("+RP contact#%u", handle);
-          tp_intset_add (self->priv->group_remote_pending, handle);
-        }
-
-      for (i = 0; i < removed->len; i++)
-        {
-          TpHandle handle = g_array_index (removed, guint, i);
-
-          DEBUG ("--- contact#%u", handle);
-
-          if (self->priv->group_local_pending_info != NULL)
-            g_hash_table_remove (self->priv->group_local_pending_info,
-                GUINT_TO_POINTER (handle));
-
-          tp_intset_remove (self->priv->group_members, handle);
-          tp_intset_remove (self->priv->group_local_pending, handle);
-          tp_intset_remove (self->priv->group_remote_pending, handle);
-
-          if (handle == self->priv->group_self_handle)
-            {
-              self->priv->group_remove_reason = reason;
-              g_free (self->priv->group_remove_message);
-              self->priv->group_remove_message = g_strdup (message);
-            }
-          /* FIXME: should check against the Connection's self-handle too,
-           * after I add that API */
-        }
-
-      g_signal_emit_by_name (self, "group-members-changed", message,
-          added, removed, local_pending, remote_pending, actor, reason);
-    }
+  handle_members_changed (self, message, added, removed, local_pending,
+      remote_pending, actor, reason);
 }
 
 
