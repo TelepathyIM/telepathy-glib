@@ -1,6 +1,7 @@
 noinst_PROGRAMS = \
     test-call-cancellation \
     test-channel-introspect \
+    test-cli-group \
     test-connection \
     test-connection-bug-18845 \
     test-connection-handles \
@@ -29,6 +30,8 @@ LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la
 
 test_channel_introspect_SOURCES = channel-introspect.c
+
+test_cli_group_SOURCES = cli-group.c
 
 test_connection_SOURCES = connection.c
 
