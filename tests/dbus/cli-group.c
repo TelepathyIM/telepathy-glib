@@ -16,6 +16,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/proxy-subclass.h>
 
+#include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/textchan-group.h"
@@ -23,9 +24,14 @@
 
 static int fail = 0;
 static GMainLoop *mainloop;
-TestTextChannelGroup *service_chan_1, *service_chan_2;
+SimpleConnection *service_conn;
+gchar *conn_path;
+TpConnection *conn;
 TpHandleRepoIface *contact_repo;
-TpHandle self_handle;
+TpHandle self_handle, h1, h2, h3;
+
+gboolean expecting_group_members_changed = FALSE;
+gboolean expecting_group_members_changed_detailed = FALSE;
 
 static void
 myassert_failed (void)
@@ -33,18 +39,201 @@ myassert_failed (void)
   fail = 1;
 }
 
+static void
+group_members_changed_cb (TpChannel *chan_,
+                          gchar *message,
+                          GArray *added,
+                          GArray *removed,
+                          GArray *local_pending,
+                          GArray *remote_pending,
+                          guint actor,
+                          guint reason,
+                          gpointer user_data)
+{
+  DEBUG ("\"%s\", %u, %u, %u, %u, %u, %u", message, added->len, removed->len,
+      local_pending->len, remote_pending->len, actor, reason);
+  MYASSERT (expecting_group_members_changed, "");
+
+  expecting_group_members_changed = FALSE;
+}
+
+static void
+group_members_changed_detailed_cb (TpChannel *chan_,
+                                   GArray *added,
+                                   GArray *removed,
+                                   GArray *local_pending,
+                                   GArray *remote_pending,
+                                   GHashTable *details,
+                                   gpointer user_data)
+{
+  DEBUG ("%u, %u, %u, %u, %u details", added->len, removed->len,
+      local_pending->len, remote_pending->len, g_hash_table_size (details));
+  MYASSERT (expecting_group_members_changed_detailed, "");
+
+  expecting_group_members_changed_detailed = FALSE;
+}
+
+
+static void
+test_channel_proxy (TestTextChannelGroup *service_chan,
+                    TpChannel *chan,
+                    gboolean detailed)
+{
+  TpIntSet *add, *rem, *expected_members;
+  GArray *arr, *yarr;
+  GError *error = NULL;
+  TpChannelGroupFlags flags;
+  gboolean has_detailed_flag;
+
+  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
+  MYASSERT_NO_ERROR (error);
+
+  /* We want to ensure that each of these signals fires exactly once per
+   * change.  The channel emits both MembersChanged and MembersChangedDetailed,
+   * but TpChannel should only be reacting to one of them, based on whether the
+   * Members_Changed_Detailed flag is set.  So, each signal's handler has a
+   * corresponding "expected" flag, which it asserts on then sets back to FALSE.
+   */
+  g_signal_connect (chan, "group-members-changed",
+      (GCallback) group_members_changed_cb, NULL);
+  g_signal_connect (chan, "group-members-changed-detailed",
+      (GCallback) group_members_changed_detailed_cb, NULL);
+
+  flags = tp_channel_group_get_flags (chan);
+  has_detailed_flag = !!(flags & TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED);
+  MYASSERT (detailed == has_detailed_flag,
+      ": expected Members_Changed_Detailed to be %sset",
+      (detailed ? "" : "un"));
+
+  /* Add a couple of members. */
+  add = tp_intset_new ();
+  tp_intset_add (add, h1);
+  tp_intset_add (add, h2);
+
+  expecting_group_members_changed = TRUE;
+  expecting_group_members_changed_detailed = TRUE;
+  tp_group_mixin_change_members ((GObject *) service_chan,
+      "quantum tunnelling", add, NULL, NULL, NULL, 0,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  /* Clear the queue to ensure that there aren't any more
+   * MembersChanged[Detailed] signals waiting for us.
+   */
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  expected_members = add;
+  MYASSERT (tp_intset_is_equal (expected_members,
+      tp_channel_group_get_members (chan)), "");
+
+  /* Add one, remove one. Check that the cache is properly updated. */
+  add = tp_intset_new ();
+  tp_intset_add (add, h3);
+  rem = tp_intset_new ();
+  tp_intset_add (rem, h1);
+
+  expecting_group_members_changed = TRUE;
+  expecting_group_members_changed_detailed = TRUE;
+  tp_group_mixin_change_members ((GObject *) service_chan,
+      "goat", add, rem, NULL, NULL, 0,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_intset_destroy (add);
+  tp_intset_destroy (rem);
+
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  tp_intset_add (expected_members, h3);
+  tp_intset_remove (expected_members, h1);
+
+  MYASSERT (tp_intset_is_equal (expected_members,
+      tp_channel_group_get_members (chan)), "");
+
+  /* Now, emit a spurious instance of whichever DBus signal the proxy should
+   * not be listening to to check it's really not listening to it.  If the
+   * TpChannel is reacting to the wrong DBus signal, it'll trigger an assertion
+   * in the GObject signal handlers.
+   */
+  yarr = g_array_new (FALSE, FALSE, sizeof (TpHandle));
+  arr = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
+  g_array_insert_val (arr, 0, h1);
+
+  expecting_group_members_changed = FALSE;
+  expecting_group_members_changed_detailed = FALSE;
+
+  if (detailed)
+    {
+      tp_svc_channel_interface_group_emit_members_changed (service_chan,
+          "whee", arr, yarr, yarr, yarr, 0,
+          TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    }
+  else
+    {
+      GHashTable *details = g_hash_table_new (NULL, NULL);
+
+      tp_svc_channel_interface_group_emit_members_changed_detailed (
+          service_chan, arr, yarr, yarr, yarr, details);
+      g_hash_table_unref (details);
+    }
+
+  g_array_free (yarr, TRUE);
+  g_array_free (arr, TRUE);
+
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  /* And, the cache of group members should be unaltered, since the signal the
+   * TpChannel cares about was not fired.
+   */
+  MYASSERT (tp_intset_is_equal (expected_members,
+      tp_channel_group_get_members (chan)), "");
+
+  tp_intset_destroy (expected_members);
+}
+
+static void
+run_test (guint channel_number,
+          gboolean detailed)
+{
+  gchar *chan_path;
+  TestTextChannelGroup *service_chan;
+  TpChannel *chan;
+  GError *error = NULL;
+
+  chan_path = g_strdup_printf ("%s/Channel%u", conn_path, channel_number);
+  service_chan = TEST_TEXT_CHANNEL_GROUP (g_object_new (
+      TEST_TYPE_TEXT_CHANNEL_GROUP,
+      "connection", service_conn,
+      "object-path", chan_path,
+      "detailed", detailed,
+      NULL));
+  chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
+      &error);
+
+  MYASSERT_NO_ERROR (error);
+
+  test_channel_proxy (service_chan, chan, detailed);
+
+  g_object_unref (chan);
+  g_object_unref (service_chan);
+  g_free (chan_path);
+}
+
+static void
+run_tests (void)
+{
+  /* Run a set of sanity checks on two channels, one of which has the
+   * Members_Changed_Details flag cleared and one of which has it set.
+   */
+  run_test (1, FALSE);
+  run_test (2, TRUE);
+}
+
 int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpDBusDaemon *dbus;
-  TpConnection *conn;
   GError *error = NULL;
   gchar *name;
-  gchar *conn_path;
-  gchar *chan_path_1, *chan_path_2;
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -73,38 +262,17 @@ main (int argc,
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
   MYASSERT (contact_repo != NULL, "");
+
   self_handle = tp_handle_ensure (contact_repo, "me@example.com", NULL, NULL);
-
-  chan_path_1 = g_strdup_printf ("%s/Channel1", conn_path);
-  service_chan_1 = TEST_TEXT_CHANNEL_GROUP (g_object_new (
-        TEST_TYPE_TEXT_CHANNEL_GROUP,
-        "connection", service_conn,
-        "object-path", chan_path_1,
-        "detailed", FALSE,
-        NULL));
-
-  chan_path_2 = g_strdup_printf ("%s/Channel2", conn_path);
-  service_chan_2 = TEST_TEXT_CHANNEL_GROUP (g_object_new (
-        TEST_TYPE_TEXT_CHANNEL_GROUP,
-        "connection", service_conn,
-        "object-path", chan_path_2,
-        "detailed", TRUE,
-        NULL));
-
+  h1 = tp_handle_ensure (contact_repo, "h1", NULL, NULL);
+  h2 = tp_handle_ensure (contact_repo, "h2", NULL, NULL);
+  h3 = tp_handle_ensure (contact_repo, "h3", NULL, NULL);
   mainloop = g_main_loop_new (NULL, FALSE);
 
   MYASSERT (tp_cli_connection_run_connect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
 
-  /* Tests go here.
-   *
-   *  - check that group-members-changed and group-members-changed-detailed
-   *    both fire once per change on a channel without the Detailed flag.
-   *  - ditto for a channel with the detailed flag.
-   *  - in both cases, check that the client-side cache matches reality.
-   *  - if feeling very keen, emit spurious MembersChanged signals on a channel
-   *    without Detailed set (and vice versa), and check they're ignored.
-   */
+  run_tests ();
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
@@ -115,16 +283,12 @@ main (int argc,
   mainloop = NULL;
 
   g_object_unref (conn);
-  g_object_unref (service_chan_2);
-  g_object_unref (service_chan_1);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
   g_object_unref (dbus);
   g_free (name);
   g_free (conn_path);
-  g_free (chan_path_1);
-  g_free (chan_path_2);
 
   return fail;
 }
