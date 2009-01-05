@@ -742,7 +742,8 @@ handle_members_changed (TpChannel *self,
                         const GArray *local_pending,
                         const GArray *remote_pending,
                         guint actor,
-                        guint reason)
+                        guint reason,
+                        GHashTable *details)
 {
   guint i;
 
@@ -828,6 +829,8 @@ handle_members_changed (TpChannel *self,
 
   g_signal_emit_by_name (self, "group-members-changed", message,
       added, removed, local_pending, remote_pending, actor, reason);
+  g_signal_emit_by_name (self, "group-members-changed-detailed", added,
+      removed, local_pending, remote_pending, details);
 }
 
 
@@ -843,14 +846,40 @@ tp_channel_group_members_changed_cb (TpChannel *self,
                                      gpointer unused G_GNUC_UNUSED,
                                      GObject *unused_object G_GNUC_UNUSED)
 {
+  GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  GValue *v;
 
   DEBUG ("%p MembersChanged: added %u, removed %u, "
       "moved %u to LP and %u to RP, actor %u, reason %u, message %s",
       self, added->len, removed->len, local_pending->len, remote_pending->len,
       actor, reason, message);
 
+  if (actor != 0)
+    {
+      v = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (v, actor);
+      g_hash_table_insert (details, "actor", v);
+    }
+
+  if (reason != TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
+    {
+      v = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (v, reason);
+      g_hash_table_insert (details, "change-reason", v);
+    }
+
+  if (*message != '\0')
+    {
+      v = tp_g_value_slice_new (G_TYPE_STRING);
+      g_value_set_string (v, message);
+      g_hash_table_insert (details, "message", v);
+    }
+
   handle_members_changed (self, message, added, removed, local_pending,
-      remote_pending, actor, reason);
+      remote_pending, actor, reason, details);
+
+  g_hash_table_unref (details);
 }
 
 
