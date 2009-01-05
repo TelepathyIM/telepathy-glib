@@ -1218,7 +1218,9 @@ member_array_to_string (TpHandleRepoIface *repo,
       handle_str = tp_handle_inspect (repo, handle);
 
       g_string_append_printf (str, "%s%u (%s)",
-          (i > 0) ? "\n              " : "",
+      /* indent to:   "  remote_pending: [" */
+          (i > 0) ? "\n                   "
+                  : "",
           handle, handle_str);
     }
 
