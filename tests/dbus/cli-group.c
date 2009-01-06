@@ -32,6 +32,7 @@ TpHandle self_handle, h1, h2, h3;
 
 gboolean expecting_group_members_changed = FALSE;
 gboolean expecting_group_members_changed_detailed = FALSE;
+gboolean expecting_invalidated = FALSE;
 
 static void
 myassert_failed (void)
@@ -194,6 +195,56 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
 }
 
 static void
+channel_invalidated_cb (TpProxy *proxy,
+                        guint domain,
+                        gint code,
+                        gchar *message,
+                        gpointer user_data)
+{
+  DEBUG ("called");
+  MYASSERT (expecting_invalidated, ": I've been EXPECTING YOU");
+  MYASSERT_SAME_UINT (domain, TP_DBUS_ERRORS);
+  MYASSERT (code == TP_DBUS_ERROR_INCONSISTENT, ": was %i", code);
+
+  expecting_invalidated = FALSE;
+}
+
+static void
+test_invalidated_on_illegal_change (TestTextChannelGroup *serv_chan,
+                                    TpChannel *chan,
+                                    gboolean detailed,
+                                    gboolean properties)
+{
+  TpChannelGroupFlags add, del;
+
+  DEBUG ("This channel has detailed %sset and properties %sset",
+    (detailed ? "" : "un"), (properties ? "" : "un"));
+
+  /* If we re-set or -unset the flags the channel already has, then the
+   * TpChannel shouldn't care. This emits the signal directly rather than going
+   * through the mixin, because the mixin helpfully optimizes out the spurious
+   * change notification.
+   */
+  expecting_invalidated = FALSE;
+  add = del = 0;
+  *(detailed ? &add : &del) |= TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED;
+  *(properties ? &add : &del) |= TP_CHANNEL_GROUP_FLAG_PROPERTIES;
+  DEBUG ("Changing flags: add %u, del %u", add, del);
+  tp_svc_channel_interface_group_emit_group_flags_changed (serv_chan, add, del);
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  /* Now, let's flip the Detailed and Properties flags, and check that the
+   * proxy gets invalidated due to inconsistency on the part of the service.
+   */
+  expecting_invalidated = TRUE;
+  DEBUG ("Changing flags: add %u, del %u", del, add);
+  tp_group_mixin_change_flags ((GObject *) serv_chan, del, add);
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  MYASSERT (!expecting_invalidated, ": invalidated should have fired");
+}
+
+static void
 run_test (guint channel_number,
           gboolean detailed,
           gboolean properties)
@@ -216,7 +267,12 @@ run_test (guint channel_number,
 
   MYASSERT_NO_ERROR (error);
 
+  expecting_invalidated = FALSE;
+  g_signal_connect (chan, "invalidated", (GCallback) channel_invalidated_cb,
+      NULL);
+
   test_channel_proxy (service_chan, chan, detailed, properties);
+  test_invalidated_on_illegal_change (service_chan, chan, detailed, properties);
 
   g_object_unref (chan);
   g_object_unref (service_chan);
