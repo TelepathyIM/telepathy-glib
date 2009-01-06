@@ -77,13 +77,14 @@ group_members_changed_detailed_cb (TpChannel *chan_,
 static void
 test_channel_proxy (TestTextChannelGroup *service_chan,
                     TpChannel *chan,
-                    gboolean detailed)
+                    gboolean detailed,
+                    gboolean properties)
 {
   TpIntSet *add, *rem, *expected_members;
   GArray *arr, *yarr;
   GError *error = NULL;
   TpChannelGroupFlags flags;
-  gboolean has_detailed_flag;
+  gboolean has_detailed_flag, has_properties_flag;
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
@@ -103,6 +104,10 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
   has_detailed_flag = !!(flags & TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED);
   MYASSERT (detailed == has_detailed_flag,
       ": expected Members_Changed_Detailed to be %sset",
+      (detailed ? "" : "un"));
+  has_properties_flag = !!(flags & TP_CHANNEL_GROUP_FLAG_PROPERTIES);
+  MYASSERT (properties == has_properties_flag,
+      ": expected Properties to be %sset",
       (detailed ? "" : "un"));
 
   /* Add a couple of members. */
@@ -190,7 +195,8 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
 
 static void
 run_test (guint channel_number,
-          gboolean detailed)
+          gboolean detailed,
+          gboolean properties)
 {
   gchar *chan_path;
   TestTextChannelGroup *service_chan;
@@ -203,13 +209,14 @@ run_test (guint channel_number,
       "connection", service_conn,
       "object-path", chan_path,
       "detailed", detailed,
+      "properties", properties,
       NULL));
   chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
       &error);
 
   MYASSERT_NO_ERROR (error);
 
-  test_channel_proxy (service_chan, chan, detailed);
+  test_channel_proxy (service_chan, chan, detailed, properties);
 
   g_object_unref (chan);
   g_object_unref (service_chan);
@@ -219,11 +226,14 @@ run_test (guint channel_number,
 static void
 run_tests (void)
 {
-  /* Run a set of sanity checks on two channels, one of which has the
-   * Members_Changed_Details flag cleared and one of which has it set.
+  /* Run a set of sanity checks on a series of channels, with all 4
+   * combinations of states of the of the Members_Changed_Detailed and
+   * Properties group flags.
    */
-  run_test (1, FALSE);
-  run_test (2, TRUE);
+  run_test (1, FALSE, FALSE);
+  run_test (2, FALSE, TRUE);
+  run_test (3, TRUE, FALSE);
+  run_test (4, TRUE, TRUE);
 }
 
 int
