@@ -24,6 +24,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_GROUPS
@@ -963,6 +964,9 @@ tp_channel_handle_owners_changed_cb (TpChannel *self,
     }
 }
 
+#define IMMUTABLE_FLAGS \
+  (TP_CHANNEL_GROUP_FLAG_PROPERTIES | \
+  TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED)
 
 static void
 tp_channel_group_flags_changed_cb (TpChannel *self,
@@ -981,6 +985,19 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
       DEBUG ("%p GroupFlagsChanged (after filtering): +%u -%u",
           self, added, removed);
 
+      if ((added & IMMUTABLE_FLAGS) || (removed & IMMUTABLE_FLAGS))
+        {
+          GError *e = g_error_new (TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+              "CM is broken: it changed the Properties/"
+              "Members_Changed_Detailed flags on an existing group channel "
+              "(offending changes: added=%u, removed=%u)",
+              added & IMMUTABLE_FLAGS, removed & IMMUTABLE_FLAGS);
+
+          tp_proxy_invalidate ((TpProxy *) self, e);
+          g_error_free (e);
+          return;
+        }
+
       self->priv->group_flags |= added;
       self->priv->group_flags &= ~removed;
 
@@ -991,6 +1008,8 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
         }
     }
 }
+
+#undef IMMUTABLE_FLAGS
 
 
 void
