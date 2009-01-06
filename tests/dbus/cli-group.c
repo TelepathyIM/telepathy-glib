@@ -245,9 +245,9 @@ test_invalidated_on_illegal_change (TestTextChannelGroup *serv_chan,
 }
 
 static void
-run_test (guint channel_number,
-          gboolean detailed,
-          gboolean properties)
+run_membership_test (guint channel_number,
+                     gboolean detailed,
+                     gboolean properties)
 {
   gchar *chan_path;
   TestTextChannelGroup *service_chan;
@@ -280,16 +280,16 @@ run_test (guint channel_number,
 }
 
 static void
-run_tests (void)
+run_membership_tests (void)
 {
   /* Run a set of sanity checks on a series of channels, with all 4
    * combinations of states of the of the Members_Changed_Detailed and
    * Properties group flags.
    */
-  run_test (1, FALSE, FALSE);
-  run_test (2, FALSE, TRUE);
-  run_test (3, TRUE, FALSE);
-  run_test (4, TRUE, TRUE);
+  run_membership_test (1, FALSE, FALSE);
+  run_membership_test (2, FALSE, TRUE);
+  run_membership_test (3, TRUE, FALSE);
+  run_membership_test (4, TRUE, TRUE);
 }
 
 int
@@ -338,7 +338,7 @@ main (int argc,
   MYASSERT (tp_cli_connection_run_connect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
 
-  run_tests ();
+  run_membership_tests ();
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
