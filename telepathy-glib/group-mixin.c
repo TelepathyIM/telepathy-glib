@@ -1100,6 +1100,7 @@ tp_group_mixin_get_handle_owners_async (TpSvcChannelInterfaceGroup *obj,
       if (i++ > 0) \
         g_string_append (str, "|"); \
       g_string_append (str, #flag + 22); \
+      flags &= ~flag; \
     }
 
 static gchar *
@@ -1118,6 +1119,17 @@ group_flags_to_string (TpChannelGroupFlags flags)
   GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_MESSAGE_ACCEPT);
   GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_MESSAGE_REJECT);
   GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_MESSAGE_RESCIND);
+
+  /* Print out any remaining flags that weren't removed in the above cases
+   * numerically.
+   */
+  if (flags != 0)
+    {
+      if (i > 0)
+        g_string_append (str, "|");
+
+      g_string_append_printf (str, "%u", flags);
+    }
 
   g_string_append (str, TP_ANSI_BOLD_ON "]");
 
