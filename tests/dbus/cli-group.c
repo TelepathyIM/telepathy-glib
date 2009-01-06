@@ -32,6 +32,7 @@ TpHandle self_handle, h1, h2, h3;
 
 gboolean expecting_group_members_changed = FALSE;
 gboolean expecting_group_members_changed_detailed = FALSE;
+TpChannelGroupChangeReason expected_reason = TP_CHANNEL_GROUP_CHANGE_REASON_NONE;
 gboolean expecting_invalidated = FALSE;
 
 static void
@@ -53,7 +54,9 @@ group_members_changed_cb (TpChannel *chan_,
 {
   DEBUG ("\"%s\", %u, %u, %u, %u, %u, %u", message, added->len, removed->len,
       local_pending->len, remote_pending->len, actor, reason);
+
   MYASSERT (expecting_group_members_changed, "");
+  MYASSERT_SAME_UINT (reason, expected_reason);
 
   expecting_group_members_changed = FALSE;
 }
@@ -67,9 +70,13 @@ group_members_changed_detailed_cb (TpChannel *chan_,
                                    GHashTable *details,
                                    gpointer user_data)
 {
+  guint reason = tp_asv_get_uint32 (details, "change-reason", NULL);
+
   DEBUG ("%u, %u, %u, %u, %u details", added->len, removed->len,
       local_pending->len, remote_pending->len, g_hash_table_size (details));
+
   MYASSERT (expecting_group_members_changed_detailed, "");
+  MYASSERT_SAME_UINT (reason, expected_reason);
 
   expecting_group_members_changed_detailed = FALSE;
 }
@@ -118,9 +125,9 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
 
   expecting_group_members_changed = TRUE;
   expecting_group_members_changed_detailed = TRUE;
+  expected_reason++;
   tp_group_mixin_change_members ((GObject *) service_chan,
-      "quantum tunnelling", add, NULL, NULL, NULL, 0,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      "quantum tunnelling", add, NULL, NULL, NULL, 0, expected_reason);
 
   /* Clear the queue to ensure that there aren't any more
    * MembersChanged[Detailed] signals waiting for us.
@@ -139,9 +146,9 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
 
   expecting_group_members_changed = TRUE;
   expecting_group_members_changed_detailed = TRUE;
+  expected_reason++;
   tp_group_mixin_change_members ((GObject *) service_chan,
-      "goat", add, rem, NULL, NULL, 0,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      "goat", add, rem, NULL, NULL, 0, expected_reason);
   tp_intset_destroy (add);
   tp_intset_destroy (rem);
 
