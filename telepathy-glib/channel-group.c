@@ -309,6 +309,43 @@ tp_channel_group_get_handle_owner (TpChannel *self,
 }
 
 
+/* This must be called before the local group members lists are created.  Until
+ * this is called, the proxy is listening to both MembersChanged and
+ * MembersChangedDetailed, but they are ignored until priv->group_members
+ * exists.  If that list is created before one signal is disconnected, the
+ * proxy will react to state changes twice and madness will ensue.
+ */
+static void
+_got_initial_group_flags (TpChannel *self,
+                          TpChannelGroupFlags flags)
+{
+  TpChannelPrivate *priv = self->priv;
+
+  g_assert (priv->group_flags == 0);
+  g_assert (self->priv->group_members == NULL);
+
+  priv->group_flags = flags;
+  DEBUG ("Initial GroupFlags: %u", flags);
+  priv->have_group_flags = TRUE;
+
+  if (flags != 0)
+    g_object_notify ((GObject *) self, "group-flags");
+
+  /* If the channel claims to support MembersChangedDetailed, disconnect from
+   * MembersChanged. Otherwise, disconnect from MembersChangedDetailed in case
+   * it secretly emits it anyway, so we're only listening to one change
+   * notification.
+   */
+  if (flags & TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED)
+    tp_proxy_signal_connection_disconnect (priv->members_changed_sig);
+  else
+    tp_proxy_signal_connection_disconnect (priv->members_changed_detailed_sig);
+
+  priv->members_changed_sig = NULL;
+  priv->members_changed_detailed_sig = NULL;
+}
+
+
 static void
 tp_channel_got_group_flags_0_16_cb (TpChannel *self,
                                     guint flags,
@@ -322,6 +359,7 @@ tp_channel_got_group_flags_0_16_cb (TpChannel *self,
     {
       DEBUG ("%p GetGroupFlags() failed, assuming initial flags 0: %s", self,
           error->message);
+      flags = 0;
     }
   else
     {
@@ -332,15 +370,9 @@ tp_channel_got_group_flags_0_16_cb (TpChannel *self,
               "properties, but GetAll didn't work");
           flags &= ~TP_CHANNEL_GROUP_FLAG_PROPERTIES;
         }
-
-      self->priv->group_flags = flags;
-      DEBUG ("Initial GroupFlags: %u", flags);
-
-      if (flags != 0)
-        g_object_notify ((GObject *) self, "group-flags");
     }
 
-  self->priv->have_group_flags = 1;
+  _got_initial_group_flags (self, flags);
   _tp_channel_continue_introspection (self);
 }
 
@@ -652,12 +684,8 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
 
       DEBUG ("Received %u group properties", g_hash_table_size (asv));
 
-      self->priv->group_flags = tp_asv_get_uint32 (asv, "GroupFlags", NULL);
-      DEBUG ("Initial GroupFlags: %u", self->priv->group_flags);
-      self->priv->have_group_flags = 1;
-
-      if (self->priv->group_flags != 0)
-        g_object_notify ((GObject *) self, "group-flags");
+      _got_initial_group_flags (self,
+          tp_asv_get_uint32 (asv, "GroupFlags", NULL));
 
       tp_channel_group_self_handle_changed_cb (self,
           tp_asv_get_uint32 (asv, "SelfHandle", NULL), NULL, NULL);
@@ -978,11 +1006,13 @@ _tp_channel_get_group_properties (TpChannel *self)
 
   DEBUG ("%p", self);
 
-  tp_cli_channel_interface_group_connect_to_members_changed (self,
-      tp_channel_group_members_changed_cb, NULL, NULL, NULL, NULL);
+  self->priv->members_changed_sig =
+      tp_cli_channel_interface_group_connect_to_members_changed (self,
+          tp_channel_group_members_changed_cb, NULL, NULL, NULL, NULL);
 
-  tp_cli_channel_interface_group_connect_to_members_changed_detailed (self,
-      tp_channel_group_members_changed_detailed_cb, NULL, NULL, NULL, NULL);
+  self->priv->members_changed_detailed_sig =
+      tp_cli_channel_interface_group_connect_to_members_changed_detailed (self,
+          tp_channel_group_members_changed_detailed_cb, NULL, NULL, NULL, NULL);
 
   tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
       tp_channel_group_flags_changed_cb, NULL, NULL, NULL, NULL);
