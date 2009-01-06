@@ -91,6 +91,18 @@ group_change_reason_str (guint reason)
       return "invited";
     case TP_CHANNEL_GROUP_CHANGE_REASON_BANNED:
       return "banned";
+    case TP_CHANNEL_GROUP_CHANGE_REASON_ERROR:
+      return "error";
+    case TP_CHANNEL_GROUP_CHANGE_REASON_INVALID_CONTACT:
+      return "invalid contact";
+    case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
+      return "no answer";
+    case TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED:
+      return "renamed";
+    case TP_CHANNEL_GROUP_CHANGE_REASON_PERMISSION_DENIED:
+      return "permission denied";
+    case TP_CHANNEL_GROUP_CHANGE_REASON_SEPARATED:
+      return "separated";
     default:
       return "(unknown reason code)";
     }
