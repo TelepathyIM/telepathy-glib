@@ -931,7 +931,7 @@ tp_channel_group_members_changed_detailed_cb (TpChannel *self,
       self, added->len, removed->len, local_pending->len, remote_pending->len);
 
   actor = tp_asv_get_uint32 (details, "actor", NULL);
-  reason = tp_asv_get_uint32 (details, "reason", NULL);
+  reason = tp_asv_get_uint32 (details, "change-reason", NULL);
   message = tp_asv_get_string (details, "message");
 
   if (message == NULL)
