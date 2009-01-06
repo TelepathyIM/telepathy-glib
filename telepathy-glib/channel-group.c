@@ -848,10 +848,20 @@ handle_members_changed (TpChannel *self,
 
       if (handle == self->priv->group_self_handle)
         {
+          const gchar *error_detail = tp_asv_get_string (details, "error");
+
           self->priv->group_remove_reason = reason;
           g_free (self->priv->group_remove_message);
-          self->priv->group_remove_message = g_strdup (message);
+
+          /* If there's an error detail and a message, "$error: $message", else
+           * just the non-empty one (or indeed the empty string).
+           */
+          self->priv->group_remove_message = g_strdup_printf ("%s%s%s",
+              (error_detail != NULL ? error_detail : ""),
+              (error_detail != NULL && message[0] != '\0' ? ": " : ""),
+              message);
         }
+
       /* FIXME: should check against the Connection's self-handle too,
        * after I add that API */
     }
