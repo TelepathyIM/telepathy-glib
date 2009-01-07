@@ -1,7 +1,7 @@
 /*
- * factory.c - an example channel factory for channels talking to a particular
- * contact. Similar code is used for 1-1 IM channels in many protocols
- * (IRC private messages ("/query"), XMPP IM etc.)
+ * im-manager.c - an example channel manager for channels talking to a
+ * particular contact. Similar code is used for 1-1 IM channels in many
+ * protocols (IRC private messages ("/query"), XMPP IM etc.)
  *
  * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007 Nokia Corporation
@@ -11,7 +11,7 @@
  * notice and this notice are preserved.
  */
 
-#include "factory.h"
+#include "im-manager.h"
 
 #include <dbus/dbus-glib.h>
 

@@ -18,7 +18,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/interfaces.h>
 
-#include "factory.h"
+#include "im-manager.h"
 
 G_DEFINE_TYPE (ExampleEcho2Connection,
     example_echo_2_connection,
