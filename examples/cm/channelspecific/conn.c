@@ -18,6 +18,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
+#include <telepathy-glib/interfaces.h>
 
 #include "room-factory.h"
 
@@ -197,7 +198,7 @@ create_handle_repos (TpBaseConnection *conn,
 }
 
 static GPtrArray *
-create_channel_factories (TpBaseConnection *conn)
+create_channel_managers (TpBaseConnection *conn)
 {
   GPtrArray *ret = g_ptr_array_sized_new (1);
 
@@ -244,6 +245,9 @@ shut_down (TpBaseConnection *conn)
 static void
 example_csh_connection_class_init (ExampleCSHConnectionClass *klass)
 {
+  static const gchar *interfaces_always_present[] = {
+      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+      NULL };
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -256,9 +260,10 @@ example_csh_connection_class_init (ExampleCSHConnectionClass *klass)
 
   base_class->create_handle_repos = create_handle_repos;
   base_class->get_unique_connection_name = get_unique_connection_name;
-  base_class->create_channel_factories = create_channel_factories;
+  base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
+  base_class->interfaces_always_present = interfaces_always_present;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,
