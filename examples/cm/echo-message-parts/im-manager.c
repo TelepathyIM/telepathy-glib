@@ -25,8 +25,8 @@
 
 static void channel_manager_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Factory,
-    example_echo_2_factory,
+G_DEFINE_TYPE_WITH_CODE (ExampleEcho2ImManager,
+    example_echo_2_im_manager,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_MANAGER,
       channel_manager_iface_init))
@@ -39,7 +39,7 @@ enum
   N_PROPS
 };
 
-struct _ExampleEcho2FactoryPrivate
+struct _ExampleEcho2ImManagerPrivate
 {
   TpBaseConnection *conn;
 
@@ -49,26 +49,26 @@ struct _ExampleEcho2FactoryPrivate
 };
 
 static void
-example_echo_2_factory_init (ExampleEcho2Factory *self)
+example_echo_2_im_manager_init (ExampleEcho2ImManager *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_ECHO_2_FACTORY,
-      ExampleEcho2FactoryPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_ECHO_2_IM_MANAGER,
+      ExampleEcho2ImManagerPrivate);
 
   self->priv->channels = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, g_object_unref);
 }
 
-static void example_echo_2_factory_close_all (ExampleEcho2Factory *self);
+static void example_echo_2_im_manager_close_all (ExampleEcho2ImManager *self);
 
 static void
 dispose (GObject *object)
 {
-  ExampleEcho2Factory *self = EXAMPLE_ECHO_2_FACTORY (object);
+  ExampleEcho2ImManager *self = EXAMPLE_ECHO_2_IM_MANAGER (object);
 
-  example_echo_2_factory_close_all (self);
+  example_echo_2_im_manager_close_all (self);
   g_assert (self->priv->channels == NULL);
 
-  ((GObjectClass *) example_echo_2_factory_parent_class)->dispose (object);
+  ((GObjectClass *) example_echo_2_im_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -77,7 +77,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-  ExampleEcho2Factory *self = EXAMPLE_ECHO_2_FACTORY (object);
+  ExampleEcho2ImManager *self = EXAMPLE_ECHO_2_IM_MANAGER (object);
 
   switch (property_id)
     {
@@ -95,7 +95,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-  ExampleEcho2Factory *self = EXAMPLE_ECHO_2_FACTORY (object);
+  ExampleEcho2ImManager *self = EXAMPLE_ECHO_2_IM_MANAGER (object);
 
   switch (property_id)
     {
@@ -114,18 +114,18 @@ static void
 status_changed_cb (TpBaseConnection *conn,
                    guint status,
                    guint reason,
-                   ExampleEcho2Factory *self)
+                   ExampleEcho2ImManager *self)
 {
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
-    example_echo_2_factory_close_all (self);
+    example_echo_2_im_manager_close_all (self);
 }
 
 static void
 constructed (GObject *object)
 {
-  ExampleEcho2Factory *self = EXAMPLE_ECHO_2_FACTORY (object);
+  ExampleEcho2ImManager *self = EXAMPLE_ECHO_2_IM_MANAGER (object);
   void (*chain_up) (GObject *) =
-      ((GObjectClass *) example_echo_2_factory_parent_class)->constructed;
+      ((GObjectClass *) example_echo_2_im_manager_parent_class)->constructed;
 
   if (chain_up != NULL)
     {
@@ -137,7 +137,7 @@ constructed (GObject *object)
 }
 
 static void
-example_echo_2_factory_class_init (ExampleEcho2FactoryClass *klass)
+example_echo_2_im_manager_class_init (ExampleEcho2ImManagerClass *klass)
 {
   GParamSpec *param_spec;
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -154,11 +154,11 @@ example_echo_2_factory_class_init (ExampleEcho2FactoryClass *klass)
       G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
-  g_type_class_add_private (klass, sizeof (ExampleEcho2FactoryPrivate));
+  g_type_class_add_private (klass, sizeof (ExampleEcho2ImManagerPrivate));
 }
 
 static void
-example_echo_2_factory_close_all (ExampleEcho2Factory *self)
+example_echo_2_im_manager_close_all (ExampleEcho2ImManager *self)
 {
   if (self->priv->channels != NULL)
     {
@@ -177,11 +177,11 @@ example_echo_2_factory_close_all (ExampleEcho2Factory *self)
 }
 
 static void
-example_echo_2_factory_foreach_channel (TpChannelManager *iface,
+example_echo_2_im_manager_foreach_channel (TpChannelManager *iface,
                                         TpExportableChannelFunc callback,
                                         gpointer user_data)
 {
-  ExampleEcho2Factory *self = EXAMPLE_ECHO_2_FACTORY (iface);
+  ExampleEcho2ImManager *self = EXAMPLE_ECHO_2_IM_MANAGER (iface);
   GHashTableIter iter;
   gpointer handle, channel;
 
@@ -195,7 +195,7 @@ example_echo_2_factory_foreach_channel (TpChannelManager *iface,
 
 static void
 channel_closed_cb (ExampleEcho2Channel *chan,
-                   ExampleEcho2Factory *self)
+                   ExampleEcho2ImManager *self)
 {
   tp_channel_manager_emit_channel_closed_for_object (self,
       TP_EXPORTABLE_CHANNEL (chan));
@@ -226,7 +226,7 @@ channel_closed_cb (ExampleEcho2Channel *chan,
 }
 
 static ExampleEcho2Channel *
-new_channel (ExampleEcho2Factory *self,
+new_channel (ExampleEcho2ImManager *self,
              TpHandle handle,
              TpHandle initiator,
              gpointer request_token)
@@ -274,7 +274,7 @@ static const gchar * const allowed_properties[] = {
 };
 
 static void
-example_echo_2_factory_foreach_channel_class (TpChannelManager *manager,
+example_echo_2_im_manager_foreach_channel_class (TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func,
     gpointer user_data)
 {
@@ -296,7 +296,7 @@ example_echo_2_factory_foreach_channel_class (TpChannelManager *manager,
 }
 
 static gboolean
-example_echo_2_factory_request (ExampleEcho2Factory *self,
+example_echo_2_im_manager_request (ExampleEcho2ImManager *self,
                                 gpointer request_token,
                                 GHashTable *request_properties,
                                 gboolean require_new)
@@ -357,20 +357,20 @@ error:
 }
 
 static gboolean
-example_echo_2_factory_create_channel (TpChannelManager *manager,
+example_echo_2_im_manager_create_channel (TpChannelManager *manager,
                                        gpointer request_token,
                                        GHashTable *request_properties)
 {
-    return example_echo_2_factory_request (EXAMPLE_ECHO_2_FACTORY (manager),
+    return example_echo_2_im_manager_request (EXAMPLE_ECHO_2_IM_MANAGER (manager),
         request_token, request_properties, TRUE);
 }
 
 static gboolean
-example_echo_2_factory_ensure_channel (TpChannelManager *manager,
+example_echo_2_im_manager_ensure_channel (TpChannelManager *manager,
                                        gpointer request_token,
                                        GHashTable *request_properties)
 {
-    return example_echo_2_factory_request (EXAMPLE_ECHO_2_FACTORY (manager),
+    return example_echo_2_im_manager_request (EXAMPLE_ECHO_2_IM_MANAGER (manager),
         request_token, request_properties, FALSE);
 }
 
@@ -380,10 +380,10 @@ channel_manager_iface_init (gpointer g_iface,
 {
   TpChannelManagerIface *iface = g_iface;
 
-  iface->foreach_channel = example_echo_2_factory_foreach_channel;
-  iface->foreach_channel_class = example_echo_2_factory_foreach_channel_class;
-  iface->create_channel = example_echo_2_factory_create_channel;
-  iface->ensure_channel = example_echo_2_factory_ensure_channel;
+  iface->foreach_channel = example_echo_2_im_manager_foreach_channel;
+  iface->foreach_channel_class = example_echo_2_im_manager_foreach_channel_class;
+  iface->create_channel = example_echo_2_im_manager_create_channel;
+  iface->ensure_channel = example_echo_2_im_manager_ensure_channel;
   /* In this channel manager, Request has the same semantics as Ensure */
-  iface->request_channel = example_echo_2_factory_ensure_channel;
+  iface->request_channel = example_echo_2_im_manager_ensure_channel;
 }

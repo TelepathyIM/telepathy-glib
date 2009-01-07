@@ -17,38 +17,38 @@
 
 G_BEGIN_DECLS
 
-typedef struct _ExampleEcho2Factory ExampleEcho2Factory;
-typedef struct _ExampleEcho2FactoryClass ExampleEcho2FactoryClass;
-typedef struct _ExampleEcho2FactoryPrivate ExampleEcho2FactoryPrivate;
+typedef struct _ExampleEcho2ImManager ExampleEcho2ImManager;
+typedef struct _ExampleEcho2ImManagerClass ExampleEcho2ImManagerClass;
+typedef struct _ExampleEcho2ImManagerPrivate ExampleEcho2ImManagerPrivate;
 
-struct _ExampleEcho2FactoryClass {
+struct _ExampleEcho2ImManagerClass {
     GObjectClass parent_class;
 };
 
-struct _ExampleEcho2Factory {
+struct _ExampleEcho2ImManager {
     GObject parent;
 
-    ExampleEcho2FactoryPrivate *priv;
+    ExampleEcho2ImManagerPrivate *priv;
 };
 
-GType example_echo_2_factory_get_type (void);
+GType example_echo_2_im_manager_get_type (void);
 
 /* TYPE MACROS */
-#define EXAMPLE_TYPE_ECHO_2_FACTORY \
-  (example_echo_2_factory_get_type ())
-#define EXAMPLE_ECHO_2_FACTORY(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_ECHO_2_FACTORY, \
-                              ExampleEcho2Factory))
-#define EXAMPLE_ECHO_2_FACTORY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_ECHO_2_FACTORY, \
-                           ExampleEcho2FactoryClass))
-#define EXAMPLE_IS_ECHO_2_FACTORY(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_ECHO_2_FACTORY))
-#define EXAMPLE_IS_ECHO_2_FACTORY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_ECHO_2_FACTORY))
-#define EXAMPLE_ECHO_2_FACTORY_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_ECHO_2_FACTORY, \
-                              ExampleEcho2FactoryClass))
+#define EXAMPLE_TYPE_ECHO_2_IM_MANAGER \
+  (example_echo_2_im_manager_get_type ())
+#define EXAMPLE_ECHO_2_IM_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_ECHO_2_IM_MANAGER, \
+                              ExampleEcho2ImManager))
+#define EXAMPLE_ECHO_2_IM_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_ECHO_2_IM_MANAGER, \
+                           ExampleEcho2ImManagerClass))
+#define EXAMPLE_IS_ECHO_2_IM_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_ECHO_2_IM_MANAGER))
+#define EXAMPLE_IS_ECHO_2_IM_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_ECHO_2_IM_MANAGER))
+#define EXAMPLE_ECHO_2_IM_MANAGER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_ECHO_2_IM_MANAGER, \
+                              ExampleEcho2ImManagerClass))
 
 G_END_DECLS
 
