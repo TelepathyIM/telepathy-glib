@@ -74,8 +74,8 @@ new_connection (TpBaseConnectionManager *self,
                 GError **error)
 {
   ExampleParams *params = parsed_params;
-  ExampleConnection *conn = EXAMPLE_CONNECTION
-      (g_object_new (EXAMPLE_TYPE_CONNECTION,
+  ExampleExtendedConnection *conn = EXAMPLE_EXTENDED_CONNECTION
+      (g_object_new (EXAMPLE_TYPE_EXTENDED_CONNECTION,
           "account", params->account,
           "protocol", proto,
           NULL));

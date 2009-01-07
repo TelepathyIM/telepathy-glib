@@ -24,8 +24,8 @@
 
 static void _hats_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE (ExampleConnection,
-    example_connection,
+G_DEFINE_TYPE_WITH_CODE (ExampleExtendedConnection,
+    example_extended_connection,
     TP_TYPE_BASE_CONNECTION,
     G_IMPLEMENT_INTERFACE (EXAMPLE_TYPE_SVC_CONNECTION_INTERFACE_HATS,
       _hats_iface_init))
@@ -38,7 +38,7 @@ enum
   N_PROPS
 };
 
-struct _ExampleConnectionPrivate
+struct _ExampleExtendedConnectionPrivate
 {
   gchar *account;
 
@@ -49,10 +49,10 @@ struct _ExampleConnectionPrivate
 };
 
 static void
-example_connection_init (ExampleConnection *self)
+example_extended_connection_init (ExampleExtendedConnection *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_CONNECTION,
-      ExampleConnectionPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_EXTENDED_CONNECTION,
+      ExampleExtendedConnectionPrivate);
 
   self->priv->hat_color = g_strdup ("");
   self->priv->hat_style = EXAMPLE_HAT_STYLE_NONE;
@@ -66,7 +66,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *spec)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (object);
+  ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (object);
 
   switch (property_id) {
     case PROP_ACCOUNT:
@@ -83,7 +83,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *spec)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (object);
+  ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (object);
 
   switch (property_id) {
     case PROP_ACCOUNT:
@@ -98,19 +98,19 @@ set_property (GObject *object,
 static void
 finalize (GObject *object)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (object);
+  ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (object);
 
   g_free (self->priv->account);
   g_free (self->priv->hat_color);
   g_hash_table_destroy (self->priv->hat_properties);
 
-  G_OBJECT_CLASS (example_connection_parent_class)->finalize (object);
+  G_OBJECT_CLASS (example_extended_connection_parent_class)->finalize (object);
 }
 
 static gchar *
 get_unique_connection_name (TpBaseConnection *conn)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (conn);
+  ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (conn);
 
   return g_strdup (self->priv->account);
 }
@@ -149,7 +149,7 @@ static gboolean
 start_connecting (TpBaseConnection *conn,
                   GError **error)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (conn);
+  ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (conn);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
 
@@ -176,7 +176,7 @@ shut_down (TpBaseConnection *conn)
 }
 
 static void
-example_connection_class_init (ExampleConnectionClass *klass)
+example_extended_connection_class_init (ExampleExtendedConnectionClass *klass)
 {
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
@@ -189,7 +189,7 @@ example_connection_class_init (ExampleConnectionClass *klass)
   object_class->get_property = get_property;
   object_class->set_property = set_property;
   object_class->finalize = finalize;
-  g_type_class_add_private (klass, sizeof (ExampleConnectionPrivate));
+  g_type_class_add_private (klass, sizeof (ExampleExtendedConnectionPrivate));
 
   base_class->create_handle_repos = create_handle_repos;
   base_class->get_unique_connection_name = get_unique_connection_name;
@@ -211,7 +211,7 @@ my_get_hats (ExampleSvcConnectionInterfaceHats *iface,
              const GArray *contacts,
              DBusGMethodInvocation *context)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (iface);
+  ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (iface);
   TpBaseConnection *base = (TpBaseConnection *) self;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (base,
       TP_HANDLE_TYPE_CONTACT);
@@ -283,7 +283,7 @@ my_set_hat (ExampleSvcConnectionInterfaceHats *iface,
             GHashTable *properties,
             DBusGMethodInvocation *context)
 {
-  ExampleConnection *self = EXAMPLE_CONNECTION (iface);
+  ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (iface);
   TpBaseConnection *base = (TpBaseConnection *) self;
 
   g_free (self->priv->hat_color);
