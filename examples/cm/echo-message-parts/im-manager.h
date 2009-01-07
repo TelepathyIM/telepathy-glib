@@ -1,5 +1,5 @@
 /*
- * factory.h - header for an example channel factory
+ * manager.h - header for an example channel manager
  *
  * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007 Nokia Corporation
@@ -9,11 +9,10 @@
  * notice and this notice are preserved.
  */
 
-#ifndef EXAMPLE_ECHO_MESSAGE_PARTS_FACTORY_H
-#define EXAMPLE_ECHO_MESSAGE_PARTS_FACTORY_H
+#ifndef EXAMPLE_ECHO_MESSAGE_PARTS_IM_MANAGER_H
+#define EXAMPLE_ECHO_MESSAGE_PARTS_IM_MANAGER_H
 
 #include <glib-object.h>
-#include <telepathy-glib/channel-factory-iface.h>
 
 G_BEGIN_DECLS
 

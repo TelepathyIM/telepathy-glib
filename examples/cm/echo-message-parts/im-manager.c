@@ -101,7 +101,7 @@ set_property (GObject *object,
     {
     case PROP_CONNECTION:
       /* We don't ref the connection, because it owns a reference to the
-       * factory, and it guarantees that the factory's lifetime is
+       * channel manager, and it guarantees that the manager's lifetime is
        * less than its lifetime */
       self->priv->conn = g_value_get_object (value);
       break;
@@ -148,7 +148,7 @@ example_echo_2_im_manager_class_init (ExampleEcho2ImManagerClass *klass)
   object_class->set_property = set_property;
 
   param_spec = g_param_spec_object ("connection", "Connection object",
-      "The connection that owns this channel factory",
+      "The connection that owns this channel manager",
       TP_TYPE_BASE_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);

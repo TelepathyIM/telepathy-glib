@@ -366,7 +366,7 @@ example_echo_channel_close (ExampleEchoChannel *self)
     {
       TpHandle first_sender;
 
-      /* The factory wants to be able to respawn the channel if it has pending
+      /* The manager wants to be able to respawn the channel if it has pending
        * messages. When respawned, the channel must have the initiator set
        * to the contact who sent us those messages (if it isn't already),
        * and the messages must be marked as having been rescued so they
