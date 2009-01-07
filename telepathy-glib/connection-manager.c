@@ -1118,7 +1118,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       param_spec);
 
   /**
-   * TpConnectionManager:activated:
+   * TpConnectionManager::activated:
    * @self: the connection manager proxy
    *
    * Emitted when the connection manager's well-known name appears on the bus.
@@ -1132,7 +1132,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       G_TYPE_NONE, 0);
 
   /**
-   * TpConnectionManager:exited:
+   * TpConnectionManager::exited:
    * @self: the connection manager proxy
    *
    * Emitted when the connection manager's well-known name disappears from
@@ -1147,7 +1147,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       G_TYPE_NONE, 0);
 
   /**
-   * TpConnectionManager:got-info:
+   * TpConnectionManager::got-info:
    * @self: the connection manager proxy
    * @source: a #TpCMInfoSource
    *
