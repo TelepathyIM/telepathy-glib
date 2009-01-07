@@ -399,7 +399,7 @@ hold_handles_context_free (gpointer p)
  * On success, the caller has one reference to each handle in @handles, which
  * may be released later with tp_connection_unref_handles(). If not
  * released, the handles will remain valid until @connection becomes invalid
- * (signalled by TpProxy::invalidated).
+ * (signalled by #TpProxy::invalidated).
  *
  * For convenience, the handle type and handles requested by the caller are
  * passed through to this callback on success, so the caller does not have to
