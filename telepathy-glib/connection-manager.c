@@ -1165,13 +1165,15 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 /**
  * tp_connection_manager_new:
  * @dbus: Proxy for the D-Bus daemon
- * @name: The connection manager name
- * @manager_filename: The #TpConnectionManager:manager-file property
+ * @name: The connection manager name (such as "gabble")
+ * @manager_filename: The #TpConnectionManager:manager-file property, which may
+ *                    (and generally should) be %NULL.
  * @error: used to return an error if %NULL is returned
  *
  * Convenience function to create a new connection manager proxy.
  *
- * Returns: a new reference to a connection manager proxy
+ * Returns: a new reference to a connection manager proxy, or %NULL if @error
+ *          is set.
  */
 TpConnectionManager *
 tp_connection_manager_new (TpDBusDaemon *dbus,
