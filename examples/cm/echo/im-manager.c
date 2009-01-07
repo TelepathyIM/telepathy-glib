@@ -178,8 +178,8 @@ example_echo_im_manager_close_all (ExampleEchoImManager *self)
 
 static void
 example_echo_im_manager_foreach_channel (TpChannelManager *iface,
-                                      TpExportableChannelFunc callback,
-                                      gpointer user_data)
+                                         TpExportableChannelFunc callback,
+                                         gpointer user_data)
 {
   ExampleEchoImManager *self = EXAMPLE_ECHO_IM_MANAGER (iface);
   GHashTableIter iter;
@@ -278,28 +278,28 @@ example_echo_im_manager_foreach_channel_class (TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func,
     gpointer user_data)
 {
-    GHashTable *table = g_hash_table_new_full (g_str_hash, g_str_equal,
-        NULL, (GDestroyNotify) tp_g_value_slice_free);
-    GValue *value;
+  GHashTable *table = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, (GDestroyNotify) tp_g_value_slice_free);
+  GValue *value;
 
-    value = tp_g_value_slice_new (G_TYPE_STRING);
-    g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_TEXT);
-    g_hash_table_insert (table, TP_IFACE_CHANNEL ".ChannelType", value);
+  value = tp_g_value_slice_new (G_TYPE_STRING);
+  g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_hash_table_insert (table, TP_IFACE_CHANNEL ".ChannelType", value);
 
-    value = tp_g_value_slice_new (G_TYPE_UINT);
-    g_value_set_uint (value, TP_HANDLE_TYPE_CONTACT);
-    g_hash_table_insert (table, TP_IFACE_CHANNEL ".TargetHandleType", value);
+  value = tp_g_value_slice_new (G_TYPE_UINT);
+  g_value_set_uint (value, TP_HANDLE_TYPE_CONTACT);
+  g_hash_table_insert (table, TP_IFACE_CHANNEL ".TargetHandleType", value);
 
-    func (manager, table, allowed_properties, user_data);
+  func (manager, table, allowed_properties, user_data);
 
-    g_hash_table_destroy (table);
+  g_hash_table_destroy (table);
 }
 
 static gboolean
 example_echo_im_manager_request (ExampleEchoImManager *self,
-                              gpointer request_token,
-                              GHashTable *request_properties,
-                              gboolean require_new)
+                                 gpointer request_token,
+                                 GHashTable *request_properties,
+                                 gboolean require_new)
 {
   TpHandle handle;
   ExampleEchoChannel *chan;
@@ -358,8 +358,8 @@ error:
 
 static gboolean
 example_echo_im_manager_create_channel (TpChannelManager *manager,
-                                     gpointer request_token,
-                                     GHashTable *request_properties)
+                                        gpointer request_token,
+                                        GHashTable *request_properties)
 {
     return example_echo_im_manager_request (EXAMPLE_ECHO_IM_MANAGER (manager),
         request_token, request_properties, TRUE);
@@ -367,8 +367,8 @@ example_echo_im_manager_create_channel (TpChannelManager *manager,
 
 static gboolean
 example_echo_im_manager_ensure_channel (TpChannelManager *manager,
-                                     gpointer request_token,
-                                     GHashTable *request_properties)
+                                        gpointer request_token,
+                                        GHashTable *request_properties)
 {
     return example_echo_im_manager_request (EXAMPLE_ECHO_IM_MANAGER (manager),
         request_token, request_properties, FALSE);
