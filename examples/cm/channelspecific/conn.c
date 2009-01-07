@@ -20,7 +20,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/interfaces.h>
 
-#include "room-factory.h"
+#include "room-manager.h"
 
 G_DEFINE_TYPE (ExampleCSHConnection,
     example_csh_connection,

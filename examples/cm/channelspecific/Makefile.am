@@ -11,8 +11,8 @@ libexample_cm_csh_la_SOURCES = \
     connection-manager.h \
     room.c \
     room.h \
-    room-factory.c \
-    room-factory.h
+    room-manager.c \
+    room-manager.h
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
 # pkg-config via autoconf) instead of the .la path

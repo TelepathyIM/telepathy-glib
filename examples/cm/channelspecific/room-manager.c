@@ -1,5 +1,5 @@
 /*
- * room-factory.c: example channel factory for chatrooms
+ * room-manager.c: example channel manager for chatrooms
  *
  * Copyright (C) 2007-2008 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007 Nokia Corporation
@@ -9,7 +9,7 @@
  * notice and this notice are preserved.
  */
 
-#include "room-factory.h"
+#include "room-manager.h"
 
 #include <dbus/dbus-glib.h>
 
