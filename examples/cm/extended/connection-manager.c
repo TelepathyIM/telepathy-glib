@@ -8,7 +8,7 @@
  * notice and this notice are preserved.
  */
 
-#include "manager.h"
+#include "connection-manager.h"
 
 #include <dbus/dbus-protocol.h>
 #include <dbus/dbus-glib.h>
@@ -18,14 +18,15 @@
 
 #include "conn.h"
 
-G_DEFINE_TYPE (ExampleConnectionManager,
-    example_connection_manager,
+G_DEFINE_TYPE (ExampleExtendedConnectionManager,
+    example_extended_connection_manager,
     TP_TYPE_BASE_CONNECTION_MANAGER)
 
 /* type definition stuff */
 
 static void
-example_connection_manager_init (ExampleConnectionManager *self)
+example_extended_connection_manager_init (
+    ExampleExtendedConnectionManager *self)
 {
 }
 
@@ -83,7 +84,8 @@ new_connection (TpBaseConnectionManager *self,
 }
 
 static void
-example_connection_manager_class_init (ExampleConnectionManagerClass *klass)
+example_extended_connection_manager_class_init (
+    ExampleExtendedConnectionManagerClass *klass)
 {
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;

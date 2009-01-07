@@ -13,13 +13,14 @@
 
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/run.h>
-#include "manager.h"
+
+#include "connection-manager.h"
 
 static TpBaseConnectionManager *
 construct_cm (void)
 {
   return (TpBaseConnectionManager *) g_object_new (
-      EXAMPLE_TYPE_CONNECTION_MANAGER,
+      EXAMPLE_TYPE_EXTENDED_CONNECTION_MANAGER,
       NULL);
 }
 

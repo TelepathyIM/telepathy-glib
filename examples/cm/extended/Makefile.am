@@ -3,9 +3,9 @@ noinst_PROGRAMS = telepathy-example-cm-extended
 telepathy_example_cm_extended_SOURCES = \
     conn.c \
     conn.h \
-    main.c \
-    manager.c \
-    manager.h
+    connection-manager.c \
+    connection-manager.h \
+    main.c
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
 # pkg-config via autoconf) instead of the path to libtelepathy-glib.la
