@@ -6,10 +6,10 @@ libexample_cm_echo_2_la_SOURCES = \
     chan.h \
     conn.c \
     conn.h \
+    connection-manager.c \
+    connection-manager.h \
     factory.c \
-    factory.h \
-    manager.c \
-    manager.h
+    factory.h
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
 # pkg-config via autoconf) instead of the .la path
