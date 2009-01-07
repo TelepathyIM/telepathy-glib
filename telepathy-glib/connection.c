@@ -52,9 +52,10 @@
  * Compared with a simple proxy for method calls, they add the following
  * features:
  *
- * * connection status tracking
- *
- * * calling GetInterfaces() automatically
+ * <itemizedlist>
+ * <listitem>connection status tracking</listitem>
+ * <listitem>calling GetInterfaces() automatically</listitem>
+ * </itemizedlist>
  *
  * Since: 0.7.1
  */
