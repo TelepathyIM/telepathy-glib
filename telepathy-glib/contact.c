@@ -37,6 +37,8 @@
  * @see_also: #TpConnection
  *
  * #TpContact objects represent the contacts on a particular #TpConnection.
+ *
+ * Since: 0.7.18
  */
 
 /**
@@ -58,6 +60,8 @@
  * Those functions should be avoided in favour of using #TpContact,
  * tp_connection_hold_handles(), tp_connection_request_handles() and
  * tp_connection_get_contact_attributes().
+ *
+ * Since: 0.7.18
  */
 
 struct _TpContactClass {
@@ -84,6 +88,8 @@ struct _TpContact {
  * When requesting a #TpContact, library users specify the desired features;
  * the #TpContact code will only initialize state for those features, to
  * avoid unwanted D-Bus round-trips and signal connections.
+ *
+ * Since: 0.7.18
  */
 
 G_DEFINE_TYPE (TpContact, tp_contact, G_TYPE_OBJECT);
@@ -139,6 +145,8 @@ struct _TpContactPrivate {
  * Returns: a borrowed reference to the #TpContact:connection
  *  (it must be referenced with g_object_ref if it must remain valid
  *  longer than the contact)
+ *
+ * Since: 0.7.18
  */
 TpConnection *
 tp_contact_get_connection (TpContact *self)
@@ -164,6 +172,8 @@ tp_contact_get_connection (TpContact *self)
  * to the handle.
  *
  * Returns: the same handle as the #TpContact:handle property
+ *
+ * Since: 0.7.18
  */
 TpHandle
 tp_contact_get_handle (TpContact *self)
@@ -182,6 +192,8 @@ tp_contact_get_handle (TpContact *self)
  * that, it must be copied with g_strdup().
  *
  * Returns: the same non-%NULL identifier as the #TpContact:identifier property
+ *
+ * Since: 0.7.18
  */
 const gchar *
 tp_contact_get_identifier (TpContact *self)
@@ -202,6 +214,8 @@ tp_contact_get_identifier (TpContact *self)
  * <!-- -->
  *
  * Returns: %TRUE if @self has been set up to track the feature @feature
+ *
+ * Since: 0.7.18
  */
 gboolean
 tp_contact_has_feature (TpContact *self,
@@ -223,6 +237,8 @@ tp_contact_has_feature (TpContact *self,
  * longer than that, it must be copied with g_strdup().
  *
  * Returns: the same non-%NULL alias as the #TpContact:alias
+ *
+ * Since: 0.7.18
  */
 const gchar *
 tp_contact_get_alias (TpContact *self)
@@ -249,6 +265,8 @@ tp_contact_get_alias (TpContact *self)
  *
  * Returns: the same token as the #TpContact:avatar-token property
  *  (possibly %NULL)
+ *
+ * Since: 0.7.18
  */
 const gchar *
 tp_contact_get_avatar_token (TpContact *self)
@@ -270,6 +288,8 @@ tp_contact_get_avatar_token (TpContact *self)
  * Otherwise, return %TP_CONNECTION_PRESENCE_TYPE_UNSET.
  *
  * Returns: the same presence type as the #TpContact:presence-type property
+ *
+ * Since: 0.7.18
  */
 TpConnectionPresenceType
 tp_contact_get_presence_type (TpContact *self)
@@ -291,6 +311,8 @@ tp_contact_get_presence_type (TpContact *self)
  *
  * Returns: the same non-%NULL status name as the #TpContact:presence-status
  *  property
+ *
+ * Since: 0.7.18
  */
 const gchar *
 tp_contact_get_presence_status (TpContact *self)
@@ -313,6 +335,8 @@ tp_contact_get_presence_status (TpContact *self)
  *
  * Returns: the same non-%NULL message as the #TpContact:presence-message
  *  property
+ *
+ * Since: 0.7.18
  */
 const gchar *
 tp_contact_get_presence_message (TpContact *self)
@@ -772,7 +796,8 @@ contacts_context_fail (ContactsContext *c,
           error, c->user_data, c->weak_object);
       return;
     case CB_BY_ID:
-      for (i = 0; i < c->request_ids->len; i++)
+      /* -1 because NULL terminator is explicit */
+      for (i = 0; i < c->request_ids->len - 1; i++)
         {
           const gchar *id = g_ptr_array_index (c->request_ids, i);
 
@@ -831,6 +856,8 @@ contacts_context_fail (ContactsContext *c,
  * @contacts will contain contact objects for those handles that were
  * valid (possibly none of them), and @invalid will contain the handles
  * that were not valid.
+ *
+ * Since: 0.7.18
  */
 
 /**
@@ -875,6 +902,8 @@ contacts_context_fail (ContactsContext *c,
  * that were requested, mapped to a corresponding #GError (either one
  * indicating that the ID was invalid, if that was determined before the
  * fatal error occurred, or a copy of @error).
+ *
+ * Since: 0.7.18
  */
 
 /**
@@ -897,6 +926,8 @@ contacts_context_fail (ContactsContext *c,
  * If an unrecoverable error occurs (for instance, if @connection becomes
  * disconnected) it is indicated by @error, but the contacts in @contacts
  * are still provided.
+ *
+ * Since: 0.7.18
  */
 
 
@@ -1819,6 +1850,8 @@ contacts_get_attributes (ContactsContext *context)
  * manager doesn't support them - users of this method should have a static
  * list of features they would like to use if possible, and use it for all
  * connection managers.
+ *
+ * Since: 0.7.18
  */
 void
 tp_connection_get_contacts_by_handle (TpConnection *self,
@@ -1916,6 +1949,8 @@ contacts_context_idle_continue (gpointer data)
  * manager doesn't support them - users of this method should have a static
  * list of features they would like to use if possible, and use it for all
  * connection managers.
+ *
+ * Since: 0.7.18
  */
 void
 tp_connection_upgrade_contacts (TpConnection *self,
@@ -2125,6 +2160,8 @@ contacts_requested_handles (TpConnection *connection,
  * manager doesn't support them - users of this method should have a static
  * list of features they would like to use if possible, and use it for all
  * connection managers.
+ *
+ * Since: 0.7.18
  */
 void
 tp_connection_get_contacts_by_id (TpConnection *self,

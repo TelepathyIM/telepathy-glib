@@ -519,7 +519,7 @@ tp_dynamic_handle_repo_class_init (TpDynamicHandleRepoClass *klass)
       "handle-type");
 
   /**
-   * TpDynamicHandleRepo::normalize-function:
+   * TpDynamicHandleRepo:normalize-function:
    *
    * An optional #TpDynamicHandleRepoNormalizeFunc used to validate and
    * normalize handle IDs. If %NULL (which is the default), any handle ID is
@@ -535,10 +535,10 @@ tp_dynamic_handle_repo_class_init (TpDynamicHandleRepoClass *klass)
       param_spec);
 
   /**
-   * TpDynamicHandleRepo::default-normalize-context:
+   * TpDynamicHandleRepo:default-normalize-context:
    *
    * An optional default context given to the
-   * #TpDynamicHandleRepo::normalize-function if %NULL is passed as context to
+   * #TpDynamicHandleRepo:normalize-function if %NULL is passed as context to
    * the ensure or lookup functions, e.g. when RequestHandle is called via
    * D-Bus. The default is %NULL.
    */

@@ -1061,7 +1061,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
 
   /**
-   * TpConnectionManager::info-source:
+   * TpConnectionManager:info-source:
    *
    * Where we got the current information on supported protocols
    * (a #TpCMInfoSource).
@@ -1075,7 +1075,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       param_spec);
 
   /**
-   * TpConnectionManager::connection-manager:
+   * TpConnectionManager:connection-manager:
    *
    * The name of the connection manager, e.g. "gabble" (read-only).
    */
@@ -1088,7 +1088,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       param_spec);
 
   /**
-   * TpConnectionManager::manager-file:
+   * TpConnectionManager:manager-file:
    *
    * The absolute path of the .manager file. If set to %NULL (the default),
    * the XDG data directories will be searched for a .manager file of the
@@ -1105,7 +1105,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       param_spec);
 
   /**
-   * TpConnectionManager::always-introspect:
+   * TpConnectionManager:always-introspect:
    *
    * If %TRUE, always introspect the connection manager as it comes online,
    * even if we already have its info from a .manager file. Default %FALSE.
@@ -1118,7 +1118,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       param_spec);
 
   /**
-   * TpConnectionManager::activated:
+   * TpConnectionManager:activated:
    * @self: the connection manager proxy
    *
    * Emitted when the connection manager's well-known name appears on the bus.
@@ -1132,7 +1132,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       G_TYPE_NONE, 0);
 
   /**
-   * TpConnectionManager::exited:
+   * TpConnectionManager:exited:
    * @self: the connection manager proxy
    *
    * Emitted when the connection manager's well-known name disappears from
@@ -1147,7 +1147,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
       G_TYPE_NONE, 0);
 
   /**
-   * TpConnectionManager::got-info:
+   * TpConnectionManager:got-info:
    * @self: the connection manager proxy
    * @source: a #TpCMInfoSource
    *
@@ -1165,13 +1165,15 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 /**
  * tp_connection_manager_new:
  * @dbus: Proxy for the D-Bus daemon
- * @name: The connection manager name
- * @manager_filename: The #TpConnectionManager::manager-file property
+ * @name: The connection manager name (such as "gabble")
+ * @manager_filename: The #TpConnectionManager:manager-file property, which may
+ *                    (and generally should) be %NULL.
  * @error: used to return an error if %NULL is returned
  *
  * Convenience function to create a new connection manager proxy.
  *
- * Returns: a new reference to a connection manager proxy
+ * Returns: a new reference to a connection manager proxy, or %NULL if @error
+ *          is set.
  */
 TpConnectionManager *
 tp_connection_manager_new (TpDBusDaemon *dbus,
