@@ -7,6 +7,7 @@ noinst_PROGRAMS = \
     test-connection-inject-bug16307 \
     test-connection-getinterfaces-failure \
     test-contacts \
+    test-contacts-bug-19101 \
     test-contacts-mixin \
     test-dbus \
     test-disconnection \
@@ -40,6 +41,8 @@ test_connection_getinterfaces_failure_SOURCES = \
     connection-getinterfaces-failure.c
 
 test_contacts_SOURCES = contacts.c
+
+test_contacts_bug_19101_SOURCES = contacts-bug-19101.c
 
 test_contacts_mixin_SOURCES = contacts-mixin.c
 
