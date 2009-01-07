@@ -1,9 +1,9 @@
 noinst_PROGRAMS = telepathy-example-no-protocols
 
 telepathy_example_no_protocols_SOURCES = \
-    main.c \
-    manager.c \
-    manager.h
+    connection-manager.c \
+    connection-manager.h \
+    main.c
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
 # pkg-config via autoconf) instead of the .la path
