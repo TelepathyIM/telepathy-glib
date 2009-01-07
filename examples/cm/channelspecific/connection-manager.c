@@ -9,7 +9,7 @@
  * notice and this notice are preserved.
  */
 
-#include "manager.h"
+#include "connection-manager.h"
 
 #include <string.h>
 

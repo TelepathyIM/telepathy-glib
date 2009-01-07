@@ -14,7 +14,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/run.h>
 
-#include "manager.h"
+#include "examples/cm/channelspecific/connection-manager.h"
 
 static TpBaseConnectionManager *
 construct_cm (void)
