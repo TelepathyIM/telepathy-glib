@@ -202,7 +202,7 @@ create_channel_managers (TpBaseConnection *conn)
 {
   GPtrArray *ret = g_ptr_array_sized_new (1);
 
-  g_ptr_array_add (ret, g_object_new (EXAMPLE_TYPE_CSH_ROOM_FACTORY,
+  g_ptr_array_add (ret, g_object_new (EXAMPLE_TYPE_CSH_ROOM_MANAGER,
         "connection", conn,
         NULL));
 

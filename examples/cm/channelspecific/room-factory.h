@@ -1,5 +1,5 @@
 /*
- * factory.h - header for an example channel factory
+ * manager.h - header for an example channel manager
  *
  * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007 Nokia Corporation
@@ -9,47 +9,47 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __EXAMPLE_FACTORY_H__
-#define __EXAMPLE_FACTORY_H__
+#ifndef __EXAMPLE_CSH_ROOM_MANAGER_H__
+#define __EXAMPLE_CSH_ROOM_MANAGER_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/channel-factory-iface.h>
+#include <telepathy-glib/channel-manager.h>
 
 G_BEGIN_DECLS
 
-typedef struct _ExampleCSHRoomFactory ExampleCSHRoomFactory;
-typedef struct _ExampleCSHRoomFactoryClass ExampleCSHRoomFactoryClass;
-typedef struct _ExampleCSHRoomFactoryPrivate ExampleCSHRoomFactoryPrivate;
+typedef struct _ExampleCSHRoomManager ExampleCSHRoomManager;
+typedef struct _ExampleCSHRoomManagerClass ExampleCSHRoomManagerClass;
+typedef struct _ExampleCSHRoomManagerPrivate ExampleCSHRoomManagerPrivate;
 
-struct _ExampleCSHRoomFactoryClass {
+struct _ExampleCSHRoomManagerClass {
     GObjectClass parent_class;
 };
 
-struct _ExampleCSHRoomFactory {
+struct _ExampleCSHRoomManager {
     GObject parent;
 
-    ExampleCSHRoomFactoryPrivate *priv;
+    ExampleCSHRoomManagerPrivate *priv;
 };
 
-GType example_csh_room_factory_get_type (void);
+GType example_csh_room_manager_get_type (void);
 
 /* TYPE MACROS */
-#define EXAMPLE_TYPE_CSH_ROOM_FACTORY \
-  (example_csh_room_factory_get_type ())
-#define EXAMPLE_CSH_ROOM_FACTORY(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_CSH_ROOM_FACTORY, \
-                              ExampleCSHRoomFactory))
-#define EXAMPLE_CSH_ROOM_FACTORY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_CSH_ROOM_FACTORY, \
-                           ExampleCSHRoomFactoryClass))
-#define EXAMPLE_IS_CSH_ROOM_FACTORY(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_CSH_ROOM_FACTORY))
-#define EXAMPLE_IS_CSH_ROOM_FACTORY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_CSH_ROOM_FACTORY))
-#define EXAMPLE_CSH_ROOM_FACTORY_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CSH_ROOM_FACTORY, \
-                              ExampleCSHRoomFactoryClass))
+#define EXAMPLE_TYPE_CSH_ROOM_MANAGER \
+  (example_csh_room_manager_get_type ())
+#define EXAMPLE_CSH_ROOM_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_CSH_ROOM_MANAGER, \
+                              ExampleCSHRoomManager))
+#define EXAMPLE_CSH_ROOM_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_CSH_ROOM_MANAGER, \
+                           ExampleCSHRoomManagerClass))
+#define EXAMPLE_IS_CSH_ROOM_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_CSH_ROOM_MANAGER))
+#define EXAMPLE_IS_CSH_ROOM_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_CSH_ROOM_MANAGER))
+#define EXAMPLE_CSH_ROOM_MANAGER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CSH_ROOM_MANAGER, \
+                              ExampleCSHRoomManagerClass))
 
 G_END_DECLS
 
-#endif /* #ifndef __EXAMPLE_FACTORY_H__ */
+#endif
