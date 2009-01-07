@@ -796,7 +796,8 @@ contacts_context_fail (ContactsContext *c,
           error, c->user_data, c->weak_object);
       return;
     case CB_BY_ID:
-      for (i = 0; i < c->request_ids->len; i++)
+      /* -1 because NULL terminator is explicit */
+      for (i = 0; i < c->request_ids->len - 1; i++)
         {
           const gchar *id = g_ptr_array_index (c->request_ids, i);
 
