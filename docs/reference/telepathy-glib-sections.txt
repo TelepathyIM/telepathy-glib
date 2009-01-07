@@ -1018,11 +1018,13 @@ TP_STRUCT_TYPE_STATUS_SPEC
 TP_STRUCT_TYPE_LOCAL_PENDING_INFO
 TP_ARRAY_TYPE_LOCAL_PENDING_INFO_LIST
 TP_HASH_TYPE_HANDLE_OWNER_MAP
+TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP
 <SUBSECTION>
 # Channel - Text and Messages
 TP_STRUCT_TYPE_PENDING_TEXT_MESSAGE
 TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST
 TP_HASH_TYPE_MESSAGE_PART
+TP_HASH_TYPE_MESSAGE_PART_CONTENT_MAP
 <SUBSECTION>
 # Channel - Tubes
 TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4
@@ -1091,6 +1093,7 @@ tp_type_dbus_hash_ua_7bsv_7d
 tp_type_dbus_hash_uau
 tp_type_dbus_hash_us
 tp_type_dbus_hash_uu
+tp_type_dbus_hash_uv
 tp_type_dbus_struct_a_7bsv_7das
 tp_type_dbus_struct_oa_7bsv_7d
 tp_type_dbus_struct_os
