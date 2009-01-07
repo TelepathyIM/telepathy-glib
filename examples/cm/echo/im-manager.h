@@ -1,5 +1,5 @@
 /*
- * factory.h - header for an example channel factory
+ * im-manager.h - header for an example channel manager
  *
  * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007 Nokia Corporation
@@ -9,47 +9,46 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __EXAMPLE_FACTORY_H__
-#define __EXAMPLE_FACTORY_H__
+#ifndef __EXAMPLE_ECHO_IM_MANAGER_H__
+#define __EXAMPLE_ECHO_IM_MANAGER_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/channel-factory-iface.h>
 
 G_BEGIN_DECLS
 
-typedef struct _ExampleEchoFactory ExampleEchoFactory;
-typedef struct _ExampleEchoFactoryClass ExampleEchoFactoryClass;
-typedef struct _ExampleEchoFactoryPrivate ExampleEchoFactoryPrivate;
+typedef struct _ExampleEchoImManager ExampleEchoImManager;
+typedef struct _ExampleEchoImManagerClass ExampleEchoImManagerClass;
+typedef struct _ExampleEchoImManagerPrivate ExampleEchoImManagerPrivate;
 
-struct _ExampleEchoFactoryClass {
+struct _ExampleEchoImManagerClass {
     GObjectClass parent_class;
 };
 
-struct _ExampleEchoFactory {
+struct _ExampleEchoImManager {
     GObject parent;
 
-    ExampleEchoFactoryPrivate *priv;
+    ExampleEchoImManagerPrivate *priv;
 };
 
-GType example_echo_factory_get_type (void);
+GType example_echo_im_manager_get_type (void);
 
 /* TYPE MACROS */
-#define EXAMPLE_TYPE_ECHO_FACTORY \
-  (example_echo_factory_get_type ())
-#define EXAMPLE_ECHO_FACTORY(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_ECHO_FACTORY, \
-                              ExampleEchoFactory))
-#define EXAMPLE_ECHO_FACTORY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_ECHO_FACTORY, \
-                           ExampleEchoFactoryClass))
-#define EXAMPLE_IS_ECHO_FACTORY(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_ECHO_FACTORY))
-#define EXAMPLE_IS_ECHO_FACTORY_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_ECHO_FACTORY))
-#define EXAMPLE_ECHO_FACTORY_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_ECHO_FACTORY, \
-                              ExampleEchoFactoryClass))
+#define EXAMPLE_TYPE_ECHO_IM_MANAGER \
+  (example_echo_im_manager_get_type ())
+#define EXAMPLE_ECHO_IM_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_ECHO_IM_MANAGER, \
+                              ExampleEchoImManager))
+#define EXAMPLE_ECHO_IM_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_ECHO_IM_MANAGER, \
+                           ExampleEchoImManagerClass))
+#define EXAMPLE_IS_ECHO_IM_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_ECHO_IM_MANAGER))
+#define EXAMPLE_IS_ECHO_IM_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_ECHO_IM_MANAGER))
+#define EXAMPLE_ECHO_IM_MANAGER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_ECHO_IM_MANAGER, \
+                              ExampleEchoImManagerClass))
 
 G_END_DECLS
 
-#endif /* #ifndef __EXAMPLE_FACTORY_H__ */
+#endif
