@@ -9,47 +9,47 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __EXAMPLE_CONN_H__
-#define __EXAMPLE_CONN_H__
+#ifndef __EXAMPLE_EXTENDED_CONN_H__
+#define __EXAMPLE_EXTENDED_CONN_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
 
 G_BEGIN_DECLS
 
-typedef struct _ExampleConnection ExampleConnection;
-typedef struct _ExampleConnectionClass ExampleConnectionClass;
-typedef struct _ExampleConnectionPrivate ExampleConnectionPrivate;
+typedef struct _ExampleExtendedConnection ExampleExtendedConnection;
+typedef struct _ExampleExtendedConnectionClass ExampleExtendedConnectionClass;
+typedef struct _ExampleExtendedConnectionPrivate ExampleExtendedConnectionPrivate;
 
-struct _ExampleConnectionClass {
+struct _ExampleExtendedConnectionClass {
     TpBaseConnectionClass parent_class;
 };
 
-struct _ExampleConnection {
+struct _ExampleExtendedConnection {
     TpBaseConnection parent;
 
-    ExampleConnectionPrivate *priv;
+    ExampleExtendedConnectionPrivate *priv;
 };
 
-GType example_connection_get_type (void);
+GType example_extended_connection_get_type (void);
 
 /* TYPE MACROS */
-#define EXAMPLE_TYPE_CONNECTION \
-  (example_connection_get_type ())
-#define EXAMPLE_CONNECTION(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_CONNECTION, \
-                              ExampleConnection))
-#define EXAMPLE_CONNECTION_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_CONNECTION, \
-                           ExampleConnectionClass))
-#define EXAMPLE_IS_CONNECTION(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_CONNECTION))
-#define EXAMPLE_IS_CONNECTION_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_CONNECTION))
-#define EXAMPLE_CONNECTION_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CONNECTION, \
-                              ExampleConnectionClass))
+#define EXAMPLE_TYPE_EXTENDED_CONNECTION \
+  (example_extended_connection_get_type ())
+#define EXAMPLE_EXTENDED_CONNECTION(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_EXTENDED_CONNECTION, \
+                              ExampleExtendedConnection))
+#define EXAMPLE_EXTENDED_CONNECTION_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_EXTENDED_CONNECTION, \
+                           ExampleExtendedConnectionClass))
+#define EXAMPLE_IS_EXTENDED_CONNECTION(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_EXTENDED_CONNECTION))
+#define EXAMPLE_IS_EXTENDED_CONNECTION_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_EXTENDED_CONNECTION))
+#define EXAMPLE_EXTENDED_CONNECTION_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_EXTENDED_CONNECTION, \
+                              ExampleExtendedConnectionClass))
 
 G_END_DECLS
 
-#endif /* #ifndef __EXAMPLE_CONN_H__ */
+#endif

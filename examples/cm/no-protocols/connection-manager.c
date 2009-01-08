@@ -1,5 +1,5 @@
 /*
- * manager.c - trivial connection manager which supports no protocols
+ * A trivial connection manager which supports no protocols
  *
  * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007 Nokia Corporation
@@ -9,21 +9,22 @@
  * notice and this notice are preserved.
  */
 
-#include "manager.h"
+#include "connection-manager.h"
 
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 
-G_DEFINE_TYPE (ExampleConnectionManager,
-    example_connection_manager,
+G_DEFINE_TYPE (ExampleNoProtocolsConnectionManager,
+    example_no_protocols_connection_manager,
     TP_TYPE_BASE_CONNECTION_MANAGER)
 
 /* type definition stuff */
 
 static void
-example_connection_manager_init (ExampleConnectionManager *self)
+example_no_protocols_connection_manager_init (
+    ExampleNoProtocolsConnectionManager *self)
 {
 }
 
@@ -47,7 +48,8 @@ new_connection (TpBaseConnectionManager *self,
 }
 
 static void
-example_connection_manager_class_init (ExampleConnectionManagerClass *klass)
+example_no_protocols_connection_manager_class_init (
+    ExampleNoProtocolsConnectionManagerClass *klass)
 {
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;

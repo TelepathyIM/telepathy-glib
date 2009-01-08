@@ -366,7 +366,7 @@ example_echo_channel_close (ExampleEchoChannel *self)
     {
       TpHandle first_sender;
 
-      /* The factory wants to be able to respawn the channel if it has pending
+      /* The manager wants to be able to respawn the channel if it has pending
        * messages. When respawned, the channel must have the initiator set
        * to the contact who sent us those messages (if it isn't already),
        * and the messages must be marked as having been rescued so they
@@ -515,7 +515,7 @@ destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
   tp_text_mixin_clear ((GObject *) self);
   example_echo_channel_close (self);
   g_assert (self->priv->closed);
-  tp_svc_channel_return_from_close (context);
+  tp_svc_channel_interface_destroyable_return_from_destroy (context);
 }
 
 static void

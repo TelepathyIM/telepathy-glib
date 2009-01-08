@@ -229,7 +229,6 @@ main (int argc,
   ExampleEcho2Connection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
-  ExampleEcho2Channel *service_chan;
   TpDBusDaemon *dbus;
   TpConnection *conn;
   TpChannel *chan;
@@ -271,16 +270,32 @@ main (int argc,
   handle = tp_handle_ensure (contact_repo, "them@example.org", NULL, &error);
   MYASSERT_NO_ERROR (error);
 
-  /* FIXME: exercise RequestChannel rather than just pasting on a channel */
+    {
+      GHashTable *request = g_hash_table_new_full (g_str_hash, g_str_equal,
+          NULL, (GDestroyNotify) tp_g_value_slice_free);
+      GValue *value;
 
-  chan_path = g_strdup_printf ("%s/Channel", conn_path);
+      value = tp_g_value_slice_new (G_TYPE_STRING);
+      g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_TEXT);
+      g_hash_table_insert (request, TP_IFACE_CHANNEL ".ChannelType",
+          value);
 
-  service_chan = EXAMPLE_ECHO_2_CHANNEL (g_object_new (
-        EXAMPLE_TYPE_ECHO_2_CHANNEL,
-        "connection", service_conn,
-        "object-path", chan_path,
-        "handle", handle,
-        NULL));
+      value = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (value, TP_HANDLE_TYPE_CONTACT);
+      g_hash_table_insert (request, TP_IFACE_CHANNEL ".TargetHandleType",
+          value);
+
+      value = tp_g_value_slice_new (G_TYPE_UINT);
+      g_value_set_uint (value, handle);
+      g_hash_table_insert (request, TP_IFACE_CHANNEL ".TargetHandle",
+          value);
+
+      tp_cli_connection_interface_requests_run_create_channel (conn, -1,
+          request, &chan_path, NULL, &error, NULL);
+      MYASSERT_NO_ERROR (error);
+
+      g_hash_table_destroy (request);
+    }
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
@@ -1039,17 +1054,18 @@ main (int argc,
   g_print ("\n\n==== Closing channel ====\n");
 
     {
-      gboolean dead;
+      GPtrArray *channels;
 
       MYASSERT (tp_cli_channel_run_close (chan, -1, &error, NULL), "");
       MYASSERT_NO_ERROR (error);
       MYASSERT (tp_proxy_get_invalidated (chan) != NULL, "");
 
-      g_object_get (service_chan,
-          "channel-destroyed", &dead,
-          NULL);
-
-      MYASSERT (dead, "");
+      /* assert that the channel has really gone */
+      MYASSERT (tp_cli_connection_run_list_channels (conn, -1,
+            &channels, &error, NULL), "");
+      MYASSERT_NO_ERROR (error);
+      MYASSERT (channels->len == 0, "%u != 0", channels->len);
+      g_boxed_free (TP_ARRAY_TYPE_CHANNEL_INFO_LIST, channels);
     }
 
   g_print ("\n\n==== End of tests ====\n");
@@ -1060,7 +1076,6 @@ main (int argc,
   tp_handle_unref (contact_repo, handle);
   g_object_unref (chan);
   g_object_unref (conn);
-  g_object_unref (service_chan);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
