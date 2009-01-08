@@ -79,11 +79,6 @@
 #include "debug-internal.h"
 
 
-struct _TpPresenceMixinPrivate
-{
-  /* ... */
-};
-
 static GHashTable *construct_simple_presence_hash (
   const TpPresenceStatusSpec *supported_statuses,
   GHashTable *contact_statuses);
@@ -260,8 +255,6 @@ void
 tp_presence_mixin_init (GObject *obj,
                         glong offset)
 {
-  TpPresenceMixin *mixin;
-
   DEBUG ("called.");
 
   g_assert (G_IS_OBJECT (obj));
@@ -269,10 +262,6 @@ tp_presence_mixin_init (GObject *obj,
   g_type_set_qdata (G_OBJECT_TYPE (obj),
                     TP_PRESENCE_MIXIN_OFFSET_QUARK,
                     GINT_TO_POINTER (offset));
-
-  mixin = TP_PRESENCE_MIXIN (obj);
-
-  mixin->priv = g_slice_new0 (TpPresenceMixinPrivate);
 }
 
 /**
@@ -284,13 +273,9 @@ tp_presence_mixin_init (GObject *obj,
 void
 tp_presence_mixin_finalize (GObject *obj)
 {
-  TpPresenceMixin *mixin = TP_PRESENCE_MIXIN (obj);
-
   DEBUG ("%p", obj);
 
   /* free any data held directly by the object here */
-
-  g_slice_free (TpPresenceMixinPrivate, mixin->priv);
 }
 
 
