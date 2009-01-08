@@ -85,7 +85,7 @@ struct _TpTextMixinPrivate
 typedef struct
 {
     guint id;
-    time_t timestamp;
+    guint timestamp;
     TpHandle sender;
     TpChannelTextMessageType type;
     char *text;
