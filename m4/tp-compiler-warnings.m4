@@ -9,20 +9,20 @@ AC_DEFUN([TP_COMPILER_WARNINGS],
 [
   AC_REQUIRE([AC_ARG_ENABLE])dnl
   AC_REQUIRE([AC_HELP_STRING])dnl
-  AC_REQUIRE([AS_COMPILER_FLAG])dnl
+  AC_REQUIRE([TP_COMPILER_FLAG])dnl
 
   tp_warnings=""
   for tp_flag in $3; do
-    AS_COMPILER_FLAG([-W$tp_flag], [tp_warnings="$tp_warnings -W$tp_flag"])
+    TP_COMPILER_FLAG([-W$tp_flag], [tp_warnings="$tp_warnings -W$tp_flag"])
   done
 
   tp_error_flags="-Werror"
-  AS_COMPILER_FLAG([-Werror], [tp_werror=yes], [tp_werror=no])
+  TP_COMPILER_FLAG([-Werror], [tp_werror=yes], [tp_werror=no])
 
   for tp_flag in $4; do
-    AS_COMPILER_FLAG([-Wno-$tp_flag],
+    TP_COMPILER_FLAG([-Wno-$tp_flag],
       [tp_warnings="$tp_warnings -Wno-$tp_flag"])
-    AS_COMPILER_FLAG([-Wno-error=$tp_flag],
+    TP_COMPILER_FLAG([-Wno-error=$tp_flag],
       [tp_error_flags="$tp_error_flags -Wno-error=$tp_flag"], [tp_werror=no])
   done
 
