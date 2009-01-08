@@ -57,7 +57,10 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <sys/stat.h>
+
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #include <glib.h>
 #include <glib/gstdio.h>

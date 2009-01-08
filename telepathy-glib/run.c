@@ -40,7 +40,10 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #include "debug-internal.h"
 #include <telepathy-glib/base-connection-manager.h>
