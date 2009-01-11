@@ -1327,6 +1327,8 @@ tp_channel_class_init (TpChannelClass *klass)
  * <!-- -->
  *
  * Returns: a new channel proxy, or %NULL on invalid arguments
+ *
+ * Since: 0.7.19
  */
 TpChannel *
 tp_channel_new_from_properties (TpConnection *conn,
