@@ -28,6 +28,9 @@ Enhancements:
 
 * Added tp_channel_get_identifier
 
+* Added support for parsing the dbus-property CM parameter flag (introduced in
+  spec 0.17.16) from .manager files (fd.o #19053).
+
 Fixes:
 
 * Various Win32 portability fixes (from Sunil Mohan Adapa on fd.o #19461).
