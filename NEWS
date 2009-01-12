@@ -6,6 +6,8 @@ Dependencies:
 Enhancements:
 
 * Updated to spec version 0.17.17
+  - Added TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP and
+    TP_HASH_TYPE_MESSAGE_PART_CONTENT_MAP
 
 * (Finally) merged TpMessageMixin, which can be used in place of TpTextMixin to
   implement the Messages interface on Text channels.
@@ -23,6 +25,8 @@ Enhancements:
 * Added support to TpGroupMixin for emitting the MembersChangedDetailed signal
   (fd.o #19050 and #19052), and to TpChannel for listening to it when possible
   (fd.o #19051).
+
+* Added tp_channel_get_identifier
 
 Fixes:
 
