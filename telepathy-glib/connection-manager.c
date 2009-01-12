@@ -754,6 +754,8 @@ tp_connection_manager_read_file (TpConnectionManager *self,
                     param->flags |= TP_CONN_MGR_PARAM_FLAG_REGISTER;
                   if (!tp_strdiff (*iter, "secret"))
                     param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
+                  if (!tp_strdiff (*iter, "dbus-property"))
+                    param->flags |= TP_CONN_MGR_PARAM_FLAG_DBUS_PROPERTY;
                 }
 
               g_strfreev (strv);
