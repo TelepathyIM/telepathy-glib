@@ -20,9 +20,13 @@ Enhancements:
   telepathy-qt4).  Other projects using telepathy-glib's warnings might want to
   copy m4/tp-compiler-*.m4 and use TP_COMPILER_WARNINGS.
 
+* Added support to TpGroupMixin for emitting the MembersChangedDetailed signal
+  (fd.o #19050 and #19052), and to TpChannel for listening to it when possible
+  (fd.o #19051).
+
 Fixes:
 
-* Various Win32 portability fixes (Sunil Mohan Adapa).
+* Various Win32 portability fixes (from Sunil Mohan Adapa on fd.o #19461).
 
 * fd.o #19101: tp_connection_get_contacts_by_id() crashes
 
