@@ -17,6 +17,8 @@ libtp_glib_tests_la_SOURCES = \
     stub-object.h \
     textchan-null.c \
     textchan-null.h \
+    textchan-group.c \
+    textchan-group.h \
     util.c \
     util.h
 

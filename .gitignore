@@ -66,6 +66,7 @@ stamp-h1
 tags
 tests/dbus/test-call-cancellation
 tests/dbus/test-channel-introspect
+tests/dbus/test-cli-group
 tests/dbus/test-connection
 tests/dbus/test-connection-bug-18845
 tests/dbus/test-connection-getinterfaces-failure
@@ -78,6 +79,7 @@ tests/dbus/test-dbus
 tests/dbus/test-disconnection
 tests/dbus/test-example-no-protocols
 tests/dbus/test-finalized-in-invalidated-handler
+tests/dbus/test-group-mixin
 tests/dbus/test-handle-set
 tests/dbus/test-invalidated-while-invoking-signals
 tests/dbus/test-message-mixin

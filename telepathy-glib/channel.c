@@ -95,6 +95,7 @@ enum
 enum {
   SIGNAL_GROUP_FLAGS_CHANGED,
   SIGNAL_GROUP_MEMBERS_CHANGED,
+  SIGNAL_GROUP_MEMBERS_CHANGED_DETAILED,
   N_SIGNALS
 };
 
@@ -1311,6 +1312,36 @@ tp_channel_class_init (TpChannelClass *klass)
       G_TYPE_NONE, 7,
       G_TYPE_STRING, au_type, au_type, au_type, au_type, G_TYPE_UINT,
       G_TYPE_UINT);
+
+  /**
+   * TpChannel::group-members-changed-detailed:
+   * @self: a channel
+   * @added: a #GArray of #guint containing the full members added
+   * @removed: a #GArray of #guint containing the members (full,
+   *  local-pending or remote-pending) removed
+   * @local_pending: a #GArray of #guint containing the local-pending
+   *  members added
+   * @remote_pending: a #GArray of #guint containing the remote-pending
+   *  members added
+   * @details: a #GHashTable mapping (gchar *) to #GValue containing details
+   *  about the change, as described in the specification of the
+   *  MembersChangedDetailed signal.
+   *
+   * Emitted when the group members change in a Group channel that is ready.
+   * Contains a superset of the information in the
+   * TpChannel::group-members-changed signal, and is emitted at the same time;
+   * applications can connect to this signal and ignore the other.
+   *
+   * Since: 0.7.UNRELEASED
+   */
+  signals[SIGNAL_GROUP_MEMBERS_CHANGED_DETAILED] = g_signal_new (
+      "group-members-changed-detailed", G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED_BOXED_BOXED_BOXED,
+      G_TYPE_NONE, 5,
+      au_type, au_type, au_type, au_type, TP_HASH_TYPE_STRING_VARIANT_MAP);
 }
 
 

@@ -1,6 +1,7 @@
 noinst_PROGRAMS = \
     test-call-cancellation \
     test-channel-introspect \
+    test-cli-group \
     test-connection \
     test-connection-bug-18845 \
     test-connection-handles \
@@ -13,6 +14,7 @@ noinst_PROGRAMS = \
     test-disconnection \
     test-example-no-protocols \
     test-finalized-in-invalidated-handler \
+    test-group-mixin \
     test-handle-set \
     test-invalidated-while-invoking-signals \
     test-message-mixin \
@@ -28,6 +30,8 @@ LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la
 
 test_channel_introspect_SOURCES = channel-introspect.c
+
+test_cli_group_SOURCES = cli-group.c
 
 test_connection_SOURCES = connection.c
 
@@ -48,6 +52,8 @@ test_contacts_mixin_SOURCES = contacts-mixin.c
 
 test_finalized_in_invalidated_handler_SOURCES = \
     finalized-in-invalidated-handler.c
+
+test_group_mixin_SOURCES = group-mixin.c
 
 test_handle_set_SOURCES = handle-set.c
 
