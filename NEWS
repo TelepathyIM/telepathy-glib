@@ -5,7 +5,26 @@ Dependencies:
 
 Enhancements:
 
+* Updated to spec version 0.17.17
+
+* (Finally) merged TpMessageMixin, which can be used in place of TpTextMixin to
+  implement the Messages interface on Text channels.
+
+* The examples have been made more exemplary, using TpChannelManager in place
+  of TpChannelFactoryIface, implementing Destroyable and respawning 1-1 text
+  channels which are closed with pending messages.
+
+* Added a TP_COMPILER_WARNINGS macro to simplify choosing compiler warnings in
+  configure.ac, and forked a version of AS_COMPILER_FLAG that supports C++ so
+  that TP_COMPILER_WARNINGS can be used for C++ projects (such as
+  telepathy-qt4).  Other projects using telepathy-glib's warnings might want to
+  copy m4/tp-compiler-*.m4 and use TP_COMPILER_WARNINGS.
+
 Fixes:
+
+* Various Win32 portability fixes (Sunil Mohan Adapa).
+
+* fd.o #19101: tp_connection_get_contacts_by_id() crashes
 
 telepathy-glib 0.7.20 (2008-12-14)
 ==================================
