@@ -1738,8 +1738,9 @@ tp_group_mixin_change_members (GObject *obj,
  * details may contain, among other entries, the well-known
  * keys (and corresponding type, wrapped in a GValue) defined by the
  * Group.MembersChangedDetailed signal's specification; these include "actor"
- * (a handle), "change-reason" (an element of #TpChannelGroupChangeReason),
- * "message" (gchar *), "error" (gchar *), "debug-message" (gchar *).
+ * (a handle as G_TYPE_UINT), "change-reason" (an element of
+ * #TpChannelGroupChangeReason as G_TYPE_UINT), "message" (G_TYPE_STRING),
+ * "error" (G_TYPE_STRING), "debug-message" (G_TYPE_STRING).
  *
  * If all of the information in details could be passed to
  * tp_group_mixin_change_members() then calling this function instead provides
