@@ -79,6 +79,8 @@ local_pending_info_free (LocalPendingInfo *info)
 TpHandle
 tp_channel_group_get_self_handle (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
+
   return self->priv->group_self_handle;
 }
 
@@ -96,6 +98,8 @@ tp_channel_group_get_self_handle (TpChannel *self)
 TpChannelGroupFlags
 tp_channel_group_get_flags (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
+
   return self->priv->group_flags;
 }
 
@@ -118,6 +122,8 @@ tp_channel_group_get_flags (TpChannel *self)
 const TpIntSet *
 tp_channel_group_get_members (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
   return self->priv->group_members;
 }
 
@@ -140,6 +146,8 @@ tp_channel_group_get_members (TpChannel *self)
 const TpIntSet *
 tp_channel_group_get_local_pending (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
   return self->priv->group_local_pending;
 }
 
@@ -162,6 +170,8 @@ tp_channel_group_get_local_pending (TpChannel *self)
 const TpIntSet *
 tp_channel_group_get_remote_pending (TpChannel *self)
 {
+  g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
   return self->priv->group_remote_pending;
 }
 
@@ -199,6 +209,8 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
   TpHandle a = 0;
   TpChannelGroupChangeReason r = TP_CHANNEL_GROUP_CHANGE_REASON_NONE;
   const gchar *m = "";
+
+  g_return_val_if_fail (TP_IS_CHANNEL (self), FALSE);
 
   if (self->priv->group_local_pending != NULL)
     {
@@ -288,6 +300,8 @@ tp_channel_group_get_handle_owner (TpChannel *self,
                                    TpHandle handle)
 {
   gpointer key, value;
+
+  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
 
   if (self->priv->group_handle_owners == NULL)
     {
