@@ -1693,7 +1693,7 @@ tp_group_mixin_change_members (GObject *obj,
       g_hash_table_insert (details, "change-reason", detail);
     }
 
-  if (message[0] != '\0')
+  if (message != NULL && message[0] != '\0')
     {
       detail = tp_g_value_slice_new (G_TYPE_STRING);
       g_value_set_string (detail, message);

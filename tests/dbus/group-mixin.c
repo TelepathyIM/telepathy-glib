@@ -398,7 +398,7 @@ in_the_desert (void)
     tp_intset_add (add, camel);
     expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
         camel_added);
-    tp_group_mixin_change_members ((GObject *) service_chan, "", add, NULL,
+    tp_group_mixin_change_members ((GObject *) service_chan, NULL, add, NULL,
         NULL, NULL, camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
     wait_for_outstanding_signals ();
     MYASSERT (!outstanding_signals (),
