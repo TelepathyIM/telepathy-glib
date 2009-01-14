@@ -1,3 +1,10 @@
+telepathy-farsight 0.0.4 (14 January 2009)
+==========================================
+- Add python bindings for tpfarsight
+- Fix hold
+- Make the "request-resource" signal optional, assumes
+  the resource is always there if there is no handler.
+
 telepathy-farsight 0.0.3 (21 November 2008)
 ===========================================
 - Fix small brown-paper bug in last release
