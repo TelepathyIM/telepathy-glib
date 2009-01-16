@@ -2400,7 +2400,7 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
     {
       DEBUG ("unimplemented handle type %u", handle_type);
 
-      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
                           "unimplemented handle type %u", handle_type);
       goto out;
     }
