@@ -37,14 +37,17 @@
  * @type: An invalid handle type
  * @error: Either %NULL, or used to return an error (as for g_set_error)
  *
- * Set the error InvalidArgument corresponding to an invalid handle type,
+ * Set the error NotImplemented for an invalid handle type,
  * with an appropriate message.
+ *
+ * Changed in version 0.7.UNRELEASED: previously, the error was
+ * InvalidArgument.
  */
 void
 tp_g_set_error_invalid_handle_type (guint type, GError **error)
 {
-  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-      "invalid handle type %u", type);
+  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      "unsupported handle type %u", type);
 }
 
 /**
@@ -52,16 +55,16 @@ tp_g_set_error_invalid_handle_type (guint type, GError **error)
  * @type: An unsupported handle type
  * @error: Either %NULL, or used to return an error (as for g_set_error)
  *
- * Set the error InvalidArgument for a handle type which is valid but is not
+ * Set the error NotImplemented for a handle type which is valid but is not
  * supported by this connection manager, with an appropriate message.
  *
- * FIXME: Shouldn't the error be NotImplemented? The spec doesn't always
- * allow us to return that, though.
+ * Changed in version 0.7.UNRELEASED: previously, the error was
+ * InvalidArgument.
  */
 void
 tp_g_set_error_unsupported_handle_type (guint type, GError **error)
 {
-  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
       "unsupported handle type %u", type);
 }
 
