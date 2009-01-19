@@ -27,7 +27,7 @@ import os.path
 import xml.dom.minidom
 
 from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
-        camelcase_to_lower, NS_TP, dbus_gutils_wincaps_to_uscore, \
+        NS_TP, dbus_gutils_wincaps_to_uscore, \
         signal_to_marshal_name, method_to_glue_marshal_name
 
 
@@ -338,7 +338,7 @@ class Generator(object):
         return ''.join(info) + '\0', offsets
 
     def do_method_glue(self, method, offset):
-        lc_name = camelcase_to_lower(method.getAttribute('name'))
+        lc_name = method.getAttribute('tp:name-for-bindings').lower()
 
         marshaller = method_to_glue_marshal_name(method,
                 self.signal_marshal_prefix)
@@ -360,7 +360,7 @@ class Generator(object):
 
     def get_method_impl_names(self, method):
         dbus_method_name = method.getAttribute('name')
-        class_member_name = camelcase_to_lower(dbus_method_name)
+        class_member_name = method.getAttribute('tp:name-for-bindings').lower()
         stub_name = (self.prefix_ + self.node_name_lc + '_' +
                      class_member_name)
         return (stub_name + '_impl', class_member_name)
@@ -375,7 +375,7 @@ class Generator(object):
         # DoStuff
         dbus_method_name = method.getAttribute('name')
         # do_stuff
-        class_member_name = camelcase_to_lower(dbus_method_name)
+        class_member_name = method.getAttribute('tp:name-for-bindings').lower()
         # void tp_svc_thing_do_stuff (TpSvcThing *, const char *, guint,
         #   DBusGMethodInvocation *);
         stub_name = (self.prefix_ + self.node_name_lc + '_' +
@@ -537,7 +537,7 @@ class Generator(object):
 
         dbus_name = signal.getAttribute('name')
         stub_name = (self.prefix_ + self.node_name_lc + '_emit_' +
-                     camelcase_to_lower(dbus_name))
+                     signal.getAttribute('tp:name-for-bindings').lower())
         const_name = self.get_signal_const_entry(signal)
 
         # Gather arguments
