@@ -6,19 +6,19 @@
   <node name="/DBus_Properties">
     <interface name="org.freedesktop.DBus.Properties">
 
-      <method name="Get">
+      <method name="Get" tp:name-for-bindings="Get">
         <arg direction="in" type="s" name="Interface_Name"/>
         <arg direction="in" type="s" name="Property_Name"/>
         <arg direction="out" type="v" name="Value"/>
       </method>
 
-      <method name="Set">
+      <method name="Set" tp:name-for-bindings="Set">
         <arg direction="in" type="s" name="Interface_Name"/>
         <arg direction="in" type="s" name="Property_Name"/>
         <arg direction="in" type="v" name="Value"/>
       </method>
 
-      <method name="GetAll">
+      <method name="GetAll" tp:name-for-bindings="Get_All">
         <arg direction="in" type="s" name="Interface_Name"/>
         <arg direction="out" type="a{sv}" name="Properties"/>
       </method>
