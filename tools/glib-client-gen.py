@@ -28,7 +28,7 @@ import xml.dom.minidom
 from getopt import gnu_getopt
 
 from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
-        camelcase_to_lower, get_docstring, xml_escape
+        get_docstring, xml_escape
 
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
@@ -78,7 +78,7 @@ class Generator(object):
         iface_lc = iface.lower()
 
         member = signal.getAttribute('name')
-        member_lc = camelcase_to_lower(member)
+        member_lc = signal.getAttribute('tp:name-for-bindings').lower()
         member_uc = member_lc.upper()
 
         arg_count = 0
@@ -358,7 +358,7 @@ class Generator(object):
         iface_lc = iface.lower()
 
         member = method.getAttribute('name')
-        member_lc = camelcase_to_lower(member)
+        member_lc = method.getAttribute('tp:name-for-bindings').lower()
         member_uc = member_lc.upper()
 
         in_count = 0
