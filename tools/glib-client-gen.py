@@ -78,7 +78,11 @@ class Generator(object):
         iface_lc = iface.lower()
 
         member = signal.getAttribute('name')
-        member_lc = signal.getAttribute('tp:name-for-bindings').lower()
+        member_lc = signal.getAttribute('tp:name-for-bindings')
+        if member != member_lc.replace('_', ''):
+            raise AssertionError('Signal %s tp:name-for-bindings (%s) does '
+                    'not match' % (member, member_lc))
+        member_lc = member_lc.lower()
         member_uc = member_lc.upper()
 
         arg_count = 0
@@ -358,7 +362,11 @@ class Generator(object):
         iface_lc = iface.lower()
 
         member = method.getAttribute('name')
-        member_lc = method.getAttribute('tp:name-for-bindings').lower()
+        member_lc = method.getAttribute('tp:name-for-bindings')
+        if member != member_lc.replace('_', ''):
+            raise AssertionError('Method %s tp:name-for-bindings (%s) does '
+                    'not match' % (member, member_lc))
+        member_lc = member_lc.lower()
         member_uc = member_lc.upper()
 
         in_count = 0

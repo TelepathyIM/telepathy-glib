@@ -338,7 +338,11 @@ class Generator(object):
         return ''.join(info) + '\0', offsets
 
     def do_method_glue(self, method, offset):
-        lc_name = method.getAttribute('tp:name-for-bindings').lower()
+        lc_name = method.getAttribute('tp:name-for-bindings')
+        if method.getAttribute('name') != lc_name.replace('_', ''):
+            raise AssertionError('Method %s tp:name-for-bindings (%s) does '
+                    'not match' % (method.getAttribute('name'), lc_name))
+        lc_name = lc_name.lower()
 
         marshaller = method_to_glue_marshal_name(method,
                 self.signal_marshal_prefix)
@@ -360,7 +364,13 @@ class Generator(object):
 
     def get_method_impl_names(self, method):
         dbus_method_name = method.getAttribute('name')
-        class_member_name = method.getAttribute('tp:name-for-bindings').lower()
+
+        class_member_name = method.getAttribute('tp:name-for-bindings')
+        if dbus_method_name != class_member_name.replace('_', ''):
+            raise AssertionError('Method %s tp:name-for-bindings (%s) does '
+                    'not match' % (dbus_method_name, class_member_name))
+        class_member_name = class_member_name.lower()
+
         stub_name = (self.prefix_ + self.node_name_lc + '_' +
                      class_member_name)
         return (stub_name + '_impl', class_member_name)
@@ -375,7 +385,12 @@ class Generator(object):
         # DoStuff
         dbus_method_name = method.getAttribute('name')
         # do_stuff
-        class_member_name = method.getAttribute('tp:name-for-bindings').lower()
+        class_member_name = method.getAttribute('tp:name-for-bindings')
+        if dbus_method_name != class_member_name.replace('_', ''):
+            raise AssertionError('Method %s tp:name-for-bindings (%s) does '
+                    'not match' % (dbus_method_name, class_member_name))
+        class_member_name = class_member_name.lower()
+
         # void tp_svc_thing_do_stuff (TpSvcThing *, const char *, guint,
         #   DBusGMethodInvocation *);
         stub_name = (self.prefix_ + self.node_name_lc + '_' +
@@ -536,8 +551,15 @@ class Generator(object):
         #    const char *arg0, guint arg1);
 
         dbus_name = signal.getAttribute('name')
+
+        ugly_name = signal.getAttribute('tp:name-for-bindings')
+        if dbus_name != ugly_name.replace('_', ''):
+            raise AssertionError('Signal %s tp:name-for-bindings (%s) does '
+                    'not match' % (dbus_name, ugly_name))
+
         stub_name = (self.prefix_ + self.node_name_lc + '_emit_' +
-                     signal.getAttribute('tp:name-for-bindings').lower())
+                     ugly_name.lower())
+
         const_name = self.get_signal_const_entry(signal)
 
         # Gather arguments
