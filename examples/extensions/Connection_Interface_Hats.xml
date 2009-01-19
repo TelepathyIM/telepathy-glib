@@ -60,7 +60,7 @@
       </tp:enumvalue>
     </tp:enum>
 
-    <signal name="HatsChanged">
+    <signal name="HatsChanged" tp:name-for-bindings="Hats_Changed">
       <tp:docstring>
         Emitted when the contact's hat has changed.
       </tp:docstring>
@@ -87,7 +87,7 @@
       </arg>
     </signal>
 
-    <method name="GetHats">
+    <method name="GetHats" tp:name-for-bindings="Get_Hats">
       <tp:docstring>
         Request a list of the hats worn by the given contacts.
       </tp:docstring>
@@ -111,7 +111,7 @@
       </tp:possible-errors>
     </method>
 
-    <method name="SetHat">
+    <method name="SetHat" tp:name-for-bindings="Set_Hat">
       <tp:docstring>
         Indicate that the hat currently being worn by the local user
         has changed.
