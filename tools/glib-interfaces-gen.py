@@ -3,7 +3,7 @@
 from sys import argv, stdout, stderr
 import xml.dom.minidom
 
-from libglibcodegen import NS_TP, camelcase_to_upper, get_docstring, \
+from libglibcodegen import NS_TP, get_docstring, \
         get_descendant_text, get_by_path
 
 class Generator(object):
