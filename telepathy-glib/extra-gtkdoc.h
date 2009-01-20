@@ -93,6 +93,15 @@
  */
 
 /**
+ * SECTION:svc-channel-file-transfer
+ * @title: File Transfer channels
+ * @short_description: service-side interface for the File Transfer channel type
+ *
+ * This section documents the auto-generated GInterface used to implement
+ * the File Transfer channel type.
+ */
+
+/**
  * SECTION:svc-channel-media
  * @title: Media channels
  * @short_description: service-side interfaces for the Streamed Media channel
@@ -303,6 +312,16 @@
  * This section documents the auto-generated C wrappers for the Text channel
  * type, and also for the Chat State and Password interfaces, which are
  * usually used in conjunction with Text channels.
+ */
+
+/**
+ * SECTION:channel-file-transfer
+ * @title: File transfer
+ * @short_description: client-side wrappers for the File Transfer channel type
+ * @see_also: #TpChannel
+ *
+ * This section documents the auto-generated C wrappers for the File Transfer
+ * channel type.
  */
 
 /**

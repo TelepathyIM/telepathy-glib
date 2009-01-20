@@ -10,6 +10,7 @@ Enhancements:
     for bad identifiers (fd.o #19609)
   - MediaStreamHandler has a CodecsUpdated method
   - generated methods should now have names for all "out" arguments
+  - the File Transfer channel type is now considered stable
 
 * Use tp:name-for-bindings to construct the C name for D-Bus methods etc.,
   which will result in better C function naming for future D-Bus interfaces
