@@ -906,6 +906,9 @@ tp_svc_media_stream_handler_implement_unhold_failure
 tp_svc_media_stream_handler_return_from_hold_state
 tp_svc_media_stream_handler_return_from_unhold_failure
 tp_svc_media_stream_handler_unhold_failure_impl
+tp_svc_media_stream_handler_codecs_updated_impl
+tp_svc_media_stream_handler_implement_codecs_updated
+tp_svc_media_stream_handler_return_from_codecs_updated
 <SUBSECTION Standard>
 TP_SVC_MEDIA_STREAM_HANDLER
 TP_IS_SVC_MEDIA_STREAM_HANDLER
@@ -1001,11 +1004,12 @@ TP_HASH_TYPE_CHANNEL_CLASS
 TP_STRUCT_TYPE_CHANNEL_DETAILS
 TP_STRUCT_TYPE_REQUESTABLE_CHANNEL_CLASS
 <SUBSECTION>
-# Connection - SimplePresence
+# Connection - SimplePresence and generic support for rich presence
 TP_HASH_TYPE_SIMPLE_CONTACT_PRESENCES
 TP_HASH_TYPE_SIMPLE_STATUS_SPEC_MAP
 TP_STRUCT_TYPE_SIMPLE_PRESENCE
 TP_STRUCT_TYPE_SIMPLE_STATUS_SPEC
+TP_STRUCT_TYPE_RICH_PRESENCE_ACCESS_CONTROL
 <SUBSECTION>
 # Connection - Presence (0.16)
 TP_HASH_TYPE_CONTACT_PRESENCES
@@ -1671,6 +1675,8 @@ NUM_TP_LOCAL_HOLD_STATES
 TpLocalHoldState
 NUM_TP_LOCAL_HOLD_STATE_REASONS
 TpLocalHoldStateReason
+TpRichPresenceAccessControlType
+NUM_TP_RICH_PRESENCE_ACCESS_CONTROL_TYPES
 </SECTION>
 
 <SECTION>
@@ -2502,6 +2508,9 @@ tp_cli_media_stream_handler_connect_to_set_stream_held
 tp_cli_media_stream_handler_run_hold_state
 tp_cli_media_stream_handler_run_unhold_failure
 tp_cli_media_stream_handler_signal_callback_set_stream_held
+tp_cli_media_stream_handler_call_codecs_updated
+tp_cli_media_stream_handler_callback_for_codecs_updated
+tp_cli_media_stream_handler_run_codecs_updated
 </SECTION>
 
 <SECTION>
