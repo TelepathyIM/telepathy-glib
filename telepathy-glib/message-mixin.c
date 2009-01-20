@@ -49,7 +49,7 @@
  * tp_message_mixin_implement_sending() in the constructor function. If you do
  * not, any attempt to send a message will fail with NotImplemented.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 
 #include <telepathy-glib/message-mixin.h>
@@ -75,7 +75,7 @@
  *
  * There are no public fields.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 
 struct _TpMessageMixinPrivate
@@ -192,7 +192,7 @@ struct _TpMessage {
  * Returns: a newly allocated message suitable to be passed to
  * tp_message_mixin_take_received
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 TpMessage *
 tp_message_new (TpBaseConnection *connection,
@@ -228,7 +228,7 @@ tp_message_new (TpBaseConnection *connection,
  *
  * Destroy @self.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_destroy (TpMessage *self)
@@ -267,7 +267,7 @@ tp_message_destroy (TpMessage *self)
  * Returns: the number of parts in the message, including the headers in
  * part 0
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 guint
 tp_message_count_parts (TpMessage *self)
@@ -287,7 +287,7 @@ tp_message_count_parts (TpMessage *self)
  *  part number is out of range. The hash table is only valid as long as the
  *  message is valid and the part is not deleted.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 const GHashTable *
 tp_message_peek (TpMessage *self,
@@ -308,7 +308,7 @@ tp_message_peek (TpMessage *self,
  *
  * Returns: the part number
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 guint
 tp_message_append_part (TpMessage *self)
@@ -326,7 +326,7 @@ tp_message_append_part (TpMessage *self)
  *
  * Delete the given body part from the message.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_delete_part (TpMessage *self,
@@ -364,7 +364,7 @@ _ensure_handle_set (TpMessage *self,
  *
  * Reference the given handle until this message is destroyed.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_ref_handle (TpMessage *self,
@@ -390,7 +390,7 @@ tp_message_ref_handle (TpMessage *self,
  *
  * References all of the given handles until this message is destroyed.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 static void
 tp_message_ref_handles (TpMessage *self,
@@ -421,7 +421,7 @@ tp_message_ref_handles (TpMessage *self,
  *
  * Returns: %TRUE if the key previously existed
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 gboolean
 tp_message_delete_key (TpMessage *self,
@@ -448,7 +448,7 @@ tp_message_delete_key (TpMessage *self,
  * Set @key in part @part of @self to have @handle_or_0 as an unsigned integer
  * value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_handle (TpMessage *self,
@@ -474,7 +474,7 @@ tp_message_set_handle (TpMessage *self,
  *
  * Set @key in part @part of @self to have @b as a boolean value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_boolean (TpMessage *self,
@@ -504,7 +504,7 @@ tp_message_set_boolean (TpMessage *self,
  *
  * Set @key in part @part of @self to have @i as a signed integer value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 
 /**
@@ -517,7 +517,7 @@ tp_message_set_boolean (TpMessage *self,
  *
  * Set @key in part @part of @self to have @i as a signed integer value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_int32 (TpMessage *self,
@@ -547,7 +547,7 @@ tp_message_set_int32 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @i as a signed integer value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_int64 (TpMessage *self,
@@ -577,7 +577,7 @@ tp_message_set_int64 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @u as an unsigned integer value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 
 /**
@@ -590,7 +590,7 @@ tp_message_set_int64 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @u as an unsigned integer value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_uint32 (TpMessage *self,
@@ -620,7 +620,7 @@ tp_message_set_uint32 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @u as an unsigned integer value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_uint64 (TpMessage *self,
@@ -650,7 +650,7 @@ tp_message_set_uint64 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @s as a string value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_string (TpMessage *self,
@@ -683,7 +683,7 @@ tp_message_set_string (TpMessage *self,
  * Set @key in part @part of @self to have a string value constructed from a
  * printf-style format string.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_string_printf (TpMessage *self,
@@ -722,7 +722,7 @@ tp_message_set_string_printf (TpMessage *self,
  *
  * Set @key in part @part of @self to have @bytes as a byte-array value.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set_bytes (TpMessage *self,
@@ -760,7 +760,7 @@ tp_message_set_bytes (TpMessage *self,
  * If @source represents a data structure containing handles, they should
  * all be referenced with tp_message_ref_handle() first.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_set (TpMessage *self,
@@ -791,7 +791,7 @@ tp_message_set (TpMessage *self,
  * references owned by @message will subsequently belong to and be released
  * with @self.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_take_message (TpMessage *self,
@@ -841,7 +841,7 @@ tp_message_take_message (TpMessage *self,
  *
  * Returns: the quark used for storing mixin offset on a GObject
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 static GQuark
 tp_message_mixin_get_offset_quark (void)
@@ -1106,7 +1106,7 @@ parts_to_text (const GPtrArray *parts,
  * constructed callback, after tp_message_mixin_init(), and may only be called
  * once per object.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_mixin_implement_sending (GObject *object,
@@ -1156,7 +1156,7 @@ tp_message_mixin_implement_sending (GObject *object,
  *     self->connection);
  * </programlisting></informalexample>
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_mixin_init (GObject *obj,
@@ -1211,7 +1211,7 @@ tp_message_mixin_clear (GObject *obj)
  *
  * Free resources held by the text mixin.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_mixin_finalize (GObject *obj)
@@ -1542,7 +1542,7 @@ queue_pending (gpointer data)
  *
  * Returns: the message ID
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 guint
 tp_message_mixin_take_received (GObject *object,
@@ -1658,7 +1658,7 @@ tp_message_mixin_set_rescued (GObject *obj)
  * the connection manager has no way to know how the keys and values will be
  * freed).
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 
 
@@ -1687,7 +1687,7 @@ struct _TpMessageMixinOutgoingMessagePrivate {
  * After this function is called, @message will have been freed, and must not
  * be dereferenced.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_mixin_sent (GObject *object,
@@ -2003,7 +2003,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
  * Fill in this mixin's Text method implementations in the given interface
  * vtable.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_mixin_text_iface_init (gpointer g_iface,
@@ -2029,7 +2029,7 @@ tp_message_mixin_text_iface_init (gpointer g_iface,
  * Fill in this mixin's Messages method implementations in the given interface
  * vtable.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 void
 tp_message_mixin_messages_iface_init (gpointer g_iface,

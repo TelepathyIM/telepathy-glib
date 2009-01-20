@@ -1332,7 +1332,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel::group-members-changed signal, and is emitted at the same time;
    * applications can connect to this signal and ignore the other.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.7.21
    */
   signals[SIGNAL_GROUP_MEMBERS_CHANGED_DETAILED] = g_signal_new (
       "group-members-changed-detailed", G_OBJECT_CLASS_TYPE (klass),

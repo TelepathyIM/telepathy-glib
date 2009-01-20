@@ -1754,7 +1754,7 @@ tp_group_mixin_change_members (GObject *obj,
  *  signals were emitted; %FALSE if nothing actually changed and the signals
  *  were suppressed.
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.21
  */
 gboolean
 tp_group_mixin_change_members_detailed (GObject *obj,
