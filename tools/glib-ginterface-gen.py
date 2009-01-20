@@ -279,6 +279,10 @@ class Generator(object):
         for method, offset in zip(methods, offsets):
             self.do_method_glue(method, offset)
 
+        if len(methods) == 0:
+            # empty arrays are a gcc extension, so put in a dummy member
+            self.b("  { NULL, NULL, 0 }")
+
         self.b('};')
         self.b('')
 
