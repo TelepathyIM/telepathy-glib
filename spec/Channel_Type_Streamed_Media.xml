@@ -89,7 +89,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:simple-type name="Stream_ID" type="u"/>
 
     <method name="ListStreams" tp:name-for-bindings="List_Streams">
-      <arg direction="out" type="a(uuuuuu)" tp:type="Media_Stream_Info[]">
+      <arg direction="out" type="a(uuuuuu)" tp:type="Media_Stream_Info[]"
+        name="Streams">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structs containing:
           <ul>
@@ -180,7 +181,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           An array of stream types (values of MediaStreamType)
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a(uuuuuu)" tp:type="Media_Stream_Info[]">
+      <arg direction="out" type="a(uuuuuu)" tp:type="Media_Stream_Info[]"
+        name="Streams">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           An array of structs (in the same order as the given stream types)
           containing:

@@ -91,17 +91,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         this method and GetLocalPendingMembersWithInfo if necessary.
       </tp:deprecated>
 
-      <arg direction="out" type="au" tp:type="Contact_Handle[]">
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"
+        name="Members">
         <tp:docstring>
           array of handles of current members
         </tp:docstring>
       </arg>
-      <arg direction="out" type="au" tp:type="Contact_Handle[]">
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"
+        name="Local_Pending">
         <tp:docstring>
           array of handles of local pending members
         </tp:docstring>
       </arg>
-      <arg direction="out" type="au" tp:type="Contact_Handle[]">
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"
+        name="Remote_Pending">
         <tp:docstring>
           array of handles of remote pending members
         </tp:docstring>
@@ -254,7 +257,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </property>
 
     <method name="GetGroupFlags" tp:name-for-bindings="Get_Group_Flags">
-      <arg direction="out" type="u" tp:type="Channel_Group_Flags">
+      <arg direction="out" type="u" tp:type="Channel_Group_Flags"
+        name="Group_Flags">
         <tp:docstring>
           The value of the GroupFlags property
         </tp:docstring>
@@ -340,7 +344,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           A list of integer handles representing members of the channel
         </tp:docstring>
       </arg>
-      <arg direction="out" type="au" tp:type="Contact_Handle[]">
+      <arg direction="out" type="au" tp:type="Contact_Handle[]" name="Owners">
         <tp:docstring>
           An array of integer handles representing the owner handles of
           the given room members, in the same order, or 0 if the
@@ -379,7 +383,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <method name="GetLocalPendingMembers"
       tp:name-for-bindings="Get_Local_Pending_Members">
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"
+        name="Handles"/>
       <tp:docstring>
         Returns the To_Be_Added handle (only) for each structure in the
         <tp:member-ref>LocalPendingMembers</tp:member-ref> property.
@@ -400,7 +405,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
       <tp:deprecated version="0.17.6">Use the LocalPendingMembers
         property, if Channel_Group_Flag_Properties is present.</tp:deprecated>
-      <arg direction="out" type="a(uuus)" tp:type="Local_Pending_Info[]">
+      <arg direction="out" type="a(uuus)" tp:type="Local_Pending_Info[]"
+        name="Info">
         <tp:docstring>
           An array of structs containing:
           <ul>
@@ -452,7 +458,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </property>
 
     <method name="GetMembers" tp:name-for-bindings="Get_Members">
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"
+        name="Handles"/>
       <tp:docstring>
         Returns the <tp:member-ref>Members</tp:member-ref> property.
       </tp:docstring>
@@ -476,7 +483,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <method name="GetRemotePendingMembers"
       tp:name-for-bindings="Get_Remote_Pending_Members">
-      <arg direction="out" type="au" tp:type="Contact_Handle[]"/>
+      <arg direction="out" type="au" tp:type="Contact_Handle[]"
+        name="Handles"/>
       <tp:docstring>
         Returns an array of handles representing contacts who have been
         invited to the channel and are awaiting remote approval.
@@ -524,7 +532,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </property>
 
     <method name="GetSelfHandle" tp:name-for-bindings="Get_Self_Handle">
-      <arg direction="out" type="u" tp:type="Contact_Handle"/>
+      <arg direction="out" type="u" tp:type="Contact_Handle"
+        name="Self_Handle"/>
       <tp:docstring>
         Returns the value of the <tp:member-ref>SelfHandle</tp:member-ref>
         property.

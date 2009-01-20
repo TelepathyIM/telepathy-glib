@@ -252,7 +252,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       tp:name-for-bindings="Get_Available_Stream_Tube_Types">
       <tp:docstring>List the available address types and access-control types
         for stream tubes.</tp:docstring>
-      <arg direction="out" type="a{uau}" tp:type="Supported_Socket_Map">
+      <arg direction="out" type="a{uau}" tp:type="Supported_Socket_Map"
+        name="Available_Stream_Tube_Types">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>A mapping from address types (members of Socket_Address_Type) to
           arrays of access-control type (members of Socket_Access_Control)
@@ -280,7 +281,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
     <method name="GetAvailableTubeTypes"
       tp:name-for-bindings="Get_Available_Tube_Types">
-      <arg direction="out" type="au" tp:type="Tube_Type[]">
+      <arg direction="out" type="au" tp:type="Tube_Type[]"
+        name="Available_Tube_Types">
         <tp:docstring>
           An array of the available tube types, as defined by the Tube_Type
           enum.
@@ -289,7 +291,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </method>
 
     <method name="ListTubes" tp:name-for-bindings="List_Tubes">
-      <arg direction="out" type="a(uuusa{sv}u)" tp:type="Tube_Info[]">
+      <arg direction="out" type="a(uuusa{sv}u)" tp:type="Tube_Info[]"
+        name="Tubes">
         <tp:docstring>
          Return an array of tuples, each representing a tube, with the
          following members:
@@ -330,7 +333,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           D-Bus type, or a byte array 'ay'.
         </tp:docstring>
       </arg>
-      <arg direction="out" type="u" tp:type="Tube_ID">
+      <arg direction="out" type="u" tp:type="Tube_ID" name="Tube_ID">
         <tp:docstring>
           The ID of the new tube.
         </tp:docstring>
@@ -403,7 +406,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           specified in the documentation for the Socket_Access_Control enum.
         </tp:docstring>
       </arg>
-      <arg direction="out" type="u" tp:type="Tube_ID">
+      <arg direction="out" type="u" tp:type="Tube_ID" name="Tube_ID">
         <tp:docstring>
           The ID of the new tube.
         </tp:docstring>
@@ -600,7 +603,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           The ID of the tube to get an address for.
         </tp:docstring>
       </arg>
-      <arg direction="out" type="s">
+      <arg direction="out" type="s" name="Address">
         <tp:docstring>
           The bus address.
         </tp:docstring>
@@ -632,7 +635,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           The ID of the tube to get names for.
         </tp:docstring>
       </arg>
-      <arg direction="out" type="a(us)" tp:type="DBus_Tube_Member[]">
+      <arg direction="out" type="a(us)" tp:type="DBus_Tube_Member[]"
+        name="DBus_Names">
         <tp:docstring>
           An array of structures, each containing a contact handle and a D-Bus
           bus name.

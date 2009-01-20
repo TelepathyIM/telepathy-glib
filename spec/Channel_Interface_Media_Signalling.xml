@@ -41,7 +41,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <method name="GetSessionHandlers"
       tp:name-for-bindings="Get_Session_Handlers">
-      <arg direction="out" type="a(os)" tp:type="Media_Session_Handler_Info[]"/>
+      <arg direction="out" type="a(os)" tp:type="Media_Session_Handler_Info[]"
+        name="Session_Handlers"/>
       <tp:docstring>
         Returns all currently active session handlers on this channel
         as a list of (session_handler_path, type).

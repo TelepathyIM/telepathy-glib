@@ -199,6 +199,18 @@
             namespace="org.freedesktop.Telepathy">Channel.TargetID</tp:dbus-ref>).
           </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+          <tp:docstring>
+            The request matched the fixed properties of a
+            <tp:type>Requestable_Channel_Class</tp:type> in
+            <tp:member-ref>RequestableChannelClasses</tp:member-ref>, but the
+            allowed arguments did not make sense; for example, a <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Channel.Type">RoomList</tp:dbus-ref>
+            was requested, but the <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Channel.Type.RoomList">Server</tp:dbus-ref>
+            property provided was not a valid DNS name.
+          </tp:docstring>
+        </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
           <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
             <p>The requested channel cannot be created, but in
@@ -320,6 +332,18 @@
             of a property whose value is the string corresponding to a handle
             (like <tp:dbus-ref
             namespace="org.freedesktop.Telepathy">Channel.TargetID</tp:dbus-ref>).
+          </tp:docstring>
+        </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+          <tp:docstring>
+            The request matched the fixed properties of a
+            <tp:type>Requestable_Channel_Class</tp:type> in
+            <tp:member-ref>RequestableChannelClasses</tp:member-ref>, but the
+            allowed arguments did not make sense; for example, a <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Channel.Type">RoomList</tp:dbus-ref>
+            was requested, but the <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Channel.Type.RoomList">Server</tp:dbus-ref>
+            property provided was not a valid DNS name.
           </tp:docstring>
         </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">

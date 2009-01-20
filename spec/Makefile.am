@@ -39,15 +39,16 @@ EXTRA_DIST = \
     Connection_Interface_Aliasing.xml \
     Connection_Interface_Avatars.xml \
     Connection_Interface_Capabilities.xml \
+    Connection_Interface_Contact_Capabilities.xml \
     Connection_Interface_Contact_Info.xml \
     Connection_Interface_Contacts.xml \
-    Connection_Interface_Contact_Capabilities.xml \
     Connection_Interface_Forwarding.xml \
-    Connection_Interface_Simple_Presence.xml \
+    Connection_Interface_Location.xml \
     Connection_Interface_Presence.xml \
     Connection_Interface_Privacy.xml \
     Connection_Interface_Renaming.xml \
     Connection_Interface_Requests.xml \
+    Connection_Interface_Simple_Presence.xml \
     Connection_Manager.xml \
     Connection.xml \
     errors.xml \
