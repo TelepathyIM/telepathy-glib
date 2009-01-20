@@ -1,3 +1,26 @@
+telepathy-glib 0.7.23 (UNRELEASED)
+==================================
+
+Enhancements:
+
+* Updated to spec version 0.17.18
+  - Added TpRichPresenceAccessControlType and
+    TP_STRUCT_TYPE_RICH_PRESENCE_ACCESS_CONTROL
+  - RequestHandles raises NotImplemented for bad handle types or InvalidHandle
+    for bad identifiers (fd.o #19609)
+  - MediaStreamHandler has a CodecsUpdated method
+  - generated methods should now have names for all "out" arguments
+
+* Use tp:name-for-bindings to construct the C name for D-Bus methods etc.,
+  which will result in better C function naming for future D-Bus interfaces
+  like DBusTube
+
+Fixes:
+
+* Annotate things added in 0.7.21 with the correct "Since:" indicator
+
+* Correct the documentation for tp_list_connection_names()
+
 telepathy-glib 0.7.22 (2009-01-13)
 ==================================
 
@@ -25,6 +48,7 @@ Enhancements:
 * The examples have been made more exemplary, using TpChannelManager in place
   of TpChannelFactoryIface, implementing Destroyable and respawning 1-1 text
   channels which are closed with pending messages.
+  (fd.o #17632)
 
 * Added a TP_COMPILER_WARNINGS macro to simplify choosing compiler warnings in
   configure.ac, and forked a version of AS_COMPILER_FLAG that supports C++ so
@@ -83,6 +107,7 @@ Enhancements:
   (tp_channel_new_from_properties), and has a fast path using GetAll to reduce
   round trips (if supported); when constructed from a dictionary of immutable
   properties, non-Group channels should become 'ready' in a single round-trip
+  (fd.o #17427)
 
 * Only use the Properties mixin in there are properties defined
 
