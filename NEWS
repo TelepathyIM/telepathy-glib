@@ -1,5 +1,7 @@
-telepathy-glib 0.7.23 (UNRELEASED)
+telepathy-glib 0.7.23 (2009-01-20)
 ==================================
+
+The "new in version 0.7.1, and allegedly also in 0.7.21" release.
 
 Enhancements:
 
@@ -18,6 +20,12 @@ Enhancements:
   like DBusTube
 
 Fixes:
+
+* Remove symbols from 0.7.21.abi that were already in 0.7.1.abi (GNU ld
+  seems to respond by giving them the older version, so no harm was done
+  to the ABI, but it broke the Debian packages)
+
+* Make make-version-script.py fail if that ever happens again
 
 * Annotate things added in 0.7.21 with the correct "Since:" indicator
 
