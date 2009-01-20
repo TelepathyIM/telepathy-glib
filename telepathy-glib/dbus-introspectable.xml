@@ -6,7 +6,7 @@
   <node name="/DBus_Introspectable">
     <interface name="org.freedesktop.DBus.Introspectable">
 
-      <method name="Introspect">
+      <method name="Introspect" tp:name-for-bindings="Introspect">
         <arg direction="out" type="s" name="XML_Data"/>
       </method>
 

@@ -6,10 +6,10 @@
   <node name="/DBus_Peer">
     <interface name="org.freedesktop.DBus.Peer" tp:implement-service="no">
 
-      <method name="Ping">
+      <method name="Ping" tp:name-for-bindings="Ping">
       </method>
 
-      <method name="GetMachineId">
+      <method name="GetMachineId" tp:name-for-bindings="Get_Machine_Id">
         <arg direction="out" type="s" name="Machine_UUID"/>
       </method>
 
