@@ -822,18 +822,19 @@ raise_invalidated:
 
 /**
  * TpConnectionNameListCb:
- * @names: %NULL-terminated array of connection bus names,
+ * @names: %NULL-terminated array of @n connection bus names,
  *   or %NULL on error
  * @n: number of names (not including the final %NULL), or 0 on error
- * @cms: %NULL-terminated array of connection manager names in the same order
- *   as @names, or %NULL on error
- * @protocols: %NULL-terminated array of protocol names in the same order
- *   as @names, or %NULL on error
+ * @cms: %NULL-terminated array of @n connection manager names
+ *   (e.g. "gabble") in the same order as @names, or %NULL on error
+ * @protocols: %NULL-terminated array of @n protocol names as defined in the
+ *   Telepathy spec (e.g. "jabber") in the same order as @names, or %NULL on
+ *   error
  * @error: %NULL on success, or an error that occurred
  * @user_data: user-supplied data
  * @weak_object: user-supplied weakly referenced object
  *
- * Signature of the callback supplied to tp_list_connection_managers().
+ * Signature of the callback supplied to tp_list_connection_names().
  *
  * Since: 0.7.1
  */
@@ -967,10 +968,14 @@ list_context_free (gpointer p)
  *   @callback, but also if the D-Bus connection fails or if the @weak_object
  *   goes away
  * @weak_object: if not %NULL, will be weakly referenced; the callback will
- *   not be called, and the call will be cancelled, if the object has vanished
+ *   not be called if the object has vanished
  *
- * List the available (running or installed) connection managers. Call the
- * callback when done.
+ * List the bus names of all the connections that currently exist, together
+ * with the connection manager name and the protocol name for each connection.
+ * Call the callback when done.
+ *
+ * The bus names passed to the callback can be used to construct #TpConnection
+ * objects for any connections that are of interest.
  *
  * Since: 0.7.1
  */
