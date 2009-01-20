@@ -40,7 +40,7 @@
  * Set the error NotImplemented for an invalid handle type,
  * with an appropriate message.
  *
- * Changed in version 0.7.UNRELEASED: previously, the error was
+ * Changed in version 0.7.23: previously, the error was
  * InvalidArgument.
  */
 void
@@ -58,7 +58,7 @@ tp_g_set_error_invalid_handle_type (guint type, GError **error)
  * Set the error NotImplemented for a handle type which is valid but is not
  * supported by this connection manager, with an appropriate message.
  *
- * Changed in version 0.7.UNRELEASED: previously, the error was
+ * Changed in version 0.7.23: previously, the error was
  * InvalidArgument.
  */
 void
