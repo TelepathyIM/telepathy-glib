@@ -90,10 +90,39 @@ exportable_channel_base_init (gpointer klass)
        * and in the Channels property, as a map from
        * interface.name.propertyname to GValue.
        *
-       * A channel's properties are constant for its lifetime on the bus, so
-       * this property should only change when the closed signal is emitted (so
-       * that respawned channels can reappear on the bus with different
-       * properties).
+       * A channel's immutable properties are constant for its lifetime on the
+       * bus, so this property should only change when the closed signal is
+       * emitted (so that respawned channels can reappear on the bus with
+       * different properties).  All of the D-Bus properties mentioned here
+       * should be exposed through the D-Bus properties interface; additional
+       * (possibly mutable) properties not included here may also be exposed
+       * via the D-Bus properties interface.
+       *
+       * If the channel implementation uses #TpDBusPropertiesMixin, this
+       * property can implemented using
+       * #tp_dbus_properties_mixin_make_properties_hash as follows:
+       *
+       * <informalexample><programlisting>
+       *  case PROP_CHANNEL_PROPERTIES:
+       *    g_value_take_boxed (value,
+       *      tp_dbus_properties_mixin_make_properties_hash (object,
+       *          // The spec says these properties MUST be included:
+       *          TP_IFACE_CHANNEL, "TargetHandle",
+       *          TP_IFACE_CHANNEL, "TargetHandleType",
+       *          TP_IFACE_CHANNEL, "ChannelType",
+       *          TP_IFACE_CHANNEL, "TargetID",
+       *          TP_IFACE_CHANNEL, "Requested",
+       *          // These aren't mandatory as of spec 0.17.17
+       *          // (but they should be):
+       *          TP_IFACE_CHANNEL, "InitiatorHandle",
+       *          TP_IFACE_CHANNEL, "InitiatorID",
+       *          TP_IFACE_CHANNEL, "Interfaces",
+       *          // Perhaps your channel has some other immutable properties:
+       *          TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "SupportedContentTypes",
+       *          // etc.
+       *          NULL));
+       *    break;
+       * </programlisting></informalexample>
        */
       param_spec = g_param_spec_boxed ("channel-properties",
           "Channel properties",
