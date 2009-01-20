@@ -135,6 +135,10 @@ def main(abifiles, symbols=None, unreleased_version=None,
             elif dpkg:
                 dpkg_symbols.append('%s@%s %s' % (symbol, version, release))
 
+            if symbol in versioned_symbols:
+                raise AssertionError('Symbol %s is in version %s and an '
+                                     'earlier version' % (symbol, version))
+
             versioned_symbols.add(symbol)
 
         if gnuld:
