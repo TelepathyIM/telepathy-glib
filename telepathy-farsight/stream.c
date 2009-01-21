@@ -91,8 +91,6 @@ struct _TfStreamPrivate
 
   gboolean send_local_codecs;
   gboolean send_supported_codecs;
-
-  gboolean gathering;
 };
 
 enum
@@ -1279,10 +1277,6 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else
     {
       if (!self->priv->held) {
-        if (!self->priv->gathering)
-          tf_stream_free_resource (self,
-              TP_MEDIA_STREAM_DIRECTION_RECEIVE);
-
         g_object_set (self->priv->fs_stream,
             "direction", current_direction & ~(FS_DIRECTION_SEND),
             NULL);
@@ -1383,9 +1377,6 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   else
     {
       FsStreamDirection desired_direction = self->priv->desired_direction;
-
-      if (self->priv->gathering)
-        desired_direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
 
       if (tf_stream_request_resource (self, desired_direction))
         {
@@ -1797,37 +1788,14 @@ _tf_stream_try_sending_codecs (TfStream *stream)
 
   g_object_get (stream->priv->fs_session, "codecs-ready", &ready, NULL);
 
-  if (!ready)
+  if (!ready && stream->priv->has_resource & TP_MEDIA_STREAM_DIRECTION_SEND)
     {
-      if (!stream->priv->gathering)
-        {
-          DEBUG (stream, "Enabling resources to gather codecs");
-          stream->priv->gathering = TRUE;
-
-          if (stream->priv->held)
-            return;
-
-          if (!tf_stream_request_resource (stream,
-                  TP_MEDIA_STREAM_DIRECTION_SEND))
-            {
-              DEBUG (stream, "Could not get resource, sending may not work");
-              stream->priv->gathering = FALSE;
-              goto ignore_ready;
-            }
-        }
+      DEBUG (stream, "Ignoring new codecs because we're sending,"
+          " but we're not ready");
       return;
     }
 
- ignore_ready:
-
   g_object_get (stream->priv->fs_session, "codecs", &fscodecs, NULL);
-
-  if (stream->priv->gathering)
-    {
-      if (!(stream->priv->desired_direction & TP_MEDIA_STREAM_DIRECTION_SEND))
-        tf_stream_free_resource (stream, TP_MEDIA_STREAM_DIRECTION_SEND);
-      stream->priv->gathering = FALSE;
-    }
 
   for(item = fscodecs; item; item = g_list_next (item))
     {
