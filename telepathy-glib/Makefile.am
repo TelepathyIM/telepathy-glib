@@ -273,7 +273,6 @@ ALL_LIBS = \
 # Generated stuff
 
 DROP_NAMESPACE = sed -e 's@xmlns:tp="http://telepathy\.freedesktop\.org/wiki/DbusSpec.extensions-v0"@@g'
-XSLTPROCFLAGS = --nonet --novalid
 tools_dir = $(top_srcdir)/tools
 
 # Bootstrapping
@@ -285,10 +284,8 @@ _gen/spec-stamp: $(wildcard $(top_srcdir)/spec/*.xml)
 _gen/stable-stamp: $(wildcard *.xml) _gen/spec-stamp
 	touch $@
 
-_gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp
-	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
-		$(tools_dir)/identity.xsl \
-		$< > $@
+_gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp $(tools_dir)/xincludator.py
+	$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 # Things generated from the whole spec at once
 
@@ -340,10 +337,8 @@ _gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
 
 # Things generated per interface
 
-_gen/tp-spec-%.xml: %.xml $(tools_dir)/identity.xsl _gen/spec-stamp
-	$(XSLTPROC) --xinclude $(XSLTPROCFLAGS) \
-		$(tools_dir)/identity.xsl \
-		$< > $@
+_gen/tp-spec-%.xml: %.xml _gen/spec-stamp $(tools_dir)/xincludator.py
+	$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 	$(tools_dir)/glib-ginterface-gen.py \
