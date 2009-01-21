@@ -89,6 +89,8 @@ struct _TfStreamPrivate
 
   GList *local_candidates;
 
+  GList *last_sent_codecs;
+
   gboolean send_local_codecs;
   gboolean send_supported_codecs;
 };
@@ -488,6 +490,12 @@ tf_stream_dispose (GObject *object)
     {
       fs_codec_list_destroy (priv->local_preferences);
       priv->local_preferences = NULL;
+    }
+
+  if (priv->last_sent_codecs)
+    {
+      fs_codec_list_destroy (priv->last_sent_codecs);
+      priv->last_sent_codecs = NULL;
     }
 
   fs_candidate_list_destroy (priv->local_candidates);
@@ -1779,12 +1787,12 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   gboolean ready = FALSE;
   GList *fscodecs = NULL;
   GList *item = NULL;
+  GPtrArray *tpcodecs = NULL;
+
+  gboolean sent_codecs = FALSE;
 
   DEBUG (stream, "called (send_local:%d send_supported:%d)",
       stream->priv->send_local_codecs, stream->priv->send_supported_codecs);
-
-  if (!stream->priv->send_supported_codecs && !stream->priv->send_local_codecs)
-    return;
 
   g_object_get (stream->priv->fs_session, "codecs-ready", &ready, NULL);
 
@@ -1806,7 +1814,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
 
   if (stream->priv->send_local_codecs)
     {
-      GPtrArray *tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+      tpcodecs = fs_codecs_to_tp (stream, fscodecs);
 
       DEBUG (stream, "calling MediaStreamHandler::Ready");
       tp_cli_media_stream_handler_call_ready (
@@ -1814,11 +1822,12 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           -1, tpcodecs, async_method_callback, "Media.StreamHandler::Ready",
           NULL, (GObject *) stream);
       stream->priv->send_local_codecs = FALSE;
+      sent_codecs = TRUE;
     }
 
   if (stream->priv->send_supported_codecs)
     {
-      GPtrArray *tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+      tpcodecs = fs_codecs_to_tp (stream, fscodecs);
 
       DEBUG (stream, "calling MediaStreamHandler::SupportedCodecs");
       tp_cli_media_stream_handler_call_supported_codecs (
@@ -1826,9 +1835,26 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           -1, tpcodecs, async_method_callback,
           "Media.StreamHandler::SupportedCodecs", NULL, (GObject *) stream);
       stream->priv->send_supported_codecs = FALSE;
+      sent_codecs = TRUE;
     }
 
-  fs_codec_list_destroy (fscodecs);
+
+  if (!sent_codecs &&
+      !fs_codec_list_are_equal (fscodecs, stream->priv->last_sent_codecs))
+    {
+      tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+
+      DEBUG (stream, "calling MediaStreamHandler::CodecsUpdated");
+      tp_cli_media_stream_handler_call_codecs_updated (
+          stream->priv->stream_handler_proxy,
+          -1, tpcodecs, async_method_callback,
+          "Media.StreamHandler::CodecsUpdated", NULL, (GObject *) stream);
+    }
+
+  if (tpcodecs)
+    g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, tpcodecs);
+  fs_codec_list_destroy (stream->priv->last_sent_codecs);
+  stream->priv->last_sent_codecs = fscodecs;
 }
 
 /**
