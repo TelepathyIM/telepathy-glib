@@ -603,7 +603,7 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
       g_value_array_append (status, NULL);
       g_value_init (g_value_array_get_nth (status, 3),
           DBUS_TYPE_G_STRING_STRING_HASHTABLE);
-      g_value_set_static_boxed (g_value_array_get_nth (status, 3),
+      g_value_take_boxed (g_value_array_get_nth (status, 3),
           get_statuses_arguments (mixin_cls->statuses[i].optional_arguments));
 
       g_hash_table_insert (ret, (gchar *) mixin_cls->statuses[i].name,
