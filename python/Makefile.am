@@ -11,7 +11,8 @@ AM_CPPFLAGS =					\
 	-DDATADIR=\""$(datadir)"\" \
 	$(TELEPATHY_CFLAGS) \
 	$(PYTHON_INCLUDES) \
-	$(PYTPFARSIGHT_CFLAGS)
+	$(PYTPFARSIGHT_CFLAGS) \
+	$(FARSIGHT2_CFLAGS)
 
 BUILT_SOURCES =						\
 	pytpfarsight.c					 
