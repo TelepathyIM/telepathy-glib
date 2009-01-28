@@ -1,6 +1,15 @@
 telepathy-glib 0.7.24 (UNRELEASED)
 ==================================
 
+Enhancements:
+
+* Use a simple Python implementation of XInclude, rather than xsltproc, for
+  easier Windows porting
+
+Fixes:
+
+* Add File Transfer to the documentation
+
 telepathy-glib 0.7.23 (2009-01-20)
 ==================================
 
