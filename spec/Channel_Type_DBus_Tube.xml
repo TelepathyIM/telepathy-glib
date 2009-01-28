@@ -128,7 +128,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         For a multi-user (i.e. Handle_Type_Room) D-Bus tube, a mapping
         between contact handles and their unique bus names on this tube.
         For a peer-to-peer (i.e. Handle_Type_Contact) D-Bus tube, the empty
-        list.  Change notification is via
+        dictionary.  Change notification is via
         <tp:member-ref>DBusNamesChanged</tp:member-ref>.
       </tp:docstring>
     </property>

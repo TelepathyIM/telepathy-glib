@@ -211,6 +211,12 @@
             property provided was not a valid DNS name.
           </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotCapable">
+          <tp:docstring>
+            The requested channel cannot be created because the requested
+            contact is using a client that lacks a particular feature.
+          </tp:docstring>
+        </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
           <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
             <p>The requested channel cannot be created, but in
@@ -218,8 +224,6 @@
               For instance, this might be because:</p>
 
             <ul>
-              <li>the requested contact is using a client
-                that lacks a particular feature</li>
               <li>a channel matching the request already exists and the
                 protocol requires that only one such channel can exist at a
                 time</li>
@@ -346,12 +350,16 @@
             property provided was not a valid DNS name.
           </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotCapable">
+          <tp:docstring>
+            The requested channel cannot be created because the requested
+            contact is using a client that lacks a particular feature.
+          </tp:docstring>
+        </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
           <tp:docstring>
             The requested channel cannot be created, but in
-            principle, a similar request might succeed in future. For instance,
-            this might be because the requested contact is using a client
-            that lacks a particular feature.
+            principle, a similar request might succeed in future.
           </tp:docstring>
         </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.Channel.Banned"/>

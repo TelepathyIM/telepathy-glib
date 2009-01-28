@@ -593,8 +593,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Banned" value="5">
-        <tp:docstring>
-            The change is due to a kick+ban operation.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The change is due to a kick+ban operation.</p>
+
+          <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is removed
+            from a group for this reason, the equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.Channel.Banned</code>.
+          </p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Error" value="6">
@@ -603,8 +608,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Invalid_Contact" value="7">
-        <tp:docstring>
-            The change is because the requested contact does not exist.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The change is because the requested contact does not exist.</p>
+
+          <tp:rationale>
+            <p>For instance, if the user invites a nonexistent contact to a
+              chatroom or attempts to call a nonexistent contact, this could
+              be indicated by the CM adding that contact's handle to
+              remote-pending for reason None or Invited, then removing it for
+              reason Invalid_Contact.</p>
+          </tp:rationale>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="No_Answer" value="8">
@@ -936,6 +949,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     <tp:member-ref>MembersChangedDetailed</tp:member-ref> signal)
     should be emitted when information
     is retrieved from the server, or changes occur.</p>
+
+  <p>If the <tp:member-ref>MembersChanged</tp:member-ref> or
+    <tp:member-ref>MembersChangedDetailed</tp:member-ref> signal indicates
+    that the <tp:member-ref>SelfHandle</tp:member-ref> has been removed from
+    the channel, and the channel subsequently emits <tp:dbus-ref
+      namespace="org.freedesktop.Telepathy.Channel">Closed</tp:dbus-ref>,
+    clients SHOULD consider the details given in the MembersChanged or
+    MembersChangedDetailed signal to be the reason why the channel closed.</p>
 
   <p>Addition of members to the channel may be requested by using
     <tp:member-ref>AddMembers</tp:member-ref>. If
