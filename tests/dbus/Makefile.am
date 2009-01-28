@@ -4,6 +4,7 @@ noinst_PROGRAMS = \
     test-cli-group \
     test-connection \
     test-connection-bug-18845 \
+    test-connection-error \
     test-connection-handles \
     test-connection-inject-bug16307 \
     test-connection-getinterfaces-failure \
@@ -38,6 +39,8 @@ test_connection_SOURCES = connection.c
 test_connection_bug_18845_SOURCES = connection-bug-18845.c
 
 test_connection_handles_SOURCES = connection-handles.c
+
+test_connection_error_SOURCES = connection-error.c
 
 test_connection_inject_bug16307_SOURCES = connection-inject-bug16307.c
 
