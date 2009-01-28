@@ -534,6 +534,78 @@ error_mapping_quark (void)
   return q;
 }
 
+/**
+ * tp_proxy_dbus_error_to_gerror:
+ * @self: a #TpProxy or subclass
+ * @dbus_error: a D-Bus error name, for instance from the callback for
+ *              tp_cli_connection_connect_to_connection_error()
+ * @debug_message: a debug message that accompanied the error name, or %NULL
+ * @error: used to return the corresponding #GError
+ *
+ * Convert a D-Bus error name into a GError as if it was returned by a method
+ * on this proxy. This method is useful when D-Bus error names are emitted in
+ * signals, such as Connection.ConnectionError and
+ * Group.MembersChangedDetailed.
+ */
+void
+tp_proxy_dbus_error_to_gerror (gpointer self,
+                               const char *dbus_error,
+                               const char *debug_message,
+                               GError **error)
+{
+  GType proxy_type = TP_TYPE_PROXY;
+  GType type;
+
+  g_return_if_fail (TP_IS_PROXY (self));
+
+  if (error == NULL)
+    return;
+
+  g_return_if_fail (*error == NULL);
+
+  if (!tp_dbus_check_valid_interface_name (dbus_error, error))
+    {
+      return;
+    }
+
+  if (debug_message == NULL)
+    debug_message = "";
+
+  for (type = G_TYPE_FROM_INSTANCE (self);
+       type != proxy_type;
+       type = g_type_parent (type))
+    {
+      TpProxyErrorMappingLink *iter;
+
+      for (iter = g_type_get_qdata (type, error_mapping_quark ());
+           iter != NULL;
+           iter = iter->next)
+        {
+          size_t prefix_len = strlen (iter->prefix);
+
+          if (!strncmp (dbus_error, iter->prefix, prefix_len)
+              && dbus_error[prefix_len] == '.')
+            {
+              GEnumValue *code =
+                g_enum_get_value_by_nick (iter->code_enum_class,
+                    dbus_error + prefix_len + 1);
+
+              if (code != NULL)
+                {
+                  g_set_error (error, iter->domain, code->value,
+                      "%s", debug_message);
+                  return;
+                }
+            }
+        }
+    }
+
+  /* we don't have an error mapping - so let's just paste the
+   * error name and message into TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR */
+  g_set_error (error, TP_DBUS_ERRORS,
+      TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR, "%s: %s", dbus_error, debug_message);
+}
+
 GError *
 _tp_proxy_take_and_remap_error (TpProxy *self,
                                 GError *error)
@@ -548,43 +620,8 @@ _tp_proxy_take_and_remap_error (TpProxy *self,
     {
       GError *replacement = NULL;
       const gchar *dbus = dbus_g_error_get_name (error);
-      GType proxy_type = TP_TYPE_PROXY;
-      GType type;
 
-      for (type = G_TYPE_FROM_INSTANCE (self);
-           type != proxy_type;
-           type = g_type_parent (type))
-        {
-          TpProxyErrorMappingLink *iter;
-
-          for (iter = g_type_get_qdata (type, error_mapping_quark ());
-               iter != NULL;
-               iter = iter->next)
-            {
-              size_t prefix_len = strlen (iter->prefix);
-
-              if (!strncmp (dbus, iter->prefix, prefix_len)
-                  && dbus[prefix_len] == '.')
-                {
-                  GEnumValue *code =
-                    g_enum_get_value_by_nick (iter->code_enum_class,
-                        dbus + prefix_len + 1);
-
-                  if (code != NULL)
-                    {
-                      replacement = g_error_new_literal (iter->domain,
-                          code->value, error->message);
-                      g_error_free (error);
-                      return replacement;
-                    }
-                }
-            }
-        }
-
-      /* we don't have an error mapping - so let's just paste the
-       * error name and message into TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR */
-      replacement = g_error_new (TP_DBUS_ERRORS,
-          TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR, "%s: %s", dbus, error->message);
+      tp_proxy_dbus_error_to_gerror (self, dbus, error->message, &replacement);
       g_error_free (error);
       return replacement;
     }

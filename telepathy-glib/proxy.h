@@ -131,6 +131,9 @@ const gchar *tp_proxy_get_object_path (gpointer self);
 
 const GError *tp_proxy_get_invalidated (gpointer self);
 
+void tp_proxy_dbus_error_to_gerror (gpointer self,
+    const char *dbus_error, const char *debug_message, GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-generic.h>
