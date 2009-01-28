@@ -372,6 +372,107 @@ tp_connection_status_changed (TpConnection *self,
 }
 
 static void
+tp_connection_connection_error_cb (TpConnection *self,
+                                   const gchar *error_name,
+                                   GHashTable *details,
+                                   gpointer user_data,
+                                   GObject *weak_object)
+{
+  if (self->priv->connection_error != NULL)
+    {
+      g_error_free (self->priv->connection_error);
+      self->priv->connection_error = NULL;
+    }
+
+  tp_proxy_dbus_error_to_gerror (self, error_name,
+        tp_asv_get_string (details, "debug-message"),
+        &(self->priv->connection_error));
+}
+
+static void
+tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
+                                       GError **error)
+{
+  TpError code;
+  const gchar *message;
+
+  switch (reason)
+    {
+    case TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED:
+      code = TP_ERROR_DISCONNECTED;
+      message = "Disconnected for unspecified reason";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_REQUESTED:
+      code = TP_ERROR_CANCELLED;
+      message = "User requested disconnection";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_NETWORK_ERROR:
+      code = TP_ERROR_NETWORK_ERROR;
+      message = "Network error";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_ENCRYPTION_ERROR:
+      code = TP_ERROR_ENCRYPTION_ERROR;
+      message = "Encryption error";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_NAME_IN_USE:
+      code = TP_ERROR_NOT_YOURS;
+      message = "Name in use";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_CERT_NOT_PROVIDED:
+      code = TP_ERROR_CERT_NOT_PROVIDED;
+      message = "Server certificate not provided";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_CERT_UNTRUSTED:
+      code = TP_ERROR_CERT_UNTRUSTED;
+      message = "Server certificate CA not trusted";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_CERT_EXPIRED:
+      code = TP_ERROR_CERT_EXPIRED;
+      message = "Server certificate expired";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_CERT_NOT_ACTIVATED:
+      code = TP_ERROR_CERT_NOT_ACTIVATED;
+      message = "Server certificate not valid yet";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_CERT_HOSTNAME_MISMATCH:
+      code = TP_ERROR_CERT_HOSTNAME_MISMATCH;
+      message = "Server certificate has wrong hostname";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_CERT_FINGERPRINT_MISMATCH:
+      code = TP_ERROR_CERT_FINGERPRINT_MISMATCH;
+      message = "Server certificate fingerprint mismatch";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_CERT_SELF_SIGNED:
+      code = TP_ERROR_CERT_SELF_SIGNED;
+      message = "Server certificate is self-signed";
+      break;
+
+    case TP_CONNECTION_STATUS_REASON_CERT_OTHER_ERROR:
+      code = TP_ERROR_CERT_INVALID;
+      message = "Unspecified server certificate error";
+      break;
+
+    default:
+      g_set_error (error, TP_ERRORS_DISCONNECTED, reason,
+          "Unknown disconnection reason");
+      return;
+    }
+
+  g_set_error (error, TP_ERRORS, code, "%s", message);
+}
+
+static void
 tp_connection_status_changed_cb (TpConnection *self,
                                  guint status,
                                  guint reason,
@@ -392,11 +493,16 @@ tp_connection_status_changed_cb (TpConnection *self,
 
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
-      GError *error = g_error_new (TP_ERRORS_DISCONNECTED, reason,
-          "Disconnected: reason %d", reason);
+      if (self->priv->connection_error == NULL)
+        {
+          tp_connection_status_reason_to_gerror (reason,
+              &(self->priv->connection_error));
+        }
 
-      tp_proxy_invalidate ((TpProxy *) self, error);
-      g_error_free (error);
+      tp_proxy_invalidate ((TpProxy *) self, self->priv->connection_error);
+
+      g_error_free (self->priv->connection_error);
+      self->priv->connection_error = NULL;
     }
 }
 
@@ -435,9 +541,11 @@ tp_connection_constructor (GType type,
   /* Connect to my own StatusChanged signal.
    * The connection hasn't had a chance to become invalid yet, so we can
    * assume that this signal connection will work */
-  DEBUG ("Connecting to StatusChanged");
+  DEBUG ("Connecting to StatusChanged and ConnectionError");
   tp_cli_connection_connect_to_status_changed (self,
       tp_connection_status_changed_cb, NULL, NULL, NULL, NULL);
+  tp_cli_connection_connect_to_connection_error (self,
+      tp_connection_connection_error_cb, NULL, NULL, NULL, NULL);
 
   /* get my initial status */
   DEBUG ("Calling GetStatus");
@@ -484,6 +592,12 @@ tp_connection_finalize (GObject *object)
     {
       g_array_free (self->priv->contact_attribute_interfaces, TRUE);
       self->priv->contact_attribute_interfaces = NULL;
+    }
+
+  if (self->priv->connection_error != NULL)
+    {
+      g_error_free (self->priv->connection_error);
+      self->priv->connection_error = NULL;
     }
 
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);

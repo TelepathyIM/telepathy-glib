@@ -462,10 +462,10 @@ main (int argc,
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
   MYASSERT (was_ready == TRUE, "");
   MYASSERT (invalidated != NULL, "");
-  MYASSERT (invalidated->domain == TP_ERRORS_DISCONNECTED,
-      "%s", g_quark_to_string (invalidated->domain));
-  MYASSERT (invalidated->code == TP_CONNECTION_STATUS_REASON_REQUESTED,
-      "%u", invalidated->code);
+  MYASSERT (invalidated->domain == TP_ERRORS,
+      ": %s", g_quark_to_string (invalidated->domain));
+  MYASSERT (invalidated->code == TP_ERROR_CANCELLED,
+      ": %u", invalidated->code);
   g_error_free (invalidated);
   invalidated = NULL;
 

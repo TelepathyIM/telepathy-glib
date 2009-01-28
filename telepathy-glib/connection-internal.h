@@ -35,6 +35,7 @@ struct _TpConnectionPrivate {
 
     TpConnectionStatus status;
     TpConnectionStatusReason status_reason;
+    GError *connection_error /* initialized statically */;
 
     TpConnectionAliasFlags alias_flags;
 
