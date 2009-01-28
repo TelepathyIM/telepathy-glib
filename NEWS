@@ -1,7 +1,10 @@
 telepathy-glib 0.7.25 (UNRELEASED)
 ==================================
 
-...
+Fixes:
+
+* Fix a memory leak in tp_presence_mixin_get_statuses() (sorry Jonathon,
+  your patch got lost during the release process...)
 
 telepathy-glib 0.7.24 (2009-01-28)
 ==================================
