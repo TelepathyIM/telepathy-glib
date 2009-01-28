@@ -1,7 +1,23 @@
-telepathy-glib 0.7.24 (UNRELEASED)
+telepathy-glib 0.7.24 (2009-01-28)
 ==================================
 
+The "Divide By Cucumber Error" release.
+
+API changes:
+
+* When a TpConnection is invalidated due to disconnection, the error will now
+  be chosen from the TP_ERRORS domain in most cases. Previously, the
+  TP_ERROR_DISCONNECTED domain was used. This change is necessary to support
+  the extensible error reporting introduced in spec 0.17.19.
+
 Enhancements:
+
+* Update to telepathy-spec 0.17.19
+  - Many new errors in the TP_ERRORS domain
+  - Connection.ConnectionError signal for extensible error reporting
+
+* Add a client binding for the extensible error reporting provided
+  by the ConnectionError signal
 
 * Use a simple Python implementation of XInclude, rather than xsltproc, for
   easier Windows porting
