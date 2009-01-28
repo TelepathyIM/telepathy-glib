@@ -45,6 +45,7 @@ tp_error_get_type (void)
       static const GEnumValue values[] = {"""
         self.do_enum_values()
         print """\
+        { 0 }
       };
 
       etype = g_enum_register_static ("TpError", values);
