@@ -51,6 +51,54 @@ on_status_changed (TpConnection *conn,
   g_main_loop_quit (user_data);
 }
 
+typedef enum
+{
+  DOMAIN_SPECIFIC_ERROR = 0,
+} ExampleError;
+
+static GType
+example_com_error_get_type (void)
+{
+  static gsize type = 0;
+
+  if (g_once_init_enter (&type))
+    {
+      static const GEnumValue values[] = {
+            { DOMAIN_SPECIFIC_ERROR, "DOMAIN_SPECIFIC_ERROR",
+              "DomainSpecificError" },
+            { 0 }
+      };
+      GType gtype;
+
+      g_assert (sizeof (GType) <= sizeof (gsize));
+
+      gtype = g_enum_register_static ("ExampleError", values);
+      g_once_init_leave (&type, gtype);
+    }
+
+  return (GType) type;
+}
+
+static GQuark
+example_com_error_quark (void)
+{
+  static gsize quark = 0;
+
+  if (g_once_init_enter (&quark))
+    {
+      GQuark domain = g_quark_from_static_string ("com.example");
+
+      g_assert (sizeof (GQuark) <= sizeof (gsize));
+
+      g_type_init ();
+      dbus_g_error_domain_register (domain, "com.example",
+          example_com_error_get_type ());
+      g_once_init_leave (&quark, domain);
+    }
+
+  return (GQuark) quark;
+}
+
 int
 main (int argc,
       char **argv)
@@ -68,6 +116,9 @@ main (int argc,
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
   dbus = tp_dbus_daemon_new (tp_get_bus ());
+
+  tp_proxy_subclass_add_error_mapping (TP_TYPE_CONNECTION,
+      "com.example", example_com_error_quark (), example_com_error_get_type ());
 
   service_conn = SIMPLE_CONNECTION (g_object_new (
         SIMPLE_TYPE_CONNECTION,
@@ -102,6 +153,13 @@ main (int argc,
   g_main_loop_run (mainloop);
 
   MYASSERT_SAME_UINT (connection_errors, 1);
+
+  MYASSERT (!tp_connection_run_until_ready (conn, FALSE, &error, NULL), "");
+  MYASSERT_SAME_STRING (g_quark_to_string (error->domain),
+      g_quark_to_string (example_com_error_quark ()));
+  MYASSERT_SAME_UINT (error->code, DOMAIN_SPECIFIC_ERROR);
+  g_error_free (error);
+  error = NULL;
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
