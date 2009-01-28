@@ -17,6 +17,7 @@ EXTRA_DIST = \
     Channel_Interface_Hold.xml \
     Channel_Interface_HTML.xml \
     Channel_Interface_Media_Signalling.xml \
+    Channel_Interface_Media_Signalling_Future.xml \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
     Channel_Interface_Transfer.xml \
@@ -29,6 +30,7 @@ EXTRA_DIST = \
     Channel_Type_Room_List.xml \
     Channel_Type_Stream_Tube.xml \
     Channel_Type_Streamed_Media.xml \
+    Channel_Type_Streamed_Media_Future.xml \
     Channel_Type_Text.xml \
     Channel_Type_Tubes.xml \
     Channel.xml \

@@ -572,24 +572,71 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Offline" value="1">
-        <tp:docstring>
-            The change is due to a user going offline. Also used when
-            user is already offline, but this wasn't known previously.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The change is due to a user going offline. Also used when
+            user is already offline, but this wasn't known previously.</p>
+
+          <p>If a one-to-one <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
+            call fails because the contact being called is offline, the
+            connection manager SHOULD indicate this by removing both the
+            <tp:member-ref>SelfHandle</tp:member-ref> and the other contact's
+            handle from the Group interface with reason Offline.</p>
+
+          <tp:rationale>
+            For 1-1 calls, the call terminates as a result of removing the
+            remote contact, so the SelfHandle should be removed at the same
+            time as the remote contact and for the same reason.
+          </tp:rationale>
+
+          <p>If a handle is removed from a group for this reason, the
+            equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.Offline</code>.</p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Kicked" value="2">
-        <tp:docstring>
-            The change is due to a kick operation.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The change is due to a kick operation.</p>
+
+          <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is removed
+            from a group for this reason, the equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.Channel.Kicked</code>.
+          </p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Busy" value="3">
-        <tp:docstring>
-            The change is due to a busy indication.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The change is due to a busy indication.</p>
+
+          <p>If a one-to-one <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
+            call fails because the contact being called is busy, the
+            connection manager SHOULD indicate this by removing both the
+            <tp:member-ref>SelfHandle</tp:member-ref> and the other contact's
+            handle from the Group interface with reason Busy.</p>
+
+          <tp:rationale>
+            For 1-1 calls, the call terminates as a result of removing the
+            remote contact, so the SelfHandle should be removed at the same
+            time as the remote contact and for the same reason.
+          </tp:rationale>
+
+          <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is removed
+            from a group for this reason, the equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.Busy</code>.
+          </p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Invited" value="4">
         <tp:docstring>
-            The change is due to an invitation.
+          The change is due to an invitation. This reason SHOULD only be used
+          when contacts are added to the remote-pending set (to indicate that
+          the contact has been invited) or to the members (to indicate that
+          the contact has accepted the invitation).
+
+          <tp:rationale>
+            Otherwise, what would it mean?
+          </tp:rationale>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Banned" value="5">
@@ -611,23 +658,50 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The change is because the requested contact does not exist.</p>
 
+          <p>For instance, if the user invites a nonexistent contact to a
+            chatroom or attempts to call a nonexistent contact, this could
+            be indicated by the CM adding that contact's handle to
+            remote-pending for reason None or Invited, then removing it for
+            reason Invalid_Contact. In the case of a 1-1 StreamedMedia
+            call, the CM SHOULD remove the self handle from the Group
+            in the same signal.</p>
+
           <tp:rationale>
-            <p>For instance, if the user invites a nonexistent contact to a
-              chatroom or attempts to call a nonexistent contact, this could
-              be indicated by the CM adding that contact's handle to
-              remote-pending for reason None or Invited, then removing it for
-              reason Invalid_Contact.</p>
+            For 1-1 calls, the call terminates as a result of removing the
+            remote contact, so the SelfHandle should be removed at the same
+            time as the remote contact and for the same reason.
           </tp:rationale>
+
+          <p>If a contact is removed from a group for this reason, the
+            equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.DoesNotExist</code>.
+          </p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="No_Answer" value="8">
-        <tp:docstring>
-            The change is because the requested contact did not respond.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The change is because the requested contact did not respond.</p>
+
+          <p>If a one-to-one <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Channel.Type">StreamedMedia</tp:dbus-ref>
+            call fails because the contact being called did not respond, the
+            connection manager SHOULD indicate this by removing both the
+            <tp:member-ref>SelfHandle</tp:member-ref> and the other contact's
+            handle from the Group interface with reason No_Answer.</p>
+
+          <tp:rationale>
+            Documenting existing practice.
+          </tp:rationale>
+
+          <p>If a contact is removed from a group for this reason, the
+            equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.NoAnswer</code>.
+          </p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Renamed" value="9">
-        <tp:docstring>
-          The change is because a contact's unique identifier changed.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The change is because a contact's unique identifier changed.
           There must be exactly one handle in the removed set and exactly
           one handle in one of the added sets. The <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.Connection.Interface.Renaming">Renamed</tp:dbus-ref>
@@ -635,13 +709,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.Connection.Interface">Renaming</tp:dbus-ref>
           interface will have been emitted for the same handles,
-          shortly before this <tp:member-ref>MembersChanged</tp:member-ref> signal is emitted.
+          shortly before this <tp:member-ref>MembersChanged</tp:member-ref> signal is emitted.</p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Permission_Denied" value="10">
-        <tp:docstring>
-            The change is because there was no permission to contact the
-            requested handle.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The change is because there was no permission to contact the
+            requested handle.</p>
+
+          <p>If a contact is removed from a group for this reason, the
+            equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.PermissionDenied</code>.
+          </p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Separated" value="11">
@@ -670,6 +749,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
             the group with reason Separated. Application protocols in Tubes
             should be prepared to cope with this situation.
           </p>
+
+          <p>The <tp:member-ref>SelfHandle</tp:member-ref> SHOULD NOT be
+            removed from channels with this reason.</p>
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>

@@ -235,6 +235,67 @@
     not having required capabilities.
     </tp:docstring>
   </tp:error>
+
+  <tp:error name="Offline">
+    <tp:docstring>
+      Raised when requested functionality is unavailable because a contact is
+      offline.
+
+      <tp:rationale>
+        This corresponds to Offline in the
+        <tp:type>Channel_Group_Change_Reason</tp:type> enum.
+      </tp:rationale>
+    </tp:docstring>
+  </tp:error>
+
+  <tp:error name="Channel.Kicked">
+    <tp:docstring>
+      Used to represent a user being ejected from a channel by another user,
+      for instance being kicked from a chatroom.
+
+      <tp:rationale>
+        This corresponds to Kicked in the
+        <tp:type>Channel_Group_Change_Reason</tp:type> enum.
+      </tp:rationale>
+    </tp:docstring>
+  </tp:error>
+
+  <tp:error name="Busy">
+    <tp:docstring>
+      Used to represent a user being removed from a channel because of a
+      "busy" indication.
+
+      <tp:rationale>
+        This corresponds to Busy in the
+        <tp:type>Channel_Group_Change_Reason</tp:type> enum.
+      </tp:rationale>
+    </tp:docstring>
+  </tp:error>
+
+  <tp:error name="No Answer">
+    <tp:docstring>
+      Used to represent a user being removed from a channel because they did
+      not respond, e.g. to a StreamedMedia call.
+
+      <tp:rationale>
+        This corresponds to No_Answer in the
+        <tp:type>Channel_Group_Change_Reason</tp:type> enum.
+      </tp:rationale>
+    </tp:docstring>
+  </tp:error>
+
+  <tp:error name="Does Not Exist">
+    <tp:docstring>
+      Raised when the requested user does not, in fact, exist.
+
+      <tp:rationale>
+        This corresponds to Invalid_Contact in the
+        <tp:type>Channel_Group_Change_Reason</tp:type> enum, but can also be
+        used to represent other things not existing (like chatrooms, perhaps).
+      </tp:rationale>
+    </tp:docstring>
+  </tp:error>
+
   <tp:copyright>Copyright (C) 2005-2008 Collabora Limited</tp:copyright>
   <tp:copyright>Copyright (C) 2005-2008 Nokia Corporation</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">

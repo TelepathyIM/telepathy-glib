@@ -866,45 +866,46 @@ USA.</p>
             information given by this signal can be used to supplement the
             StatusChanged signal.</p>
         </tp:rationale>
-
-        <arg name="Error" type="s" tp:type="DBus_Error_Name">
-          <tp:docstring>
-            The name of a D-Bus error describing the error that occurred,
-            which may correspond to a
-            <tp:type>Connection_Status_Reason</tp:type> or be a
-            protocol-specific or connection-manager-specific error in a
-            suitable namespace.
-
-            <tp:rationale>
-              For instance, a SIP connection manager could signal
-              "402 Payment Required" as an error in a
-              connection-manager-specific namespace, or a link-local
-              XMPP implementation that used Avahi could provide the error
-              given to it by the avahi-daemon.
-            </tp:rationale>
-          </tp:docstring>
-        </arg>
-
-        <arg name="Details" type="a{sv}" tp:type="String_Variant_Map">
-          <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-            <p>Additional information about the error, which may include
-              the following well-known keys:</p>
-
-            <dl>
-              <dt>debug-message (s)</dt>
-              <dd>Debugging information on the change, corresponding to the
-                message part of a D-Bus error message, which SHOULD NOT be
-                displayed to users under normal circumstances</dd>
-            </dl>
-
-            <tp:rationale>
-              <p>This argument allows for future extensions. For instance,
-                if indicating DNS lookup failure, we could define a key
-                that indicates the hostname that could not be found.</p>
-            </tp:rationale>
-          </tp:docstring>
-        </arg>
       </tp:docstring>
+
+      <arg name="Error" type="s" tp:type="DBus_Error_Name">
+        <tp:docstring>
+          The name of a D-Bus error describing the error that occurred,
+          which may correspond to a
+          <tp:type>Connection_Status_Reason</tp:type> or be a
+          protocol-specific or connection-manager-specific error in a
+          suitable namespace.
+
+          <tp:rationale>
+            For instance, a SIP connection manager could signal
+            "402 Payment Required" as an error in a
+            connection-manager-specific namespace, or a link-local
+            XMPP implementation that used Avahi could provide the error
+            given to it by the avahi-daemon.
+          </tp:rationale>
+        </tp:docstring>
+      </arg>
+
+      <arg name="Details" type="a{sv}" tp:type="String_Variant_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>Additional information about the error, which may include
+            the following well-known keys:</p>
+
+          <dl>
+            <dt>debug-message (s)</dt>
+            <dd>Debugging information on the change, corresponding to the
+              message part of a D-Bus error message, which SHOULD NOT be
+              displayed to users under normal circumstances</dd>
+          </dl>
+
+          <tp:rationale>
+            <p>This argument allows for future extensions. For instance,
+              if indicating DNS lookup failure, we could define a key
+              that indicates the hostname that could not be found.</p>
+          </tp:rationale>
+        </tp:docstring>
+      </arg>
+
     </signal>
 
     <signal name="StatusChanged" tp:name-for-bindings="Status_Changed">
