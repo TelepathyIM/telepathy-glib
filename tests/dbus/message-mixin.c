@@ -240,6 +240,7 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
+  dbus = tp_dbus_daemon_new (tp_get_bus ());
 
   service_conn = EXAMPLE_ECHO_2_CONNECTION (g_object_new (
         EXAMPLE_TYPE_ECHO_2_CONNECTION,
@@ -254,7 +255,6 @@ main (int argc,
         &name, &conn_path, &error), "");
   MYASSERT_NO_ERROR (error);
 
-  dbus = tp_dbus_daemon_new (tp_get_bus ());
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
   MYASSERT_NO_ERROR (error);

@@ -100,6 +100,7 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
+  dbus = tp_dbus_daemon_new (tp_get_bus ());
 
   service_conn = SIMPLE_CONNECTION (g_object_new (
         bug15306_connection_get_type (),
@@ -117,7 +118,6 @@ main (int argc,
         &name, &conn_path, &error), "");
   MYASSERT_NO_ERROR (error);
 
-  dbus = tp_dbus_daemon_new (tp_get_bus ());
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
   MYASSERT_NO_ERROR (error);
