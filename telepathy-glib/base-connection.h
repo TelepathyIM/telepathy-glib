@@ -115,6 +115,16 @@ gboolean tp_base_connection_register (TpBaseConnection *self,
     const gchar *cm_name, gchar **bus_name, gchar **object_path,
     GError **error);
 
+/* FIXME: when dbus-glib exposes its GError -> D-Bus error name mapping,
+we could also add:
+void tp_base_connection_disconnect_with_error (TpBaseConnection *self,
+    const GError *error, GHashTable *details, TpConnectionStatusReason reason);
+*/
+
+void tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
+    const gchar *error_name, GHashTable *details,
+    TpConnectionStatusReason reason);
+
 void tp_base_connection_change_status (TpBaseConnection *self,
     TpConnectionStatus status, TpConnectionStatusReason reason);
 

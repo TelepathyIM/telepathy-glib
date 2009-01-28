@@ -2542,6 +2542,48 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 }
 
 /**
+ * tp_base_connection_disconnect_with_dbus_error:
+ * @self: The connection
+ * @error_name: The D-Bus error with which the connection changed status to
+ *              Disconnected
+ * @details: Further details of the error, as a hash table where the keys
+ *           are strings as defined in the Telepathy specification, and the
+ *           values are GValues. %NULL is allowed, and treated as empty.
+ * @reason: The reason code to use in the StatusChanged signal
+ *          (a less specific, non-extensible version of @error_name)
+ *
+ * Change the status of the connection to %TP_CONNECTION_STATUS_DISCONNECTED,
+ * as if by a call to tp_base_connection_change_status(). Before doing so,
+ * emit the ConnectionError D-Bus signal to give more details of the error.
+ *
+ * @details may contain, among other entries, the well-known key
+ * "debug-message", whose value should have type G_TYPE_STRING.
+ */
+void
+tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
+                                               const gchar *error_name,
+                                               GHashTable *details,
+                                               TpConnectionStatusReason reason)
+{
+  GHashTable *dup = NULL;
+
+  g_return_if_fail (tp_dbus_check_valid_interface_name (error_name, NULL));
+
+  if (details == NULL)
+    {
+      dup = g_hash_table_new (g_str_hash, g_str_equal);
+      details = dup;
+    }
+
+  tp_svc_connection_emit_connection_error (self, error_name, details);
+  tp_base_connection_change_status (self, TP_CONNECTION_STATUS_DISCONNECTED,
+      reason);
+
+  if (dup != NULL)
+    g_hash_table_destroy (dup);
+}
+
+/**
  * tp_base_connection_change_status:
  * @self: The connection
  * @status: The new status
