@@ -216,6 +216,12 @@ main (int argc,
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   MYASSERT_NO_ERROR (error);
 
+  MYASSERT (!tp_connection_run_until_ready (conn, FALSE, &error, NULL), "");
+  MYASSERT_SAME_UINT (error->domain, TP_ERRORS);
+  MYASSERT_SAME_UINT (error->code, TP_ERROR_CANCELLED);
+  g_error_free (error);
+  error = NULL;
+
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
   g_free (name);
