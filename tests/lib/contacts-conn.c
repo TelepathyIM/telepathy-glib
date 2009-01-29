@@ -177,7 +177,7 @@ static const TpPresenceStatusSpec my_statuses[] = {
         can_have_message },
       { "busy", TP_CONNECTION_PRESENCE_TYPE_BUSY, TRUE, can_have_message },
       { "away", TP_CONNECTION_PRESENCE_TYPE_AWAY, TRUE, can_have_message },
-      { "offline", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, TRUE, NULL },
+      { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, NULL },
       { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, NULL },
       { "error", TP_CONNECTION_PRESENCE_TYPE_ERROR, FALSE, NULL },
       { NULL }
