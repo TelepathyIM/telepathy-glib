@@ -20,6 +20,7 @@ noinst_PROGRAMS = \
     test-invalidated-while-invoking-signals \
     test-message-mixin \
     test-properties \
+    test-self-presence \
     test-text-mixin \
     test-text-respawn \
     test-unsupported-interface
@@ -73,6 +74,8 @@ test_properties_SOURCES = properties.c
 nodist_test_properties_SOURCES = \
     _gen/svc.h \
     _gen/svc.c
+
+test_self_presence_SOURCES = self-presence.c
 
 test_text_mixin_LDADD = \
     $(LDADD) \
