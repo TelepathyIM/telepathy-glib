@@ -216,6 +216,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
                               const TpPresenceStatusSpec *statuses)
 {
   TpPresenceMixinClass *mixin_cls;
+  guint i;
 
   DEBUG ("called.");
 
@@ -235,6 +236,26 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
   mixin_cls->get_contact_statuses = get_contact_statuses;
   mixin_cls->set_own_status = set_own_status;
   mixin_cls->statuses = statuses;
+
+  for (i = 0; statuses[i].name != NULL; i++)
+    {
+      if (statuses[i].self)
+        {
+          switch (statuses[i].presence_type)
+            {
+            case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
+            case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
+            case TP_CONNECTION_PRESENCE_TYPE_ERROR:
+              g_warning ("Status \"%s\" of type %u should not be available "
+                  "to set on yourself", statuses[i].name,
+                  statuses[i].presence_type);
+              break;
+
+            default:
+              break;
+            }
+        }
+    }
 }
 
 
@@ -548,6 +569,53 @@ get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
   return arguments;
 }
 
+static gboolean
+check_status_available (GObject *object,
+                        TpPresenceMixinClass *mixin_cls,
+                        guint i,
+                        GError **error,
+                        gboolean for_self)
+{
+  if (for_self)
+    {
+      if (!mixin_cls->statuses[i].self)
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "cannot set status '%s' on yourself",
+              mixin_cls->statuses[i].name);
+          return FALSE;
+        }
+
+      /* never allow OFFLINE, UNKNOWN or ERROR - if the CM says they're
+       * OK to set on yourself, then it's wrong */
+      switch (mixin_cls->statuses[i].presence_type)
+        {
+        case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
+        case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
+        case TP_CONNECTION_PRESENCE_TYPE_ERROR:
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "cannot set offline/unknown/error status '%s' on yourself",
+              mixin_cls->statuses[i].name);
+          return FALSE;
+
+        default:
+          break;
+        }
+    }
+
+  if (mixin_cls->status_available
+      && !mixin_cls->status_available (object, i))
+    {
+      DEBUG ("requested status %s is not available",
+          mixin_cls->statuses[i].name);
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "requested status '%s' is not available on this connection",
+          mixin_cls->statuses[i].name);
+      return FALSE;
+    }
+
+  return TRUE;
+}
 
 /**
  * tp_presence_mixin_get_statuses:
@@ -579,7 +647,9 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
 
   for (i=0; mixin_cls->statuses[i].name != NULL; i++)
     {
-      if (mixin_cls->status_available && !mixin_cls->status_available (obj, i))
+      /* the spec says we include statuses here even if they're not available
+       * to set on yourself */
+      if (!check_status_available (obj, mixin_cls, i, NULL, FALSE))
         continue;
 
       status = g_value_array_new (5);
@@ -776,7 +846,6 @@ struct _i_hate_g_hash_table_foreach {
   gboolean retval;
 };
 
-
 static int
 check_for_status (GObject *object, const gchar *status, GError **error)
 {
@@ -795,16 +864,8 @@ check_for_status (GObject *object, const gchar *status, GError **error)
       DEBUG ("Found status \"%s\", checking if it's available...",
           (const gchar *) status);
 
-      if (mixin_cls->status_available
-          && !mixin_cls->status_available (object, i))
-        {
-          DEBUG ("requested status %s is not available",
-              (const gchar *) status);
-          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "requested status '%s' is not available on this connection",
-              (const gchar *) status);
-          return -1;
-        }
+      if (!check_status_available (object, mixin_cls, i, error, TRUE))
+        return -1;
     }
   else
     {
@@ -835,15 +896,15 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
    * tp_presence_mixin_set_status(). Therefore there are no problems with
    * sharing the foreach data like this.
    */
-   status = check_for_status (data->obj, (const gchar *) key, data->error);
+  status = check_for_status (data->obj, (const gchar *) key, data->error);
 
-   if (status == -1)
-     {
-       data->retval = FALSE;
-       return;
-     }
+  if (status == -1)
+    {
+      data->retval = FALSE;
+      return;
+    }
 
-   DEBUG ("The status is available.");
+  DEBUG ("The status is available.");
 
   if (value)
     {
@@ -1021,8 +1082,9 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
           int j;
           gboolean message = FALSE;
 
-          if (mixin_cls->status_available
-              && !mixin_cls->status_available (object, i))
+          /* we include statuses here even if they're not available
+           * to set on yourself */
+          if (!check_status_available (object, mixin_cls, i, NULL, FALSE))
             continue;
 
           specs = mixin_cls->statuses[i].optional_arguments;

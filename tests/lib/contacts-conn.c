@@ -177,7 +177,7 @@ static const TpPresenceStatusSpec my_statuses[] = {
         can_have_message },
       { "busy", TP_CONNECTION_PRESENCE_TYPE_BUSY, TRUE, can_have_message },
       { "away", TP_CONNECTION_PRESENCE_TYPE_AWAY, TRUE, can_have_message },
-      { "offline", TP_CONNECTION_PRESENCE_TYPE_AVAILABLE, TRUE, NULL },
+      { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, NULL },
       { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, NULL },
       { "error", TP_CONNECTION_PRESENCE_TYPE_ERROR, FALSE, NULL },
       { NULL }
@@ -242,9 +242,22 @@ my_set_own_status (GObject *object,
                    const TpPresenceStatus *status,
                    GError **error)
 {
-  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-      "Not implemented");
-  return FALSE;
+  TpBaseConnection *base_conn = TP_BASE_CONNECTION (object);
+  ContactsConnectionPresenceStatusIndex index = status->index;
+  const gchar *message = "";
+
+  if (status->optional_arguments != NULL)
+    {
+      message = g_hash_table_lookup (status->optional_arguments, "message");
+
+      if (message == NULL)
+        message = "";
+    }
+
+  contacts_connection_change_presences (CONTACTS_CONNECTION (object),
+      1, &(base_conn->self_handle), &index, &message);
+
+  return TRUE;
 }
 
 static void
