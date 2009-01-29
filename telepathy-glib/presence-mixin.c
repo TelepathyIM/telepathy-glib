@@ -569,6 +569,53 @@ get_statuses_arguments (const TpPresenceStatusOptionalArgumentSpec *specs)
   return arguments;
 }
 
+static gboolean
+check_status_available (GObject *object,
+                        TpPresenceMixinClass *mixin_cls,
+                        guint i,
+                        GError **error,
+                        gboolean for_self)
+{
+  if (for_self)
+    {
+      if (!mixin_cls->statuses[i].self)
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "cannot set status '%s' on yourself",
+              mixin_cls->statuses[i].name);
+          return FALSE;
+        }
+
+      /* never allow OFFLINE, UNKNOWN or ERROR - if the CM says they're
+       * OK to set on yourself, then it's wrong */
+      switch (mixin_cls->statuses[i].presence_type)
+        {
+        case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
+        case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
+        case TP_CONNECTION_PRESENCE_TYPE_ERROR:
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "cannot set offline/unknown/error status '%s' on yourself",
+              mixin_cls->statuses[i].name);
+          return FALSE;
+
+        default:
+          break;
+        }
+    }
+
+  if (mixin_cls->status_available
+      && !mixin_cls->status_available (object, i))
+    {
+      DEBUG ("requested status %s is not available",
+          mixin_cls->statuses[i].name);
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "requested status '%s' is not available on this connection",
+          mixin_cls->statuses[i].name);
+      return FALSE;
+    }
+
+  return TRUE;
+}
 
 /**
  * tp_presence_mixin_get_statuses:
@@ -798,54 +845,6 @@ struct _i_hate_g_hash_table_foreach {
   GError **error;
   gboolean retval;
 };
-
-static gboolean
-check_status_available (GObject *object,
-                        TpPresenceMixinClass *mixin_cls,
-                        guint i,
-                        GError **error,
-                        gboolean for_self)
-{
-  if (for_self)
-    {
-      if (!mixin_cls->statuses[i].self)
-        {
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-              "cannot set status '%s' on yourself",
-              mixin_cls->statuses[i].name);
-          return FALSE;
-        }
-
-      /* never allow OFFLINE, UNKNOWN or ERROR - if the CM says they're
-       * OK to set on yourself, then it's wrong */
-      switch (mixin_cls->statuses[i].presence_type)
-        {
-        case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
-        case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
-        case TP_CONNECTION_PRESENCE_TYPE_ERROR:
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-              "cannot set offline/unknown/error status '%s' on yourself",
-              mixin_cls->statuses[i].name);
-          return FALSE;
-
-        default:
-          break;
-        }
-    }
-
-  if (mixin_cls->status_available
-      && !mixin_cls->status_available (object, i))
-    {
-      DEBUG ("requested status %s is not available",
-          mixin_cls->statuses[i].name);
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "requested status '%s' is not available on this connection",
-          mixin_cls->statuses[i].name);
-      return FALSE;
-    }
-
-  return TRUE;
-}
 
 static int
 check_for_status (GObject *object, const gchar *status, GError **error)
