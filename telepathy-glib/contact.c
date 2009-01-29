@@ -1773,6 +1773,14 @@ contacts_get_attributes (ContactsContext *context)
   const gchar **supported_interfaces;
   guint i;
 
+  /* tp_connection_get_contact_attributes insists that you have at least one
+   * handle; skip it if we don't (can only happen if we started from IDs) */
+  if (context->handles->len == 0)
+    {
+      contacts_context_continue (context);
+      return;
+    }
+
   g_assert (tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS));
   g_assert (contact_attribute_interfaces != NULL);
