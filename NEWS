@@ -3,6 +3,16 @@ telepathy-glib 0.7.25 (UNRELEASED)
 
 Fixes:
 
+* fd.o #19688: don't assert when getting contacts by ID if none of the
+  identifiers supplied are valid
+
+* TpPresenceMixin: don't allow setting statuses that are flagged as not
+  settable on the user themselves
+
+* TpPresenceMixin: never allow statuses of type OFFLINE, UNKNOWN or ERROR to
+  be set on the user themselves, and warn if the connection manager got this
+  wrong
+
 * Fix a memory leak in tp_presence_mixin_get_statuses() (sorry Jonathon,
   your patch got lost during the release process...)
 

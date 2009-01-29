@@ -776,6 +776,31 @@ test_by_id (TpConnection *client_conn)
   guint i;
   GError *e /* no initialization needed */;
 
+  g_message ("%s: all bad (fd.o #19688)", G_STRFUNC);
+
+  tp_connection_get_contacts_by_id (client_conn,
+      1, ids + 2,
+      0, NULL,
+      by_id_cb,
+      &result, finish, NULL);
+
+  g_main_loop_run (result.loop);
+
+  MYASSERT (result.contacts->len == 0, ": %u", result.contacts->len);
+  MYASSERT (g_hash_table_size (result.bad_ids) == 1, ": %u",
+      g_hash_table_size (result.bad_ids));
+  MYASSERT_NO_ERROR (result.error);
+
+  e = g_hash_table_lookup (result.bad_ids, "Not valid");
+  MYASSERT (e != NULL, "");
+
+  g_ptr_array_free (result.contacts, TRUE);
+  result.contacts = NULL;
+  g_strfreev (result.good_ids);
+  result.good_ids = NULL;
+  g_hash_table_destroy (result.bad_ids);
+  result.bad_ids = NULL;
+
   g_message ("%s: all good", G_STRFUNC);
 
   tp_connection_get_contacts_by_id (client_conn,
