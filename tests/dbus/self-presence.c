@@ -88,6 +88,17 @@ test_simple_presence (ContactsConnection *service_conn,
 
   g_value_unset (value);
   g_free (value);
+
+  MYASSERT (!tp_cli_connection_interface_simple_presence_run_set_presence (
+        client_conn, -1, "offline", "", &error, NULL), "");
+  MYASSERT_SAME_STRING (g_quark_to_string (error->domain),
+      g_quark_to_string (TP_ERRORS));
+  g_error_free (error);
+  error = NULL;
+
+  MYASSERT (tp_cli_connection_interface_simple_presence_run_set_presence (
+        client_conn, -1, "available", "Here I am", &error, NULL), "");
+  MYASSERT_NO_ERROR (error);
 }
 
 static void
@@ -98,6 +109,7 @@ test_complex_presence (ContactsConnection *service_conn,
   GValueArray *spec;
   GHashTable *params;
   GError *error = NULL;
+  GHashTable *monster;
 
   MYASSERT (tp_cli_connection_interface_presence_run_get_statuses (
         client_conn, -1, &statuses, &error, NULL), "");
@@ -169,6 +181,29 @@ test_complex_presence (ContactsConnection *service_conn,
   MYASSERT (params != NULL, "");
   MYASSERT_SAME_UINT (g_hash_table_size (params), 0);
 
+  monster = g_hash_table_new (g_str_hash, g_str_equal);
+  params = g_hash_table_new (g_str_hash, g_str_equal);
+
+  g_hash_table_insert (monster, "offline", params);
+
+  MYASSERT (!tp_cli_connection_interface_presence_run_set_status (
+        client_conn, -1, monster, &error, NULL), "");
+  MYASSERT_SAME_STRING (g_quark_to_string (error->domain),
+      g_quark_to_string (TP_ERRORS));
+  g_error_free (error);
+  error = NULL;
+
+  g_hash_table_remove (monster, "offline");
+  g_hash_table_insert (monster, "available", params);
+
+  MYASSERT (tp_cli_connection_interface_presence_run_set_status (
+        client_conn, -1, monster, &error, NULL), "");
+  MYASSERT_NO_ERROR (error);
+
+  g_hash_table_destroy (params);
+  params = NULL;
+  g_hash_table_destroy (monster);
+  monster = NULL;
 }
 
 int
