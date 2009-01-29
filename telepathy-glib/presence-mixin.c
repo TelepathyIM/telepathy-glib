@@ -1082,7 +1082,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
           int j;
           gboolean message = FALSE;
 
-          if (!check_status_available (obj, mixin_cls, i, NULL, TRUE))
+          if (!check_status_available (object, mixin_cls, i, NULL, TRUE))
             continue;
 
           specs = mixin_cls->statuses[i].optional_arguments;
