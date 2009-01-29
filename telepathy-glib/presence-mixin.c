@@ -216,6 +216,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
                               const TpPresenceStatusSpec *statuses)
 {
   TpPresenceMixinClass *mixin_cls;
+  guint i;
 
   DEBUG ("called.");
 
@@ -235,6 +236,26 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
   mixin_cls->get_contact_statuses = get_contact_statuses;
   mixin_cls->set_own_status = set_own_status;
   mixin_cls->statuses = statuses;
+
+  for (i = 0; statuses[i].name != NULL; i++)
+    {
+      if (statuses[i].self)
+        {
+          switch (statuses[i].presence_type)
+            {
+            case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
+            case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
+            case TP_CONNECTION_PRESENCE_TYPE_ERROR:
+              g_warning ("Status \"%s\" of type %u should not be available "
+                  "to set on yourself", statuses[i].name,
+                  statuses[i].presence_type);
+              break;
+
+            default:
+              break;
+            }
+        }
+    }
 }
 
 
