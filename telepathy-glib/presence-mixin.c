@@ -600,7 +600,9 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
 
   for (i=0; mixin_cls->statuses[i].name != NULL; i++)
     {
-      if (!check_status_available (obj, mixin_cls, i, NULL))
+      /* the spec says we include statuses here even if they're not available
+       * to set on yourself */
+      if (!check_status_available (obj, mixin_cls, i, NULL, FALSE))
         continue;
 
       status = g_value_array_new (5);
@@ -801,8 +803,36 @@ static gboolean
 check_status_available (GObject *object,
                         TpPresenceMixinClass *mixin_cls,
                         guint i,
-                        GError **error)
+                        GError **error,
+                        gboolean for_self)
 {
+  if (for_self)
+    {
+      if (!mixin_cls->statuses[i].self)
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "cannot set status '%s' on yourself",
+              mixin_cls->statuses[i].name);
+          return FALSE;
+        }
+
+      /* never allow OFFLINE, UNKNOWN or ERROR - if the CM says they're
+       * OK to set on yourself, then it's wrong */
+      switch (mixin_cls->statuses[i].presence_type)
+        {
+        case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
+        case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
+        case TP_CONNECTION_PRESENCE_TYPE_ERROR:
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "cannot set offline/unknown/error status '%s' on yourself",
+              mixin_cls->statuses[i].name);
+          return FALSE;
+
+        default:
+          break;
+        }
+    }
+
   if (mixin_cls->status_available
       && !mixin_cls->status_available (object, i))
     {
@@ -835,7 +865,7 @@ check_for_status (GObject *object, const gchar *status, GError **error)
       DEBUG ("Found status \"%s\", checking if it's available...",
           (const gchar *) status);
 
-      if (!check_status_available (object, mixin_cls, i, error))
+      if (!check_status_available (object, mixin_cls, i, error, TRUE))
         return -1;
     }
   else
@@ -1053,7 +1083,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
           int j;
           gboolean message = FALSE;
 
-          if (!check_status_available (obj, mixin_cls, i, NULL))
+          if (!check_status_available (obj, mixin_cls, i, NULL, TRUE))
             continue;
 
           specs = mixin_cls->statuses[i].optional_arguments;
