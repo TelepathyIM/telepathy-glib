@@ -600,7 +600,7 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
 
   for (i=0; mixin_cls->statuses[i].name != NULL; i++)
     {
-      if (mixin_cls->status_available && !mixin_cls->status_available (obj, i))
+      if (!check_status_available (obj, mixin_cls, i, NULL))
         continue;
 
       status = g_value_array_new (5);
@@ -797,6 +797,25 @@ struct _i_hate_g_hash_table_foreach {
   gboolean retval;
 };
 
+static gboolean
+check_status_available (GObject *object,
+                        TpPresenceMixinClass *mixin_cls,
+                        guint i,
+                        GError **error)
+{
+  if (mixin_cls->status_available
+      && !mixin_cls->status_available (object, i))
+    {
+      DEBUG ("requested status %s is not available",
+          mixin_cls->statuses[i].name);
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "requested status '%s' is not available on this connection",
+          mixin_cls->statuses[i].name);
+      return FALSE;
+    }
+
+  return TRUE;
+}
 
 static int
 check_for_status (GObject *object, const gchar *status, GError **error)
@@ -816,16 +835,8 @@ check_for_status (GObject *object, const gchar *status, GError **error)
       DEBUG ("Found status \"%s\", checking if it's available...",
           (const gchar *) status);
 
-      if (mixin_cls->status_available
-          && !mixin_cls->status_available (object, i))
-        {
-          DEBUG ("requested status %s is not available",
-              (const gchar *) status);
-          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "requested status '%s' is not available on this connection",
-              (const gchar *) status);
-          return -1;
-        }
+      if (!check_status_available (object, mixin_cls, i, error))
+        return -1;
     }
   else
     {
@@ -1042,8 +1053,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
           int j;
           gboolean message = FALSE;
 
-          if (mixin_cls->status_available
-              && !mixin_cls->status_available (object, i))
+          if (!check_status_available (obj, mixin_cls, i, NULL))
             continue;
 
           specs = mixin_cls->statuses[i].optional_arguments;
