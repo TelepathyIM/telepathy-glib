@@ -78,6 +78,7 @@ tests/dbus/test-contacts-bug-19101
 tests/dbus/test-contacts-mixin
 tests/dbus/test-dbus
 tests/dbus/test-disconnection
+tests/dbus/test-error-enum
 tests/dbus/test-example-no-protocols
 tests/dbus/test-finalized-in-invalidated-handler
 tests/dbus/test-group-mixin

@@ -1,7 +1,7 @@
 /*
- * tp-errors.h - Header for Telepathy error types
- * Copyright (C) 2005, 2007 Collabora Ltd.
- * Copyright (C) 2005, 2007 Nokia Corporation
+ * <telepathy-glib/errors.h> - Header for Telepathy error types
+ * Copyright (C) 2005-2009 Collabora Ltd.
+ * Copyright (C) 2005-2009 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,24 +23,52 @@
 
 #include <glib-object.h>
 
-#include <telepathy-glib/_gen/telepathy-errors.h>
-
 G_BEGIN_DECLS
 
 GQuark tp_errors_quark (void);
 
 #define TP_ERROR_PREFIX "org.freedesktop.Telepathy.Errors"
 
-/**
- * TP_ERRORS:
- *
- * The error domain for the D-Bus errors described in the Telepathy
- * specification.
- */
-#define TP_ERRORS tp_errors_quark ()
+#define TP_ERRORS (tp_errors_quark ())
 
 void tp_g_set_error_invalid_handle_type (guint type, GError **error);
 void tp_g_set_error_unsupported_handle_type (guint type, GError **error);
+
+#define TP_TYPE_ERROR (tp_error_get_type())
+
+GType tp_error_get_type (void);
+
+typedef enum {
+    TP_ERROR_NETWORK_ERROR,
+    TP_ERROR_NOT_IMPLEMENTED,
+    TP_ERROR_INVALID_ARGUMENT,
+    TP_ERROR_NOT_AVAILABLE,
+    TP_ERROR_PERMISSION_DENIED,
+    TP_ERROR_DISCONNECTED,
+    TP_ERROR_INVALID_HANDLE,
+    TP_ERROR_CHANNEL_BANNED,
+    TP_ERROR_CHANNEL_FULL,
+    TP_ERROR_CHANNEL_INVITE_ONLY,
+    TP_ERROR_NOT_YOURS,
+    TP_ERROR_CANCELLED,
+    TP_ERROR_AUTHENTICATION_FAILED,
+    TP_ERROR_ENCRYPTION_NOT_AVAILABLE,
+    TP_ERROR_ENCRYPTION_ERROR,
+    TP_ERROR_CERT_NOT_PROVIDED,
+    TP_ERROR_CERT_UNTRUSTED,
+    TP_ERROR_CERT_EXPIRED,
+    TP_ERROR_CERT_NOT_ACTIVATED,
+    TP_ERROR_CERT_FINGERPRINT_MISMATCH,
+    TP_ERROR_CERT_HOSTNAME_MISMATCH,
+    TP_ERROR_CERT_SELF_SIGNED,
+    TP_ERROR_CERT_INVALID,
+    TP_ERROR_NOT_CAPABLE,
+    TP_ERROR_OFFLINE,
+    TP_ERROR_CHANNEL_KICKED,
+    TP_ERROR_BUSY,
+    TP_ERROR_NO_ANSWER,
+    TP_ERROR_DOES_NOT_EXIST,
+} TpError;
 
 G_END_DECLS
 

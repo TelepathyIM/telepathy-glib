@@ -153,7 +153,6 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/signals-marshal.c \
     _gen/signals-marshal.h \
     _gen/signals-marshal.list \
-    _gen/telepathy-errors.c \
     _gen/tp-signals-marshal.list \
     _gen/interfaces-body.h \
     _gen/gtypes-body.h \
@@ -175,7 +174,6 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
 nodist_geninclude_HEADERS = \
     _gen/telepathy-enums.h \
     _gen/telepathy-interfaces.h \
-    _gen/telepathy-errors.h \
     _gen/gtypes.h \
     _gen/tp-cli-channel.h \
     _gen/tp-cli-connection.h \
@@ -306,16 +304,6 @@ _gen/interfaces-body.h _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-interfaces-gen.py
 	$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
 		Tp _gen/interfaces-body.h _gen/telepathy-interfaces.h $<
-
-_gen/telepathy-errors.c: _gen/stable-spec.xml \
-	$(tools_dir)/glib-errors-enum-body-gen.py
-	$(PYTHON) $(tools_dir)/glib-errors-enum-body-gen.py \
-		$< > $@
-
-_gen/telepathy-errors.h: _gen/stable-spec.xml \
-	$(tools_dir)/glib-errors-enum-header-gen.py
-	$(PYTHON) $(tools_dir)/glib-errors-enum-header-gen.py \
-		$< > $@
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-client-marshaller-gen.py
