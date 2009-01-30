@@ -57,10 +57,11 @@ main (int argc,
       char **argv)
 {
   const gchar *bus_name, *object_path;
-  TpConnection *connection;
-  GMainLoop *mainloop;
-  TpDBusDaemon *daemon;
+  TpConnection *connection = NULL;
+  GMainLoop *mainloop = NULL;
+  TpDBusDaemon *daemon = NULL;
   GError *error = NULL;
+  int ret = 1;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -87,7 +88,14 @@ main (int argc,
       bus_name = NULL;
     }
 
-  daemon = tp_dbus_daemon_new (tp_get_bus ());
+  daemon = tp_dbus_daemon_dup (&error);
+
+  if (daemon == NULL)
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      goto out;
+    }
 
   connection = tp_connection_new (daemon, bus_name, object_path, &error);
 
@@ -100,12 +108,7 @@ main (int argc,
     {
       g_warning ("%s", error->message);
       g_error_free (error);
-      g_object_unref (daemon);
-
-      if (connection != NULL)
-        g_object_unref (connection);
-
-      return 1;
+      goto out;
     }
 
   printf ("Connection ready\n");
@@ -117,9 +120,17 @@ main (int argc,
       (GDestroyNotify) g_main_loop_unref, NULL);
 
   g_main_loop_run (mainloop);
+  ret = 0;
 
-  g_main_loop_unref (mainloop);
-  g_object_unref (daemon);
+out:
+  if (connection != NULL)
+    g_object_unref (connection);
 
-  return 0;
+  if (mainloop != NULL)
+    g_main_loop_unref (mainloop);
+
+  if (daemon != NULL)
+    g_object_unref (daemon);
+
+  return ret;
 }
