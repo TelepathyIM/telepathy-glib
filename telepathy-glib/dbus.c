@@ -122,6 +122,7 @@ starter_bus_conn (GError **error)
  * be useful even in the absence of D-Bus - it is designed for use in
  * connection managers, which are not at all useful without a D-Bus
  * connection. See <https://bugs.freedesktop.org/show_bug.cgi?id=18832>.
+ * Most processes should use tp_dbus_daemon_dup() instead.
  *
  * Returns: a connection to the starter or session D-Bus daemon.
  */
@@ -606,11 +607,58 @@ struct _TpDBusDaemonPrivate
 
 G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY);
 
+static gpointer starter_bus_daemon = NULL;
+
+/**
+ * tp_dbus_daemon_dup:
+ * @error: Used to indicate error if %NULL is returned
+ *
+ * Returns a proxy for signals and method calls on the D-Bus daemon on which
+ * this process was activated (if it was launched by D-Bus service
+ * activation), or the session bus (otherwise).
+ *
+ * If it is not possible to connect to the appropriate bus, raise an error
+ * and return %NULL.
+ *
+ * The returned #TpDBusDaemon is cached; the same #TpDBusDaemon object will
+ * be returned by this function repeatedly, as long as at least one reference
+ * exists.
+ *
+ * Returns: a reference to a proxy for signals and method calls on the bus
+ *  daemon, or %NULL
+ *
+ * Since: 0.7.UNRELEASED
+ */
+TpDBusDaemon *
+tp_dbus_daemon_dup (GError **error)
+{
+  DBusGConnection *conn;
+
+  if (starter_bus_daemon != NULL)
+    return g_object_ref (starter_bus_daemon);
+
+  conn = starter_bus_conn (error);
+
+  if (conn == NULL)
+    return NULL;
+
+  starter_bus_daemon = tp_dbus_daemon_new (conn);
+  g_assert (starter_bus_daemon != NULL);
+  g_object_add_weak_pointer (starter_bus_daemon, &starter_bus_daemon);
+
+  return starter_bus_daemon;
+}
+
 /**
  * tp_dbus_daemon_new:
  * @connection: a connection to D-Bus
  *
- * <!-- -->
+ * Returns a proxy for signals and method calls on a particular bus
+ * connection.
+ *
+ * Use tp_dbus_daemon_dup() instead if you just want a connection to the
+ * starter or session bus (which is almost always the right thing for
+ * Telepathy).
  *
  * Returns: a new proxy for signals and method calls on the bus daemon
  *  to which @connection is connected

@@ -51,6 +51,8 @@ GType tp_dbus_daemon_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DBUS_DAEMON, \
                               TpDBusDaemonClass))
 
+TpDBusDaemon *tp_dbus_daemon_dup (GError **error);
+
 TpDBusDaemon *tp_dbus_daemon_new (DBusGConnection *connection);
 
 typedef void (*TpDBusDaemonNameOwnerChangedCb) (TpDBusDaemon *bus_daemon,
