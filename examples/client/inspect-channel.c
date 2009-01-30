@@ -25,8 +25,8 @@ main (int argc,
   gchar *channel_type;
   gchar **interfaces, **iter;
   const gchar *conn_name, *object_path;
-  TpDBusDaemon *daemon;
-  TpConnection *connection;
+  TpDBusDaemon *daemon = NULL;
+  TpConnection *connection = NULL;
   TpChannel *channel = NULL;
   GError *error = NULL;
   int ret = 0;
@@ -47,7 +47,15 @@ main (int argc,
   conn_name = argv[1];
   object_path = argv[2];
 
-  daemon = tp_dbus_daemon_new (tp_get_bus ());
+  daemon = tp_dbus_daemon_dup (&error);
+
+  if (daemon == NULL)
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      ret = 1;
+      goto out;
+    }
 
   if (conn_name[0] == '/')
     connection = tp_connection_new (daemon, NULL, conn_name, &error);
@@ -124,7 +132,8 @@ main (int argc,
     }
 
 out:
-  g_object_unref (daemon);
+  if (daemon != NULL)
+    g_object_unref (daemon);
 
   if (connection != NULL)
     g_object_unref (connection);
