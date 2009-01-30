@@ -250,6 +250,8 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
 
+#include "telepathy-glib/dbus-internal.h"
+
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
 
@@ -1489,13 +1491,10 @@ tp_base_connection_register (TpBaseConnection *self,
 {
   TpBaseConnectionClass *cls = TP_BASE_CONNECTION_GET_CLASS (self);
   TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
-  DBusGConnection *bus;
-  DBusGProxy *bus_proxy;
+  TpDBusDaemon *bus_proxy;
   gchar *tmp;
   gchar *safe_proto;
   gchar *unique_name;
-  guint request_name_result;
-  GError *request_error = NULL;
 
   if (tp_connection_manager_check_valid_protocol_name (priv->protocol, NULL))
     {
@@ -1520,8 +1519,10 @@ tp_base_connection_register (TpBaseConnection *self,
       unique_name = g_strdup_printf ("_%p", self);
     }
 
-  bus = tp_get_bus ();
-  bus_proxy = tp_get_bus_proxy ();
+  bus_proxy = tp_dbus_daemon_dup (error);
+
+  if (bus_proxy == NULL)
+    return FALSE;
 
   self->bus_name = g_strdup_printf (TP_CONN_BUS_NAME_BASE "%s.%s.%s",
       cm_name, safe_proto, unique_name);
@@ -1531,56 +1532,19 @@ tp_base_connection_register (TpBaseConnection *self,
   g_free (safe_proto);
   g_free (unique_name);
 
-  if (!dbus_g_proxy_call (bus_proxy, "RequestName", &request_error,
-                          G_TYPE_STRING, self->bus_name,
-                          G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                          G_TYPE_INVALID,
-                          G_TYPE_UINT, &request_name_result,
-                          G_TYPE_INVALID))
+  if (!_tp_dbus_daemon_request_name (bus_proxy, self->bus_name, FALSE, error))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Error acquiring bus name %s: %s", self->bus_name,
-          request_error->message);
-
-      g_error_free (request_error);
-
       g_free (self->bus_name);
       self->bus_name = NULL;
-
       return FALSE;
     }
 
-  if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER)
-    {
-      gchar *msg;
-
-      switch (request_name_result)
-        {
-        case DBUS_REQUEST_NAME_REPLY_IN_QUEUE:
-          msg = "Request has been queued, though we request non-queueing.";
-          break;
-        case DBUS_REQUEST_NAME_REPLY_EXISTS:
-          msg = "A connection manger already has this busname.";
-          break;
-        case DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER:
-          msg = "Connection manager already has a connection to this account.";
-          break;
-        default:
-          msg = "Unknown error return from ReleaseName";
-        }
-
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Error acquiring bus name %s: %s", self->bus_name, msg);
-
-      g_free (self->bus_name);
-      self->bus_name = NULL;
-
-      return FALSE;
-    }
+  g_object_unref (bus_proxy);
 
   DEBUG ("bus name %s", self->bus_name);
 
-  dbus_g_connection_register_g_object (bus, self->object_path,
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (bus_proxy), self->object_path,
       G_OBJECT (self));
 
   DEBUG ("object path %s", self->object_path);

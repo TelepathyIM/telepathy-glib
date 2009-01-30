@@ -42,8 +42,10 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
 
+#include "telepathy-glib/dbus-internal.h"
+
 #define DEBUG_FLAG TP_DEBUG_PARAMS
-#include "debug-internal.h"
+#include "telepathy-glib/debug-internal.h"
 
 /**
  * TpCMParamSpec:
@@ -863,42 +865,40 @@ OUT:
 gboolean
 tp_base_connection_manager_register (TpBaseConnectionManager *self)
 {
-  DBusGConnection *bus;
-  DBusGProxy *bus_proxy;
+  TpDBusDaemon *bus_proxy;
   GError *error = NULL;
-  guint request_name_result;
   TpBaseConnectionManagerClass *cls;
   GString *string;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (self));
   cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
 
-  bus = tp_get_bus ();
-  bus_proxy = tp_get_bus_proxy ();
+  bus_proxy = tp_dbus_daemon_dup (&error);
+
+  if (bus_proxy == NULL)
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      return FALSE;
+    }
 
   string = g_string_new (TP_CM_BUS_NAME_BASE);
   g_string_append (string, cls->cm_dbus_name);
 
-  if (!dbus_g_proxy_call (bus_proxy, "RequestName", &error,
-                          G_TYPE_STRING, string->str,
-                          G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                          G_TYPE_INVALID,
-                          G_TYPE_UINT, &request_name_result,
-                          G_TYPE_INVALID))
-    g_error ("Failed to request bus name: %s", error->message);
-
-  if (request_name_result == DBUS_REQUEST_NAME_REPLY_EXISTS)
+  if (!_tp_dbus_daemon_request_name (bus_proxy, string->str, TRUE, &error))
     {
-      g_warning ("Failed to acquire bus name, connection manager already "
-          "running?");
-
+      g_warning ("%s", error->message);
+      g_error_free (error);
       g_string_free (string, TRUE);
       return FALSE;
     }
 
+  g_object_unref (bus_proxy);
+
   g_string_assign (string, TP_CM_OBJECT_PATH_BASE);
   g_string_append (string, cls->cm_dbus_name);
-  dbus_g_connection_register_g_object (bus, string->str, G_OBJECT (self));
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (bus_proxy), string->str, G_OBJECT (self));
 
   g_string_free (string, TRUE);
 
