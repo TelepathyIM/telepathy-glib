@@ -153,4 +153,5 @@ _gen/svc.c _gen/svc.h: with-properties.xml \
 
 _gen/errors-check.h: $(top_srcdir)/spec/errors.xml \
 	$(top_srcdir)/tools/glib-errors-check-gen.py
+	$(mkdir_p) _gen
 	$(PYTHON) $(top_srcdir)/tools/glib-errors-check-gen.py $< > $@
