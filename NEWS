@@ -3,6 +3,9 @@ telepathy-glib 0.7.25 (UNRELEASED)
 
 Fixes:
 
+* fd.o #17588: don't break ABI if errors are re-ordered in a future spec
+  version
+
 * fd.o #19688: don't assert when getting contacts by ID if none of the
   identifiers supplied are valid
 
