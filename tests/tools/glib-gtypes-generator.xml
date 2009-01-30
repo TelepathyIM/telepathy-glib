@@ -1,0 +1,42 @@
+<tp:spec
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+
+  <tp:mapping name="String_Variant_Map" array-name="String_Variant_Map_List">
+    <tp:member type="s" name="Key"/>
+    <tp:member type="v" name="Value"/>
+  </tp:mapping>
+
+  <tp:mapping name="String_String_Map">
+    <tp:member type="s" name="Key"/>
+    <tp:member type="s" name="Value"/>
+  </tp:mapping>
+
+  <tp:mapping name="String_Variant_Map_Map" array-name="String_Variant_Map_Map_List">
+    <tp:member type="s" name="Key"/>
+    <tp:member type="a{sv}" name="Value" tp:type="String_Variant_Map"/>
+  </tp:mapping>
+
+  <tp:mapping name="String_Variant_Map_List_Map" array-name="String_Variant_Map_List_Map_List">
+    <tp:member type="s" name="Key"/>
+    <tp:member type="aa{sv}" name="Value" tp:type="String_Variant_Map[]"/>
+  </tp:mapping>
+
+  <tp:struct name="Struct" array-name="Struct_List">
+    <tp:member type="i" name="Int"/>
+    <tp:member type="s" name="String"/>
+    <tp:member type="u" name="UInt"/>
+  </tp:struct>
+
+  <tp:simple-type name="Word" type="s" array-name="Word_List">
+  </tp:simple-type>
+
+  <tp:simple-type name="Sixty_Four" type="x" array-name="Sixty_Four_List">
+  </tp:simple-type>
+
+  <tp:simple-type name="Thirty_Two" type="u" array-name="Thirty_Two_List">
+  </tp:simple-type>
+
+  <tp:simple-type name="Byte" type="y" array-name="Byte_Array">
+  </tp:simple-type>
+
+</tp:spec>
