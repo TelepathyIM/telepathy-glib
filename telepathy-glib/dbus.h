@@ -28,7 +28,6 @@ G_BEGIN_DECLS
 
 void tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context);
 DBusGConnection * tp_get_bus (void);
-DBusGProxy * tp_get_bus_proxy (void);
 
 /* TpDBusDaemon is typedef'd in proxy.h */
 typedef struct _TpDBusDaemonPrivate TpDBusDaemonPrivate;
@@ -125,5 +124,9 @@ tp_asv_get_strv (const GHashTable *asv, const gchar *key);
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
+
+#ifndef TP_DISABLE_DEPRECATED
+DBusGProxy * tp_get_bus_proxy (void) G_GNUC_DEPRECATED;
+#endif
 
 #endif /* __TELEPATHY_DBUS_H__ */

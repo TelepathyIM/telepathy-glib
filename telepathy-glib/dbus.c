@@ -145,9 +145,11 @@ tp_get_bus (void)
 /**
  * tp_get_bus_proxy:
  *
- * <!--Returns: says it all-->
+ * Return a #DBusGProxy for the bus daemon object.
  *
  * Returns: a proxy for the bus daemon object on the starter or session bus.
+ *
+ * Deprecated: 0.7.UNRELEASED: Use tp_dbus_daemon_dup() in new code.
  */
 DBusGProxy *
 tp_get_bus_proxy (void)
