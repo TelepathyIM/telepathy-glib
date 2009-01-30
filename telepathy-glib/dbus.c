@@ -1056,6 +1056,63 @@ _tp_dbus_daemon_request_name (TpDBusDaemon *self,
     }
 }
 
+/**
+ * _tp_dbus_daemon_release_name:
+ * @self: a TpDBusDaemon
+ * @well_known_name: a well-known name to acquire
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Release the given well-known name.
+ *
+ * For internal use by TpBaseConnection, TpBaseConnectionManager.
+ */
+gboolean
+_tp_dbus_daemon_release_name (TpDBusDaemon *self,
+                              const gchar *well_known_name,
+                              GError **error)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+  DBusGConnection *gconn = as_proxy->dbus_connection;
+  DBusConnection *dbc = dbus_g_connection_get_connection (gconn);
+  DBusError dbus_error;
+  int result;
+
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
+
+  dbus_error_init (&dbus_error);
+  result = dbus_bus_release_name (dbc, well_known_name, &dbus_error);
+
+  switch (result)
+    {
+    case DBUS_RELEASE_NAME_REPLY_RELEASED:
+      return TRUE;
+
+    case DBUS_RELEASE_NAME_REPLY_NOT_OWNER:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_YOURS,
+          "Name '%s' owned by another process", well_known_name);
+      return FALSE;
+
+    case DBUS_RELEASE_NAME_REPLY_NON_EXISTENT:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Name '%s' not owned", well_known_name);
+      return FALSE;
+
+    case -1:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "%s: %s", dbus_error.name, dbus_error.message);
+      dbus_error_free (&dbus_error);
+      return FALSE;
+
+    default:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "ReleaseName('%s') returned %d and I don't know what that means",
+          well_known_name, result);
+      return FALSE;
+    }
+}
+
 static GObject *
 tp_dbus_daemon_constructor (GType type,
                             guint n_params,

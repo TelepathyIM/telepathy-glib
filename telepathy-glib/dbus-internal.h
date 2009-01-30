@@ -31,6 +31,8 @@ gboolean _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self, gint timeout_ms,
 
 gboolean _tp_dbus_daemon_request_name (TpDBusDaemon *self,
     const gchar *well_known_name, gboolean idempotent, GError **error);
+gboolean _tp_dbus_daemon_release_name (TpDBusDaemon *self,
+    const gchar *well_known_name, GError **error);
 
 void _tp_register_dbus_glib_marshallers (void);
 
