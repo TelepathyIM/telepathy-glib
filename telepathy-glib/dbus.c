@@ -121,7 +121,7 @@ starter_bus_conn (GError **error)
  * Note that this function is not suitable for use in applications which can
  * be useful even in the absence of D-Bus - it is designed for use in
  * connection managers, which are not at all useful without a D-Bus
- * connection. See <https://bugs.freedesktop.org/show_bug.cgi?id=18832>.
+ * connection. See &lt;https://bugs.freedesktop.org/show_bug.cgi?id=18832&gt;.
  * Most processes should use tp_dbus_daemon_dup() instead.
  *
  * Returns: a connection to the starter or session D-Bus daemon.
