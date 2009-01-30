@@ -17,8 +17,6 @@ EXTRA_DIST = \
     glib-client-gen.py \
     glib-client-marshaller-gen.py \
     glib-errors-check-gen.py \
-    glib-errors-enum-body-gen.py \
-    glib-errors-enum-header-gen.py \
     glib-ginterface-gen.py \
     glib-gtypes-generator.py \
     glib-interfaces-gen.py \
