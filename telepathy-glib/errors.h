@@ -31,12 +31,6 @@ GQuark tp_errors_quark (void);
 
 #define TP_ERROR_PREFIX "org.freedesktop.Telepathy.Errors"
 
-/**
- * TP_ERRORS:
- *
- * The error domain for the D-Bus errors described in the Telepathy
- * specification.
- */
 #define TP_ERRORS tp_errors_quark ()
 
 void tp_g_set_error_invalid_handle_type (guint type, GError **error);

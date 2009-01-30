@@ -33,6 +33,14 @@
  */
 
 /**
+ * TP_ERRORS:
+ *
+ * The error domain for the D-Bus errors described in the Telepathy
+ * specification. Error codes in this domain come from the #TpError
+ * enumeration.
+ */
+
+/**
  * tp_g_set_error_invalid_handle_type:
  * @type: An invalid handle type
  * @error: Either %NULL, or used to return an error (as for g_set_error)
