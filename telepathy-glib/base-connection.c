@@ -402,6 +402,9 @@ struct _TpBaseConnectionPrivate
    * If not NULL, we are trying to shut down (and must be in state
    * DISCONNECTED). */
   GPtrArray *disconnect_requests;
+
+  /* Only non-NULL if we have taken our ->bus_name. */
+  TpDBusDaemon *bus_proxy;
 };
 
 static void
@@ -479,7 +482,6 @@ tp_base_connection_dispose (GObject *object)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (object);
   TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
-  DBusGProxy *bus_proxy = tp_get_bus_proxy ();
   guint i;
 
   if (priv->dispose_has_run)
@@ -496,11 +498,15 @@ tp_base_connection_dispose (GObject *object)
       self->self_handle = 0;
     }
 
-  if (NULL != self->bus_name)
+  if (priv->bus_proxy != NULL)
     {
-      dbus_g_proxy_call_no_reply (bus_proxy, "ReleaseName",
-                                  G_TYPE_STRING, self->bus_name,
-                                  G_TYPE_INVALID);
+      if (self->bus_name != NULL)
+        {
+          _tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
+        }
+
+      g_object_unref (priv->bus_proxy);
+      priv->bus_proxy = NULL;
     }
 
   g_ptr_array_foreach (priv->channel_factories, (GFunc) g_object_unref, NULL);
@@ -1491,7 +1497,6 @@ tp_base_connection_register (TpBaseConnection *self,
 {
   TpBaseConnectionClass *cls = TP_BASE_CONNECTION_GET_CLASS (self);
   TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
-  TpDBusDaemon *bus_proxy;
   gchar *tmp;
   gchar *safe_proto;
   gchar *unique_name;
@@ -1519,9 +1524,10 @@ tp_base_connection_register (TpBaseConnection *self,
       unique_name = g_strdup_printf ("_%p", self);
     }
 
-  bus_proxy = tp_dbus_daemon_dup (error);
+  if (priv->bus_proxy == NULL)
+    priv->bus_proxy = tp_dbus_daemon_dup (error);
 
-  if (bus_proxy == NULL)
+  if (priv->bus_proxy == NULL)
     return FALSE;
 
   self->bus_name = g_strdup_printf (TP_CONN_BUS_NAME_BASE "%s.%s.%s",
@@ -1532,19 +1538,18 @@ tp_base_connection_register (TpBaseConnection *self,
   g_free (safe_proto);
   g_free (unique_name);
 
-  if (!_tp_dbus_daemon_request_name (bus_proxy, self->bus_name, FALSE, error))
+  if (!_tp_dbus_daemon_request_name (priv->bus_proxy, self->bus_name, FALSE,
+        error))
     {
       g_free (self->bus_name);
       self->bus_name = NULL;
       return FALSE;
     }
 
-  g_object_unref (bus_proxy);
-
   DEBUG ("bus name %s", self->bus_name);
 
   dbus_g_connection_register_g_object (
-      tp_proxy_get_dbus_connection (bus_proxy), self->object_path,
+      tp_proxy_get_dbus_connection (priv->bus_proxy), self->object_path,
       G_OBJECT (self));
 
   DEBUG ("object path %s", self->object_path);
