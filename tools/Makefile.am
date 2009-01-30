@@ -16,6 +16,7 @@ EXTRA_DIST = \
     git-which-branch.sh \
     glib-client-gen.py \
     glib-client-marshaller-gen.py \
+    glib-errors-check-gen.py \
     glib-errors-enum-body-gen.py \
     glib-errors-enum-header-gen.py \
     glib-ginterface-gen.py \
