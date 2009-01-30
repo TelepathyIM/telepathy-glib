@@ -72,6 +72,7 @@ kill_connection_manager (gpointer data)
     {
       g_debug ("no connections, and timed out");
       g_object_unref (manager);
+      manager = NULL;
       g_main_loop_quit (mainloop);
     }
 
