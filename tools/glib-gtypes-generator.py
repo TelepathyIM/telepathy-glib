@@ -258,19 +258,19 @@ class GTypesGenerator(object):
                 self.body.write('    t = dbus_g_type_get_collection ('
                             '"GPtrArray", '
                             '%stype_dbus_hash_%s ());\n' %
-                            (self.prefix_, self.need_other_arrays[sig][2:-1]))
+                            (self.prefix_, escape_as_identifier(sig[2:-1])))
             elif sig[:2] == 'a(' and sig[-1:] == ')':
                 # array of arrays of struct
                 self.body.write('    t = dbus_g_type_get_collection ('
                             '"GPtrArray", '
                             '%stype_dbus_array_%s ());\n' %
-                            (self.prefix_, self.need_other_arrays[sig][2:-1]))
+                            (self.prefix_, escape_as_identifier(sig[2:-1])))
             elif sig[:1] == 'a':
                 # array of arrays of non-struct
                 self.body.write('    t = dbus_g_type_get_collection ('
                             '"GPtrArray", '
                             '%stype_dbus_array_of_%s ());\n' %
-                            (self.prefix_, self.need_other_arrays[sig][1:]))
+                            (self.prefix_, escape_as_identifier(sig[1:])))
             else:
                 raise AssertionError("array of '%s' not supported" % sig)
 
