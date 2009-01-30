@@ -96,29 +96,45 @@ tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context)
   dbus_g_method_return_error (context, &e);
 }
 
+static DBusGConnection *
+starter_bus_conn (GError **error)
+{
+  static DBusGConnection *starter_bus = NULL;
+
+  if (starter_bus == NULL)
+    {
+      starter_bus = dbus_g_bus_get (DBUS_BUS_STARTER, error);
+    }
+
+  return starter_bus;
+}
+
 /**
  * tp_get_bus:
  *
- * <!--Returns: says it all-->
+ * Returns a connection to the D-Bus daemon on which this process was
+ * activated if it was launched by D-Bus service activation, or the session
+ * bus otherwise.
+ *
+ * If dbus_bus_get() fails, exit with error code 1.
+ *
+ * Note that this function is not suitable for use in applications which can
+ * be useful even in the absence of D-Bus - it is designed for use in
+ * connection managers, which are not at all useful without a D-Bus
+ * connection. See <https://bugs.freedesktop.org/show_bug.cgi?id=18832>.
  *
  * Returns: a connection to the starter or session D-Bus daemon.
  */
 DBusGConnection *
 tp_get_bus (void)
 {
-  static DBusGConnection *bus = NULL;
+  GError *error = NULL;
+  DBusGConnection *bus = starter_bus_conn (&error);
 
   if (bus == NULL)
     {
-      GError *error = NULL;
-
-      bus = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-
-      if (bus == NULL)
-        {
-          g_warning ("Failed to connect to starter bus: %s", error->message);
-          exit (1);
-        }
+      g_warning ("Failed to connect to starter bus: %s", error->message);
+      exit (1);
     }
 
   return bus;
