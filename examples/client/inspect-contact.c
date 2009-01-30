@@ -117,15 +117,16 @@ main (int argc,
       char **argv)
 {
   const gchar *bus_name, *object_path;
-  TpConnection *connection;
-  GMainLoop *mainloop;
-  TpDBusDaemon *daemon;
+  TpConnection *connection = NULL;
+  GMainLoop *mainloop = NULL;
+  TpDBusDaemon *daemon = NULL;
   GError *error = NULL;
   static TpContactFeature features[] = {
       TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_AVATAR_TOKEN,
       TP_CONTACT_FEATURE_PRESENCE
   };
+  int ret = 1;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -152,20 +153,21 @@ main (int argc,
       bus_name = argv[1];
     }
 
-  daemon = tp_dbus_daemon_new (tp_get_bus ());
+  daemon = tp_dbus_daemon_dup (&error);
+
+  if (daemon == NULL)
+    {
+      g_warning ("%s", error->message);
+      goto out;
+    }
+
   connection = tp_connection_new (daemon, bus_name, object_path, &error);
 
   if (connection == NULL ||
       !tp_connection_run_until_ready (connection, FALSE, &error, NULL))
     {
       g_warning ("%s", error->message);
-      g_error_free (error);
-      g_object_unref (daemon);
-
-      if (connection != NULL)
-        g_object_unref (connection);
-
-      return 1;
+      goto out;
     }
 
   g_message ("Connection ready\n");
@@ -180,11 +182,7 @@ main (int argc,
             &self_handle, &error, NULL))
         {
           g_warning ("%s", error->message);
-          g_error_free (error);
-          g_main_loop_unref (mainloop);
-          g_object_unref (connection);
-          g_object_unref (daemon);
-          return 1;
+          goto out;
         }
 
       tp_connection_get_contacts_by_handle (connection,
@@ -207,10 +205,20 @@ main (int argc,
     }
 
   g_main_loop_run (mainloop);
+  ret = 0;
 
-  g_main_loop_unref (mainloop);
-  g_object_unref (connection);
-  g_object_unref (daemon);
+out:
+  if (error != NULL)
+    g_error_free (error);
 
-  return 0;
+  if (mainloop != NULL)
+    g_main_loop_unref (mainloop);
+
+  if (connection != NULL)
+    g_object_unref (connection);
+
+  if (daemon != NULL)
+    g_object_unref (daemon);
+
+  return ret;
 }
