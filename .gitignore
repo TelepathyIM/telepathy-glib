@@ -97,4 +97,6 @@ tests/test-heap
 tests/test-internal-debug
 tests/test-intset
 tests/test-util
+tests/tools/actual.h
+tests/tools/actual-body.h
 tools/telepathy-glib-env

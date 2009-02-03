@@ -51,9 +51,18 @@ class GTypesGenerator(object):
                     ' * as the specification from which it was generated.\n'
                     ' */\n\n')
 
+        # keys are e.g. 'sv', values are the key escaped
         self.need_mappings = {}
+        # keys are the contents of the struct (e.g. 'sssu'), values are the
+        # key escaped
         self.need_structs = {}
-        self.need_arrays = {}
+        # keys are the contents of the struct (e.g. 'sssu'), values are the
+        # key escaped
+        self.need_struct_arrays = {}
+
+        # keys are the contents of the array (unlike need_struct_arrays!),
+        # values are the key escaped
+        self.need_other_arrays = {}
 
     def do_mapping_header(self, mapping):
         members = mapping.getElementsByTagNameNS(NS_TP, 'member')
@@ -108,6 +117,20 @@ class GTypesGenerator(object):
 
         self.header.write('#define %s (%s ())\n\n' % (name, impl))
         self.need_mappings[impl_sig] = esc_impl_sig
+
+        array_name = mapping.getAttribute('array-name')
+        if array_name:
+            gtype_name = self.PREFIX_ + 'ARRAY_TYPE_' + array_name.upper()
+            contents_sig = 'a{' + impl_sig + '}'
+            esc_contents_sig = escape_as_identifier(contents_sig)
+            impl = self.prefix_ + 'type_dbus_array_of_' + esc_contents_sig
+            self.header.write('/**\n * %s:\n\n' % gtype_name)
+            self.header.write(' * Expands to a call to a function\n')
+            self.header.write(' * that returns the #GType of a #GPtrArray\n')
+            self.header.write(' * of #%s.\n' % name)
+            self.header.write(' */\n')
+            self.header.write('#define %s (%s ())\n\n' % (gtype_name, impl))
+            self.need_other_arrays[contents_sig] = esc_contents_sig
 
     def do_struct_header(self, struct):
         members = struct.getElementsByTagNameNS(NS_TP, 'member')
@@ -164,7 +187,7 @@ class GTypesGenerator(object):
             self.header.write(' * of #%s.\n' % name)
             self.header.write(' */\n')
             self.header.write('#define %s (%s ())\n\n' % (array_name, impl))
-            self.need_arrays[impl_sig] = esc_impl_sig
+            self.need_struct_arrays[impl_sig] = esc_impl_sig
 
         self.need_structs[impl_sig] = esc_impl_sig
 
@@ -209,16 +232,48 @@ class GTypesGenerator(object):
             self.body.write('  return t;\n')
             self.body.write('}\n\n')
 
-        for sig in self.need_arrays:
+        for sig in self.need_struct_arrays:
             self.header.write('GType %stype_dbus_array_%s (void);\n\n' %
-                              (self.prefix_, self.need_structs[sig]))
+                              (self.prefix_, self.need_struct_arrays[sig]))
             self.body.write('GType\n%stype_dbus_array_%s (void)\n{\n' %
-                              (self.prefix_, self.need_structs[sig]))
+                              (self.prefix_, self.need_struct_arrays[sig]))
             self.body.write('  static GType t = 0;\n\n')
             self.body.write('  if (G_UNLIKELY (t == 0))\n')
             self.body.write('    t = dbus_g_type_get_collection ("GPtrArray", '
                             '%stype_dbus_struct_%s ());\n' %
-                            (self.prefix_, self.need_structs[sig]))
+                            (self.prefix_, self.need_struct_arrays[sig]))
+            self.body.write('  return t;\n')
+            self.body.write('}\n\n')
+
+        for sig in self.need_other_arrays:
+            self.header.write('GType %stype_dbus_array_of_%s (void);\n\n' %
+                              (self.prefix_, self.need_other_arrays[sig]))
+            self.body.write('GType\n%stype_dbus_array_of_%s (void)\n{\n' %
+                              (self.prefix_, self.need_other_arrays[sig]))
+            self.body.write('  static GType t = 0;\n\n')
+            self.body.write('  if (G_UNLIKELY (t == 0))\n')
+
+            if sig[:2] == 'a{' and sig[-1:] == '}':
+                # array of mappings
+                self.body.write('    t = dbus_g_type_get_collection ('
+                            '"GPtrArray", '
+                            '%stype_dbus_hash_%s ());\n' %
+                            (self.prefix_, escape_as_identifier(sig[2:-1])))
+            elif sig[:2] == 'a(' and sig[-1:] == ')':
+                # array of arrays of struct
+                self.body.write('    t = dbus_g_type_get_collection ('
+                            '"GPtrArray", '
+                            '%stype_dbus_array_%s ());\n' %
+                            (self.prefix_, escape_as_identifier(sig[2:-1])))
+            elif sig[:1] == 'a':
+                # array of arrays of non-struct
+                self.body.write('    t = dbus_g_type_get_collection ('
+                            '"GPtrArray", '
+                            '%stype_dbus_array_of_%s ());\n' %
+                            (self.prefix_, escape_as_identifier(sig[1:])))
+            else:
+                raise AssertionError("array of '%s' not supported" % sig)
+
             self.body.write('  return t;\n')
             self.body.write('}\n\n')
 
