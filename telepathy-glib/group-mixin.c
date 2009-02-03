@@ -1364,8 +1364,7 @@ maybe_add_member_ids (TpGroupMixin *mixin,
       g_hash_table_insert (member_ids, GUINT_TO_POINTER (actor), (gchar *) id);
     }
 
- /* FIXME: TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP */
-  v = tp_g_value_slice_new (tp_type_dbus_hash_us ());
+  v = tp_g_value_slice_new (TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
   g_value_take_boxed (v, member_ids);
   g_hash_table_insert (details, "member-ids", v);
 
