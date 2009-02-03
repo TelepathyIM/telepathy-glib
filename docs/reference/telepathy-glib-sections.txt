@@ -1389,6 +1389,7 @@ TpIntSet
 TpIntFunc
 tp_intset_sized_new
 tp_intset_new
+tp_intset_new_singleton
 tp_intset_destroy
 tp_intset_clear
 tp_intset_add
