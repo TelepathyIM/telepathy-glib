@@ -809,9 +809,7 @@ tp_message_take_message (TpMessage *self,
   g_return_if_fail (self != message);
   g_return_if_fail (self->connection == message->connection);
 
-  /* FIXME: TP_ARRAY_TYPE_MESSAGE_PART_LIST */
-  value = tp_g_value_slice_new (dbus_g_type_get_collection ("GPtrArray",
-      TP_HASH_TYPE_MESSAGE_PART));
+  value = tp_g_value_slice_new (TP_ARRAY_TYPE_MESSAGE_PART_LIST);
   g_value_take_boxed (value, message->parts);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), value);
@@ -1491,8 +1489,7 @@ queue_pending (gpointer data)
       TpChannelTextSendError send_error = tp_asv_get_uint32 (header,
           "delivery-error", NULL);
       GPtrArray *echo = tp_asv_get_boxed (header, "delivery-echo",
-          /* FIXME: TP_ARRAY_TYPE_MESSAGE_PART_LIST */
-          dbus_g_type_get_collection ("GPtrArray", TP_HASH_TYPE_MESSAGE_PART));
+          TP_ARRAY_TYPE_MESSAGE_PART_LIST);
 
       type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
 
