@@ -2387,15 +2387,6 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
       goto out;
     }
 
-  /* FIXME: NotAvailable is the wrong error, since that's meant to be for
-   * transient errors which might go away later. It should raise
-   * NotImplemented if the handle type is >0 and <NUM_TP_HANDLE_TYPES but we
-   * don't have a repo for that type, but the spec doesn't currently allow us
-   * to. It should.
-   *
-   * If the handle type is 0 or >= NUM_TP_HANDLE_TYPES we should raise
-   * InvalidArgument.
-   */
   if (handle_repo == NULL)
     {
       DEBUG ("unimplemented handle type %u", handle_type);
