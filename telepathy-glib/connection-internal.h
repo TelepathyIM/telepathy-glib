@@ -33,6 +33,7 @@ struct _TpConnectionPrivate {
     /* GArray of TpConnectionProc */
     GArray *introspect_needed;
 
+    TpHandle self_handle;
     TpConnectionStatus status;
     TpConnectionStatusReason status_reason;
     GError *connection_error /* initialized statically */;

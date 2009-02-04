@@ -116,6 +116,7 @@ enum
   PROP_STATUS = 1,
   PROP_STATUS_REASON,
   PROP_CONNECTION_READY,
+  PROP_SELF_HANDLE,
   N_PROPS
 };
 
@@ -272,12 +273,69 @@ introspect_contacts (TpConnection *self)
 }
 
 static void
+_tp_connection_set_self_handle (TpConnection *self,
+                 guint self_handle)
+{
+  if (self_handle != self->priv->self_handle)
+    {
+      self->priv->self_handle = self_handle;
+      g_object_notify ((GObject *) self, "self-handle");
+    }
+}
+
+static void
+got_self_handle (TpConnection *self,
+                 guint self_handle,
+                 const GError *error,
+                 gpointer user_data G_GNUC_UNUSED,
+                 GObject *user_object G_GNUC_UNUSED)
+{
+
+  if (error != NULL)
+    {
+      DEBUG ("%p: GetSelfHandle() failed: %s", self, error->message);
+      self_handle = 0;
+      /* FIXME: abort the readying process */
+    }
+
+  _tp_connection_set_self_handle (self, self_handle);
+  tp_connection_continue_introspection (self);
+}
+
+static void
+on_self_handle_changed (TpConnection *self,
+                        guint self_handle,
+                        gpointer user_data G_GNUC_UNUSED,
+                        GObject *user_object G_GNUC_UNUSED)
+{
+  _tp_connection_set_self_handle (self, self_handle);
+}
+
+static void
+get_self_handle (TpConnection *self)
+{
+  g_assert (self->priv->introspect_needed != NULL);
+
+  tp_cli_connection_connect_to_self_handle_changed (self,
+      on_self_handle_changed, NULL, NULL, NULL, NULL);
+
+  /* GetSelfHandle is deprecated in favour of the SelfHandle property,
+   * but until Connection has other interesting properties, there's no point in
+   * trying to implement a fast path; GetSelfHandle is the only one guaranteed
+   * to work, so we'll sometimes have to call it anyway */
+  tp_cli_connection_call_get_self_handle (self, -1,
+       got_self_handle, NULL, NULL, NULL);
+}
+
+static void
 tp_connection_got_interfaces_cb (TpConnection *self,
                                  const gchar **interfaces,
                                  const GError *error,
                                  gpointer user_data,
                                  GObject *user_object)
 {
+  TpConnectionProc func;
+
   if (error != NULL)
     {
       DEBUG ("%p: GetInterfaces() failed, assuming no interfaces: %s",
@@ -290,6 +348,9 @@ tp_connection_got_interfaces_cb (TpConnection *self,
   g_assert (self->priv->introspect_needed == NULL);
   self->priv->introspect_needed = g_array_new (FALSE, FALSE,
       sizeof (TpConnectionProc));
+
+  func = get_self_handle;
+  g_array_append_val (self->priv->introspect_needed, func);
 
   if (interfaces != NULL)
     {
@@ -306,15 +367,13 @@ tp_connection_got_interfaces_cb (TpConnection *self,
 
               if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS)
                 {
-                  TpConnectionProc func = introspect_contacts;
-
+                  func = introspect_contacts;
                   g_array_append_val (self->priv->introspect_needed, func);
                 }
               else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
                 {
                   /* call GetAliasFlags */
-                  TpConnectionProc func = introspect_aliasing;
-
+                  func = introspect_aliasing;
                   g_array_append_val (self->priv->introspect_needed,
                       func);
                 }
@@ -322,16 +381,14 @@ tp_connection_got_interfaces_cb (TpConnection *self,
               else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
                 {
                   /* call GetAvatarRequirements */
-                  TpConnectionProc func = introspect_avatars;
-
+                  func = introspect_avatars;
                   g_array_append_val (self->priv->introspect_needed,
                       func);
                 }
               else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE)
                 {
                   /* call GetStatuses */
-                  TpConnectionProc func = introspect_presence;
-
+                  func = introspect_presence;
                   g_array_append_val (self->priv->introspect_needed,
                       func);
                 }
@@ -529,6 +586,13 @@ tp_connection_got_status_cb (TpConnection *self,
     }
 }
 
+static void
+tp_connection_invalidated (TpConnection *self)
+{
+  _tp_connection_set_self_handle (self, 0);
+  _tp_connection_clean_up_handle_refs (self);
+}
+
 static GObject *
 tp_connection_constructor (GType type,
                            guint n_params,
@@ -555,7 +619,7 @@ tp_connection_constructor (GType type,
   _tp_connection_init_handle_refs (self);
 
   g_signal_connect (self, "invalidated",
-      G_CALLBACK (_tp_connection_clean_up_handle_refs), NULL);
+      G_CALLBACK (tp_connection_invalidated), NULL);
 
   DEBUG ("Returning %p", self);
   return (GObject *) self;
@@ -670,6 +734,19 @@ tp_connection_class_init (TpConnectionClass *klass)
       param_spec);
 
   /**
+   * TpConnection:self-handle:
+   *
+   * The %TP_HANDLE_TYPE_CONTACT handle of the local user on this connection,
+   * or 0 if we don't know yet or if the connection has become invalid.
+   */
+  param_spec = g_param_spec_uint ("self-handle", "Self handle",
+      "The local user's Contact handle on this connection", 0, G_MAXUINT32,
+      0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SELF_HANDLE,
+      param_spec);
+
+  /**
    * TpConnection:status-reason:
    *
    * The reason why #TpConnection:status changed to its current value,
@@ -780,6 +857,32 @@ finally:
   g_free (dup_unique_name);
 
   return ret;
+}
+
+/**
+ * tp_connection_get_self_handle:
+ * @self: a connection
+ *
+ * Return the %TP_HANDLE_TYPE_CONTACT handle of the local user on this
+ * connection, or 0 if the connection is not ready (the
+ * TpConnection:connection-ready property is false) or has become invalid
+ * (the TpProxy::invalidated signal).
+ *
+ * The returned handle is not necessarily valid forever (the
+ * notify::self-handle signal will be emitted if it changes, which can happen
+ * on protocols such as IRC). Construct a #TpContact object if you want to
+ * track the local user's identifier in the protocol, or other information
+ * like their presence status, over time.
+ *
+ * Returns: the value of the TpConnection:self-handle property
+ *
+ * Since: 0.7.UNRELEASED
+ */
+TpHandle
+tp_connection_get_self_handle (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), 0);
+  return self->priv->self_handle;
 }
 
 /**
