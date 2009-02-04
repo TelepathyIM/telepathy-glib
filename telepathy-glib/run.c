@@ -72,6 +72,7 @@ kill_connection_manager (gpointer data)
     {
       g_debug ("no connections, and timed out");
       g_object_unref (manager);
+      manager = NULL;
       g_main_loop_quit (mainloop);
     }
 
@@ -204,6 +205,9 @@ tp_run_connection_manager (const char *prog_name,
 {
   GLogLevelFlags fatal_mask;
   DBusConnection *connection;
+  TpDBusDaemon *bus_daemon = NULL;
+  GError *error = NULL;
+  int ret = 1;
 
   add_signal_handlers ();
 
@@ -236,6 +240,16 @@ tp_run_connection_manager (const char *prog_name,
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
+  bus_daemon = tp_dbus_daemon_dup (&error);
+
+  if (bus_daemon == NULL)
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      error = NULL;
+      goto out;
+    }
+
   manager = construct_cm ();
 
   g_signal_connect (manager, "new-connection",
@@ -248,12 +262,15 @@ tp_run_connection_manager (const char *prog_name,
    * DBUS_HANDLER_RESULT_HANDLED for signals, so for *our* filter to have any
    * effect, we need to install it before calling
    * tp_base_connection_manager_register () */
-  connection = dbus_g_connection_get_connection (tp_get_bus ());
+  connection = dbus_g_connection_get_connection (
+      ((TpProxy *) bus_daemon)->dbus_connection);
   dbus_connection_add_filter (connection, dbus_filter_function, NULL, NULL);
 
   if (!tp_base_connection_manager_register (manager))
     {
-      return 1;
+      g_object_unref (manager);
+      manager = NULL;
+      goto out;
     }
 
   g_debug ("started version %s (telepathy-glib version %s)", version,
@@ -262,7 +279,23 @@ tp_run_connection_manager (const char *prog_name,
   timeout_id = g_timeout_add (DIE_TIME, kill_connection_manager, NULL);
 
   g_main_loop_run (mainloop);
-  g_main_loop_unref (mainloop);
 
-  return 0;
+  ret = 0;
+
+out:
+  /* locals */
+
+  if (bus_daemon != NULL)
+    g_object_unref (bus_daemon);
+
+  /* globals */
+
+  if (mainloop != NULL)
+    g_main_loop_unref (mainloop);
+
+  mainloop = NULL;
+
+  g_assert (manager == NULL);
+
+  return ret;
 }

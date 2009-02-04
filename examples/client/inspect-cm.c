@@ -53,9 +53,11 @@ main (int argc,
       char **argv)
 {
   const gchar *cm_name, *manager_file;
-  TpConnectionManager *cm;
-  GMainLoop *mainloop;
-  GError *error;
+  TpConnectionManager *cm = NULL;
+  GMainLoop *mainloop = NULL;
+  GError *error = NULL;
+  TpDBusDaemon *daemon = NULL;
+  int ret = 1;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -63,18 +65,27 @@ main (int argc,
   if (argc < 2)
     return 2;
 
+  daemon = tp_dbus_daemon_dup (&error);
+
+  if (daemon == NULL)
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      goto out;
+    }
+
   mainloop = g_main_loop_new (NULL, FALSE);
 
   cm_name = argv[1];
   manager_file = argv[2];   /* possibly NULL */
 
-  cm = tp_connection_manager_new (tp_dbus_daemon_new (tp_get_bus ()),
-      cm_name, manager_file, &error);
+  cm = tp_connection_manager_new (daemon, cm_name, manager_file, &error);
 
   if (cm == NULL)
     {
       g_warning ("%s", error->message);
-      return 1;
+      g_error_free (error);
+      goto out;
     }
 
   g_signal_connect (cm, "got-info",
@@ -83,8 +94,17 @@ main (int argc,
   g_timeout_add (5000, time_out, mainloop);
 
   g_main_loop_run (mainloop);
+  ret = 0;
 
-  g_object_unref (cm);
-  g_main_loop_unref (mainloop);
-  return 0;
+out:
+  if (cm != NULL)
+    g_object_unref (cm);
+
+  if (mainloop != NULL)
+    g_main_loop_unref (mainloop);
+
+  if (daemon != NULL)
+    g_object_unref (daemon);
+
+  return ret;
 }

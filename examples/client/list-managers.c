@@ -60,17 +60,32 @@ main (int argc,
 {
   ExampleData data = { g_main_loop_new (NULL, FALSE), 0 };
   TpDBusDaemon *bus_daemon;
+  GError *error = NULL;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  bus_daemon = tp_dbus_daemon_new (tp_get_bus ());
+  bus_daemon = tp_dbus_daemon_dup (&error);
+
+  if (bus_daemon == NULL)
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      data.exit_code = 1;
+      goto out;
+    }
 
   tp_list_connection_managers (bus_daemon, got_connection_managers, &data,
       NULL, NULL);
 
   g_main_loop_run (data.mainloop);
-  g_main_loop_unref (data.mainloop);
-  g_object_unref (bus_daemon);
+
+out:
+  if (data.mainloop != NULL)
+    g_main_loop_unref (data.mainloop);
+
+  if (bus_daemon != NULL)
+    g_object_unref (bus_daemon);
+
   return data.exit_code;
 }

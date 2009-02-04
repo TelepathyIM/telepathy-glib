@@ -1444,6 +1444,7 @@ tp_dbus_check_valid_object_path
 <SUBSECTION>
 TpDBusDaemon
 TpDBusDaemonClass
+tp_dbus_daemon_dup
 tp_dbus_daemon_new
 TpDBusDaemonNameOwnerChangedCb
 tp_dbus_daemon_watch_name_owner

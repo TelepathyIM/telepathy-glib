@@ -57,7 +57,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <dbus/dbus-shared.h>
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
@@ -96,29 +97,46 @@ tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context)
   dbus_g_method_return_error (context, &e);
 }
 
+static DBusGConnection *
+starter_bus_conn (GError **error)
+{
+  static DBusGConnection *starter_bus = NULL;
+
+  if (starter_bus == NULL)
+    {
+      starter_bus = dbus_g_bus_get (DBUS_BUS_STARTER, error);
+    }
+
+  return starter_bus;
+}
+
 /**
  * tp_get_bus:
  *
- * <!--Returns: says it all-->
+ * Returns a connection to the D-Bus daemon on which this process was
+ * activated if it was launched by D-Bus service activation, or the session
+ * bus otherwise.
+ *
+ * If dbus_bus_get() fails, exit with error code 1.
+ *
+ * Note that this function is not suitable for use in applications which can
+ * be useful even in the absence of D-Bus - it is designed for use in
+ * connection managers, which are not at all useful without a D-Bus
+ * connection. See &lt;https://bugs.freedesktop.org/show_bug.cgi?id=18832&gt;.
+ * Most processes should use tp_dbus_daemon_dup() instead.
  *
  * Returns: a connection to the starter or session D-Bus daemon.
  */
 DBusGConnection *
 tp_get_bus (void)
 {
-  static DBusGConnection *bus = NULL;
+  GError *error = NULL;
+  DBusGConnection *bus = starter_bus_conn (&error);
 
   if (bus == NULL)
     {
-      GError *error = NULL;
-
-      bus = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-
-      if (bus == NULL)
-        {
-          g_warning ("Failed to connect to starter bus: %s", error->message);
-          exit (1);
-        }
+      g_warning ("Failed to connect to starter bus: %s", error->message);
+      exit (1);
     }
 
   return bus;
@@ -127,9 +145,11 @@ tp_get_bus (void)
 /**
  * tp_get_bus_proxy:
  *
- * <!--Returns: says it all-->
+ * Return a #DBusGProxy for the bus daemon object.
  *
  * Returns: a proxy for the bus daemon object on the starter or session bus.
+ *
+ * Deprecated: 0.7.UNRELEASED: Use tp_dbus_daemon_dup() in new code.
  */
 DBusGProxy *
 tp_get_bus_proxy (void)
@@ -590,11 +610,58 @@ struct _TpDBusDaemonPrivate
 
 G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY);
 
+static gpointer starter_bus_daemon = NULL;
+
+/**
+ * tp_dbus_daemon_dup:
+ * @error: Used to indicate error if %NULL is returned
+ *
+ * Returns a proxy for signals and method calls on the D-Bus daemon on which
+ * this process was activated (if it was launched by D-Bus service
+ * activation), or the session bus (otherwise).
+ *
+ * If it is not possible to connect to the appropriate bus, raise an error
+ * and return %NULL.
+ *
+ * The returned #TpDBusDaemon is cached; the same #TpDBusDaemon object will
+ * be returned by this function repeatedly, as long as at least one reference
+ * exists.
+ *
+ * Returns: a reference to a proxy for signals and method calls on the bus
+ *  daemon, or %NULL
+ *
+ * Since: 0.7.UNRELEASED
+ */
+TpDBusDaemon *
+tp_dbus_daemon_dup (GError **error)
+{
+  DBusGConnection *conn;
+
+  if (starter_bus_daemon != NULL)
+    return g_object_ref (starter_bus_daemon);
+
+  conn = starter_bus_conn (error);
+
+  if (conn == NULL)
+    return NULL;
+
+  starter_bus_daemon = tp_dbus_daemon_new (conn);
+  g_assert (starter_bus_daemon != NULL);
+  g_object_add_weak_pointer (starter_bus_daemon, &starter_bus_daemon);
+
+  return starter_bus_daemon;
+}
+
 /**
  * tp_dbus_daemon_new:
  * @connection: a connection to D-Bus
  *
- * <!-- -->
+ * Returns a proxy for signals and method calls on a particular bus
+ * connection.
+ *
+ * Use tp_dbus_daemon_dup() instead if you just want a connection to the
+ * starter or session bus (which is almost always the right thing for
+ * Telepathy).
  *
  * Returns: a new proxy for signals and method calls on the bus daemon
  *  to which @connection is connected
@@ -906,18 +973,190 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
                                 gchar **unique_name,
                                 GError **error)
 {
-  DBusGProxy *iface = tp_proxy_borrow_interface_by_id ((TpProxy *) self,
-      TP_IFACE_QUARK_DBUS_DAEMON, error);
+  DBusGConnection *gconn = tp_proxy_get_dbus_connection (self);
+  DBusConnection *dbc = dbus_g_connection_get_connection (gconn);
+  DBusMessage *message;
+  DBusMessage *reply;
+  DBusError dbus_error;
+  const char *name_in_reply;
 
-  if (iface == NULL)
-    return FALSE;
+  message = dbus_message_new_method_call (DBUS_SERVICE_DBUS, DBUS_PATH_DBUS,
+      DBUS_INTERFACE_DBUS, "GetNameOwner");
 
-  return dbus_g_proxy_call_with_timeout (iface, "GetNameOwner", timeout_ms,
-      error,
-      G_TYPE_STRING, well_known_name,
-      G_TYPE_INVALID,
-      G_TYPE_STRING, unique_name,
-      G_TYPE_INVALID);
+  if (message == NULL)
+    g_error ("Out of memory");
+
+  if (!dbus_message_append_args (message,
+        DBUS_TYPE_STRING, &well_known_name,
+        DBUS_TYPE_INVALID))
+    g_error ("Out of memory");
+
+  dbus_error_init (&dbus_error);
+  reply = dbus_connection_send_with_reply_and_block (dbc, message,
+      timeout_ms, &dbus_error);
+
+  dbus_message_unref (message);
+
+  if (reply == NULL)
+    {
+      if (!tp_strdiff (dbus_error.name, DBUS_ERROR_NO_MEMORY))
+        g_error ("Out of memory");
+
+      /* FIXME: ideally we'd use dbus-glib's error mapping for this */
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
+          "%s: %s", dbus_error.name, dbus_error.message);
+
+      dbus_error_free (&dbus_error);
+      dbus_message_unref (reply);
+      return FALSE;
+    }
+
+  if (!dbus_message_get_args (reply, &dbus_error,
+        DBUS_TYPE_STRING, &name_in_reply,
+        DBUS_TYPE_INVALID))
+    {
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
+          "%s: %s", dbus_error.name, dbus_error.message);
+
+      dbus_error_free (&dbus_error);
+      dbus_message_unref (reply);
+      return FALSE;
+    }
+
+  if (unique_name != NULL)
+    *unique_name = g_strdup (name_in_reply);
+
+  dbus_message_unref (reply);
+
+  return TRUE;
+}
+
+/**
+ * _tp_dbus_daemon_request_name:
+ * @self: a TpDBusDaemon
+ * @well_known_name: a well-known name to acquire
+ * @idempotent: whether to consider it to be a success if this process
+ *              already owns the name
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Claim the given well-known name without queueing, allowing replacement
+ * or replacing an existing name-owner.
+ *
+ * For internal use by TpBaseConnection, TpBaseConnectionManager.
+ */
+gboolean
+_tp_dbus_daemon_request_name (TpDBusDaemon *self,
+                              const gchar *well_known_name,
+                              gboolean idempotent,
+                              GError **error)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+  DBusGConnection *gconn = as_proxy->dbus_connection;
+  DBusConnection *dbc = dbus_g_connection_get_connection (gconn);
+  DBusError dbus_error;
+  int result;
+
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
+
+  dbus_error_init (&dbus_error);
+  result = dbus_bus_request_name (dbc, well_known_name,
+      DBUS_NAME_FLAG_DO_NOT_QUEUE, &dbus_error);
+
+  switch (result)
+    {
+    case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
+      return TRUE;
+
+    case DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER:
+      if (idempotent)
+        {
+          return TRUE;
+        }
+      else
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "Name '%s' already in use by this process", well_known_name);
+          return FALSE;
+        }
+
+    case DBUS_REQUEST_NAME_REPLY_EXISTS:
+    case DBUS_REQUEST_NAME_REPLY_IN_QUEUE:
+      /* the latter shouldn't actually happen since we said DO_NOT_QUEUE */
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Name '%s' already in use by another process", well_known_name);
+      return FALSE;
+
+    case -1:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "%s: %s", dbus_error.name, dbus_error.message);
+      dbus_error_free (&dbus_error);
+      return FALSE;
+
+    default:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "RequestName('%s') returned %d and I don't know what that means",
+          well_known_name, result);
+      return FALSE;
+    }
+}
+
+/**
+ * _tp_dbus_daemon_release_name:
+ * @self: a TpDBusDaemon
+ * @well_known_name: a well-known name to acquire
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Release the given well-known name.
+ *
+ * For internal use by TpBaseConnection, TpBaseConnectionManager.
+ */
+gboolean
+_tp_dbus_daemon_release_name (TpDBusDaemon *self,
+                              const gchar *well_known_name,
+                              GError **error)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+  DBusGConnection *gconn = as_proxy->dbus_connection;
+  DBusConnection *dbc = dbus_g_connection_get_connection (gconn);
+  DBusError dbus_error;
+  int result;
+
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
+        TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
+
+  dbus_error_init (&dbus_error);
+  result = dbus_bus_release_name (dbc, well_known_name, &dbus_error);
+
+  switch (result)
+    {
+    case DBUS_RELEASE_NAME_REPLY_RELEASED:
+      return TRUE;
+
+    case DBUS_RELEASE_NAME_REPLY_NOT_OWNER:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_YOURS,
+          "Name '%s' owned by another process", well_known_name);
+      return FALSE;
+
+    case DBUS_RELEASE_NAME_REPLY_NON_EXISTENT:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Name '%s' not owned", well_known_name);
+      return FALSE;
+
+    case -1:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "%s: %s", dbus_error.name, dbus_error.message);
+      dbus_error_free (&dbus_error);
+      return FALSE;
+
+    default:
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "ReleaseName('%s') returned %d and I don't know what that means",
+          well_known_name, result);
+      return FALSE;
+    }
 }
 
 static GObject *

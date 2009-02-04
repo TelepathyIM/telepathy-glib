@@ -212,21 +212,8 @@ struct _TpDynamicHandleRepo {
    * _lookup
    */
   gpointer default_normalize_context;
+  TpDBusDaemon *bus_daemon;
 };
-
-/* To listen for NameOwnerChanged. One ref per dynamic handle repo */
-static gpointer bus_daemon;
-
-static TpDBusDaemon *
-ref_bus_daemon (void)
-{
-  if (bus_daemon != NULL)
-    return g_object_ref (bus_daemon);
-
-  bus_daemon = tp_dbus_daemon_new (tp_get_bus ());
-  g_object_add_weak_pointer (bus_daemon, &bus_daemon);
-  return (TpDBusDaemon *) bus_daemon;
-}
 
 static void dynamic_repo_iface_init (gpointer g_iface,
     gpointer iface_data);
@@ -315,14 +302,15 @@ tp_dynamic_handle_repo_init (TpDynamicHandleRepo *self)
   self->next_handle = 1;
   g_datalist_init (&self->holder_to_handle_set);
 
-  ref_bus_daemon ();
+  self->bus_daemon = tp_dbus_daemon_dup (NULL);
+
+  if (self->bus_daemon == NULL)
+    g_error ("Unable to connect to starter bus");
 
   /* FIXME: if dbus-glib gets arg matching, do this on a per-holder
    * basis so we don't wake up whenever any name owner changes... */
 
-  /* we call ref_bus_daemon() here, and do the corresponding unref on
-   * bus_daemon in _dispose */
-  tp_cli_dbus_daemon_connect_to_name_owner_changed (ref_bus_daemon (),
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (self->bus_daemon,
       handles_name_owner_changed_cb, NULL, NULL, (GObject *) self, NULL);
 
   return;
@@ -424,7 +412,13 @@ handle_leak_debug_bt (HandleLeakEvent event)
 static void
 dynamic_dispose (GObject *obj)
 {
-  g_object_unref (bus_daemon);
+  TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (obj);
+
+  if (self->bus_daemon != NULL)
+    {
+      g_object_unref (self->bus_daemon);
+      self->bus_daemon = NULL;
+    }
 
   G_OBJECT_CLASS (tp_dynamic_handle_repo_parent_class)->dispose (obj);
 }
