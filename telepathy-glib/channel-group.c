@@ -917,7 +917,8 @@ handle_members_changed (TpChannel *self,
       tp_intset_remove (self->priv->group_local_pending, handle);
       tp_intset_remove (self->priv->group_remote_pending, handle);
 
-      if (handle == self->priv->group_self_handle)
+      if (handle == self->priv->group_self_handle ||
+          handle == tp_connection_get_self_handle (self->priv->connection))
         {
           const gchar *error_detail = tp_asv_get_string (details, "error");
 
