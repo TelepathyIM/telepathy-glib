@@ -94,7 +94,7 @@ tp_intset_new ()
 }
 
 /**
- * tp_intset_new_singleton:
+ * tp_intset_new_containing:
  * @element: integer to add to a new set
  *
  * Allocate a new integer set containing the given integer.
@@ -105,7 +105,7 @@ tp_intset_new ()
  * @since 0.7.UNRELEASED
  */
 TpIntSet *
-tp_intset_new_singleton (guint element)
+tp_intset_new_containing (guint element)
 {
   TpIntSet *ret = tp_intset_sized_new (element + 1);
 
