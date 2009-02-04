@@ -831,6 +831,8 @@ cb_fs_local_candidates_prepared (TfStream *self)
           "Media.StreamHandler::NewNativeCandidate",
           NULL, (GObject *) self);
 
+      g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT_LIST,
+          transports);
       g_free (foundation);
     }
 
