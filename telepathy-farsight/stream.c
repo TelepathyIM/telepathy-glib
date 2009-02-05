@@ -353,6 +353,10 @@ tf_stream_constructor (GType type,
       g_value_set_uint (&params[n_args].value, 1);
       n_args++;
     }
+  else if (!strcmp (stream->priv->nat_props->nat_traversal, "ice-udp"))
+    {
+      transmitter = "nice";
+    }
   else
     {
       transmitter = "rawudp";
