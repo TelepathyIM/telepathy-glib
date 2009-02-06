@@ -877,17 +877,18 @@ tp_connection_manager_constructor (GType type,
   TpProxy *as_proxy = (TpProxy *) self;
   const gchar *object_path = as_proxy->object_path;
 
+  g_return_val_if_fail (object_path != NULL, NULL);
+  g_return_val_if_fail (bus_name != NULL, NULL);
+
   /* Watch my D-Bus name */
   tp_dbus_daemon_watch_name_owner (as_proxy->dbus_daemon,
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, self,
       NULL);
 
-  if (object_path == NULL || object_path[0] != '/')
-    self->name = NULL;
-  else
-    self->name = strrchr (object_path, '/') + 1;
+  self->name = strrchr (object_path, '/') + 1;
+  g_assert (self->name != NULL);
 
-  if (self->priv->manager_file == NULL && self->name != NULL)
+  if (self->priv->manager_file == NULL)
     {
       self->priv->manager_file =
           tp_connection_manager_find_manager_file (self->name);
