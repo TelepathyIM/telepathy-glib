@@ -817,9 +817,19 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 {
   TpConnectionManager *self = TP_CONNECTION_MANAGER (data);
 
-  if (self->priv->protocols == NULL && self->priv->manager_file != NULL
-      && self->priv->manager_file[0] != '\0')
-    tp_connection_manager_read_file (self, self->priv->manager_file);
+  if (self->priv->protocols == NULL)
+    {
+      if (self->priv->manager_file != NULL &&
+          self->priv->manager_file[0] != '\0')
+        {
+          tp_connection_manager_read_file (self, self->priv->manager_file);
+        }
+      else if (self->priv->introspect_idle_id == 0)
+        {
+          tp_connection_manager_idle_introspect (self);
+        }
+      /* else we're going to introspect soon anyway */
+    }
 
   self->priv->manager_file_read_idle_id = 0;
 
