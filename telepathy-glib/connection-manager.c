@@ -558,7 +558,10 @@ init_gvalue_from_dbus_sig (const gchar *sig,
 static gboolean
 parse_default_value (GValue *value,
                      const gchar *sig,
-                     gchar *string)
+                     gchar *string,
+                     GKeyFile *file,
+                     const gchar *group,
+                     const gchar *key)
 {
   gchar *p;
   switch (sig[0])
@@ -762,16 +765,16 @@ tp_connection_manager_read_file (TpConnectionManager *self,
 
               def = g_strdup_printf ("default-%s", param->name);
               value = g_key_file_get_string (file, *group, def, NULL);
-              g_free (def);
 
               init_gvalue_from_dbus_sig (param->dbus_signature,
                   &param->default_value);
 
               if (value != NULL && parse_default_value (&param->default_value,
-                    param->dbus_signature, value))
+                    param->dbus_signature, value, file, *group, def))
                 param->flags |= TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT;
 
               g_free (value);
+              g_free (def);
 
               DEBUG ("\tParam name: %s", param->name);
               DEBUG ("\tParam flags: 0x%x", param->flags);
