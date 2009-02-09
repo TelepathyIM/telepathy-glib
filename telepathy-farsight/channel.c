@@ -658,8 +658,11 @@ new_stream_cb (TfSession *session,
 
   if (proxy == NULL)
     {
-      g_warning ("failed to construct TpMediaStreamHandler: bad object path "
-          "'%s'?", object_path);
+      gchar *str = g_strdup_printf ("failed to construct TpMediaStreamHandler:"
+          " bad object path '%s'?", object_path);
+      g_warning (str);
+      tf_channel_error (self, 0, str);
+      g_free (str);
       return;
     }
 
@@ -682,8 +685,12 @@ new_stream_cb (TfSession *session,
 
   if (!stream)
     {
-      g_warning ("Error creating stream: %s", error->message);
+      gchar *str = g_strdup_printf ("Error creating stream: %s",
+          error->message);
       g_clear_error (&error);
+      g_warning (str);
+      tf_channel_error (self, 0, str);
+      g_free (str);
       return;
     }
 
