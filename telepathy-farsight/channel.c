@@ -755,9 +755,13 @@ add_session (TfChannel *self,
 
   if (proxy == NULL)
     {
-      g_warning ("failed to construct TpMediaSessionHandler: %s",
+      gchar *str = g_strdup_printf ("failed to construct TpMediaSessionHandler:"
+          " %s",
           error->message);
       g_error_free (error);
+      g_warning (str);
+      tf_channel_error (self, 0, str);
+      g_free (str);
       return;
     }
 
@@ -765,8 +769,12 @@ add_session (TfChannel *self,
 
   if (session == NULL)
     {
-      g_warning ("failed to create session: %s", error->message);
+      gchar *str = g_strdup_printf("failed to create session: %s",
+          error->message);
       g_error_free (error);
+      g_warning (str);
+      tf_channel_error (self, 0, str);
+      g_free (str);
       return;
     }
 
