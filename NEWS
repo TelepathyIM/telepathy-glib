@@ -1,7 +1,27 @@
 telepathy-glib 0.7.26 (UNRELEASED)
 ==================================
 
-...
+Enhancements:
+
+* fd.o #17519: track the Connection's SelfHandle property in TpConnection
+
+* Add tp_dbus_daemon_dup(), convenient API to share a starter-bus connection
+
+* Generate GTypes for arrays of mappings, and improve use of the
+  type-generation functions
+
+Deprecations:
+
+* Deprecate tp_get_bus_proxy()
+
+Fixes:
+
+* Reduce our reliance on making a DBusGProxy for the dbus-daemon (working
+  towards avoiding overly-broad NameOwnerChanged matches)
+
+* fd.o #18832 (partially addressed): document that tp_get_bus() can call
+  exit() and why, and discourage it in processes that aren't totally reliant
+  on D-Bus
 
 telepathy-glib 0.7.25 (2009-01-30)
 ==================================
