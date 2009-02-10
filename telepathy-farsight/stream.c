@@ -822,7 +822,7 @@ cb_fs_local_candidates_prepared (TfStream *self)
       tp_cli_media_stream_handler_call_new_native_candidate (
           self->priv->stream_handler_proxy, -1, foundation, transports,
           async_method_callback,
-          "Media.StreamHandler::NativeCandidatesPrepared",
+          "Media.StreamHandler::NewNativeCandidate",
           NULL, (GObject *) self);
 
       g_free (foundation);
@@ -1375,7 +1375,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
          {
            tp_cli_media_stream_handler_call_hold_state (
              self->priv->stream_handler_proxy, -1, TRUE,
-             async_method_callback, "Media.StreamHandler::HoldState",
+             async_method_callback, "Media.StreamHandler::HoldState TRUE",
              NULL, (GObject *) self);
          }
        self->priv->held = TRUE;
@@ -1394,7 +1394,7 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                NULL);
            tp_cli_media_stream_handler_call_hold_state (
              self->priv->stream_handler_proxy, -1, FALSE,
-             async_method_callback, "Media.StreamHandler::HoldState",
+             async_method_callback, "Media.StreamHandler::HoldState FALSE",
              NULL, (GObject *) self);
 
            self->priv->held = FALSE;
@@ -1499,7 +1499,7 @@ cb_fs_new_active_candidate_pair (TfStream *self,
 
   tp_cli_media_stream_handler_call_stream_state (
     self->priv->stream_handler_proxy, -1, TP_MEDIA_STREAM_STATE_CONNECTED,
-    async_method_callback, "Media.StreamHandler::SetStreamState",
+    async_method_callback, "Media.StreamHandler::StreamState",
     NULL, (GObject *) self);
 }
 
