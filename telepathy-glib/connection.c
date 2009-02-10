@@ -143,6 +143,9 @@ tp_connection_get_property (GObject *object,
     case PROP_STATUS_REASON:
       g_value_set_uint (value, self->priv->status_reason);
       break;
+    case PROP_SELF_HANDLE:
+      g_value_set_uint (value, self->priv->self_handle);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
