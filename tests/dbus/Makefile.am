@@ -21,6 +21,7 @@ noinst_PROGRAMS = \
     test-invalidated-while-invoking-signals \
     test-message-mixin \
     test-properties \
+    test-self-handle \
     test-self-presence \
     test-text-mixin \
     test-text-respawn \
@@ -78,6 +79,8 @@ test_properties_SOURCES = properties.c
 nodist_test_properties_SOURCES = \
     _gen/svc.h \
     _gen/svc.c
+
+test_self_handle_SOURCES = self-handle.c
 
 test_self_presence_SOURCES = self-presence.c
 

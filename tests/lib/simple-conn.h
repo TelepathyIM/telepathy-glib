@@ -54,6 +54,9 @@ GType simple_connection_get_type (void);
 
 void simple_connection_inject_disconnect (SimpleConnection *self);
 
+void simple_connection_set_identifier (SimpleConnection *self,
+    const gchar *identifier);
+
 G_END_DECLS
 
 #endif /* #ifndef __SIMPLE_CONN_H__ */
