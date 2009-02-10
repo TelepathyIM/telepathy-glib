@@ -536,6 +536,12 @@ _tp_channel_group_set_lp (TpChannel *self,
           item->values + 2);
       const gchar *message = g_value_get_string (item->values + 3);
 
+      if (handle == 0)
+        {
+          DEBUG ("Ignoring handle 0, claimed to be in local-pending");
+          continue;
+        }
+
       DEBUG ("+L %u, actor=%u, reason=%u, message=%s", handle,
           actor, reason, message);
       _tp_channel_group_set_one_lp (self, handle, actor,
@@ -566,6 +572,21 @@ tp_channel_got_all_members_0_16_cb (TpChannel *self,
       self->priv->group_local_pending = tp_intset_from_array (local_pending);
       self->priv->group_members = tp_intset_from_array (members);
       self->priv->group_remote_pending = tp_intset_from_array (remote_pending);
+
+      if (tp_intset_remove (self->priv->group_members, 0))
+        {
+          DEBUG ("Ignoring handle 0, claimed to be in group");
+        }
+
+      if (tp_intset_remove (self->priv->group_local_pending, 0))
+        {
+          DEBUG ("Ignoring handle 0, claimed to be in local-pending");
+        }
+
+      if (tp_intset_remove (self->priv->group_remote_pending, 0))
+        {
+          DEBUG ("Ignoring handle 0, claimed to be in remote-pending");
+        }
 
       /* the local-pending info will be filled in with the result of
        * GetLocalPendingMembersWithInfo, if it succeeds */
@@ -715,12 +736,22 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
       else
         self->priv->group_members = tp_intset_from_array (arr);
 
+      if (tp_intset_remove (self->priv->group_members, 0))
+        {
+          DEBUG ("Ignoring handle 0, claimed to be in group");
+        }
+
       arr = tp_asv_get_boxed (asv, "RemotePendingMembers", au_type);
 
       if (arr == NULL)
         self->priv->group_remote_pending = tp_intset_new ();
       else
         self->priv->group_remote_pending = tp_intset_from_array (arr);
+
+      if (tp_intset_remove (self->priv->group_remote_pending, 0))
+        {
+          DEBUG ("Ignoring handle 0, claimed to be in remote-pending");
+        }
 
       g_assert (self->priv->group_local_pending == NULL);
       g_assert (self->priv->group_local_pending_info == NULL);
@@ -801,6 +832,13 @@ handle_members_changed (TpChannel *self,
       TpHandle handle = g_array_index (added, guint, i);
 
       DEBUG ("+++ contact#%u", handle);
+
+      if (handle == 0)
+        {
+          DEBUG ("handle 0 shouldn't be in MembersChanged, ignoring");
+          continue;
+        }
+
       tp_intset_add (self->priv->group_members, handle);
     }
 
@@ -809,6 +847,12 @@ handle_members_changed (TpChannel *self,
       TpHandle handle = g_array_index (local_pending, guint, i);
 
       DEBUG ("+LP contact#%u", handle);
+
+      if (handle == 0)
+        {
+          DEBUG ("handle 0 shouldn't be in MembersChanged, ignoring");
+          continue;
+        }
 
       /* Special-case renaming a local-pending contact, if the
        * signal is spec-compliant. Keep the old actor/reason/message in
@@ -843,6 +887,13 @@ handle_members_changed (TpChannel *self,
       TpHandle handle = g_array_index (remote_pending, guint, i);
 
       DEBUG ("+RP contact#%u", handle);
+
+      if (handle == 0)
+        {
+          DEBUG ("handle 0 shouldn't be in MembersChanged, ignoring");
+          continue;
+        }
+
       tp_intset_add (self->priv->group_remote_pending, handle);
     }
 
@@ -852,6 +903,12 @@ handle_members_changed (TpChannel *self,
 
       DEBUG ("--- contact#%u", handle);
 
+      if (handle == 0)
+        {
+          DEBUG ("handle 0 shouldn't be in MembersChanged, ignoring");
+          continue;
+        }
+
       if (self->priv->group_local_pending_info != NULL)
         g_hash_table_remove (self->priv->group_local_pending_info,
             GUINT_TO_POINTER (handle));
@@ -860,7 +917,8 @@ handle_members_changed (TpChannel *self,
       tp_intset_remove (self->priv->group_local_pending, handle);
       tp_intset_remove (self->priv->group_remote_pending, handle);
 
-      if (handle == self->priv->group_self_handle)
+      if (handle == self->priv->group_self_handle ||
+          handle == tp_connection_get_self_handle (self->priv->connection))
         {
           const gchar *error_detail = tp_asv_get_string (details, "error");
 

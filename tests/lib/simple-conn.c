@@ -224,3 +224,19 @@ simple_connection_class_init (SimpleConnectionClass *klass)
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
 }
+
+void
+simple_connection_set_identifier (SimpleConnection *self,
+                                  const gchar *identifier)
+{
+  TpBaseConnection *conn = (TpBaseConnection *) self;
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
+      TP_HANDLE_TYPE_CONTACT);
+  TpHandle handle = tp_handle_ensure (contact_repo, identifier, NULL, NULL);
+
+  /* if this fails then the identifier was bad - caller error */
+  g_return_if_fail (handle != 0);
+
+  tp_base_connection_set_self_handle (conn, handle);
+  tp_handle_unref (contact_repo, handle);
+}

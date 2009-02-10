@@ -76,6 +76,8 @@ TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
 TpConnectionStatus tp_connection_get_status (TpConnection *self,
     TpConnectionStatusReason *reason);
 
+TpHandle tp_connection_get_self_handle (TpConnection *self);
+
 gboolean tp_connection_is_ready (TpConnection *self);
 
 gboolean tp_connection_run_until_ready (TpConnection *self,
