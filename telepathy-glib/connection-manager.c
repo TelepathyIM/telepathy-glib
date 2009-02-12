@@ -404,6 +404,8 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
 
   if (error != NULL)
     {
+      DEBUG ("Failed: %s", error->message);
+
       if (!self->running)
         {
           /* ListProtocols failed to start it - we assume this is because
@@ -417,6 +419,8 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
 
   for (iter = protocols; *iter != NULL; iter++)
     i++;
+
+  DEBUG ("Succeeded with %u protocols", i);
 
   g_assert (self->priv->found_protocols == NULL);
   /* Allocate one more pointer - we're going to append NULL afterwards */
@@ -446,6 +450,7 @@ tp_connection_manager_idle_introspect (gpointer data)
     {
       self->priv->listing_protocols = TRUE;
 
+      DEBUG ("calling ListProtocols on CM");
       tp_cli_connection_manager_call_list_protocols (self, -1,
           tp_connection_manager_got_protocols, NULL, NULL,
           NULL);
@@ -948,6 +953,8 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
           GError *error = NULL;
           GPtrArray *protocols = tp_connection_manager_read_file (
               self->priv->manager_file, &error);
+
+          DEBUG ("Reading %s", self->priv->manager_file);
 
           if (protocols == NULL)
             {
