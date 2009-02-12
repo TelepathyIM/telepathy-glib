@@ -19,6 +19,7 @@ typedef struct {
     ExampleEchoConnectionManager *service_cm;
 
     TpConnectionManager *cm;
+    GError *error /* initialized where needed */;
 } Test;
 
 static void
@@ -549,6 +550,91 @@ test_dbus_got_info (Test *test,
   g_signal_handler_disconnect (test->cm, id);
 }
 
+static void
+ready_or_not (TpConnectionManager *self,
+              const GError *error,
+              gpointer user_data,
+              GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+
+  if (error != NULL)
+    test->error = g_error_copy (error);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_nothing_ready (Test *test,
+                    gconstpointer data G_GNUC_UNUSED)
+{
+  test->error = NULL;
+  test->cm = tp_connection_manager_new (test->dbus, "nonexistent_cm",
+      NULL, &test->error);
+  g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
+  g_assert (test->error == NULL);
+  g_test_queue_unref (test->cm);
+
+  tp_connection_manager_call_when_ready (test->cm, ready_or_not,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error != NULL);
+  g_clear_error (&test->error);
+}
+
+static void
+test_file_ready (Test *test,
+                 gconstpointer data G_GNUC_UNUSED)
+{
+  test->error = NULL;
+  test->cm = tp_connection_manager_new (test->dbus, "spurious",
+      NULL, &test->error);
+  g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
+  g_assert (test->error == NULL);
+  g_test_queue_unref (test->cm);
+
+  tp_connection_manager_call_when_ready (test->cm, ready_or_not,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error == NULL);
+
+}
+
+static void
+test_complex_file_ready (Test *test,
+                         gconstpointer data G_GNUC_UNUSED)
+{
+  test->error = NULL;
+  test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
+      NULL, &test->error);
+  g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
+  g_assert (test->error == NULL);
+  g_test_queue_unref (test->cm);
+
+  tp_connection_manager_call_when_ready (test->cm, ready_or_not,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error == NULL);
+}
+
+static void
+test_dbus_ready (Test *test,
+                 gconstpointer data G_GNUC_UNUSED)
+{
+  test->error = NULL;
+  test->cm = tp_connection_manager_new (test->dbus,
+      TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
+      NULL, &test->error);
+  g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
+  g_assert (test->error == NULL);
+  g_test_queue_unref (test->cm);
+
+  tp_connection_manager_call_when_ready (test->cm, ready_or_not,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -557,12 +643,22 @@ main (int argc,
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add_func ("/cm/valid-name", test_valid_name);
-  g_test_add ("/cm/nothing", Test, NULL, setup, test_nothing_got_info,
+
+  g_test_add ("/cm/nothing (old)", Test, NULL, setup, test_nothing_got_info,
       teardown);
-  g_test_add ("/cm/file", Test, NULL, setup, test_file_got_info, teardown);
-  g_test_add ("/cm/file (complex)", Test, NULL, setup,
+  g_test_add ("/cm/file (old)", Test, NULL, setup, test_file_got_info,
+      teardown);
+  g_test_add ("/cm/file (old, complex)", Test, NULL, setup,
       test_complex_file_got_info, teardown);
-  g_test_add ("/cm/dbus", Test, NULL, setup, test_dbus_got_info, teardown);
+  g_test_add ("/cm/dbus (old)", Test, NULL, setup, test_dbus_got_info,
+      teardown);
+
+  g_test_add ("/cm/nothing", Test, NULL, setup, test_nothing_ready,
+      teardown);
+  g_test_add ("/cm/file", Test, NULL, setup, test_file_ready, teardown);
+  g_test_add ("/cm/file (complex)", Test, NULL, setup,
+      test_complex_file_ready, teardown);
+  g_test_add ("/cm/dbus", Test, NULL, setup, test_dbus_ready, teardown);
 
   return g_test_run ();
 }
