@@ -334,7 +334,6 @@ tp_connection_manager_free_protocols (GPtrArray *protocols)
 static void
 tp_connection_manager_end_introspection (TpConnectionManager *self)
 {
-  gboolean emit = self->priv->listing_protocols;
   guint i;
 
   self->priv->listing_protocols = FALSE;
@@ -347,8 +346,6 @@ tp_connection_manager_end_introspection (TpConnectionManager *self)
 
   if (self->priv->pending_protocols != NULL)
     {
-      emit = TRUE;
-
       for (i = 0; i < self->priv->pending_protocols->len; i++)
         g_free (self->priv->pending_protocols->pdata[i]);
 
@@ -356,8 +353,7 @@ tp_connection_manager_end_introspection (TpConnectionManager *self)
       self->priv->pending_protocols = NULL;
     }
 
-  if (emit)
-    g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
+  g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
 }
 
 static void
