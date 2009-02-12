@@ -886,6 +886,7 @@ tp_connection_manager_constructor (GType type,
             params));
   TpProxy *as_proxy = (TpProxy *) self;
   const gchar *object_path = as_proxy->object_path;
+  const gchar *bus_name = as_proxy->bus_name;
 
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (bus_name != NULL, NULL);
