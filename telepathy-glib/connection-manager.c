@@ -185,6 +185,9 @@ struct _TpConnectionManagerPrivate {
     /* source ID for introspecting later */
     guint introspect_idle_id;
 
+    /* FALSE if constructor hasn't run yet */
+    unsigned constructed:1;
+
     /* TRUE if we're waiting for ListProtocols */
     unsigned listing_protocols:1;
 
@@ -986,9 +989,7 @@ tp_connection_manager_find_manager_file (const gchar *name)
   gchar *filename;
   const gchar * const * data_dirs;
 
-  /* if no name yet, do nothing */
-  if (name == NULL)
-    return NULL;
+  g_assert (name != NULL);
 
   filename = g_strdup_printf ("%s/telepathy/managers/%s.manager",
       g_get_user_data_dir (), name);
@@ -1049,9 +1050,13 @@ tp_connection_manager_constructor (GType type,
           tp_connection_manager_find_manager_file (self->name);
     }
 
-  if (self->priv->manager_file_read_idle_id == 0)
-    self->priv->manager_file_read_idle_id = g_idle_add (
-        tp_connection_manager_idle_read_manager_file, self);
+  g_assert (self->priv->manager_file_read_idle_id == 0);
+
+  self->priv->manager_file_read_idle_id = g_idle_add (
+      tp_connection_manager_idle_read_manager_file, self);
+
+  /* Unfreeze automatic reading of .manager file if manager-file changes */
+  self->priv->constructed = TRUE;
 
   return (GObject *) self;
 }
@@ -1148,27 +1153,39 @@ tp_connection_manager_set_property (GObject *object,
                                     GParamSpec *pspec)
 {
   TpConnectionManager *self = TP_CONNECTION_MANAGER (object);
-  const gchar *tmp;
 
   switch (property_id)
     {
     case PROP_MANAGER_FILE:
       g_free (self->priv->manager_file);
 
-      tmp = g_value_get_string (value);
-      if (tmp == NULL)
+      /* If the constructor has already run, change the definition of where
+       * we expect to find the .manager file and trigger re-introspection.
+       * Otherwise, just take the value - _constructor queues the first-time
+       * manager file lookup anyway.
+       */
+      if (self->priv->constructed)
         {
-          self->priv->manager_file =
-              tp_connection_manager_find_manager_file (self->name);
+          const gchar *tmp = g_value_get_string (value);
+
+          if (tmp == NULL)
+            {
+              self->priv->manager_file =
+                  tp_connection_manager_find_manager_file (self->name);
+            }
+          else
+            {
+              self->priv->manager_file = g_strdup (tmp);
+            }
+
+          if (self->priv->manager_file_read_idle_id == 0)
+            self->priv->manager_file_read_idle_id = g_idle_add (
+                tp_connection_manager_idle_read_manager_file, self);
         }
       else
         {
-          self->priv->manager_file = g_strdup (tmp);
+          self->priv->manager_file = g_value_dup_string (value);
         }
-
-      if (self->priv->manager_file_read_idle_id == 0)
-        self->priv->manager_file_read_idle_id = g_idle_add (
-            tp_connection_manager_idle_read_manager_file, self);
 
       break;
 
