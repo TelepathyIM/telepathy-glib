@@ -614,6 +614,9 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
 {
   TpConnectionManager *self = user_data;
 
+  /* make sure self exists for the duration of this callback */
+  g_object_ref (self);
+
   if (new_owner[0] == '\0')
     {
       GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
@@ -640,6 +643,8 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
         self->priv->introspect_idle_id = g_idle_add (
             tp_connection_manager_idle_introspect, self);
     }
+
+  g_object_unref (self);
 }
 
 static gboolean
