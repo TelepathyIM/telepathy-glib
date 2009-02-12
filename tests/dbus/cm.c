@@ -582,6 +582,13 @@ test_nothing_ready (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert (test->error != NULL);
   g_clear_error (&test->error);
+
+  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
+      "nonexistent_cm");
+  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, FALSE);
+  g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, FALSE);
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+      TP_CM_INFO_SOURCE_NONE);
 }
 
 static void
@@ -602,6 +609,13 @@ test_file_ready (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert (test->error == NULL);
 
+  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
+      "spurious");
+  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, TRUE);
+  g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, FALSE);
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+      TP_CM_INFO_SOURCE_FILE);
+
 }
 
 static void
@@ -621,6 +635,13 @@ test_complex_file_ready (Test *test,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert (test->error == NULL);
+
+  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
+      "test_manager_file");
+  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, TRUE);
+  g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, FALSE);
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+      TP_CM_INFO_SOURCE_FILE);
 }
 
 static void
@@ -641,6 +662,13 @@ test_dbus_ready (Test *test,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert (test->error == NULL);
+
+  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
+      "example_echo");
+  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, TRUE);
+  g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, TRUE);
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+      TP_CM_INFO_SOURCE_LIVE);
 }
 
 int
