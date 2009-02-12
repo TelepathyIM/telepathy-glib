@@ -209,11 +209,142 @@ struct _TpConnectionManagerPrivate {
      * progress (will replace ->protocols when finished).
      * Otherwise NULL */
     GPtrArray *found_protocols;
+
+    /* list of WhenReadyContext */
+    GList *waiting_for_ready;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
     tp_connection_manager,
     TP_TYPE_PROXY);
+
+typedef struct {
+    TpConnectionManager *cm;
+    TpConnectionManagerWhenReadyCb callback;
+    gpointer user_data;
+    GDestroyNotify destroy;
+    GObject *weak_object;
+} WhenReadyContext;
+
+static void
+when_ready_context_free (gpointer d)
+{
+  WhenReadyContext *c = d;
+
+  if (c->cm != NULL)
+    {
+      g_object_unref (c->cm);
+      c->cm = NULL;
+    }
+
+  if (c->destroy != NULL)
+    c->destroy (c->user_data);
+
+  g_slice_free (WhenReadyContext, c);
+}
+
+static void
+when_ready_context_cancel (gpointer d,
+                           GObject *corpse)
+{
+  WhenReadyContext *c = d;
+
+  g_assert (c->weak_object == corpse);
+  c->weak_object = NULL;
+  c->callback = NULL;
+
+  if (c->destroy != NULL)
+    {
+      c->destroy (c->user_data);
+      c->destroy = NULL;
+    }
+
+  if (c->cm != NULL)
+    {
+      g_object_unref (c->cm);
+      c->cm = NULL;
+    }
+}
+
+static gboolean
+when_ready_context_complete (gpointer d)
+{
+  WhenReadyContext *c = d;
+
+  if (c->callback != NULL)
+    c->callback (c->cm, NULL, c->user_data, c->weak_object);
+
+  return FALSE;
+}
+
+static void
+tp_connection_manager_ready_or_failed (TpConnectionManager *self,
+                                       const GError *error)
+{
+  GList *waiters = self->priv->waiting_for_ready;
+  GList *link;
+
+  self->priv->waiting_for_ready = NULL;
+
+  if (self->info_source > TP_CM_INFO_SOURCE_NONE)
+    {
+      /* we have info already, so suppress any error and return the old info */
+      error = NULL;
+    }
+  else
+    {
+      g_assert (error != NULL);
+    }
+
+  for (link = waiters; link != NULL; link = g_list_next (link))
+    {
+      WhenReadyContext *c = link->data;
+
+      if (c->callback != NULL)
+        c->callback (c->cm, error, c->user_data, c->weak_object);
+
+      when_ready_context_free (c);
+      link->data = NULL;
+    }
+
+  g_list_free (waiters);
+}
+
+void
+tp_connection_manager_call_when_ready (TpConnectionManager *self,
+                                       TpConnectionManagerWhenReadyCb callback,
+                                       gpointer user_data,
+                                       GDestroyNotify destroy,
+                                       GObject *weak_object)
+{
+  WhenReadyContext *c;
+
+  g_return_if_fail (TP_IS_CONNECTION_MANAGER (self));
+  g_return_if_fail (callback != NULL);
+
+  c = g_slice_new0 (WhenReadyContext);
+
+  c->cm = g_object_ref (self);
+  c->callback = callback;
+  c->user_data = user_data;
+  c->destroy = destroy;
+  c->weak_object = weak_object;
+
+  if (weak_object != NULL)
+    {
+      g_object_weak_ref (weak_object, when_ready_context_cancel, c);
+    }
+
+  if (self->info_source != TP_CM_INFO_SOURCE_NONE)
+    {
+      g_idle_add_full (G_PRIORITY_HIGH, when_ready_context_complete,
+          c, when_ready_context_free);
+      return;
+    }
+
+  self->priv->waiting_for_ready = g_list_append (self->priv->waiting_for_ready,
+      c);
+}
 
 static void tp_connection_manager_continue_introspection
     (TpConnectionManager *self);
@@ -331,8 +462,12 @@ tp_connection_manager_free_protocols (GPtrArray *protocols)
   g_ptr_array_free (protocols, TRUE);
 }
 
+static void tp_connection_manager_ready_or_failed (TpConnectionManager *self,
+                                       const GError *error);
+
 static void
-tp_connection_manager_end_introspection (TpConnectionManager *self)
+tp_connection_manager_end_introspection (TpConnectionManager *self,
+                                         const GError *error)
 {
   guint i;
 
@@ -354,6 +489,7 @@ tp_connection_manager_end_introspection (TpConnectionManager *self)
     }
 
   g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
+  tp_connection_manager_ready_or_failed (self, error);
 }
 
 static void
@@ -378,7 +514,7 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
           self->priv->protocols->pdata;
 
       self->info_source = TP_CM_INFO_SOURCE_LIVE;
-      tp_connection_manager_end_introspection (self);
+      tp_connection_manager_end_introspection (self, NULL);
 
       return;
     }
@@ -413,7 +549,7 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
           g_signal_emit (self, signals[SIGNAL_EXITED], 0);
         }
 
-      tp_connection_manager_end_introspection (self);
+      tp_connection_manager_end_introspection (self, error);
       return;
     }
 
@@ -471,10 +607,13 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
 
   if (new_owner[0] == '\0')
     {
+      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
+          "Connection manager process exited during introspection" };
+
       self->running = FALSE;
 
       /* cancel pending introspection, if any */
-      tp_connection_manager_end_introspection (self);
+      tp_connection_manager_end_introspection (self, &e);
 
       g_signal_emit (self, signals[SIGNAL_EXITED], 0);
     }
@@ -973,6 +1112,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
               g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0,
                   self->info_source);
+              tp_connection_manager_ready_or_failed (self, NULL);
             }
         }
 
