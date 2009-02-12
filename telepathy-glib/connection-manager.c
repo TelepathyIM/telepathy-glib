@@ -1923,3 +1923,339 @@ tp_connection_manager_get_info_source (TpConnectionManager *self)
       TP_CM_INFO_SOURCE_NONE);
   return self->info_source;
 }
+
+/**
+ * tp_connection_manager_dup_protocol_names:
+ * @self: a connection manager
+ *
+ * Returns a list of protocol names supported by this connection manager.
+ * These are the internal protocol names used by the Telepathy specification
+ * (e.g. "jabber" and "msn"), rather than user-visible names in any particular
+ * locale.
+ *
+ * If this function is called before the connection manager information has
+ * been obtained, the result is always %NULL. Use
+ * tp_connection_manager_call_when_ready() to wait for this.
+ *
+ * The result is copied and must be freed by the caller, but it is not
+ * necessarily still true after the main loop is re-entered.
+ *
+ * Returns: a #GStrv of protocol names
+ */
+gchar **
+tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
+{
+  GPtrArray *ret;
+  guint i;
+
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+
+  if (self->info_source == TP_CM_INFO_SOURCE_NONE)
+    return NULL;
+
+  g_assert (self->priv->protocols != NULL);
+
+  ret = g_ptr_array_sized_new (self->priv->protocols->len);
+
+  for (i = 0; i < self->priv->protocols->len; i++)
+    {
+      TpConnectionManagerProtocol *proto = g_ptr_array_index (
+          self->priv->protocols, i);
+
+      if (proto != NULL)
+        g_ptr_array_add (ret, g_strdup (proto->name));
+    }
+
+  g_ptr_array_add (ret, NULL);
+
+  return (gchar **) g_ptr_array_free (ret, FALSE);
+}
+
+/**
+ * tp_connection_manager_get_protocol:
+ * @self: a connection manager
+ * @protocol: the name of a protocol as defined in the Telepathy D-Bus API,
+ *            e.g. "jabber" or "msn"
+ *
+ * Returns a structure representing a protocol, or %NULL if this connection
+ * manager does not support the specified protocol.
+ *
+ * If this function is called before the connection manager information has
+ * been obtained, the result is always %NULL. Use
+ * tp_connection_manager_call_when_ready() to wait for this.
+ *
+ * The result is not necessarily valid after the main loop is re-entered.
+ *
+ * Returns: a structure representing the protocol
+ */
+const TpConnectionManagerProtocol *
+tp_connection_manager_get_protocol (TpConnectionManager *self,
+                                    const gchar *protocol)
+{
+  guint i;
+
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+
+  if (self->info_source == TP_CM_INFO_SOURCE_NONE)
+    return NULL;
+
+  g_assert (self->priv->protocols != NULL);
+
+  for (i = 0; i < self->priv->protocols->len; i++)
+    {
+      TpConnectionManagerProtocol *proto = g_ptr_array_index (
+          self->priv->protocols, i);
+
+      if (proto != NULL && !tp_strdiff (proto->name, protocol))
+        return proto;
+    }
+
+  return NULL;
+}
+
+/**
+ * tp_connection_manager_has_protocol:
+ * @self: a connection manager
+ * @protocol: the name of a protocol as defined in the Telepathy D-Bus API,
+ *            e.g. "jabber" or "msn"
+ *
+ * Return whether @protocol is supported by this connection manager.
+ *
+ * If this function is called before the connection manager information has
+ * been obtained, the result is always %FALSE. Use
+ * tp_connection_manager_call_when_ready() to wait for this.
+ *
+ * Returns: %TRUE if this connection manager supports @protocol
+ */
+gboolean
+tp_connection_manager_has_protocol (TpConnectionManager *self,
+                                    const gchar *protocol)
+{
+  return (tp_connection_manager_get_protocol (self, protocol) != NULL);
+}
+
+/**
+ * tp_connection_manager_protocol_has_param:
+ * @protocol: structure representing a supported protocol
+ * @param: a parameter name
+ *
+ * <!-- no more to say -->
+ *
+ * Returns: %TRUE if @protocol supports the parameter @param.
+ */
+gboolean
+tp_connection_manager_protocol_has_param (
+    const TpConnectionManagerProtocol *protocol,
+    const gchar *param)
+{
+  return (tp_connection_manager_protocol_get_param (protocol, param) != NULL);
+}
+
+/**
+ * tp_connection_manager_protocol_get_param:
+ * @protocol: structure representing a supported protocol
+ * @param: a parameter name
+ *
+ * <!-- no more to say -->
+ *
+ * Returns: a structure representing the parameter @param, or %NULL if not
+ *          supported
+ */
+const TpConnectionManagerParam *
+tp_connection_manager_protocol_get_param (
+    const TpConnectionManagerProtocol *protocol,
+    const gchar *param)
+{
+  const TpConnectionManagerParam *ret = NULL;
+  guint i;
+
+  g_return_val_if_fail (protocol != NULL, NULL);
+
+  for (i = 0; protocol->params[i].name != NULL; i++)
+    {
+      if (!tp_strdiff (param, protocol->params[i].name))
+        {
+          ret = &protocol->params[i];
+          break;
+        }
+    }
+
+  return ret;
+}
+
+/**
+ * tp_connection_manager_protocol_has_param:
+ * @protocol: structure representing a supported protocol
+ *
+ * Return whether a new account can be registered on this protocol, by setting
+ * the special "register" parameter to %TRUE.
+ *
+ * Returns: %TRUE if @protocol supports the parameter "register"
+ */
+gboolean
+tp_connection_manager_protocol_can_register (
+    const TpConnectionManagerProtocol *protocol)
+{
+  return tp_connection_manager_protocol_has_param (protocol, "register");
+}
+
+/**
+ * tp_connection_manager_protocol_dup_param_names:
+ * @protocol: a protocol supported by a #TpConnectionManager
+ *
+ * Returns a list of parameter names supported by this connection manager
+ * for this protocol.
+ *
+ * The result is copied and must be freed by the caller with g_strfreev().
+ *
+ * Returns: a #GStrv of protocol names
+ */
+gchar **
+tp_connection_manager_protocol_dup_param_names (
+    const TpConnectionManagerProtocol *protocol)
+{
+  GPtrArray *ret;
+  guint i;
+
+  g_return_val_if_fail (protocol != NULL, NULL);
+
+  ret = g_ptr_array_new ();
+
+  for (i = 0; protocol->params[i].name != NULL; i++)
+    g_ptr_array_add (ret, g_strdup (protocol->params[i].name));
+
+  g_ptr_array_add (ret, NULL);
+  return (gchar **) g_ptr_array_free (ret, FALSE);
+}
+
+/**
+ * tp_connection_manager_param_get_name:
+ * @parameter: a parameter supported by a #TpConnectionManager
+ *
+ * <!-- -->
+ *
+ * Returns: the name of the parameter
+ */
+const gchar *
+tp_connection_manager_param_get_name (const TpConnectionManagerParam *param)
+{
+  g_return_val_if_fail (param != NULL, NULL);
+
+  return param->name;
+}
+
+/**
+ * tp_connection_manager_param_get_dbus_signature:
+ * @parameter: a parameter supported by a #TpConnectionManager
+ *
+ * <!-- -->
+ *
+ * Returns: the D-Bus signature of the parameter
+ */
+const gchar *
+tp_connection_manager_param_get_dbus_signature (
+    const TpConnectionManagerParam *param)
+{
+  g_return_val_if_fail (param != NULL, NULL);
+
+  return param->dbus_signature;
+}
+
+/**
+ * tp_connection_manager_param_is_required:
+ * @parameter: a parameter supported by a #TpConnectionManager
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the parameter is normally required
+ */
+gboolean
+tp_connection_manager_param_is_required (
+    const TpConnectionManagerParam *param)
+{
+  g_return_val_if_fail (param != NULL, FALSE);
+
+  return (param->flags & TP_CONN_MGR_PARAM_FLAG_REQUIRED) != 0;
+}
+
+/**
+ * tp_connection_manager_param_is_required_for_registration:
+ * @parameter: a parameter supported by a #TpConnectionManager
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the parameter is required when registering a new account
+ *          (by setting the special "register" parameter to %TRUE)
+ */
+gboolean
+tp_connection_manager_param_is_required_for_registration (
+    const TpConnectionManagerParam *param)
+{
+  g_return_val_if_fail (param != NULL, FALSE);
+
+  return (param->flags & TP_CONN_MGR_PARAM_FLAG_REGISTER) != 0;
+}
+
+/**
+ * tp_connection_manager_param_is_secret:
+ * @parameter: a parameter supported by a #TpConnectionManager
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the parameter's value is a password or other secret
+ */
+gboolean
+tp_connection_manager_param_is_secret (
+    const TpConnectionManagerParam *param)
+{
+  g_return_val_if_fail (param != NULL, FALSE);
+
+  return (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) != 0;
+}
+
+/**
+ * tp_connection_manager_param_is_dbus_property:
+ * @parameter: a parameter supported by a #TpConnectionManager
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the parameter represents a D-Bus property of the same name
+ */
+gboolean
+tp_connection_manager_param_is_dbus_property (
+    const TpConnectionManagerParam *param)
+{
+  g_return_val_if_fail (param != NULL, FALSE);
+
+  return (param->flags & TP_CONN_MGR_PARAM_FLAG_DBUS_PROPERTY) != 0;
+}
+
+/**
+ * tp_connection_manager_param_get_default:
+ * @parameter: a parameter supported by a #TpConnectionManager
+ * @value: pointer to an unset (all zeroes) #GValue into which the default's
+ *         type and value are written
+ *
+ * Get the default value for this parameter, if there is one. If %FALSE is
+ * returned, @value is left uninitialized.
+ *
+ * Returns: %TRUE if there is a default value
+ */
+gboolean
+tp_connection_manager_param_get_default (
+    const TpConnectionManagerParam *param,
+    GValue *value)
+{
+  g_return_val_if_fail (param != NULL, FALSE);
+  g_return_val_if_fail (value != NULL, FALSE);
+  g_return_val_if_fail (!G_IS_VALUE (value), FALSE);
+
+  if ((param->flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) == 0
+      || !G_IS_VALUE (&param->default_value))
+    return FALSE;
+
+  g_value_init (value, G_VALUE_TYPE (&param->default_value));
+  g_value_copy (&param->default_value, value);
+
+  return TRUE;
+}

@@ -135,6 +135,37 @@ gboolean tp_connection_manager_check_valid_name (const gchar *name,
 gboolean tp_connection_manager_check_valid_protocol_name (const gchar *name,
     GError **error);
 
+gchar **tp_connection_manager_dup_protocol_names (TpConnectionManager *self);
+gboolean tp_connection_manager_has_protocol (TpConnectionManager *self,
+    const gchar *protocol);
+const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
+    TpConnectionManager *self, const gchar *protocol);
+
+gchar **tp_connection_manager_protocol_dup_param_names (
+    const TpConnectionManagerProtocol *protocol);
+gboolean tp_connection_manager_protocol_has_param (
+    const TpConnectionManagerProtocol *protocol,
+    const gchar *param);
+const TpConnectionManagerParam *tp_connection_manager_protocol_get_param (
+    const TpConnectionManagerProtocol *protocol, const gchar *param);
+gboolean tp_connection_manager_protocol_can_register (
+    const TpConnectionManagerProtocol *protocol);
+
+const gchar *tp_connection_manager_param_get_name (
+    const TpConnectionManagerParam *param);
+const gchar *tp_connection_manager_param_get_dbus_signature (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_is_required (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_is_required_for_registration (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_is_secret (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_is_dbus_property (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_get_default (
+    const TpConnectionManagerParam *param, GValue *value);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection-manager.h>
