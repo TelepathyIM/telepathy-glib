@@ -493,6 +493,8 @@ static gboolean
 init_gvalue_from_dbus_sig (const gchar *sig,
                            GValue *value)
 {
+  g_assert (!G_IS_VALUE (value));
+
   switch (sig[0])
     {
     case 'b':
@@ -551,8 +553,71 @@ init_gvalue_from_dbus_sig (const gchar *sig,
         }
     }
 
-  g_value_unset (value);
   return FALSE;
+}
+
+static gint64
+tp_g_key_file_get_int64 (GKeyFile *key_file,
+                         const gchar *group_name,
+                         const gchar *key,
+                         GError **error)
+{
+  gchar *s, *end;
+  gint64 v;
+
+  g_return_val_if_fail (key_file != NULL, -1);
+  g_return_val_if_fail (group_name != NULL, -1);
+  g_return_val_if_fail (key != NULL, -1);
+
+  s = g_key_file_get_value (key_file, group_name, key, error);
+
+  if (s == NULL)
+    return 0;
+
+  v = g_ascii_strtoll (s, &end, 10);
+
+  if (*s == '\0' || *end != '\0')
+    {
+      g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+          "Key '%s' in group '%s' has value '%s' where int64 was expected",
+          key, group_name, s);
+      return 0;
+    }
+
+  g_free (s);
+  return v;
+}
+
+static guint64
+tp_g_key_file_get_uint64 (GKeyFile *key_file,
+                          const gchar *group_name,
+                          const gchar *key,
+                          GError **error)
+{
+  gchar *s, *end;
+  guint64 v;
+
+  g_return_val_if_fail (key_file != NULL, -1);
+  g_return_val_if_fail (group_name != NULL, -1);
+  g_return_val_if_fail (key != NULL, -1);
+
+  s = g_key_file_get_value (key_file, group_name, key, error);
+
+  if (s == NULL)
+    return 0;
+
+  v = g_ascii_strtoull (s, &end, 10);
+
+  if (*s == '\0' || *end != '\0')
+    {
+      g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
+          "Key '%s' in group '%s' has value '%s' where uint64 was expected",
+          key, group_name, s);
+      return 0;
+    }
+
+  g_free (s);
+  return v;
 }
 
 static gboolean
@@ -563,38 +628,66 @@ parse_default_value (GValue *value,
                      const gchar *group,
                      const gchar *key)
 {
-  gchar *p;
+  GError *error = NULL;
+  gchar *s, *p;
+
   switch (sig[0])
     {
     case 'b':
-      for (p = string; *p != '\0'; p++)
-        *p = g_ascii_tolower (*p);
-      if (!tp_strdiff (string, "1") || !tp_strdiff (string, "true"))
-        g_value_set_boolean (value, TRUE);
-      else if (!tp_strdiff (string, "0") || !tp_strdiff (string, "false"))
-        g_value_set_boolean (value, TRUE);
-      else
+      g_value_set_boolean (value, g_key_file_get_boolean (file, group, key,
+            &error));
+
+      if (error == NULL)
+        return TRUE;
+
+      /* In telepathy-glib < 0.7.UNRELEASED we accepted true and false in
+       * any case combination, so on error, let's fall back to more lenient
+       * parsing */
+      g_error_free (error);
+      s = g_key_file_get_value (file, group, key, NULL);
+
+      if (s == NULL)
         return FALSE;
+
+      for (p = s; *p != '\0'; p++)
+        {
+          *p = g_ascii_tolower (*p);
+        }
+
+      if (!tp_strdiff (s, "1") || !tp_strdiff (s, "true"))
+        {
+          g_value_set_boolean (value, TRUE);
+        }
+      else if (!tp_strdiff (s, "0") || !tp_strdiff (s, "false"))
+        {
+          g_value_set_boolean (value, TRUE);
+        }
+      else
+        {
+          g_free (s);
+          return FALSE;
+        }
+
+      g_free (s);
       return TRUE;
 
     case 's':
-      g_value_set_string (value, string);
-      return TRUE;
+      s = g_key_file_get_string (file, group, key, NULL);
+
+      g_value_take_string (value, s);
+      return (s != NULL);
 
     case 'q':
     case 'u':
     case 't':
-      if (string[0] == '\0')
         {
-          return FALSE;
-        }
-      else
-        {
-          gchar *end;
-          guint64 v = g_ascii_strtoull (string, &end, 10);
+          guint64 v = tp_g_key_file_get_uint64 (file, group, key, &error);
 
-          if (*end != '\0')
-            return FALSE;
+          if (error != NULL)
+            {
+              g_error_free (error);
+              return FALSE;
+            }
 
           if (sig[0] == 't')
             {
@@ -618,11 +711,13 @@ parse_default_value (GValue *value,
         }
       else
         {
-          gchar *end;
-          gint64 v = g_ascii_strtoll (string, &end, 10);
+          gint64 v = tp_g_key_file_get_int64 (file, group, key, &error);
 
-          if (*end != '\0')
-            return FALSE;
+          if (error != NULL)
+            {
+              g_error_free (error);
+              return FALSE;
+            }
 
           if (sig[0] == 'x')
             {
@@ -641,26 +736,49 @@ parse_default_value (GValue *value,
         }
 
     case 'o':
-      if (string[0] != '/')
+      s = g_key_file_get_string (file, group, key, NULL);
+
+      g_value_take_boxed (value, s);
+
+      if (s[0] != '/')
         return FALSE;
 
-      g_value_set_boxed (value, string);
       return TRUE;
 
     case 'd':
+      g_value_set_double (value, g_key_file_get_double (file, group, key,
+            &error));
+
+      if (error != NULL)
         {
-          gchar *end;
-          gdouble v = g_ascii_strtod (string, &end);
+          g_error_free (error);
+          return FALSE;
+        }
 
-          if (*end != '\0')
-            return FALSE;
+      return TRUE;
 
-          g_value_set_double (value, v);
-          return TRUE;
+    case 'a':
+      switch (sig[1])
+        {
+        case 's':
+            {
+              g_value_take_boxed (value,
+                  g_key_file_get_string_list (file, group, key, NULL, &error));
+
+              if (error != NULL)
+                {
+                  g_error_free (error);
+                  return FALSE;
+                }
+
+              return TRUE;
+            }
         }
     }
 
-  g_value_unset (value);
+  if (G_IS_VALUE (value))
+    g_value_unset (value);
+
   return FALSE;
 }
 
@@ -781,6 +899,7 @@ tp_connection_manager_read_file (TpConnectionManager *self,
               DEBUG ("\tParam sig: %s", param->dbus_signature);
 
 #ifdef ENABLE_DEBUG
+              if (G_IS_VALUE (&param->default_value))
                 {
                   gchar *repr = g_strdup_value_contents
                       (&(param->default_value));
@@ -788,6 +907,10 @@ tp_connection_manager_read_file (TpConnectionManager *self,
                   DEBUG ("\tParam default value: %s of type %s", repr,
                       G_VALUE_TYPE_NAME (&(param->default_value)));
                   g_free (repr);
+                }
+              else
+                {
+                  DEBUG ("\tParam default value: not set");
                 }
 #endif
             }
