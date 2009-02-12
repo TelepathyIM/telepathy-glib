@@ -217,6 +217,7 @@ test_complex_file_got_info (Test *test,
   gulong id;
   const TpConnectionManagerParam *param;
   const TpConnectionManagerProtocol *protocol;
+  gchar **strv;
 
   test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
       NULL, &error);
@@ -251,32 +252,45 @@ test_complex_file_got_info (Test *test,
   g_assert_cmpstr (param->dbus_signature, ==, "s");
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
+  g_assert_cmpstr (g_value_get_string (&param->default_value), ==,
+      "foo@default");
 
   param = &protocol->params[1];
   g_assert_cmpstr (param->name, ==, "password");
   g_assert_cmpstr (param->dbus_signature, ==, "s");
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_SECRET);
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
 
   param = &protocol->params[2];
   g_assert_cmpstr (param->name, ==, "encryption-key");
   g_assert_cmpstr (param->dbus_signature, ==, "s");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_SECRET);
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
 
   param = &protocol->params[3];
   g_assert_cmpstr (param->name, ==, "port");
   g_assert_cmpstr (param->dbus_signature, ==, "q");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert (G_VALUE_HOLDS_UINT (&param->default_value));
+  g_assert_cmpuint (g_value_get_uint (&param->default_value), ==, 1234);
 
   param = &protocol->params[4];
   g_assert_cmpstr (param->name, ==, "register");
   g_assert_cmpstr (param->dbus_signature, ==, "b");
   g_assert_cmpuint (param->flags, ==, 0);
+  g_assert (G_VALUE_HOLDS_BOOLEAN (&param->default_value));
 
   param = &protocol->params[5];
   g_assert_cmpstr (param->name, ==, "server-list");
   g_assert_cmpstr (param->dbus_signature, ==, "as");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "foo");
+  g_assert_cmpstr (strv[1], ==, "bar");
+  g_assert (strv[2] == NULL);
 
   param = &protocol->params[6];
   g_assert (param->name == NULL);
@@ -289,35 +303,48 @@ test_complex_file_got_info (Test *test,
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (param->dbus_signature, ==, "s");
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
+  g_assert_cmpstr (g_value_get_string (&param->default_value), ==,
+      "bar@default");
 
   param = &protocol->params[1];
   g_assert_cmpstr (param->name, ==, "encryption-key");
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_SECRET);
   g_assert_cmpstr (param->dbus_signature, ==, "s");
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
 
   param = &protocol->params[2];
   g_assert_cmpstr (param->name, ==, "password");
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_SECRET);
   g_assert_cmpstr (param->dbus_signature, ==, "s");
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
 
   param = &protocol->params[3];
   g_assert_cmpstr (param->name, ==, "port");
   g_assert_cmpstr (param->dbus_signature, ==, "q");
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert (G_VALUE_HOLDS_UINT (&param->default_value));
+  g_assert_cmpuint (g_value_get_uint (&param->default_value), ==, 4321);
 
   param = &protocol->params[4];
   g_assert_cmpstr (param->name, ==, "register");
   g_assert_cmpstr (param->dbus_signature, ==, "b");
   g_assert_cmpuint (param->flags, ==, 0);
+  g_assert (G_VALUE_HOLDS_BOOLEAN (&param->default_value));
 
   param = &protocol->params[5];
   g_assert_cmpstr (param->name, ==, "server-list");
   g_assert_cmpstr (param->dbus_signature, ==, "as");
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "bar");
+  g_assert_cmpstr (strv[1], ==, "foo");
+  g_assert (strv[2] == NULL);
 
   param = &protocol->params[6];
   g_assert (param->name == NULL);
@@ -330,42 +357,163 @@ test_complex_file_got_info (Test *test,
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (param->dbus_signature, ==, "s");
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
+  g_assert_cmpstr (g_value_get_string (&param->default_value), ==,
+      "hello world");
 
   param = &protocol->params[1];
   g_assert_cmpstr (param->name, ==, "semicolons");
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT | TP_CONN_MGR_PARAM_FLAG_SECRET);
   g_assert_cmpstr (param->dbus_signature, ==, "s");
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
+  g_assert_cmpstr (g_value_get_string (&param->default_value), ==,
+      "list;of;misc;");
 
   param = &protocol->params[2];
   g_assert_cmpstr (param->name, ==, "list");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (param->dbus_signature, ==, "as");
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "list");
+  g_assert_cmpstr (strv[1], ==, "of");
+  g_assert_cmpstr (strv[2], ==, "misc");
+  g_assert (strv[3] == NULL);
 
   param = &protocol->params[3];
   g_assert_cmpstr (param->name, ==, "unterminated-list");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (param->dbus_signature, ==, "as");
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "list");
+  g_assert_cmpstr (strv[1], ==, "of");
+  g_assert_cmpstr (strv[2], ==, "misc");
+  g_assert (strv[3] == NULL);
 
   param = &protocol->params[4];
   g_assert_cmpstr (param->name, ==, "spaces-in-list");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (param->dbus_signature, ==, "as");
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "list");
+  g_assert_cmpstr (strv[1], ==, " of");
+  g_assert_cmpstr (strv[2], ==, " misc ");
+  g_assert (strv[3] == NULL);
 
   param = &protocol->params[5];
   g_assert_cmpstr (param->name, ==, "escaped-semicolon-in-list");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (param->dbus_signature, ==, "as");
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "list;of");
+  g_assert_cmpstr (strv[1], ==, "misc");
+  g_assert (strv[2] == NULL);
 
   param = &protocol->params[6];
   g_assert_cmpstr (param->name, ==, "doubly-escaped-semicolon-in-list");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (param->dbus_signature, ==, "as");
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "list\\");
+  g_assert_cmpstr (strv[1], ==, "of");
+  g_assert_cmpstr (strv[2], ==, "misc");
+  g_assert (strv[3] == NULL);
 
   param = &protocol->params[7];
   g_assert_cmpstr (param->name, ==, "triply-escaped-semicolon-in-list");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
   g_assert_cmpstr (param->dbus_signature, ==, "as");
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "list\\;of");
+  g_assert_cmpstr (strv[1], ==, "misc");
+  g_assert (strv[2] == NULL);
+
+  param = &protocol->params[8];
+  g_assert_cmpstr (param->name, ==, "empty-list");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "as");
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert (strv == NULL || strv[0] == NULL);
+
+  param = &protocol->params[9];
+  g_assert_cmpstr (param->name, ==, "escaped-semicolon");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "s");
+  g_assert (G_VALUE_HOLDS_STRING (&param->default_value));
+  g_assert_cmpstr (g_value_get_string (&param->default_value), ==,
+      "foo\\;bar");
+
+  param = &protocol->params[10];
+  g_assert_cmpstr (param->name, ==, "object");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "o");
+  g_assert (G_VALUE_HOLDS (&param->default_value, DBUS_TYPE_G_OBJECT_PATH));
+  g_assert_cmpstr (g_value_get_boxed (&param->default_value), ==, "/misc");
+
+  param = &protocol->params[11];
+  g_assert_cmpstr (param->name, ==, "q");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "q");
+  g_assert (G_VALUE_HOLDS_UINT (&param->default_value));
+  g_assert_cmpint (g_value_get_uint (&param->default_value), ==, 42);
+
+  param = &protocol->params[12];
+  g_assert_cmpstr (param->name, ==, "u");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "u");
+  g_assert (G_VALUE_HOLDS_UINT (&param->default_value));
+  g_assert_cmpint (g_value_get_uint (&param->default_value), ==, 42);
+
+  param = &protocol->params[13];
+  g_assert_cmpstr (param->name, ==, "t");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "t");
+  g_assert (G_VALUE_HOLDS_UINT64 (&param->default_value));
+  g_assert_cmpuint ((guint) g_value_get_uint64 (&param->default_value), ==,
+      42);
+
+  param = &protocol->params[14];
+  g_assert_cmpstr (param->name, ==, "n");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "n");
+  g_assert (G_VALUE_HOLDS_INT (&param->default_value));
+  g_assert_cmpint (g_value_get_int (&param->default_value), ==, -42);
+
+  param = &protocol->params[15];
+  g_assert_cmpstr (param->name, ==, "i");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "i");
+  g_assert (G_VALUE_HOLDS_INT (&param->default_value));
+  g_assert_cmpint (g_value_get_int (&param->default_value), ==, -42);
+
+  param = &protocol->params[16];
+  g_assert_cmpstr (param->name, ==, "x");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "x");
+  g_assert (G_VALUE_HOLDS_INT64 (&param->default_value));
+  g_assert_cmpint ((int) g_value_get_int64 (&param->default_value), ==, -42);
+
+  param = &protocol->params[17];
+  g_assert_cmpstr (param->name, ==, "d");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "d");
+  g_assert (G_VALUE_HOLDS_DOUBLE (&param->default_value));
+
+  param = &protocol->params[18];
+  g_assert_cmpstr (param->name, ==, "empty-string-in-list");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "as");
+  g_assert (G_VALUE_HOLDS (&param->default_value, G_TYPE_STRV));
+  strv = g_value_get_boxed (&param->default_value);
+  g_assert_cmpstr (strv[0], ==, "");
+  g_assert (strv[1] == NULL);
 
 }
 
