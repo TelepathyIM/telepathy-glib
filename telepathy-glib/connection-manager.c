@@ -131,12 +131,14 @@ enum
  * references to it are discarded.
  *
  * On initialization, we find and read the .manager file, and emit
- * got-info(FILE) on success, got-info(NONE) if no file
- * or if reading the file failed.
+ * got-info(FILE) on success. If that fails, we try to activate the connection
+ * manager and introspect it over D-Bus, emitting got-info(LIVE) on success
+ * or got-info(NONE) on failure.
  *
- * When the CM runs, we automatically introspect it if @always_introspect
- * is %TRUE. On success we emit got-info(LIVE). On failure, re-emit
- * got-info(NONE) or got-info(FILE) as appropriate.
+ * Whenever the CM runs, we automatically introspect it if @always_introspect
+ * is %TRUE or we have no protocol information. On success we emit
+ * got-info(LIVE). On failure, we re-emit got-info(NONE) or got-info(FILE) as
+ * appropriate.
  *
  * If we're asked to activate the CM, it'll implicitly be introspected.
  *
@@ -1489,6 +1491,9 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    * @source: a #TpCMInfoSource
    *
    * Emitted when the connection manager's capabilities have been discovered.
+   *
+   * This signal is not very helpful. Since 0.7.UNRELEASED, using
+   * tp_connection_manager_call_when_ready() instead is recommended.
    */
   signals[SIGNAL_GOT_INFO] = g_signal_new ("got-info",
       G_OBJECT_CLASS_TYPE (klass),
