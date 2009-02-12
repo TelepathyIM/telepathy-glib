@@ -490,6 +490,7 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
       self->priv->pending_protocols = NULL;
     }
 
+  DEBUG ("End of introspection, info source %u", self->info_source);
   g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
   tp_connection_manager_ready_or_failed (self, error);
 }
@@ -1124,6 +1125,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
               self->protocols = (const TpConnectionManagerProtocol * const *)
                   self->priv->protocols->pdata;
 
+              DEBUG ("Got info from file");
               /* previously it must have been NONE */
               self->info_source = TP_CM_INFO_SOURCE_FILE;
               g_object_notify ((GObject *) self, "info-source");
