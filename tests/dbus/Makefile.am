@@ -143,7 +143,12 @@ CLEANFILES = \
 distclean-local:
 	rm -rf _gen
 
-EXTRA_DIST = with-properties.xml
+EXTRA_DIST = \
+    dbus-1/services/spurious.service \
+    telepathy/managers/spurious.manager \
+    telepathy/managers/test_manager_file.manager \
+    telepathy/managers/test_manager_file_invalid.manager \
+    with-properties.xml
 
 _gen/svc.c _gen/svc.h: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \
