@@ -38,6 +38,9 @@ connection_manager_got_info (TpConnectionManager *cm,
 
   g_message ("Emitted got-info (source=%d)", source);
 
+  if (source < TP_CM_INFO_SOURCE_LIVE)
+    return;
+
   tp_cli_connection_manager_run_request_connection (cm, -1,
       "jabber", empty, &bus_name, &object_path, &error, NULL);
 
@@ -47,8 +50,7 @@ connection_manager_got_info (TpConnectionManager *cm,
 
   g_error_free (error);
 
-  if (source > 0)
-    g_main_loop_quit (mainloop);
+  g_main_loop_quit (mainloop);
 
   g_hash_table_destroy (empty);
 }
