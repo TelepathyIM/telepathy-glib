@@ -502,6 +502,8 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
   if (self->priv->pending_protocols->len == 0)
     {
       GPtrArray *tmp;
+      guint old;
+
       g_ptr_array_add (self->priv->found_protocols, NULL);
 
       /* swap found_protocols and protocols, so we'll free the old protocols
@@ -513,7 +515,12 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
       self->protocols = (const TpConnectionManagerProtocol * const *)
           self->priv->protocols->pdata;
 
+      old = self->info_source;
       self->info_source = TP_CM_INFO_SOURCE_LIVE;
+
+      if (old != TP_CM_INFO_SOURCE_LIVE)
+        g_object_notify ((GObject *) self, "info-source");
+
       tp_connection_manager_end_introspection (self, NULL);
 
       return;
@@ -1106,9 +1113,13 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
             {
               g_ptr_array_add (protocols, NULL);
               self->priv->protocols = protocols;
-              self->info_source = TP_CM_INFO_SOURCE_FILE;
+
               self->protocols = (const TpConnectionManagerProtocol * const *)
                   self->priv->protocols->pdata;
+
+              /* previously it must have been NONE */
+              self->info_source = TP_CM_INFO_SOURCE_FILE;
+              g_object_notify ((GObject *) self, "info-source");
 
               g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0,
                   self->info_source);
