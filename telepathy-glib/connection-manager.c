@@ -970,13 +970,21 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
               self->info_source = TP_CM_INFO_SOURCE_FILE;
               self->protocols = (const TpConnectionManagerProtocol * const *)
                   self->priv->protocols->pdata;
-            }
 
-          g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
+              g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0,
+                  self->info_source);
+            }
         }
-      else if (self->priv->introspect_idle_id == 0)
+
+      if (self->priv->introspect_idle_id == 0)
         {
+          DEBUG ("no .manager file or failed to parse it, trying to activate "
+              "CM instead");
           tp_connection_manager_idle_introspect (self);
+        }
+      else
+        {
+          DEBUG ("no .manager file, but will activate CM soon anyway");
         }
       /* else we're going to introspect soon anyway */
     }
