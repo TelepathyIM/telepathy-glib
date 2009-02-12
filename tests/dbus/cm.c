@@ -575,6 +575,8 @@ test_nothing_ready (Test *test,
   g_assert (test->error == NULL);
   g_test_queue_unref (test->cm);
 
+  g_test_bug ("18291");
+
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
@@ -592,6 +594,8 @@ test_file_ready (Test *test,
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert (test->error == NULL);
   g_test_queue_unref (test->cm);
+
+  g_test_bug ("18291");
 
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
@@ -611,6 +615,8 @@ test_complex_file_ready (Test *test,
   g_assert (test->error == NULL);
   g_test_queue_unref (test->cm);
 
+  g_test_bug ("18291");
+
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
@@ -628,6 +634,8 @@ test_dbus_ready (Test *test,
   g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
   g_assert (test->error == NULL);
   g_test_queue_unref (test->cm);
+
+  g_test_bug ("18291");
 
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
