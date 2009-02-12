@@ -1047,11 +1047,11 @@ tp_connection_manager_constructor (GType type,
     {
       self->priv->manager_file =
           tp_connection_manager_find_manager_file (self->name);
-
-      if (self->priv->manager_file_read_idle_id == 0)
-        self->priv->manager_file_read_idle_id = g_idle_add (
-            tp_connection_manager_idle_read_manager_file, self);
     }
+
+  if (self->priv->manager_file_read_idle_id == 0)
+    self->priv->manager_file_read_idle_id = g_idle_add (
+        tp_connection_manager_idle_read_manager_file, self);
 
   return (GObject *) self;
 }
