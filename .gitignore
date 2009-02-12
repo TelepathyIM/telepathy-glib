@@ -67,6 +67,7 @@ tags
 tests/dbus/test-call-cancellation
 tests/dbus/test-channel-introspect
 tests/dbus/test-cli-group
+tests/dbus/test-cm
 tests/dbus/test-connection
 tests/dbus/test-connection-bug-18845
 tests/dbus/test-connection-getinterfaces-failure
