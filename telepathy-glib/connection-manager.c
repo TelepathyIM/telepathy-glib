@@ -867,6 +867,12 @@ tp_connection_manager_read_file (TpConnectionManager *self,
 
               param->dbus_signature = g_strdup (strv[0]);
 
+              if (!tp_strdiff (param->name, "password") ||
+                  g_str_has_suffix (param->name, "-password"))
+                {
+                  param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
+                }
+
               for (iter = strv + 1; *iter != NULL; iter++)
                 {
                   if (!tp_strdiff (*iter, "required"))
