@@ -783,12 +783,11 @@ parse_default_value (GValue *value,
   return FALSE;
 }
 
-static void
-tp_connection_manager_read_file (TpConnectionManager *self,
-                                 const gchar *filename)
+static GPtrArray *
+tp_connection_manager_read_file (const gchar *filename,
+                                 GError **error)
 {
   GKeyFile *file;
-  GError *error = NULL;
   gchar **groups, **group;
   guint i;
   TpConnectionManagerProtocol *proto_struct;
@@ -796,13 +795,13 @@ tp_connection_manager_read_file (TpConnectionManager *self,
 
   file = g_key_file_new ();
 
-  if (!g_key_file_load_from_file (file, filename, G_KEY_FILE_NONE, &error))
-    {
-      DEBUG ("Failed to read %s: %s", filename, error->message);
-      g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
-    }
+  if (!g_key_file_load_from_file (file, filename, G_KEY_FILE_NONE, error))
+    return NULL;
 
   groups = g_key_file_get_groups (file, NULL);
+
+  if (groups == NULL || *groups == NULL)
+    return g_ptr_array_sized_new (1);
 
   i = 0;
   for (group = groups; *group != NULL; group++)
@@ -811,7 +810,7 @@ tp_connection_manager_read_file (TpConnectionManager *self,
         i++;
     }
 
-  /* We're going to add a NULL at the end, so +1 */
+  /* Reserve space for the caller to add a NULL at the end, so +1 */
   protocols = g_ptr_array_sized_new (i + 1);
 
   for (group = groups; *group != NULL; group++)
@@ -828,10 +827,10 @@ tp_connection_manager_read_file (TpConnectionManager *self,
       proto_struct->name = g_strdup (keys[1]);
       g_strfreev (keys);
 
-      keys = g_key_file_get_keys (file, *group, NULL, &error);
+      keys = g_key_file_get_keys (file, *group, NULL, NULL);
 
       i = 0;
-      for (key = keys; *key != NULL; key++)
+      for (key = keys; key != NULL && *key != NULL; key++)
         {
           if (g_str_has_prefix (*key, "param-"))
             i++;
@@ -840,7 +839,7 @@ tp_connection_manager_read_file (TpConnectionManager *self,
       output = g_array_sized_new (TRUE, TRUE,
           sizeof (TpConnectionManagerParam), i);
 
-      for (key = keys; *key != NULL; key++)
+      for (key = keys; key != NULL && *key != NULL; key++)
         {
           if (g_str_has_prefix (*key, "param-"))
             {
@@ -931,18 +930,10 @@ tp_connection_manager_read_file (TpConnectionManager *self,
       g_ptr_array_add (protocols, proto_struct);
     }
 
-  g_ptr_array_add (protocols, NULL);
-
-  g_assert (self->priv->protocols == NULL);
-  self->priv->protocols = protocols;
-  self->info_source = TP_CM_INFO_SOURCE_FILE;
-  self->protocols = (const TpConnectionManagerProtocol * const *)
-      self->priv->protocols->pdata;
-
-  g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
-
   g_strfreev (groups);
   g_key_file_free (file);
+
+  return protocols;
 }
 
 static gboolean
@@ -955,7 +946,27 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
       if (self->priv->manager_file != NULL &&
           self->priv->manager_file[0] != '\0')
         {
-          tp_connection_manager_read_file (self, self->priv->manager_file);
+          GError *error = NULL;
+          GPtrArray *protocols = tp_connection_manager_read_file (
+              self->priv->manager_file, &error);
+
+          if (protocols == NULL)
+            {
+              DEBUG ("Failed to load %s: %s", self->priv->manager_file,
+                  error->message);
+              g_error_free (error);
+              error = NULL;
+            }
+          else
+            {
+              g_ptr_array_add (protocols, NULL);
+              self->priv->protocols = protocols;
+              self->info_source = TP_CM_INFO_SOURCE_FILE;
+              self->protocols = (const TpConnectionManagerProtocol * const *)
+                  self->priv->protocols->pdata;
+            }
+
+          g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0, self->info_source);
         }
       else if (self->priv->introspect_idle_id == 0)
         {
