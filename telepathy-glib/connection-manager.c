@@ -626,7 +626,9 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       self->running = FALSE;
 
       /* cancel pending introspection, if any */
-      tp_connection_manager_end_introspection (self, &e);
+      if (self->priv->listing_protocols ||
+          self->priv->pending_protocols != NULL)
+        tp_connection_manager_end_introspection (self, &e);
 
       g_signal_emit (self, signals[SIGNAL_EXITED], 0);
     }
