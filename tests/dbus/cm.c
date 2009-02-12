@@ -105,12 +105,9 @@ test_nothing_got_info (Test *test,
   g_assert (error == NULL);
   g_test_queue_unref (test->cm);
 
-  /* Spin the mainloop until we get the got-info signal. This API is rubbish.
-   * In particular, got-info isn't guaranteed to be emitted at all,
-   * unless you call tp_connection_manager_activate (#18207). As a
-   * workaround for that, you can call tp_connection_manager_activate. */
+  /* Spin the mainloop until we get the got-info signal. This API is rubbish,
+   * but it's better than it used to be... */
   g_test_bug ("18207");
-  tp_connection_manager_activate (test->cm);
   id = g_signal_connect (test->cm, "got-info",
       G_CALLBACK (on_got_info_expect_none), test);
   g_main_loop_run (test->mainloop);
