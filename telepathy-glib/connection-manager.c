@@ -316,7 +316,8 @@ tp_connection_manager_free_protocols (GPtrArray *protocols)
         {
           g_free (param->name);
           g_free (param->dbus_signature);
-          g_value_unset (&(param->default_value));
+          if (G_IS_VALUE (&param->default_value))
+            g_value_unset (&param->default_value);
         }
 
       g_free (proto->params);
