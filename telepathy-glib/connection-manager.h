@@ -123,6 +123,12 @@ void tp_connection_manager_call_when_ready (TpConnectionManager *self,
     TpConnectionManagerWhenReadyCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
+const gchar *tp_connection_manager_get_name (TpConnectionManager *self);
+gboolean tp_connection_manager_is_ready (TpConnectionManager *self);
+gboolean tp_connection_manager_is_running (TpConnectionManager *self);
+TpCMInfoSource tp_connection_manager_get_info_source (
+    TpConnectionManager *self);
+
 gboolean tp_connection_manager_check_valid_name (const gchar *name,
     GError **error);
 

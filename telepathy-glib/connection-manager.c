@@ -1840,3 +1840,86 @@ tp_connection_manager_check_valid_protocol_name (const gchar *name,
 
   return TRUE;
 }
+
+/**
+ * tp_connection_manager_get_name:
+ * @self: a connection manager
+ *
+ * Return the internal name of this connection manager in the Telepathy
+ * D-Bus API, e.g. "gabble" or "haze". This is often the name of the binary
+ * without the "telepathy-" prefix.
+ *
+ * The returned string is valid as long as @self is. Copy it with g_strdup()
+ * if a longer lifetime is required.
+ *
+ * Returns: the #TpConnectionManager:connection-manager property
+ */
+const gchar *
+tp_connection_manager_get_name (TpConnectionManager *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+  return self->name;
+}
+
+/**
+ * tp_connection_manager_is_ready:
+ * @self: a connection manager
+ *
+ * If protocol and parameter information has been obtained from the connection
+ * manager or the cache in the .manager file, return %TRUE. Otherwise,
+ * return %FALSE.
+ *
+ * This may change from %FALSE to %TRUE at any time that the main loop is
+ * running; the #GObject::notify signal is emitted for the
+ * #TpConnectionManager:info-source property.
+ *
+ * Returns: %TRUE, unless the #TpConnectionManager:info-source property is
+ *          %TP_CM_INFO_SOURCE_NONE
+ */
+gboolean
+tp_connection_manager_is_ready (TpConnectionManager *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), FALSE);
+  return self->info_source != TP_CM_INFO_SOURCE_NONE;
+}
+
+/**
+ * tp_connection_manager_is_running:
+ * @self: a connection manager
+ *
+ * Return %TRUE if this connection manager currently appears to be running.
+ * This may change at any time that the main loop is running; the
+ * #TpConnectionManager::activated and #TpConnectionManager::exited signals
+ * are emitted.
+ *
+ * Returns: whether the connection manager is currently running
+ */
+gboolean
+tp_connection_manager_is_running (TpConnectionManager *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), FALSE);
+  return self->running;
+}
+
+/**
+ * tp_connection_manager_get_info_source:
+ * @self: a connection manager
+ *
+ * If protocol and parameter information has been obtained from the connection
+ * manager, return %TP_CM_INFO_SOURCE_LIVE; if it has been obtained from the
+ * cache in the .manager file, return %TP_CM_INFO_SOURCE_FILE. If this
+ * information has not yet been obtained, or obtaining it failed, return
+ * %TP_CM_INFO_SOURCE_NONE.
+ *
+ * This may increase at any time that the main loop is running; the
+ * #GObject::notify signal is emitted.
+ *
+ * Returns: the value of the #TpConnectionManager:info-source property
+ */
+TpCMInfoSource
+tp_connection_manager_get_info_source (TpConnectionManager *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self),
+      TP_CM_INFO_SOURCE_NONE);
+  return self->info_source;
+}
