@@ -116,7 +116,7 @@ void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
-typedef void (*TpConnectionManagerWhenReadyCb) (TpConnectionManager *self,
+typedef void (*TpConnectionManagerWhenReadyCb) (TpConnectionManager *cm,
     const GError *error, gpointer user_data, GObject *weak_object);
 
 void tp_connection_manager_call_when_ready (TpConnectionManager *self,
