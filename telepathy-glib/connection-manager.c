@@ -1137,6 +1137,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
               g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0,
                   self->info_source);
               tp_connection_manager_ready_or_failed (self, NULL);
+              goto out;
             }
         }
 
@@ -1153,6 +1154,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
       /* else we're going to introspect soon anyway */
     }
 
+out:
   self->priv->manager_file_read_idle_id = 0;
 
   return FALSE;
