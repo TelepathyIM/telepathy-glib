@@ -894,7 +894,7 @@ contacts_context_fail (ContactsContext *c,
  * valid (it may be empty), and @failed_id_errors will map the IDs
  * that were not valid to a corresponding #GError (if the connection manager
  * complies with the Telepathy spec, it will have domain %TP_ERRORS and code
- * %TP_ERROR_NOT_AVAILABLE).
+ * %TP_ERROR_INVALID_HANDLE).
  *
  * If an unrecoverable error occurs (for instance, if @connection
  * becomes disconnected) the whole operation fails, and no contacts
@@ -2050,7 +2050,8 @@ contacts_requested_one_handle (TpConnection *connection,
       c->next_index++;
     }
   else if (error->domain == TP_ERRORS &&
-      (error->code == TP_ERROR_NOT_AVAILABLE ||
+      (error->code == TP_ERROR_INVALID_HANDLE ||
+       error->code == TP_ERROR_NOT_AVAILABLE ||
        error->code == TP_ERROR_INVALID_ARGUMENT))
     {
       g_hash_table_insert (c->request_errors,
@@ -2113,7 +2114,8 @@ contacts_requested_handles (TpConnection *connection,
         }
     }
   else if (error->domain == TP_ERRORS &&
-      (error->code == TP_ERROR_NOT_AVAILABLE ||
+      (error->code == TP_ERROR_INVALID_HANDLE ||
+       error->code == TP_ERROR_NOT_AVAILABLE ||
        error->code == TP_ERROR_INVALID_ARGUMENT))
     {
       /* One of the strings is bad. We don't know which, so split them. */
