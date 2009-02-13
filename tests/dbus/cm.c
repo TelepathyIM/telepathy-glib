@@ -142,6 +142,9 @@ test_file_got_info (Test *test,
   gulong id;
   const TpConnectionManagerParam *param;
   const TpConnectionManagerProtocol *protocol;
+  gchar **strv;
+  GValue value = { 0 };
+  gboolean ok;
 
   test->cm = tp_connection_manager_new (test->dbus, "spurious",
       NULL, &error);
@@ -166,14 +169,43 @@ test_file_got_info (Test *test,
   /* FIXME: it's not technically an API guarantee that protocols and params
    * come out in this order... */
 
+  strv = tp_connection_manager_dup_protocol_names (test->cm);
+  g_assert_cmpstr (strv[0], ==, "normal");
+  g_assert_cmpstr (strv[1], ==, "weird");
+  g_assert (strv[2] == NULL);
+  g_strfreev (strv);
+
+  g_assert (tp_connection_manager_has_protocol (test->cm, "normal"));
+  g_assert (!tp_connection_manager_has_protocol (test->cm, "not-there"));
+
   protocol = test->cm->protocols[0];
   g_assert_cmpstr (protocol->name, ==, "normal");
+  g_assert (protocol == tp_connection_manager_get_protocol (test->cm,
+        "normal"));
+  g_assert (tp_connection_manager_protocol_can_register (protocol));
+
+  g_assert (tp_connection_manager_protocol_has_param (protocol, "account"));
+  g_assert (!tp_connection_manager_protocol_has_param (protocol, "not-there"));
 
   param = &protocol->params[0];
   g_assert_cmpstr (param->name, ==, "account");
   g_assert_cmpstr (param->dbus_signature, ==, "s");
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER);
+  g_assert (param == tp_connection_manager_protocol_get_param (protocol,
+        "account"));
+  g_assert_cmpstr (tp_connection_manager_param_get_name (param), ==,
+      "account");
+  g_assert_cmpstr (tp_connection_manager_param_get_dbus_signature (param),
+      ==, "s");
+  g_assert (tp_connection_manager_param_is_required (param));
+  g_assert (tp_connection_manager_param_is_required_for_registration (param));
+  g_assert (!tp_connection_manager_param_is_secret (param));
+  g_assert (!tp_connection_manager_param_is_dbus_property (param));
+  g_assert (!tp_connection_manager_param_is_dbus_property (param));
+  ok = tp_connection_manager_param_get_default (param, &value);
+  g_assert (!ok);
+  g_assert (!G_IS_VALUE (&value));
 
   param = &protocol->params[1];
   g_assert_cmpstr (param->name, ==, "password");
@@ -181,17 +213,36 @@ test_file_got_info (Test *test,
   g_assert_cmpuint (param->flags, ==,
       TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER |
       TP_CONN_MGR_PARAM_FLAG_SECRET);
+  g_assert (param == tp_connection_manager_protocol_get_param (protocol,
+        "password"));
 
   param = &protocol->params[2];
   g_assert_cmpstr (param->name, ==, "register");
   g_assert_cmpstr (param->dbus_signature, ==, "b");
   g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert (param == tp_connection_manager_protocol_get_param (protocol,
+        "register"));
+  ok = tp_connection_manager_param_get_default (param, &value);
+  g_assert (ok);
+  g_assert (G_IS_VALUE (&value));
+  g_assert (G_VALUE_HOLDS_BOOLEAN (&value));
+  g_value_unset (&value);
 
   param = &protocol->params[3];
   g_assert (param->name == NULL);
 
+  strv = tp_connection_manager_protocol_dup_param_names (protocol);
+  g_assert_cmpstr (strv[0], ==, "account");
+  g_assert_cmpstr (strv[1], ==, "password");
+  g_assert_cmpstr (strv[2], ==, "register");
+  g_assert (strv[3] == NULL);
+  g_strfreev (strv);
+
   protocol = test->cm->protocols[1];
   g_assert_cmpstr (protocol->name, ==, "weird");
+  g_assert (protocol == tp_connection_manager_get_protocol (test->cm,
+        "weird"));
+  g_assert (!tp_connection_manager_protocol_can_register (protocol));
 
   param = &protocol->params[0];
   g_assert_cmpstr (param->name, ==, "com.example.Bork.Bork.Bork");
@@ -568,6 +619,9 @@ static void
 test_nothing_ready (Test *test,
                     gconstpointer data G_GNUC_UNUSED)
 {
+  gchar *name;
+  guint info_source;
+
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus, "nonexistent_cm",
       NULL, &test->error);
@@ -589,12 +643,23 @@ test_nothing_ready (Test *test,
   g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, FALSE);
   g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
       TP_CM_INFO_SOURCE_NONE);
+
+  g_object_get (test->cm,
+      "info-source", &info_source,
+      "connection-manager", &name,
+      NULL);
+  g_assert_cmpstr (name, ==, "nonexistent_cm");
+  g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_NONE);
+  g_free (name);
 }
 
 static void
 test_file_ready (Test *test,
                  gconstpointer data G_GNUC_UNUSED)
 {
+  gchar *name;
+  guint info_source;
+
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus, "spurious",
       NULL, &test->error);
@@ -616,12 +681,23 @@ test_file_ready (Test *test,
   g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
       TP_CM_INFO_SOURCE_FILE);
 
+  g_object_get (test->cm,
+      "info-source", &info_source,
+      "connection-manager", &name,
+      NULL);
+  g_assert_cmpstr (name, ==, "spurious");
+  g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_FILE);
+  g_free (name);
+
 }
 
 static void
 test_complex_file_ready (Test *test,
                          gconstpointer data G_GNUC_UNUSED)
 {
+  gchar *name;
+  guint info_source;
+
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus, "test_manager_file",
       NULL, &test->error);
@@ -642,12 +718,23 @@ test_complex_file_ready (Test *test,
   g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, FALSE);
   g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
       TP_CM_INFO_SOURCE_FILE);
+
+  g_object_get (test->cm,
+      "info-source", &info_source,
+      "connection-manager", &name,
+      NULL);
+  g_assert_cmpstr (name, ==, "test_manager_file");
+  g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_FILE);
+  g_free (name);
 }
 
 static void
 test_dbus_ready (Test *test,
                  gconstpointer data G_GNUC_UNUSED)
 {
+  gchar *name;
+  guint info_source;
+
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus,
       TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
@@ -669,6 +756,14 @@ test_dbus_ready (Test *test,
   g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, TRUE);
   g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
       TP_CM_INFO_SOURCE_LIVE);
+
+  g_object_get (test->cm,
+      "info-source", &info_source,
+      "connection-manager", &name,
+      NULL);
+  g_assert_cmpstr (name, ==, "example_echo");
+  g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);
+  g_free (name);
 }
 
 int
