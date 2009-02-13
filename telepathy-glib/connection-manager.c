@@ -1612,26 +1612,70 @@ steal_into_ptr_array (gpointer key,
 typedef struct
 {
   GHashTable *table;
+  GPtrArray *arr;
   TpConnectionManagerListCb callback;
   gpointer user_data;
   GDestroyNotify destroy;
   TpProxyPendingCall *pending_call;
   size_t base_len;
+  gsize refcount;
+  gsize cms_to_ready;
   unsigned getting_names:1;
-  guint refcount:2;
 } _ListContext;
 
 static void
 list_context_unref (_ListContext *list_context)
 {
+  guint i;
+
   if (--list_context->refcount > 0)
     return;
 
   if (list_context->destroy != NULL)
     list_context->destroy (list_context->user_data);
 
+  if (list_context->arr != NULL)
+    {
+      for (i = 0; i < list_context->arr->len; i++)
+        {
+          TpConnectionManager *cm = g_ptr_array_index (list_context->arr, i);
+
+          if (cm != NULL)
+            g_object_unref (cm);
+        }
+
+      g_ptr_array_free (list_context->arr, TRUE);
+    }
+
   g_hash_table_destroy (list_context->table);
   g_slice_free (_ListContext, list_context);
+}
+
+static void
+tp_list_connection_managers_cm_ready (TpConnectionManager *cm,
+                                      const GError *error,
+                                      gpointer user_data,
+                                      GObject *weak_object)
+{
+  _ListContext *list_context = user_data;
+
+  /* ignore errors here - all we guarantee is that the CM is ready
+   * *if possible* */
+
+  if ((--list_context->cms_to_ready) == 0)
+    {
+      TpConnectionManager **cms;
+      guint n_cms = list_context->arr->len;
+
+      g_assert (list_context->callback != NULL);
+
+      g_ptr_array_add (list_context->arr, NULL);
+      cms = (TpConnectionManager **) list_context->arr->pdata;
+
+      list_context->callback (cms, n_cms, NULL, list_context->user_data,
+          weak_object);
+      list_context->callback = NULL;
+    }
 }
 
 static void
@@ -1673,29 +1717,26 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
 
   if (list_context->getting_names)
     {
-      /* actually call the callback */
-      GPtrArray *arr = g_ptr_array_sized_new (g_hash_table_size
+      /* now that we have all the CMs, wait for them all to be ready */
+      guint i;
+
+      list_context->arr = g_ptr_array_sized_new (g_hash_table_size
               (list_context->table));
-      TpConnectionManager **cms;
-      TpConnectionManager * const *cm_iter;
-      gsize n_cms;
 
       g_hash_table_foreach_steal (list_context->table, steal_into_ptr_array,
-          arr);
-      n_cms = arr->len;
-      g_ptr_array_add (arr, NULL);
+          list_context->arr);
 
-      cms = (TpConnectionManager **) g_ptr_array_free (arr, FALSE);
-      list_context->callback (cms, n_cms, NULL, list_context->user_data,
-          weak_object);
-      list_context->callback = NULL;
+      list_context->cms_to_ready = list_context->arr->len;
+      list_context->refcount += list_context->cms_to_ready;
 
-      for (cm_iter = cms; *cm_iter != NULL; cm_iter++)
+      for (i = 0; i < list_context->cms_to_ready; i++)
         {
-          g_object_unref (*cm_iter);
-        }
+          TpConnectionManager *cm = g_ptr_array_index (list_context->arr, i);
 
-      g_free (cms);
+          tp_connection_manager_call_when_ready (cm,
+              tp_list_connection_managers_cm_ready, list_context,
+              (GDestroyNotify) list_context_unref, weak_object);
+        }
     }
   else
     {
@@ -1741,6 +1782,8 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
   list_context->refcount = 1;
   list_context->table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       g_object_unref);
+  list_context->arr = NULL;
+  list_context->cms_to_ready = 0;
 
   tp_cli_dbus_daemon_call_list_activatable_names (bus_daemon, 2000,
       tp_list_connection_managers_got_names, list_context,
