@@ -28,24 +28,101 @@
 #include <telepathy-glib/debug.h>
 
 static void
-connection_manager_got_info (TpConnectionManager *cm,
-                             guint source,
-                             GMainLoop *mainloop)
+ready (TpConnectionManager *cm,
+       const GError *error,
+       gpointer user_data,
+       GObject *weak_object G_GNUC_UNUSED)
 {
-  static int counter = 0;
+  GMainLoop *mainloop = user_data;
 
-  g_message ("Emitted got-info (source=%d)", source);
+  if (error != NULL)
+    {
+      g_assert (!tp_connection_manager_is_ready (cm));
 
-  if (source > 0 || ++counter >= 2)
-    g_main_loop_quit (mainloop);
-}
+      g_warning ("Error getting CM info: %s", error->message);
+    }
+  else
+    {
+      gchar **protocols;
+      guint i;
 
-static gboolean
-time_out (gpointer mainloop)
-{
-  g_message ("Timed out");
+      g_assert (tp_connection_manager_is_ready (cm));
+
+      g_message ("Connection manager name: %s",
+          tp_connection_manager_get_name (cm));
+      g_message ("Is running: %s",
+          tp_connection_manager_is_running (cm) ? "yes" : "no");
+      g_message ("Source of information: %s",
+          tp_connection_manager_get_info_source (cm) == TP_CM_INFO_SOURCE_LIVE
+            ? "D-Bus" : ".manager file");
+
+      protocols = tp_connection_manager_dup_protocol_names (cm);
+
+      for (i = 0; protocols != NULL && protocols[i] != NULL; i++)
+        {
+          const TpConnectionManagerProtocol *protocol;
+          gchar **params;
+          guint j;
+
+          g_message ("Protocol: %s", protocols[i]);
+          protocol = tp_connection_manager_get_protocol (cm, protocols[i]);
+          g_assert (protocol != NULL);
+
+          g_message ("\tCan register accounts via Telepathy: %s",
+              tp_connection_manager_protocol_can_register (protocol) ?
+                "yes" : "no");
+
+          params = tp_connection_manager_protocol_dup_param_names (protocol);
+
+          for (j = 0; params != NULL && params[j] != NULL; j++)
+            {
+              const TpConnectionManagerParam *param;
+              GValue value = { 0 };
+
+              g_message ("\tParameter: %s", params[j]);
+              param = tp_connection_manager_protocol_get_param (protocol,
+                  params[j]);
+              g_message ("\t\tD-Bus signature: %s",
+                  tp_connection_manager_param_get_dbus_signature (param));
+              g_message ("\t\tIs required: %s",
+                  tp_connection_manager_param_is_required (param) ?
+                    "yes" : "no");
+
+              if (tp_connection_manager_protocol_can_register (protocol))
+                {
+                  g_message ("\t\tIs required for registration: %s",
+                    tp_connection_manager_param_is_required_for_registration (
+                        param) ?  "yes" : "no");
+                }
+
+              g_message ("\t\tIs secret (password etc.): %s",
+                  tp_connection_manager_param_is_secret (param) ?
+                    "yes" : "no");
+              g_message ("\t\tIs a D-Bus property: %s",
+                  tp_connection_manager_param_is_dbus_property (param) ?
+                    "yes" : "no");
+
+              if (tp_connection_manager_param_get_default (param, &value))
+                {
+                  gchar *s = g_strdup_value_contents (&value);
+
+                  g_message ("\t\tDefault value: %s", s);
+                  g_free (s);
+                  g_value_unset (&value);
+                }
+              else
+                {
+                  g_message ("\t\tNo default value");
+                }
+            }
+
+          g_strfreev (params);
+        }
+
+      g_strfreev (protocols);
+    }
+
   g_main_loop_quit (mainloop);
-  return FALSE;
 }
 
 int
@@ -88,11 +165,7 @@ main (int argc,
       goto out;
     }
 
-  g_signal_connect (cm, "got-info",
-      G_CALLBACK (connection_manager_got_info), mainloop);
-
-  g_timeout_add (5000, time_out, mainloop);
-
+  tp_connection_manager_call_when_ready (cm, ready, mainloop, NULL, NULL);
   g_main_loop_run (mainloop);
   ret = 0;
 
