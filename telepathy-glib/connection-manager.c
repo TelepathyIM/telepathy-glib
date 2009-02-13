@@ -826,8 +826,10 @@ parse_default_value (GValue *value,
         return TRUE;
 
       /* In telepathy-glib < 0.7.UNRELEASED we accepted true and false in
-       * any case combination, so on error, let's fall back to more lenient
-       * parsing */
+       * any case combination, 0, and 1. The desktop file spec specifies
+       * "true" and "false" only, while GKeyFile currently accepts 0 and 1 too.
+       * So, on error, let's fall back to more lenient parsing that explicitly
+       * allows everything we historically allowed. */
       g_error_free (error);
       s = g_key_file_get_value (file, group, key, NULL);
 
