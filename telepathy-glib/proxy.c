@@ -546,6 +546,8 @@ error_mapping_quark (void)
  * on this proxy. This method is useful when D-Bus error names are emitted in
  * signals, such as Connection.ConnectionError and
  * Group.MembersChangedDetailed.
+ *
+ * Since: 0.7.24
  */
 void
 tp_proxy_dbus_error_to_gerror (gpointer self,

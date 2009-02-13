@@ -3,6 +3,16 @@ telepathy-glib 0.7.26 (UNRELEASED)
 
 Enhancements:
 
+* Add tp_connection_manager_call_when_ready()
+
+* When constructing TpConnectionManager, if the .manager file is missing
+  or can't be read, always try to activate the connection manager (in
+  practice, this is what's wanted)
+
+* fd.o #18291: when listing connection managers, wait for them to all be ready
+
+* fd.o #18056: add method-based accessors for TpConnectionManager members
+
 * fd.o #17519: track the Connection's SelfHandle property in TpConnection
 
 * Add tp_dbus_daemon_dup(), convenient API to share a starter-bus connection
@@ -22,6 +32,18 @@ Fixes:
 * fd.o #18832 (partially addressed): document that tp_get_bus() can call
   exit() and why, and discourage it in processes that aren't totally reliant
   on D-Bus
+
+* fd.o #18207: reliably emit TpConnectionManager::got-info signal (although
+  tp_connection_manager_call_when_ready() should be used instead)
+
+* Fix some assertion failures in TpConnectionManager when .manager files
+  contain surprising types
+
+* Parse all currently supported types in .manager files
+
+Miscellaneous:
+
+* Add regression test coverage for TpConnectionManager
 
 telepathy-glib 0.7.25 (2009-01-30)
 ==================================

@@ -1,8 +1,8 @@
 /*
  * connection-manager.h - proxy for a Telepathy connection manager
  *
- * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2007 Nokia Corporation
+ * Copyright (C) 2007-2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2007-2009 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -116,11 +116,55 @@ void tp_list_connection_managers (TpDBusDaemon *bus_daemon,
     gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object);
 
+typedef void (*TpConnectionManagerWhenReadyCb) (TpConnectionManager *cm,
+    const GError *error, gpointer user_data, GObject *weak_object);
+
+void tp_connection_manager_call_when_ready (TpConnectionManager *self,
+    TpConnectionManagerWhenReadyCb callback,
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+
+const gchar *tp_connection_manager_get_name (TpConnectionManager *self);
+gboolean tp_connection_manager_is_ready (TpConnectionManager *self);
+gboolean tp_connection_manager_is_running (TpConnectionManager *self);
+TpCMInfoSource tp_connection_manager_get_info_source (
+    TpConnectionManager *self);
+
 gboolean tp_connection_manager_check_valid_name (const gchar *name,
     GError **error);
 
 gboolean tp_connection_manager_check_valid_protocol_name (const gchar *name,
     GError **error);
+
+gchar **tp_connection_manager_dup_protocol_names (TpConnectionManager *self);
+gboolean tp_connection_manager_has_protocol (TpConnectionManager *self,
+    const gchar *protocol);
+const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
+    TpConnectionManager *self, const gchar *protocol);
+
+gchar **tp_connection_manager_protocol_dup_param_names (
+    const TpConnectionManagerProtocol *protocol);
+gboolean tp_connection_manager_protocol_has_param (
+    const TpConnectionManagerProtocol *protocol,
+    const gchar *param);
+const TpConnectionManagerParam *tp_connection_manager_protocol_get_param (
+    const TpConnectionManagerProtocol *protocol, const gchar *param);
+gboolean tp_connection_manager_protocol_can_register (
+    const TpConnectionManagerProtocol *protocol);
+
+const gchar *tp_connection_manager_param_get_name (
+    const TpConnectionManagerParam *param);
+const gchar *tp_connection_manager_param_get_dbus_signature (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_is_required (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_is_required_for_registration (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_is_secret (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_is_dbus_property (
+    const TpConnectionManagerParam *param);
+gboolean tp_connection_manager_param_get_default (
+    const TpConnectionManagerParam *param, GValue *value);
 
 G_END_DECLS
 

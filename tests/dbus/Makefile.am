@@ -2,6 +2,7 @@ noinst_PROGRAMS = \
     test-call-cancellation \
     test-channel-introspect \
     test-cli-group \
+    test-cm \
     test-connection \
     test-connection-bug-18845 \
     test-connection-error \
@@ -36,6 +37,11 @@ LDADD = \
 test_channel_introspect_SOURCES = channel-introspect.c
 
 test_cli_group_SOURCES = cli-group.c
+
+test_cm_SOURCES = cm.c
+test_cm_LDADD = \
+    $(LDADD) \
+    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
 
 test_connection_SOURCES = connection.c
 
@@ -143,7 +149,12 @@ CLEANFILES = \
 distclean-local:
 	rm -rf _gen
 
-EXTRA_DIST = with-properties.xml
+EXTRA_DIST = \
+    dbus-1/services/spurious.service \
+    telepathy/managers/spurious.manager \
+    telepathy/managers/test_manager_file.manager \
+    telepathy/managers/test_manager_file_invalid.manager \
+    with-properties.xml
 
 _gen/svc.c _gen/svc.h: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \
