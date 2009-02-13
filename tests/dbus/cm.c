@@ -766,6 +766,56 @@ test_dbus_ready (Test *test,
   g_free (name);
 }
 
+static void
+on_listed_connection_managers (TpConnectionManager * const * cms,
+                               gsize n_cms,
+                               const GError *error,
+                               gpointer user_data,
+                               GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  TpConnectionManager *spurious;
+  TpConnectionManager *echo;
+
+  g_assert_cmpuint ((guint) n_cms, ==, 2);
+  g_assert (cms[2] == NULL);
+
+  if (tp_connection_manager_is_running (cms[0]))
+    {
+      echo = cms[0];
+      spurious = cms[1];
+    }
+  else
+    {
+      spurious = cms[0];
+      echo = cms[1];
+    }
+
+  g_assert (tp_connection_manager_is_running (echo));
+  g_assert (!tp_connection_manager_is_running (spurious));
+
+  g_assert (tp_connection_manager_is_ready (echo));
+  g_assert (tp_connection_manager_is_ready (spurious));
+
+  g_assert_cmpuint (tp_connection_manager_get_info_source (echo),
+      ==, TP_CM_INFO_SOURCE_LIVE);
+  g_assert_cmpuint (tp_connection_manager_get_info_source (spurious),
+      ==, TP_CM_INFO_SOURCE_FILE);
+
+  g_assert (tp_connection_manager_has_protocol (echo, "example"));
+  g_assert (tp_connection_manager_has_protocol (spurious, "normal"));
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_list (Test *test,
+           gconstpointer data G_GNUC_UNUSED)
+{
+  tp_list_connection_managers (test->dbus, on_listed_connection_managers,
+      test, NULL, NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -790,6 +840,8 @@ main (int argc,
   g_test_add ("/cm/file (complex)", Test, NULL, setup,
       test_complex_file_ready, teardown);
   g_test_add ("/cm/dbus", Test, NULL, setup, test_dbus_ready, teardown);
+
+  g_test_add ("/cm/list", Test, NULL, setup, test_list, teardown);
 
   return g_test_run ();
 }
