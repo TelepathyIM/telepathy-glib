@@ -1112,7 +1112,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
           GPtrArray *protocols = tp_connection_manager_read_file (
               self->priv->manager_file, &error);
 
-          DEBUG ("Reading %s", self->priv->manager_file);
+          DEBUG ("Read %s", self->priv->manager_file);
 
           if (protocols == NULL)
             {
