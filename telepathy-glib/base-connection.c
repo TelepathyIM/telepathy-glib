@@ -2518,6 +2518,8 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
  *
  * @details may contain, among other entries, the well-known key
  * "debug-message", whose value should have type G_TYPE_STRING.
+ *
+ * Since: 0.7.24
  */
 void
 tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,

@@ -200,7 +200,7 @@ tp_channel_get_handle (TpChannel *self,
  * This is the same as the #TpChannel:identifier property.
  *
  * Returns: the identifier
- * Since: 0.7.FUTURE
+ * Since: 0.7.21
  */
 const gchar *
 tp_channel_get_identifier (TpChannel *self)
