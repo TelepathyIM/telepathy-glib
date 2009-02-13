@@ -987,6 +987,8 @@ tp_connection_manager_read_file (const gchar *filename,
       proto_struct->name = g_strdup (keys[1]);
       g_strfreev (keys);
 
+      DEBUG ("Protocol %s", proto_struct->name);
+
       keys = g_key_file_get_keys (file, *group, NULL, NULL);
 
       i = 0;
