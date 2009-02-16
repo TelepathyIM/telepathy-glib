@@ -45,6 +45,7 @@ typedef void (*TpIntFunc) (guint i, gpointer userdata);
 
 TpIntSet *tp_intset_new (void);
 TpIntSet *tp_intset_sized_new (guint size);
+TpIntSet *tp_intset_new_containing (guint element);
 void tp_intset_destroy (TpIntSet *set);
 void tp_intset_clear (TpIntSet *set);
 

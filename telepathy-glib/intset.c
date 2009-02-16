@@ -94,6 +94,27 @@ tp_intset_new ()
 }
 
 /**
+ * tp_intset_new_containing:
+ * @element: integer to add to a new set
+ *
+ * Allocate a new integer set containing the given integer.
+ *
+ * Returns: a new integer set containing @element, to be destroyed with
+ * tp_intset_destroy()
+ *
+ * @since 0.7.UNRELEASED
+ */
+TpIntSet *
+tp_intset_new_containing (guint element)
+{
+  TpIntSet *ret = tp_intset_sized_new (element + 1);
+
+  tp_intset_add (ret, element);
+
+  return ret;
+}
+
+/**
  * tp_intset_destroy:
  * @set: set
  *
