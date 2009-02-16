@@ -11,8 +11,8 @@ AC_PREREQ([2.59])
 
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [7])
-m4_define([tp_glib_micro_version], [25])
-m4_define([tp_glib_nano_version], [1])
+m4_define([tp_glib_micro_version], [26])
+m4_define([tp_glib_nano_version], [0])
 
 # If library source has changed since last release, increment revision
 # If interfaces have been added, removed or changed since last release,
@@ -26,9 +26,9 @@ m4_define([tp_glib_nano_version], [1])
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
-m4_define([tp_glib_lt_current], [22])
+m4_define([tp_glib_lt_current], [23])
 m4_define([tp_glib_lt_revision], [1])
-m4_define([tp_glib_lt_age], [22])
+m4_define([tp_glib_lt_age], [23])
 
 # Some magic
 m4_define([tp_glib_base_version],
