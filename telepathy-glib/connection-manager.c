@@ -62,7 +62,7 @@
  *
  * Signature of the callback supplied to tp_list_connection_managers().
  *
- * Since 0.7.UNRELEASED, tp_list_connection_managers() will wait for each
+ * Since 0.7.26, tp_list_connection_managers() will wait for each
  * #TpConnectionManager to become ready, so all connection managers passed
  * to @callback will be ready (tp_connection_manager_is_ready() will return
  * %TRUE) unless an error occurred while launching that connection manager.
@@ -334,7 +334,7 @@ tp_connection_manager_ready_or_failed (TpConnectionManager *self,
  * Call the @callback from the main loop when information about @cm's
  * supported protocols and parameters has been retrieved.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 void
 tp_connection_manager_call_when_ready (TpConnectionManager *self,
@@ -825,7 +825,7 @@ parse_default_value (GValue *value,
       if (error == NULL)
         return TRUE;
 
-      /* In telepathy-glib < 0.7.UNRELEASED we accepted true and false in
+      /* In telepathy-glib < 0.7.26 we accepted true and false in
        * any case combination, 0, and 1. The desktop file spec specifies
        * "true" and "false" only, while GKeyFile currently accepts 0 and 1 too.
        * So, on error, let's fall back to more lenient parsing that explicitly
@@ -1444,7 +1444,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    * Where we got the current information on supported protocols
    * (a #TpCMInfoSource).
    *
-   * Since 0.7.UNRELEASED, the #GObject::notify signal is emitted for this
+   * Since 0.7.26, the #GObject::notify signal is emitted for this
    * property.
    */
   param_spec = g_param_spec_uint ("info-source", "CM info source",
@@ -1534,7 +1534,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    *
    * Emitted when the connection manager's capabilities have been discovered.
    *
-   * This signal is not very helpful. Since 0.7.UNRELEASED, using
+   * This signal is not very helpful. Since 0.7.26, using
    * tp_connection_manager_call_when_ready() instead is recommended.
    */
   signals[SIGNAL_GOT_INFO] = g_signal_new ("got-info",
@@ -1598,7 +1598,7 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
  * @self: a connection manager proxy
  *
  * Attempt to run and introspect the connection manager, asynchronously.
- * Since 0.7.UNRELEASED this function is not generally very useful, since
+ * Since 0.7.26 this function is not generally very useful, since
  * the connection manager will now be activated automatically if necessary.
  *
  * If the CM was already running, do nothing and return %FALSE.
@@ -1795,7 +1795,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
  * List the available (running or installed) connection managers. Call the
  * callback when done.
  *
- * Since 0.7.UNRELEASED, this function will wait for each #TpConnectionManager
+ * Since 0.7.26, this function will wait for each #TpConnectionManager
  * to be ready, so all connection managers passed to @callback will be ready
  * (tp_connection_manager_is_ready() will return %TRUE) unless an error
  * occurred while launching that connection manager.
@@ -1938,7 +1938,7 @@ tp_connection_manager_check_valid_protocol_name (const gchar *name,
  * if a longer lifetime is required.
  *
  * Returns: the #TpConnectionManager:connection-manager property
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 const gchar *
 tp_connection_manager_get_name (TpConnectionManager *self)
@@ -1961,7 +1961,7 @@ tp_connection_manager_get_name (TpConnectionManager *self)
  *
  * Returns: %TRUE, unless the #TpConnectionManager:info-source property is
  *          %TP_CM_INFO_SOURCE_NONE
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_is_ready (TpConnectionManager *self)
@@ -1980,7 +1980,7 @@ tp_connection_manager_is_ready (TpConnectionManager *self)
  * are emitted.
  *
  * Returns: whether the connection manager is currently running
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_is_running (TpConnectionManager *self)
@@ -2003,7 +2003,7 @@ tp_connection_manager_is_running (TpConnectionManager *self)
  * #GObject::notify signal is emitted.
  *
  * Returns: the value of the #TpConnectionManager:info-source property
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 TpCMInfoSource
 tp_connection_manager_get_info_source (TpConnectionManager *self)
@@ -2030,7 +2030,7 @@ tp_connection_manager_get_info_source (TpConnectionManager *self)
  * necessarily still true after the main loop is re-entered.
  *
  * Returns: a #GStrv of protocol names
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gchar **
 tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
@@ -2077,7 +2077,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  * The result is not necessarily valid after the main loop is re-entered.
  *
  * Returns: a structure representing the protocol
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 const TpConnectionManagerProtocol *
 tp_connection_manager_get_protocol (TpConnectionManager *self,
@@ -2117,7 +2117,7 @@ tp_connection_manager_get_protocol (TpConnectionManager *self,
  * tp_connection_manager_call_when_ready() to wait for this.
  *
  * Returns: %TRUE if this connection manager supports @protocol
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_has_protocol (TpConnectionManager *self,
@@ -2134,7 +2134,7 @@ tp_connection_manager_has_protocol (TpConnectionManager *self,
  * <!-- no more to say -->
  *
  * Returns: %TRUE if @protocol supports the parameter @param.
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_protocol_has_param (
@@ -2153,7 +2153,7 @@ tp_connection_manager_protocol_has_param (
  *
  * Returns: a structure representing the parameter @param, or %NULL if not
  *          supported
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 const TpConnectionManagerParam *
 tp_connection_manager_protocol_get_param (
@@ -2185,7 +2185,7 @@ tp_connection_manager_protocol_get_param (
  * the special "register" parameter to %TRUE.
  *
  * Returns: %TRUE if @protocol supports the parameter "register"
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_protocol_can_register (
@@ -2204,7 +2204,7 @@ tp_connection_manager_protocol_can_register (
  * The result is copied and must be freed by the caller with g_strfreev().
  *
  * Returns: a #GStrv of protocol names
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gchar **
 tp_connection_manager_protocol_dup_param_names (
@@ -2231,7 +2231,7 @@ tp_connection_manager_protocol_dup_param_names (
  * <!-- -->
  *
  * Returns: the name of the parameter
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 const gchar *
 tp_connection_manager_param_get_name (const TpConnectionManagerParam *param)
@@ -2248,7 +2248,7 @@ tp_connection_manager_param_get_name (const TpConnectionManagerParam *param)
  * <!-- -->
  *
  * Returns: the D-Bus signature of the parameter
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 const gchar *
 tp_connection_manager_param_get_dbus_signature (
@@ -2266,7 +2266,7 @@ tp_connection_manager_param_get_dbus_signature (
  * <!-- -->
  *
  * Returns: %TRUE if the parameter is normally required
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_param_is_required (
@@ -2285,7 +2285,7 @@ tp_connection_manager_param_is_required (
  *
  * Returns: %TRUE if the parameter is required when registering a new account
  *          (by setting the special "register" parameter to %TRUE)
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_param_is_required_for_registration (
@@ -2303,7 +2303,7 @@ tp_connection_manager_param_is_required_for_registration (
  * <!-- -->
  *
  * Returns: %TRUE if the parameter's value is a password or other secret
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_param_is_secret (
@@ -2321,7 +2321,7 @@ tp_connection_manager_param_is_secret (
  * <!-- -->
  *
  * Returns: %TRUE if the parameter represents a D-Bus property of the same name
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_param_is_dbus_property (
@@ -2342,7 +2342,7 @@ tp_connection_manager_param_is_dbus_property (
  * returned, @value is left uninitialized.
  *
  * Returns: %TRUE if there is a default value
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 gboolean
 tp_connection_manager_param_get_default (

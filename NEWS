@@ -20,6 +20,9 @@ Enhancements:
 * Generate GTypes for arrays of mappings, and improve use of the
   type-generation functions
 
+* Add tp_intset_new_containing(), a convenient factory for sets with
+  exactly one member
+
 Deprecations:
 
 * Deprecate tp_get_bus_proxy()

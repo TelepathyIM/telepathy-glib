@@ -879,7 +879,7 @@ finally:
  *
  * Returns: the value of the TpConnection:self-handle property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 TpHandle
 tp_connection_get_self_handle (TpConnection *self)

@@ -102,7 +102,7 @@ tp_intset_new ()
  * Returns: a new integer set containing @element, to be destroyed with
  * tp_intset_destroy()
  *
- * @since 0.7.UNRELEASED
+ * @since 0.7.26
  */
 TpIntSet *
 tp_intset_new_containing (guint element)

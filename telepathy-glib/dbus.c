@@ -149,7 +149,7 @@ tp_get_bus (void)
  *
  * Returns: a proxy for the bus daemon object on the starter or session bus.
  *
- * Deprecated: 0.7.UNRELEASED: Use tp_dbus_daemon_dup() in new code.
+ * Deprecated: 0.7.26: Use tp_dbus_daemon_dup() in new code.
  */
 DBusGProxy *
 tp_get_bus_proxy (void)
@@ -630,7 +630,7 @@ static gpointer starter_bus_daemon = NULL;
  * Returns: a reference to a proxy for signals and method calls on the bus
  *  daemon, or %NULL
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.26
  */
 TpDBusDaemon *
 tp_dbus_daemon_dup (GError **error)
