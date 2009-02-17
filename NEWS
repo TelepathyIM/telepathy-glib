@@ -27,8 +27,8 @@ Enhancements:
 * Generate GTypes for arrays of mappings, and improve use of the
   type-generation functions
 
-* Add tp_intset_new_containing(), a convenient factory for sets with
-  exactly one member
+* fd.o #19907: Add tp_intset_new_containing(), a convenient factory for sets
+  with exactly one member
 
 Deprecations:
 
@@ -49,7 +49,10 @@ Fixes:
 * Fix some assertion failures in TpConnectionManager when .manager files
   contain surprising types
 
-* Parse all currently supported types in .manager files
+* fd.o #19054: Parse all currently supported types in .manager files
+
+* fd.o #20096: don't consider InvalidHandle to be fatal for
+  tp_connection_get_contacts_by_id (spec 0.17.18 compliance)
 
 Miscellaneous:
 
