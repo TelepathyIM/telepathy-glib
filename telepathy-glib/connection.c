@@ -1063,8 +1063,98 @@ typedef struct {
     TpConnectionNameListCb callback;
     gpointer user_data;
     GDestroyNotify destroy;
-    size_t base_len;
 } _ListContext;
+
+static gboolean
+_tp_connection_parse (const gchar *path_or_bus_name,
+                      char delimiter,
+                      gchar **protocol,
+                      gchar **cm_name)
+{
+  const gchar *prefix;
+  const gchar *cm_name_start;
+  const gchar *protocol_start;
+  const gchar *account_start;
+  gchar *dup_cm_name = NULL;
+  gchar *dup_protocol = NULL;
+
+  g_return_val_if_fail (delimiter == '.' || delimiter == '/', FALSE);
+
+  /* If CM respects the spec, object path and bus name should be in the form:
+   * /org/freedesktop/Telepathy/Connection/cmname/proto/account
+   * org.freedesktop.Telepathy.Connection.cmname.proto.account
+   */
+  if (delimiter == '.')
+    prefix = TP_CONN_BUS_NAME_BASE;
+  else
+    prefix = TP_CONN_OBJECT_PATH_BASE;
+
+  if (!g_str_has_prefix (path_or_bus_name, prefix))
+    goto OUT;
+
+  cm_name_start = path_or_bus_name + strlen (prefix);
+  protocol_start = strchr (cm_name_start, delimiter);
+  if (protocol_start == NULL)
+    goto OUT;
+  protocol_start++;
+
+  account_start = strchr (protocol_start, delimiter);
+  if (account_start == NULL)
+    goto OUT;
+  account_start++;
+
+  dup_cm_name = g_strndup (cm_name_start, protocol_start - cm_name_start - 1);
+  if (!tp_connection_manager_check_valid_name (dup_cm_name, NULL))
+    {
+      g_free (dup_cm_name);
+      dup_cm_name = NULL;
+      goto OUT;
+    }
+
+  dup_protocol = g_strndup (protocol_start, account_start - protocol_start - 1);
+  if (!tp_strdiff (dup_protocol, "local_2dxmpp"))
+    {
+      /* the CM's telepathy-glib is older than 0.7.x, work around it.
+       * FIXME: Remove this workaround in 0.9.x */
+      g_free (dup_protocol);
+      dup_protocol = g_strdup ("local-xmpp");
+    }
+  else
+    {
+      /* the real protocol name may have "-" in; bus names may not, but
+       * they may have "_", so the Telepathy spec specifies replacement.
+       * Here we need to undo that replacement */
+      g_strdelimit (dup_protocol, "_", '-');
+    }
+
+  if (!tp_connection_manager_check_valid_protocol_name (dup_protocol, NULL))
+    {
+      g_free (dup_protocol);
+      dup_protocol = NULL;
+      goto OUT;
+    }
+
+OUT:
+
+  if (dup_protocol == NULL || dup_cm_name == NULL)
+    {
+      g_free (dup_protocol);
+      g_free (dup_cm_name);
+      return FALSE;
+    }
+
+  if (cm_name != NULL)
+    *cm_name = dup_cm_name;
+  else
+    g_free (dup_cm_name);
+
+  if (protocol != NULL)
+    *protocol = dup_protocol;
+  else
+    g_free (dup_protocol);
+
+  return TRUE;
+}
 
 static void
 tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
@@ -1095,61 +1185,20 @@ tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
 
   for (iter = names; iter != NULL && *iter != NULL; iter++)
     {
-      gchar *dup, *proto, *dot;
+      gchar *proto, *cm_name;
 
-      if (strncmp (TP_CONN_BUS_NAME_BASE, *iter, list_context->base_len) != 0)
-        continue;
-
-      dup = g_strdup (*iter + list_context->base_len);
-      dot = strchr (dup, '.');
-
-      if (dot == NULL)
-        goto invalid;
-
-      *dot = '\0';
-
-      if (!tp_connection_manager_check_valid_name (dup, NULL))
-        goto invalid;
-
-      proto = dot + 1;
-      dot = strchr (proto, '.');
-
-      if (dot == NULL)
-        goto invalid;
-
-      *dot = '\0';
-
-      if (!tp_strdiff (proto, "local_2dxmpp"))
+      if (_tp_connection_parse (*iter, '.', &proto, &cm_name))
         {
-          /* the CM's telepathy-glib is older than 0.7.x, work around it.
-           * FIXME: Remove this workaround in 0.9.x */
-          proto = "local-xmpp";
-        }
-      else
-        {
-          /* the real protocol name may have "-" in; bus names may not, but
-           * they may have "_", so the Telepathy spec specifies replacement.
-           * Here we need to undo that replacement */
-          g_strdelimit (proto, "_", '-');
+          /* the casts here are because g_ptr_array contains non-const pointers -
+           * but in this case I'll only be passing pdata to a callback with const
+           * arguments, so it's fine */
+          g_ptr_array_add (bus_names, (gpointer) *iter);
+          g_ptr_array_add (cms, cm_name);
+          g_ptr_array_add (protocols, proto);
+          continue;
         }
 
-      if (!tp_connection_manager_check_valid_protocol_name (proto, NULL))
-        {
-          goto invalid;
-        }
-
-      /* the casts here are because g_ptr_array contains non-const pointers -
-       * but in this case I'll only be passing pdata to a callback with const
-       * arguments, so it's fine */
-      g_ptr_array_add (bus_names, (gpointer) *iter);
-      g_ptr_array_add (cms, dup);
-      g_ptr_array_add (protocols, (gpointer) proto);
-
-      continue;
-
-invalid:
       DEBUG ("invalid name: %s", *iter);
-      g_free (dup);
     }
 
   g_ptr_array_add (bus_names, NULL);
@@ -1163,7 +1212,7 @@ invalid:
 
   g_ptr_array_free (bus_names, TRUE);
   g_strfreev ((char **) g_ptr_array_free (cms, FALSE));
-  g_ptr_array_free (protocols, TRUE);
+  g_strfreev ((char **) g_ptr_array_free (protocols, FALSE));
 }
 
 static void
@@ -1211,7 +1260,6 @@ tp_list_connection_names (TpDBusDaemon *bus_daemon,
   g_return_if_fail (TP_IS_DBUS_DAEMON (bus_daemon));
   g_return_if_fail (callback != NULL);
 
-  list_context->base_len = strlen (TP_CONN_BUS_NAME_BASE);
   list_context->callback = callback;
   list_context->user_data = user_data;
 
@@ -1454,42 +1502,11 @@ tp_connection_parse_object_path (TpConnection *self,
                                  gchar **cm_name)
 {
   const gchar *object_path;
-  const gchar *cm_name_start = NULL;
-  const gchar *protocol_start = NULL;
-  const gchar *account_start = NULL;
 
   g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
 
-  /* If CM respects the spec, object path must be in that form:
-   * /org/freedesktop/Telepathy/Connection/cmname/proto/account */
   object_path = tp_proxy_get_object_path (TP_PROXY (self));
-  if (!g_str_has_prefix (object_path, TP_CONN_OBJECT_PATH_BASE))
-    return FALSE;
-
-  cm_name_start = object_path + strlen (TP_CONN_OBJECT_PATH_BASE);
-  protocol_start = strchr (cm_name_start, '/');
-  if (protocol_start == NULL)
-    return FALSE;
-  protocol_start++;
-
-  account_start = strchr (protocol_start, '/');
-  if (account_start == NULL)
-    return FALSE;
-  account_start++;
-
-  if (cm_name != NULL)
-    {
-      *cm_name = g_strndup (cm_name_start, protocol_start - cm_name_start - 1);
-      g_strdelimit (*cm_name, "_", '-');
-    }
-
-  if (protocol != NULL)
-    {
-      *protocol = g_strndup (protocol_start, account_start - protocol_start - 1);
-      g_strdelimit (*protocol, "_", '-');
-    }
-
-  return TRUE;
+  return _tp_connection_parse (object_path, '/', protocol, cm_name);
 }
 
 TpContact *
