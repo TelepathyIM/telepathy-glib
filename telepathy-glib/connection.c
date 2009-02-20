@@ -1467,12 +1467,12 @@ tp_connection_parse_object_path (TpConnection *self,
     return FALSE;
 
   cm_name_start = object_path + strlen (TP_CONN_OBJECT_PATH_BASE);
-  protocol_start = strstr (cm_name_start, "/");
+  protocol_start = strchr (cm_name_start, '/');
   if (protocol_start == NULL)
     return FALSE;
   protocol_start++;
 
-  account_start = strstr (protocol_start, "/");
+  account_start = strchr (protocol_start, '/');
   if (account_start == NULL)
     return FALSE;
   account_start++;
