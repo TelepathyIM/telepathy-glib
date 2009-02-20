@@ -98,6 +98,8 @@ conn_ready (TpConnection *connection,
       MYASSERT (parsed ==  TRUE, "");
       MYASSERT_SAME_STRING (proto, "simple-protocol");
       MYASSERT_SAME_STRING (cm_name, "simple");
+      g_free (proto);
+      g_free (cm_name);
     }
   else
     {
