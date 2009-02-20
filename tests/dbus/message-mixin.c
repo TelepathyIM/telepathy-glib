@@ -526,7 +526,7 @@ main (int argc,
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
       g_hash_table_insert (part, "alternative", slice_new_string ("main"));
-      g_hash_table_insert (part, "type", slice_new_string ("text/html"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/html"));
       g_hash_table_insert (part, "content", slice_new_string (
             "Here is a photo of a cat:<br />"
             "<img src=\"cid:lolcat\" alt=\"lol!\" /><br />"
@@ -537,7 +537,7 @@ main (int argc,
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
       g_hash_table_insert (part, "alternative", slice_new_string ("main"));
-      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/plain"));
       g_hash_table_insert (part, "content",
           slice_new_string (EXPECTED_TEXT));
       g_ptr_array_add (send_parts, part);
@@ -545,7 +545,7 @@ main (int argc,
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
       g_hash_table_insert (part, "identifier", slice_new_string ("lolcat"));
-      g_hash_table_insert (part, "type", slice_new_string ("image/jpeg"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("image/jpeg"));
       g_hash_table_insert (part, "content", slice_new_byte_array (
             "\xff\xd8\xff\xe0\x00\x10JFIF\x00...", 14));
       g_ptr_array_add (send_parts, part);
@@ -624,7 +624,7 @@ main (int argc,
           (GDestroyNotify) tp_g_value_slice_free);
       g_hash_table_insert (part, "alternative", slice_new_string ("main"));
       g_hash_table_insert (part, "identifier", slice_new_string ("html"));
-      g_hash_table_insert (part, "type", slice_new_string ("text/html"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/html"));
       g_hash_table_insert (part, "content", slice_new_string (
             "Here is a photo of a cat:<br />"
             "<img src=\"cid:lolcat\" alt=\"lol!\" /><br />"
@@ -636,7 +636,7 @@ main (int argc,
           (GDestroyNotify) tp_g_value_slice_free);
       g_hash_table_insert (part, "alternative", slice_new_string ("main"));
       g_hash_table_insert (part, "identifier", slice_new_string ("text"));
-      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/plain"));
       g_hash_table_insert (part, "content",
           slice_new_string (EXPECTED_TEXT));
       g_ptr_array_add (send_parts, part);
@@ -645,7 +645,7 @@ main (int argc,
           (GDestroyNotify) tp_g_value_slice_free);
       g_hash_table_insert (part, "identifier", slice_new_string ("jpeg"));
       g_hash_table_insert (part, "alternative", slice_new_string ("lolcat"));
-      g_hash_table_insert (part, "type", slice_new_string ("image/jpeg"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("image/jpeg"));
       g_hash_table_insert (part, "content", slice_new_byte_array (
             "\xff\xd8\xff\xe0\x00\x10JFIF\x00...", 14));
       g_ptr_array_add (send_parts, part);
@@ -654,7 +654,7 @@ main (int argc,
           (GDestroyNotify) tp_g_value_slice_free);
       g_hash_table_insert (part, "identifier", slice_new_string ("png"));
       g_hash_table_insert (part, "alternative", slice_new_string ("lolcat"));
-      g_hash_table_insert (part, "type", slice_new_string ("image/png"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("image/png"));
       g_hash_table_insert (part, "content", slice_new_byte_array (
             "\x89PNG\x0d\x0a\x1a\x0a\x00...", 12));
       g_ptr_array_add (send_parts, part);
@@ -734,21 +734,21 @@ main (int argc,
 
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/plain"));
       g_hash_table_insert (part, "content",
           slice_new_string ("I'm on a roll\n"));
       g_ptr_array_add (send_parts, part);
 
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/plain"));
       g_hash_table_insert (part, "content",
           slice_new_string ("I'm on a roll this time\n"));
       g_ptr_array_add (send_parts, part);
 
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/plain"));
       g_hash_table_insert (part, "content",
           slice_new_string ("I feel my luck could change\n"));
       g_ptr_array_add (send_parts, part);
@@ -824,7 +824,7 @@ main (int argc,
 
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/plain"));
       g_hash_table_insert (part, "alternative", slice_new_string ("alt"));
       g_hash_table_insert (part, "lang", slice_new_string ("fr_CA@collabora"));
       g_hash_table_insert (part, "content", slice_new_string (EXPECTED_TEXT));
@@ -832,7 +832,7 @@ main (int argc,
 
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/plain"));
       g_hash_table_insert (part, "alternative", slice_new_string ("alt"));
       g_hash_table_insert (part, "lang", slice_new_string ("en_GB"));
       g_hash_table_insert (part, "content",
@@ -841,7 +841,7 @@ main (int argc,
 
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
           (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "type", slice_new_string ("text/plain"));
+      g_hash_table_insert (part, "content-type", slice_new_string ("text/plain"));
       g_hash_table_insert (part, "alternative", slice_new_string ("alt"));
       g_hash_table_insert (part, "lang", slice_new_string ("en_US"));
       g_hash_table_insert (part, "content",
