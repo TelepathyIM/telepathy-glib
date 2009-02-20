@@ -1433,6 +1433,65 @@ tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
 }
 
 
+/**
+ * tp_connection_parse_object_path:
+ * @self: a connection
+ * @protocol: If not NULL, used to return the protocol of the connection
+ * @cm_name: If not NULL, used to return the connection manager name of the
+ * connection
+ *
+ * If the object path of @connection is in the correct form, set
+ * @protocol and @cm_name, return TRUE. Otherwise leave them unchanged and
+ * return FALSE.
+ *
+ * Returns: TRUE if the object path was correctly parsed, FALSE otherwise.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+gboolean
+tp_connection_parse_object_path (TpConnection *self,
+                                 gchar **protocol,
+                                 gchar **cm_name)
+{
+  const gchar *object_path;
+  const gchar *cm_name_start = NULL;
+  const gchar *protocol_start = NULL;
+  const gchar *account_start = NULL;
+
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  /* If CM respects the spec, object path must be in that form:
+   * /org/freedesktop/Telepathy/Connection/cmname/proto/account */
+  object_path = tp_proxy_get_object_path (TP_PROXY (self));
+  if (!g_str_has_prefix (object_path, TP_CONN_OBJECT_PATH_BASE))
+    return FALSE;
+
+  cm_name_start = object_path + strlen (TP_CONN_OBJECT_PATH_BASE);
+  protocol_start = strstr (cm_name_start, "/");
+  if (protocol_start == NULL)
+    return FALSE;
+  protocol_start++;
+
+  account_start = strstr (protocol_start, "/");
+  if (account_start == NULL)
+    return FALSE;
+  account_start++;
+
+  if (cm_name != NULL)
+    {
+      *cm_name = g_strndup (cm_name_start, protocol_start - cm_name_start - 1);
+      g_strdelimit (*cm_name, "_", '-');
+    }
+
+  if (protocol != NULL)
+    {
+      *protocol = g_strndup (protocol_start, account_start - protocol_start - 1);
+      g_strdelimit (*protocol, "_", '-');
+    }
+
+  return TRUE;
+}
+
 TpContact *
 _tp_connection_lookup_contact (TpConnection *self,
                                TpHandle handle)

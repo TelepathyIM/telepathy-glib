@@ -89,7 +89,15 @@ conn_ready (TpConnection *connection,
 
   if (error == NULL)
     {
+      gboolean parsed;
+      gchar *proto = NULL;
+      gchar *cm_name = NULL;
+
       g_message ("connection %p ready", connection);
+      parsed = tp_connection_parse_object_path (connection, &proto, &cm_name);
+      MYASSERT (parsed ==  TRUE, "");
+      MYASSERT_SAME_STRING (proto, "simple-protocol");
+      MYASSERT_SAME_STRING (cm_name, "simple");
     }
   else
     {
@@ -192,7 +200,7 @@ main (int argc,
   service_conn = SIMPLE_CONNECTION (g_object_new (
         SIMPLE_TYPE_CONNECTION,
         "account", "me@example.com",
-        "protocol", "simple",
+        "protocol", "simple-protocol",
         NULL));
   service_conn_as_base = TP_BASE_CONNECTION (service_conn);
   MYASSERT (service_conn != NULL, "");
