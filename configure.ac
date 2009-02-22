@@ -194,6 +194,8 @@ if test -z "$NM"; then
 fi
 AM_CONDITIONAL([HAVE_LD_VERSION_SCRIPT], [test $HAVE_LD_VERSION_SCRIPT = yes])
 
+SHAVE_INIT(.)
+
 AC_OUTPUT( Makefile \
 	   docs/Makefile \
 	   docs/reference/Makefile \
@@ -218,4 +220,6 @@ AC_OUTPUT( Makefile \
 	   tests/tools/Makefile \
 	   tools/Makefile \
 	   m4/Makefile \
+	   shave \
+	   shave-libtool
 )
