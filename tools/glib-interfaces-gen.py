@@ -27,8 +27,8 @@ class Generator(object):
             file.write(' version ' + get_descendant_text(version))
         file.write('\n\n')
         for copyright in get_by_path(self.spec, 'copyright'):
-            stdout.write(get_descendant_text(copyright))
-            stdout.write('\n')
+            file.write(get_descendant_text(copyright))
+            file.write('\n')
         file.write('\n')
         file.write(get_descendant_text(get_by_path(self.spec, 'license')))
         file.write(get_descendant_text(get_by_path(self.spec, 'docstring')))
