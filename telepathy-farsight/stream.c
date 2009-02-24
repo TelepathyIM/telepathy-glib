@@ -50,17 +50,17 @@
 G_DEFINE_TYPE (TfStream, tf_stream, G_TYPE_OBJECT);
 
 #define DEBUG(stream, format, ...) \
-  g_debug ("stream %d (%s) %s: " format, \
-    stream->stream_id, \
-    (stream->priv->media_type == FS_MEDIA_TYPE_AUDIO) ? "audio" \
+  g_debug ("stream %d %p (%s) %s: " format, \
+    stream->stream_id, stream,                                   \
+    (stream->priv->media_type == FS_MEDIA_TYPE_AUDIO) ? "audio"  \
                                                       : "video", \
     G_STRFUNC, \
     ##__VA_ARGS__)
 
 #define WARNING(stream, format, ...) \
-  g_warning ("stream %d (%s) %s: " format, \
-    stream->stream_id, \
-    (stream->priv->media_type == FS_MEDIA_TYPE_AUDIO) ? "audio" \
+  g_warning ("stream %d %p (%s) %s: " format, \
+    stream->stream_id, stream,                                   \
+    (stream->priv->media_type == FS_MEDIA_TYPE_AUDIO) ? "audio"  \
                                                       : "video", \
     G_STRFUNC, \
     ##__VA_ARGS__)
