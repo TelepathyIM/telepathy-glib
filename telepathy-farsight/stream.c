@@ -1441,6 +1441,20 @@ stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     WARNING (self, "stopping event failed");
 }
 
+
+static void
+tf_stream_shutdown (TfStream *self)
+{
+  g_object_set (self->priv->fs_stream,
+            "direction", FS_DIRECTION_NONE,
+            NULL);
+  tf_stream_free_resource (self,
+      TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+
+  g_signal_emit (self, signals[CLOSED], 0);
+}
+
+
 static void
 close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
        gpointer user_data G_GNUC_UNUSED,
@@ -1450,13 +1464,7 @@ close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   DEBUG (self, "close requested by connection manager");
 
-  g_object_set (self->priv->fs_stream,
-            "direction", FS_DIRECTION_NONE,
-            NULL);
-  tf_stream_free_resource (self,
-      TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
-
-  g_signal_emit (self, signals[CLOSED], 0);
+  tf_stream_shutdown (self);
 }
 
 static void
@@ -1512,6 +1520,8 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 {
   TfStream *stream = TF_STREAM (user_data);
 
+  DEBUG (stream, "proxy invalidated");
+
   if (stream->priv->stream_handler_proxy)
     {
       TpMediaStreamHandler *tmp = stream->priv->stream_handler_proxy;
@@ -1519,6 +1529,8 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       stream->priv->stream_handler_proxy = NULL;
       g_object_unref (tmp);
     }
+
+  tf_stream_shutdown (stream);
 }
 
 /**
