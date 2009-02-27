@@ -72,7 +72,7 @@ struct _TpPropertiesMixinPrivate {
     TpPropertiesContext context;
 };
 
-/**
+/*
  * tp_properties_mixin_class_get_offset_quark:
  *
  * Returns: the quark used for storing mixin offset on a GObjectClass
@@ -87,7 +87,7 @@ tp_properties_mixin_class_get_offset_quark ()
   return offset_quark;
 }
 
-/**
+/*
  * tp_properties_mixin_get_offset_quark:
  *
  * Returns: the quark used for storing mixin offset on a GObject

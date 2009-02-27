@@ -631,7 +631,7 @@ exportable_channel_get_old_info (TpExportableChannel *channel,
 }
 
 
-/**
+/*
  * get_channel_details:
  * @obj: a channel, which must implement one of #TpExportableChannel and
  *       #TpChannelIface
@@ -2933,7 +2933,7 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
 }
 
 
-/**
+/*
  * @target_handle: non-zero if a TargetHandle property was in the request;
  *                 zero if TargetHandle was not in the request.
  */

@@ -63,7 +63,10 @@
  * The class of a #TpChannel. In addition to @parent_class there are four
  * pointers reserved for possible future use.
  *
- * Since: 0.7.1; structure layout visible since 0.7.12
+ * (Changed in 0.7.12: the layout of the structure is visible, allowing
+ * subclassing.)
+ *
+ * Since: 0.7.1
  */
 
 
@@ -74,7 +77,10 @@
  *
  * A proxy object for a Telepathy channel.
  *
- * Since: 0.7.1; structure layout visible since 0.7.12
+ * (Changed in 0.7.12: the layout of the structure is visible, allowing
+ * subclassing.)
+ *
+ * Since: 0.7.1
  */
 
 
