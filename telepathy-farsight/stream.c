@@ -1446,9 +1446,10 @@ stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 static void
 tf_stream_shutdown (TfStream *self)
 {
-  g_object_set (self->priv->fs_stream,
-            "direction", FS_DIRECTION_NONE,
-            NULL);
+  if (self->priv->fs_stream)
+    g_object_set (self->priv->fs_stream,
+        "direction", FS_DIRECTION_NONE,
+        NULL);
   tf_stream_free_resource (self,
       TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
 
