@@ -134,6 +134,13 @@ fi
 AC_SUBST(HANDLE_LEAK_DEBUG_CFLAGS)
 AC_SUBST(COVERAGE_CFLAGS)
 
+AC_ARG_ENABLE([installed-examples],
+  AC_HELP_STRING([--enable-installed-examples],
+    [install examples as well as the library]),
+    [enable_installed_examples="$enableval"],
+    [enable_installed_examples=no])
+AM_CONDITIONAL([INSTALL_EXAMPLES], [test "$enable_installed_examples" = yes])
+
 AC_SUBST([ENABLE_CODING_STYLE_CHECKS])
 
 dnl docs/Makefile.am needs to know whether it's an out of tree build
