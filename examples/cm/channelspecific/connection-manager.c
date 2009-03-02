@@ -74,15 +74,7 @@ account_param_filter (const TpCMParamSpec *paramspec,
   return TRUE;
 }
 
-
-static const TpCMParamSpec example_params[] = {
-  { "account", DBUS_TYPE_STRING_AS_STRING, G_TYPE_STRING,
-    TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER, NULL,
-    G_STRUCT_OFFSET (ExampleParams, account),
-    account_param_filter, NULL },
-
-  { NULL }
-};
+#include "_gen/param-spec-struct.h"
 
 static gpointer
 alloc_params (void)
@@ -101,7 +93,7 @@ free_params (gpointer p)
 }
 
 static const TpCMProtocolSpec example_protocols[] = {
-  { "example", example_params, alloc_params, free_params },
+  { "example", example_csh_example_params, alloc_params, free_params },
   { NULL, NULL }
 };
 
