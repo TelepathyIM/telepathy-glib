@@ -49,6 +49,8 @@ typedef struct {
   gchar *relay_token;
 } TfNatProperties;
 
+typedef void (NewStreamCreatedCb) (TfStream *stream, gpointer channel);
+
 TfStream *
 _tf_stream_new (gpointer channel,
     FsConference *conference,
@@ -59,7 +61,7 @@ _tf_stream_new (gpointer channel,
     TpMediaStreamDirection direction,
     TfNatProperties *nat_props,
     GList *local_codecs_config,
-    GError **error);
+    NewStreamCreatedCb new_stream_created_cb);
 
 gboolean _tf_stream_bus_message (TfStream *stream,
     GstMessage *message);

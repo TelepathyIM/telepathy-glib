@@ -79,8 +79,6 @@ struct _TfStreamPrivate
   const TfNatProperties *nat_props;
   GList *local_preferences;
 
-  GError *construction_error;
-
   TpMediaStreamHandler *stream_handler_proxy;
 
   FsStreamDirection desired_direction;
@@ -93,6 +91,8 @@ struct _TfStreamPrivate
 
   gboolean send_local_codecs;
   gboolean send_supported_codecs;
+
+  NewStreamCreatedCb *new_stream_created_cb;
 };
 
 enum
@@ -122,7 +122,11 @@ enum
   PROP_LOCAL_PREFERENCES
 };
 
-
+static void get_all_properties_cb (TpProxy *proxy,
+    GHashTable *out_Properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object);
 static gboolean tf_stream_request_resource (
     TfStream *self,
     TpMediaStreamDirection dir);
@@ -175,6 +179,8 @@ static void async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     const GError *error,
     gpointer user_data,
     GObject *weak_object);
+static void tf_stream_shutdown (TfStream *self);
+
 
 static void cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     GstPad *pad,
@@ -295,157 +301,19 @@ tf_stream_constructor (GType type,
 {
   GObject *obj;
   TfStream *stream;
-  TfStreamPrivate *priv;
-  TfStreamClass *klass = NULL;
-  gchar *transmitter;
-  guint n_args = 0;
-  GList *preferred_local_candidates = NULL;
-  GParameter params[MAX_STREAM_TRANS_PARAMS];
+
 
   obj = G_OBJECT_CLASS (tf_stream_parent_class)->
-            constructor (type, n_props, props);
-  stream = (TfStream *) obj;
-  priv = stream->priv;
-  klass = TF_STREAM_GET_CLASS(obj);
+      constructor (type, n_props, props);
 
-  g_signal_connect (priv->stream_handler_proxy, "invalidated",
+  stream = TF_STREAM (obj);
+
+  g_signal_connect (stream->priv->stream_handler_proxy, "invalidated",
       G_CALLBACK (invalidated_cb), obj);
 
-  tp_cli_media_stream_handler_connect_to_add_remote_candidate
-      (priv->stream_handler_proxy, add_remote_candidate, NULL, NULL, obj,
-       NULL);
-  tp_cli_media_stream_handler_connect_to_remove_remote_candidate
-      (priv->stream_handler_proxy, remove_remote_candidate, NULL, NULL, obj,
-       NULL);
-  tp_cli_media_stream_handler_connect_to_set_active_candidate_pair
-      (priv->stream_handler_proxy, set_active_candidate_pair, NULL, NULL, obj,
-       NULL);
-  tp_cli_media_stream_handler_connect_to_set_remote_candidate_list
-      (priv->stream_handler_proxy, set_remote_candidate_list, NULL, NULL, obj,
-       NULL);
-  tp_cli_media_stream_handler_connect_to_set_remote_codecs
-      (priv->stream_handler_proxy, set_remote_codecs, NULL, NULL, obj, NULL);
-  tp_cli_media_stream_handler_connect_to_set_stream_playing
-      (priv->stream_handler_proxy, set_stream_playing, NULL, NULL, obj, NULL);
-  tp_cli_media_stream_handler_connect_to_set_stream_sending
-      (priv->stream_handler_proxy, set_stream_sending, NULL, NULL, obj, NULL);
-  tp_cli_media_stream_handler_connect_to_set_stream_held
-      (priv->stream_handler_proxy, set_stream_held, NULL, NULL, obj, NULL);
-  tp_cli_media_stream_handler_connect_to_start_telephony_event
-      (priv->stream_handler_proxy, start_telephony_event, NULL, NULL, obj,
-       NULL);
-  tp_cli_media_stream_handler_connect_to_stop_telephony_event
-      (priv->stream_handler_proxy, stop_telephony_event, NULL, NULL, obj,
-       NULL);
-  tp_cli_media_stream_handler_connect_to_close
-      (priv->stream_handler_proxy, close, NULL, NULL, obj, NULL);
-
-  memset (params, 0, sizeof(GParameter) * MAX_STREAM_TRANS_PARAMS);
-
-  if (stream->priv->nat_props == NULL ||
-      stream->priv->nat_props->nat_traversal == NULL ||
-      !strcmp (stream->priv->nat_props->nat_traversal, "gtalk-p2p"))
-    {
-      transmitter = "nice";
-
-      params[n_args].name = "compatibility-mode";
-      g_value_init (&params[n_args].value, G_TYPE_UINT);
-      g_value_set_uint (&params[n_args].value, 1);
-      n_args++;
-    }
-  else if (!strcmp (stream->priv->nat_props->nat_traversal, "ice-udp"))
-    {
-      transmitter = "nice";
-    }
-  else
-    {
-      transmitter = "rawudp";
-
-      if (stream->priv->media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
-        preferred_local_candidates = g_list_prepend (NULL,
-            fs_candidate_new (NULL, FS_COMPONENT_RTP, FS_CANDIDATE_TYPE_HOST,
-                FS_NETWORK_PROTOCOL_UDP, NULL, 7078));
-      else if (stream->priv->media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
-        preferred_local_candidates = g_list_prepend (NULL,
-            fs_candidate_new (NULL, FS_COMPONENT_RTP, FS_CANDIDATE_TYPE_HOST,
-                FS_NETWORK_PROTOCOL_UDP, NULL, 9078));
-    }
-
-  if (stream->priv->nat_props &&
-      stream->priv->nat_props->stun_server &&
-      stream->priv->nat_props->stun_port)
-    {
-      gchar *conn_timeout_str = NULL;
-
-      params[n_args].name = "stun-ip";
-      g_value_init (&params[n_args].value, G_TYPE_STRING);
-      g_value_set_string (&params[n_args].value,
-          stream->priv->nat_props->stun_server);
-      n_args++;
-
-      params[n_args].name = "stun-port";
-      g_value_init (&params[n_args].value, G_TYPE_UINT);
-      g_value_set_uint (&params[n_args].value,
-          stream->priv->nat_props->stun_port);
-      n_args++;
-
-      conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
-
-      if (conn_timeout_str)
-        {
-          gint conn_timeout = strtol (conn_timeout_str, NULL, 10);
-
-          params[n_args].name = "stun-timeout";
-          g_value_init (&params[n_args].value, G_TYPE_UINT);
-          g_value_set_uint (&params[n_args].value, conn_timeout);
-          n_args++;
-        }
-    }
-
-  if (preferred_local_candidates)
-    {
-      params[n_args].name = "preferred-local-candidates";
-      g_value_init (&params[n_args].value, FS_TYPE_CANDIDATE_LIST);
-      g_value_take_boxed (&params[n_args].value,
-          preferred_local_candidates);
-      n_args++;
-    }
-
-  stream->priv->fs_session = fs_conference_new_session (
-      stream->priv->fs_conference,
-      tp_media_type_to_fs (stream->priv->media_type),
-      &stream->priv->construction_error);
-
-  if (!stream->priv->fs_session)
-    return obj;
-
-  stream->priv->fs_stream = fs_session_new_stream (stream->priv->fs_session,
-      stream->priv->fs_participant,
-      FS_DIRECTION_NONE,
-      transmitter,
-      n_args,
-      params,
-      &stream->priv->construction_error);
-
-  if (!stream->priv->fs_stream)
-    return obj;
-
-  if (stream->priv->local_preferences)
-    if (!fs_session_set_codec_preferences (stream->priv->fs_session,
-            stream->priv->local_preferences,
-            &stream->priv->construction_error))
-      return obj;
-
-
-  if (g_object_class_find_property (
-          G_OBJECT_GET_CLASS (stream->priv->fs_session),
-          "no-rtcp-timeout"))
-    g_object_set (stream->priv->fs_session, "no-rtcp-timeout", 0, NULL);
-
-  g_signal_connect (stream->priv->fs_stream, "src-pad-added",
-      G_CALLBACK (cb_fs_stream_src_pad_added), stream);
-
-  stream->priv->send_local_codecs = TRUE;
+  tp_cli_dbus_properties_call_get_all (stream->priv->stream_handler_proxy,
+      -1, "org.freedesktop.Telepathy.Media.StreamHandler",
+      get_all_properties_cb, NULL, NULL, obj);
 
   return obj;
 }
@@ -705,6 +573,186 @@ tf_stream_class_init (TfStreamClass *klass)
           NULL, NULL,
           _tf_marshal_VOID__OBJECT_BOXED,
           G_TYPE_NONE, 2, GST_TYPE_PAD, FS_TYPE_CODEC);
+}
+
+static void
+get_all_properties_cb (TpProxy *proxy,
+    GHashTable *out_Properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TfStream *stream = TF_STREAM (weak_object);
+  GError *myerror = NULL;
+  gchar *transmitter;
+  guint n_args = 0;
+  GList *preferred_local_candidates = NULL;
+  GParameter params[MAX_STREAM_TRANS_PARAMS];
+
+  if (error)
+    {
+      tf_stream_error (stream, 0, error->message);
+      return;
+    }
+
+  tp_cli_media_stream_handler_connect_to_add_remote_candidate
+      (stream->priv->stream_handler_proxy, add_remote_candidate, NULL, NULL,
+          (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_remove_remote_candidate
+      (stream->priv->stream_handler_proxy, remove_remote_candidate, NULL, NULL,
+          (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_set_active_candidate_pair
+      (stream->priv->stream_handler_proxy, set_active_candidate_pair, NULL,
+          NULL, (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_set_remote_candidate_list
+      (stream->priv->stream_handler_proxy, set_remote_candidate_list, NULL,
+          NULL, (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_set_remote_codecs
+      (stream->priv->stream_handler_proxy, set_remote_codecs, NULL, NULL,
+          (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_set_stream_playing
+      (stream->priv->stream_handler_proxy, set_stream_playing, NULL, NULL,
+          (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_set_stream_sending
+      (stream->priv->stream_handler_proxy, set_stream_sending, NULL, NULL,
+          (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_set_stream_held
+      (stream->priv->stream_handler_proxy, set_stream_held, NULL, NULL,
+          (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_start_telephony_event
+      (stream->priv->stream_handler_proxy, start_telephony_event, NULL, NULL,
+          (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_stop_telephony_event
+      (stream->priv->stream_handler_proxy, stop_telephony_event, NULL, NULL,
+          (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_close
+      (stream->priv->stream_handler_proxy, close, NULL, NULL,
+          (GObject*) stream, NULL);
+
+  memset (params, 0, sizeof(GParameter) * MAX_STREAM_TRANS_PARAMS);
+
+  if (stream->priv->nat_props == NULL ||
+      stream->priv->nat_props->nat_traversal == NULL ||
+      !strcmp (stream->priv->nat_props->nat_traversal, "gtalk-p2p"))
+    {
+      transmitter = "nice";
+
+      params[n_args].name = "compatibility-mode";
+      g_value_init (&params[n_args].value, G_TYPE_UINT);
+      g_value_set_uint (&params[n_args].value, 1);
+      n_args++;
+    }
+  else if (!strcmp (stream->priv->nat_props->nat_traversal, "ice-udp"))
+    {
+      transmitter = "nice";
+    }
+  else
+    {
+      transmitter = "rawudp";
+
+      if (stream->priv->media_type == TP_MEDIA_STREAM_TYPE_AUDIO)
+        preferred_local_candidates = g_list_prepend (NULL,
+            fs_candidate_new (NULL, FS_COMPONENT_RTP, FS_CANDIDATE_TYPE_HOST,
+                FS_NETWORK_PROTOCOL_UDP, NULL, 7078));
+      else if (stream->priv->media_type == TP_MEDIA_STREAM_TYPE_VIDEO)
+        preferred_local_candidates = g_list_prepend (NULL,
+            fs_candidate_new (NULL, FS_COMPONENT_RTP, FS_CANDIDATE_TYPE_HOST,
+                FS_NETWORK_PROTOCOL_UDP, NULL, 9078));
+    }
+
+  if (stream->priv->nat_props &&
+      stream->priv->nat_props->stun_server &&
+      stream->priv->nat_props->stun_port)
+    {
+      gchar *conn_timeout_str = NULL;
+
+      params[n_args].name = "stun-ip";
+      g_value_init (&params[n_args].value, G_TYPE_STRING);
+      g_value_set_string (&params[n_args].value,
+          stream->priv->nat_props->stun_server);
+      n_args++;
+
+      params[n_args].name = "stun-port";
+      g_value_init (&params[n_args].value, G_TYPE_UINT);
+      g_value_set_uint (&params[n_args].value,
+          stream->priv->nat_props->stun_port);
+      n_args++;
+
+      conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
+
+      if (conn_timeout_str)
+        {
+          gint conn_timeout = strtol (conn_timeout_str, NULL, 10);
+
+          params[n_args].name = "stun-timeout";
+          g_value_init (&params[n_args].value, G_TYPE_UINT);
+          g_value_set_uint (&params[n_args].value, conn_timeout);
+          n_args++;
+        }
+    }
+
+  if (preferred_local_candidates)
+    {
+      params[n_args].name = "preferred-local-candidates";
+      g_value_init (&params[n_args].value, FS_TYPE_CANDIDATE_LIST);
+      g_value_take_boxed (&params[n_args].value,
+          preferred_local_candidates);
+      n_args++;
+    }
+
+  stream->priv->fs_session = fs_conference_new_session (
+      stream->priv->fs_conference,
+      tp_media_type_to_fs (stream->priv->media_type),
+      &myerror);
+
+  if (!stream->priv->fs_session)
+    {
+      tf_stream_error (stream, 0, error->message);
+      WARNING (stream, "Error creating session: %s", myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+  stream->priv->fs_stream = fs_session_new_stream (stream->priv->fs_session,
+      stream->priv->fs_participant,
+      FS_DIRECTION_NONE,
+      transmitter,
+      n_args,
+      params,
+      &myerror);
+
+  if (!stream->priv->fs_stream)
+    {
+      tf_stream_error (stream, 0, error->message);
+      WARNING (stream, "Error creating stream: %s", myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+  if (stream->priv->local_preferences)
+    if (!fs_session_set_codec_preferences (stream->priv->fs_session,
+            stream->priv->local_preferences,
+            &myerror))
+      {
+        tf_stream_error (stream, 0, error->message);
+        WARNING (stream, "Error sestting codec preferences: %s",
+            myerror->message);
+        g_clear_error (&myerror);
+        return;
+      }
+
+
+  if (g_object_class_find_property (
+          G_OBJECT_GET_CLASS (stream->priv->fs_session),
+          "no-rtcp-timeout"))
+    g_object_set (stream->priv->fs_session, "no-rtcp-timeout", 0, NULL);
+
+  g_signal_connect (stream->priv->fs_stream, "src-pad-added",
+      G_CALLBACK (cb_fs_stream_src_pad_added), stream);
+
+  stream->priv->send_local_codecs = TRUE;
+
+  stream->priv->new_stream_created_cb (stream, stream->priv->channel);
 }
 
 /* dummy callback handler for async calling calls with no return values */
@@ -1759,8 +1807,7 @@ _tf_stream_new (gpointer channel,
     TpMediaStreamDirection direction,
     TfNatProperties *nat_props,
     GList *local_preferences,
-    GError **error)
-
+    NewStreamCreatedCb new_stream_created_cb)
 {
   TfStream *self = NULL;
 
@@ -1776,13 +1823,7 @@ _tf_stream_new (gpointer channel,
       "codec-preferences", local_preferences,
       NULL);
 
-  if (self->priv->construction_error)
-    {
-      tf_stream_error (self, 0, self->priv->construction_error->message);
-      g_propagate_error (error, self->priv->construction_error);
-      g_object_unref (self);
-      return NULL;
-    }
+  self->priv->new_stream_created_cb = new_stream_created_cb;
 
   return self;
 }

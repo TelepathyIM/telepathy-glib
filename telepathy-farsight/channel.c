@@ -637,6 +637,16 @@ stream_closed_cb (TfStream *stream,
 }
 
 static void
+stream_created_cb (TfStream *stream, gpointer user_data)
+{
+  TfChannel *self = user_data;
+
+  g_signal_emit (self, signals[STREAM_CREATED], 0, stream);
+
+  _tf_stream_try_sending_codecs (stream);
+}
+
+static void
 new_stream_cb (TfSession *session,
     gchar *object_path,
     guint stream_id,
@@ -650,7 +660,6 @@ new_stream_cb (TfSession *session,
   FsParticipant *fs_participant;
   TpProxy *channel_as_proxy = (TpProxy *) self->priv->channel_proxy;
   TpMediaStreamHandler *proxy;
-  GError *error = NULL;
   GList *local_codec_config = NULL;
 
   proxy = tp_media_stream_handler_new (channel_as_proxy->dbus_daemon,
@@ -679,18 +688,14 @@ new_stream_cb (TfSession *session,
 
   stream = _tf_stream_new ((gpointer) self, fs_conference,
       fs_participant, proxy, stream_id, media_type, direction,
-      &self->priv->nat_props, local_codec_config, &error);
+      &self->priv->nat_props, local_codec_config,
+      stream_created_cb);
 
   fs_codec_list_destroy (local_codec_config);
 
   if (!stream)
     {
-      gchar *str = g_strdup_printf ("Error creating stream: %s",
-          error->message);
-      g_clear_error (&error);
-      g_warning (str);
-      tf_channel_error (self, 0, str);
-      g_free (str);
+      tf_channel_error (self, 0, "Error creating stream");
       return;
     }
 
@@ -717,10 +722,6 @@ new_stream_cb (TfSession *session,
   g_ptr_array_index (self->priv->streams, stream_id) = stream;
   g_signal_connect (stream, "closed", G_CALLBACK (stream_closed_cb),
       self);
-
-  g_signal_emit (self, signals[STREAM_CREATED], 0, stream);
-
-  _tf_stream_try_sending_codecs (stream);
 }
 
 static void
