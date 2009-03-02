@@ -1580,6 +1580,9 @@ _tf_stream_bus_message (TfStream *stream,
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return FALSE;
 
+  if (!stream->priv->fs_stream || !stream->priv->fs_session)
+    return FALSE;
+
   if (gst_structure_has_name (s, "farsight-error"))
     {
       GObject *object;
