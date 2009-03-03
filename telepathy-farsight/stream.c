@@ -697,6 +697,10 @@ get_all_properties_cb (TpProxy *proxy,
           GValue *stun_ip = g_value_array_get_nth (stun_server, 0);
           GValue *stun_port = g_value_array_get_nth (stun_server, 1);
 
+          DEBUG (stream, "Adding STUN server %s:%u",
+              g_value_get_string (stun_ip),
+              g_value_get_uint (stun_port));
+
           params[n_args].name = "stun-ip";
           g_value_init (&params[n_args].value, G_TYPE_STRING);
           g_value_copy (stun_ip, &params[n_args].value);
@@ -715,6 +719,9 @@ get_all_properties_cb (TpProxy *proxy,
       stream->priv->nat_props->stun_server &&
       stream->priv->nat_props->stun_port)
     {
+      DEBUG (stream, "Adding STUN server (old API) %s:%u",
+          stream->priv->nat_props->stun_server,
+          stream->priv->nat_props->stun_port);
       params[n_args].name = "stun-ip";
       g_value_init (&params[n_args].value, G_TYPE_STRING);
       g_value_set_string (&params[n_args].value,
@@ -789,6 +796,12 @@ get_all_properties_cb (TpProxy *proxy,
 
           if (component)
             gst_structure_set (s, "component", G_TYPE_UINT, component, NULL);
+
+          if (!type)
+            type = "udp";
+
+          DEBUG (stream, "Adding relay (%s) %s:%u %s:%s %u",
+              type, ip, port, username, password, component);
 
           g_value_take_boxed (&val, s);
 
