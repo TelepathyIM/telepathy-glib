@@ -591,6 +591,7 @@ get_all_properties_cb (TpProxy *proxy,
   const gchar *nat_traversal = NULL;
   GPtrArray *stun_servers;
   gboolean got_stun = FALSE;
+  GPtrArray *dbus_relay_info;
 
   if (error)
     {
@@ -743,6 +744,67 @@ get_all_properties_cb (TpProxy *proxy,
           g_value_set_uint (&params[n_args].value, conn_timeout);
           n_args++;
         }
+    }
+
+  dbus_relay_info = tp_asv_get_boxed (out_Properties, "RelayInfo",
+      G_TYPE_VALUE_ARRAY);
+
+  if (dbus_relay_info && dbus_relay_info->len)
+    {
+      GValueArray *fs_relay_info = g_value_array_new (0);
+      guint i;
+      GValue val = {0};
+      g_value_init (&val, GST_TYPE_STRUCTURE);
+
+      for (i = 0; i < dbus_relay_info->len; i++)
+        {
+          GHashTable *one_relay = g_ptr_array_index(dbus_relay_info, i);
+          const gchar *type;
+          const gchar *ip;
+          guint32 port;
+          const gchar *username;
+          const gchar *password;
+          guint component;
+          GstStructure *s;
+
+          ip = tp_asv_get_string (one_relay, "ip");
+          port = tp_asv_get_uint32 (one_relay, "port", NULL);
+          type = tp_asv_get_string (one_relay, "type");
+          username = tp_asv_get_string (one_relay, "username");
+          password = tp_asv_get_string (one_relay, "password");
+          component = tp_asv_get_uint32 (one_relay, "component", NULL);
+
+          if (!ip || !port || !username || !password)
+              continue;
+
+          s = gst_structure_new ("relay-info",
+              "ip", G_TYPE_STRING, ip,
+              "port", G_TYPE_UINT, port,
+              "username", G_TYPE_STRING, username,
+              "pasword", G_TYPE_STRING, password,
+              NULL);
+
+          if (type)
+            gst_structure_set (s, "relay-type", G_TYPE_STRING, type, NULL);
+
+          if (component)
+            gst_structure_set (s, "component", G_TYPE_UINT, component, NULL);
+
+          g_value_take_boxed (&val, s);
+
+          g_value_array_append (fs_relay_info, &val);
+          g_value_reset (&val);
+        }
+
+      if (fs_relay_info->n_values)
+        {
+          params[n_args].name = "relay-info";
+          g_value_init (&params[n_args].value, G_TYPE_VALUE_ARRAY);
+          g_value_set_boxed (&params[n_args].value, fs_relay_info);
+          n_args++;
+        }
+
+      g_value_array_free (fs_relay_info);
     }
 
   if (preferred_local_candidates)
