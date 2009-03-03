@@ -284,8 +284,7 @@ enum
 
 static guint signals[N_SIGNALS] = {0};
 
-#define TP_BASE_CONNECTION_GET_PRIVATE(obj) \
-    ((TpBaseConnectionPrivate *) obj->priv)
+#define TP_BASE_CONNECTION_GET_PRIVATE(obj) (obj->priv)
 
 typedef struct _ChannelRequest ChannelRequest;
 
