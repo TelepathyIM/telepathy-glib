@@ -589,6 +589,8 @@ get_all_properties_cb (TpProxy *proxy,
   GList *preferred_local_candidates = NULL;
   GParameter params[MAX_STREAM_TRANS_PARAMS];
   const gchar *nat_traversal = NULL;
+  GPtrArray *stun_servers;
+  gboolean got_stun = FALSE;
 
   if (error)
     {
@@ -681,12 +683,37 @@ get_all_properties_cb (TpProxy *proxy,
                 FS_NETWORK_PROTOCOL_UDP, NULL, 9078));
     }
 
-  if (stream->priv->nat_props &&
+  /* FIXME: use correct macro when available */
+  stun_servers = tp_asv_get_boxed (out_Properties, "STUNServers",
+      tp_type_dbus_array_su ());
+
+  if (stun_servers && stun_servers->len)
+    {
+      GValueArray *stun_server = g_ptr_array_index (stun_servers, 0);
+
+      if (stun_server && stun_server->n_values == 2)
+        {
+          GValue *stun_ip = g_value_array_get_nth (stun_server, 0);
+          GValue *stun_port = g_value_array_get_nth (stun_server, 1);
+
+          params[n_args].name = "stun-ip";
+          g_value_init (&params[n_args].value, G_TYPE_STRING);
+          g_value_copy (stun_ip, &params[n_args].value);
+          n_args++;
+
+          params[n_args].name = "stun-port";
+          g_value_init (&params[n_args].value, G_TYPE_UINT);
+          g_value_copy (stun_port, &params[n_args].value);
+          n_args++;
+
+          got_stun = TRUE;
+        }
+    }
+
+  if (!got_stun && stream->priv->nat_props &&
       stream->priv->nat_props->stun_server &&
       stream->priv->nat_props->stun_port)
     {
-      gchar *conn_timeout_str = NULL;
-
       params[n_args].name = "stun-ip";
       g_value_init (&params[n_args].value, G_TYPE_STRING);
       g_value_set_string (&params[n_args].value,
@@ -699,8 +726,14 @@ get_all_properties_cb (TpProxy *proxy,
           stream->priv->nat_props->stun_port);
       n_args++;
 
-      conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
+      got_stun = TRUE;
+    }
 
+  if (got_stun)
+    {
+      gchar *conn_timeout_str = NULL;
+
+      conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
       if (conn_timeout_str)
         {
           gint conn_timeout = strtol (conn_timeout_str, NULL, 10);
