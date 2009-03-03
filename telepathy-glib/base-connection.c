@@ -2451,6 +2451,8 @@ tp_base_connection_get_handles (TpBaseConnection *self,
 TpHandle
 tp_base_connection_get_self_handle (TpBaseConnection *self)
 {
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), 0);
+
   return self->self_handle;
 }
 
@@ -2481,12 +2483,14 @@ tp_base_connection_set_self_handle (TpBaseConnection *self,
  */
 void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 {
-  GPtrArray *contexts = self->priv->disconnect_requests;
+  GPtrArray *contexts;
   guint i;
 
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (self->status == TP_CONNECTION_STATUS_DISCONNECTED);
-  g_return_if_fail (contexts != NULL);
+  g_return_if_fail (self->priv->disconnect_requests != NULL);
 
+  contexts = self->priv->disconnect_requests;
   self->priv->disconnect_requests = NULL;
 
   for (i = 0; i < contexts->len; i++)
@@ -2528,6 +2532,7 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
 {
   GHashTable *dup = NULL;
 
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (tp_dbus_check_valid_interface_name (error_name, NULL));
 
   if (details == NULL)
@@ -2746,6 +2751,7 @@ tp_base_connection_add_interfaces (TpBaseConnection *self,
   TpBaseConnectionPrivate *priv = self->priv;
   TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
 
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (self->status != TP_CONNECTION_STATUS_CONNECTED);
   g_return_if_fail (self->status != TP_CONNECTION_STATUS_DISCONNECTED);
 
@@ -3175,6 +3181,8 @@ void
 tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
                                               TpBaseConnection *self)
 {
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+
   iter->self = self;
   iter->index = 0;
 }
@@ -3258,6 +3266,8 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
 void
 tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
 {
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+
   tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
       TP_IFACE_CONNECTION,
       tp_base_connection_fill_contact_attributes);
