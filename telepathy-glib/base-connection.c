@@ -2341,14 +2341,13 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
   GArray *handles = NULL;
   gchar *sender;
 
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
+
   for (cur_name = names; *cur_name != NULL; cur_name++)
     {
       count++;
     }
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
   if (!tp_handle_type_is_valid (handle_type, &error))
     {
