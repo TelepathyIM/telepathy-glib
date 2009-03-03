@@ -19,17 +19,23 @@ G_BEGIN_DECLS
 
 typedef struct _ExampleNoProtocolsConnectionManager
     ExampleNoProtocolsConnectionManager;
+typedef struct _ExampleNoProtocolsConnectionManagerPrivate
+    ExampleNoProtocolsConnectionManagerPrivate;
 typedef struct _ExampleNoProtocolsConnectionManagerClass
     ExampleNoProtocolsConnectionManagerClass;
+typedef struct _ExampleNoProtocolsConnectionManagerClassPrivate
+    ExampleNoProtocolsConnectionManagerClassPrivate;
 
 struct _ExampleNoProtocolsConnectionManagerClass {
     TpBaseConnectionManagerClass parent_class;
+
+    ExampleNoProtocolsConnectionManagerClassPrivate *priv;
 };
 
 struct _ExampleNoProtocolsConnectionManager {
     TpBaseConnectionManager parent;
 
-    gpointer priv;
+    ExampleNoProtocolsConnectionManagerPrivate *priv;
 };
 
 GType example_no_protocols_connection_manager_get_type (void);

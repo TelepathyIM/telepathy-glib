@@ -18,17 +18,23 @@
 G_BEGIN_DECLS
 
 typedef struct _ExampleCSHConnectionManager ExampleCSHConnectionManager;
+typedef struct _ExampleCSHConnectionManagerPrivate
+    ExampleCSHConnectionManagerPrivate;
 typedef struct _ExampleCSHConnectionManagerClass
     ExampleCSHConnectionManagerClass;
+typedef struct _ExampleCSHConnectionManagerClassPrivate
+    ExampleCSHConnectionManagerClassPrivate;
 
 struct _ExampleCSHConnectionManagerClass {
     TpBaseConnectionManagerClass parent_class;
+
+    ExampleCSHConnectionManagerClassPrivate *priv;
 };
 
 struct _ExampleCSHConnectionManager {
     TpBaseConnectionManager parent;
 
-    gpointer priv;
+    ExampleCSHConnectionManagerPrivate *priv;
 };
 
 GType example_csh_connection_manager_get_type (void);
