@@ -8,6 +8,9 @@ Fixes:
   tp_dbus_daemon_dup() or tp_run_connection_manager() (regression in 0.7.26
   which broke the telepathy-qt4 regression tests)
 
+* Fix compilation with gtkdoc 1.11, which is stricter about the contents of
+  Since: annotations, and parses more comments
+
 telepathy-glib 0.7.26 (2009-02-16)
 ==================================
 
