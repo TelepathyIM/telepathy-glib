@@ -1499,6 +1499,11 @@ tp_base_connection_register (TpBaseConnection *self,
   gchar *safe_proto;
   gchar *unique_name;
 
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
+  g_return_val_if_fail (cm_name != NULL, FALSE);
+  g_return_val_if_fail (bus_name != NULL, FALSE);
+  g_return_val_if_fail (object_path != NULL, FALSE);
+
   if (tp_connection_manager_check_valid_protocol_name (priv->protocol, NULL))
     {
       safe_proto = g_strdelimit (g_strdup (priv->protocol), "-", '_');
