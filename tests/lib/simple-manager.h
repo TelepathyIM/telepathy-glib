@@ -17,18 +17,21 @@
 G_BEGIN_DECLS
 
 typedef struct _SimpleConnectionManager SimpleConnectionManager;
+typedef struct _SimpleConnectionManagerPrivate SimpleConnectionManagerPrivate;
 typedef struct _SimpleConnectionManagerClass SimpleConnectionManagerClass;
+typedef struct _SimpleConnectionManagerClassPrivate
+  SimpleConnectionManagerClassPrivate;
 
 struct _SimpleConnectionManagerClass {
     TpBaseConnectionManagerClass parent_class;
 
-    gpointer priv;
+    SimpleConnectionManagerClassPrivate *priv;
 };
 
 struct _SimpleConnectionManager {
     TpBaseConnectionManager parent;
 
-    gpointer priv;
+    SimpleConnectionManagerPrivate *priv;
 };
 
 GType simple_connection_manager_get_type (void);
