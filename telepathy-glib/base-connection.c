@@ -2424,12 +2424,12 @@ TpHandleRepoIface *
 tp_base_connection_get_handles (TpBaseConnection *self,
                                 TpHandleType handle_type)
 {
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
   if (handle_type >= NUM_TP_HANDLE_TYPES)
     return NULL;
-  return priv->handles[handle_type];
+
+  return self->priv->handles[handle_type];
 }
 
 
