@@ -588,6 +588,7 @@ get_all_properties_cb (TpProxy *proxy,
   guint n_args = 0;
   GList *preferred_local_candidates = NULL;
   GParameter params[MAX_STREAM_TRANS_PARAMS];
+  const gchar *nat_traversal = NULL;
 
   if (error)
     {
@@ -631,9 +632,11 @@ get_all_properties_cb (TpProxy *proxy,
 
   memset (params, 0, sizeof(GParameter) * MAX_STREAM_TRANS_PARAMS);
 
-  if (stream->priv->nat_props == NULL ||
-      stream->priv->nat_props->nat_traversal == NULL ||
-      !strcmp (stream->priv->nat_props->nat_traversal, "gtalk-p2p"))
+  nat_traversal = tp_asv_get_string (out_Properties, "NATTraversal");
+  if (!nat_traversal && stream->priv->nat_props)
+    nat_traversal = stream->priv->nat_props->nat_traversal;
+
+  if (!nat_traversal || !strcmp (nat_traversal, "gtalk-p2p"))
     {
       transmitter = "nice";
 
@@ -642,9 +645,27 @@ get_all_properties_cb (TpProxy *proxy,
       g_value_set_uint (&params[n_args].value, 1);
       n_args++;
     }
-  else if (!strcmp (stream->priv->nat_props->nat_traversal, "ice-udp"))
+  else if (!strcmp (nat_traversal, "ice-udp"))
     {
       transmitter = "nice";
+    }
+  else if (!strcmp (nat_traversal, "wlm-8.5"))
+    {
+      transmitter = "nice";
+
+      params[n_args].name = "compatibility-mode";
+      g_value_init (&params[n_args].value, G_TYPE_UINT);
+      g_value_set_uint (&params[n_args].value, 2);
+      n_args++;
+    }
+  else if (!strcmp (nat_traversal, "wlm-2009"))
+    {
+      transmitter = "nice";
+
+      params[n_args].name = "compatibility-mode";
+      g_value_init (&params[n_args].value, G_TYPE_UINT);
+      g_value_set_uint (&params[n_args].value, 3);
+      n_args++;
     }
   else
     {
