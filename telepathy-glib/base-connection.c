@@ -1175,8 +1175,7 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   TpBaseConnection *self = TP_BASE_CONNECTION (
       G_OBJECT_CLASS (tp_base_connection_parent_class)->constructor (
         type, n_construct_properties, construct_params));
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  TpBaseConnectionPrivate *priv = self->priv;
   TpBaseConnectionClass *cls = TP_BASE_CONNECTION_GET_CLASS (self);
 
   DEBUG("Post-construction: (TpBaseConnection *)%p", self);
@@ -1562,8 +1561,7 @@ tp_base_connection_register (TpBaseConnection *self,
 static void
 tp_base_connection_close_all_channels (TpBaseConnection *self)
 {
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  TpBaseConnectionPrivate *priv = self->priv;
 
   /* We deliberately don't iterate over channel managers here -
    * they don't need this, and are expected to listen to
@@ -1864,8 +1862,7 @@ tp_base_connection_inspect_handles (TpSvcConnection *iface,
                                     DBusGMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  TpBaseConnectionPrivate *priv = self->priv;
   GError *error = NULL;
   const gchar **ret;
   guint i;
@@ -2275,8 +2272,7 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
                                     DBusGMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  TpBaseConnectionPrivate *priv = self->priv;
   char *sender;
   GError *error = NULL;
 
