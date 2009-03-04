@@ -2082,7 +2082,6 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
   guint i;
   ChannelRequest *request;
   GHashTable *request_properties;
-  GValue *v;
   gboolean claimed_by_channel_manager = FALSE;
 
   g_assert (TP_IS_BASE_CONNECTION (self));
@@ -2133,21 +2132,18 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
   request_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) tp_g_value_slice_free);
 
-  v = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_string (v, type);
-  g_hash_table_insert (request_properties, TP_IFACE_CHANNEL ".ChannelType", v);
+  g_hash_table_insert (request_properties, TP_IFACE_CHANNEL ".ChannelType",
+      tp_g_value_slice_new_string (type));
 
-  v = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (v, handle_type);
   g_hash_table_insert (request_properties,
-      TP_IFACE_CHANNEL ".TargetHandleType", v);
+      TP_IFACE_CHANNEL ".TargetHandleType",
+      tp_g_value_slice_new_uint (handle_type));
 
   if (handle != 0)
     {
-      v = tp_g_value_slice_new (G_TYPE_UINT);
-      g_value_set_uint (v, handle);
       g_hash_table_insert (request_properties,
-          TP_IFACE_CHANNEL ".TargetHandle", v);
+          TP_IFACE_CHANNEL ".TargetHandle",
+          tp_g_value_slice_new_uint (handle));
     }
 
   for (i = 0; i < priv->channel_managers->len; i++)
@@ -3007,8 +3003,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
           tp_g_hash_table_update (altered_properties, requested_properties,
               NULL, NULL);
 
-          target_handle_value = tp_g_value_slice_new (G_TYPE_UINT);
-          g_value_set_uint (target_handle_value, target_handle);
+          target_handle_value = tp_g_value_slice_new_uint (target_handle);
           g_hash_table_insert (altered_properties,
               TP_IFACE_CHANNEL ".TargetHandle", target_handle_value);
 
@@ -3233,18 +3228,14 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
     {
       TpHandle handle;
       const gchar *tmp;
-      GValue *val;
-
 
       handle = g_array_index (contacts, TpHandle, i);
       tmp = tp_handle_inspect (priv->handles[TP_HANDLE_TYPE_CONTACT], handle);
       g_assert (tmp != NULL);
 
-      val = tp_g_value_slice_new (G_TYPE_STRING);
-      g_value_set_static_string (val, tmp);
-
       tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_IFACE_CONNECTION"/contact-id", val);
+          handle, TP_IFACE_CONNECTION"/contact-id",
+          tp_g_value_slice_new_string (tmp));
     }
 }
 
