@@ -280,15 +280,11 @@ example_echo_2_im_manager_foreach_channel_class (TpChannelManager *manager,
 {
   GHashTable *table = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) tp_g_value_slice_free);
-  GValue *value;
 
-  value = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_TEXT);
-  g_hash_table_insert (table, TP_IFACE_CHANNEL ".ChannelType", value);
-
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, TP_HANDLE_TYPE_CONTACT);
-  g_hash_table_insert (table, TP_IFACE_CHANNEL ".TargetHandleType", value);
+  g_hash_table_insert (table, TP_IFACE_CHANNEL ".ChannelType",
+      tp_g_value_slice_new_static_string (TP_IFACE_CHANNEL_TYPE_TEXT));
+  g_hash_table_insert (table, TP_IFACE_CHANNEL ".TargetHandleType",
+      tp_g_value_slice_new_uint (TP_HANDLE_TYPE_CONTACT));
 
   func (manager, table, allowed_properties, user_data);
 

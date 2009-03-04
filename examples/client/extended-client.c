@@ -53,7 +53,6 @@ conn_ready (TpConnection *conn,
   GPtrArray *hats;
   guint i;
   GHashTable *asv;
-  GValue *value;
 
   if (!tp_proxy_has_interface_by_id (conn,
         EXAMPLE_IFACE_QUARK_CONNECTION_INTERFACE_HATS))
@@ -76,10 +75,8 @@ conn_ready (TpConnection *conn,
 
   asv = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
-  value = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_static_string (value, "Shadowman");
   g_hash_table_insert (asv, "previous-owner",
-      value);
+      tp_g_value_slice_new_static_string ("Shadowman"));
   example_cli_connection_interface_hats_run_set_hat (conn, -1,
       "red", EXAMPLE_HAT_STYLE_FEDORA, asv, &error, NULL);
   g_hash_table_destroy (asv);
