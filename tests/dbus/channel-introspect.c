@@ -114,7 +114,6 @@ main (int argc,
   GError invalidated_for_test = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
       "No channel for you!" };
   GHashTable *asv;
-  GValue *value;
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -260,25 +259,14 @@ main (int argc,
   asv = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       (GDestroyNotify) tp_g_value_slice_free);
 
-  value = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_TEXT);
   g_hash_table_insert (asv, g_strdup (TP_IFACE_CHANNEL ".ChannelType"),
-      tp_g_value_slice_dup (value));
-
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, TP_HANDLE_TYPE_CONTACT);
+      tp_g_value_slice_new_static_string (TP_IFACE_CHANNEL_TYPE_TEXT));
   g_hash_table_insert (asv, g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"),
-      tp_g_value_slice_dup (value));
-
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, handle);
+      tp_g_value_slice_new_uint (TP_HANDLE_TYPE_CONTACT));
   g_hash_table_insert (asv, g_strdup (TP_IFACE_CHANNEL ".TargetHandle"),
-      tp_g_value_slice_dup (value));
-
-  value = tp_g_value_slice_new (G_TYPE_STRV);
-  g_value_set_static_boxed (value, NULL);
+      tp_g_value_slice_new_uint (handle));
   g_hash_table_insert (asv, g_strdup (TP_IFACE_CHANNEL ".Interfaces"),
-      tp_g_value_slice_dup (value));
+      tp_g_value_slice_new_static_boxed (G_TYPE_STRV, NULL));
 
   chan = tp_channel_new_from_properties (conn, chan_path, asv, &error);
   MYASSERT_NO_ERROR (error);

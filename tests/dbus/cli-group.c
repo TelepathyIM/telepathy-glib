@@ -339,7 +339,6 @@ check_removed_error_in_invalidated (void)
   TpIntSet *self_handle_singleton = tp_intset_new ();
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
-  GValue *v;
   gboolean invalidated = FALSE;
   GError *error = NULL;
 
@@ -370,17 +369,14 @@ check_removed_error_in_invalidated (void)
 
   test_connection_run_until_dbus_queue_processed (conn);
 
-  v = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (v, REMOVED_REASON);
-  g_hash_table_insert (details, "change-reason", v);
+  g_hash_table_insert (details, "change-reason",
+      tp_g_value_slice_new_uint (REMOVED_REASON));
 
-  v = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_static_string (v, REMOVED_MESSAGE);
-  g_hash_table_insert (details, "message", v);
+  g_hash_table_insert (details, "message",
+      tp_g_value_slice_new_static_string (REMOVED_MESSAGE));
 
-  v = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_static_string (v, REMOVED_ERROR);
-  g_hash_table_insert (details, "error", v);
+  g_hash_table_insert (details, "error",
+      tp_g_value_slice_new_static_string (REMOVED_ERROR));
 
   tp_group_mixin_change_members_detailed ((GObject *) service_chan, NULL,
       self_handle_singleton, NULL, NULL, details);

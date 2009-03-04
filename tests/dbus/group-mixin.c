@@ -412,13 +412,10 @@ in_the_desert (void)
     TpIntSet *add = tp_intset_new ();
     GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
         NULL, (GDestroyNotify) tp_g_value_slice_free);
-    GValue *v;
 
     tp_intset_add (add, camel2);
 
-    v = tp_g_value_slice_new (G_TYPE_UINT);
-    g_value_set_uint (v, camel);
-    g_hash_table_insert (details, "actor", v);
+    g_hash_table_insert (details, "actor", tp_g_value_slice_new_uint (camel));
 
     expect_signals ("", camel, TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
         camel2_added);
@@ -436,33 +433,24 @@ in_the_desert (void)
     TpIntSet *del = tp_intset_new ();
     GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
         NULL, (GDestroyNotify) tp_g_value_slice_free);
-    GValue *v;
 
     tp_intset_add (del, camel);
 
-    v = tp_g_value_slice_new (G_TYPE_UINT);
-    g_value_set_uint (v, camel2);
-    g_hash_table_insert (details, "actor", v);
+    g_hash_table_insert (details, "actor", tp_g_value_slice_new_uint (camel2));
 
     /* It turns out that spitting was not included in the GroupChangeReason
      * enum.
      */
-    v = tp_g_value_slice_new (G_TYPE_STRING);
-    g_value_set_static_string (v, "le.mac.Spat");
-    g_hash_table_insert (details, "error", v);
-
-    v = tp_g_value_slice_new (G_TYPE_STRING);
-    g_value_set_static_string (v, "fluid");
-    g_hash_table_insert (details, "saliva-consistency", v);
+    g_hash_table_insert (details, "error",
+        tp_g_value_slice_new_static_string ("le.mac.Spat"));
+    g_hash_table_insert (details, "saliva-consistency",
+        tp_g_value_slice_new_static_string ("fluid"));
 
     /* Kicking is the closest we have to this .. unsavory act. */
-    v = tp_g_value_slice_new (G_TYPE_UINT);
-    g_value_set_uint (v, TP_CHANNEL_GROUP_CHANGE_REASON_KICKED);
-    g_hash_table_insert (details, "change-reason", v);
-
-    v = tp_g_value_slice_new (G_TYPE_STRING);
-    g_value_set_static_string (v, "*ptooey*");
-    g_hash_table_insert (details, "message", v);
+    g_hash_table_insert (details, "change-reason",
+        tp_g_value_slice_new_uint (TP_CHANNEL_GROUP_CHANGE_REASON_KICKED));
+    g_hash_table_insert (details, "message",
+        tp_g_value_slice_new_static_string ("*ptooey*"));
 
     /* Check that all the right information was extracted from the dict. */
     expect_signals ("*ptooey*", camel2,

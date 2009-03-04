@@ -100,7 +100,6 @@ aliasing_fill_contact_attributes (GObject *object,
 
   for (i = 0; i < contacts->len; i++)
     {
-      GValue *val = tp_g_value_slice_new (G_TYPE_STRING);
       TpHandle handle = g_array_index (contacts, guint, i);
       const gchar *alias = g_hash_table_lookup (self->priv->aliases,
           GUINT_TO_POINTER (handle));
@@ -110,10 +109,10 @@ aliasing_fill_contact_attributes (GObject *object,
           alias = tp_handle_inspect (contact_repo, handle);
         }
 
-        g_value_set_string (val, alias);
-        tp_contacts_mixin_set_contact_attribute (attributes, handle,
-            TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias", val);
-      }
+      tp_contacts_mixin_set_contact_attribute (attributes, handle,
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias",
+          tp_g_value_slice_new_string (alias));
+    }
 }
 
 static void
@@ -132,11 +131,9 @@ avatars_fill_contact_attributes (GObject *object,
 
       if (token != NULL)
         {
-          GValue *val = tp_g_value_slice_new (G_TYPE_STRING);
-
-          g_value_set_string (val, token);
           tp_contacts_mixin_set_contact_attribute (attributes, handle,
-              TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token", val);
+              TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token",
+              tp_g_value_slice_new_string (token));
         }
     }
 }
@@ -222,12 +219,8 @@ my_get_contact_statuses (GObject *object,
           g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
 
       if (presence_message != NULL)
-        {
-          GValue *value = tp_g_value_slice_new (G_TYPE_STRING);
-
-          g_value_set_string (value, presence_message);
-          g_hash_table_insert (parameters, "message", value);
-        }
+        g_hash_table_insert (parameters, "message",
+            tp_g_value_slice_new_string (presence_message));
 
       g_hash_table_insert (result, key,
           tp_presence_status_new (index, parameters));
@@ -356,12 +349,8 @@ contacts_connection_change_presences (
           g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
 
       if (messages[i] != NULL && messages[i][0] != '\0')
-        {
-          GValue *value = tp_g_value_slice_new (G_TYPE_STRING);
-
-          g_value_set_string (value, messages[i]);
-          g_hash_table_insert (parameters, "message", value);
-        }
+        g_hash_table_insert (parameters, "message",
+            tp_g_value_slice_new_string (messages[i]));
 
       g_hash_table_insert (presences, key, tp_presence_status_new (indexes[i],
             parameters));
