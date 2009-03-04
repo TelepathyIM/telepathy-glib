@@ -204,6 +204,8 @@ test_complex_presence (ContactsConnection *service_conn,
   params = NULL;
   g_hash_table_destroy (monster);
   monster = NULL;
+  g_hash_table_destroy (statuses);
+  statuses = NULL;
 }
 
 int
