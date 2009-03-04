@@ -583,3 +583,24 @@
    fun:_dl_init
    obj:/lib/ld-*.so
 }
+
+{
+   ld.so initialization on glibc 2.9
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start
+   obj:/lib/ld-2.9.so
+}
+
+{
+   ld.so initialization on glibc 2.9
+   Memcheck:Cond
+   fun:strlen
+   fun:_dl_init_paths
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start
+   obj:/lib/ld-2.9.so
+}
