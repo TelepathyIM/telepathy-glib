@@ -525,7 +525,7 @@ main (int argc,
       g_hash_table_insert (part, "content-type",
           tp_g_value_slice_new_string ("image/jpeg"));
       g_hash_table_insert (part, "content", tp_g_value_slice_new_bytes (
-            "\xff\xd8\xff\xe0\x00\x10JFIF\x00...", 14));
+            14, "\xff\xd8\xff\xe0\x00\x10JFIF\x00..."));
       g_ptr_array_add (send_parts, part);
 
       tp_cli_channel_interface_messages_run_send_message (chan, -1,
@@ -635,7 +635,7 @@ main (int argc,
       g_hash_table_insert (part, "content-type",
           tp_g_value_slice_new_string ("image/jpeg"));
       g_hash_table_insert (part, "content", tp_g_value_slice_new_bytes (
-            "\xff\xd8\xff\xe0\x00\x10JFIF\x00...", 14));
+            14, "\xff\xd8\xff\xe0\x00\x10JFIF\x00..."));
       g_ptr_array_add (send_parts, part);
 
       part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
@@ -647,7 +647,7 @@ main (int argc,
       g_hash_table_insert (part, "content-type",
           tp_g_value_slice_new_string ("image/png"));
       g_hash_table_insert (part, "content", tp_g_value_slice_new_bytes (
-            "\x89PNG\x0d\x0a\x1a\x0a\x00...", 12));
+            12, "\x89PNG\x0d\x0a\x1a\x0a\x00..."));
       g_ptr_array_add (send_parts, part);
 
       tp_cli_channel_interface_messages_run_send_message (chan, -1,
