@@ -341,17 +341,15 @@ static void
 _tp_channel_maybe_set_channel_type (TpChannel *self,
                                     const gchar *type)
 {
-  GValue *value;
   GQuark q = g_quark_from_string (type);
 
   if (type == NULL)
     return;
 
   self->priv->channel_type = q;
-  value = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_static_string (value, g_quark_to_string (q));
   g_hash_table_insert (self->priv->channel_properties,
-      g_strdup (TP_IFACE_CHANNEL ".ChannelType"), value);
+      g_strdup (TP_IFACE_CHANNEL ".ChannelType"),
+      tp_g_value_slice_new_static_string (g_quark_to_string (q)));
 }
 
 
@@ -362,12 +360,10 @@ _tp_channel_maybe_set_handle (TpChannel *self,
 {
   if (valid)
     {
-      GValue *value = tp_g_value_slice_new (G_TYPE_UINT);
-
-      g_value_set_uint (value, handle);
       self->priv->handle = handle;
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetHandle"), value);
+          g_strdup (TP_IFACE_CHANNEL ".TargetHandle"),
+          tp_g_value_slice_new_uint (handle));
     }
 }
 
@@ -379,12 +375,10 @@ _tp_channel_maybe_set_handle_type (TpChannel *self,
 {
   if (valid)
     {
-      GValue *value = tp_g_value_slice_new (G_TYPE_UINT);
-
-      g_value_set_uint (value, handle_type);
       self->priv->handle_type = handle_type;
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"), value);
+          g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"),
+          tp_g_value_slice_new_uint (handle_type));
     }
 }
 
@@ -395,12 +389,10 @@ _tp_channel_maybe_set_identifier (TpChannel *self,
 {
   if (identifier != NULL && self->priv->identifier == NULL)
     {
-      GValue *value = tp_g_value_slice_new (G_TYPE_STRING);
-
-      g_value_set_string (value, identifier);
       self->priv->identifier = g_strdup (identifier);
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetID"), value);
+          g_strdup (TP_IFACE_CHANNEL ".TargetID"),
+          tp_g_value_slice_new_string (identifier));
     }
 }
 
@@ -409,7 +401,6 @@ static void
 _tp_channel_maybe_set_interfaces (TpChannel *self,
                                   const gchar **interfaces)
 {
-  GValue *value;
   const gchar **iter;
 
   if (interfaces == NULL)
@@ -430,11 +421,9 @@ _tp_channel_maybe_set_interfaces (TpChannel *self,
         }
     }
 
-  value = tp_g_value_slice_new (G_TYPE_STRV);
-  g_value_set_boxed (value, interfaces);
   g_hash_table_insert (self->priv->channel_properties,
       g_strdup (TP_IFACE_CHANNEL ".Interfaces"),
-      value);
+      tp_g_value_slice_new_boxed (G_TYPE_STRV, interfaces));
 }
 
 
@@ -660,8 +649,6 @@ tp_channel_got_handle_cb (TpChannel *self,
 {
   if (error == NULL)
     {
-      GValue *value;
-
       self->priv->exists = TRUE;
 
       DEBUG ("%p: Introspected handle #%d of type %d", self, handle,
@@ -669,15 +656,13 @@ tp_channel_got_handle_cb (TpChannel *self,
       self->priv->handle_type = handle_type;
       self->priv->handle = handle;
 
-      value = tp_g_value_slice_new (G_TYPE_UINT);
-      g_value_set_uint (value, handle_type);
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"), value);
+          g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"),
+          tp_g_value_slice_new_uint (handle_type));
 
-      value = tp_g_value_slice_new (G_TYPE_UINT);
-      g_value_set_uint (value, handle);
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetHandle"), value);
+          g_strdup (TP_IFACE_CHANNEL ".TargetHandle"),
+          tp_g_value_slice_new_uint (handle));
 
       g_object_notify ((GObject *) self, "handle-type");
       g_object_notify ((GObject *) self, "handle");
@@ -723,15 +708,12 @@ tp_channel_got_identifier_cb (TpConnection *connection,
 
   if (error == NULL)
     {
-      GValue *value;
-
       DEBUG ("%p: Introspected identifier %s", self, *identifier);
       self->priv->identifier = g_strdup (*identifier);
 
-      value = tp_g_value_slice_new (G_TYPE_STRING);
-      g_value_set_string (value, *identifier);
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetID"), value);
+          g_strdup (TP_IFACE_CHANNEL ".TargetID"),
+          tp_g_value_slice_new_string (*identifier));
 
       g_object_notify ((GObject *) self, "identifier");
 
@@ -779,7 +761,6 @@ _tp_channel_got_properties (TpProxy *proxy,
 
   if (error == NULL)
     {
-      GValue *value;
       gboolean valid;
       guint u;
       const gchar *s;
@@ -807,30 +788,27 @@ _tp_channel_got_properties (TpProxy *proxy,
 
       if (valid)
         {
-          value = tp_g_value_slice_new (G_TYPE_UINT);
-          g_value_set_uint (value, u);
           g_hash_table_insert (self->priv->channel_properties,
-              g_strdup (TP_IFACE_CHANNEL ".InitiatorHandle"), value);
+              g_strdup (TP_IFACE_CHANNEL ".InitiatorHandle"),
+              tp_g_value_slice_new_uint (u));
         }
 
       s = tp_asv_get_string (asv, "InitiatorID");
 
       if (s != NULL)
         {
-          value = tp_g_value_slice_new (G_TYPE_STRING);
-          g_value_set_string (value, s);
           g_hash_table_insert (self->priv->channel_properties,
-              g_strdup (TP_IFACE_CHANNEL ".InitiatorID"), value);
+              g_strdup (TP_IFACE_CHANNEL ".InitiatorID"),
+              tp_g_value_slice_new_string (s));
         }
 
       b = tp_asv_get_boolean (asv, "Requested", &valid);
 
       if (valid)
         {
-          value = tp_g_value_slice_new (G_TYPE_BOOLEAN);
-          g_value_set_boolean (value, b);
           g_hash_table_insert (self->priv->channel_properties,
-              g_strdup (TP_IFACE_CHANNEL ".Requested"), value);
+              g_strdup (TP_IFACE_CHANNEL ".Requested"),
+              tp_g_value_slice_new_boolean (b));
         }
 
       g_object_notify ((GObject *) self, "channel-type");

@@ -959,7 +959,6 @@ tp_channel_group_members_changed_cb (TpChannel *self,
 {
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
-  GValue *v;
 
   DEBUG ("%p MembersChanged: added %u, removed %u, "
       "moved %u to LP and %u to RP, actor %u, reason %u, message %s",
@@ -968,23 +967,20 @@ tp_channel_group_members_changed_cb (TpChannel *self,
 
   if (actor != 0)
     {
-      v = tp_g_value_slice_new (G_TYPE_UINT);
-      g_value_set_uint (v, actor);
-      g_hash_table_insert (details, "actor", v);
+      g_hash_table_insert (details, "actor",
+          tp_g_value_slice_new_uint (actor));
     }
 
   if (reason != TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
     {
-      v = tp_g_value_slice_new (G_TYPE_UINT);
-      g_value_set_uint (v, reason);
-      g_hash_table_insert (details, "change-reason", v);
+      g_hash_table_insert (details, "change-reason",
+          tp_g_value_slice_new_uint (reason));
     }
 
   if (*message != '\0')
     {
-      v = tp_g_value_slice_new (G_TYPE_STRING);
-      g_value_set_string (v, message);
-      g_hash_table_insert (details, "message", v);
+      g_hash_table_insert (details, "message",
+          tp_g_value_slice_new_string (message));
     }
 
   handle_members_changed (self, message, added, removed, local_pending,
