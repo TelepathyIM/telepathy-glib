@@ -827,3 +827,26 @@
    fun:_dl_start
    obj:/lib/ld-2.9.so
 }
+
+{
+   GTest initialization
+   Memcheck:Leak
+   fun:malloc
+   fun:g_malloc
+   fun:g_strdup
+   fun:g_set_prgname
+   fun:g_test_init
+   fun:main
+}
+
+{
+   GTest initialization
+   Memcheck:Leak
+   fun:calloc
+   fun:g_malloc0
+   fun:g_rand_new_with_seed_array
+   fun:g_rand_new
+   fun:g_random_int
+   fun:g_test_init
+   fun:main
+}
