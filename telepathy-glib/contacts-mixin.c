@@ -317,7 +317,9 @@ tp_contacts_mixin_get_contact_attributes (
   if (hold)
     {
       gchar *sender = dbus_g_method_get_sender (context);
+
       tp_handles_client_hold (contact_repo, sender, valid_handles, NULL);
+      g_free (sender);
     }
 
   /* ensure the handles don't disappear while calling out to various functions
