@@ -1338,7 +1338,6 @@ maybe_add_member_ids (TpGroupMixin *mixin,
                       TpHandle actor,
                       GHashTable *details)
 {
-  GValue *v;
   GHashTable *member_ids;
 
   /* If the library user had its own ideas about which members' IDs to include
@@ -1364,9 +1363,9 @@ maybe_add_member_ids (TpGroupMixin *mixin,
       g_hash_table_insert (member_ids, GUINT_TO_POINTER (actor), (gchar *) id);
     }
 
-  v = tp_g_value_slice_new (TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
-  g_value_take_boxed (v, member_ids);
-  g_hash_table_insert (details, "member-ids", v);
+  g_hash_table_insert (details, "member-ids",
+      tp_g_value_slice_new_take_boxed (TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP,
+      member_ids));
 
   return TRUE;
 }
@@ -1675,28 +1674,24 @@ tp_group_mixin_change_members (GObject *obj,
 {
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) tp_g_value_slice_free);
-  GValue *detail;
   gboolean ret;
 
   if (actor != 0)
     {
-      detail = tp_g_value_slice_new (G_TYPE_UINT);
-      g_value_set_uint (detail, actor);
-      g_hash_table_insert (details, "actor", detail);
+      g_hash_table_insert (details, "actor",
+          tp_g_value_slice_new_uint (actor));
     }
 
   if (reason != TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
     {
-      detail = tp_g_value_slice_new (G_TYPE_UINT);
-      g_value_set_uint (detail, reason);
-      g_hash_table_insert (details, "change-reason", detail);
+      g_hash_table_insert (details, "change-reason",
+          tp_g_value_slice_new_uint (reason));
     }
 
   if (message != NULL && message[0] != '\0')
     {
-      detail = tp_g_value_slice_new (G_TYPE_STRING);
-      g_value_set_string (detail, message);
-      g_hash_table_insert (details, "message", detail);
+      g_hash_table_insert (details, "message",
+          tp_g_value_slice_new_string (message));
     }
 
   ret = change_members (obj, message, add, del, add_local_pending,
