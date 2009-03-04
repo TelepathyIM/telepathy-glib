@@ -482,15 +482,11 @@ tp_message_set_boolean (TpMessage *self,
                         const gchar *key,
                         gboolean b)
 {
-  GValue *value;
-
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
 
-  value = tp_g_value_slice_new (G_TYPE_BOOLEAN);
-  g_value_set_boolean (value, b);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key), tp_g_value_slice_new_boolean (b));
 }
 
 
@@ -525,15 +521,11 @@ tp_message_set_int32 (TpMessage *self,
                       const gchar *key,
                       gint32 i)
 {
-  GValue *value;
-
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
 
-  value = tp_g_value_slice_new (G_TYPE_INT);
-  g_value_set_int (value, i);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key), tp_g_value_slice_new_int (i));
 }
 
 
@@ -555,15 +547,11 @@ tp_message_set_int64 (TpMessage *self,
                       const gchar *key,
                       gint64 i)
 {
-  GValue *value;
-
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
 
-  value = tp_g_value_slice_new (G_TYPE_INT64);
-  g_value_set_int64 (value, i);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key), tp_g_value_slice_new_int64 (i));
 }
 
 
@@ -598,15 +586,11 @@ tp_message_set_uint32 (TpMessage *self,
                        const gchar *key,
                        guint32 u)
 {
-  GValue *value;
-
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
 
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, u);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key), tp_g_value_slice_new_uint (u));
 }
 
 
@@ -628,15 +612,11 @@ tp_message_set_uint64 (TpMessage *self,
                        const gchar *key,
                        guint64 u)
 {
-  GValue *value;
-
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
 
-  value = tp_g_value_slice_new (G_TYPE_UINT64);
-  g_value_set_uint64 (value, u);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key), tp_g_value_slice_new_uint64 (u));
 }
 
 
@@ -658,16 +638,12 @@ tp_message_set_string (TpMessage *self,
                        const gchar *key,
                        const gchar *s)
 {
-  GValue *value;
-
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
   g_return_if_fail (s != NULL);
 
-  value = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_string (value, s);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key), tp_g_value_slice_new_string (s));
 }
 
 
@@ -694,7 +670,6 @@ tp_message_set_string_printf (TpMessage *self,
 {
   va_list va;
   gchar *s;
-  GValue *value;
 
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
@@ -704,10 +679,8 @@ tp_message_set_string_printf (TpMessage *self,
   s = g_strdup_vprintf (fmt, va);
   va_end (va);
 
-  value = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_take_string (value, s);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key), tp_g_value_slice_new_take_string (s));
 }
 
 
@@ -731,19 +704,13 @@ tp_message_set_bytes (TpMessage *self,
                       guint len,
                       gconstpointer bytes)
 {
-  GValue *value;
-  GArray *array;
-
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
   g_return_if_fail (bytes != NULL);
 
-  array = g_array_sized_new (FALSE, FALSE, sizeof (guchar), len);
-  g_array_append_vals (array, bytes, len);
-  value = tp_g_value_slice_new (DBUS_TYPE_G_UCHAR_ARRAY);
-  g_value_take_boxed (value, array);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key),
+      tp_g_value_slice_new_bytes (bytes, len));
 }
 
 
@@ -799,7 +766,6 @@ tp_message_take_message (TpMessage *self,
                          const gchar *key,
                          TpMessage *message)
 {
-  GValue *value;
   guint i;
 
   g_return_if_fail (self != NULL);
@@ -809,10 +775,10 @@ tp_message_take_message (TpMessage *self,
   g_return_if_fail (self != message);
   g_return_if_fail (self->connection == message->connection);
 
-  value = tp_g_value_slice_new (TP_ARRAY_TYPE_MESSAGE_PART_LIST);
-  g_value_take_boxed (value, message->parts);
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key), value);
+      g_strdup (key),
+      tp_g_value_slice_new_take_boxed (TP_ARRAY_TYPE_MESSAGE_PART_LIST,
+          message->parts));
 
   /* Now that @self has stolen @message's parts, replace them with a stub to
    * keep tp_message_destroy happy.
