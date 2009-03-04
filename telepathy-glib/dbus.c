@@ -1230,9 +1230,9 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
 
 /**
  * tp_g_value_slice_new_bytes:
+ * @length: number of bytes to copy
  * @bytes: location of an array of bytes to be copied (this may be %NULL
  *  if and only if length is 0)
- * @length: number of bytes to copy
  *
  * Slice-allocate a #GValue containing a byte-array, using
  * tp_g_value_slice_new_boxed(). This function is convenient to use when
@@ -1245,8 +1245,8 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
  * Since: 0.7.UNRELEASED
  */
 GValue *
-tp_g_value_slice_new_bytes (gconstpointer bytes,
-                            gsize length)
+tp_g_value_slice_new_bytes (guint length,
+                            gconstpointer bytes)
 {
   GArray *arr;
 

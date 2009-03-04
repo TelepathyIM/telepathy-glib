@@ -710,7 +710,7 @@ tp_message_set_bytes (TpMessage *self,
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key),
-      tp_g_value_slice_new_bytes (bytes, len));
+      tp_g_value_slice_new_bytes (len, bytes));
 }
 
 
