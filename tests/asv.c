@@ -18,7 +18,6 @@ myassert_failed (void)
 int main (int argc, char **argv)
 {
   GHashTable *hash;
-  GValue *value;
   gboolean valid;
   static const char * const strv[] = { "Foo", "Bar", NULL };
 
@@ -31,145 +30,72 @@ int main (int argc, char **argv)
 
   MYASSERT (tp_asv_size (hash) == 0, "%u != 0", tp_asv_size (hash));
 
-  value = tp_g_value_slice_new (G_TYPE_DOUBLE);
-  g_value_set_double (value, 0.0);
-  g_hash_table_insert (hash, "d:0", value);
-  value = NULL;
+  g_hash_table_insert (hash, "d:0", tp_g_value_slice_new_double (0.0));
 
   MYASSERT (tp_asv_size (hash) == 1, "%u != 1", tp_asv_size (hash));
 
-  value = tp_g_value_slice_new (G_TYPE_DOUBLE);
-  g_value_set_double (value, -123.0);
-  g_hash_table_insert (hash, "d:-123", value);
-  value = NULL;
+  g_hash_table_insert (hash, "d:-123", tp_g_value_slice_new_double (-123.0));
 
   MYASSERT (tp_asv_size (hash) == 2, "%u != 2", tp_asv_size (hash));
 
-  value = tp_g_value_slice_new (G_TYPE_BOOLEAN);
-  g_value_set_boolean (value, TRUE);
-  g_hash_table_insert (hash, "b:TRUE", value);
-  value = NULL;
+  g_hash_table_insert (hash, "b:TRUE", tp_g_value_slice_new_boolean (TRUE));
+  g_hash_table_insert (hash, "b:FALSE", tp_g_value_slice_new_boolean (FALSE));
 
-  value = tp_g_value_slice_new (G_TYPE_BOOLEAN);
-  g_value_set_boolean (value, FALSE);
-  g_hash_table_insert (hash, "b:FALSE", value);
-  value = NULL;
+  g_hash_table_insert (hash, "s0", tp_g_value_slice_new_static_string (""));
 
-  value = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_string (value, "");
-  g_hash_table_insert (hash, "s0", value);
-  value = NULL;
+  g_hash_table_insert (hash, "s",
+      tp_g_value_slice_new_string ("hello, world!"));
 
-  value = tp_g_value_slice_new (G_TYPE_STRING);
-  g_value_set_string (value, "hello, world!");
-  g_hash_table_insert (hash, "s", value);
-  value = NULL;
+  g_hash_table_insert (hash, "o",
+      tp_g_value_slice_new_object_path ("/com/example/Object"));
 
-  value = tp_g_value_slice_new (DBUS_TYPE_G_OBJECT_PATH);
-  g_value_set_boxed (value, "/com/example/Object");
-  g_hash_table_insert (hash, "o", value);
-  value = NULL;
+  g_hash_table_insert (hash, "i32:-2**16",
+      tp_g_value_slice_new_int (-0x10000));
 
-  value = tp_g_value_slice_new (G_TYPE_INT);
-  g_value_set_int (value, -0x10000);
-  g_hash_table_insert (hash, "i32:-2**16", value);
-  value = NULL;
+  g_hash_table_insert (hash, "i32:0", tp_g_value_slice_new_int (0));
+  g_hash_table_insert (hash, "u32:0", tp_g_value_slice_new_uint (0));
+  g_hash_table_insert (hash, "i64:0", tp_g_value_slice_new_int64 (0));
+  g_hash_table_insert (hash, "u64:0", tp_g_value_slice_new_uint64 (0));
 
-  value = tp_g_value_slice_new (G_TYPE_INT);
-  g_value_set_int (value, 0);
-  g_hash_table_insert (hash, "i32:0", value);
-  value = NULL;
+  g_hash_table_insert (hash, "i32:2**16", tp_g_value_slice_new_int (0x10000));
+  g_hash_table_insert (hash, "u32:2**16", tp_g_value_slice_new_uint (0x10000));
 
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, 0);
-  g_hash_table_insert (hash, "u32:0", value);
-  value = NULL;
+  g_hash_table_insert (hash, "i32:-2**31",
+      tp_g_value_slice_new_int (0x10000 * -0x8000));
 
-  value = tp_g_value_slice_new (G_TYPE_INT64);
-  g_value_set_int64 (value, 0);
-  g_hash_table_insert (hash, "i64:0", value);
-  value = NULL;
+  g_hash_table_insert (hash, "i32:2**31-1",
+      tp_g_value_slice_new_int (0x7FFFffff));
+  g_hash_table_insert (hash, "u32:2**31-1",
+      tp_g_value_slice_new_uint (0x7FFFffff));
 
-  value = tp_g_value_slice_new (G_TYPE_UINT64);
-  g_value_set_uint64 (value, 0);
-  g_hash_table_insert (hash, "u64:0", value);
-  value = NULL;
+  g_hash_table_insert (hash, "u32:2**31",
+      tp_g_value_slice_new_uint (0x80000000U));
+  g_hash_table_insert (hash, "u32:2**32-1",
+      tp_g_value_slice_new_uint (0xFFFFffffU));
+  g_hash_table_insert (hash, "u64:2**32-1",
+      tp_g_value_slice_new_uint64 (0xFFFFffffU));
 
-  value = tp_g_value_slice_new (G_TYPE_INT);
-  g_value_set_int (value, 0x10000);
-  g_hash_table_insert (hash, "i32:2**16", value);
-  value = NULL;
+  g_hash_table_insert (hash, "u64:2**32",
+      tp_g_value_slice_new_uint64 (G_GUINT64_CONSTANT (0x100000000)));
 
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, 0x10000);
-  g_hash_table_insert (hash, "u32:2**16", value);
-  value = NULL;
+  g_hash_table_insert (hash, "i64:-2**63",
+  tp_g_value_slice_new_int64 (G_GINT64_CONSTANT (-0x80000000) *
+      G_GINT64_CONSTANT (0x100000000)));
 
-  value = tp_g_value_slice_new (G_TYPE_INT);
-  g_value_set_int (value, 0x10000 * -0x8000);
-  g_hash_table_insert (hash, "i32:-2**31", value);
-  value = NULL;
+  g_hash_table_insert (hash, "i64:2**63-1",
+      tp_g_value_slice_new_int64 (G_GINT64_CONSTANT (0x7FFFffffFFFFffff)));
 
-  value = tp_g_value_slice_new (G_TYPE_INT);
-  g_value_set_int (value, 0x7FFFffff);
-  g_hash_table_insert (hash, "i32:2**31-1", value);
-  value = NULL;
+  g_hash_table_insert (hash, "u64:2**63-1",
+      tp_g_value_slice_new_uint64 (G_GUINT64_CONSTANT (0x7FFFffffFFFFffff)));
 
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, 0x7FFFffff);
-  g_hash_table_insert (hash, "u32:2**31-1", value);
-  value = NULL;
+  g_hash_table_insert (hash, "u64:2**64-1",
+      tp_g_value_slice_new_uint64 (G_GUINT64_CONSTANT (0xFFFFffffFFFFffff)));
 
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, 0x80000000U);
-  g_hash_table_insert (hash, "u32:2**31", value);
-  value = NULL;
+  g_hash_table_insert (hash, "as",
+      tp_g_value_slice_new_boxed (G_TYPE_STRV, strv));
 
-  value = tp_g_value_slice_new (G_TYPE_UINT);
-  g_value_set_uint (value, 0xFFFFffffU);
-  g_hash_table_insert (hash, "u32:2**32-1", value);
-  value = NULL;
-
-  value = tp_g_value_slice_new (G_TYPE_UINT64);
-  g_value_set_uint64 (value, 0xFFFFffffU);
-  g_hash_table_insert (hash, "u64:2**32-1", value);
-  value = NULL;
-
-  value = tp_g_value_slice_new (G_TYPE_UINT64);
-  g_value_set_uint64 (value, G_GUINT64_CONSTANT (0x100000000));
-  g_hash_table_insert (hash, "u64:2**32", value);
-  value = NULL;
-
-  value = tp_g_value_slice_new (G_TYPE_INT64);
-  g_value_set_int64 (value, G_GINT64_CONSTANT (-0x80000000) *
-      G_GINT64_CONSTANT (0x100000000));
-  g_hash_table_insert (hash, "i64:-2**63", value);
-  value = NULL;
-
-  value = tp_g_value_slice_new (G_TYPE_INT64);
-  g_value_set_int64 (value, G_GINT64_CONSTANT (0x7FFFffffFFFFffff));
-  g_hash_table_insert (hash, "i64:2**63-1", value);
-  value = NULL;
-
-  value = tp_g_value_slice_new (G_TYPE_UINT64);
-  g_value_set_uint64 (value, G_GUINT64_CONSTANT (0x7FFFffffFFFFffff));
-  g_hash_table_insert (hash, "u64:2**63-1", value);
-  value = NULL;
-
-  value = tp_g_value_slice_new (G_TYPE_UINT64);
-  g_value_set_uint64 (value, G_GUINT64_CONSTANT (0xFFFFffffFFFFffff));
-  g_hash_table_insert (hash, "u64:2**64-1", value);
-  value = NULL;
-
-  value = tp_g_value_slice_new (G_TYPE_STRV);
-  g_value_set_boxed (value, strv);
-  g_hash_table_insert (hash, "as", value);
-  value = NULL;
-
-  value = tp_g_value_slice_new (G_TYPE_STRV);
-  g_value_set_boxed (value, strv + 2);
-  g_hash_table_insert (hash, "as0", value);
-  value = NULL;
+  g_hash_table_insert (hash, "as0",
+      tp_g_value_slice_new_boxed (G_TYPE_STRV, strv + 2));
 
   /* Tests: tp_asv_get_boolean */
 
