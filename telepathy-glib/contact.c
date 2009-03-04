@@ -1768,8 +1768,7 @@ contacts_get_attributes (ContactsContext *context)
 {
   GArray *contact_attribute_interfaces =
       context->connection->priv->contact_attribute_interfaces;
-  GPtrArray *array = g_ptr_array_sized_new (
-      contact_attribute_interfaces->len);
+  GPtrArray *array;
   const gchar **supported_interfaces;
   guint i;
 
@@ -1784,6 +1783,8 @@ contacts_get_attributes (ContactsContext *context)
   g_assert (tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS));
   g_assert (contact_attribute_interfaces != NULL);
+
+  array = g_ptr_array_sized_new (contact_attribute_interfaces->len);
 
   for (i = 0; i < contact_attribute_interfaces->len; i++)
     {
