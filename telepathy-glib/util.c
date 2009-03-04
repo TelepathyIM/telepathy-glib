@@ -62,7 +62,8 @@ tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
  * tp_g_value_slice_new:
  * @type: The type desired for the new GValue
  *
- * <!-- 'Returns' says it all -->
+ * Slice-allocate an empty #GValue. tp_g_value_slice_new_boolean() and similar
+ * functions are likely to be more convenient to use for the types supported.
  *
  * Returns: a newly allocated, newly initialized #GValue, to be freed with
  * tp_g_value_slice_free() or g_slice_free().
@@ -77,12 +78,283 @@ tp_g_value_slice_new (GType type)
   return ret;
 }
 
+/**
+ * tp_g_value_slice_new_boolean:
+ * @b: a boolean value
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_BOOLEAN with value @b, to be freed with
+ * tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_boolean (gboolean b)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_BOOLEAN);
+
+  g_value_set_boolean (v, b);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_int:
+ * @n: an integer
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_INT with value @n, to be freed with
+ * tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_int (gint n)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_INT);
+
+  g_value_set_int (v, n);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_int64:
+ * @n: a 64-bit integer
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_INT64 with value @n, to be freed with
+ * tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_int64 (gint64 n)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_INT64);
+
+  g_value_set_int64 (v, n);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_uint:
+ * @n: an unsigned integer
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_UINT with value @n, to be freed with
+ * tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_uint (guint n)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_UINT);
+
+  g_value_set_uint (v, n);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_uint64:
+ * @n: a 64-bit unsigned integer
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_UINT64 with value @n, to be freed with
+ * tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_uint64 (guint64 n)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_UINT64);
+
+  g_value_set_uint64 (v, n);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_double:
+ * @d: a number
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_DOUBLE with value @n, to be freed with
+ * tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_double (double n)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_DOUBLE);
+
+  g_value_set_double (v, n);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_string:
+ * @string: a string to be copied into the value
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_STRING whose value is a copy of @string,
+ * to be freed with tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_string (const gchar *string)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_STRING);
+
+  g_value_set_string (v, string);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_static_string:
+ * @string: a static string which must remain valid forever, to be pointed to
+ *  by the value
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_STRING whose value is @string,
+ * to be freed with tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_static_string (const gchar *string)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_STRING);
+
+  g_value_set_static_string (v, string);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_take_string:
+ * @string: a string which will be freed with g_free() by the returned #GValue
+ *  (the caller must own it before calling this function, but no longer owns
+ *  it after this function returns)
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_STRING whose value is @string,
+ * to be freed with tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_take_string (gchar *string)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_STRING);
+
+  g_value_take_string (v, string);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_boxed:
+ * @type: a boxed type
+ * @p: a pointer of type @type, which will be copied
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type @type whose value is a copy of @p,
+ * to be freed with tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_boxed (GType type,
+                            gconstpointer p)
+{
+  GValue *v;
+
+  g_return_val_if_fail (G_TYPE_FUNDAMENTAL (type) == G_TYPE_BOXED, NULL);
+  v = tp_g_value_slice_new (type);
+  g_value_set_boxed (v, p);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_static_boxed:
+ * @type: a boxed type
+ * @p: a pointer of type @type, which must remain valid forever
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type @type whose value is @p,
+ * to be freed with tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_static_boxed (GType type,
+                                   gconstpointer p)
+{
+  GValue *v;
+
+  g_return_val_if_fail (G_TYPE_FUNDAMENTAL (type) == G_TYPE_BOXED, NULL);
+  v = tp_g_value_slice_new (type);
+  g_value_set_static_boxed (v, p);
+  return v;
+}
+
+/**
+ * tp_g_value_slice_new_take_boxed:
+ * @type: a boxed type
+ * @p: a pointer of type @type which will be freed with g_boxed_free() by the
+ *  returned #GValue (the caller must own it before calling this function, but
+ *  no longer owns it after this function returns)
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type @type whose value is @p,
+ * to be freed with tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_take_boxed (GType type,
+                                 gpointer p)
+{
+  GValue *v;
+
+  g_return_val_if_fail (G_TYPE_FUNDAMENTAL (type) == G_TYPE_BOXED, NULL);
+  v = tp_g_value_slice_new (type);
+  g_value_take_boxed (v, p);
+  return v;
+}
 
 /**
  * tp_g_value_slice_free:
  * @value: A GValue which was allocated with the g_slice API
  *
  * Unset and free a slice-allocated GValue.
+ *
+ * <literal>(GDestroyNotify) tp_g_value_slice_free</literal> can be used
+ * as a destructor for values in a #GHashTable, for example.
  */
 
 void

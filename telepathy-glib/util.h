@@ -31,6 +31,21 @@ gboolean tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle);
 
 GValue *tp_g_value_slice_new (GType type);
 
+GValue *tp_g_value_slice_new_boolean (gboolean b);
+GValue *tp_g_value_slice_new_int (gint n);
+GValue *tp_g_value_slice_new_int64 (gint64 n);
+GValue *tp_g_value_slice_new_uint (guint n);
+GValue *tp_g_value_slice_new_uint64 (guint64 n);
+GValue *tp_g_value_slice_new_double (double d);
+
+GValue *tp_g_value_slice_new_string (const gchar *string);
+GValue *tp_g_value_slice_new_static_string (const gchar *string);
+GValue *tp_g_value_slice_new_take_string (gchar *string);
+
+GValue *tp_g_value_slice_new_boxed (GType type, gconstpointer p);
+GValue *tp_g_value_slice_new_static_boxed (GType type, gconstpointer p);
+GValue *tp_g_value_slice_new_take_boxed (GType type, gpointer p);
+
 void tp_g_value_slice_free (GValue *value);
 
 GValue *tp_g_value_slice_dup (const GValue *value);
