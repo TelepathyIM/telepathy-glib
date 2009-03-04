@@ -477,6 +477,7 @@ main (int argc,
   g_free (name);
   g_free (conn_path);
   g_free (chan_path);
+  g_free (props_chan_path);
 
   return fail;
 }

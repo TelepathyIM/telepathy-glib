@@ -394,6 +394,7 @@ check_removed_error_in_invalidated (void)
   g_object_unref (chan);
   g_object_unref (service_chan);
   g_free (chan_path);
+  tp_intset_destroy (self_handle_singleton);
 }
 
 int
