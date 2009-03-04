@@ -112,26 +112,20 @@ AM_CFLAGS = \
     $(GLIB_CFLAGS) \
     $(TP_GLIB_CFLAGS)
 
-TESTS_ENV = \
+TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
     XDG_DATA_HOME=@abs_builddir@ \
     XDG_DATA_DIRS=@abs_srcdir@ \
     G_DEBUG=fatal_warnings,fatal_criticals
 
-TESTS_ENVIRONMENT = \
-    $(TESTS_ENV) \
-    sh $(top_srcdir)/tools/with-session-bus.sh --session --
-
 check-valgrind:
 	$(MAKE) check-TESTS \
-		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)" \
-		TESTS="$(TESTS:%=.libs/%)"
+		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
 
 VALGRIND_TESTS_ENVIRONMENT = \
     G_SLICE=always-malloc \
-    $(TESTS_ENV) \
-    $(top_builddir)/tools/telepathy-glib-env \
-    sh $(top_srcdir)/tools/with-session-bus.sh --session -- \
+    $(TESTS_ENVIRONMENT) \
+    $(top_builddir)/libtool --mode=execute \
     valgrind --tool=memcheck --leak-check=full --show-reachable=yes \
         --suppressions=$(top_srcdir)/examples/tp-glib-examples.supp \
         --child-silent-after-fork=yes --num-callers=20 --error-exitcode=42 \
