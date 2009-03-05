@@ -26,6 +26,7 @@ EXTRA_DIST = \
     libtpcodegen.py \
     libglibcodegen.py \
     make-version-script.py \
+    manager-file.py \
     telepathy.am \
     telepathy-glib-env.in \
     with-session-bus.sh \

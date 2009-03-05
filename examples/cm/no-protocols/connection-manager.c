@@ -31,6 +31,9 @@ example_no_protocols_connection_manager_init (
 /* private data */
 
 /* We don't actually support any protocols */
+
+#include "_gen/param-spec-struct.h"
+
 const TpCMProtocolSpec stub_protocols[] = {
   { NULL, NULL }
 };
