@@ -1365,7 +1365,7 @@ maybe_add_member_ids (TpGroupMixin *mixin,
 
   g_hash_table_insert (details, "member-ids",
       tp_g_value_slice_new_take_boxed (TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP,
-      member_ids));
+          member_ids));
 
   return TRUE;
 }
