@@ -1,12 +1,26 @@
 telepathy-glib 0.7.27 (UNRELEASED)
 ==================================
 
+Enhancements:
+
+* fd.o #18220: make it much less verbose to construct string/variant maps
+  (a{sv}) by adding functions like tp_g_value_slice_new_uint(), which are a
+  shortcut for a sequence like tp_g_value_slice_new (G_TYPE_UINT) followed by
+  g_value_set_uint
+
 Fixes:
 
 * fd.o #20165: fix a use-after-free in tp_base_connection_register() that
   causes connection managers to assert if they have not already called
   tp_dbus_daemon_dup() or tp_run_connection_manager() (regression in 0.7.26
   which broke the telepathy-qt4 regression tests)
+
+* Fix some memory leaks when making TpContact objects, when holding handles in
+  TpContactsMixin, when filling contact attributes in TpPresenceMixin,
+  when setting simple presence, and in the regression tests
+  
+* Update the valgrind suppressions file to cope with new telepathy-glib code,
+  GTest, and glibc 2.9
 
 * Fix compilation with gtkdoc 1.11, which is stricter about the contents of
   Since: annotations, and parses more comments
