@@ -408,7 +408,11 @@ channel_manager_iface_init (gpointer g_iface,
     example_callable_media_manager_foreach_channel_class;
   iface->create_channel = example_callable_media_manager_create_channel;
   iface->ensure_channel = example_callable_media_manager_ensure_channel;
-  /* In this channel manager, Request has the same semantics as Create
-   * (this matches telepathy-gabble's behaviour) */
-  iface->request_channel = example_callable_media_manager_create_channel;
+  /* In this channel manager, RequestChannel is not supported (it's new
+   * code so there's no reason to be backwards compatible). The requirements
+   * for RequestChannel are somewhat complicated for backwards compatibility
+   * reasons: see telepathy-gabble or
+   * http://telepathy.freedesktop.org/wiki/Requesting%20StreamedMedia%20channels
+   * for the gory details. */
+  iface->request_channel = NULL;
 }
