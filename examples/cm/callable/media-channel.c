@@ -83,6 +83,7 @@ struct _ExampleCallableMediaChannelPrivate
   TpHandle initiator;
 
   /* These are really booleans, but gboolean is signed. Thanks, GLib */
+  unsigned locally_requested:1;
   unsigned closed:1;
   unsigned disposed:1;
 };
@@ -167,8 +168,7 @@ get_property (GObject *object,
       break;
 
     case PROP_REQUESTED:
-      g_value_set_boolean (value,
-          (self->priv->initiator == self->priv->conn->self_handle));
+      g_value_set_boolean (value, self->priv->locally_requested);
       break;
 
     case PROP_INITIATOR_HANDLE:
@@ -242,6 +242,10 @@ set_property (GObject *object,
     case PROP_INITIATOR_HANDLE:
       /* likewise */
       self->priv->initiator = g_value_get_uint (value);
+      break;
+
+    case PROP_REQUESTED:
+      self->priv->locally_requested = g_value_get_boolean (value);
       break;
 
     case PROP_HANDLE_TYPE:
@@ -403,7 +407,7 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
   param_spec = g_param_spec_boolean ("requested", "Requested?",
       "True if this channel was requested by the local user",
       FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
