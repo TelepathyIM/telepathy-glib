@@ -331,6 +331,19 @@ example_callable_media_manager_request (ExampleCallableMediaManager *self,
       goto error;
     }
 
+  if (handle == self->priv->conn->self_handle)
+    {
+      /* In protocols with a concept of multiple "resources" signed in to
+       * one account (XMPP, and possibly MSN) it is technically possible to
+       * call yourself - e.g. if you're signed in on two PCs, you can call one
+       * from the other. For simplicity, this example simulates a protocol
+       * where this is not the case.
+       */
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "In this protocol, you can't call yourself");
+      goto error;
+    }
+
   if (!require_new)
     {
       /* see if we're already calling that handle */
