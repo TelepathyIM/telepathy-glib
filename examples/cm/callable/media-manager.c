@@ -247,6 +247,7 @@ new_channel (ExampleCallableMediaManager *self,
       "object-path", object_path,
       "handle", handle,
       "initiator-handle", initiator,
+      "requested", (self->priv->conn->self_handle == initiator),
       NULL);
 
   g_free (object_path);
