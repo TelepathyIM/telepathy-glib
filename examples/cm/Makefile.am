@@ -1,4 +1,5 @@
 SUBDIRS = \
+    callable \
     channelspecific \
     contactlist \
     echo \

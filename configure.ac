@@ -200,6 +200,7 @@ AC_OUTPUT( Makefile \
 	   examples/Makefile \
 	   examples/client/Makefile \
 	   examples/cm/Makefile \
+	   examples/cm/callable/Makefile \
 	   examples/cm/channelspecific/Makefile \
 	   examples/cm/contactlist/Makefile \
 	   examples/cm/echo/Makefile \
