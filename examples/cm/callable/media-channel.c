@@ -82,6 +82,8 @@ struct _ExampleCallableMediaChannelPrivate
   TpHandle handle;
   TpHandle initiator;
 
+  guint next_stream_id;
+
   /* These are really booleans, but gboolean is signed. Thanks, GLib */
   unsigned locally_requested:1;
   unsigned closed:1;
@@ -99,6 +101,8 @@ example_callable_media_channel_init (ExampleCallableMediaChannel *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       EXAMPLE_TYPE_CALLABLE_MEDIA_CHANNEL,
       ExampleCallableMediaChannelPrivate);
+
+  self->priv->next_stream_id = 1;
 }
 
 static void
