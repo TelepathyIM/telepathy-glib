@@ -114,6 +114,8 @@ constructed (GObject *object)
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   DBusGConnection *bus;
+  TpIntSet *members;
+  TpIntSet *local_pending;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -128,11 +130,66 @@ constructed (GObject *object)
       G_STRUCT_OFFSET (ExampleCallableMediaChannel, group),
       contact_repo, self->priv->conn->self_handle);
 
-  /* FIXME: correct flags */
-  tp_group_mixin_change_flags (object,
-      TP_CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES |
-      TP_CHANNEL_GROUP_FLAG_PROPERTIES,
-      0);
+  /* Initially, the channel contains the initiator as a member; they are also
+   * the actor.
+   *
+   * (FIXME: in Gabble, the actor for the initiator being in the channel
+   * is 0, although the actor for the self-handle being local-pending is
+   * correctly the initiator) */
+
+  members = tp_intset_new_containing (self->priv->initiator);
+
+  if (self->priv->locally_requested)
+    {
+      /* Nobody is locally pending. The remote peer will turn up in
+       * remote-pending state when we actually contact them, which is done
+       * in RequestStreams */
+      local_pending = NULL;
+    }
+  else
+    {
+      /* This is an incoming call, so the self-handle is locally
+       * pending, to indicate that we need to answer. */
+      local_pending = tp_intset_new_containing (self->priv->conn->self_handle);
+    }
+
+  tp_group_mixin_change_members (object, "", members, NULL, local_pending,
+      NULL, self->priv->initiator, 0);
+  tp_intset_destroy (members);
+
+  if (local_pending != NULL)
+    tp_intset_destroy (local_pending);
+
+  if (self->priv->locally_requested)
+    {
+      /* It doesn't make sense to add anyone to the Group, since we already
+       * know who we're going to call.
+       *
+       * (Connection managers that support the various backwards-compatible
+       * ways to make a StreamedMedia channel have to support adding the peer
+       * to remote-pending, but that has no actual effect other than to obscure
+       * what's going on; in this one, there's no need to support that
+       * usage.)
+       *
+       * FIXME: It would make sense to be able to remove the self-handle, but
+       * this is not currently allowed. Gabble doesn't allow removing the
+       * self-handle here, which may be a bug (fd.o#20578). For the moment, we
+       * mimic its behaviour in this example. */
+      tp_group_mixin_change_flags (object,
+          TP_CHANNEL_GROUP_FLAG_PROPERTIES,
+          0);
+    }
+  else
+    {
+      /* We can implicitly move ourselves from local-pending to member (no
+       * flag is needed - if we're in local-pending, then that's always
+       * allowed). We can also reject the call by removing the remote peer. */
+      tp_group_mixin_change_flags (object,
+          TP_CHANNEL_GROUP_FLAG_PROPERTIES | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE,
+          0);
+
+      /* FIXME: act on any streams that the remote peer has already enabled */
+    }
 }
 
 static void
