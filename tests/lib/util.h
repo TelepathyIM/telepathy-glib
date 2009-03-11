@@ -15,4 +15,6 @@
 
 void test_connection_run_until_dbus_queue_processed (TpConnection *connection);
 
+void test_assert_no_error (const GError *error);
+
 #endif
