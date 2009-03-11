@@ -17,7 +17,9 @@ libexample_cm_callable_la_SOURCES = \
     media-channel.c \
     media-channel.h \
     media-manager.c \
-    media-manager.h
+    media-manager.h \
+    media-stream.c \
+    media-stream.h
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
 # pkg-config via autoconf) instead of the .la path
