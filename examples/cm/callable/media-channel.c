@@ -681,9 +681,31 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
                       DBusGMethodInvocation *context)
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
+  guint i;
 
-  /* FIXME */
-  (void) self;
+  for (i = 0; i < stream_ids->len; i++)
+    {
+      guint id = g_array_index (stream_ids, guint, i);
+
+      if (g_hash_table_lookup (self->priv->streams,
+            GUINT_TO_POINTER (id)) == NULL)
+        {
+          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "No stream with ID %u in this channel", id);
+
+          dbus_g_method_return_error (context, error);
+          g_error_free (error);
+          return;
+        }
+    }
+
+  for (i = 0; i < stream_ids->len; i++)
+    {
+      guint id = g_array_index (stream_ids, guint, i);
+
+      example_callable_media_stream_close (
+          g_hash_table_lookup (self->priv->streams, GUINT_TO_POINTER (id)));
+    }
 
   tp_svc_channel_type_streamed_media_return_from_remove_streams (context);
 }
