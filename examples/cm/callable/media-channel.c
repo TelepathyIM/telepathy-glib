@@ -717,12 +717,53 @@ media_request_stream_direction (TpSvcChannelTypeStreamedMedia *iface,
                                 DBusGMethodInvocation *context)
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
+  ExampleCallableMediaStream *stream = g_hash_table_lookup (
+      self->priv->streams, GUINT_TO_POINTER (stream_id));
+  GError *error = NULL;
 
-  /* FIXME */
-  (void) self;
+  if (stream == NULL)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "No stream with ID %u in this channel", stream_id);
+      goto error;
+    }
+
+  if (stream_direction > TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Stream direction %u is not valid", stream_direction);
+      goto error;
+    }
+
+  /* In some protocols, streams cannot be neither sending nor receiving, so
+   * if a stream is set to TP_MEDIA_STREAM_DIRECTION_NONE, this is equivalent
+   * to removing it with RemoveStreams. (This is true in XMPP, for instance.)
+   *
+   * If this was the case, there would be code like this here:
+   *
+   * if (stream_direction == TP_MEDIA_STREAM_DIRECTION_NONE)
+   *   {
+   *     example_callable_media_stream_close (stream);
+   *     tp_svc_channel_type_streamed_media_return_from_request_stream_direction (
+   *        context);
+   *     return;
+   *   }
+   *
+   * However, for this example we'll emulate a protocol where streams can be
+   * directionless.
+   */
+
+  if (!example_callable_media_stream_change_direction (stream,
+        stream_direction, &error))
+    goto error;
 
   tp_svc_channel_type_streamed_media_return_from_request_stream_direction (
       context);
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
