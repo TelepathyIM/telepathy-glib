@@ -35,6 +35,8 @@
 
 #include "media-channel.h"
 
+#include "media-stream.h"
+
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
@@ -92,6 +94,8 @@ struct _ExampleCallableMediaChannelPrivate
 
   guint next_stream_id;
 
+  GHashTable *streams;
+
   /* These are really booleans, but gboolean is signed. Thanks, GLib */
   unsigned locally_requested:1;
   unsigned closed:1;
@@ -111,6 +115,8 @@ example_callable_media_channel_init (ExampleCallableMediaChannel *self)
       ExampleCallableMediaChannelPrivate);
 
   self->priv->next_stream_id = 1;
+  self->priv->streams = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+      NULL, g_object_unref);
 }
 
 static void
@@ -621,13 +627,51 @@ media_list_streams (TpSvcChannelTypeStreamedMedia *iface,
                     DBusGMethodInvocation *context)
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
-  GPtrArray *array = g_ptr_array_sized_new (0);
+  GPtrArray *array = g_ptr_array_sized_new (g_hash_table_size (
+        self->priv->streams));
+  GHashTableIter iter;
+  gpointer k, v;
 
-  /* FIXME */
-  (void) self;
+  g_hash_table_iter_init (&iter, self->priv->streams);
+
+  while (g_hash_table_iter_next (&iter, &k, &v))
+    {
+      guint id = GPOINTER_TO_UINT (k);
+      guint i;
+      ExampleCallableMediaStream *stream = v;
+      guint handle, media_type, state, direction, pending_send;
+      GValueArray *va = g_value_array_new (6);
+
+      g_object_get (stream,
+          "handle", &handle,
+          "type", &media_type,
+          "state", &state,
+          "pending-send", &pending_send,
+          "direction", &direction,
+          NULL);
+
+      for (i = 0; i < 6; i++)
+        g_value_array_append (va, NULL);
+
+      g_value_init (va->values + 0, G_TYPE_UINT);
+      g_value_set_uint (va->values + 0, id);
+      g_value_init (va->values + 1, G_TYPE_UINT);
+      g_value_set_uint (va->values + 1, handle);
+      g_value_init (va->values + 2, G_TYPE_UINT);
+      g_value_set_uint (va->values + 2, media_type);
+      g_value_init (va->values + 3, G_TYPE_UINT);
+      g_value_set_uint (va->values + 3, state);
+      g_value_init (va->values + 4, G_TYPE_UINT);
+      g_value_set_uint (va->values + 4, direction);
+      g_value_init (va->values + 5, G_TYPE_UINT);
+      g_value_set_uint (va->values + 5, pending_send);
+
+      g_ptr_array_add (array, va);
+    }
 
   tp_svc_channel_type_streamed_media_return_from_list_streams (context,
       array);
+  g_ptr_array_foreach (array, (GFunc) g_value_array_free, NULL);
   g_ptr_array_free (array, TRUE);
 }
 
