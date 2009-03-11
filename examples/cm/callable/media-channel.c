@@ -153,8 +153,12 @@ constructed (GObject *object)
       local_pending = tp_intset_new_containing (self->priv->conn->self_handle);
     }
 
-  tp_group_mixin_change_members (object, "", members, NULL, local_pending,
-      NULL, self->priv->initiator, 0);
+  tp_group_mixin_change_members (object, "",
+      members /* added */,
+      NULL /* nobody removed */,
+      local_pending, /* added to local-pending */
+      NULL /* nobody added to remote-pending */,
+      self->priv->initiator /* actor */, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (members);
 
   if (local_pending != NULL)
