@@ -26,6 +26,7 @@
 #include "media-stream.h"
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/gtypes.h>
 
 #include "media-channel.h"
 
@@ -42,6 +43,7 @@ enum
   PROP_STATE,
   PROP_PENDING_SEND,
   PROP_DIRECTION,
+  PROP_STREAM_INFO,
   N_PROPS
 };
 
@@ -142,6 +144,28 @@ get_property (GObject *object,
 
     case PROP_CHANNEL:
       g_value_set_object (value, self->priv->channel);
+      break;
+
+    case PROP_STREAM_INFO:
+        {
+          GValueArray *va = g_value_array_new (6);
+          guint i;
+
+          for (i = 0; i < 6; i++)
+            {
+              g_value_array_append (va, NULL);
+              g_value_init (va->values + i, G_TYPE_UINT);
+            }
+
+          g_value_set_uint (va->values + 0, self->priv->id);
+          g_value_set_uint (va->values + 1, self->priv->handle);
+          g_value_set_uint (va->values + 2, self->priv->type);
+          g_value_set_uint (va->values + 3, self->priv->state);
+          g_value_set_uint (va->values + 4, self->priv->direction);
+          g_value_set_uint (va->values + 5, self->priv->pending_send);
+
+          g_value_take_boxed (value, va);
+        }
       break;
 
     default:
@@ -268,6 +292,12 @@ example_callable_media_stream_class_init (ExampleCallableMediaStreamClass *klass
       0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PENDING_SEND, param_spec);
+
+  param_spec = g_param_spec_boxed ("stream-info", "Stream info",
+      "6-entry GValueArray as returned by ListStreams and RequestStreams",
+      TP_STRUCT_TYPE_MEDIA_STREAM_INFO,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_STREAM_INFO, param_spec);
 
   signals[SIGNAL_REMOVED] = g_signal_new ("removed",
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
