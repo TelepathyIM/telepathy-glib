@@ -1,5 +1,6 @@
 noinst_PROGRAMS = \
     test-call-cancellation \
+    test-callable-example \
     test-channel-introspect \
     test-cli-group \
     test-cm \
@@ -35,6 +36,11 @@ LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la
 
 test_channel_introspect_SOURCES = channel-introspect.c
+
+test_callable_example_SOURCES = callable-example.c
+test_callable_example_LDADD = \
+    $(LDADD) \
+    $(top_builddir)/examples/cm/callable/libexample-cm-callable.la
 
 test_cli_group_SOURCES = cli-group.c
 
