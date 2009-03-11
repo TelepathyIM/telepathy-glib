@@ -232,6 +232,15 @@ class Generator(object):
             self.b('  static TpDBusPropertiesMixinIfaceInfo interface =')
             self.b('      { 0, properties, NULL, NULL };')
             self.b('')
+
+
+        self.b('  dbus_g_object_type_install_info (%s%s_get_type (),'
+               % (self.prefix_, node_name_lc))
+        self.b('      &_%s%s_object_info);'
+               % (self.prefix_, node_name_lc))
+        self.b('')
+
+        if properties:
             self.b('  interface.dbus_interface = g_quark_from_static_string '
                    '("%s");' % self.iface_name)
 
@@ -248,10 +257,6 @@ class Generator(object):
 
         for s in base_init_code:
             self.b(s)
-        self.b('  dbus_g_object_type_install_info (%s%s_get_type (),'
-               % (self.prefix_, node_name_lc))
-        self.b('      &_%s%s_object_info);'
-               % (self.prefix_, node_name_lc))
         self.b('}')
 
         self.b('static void')
