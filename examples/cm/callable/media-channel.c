@@ -630,41 +630,18 @@ media_list_streams (TpSvcChannelTypeStreamedMedia *iface,
   GPtrArray *array = g_ptr_array_sized_new (g_hash_table_size (
         self->priv->streams));
   GHashTableIter iter;
-  gpointer k, v;
+  gpointer v;
 
   g_hash_table_iter_init (&iter, self->priv->streams);
 
-  while (g_hash_table_iter_next (&iter, &k, &v))
+  while (g_hash_table_iter_next (&iter, NULL, &v))
     {
-      guint id = GPOINTER_TO_UINT (k);
-      guint i;
       ExampleCallableMediaStream *stream = v;
-      guint handle, media_type, state, direction, pending_send;
-      GValueArray *va = g_value_array_new (6);
+      GValueArray *va;
 
       g_object_get (stream,
-          "handle", &handle,
-          "type", &media_type,
-          "state", &state,
-          "pending-send", &pending_send,
-          "direction", &direction,
+          "stream-info", &va,
           NULL);
-
-      for (i = 0; i < 6; i++)
-        g_value_array_append (va, NULL);
-
-      g_value_init (va->values + 0, G_TYPE_UINT);
-      g_value_set_uint (va->values + 0, id);
-      g_value_init (va->values + 1, G_TYPE_UINT);
-      g_value_set_uint (va->values + 1, handle);
-      g_value_init (va->values + 2, G_TYPE_UINT);
-      g_value_set_uint (va->values + 2, media_type);
-      g_value_init (va->values + 3, G_TYPE_UINT);
-      g_value_set_uint (va->values + 3, state);
-      g_value_init (va->values + 4, G_TYPE_UINT);
-      g_value_set_uint (va->values + 4, direction);
-      g_value_init (va->values + 5, G_TYPE_UINT);
-      g_value_set_uint (va->values + 5, pending_send);
 
       g_ptr_array_add (array, va);
     }
