@@ -75,6 +75,14 @@ enum
   N_PROPS
 };
 
+enum
+{
+  SIGNAL_CALL_TERMINATED,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
+
 struct _ExampleCallableMediaChannelPrivate
 {
   TpBaseConnection *conn;
@@ -377,7 +385,40 @@ add_member (GObject *object,
             const gchar *message,
             GError **error)
 {
-  return TRUE;
+  ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (object);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
+      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+
+  /* In connection managers that supported the RequestChannel method for
+   * streamed media channels, it would be necessary to support adding the
+   * called contact to the members of an outgoing call. However, in this
+   * legacy-free example, we don't support that usage, so the only use for
+   * AddMembers is to accept an incoming call.
+   */
+
+  if (member == self->group.self_handle &&
+      tp_handle_set_is_member (self->group.local_pending, member))
+    {
+      /* We're in local-pending, move to members to accept. */
+      TpIntSet *set = tp_intset_new_containing (member);
+
+      g_message ("Sending to server: Accepting incoming call from %s",
+          tp_handle_inspect (contact_repo, self->priv->handle));
+
+      tp_group_mixin_change_members (object, "",
+          set /* added */,
+          NULL /* nobody removed */,
+          NULL /* nobody added to local pending */,
+          NULL /* nobody added to remote pending */,
+          member /* actor */, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+      return TRUE;
+    }
+
+  /* Otherwise it's a meaningless request, so reject it. */
+  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      "Cannot add handle %u to channel", member);
+  return FALSE;
 }
 
 static gboolean
@@ -387,6 +428,37 @@ remove_member_with_reason (GObject *object,
                            guint reason,
                            GError **error)
 {
+  ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (object);
+  const gchar *send_reason;
+
+  /* The TpGroupMixin won't call this unless member is in one of the sets,
+   * which means either it's the local user or the peer. */
+
+  g_assert (member == self->group.self_handle || member == self->priv->handle);
+
+  /* FIXME: Gabble disallows removing handles that are not our self handle
+   * unless we created the channel. That doesn't seem right... bug? Or should
+   * we mimic its behaviour, so people who interop with this example will
+   * also interop with Gabble? */
+
+  /* In a real protocol these would be some sort of real protocol construct,
+   * like an XMPP error stanza or a SIP error code */
+  switch (reason)
+    {
+    case TP_CHANNEL_GROUP_CHANGE_REASON_BUSY:
+      send_reason = "<user-is-busy/>";
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
+      send_reason = "<no-answer/>";
+      break;
+
+    default:
+      send_reason = "<call-terminated/>";
+    }
+
+  g_message ("Sending to server: Terminating call: %s", send_reason);
+  g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
   return TRUE;
 }
 
@@ -474,6 +546,11 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
       FALSE,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
+
+  signals[SIGNAL_CALL_TERMINATED] = g_signal_new ("call-terminated",
+      G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
