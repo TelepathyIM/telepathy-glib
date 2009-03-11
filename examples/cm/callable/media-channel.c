@@ -750,14 +750,67 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
                        DBusGMethodInvocation *context)
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
-  GPtrArray *array = g_ptr_array_sized_new (0);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
+      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  GPtrArray *array;
+  guint i;
+  GError *error = NULL;
 
-  /* FIXME */
-  (void) self;
+  if (!tp_handle_is_valid (contact_repo, contact_handle, &error))
+    goto error;
+
+  for (i = 0; i < media_types->len; i++)
+    {
+      guint media_type = g_array_index (media_types, guint, i);
+
+      switch (media_type)
+        {
+        case TP_MEDIA_STREAM_TYPE_AUDIO:
+        case TP_MEDIA_STREAM_TYPE_VIDEO:
+          break;
+        default:
+          g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "%u is not a valid Media_Stream_Type", media_type);
+          goto error;
+        }
+    }
+
+  array = g_ptr_array_sized_new (media_types->len);
+
+  for (i = 0; i < media_types->len; i++)
+    {
+      guint media_type = g_array_index (media_types, guint, i);
+      ExampleCallableMediaStream *stream;
+      GValueArray *info;
+      guint id = self->priv->next_stream_id++;
+
+      stream = g_object_new (EXAMPLE_TYPE_CALLABLE_MEDIA_STREAM,
+          "channel", self,
+          "id", id,
+          "handle", self->priv->handle,
+          "type", media_type,
+          NULL);
+      /* FIXME: what direction should the stream have, and why? Answers on
+       * a postcard. */
+
+      g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
+
+      g_object_get (stream,
+          "stream-info", &info,
+          NULL);
+
+      g_ptr_array_add (array, info);
+    }
 
   tp_svc_channel_type_streamed_media_return_from_request_streams (context,
       array);
   g_ptr_array_free (array, TRUE);
+
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
