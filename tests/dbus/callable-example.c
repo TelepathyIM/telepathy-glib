@@ -65,6 +65,7 @@ typedef struct
 
   GArray *audio_request;
   GArray *video_request;
+  GArray *invalid_request;
 
   GArray *stream_ids;
   GArray *contacts;
@@ -106,6 +107,7 @@ setup (Test *test,
   GHashTable *parameters;
   guint audio = TP_MEDIA_STREAM_TYPE_AUDIO;
   guint video = TP_MEDIA_STREAM_TYPE_VIDEO;
+  guint not_a_media_type = 31337;
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -156,6 +158,9 @@ setup (Test *test,
 
   test->video_request = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
   g_array_append_val (test->video_request, video);
+
+  test->invalid_request = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+  g_array_append_val (test->invalid_request, not_a_media_type);
 
   test->stream_ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
   test->contacts = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
@@ -266,6 +271,7 @@ test_basics (Test *test,
   GValueArray *audio_info, *video_info;
   guint audio_stream_id;
   guint video_stream_id;
+  guint not_a_stream_id = 31337;
 
   g_hash_table_insert (request, TP_IFACE_CHANNEL ".ChannelType",
       tp_g_value_slice_new_static_string (
@@ -295,6 +301,26 @@ test_basics (Test *test,
   test_assert_no_error (test->error);
 
   g_assert_cmpuint (test->list_streams_return->len, ==, 0);
+
+  /* RequestStreams with bad handle must fail */
+
+  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
+      test->self_handle,
+      test->audio_request, requested_streams_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error != NULL);
+  g_clear_error (&test->error);
+
+  /* RequestStreams with bad request must fail */
+
+  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
+      tp_channel_get_handle (test->chan, NULL),
+      test->invalid_request, requested_streams_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error != NULL);
+  g_clear_error (&test->error);
 
   /* RequestStreams */
 
@@ -425,6 +451,17 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (video_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_VIDEO);
 
+  /* RemoveStreams with a bad stream ID must fail */
+
+  g_array_set_size (test->stream_ids, 0);
+  g_array_append_val (test->stream_ids, not_a_stream_id);
+  tp_cli_channel_type_streamed_media_call_remove_streams (test->chan, -1,
+      test->stream_ids,
+      void_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error != NULL);
+  g_clear_error (&test->error);
+
   /* Drop the video stream with RemoveStreams */
 
   g_array_set_size (test->stream_ids, 0);
@@ -472,21 +509,24 @@ test_basics (Test *test,
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* FIXME: untested things include:
-   * RequestStream failing (invalid handle, invalid media type)
+   *
    * RequestStreamDirection
-   * RequestStreamDirection failing (invalid direction)
-   * RemoveStreams
-   * RemoveStreams failing (with a contact who accepts)
-   * StreamAdded being emitted correctly (part of calling RS again)
    * StreamDirectionChanged being emitted correctly (part of RSD)
-   * StreamError being emitted (special contact)
-   * StreamRemoved being emitted
+   * RequestStreamDirection failing (invalid direction, stream ID)
+   *
+   * StreamAdded being emitted correctly
+   * StreamRemoved being emitted correctly
+   *
    * StreamStateChanged being emitted (???)
+   *
+   * The contact accepting the call
+   *
+   * The Group interface
    */
 }
 
 /* FIXME: add a special contact who never accepts the call, so it rings
- * forever */
+ * forever, and test that */
 
 /* FIXME: add a special contact who accepts the call, then terminates it */
 
