@@ -66,6 +66,7 @@ struct _ExampleCallableMediaStreamPrivate
   TpMediaStreamState state;
   TpMediaStreamDirection direction;
   TpMediaStreamPendingSend pending_send;
+  gulong call_terminated_id;
 };
 
 static void
@@ -80,6 +81,8 @@ static void
 call_terminated_cb (ExampleCallableMediaChannel *channel,
                     ExampleCallableMediaStream *self)
 {
+  g_signal_handler_disconnect (channel, self->priv->call_terminated_id);
+  self->priv->call_terminated_id = 0;
   example_callable_media_stream_close (self);
 }
 
@@ -96,8 +99,8 @@ constructed (GObject *object)
   g_object_get (self->priv->channel,
       "connection", &self->priv->conn,
       NULL);
-  g_signal_connect (self->priv->channel, "call-terminated",
-      G_CALLBACK (call_terminated_cb), self);
+  self->priv->call_terminated_id = g_signal_connect (self->priv->channel,
+      "call-terminated", G_CALLBACK (call_terminated_cb), self);
 
   if (self->priv->handle != 0)
     {
@@ -222,6 +225,13 @@ dispose (GObject *object)
 
   if (self->priv->channel != NULL)
     {
+      if (self->priv->call_terminated_id != 0)
+        {
+          g_signal_handler_disconnect (self->priv->channel,
+              self->priv->call_terminated_id);
+          self->priv->call_terminated_id = 0;
+        }
+
       g_object_unref (self->priv->channel);
       self->priv->channel = NULL;
     }
