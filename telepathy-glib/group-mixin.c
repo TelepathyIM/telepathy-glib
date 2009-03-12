@@ -546,6 +546,12 @@ tp_group_mixin_add_members (GObject *obj,
           continue;
         }
 
+      if (mixin_cls->add_member == NULL)
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+              "Adding members to this Group channel is not possible");
+          return FALSE;
+        }
       if (!mixin_cls->add_member (obj, handle, message, error))
         {
           return FALSE;
@@ -683,7 +689,7 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
     {
       handle = g_array_index (contacts, TpHandle, i);
 
-      if (mixin_cls->priv->remove_with_reason)
+      if (mixin_cls->priv->remove_with_reason != NULL)
         {
           if (!mixin_cls->priv->remove_with_reason (obj, handle, message,
                                                     reason, error))
@@ -691,12 +697,18 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
               return FALSE;
             }
         }
-      else
+      else if (mixin_cls->remove_member != NULL)
         {
           if (!mixin_cls->remove_member (obj, handle, message, error))
             {
               return FALSE;
             }
+        }
+      else
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+              "Removing contacts from this Group channel is not possible");
+          return FALSE;
         }
     }
 
