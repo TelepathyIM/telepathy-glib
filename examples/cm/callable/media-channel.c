@@ -746,6 +746,38 @@ error:
 }
 
 static void
+stream_removed_cb (ExampleCallableMediaStream *stream,
+                   ExampleCallableMediaChannel *self)
+{
+  guint id;
+
+  g_object_get (stream,
+      "id", &id,
+      NULL);
+
+  g_signal_handlers_disconnect_matched (stream, G_SIGNAL_MATCH_DATA,
+      0, 0, NULL, NULL, self);
+  g_hash_table_remove (self->priv->streams, GUINT_TO_POINTER (id));
+  tp_svc_channel_type_streamed_media_emit_stream_removed (self, id);
+}
+
+static void
+stream_direction_changed_cb (ExampleCallableMediaStream *stream,
+                             ExampleCallableMediaChannel *self)
+{
+  guint id, direction, pending;
+
+  g_object_get (stream,
+      "id", &id,
+      "direction", &direction,
+      "pending-send", &pending,
+      NULL);
+
+  tp_svc_channel_type_streamed_media_emit_stream_direction_changed (self, id,
+      direction, pending);
+}
+
+static void
 media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
                        guint contact_handle,
                        const GArray *media_types,
@@ -796,6 +828,11 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
        * a postcard. */
 
       g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
+
+      g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
+          self);
+      g_signal_connect (stream, "direction-changed",
+          G_CALLBACK (stream_direction_changed_cb), self);
 
       g_object_get (stream,
           "stream-info", &info,
