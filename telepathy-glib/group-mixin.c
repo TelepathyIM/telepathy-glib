@@ -146,6 +146,7 @@ local_pending_info_free (LocalPendingInfo *info)
 
 struct _TpGroupMixinClassPrivate {
     TpGroupMixinRemMemberWithReasonFunc remove_with_reason;
+    unsigned always_allow_removing_self : 1;
 };
 
 struct _TpGroupMixinPrivate {
@@ -247,6 +248,39 @@ tp_group_mixin_class_init (GObjectClass *obj_cls,
   mixin_cls->remove_member = rem_func;
 
   mixin_cls->priv = g_slice_new0 (TpGroupMixinClassPrivate);
+}
+
+/**
+ * tp_group_mixin_class_always_allow_removing_self:
+ * @obj_cls: The class of an object implementing the group interface using this
+ *  mixin
+ *
+ * Configure the mixin to allow attempts to remove the SelfHandle from this
+ * Group, even if the group flags would otherwise disallow this. The
+ * channel's #TpGroupMixinRemMemberFunc or
+ * #TpGroupMixinRemMemberWithReasonFunc will be called as usual for such
+ * attempts, and may make them fail with %TP_ERROR_PERMISSION_DENIED if
+ * required.
+ *
+ * This function should be called from the GObject @class_init callback,
+ * after calling tp_group_mixin_class_init().
+ *
+ * (Recent telepathy-spec changes make it valid to try to remove the
+ * self-handle at all times, regardless of group flags. However, if this was
+ * implemented automatically in TpGroupMixin, this would risk crashing
+ * connection manager implementations that assume that TpGroupMixin will
+ * enforce the group flags strictly. As a result, connection managers should
+ * call this function to indicate to the TpGroupMixin that it may call their
+ * removal callback with the self-handle regardless of flag settings.)
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_group_mixin_class_always_allow_removing_self (GObjectClass *obj_cls)
+{
+  TpGroupMixinClass *mixin_cls = TP_GROUP_MIXIN_CLASS (obj_cls);
+
+  mixin_cls->priv->always_allow_removing_self = TRUE;
 }
 
 /**
@@ -644,7 +678,16 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
     {
       handle = g_array_index (contacts, TpHandle, i);
 
-      if (tp_handle_set_is_member (mixin->members, handle))
+      if (mixin_cls->priv->always_allow_removing_self &&
+          handle == mixin->self_handle &&
+          (tp_handle_set_is_member (mixin->members, handle) ||
+           tp_handle_set_is_member (mixin->remote_pending, handle) ||
+           tp_handle_set_is_member (mixin->local_pending, handle)))
+        {
+          /* don't check the flags - attempting to remove the self-handle
+           * is explicitly always allowed by this channel */
+        }
+      else if (tp_handle_set_is_member (mixin->members, handle))
         {
           if ((mixin->group_flags & TP_CHANNEL_GROUP_FLAG_CAN_REMOVE) == 0)
             {

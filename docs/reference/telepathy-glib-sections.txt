@@ -1351,6 +1351,7 @@ TpGroupMixinRemMemberWithReasonFunc
 TpGroupMixin
 TpGroupMixinClass
 tp_group_mixin_class_init
+tp_group_mixin_class_always_allow_removing_self
 tp_group_mixin_class_set_remove_with_reason_func
 tp_group_mixin_init
 tp_group_mixin_finalize
