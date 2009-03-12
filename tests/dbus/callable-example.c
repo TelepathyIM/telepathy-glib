@@ -41,6 +41,15 @@
         } \
   } G_STMT_END
 
+#define CLEAR_BOXED(g, o) \
+  G_STMT_START { \
+      if (*(o) != NULL) \
+        { \
+          g_boxed_free ((g), *(o)); \
+          *(o) = NULL; \
+        } \
+  } G_STMT_END
+
 typedef struct
 {
   GMainLoop *mainloop;
@@ -54,6 +63,11 @@ typedef struct
   TpChannel *chan;
   TpHandle self_handle;
 
+  GArray *audio_request;
+  GArray *video_request;
+
+  GArray *stream_ids;
+  GArray *contacts;
   GPtrArray *request_streams_return;
   GPtrArray *list_streams_return;
 } Test;
@@ -90,6 +104,8 @@ setup (Test *test,
   gchar *bus_name;
   gchar *object_path;
   GHashTable *parameters;
+  guint audio = TP_MEDIA_STREAM_TYPE_AUDIO;
+  guint video = TP_MEDIA_STREAM_TYPE_VIDEO;
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -135,6 +151,15 @@ setup (Test *test,
   test->self_handle = tp_connection_get_self_handle (test->conn);
   g_assert (test->self_handle != 0);
 
+  test->audio_request = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+  g_array_append_val (test->audio_request, audio);
+
+  test->video_request = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+  g_array_append_val (test->video_request, video);
+
+  test->stream_ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
+  test->contacts = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+
   g_free (bus_name);
   g_free (object_path);
 }
@@ -171,13 +196,16 @@ channel_ready_cb (TpChannel *channel G_GNUC_UNUSED,
 }
 
 static void
-requested_streams_cb (TpChannel *chan,
+requested_streams_cb (TpChannel *chan G_GNUC_UNUSED,
                       const GPtrArray *stream_info,
                       const GError *error,
                       gpointer user_data,
                       GObject *weak_object G_GNUC_UNUSED)
 {
   Test *test = user_data;
+
+  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
+      &test->request_streams_return);
 
   if (error != NULL)
     {
@@ -193,7 +221,7 @@ requested_streams_cb (TpChannel *chan,
 }
 
 static void
-listed_streams_cb (TpChannel *chan,
+listed_streams_cb (TpChannel *chan G_GNUC_UNUSED,
                    const GPtrArray *stream_info,
                    const GError *error,
                    gpointer user_data,
@@ -204,8 +232,27 @@ listed_streams_cb (TpChannel *chan,
   /* ListStreams shouldn't fail in any of these tests */
   test_assert_no_error (error);
 
+  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
+      &test->list_streams_return);
+
   test->list_streams_return = g_boxed_copy (
       TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST, stream_info);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+void_cb (TpChannel *chan G_GNUC_UNUSED,
+         const GError *error,
+         gpointer user_data,
+         GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+
+  if (error != NULL)
+    {
+      test->error = g_error_copy (error);
+    }
 
   g_main_loop_quit (test->mainloop);
 }
@@ -216,12 +263,9 @@ test_basics (Test *test,
 {
   GHashTable *request = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) tp_g_value_slice_free);
-  GArray *audio_request = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
-  guint audio = TP_MEDIA_STREAM_TYPE_AUDIO;
-  GValueArray *va;
+  GValueArray *audio_info, *video_info;
   guint audio_stream_id;
-
-  g_array_append_val (audio_request, audio);
+  guint video_stream_id;
 
   g_hash_table_insert (request, TP_IFACE_CHANNEL ".ChannelType",
       tp_g_value_slice_new_static_string (
@@ -243,38 +287,47 @@ test_basics (Test *test,
   g_assert_cmpuint (tp_channel_group_get_self_handle (test->chan), ==,
       test->self_handle);
 
+  /* ListStreams: we have no streams yet */
+
+  tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
+      listed_streams_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->list_streams_return->len, ==, 0);
+
   /* RequestStreams */
 
   tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
       tp_channel_get_handle (test->chan, NULL),
-      audio_request, requested_streams_cb,
+      test->audio_request, requested_streams_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
   g_assert_cmpuint (test->request_streams_return->len, ==, 1);
-  va = g_ptr_array_index (test->request_streams_return, 0);
+  audio_info = g_ptr_array_index (test->request_streams_return, 0);
 
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 0));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 1));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 2));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 3));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 4));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 5));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 0));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 1));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 2));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 3));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 4));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
 
-  audio_stream_id = g_value_get_uint (va->values + 0);
+  audio_stream_id = g_value_get_uint (audio_info->values + 0);
 
-  g_assert_cmpuint (g_value_get_uint (va->values + 1), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
       tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (g_value_get_uint (va->values + 2), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
-  g_assert_cmpuint (g_value_get_uint (va->values + 3), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 3), ==,
       TP_MEDIA_STREAM_STATE_DISCONNECTED);
-  g_assert_cmpuint (g_value_get_uint (va->values + 4), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
       TP_MEDIA_STREAM_DIRECTION_NONE);
-  g_assert_cmpuint (g_value_get_uint (va->values + 5), ==, 0);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
 
-  /* ListStreams */
+  /* ListStreams again: now we have the audio stream */
 
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
       listed_streams_cb, test, NULL, NULL);
@@ -282,28 +335,141 @@ test_basics (Test *test,
   test_assert_no_error (test->error);
 
   g_assert_cmpuint (test->list_streams_return->len, ==, 1);
-  va = g_ptr_array_index (test->list_streams_return, 0);
+  audio_info = g_ptr_array_index (test->list_streams_return, 0);
 
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 0));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 1));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 2));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 3));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 4));
-  g_assert (G_VALUE_HOLDS_UINT (va->values + 5));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 0));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 1));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 2));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 3));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 4));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
 
-  /* value 0 is the handle */
-  g_assert_cmpuint (g_value_get_uint (va->values + 0), ==, audio_stream_id);
-  g_assert_cmpuint (g_value_get_uint (va->values + 1), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
+      audio_stream_id);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
       tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (g_value_get_uint (va->values + 1), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
       tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (g_value_get_uint (va->values + 2), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
-  g_assert_cmpuint (g_value_get_uint (va->values + 3), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 3), ==,
       TP_MEDIA_STREAM_STATE_DISCONNECTED);
-  g_assert_cmpuint (g_value_get_uint (va->values + 4), ==,
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
       TP_MEDIA_STREAM_DIRECTION_NONE);
-  g_assert_cmpuint (g_value_get_uint (va->values + 5), ==, 0);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
+
+  /* RequestStreams again, to add a video stream */
+
+  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
+      tp_channel_get_handle (test->chan, NULL),
+      test->video_request, requested_streams_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->request_streams_return->len, ==, 1);
+
+  video_info = g_ptr_array_index (test->request_streams_return, 0);
+
+  g_assert (G_VALUE_HOLDS_UINT (video_info->values + 0));
+  g_assert (G_VALUE_HOLDS_UINT (video_info->values + 1));
+  g_assert (G_VALUE_HOLDS_UINT (video_info->values + 2));
+  g_assert (G_VALUE_HOLDS_UINT (video_info->values + 3));
+  g_assert (G_VALUE_HOLDS_UINT (video_info->values + 4));
+  g_assert (G_VALUE_HOLDS_UINT (video_info->values + 5));
+
+  video_stream_id = g_value_get_uint (video_info->values + 0);
+
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 1), ==,
+      tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 1), ==,
+      tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 2), ==,
+      TP_MEDIA_STREAM_TYPE_VIDEO);
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 3), ==,
+      TP_MEDIA_STREAM_STATE_DISCONNECTED);
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 4), ==,
+      TP_MEDIA_STREAM_DIRECTION_NONE);
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 5), ==, 0);
+
+  /* ListStreams again: now we have the video stream too */
+
+  tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
+      listed_streams_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->list_streams_return->len, ==, 2);
+
+  /* this might be the video or the audio - we'll have to find out */
+  audio_info = g_ptr_array_index (test->list_streams_return, 0);
+
+  if (g_value_get_uint (audio_info->values + 0) == audio_stream_id)
+    {
+      /* our guess was right, so the other one must be the video */
+      video_info = g_ptr_array_index (test->list_streams_return, 1);
+    }
+  else
+    {
+      /* we guessed wrong, compensate for that */
+      video_info = audio_info;
+      audio_info = g_ptr_array_index (test->list_streams_return, 1);
+    }
+
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
+      audio_stream_id);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
+      TP_MEDIA_STREAM_TYPE_AUDIO);
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 0), ==,
+      video_stream_id);
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 2), ==,
+      TP_MEDIA_STREAM_TYPE_VIDEO);
+
+  /* Drop the video stream with RemoveStreams */
+
+  g_array_set_size (test->stream_ids, 0);
+  g_array_append_val (test->stream_ids, video_stream_id);
+  tp_cli_channel_type_streamed_media_call_remove_streams (test->chan, -1,
+      test->stream_ids,
+      void_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  /* List streams again: now there's only the audio */
+
+  tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
+      listed_streams_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->list_streams_return->len, ==, 1);
+  audio_info = g_ptr_array_index (test->list_streams_return, 0);
+
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 0));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 1));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 2));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 3));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 4));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
+
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
+      audio_stream_id);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
+      TP_MEDIA_STREAM_TYPE_AUDIO);
+
+  /* Hang up the call */
+
+  g_array_set_size (test->contacts, 0);
+  g_array_append_val (test->contacts, test->self_handle);
+  tp_cli_channel_interface_group_call_remove_members_with_reason (test->chan,
+      -1, test->contacts, "", TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      void_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  /* In response to hanging up, the channel closes */
+  test_connection_run_until_dbus_queue_processed (test->conn);
+  g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* FIXME: untested things include:
    * RequestStream failing (invalid handle, invalid media type)
@@ -338,6 +504,16 @@ teardown (Test *test,
 {
   tp_cli_connection_run_disconnect (test->conn, -1, &test->error, NULL);
   test_assert_no_error (test->error);
+
+  g_array_free (test->audio_request, TRUE);
+  g_array_free (test->video_request, TRUE);
+  g_array_free (test->stream_ids, TRUE);
+  g_array_free (test->contacts, TRUE);
+
+  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
+      &test->list_streams_return);
+  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
+      &test->request_streams_return);
 
   CLEAR_OBJECT (&test->chan);
   CLEAR_OBJECT (&test->conn);
