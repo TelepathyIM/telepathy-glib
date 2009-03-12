@@ -178,34 +178,29 @@ constructed (GObject *object)
   if (local_pending != NULL)
     tp_intset_destroy (local_pending);
 
-  if (self->priv->locally_requested)
-    {
-      /* It doesn't make sense to add anyone to the Group, since we already
-       * know who we're going to call.
-       *
-       * (Connection managers that support the various backwards-compatible
-       * ways to make a StreamedMedia channel have to support adding the peer
-       * to remote-pending, but that has no actual effect other than to obscure
-       * what's going on; in this one, there's no need to support that
-       * usage.)
-       *
-       * FIXME: It would make sense to be able to remove the self-handle, but
-       * this is not currently allowed. Gabble doesn't allow removing the
-       * self-handle here, which may be a bug (fd.o#20578). For the moment, we
-       * mimic its behaviour in this example. */
-      tp_group_mixin_change_flags (object,
-          TP_CHANNEL_GROUP_FLAG_PROPERTIES,
-          0);
-    }
-  else
-    {
-      /* We can implicitly move ourselves from local-pending to member (no
-       * flag is needed - if we're in local-pending, then that's always
-       * allowed). We can also reject the call by removing the remote peer. */
-      tp_group_mixin_change_flags (object,
-          TP_CHANNEL_GROUP_FLAG_PROPERTIES | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE,
-          0);
+  /* We don't need to allow adding or removing members to this Group in ways
+   * that need flags set, so the only flag we set is to say we support the
+   * Properties interface to the Group.
+   *
+   * It doesn't make sense to add anyone to the Group, since we already know
+   * who we're going to call (or were called by). The only call to AddMembers
+   * we need to support is to move ourselves from local-pending to member in
+   * the incoming call case, and that's always allowed anyway.
+   *
+   * (Connection managers that support the various backwards-compatible
+   * ways to make an outgoing StreamedMedia channel have to support adding the
+   * peer to remote-pending, but that has no actual effect other than to
+   * obscure what's going on; in this one, there's no need to support that
+   * usage.)
+   *
+   * Similarly, it doesn't make sense to remove anyone from this Group apart
+   * from ourselves (to hang up), and removing the SelfHandle is always
+   * allowed anyway.
+   */
+  tp_group_mixin_change_flags (object, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
 
+  if (!self->priv->locally_requested)
+    {
       /* FIXME: act on any streams that the remote peer has already enabled */
     }
 }
@@ -567,6 +562,7 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
       G_STRUCT_OFFSET (ExampleCallableMediaChannelClass, group_class),
       add_member,
       NULL);
+  tp_group_mixin_class_always_allow_removing_self (object_class);
   tp_group_mixin_class_set_remove_with_reason_func (object_class,
       remove_member_with_reason);
   tp_group_mixin_init_dbus_properties (object_class);
