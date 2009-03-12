@@ -339,11 +339,33 @@ set_property (GObject *object,
 }
 
 static void
-example_callable_media_channel_close (ExampleCallableMediaChannel *self)
+example_callable_media_channel_close (ExampleCallableMediaChannel *self,
+                                      TpChannelGroupChangeReason reason)
 {
   if (!self->priv->closed)
     {
+      const gchar *send_reason;
+
       self->priv->closed = TRUE;
+
+      /* In a real protocol these would be some sort of real protocol construct,
+       * like an XMPP error stanza or a SIP error code */
+      switch (reason)
+        {
+        case TP_CHANNEL_GROUP_CHANGE_REASON_BUSY:
+          send_reason = "<user-is-busy/>";
+          break;
+
+        case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
+          send_reason = "<no-answer/>";
+          break;
+
+        default:
+          send_reason = "<call-terminated/>";
+        }
+
+      g_message ("Sending to server: Terminating call: %s", send_reason);
+      g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
       tp_svc_channel_emit_closed (self);
     }
 }
@@ -358,7 +380,8 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
-  example_callable_media_channel_close (self);
+  example_callable_media_channel_close (self,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   ((GObjectClass *) example_callable_media_channel_parent_class)->dispose (object);
 }
@@ -430,7 +453,6 @@ remove_member_with_reason (GObject *object,
                            GError **error)
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (object);
-  const gchar *send_reason;
 
   /* The TpGroupMixin won't call this unless member is in one of the sets,
    * which means either it's the local user or the peer. */
@@ -442,24 +464,7 @@ remove_member_with_reason (GObject *object,
    * we mimic its behaviour, so people who interop with this example will
    * also interop with Gabble? */
 
-  /* In a real protocol these would be some sort of real protocol construct,
-   * like an XMPP error stanza or a SIP error code */
-  switch (reason)
-    {
-    case TP_CHANNEL_GROUP_CHANGE_REASON_BUSY:
-      send_reason = "<user-is-busy/>";
-      break;
-
-    case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
-      send_reason = "<no-answer/>";
-      break;
-
-    default:
-      send_reason = "<call-terminated/>";
-    }
-
-  g_message ("Sending to server: Terminating call: %s", send_reason);
-  g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
+  example_callable_media_channel_close (self, reason);
   return TRUE;
 }
 
@@ -574,7 +579,8 @@ channel_close (TpSvcChannel *iface,
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
 
-  example_callable_media_channel_close (self);
+  example_callable_media_channel_close (self,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_svc_channel_return_from_close (context);
 }
 
