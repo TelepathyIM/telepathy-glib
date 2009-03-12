@@ -793,6 +793,14 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
   if (!tp_handle_is_valid (contact_repo, contact_handle, &error))
     goto error;
 
+  if (contact_handle != self->priv->handle)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "This channel is for handle #%u, we can't make a stream to #%u",
+          self->priv->handle, contact_handle);
+      goto error;
+    }
+
   for (i = 0; i < media_types->len; i++)
     {
       guint media_type = g_array_index (media_types, guint, i);
