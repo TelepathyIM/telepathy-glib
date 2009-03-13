@@ -66,7 +66,12 @@ struct _ExampleCallableMediaStreamPrivate
   TpMediaStreamState state;
   TpMediaStreamDirection direction;
   TpMediaStreamPendingSend pending_send;
+
   gulong call_terminated_id;
+
+  guint connected_event_id;
+
+  unsigned removed : 1;
 };
 
 static void
@@ -217,6 +222,8 @@ dispose (GObject *object)
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
       self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
+  example_callable_media_stream_close (self);
+
   if (self->priv->handle != 0)
     {
       tp_handle_unref (contact_repo, self->priv->handle);
@@ -323,10 +330,20 @@ example_callable_media_stream_class_init (ExampleCallableMediaStreamClass *klass
 void
 example_callable_media_stream_close (ExampleCallableMediaStream *self)
 {
-  g_message ("Sending to server: Closing stream %u",
-      self->priv->id);
+  if (!self->priv->removed)
+    {
+      self->priv->removed = TRUE;
 
-  g_signal_emit (self, signals[SIGNAL_REMOVED], 0);
+      g_message ("Sending to server: Closing stream %u",
+          self->priv->id);
+
+      g_signal_emit (self, signals[SIGNAL_REMOVED], 0);
+
+      if (self->priv->connected_event_id != 0)
+        {
+          g_source_remove (self->priv->connected_event_id);
+        }
+    }
 }
 
 gboolean
@@ -411,4 +428,29 @@ example_callable_media_stream_change_direction (
     }
 
   return TRUE;
+}
+
+static gboolean
+simulate_stream_connected_cb (gpointer p)
+{
+  ExampleCallableMediaStream *self = EXAMPLE_CALLABLE_MEDIA_STREAM (p);
+
+  g_message ("MEDIA: stream connected");
+  self->priv->state = TP_MEDIA_STREAM_STATE_CONNECTED;
+  g_object_notify ((GObject *) self, "state");
+
+  return FALSE;
+}
+
+void
+example_callable_media_stream_connect (ExampleCallableMediaStream *self)
+{
+
+  /* if already trying to connect, do nothing */
+  if (self->priv->connected_event_id != 0)
+    return;
+
+  /* simulate it taking a short time to connect */
+  self->priv->connected_event_id = g_timeout_add (1000,
+      simulate_stream_connected_cb, self);
 }

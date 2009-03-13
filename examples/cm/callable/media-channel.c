@@ -803,11 +803,29 @@ stream_direction_changed_cb (ExampleCallableMediaStream *stream,
       direction, pending);
 }
 
+static void
+stream_state_changed_cb (ExampleCallableMediaStream *stream,
+                         GParamSpec *spec G_GNUC_UNUSED,
+                         ExampleCallableMediaChannel *self)
+{
+  guint id, state;
+
+  g_object_get (stream,
+      "id", &id,
+      "state", &state,
+      NULL);
+
+  tp_svc_channel_type_streamed_media_emit_stream_state_changed (self, id,
+      state);
+}
+
 static gboolean
 simulate_contact_answered_cb (gpointer p)
 {
   ExampleCallableMediaChannel *self = p;
   TpIntSet *peer_set;
+  GHashTableIter iter;
+  gpointer v;
 
   /* if the call has been cancelled while we were waiting for the
    * contact to answer, do nothing */
@@ -831,6 +849,13 @@ simulate_contact_answered_cb (gpointer p)
       self->priv->handle /* actor */,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (peer_set);
+
+  g_hash_table_iter_init (&iter, self->priv->streams);
+
+  while (g_hash_table_iter_next (&iter, NULL, &v))
+    {
+      example_callable_media_stream_connect (v);
+    }
 
   return FALSE;
 }
@@ -936,8 +961,15 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
 
       g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
           self);
+      g_signal_connect (stream, "notify::state",
+          G_CALLBACK (stream_state_changed_cb), self);
       g_signal_connect (stream, "direction-changed",
           G_CALLBACK (stream_direction_changed_cb), self);
+
+      if (self->priv->progress == PROGRESS_ACTIVE)
+        {
+          example_callable_media_stream_connect (stream);
+        }
 
       g_object_get (stream,
           "stream-info", &info,

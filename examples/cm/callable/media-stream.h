@@ -71,6 +71,7 @@ void example_callable_media_stream_close (ExampleCallableMediaStream *self);
 gboolean example_callable_media_stream_change_direction (
     ExampleCallableMediaStream *self, TpMediaStreamDirection direction,
     GError **error);
+void example_callable_media_stream_connect (ExampleCallableMediaStream *self);
 
 G_END_DECLS
 
