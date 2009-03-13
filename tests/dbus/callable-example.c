@@ -670,9 +670,8 @@ test_basics (Test *test,
    *
    * StreamStateChanged being emitted (???)
    *
-   * The contact accepting the call
-   *
-   * The Group interface
+   * Terminating the call via Close()
+   * Terminating the call by removing the streams
    */
 }
 
