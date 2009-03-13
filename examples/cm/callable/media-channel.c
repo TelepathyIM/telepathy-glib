@@ -924,6 +924,9 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
 
       g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
 
+      tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
+          self->priv->handle, media_type);
+
       g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
           self);
       g_signal_connect (stream, "direction-changed",
