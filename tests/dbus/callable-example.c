@@ -671,6 +671,19 @@ test_basics (Test *test,
   g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
+  /* The stream should become connected after a while */
+
+  se = test->stream_events->data;
+
+  while (se->type != STREAM_EVENT_STATE_CHANGED)
+    {
+       g_main_context_iteration (NULL, TRUE);
+      se = test->stream_events->data;
+    }
+
+  g_assert_cmpuint (se->id, ==, audio_stream_id);
+  g_assert_cmpuint (se->state, ==, TP_MEDIA_STREAM_STATE_CONNECTED);
+
   /* RequestStreams again, to add a video stream */
 
   tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
@@ -840,8 +853,6 @@ test_basics (Test *test,
    * RequestStreamDirection
    * StreamDirectionChanged being emitted correctly (part of RSD)
    * RequestStreamDirection failing (invalid direction, stream ID)
-   *
-   * StreamStateChanged being emitted (???)
    */
 }
 
