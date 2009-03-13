@@ -349,10 +349,12 @@ set_property (GObject *object,
 
 static void
 example_callable_media_channel_close (ExampleCallableMediaChannel *self,
+                                      TpHandle actor,
                                       TpChannelGroupChangeReason reason)
 {
   if (self->priv->progress != PROGRESS_ENDED)
     {
+      TpIntSet *everyone;
       const gchar *send_reason;
 
       self->priv->progress = PROGRESS_ENDED;
@@ -373,6 +375,17 @@ example_callable_media_channel_close (ExampleCallableMediaChannel *self,
           send_reason = "<call-terminated/>";
         }
 
+      everyone = tp_intset_new_containing (self->priv->handle);
+      tp_intset_add (everyone, self->group.self_handle);
+      tp_group_mixin_change_members ((GObject *) self, "",
+          NULL /* nobody added */,
+          everyone /* removed */,
+          NULL /* nobody locally pending */,
+          NULL /* nobody remotely pending */,
+          actor,
+          reason);
+      tp_intset_destroy (everyone);
+
       g_message ("SIGNALLING: send: Terminating call: %s", send_reason);
       g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
       tp_svc_channel_emit_closed (self);
@@ -389,7 +402,7 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
-  example_callable_media_channel_close (self,
+  example_callable_media_channel_close (self, 0,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   ((GObjectClass *) example_callable_media_channel_parent_class)->dispose (object);
@@ -470,7 +483,7 @@ remove_member_with_reason (GObject *object,
 
   g_assert (member == self->group.self_handle);
 
-  example_callable_media_channel_close (self, reason);
+  example_callable_media_channel_close (self, self->group.self_handle, reason);
   return TRUE;
 }
 
@@ -585,7 +598,7 @@ channel_close (TpSvcChannel *iface,
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
 
-  example_callable_media_channel_close (self,
+  example_callable_media_channel_close (self, self->group.self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_svc_channel_return_from_close (context);
 }
