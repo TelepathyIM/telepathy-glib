@@ -52,6 +52,42 @@
 
 typedef struct
 {
+  TpIntSet *added;
+  TpIntSet *removed;
+  TpIntSet *local_pending;
+  TpIntSet *remote_pending;
+  GHashTable *details;
+} Event;
+
+static Event *
+event_new (void)
+{
+  return g_slice_new0 (Event);
+}
+
+static void
+event_destroy (Event *e)
+{
+  if (e->added != NULL)
+    tp_intset_destroy (e->added);
+
+  if (e->removed != NULL)
+    tp_intset_destroy (e->removed);
+
+  if (e->local_pending != NULL)
+    tp_intset_destroy (e->local_pending);
+
+  if (e->remote_pending != NULL)
+    tp_intset_destroy (e->remote_pending);
+
+  if (e->details != NULL)
+    g_hash_table_destroy (e->details);
+
+  g_slice_free (Event, e);
+}
+
+typedef struct
+{
   GMainLoop *mainloop;
   TpDBusDaemon *dbus;
   GError *error /* statically initialized to NULL */ ;
@@ -71,6 +107,9 @@ typedef struct
   GArray *contacts;
   GPtrArray *request_streams_return;
   GPtrArray *list_streams_return;
+
+  GSList *events;
+  gulong members_changed_detailed_id;
 } Test;
 
 static void
@@ -263,6 +302,31 @@ void_cb (TpChannel *chan G_GNUC_UNUSED,
 }
 
 static void
+members_changed_detailed_cb (TpChannel *chan G_GNUC_UNUSED,
+                             const GArray *added,
+                             const GArray *removed,
+                             const GArray *local_pending,
+                             const GArray *remote_pending,
+                             GHashTable *details,
+                             gpointer user_data)
+{
+  Test *test = user_data;
+  Event *e = event_new ();
+
+  /* just log the event */
+  e->added = tp_intset_from_array (added);
+  e->removed = tp_intset_from_array (removed);
+  e->local_pending = tp_intset_from_array (local_pending);
+  e->remote_pending = tp_intset_from_array (remote_pending);
+  e->details = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+      (GDestroyNotify) tp_g_value_slice_free);
+  tp_g_hash_table_update (e->details, details,
+      (GBoxedCopyFunc) g_strdup, (GBoxedCopyFunc) tp_g_value_slice_dup);
+
+  test->events = g_slist_prepend (test->events, e);
+}
+
+static void
 test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
@@ -272,6 +336,7 @@ test_basics (Test *test,
   guint audio_stream_id;
   guint video_stream_id;
   guint not_a_stream_id = 31337;
+  Event *e;
 
   g_hash_table_insert (request, TP_IFACE_CHANNEL ".ChannelType",
       tp_g_value_slice_new_static_string (
@@ -290,8 +355,24 @@ test_basics (Test *test,
   tp_channel_call_when_ready (test->chan, channel_ready_cb, test);
   g_main_loop_run (test->mainloop);
 
+  test->members_changed_detailed_id = g_signal_connect (test->chan,
+      "group-members-changed-detailed",
+      G_CALLBACK (members_changed_detailed_cb), test);
+
+  /* At this point in the channel's lifetime, we should be the channel's
+   * only member */
   g_assert_cmpuint (tp_channel_group_get_self_handle (test->chan), ==,
       test->self_handle);
+  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
+        test->self_handle), ==, test->self_handle);
+  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
+      ==, 1);
+  g_assert_cmpuint (tp_intset_size (
+        tp_channel_group_get_local_pending (test->chan)), ==, 0);
+  g_assert_cmpuint (tp_intset_size (
+        tp_channel_group_get_remote_pending (test->chan)), ==, 0);
+  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
+        test->self_handle));
 
   /* ListStreams: we have no streams yet */
 
@@ -383,6 +464,59 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
       TP_MEDIA_STREAM_DIRECTION_NONE);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
+
+  /* Wait for the remote contact to answer, if they haven't already */
+
+  while (!tp_intset_is_member (tp_channel_group_get_members (test->chan),
+        tp_channel_get_handle (test->chan, NULL)))
+    g_main_context_iteration (NULL, TRUE);
+
+  /* The self-handle and the peer are now the channel's members */
+  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
+        test->self_handle), ==, test->self_handle);
+  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
+        tp_channel_get_handle (test->chan, NULL)),
+      ==, tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
+      ==, 2);
+  g_assert_cmpuint (tp_intset_size (
+        tp_channel_group_get_local_pending (test->chan)), ==, 0);
+  g_assert_cmpuint (tp_intset_size (
+        tp_channel_group_get_remote_pending (test->chan)), ==, 0);
+  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
+        test->self_handle));
+  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
+        tp_channel_get_handle (test->chan, NULL)));
+
+  /* Look at the event log: what should have happened is that the remote
+   * peer was added first to remote-pending, then to members. (The event
+   * log is in reverse chronological order.) */
+
+  e = g_slist_nth_data (test->events, 1);
+
+  g_assert_cmpuint (tp_intset_size (e->added), ==, 0);
+  g_assert_cmpuint (tp_intset_size (e->removed), ==, 0);
+  g_assert_cmpuint (tp_intset_size (e->local_pending), ==, 0);
+  g_assert_cmpuint (tp_intset_size (e->remote_pending), ==, 1);
+  g_assert (tp_intset_is_member (e->remote_pending,
+        tp_channel_get_handle (test->chan, NULL)));
+  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "actor", NULL), ==,
+      test->self_handle);
+  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "change-reason", NULL), ==,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  e = g_slist_nth_data (test->events, 0);
+
+  g_assert_cmpuint (tp_intset_size (e->added), ==, 1);
+  g_assert (tp_intset_is_member (e->added,
+        tp_channel_get_handle (test->chan, NULL)));
+  g_assert_cmpuint (tp_intset_size (e->removed), ==, 0);
+  g_assert_cmpuint (tp_intset_size (e->local_pending), ==, 0);
+  g_assert_cmpuint (tp_intset_size (e->remote_pending), ==, 0);
+  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "actor", NULL), ==,
+      tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "change-reason", NULL), ==,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   /* RequestStreams again, to add a video stream */
 
@@ -545,10 +679,19 @@ teardown (Test *test,
   tp_cli_connection_run_disconnect (test->conn, -1, &test->error, NULL);
   test_assert_no_error (test->error);
 
+  if (test->members_changed_detailed_id != 0)
+    {
+      g_signal_handler_disconnect (test->chan,
+          test->members_changed_detailed_id);
+    }
+
   g_array_free (test->audio_request, TRUE);
   g_array_free (test->video_request, TRUE);
   g_array_free (test->stream_ids, TRUE);
   g_array_free (test->contacts, TRUE);
+
+  g_slist_foreach (test->events, (GFunc) event_destroy, NULL);
+  g_slist_free (test->events);
 
   CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->list_streams_return);
