@@ -778,6 +778,13 @@ stream_removed_cb (ExampleCallableMediaStream *stream,
       0, 0, NULL, NULL, self);
   g_hash_table_remove (self->priv->streams, GUINT_TO_POINTER (id));
   tp_svc_channel_type_streamed_media_emit_stream_removed (self, id);
+
+  if (g_hash_table_size (self->priv->streams) == 0)
+    {
+      /* no streams left, so the call terminates */
+      example_callable_media_channel_close (self, 0,
+          TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    }
 }
 
 static void
