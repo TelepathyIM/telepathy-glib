@@ -66,24 +66,57 @@ group_event_new (void)
 }
 
 static void
-group_event_destroy (GroupEvent *e)
+group_event_destroy (GroupEvent *ge)
 {
-  if (e->added != NULL)
-    tp_intset_destroy (e->added);
+  if (ge->added != NULL)
+    tp_intset_destroy (ge->added);
 
-  if (e->removed != NULL)
-    tp_intset_destroy (e->removed);
+  if (ge->removed != NULL)
+    tp_intset_destroy (ge->removed);
 
-  if (e->local_pending != NULL)
-    tp_intset_destroy (e->local_pending);
+  if (ge->local_pending != NULL)
+    tp_intset_destroy (ge->local_pending);
 
-  if (e->remote_pending != NULL)
-    tp_intset_destroy (e->remote_pending);
+  if (ge->remote_pending != NULL)
+    tp_intset_destroy (ge->remote_pending);
 
-  if (e->details != NULL)
-    g_hash_table_destroy (e->details);
+  if (ge->details != NULL)
+    g_hash_table_destroy (ge->details);
 
-  g_slice_free (GroupEvent, e);
+  g_slice_free (GroupEvent, ge);
+}
+
+typedef enum
+{
+  STREAM_EVENT_ADDED,
+  STREAM_EVENT_DIRECTION_CHANGED,
+  STREAM_EVENT_ERROR,
+  STREAM_EVENT_REMOVED,
+  STREAM_EVENT_STATE_CHANGED
+} StreamEventType;
+
+typedef struct
+{
+  StreamEventType type;
+  guint id;
+  TpHandle contact;
+  TpMediaStreamType media_type;
+  TpMediaStreamDirection direction;
+  TpMediaStreamPendingSend pending_send;
+  TpMediaStreamError error;
+  TpMediaStreamState state;
+} StreamEvent;
+
+static StreamEvent *
+stream_event_new (void)
+{
+  return g_slice_new0 (StreamEvent);
+}
+
+static void
+stream_event_destroy (StreamEvent *se)
+{
+  g_slice_free (StreamEvent, se);
 }
 
 typedef struct
@@ -110,6 +143,8 @@ typedef struct
 
   GSList *group_events;
   gulong members_changed_detailed_id;
+
+  GSList *stream_events;
 } Test;
 
 static void
@@ -311,19 +346,107 @@ members_changed_detailed_cb (TpChannel *chan G_GNUC_UNUSED,
                              gpointer user_data)
 {
   Test *test = user_data;
-  GroupEvent *e = group_event_new ();
+  GroupEvent *ge = group_event_new ();
 
   /* just log the event */
-  e->added = tp_intset_from_array (added);
-  e->removed = tp_intset_from_array (removed);
-  e->local_pending = tp_intset_from_array (local_pending);
-  e->remote_pending = tp_intset_from_array (remote_pending);
-  e->details = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+  ge->added = tp_intset_from_array (added);
+  ge->removed = tp_intset_from_array (removed);
+  ge->local_pending = tp_intset_from_array (local_pending);
+  ge->remote_pending = tp_intset_from_array (remote_pending);
+  ge->details = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       (GDestroyNotify) tp_g_value_slice_free);
-  tp_g_hash_table_update (e->details, details,
+  tp_g_hash_table_update (ge->details, details,
       (GBoxedCopyFunc) g_strdup, (GBoxedCopyFunc) tp_g_value_slice_dup);
 
-  test->group_events = g_slist_prepend (test->group_events, e);
+  test->group_events = g_slist_prepend (test->group_events, ge);
+}
+
+static void
+stream_added_cb (TpChannel *chan G_GNUC_UNUSED,
+                 guint id,
+                 guint contact,
+                 guint media_type,
+                 gpointer user_data,
+                 GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  StreamEvent *se = stream_event_new ();
+
+  se->type = STREAM_EVENT_ADDED;
+  se->id = id;
+  se->contact = contact;
+  se->media_type = media_type;
+
+  test->stream_events = g_slist_prepend (test->stream_events, se);
+}
+
+static void
+stream_direction_changed_cb (TpChannel *chan G_GNUC_UNUSED,
+                             guint id,
+                             guint direction,
+                             guint pending_flags,
+                             gpointer user_data,
+                             GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  StreamEvent *se = stream_event_new ();
+
+  se->type = STREAM_EVENT_DIRECTION_CHANGED;
+  se->id = id;
+  se->direction = direction;
+  se->pending_send = pending_flags;
+
+  test->stream_events = g_slist_prepend (test->stream_events, se);
+}
+
+static void
+stream_error_cb (TpChannel *chan G_GNUC_UNUSED,
+                 guint id,
+                 guint error,
+                 const gchar *message,
+                 gpointer user_data,
+                 GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  StreamEvent *se = stream_event_new ();
+
+  se->type = STREAM_EVENT_ERROR;
+  se->id = id;
+  se->error = error;
+
+  test->stream_events = g_slist_prepend (test->stream_events, se);
+}
+
+static void
+stream_removed_cb (TpChannel *chan G_GNUC_UNUSED,
+                   guint id,
+                   gpointer user_data,
+                   GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  StreamEvent *se = stream_event_new ();
+
+  se->type = STREAM_EVENT_REMOVED;
+  se->id = id;
+
+  test->stream_events = g_slist_prepend (test->stream_events, se);
+}
+
+static void
+stream_state_changed_cb (TpChannel *chan G_GNUC_UNUSED,
+                         guint id,
+                         guint state,
+                         gpointer user_data,
+                         GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  StreamEvent *se = stream_event_new ();
+
+  se->type = STREAM_EVENT_STATE_CHANGED;
+  se->id = id;
+  se->state = state;
+
+  test->stream_events = g_slist_prepend (test->stream_events, se);
 }
 
 static void
@@ -336,7 +459,7 @@ test_basics (Test *test,
   guint audio_stream_id;
   guint video_stream_id;
   guint not_a_stream_id = 31337;
-  GroupEvent *e;
+  GroupEvent *ge;
 
   g_hash_table_insert (request, TP_IFACE_CHANNEL ".ChannelType",
       tp_g_value_slice_new_static_string (
@@ -358,6 +481,17 @@ test_basics (Test *test,
   test->members_changed_detailed_id = g_signal_connect (test->chan,
       "group-members-changed-detailed",
       G_CALLBACK (members_changed_detailed_cb), test);
+
+  tp_cli_channel_type_streamed_media_connect_to_stream_added (test->chan,
+      stream_added_cb, test, NULL, NULL, NULL);
+  tp_cli_channel_type_streamed_media_connect_to_stream_removed (test->chan,
+      stream_removed_cb, test, NULL, NULL, NULL);
+  tp_cli_channel_type_streamed_media_connect_to_stream_error (test->chan,
+      stream_error_cb, test, NULL, NULL, NULL);
+  tp_cli_channel_type_streamed_media_connect_to_stream_direction_changed (
+      test->chan, stream_direction_changed_cb, test, NULL, NULL, NULL);
+  tp_cli_channel_type_streamed_media_connect_to_stream_state_changed (
+      test->chan, stream_state_changed_cb, test, NULL, NULL, NULL);
 
   /* At this point in the channel's lifetime, we should be the channel's
    * only member */
@@ -492,30 +626,30 @@ test_basics (Test *test,
    * peer was added first to remote-pending, then to members. (The event
    * log is in reverse chronological order.) */
 
-  e = g_slist_nth_data (test->group_events, 1);
+  ge = g_slist_nth_data (test->group_events, 1);
 
-  g_assert_cmpuint (tp_intset_size (e->added), ==, 0);
-  g_assert_cmpuint (tp_intset_size (e->removed), ==, 0);
-  g_assert_cmpuint (tp_intset_size (e->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (e->remote_pending), ==, 1);
-  g_assert (tp_intset_is_member (e->remote_pending,
+  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 1);
+  g_assert (tp_intset_is_member (ge->remote_pending,
         tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "actor", NULL), ==,
+  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
       test->self_handle);
-  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "change-reason", NULL), ==,
+  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  e = g_slist_nth_data (test->group_events, 0);
+  ge = g_slist_nth_data (test->group_events, 0);
 
-  g_assert_cmpuint (tp_intset_size (e->added), ==, 1);
-  g_assert (tp_intset_is_member (e->added,
+  g_assert_cmpuint (tp_intset_size (ge->added), ==, 1);
+  g_assert (tp_intset_is_member (ge->added,
         tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_intset_size (e->removed), ==, 0);
-  g_assert_cmpuint (tp_intset_size (e->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (e->remote_pending), ==, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "actor", NULL), ==,
+  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
+  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
       tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "change-reason", NULL), ==,
+  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   /* RequestStreams again, to add a video stream */
@@ -644,19 +778,19 @@ test_basics (Test *test,
 
   /* The last event should be that the peer and the self-handle were both
    * removed */
-  e = g_slist_nth_data (test->group_events, 0);
+  ge = g_slist_nth_data (test->group_events, 0);
 
-  g_assert_cmpuint (tp_intset_size (e->added), ==, 0);
-  g_assert_cmpuint (tp_intset_size (e->removed), ==, 2);
-  g_assert (tp_intset_is_member (e->removed,
+  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 2);
+  g_assert (tp_intset_is_member (ge->removed,
         test->self_handle));
-  g_assert (tp_intset_is_member (e->removed,
+  g_assert (tp_intset_is_member (ge->removed,
         tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_intset_size (e->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (e->remote_pending), ==, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "actor", NULL), ==,
+  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
+  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
       test->self_handle);
-  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "change-reason", NULL), ==,
+  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   /* FIXME: untested things include:
@@ -708,6 +842,9 @@ teardown (Test *test,
 
   g_slist_foreach (test->group_events, (GFunc) group_event_destroy, NULL);
   g_slist_free (test->group_events);
+
+  g_slist_foreach (test->stream_events, (GFunc) stream_event_destroy, NULL);
+  g_slist_free (test->stream_events);
 
   CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->list_streams_return);
