@@ -83,6 +83,13 @@ enum
   N_SIGNALS
 };
 
+typedef enum {
+    PROGRESS_NONE,
+    PROGRESS_CALLING,
+    PROGRESS_ACTIVE,
+    PROGRESS_ENDED
+} ExampleCallableCallProgress;
+
 static guint signals[N_SIGNALS] = { 0 };
 
 struct _ExampleCallableMediaChannelPrivate
@@ -91,6 +98,7 @@ struct _ExampleCallableMediaChannelPrivate
   gchar *object_path;
   TpHandle handle;
   TpHandle initiator;
+  ExampleCallableCallProgress progress;
 
   guint next_stream_id;
 
@@ -98,7 +106,6 @@ struct _ExampleCallableMediaChannelPrivate
 
   /* These are really booleans, but gboolean is signed. Thanks, GLib */
   unsigned locally_requested:1;
-  unsigned closed:1;
   unsigned disposed:1;
 };
 
@@ -158,12 +165,14 @@ constructed (GObject *object)
       /* Nobody is locally pending. The remote peer will turn up in
        * remote-pending state when we actually contact them, which is done
        * in RequestStreams */
+      self->priv->progress = PROGRESS_NONE;
       local_pending = NULL;
     }
   else
     {
       /* This is an incoming call, so the self-handle is locally
        * pending, to indicate that we need to answer. */
+      self->priv->progress = PROGRESS_CALLING;
       local_pending = tp_intset_new_containing (self->priv->conn->self_handle);
     }
 
@@ -268,7 +277,7 @@ get_property (GObject *object,
       break;
 
     case PROP_CHANNEL_DESTROYED:
-      g_value_set_boolean (value, self->priv->closed);
+      g_value_set_boolean (value, (self->priv->progress == PROGRESS_ENDED));
       break;
 
     case PROP_CHANNEL_PROPERTIES:
@@ -342,11 +351,11 @@ static void
 example_callable_media_channel_close (ExampleCallableMediaChannel *self,
                                       TpChannelGroupChangeReason reason)
 {
-  if (!self->priv->closed)
+  if (self->priv->progress != PROGRESS_ENDED)
     {
       const gchar *send_reason;
 
-      self->priv->closed = TRUE;
+      self->priv->progress = PROGRESS_ENDED;
 
       /* In a real protocol these would be some sort of real protocol construct,
        * like an XMPP error stanza or a SIP error code */
@@ -364,7 +373,7 @@ example_callable_media_channel_close (ExampleCallableMediaChannel *self,
           send_reason = "<call-terminated/>";
         }
 
-      g_message ("Sending to server: Terminating call: %s", send_reason);
+      g_message ("SIGNALLING: send: Terminating call: %s", send_reason);
       g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
       tp_svc_channel_emit_closed (self);
     }
@@ -426,7 +435,7 @@ add_member (GObject *object,
       /* We're in local-pending, move to members to accept. */
       TpIntSet *set = tp_intset_new_containing (member);
 
-      g_message ("Sending to server: Accepting incoming call from %s",
+      g_message ("SIGNALLING: send: Accepting incoming call from %s",
           tp_handle_inspect (contact_repo, self->priv->handle));
 
       tp_group_mixin_change_members (object, "",
@@ -777,6 +786,38 @@ stream_direction_changed_cb (ExampleCallableMediaStream *stream,
       direction, pending);
 }
 
+static gboolean
+simulate_contact_answered_cb (gpointer p)
+{
+  ExampleCallableMediaChannel *self = p;
+  TpIntSet *peer_set;
+
+  /* if the call has been cancelled while we were waiting for the
+   * contact to answer, do nothing */
+  if (self->priv->progress == PROGRESS_ENDED)
+    return FALSE;
+
+  /* otherwise, we're waiting for a response from the contact, which now
+   * arrives */
+  g_assert (self->priv->progress == PROGRESS_CALLING);
+
+  g_message ("SIGNALLING: receive: contact answered our call");
+
+  self->priv->progress = PROGRESS_ACTIVE;
+
+  peer_set = tp_intset_new_containing (self->priv->handle);
+  tp_group_mixin_change_members ((GObject *) self, "",
+      peer_set /* added */,
+      NULL /* nobody removed */,
+      NULL /* nobody added to local-pending */,
+      NULL /* nobody added to remote-pending */,
+      self->priv->handle /* actor */,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_intset_destroy (peer_set);
+
+  return FALSE;
+}
+
 static void
 media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
                        guint contact_handle,
@@ -798,6 +839,13 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "This channel is for handle #%u, we can't make a stream to #%u",
           self->priv->handle, contact_handle);
+      goto error;
+    }
+
+  if (self->priv->progress == PROGRESS_ENDED)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Call has terminated");
       goto error;
     }
 
@@ -825,6 +873,35 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
       ExampleCallableMediaStream *stream;
       GValueArray *info;
       guint id = self->priv->next_stream_id++;
+
+      if (self->priv->progress < PROGRESS_CALLING)
+        {
+          TpIntSet *peer_set = tp_intset_new_containing (self->priv->handle);
+
+          g_message ("SIGNALLING: send: new streamed media call");
+          self->priv->progress = PROGRESS_CALLING;
+
+          tp_group_mixin_change_members ((GObject *) self, "",
+              NULL /* nobody added */,
+              NULL /* nobody removed */,
+              NULL /* nobody added to local-pending */,
+              peer_set /* added to remote-pending */,
+              self->group.self_handle /* actor */,
+              TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+          tp_intset_destroy (peer_set);
+
+          /* In this example there is no real contact, so just simulate them
+           * answering after 1000ms */
+          /* FIXME: define a special contact who never answers, and if it's
+           * that contact, don't add this timeout */
+          g_timeout_add_full (G_PRIORITY_DEFAULT, 1000,
+              simulate_contact_answered_cb, g_object_ref (self),
+              g_object_unref);
+        }
+
+      g_message ("SIGNALLING: send: new %s stream",
+          media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
 
       stream = g_object_new (EXAMPLE_TYPE_CALLABLE_MEDIA_STREAM,
           "channel", self,
