@@ -463,15 +463,12 @@ remove_member_with_reason (GObject *object,
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (object);
 
-  /* The TpGroupMixin won't call this unless member is in one of the sets,
-   * which means either it's the local user or the peer. */
+  /* The TpGroupMixin won't call this unless removing the member is allowed
+   * by the group flags, which in this case means it must be our own handle
+   * (because the other user never appears in local-pending).
+   */
 
-  g_assert (member == self->group.self_handle || member == self->priv->handle);
-
-  /* FIXME: Gabble disallows removing handles that are not our self handle
-   * unless we created the channel. That doesn't seem right... bug? Or should
-   * we mimic its behaviour, so people who interop with this example will
-   * also interop with Gabble? */
+  g_assert (member == self->group.self_handle);
 
   example_callable_media_channel_close (self, reason);
   return TRUE;
