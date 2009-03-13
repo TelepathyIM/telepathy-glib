@@ -460,6 +460,7 @@ test_basics (Test *test,
   guint video_stream_id;
   guint not_a_stream_id = 31337;
   GroupEvent *ge;
+  StreamEvent *se;
 
   g_hash_table_insert (request, TP_IFACE_CHANNEL ".ChannelType",
       tp_g_value_slice_new_static_string (
@@ -599,6 +600,16 @@ test_basics (Test *test,
       TP_MEDIA_STREAM_DIRECTION_NONE);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
 
+  /* There should be one stream event, the addition of the audio stream */
+
+  g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
+  se = g_slist_nth_data (test->stream_events, 0);
+
+  g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
+  g_assert_cmpuint (se->id, ==, audio_stream_id);
+  g_assert_cmpuint (se->contact, ==, tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (se->media_type, ==, TP_MEDIA_STREAM_TYPE_AUDIO);
+
   /* Wait for the remote contact to answer, if they haven't already */
 
   while (!tp_intset_is_member (tp_channel_group_get_members (test->chan),
@@ -719,6 +730,15 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (video_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_VIDEO);
 
+  /* The last stream event should now be the addition of the video stream */
+
+  se = g_slist_nth_data (test->stream_events, 0);
+
+  g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
+  g_assert_cmpuint (se->id, ==, video_stream_id);
+  g_assert_cmpuint (se->contact, ==, tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (se->media_type, ==, TP_MEDIA_STREAM_TYPE_VIDEO);
+
   /* RemoveStreams with a bad stream ID must fail */
 
   g_array_set_size (test->stream_ids, 0);
@@ -762,6 +782,13 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
 
+  /* The last event should be the removal of the video stream */
+
+  se = g_slist_nth_data (test->stream_events, 0);
+
+  g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
+  g_assert_cmpuint (se->id, ==, video_stream_id);
+
   /* Hang up the call in the recommended way */
 
   g_array_set_size (test->contacts, 0);
@@ -793,14 +820,18 @@ test_basics (Test *test,
   g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
+  /* The last stream event should be the removal of the audio stream */
+
+  se = g_slist_nth_data (test->stream_events, 0);
+
+  g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
+  g_assert_cmpuint (se->id, ==, audio_stream_id);
+
   /* FIXME: untested things include:
    *
    * RequestStreamDirection
    * StreamDirectionChanged being emitted correctly (part of RSD)
    * RequestStreamDirection failing (invalid direction, stream ID)
-   *
-   * StreamAdded being emitted correctly
-   * StreamRemoved being emitted correctly
    *
    * StreamStateChanged being emitted (???)
    *
