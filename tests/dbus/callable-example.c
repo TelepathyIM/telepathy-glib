@@ -628,7 +628,7 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
 
-  /* Hang up the call */
+  /* Hang up the call in the recommended way */
 
   g_array_set_size (test->contacts, 0);
   g_array_append_val (test->contacts, test->self_handle);
@@ -641,6 +641,23 @@ test_basics (Test *test,
   /* In response to hanging up, the channel closes */
   test_connection_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
+
+  /* The last event should be that the peer and the self-handle were both
+   * removed */
+  e = g_slist_nth_data (test->events, 0);
+
+  g_assert_cmpuint (tp_intset_size (e->added), ==, 0);
+  g_assert_cmpuint (tp_intset_size (e->removed), ==, 2);
+  g_assert (tp_intset_is_member (e->removed,
+        test->self_handle));
+  g_assert (tp_intset_is_member (e->removed,
+        tp_channel_get_handle (test->chan, NULL)));
+  g_assert_cmpuint (tp_intset_size (e->local_pending), ==, 0);
+  g_assert_cmpuint (tp_intset_size (e->remote_pending), ==, 0);
+  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "actor", NULL), ==,
+      test->self_handle);
+  g_assert_cmpuint (tp_asv_get_uint32 (e->details, "change-reason", NULL), ==,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   /* FIXME: untested things include:
    *
