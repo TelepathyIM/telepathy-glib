@@ -1,3 +1,9 @@
+telepathy-farsight 0.0.5 (16 March 2009)
+========================================
+- Recognize ice-udp
+- Improve error handling
+- Support the new CodecsUpdated method
+
 telepathy-farsight 0.0.4 (14 January 2009)
 ==========================================
 - Add python bindings for tpfarsight
