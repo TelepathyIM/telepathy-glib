@@ -490,6 +490,26 @@ outgoing_call (Test *test,
 }
 
 static void
+maybe_pop_stream_direction (Test *test)
+{
+  while (test->stream_events != NULL)
+    {
+      StreamEvent *se = test->stream_events->data;
+
+      if (se->type == STREAM_EVENT_DIRECTION_CHANGED)
+        {
+          stream_event_destroy (se);
+          test->stream_events = g_slist_delete_link (test->stream_events,
+              test->stream_events);
+        }
+      else
+        {
+          break;
+        }
+    }
+}
+
+static void
 test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
@@ -612,7 +632,11 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
 #endif
 
-  /* There should be one stream event, the addition of the audio stream */
+  /* There should be one stream event, the addition of the audio stream,
+   * or two events, its addition and its direction. In this test we make
+   * no assertion about the direction */
+
+  maybe_pop_stream_direction (test);
 
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
   se = g_slist_nth_data (test->stream_events, 0);
@@ -759,6 +783,8 @@ test_basics (Test *test,
 
   /* The last stream event should now be the addition of the video stream */
 
+  maybe_pop_stream_direction (test);
+
   se = g_slist_nth_data (test->stream_events, 0);
 
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
@@ -881,6 +907,8 @@ test_terminate_via_close (Test *test,
   test_assert_no_error (test->error);
 
   test_connection_run_until_dbus_queue_processed (test->conn);
+
+  maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
@@ -946,6 +974,8 @@ test_terminate_via_no_streams (Test *test,
   test_assert_no_error (test->error);
 
   test_connection_run_until_dbus_queue_processed (test->conn);
+
+  maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
