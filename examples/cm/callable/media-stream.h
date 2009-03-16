@@ -73,6 +73,11 @@ gboolean example_callable_media_stream_change_direction (
     GError **error);
 void example_callable_media_stream_connect (ExampleCallableMediaStream *self);
 
+/* This controls receiving emulated network events, so it wouldn't exist in
+ * a real connection manager */
+void example_callable_media_stream_simulate_contact_agreed_to_send (
+    ExampleCallableMediaStream *self);
+
 G_END_DECLS
 
 #endif

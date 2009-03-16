@@ -854,6 +854,9 @@ simulate_contact_answered_cb (gpointer p)
 
   while (g_hash_table_iter_next (&iter, NULL, &v))
     {
+      /* remote contact accepts our proposed stream direction... */
+      example_callable_media_stream_simulate_contact_agreed_to_send (v);
+      /* ... and the stream tries to connect */
       example_callable_media_stream_connect (v);
     }
 
@@ -951,8 +954,6 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
           "handle", self->priv->handle,
           "type", media_type,
           NULL);
-      /* FIXME: what direction should the stream have, and why? Answers on
-       * a postcard. */
 
       g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
 
@@ -965,6 +966,11 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
           G_CALLBACK (stream_state_changed_cb), self);
       g_signal_connect (stream, "direction-changed",
           G_CALLBACK (stream_direction_changed_cb), self);
+
+      /* newly requested streams start off in a "we want to be bidirectional"
+       * state */
+      example_callable_media_stream_change_direction (stream,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
 
       if (self->priv->progress == PROGRESS_ACTIVE)
         {

@@ -80,6 +80,11 @@ example_callable_media_stream_init (ExampleCallableMediaStream *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       EXAMPLE_TYPE_CALLABLE_MEDIA_STREAM,
       ExampleCallableMediaStreamPrivate);
+
+  /* FIXME: no particular "implicit" direction is currently mandated by
+   * telepathy-spec */
+  self->priv->direction = TP_MEDIA_STREAM_DIRECTION_NONE;
+  self->priv->pending_send = 0;
 }
 
 static void
@@ -346,11 +351,10 @@ example_callable_media_stream_close (ExampleCallableMediaStream *self)
     }
 }
 
-static gboolean
-simulate_contact_agreed_to_send_cb (gpointer p)
+void
+example_callable_media_stream_simulate_contact_agreed_to_send (
+    ExampleCallableMediaStream *self)
 {
-  ExampleCallableMediaStream *self = p;
-
   if (self->priv->removed ||
       !(self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND))
     return;
@@ -362,6 +366,13 @@ simulate_contact_agreed_to_send_cb (gpointer p)
   self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
 
   g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+}
+
+static gboolean
+simulate_contact_agreed_to_send_cb (gpointer p)
+{
+  example_callable_media_stream_simulate_contact_agreed_to_send (p);
+  return FALSE;
 }
 
 gboolean
@@ -467,7 +478,6 @@ simulate_stream_connected_cb (gpointer p)
 void
 example_callable_media_stream_connect (ExampleCallableMediaStream *self)
 {
-
   /* if already trying to connect, do nothing */
   if (self->priv->connected_event_id != 0)
     return;
