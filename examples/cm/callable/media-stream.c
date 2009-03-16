@@ -427,6 +427,9 @@ example_callable_media_stream_change_direction (
         }
     }
 
+  if (changed)
+    g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+
   return TRUE;
 }
 
