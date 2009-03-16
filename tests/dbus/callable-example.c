@@ -573,9 +573,11 @@ test_basics (Test *test,
       TP_MEDIA_STREAM_TYPE_AUDIO);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 3), ==,
       TP_MEDIA_STREAM_STATE_DISCONNECTED);
+#if 0
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
       TP_MEDIA_STREAM_DIRECTION_NONE);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
+#endif
 
   /* ListStreams again: now we have the audio stream */
 
@@ -604,9 +606,11 @@ test_basics (Test *test,
       TP_MEDIA_STREAM_TYPE_AUDIO);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 3), ==,
       TP_MEDIA_STREAM_STATE_DISCONNECTED);
+#if 0
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
       TP_MEDIA_STREAM_DIRECTION_NONE);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
+#endif
 
   /* There should be one stream event, the addition of the audio stream */
 
@@ -714,9 +718,11 @@ test_basics (Test *test,
       TP_MEDIA_STREAM_TYPE_VIDEO);
   g_assert_cmpuint (g_value_get_uint (video_info->values + 3), ==,
       TP_MEDIA_STREAM_STATE_DISCONNECTED);
+#if 0
   g_assert_cmpuint (g_value_get_uint (video_info->values + 4), ==,
       TP_MEDIA_STREAM_DIRECTION_NONE);
   g_assert_cmpuint (g_value_get_uint (video_info->values + 5), ==, 0);
+#endif
 
   /* ListStreams again: now we have the video stream too */
 
