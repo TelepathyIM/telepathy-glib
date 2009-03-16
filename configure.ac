@@ -174,11 +174,7 @@ AC_CHECK_PROGS([XSLTPROC], [xsltproc])
 if test -z "$XSLTPROC"; then
   AC_MSG_ERROR([xsltproc (from the libxslt source package) is required])
 fi
-PYTHON=
-AC_CHECK_PROGS([PYTHON], [python2.3 python2.4 python2.5 python])
-if test -z "$PYTHON"; then
-  AC_MSG_ERROR([Python is required to compile this package])
-fi
+AM_PATH_PYTHON([2.3])
 
 dnl glibc backtrace functions
 AC_CHECK_FUNCS(backtrace backtrace_symbols_fd)
