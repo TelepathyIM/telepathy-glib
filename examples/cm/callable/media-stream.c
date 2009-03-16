@@ -346,6 +346,24 @@ example_callable_media_stream_close (ExampleCallableMediaStream *self)
     }
 }
 
+static gboolean
+simulate_contact_agreed_to_send_cb (gpointer p)
+{
+  ExampleCallableMediaStream *self = p;
+
+  if (self->priv->removed ||
+      !(self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND))
+    return;
+
+  g_message ("SIGNALLING: receive: OK, I'll send you media on stream %u",
+      self->priv->id);
+
+  self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+  self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
+
+  g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+}
+
 gboolean
 example_callable_media_stream_change_direction (
     ExampleCallableMediaStream *self,
@@ -410,8 +428,9 @@ example_callable_media_stream_change_direction (
               self->priv->id);
           changed = TRUE;
           self->priv->pending_send |= TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
-          /* FIXME: schedule a timeout, after which the sender will accept
-           * our request */
+          g_timeout_add_full (G_PRIORITY_DEFAULT, 1000,
+              simulate_contact_agreed_to_send_cb, g_object_ref (self),
+              g_object_unref);
         }
     }
   else
