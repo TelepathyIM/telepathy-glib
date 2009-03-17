@@ -89,8 +89,10 @@ typedef struct {
 } TpCMProtocolSpec;
 
 typedef struct _TpBaseConnectionManager TpBaseConnectionManager;
-
+typedef struct _TpBaseConnectionManagerPrivate TpBaseConnectionManagerPrivate;
 typedef struct _TpBaseConnectionManagerClass TpBaseConnectionManagerClass;
+typedef struct _TpBaseConnectionManagerClassPrivate
+    TpBaseConnectionManagerClassPrivate;
 
 typedef TpBaseConnection *(*TpBaseConnectionManagerNewConnFunc)(
     TpBaseConnectionManager *self, const gchar *proto,
@@ -109,14 +111,14 @@ struct _TpBaseConnectionManagerClass {
     gpointer _future3;
     gpointer _future4;
 
-    gpointer priv;
+    TpBaseConnectionManagerClassPrivate *priv;
 };
 
 struct _TpBaseConnectionManager {
     /*<private>*/
     GObject parent;
 
-    gpointer priv;
+    TpBaseConnectionManagerPrivate *priv;
 };
 
 GType tp_base_connection_manager_get_type (void);

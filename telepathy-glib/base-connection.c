@@ -284,9 +284,6 @@ enum
 
 static guint signals[N_SIGNALS] = {0};
 
-#define TP_BASE_CONNECTION_GET_PRIVATE(obj) \
-    ((TpBaseConnectionPrivate *) obj->priv)
-
 typedef struct _ChannelRequest ChannelRequest;
 
 typedef enum {
@@ -414,7 +411,7 @@ tp_base_connection_get_property (GObject *object,
                                  GParamSpec *pspec)
 {
   TpBaseConnection *self = (TpBaseConnection *) object;
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
 
   switch (property_id) {
     case PROP_PROTOCOL:
@@ -438,7 +435,7 @@ tp_base_connection_set_property (GObject      *object,
                                  GParamSpec   *pspec)
 {
   TpBaseConnection *self = (TpBaseConnection *) object;
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
 
   switch (property_id) {
     case PROP_PROTOCOL:
@@ -481,7 +478,7 @@ static void
 tp_base_connection_dispose (GObject *object)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (object);
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
   guint i;
 
   if (priv->dispose_has_run)
@@ -546,7 +543,7 @@ static void
 tp_base_connection_finalize (GObject *object)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (object);
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
 
   g_free (priv->protocol);
   g_free (self->bus_name);
@@ -700,7 +697,7 @@ find_matching_channel_requests (TpBaseConnection *conn,
                                 ChannelRequest *channel_request,
                                 gboolean *suppress_handler)
 {
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (conn);
+  TpBaseConnectionPrivate *priv = conn->priv;
   GPtrArray *requests;
   guint i;
 
@@ -766,7 +763,8 @@ satisfy_request (TpBaseConnection *conn,
                  GObject *channel,
                  const gchar *object_path)
 {
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (conn);
+  TpBaseConnectionPrivate *priv = conn->priv;
+
   DEBUG ("completing queued request %p with success, "
       "channel_type=%s, handle_type=%u, "
       "handle=%u, suppress_handler=%u", request, request->channel_type,
@@ -873,7 +871,8 @@ fail_channel_request (TpBaseConnection *conn,
                       ChannelRequest *request,
                       GError *error)
 {
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (conn);
+  TpBaseConnectionPrivate *priv = conn->priv;
+
   DEBUG ("completing queued request %p with error, channel_type=%s, "
       "handle_type=%u, handle=%u, suppress_handler=%u",
       request, request->channel_type,
@@ -1176,8 +1175,7 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   TpBaseConnection *self = TP_BASE_CONNECTION (
       G_OBJECT_CLASS (tp_base_connection_parent_class)->constructor (
         type, n_construct_properties, construct_params));
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  TpBaseConnectionPrivate *priv = self->priv;
   TpBaseConnectionClass *cls = TP_BASE_CONNECTION_GET_CLASS (self);
 
   DEBUG("Post-construction: (TpBaseConnection *)%p", self);
@@ -1267,7 +1265,7 @@ manager_get_channel_details_foreach (TpExportableChannel *chan,
 static GPtrArray *
 conn_requests_get_channel_details (TpBaseConnection *self)
 {
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
   /* guess that each ChannelManager and each ChannelFactory has two
    * channels, on average */
   GPtrArray *details = g_ptr_array_sized_new (priv->channel_managers->len * 2
@@ -1323,7 +1321,7 @@ get_requestables_foreach (TpChannelManager *manager,
 static GPtrArray *
 conn_requests_get_requestables (TpBaseConnection *self)
 {
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
   /* generously guess that each ChannelManager has about 2 ChannelClasses */
   GPtrArray *details = g_ptr_array_sized_new (priv->channel_managers->len * 2);
   guint i;
@@ -1496,10 +1494,15 @@ tp_base_connection_register (TpBaseConnection *self,
                              GError **error)
 {
   TpBaseConnectionClass *cls = TP_BASE_CONNECTION_GET_CLASS (self);
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
   gchar *tmp;
   gchar *safe_proto;
   gchar *unique_name;
+
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
+  g_return_val_if_fail (cm_name != NULL, FALSE);
+  g_return_val_if_fail (bus_name != NULL, FALSE);
+  g_return_val_if_fail (object_path != NULL, FALSE);
 
   if (tp_connection_manager_check_valid_protocol_name (priv->protocol, NULL))
     {
@@ -1563,8 +1566,7 @@ tp_base_connection_register (TpBaseConnection *self,
 static void
 tp_base_connection_close_all_channels (TpBaseConnection *self)
 {
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  TpBaseConnectionPrivate *priv = self->priv;
 
   /* We deliberately don't iterate over channel managers here -
    * they don't need this, and are expected to listen to
@@ -1702,7 +1704,7 @@ tp_base_connection_get_interfaces (TpSvcConnection *iface,
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
-  priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  priv = self->priv;
   klass = TP_BASE_CONNECTION_GET_CLASS (self);
 
   if (priv->interfaces)
@@ -1744,7 +1746,7 @@ tp_base_connection_get_protocol (TpSvcConnection *iface,
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
-  priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  priv = self->priv;
 
   tp_svc_connection_return_from_get_protocol (context, priv->protocol);
 }
@@ -1820,7 +1822,7 @@ tp_base_connection_hold_handles (TpSvcConnection *iface,
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
-  priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  priv = self->priv;
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
@@ -1865,8 +1867,7 @@ tp_base_connection_inspect_handles (TpSvcConnection *iface,
                                     DBusGMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  TpBaseConnectionPrivate *priv = self->priv;
   GError *error = NULL;
   const gchar **ret;
   guint i;
@@ -2012,7 +2013,7 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
-  priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  priv = self->priv;
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
@@ -2086,7 +2087,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
-  priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  priv = self->priv;
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
@@ -2272,8 +2273,7 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
                                     DBusGMethodInvocation *context)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  TpBaseConnectionPrivate *priv = self->priv;
   char *sender;
   GError *error = NULL;
 
@@ -2337,14 +2337,13 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
   GArray *handles = NULL;
   gchar *sender;
 
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
+
   for (cur_name = names; *cur_name != NULL; cur_name++)
     {
       count++;
     }
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
 
   if (!tp_handle_type_is_valid (handle_type, &error))
     {
@@ -2425,12 +2424,12 @@ TpHandleRepoIface *
 tp_base_connection_get_handles (TpBaseConnection *self,
                                 TpHandleType handle_type)
 {
-  TpBaseConnectionPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_BASE_CONNECTION, TpBaseConnectionPrivate);
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
 
   if (handle_type >= NUM_TP_HANDLE_TYPES)
     return NULL;
-  return priv->handles[handle_type];
+
+  return self->priv->handles[handle_type];
 }
 
 
@@ -2448,6 +2447,8 @@ tp_base_connection_get_handles (TpBaseConnection *self,
 TpHandle
 tp_base_connection_get_self_handle (TpBaseConnection *self)
 {
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), 0);
+
   return self->self_handle;
 }
 
@@ -2478,12 +2479,14 @@ tp_base_connection_set_self_handle (TpBaseConnection *self,
  */
 void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 {
-  GPtrArray *contexts = self->priv->disconnect_requests;
+  GPtrArray *contexts;
   guint i;
 
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (self->status == TP_CONNECTION_STATUS_DISCONNECTED);
-  g_return_if_fail (contexts != NULL);
+  g_return_if_fail (self->priv->disconnect_requests != NULL);
 
+  contexts = self->priv->disconnect_requests;
   self->priv->disconnect_requests = NULL;
 
   for (i = 0; i < contexts->len; i++)
@@ -2525,6 +2528,7 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
 {
   GHashTable *dup = NULL;
 
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (tp_dbus_check_valid_interface_name (error_name, NULL));
 
   if (details == NULL)
@@ -2592,7 +2596,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
-  priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  priv = self->priv;
   klass = TP_BASE_CONNECTION_GET_CLASS (self);
 
   if (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW
@@ -2740,9 +2744,10 @@ tp_base_connection_add_interfaces (TpBaseConnection *self,
                                    const gchar **interfaces)
 {
   guint i, n_new;
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
   TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
 
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   g_return_if_fail (self->status != TP_CONNECTION_STATUS_CONNECTED);
   g_return_if_fail (self->status != TP_CONNECTION_STATUS_DISCONNECTED);
 
@@ -3063,7 +3068,7 @@ conn_requests_offer_request (TpBaseConnection *self,
   /* Step 3: offer the incoming, vaguely sanitized request to the channel
    * managers.
    */
-  TpBaseConnectionPrivate *priv = TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
   TpChannelManagerRequestFunc func;
   ChannelRequest *request;
   gboolean suppress_handler;
@@ -3171,6 +3176,8 @@ void
 tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
                                               TpBaseConnection *self)
 {
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+
   iter->self = self;
   iter->index = 0;
 }
@@ -3198,7 +3205,7 @@ tp_base_connection_channel_manager_iter_next (TpChannelManagerIter *iter,
   /* Check the caller initialized the iterator properly. */
   g_assert (TP_IS_BASE_CONNECTION (iter->self));
 
-  priv = TP_BASE_CONNECTION_GET_PRIVATE (iter->self);
+  priv = iter->self->priv;
 
   /* Be noisy if something's gone really wrong */
   g_return_val_if_fail (iter->index <= priv->channel_managers->len, FALSE);
@@ -3220,8 +3227,7 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
   const GArray *contacts, GHashTable *attributes_hash)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (obj);
-  TpBaseConnectionPrivate *priv =
-    TP_BASE_CONNECTION_GET_PRIVATE (self);
+  TpBaseConnectionPrivate *priv = self->priv;
   guint i;
 
   for (i = 0; i < contacts->len; i++)
@@ -3251,6 +3257,8 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
 void
 tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
 {
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+
   tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
       TP_IFACE_CONNECTION,
       tp_base_connection_fill_contact_attributes);

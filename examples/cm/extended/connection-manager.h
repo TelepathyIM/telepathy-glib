@@ -17,17 +17,23 @@ G_BEGIN_DECLS
 
 typedef struct _ExampleExtendedConnectionManager
     ExampleExtendedConnectionManager;
+typedef struct _ExampleExtendedConnectionManagerPrivate
+    ExampleExtendedConnectionManagerPrivate;
 typedef struct _ExampleExtendedConnectionManagerClass
     ExampleExtendedConnectionManagerClass;
+typedef struct _ExampleExtendedConnectionManagerClassPrivate
+    ExampleExtendedConnectionManagerClassPrivate;
 
 struct _ExampleExtendedConnectionManagerClass {
     TpBaseConnectionManagerClass parent_class;
+
+    ExampleExtendedConnectionManagerClassPrivate *priv;
 };
 
 struct _ExampleExtendedConnectionManager {
     TpBaseConnectionManager parent;
 
-    gpointer priv;
+    ExampleExtendedConnectionManagerPrivate *priv;
 };
 
 GType example_extended_connection_manager_get_type (void);
