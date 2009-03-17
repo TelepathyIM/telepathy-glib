@@ -238,6 +238,8 @@ setup (Test *test,
       (GDestroyNotify) tp_g_value_slice_free);
   g_hash_table_insert (parameters, "account",
       tp_g_value_slice_new_static_string ("me"));
+  g_hash_table_insert (parameters, "simulation-delay",
+      tp_g_value_slice_new_uint (0));
 
   tp_cli_connection_manager_run_request_connection (test->cm, -1,
       "example", parameters, &bus_name, &object_path, &test->error, NULL);
