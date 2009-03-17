@@ -50,6 +50,20 @@
         } \
   } G_STMT_END
 
+static void
+test_assert_uu_hash_contains (GHashTable *hash,
+                              guint key,
+                              guint expected)
+{
+  gpointer v;
+
+  if (!g_hash_table_lookup_extended (hash, GUINT_TO_POINTER (key), NULL, &v))
+    g_error ("Expected %u => %u in hash table, but key was absent", key,
+        expected);
+
+  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, expected);
+}
+
 typedef struct
 {
   TpIntSet *added;
@@ -145,6 +159,12 @@ typedef struct
   gulong members_changed_detailed_id;
 
   GSList *stream_events;
+
+  guint audio_stream_id;
+  guint video_stream_id;
+  GHashTable *stream_directions;
+  GHashTable *stream_pending_sends;
+  GHashTable *stream_states;
 } Test;
 
 static void
@@ -185,6 +205,13 @@ setup (Test *test,
 
   g_type_init ();
   tp_debug_set_flags ("all");
+
+  test->audio_stream_id = G_MAXUINT;
+  test->video_stream_id = G_MAXUINT;
+
+  test->stream_directions = g_hash_table_new (NULL, NULL);
+  test->stream_pending_sends = g_hash_table_new (NULL, NULL);
+  test->stream_states = g_hash_table_new (NULL, NULL);
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_dbus_daemon_dup (NULL);
@@ -378,6 +405,17 @@ stream_added_cb (TpChannel *chan G_GNUC_UNUSED,
   se->media_type = media_type;
 
   test->stream_events = g_slist_prepend (test->stream_events, se);
+
+  /* use G_MAXUINT to represent "we have no idea" until telepathy-spec
+   * specifies what the initial direction is */
+  g_hash_table_insert (test->stream_directions, GUINT_TO_POINTER (id),
+      GUINT_TO_POINTER (G_MAXUINT));
+  g_hash_table_insert (test->stream_pending_sends, GUINT_TO_POINTER (id),
+      GUINT_TO_POINTER (G_MAXUINT));
+
+  /* this one does seem reasonable, though */
+  g_hash_table_insert (test->stream_states, GUINT_TO_POINTER (id),
+      GUINT_TO_POINTER (TP_MEDIA_STREAM_STATE_DISCONNECTED));
 }
 
 static void
@@ -397,6 +435,11 @@ stream_direction_changed_cb (TpChannel *chan G_GNUC_UNUSED,
   se->pending_send = pending_flags;
 
   test->stream_events = g_slist_prepend (test->stream_events, se);
+
+  g_hash_table_insert (test->stream_directions, GUINT_TO_POINTER (id),
+      GUINT_TO_POINTER (direction));
+  g_hash_table_insert (test->stream_pending_sends, GUINT_TO_POINTER (id),
+      GUINT_TO_POINTER (pending_flags));
 }
 
 static void
@@ -430,6 +473,10 @@ stream_removed_cb (TpChannel *chan G_GNUC_UNUSED,
   se->id = id;
 
   test->stream_events = g_slist_prepend (test->stream_events, se);
+
+  g_hash_table_remove (test->stream_directions, GUINT_TO_POINTER (id));
+  g_hash_table_remove (test->stream_pending_sends, GUINT_TO_POINTER (id));
+  g_hash_table_remove (test->stream_states, GUINT_TO_POINTER (id));
 }
 
 static void
@@ -447,6 +494,9 @@ stream_state_changed_cb (TpChannel *chan G_GNUC_UNUSED,
   se->state = state;
 
   test->stream_events = g_slist_prepend (test->stream_events, se);
+
+  g_hash_table_insert (test->stream_states, GUINT_TO_POINTER (id),
+      GUINT_TO_POINTER (state));
 }
 
 static void
@@ -514,8 +564,6 @@ test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
   GValueArray *audio_info, *video_info;
-  guint audio_stream_id;
-  guint video_stream_id;
   guint not_a_stream_id = 31337;
   GroupEvent *ge;
   StreamEvent *se;
@@ -585,19 +633,20 @@ test_basics (Test *test,
   g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 4));
   g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
 
-  audio_stream_id = g_value_get_uint (audio_info->values + 0);
+  test->audio_stream_id = g_value_get_uint (audio_info->values + 0);
 
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
       tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
+  /* Initially, the stream is disconnected, we're willing to send to the peer,
+   * and we've asked the peer whether they will send to us too */
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 3), ==,
       TP_MEDIA_STREAM_STATE_DISCONNECTED);
-#if 0
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
-      TP_MEDIA_STREAM_DIRECTION_NONE);
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
-#endif
+      TP_MEDIA_STREAM_DIRECTION_SEND);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==,
+      TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
   /* ListStreams again: now we have the audio stream */
 
@@ -617,7 +666,7 @@ test_basics (Test *test,
   g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
 
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
-      audio_stream_id);
+      test->audio_stream_id);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
       tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
@@ -626,25 +675,35 @@ test_basics (Test *test,
       TP_MEDIA_STREAM_TYPE_AUDIO);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 3), ==,
       TP_MEDIA_STREAM_STATE_DISCONNECTED);
-#if 0
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
-      TP_MEDIA_STREAM_DIRECTION_NONE);
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==, 0);
-#endif
+      TP_MEDIA_STREAM_DIRECTION_SEND);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==,
+      TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
-  /* There should be one stream event, the addition of the audio stream,
-   * or two events, its addition and its direction. In this test we make
-   * no assertion about the direction */
+  /* There should be two stream events, the addition of the audio stream,
+   * and the change to the appropriate direction (StreamAdded does not signal
+   * stream directionality) */
 
-  maybe_pop_stream_direction (test);
+  g_assert_cmpuint (g_slist_length (test->stream_events), ==, 2);
 
-  g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
-  se = g_slist_nth_data (test->stream_events, 0);
-
+  se = g_slist_nth_data (test->stream_events, 1);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
-  g_assert_cmpuint (se->id, ==, audio_stream_id);
+  g_assert_cmpuint (se->id, ==, test->audio_stream_id);
   g_assert_cmpuint (se->contact, ==, tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (se->media_type, ==, TP_MEDIA_STREAM_TYPE_AUDIO);
+
+  se = g_slist_nth_data (test->stream_events, 0);
+  g_assert_cmpuint (se->type, ==, STREAM_EVENT_DIRECTION_CHANGED);
+  g_assert_cmpuint (se->id, ==, test->audio_stream_id);
+  g_assert_cmpuint (se->direction, ==, TP_MEDIA_STREAM_DIRECTION_SEND);
+  g_assert_cmpuint (se->pending_send, ==, TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
+
+  test_assert_uu_hash_contains (test->stream_states, test->audio_stream_id,
+      TP_MEDIA_STREAM_STATE_DISCONNECTED);
+  test_assert_uu_hash_contains (test->stream_directions, test->audio_stream_id,
+      TP_MEDIA_STREAM_DIRECTION_SEND);
+  test_assert_uu_hash_contains (test->stream_pending_sends,
+      test->audio_stream_id, TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -699,18 +758,32 @@ test_basics (Test *test,
   g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
+  /* Immediately the call is accepted, the remote peer accepts our proposed
+   * stream direction */
+  test_connection_run_until_dbus_queue_processed (test->conn);
+
+  se = g_slist_nth_data (test->stream_events, 0);
+  g_assert_cmpuint (se->type, ==, STREAM_EVENT_DIRECTION_CHANGED);
+  g_assert_cmpuint (se->id, ==, test->audio_stream_id);
+  g_assert_cmpuint (se->direction, ==,
+      TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+  g_assert_cmpuint (se->pending_send, ==, 0);
+
+  test_assert_uu_hash_contains (test->stream_states, test->audio_stream_id,
+      TP_MEDIA_STREAM_STATE_DISCONNECTED);
+  test_assert_uu_hash_contains (test->stream_directions, test->audio_stream_id,
+      TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+  test_assert_uu_hash_contains (test->stream_pending_sends,
+      test->audio_stream_id, 0);
+
   /* The stream should become connected after a while */
 
-  se = test->stream_events->data;
-
-  while (se->type != STREAM_EVENT_STATE_CHANGED)
+  while (GPOINTER_TO_UINT (g_hash_table_lookup (test->stream_states,
+        GUINT_TO_POINTER (test->audio_stream_id))) !=
+        TP_MEDIA_STREAM_STATE_CONNECTED)
     {
-       g_main_context_iteration (NULL, TRUE);
-      se = test->stream_events->data;
+      g_main_context_iteration (NULL, TRUE);
     }
-
-  g_assert_cmpuint (se->id, ==, audio_stream_id);
-  g_assert_cmpuint (se->state, ==, TP_MEDIA_STREAM_STATE_CONNECTED);
 
   /* RequestStreams again, to add a video stream */
 
@@ -732,7 +805,7 @@ test_basics (Test *test,
   g_assert (G_VALUE_HOLDS_UINT (video_info->values + 4));
   g_assert (G_VALUE_HOLDS_UINT (video_info->values + 5));
 
-  video_stream_id = g_value_get_uint (video_info->values + 0);
+  test->video_stream_id = g_value_get_uint (video_info->values + 0);
 
   g_assert_cmpuint (g_value_get_uint (video_info->values + 1), ==,
       tp_channel_get_handle (test->chan, NULL));
@@ -742,11 +815,10 @@ test_basics (Test *test,
       TP_MEDIA_STREAM_TYPE_VIDEO);
   g_assert_cmpuint (g_value_get_uint (video_info->values + 3), ==,
       TP_MEDIA_STREAM_STATE_DISCONNECTED);
-#if 0
   g_assert_cmpuint (g_value_get_uint (video_info->values + 4), ==,
-      TP_MEDIA_STREAM_DIRECTION_NONE);
-  g_assert_cmpuint (g_value_get_uint (video_info->values + 5), ==, 0);
-#endif
+      TP_MEDIA_STREAM_DIRECTION_SEND);
+  g_assert_cmpuint (g_value_get_uint (video_info->values + 5), ==,
+      TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
   /* ListStreams again: now we have the video stream too */
 
@@ -760,7 +832,7 @@ test_basics (Test *test,
   /* this might be the video or the audio - we'll have to find out */
   audio_info = g_ptr_array_index (test->list_streams_return, 0);
 
-  if (g_value_get_uint (audio_info->values + 0) == audio_stream_id)
+  if (g_value_get_uint (audio_info->values + 0) == test->audio_stream_id)
     {
       /* our guess was right, so the other one must be the video */
       video_info = g_ptr_array_index (test->list_streams_return, 1);
@@ -773,24 +845,41 @@ test_basics (Test *test,
     }
 
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
-      audio_stream_id);
+      test->audio_stream_id);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
   g_assert_cmpuint (g_value_get_uint (video_info->values + 0), ==,
-      video_stream_id);
+      test->video_stream_id);
   g_assert_cmpuint (g_value_get_uint (video_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_VIDEO);
 
-  /* The last stream event should now be the addition of the video stream */
+  /* The last two stream events should be the addition of the video stream,
+   * and the change to the appropriate direction (StreamAdded does not signal
+   * stream directionality) */
 
-  maybe_pop_stream_direction (test);
-
-  se = g_slist_nth_data (test->stream_events, 0);
-
+  se = g_slist_nth_data (test->stream_events, 1);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
-  g_assert_cmpuint (se->id, ==, video_stream_id);
+  g_assert_cmpuint (se->id, ==, test->video_stream_id);
   g_assert_cmpuint (se->contact, ==, tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (se->media_type, ==, TP_MEDIA_STREAM_TYPE_VIDEO);
+
+  se = g_slist_nth_data (test->stream_events, 0);
+  g_assert_cmpuint (se->type, ==, STREAM_EVENT_DIRECTION_CHANGED);
+  g_assert_cmpuint (se->id, ==, test->video_stream_id);
+  g_assert_cmpuint (se->direction, ==, TP_MEDIA_STREAM_DIRECTION_SEND);
+  g_assert_cmpuint (se->pending_send, ==, TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
+
+  /* After a moment, the video stream becomes connected, and the remote user
+   * accepts our proposed direction change. These might happen in either
+   * order, at least in this implementation. We already tested the stream
+   * becoming connected, so let's test the direction change here instead. */
+
+  while (GPOINTER_TO_UINT (g_hash_table_lookup (test->stream_directions,
+        GUINT_TO_POINTER (test->video_stream_id))) !=
+        TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL)
+    {
+      g_main_context_iteration (NULL, TRUE);
+    }
 
   /* RemoveStreams with a bad stream ID must fail */
 
@@ -806,7 +895,7 @@ test_basics (Test *test,
   /* Drop the video stream with RemoveStreams */
 
   g_array_set_size (test->stream_ids, 0);
-  g_array_append_val (test->stream_ids, video_stream_id);
+  g_array_append_val (test->stream_ids, test->video_stream_id);
   tp_cli_channel_type_streamed_media_call_remove_streams (test->chan, -1,
       test->stream_ids,
       void_cb, test, NULL, NULL);
@@ -831,7 +920,7 @@ test_basics (Test *test,
   g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
 
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
-      audio_stream_id);
+      test->audio_stream_id);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
 
@@ -840,7 +929,7 @@ test_basics (Test *test,
   se = g_slist_nth_data (test->stream_events, 0);
 
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
-  g_assert_cmpuint (se->id, ==, video_stream_id);
+  g_assert_cmpuint (se->id, ==, test->video_stream_id);
 
   /* Hang up the call in the recommended way */
 
@@ -878,7 +967,7 @@ test_basics (Test *test,
   se = g_slist_nth_data (test->stream_events, 0);
 
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
-  g_assert_cmpuint (se->id, ==, audio_stream_id);
+  g_assert_cmpuint (se->id, ==, test->audio_stream_id);
 
   /* FIXME: untested things include:
    *
@@ -894,7 +983,6 @@ test_terminate_via_close (Test *test,
 {
   GroupEvent *ge;
   StreamEvent *se;
-  guint audio_stream_id;
 
   outgoing_call (test, "basic-test");
 
@@ -912,7 +1000,7 @@ test_terminate_via_close (Test *test,
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
-  audio_stream_id = se->id;
+  test->audio_stream_id = se->id;
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -952,7 +1040,7 @@ test_terminate_via_close (Test *test,
   se = g_slist_nth_data (test->stream_events, 0);
 
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
-  g_assert_cmpuint (se->id, ==, audio_stream_id);
+  g_assert_cmpuint (se->id, ==, test->audio_stream_id);
 }
 
 static void
@@ -961,7 +1049,6 @@ test_terminate_via_no_streams (Test *test,
 {
   GroupEvent *ge;
   StreamEvent *se;
-  guint audio_stream_id;
 
   outgoing_call (test, "basic-test");
 
@@ -979,7 +1066,7 @@ test_terminate_via_no_streams (Test *test,
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
-  audio_stream_id = se->id;
+  test->audio_stream_id = se->id;
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -990,7 +1077,7 @@ test_terminate_via_no_streams (Test *test,
   /* Close the audio stream */
 
   g_array_set_size (test->stream_ids, 0);
-  g_array_append_val (test->stream_ids, audio_stream_id);
+  g_array_append_val (test->stream_ids, test->audio_stream_id);
   tp_cli_channel_type_streamed_media_call_remove_streams (test->chan, -1,
       test->stream_ids,
       void_cb, test, NULL, NULL);
@@ -1019,7 +1106,7 @@ test_terminate_via_no_streams (Test *test,
   se = g_slist_nth_data (test->stream_events, 0);
 
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
-  g_assert_cmpuint (se->id, ==, audio_stream_id);
+  g_assert_cmpuint (se->id, ==, test->audio_stream_id);
 }
 
 /* FIXME: add a special contact who never accepts the call, so it rings
@@ -1063,6 +1150,10 @@ teardown (Test *test,
       &test->list_streams_return);
   CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->request_streams_return);
+
+  g_hash_table_destroy (test->stream_directions);
+  g_hash_table_destroy (test->stream_pending_sends);
+  g_hash_table_destroy (test->stream_states);
 
   CLEAR_OBJECT (&test->chan);
   CLEAR_OBJECT (&test->conn);
