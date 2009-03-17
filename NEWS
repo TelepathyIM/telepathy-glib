@@ -1,5 +1,7 @@
-telepathy-glib 0.7.27 (UNRELEASED)
+telepathy-glib 0.7.27 (2009-03-17)
 ==================================
+
+The "sliced woot" release.
 
 Enhancements:
 
@@ -7,6 +9,9 @@ Enhancements:
   (a{sv}) by adding functions like tp_g_value_slice_new_uint(), which are a
   shortcut for a sequence like tp_g_value_slice_new (G_TYPE_UINT) followed by
   g_value_set_uint
+
+* Make example connection managers installable (they might be useful for
+  testing UIs - use ./configure --enable-installed-examples if you want them)
 
 * Add an example connection manager that has dummy StreamedMedia channels
 
