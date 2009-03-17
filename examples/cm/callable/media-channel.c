@@ -599,7 +599,7 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
       G_STRUCT_OFFSET (ExampleCallableMediaChannelClass, group_class),
       add_member,
       NULL);
-  tp_group_mixin_class_always_allow_removing_self (object_class);
+  tp_group_mixin_class_allow_self_removal (object_class);
   tp_group_mixin_class_set_remove_with_reason_func (object_class,
       remove_member_with_reason);
   tp_group_mixin_init_dbus_properties (object_class);

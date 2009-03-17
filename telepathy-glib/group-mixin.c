@@ -146,7 +146,7 @@ local_pending_info_free (LocalPendingInfo *info)
 
 struct _TpGroupMixinClassPrivate {
     TpGroupMixinRemMemberWithReasonFunc remove_with_reason;
-    unsigned always_allow_removing_self : 1;
+    unsigned allow_self_removal : 1;
 };
 
 struct _TpGroupMixinPrivate {
@@ -251,7 +251,7 @@ tp_group_mixin_class_init (GObjectClass *obj_cls,
 }
 
 /**
- * tp_group_mixin_class_always_allow_removing_self:
+ * tp_group_mixin_class_allow_self_removal:
  * @obj_cls: The class of an object implementing the group interface using this
  *  mixin
  *
@@ -276,11 +276,11 @@ tp_group_mixin_class_init (GObjectClass *obj_cls,
  * Since: 0.7.UNRELEASED
  */
 void
-tp_group_mixin_class_always_allow_removing_self (GObjectClass *obj_cls)
+tp_group_mixin_class_allow_self_removal (GObjectClass *obj_cls)
 {
   TpGroupMixinClass *mixin_cls = TP_GROUP_MIXIN_CLASS (obj_cls);
 
-  mixin_cls->priv->always_allow_removing_self = TRUE;
+  mixin_cls->priv->allow_self_removal = TRUE;
 }
 
 /**
@@ -678,7 +678,7 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
     {
       handle = g_array_index (contacts, TpHandle, i);
 
-      if (mixin_cls->priv->always_allow_removing_self &&
+      if (mixin_cls->priv->allow_self_removal &&
           handle == mixin->self_handle &&
           (tp_handle_set_is_member (mixin->members, handle) ||
            tp_handle_set_is_member (mixin->remote_pending, handle) ||
