@@ -18,14 +18,7 @@
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/textchan-null.h"
 
-static int fail = 0;
 static GMainLoop *mainloop;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 on_invalidated (TpChannel *chan,
@@ -150,5 +143,5 @@ main (int argc,
   g_free (conn_path);
   g_free (chan_path);
 
-  return fail;
+  return 0;
 }

@@ -59,14 +59,7 @@ bug15306_conn_iface_init (gpointer g_iface,
 #undef IMPLEMENT
 }
 
-static int fail = 0;
 static GMainLoop *mainloop;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 on_status_changed (TpConnection *connection,
@@ -141,5 +134,5 @@ main (int argc,
   g_free (name);
   g_free (conn_path);
 
-  return fail;
+  return 0;
 }

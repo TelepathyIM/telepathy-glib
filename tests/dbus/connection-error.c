@@ -17,14 +17,6 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 static int connection_errors;
 
 static void
@@ -169,5 +161,5 @@ main (int argc,
   g_object_unref (dbus);
   g_main_loop_unref (mainloop);
 
-  return fail;
+  return 0;
 }

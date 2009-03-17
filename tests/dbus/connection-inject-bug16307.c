@@ -16,14 +16,7 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/bug16307-conn.h"
 
-static int fail = 0;
 static GMainLoop *mainloop;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 typedef struct {
     gboolean ready;
@@ -84,5 +77,5 @@ main (int argc,
   g_object_unref (dbus);
   g_main_loop_unref (mainloop);
 
-  return fail;
+  return 0;
 }

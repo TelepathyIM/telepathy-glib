@@ -19,14 +19,6 @@
 #include "examples/cm/echo-message-parts/conn.h"
 #include "tests/lib/myassert.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 static guint received_count = 0;
 static guint last_received_id = 0;
 static guint last_received_sender = 0;
@@ -1092,5 +1084,5 @@ main (int argc,
   g_free (last_received_text);
   g_free (last_message_sent_token);
 
-  return fail;
+  return 0;
 }

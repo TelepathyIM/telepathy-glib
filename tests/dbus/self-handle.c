@@ -19,14 +19,6 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 static void
 on_self_handle_changed (TpConnection *client_conn,
                         GParamSpec *param_spec G_GNUC_UNUSED,
@@ -140,5 +132,5 @@ main (int argc,
 
   g_object_unref (dbus);
 
-  return fail;
+  return 0;
 }

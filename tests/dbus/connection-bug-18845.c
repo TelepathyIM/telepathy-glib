@@ -17,14 +17,7 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
 
-static int fail = 0;
 static GMainLoop *mainloop;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static GError invalidated_for_test = { 0, TP_ERROR_PERMISSION_DENIED,
       "No connection for you!" };
@@ -126,5 +119,5 @@ main (int argc,
   g_object_unref (dbus);
   g_main_loop_unref (mainloop);
 
-  return fail;
+  return 0;
 }

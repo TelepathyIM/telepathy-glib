@@ -22,15 +22,8 @@
 
 #define IDENTIFIER "them@example.org"
 
-static int fail = 0;
 static GError *invalidated = NULL;
 static GMainLoop *mainloop;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 channel_ready (TpChannel *channel,
@@ -479,5 +472,5 @@ main (int argc,
   g_free (chan_path);
   g_free (props_chan_path);
 
-  return fail;
+  return 0;
 }

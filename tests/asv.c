@@ -7,14 +7,6 @@
 
 #include "tests/lib/myassert.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 int main (int argc, char **argv)
 {
   GHashTable *hash;
@@ -683,5 +675,5 @@ int main (int argc, char **argv)
 
   g_hash_table_destroy (hash);
 
-  return fail;
+  return 0;
 }

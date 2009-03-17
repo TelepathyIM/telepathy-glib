@@ -23,7 +23,6 @@
 
 #define IDENTIFIER "them@example.org"
 
-static int fail = 0;
 static GMainLoop *mainloop;
 TestTextChannelGroup *service_chan;
 TpChannel *chan = NULL;
@@ -40,12 +39,6 @@ static const gchar *expected_message;
 static TpHandle expected_actor;
 static TpChannelGroupChangeReason expected_reason;
 static diff_checker expected_diffs;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 expect_signals (const gchar *message,
@@ -601,5 +594,5 @@ main (int argc,
   g_free (conn_path);
   g_free (chan_path);
 
-  return fail;
+  return 0;
 }

@@ -24,7 +24,6 @@
 #include "tests/lib/textchan-group.h"
 #include "tests/lib/util.h"
 
-static int fail = 0;
 static GMainLoop *mainloop;
 SimpleConnection *service_conn;
 gchar *conn_path;
@@ -36,12 +35,6 @@ gboolean expecting_group_members_changed = FALSE;
 gboolean expecting_group_members_changed_detailed = FALSE;
 TpChannelGroupChangeReason expected_reason = TP_CHANNEL_GROUP_CHANGE_REASON_NONE;
 gboolean expecting_invalidated = FALSE;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 group_members_changed_cb (TpChannel *chan_,
@@ -462,5 +455,5 @@ main (int argc,
   g_free (name);
   g_free (conn_path);
 
-  return fail;
+  return 0;
 }

@@ -4,16 +4,12 @@
 #include <glib.h>
 #include <telepathy-glib/util.h>
 
-/* code using this header must define */
-static void myassert_failed (void);
-
 #define MYASSERT(assertion, extra_format, ...)\
   G_STMT_START {\
       if (!(assertion))\
         {\
-          g_critical ("\n%s:%d: Assertion failed: %s" extra_format,\
+          g_error ("\n%s:%d: Assertion failed: %s" extra_format,\
             __FILE__, __LINE__, #assertion, ##__VA_ARGS__);\
-          myassert_failed ();\
         }\
   } G_STMT_END
 

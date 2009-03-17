@@ -20,14 +20,6 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 static guint received_count = 0;
 static guint last_received_id = 0;
 static guint last_received_time = 0;
@@ -274,5 +266,5 @@ main (int argc,
   g_free (last_sent_text);
   g_free (last_received_text);
 
-  return fail;
+  return 0;
 }

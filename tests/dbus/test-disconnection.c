@@ -25,13 +25,6 @@ static TpDBusDaemon *h;
 static TpDBusDaemon *z;
 static TpIntSet *caught_signal;
 static TpIntSet *freed_user_data;
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 enum {
     TEST_A,
@@ -84,9 +77,8 @@ prop_changed (TpProxy *proxy,
               gpointer user_data,
               GObject *weak_object)
 {
-  g_critical ("prop_changed called - a signal connection which should have "
+  g_error ("prop_changed called - a signal connection which should have "
       "failed has succeeded. Args: proxy=%p user_data=%p", proxy, user_data);
-  fail = 1;
 }
 
 static void
@@ -97,9 +89,8 @@ dummy_noc (TpDBusDaemon *proxy,
            gpointer user_data,
            GObject *weak_object)
 {
-  g_critical ("dummy_noc called - a signal connection which should have "
+  g_error ("dummy_noc called - a signal connection which should have "
       "failed has succeeded. Args: proxy=%p user_data=%p", proxy, user_data);
-  fail = 1;
 }
 
 static void
@@ -131,10 +122,8 @@ noc (TpDBusDaemon *proxy,
       want_object = (GObject *) a;
       break;
     default:
-      g_critical ("%c (%p) got the signal, which shouldn't have happened",
+      g_error ("%c (%p) got the signal, which shouldn't have happened",
           'a' + which, proxy);
-      fail = 1;
-      return;
     }
 
   g_message ("Expecting proxy %p, weak object %p", want_proxy, want_object);
@@ -382,5 +371,5 @@ main (int argc,
   tp_intset_destroy (freed_user_data);
   tp_intset_destroy (caught_signal);
 
-  return fail;
+  return 0;
 }

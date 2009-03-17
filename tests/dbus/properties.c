@@ -101,14 +101,6 @@ test_properties_class_init (TestPropertiesClass *cls)
       G_STRUCT_OFFSET (TestPropertiesClass, props));
 }
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 static void
 print_asv_item (gpointer key,
                 gpointer value,
@@ -191,5 +183,5 @@ main (int argc, char **argv)
   g_object_unref (obj);
   g_object_unref (proxy);
 
-  return fail;
+  return 0;
 }

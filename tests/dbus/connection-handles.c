@@ -23,14 +23,6 @@
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/util.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
@@ -358,5 +350,5 @@ main (int argc,
 
   g_object_unref (dbus);
 
-  return fail;
+  return 0;
 }

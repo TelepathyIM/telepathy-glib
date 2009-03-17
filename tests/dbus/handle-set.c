@@ -10,14 +10,6 @@
 
 #include "tests/lib/myassert.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 int
 main (int argc,
       char **argv)
@@ -116,5 +108,5 @@ main (int argc,
 
   g_object_unref (G_OBJECT (repo));
 
-  return fail;
+  return 0;
 }

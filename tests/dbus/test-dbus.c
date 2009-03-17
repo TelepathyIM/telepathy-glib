@@ -11,13 +11,6 @@ static TpDBusDaemon *bus;
 static GMainLoop *mainloop;
 static gchar *two = "2", *five = "5";
 static gboolean had_owners = FALSE;
-int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 noc (TpDBusDaemon *obj,
@@ -250,5 +243,5 @@ main (int argc,
   g_main_loop_unref (mainloop);
   mainloop = NULL;
 
-  return fail;
+  return 0;
 }

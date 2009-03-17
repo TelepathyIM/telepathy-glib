@@ -18,14 +18,6 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 static void
 test_no_features (ContactsConnection *service_conn,
                   TpConnection *client_conn,
@@ -223,5 +215,5 @@ main (int argc,
   g_object_unref (dbus);
   g_array_free (handles, TRUE);
 
-  return fail;
+  return 0;
 }
