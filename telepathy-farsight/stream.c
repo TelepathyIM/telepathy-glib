@@ -754,7 +754,7 @@ get_all_properties_cb (TpProxy *proxy,
     }
 
   dbus_relay_info = tp_asv_get_boxed (out_Properties, "RelayInfo",
-      G_TYPE_VALUE_ARRAY);
+      TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST);
 
   if (dbus_relay_info && dbus_relay_info->len)
     {
