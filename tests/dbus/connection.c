@@ -16,6 +16,7 @@
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
+#include "tests/lib/util.h"
 
 static GMainLoop *mainloop;
 
@@ -33,7 +34,7 @@ test_run_until_invalid (TpDBusDaemon *dbus,
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   tp_proxy_invalidate ((TpProxy *) conn, &invalidated_for_test);
 
   MYASSERT (!tp_connection_run_until_ready (conn, TRUE, &error, NULL),
@@ -56,11 +57,11 @@ test_run_until_ready (TpDBusDaemon *dbus,
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   g_object_unref (conn);
 }
@@ -118,21 +119,21 @@ test_call_when_ready (TpDBusDaemon *dbus,
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   tp_connection_call_when_ready (conn, conn_ready, &ctx);
   g_message ("Entering main loop");
   g_main_loop_run (mainloop);
   g_message ("Leaving main loop");
   MYASSERT (ctx.ready == TRUE, "");
-  MYASSERT_NO_ERROR (ctx.error);
+  test_assert_no_error (ctx.error);
 
   /* Connection already ready, so we are called back synchronously */
 
   ctx.ready = FALSE;
   tp_connection_call_when_ready (conn, conn_ready, &ctx);
   MYASSERT (ctx.ready == TRUE, "");
-  MYASSERT_NO_ERROR (ctx.error);
+  test_assert_no_error (ctx.error);
 
   g_object_unref (conn);
 }
@@ -149,7 +150,7 @@ test_call_when_invalid (TpDBusDaemon *dbus,
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   /* Connection becomes invalid, so we are called back synchronously */
 
@@ -203,7 +204,7 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   test_run_until_invalid (dbus, service_conn, name, conn_path);
   test_run_until_ready (dbus, service_conn, name, conn_path);
@@ -212,12 +213,12 @@ main (int argc,
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (!tp_connection_run_until_ready (conn, FALSE, &error, NULL), "");
   MYASSERT_SAME_UINT (error->domain, TP_ERRORS);

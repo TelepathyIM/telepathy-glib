@@ -90,7 +90,7 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
   gboolean has_detailed_flag, has_properties_flag;
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   /* We want to ensure that each of these signals fires exactly once per
    * change.  The channel emits both MembersChanged and MembersChangedDetailed,
@@ -267,7 +267,7 @@ run_membership_test (guint channel_number,
   chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
       &error);
 
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   expecting_invalidated = FALSE;
   g_signal_connect (chan, "invalidated", (GCallback) channel_invalidated_cb,
@@ -346,10 +346,10 @@ check_removed_error_in_invalidated (void)
   chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
       &error);
 
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   DEBUG ("ready!");
 
   g_signal_connect (chan, "invalidated", (GCallback) check_invalidated_cb,
@@ -413,15 +413,15 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
@@ -434,13 +434,13 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
 
   MYASSERT (tp_cli_connection_run_connect (conn, -1, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   run_membership_tests ();
   check_removed_error_in_invalidated ();
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   /* clean up */
 

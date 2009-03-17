@@ -16,6 +16,7 @@
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
+#include "tests/lib/util.h"
 
 static int connection_errors;
 
@@ -123,14 +124,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   connection_errors = 0;
   tp_cli_connection_connect_to_connection_error (conn, on_connection_error,
