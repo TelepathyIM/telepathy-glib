@@ -955,10 +955,10 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
           tp_intset_destroy (peer_set);
 
           /* In this example there is no real contact, so just simulate them
-           * answering after 1000ms */
+           * answering after a short time */
           /* FIXME: define a special contact who never answers, and if it's
            * that contact, don't add this timeout */
-          g_timeout_add_full (G_PRIORITY_DEFAULT, 1000,
+          g_timeout_add_full (G_PRIORITY_DEFAULT, self->priv->simulation_delay,
               simulate_contact_answered_cb, g_object_ref (self),
               g_object_unref);
         }

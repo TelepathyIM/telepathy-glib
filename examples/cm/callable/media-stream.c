@@ -457,7 +457,7 @@ example_callable_media_stream_change_direction (
               self->priv->id);
           changed = TRUE;
           self->priv->pending_send |= TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
-          g_timeout_add_full (G_PRIORITY_DEFAULT, 1000,
+          g_timeout_add_full (G_PRIORITY_DEFAULT, self->priv->simulation_delay,
               simulate_contact_agreed_to_send_cb, g_object_ref (self),
               g_object_unref);
         }
@@ -501,6 +501,6 @@ example_callable_media_stream_connect (ExampleCallableMediaStream *self)
     return;
 
   /* simulate it taking a short time to connect */
-  self->priv->connected_event_id = g_timeout_add (1000,
+  self->priv->connected_event_id = g_timeout_add (self->priv->simulation_delay,
       simulate_stream_connected_cb, self);
 }
