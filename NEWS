@@ -1,3 +1,7 @@
+telepathy-farsight 0.0.6 (17 March 2009)
+========================================
+- Add support of the RelayInfo property
+
 telepathy-farsight 0.0.5 (16 March 2009)
 ========================================
 - Recognize ice-udp
