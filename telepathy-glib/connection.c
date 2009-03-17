@@ -1500,7 +1500,7 @@ tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
  *
  * Returns: TRUE if the object path was correctly parsed, FALSE otherwise.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 gboolean
 tp_connection_parse_object_path (TpConnection *self,

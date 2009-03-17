@@ -1242,7 +1242,7 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
  * of @length bytes from @bytes, to be freed with tp_g_value_slice_free() or
  * g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_bytes (guint length,
@@ -1272,7 +1272,7 @@ tp_g_value_slice_new_bytes (guint length,
  * @bytes, to be freed with tp_g_value_slice_free() or
  * g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_take_bytes (GArray *bytes)
@@ -1292,7 +1292,7 @@ tp_g_value_slice_new_take_bytes (GArray *bytes)
  * Returns: a #GValue of type %DBUS_TYPE_G_OBJECT_PATH whose value is a copy
  * of @path, to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_object_path (const gchar *path)
@@ -1312,7 +1312,7 @@ tp_g_value_slice_new_object_path (const gchar *path)
  * Returns: a #GValue of type %DBUS_TYPE_G_OBJECT_PATH whose value is @path,
  * to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_static_object_path (const gchar *path)
@@ -1334,7 +1334,7 @@ tp_g_value_slice_new_static_object_path (const gchar *path)
  * Returns: a #GValue of type %DBUS_TYPE_G_OBJECT_PATH whose value is @path,
  * to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_take_object_path (gchar *path)

@@ -88,7 +88,7 @@ tp_g_value_slice_new (GType type)
  * Returns: a #GValue of type %G_TYPE_BOOLEAN with value @b, to be freed with
  * tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_boolean (gboolean b)
@@ -109,7 +109,7 @@ tp_g_value_slice_new_boolean (gboolean b)
  * Returns: a #GValue of type %G_TYPE_INT with value @n, to be freed with
  * tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_int (gint n)
@@ -130,7 +130,7 @@ tp_g_value_slice_new_int (gint n)
  * Returns: a #GValue of type %G_TYPE_INT64 with value @n, to be freed with
  * tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_int64 (gint64 n)
@@ -151,7 +151,7 @@ tp_g_value_slice_new_int64 (gint64 n)
  * Returns: a #GValue of type %G_TYPE_UINT with value @n, to be freed with
  * tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_uint (guint n)
@@ -172,7 +172,7 @@ tp_g_value_slice_new_uint (guint n)
  * Returns: a #GValue of type %G_TYPE_UINT64 with value @n, to be freed with
  * tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_uint64 (guint64 n)
@@ -193,7 +193,7 @@ tp_g_value_slice_new_uint64 (guint64 n)
  * Returns: a #GValue of type %G_TYPE_DOUBLE with value @n, to be freed with
  * tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_double (double n)
@@ -214,7 +214,7 @@ tp_g_value_slice_new_double (double n)
  * Returns: a #GValue of type %G_TYPE_STRING whose value is a copy of @string,
  * to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_string (const gchar *string)
@@ -236,7 +236,7 @@ tp_g_value_slice_new_string (const gchar *string)
  * Returns: a #GValue of type %G_TYPE_STRING whose value is @string,
  * to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_static_string (const gchar *string)
@@ -259,7 +259,7 @@ tp_g_value_slice_new_static_string (const gchar *string)
  * Returns: a #GValue of type %G_TYPE_STRING whose value is @string,
  * to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_take_string (gchar *string)
@@ -281,7 +281,7 @@ tp_g_value_slice_new_take_string (gchar *string)
  * Returns: a #GValue of type @type whose value is a copy of @p,
  * to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_boxed (GType type,
@@ -306,7 +306,7 @@ tp_g_value_slice_new_boxed (GType type,
  * Returns: a #GValue of type @type whose value is @p,
  * to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_static_boxed (GType type,
@@ -333,7 +333,7 @@ tp_g_value_slice_new_static_boxed (GType type,
  * Returns: a #GValue of type @type whose value is @p,
  * to be freed with tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 GValue *
 tp_g_value_slice_new_take_boxed (GType type,

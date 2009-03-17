@@ -273,7 +273,7 @@ tp_group_mixin_class_init (GObjectClass *obj_cls,
  * call this function to indicate to the TpGroupMixin that it may call their
  * removal callback with the self-handle regardless of flag settings.)
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.27
  */
 void
 tp_group_mixin_class_allow_self_removal (GObjectClass *obj_cls)
