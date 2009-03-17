@@ -459,6 +459,8 @@ _tp_channel_group_set_one_lp (TpChannel *self,
   g_assert (self->priv->group_local_pending != NULL);
 
   tp_intset_add (self->priv->group_local_pending, handle);
+  tp_intset_remove (self->priv->group_members, handle);
+  tp_intset_remove (self->priv->group_remote_pending, handle);
 
   if (actor == 0 && reason == TP_CHANNEL_GROUP_CHANGE_REASON_NONE &&
       (message == NULL || message[0] == '\0'))
@@ -840,6 +842,8 @@ handle_members_changed (TpChannel *self,
         }
 
       tp_intset_add (self->priv->group_members, handle);
+      tp_intset_remove (self->priv->group_local_pending, handle);
+      tp_intset_remove (self->priv->group_remote_pending, handle);
     }
 
   for (i = 0; i < local_pending->len; i++)
@@ -895,6 +899,8 @@ handle_members_changed (TpChannel *self,
         }
 
       tp_intset_add (self->priv->group_remote_pending, handle);
+      tp_intset_remove (self->priv->group_members, handle);
+      tp_intset_remove (self->priv->group_local_pending, handle);
     }
 
   for (i = 0; i < removed->len; i++)

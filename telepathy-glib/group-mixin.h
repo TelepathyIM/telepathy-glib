@@ -165,6 +165,7 @@ GQuark tp_group_mixin_get_offset_quark (void);
 void tp_group_mixin_class_init (GObjectClass *obj_cls,
     glong offset, TpGroupMixinAddMemberFunc add_func,
     TpGroupMixinRemMemberFunc rem_func);
+void tp_group_mixin_class_allow_self_removal (GObjectClass *obj_cls);
 
 void tp_group_mixin_init (GObject *obj, glong offset,
     TpHandleRepoIface *handle_repo, TpHandle self_handle);
