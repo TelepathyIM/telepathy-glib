@@ -15,6 +15,8 @@
 
 void test_connection_run_until_dbus_queue_processed (TpConnection *connection);
 
-void test_assert_no_error (const GError *error);
+#define test_assert_no_error(e) _test_assert_no_error (e, __FILE__, __LINE__)
+
+void _test_assert_no_error (const GError *error, const char *file, int line);
 
 #endif

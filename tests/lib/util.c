@@ -17,11 +17,14 @@ test_connection_run_until_dbus_queue_processed (TpConnection *connection)
 }
 
 void
-test_assert_no_error (const GError *error)
+_test_assert_no_error (const GError *error,
+                       const char *file,
+                       int line)
 {
   if (error != NULL)
     {
-      g_error ("%s: code %u: %s", g_quark_to_string (error->domain),
+      g_error ("%s:%d:%s: code %u: %s",
+          file, line, g_quark_to_string (error->domain),
           error->code, error->message);
     }
 }
