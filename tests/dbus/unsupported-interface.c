@@ -4,17 +4,10 @@
 
 #include "tests/lib/myassert.h"
 
-static int fail = 0;
 static gboolean had_unsupported = FALSE;
 static gboolean had_supported = FALSE;
 static GMainLoop *mainloop = NULL;
 static gboolean freed_user_data[] = { FALSE, FALSE, FALSE, FALSE };
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 supported_cb (TpDBusDaemon *bus_daemon,
@@ -126,5 +119,5 @@ main (int argc,
   MYASSERT (!freed_user_data[2], " (signal connection, supported)");
   MYASSERT (freed_user_data[3], " (signal connection, unsupported)");
 
-  return fail;
+  return 0;
 }

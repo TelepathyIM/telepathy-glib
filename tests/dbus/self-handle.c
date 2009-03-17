@@ -19,14 +19,6 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 static void
 on_self_handle_changed (TpConnection *client_conn,
                         GParamSpec *param_spec G_GNUC_UNUSED,
@@ -113,14 +105,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   /* Tests */
 
@@ -130,7 +122,7 @@ main (int argc,
 
   MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   g_object_unref (client_conn);
 
   service_conn_as_base = NULL;
@@ -140,5 +132,5 @@ main (int argc,
 
   g_object_unref (dbus);
 
-  return fail;
+  return 0;
 }

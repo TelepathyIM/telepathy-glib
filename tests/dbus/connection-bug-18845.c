@@ -16,15 +16,9 @@
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
+#include "tests/lib/util.h"
 
-static int fail = 0;
 static GMainLoop *mainloop;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static GError invalidated_for_test = { 0, TP_ERROR_PERMISSION_DENIED,
       "No connection for you!" };
@@ -67,14 +61,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   {
     const gchar *ids[] = {
@@ -85,7 +79,7 @@ main (int argc,
 
     MYASSERT (tp_cli_connection_run_request_handles (conn, -1,
         TP_HANDLE_TYPE_CONTACT, ids, &handles, &error, NULL), "");
-    MYASSERT_NO_ERROR (error);
+    test_assert_no_error (error);
 
     g_array_free (handles, TRUE);
   }
@@ -95,7 +89,7 @@ main (int argc,
    */
   proxy = tp_proxy_borrow_interface_by_id ((TpProxy *) conn,
       TP_IFACE_QUARK_CONNECTION, &error);
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   g_signal_emit_by_name (proxy, "destroy");
 
   g_idle_add_full (G_PRIORITY_LOW, no_more_idling_around, mainloop, NULL);
@@ -109,12 +103,12 @@ main (int argc,
    */
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   g_object_unref (conn);
 
@@ -126,5 +120,5 @@ main (int argc,
   g_object_unref (dbus);
   g_main_loop_unref (mainloop);
 
-  return fail;
+  return 0;
 }

@@ -15,15 +15,9 @@
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/bug16307-conn.h"
+#include "tests/lib/util.h"
 
-static int fail = 0;
 static GMainLoop *mainloop;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 typedef struct {
     gboolean ready;
@@ -60,21 +54,21 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   /* client side */
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   bug16307_connection_inject_get_status_return (service_conn);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
@@ -84,5 +78,5 @@ main (int argc,
   g_object_unref (dbus);
   g_main_loop_unref (mainloop);
 
-  return fail;
+  return 0;
 }

@@ -38,21 +38,21 @@ test_asv_SOURCES = \
     asv.c
 
 test_heap_SOURCES = \
-    test-heap.c
+    heap.c
 
 test_util_SOURCES = \
-    test-util.c
+    util.c
 
 test_intset_SOURCES = \
-    test-intset.c
+    intset.c
 
 test_availability_cmp_SOURCES = \
-    test-availability-cmp.c
+    availability-cmp.c
 
 # this needs to link against the static convenience library so that
 # _tp_debug is still visible
 test_internal_debug_SOURCES = \
-    test-internal-debug.c
+    internal-debug.c
 test_internal_debug_LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la
 

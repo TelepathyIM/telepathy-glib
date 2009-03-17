@@ -35,6 +35,8 @@ LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
     $(top_builddir)/tests/lib/libtp-glib-tests.la
 
+test_call_cancellation_SOURCES = call-cancellation.c
+
 test_channel_introspect_SOURCES = channel-introspect.c
 
 test_callable_example_SOURCES = callable-example.c
@@ -68,8 +70,14 @@ test_contacts_bug_19101_SOURCES = contacts-bug-19101.c
 
 test_contacts_mixin_SOURCES = contacts-mixin.c
 
+test_dbus_SOURCES = dbus.c
+
+test_disconnection_SOURCES = disconnection.c
+
 test_error_enum_SOURCES = error-enum.c
 nodist_test_error_enum_SOURCES = _gen/errors-check.h
+
+test_example_no_protocols_SOURCES = example-no-protocols.c
 
 test_finalized_in_invalidated_handler_SOURCES = \
     finalized-in-invalidated-handler.c

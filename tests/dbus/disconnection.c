@@ -8,6 +8,7 @@
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/stub-object.h"
+#include "tests/lib/util.h"
 
 /* just for convenience, since it's used a lot */
 #define PTR(ui) GUINT_TO_POINTER(ui)
@@ -25,13 +26,6 @@ static TpDBusDaemon *h;
 static TpDBusDaemon *z;
 static TpIntSet *caught_signal;
 static TpIntSet *freed_user_data;
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 enum {
     TEST_A,
@@ -74,7 +68,7 @@ requested_name (TpDBusDaemon *proxy,
   g_message ("RequestName raised %s",
       (error == NULL ? "no error" : error->message));
   /* we're on a private bus, so certainly nobody else should own this name */
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (result == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER, ": %u", result);
 }
 
@@ -84,9 +78,8 @@ prop_changed (TpProxy *proxy,
               gpointer user_data,
               GObject *weak_object)
 {
-  g_critical ("prop_changed called - a signal connection which should have "
+  g_error ("prop_changed called - a signal connection which should have "
       "failed has succeeded. Args: proxy=%p user_data=%p", proxy, user_data);
-  fail = 1;
 }
 
 static void
@@ -97,9 +90,8 @@ dummy_noc (TpDBusDaemon *proxy,
            gpointer user_data,
            GObject *weak_object)
 {
-  g_critical ("dummy_noc called - a signal connection which should have "
+  g_error ("dummy_noc called - a signal connection which should have "
       "failed has succeeded. Args: proxy=%p user_data=%p", proxy, user_data);
-  fail = 1;
 }
 
 static void
@@ -131,10 +123,8 @@ noc (TpDBusDaemon *proxy,
       want_object = (GObject *) a;
       break;
     default:
-      g_critical ("%c (%p) got the signal, which shouldn't have happened",
+      g_error ("%c (%p) got the signal, which shouldn't have happened",
           'a' + which, proxy);
-      fail = 1;
-      return;
     }
 
   g_message ("Expecting proxy %p, weak object %p", want_proxy, want_object);
@@ -205,7 +195,7 @@ main (int argc,
   g_message ("Connecting signal to a");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (a, noc, PTR (TEST_A),
       destroy_user_data, (GObject *) z, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
 
   /* assert that connecting to a signal on an interface we don't have fails */
   freed = FALSE;
@@ -223,7 +213,7 @@ main (int argc,
   g_message ("Connecting signal to b");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (b, noc, PTR (TEST_B),
       destroy_user_data, stub, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_B), "");
   g_object_unref (stub);
 
@@ -232,7 +222,7 @@ main (int argc,
   g_message ("Connecting signal to c");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (c, noc, PTR (TEST_C),
       destroy_user_data, NULL, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_C), "");
   g_message ("Forcibly invalidating c");
   tp_proxy_invalidate ((TpProxy *) c, &err);
@@ -254,7 +244,7 @@ main (int argc,
   g_message ("Connecting signal to d");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (d, noc, PTR (TEST_D),
       destroy_user_data, NULL, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_D), "");
   g_message ("Destroying d");
   tmp_obj = d;
@@ -267,7 +257,7 @@ main (int argc,
   g_message ("Connecting signal to e");
   sc = tp_cli_dbus_daemon_connect_to_name_owner_changed (e, noc, PTR (TEST_E),
       destroy_user_data, NULL, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_E), "");
   g_message ("Disconnecting signal from e");
   tp_proxy_signal_connection_disconnect (sc);
@@ -280,7 +270,7 @@ main (int argc,
   g_message ("Connecting signal to f");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (f, noc, PTR (TEST_F),
       destroy_user_data, NULL, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_F), "");
   g_message ("Forcibly disposing f's DBusGProxy to simulate name owner loss");
   tmp_obj = tp_proxy_borrow_interface_by_id ((TpProxy *) f,
@@ -304,7 +294,7 @@ main (int argc,
   g_message ("Connecting signal to g");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (g, noc, PTR (TEST_G),
       destroy_user_data, (GObject *) g, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_G), "");
   g_message ("Destroying g");
   tmp_obj = g;
@@ -321,7 +311,7 @@ main (int argc,
   g_message ("Connecting signal to h");
   sc = tp_cli_dbus_daemon_connect_to_name_owner_changed (h, noc, PTR (TEST_H),
       destroy_user_data, stub, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_H), "");
   g_object_unref (stub);
 
@@ -331,7 +321,7 @@ main (int argc,
   g_message ("Connecting signal to z");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (z, noc, PTR (TEST_Z),
       destroy_user_data, (GObject *) a, &error_out);
-  MYASSERT_NO_ERROR (error_out);
+  test_assert_no_error (error_out);
 
   /* make sure a NameOwnerChanged signal occurs */
   g_message ("Requesting name");
@@ -382,5 +372,5 @@ main (int argc,
   tp_intset_destroy (freed_user_data);
   tp_intset_destroy (caught_signal);
 
-  return fail;
+  return 0;
 }

@@ -23,7 +23,6 @@
 
 #define IDENTIFIER "them@example.org"
 
-static int fail = 0;
 static GMainLoop *mainloop;
 TestTextChannelGroup *service_chan;
 TpChannel *chan = NULL;
@@ -40,12 +39,6 @@ static const gchar *expected_message;
 static TpHandle expected_actor;
 static TpChannelGroupChangeReason expected_reason;
 static diff_checker expected_diffs;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 expect_signals (const gchar *message,
@@ -171,7 +164,7 @@ check_initial_properties (void)
 
   MYASSERT (tp_cli_dbus_properties_run_get_all (chan, -1,
       TP_IFACE_CHANNEL_INTERFACE_GROUP, &props, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   members = tp_asv_get_boxed (props, "Members", DBUS_TYPE_G_UINT_ARRAY);
   MYASSERT (members != NULL, ": Members should be defined"); \
@@ -304,7 +297,7 @@ check_incoming_invitation (void)
         self_added_to_members);
     MYASSERT (tp_cli_channel_interface_group_run_add_members (chan, -1,
         contacts, "", &error, NULL), "");
-    MYASSERT_NO_ERROR (error);
+    test_assert_no_error (error);
     wait_for_outstanding_signals ();
     MYASSERT (!outstanding_signals (),
         ": MembersChanged and MembersChangedDetailed should have fired once");
@@ -500,7 +493,7 @@ test_group_mixin (void)
   GError *error = NULL;
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_proxy_has_interface (chan, TP_IFACE_CHANNEL_INTERFACE_GROUP),
       "");
@@ -544,15 +537,15 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
@@ -571,19 +564,19 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
 
   MYASSERT (tp_cli_connection_run_connect (conn, -1, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
       &error);
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   test_group_mixin ();
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   /* clean up */
 
@@ -601,5 +594,5 @@ main (int argc,
   g_free (conn_path);
   g_free (chan_path);
 
-  return fail;
+  return 0;
 }

@@ -29,17 +29,10 @@ static TpDBusDaemon *z;
 static TpIntSet *method_ok;
 static TpIntSet *method_error;
 static TpIntSet *freed_user_data;
-int fail = 0;
 static gpointer copy_of_d;
 static gpointer copy_of_g;
 static gpointer copy_of_h;
 static gpointer copy_of_i;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 enum {
     TEST_A,
@@ -475,5 +468,5 @@ main (int argc,
   tp_intset_destroy (method_ok);
   tp_intset_destroy (method_error);
 
-  return fail;
+  return 0;
 }

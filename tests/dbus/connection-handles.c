@@ -23,14 +23,6 @@
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/util.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
@@ -128,7 +120,7 @@ test_request_and_release (SimpleConnection *service_conn,
 
   g_main_loop_run (result.loop);
 
-  MYASSERT_NO_ERROR (result.error);
+  test_assert_no_error (result.error);
   MYASSERT (result.ids != NULL, "");
   MYASSERT (result.handles != NULL, "");
 
@@ -203,7 +195,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   g_main_loop_run (result.loop);
 
-  MYASSERT_NO_ERROR (result.error);
+  test_assert_no_error (result.error);
   MYASSERT (result.ids != NULL, "");
   MYASSERT (result.handles != NULL, "");
 
@@ -246,7 +238,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   g_main_loop_run (result.loop);
 
-  MYASSERT_NO_ERROR (result.error);
+  test_assert_no_error (result.error);
   MYASSERT (result.ids == NULL, "");
   MYASSERT (result.handles != NULL, "");
 
@@ -331,14 +323,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   /* Tests */
 
@@ -349,7 +341,7 @@ main (int argc,
 
   MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
@@ -358,5 +350,5 @@ main (int argc,
 
   g_object_unref (dbus);
 
-  return fail;
+  return 0;
 }

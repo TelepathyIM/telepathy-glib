@@ -18,14 +18,6 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
-static int fail = 0;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
-
 static void
 test_no_features (ContactsConnection *service_conn,
                   TpConnection *client_conn,
@@ -39,7 +31,7 @@ test_no_features (ContactsConnection *service_conn,
 
   MYASSERT (tp_cli_connection_interface_contacts_run_get_contact_attributes (
         client_conn, -1, handles, NULL, FALSE, &contacts, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT_SAME_UINT (g_hash_table_size (contacts), 3);
 
   attrs = g_hash_table_lookup (contacts,
@@ -85,7 +77,7 @@ test_features (ContactsConnection *service_conn,
   MYASSERT (tp_cli_connection_interface_contacts_run_get_contact_attributes (
         client_conn, -1, handles, interfaces, FALSE, &contacts, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT_SAME_UINT (g_hash_table_size (contacts), 3);
 
   attrs = g_hash_table_lookup (contacts,
@@ -179,14 +171,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   /* Set up some contacts */
 
@@ -213,7 +205,7 @@ main (int argc,
 
   MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
       "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);
@@ -223,5 +215,5 @@ main (int argc,
   g_object_unref (dbus);
   g_array_free (handles, TRUE);
 
-  return fail;
+  return 0;
 }

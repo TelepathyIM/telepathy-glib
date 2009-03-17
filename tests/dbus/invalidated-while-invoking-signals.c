@@ -15,15 +15,9 @@
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
+#include "tests/lib/util.h"
 
-static int fail = 0;
 static GMainLoop *mainloop;
-
-static void
-myassert_failed (void)
-{
-  fail = 1;
-}
 
 static void
 on_status_changed (TpConnection *connection,
@@ -86,14 +80,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_as_base, "simple",
         &name, &path, &error), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   client = tp_connection_new (dbus, name, path, &error);
   MYASSERT (client != NULL, "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (client, TRUE, &error, NULL), "");
-  MYASSERT_NO_ERROR (error);
+  test_assert_no_error (error);
 
   MYASSERT (tp_cli_connection_connect_to_status_changed (client,
         on_status_changed, &client, NULL, NULL, NULL), "");
@@ -110,5 +104,5 @@ main (int argc,
   g_free (name);
   g_free (path);
 
-  return fail;
+  return 0;
 }
