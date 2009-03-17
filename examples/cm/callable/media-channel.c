@@ -107,9 +107,8 @@ struct _ExampleCallableMediaChannelPrivate
 
   GHashTable *streams;
 
-  /* These are really booleans, but gboolean is signed. Thanks, GLib */
-  unsigned locally_requested:1;
-  unsigned disposed:1;
+  gboolean locally_requested;
+  gboolean disposed;
 };
 
 static const char * example_callable_media_channel_interfaces[] = {

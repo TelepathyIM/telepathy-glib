@@ -74,7 +74,7 @@ struct _ExampleCallableMediaStreamPrivate
 
   guint connected_event_id;
 
-  unsigned removed : 1;
+  gboolean removed;
 };
 
 static void
