@@ -8,7 +8,21 @@ Enhancements:
   shortcut for a sequence like tp_g_value_slice_new (G_TYPE_UINT) followed by
   g_value_set_uint
 
+* Add an example connection manager that has dummy StreamedMedia channels
+
+* Add an example connection manager that has dummy ContactList channels
+  vaguely resembling the XMPP roster
+
 Fixes:
+
+* fd.o #20646: in TpChannel, when adding contacts to one of the Group sets,
+  remove them from both of the others
+
+* Use AM_PATH_PYTHON to detect the Python version
+
+* In TpGroupMixin, let implementations allow the self-handle to be removed
+  regardless of whether the CAN_REMOVE flag is set. This is meant to be how
+  you remove yourself gracefully from a chatroom or streamed media call.
 
 * fd.o #20165: fix a use-after-free in tp_base_connection_register() that
   causes connection managers to assert if they have not already called
