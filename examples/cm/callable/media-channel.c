@@ -154,11 +154,7 @@ constructed (GObject *object)
       contact_repo, self->priv->conn->self_handle);
 
   /* Initially, the channel contains the initiator as a member; they are also
-   * the actor.
-   *
-   * (FIXME: in Gabble, the actor for the initiator being in the channel
-   * is 0, although the actor for the self-handle being local-pending is
-   * correctly the initiator) */
+   * the actor for the change that adds any initial members. */
 
   members = tp_intset_new_containing (self->priv->initiator);
 
