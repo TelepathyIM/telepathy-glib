@@ -74,6 +74,7 @@ enum
   PROP_INTERFACES,
   PROP_CHANNEL_DESTROYED,
   PROP_CHANNEL_PROPERTIES,
+  PROP_SIMULATION_DELAY,
   N_PROPS
 };
 
@@ -99,6 +100,8 @@ struct _ExampleCallableMediaChannelPrivate
   TpHandle handle;
   TpHandle initiator;
   ExampleCallableCallProgress progress;
+
+  guint simulation_delay;
 
   guint next_stream_id;
 
@@ -294,6 +297,10 @@ get_property (GObject *object,
               NULL));
       break;
 
+    case PROP_SIMULATION_DELAY:
+      g_value_set_uint (value, self->priv->simulation_delay);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -339,6 +346,10 @@ set_property (GObject *object,
 
     case PROP_CONNECTION:
       self->priv->conn = g_value_get_object (value);
+      break;
+
+    case PROP_SIMULATION_DELAY:
+      self->priv->simulation_delay = g_value_get_uint (value);
       break;
 
     default:
@@ -571,6 +582,13 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
       FALSE,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
+
+  param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
+      "Delay between simulated network events",
+      0, G_MAXUINT32, 1000,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
+      param_spec);
 
   signals[SIGNAL_CALL_TERMINATED] = g_signal_new ("call-terminated",
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,

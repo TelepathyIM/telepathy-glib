@@ -48,6 +48,7 @@ example_callable_connection_manager_init (
 
 typedef struct {
     gchar *account;
+    guint simulation_delay;
 } ExampleParams;
 
 static gboolean
@@ -71,7 +72,10 @@ account_param_filter (const TpCMParamSpec *paramspec,
 static gpointer
 alloc_params (void)
 {
-  return g_slice_new0 (ExampleParams);
+  ExampleParams *params = g_slice_new0 (ExampleParams);
+
+  params->simulation_delay = 1000;
+  return params;
 }
 
 static void
@@ -103,6 +107,7 @@ new_connection (TpBaseConnectionManager *self,
   conn = EXAMPLE_CALLABLE_CONNECTION
       (g_object_new (EXAMPLE_TYPE_CALLABLE_CONNECTION,
           "account", params->account,
+          "simulation-delay", params->simulation_delay,
           "protocol", proto,
           NULL));
 
