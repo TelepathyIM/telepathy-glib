@@ -673,37 +673,28 @@ test_basics (Test *test,
       tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 3), ==,
-      TP_MEDIA_STREAM_STATE_DISCONNECTED);
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
-      TP_MEDIA_STREAM_DIRECTION_SEND);
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==,
-      TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
+  /* Don't assert about the state or the direction here - it might already have
+   * changed to connected or bidirectional, respectively. */
 
-  /* There should be two stream events, the addition of the audio stream,
+  /* The two oldest stream events should be the addition of the audio stream,
    * and the change to the appropriate direction (StreamAdded does not signal
    * stream directionality) */
 
-  g_assert_cmpuint (g_slist_length (test->stream_events), ==, 2);
+  g_assert_cmpuint (g_slist_length (test->stream_events), >=, 2);
 
-  se = g_slist_nth_data (test->stream_events, 1);
+  se = g_slist_nth_data (test->stream_events,
+      g_slist_length (test->stream_events) - 1);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
   g_assert_cmpuint (se->id, ==, test->audio_stream_id);
   g_assert_cmpuint (se->contact, ==, tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (se->media_type, ==, TP_MEDIA_STREAM_TYPE_AUDIO);
 
-  se = g_slist_nth_data (test->stream_events, 0);
+  se = g_slist_nth_data (test->stream_events,
+      g_slist_length (test->stream_events) - 2);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_DIRECTION_CHANGED);
   g_assert_cmpuint (se->id, ==, test->audio_stream_id);
   g_assert_cmpuint (se->direction, ==, TP_MEDIA_STREAM_DIRECTION_SEND);
   g_assert_cmpuint (se->pending_send, ==, TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
-
-  test_assert_uu_hash_contains (test->stream_states, test->audio_stream_id,
-      TP_MEDIA_STREAM_STATE_DISCONNECTED);
-  test_assert_uu_hash_contains (test->stream_directions, test->audio_stream_id,
-      TP_MEDIA_STREAM_DIRECTION_SEND);
-  test_assert_uu_hash_contains (test->stream_pending_sends,
-      test->audio_stream_id, TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -776,7 +767,8 @@ test_basics (Test *test,
   test_assert_uu_hash_contains (test->stream_pending_sends,
       test->audio_stream_id, 0);
 
-  /* The stream should become connected after a while */
+  /* The stream should either already be connected, or become connected after
+   * a while */
 
   while (GPOINTER_TO_UINT (g_hash_table_lookup (test->stream_states,
         GUINT_TO_POINTER (test->audio_stream_id))) !=
