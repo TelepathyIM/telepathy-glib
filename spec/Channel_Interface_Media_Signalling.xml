@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <node name="/Channel_Interface_Media_Signalling" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright> Copyright (C) 2005, 2006 Collabora Limited </tp:copyright>
-  <tp:copyright> Copyright (C) 2005, 2006 Nokia Corporation </tp:copyright>
-  <tp:copyright> Copyright (C) 2006 INdT </tp:copyright>
+  <tp:copyright> Copyright © 2005-2009 Collabora Limited </tp:copyright>
+  <tp:copyright> Copyright © 2005-2009 Nokia Corporation </tp:copyright>
+  <tp:copyright> Copyright © 2006 INdT </tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
     <p>This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -120,6 +120,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <dt>gtalk-p2p</dt>
         <dd>Google Talk peer-to-peer connectivity establishment should be used,
         as implemented in libjingle 0.3.</dd>
+
+        <dt>ice-udp</dt>
+        <dd>
+          Interactive Connectivity Establishment should be used, as defined by
+          the IETF MMUSIC working group.
+        </dd>
       </dl>
       </tp:docstring>
     </tp:property>

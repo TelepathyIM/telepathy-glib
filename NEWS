@@ -13,6 +13,10 @@ Enhancements:
 * Add an example connection manager that has dummy ContactList channels
   vaguely resembling the XMPP roster
 
+* Update to telepathy-spec 0.17.21 (adding
+  TP_CHANNEL_GROUP_FLAG_MESSAGE_DEPART and
+  TP_CHANNEL_MEDIA_CAPABILITY_NAT_TRAVERSAL_ICE_UDP)
+
 Fixes:
 
 * fd.o #20646: in TpChannel, when adding contacts to one of the Group sets,
@@ -32,7 +36,7 @@ Fixes:
 * Fix some memory leaks when making TpContact objects, when holding handles in
   TpContactsMixin, when filling contact attributes in TpPresenceMixin,
   when setting simple presence, and in the regression tests
-  
+
 * Update the valgrind suppressions file to cope with new telepathy-glib code,
   GTest, and glibc 2.9
 

@@ -179,6 +179,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           same order as the given array of contact handles
         </tp:docstring>
       </arg>
+      <tp:deprecated version="0.15.5">Use GetKnownAvatarTokens
+        instead.</tp:deprecated>
       <tp:docstring>
         Get the unique tokens for all of the given contacts' avatars.
 
@@ -244,6 +246,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         unknown
         </tp:docstring>
       </arg>
+      <tp:deprecated version="0.15.5">Use RequestAvatars
+        instead.</tp:deprecated>
       <tp:docstring>
         Request the avatar for a given contact. Using this method in new
         Telepathy clients is deprecated; use RequestAvatars instead.

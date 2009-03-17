@@ -970,7 +970,8 @@ USA.</p>
 
     <p>As well as the methods and signatures below, arbitrary interfaces may be
     provided by the Connection object to represent extra connection-wide
-    functionality, such as the Connection.Interface.Presence for receiving and
+    functionality, such as the Connection.Interface.SimplePresence for
+    receiving and
     reporting presence information, and Connection.Interface.Aliasing for
     connections where contacts may set and change an alias for themselves.
     These interfaces can be discovered using the

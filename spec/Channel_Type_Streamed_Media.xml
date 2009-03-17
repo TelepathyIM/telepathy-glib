@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <node name="/Channel_Type_Streamed_Media" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright> Copyright (C) 2005-2008 Collabora Limited </tp:copyright>
-  <tp:copyright> Copyright (C) 2005-2008 Nokia Corporation </tp:copyright>
-  <tp:copyright> Copyright (C) 2006 INdT </tp:copyright>
+  <tp:copyright> Copyright © 2005-2009 Collabora Limited </tp:copyright>
+  <tp:copyright> Copyright © 2005-2009 Nokia Corporation </tp:copyright>
+  <tp:copyright> Copyright © 2006 INdT </tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
     <p>This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -420,6 +420,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring>
           The handle is capable of establishing Google Talk peer-to-peer
           connections (as implemented in libjingle 0.3) to traverse NATs.
+        </tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="NAT_Traversal_ICE_UDP" value="16">
+        <tp:docstring>
+          The handle is capable of establishing ICE UDP peer-to-peer
+          connections (as defined by the IETF MMUSIC working group) to traverse
+          NATs.
         </tp:docstring>
       </tp:flag>
     </tp:flags>

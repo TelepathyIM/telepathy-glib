@@ -161,7 +161,7 @@
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The name of a D-Bus error indicating why the channel closed. If
             no better reason can be found,
-            <code>org.freedesktop.Telepathy.Errors.NotAvailable</code> MAY
+            <code>org.freedesktop.Telepathy.Error.NotAvailable</code> MAY
             be used as a fallback; this means that this error SHOULD NOT be
             given any more specific meaning.</p>
 

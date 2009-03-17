@@ -238,7 +238,7 @@
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The name of the D-Bus error with which the request failed.</p>
 
-          <p>If this is <code>org.freedesktop.Telepathy.Errors.NotYours</code>,
+          <p>If this is <code>org.freedesktop.Telepathy.Error.NotYours</code>,
             this indicates that the request succeeded, but all the resulting
             channels were given to some other handler.</p>
         </tp:docstring>
