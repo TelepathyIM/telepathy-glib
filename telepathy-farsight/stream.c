@@ -788,7 +788,7 @@ get_all_properties_cb (TpProxy *proxy,
               "ip", G_TYPE_STRING, ip,
               "port", G_TYPE_UINT, port,
               "username", G_TYPE_STRING, username,
-              "pasword", G_TYPE_STRING, password,
+              "password", G_TYPE_STRING, password,
               NULL);
 
           if (type)
