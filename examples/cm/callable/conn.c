@@ -137,9 +137,9 @@ get_unique_connection_name (TpBaseConnection *conn)
 
 gchar *
 example_callable_normalize_contact (TpHandleRepoIface *repo,
-                                        const gchar *id,
-                                        gpointer context,
-                                        GError **error)
+                                    const gchar *id,
+                                    gpointer context,
+                                    GError **error)
 {
   if (id[0] == '\0')
     {
