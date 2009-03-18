@@ -1099,6 +1099,62 @@ test_busy (Test *test,
 }
 
 static void
+test_terminated_by_peer (Test *test,
+                         gconstpointer data G_GNUC_UNUSED)
+{
+  GroupEvent *ge;
+  StreamEvent *se;
+
+  /* This contact contains the magic string "(terminate)", meaning the example
+   * simulates answering the call but then terminating it */
+  outgoing_call (test, "The Governator (terminate)");
+
+  /* request an audio stream */
+  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
+      tp_channel_get_handle (test->chan, NULL),
+      test->audio_request, requested_streams_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  /* Wait for the remote contact to answer, if they haven't already */
+
+  while (!tp_intset_is_member (tp_channel_group_get_members (test->chan),
+        tp_channel_get_handle (test->chan, NULL)))
+    g_main_context_iteration (NULL, TRUE);
+
+  /* After that, wait for the remote contact to end the call */
+  while (tp_proxy_get_invalidated (test->chan) != NULL)
+    {
+      g_main_context_iteration (NULL, TRUE);
+    }
+
+  /* The last stream event should be the removal of the stream */
+
+  test_connection_run_until_dbus_queue_processed (test->conn);
+
+  se = g_slist_nth_data (test->stream_events, 0);
+  g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
+
+  /* The last event should be that the peer and the self-handle were both
+   * removed by the peer, for no particular reason */
+  ge = g_slist_nth_data (test->group_events, 0);
+
+  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 2);
+  g_assert (tp_intset_is_member (ge->removed,
+        test->self_handle));
+  g_assert (tp_intset_is_member (ge->removed,
+        tp_channel_get_handle (test->chan, NULL)));
+  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
+  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
+  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
+      tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+}
+
+static void
 test_terminate_via_close (Test *test,
                           gconstpointer data G_GNUC_UNUSED)
 {
@@ -1229,8 +1285,6 @@ test_terminate_via_no_streams (Test *test,
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
   g_assert_cmpuint (se->id, ==, test->audio_stream_id);
 }
-
-/* FIXME: add a special contact who accepts the call, then terminates it */
 
 /* FIXME: add a special contact who refuses to have video */
 
@@ -1497,6 +1551,8 @@ main (int argc,
   g_test_add ("/callable/busy", Test, NULL, setup, test_busy, teardown);
   g_test_add ("/callable/no-answer", Test, NULL, setup, test_no_answer,
       teardown);
+  g_test_add ("/callable/terminated-by-peer", Test, NULL, setup,
+      test_terminated_by_peer, teardown);
   g_test_add ("/callable/terminate-via-close", Test, NULL, setup,
       test_terminate_via_close, teardown);
   g_test_add ("/callable/terminate-via-no-streams", Test, NULL, setup,
