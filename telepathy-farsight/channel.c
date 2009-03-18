@@ -669,7 +669,7 @@ new_stream_cb (TfSession *session,
     {
       gchar *str = g_strdup_printf ("failed to construct TpMediaStreamHandler:"
           " bad object path '%s'?", object_path);
-      g_warning (str);
+      g_warning ("%s", str);
       tf_channel_error (self, 0, str);
       g_free (str);
       return;
@@ -767,7 +767,7 @@ add_session (TfChannel *self,
           " %s",
           error->message);
       g_error_free (error);
-      g_warning (str);
+      g_warning ("%s", str);
       tf_channel_error (self, 0, str);
       g_free (str);
       return;
@@ -780,7 +780,7 @@ add_session (TfChannel *self,
       gchar *str = g_strdup_printf("failed to create session: %s",
           error->message);
       g_error_free (error);
-      g_warning (str);
+      g_warning ("%s", str);
       tf_channel_error (self, 0, str);
       g_free (str);
       return;
