@@ -917,12 +917,32 @@ stream_state_changed_cb (ExampleCallableMediaStream *stream,
 }
 
 static gboolean
+simulate_contact_ended_cb (gpointer p)
+{
+  ExampleCallableMediaChannel *self = p;
+
+  /* if the call has been cancelled while we were waiting for the
+   * contact to do so, do nothing! */
+  if (self->priv->progress == PROGRESS_ENDED)
+    return FALSE;
+
+  g_message ("SIGNALLING: receive: call terminated: <call-terminated/>");
+
+  example_callable_media_channel_close (self, self->priv->handle,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  return FALSE;
+}
+
+static gboolean
 simulate_contact_answered_cb (gpointer p)
 {
   ExampleCallableMediaChannel *self = p;
   TpIntSet *peer_set;
   GHashTableIter iter;
   gpointer v;
+  TpHandleRepoIface *contact_repo;
+  const gchar *peer;
 
   /* if the call has been cancelled while we were waiting for the
    * contact to answer, do nothing */
@@ -955,6 +975,20 @@ simulate_contact_answered_cb (gpointer p)
       example_callable_media_stream_simulate_contact_agreed_to_send (v);
       /* ... and the stream tries to connect */
       example_callable_media_stream_connect (v);
+    }
+
+  contact_repo = tp_base_connection_get_handles
+      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  peer = tp_handle_inspect (contact_repo, self->priv->handle);
+
+  /* If the contact's ID contains the magic string "(terminate)", simulate
+   * them hanging up after a moment. */
+  if (strstr (peer, "(terminate)") != NULL)
+    {
+      g_timeout_add_full (G_PRIORITY_DEFAULT,
+          self->priv->simulation_delay,
+          simulate_contact_ended_cb, g_object_ref (self),
+          g_object_unref);
     }
 
   return FALSE;
