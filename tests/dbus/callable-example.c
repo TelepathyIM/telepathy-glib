@@ -1119,6 +1119,210 @@ test_terminate_via_no_streams (Test *test,
 /* FIXME: add a special contact whose stream errors */
 
 static void
+expect_incoming_call_cb (TpConnection *conn,
+                         const GPtrArray *channels,
+                         gpointer user_data,
+                         GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  guint i;
+
+  for (i = 0; i < channels->len; i++)
+    {
+      GValueArray *va = g_ptr_array_index (channels, i);
+      const gchar *object_path = g_value_get_boxed (va->values + 0);
+      GHashTable *properties = g_value_get_boxed (va->values + 1);
+      const gchar *channel_type;
+
+      channel_type = tp_asv_get_string (properties,
+          TP_IFACE_CHANNEL ".ChannelType");
+      if (tp_strdiff (channel_type, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA))
+        {
+          /* don't care about this channel */
+          continue;
+        }
+
+      g_assert_cmpuint (tp_asv_get_uint32 (properties,
+            TP_IFACE_CHANNEL ".TargetHandleType", NULL),
+          ==, TP_HANDLE_TYPE_CONTACT);
+      g_assert_cmpint (tp_asv_get_boolean (properties,
+            TP_IFACE_CHANNEL ".Requested", NULL), ==, FALSE);
+
+      /* we only expect to receive one call */
+      g_assert (test->chan == NULL);
+
+      /* save the channel */
+      test->chan = tp_channel_new_from_properties (conn, object_path,
+          properties, &test->error);
+      test_assert_no_error (test->error);
+    }
+}
+
+/* In this example connection manager, every time the presence status changes
+ * to available or the message changes, an incoming call is simulated. */
+static void
+trigger_incoming_call (Test *test,
+                       const gchar *message,
+                       const gchar *expected_caller)
+{
+  TpProxySignalConnection *new_channels_sig;
+
+  tp_cli_connection_interface_simple_presence_run_set_presence (test->conn, -1,
+      "away", "preparing for a test", &test->error, NULL);
+  test_assert_no_error (test->error);
+
+  new_channels_sig =
+    tp_cli_connection_interface_requests_connect_to_new_channels (test->conn,
+        expect_incoming_call_cb, test, NULL, NULL, &test->error);
+  test_assert_no_error (test->error);
+
+  tp_cli_connection_interface_simple_presence_run_set_presence (test->conn, -1,
+      "available", message, &test->error, NULL);
+  test_assert_no_error (test->error);
+
+  /* wait for the call to happen if it hasn't already */
+  while (test->chan == NULL)
+    {
+      g_main_context_iteration (NULL, TRUE);
+    }
+
+  tp_proxy_signal_connection_disconnect (new_channels_sig);
+
+  tp_channel_call_when_ready (test->chan, channel_ready_cb, test);
+  g_main_loop_run (test->mainloop);
+  test_connect_channel_signals (test);
+}
+
+static void
+test_incoming (Test *test,
+               gconstpointer data G_GNUC_UNUSED)
+{
+  GValueArray *audio_info;
+
+  trigger_incoming_call (test, "call me?", "caller");
+
+  /* At this point in the channel's lifetime, we should be in local-pending,
+   * with the caller in members */
+  g_assert_cmpuint (tp_channel_group_get_self_handle (test->chan), ==,
+      test->self_handle);
+  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
+        test->self_handle), ==, test->self_handle);
+  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
+      ==, 1);
+  g_assert_cmpuint (tp_intset_size (
+        tp_channel_group_get_local_pending (test->chan)), ==, 1);
+  g_assert_cmpuint (tp_intset_size (
+        tp_channel_group_get_remote_pending (test->chan)), ==, 0);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_local_pending (test->chan), test->self_handle));
+  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
+        tp_channel_get_handle (test->chan, NULL)));
+
+  /* ListStreams: we have an audio stream */
+
+  tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
+      listed_streams_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->list_streams_return->len, ==, 1);
+  audio_info = g_ptr_array_index (test->list_streams_return, 0);
+
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 0));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 1));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 2));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 3));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 4));
+  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
+
+  test->audio_stream_id = g_value_get_uint (audio_info->values + 0);
+
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
+      tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
+      tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
+      TP_MEDIA_STREAM_TYPE_AUDIO);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 3), ==,
+      TP_MEDIA_STREAM_STATE_DISCONNECTED);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 4), ==,
+      TP_MEDIA_STREAM_DIRECTION_RECEIVE);
+  g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==,
+      TP_MEDIA_STREAM_PENDING_LOCAL_SEND);
+
+  /* We already had the stream when the channel was created, so we'll have
+   * missed the StreamAdded signal */
+  g_hash_table_insert (test->stream_directions,
+      GUINT_TO_POINTER (test->audio_stream_id),
+      GUINT_TO_POINTER (TP_MEDIA_STREAM_DIRECTION_RECEIVE));
+  g_hash_table_insert (test->stream_pending_sends,
+      GUINT_TO_POINTER (test->audio_stream_id),
+      GUINT_TO_POINTER (TP_MEDIA_STREAM_PENDING_LOCAL_SEND));
+  g_hash_table_insert (test->stream_states,
+      GUINT_TO_POINTER (test->audio_stream_id),
+      GUINT_TO_POINTER (TP_MEDIA_STREAM_STATE_DISCONNECTED));
+
+  /* Accept the call */
+  g_array_set_size (test->contacts, 0);
+  g_array_append_val (test->contacts, test->self_handle);
+  tp_cli_channel_interface_group_call_add_members (test->chan,
+      -1, test->contacts, "", void_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  /* The self-handle and the peer are now the channel's members */
+  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
+        test->self_handle), ==, test->self_handle);
+  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
+        tp_channel_get_handle (test->chan, NULL)),
+      ==, tp_channel_get_handle (test->chan, NULL));
+  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
+      ==, 2);
+  g_assert_cmpuint (tp_intset_size (
+        tp_channel_group_get_local_pending (test->chan)), ==, 0);
+  g_assert_cmpuint (tp_intset_size (
+        tp_channel_group_get_remote_pending (test->chan)), ==, 0);
+  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
+        test->self_handle));
+  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
+        tp_channel_get_handle (test->chan, NULL)));
+
+  /* Immediately the call is accepted, we accept the remote peer's proposed
+   * stream direction */
+  test_connection_run_until_dbus_queue_processed (test->conn);
+
+  test_assert_uu_hash_contains (test->stream_directions, test->audio_stream_id,
+      TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+  test_assert_uu_hash_contains (test->stream_pending_sends,
+      test->audio_stream_id, 0);
+
+  /* The stream should either already be connected, or become connected after
+   * a while */
+  while (GPOINTER_TO_UINT (g_hash_table_lookup (test->stream_states,
+        GUINT_TO_POINTER (test->audio_stream_id))) ==
+        TP_MEDIA_STREAM_STATE_DISCONNECTED)
+    {
+      g_main_context_iteration (NULL, TRUE);
+    }
+
+  test_assert_uu_hash_contains (test->stream_states, test->audio_stream_id,
+      TP_MEDIA_STREAM_STATE_CONNECTED);
+
+  /* Hang up the call */
+  g_array_set_size (test->contacts, 0);
+  g_array_append_val (test->contacts, test->self_handle);
+  tp_cli_channel_interface_group_call_remove_members_with_reason (test->chan,
+      -1, test->contacts, "", TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      void_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  /* In response to hanging up, the channel closes */
+  test_connection_run_until_dbus_queue_processed (test->conn);
+  g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
+}
+
+static void
 teardown (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
@@ -1174,6 +1378,8 @@ main (int argc,
       test_terminate_via_close, teardown);
   g_test_add ("/callable/terminate-via-no-streams", Test, NULL, setup,
       test_terminate_via_no_streams, teardown);
+  g_test_add ("/callable/incoming", Test, NULL, setup, test_incoming,
+      teardown);
 
   return g_test_run ();
 }
