@@ -78,6 +78,9 @@ void example_callable_media_stream_connect (ExampleCallableMediaStream *self);
 void example_callable_media_stream_simulate_contact_agreed_to_send (
     ExampleCallableMediaStream *self);
 
+void example_callable_media_stream_receive_direction_request (
+    ExampleCallableMediaStream *self, TpMediaStreamDirection direction);
+
 G_END_DECLS
 
 #endif
