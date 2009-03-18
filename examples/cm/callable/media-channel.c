@@ -500,6 +500,8 @@ add_member (GObject *object,
     {
       /* We're in local-pending, move to members to accept. */
       TpIntSet *set = tp_intset_new_containing (member);
+      GHashTableIter iter;
+      gpointer v;
 
       g_message ("SIGNALLING: send: Accepting incoming call from %s",
           tp_handle_inspect (contact_repo, self->priv->handle));
@@ -510,6 +512,13 @@ add_member (GObject *object,
           NULL /* nobody added to local pending */,
           NULL /* nobody added to remote pending */,
           member /* actor */, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+      g_hash_table_iter_init (&iter, self->priv->streams);
+
+      while (g_hash_table_iter_next (&iter, NULL, &v))
+        {
+          example_callable_media_stream_accept_proposed_direction (v);
+        }
 
       return TRUE;
     }

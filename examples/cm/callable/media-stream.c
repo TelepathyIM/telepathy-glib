@@ -370,6 +370,23 @@ example_callable_media_stream_close (ExampleCallableMediaStream *self)
 }
 
 void
+example_callable_media_stream_accept_proposed_direction (
+    ExampleCallableMediaStream *self)
+{
+  if (self->priv->removed ||
+      !(self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND))
+    return;
+
+  g_message ("SIGNALLING: send: OK, I'll send you media on stream %u",
+      self->priv->id);
+
+  self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
+  self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
+
+  g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+}
+
+void
 example_callable_media_stream_simulate_contact_agreed_to_send (
     ExampleCallableMediaStream *self)
 {
