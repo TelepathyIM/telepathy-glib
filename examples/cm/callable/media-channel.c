@@ -132,6 +132,10 @@ example_callable_media_channel_init (ExampleCallableMediaChannel *self)
       NULL, g_object_unref);
 }
 
+static ExampleCallableMediaStream *example_callable_media_channel_add_stream (
+    ExampleCallableMediaChannel *self, TpMediaStreamType media_type,
+    gboolean locally_requested);
+
 static void
 constructed (GObject *object)
 {
@@ -210,9 +214,30 @@ constructed (GObject *object)
    */
   tp_group_mixin_change_flags (object, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
 
+  /* Future versions of telepathy-spec will allow a channel request to
+   * say "initially include an audio stream" and/or "initially include a video
+   * stream", which would be represented like this; we don't support this
+   * usage yet, though, so ExampleCallableMediaManager will never invoke
+   * our constructor in this way. */
+  g_assert (!(self->priv->locally_requested && self->priv->initial_audio));
+  g_assert (!(self->priv->locally_requested && self->priv->initial_video));
+
   if (!self->priv->locally_requested)
     {
-      /* FIXME: act on any streams that the remote peer has already enabled */
+      /* the caller has almost certainly asked us for some streams - there's
+       * not much point in having a call otherwise */
+
+      if (self->priv->initial_audio)
+        {
+          example_callable_media_channel_add_stream (self,
+              TP_MEDIA_STREAM_TYPE_AUDIO, FALSE);
+        }
+
+      if (self->priv->initial_video)
+        {
+          example_callable_media_channel_add_stream (self,
+              TP_MEDIA_STREAM_TYPE_VIDEO, FALSE);
+        }
     }
 }
 
@@ -910,6 +935,59 @@ simulate_contact_answered_cb (gpointer p)
   return FALSE;
 }
 
+static ExampleCallableMediaStream *
+example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
+                                           TpMediaStreamType media_type,
+                                           gboolean locally_requested)
+{
+  ExampleCallableMediaStream *stream;
+  guint id = self->priv->next_stream_id++;
+
+  g_message ("SIGNALLING: send: new %s stream",
+      media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
+
+  stream = g_object_new (EXAMPLE_TYPE_CALLABLE_MEDIA_STREAM,
+      "channel", self,
+      "id", id,
+      "handle", self->priv->handle,
+      "type", media_type,
+      NULL);
+
+  g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
+
+  tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
+      self->priv->handle, media_type);
+
+  g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
+      self);
+  g_signal_connect (stream, "notify::state",
+      G_CALLBACK (stream_state_changed_cb), self);
+  g_signal_connect (stream, "direction-changed",
+      G_CALLBACK (stream_direction_changed_cb), self);
+
+  if (locally_requested)
+    {
+      /* the local user wants this stream to be bidirectional (which
+       * requires remote acknowledgement */
+      example_callable_media_stream_change_direction (stream,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
+    }
+  else
+    {
+      /* the remote user wants this stream to be bidirectional (which
+       * requires local acknowledgement) */
+      example_callable_media_stream_receive_direction_request (stream,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+    }
+
+  if (self->priv->progress == PROGRESS_ACTIVE)
+    {
+      example_callable_media_stream_connect (stream);
+    }
+
+  return stream;
+}
+
 static void
 media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
                        guint contact_handle,
@@ -964,7 +1042,6 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
       guint media_type = g_array_index (media_types, guint, i);
       ExampleCallableMediaStream *stream;
       GValueArray *info;
-      guint id = self->priv->next_stream_id++;
 
       if (self->priv->progress < PROGRESS_CALLING)
         {
@@ -992,37 +1069,8 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
               g_object_unref);
         }
 
-      g_message ("SIGNALLING: send: new %s stream",
-          media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
-
-      stream = g_object_new (EXAMPLE_TYPE_CALLABLE_MEDIA_STREAM,
-          "channel", self,
-          "id", id,
-          "handle", self->priv->handle,
-          "type", media_type,
-          NULL);
-
-      g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
-
-      tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
-          self->priv->handle, media_type);
-
-      g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
-          self);
-      g_signal_connect (stream, "notify::state",
-          G_CALLBACK (stream_state_changed_cb), self);
-      g_signal_connect (stream, "direction-changed",
-          G_CALLBACK (stream_direction_changed_cb), self);
-
-      /* newly requested streams start off in a "we want to be bidirectional"
-       * state */
-      example_callable_media_stream_change_direction (stream,
-          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
-
-      if (self->priv->progress == PROGRESS_ACTIVE)
-        {
-          example_callable_media_stream_connect (stream);
-        }
+      stream = example_callable_media_channel_add_stream (self, media_type,
+          TRUE);
 
       g_object_get (stream,
           "stream-info", &info,
