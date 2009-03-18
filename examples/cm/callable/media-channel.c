@@ -37,6 +37,8 @@
 
 #include "media-stream.h"
 
+#include <string.h>
+
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
@@ -958,6 +960,28 @@ simulate_contact_answered_cb (gpointer p)
   return FALSE;
 }
 
+static gboolean
+simulate_contact_busy_cb (gpointer p)
+{
+  ExampleCallableMediaChannel *self = p;
+
+  /* if the call has been cancelled while we were waiting for the
+   * contact to answer, do nothing */
+  if (self->priv->progress == PROGRESS_ENDED)
+    return FALSE;
+
+  /* otherwise, we're waiting for a response from the contact, which now
+   * arrives */
+  g_assert (self->priv->progress == PROGRESS_CALLING);
+
+  g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
+
+  example_callable_media_channel_close (self, self->priv->handle,
+      TP_CHANNEL_GROUP_CHANGE_REASON_BUSY);
+
+  return FALSE;
+}
+
 static ExampleCallableMediaStream *
 example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
                                            TpMediaStreamType media_type,
@@ -1072,6 +1096,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
       if (self->priv->progress < PROGRESS_CALLING)
         {
           TpIntSet *peer_set = tp_intset_new_containing (self->priv->handle);
+          const gchar *peer;
 
           g_message ("SIGNALLING: send: new streamed media call");
           self->priv->progress = PROGRESS_CALLING;
@@ -1087,12 +1112,29 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
           tp_intset_destroy (peer_set);
 
           /* In this example there is no real contact, so just simulate them
-           * answering after a short time */
-          /* FIXME: define a special contact who never answers, and if it's
-           * that contact, don't add this timeout */
-          g_timeout_add_full (G_PRIORITY_DEFAULT, self->priv->simulation_delay,
-              simulate_contact_answered_cb, g_object_ref (self),
-              g_object_unref);
+           * answering after a short time - unless the contact's name
+           * contains "(no answer)" or "(busy)" */
+
+          peer = tp_handle_inspect (contact_repo, self->priv->handle);
+
+          if (strstr (peer, "(busy)") != NULL)
+            {
+              g_timeout_add_full (G_PRIORITY_DEFAULT,
+                  self->priv->simulation_delay,
+                  simulate_contact_busy_cb, g_object_ref (self),
+                  g_object_unref);
+            }
+          else if (strstr (peer, "(no answer)") != NULL)
+            {
+              /* do nothing - the call just rings forever */
+            }
+          else
+            {
+              g_timeout_add_full (G_PRIORITY_DEFAULT,
+                  self->priv->simulation_delay,
+                  simulate_contact_answered_cb, g_object_ref (self),
+                  g_object_unref);
+            }
         }
 
       stream = example_callable_media_channel_add_stream (self, media_type,
