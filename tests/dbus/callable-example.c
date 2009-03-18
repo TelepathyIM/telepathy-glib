@@ -677,8 +677,6 @@ test_basics (Test *test,
       test->audio_stream_id);
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
       tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
-      tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_AUDIO);
   /* Don't assert about the state or the direction here - it might already have
@@ -807,8 +805,6 @@ test_basics (Test *test,
 
   test->video_stream_id = g_value_get_uint (video_info->values + 0);
 
-  g_assert_cmpuint (g_value_get_uint (video_info->values + 1), ==,
-      tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (g_value_get_uint (video_info->values + 1), ==,
       tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (g_value_get_uint (video_info->values + 2), ==,
