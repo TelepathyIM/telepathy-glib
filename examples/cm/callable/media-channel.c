@@ -503,8 +503,12 @@ add_member (GObject *object,
       GHashTableIter iter;
       gpointer v;
 
+      g_assert (self->priv->progress == PROGRESS_CALLING);
+
       g_message ("SIGNALLING: send: Accepting incoming call from %s",
           tp_handle_inspect (contact_repo, self->priv->handle));
+
+      self->priv->progress = PROGRESS_ACTIVE;
 
       tp_group_mixin_change_members (object, "",
           set /* added */,
