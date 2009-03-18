@@ -408,24 +408,30 @@ example_callable_media_channel_close (ExampleCallableMediaChannel *self,
   if (self->priv->progress != PROGRESS_ENDED)
     {
       TpIntSet *everyone;
-      const gchar *send_reason;
 
       self->priv->progress = PROGRESS_ENDED;
 
-      /* In a real protocol these would be some sort of real protocol construct,
-       * like an XMPP error stanza or a SIP error code */
-      switch (reason)
+      if (actor == self->group.self_handle)
         {
-        case TP_CHANNEL_GROUP_CHANGE_REASON_BUSY:
-          send_reason = "<user-is-busy/>";
-          break;
+          const gchar *send_reason;
 
-        case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
-          send_reason = "<no-answer/>";
-          break;
+          /* In a real protocol these would be some sort of real protocol
+           * construct, like an XMPP error stanza or a SIP error code */
+          switch (reason)
+            {
+            case TP_CHANNEL_GROUP_CHANGE_REASON_BUSY:
+              send_reason = "<user-is-busy/>";
+              break;
 
-        default:
-          send_reason = "<call-terminated/>";
+            case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
+              send_reason = "<no-answer/>";
+              break;
+
+            default:
+              send_reason = "<call-terminated/>";
+            }
+
+          g_message ("SIGNALLING: send: Terminating call: %s", send_reason);
         }
 
       everyone = tp_intset_new_containing (self->priv->handle);
@@ -439,7 +445,6 @@ example_callable_media_channel_close (ExampleCallableMediaChannel *self,
           reason);
       tp_intset_destroy (everyone);
 
-      g_message ("SIGNALLING: send: Terminating call: %s", send_reason);
       g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
       tp_svc_channel_emit_closed (self);
     }
@@ -455,7 +460,7 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
-  example_callable_media_channel_close (self, 0,
+  example_callable_media_channel_close (self, self->group.self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   ((GObjectClass *) example_callable_media_channel_parent_class)->dispose (object);
