@@ -75,6 +75,8 @@ enum
   PROP_CHANNEL_DESTROYED,
   PROP_CHANNEL_PROPERTIES,
   PROP_SIMULATION_DELAY,
+  PROP_INITIAL_AUDIO,
+  PROP_INITIAL_VIDEO,
   N_PROPS
 };
 
@@ -108,6 +110,8 @@ struct _ExampleCallableMediaChannelPrivate
   GHashTable *streams;
 
   gboolean locally_requested;
+  gboolean initial_audio;
+  gboolean initial_video;
   gboolean disposed;
 };
 
@@ -296,6 +300,14 @@ get_property (GObject *object,
       g_value_set_uint (value, self->priv->simulation_delay);
       break;
 
+    case PROP_INITIAL_AUDIO:
+      g_value_set_boolean (value, self->priv->initial_audio);
+      break;
+
+    case PROP_INITIAL_VIDEO:
+      g_value_set_boolean (value, self->priv->initial_video);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -345,6 +357,14 @@ set_property (GObject *object,
 
     case PROP_SIMULATION_DELAY:
       self->priv->simulation_delay = g_value_get_uint (value);
+      break;
+
+    case PROP_INITIAL_AUDIO:
+      self->priv->initial_audio = g_value_get_boolean (value);
+      break;
+
+    case PROP_INITIAL_VIDEO:
+      self->priv->initial_video = g_value_get_boolean (value);
       break;
 
     default:
@@ -583,6 +603,20 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
       0, G_MAXUINT32, 1000,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
+      param_spec);
+
+  param_spec = g_param_spec_boolean ("initial-audio", "Initial audio?",
+      "True if this channel had an audio stream when first announced",
+      FALSE,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIAL_AUDIO,
+      param_spec);
+
+  param_spec = g_param_spec_boolean ("initial-video", "Initial video?",
+      "True if this channel had a video stream when first announced",
+      FALSE,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIAL_VIDEO,
       param_spec);
 
   signals[SIGNAL_CALL_TERMINATED] = g_signal_new ("call-terminated",
