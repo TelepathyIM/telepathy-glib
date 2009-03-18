@@ -229,12 +229,14 @@ constructed (GObject *object)
 
       if (self->priv->initial_audio)
         {
+          g_message ("Channel initially has an audio stream");
           example_callable_media_channel_add_stream (self,
               TP_MEDIA_STREAM_TYPE_AUDIO, FALSE);
         }
 
       if (self->priv->initial_video)
         {
+          g_message ("Channel initially has a video stream");
           example_callable_media_channel_add_stream (self,
               TP_MEDIA_STREAM_TYPE_VIDEO, FALSE);
         }
@@ -943,8 +945,11 @@ example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
   ExampleCallableMediaStream *stream;
   guint id = self->priv->next_stream_id++;
 
-  g_message ("SIGNALLING: send: new %s stream",
-      media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
+  if (locally_requested)
+    {
+      g_message ("SIGNALLING: send: new %s stream",
+          media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
+    }
 
   stream = g_object_new (EXAMPLE_TYPE_CALLABLE_MEDIA_STREAM,
       "channel", self,
