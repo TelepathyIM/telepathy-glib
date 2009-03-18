@@ -521,7 +521,10 @@ add_member (GObject *object,
 
       while (g_hash_table_iter_next (&iter, NULL, &v))
         {
+          /* we accept the proposed stream direction... */
           example_callable_media_stream_accept_proposed_direction (v);
+          /* ... and the stream tries to connect */
+          example_callable_media_stream_connect (v);
         }
 
       return TRUE;
