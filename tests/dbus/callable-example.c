@@ -502,6 +502,25 @@ stream_state_changed_cb (TpChannel *chan G_GNUC_UNUSED,
 }
 
 static void
+test_connect_channel_signals (Test *test)
+{
+  test->members_changed_detailed_id = g_signal_connect (test->chan,
+      "group-members-changed-detailed",
+      G_CALLBACK (members_changed_detailed_cb), test);
+
+  tp_cli_channel_type_streamed_media_connect_to_stream_added (test->chan,
+      stream_added_cb, test, NULL, NULL, NULL);
+  tp_cli_channel_type_streamed_media_connect_to_stream_removed (test->chan,
+      stream_removed_cb, test, NULL, NULL, NULL);
+  tp_cli_channel_type_streamed_media_connect_to_stream_error (test->chan,
+      stream_error_cb, test, NULL, NULL, NULL);
+  tp_cli_channel_type_streamed_media_connect_to_stream_direction_changed (
+      test->chan, stream_direction_changed_cb, test, NULL, NULL, NULL);
+  tp_cli_channel_type_streamed_media_connect_to_stream_state_changed (
+      test->chan, stream_state_changed_cb, test, NULL, NULL, NULL);
+}
+
+static void
 outgoing_call (Test *test,
                const gchar *id)
 {
@@ -525,20 +544,7 @@ outgoing_call (Test *test,
   tp_channel_call_when_ready (test->chan, channel_ready_cb, test);
   g_main_loop_run (test->mainloop);
 
-  test->members_changed_detailed_id = g_signal_connect (test->chan,
-      "group-members-changed-detailed",
-      G_CALLBACK (members_changed_detailed_cb), test);
-
-  tp_cli_channel_type_streamed_media_connect_to_stream_added (test->chan,
-      stream_added_cb, test, NULL, NULL, NULL);
-  tp_cli_channel_type_streamed_media_connect_to_stream_removed (test->chan,
-      stream_removed_cb, test, NULL, NULL, NULL);
-  tp_cli_channel_type_streamed_media_connect_to_stream_error (test->chan,
-      stream_error_cb, test, NULL, NULL, NULL);
-  tp_cli_channel_type_streamed_media_connect_to_stream_direction_changed (
-      test->chan, stream_direction_changed_cb, test, NULL, NULL, NULL);
-  tp_cli_channel_type_streamed_media_connect_to_stream_state_changed (
-      test->chan, stream_state_changed_cb, test, NULL, NULL, NULL);
+  test_connect_channel_signals (test);
 }
 
 static void
