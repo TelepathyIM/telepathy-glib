@@ -864,7 +864,7 @@ get_all_properties_cb (TpProxy *proxy,
             &myerror))
       {
         tf_stream_error (stream, 0, error->message);
-        WARNING (stream, "Error sestting codec preferences: %s",
+        WARNING (stream, "Error setting codec preferences: %s",
             myerror->message);
         g_clear_error (&myerror);
         return;
