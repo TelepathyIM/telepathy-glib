@@ -208,6 +208,9 @@ struct _TpConnectionManagerPrivate {
 
     /* list of WhenReadyContext */
     GList *waiting_for_ready;
+
+    /* the method call currently pending, or NULL if none. */
+    TpProxyPendingCall *pending_get_params;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
@@ -389,6 +392,8 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
 
   DEBUG ("Protocol name: %s", protocol);
 
+  self->priv->pending_get_params = NULL;
+
   if (error != NULL)
     {
       DEBUG ("Error getting params for %s, skipping it", protocol);
@@ -499,6 +504,12 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 
   self->priv->listing_protocols = FALSE;
 
+  if (self->priv->pending_get_params != NULL)
+    {
+      tp_proxy_pending_call_cancel (self->priv->pending_get_params);
+      self->priv->pending_get_params = NULL;
+    }
+
   if (self->priv->found_protocols != NULL)
     {
       tp_connection_manager_free_protocols (self->priv->found_protocols);
@@ -555,9 +566,10 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 
   next_protocol = g_ptr_array_remove_index_fast (self->priv->pending_protocols,
       0);
-  tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
-      tp_connection_manager_got_parameters, next_protocol, g_free,
-      NULL);
+  self->priv->pending_get_params =
+      tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
+          tp_connection_manager_got_parameters, next_protocol, g_free,
+          NULL);
 }
 
 static void
