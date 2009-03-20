@@ -878,13 +878,13 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
   TfChannel *self = TF_CHANNEL (weak_object);
   guint i;
 
-  self->priv->sessions = g_ptr_array_sized_new (session_handlers->len);
-
   if (error)
     {
       g_critical ("Error calling GetSessionHandlers: %s", error->message);
       return;
     }
+
+  self->priv->sessions = g_ptr_array_sized_new (session_handlers->len);
 
   if (session_handlers->len == 0)
     {
