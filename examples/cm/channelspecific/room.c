@@ -411,6 +411,16 @@ set_property (GObject *object,
 }
 
 static void
+example_csh_room_channel_close (ExampleCSHRoomChannel *self)
+{
+  if (!self->priv->closed)
+    {
+      self->priv->closed = TRUE;
+      tp_svc_channel_emit_closed (self);
+    }
+}
+
+static void
 dispose (GObject *object)
 {
   ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (object);
@@ -420,11 +430,7 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
-  if (!self->priv->closed)
-    {
-      self->priv->closed = TRUE;
-      tp_svc_channel_emit_closed (self);
-    }
+  example_csh_room_channel_close (self);
 
   ((GObjectClass *) example_csh_room_channel_parent_class)->dispose (object);
 }
@@ -568,11 +574,7 @@ channel_close (TpSvcChannel *iface,
 {
   ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (iface);
 
-  if (!self->priv->closed)
-    {
-      self->priv->closed = TRUE;
-      tp_svc_channel_emit_closed (self);
-    }
+  example_csh_room_channel_close (self);
 
   tp_svc_channel_return_from_close (context);
 }
