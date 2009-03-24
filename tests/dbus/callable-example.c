@@ -455,14 +455,11 @@ stream_added_cb (TpChannel *chan G_GNUC_UNUSED,
 
   test->stream_events = g_slist_prepend (test->stream_events, se);
 
-  /* use G_MAXUINT to represent "we have no idea" until telepathy-spec
-   * specifies what the initial direction is */
+  /* this initial state is mandated by telepathy-spec 0.17.22 */
   g_hash_table_insert (test->stream_directions, GUINT_TO_POINTER (id),
-      GUINT_TO_POINTER (G_MAXUINT));
+      GUINT_TO_POINTER (TP_MEDIA_STREAM_DIRECTION_RECEIVE));
   g_hash_table_insert (test->stream_pending_sends, GUINT_TO_POINTER (id),
-      GUINT_TO_POINTER (G_MAXUINT));
-
-  /* this one does seem reasonable, though */
+      GUINT_TO_POINTER (TP_MEDIA_STREAM_PENDING_LOCAL_SEND));
   g_hash_table_insert (test->stream_states, GUINT_TO_POINTER (id),
       GUINT_TO_POINTER (TP_MEDIA_STREAM_STATE_DISCONNECTED));
 }
@@ -896,33 +893,35 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (video_info->values + 2), ==,
       TP_MEDIA_STREAM_TYPE_VIDEO);
 
-  /* The last two stream events should be the addition of the video stream,
-   * and the change to the appropriate direction (StreamAdded does not signal
-   * stream directionality) */
+  /* After a moment, the video stream becomes connected, and the remote user
+   * accepts our proposed direction change. These might happen in either
+   * order, at least in this implementation. */
 
-  se = g_slist_nth_data (test->stream_events, 1);
+  while (GPOINTER_TO_UINT (g_hash_table_lookup (test->stream_directions,
+            GUINT_TO_POINTER (test->video_stream_id))) !=
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL ||
+        GPOINTER_TO_UINT (g_hash_table_lookup (test->stream_states,
+            GUINT_TO_POINTER (test->video_stream_id))) !=
+          TP_MEDIA_STREAM_STATE_CONNECTED)
+    {
+      g_main_context_iteration (NULL, TRUE);
+    }
+
+  se = g_slist_nth_data (test->stream_events, 3);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
   g_assert_cmpuint (se->id, ==, test->video_stream_id);
   g_assert_cmpuint (se->contact, ==, tp_channel_get_handle (test->chan, NULL));
   g_assert_cmpuint (se->media_type, ==, TP_MEDIA_STREAM_TYPE_VIDEO);
 
-  se = g_slist_nth_data (test->stream_events, 0);
+  se = g_slist_nth_data (test->stream_events, 2);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_DIRECTION_CHANGED);
   g_assert_cmpuint (se->id, ==, test->video_stream_id);
   g_assert_cmpuint (se->direction, ==, TP_MEDIA_STREAM_DIRECTION_SEND);
   g_assert_cmpuint (se->pending_send, ==, TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
-  /* After a moment, the video stream becomes connected, and the remote user
-   * accepts our proposed direction change. These might happen in either
-   * order, at least in this implementation. We already tested the stream
-   * becoming connected, so let's test the direction change here instead. */
-
-  while (GPOINTER_TO_UINT (g_hash_table_lookup (test->stream_directions,
-        GUINT_TO_POINTER (test->video_stream_id))) !=
-        TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL)
-    {
-      g_main_context_iteration (NULL, TRUE);
-    }
+  /* the most recent events, 0 and 1, are the direction change to bidirectional
+   * and the state change to connected, in arbitrary order - we already checked
+   * that they happened */
 
   /* RemoveStreams with a bad stream ID must fail */
 
