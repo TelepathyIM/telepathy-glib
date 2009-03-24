@@ -1036,6 +1036,7 @@ example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
       "id", id,
       "handle", self->priv->handle,
       "type", media_type,
+      "locally-requested", locally_requested,
       NULL);
 
   g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
@@ -1070,21 +1071,6 @@ example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
       G_CALLBACK (stream_state_changed_cb), self);
   g_signal_connect (stream, "direction-changed",
       G_CALLBACK (stream_direction_changed_cb), self);
-
-  if (locally_requested)
-    {
-      /* the local user wants this stream to be bidirectional (which
-       * requires remote acknowledgement */
-      example_callable_media_stream_change_direction (stream,
-          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
-    }
-  else
-    {
-      /* the remote user wants this stream to be bidirectional (which
-       * requires local acknowledgement) */
-      example_callable_media_stream_receive_direction_request (stream,
-          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
-    }
 
   if (self->priv->progress == PROGRESS_ACTIVE)
     {
