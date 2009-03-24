@@ -34,7 +34,7 @@
       <p>When a new incoming channel (one with
         <tp:dbus-ref namespace="org.freedesktop.Telepathy.Channel">Requested</tp:dbus-ref>
         = FALSE) is offered to
-        <tp:dbus-ref namespace="org.freedesktop.Telepathy.Client">Approver</tp:dbus-ref>s
+        <tp:dbus-ref namespace="org.freedesktop.Telepathy.Client">Approver.DRAFT</tp:dbus-ref>s
         by the channel dispatcher, it also offers the Approvers a list of all
         the running or activatable handlers whose
         <tp:member-ref>HandlerChannelFilter</tp:member-ref> property
@@ -140,7 +140,8 @@
         </tp:docstring>
       </arg>
 
-      <arg name="Channels" type="a(oa{sv})" direction="in">
+      <arg name="Channels" type="a(oa{sv})" direction="in"
+        tp:type="Channel_Details[]">
         <tp:docstring>
           The channels and their immutable properties. Their well-known
           bus name is the same as that of the Connection.
@@ -190,7 +191,7 @@
       <arg name="Request" type="o" direction="in">
         <tp:docstring>
           The <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy">ChannelRequest</tp:dbus-ref>
+            namespace="org.freedesktop.Telepathy">ChannelRequest.DRAFT</tp:dbus-ref>
           object, which MUST have been returned by <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.ChannelDispatcher.DRAFT">CreateChannel</tp:dbus-ref>
           or <tp:dbus-ref

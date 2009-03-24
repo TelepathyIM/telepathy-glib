@@ -349,7 +349,8 @@
       </tp:enumvalue>
     </tp:enum>
 
-    <tp:enum name="Rich_Presence_Access_Control_Type" type="u">
+    <tp:enum name="Rich_Presence_Access_Control_Type" type="u"
+      array-name="Rich_Presence_Access_Control_Type_List">
       <tp:docstring>
         A type of access control for Rich_Presence_Access_Control.
         For most types, the exact access control is given by an associated

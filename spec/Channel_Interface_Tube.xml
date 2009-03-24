@@ -26,9 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       systems to communicate without having to establish network
       connections themselves. Currently, two types of tube exist:
       <tp:dbus-ref namespace="org.freedesktop.Telepathy"
-      >Channel.Type.DBusTube</tp:dbus-ref> and
+      >Channel.Type.DBusTube.DRAFT</tp:dbus-ref> and
       <tp:dbus-ref namespace="org.freedesktop.Telepathy"
-      >Channel.Type.StreamTube</tp:dbus-ref>. This interface contains
+      >Channel.Type.StreamTube.DRAFT</tp:dbus-ref>. This interface contains
       the properties, signals and methods common to both types of tube;
       you can only create channels of a specific tube type, not of this
       type. A tube channel contains exactly one tube; if you need several
@@ -42,8 +42,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <p>As an exception to the usual handling of capabilities, connection managers
         for protocols with capability discovery, such as XMPP, SHOULD advertise the
         capability representing each Tube type that they support
-       (<tp:dbus-ref namespace="org.freedesktop.Telepathy">Channel.Type.DBusTube</tp:dbus-ref> and/or
-        <tp:dbus-ref namespace="org.freedesktop.Telepathy">Channel.Type.StreamTube</tp:dbus-ref>)
+       (<tp:dbus-ref namespace="org.freedesktop.Telepathy">Channel.Type.DBusTube.DRAFT</tp:dbus-ref> and/or
+        <tp:dbus-ref namespace="org.freedesktop.Telepathy">Channel.Type.StreamTube.DRAFT</tp:dbus-ref>)
         even if no client has indicated via
         <tp:dbus-ref
           namespace="org.freedesktop.Telepathy.Connection.Interface.ContactCapabilities.DRAFT">SetSelfCapabilities</tp:dbus-ref>

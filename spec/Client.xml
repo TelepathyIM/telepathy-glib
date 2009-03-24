@@ -105,9 +105,9 @@
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>A list of the extra interfaces provided by this client.
           This SHOULD include at least one of
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Client.Observer</tp:dbus-ref>,
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Client.Approver</tp:dbus-ref> or
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Client.Handler</tp:dbus-ref>.</p>
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Client.Observer.DRAFT</tp:dbus-ref>,
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Client.Approver.DRAFT</tp:dbus-ref> or
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy">Client.Handler.DRAFT</tp:dbus-ref>.</p>
 
         <p>In the <code>.client</code> file, this is represented by key
           "<code>Interfaces</code>" in the group named after this interface.

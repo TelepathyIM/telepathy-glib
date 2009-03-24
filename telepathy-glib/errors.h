@@ -27,7 +27,7 @@ G_BEGIN_DECLS
 
 GQuark tp_errors_quark (void);
 
-#define TP_ERROR_PREFIX "org.freedesktop.Telepathy.Errors"
+#define TP_ERROR_PREFIX "org.freedesktop.Telepathy.Error"
 
 #define TP_ERRORS (tp_errors_quark ())
 

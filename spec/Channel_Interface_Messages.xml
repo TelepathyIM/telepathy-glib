@@ -706,7 +706,8 @@ USA.</p>
       </tp:member>
     </tp:mapping>
 
-    <tp:simple-type type="u" name="Message_Part_Index">
+    <tp:simple-type type="u" name="Message_Part_Index"
+      array-name="Message_Part_Index_List">
       <tp:added version="0.17.17"/>
       <tp:docstring>
         The index of a message part within a message.

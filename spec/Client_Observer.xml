@@ -56,7 +56,7 @@
           channels, doing the actual data transfer for file transfers,
           setting up the out-of-band connection for Tubes). The
           <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Client">Handler</tp:dbus-ref>
+            namespace="org.freedesktop.Telepathy.Client">Handler.DRAFT</tp:dbus-ref>
           is responsible for such tasks.</p>
 
         <p>Handlers MAY, of course, delegate responsibility for these
