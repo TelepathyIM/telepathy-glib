@@ -167,6 +167,53 @@ typedef struct
   GHashTable *stream_states;
 } Test;
 
+/* For debugging, if this test fails */
+static void test_dump_stream_events (Test *test) G_GNUC_UNUSED;
+
+static void test_dump_stream_events (Test *test)
+{
+  GSList *link;
+
+  g_message ("Stream events (most recent first):");
+
+  for (link = test->stream_events; link != NULL; link = link->next)
+    {
+      StreamEvent *se = link->data;
+
+      switch (se->type)
+        {
+        case STREAM_EVENT_ADDED:
+          g_message ("Stream %u added, contact#%u, media type %u",
+              se->id, se->contact, se->media_type);
+          break;
+
+        case STREAM_EVENT_DIRECTION_CHANGED:
+          g_message ("Stream %u sending=%c, receiving=%c",
+              se->id,
+              (se->direction & TP_MEDIA_STREAM_DIRECTION_SEND ? 'y'
+               : (se->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND ?
+                  'p' : 'n')),
+              (se->direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE ? 'y'
+               : (se->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND ?
+                  'p' : 'n'))
+              );
+          break;
+
+        case STREAM_EVENT_ERROR:
+          g_message ("Stream %u failed with error %u", se->id, se->error);
+          break;
+
+        case STREAM_EVENT_REMOVED:
+          g_message ("Stream %u removed", se->id);
+          break;
+
+        case STREAM_EVENT_STATE_CHANGED:
+          g_message ("Stream %u changed to state %u", se->id, se->state);
+          break;
+        }
+    }
+}
+
 static void
 cm_ready_cb (TpConnectionManager *cm G_GNUC_UNUSED,
              const GError *error,
