@@ -26,6 +26,11 @@ Enhancements:
   incoming calls, support simulated contacts who never answer, are busy or
   terminate the call, and comply with telepathy-spec 0.17.22
 
+Fixes:
+
+* fd.o #20729: csh (chatroom) example connection manager: comply with
+  telepathy-spec 0.17.21 by always allowing the user to leave the Group
+
 telepathy-glib 0.7.27 (2009-03-17)
 ==================================
 
