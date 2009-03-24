@@ -1,6 +1,31 @@
 telepathy-glib 0.7.28 (UNRELEASED)
 ==================================
 
+API changes:
+
+* Use the prefix for D-Bus errors specified by telepathy-spec, not something
+  telepathy-glib made up (changing .Errors to the correct .Error). This was
+  a regression in telepathy-glib 0.7.1.
+
+  Expected impact of this change:
+  * Connection managers will emit the correct errors as soon as the
+    telepathy-glib shared library is upgraded
+  * Clients that use TpConnection, TpChannel etc. will expect the correct
+    errors as soon as the shared library is upgraded
+  * Clients that match errors by string value using TP_ERROR_PREFIX will have
+    to be recompiled against the new telepathy-glib, but should have sane
+    fallback behaviour to treat the correct error strings as an unknown error
+
+Enhancements:
+
+* Update to telepathy-spec 0.17.22, adding
+  TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST, TP_ARRAY_TYPE_STRING_STRING_MAP_LIST,
+  TP_STRUCT_TYPE_SOCKET_ADDRESS_IP
+
+* Extend the 'callable' example connection manager to support simulated
+  incoming calls, support simulated contacts who never answer, are busy or
+  terminate the call, and comply with telepathy-spec 0.17.22
+
 telepathy-glib 0.7.27 (2009-03-17)
 ==================================
 
