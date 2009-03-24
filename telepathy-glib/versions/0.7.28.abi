@@ -1,0 +1,6 @@
+Version: TELEPATHY_GLIB_0.7.28
+Extends: TELEPATHY_GLIB_0.7.27
+Release: 0.7.28
+
+tp_type_dbus_array_of_a_7bss_7d
+tp_type_dbus_array_sq

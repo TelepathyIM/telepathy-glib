@@ -1,5 +1,7 @@
-telepathy-glib 0.7.28 (UNRELEASED)
+telepathy-glib 0.7.28 (2009-03-24)
 ==================================
+
+The "a surprisingly meaty courgette" release.
 
 API changes:
 
@@ -30,6 +32,9 @@ Fixes:
 
 * fd.o #20729: csh (chatroom) example connection manager: comply with
   telepathy-spec 0.17.21 by always allowing the user to leave the Group
+
+* Cancel GetParameters call if the CM crashes, fixing an assertion failure
+  in tp_connection_manager_continue_introspection
 
 telepathy-glib 0.7.27 (2009-03-17)
 ==================================
