@@ -1023,6 +1023,7 @@ example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
 {
   ExampleCallableMediaStream *stream;
   guint id = self->priv->next_stream_id++;
+  guint state, direction, pending_send;
 
   if (locally_requested)
     {
@@ -1041,6 +1042,27 @@ example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
 
   tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
       self->priv->handle, media_type);
+
+  g_object_get (stream,
+      "state", &state,
+      "direction", &direction,
+      "pending-send", &pending_send,
+      NULL);
+
+  /* this is the "implicit" initial state mandated by telepathy-spec */
+  if (state != TP_MEDIA_STREAM_STATE_DISCONNECTED)
+    {
+      tp_svc_channel_type_streamed_media_emit_stream_state_changed (self, id,
+          state);
+    }
+
+  /* this is the "implicit" initial direction mandated by telepathy-spec */
+  if (direction != TP_MEDIA_STREAM_DIRECTION_RECEIVE ||
+      pending_send != TP_MEDIA_STREAM_PENDING_LOCAL_SEND)
+    {
+      tp_svc_channel_type_streamed_media_emit_stream_direction_changed (self,
+          id, direction, pending_send);
+    }
 
   g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
       self);
