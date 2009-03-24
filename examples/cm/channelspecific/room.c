@@ -468,6 +468,33 @@ add_member (GObject *object,
   return TRUE;
 }
 
+static gboolean
+remove_member_with_reason (GObject *object,
+                           TpHandle handle,
+                           const gchar *message,
+                           guint reason,
+                           GError **error)
+{
+  ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (object);
+
+  if (handle == self->group.self_handle)
+    {
+      /* TODO: if simulating a channel where the user is an operator, let them
+       * kick themselves (like in IRC), resulting in different "network"
+       * messages */
+
+      example_csh_room_channel_close (self);
+      return TRUE;
+    }
+  else
+    {
+      /* TODO: also simulate some channels where the user is an operator and
+       * can kick people */
+      g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+          "You can't eject other users from this channel");
+      return FALSE;
+    }
+}
 
 static void
 example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
@@ -564,6 +591,9 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
       G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, group_class),
       add_member,
       NULL);
+  tp_group_mixin_class_allow_self_removal (object_class);
+  tp_group_mixin_class_set_remove_with_reason_func (object_class,
+      remove_member_with_reason);
   tp_group_mixin_init_dbus_properties (object_class);
 }
 
