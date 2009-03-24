@@ -281,7 +281,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <tp:deprecated version="0.17.UNRELEASED">New client implementations
+    <tp:deprecated version="0.17.21">New client implementations
       SHOULD use <tp:dbus-ref
         namespace="org.freedesktop.Telepathy.Connection.Interface">SimplePresence</tp:dbus-ref>
       instead. New connection managers SHOULD implement both Presence

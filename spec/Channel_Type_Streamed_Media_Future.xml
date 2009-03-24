@@ -118,30 +118,15 @@
         <ul>
           <li>{ ChannelType = StreamedMedia }</li>
           <li>{ ChannelType = StreamedMedia, InitialAudio = true }
-            if receiving audio-only or audio+video calls is supported</li>
+            if receiving calls with audio is supported</li>
           <li>{ ChannelType = StreamedMedia, InitialVideo = true }
-            if receiving video-only or audio+video calls is supported</li>
+            if receiving calls with video is supported</li>
         </ul>
 
         <tp:rationale>
           <p>Connection managers for protocols with capability discovery,
             like XMPP, need this information to advertise the appropriate
             capabilities for their protocol.</p>
-        </tp:rationale>
-
-        <p>If { ChannelType = StreamedMedia } is passed to
-          SetSelfCapabilities, but no more specific channel class for
-          audio or video has been passed to that method (in the presence
-          of a ChannelDispatcher, this would mean that there is at least one
-          client with that channel class in its HandlerChannelFilter, but
-          no installed client has the more specific channel classes in its
-          HandlerChannelFilter), then the connection manager SHOULD advertise
-          support for every content type (audio or video) that it
-          supports.</p>
-
-        <tp:rationale>
-          <p>This lowers the "barrier to entry" by allowing a simple client
-            to say merely that it supports streamed media at all.</p>
         </tp:rationale>
       </tp:docstring>
     </property>

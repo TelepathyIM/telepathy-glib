@@ -191,7 +191,7 @@
         The well known bus names (starting with
         <code>org.freedesktop.Telepathy.Client.</code>) of the possible
         <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Client">Handler</tp:dbus-ref>s
+          namespace="org.freedesktop.Telepathy.Client">Handler.DRAFT</tp:dbus-ref>s
         for these channels. The channel dispatcher MUST place the most
         preferred handlers first, according to some reasonable heuristic.
         As a result, approvers SHOULD use the first handler by default.

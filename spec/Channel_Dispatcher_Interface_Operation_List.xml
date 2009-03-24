@@ -51,7 +51,7 @@
         <tp:docstring>
           The object path of the
           <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy">ChannelDispatchOperation</tp:dbus-ref>.
+            namespace="org.freedesktop.Telepathy">ChannelDispatchOperation.DRAFT</tp:dbus-ref>.
         </tp:docstring>
       </tp:member>
 

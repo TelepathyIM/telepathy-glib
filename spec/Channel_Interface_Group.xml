@@ -242,7 +242,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:flag>
       <tp:flag suffix="Message_Depart" value="8192">
-        <tp:added version="0.17.UNRELEASED"/>
+        <tp:added version="0.17.21"/>
         <tp:docstring>
           A message may be sent to the server when calling
           <tp:member-ref>RemoveMembers</tp:member-ref> on

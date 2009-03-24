@@ -87,7 +87,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           <dd>The current subject of conversation in the room</dd>
 
           <dt>members (u)</dt>
-          <dd>The number of members of the room</dd>
+          <dd>The number of members in the room</dd>
 
           <dt>password (b)</dt>
           <dd>True if the room requires a password to enter</dd>
