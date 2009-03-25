@@ -531,14 +531,13 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
             case DBUS_TYPE_STRING:
               {
                 GStrv *save_to = (GStrv *) (params_mem + paramspec->offset);
-                GStrv strv = g_value_get_boxed (value);
 
                 g_strfreev (*save_to);
-                *save_to = g_strdupv (strv);
+                *save_to = g_value_dup_boxed (value);
 
                 if (DEBUGGING)
                   {
-                    gchar *joined = g_strjoinv (", ", strv);
+                    gchar *joined = g_strjoinv (", ", *save_to);
 
                     DEBUG ("%s = [%s]", paramspec->name, joined);
                     g_free (joined);
