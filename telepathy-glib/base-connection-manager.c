@@ -533,6 +533,16 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
           DEBUG ("%s = %" G_GUINT64_FORMAT, paramspec->name, i);
         }
 
+      case DBUS_TYPE_DOUBLE:
+        {
+          gdouble *save_to = (gdouble *) (params_mem + paramspec->offset);
+          gdouble i = g_value_get_double (value);
+
+          g_assert (paramspec->gtype == G_TYPE_DOUBLE);
+          *save_to = i;
+          DEBUG ("%s = %f", paramspec->name, i);
+        }
+
       case DBUS_TYPE_BOOLEAN:
         {
           gboolean *save_to = (gboolean *) (params_mem + paramspec->offset);
