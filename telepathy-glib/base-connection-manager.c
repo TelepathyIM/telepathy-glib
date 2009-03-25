@@ -547,7 +547,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
         {
           gchar **save_to = (gchar **) (params_mem + paramspec->offset);
 
-          g_assert (paramspec->gtype == G_TYPE_BOXED);
+          g_assert (paramspec->gtype == DBUS_TYPE_G_OBJECT_PATH);
           g_free (*save_to);
 
           *save_to = g_value_dup_boxed (value);
