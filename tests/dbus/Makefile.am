@@ -22,6 +22,7 @@ noinst_PROGRAMS = \
     test-handle-set \
     test-invalidated-while-invoking-signals \
     test-message-mixin \
+    test-params-cm \
     test-properties \
     test-self-handle \
     test-self-presence \
@@ -115,6 +116,9 @@ test_text_respawn_LDADD = \
 test_text_respawn_SOURCES = text-respawn.c
 
 test_unsupported_interface_SOURCES = unsupported-interface.c
+
+test_params_cm_SOURCES = \
+    params-cm.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
