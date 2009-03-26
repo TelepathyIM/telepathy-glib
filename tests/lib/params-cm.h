@@ -72,6 +72,15 @@ typedef struct {
     gchar *a_string;
     gint16 a_int16;
     gint32 a_int32;
+    guint16 a_uint16;
+    guint32 a_uint32;
+    gint64 a_int64;
+    guint64 a_uint64;
+    gboolean a_boolean;
+    gdouble a_double;
+    GStrv a_array_of_strings;
+    GArray *a_array_of_bytes;
+    gchar *a_object_path;
 } CMParams;
 
 CMParams * param_connection_manager_get_params_last_conn (void);

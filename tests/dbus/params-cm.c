@@ -112,15 +112,43 @@ test_set_params (Test *test,
 {
   GHashTable *parameters;
   CMParams *params;
+  gchar *array_of_strings[] = { "Telepathy", "rocks", "!", NULL };
+  guint i;
+  GArray *array_of_bytes;
+  guint8 bytes[] = { 0x1, 0x10, 0xA, 0xB, 0xC };
+  GValue *value;
+
+  array_of_bytes = g_array_new (FALSE, FALSE, sizeof (guint8));
+  g_array_append_vals (array_of_bytes, bytes, sizeof (bytes));
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
   g_hash_table_insert (parameters, "a-string",
       tp_g_value_slice_new_static_string ("a string"));
   g_hash_table_insert (parameters, "a-int16",
-      tp_g_value_slice_new_int (7));
+      tp_g_value_slice_new_int (G_MININT16));
   g_hash_table_insert (parameters, "a-int32",
-      tp_g_value_slice_new_int (77));
+      tp_g_value_slice_new_int (G_MININT32));
+  g_hash_table_insert (parameters, "a-uint16",
+      tp_g_value_slice_new_uint (G_MAXUINT16));
+  g_hash_table_insert (parameters, "a-uint32",
+      tp_g_value_slice_new_uint (G_MAXUINT32));
+  g_hash_table_insert (parameters, "a-int64",
+      tp_g_value_slice_new_int64 (G_MAXINT64));
+  g_hash_table_insert (parameters, "a-uint64",
+      tp_g_value_slice_new_uint64 (G_MAXUINT64));
+  g_hash_table_insert (parameters, "a-boolean",
+      tp_g_value_slice_new_boolean (TRUE));
+  g_hash_table_insert (parameters, "a-double",
+      tp_g_value_slice_new_double (G_MAXDOUBLE));
+  g_hash_table_insert (parameters, "a-array-of-strings",
+      tp_g_value_slice_new_static_boxed (G_TYPE_STRV, array_of_strings));
+  g_hash_table_insert (parameters, "a-array-of-bytes",
+      tp_g_value_slice_new_static_boxed (DBUS_TYPE_G_UCHAR_ARRAY,
+        array_of_bytes));
+  value = tp_g_value_slice_new (DBUS_TYPE_G_OBJECT_PATH);
+  g_value_set_static_boxed (value, "/A/Object/Path");
+  g_hash_table_insert (parameters, "a-object-path", value);
 
   tp_cli_connection_manager_run_request_connection (test->cm, -1,
       "example", parameters, NULL, NULL, &test->error, NULL);
@@ -131,11 +159,29 @@ test_set_params (Test *test,
   g_assert (params != NULL);
 
   g_assert (!tp_strdiff (params->a_string, "a string"));
-  g_assert_cmpuint (params->a_int16, ==, 7);
-  g_assert_cmpuint (params->a_int32, ==, 77);
+  g_assert_cmpint (params->a_int16, ==, G_MININT16);
+  g_assert_cmpint (params->a_int32, ==, G_MININT32);
+  g_assert_cmpuint (params->a_uint16, ==, G_MAXUINT16);
+  g_assert_cmpuint (params->a_uint32, ==, G_MAXUINT32);
+  g_assert_cmpuint (params->a_int64, ==, G_MAXINT64);
+  g_assert_cmpuint (params->a_uint64, ==, G_MAXUINT64);
+  g_assert (params->a_boolean);
+  g_assert_cmpfloat (params->a_double, ==, G_MAXDOUBLE);
+
+  g_assert_cmpuint (g_strv_length (params->a_array_of_strings), ==,
+      g_strv_length (array_of_strings));
+  for (i = 0; array_of_strings[i] != NULL; i++)
+    g_assert (!tp_strdiff (params->a_array_of_strings[i], array_of_strings[i]));
+
+  g_assert_cmpuint (params->a_array_of_bytes->len, ==, array_of_bytes->len);
+  for (i = 0; i < array_of_bytes->len; i++)
+    g_assert (params->a_array_of_bytes->data[i] == array_of_bytes->data[i]);
+
+  g_assert (!tp_strdiff (params->a_object_path, "/A/Object/Path"));
 
   free_cm_params (params);
   g_hash_table_destroy (parameters);
+  g_array_free (array_of_bytes, TRUE);
 }
 
 int
