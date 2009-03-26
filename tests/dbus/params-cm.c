@@ -1,4 +1,4 @@
-/* Feature test for example StreamedMedia CM code.
+/* Test CM parameters
  *
  * Copyright © 2009 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright © 2009 Nokia Corporation
