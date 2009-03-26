@@ -418,8 +418,7 @@ param_default_value (const TpCMParamSpec *param)
             if (param->def == NULL)
               {
                 GArray *array = g_array_new (FALSE, FALSE, sizeof (guint8));
-                g_value_set_boxed (value, array);
-                g_array_free (array, TRUE);
+                g_value_take_boxed (value, array);
               }
             else
               {
