@@ -148,7 +148,7 @@ param_connection_manager_get_params_last_conn (void)
 }
 
 void
-free_cm_params (CMParams *p)
+param_connection_manager_free_params (CMParams *p)
 {
   g_free (p->a_string);
   g_strfreev (p->a_array_of_strings);

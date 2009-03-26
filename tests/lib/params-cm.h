@@ -84,7 +84,7 @@ typedef struct {
 } CMParams;
 
 CMParams * param_connection_manager_get_params_last_conn (void);
-void free_cm_params (CMParams *params);
+void param_connection_manager_free_params (CMParams *params);
 
 G_END_DECLS
 

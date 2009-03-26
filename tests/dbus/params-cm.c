@@ -179,7 +179,7 @@ test_set_params (Test *test,
 
   g_assert (!tp_strdiff (params->a_object_path, "/A/Object/Path"));
 
-  free_cm_params (params);
+  param_connection_manager_free_params (params);
   g_hash_table_destroy (parameters);
   g_array_free (array_of_bytes, TRUE);
 }
