@@ -413,6 +413,20 @@ param_default_value (const TpCMParamSpec *param)
             g_value_set_static_boxed (value, param->def);
             break;
 
+          case DBUS_TYPE_BYTE:
+            g_assert (param->gtype == DBUS_TYPE_G_UCHAR_ARRAY);
+            if (param->def == NULL)
+              {
+                GArray *array = g_array_new (FALSE, FALSE, sizeof (guint8));
+                g_value_set_boxed (value, array);
+                g_array_free (array, TRUE);
+              }
+            else
+              {
+                g_value_set_static_boxed (value, param->def);
+              }
+            break;
+
           default:
             g_error ("parameter_defaults: encountered unknown type %s on "
                 "argument %s", param->dtype, param->name);
