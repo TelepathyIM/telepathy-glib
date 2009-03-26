@@ -154,6 +154,7 @@ test_set_params (Test *test,
       "example", parameters, NULL, NULL, &test->error, NULL);
   g_assert (test->error != NULL);
   g_assert (test->error->code == TP_ERROR_NOT_IMPLEMENTED);
+  g_clear_error (&test->error);
 
   params = param_connection_manager_get_params_last_conn ();
   g_assert (params != NULL);
