@@ -522,6 +522,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
           *save_to = i;
           DEBUG ("%s = %" G_GINT64_FORMAT, paramspec->name, i);
         }
+        break;
 
       case DBUS_TYPE_UINT64:
         {
@@ -532,6 +533,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
           *save_to = i;
           DEBUG ("%s = %" G_GUINT64_FORMAT, paramspec->name, i);
         }
+        break;
 
       case DBUS_TYPE_DOUBLE:
         {
@@ -542,6 +544,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
           *save_to = i;
           DEBUG ("%s = %f", paramspec->name, i);
         }
+        break;
 
       case DBUS_TYPE_OBJECT_PATH:
         {
@@ -553,6 +556,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
           *save_to = g_value_dup_boxed (value);
           DEBUG ("%s = \"%s\"", paramspec->name, *save_to);
         }
+        break;
 
       case DBUS_TYPE_BOOLEAN:
         {
