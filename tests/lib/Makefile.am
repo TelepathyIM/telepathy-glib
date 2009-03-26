@@ -9,6 +9,8 @@ libtp_glib_tests_la_SOURCES = \
     contacts-conn.h \
     debug.h \
     myassert.h \
+    params-cm.h \
+    params-cm.c \
     simple-conn.c \
     simple-conn.h \
     simple-manager.c \
