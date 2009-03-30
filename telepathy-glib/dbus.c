@@ -1367,7 +1367,7 @@ tp_g_value_slice_new_take_object_path (gchar *path)
  * Returns: a newly created #GHashTable, free with g_hash_table_destroy().
  */
 GHashTable *
-tp_asv_new (const char *first_key, ...)
+tp_asv_new (const gchar *first_key, ...)
 {
   va_list var_args;
   char *key;
@@ -1377,7 +1377,7 @@ tp_asv_new (const char *first_key, ...)
 
   /* create a GHashTable */
   GHashTable *asv = g_hash_table_new_full (g_str_hash, g_str_equal,
-                  NULL, (GDestroyNotify) tp_g_value_slice_free);
+      NULL, (GDestroyNotify) tp_g_value_slice_free);
 
   va_start (var_args, first_key);
 
@@ -1388,7 +1388,7 @@ tp_asv_new (const char *first_key, ...)
     value = tp_g_value_slice_new (type);
     G_VALUE_COLLECT (value, var_args, 0, &error);
 
-    if (error)
+    if (error != NULL)
     {
       g_critical ("key %s: %s", key, error);
       g_free (error);
