@@ -104,6 +104,7 @@ _tp_asv_size_inline (const GHashTable *asv)
   return g_hash_table_size /* */ ((GHashTable *) asv);
 }
 
+GHashTable *tp_asv_new (const char *first_key, ...);
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 gpointer tp_asv_get_boxed (const GHashTable *asv, const gchar *key,

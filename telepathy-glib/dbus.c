@@ -60,6 +60,8 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include <gobject/gvaluecollector.h>
+
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
@@ -1341,6 +1343,66 @@ tp_g_value_slice_new_take_object_path (gchar *path)
 {
   g_return_val_if_fail (tp_dbus_check_valid_object_path (path, NULL), NULL);
   return tp_g_value_slice_new_take_boxed (DBUS_TYPE_G_OBJECT_PATH, path);
+}
+
+/**
+ * tp_asv_new:
+ * @first_key: the name of the first key (or NULL)
+ * @...: type and value for the first key, followed by a NULL-terminated list
+ *  of (key, type, value) tuples
+ *
+ * Creates a new #GHashTable for use with a{sv} maps, containing the values
+ * passed in as parameters.
+ *
+ * The #GHashTable is synonymous with:
+ * <informalexample><programlisting>
+ * GHashTable *asv = g_hash_table_new_full (g_str_hash, g_str_equal,
+ *                 NULL, (GDestroyNotify) tp_g_value_slice_free);
+ * </programlisting></informalexample>
+ * Followed by manual insertion of each of the parameters.
+ *
+ * Parameters are stored in slice-allocated GValues and should be set using
+ * tp_asv_set_*() and retrieved using tp_asv_get_*().
+ *
+ * Returns: a newly created #GHashTable, free with g_hash_table_destroy().
+ */
+GHashTable *
+tp_asv_new (const char *first_key, ...)
+{
+  va_list var_args;
+  char *key;
+  GType type;
+  GValue *value;
+  char *error = NULL; /* NB: not a GError! */
+
+  /* create a GHashTable */
+  GHashTable *asv = g_hash_table_new_full (g_str_hash, g_str_equal,
+                  NULL, (GDestroyNotify) tp_g_value_slice_free);
+
+  va_start (var_args, first_key);
+
+  for (key = (char *) first_key; key != NULL; key = va_arg (var_args, char *))
+  {
+    type = va_arg (var_args, GType);
+
+    value = tp_g_value_slice_new (type);
+    G_VALUE_COLLECT (value, var_args, 0, &error);
+
+    if (error)
+    {
+      g_critical ("key %s: %s", key, error);
+      g_free (error);
+      error = NULL;
+      tp_g_value_slice_free (value);
+      continue;
+    }
+
+    g_hash_table_insert (asv, key, value);
+  }
+
+  va_end (var_args);
+
+  return asv;
 }
 
 /**

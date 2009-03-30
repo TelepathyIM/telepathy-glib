@@ -17,18 +17,20 @@ int main (int argc, char **argv)
 
   g_type_init ();
 
-  hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-      (GDestroyNotify) tp_g_value_slice_free);
+  hash = tp_asv_new (
+		  "d:123.2", G_TYPE_DOUBLE, 123.2,
+		  "s:test", G_TYPE_STRING, "test",
+		  NULL);
 
-  MYASSERT (tp_asv_size (hash) == 0, "%u != 0", tp_asv_size (hash));
+  MYASSERT (tp_asv_size (hash) == 2, "%u != 0", tp_asv_size (hash));
 
   g_hash_table_insert (hash, "d:0", tp_g_value_slice_new_double (0.0));
 
-  MYASSERT (tp_asv_size (hash) == 1, "%u != 1", tp_asv_size (hash));
+  MYASSERT (tp_asv_size (hash) == 3, "%u != 1", tp_asv_size (hash));
 
   g_hash_table_insert (hash, "d:-123", tp_g_value_slice_new_double (-123.0));
 
-  MYASSERT (tp_asv_size (hash) == 2, "%u != 2", tp_asv_size (hash));
+  MYASSERT (tp_asv_size (hash) == 4, "%u != 2", tp_asv_size (hash));
 
   g_hash_table_insert (hash, "b:TRUE", tp_g_value_slice_new_boolean (TRUE));
   g_hash_table_insert (hash, "b:FALSE", tp_g_value_slice_new_boolean (FALSE));
@@ -126,6 +128,11 @@ int main (int argc, char **argv)
   MYASSERT (!tp_asv_get_boolean (hash, "d:-123", &valid), "");
   MYASSERT (valid == FALSE, ": %u", (guint) valid);
 
+  valid = (gboolean) 123;
+  MYASSERT (!tp_asv_get_boolean (hash, "d:123.2", NULL), "");
+  MYASSERT (!tp_asv_get_boolean (hash, "d:123.2", &valid), "");
+  MYASSERT (valid == FALSE, ": %u", (guint) valid);
+
   /* Tests: tp_asv_get_double */
 
   valid = (gboolean) 123;
@@ -180,6 +187,11 @@ int main (int argc, char **argv)
   valid = (gboolean) 123;
   MYASSERT (tp_asv_get_double (hash, "d:-123", NULL) == -123.0, "");
   MYASSERT (tp_asv_get_double (hash, "d:-123", &valid) == -123.0, "");
+  MYASSERT (valid == TRUE, ": %u", (guint) valid);
+
+  valid = (gboolean) 123;
+  MYASSERT (tp_asv_get_double (hash, "d:123.2", NULL) == 123.2, "");
+  MYASSERT (tp_asv_get_double (hash, "d:123.2", &valid) == 123.2, "");
   MYASSERT (valid == TRUE, ": %u", (guint) valid);
 
   /* Tests: tp_asv_get_int32 */
