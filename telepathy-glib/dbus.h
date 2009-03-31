@@ -140,6 +140,7 @@ const gchar * const *
 /* this comment stops gtkdoc denying that this function exists */
 tp_asv_get_strv (const GHashTable *asv, const gchar *key);
 void tp_asv_set_strv (GHashTable *asv, const gchar *key, char **value);
+void tp_asv_dump (GHashTable *asv);
 
 G_END_DECLS
 

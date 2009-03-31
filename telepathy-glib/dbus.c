@@ -2358,3 +2358,30 @@ tp_asv_lookup (const GHashTable *asv,
 
   return g_hash_table_lookup ((GHashTable *) asv, key);
 }
+
+/**
+ * tp_asv_dump:
+ * @asv: a #GHashTable created with tp_asv_new()
+ *
+ * Dumps the a{sv} map to the debugging console.
+ *
+ * The purpose of this function is give the programmer the ability to easily
+ * inspect the contents of an a{sv} map for debugging purposes.
+ */
+void
+tp_asv_dump (GHashTable *asv)
+{
+  GHashTableIter iter;
+  char *key;
+  GValue *value;
+
+  g_return_if_fail (asv != NULL);
+
+  g_hash_table_iter_init (&iter, asv);
+  while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
+  {
+    char *str = g_strdup_value_contents (value);
+    g_debug ("'%s' : %s", key, str);
+    g_free (str);
+  }
+}

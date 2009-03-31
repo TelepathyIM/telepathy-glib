@@ -91,6 +91,8 @@ int main (int argc, char **argv)
   g_hash_table_insert (hash, "as0",
       tp_g_value_slice_new_boxed (G_TYPE_STRV, strv + 2));
 
+  tp_asv_dump (hash);
+
   /* Tests: tp_asv_get_boolean */
 
   valid = (gboolean) 123;
