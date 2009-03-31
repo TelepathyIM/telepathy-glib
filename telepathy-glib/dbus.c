@@ -1371,8 +1371,17 @@ tp_g_value_slice_new_take_object_path (gchar *path)
  *    tp_g_value_slice_new_string ("bob@mcbadgers.com"));
  * </programlisting></informalexample>
  *
+ * <example>
+ *  <title>Using tp_asv_new()</title>
+ *  <programlisting>
+ * GHashTable *parameters = tp_asv_new (
+ *    "answer", G_TYPE_INT, 42,
+ *    "question", G_TYPE_STRING, "We just don't know",
+ *    NULL);</programlisting>
+ * </example>
+ *
  * Allocated values will be automatically free'd when overwritten, removed or
- * the hash table destroyed.
+ * the hash table destroyed with g_hash_table_destroy().
  *
  * Returns: a newly created #GHashTable for storing a{sv} maps, free with
  * g_hash_table_destroy().
