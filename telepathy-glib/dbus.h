@@ -104,7 +104,7 @@ _tp_asv_size_inline (const GHashTable *asv)
   return g_hash_table_size /* */ ((GHashTable *) asv);
 }
 
-GHashTable *tp_asv_new (const char *first_key, ...);
+GHashTable *tp_asv_new (const gchar *first_key, ...);
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 void tp_asv_set_boolean (GHashTable *asv, const gchar *key, gboolean value);
@@ -139,7 +139,7 @@ const GValue *tp_asv_lookup (const GHashTable *asv, const gchar *key);
 const gchar * const *
 /* this comment stops gtkdoc denying that this function exists */
 tp_asv_get_strv (const GHashTable *asv, const gchar *key);
-void tp_asv_set_strv (GHashTable *asv, const gchar *key, char **value);
+void tp_asv_set_strv (GHashTable *asv, const gchar *key, gchar **value);
 void tp_asv_dump (GHashTable *asv);
 
 G_END_DECLS

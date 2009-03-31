@@ -2326,7 +2326,7 @@ tp_asv_get_strv (const GHashTable *asv,
 void
 tp_asv_set_strv (GHashTable *asv,
                  const gchar *key,
-                 char **value)
+                 gchar **value)
 {
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
