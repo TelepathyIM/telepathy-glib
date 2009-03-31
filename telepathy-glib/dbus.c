@@ -1357,14 +1357,26 @@ tp_g_value_slice_new_take_object_path (gchar *path)
  * The #GHashTable is synonymous with:
  * <informalexample><programlisting>
  * GHashTable *asv = g_hash_table_new_full (g_str_hash, g_str_equal,
- *                 NULL, (GDestroyNotify) tp_g_value_slice_free);
+ *    NULL, (GDestroyNotify) tp_g_value_slice_free);
  * </programlisting></informalexample>
  * Followed by manual insertion of each of the parameters.
  *
  * Parameters are stored in slice-allocated GValues and should be set using
  * tp_asv_set_*() and retrieved using tp_asv_get_*().
  *
- * Returns: a newly created #GHashTable, free with g_hash_table_destroy().
+ * tp_g_value_slice_new() and tp_g_value_slice_dup() may also be used to insert
+ * into the map if required.
+ * <informalexample><programlisting>
+ * g_hash_table_insert (parameters, "account",
+ *    tp_g_value_slice_new_string ("bob@mcbadgers.com"));
+ * </programlisting></informalexample>
+ *
+ * Allocated values will be automatically free'd when overwritten, removed or
+ * the hash table destroyed.
+ *
+ * Returns: a newly created #GHashTable for storing a{sv} maps, free with
+ * g_hash_table_destroy().
+ * Since: UNRELEASED
  */
 GHashTable *
 tp_asv_new (const gchar *first_key, ...)
@@ -1448,7 +1460,7 @@ tp_asv_get_boolean (const GHashTable *asv,
 
 /**
  * tp_asv_set_boolean:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -1457,6 +1469,7 @@ tp_asv_get_boolean (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_boolean()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_boolean (GHashTable *asv,
@@ -1507,7 +1520,7 @@ tp_asv_get_bytes (const GHashTable *asv,
 
 /**
  * tp_asv_set_bytes:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -1516,6 +1529,7 @@ tp_asv_get_bytes (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_bytes()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_bytes (GHashTable *asv,
@@ -1564,7 +1578,7 @@ tp_asv_get_string (const GHashTable *asv,
 
 /**
  * tp_asv_set_string:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -1573,6 +1587,7 @@ tp_asv_get_string (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_string(), tp_asv_set_static_string()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_string (GHashTable *asv,
@@ -1588,7 +1603,7 @@ tp_asv_set_string (GHashTable *asv,
 
 /**
  * tp_asv_set_static_string:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -1597,6 +1612,7 @@ tp_asv_set_string (GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_string(), tp_asv_set_string()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_static_string (GHashTable *asv,
@@ -1700,7 +1716,7 @@ return_invalid:
 
 /**
  * tp_asv_set_int32:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -1709,6 +1725,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_int32()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_int32 (GHashTable *asv,
@@ -1812,7 +1829,7 @@ return_invalid:
 
 /**
  * tp_asv_set_uint32:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -1821,6 +1838,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_uint32()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_uint32 (GHashTable *asv,
@@ -1913,7 +1931,7 @@ return_invalid:
 
 /**
  * tp_asv_set_int64:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -1922,6 +1940,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_int64()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_int64 (GHashTable *asv,
@@ -2018,7 +2037,7 @@ return_invalid:
 
 /**
  * tp_asv_set_uint64:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -2027,6 +2046,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_uint64()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_uint64 (GHashTable *asv,
@@ -2116,7 +2136,7 @@ return_invalid:
 
 /**
  * tp_asv_set_double:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -2125,6 +2145,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_double()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_double (GHashTable *asv,
@@ -2173,7 +2194,7 @@ tp_asv_get_object_path (const GHashTable *asv,
 
 /**
  * tp_asv_set_object_path:
- * @asv: a #GHashTable for storing a{sv} maps
+ * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
  *
@@ -2182,6 +2203,7 @@ tp_asv_get_object_path (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_object_path()
+ * Since: UNRELEASED
  */
 void
 tp_asv_set_object_path (GHashTable *asv,
