@@ -110,6 +110,8 @@ gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
 void tp_asv_set_boolean (GHashTable *asv, const gchar *key, gboolean value);
 gpointer tp_asv_get_boxed (const GHashTable *asv, const gchar *key,
     GType type);
+void tp_asv_set_boxed (GHashTable *asv, const gchar *key, GType type,
+    gpointer value);
 const GArray *tp_asv_get_bytes (const GHashTable *asv, const gchar *key);
 void tp_asv_set_bytes (GHashTable *asv, const gchar *key, GArray *value);
 gdouble tp_asv_get_double (const GHashTable *asv, const gchar *key,
@@ -137,6 +139,7 @@ const GValue *tp_asv_lookup (const GHashTable *asv, const gchar *key);
 const gchar * const *
 /* this comment stops gtkdoc denying that this function exists */
 tp_asv_get_strv (const GHashTable *asv, const gchar *key);
+void tp_asv_set_strv (GHashTable *asv, const gchar *key, char **value);
 
 G_END_DECLS
 
