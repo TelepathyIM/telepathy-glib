@@ -1479,8 +1479,7 @@ tp_asv_set_boolean (GHashTable *asv,
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
-  g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_boolean (value));
+  g_hash_table_insert (asv, (char *) key, tp_g_value_slice_new_boolean (value));
 }
 
 /**
@@ -1540,7 +1539,7 @@ tp_asv_set_bytes (GHashTable *asv,
   g_return_if_fail (key != NULL);
 
   g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_boxed (DBUS_TYPE_G_UCHAR_ARRAY, value));
+      tp_g_value_slice_new_boxed (DBUS_TYPE_G_UCHAR_ARRAY, value));
 }
 
 /**
@@ -1597,8 +1596,7 @@ tp_asv_set_string (GHashTable *asv,
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
-  g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_string (value));
+  g_hash_table_insert (asv, (char *) key, tp_g_value_slice_new_string (value));
 }
 
 /**
@@ -1623,7 +1621,7 @@ tp_asv_set_static_string (GHashTable *asv,
   g_return_if_fail (key != NULL);
 
   g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_static_string (value));
+      tp_g_value_slice_new_static_string (value));
 }
 
 /**
@@ -1735,8 +1733,7 @@ tp_asv_set_int32 (GHashTable *asv,
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
-  g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_int (value));
+  g_hash_table_insert (asv, (char *) key, tp_g_value_slice_new_int (value));
 }
 
 /**
@@ -1848,8 +1845,7 @@ tp_asv_set_uint32 (GHashTable *asv,
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
-  g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_uint (value));
+  g_hash_table_insert (asv, (char *) key, tp_g_value_slice_new_uint (value));
 }
 
 /**
@@ -1950,8 +1946,7 @@ tp_asv_set_int64 (GHashTable *asv,
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
-  g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_int64 (value));
+  g_hash_table_insert (asv, (char *) key, tp_g_value_slice_new_int64 (value));
 }
 
 /**
@@ -2056,8 +2051,7 @@ tp_asv_set_uint64 (GHashTable *asv,
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
-  g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_uint64 (value));
+  g_hash_table_insert (asv, (char *) key, tp_g_value_slice_new_uint64 (value));
 }
 
 /**
@@ -2155,8 +2149,7 @@ tp_asv_set_double (GHashTable *asv,
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
-  g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_double (value));
+  g_hash_table_insert (asv, (char *) key, tp_g_value_slice_new_double (value));
 }
 
 /**
@@ -2214,7 +2207,7 @@ tp_asv_set_object_path (GHashTable *asv,
   g_return_if_fail (key != NULL);
 
   g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, value));
+      tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, value));
 }
 
 /**
@@ -2280,7 +2273,7 @@ tp_asv_set_boxed (GHashTable *asv,
   g_return_if_fail (G_TYPE_FUNDAMENTAL (type) == G_TYPE_BOXED);
 
   g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_boxed (type, value));
+      tp_g_value_slice_new_boxed (type, value));
 }
 
 /**
@@ -2339,7 +2332,7 @@ tp_asv_set_strv (GHashTable *asv,
   g_return_if_fail (key != NULL);
 
   g_hash_table_insert (asv, (char *) key,
-                  tp_g_value_slice_new_boxed (G_TYPE_STRV, value));
+      tp_g_value_slice_new_boxed (G_TYPE_STRV, value));
 }
 
 /**
