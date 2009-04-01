@@ -46,9 +46,14 @@
  *
  * An object representing a contact on a #TpConnection.
  *
- * Contact objects are instantiated using
- * tp_connection_get_contacts_by_handle() or
- * tp_connection_get_contacts_by_id().
+ * Contact objects support tracking a number of attributes of contacts, as
+ * described by the #TpContactFeature flags. Features can be specified when
+ * instantiating contact objects (with tp_connection_get_contacts_by_id() or
+ * tp_connection_get_contacts_by_handle()), or added to an existing contact
+ * object with tp_connection_upgrade_contacts(). For example, a client wishing
+ * to keep track of a contact's alias would set #TP_CONTACT_FEATURE_ALIAS, and
+ * then listen for the "notify::alias" signal, emitted whenever the
+ * #TpContact:alias property changes.
  *
  * Note that releasing a #TpContact object might release handle references
  * held by calling tp_cli_connection_call_request_handles(),
