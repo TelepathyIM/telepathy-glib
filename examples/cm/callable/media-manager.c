@@ -293,6 +293,7 @@ channel_closed_cb (ExampleCallableMediaChannel *chan,
   if (self->priv->channels != NULL)
     {
       self->priv->channels = g_list_remove_all (self->priv->channels, chan);
+      g_object_unref (chan);
     }
 }
 
