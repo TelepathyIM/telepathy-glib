@@ -1477,7 +1477,7 @@ tp_asv_get_boolean (const GHashTable *asv,
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_boolean()
+ * See Also: tp_asv_new(), tp_asv_get_boolean(), tp_g_value_slice_new_boolean()
  * Since: UNRELEASED
  */
 void
@@ -1789,7 +1789,7 @@ return_invalid:
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_int32()
+ * See Also: tp_asv_new(), tp_asv_get_int32(), tp_g_value_slice_new_int()
  * Since: UNRELEASED
  */
 void
@@ -1901,7 +1901,7 @@ return_invalid:
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_uint32()
+ * See Also: tp_asv_new(), tp_asv_get_uint32(), tp_g_value_slice_new_uint()
  * Since: UNRELEASED
  */
 void
@@ -2002,7 +2002,7 @@ return_invalid:
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_int64()
+ * See Also: tp_asv_new(), tp_asv_get_int64(), tp_g_value_slice_new_int64()
  * Since: UNRELEASED
  */
 void
@@ -2107,7 +2107,7 @@ return_invalid:
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_uint64()
+ * See Also: tp_asv_new(), tp_asv_get_uint64(), tp_g_value_slice_new_uint64()
  * Since: UNRELEASED
  */
 void
@@ -2205,7 +2205,7 @@ return_invalid:
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_double()
+ * See Also: tp_asv_new(), tp_asv_get_double(), tp_g_value_slice_new_double()
  * Since: UNRELEASED
  */
 void
