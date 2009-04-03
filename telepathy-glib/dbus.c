@@ -1385,7 +1385,7 @@ tp_g_value_slice_new_take_object_path (gchar *path)
  *
  * Returns: a newly created #GHashTable for storing a{sv} maps, free with
  * g_hash_table_destroy().
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 GHashTable *
 tp_asv_new (const gchar *first_key, ...)
@@ -1478,7 +1478,7 @@ tp_asv_get_boolean (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_boolean(), tp_g_value_slice_new_boolean()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_boolean (GHashTable *asv,
@@ -1539,7 +1539,7 @@ tp_asv_get_bytes (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_bytes(), tp_g_value_slice_new_bytes()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_bytes (GHashTable *asv,
@@ -1567,7 +1567,7 @@ tp_asv_set_bytes (GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_bytes(), tp_g_value_slice_new_take_bytes()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_take_bytes (GHashTable *asv,
@@ -1626,7 +1626,7 @@ tp_asv_get_string (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_string(), tp_g_value_slice_new_string()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_string (GHashTable *asv,
@@ -1651,7 +1651,7 @@ tp_asv_set_string (GHashTable *asv,
  *
  * See Also: tp_asv_new(), tp_asv_get_string(),
  * tp_g_value_slice_new_take_string()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_take_string (GHashTable *asv,
@@ -1677,7 +1677,7 @@ tp_asv_take_string (GHashTable *asv,
  *
  * See Also: tp_asv_new(), tp_asv_get_string(),
  * tp_g_value_slice_new_static_string()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_static_string (GHashTable *asv,
@@ -1790,7 +1790,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_int32(), tp_g_value_slice_new_int()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_int32 (GHashTable *asv,
@@ -1902,7 +1902,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_uint32(), tp_g_value_slice_new_uint()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_uint32 (GHashTable *asv,
@@ -2003,7 +2003,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_int64(), tp_g_value_slice_new_int64()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_int64 (GHashTable *asv,
@@ -2108,7 +2108,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_uint64(), tp_g_value_slice_new_uint64()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_uint64 (GHashTable *asv,
@@ -2206,7 +2206,7 @@ return_invalid:
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_double(), tp_g_value_slice_new_double()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_double (GHashTable *asv,
@@ -2264,7 +2264,7 @@ tp_asv_get_object_path (const GHashTable *asv,
  *
  * See Also: tp_asv_new(), tp_asv_get_object_path(),
  * tp_g_value_slice_new_object_path()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_object_path (GHashTable *asv,
@@ -2290,7 +2290,7 @@ tp_asv_set_object_path (GHashTable *asv,
  *
  * See Also: tp_asv_new(), tp_asv_get_object_path(),
  * tp_g_value_slice_new_take_object_path()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_take_object_path (GHashTable *asv,
@@ -2316,7 +2316,7 @@ tp_asv_take_object_path (GHashTable *asv,
  *
  * See Also: tp_asv_new(), tp_asv_get_object_path(),
  * tp_g_value_slice_new_static_object_path()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_static_object_path (GHashTable *asv,
@@ -2380,7 +2380,7 @@ tp_asv_get_boxed (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_boxed(), tp_g_value_slice_new_boxed()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_boxed (GHashTable *asv,
@@ -2408,7 +2408,7 @@ tp_asv_set_boxed (GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_boxed(), tp_g_value_slice_new_take_boxed()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_take_boxed (GHashTable *asv,
@@ -2437,7 +2437,7 @@ tp_asv_take_boxed (GHashTable *asv,
  *
  * See Also: tp_asv_new(), tp_asv_get_boxed(),
  * tp_g_value_slice_new_static_boxed()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_static_boxed (GHashTable *asv,
@@ -2498,7 +2498,7 @@ tp_asv_get_strv (const GHashTable *asv,
  * The value is stored as a slice-allocated GValue.
  *
  * See Also: tp_asv_new(), tp_asv_get_strv()
- * Since: UNRELEASED
+ * Since: 0.7.29
  */
 void
 tp_asv_set_strv (GHashTable *asv,
