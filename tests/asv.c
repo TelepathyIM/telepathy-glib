@@ -18,9 +18,9 @@ int main (int argc, char **argv)
   g_type_init ();
 
   hash = tp_asv_new (
-		  "d:123.2", G_TYPE_DOUBLE, 123.2,
-		  "s:test", G_TYPE_STRING, "test",
-		  NULL);
+      "d:123.2", G_TYPE_DOUBLE, 123.2,
+      "s:test", G_TYPE_STRING, "test",
+      NULL);
 
   MYASSERT (tp_asv_size (hash) == 2, "%u != 0", tp_asv_size (hash));
 
