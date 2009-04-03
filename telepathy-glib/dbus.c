@@ -1530,25 +1530,56 @@ tp_asv_get_bytes (const GHashTable *asv,
  * tp_asv_set_bytes:
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
- * @value: value
+ * @length: the number of bytes to copy
+ * @bytes: location of an array of bytes to be copied (this may be %NULL
+ * if and only if length is 0)
  *
  * Stores the value in the map.
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_bytes()
+ * See Also: tp_asv_new(), tp_asv_get_bytes(), tp_g_value_slice_new_bytes()
  * Since: UNRELEASED
  */
 void
 tp_asv_set_bytes (GHashTable *asv,
                   const gchar *key,
-                  GArray *value)
+                  guint length,
+                  gconstpointer bytes)
 {
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
+  g_return_if_fail (!(length > 0 && bytes == NULL));
 
   g_hash_table_insert (asv, (char *) key,
-      tp_g_value_slice_new_boxed (DBUS_TYPE_G_UCHAR_ARRAY, value));
+      tp_g_value_slice_new_bytes (length, bytes));
+}
+
+/**
+ * tp_asv_take_bytes:
+ * @asv: a #GHashTable created with tp_asv_new()
+ * @key: string key
+ * @value: a non-NULL #GArray of %guchar, ownership of which will be taken by
+ * the #GValue
+ *
+ * Stores the value in the map.
+ *
+ * The value is stored as a slice-allocated GValue.
+ *
+ * See Also: tp_asv_new(), tp_asv_get_bytes(), tp_g_value_slice_new_take_bytes()
+ * Since: UNRELEASED
+ */
+void
+tp_asv_take_bytes (GHashTable *asv,
+                   const gchar *key,
+                   GArray *value)
+{
+  g_return_if_fail (asv != NULL);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (value != NULL);
+
+  g_hash_table_insert (asv, (char *) key,
+      tp_g_value_slice_new_take_bytes (value));
 }
 
 /**
@@ -1594,18 +1625,44 @@ tp_asv_get_string (const GHashTable *asv,
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_string(), tp_asv_set_static_string()
+ * See Also: tp_asv_new(), tp_asv_get_string(), tp_g_value_slice_new_string()
  * Since: UNRELEASED
  */
 void
 tp_asv_set_string (GHashTable *asv,
                    const gchar *key,
-                   gchar *value)
+                   const gchar *value)
 {
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
   g_hash_table_insert (asv, (char *) key, tp_g_value_slice_new_string (value));
+}
+
+/**
+ * tp_asv_take_string:
+ * @asv: a #GHashTable created with tp_asv_new()
+ * @key: string key
+ * @value: value
+ *
+ * Stores the value in the map.
+ *
+ * The value is stored as a slice-allocated GValue.
+ *
+ * See Also: tp_asv_new(), tp_asv_get_string(),
+ * tp_g_value_slice_new_take_string()
+ * Since: UNRELEASED
+ */
+void
+tp_asv_take_string (GHashTable *asv,
+                    const gchar *key,
+                    gchar *value)
+{
+  g_return_if_fail (asv != NULL);
+  g_return_if_fail (key != NULL);
+
+  g_hash_table_insert (asv, (char *) key,
+      tp_g_value_slice_new_take_string (value));
 }
 
 /**
@@ -1618,13 +1675,14 @@ tp_asv_set_string (GHashTable *asv,
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_string(), tp_asv_set_string()
+ * See Also: tp_asv_new(), tp_asv_get_string(),
+ * tp_g_value_slice_new_static_string()
  * Since: UNRELEASED
  */
 void
 tp_asv_set_static_string (GHashTable *asv,
                           const gchar *key,
-                          gchar *value)
+                          const gchar *value)
 {
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
@@ -2204,19 +2262,72 @@ tp_asv_get_object_path (const GHashTable *asv,
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_object_path()
+ * See Also: tp_asv_new(), tp_asv_get_object_path(),
+ * tp_g_value_slice_new_object_path()
  * Since: UNRELEASED
  */
 void
 tp_asv_set_object_path (GHashTable *asv,
                         const gchar *key,
-                        gchar *value)
+                        const gchar *value)
 {
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
 
   g_hash_table_insert (asv, (char *) key,
-      tp_g_value_slice_new_boxed (DBUS_TYPE_G_OBJECT_PATH, value));
+      tp_g_value_slice_new_object_path (value));
+}
+
+/**
+ * tp_asv_take_object_path:
+ * @asv: a #GHashTable created with tp_asv_new()
+ * @key: string key
+ * @value: value
+ *
+ * Stores the value in the map.
+ *
+ * The value is stored as a slice-allocated GValue.
+ *
+ * See Also: tp_asv_new(), tp_asv_get_object_path(),
+ * tp_g_value_slice_new_take_object_path()
+ * Since: UNRELEASED
+ */
+void
+tp_asv_take_object_path (GHashTable *asv,
+                         const gchar *key,
+                         gchar *value)
+{
+  g_return_if_fail (asv != NULL);
+  g_return_if_fail (key != NULL);
+
+  g_hash_table_insert (asv, (char *) key,
+      tp_g_value_slice_new_take_object_path (value));
+}
+
+/**
+ * tp_asv_set_static_object_path:
+ * @asv: a #GHashTable created with tp_asv_new()
+ * @key: string key
+ * @value: value
+ *
+ * Stores the value in the map.
+ *
+ * The value is stored as a slice-allocated GValue.
+ *
+ * See Also: tp_asv_new(), tp_asv_get_object_path(),
+ * tp_g_value_slice_new_static_object_path()
+ * Since: UNRELEASED
+ */
+void
+tp_asv_set_static_object_path (GHashTable *asv,
+                               const gchar *key,
+                               const gchar *value)
+{
+  g_return_if_fail (asv != NULL);
+  g_return_if_fail (key != NULL);
+
+  g_hash_table_insert (asv, (char *) key,
+      tp_g_value_slice_new_static_object_path (value));
 }
 
 /**
@@ -2268,14 +2379,14 @@ tp_asv_get_boxed (const GHashTable *asv,
  *
  * The value is stored as a slice-allocated GValue.
  *
- * See Also: tp_asv_new(), tp_asv_get_boxed()
+ * See Also: tp_asv_new(), tp_asv_get_boxed(), tp_g_value_slice_new_boxed()
  * Since: UNRELEASED
  */
 void
 tp_asv_set_boxed (GHashTable *asv,
                   const gchar *key,
                   GType type,
-                  gpointer value)
+                  gconstpointer value)
 {
   g_return_if_fail (asv != NULL);
   g_return_if_fail (key != NULL);
@@ -2283,6 +2394,63 @@ tp_asv_set_boxed (GHashTable *asv,
 
   g_hash_table_insert (asv, (char *) key,
       tp_g_value_slice_new_boxed (type, value));
+}
+
+/**
+ * tp_asv_take_boxed:
+ * @asv: a #GHashTable created with tp_asv_new()
+ * @key: string key
+ * @type: the type of the key's value, which must be derived from %G_TYPE_BOXED
+ * @value: value
+ *
+ * Stores the value in the map.
+ *
+ * The value is stored as a slice-allocated GValue.
+ *
+ * See Also: tp_asv_new(), tp_asv_get_boxed(), tp_g_value_slice_new_take_boxed()
+ * Since: UNRELEASED
+ */
+void
+tp_asv_take_boxed (GHashTable *asv,
+                   const gchar *key,
+                   GType type,
+                   gpointer value)
+{
+  g_return_if_fail (asv != NULL);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (G_TYPE_FUNDAMENTAL (type) == G_TYPE_BOXED);
+
+  g_hash_table_insert (asv, (char *) key,
+      tp_g_value_slice_new_take_boxed (type, value));
+}
+
+/**
+ * tp_asv_set_static_boxed:
+ * @asv: a #GHashTable created with tp_asv_new()
+ * @key: string key
+ * @type: the type of the key's value, which must be derived from %G_TYPE_BOXED
+ * @value: value
+ *
+ * Stores the value in the map.
+ *
+ * The value is stored as a slice-allocated GValue.
+ *
+ * See Also: tp_asv_new(), tp_asv_get_boxed(),
+ * tp_g_value_slice_new_static_boxed()
+ * Since: UNRELEASED
+ */
+void
+tp_asv_set_static_boxed (GHashTable *asv,
+                         const gchar *key,
+                         GType type,
+                         gconstpointer value)
+{
+  g_return_if_fail (asv != NULL);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (G_TYPE_FUNDAMENTAL (type) == G_TYPE_BOXED);
+
+  g_hash_table_insert (asv, (char *) key,
+      tp_g_value_slice_new_static_boxed (type, value));
 }
 
 /**

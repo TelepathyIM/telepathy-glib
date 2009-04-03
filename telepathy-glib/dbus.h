@@ -111,9 +111,15 @@ void tp_asv_set_boolean (GHashTable *asv, const gchar *key, gboolean value);
 gpointer tp_asv_get_boxed (const GHashTable *asv, const gchar *key,
     GType type);
 void tp_asv_set_boxed (GHashTable *asv, const gchar *key, GType type,
+    gconstpointer value);
+void tp_asv_take_boxed (GHashTable *asv, const gchar *key, GType type,
     gpointer value);
+void tp_asv_set_static_boxed (GHashTable *asv, const gchar *key, GType type,
+    gconstpointer value);
 const GArray *tp_asv_get_bytes (const GHashTable *asv, const gchar *key);
-void tp_asv_set_bytes (GHashTable *asv, const gchar *key, GArray *value);
+void tp_asv_set_bytes (GHashTable *asv, const gchar *key, guint length,
+    gconstpointer bytes);
+void tp_asv_take_bytes (GHashTable *asv, const gchar *key, GArray *value);
 gdouble tp_asv_get_double (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 void tp_asv_set_double (GHashTable *asv, const gchar *key, gdouble value);
@@ -124,10 +130,17 @@ gint64 tp_asv_get_int64 (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 void tp_asv_set_int64 (GHashTable *asv, const gchar *key, gint64 value);
 const gchar *tp_asv_get_object_path (const GHashTable *asv, const gchar *key);
-void tp_asv_set_object_path (GHashTable *asv, const gchar *key, gchar *value);
+void tp_asv_set_object_path (GHashTable *asv, const gchar *key,
+    const gchar *value);
+void tp_asv_take_object_path (GHashTable *asv, const gchar *key,
+    gchar *value);
+void tp_asv_set_static_object_path (GHashTable *asv, const gchar *key,
+    const gchar *value);
 const gchar *tp_asv_get_string (const GHashTable *asv, const gchar *key);
-void tp_asv_set_string (GHashTable *asv, const gchar *key, gchar *value);
-void tp_asv_set_static_string (GHashTable *asv, const gchar *key, gchar *value);
+void tp_asv_set_string (GHashTable *asv, const gchar *key, const gchar *value);
+void tp_asv_take_string (GHashTable *asv, const gchar *key, gchar *value);
+void tp_asv_set_static_string (GHashTable *asv, const gchar *key,
+    const gchar *value);
 guint32 tp_asv_get_uint32 (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 void tp_asv_set_uint32 (GHashTable *asv, const gchar *key, guint32 value);
