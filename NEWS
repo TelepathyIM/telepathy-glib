@@ -1,7 +1,18 @@
 telepathy-glib 0.7.29 (UNRELEASED)
 ==================================
 
-...
+Enhancements:
+
+* TpBaseConnectionManager, tp_cm_param_setter_offset: support parameters of
+  various extra types - object path, double, 64-bit signed and unsigned
+  integer, array of strings, array of bytes - and add regression tests
+
+* TpContact: enhance documentation to spell out that change notification is
+  via GObject::notify::alias etc.
+
+* tp_asv_new(), a shorthand for creating hash tables from strings to
+  slice-allocated GValues, along with tp_asv_set_* and tp_asv_take_* helpers to
+  add entries to such hash tables. (Fixes fd.o#20942)
 
 telepathy-glib 0.7.28 (2009-03-24)
 ==================================
