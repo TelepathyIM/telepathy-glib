@@ -1,0 +1,24 @@
+Version: TELEPATHY_GLIB_0.7.29
+Extends: TELEPATHY_GLIB_0.7.28
+Release: 0.7.29
+
+tp_asv_dump
+tp_asv_new
+tp_asv_set_boolean
+tp_asv_set_boxed
+tp_asv_set_bytes
+tp_asv_set_double
+tp_asv_set_int32
+tp_asv_set_int64
+tp_asv_set_object_path
+tp_asv_set_static_boxed
+tp_asv_set_static_object_path
+tp_asv_set_static_string
+tp_asv_set_string
+tp_asv_set_strv
+tp_asv_set_uint32
+tp_asv_set_uint64
+tp_asv_take_boxed
+tp_asv_take_bytes
+tp_asv_take_object_path
+tp_asv_take_string
