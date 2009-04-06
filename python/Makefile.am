@@ -36,7 +36,6 @@ tpfarsight_la_LDFLAGS =					\
 pytpfarsight.c: pytpfarsight.override pytpfarsight.defs
 	$(PYTHON) $(top_srcdir)/python/codegen/codegen.py	\
 		--prefix tf	\
-		--register $(PYDEFS)/gdk-types.defs		\
 		--register $(GSTPYDEFS)/gst-types.defs		\
 		--override $(srcdir)/pytpfarsight.override	\
 		$(srcdir)/pytpfarsight.defs > $@ 

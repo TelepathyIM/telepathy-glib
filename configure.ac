@@ -112,8 +112,7 @@ if test "x$WANT_PYTHON" = "xyes"; then
    AM_PATH_PYTHON
    AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(could not find Python headers)])
    PKG_CHECK_MODULES(PYTPFARSIGHT, [ pygobject-2.0 >= 2.12.0
-      gst-python-0.10 >= 0.10.10
-      pygtk-2.0 >= 2.10 ] )
+      gst-python-0.10 >= 0.10.10 ])
 fi
 AM_CONDITIONAL(WANT_PYTHON, test "x$WANT_PYTHON" = "xyes")
 
