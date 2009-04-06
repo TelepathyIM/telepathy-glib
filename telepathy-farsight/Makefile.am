@@ -26,6 +26,7 @@ pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-farsight.pc
 
 AM_CFLAGS = \
+	-DG_LOG_DOMAIN=\"tp-fs\" \
 	$(ERROR_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
