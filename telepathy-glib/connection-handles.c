@@ -695,7 +695,7 @@ connection_got_contact_attributes (TpConnection *self,
   DEBUG ("%u handles, hold=%c", g_hash_table_size (attributes),
       c->hold ? 'T' : 'F');
 
-  if (c->hold)
+  if (error == NULL && c->hold)
     {
       GHashTableIter iter;
       gpointer key, value;
