@@ -578,7 +578,7 @@ tf_stream_class_init (TfStreamClass *klass)
 static void
 get_all_properties_cb (TpProxy *proxy,
     GHashTable *out_Properties,
-    const GError *error,
+    const GError *dbus_error,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -593,9 +593,9 @@ get_all_properties_cb (TpProxy *proxy,
   gboolean got_stun = FALSE;
   GPtrArray *dbus_relay_info;
 
-  if (error)
+  if (dbus_error)
     {
-      tf_stream_error (stream, 0, error->message);
+      tf_stream_error (stream, 0, dbus_error->message);
       return;
     }
 
@@ -836,7 +836,7 @@ get_all_properties_cb (TpProxy *proxy,
 
   if (!stream->priv->fs_session)
     {
-      tf_stream_error (stream, 0, error->message);
+      tf_stream_error (stream, 0, myerror->message);
       WARNING (stream, "Error creating session: %s", myerror->message);
       g_clear_error (&myerror);
       return;
@@ -852,7 +852,7 @@ get_all_properties_cb (TpProxy *proxy,
 
   if (!stream->priv->fs_stream)
     {
-      tf_stream_error (stream, 0, error->message);
+      tf_stream_error (stream, 0, myerror->message);
       WARNING (stream, "Error creating stream: %s", myerror->message);
       g_clear_error (&myerror);
       return;
@@ -863,7 +863,7 @@ get_all_properties_cb (TpProxy *proxy,
             stream->priv->local_preferences,
             &myerror))
       {
-        tf_stream_error (stream, 0, error->message);
+        tf_stream_error (stream, 0, myerror->message);
         WARNING (stream, "Error setting codec preferences: %s",
             myerror->message);
         g_clear_error (&myerror);
