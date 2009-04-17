@@ -55,3 +55,4 @@ stamp-h.in
 stamp-h1
 gtk-doc.make
 m4/gtk-doc.m4
+python/pytpfarsight.c
