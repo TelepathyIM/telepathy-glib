@@ -31,6 +31,7 @@ EXTRA_DIST = \
     libglibcodegen.py \
     make-version-script.py \
     manager-file.py \
+    shave.mk \
     telepathy.am \
     telepathy-glib-env.in \
     with-session-bus.sh \
