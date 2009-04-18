@@ -7,11 +7,9 @@
 # class, or by omitting those options entirely we could have made an extension
 # that will work on TpProxy or any subclass of TpProxy.
 
-V         = @
-Q         = $(V:1=)
-QUIET_GEN = $(Q:@=@echo '  GEN   '$@;)
-
 tools_dir = $(top_srcdir)/tools
+
+include $(tools_dir)/shave.mk
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \

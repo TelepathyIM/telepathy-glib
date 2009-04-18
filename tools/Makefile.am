@@ -1,6 +1,4 @@
-V         = @
-Q         = $(V:1=)
-QUIET_GEN = $(Q:@=@echo '  GEN   '$@;)
+include $(top_srcdir)/tools/shave.mk
 
 abs_top_builddir = @abs_top_builddir@
 

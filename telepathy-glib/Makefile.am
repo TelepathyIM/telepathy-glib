@@ -1,6 +1,4 @@
-V         = @
-Q         = $(V:1=)
-QUIET_GEN = $(Q:@=@echo '  GEN   '$@;)
+include $(top_srcdir)/tools/shave.mk
 
 tpgincludedir=$(includedir)/telepathy-1.0/telepathy-glib
 genincludedir=$(tpgincludedir)/_gen

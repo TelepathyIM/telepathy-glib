@@ -1,6 +1,4 @@
-V         = @
-Q         = $(V:1=)
-QUIET_GEN = $(Q:@=@echo '  GEN   '$@;)
+include $(top_srcdir)/tools/shave.mk
 
 noinst_PROGRAMS = \
     test-call-cancellation \
