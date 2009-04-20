@@ -11,8 +11,8 @@
 
 G_BEGIN_DECLS
 
-/* Please keep this enum in sync with #keys, and the section gtkdoc,
- * in debug.c */
+/* Please keep this enum in sync with #keys, the section gtkdoc,
+ * and #key_to_domain, in debug.c */
 typedef enum
 {
   TP_DEBUG_GROUPS        = 1 << 1,

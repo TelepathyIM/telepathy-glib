@@ -113,6 +113,36 @@ static GDebugKey keys[] = {
   { 0, }
 };
 
+typedef struct {
+  guint key;
+  const gchar *domain;
+} DebugKeyToDomain;
+
+/* This is an array of debug key flags to log domains. The point of this is so
+ * that once getting the index of the bit set, _tp_debug() can simply index
+ * this array. Aditionally, having the domain already in $domain/$category
+ * format means we don't have to call g_strdup_printf() to get the desired
+ * domain for each debug message logged, and then g_free() to free the newly
+ * created string... */
+static DebugKeyToDomain key_to_domain[] = {
+  /* There is no 1 << 0 */
+  { 0,                   G_LOG_DOMAIN "/misc" },
+  { TP_DEBUG_GROUPS,     G_LOG_DOMAIN "/groups" },
+  { TP_DEBUG_PROPERTIES, G_LOG_DOMAIN "/properties" },
+  { TP_DEBUG_IM,         G_LOG_DOMAIN "/im" },
+  { TP_DEBUG_CONNECTION, G_LOG_DOMAIN "/connection" },
+  { TP_DEBUG_PARAMS,     G_LOG_DOMAIN "/params" },
+  { TP_DEBUG_PRESENCE,   G_LOG_DOMAIN "/presence" },
+  { TP_DEBUG_MANAGER,    G_LOG_DOMAIN "/manager" },
+  { TP_DEBUG_CHANNEL,    G_LOG_DOMAIN "/channel" },
+  { TP_DEBUG_PROXY,      G_LOG_DOMAIN "/proxy" },
+  { TP_DEBUG_HANDLES,    G_LOG_DOMAIN "/handles" },
+  { TP_DEBUG_CONTACTS,   G_LOG_DOMAIN "/contacts" },
+  { TP_DEBUG_ACCOUNTS,   G_LOG_DOMAIN "/accounts" },
+  { TP_DEBUG_DISPATCHER, G_LOG_DOMAIN "/dispatcher" },
+  { 0, NULL }
+};
+
 static GDebugKey persist_keys[] = {
   { "persist",       1 },
   { 0, },
@@ -239,6 +269,29 @@ _tp_debug_flag_is_set (TpDebugFlags flag)
   return (flag & flags) != 0;
 }
 
+static const gchar *
+debug_flag_to_domain (TpDebugFlags flag)
+{
+  gint index, max;
+
+  /* First bit set of @flag. This to make sure we only have one bit (in the
+   * unlikely scenario that multiple debug flags were set). This enables us to
+   * index the #key_to_domain array, instead of having to iterate it looking
+   * for the right key. */
+  index = g_bit_nth_lsf (flag, -1);
+
+  /* The maximum valid index of the #key_to_domain array. Decrement it by one
+   * because there is the blank { 0, NULL } item on the end which we want to
+   * ignore. */
+  max = G_N_ELEMENTS (key_to_domain) - 1;
+
+  /* If the index we got isn't valid, just return "misc". */
+  if (index < 0 || index >= max)
+    return G_LOG_DOMAIN "/misc";
+  else
+    return key_to_domain[index].domain;
+}
+
 /*
  * _tp_debug_set_flags:
  * @flag: Flag to test
@@ -255,7 +308,7 @@ void _tp_debug (TpDebugFlags flag,
     {
       va_list args;
       va_start (args, format);
-      g_logv (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format, args);
+      g_logv (debug_flag_to_domain (flag), G_LOG_LEVEL_DEBUG, format, args);
       va_end (args);
     }
 }
