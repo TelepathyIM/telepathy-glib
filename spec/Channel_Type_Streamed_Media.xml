@@ -253,10 +253,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
-          A stream type given is invalid
+          <tp:docstring>
+            A stream type given is invalid.
+          </tp:docstring>
+        </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented">
+          <tp:docstring>
+            A stream type given is not implemented by the connection manager.
+            Since 0.17.23, connection managers SHOULD raise this error
+            in preference to InvalidArgument.
+            <tp:rationale>
+              Connection managers can't know whether an unknown number
+              is a valid stream type that was introduced in a later spec
+              version.
+            </tp:rationale>
+          </tp:docstring>
         </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
-          That contact is not able to do this stream type
+          <tp:docstring>
+            That contact's client does not implement one of the given stream
+            types. For this method, clients SHOULD consider this error and
+            NotCapable to be equivalent.
+          </tp:docstring>
+        </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotCapable">
+          <tp:docstring>
+            That contact's client does not implement one of the given stream
+            types. Since 0.17.23, connection managers SHOULD raise
+            this in preference to NotAvailable.
+          </tp:docstring>
         </tp:error>
       </tp:possible-errors>
     </method>

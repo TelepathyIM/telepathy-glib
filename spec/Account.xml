@@ -494,6 +494,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </property>
 
+    <property name="HasBeenOnline" tp:name-for-bindings="Has_Been_Online"
+      type="b" access="read">
+      <tp:docstring>
+        If true, this account has successfully been put online at some point
+        in the past.
+
+        <tp:rationale>
+          UIs could apply a policy that the 'account' parameter can only be
+          edited in accounts that have never been online, or that
+          ConnectAutomatically cannot be set on such accounts. The account
+          manager should not enforce such policies, but it can expose enough
+          information to UIs that the UI can decide what to do.
+        </tp:rationale>
+      </tp:docstring>
+    </property>
+
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->

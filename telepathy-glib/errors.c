@@ -133,6 +133,11 @@
  *     not respond, e.g. to a StreamedMedia call.
  * @TP_ERROR_DOES_NOT_EXIST: org.freedesktop.Telepathy.Error.DoesNotExist:
  *     Raised when the requested user does not, in fact, exist.
+ * @TP_ERROR_TERMINATED: org.freedesktop.Telepathy.Error.Terminated:
+ *     Raised when a channel is terminated for an unspecified reason. In
+ *     particular, this error SHOULD be used whenever normal termination of a
+ *     1-1 StreamedMedia call by the remote user is represented as a D-Bus
+ *     error name.
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */
@@ -229,6 +234,7 @@ tp_error_get_type (void)
         { TP_ERROR_BUSY, "TP_ERROR_BUSY", "Busy" },
         { TP_ERROR_NO_ANSWER, "TP_ERROR_NO_ANSWER", "NoAnswer" },
         { TP_ERROR_DOES_NOT_EXIST, "TP_ERROR_DOES_NOT_EXIST", "DoesNotExist" },
+        { TP_ERROR_TERMINATED, "TP_ERROR_TERMINATED", "Terminated" },
         { 0 }
       };
 

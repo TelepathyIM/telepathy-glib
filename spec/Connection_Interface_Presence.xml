@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Connection.Interface.Presence">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
+    <tp:requires interface="org.freedesktop.Telepathy.Connection.Interface.SimplePresence"/>
 
     <tp:mapping name="Multiple_Status_Map">
       <tp:docstring>Mapping used in
@@ -281,11 +282,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:possible-errors>
     </method>
 
-    <tp:deprecated version="0.17.21">New client implementations
+    <tp:deprecated version="0.17.21">Client implementations
       SHOULD use <tp:dbus-ref
         namespace="org.freedesktop.Telepathy.Connection.Interface">SimplePresence</tp:dbus-ref>
-      instead. New connection managers SHOULD implement both Presence
-      and SimplePresence.</tp:deprecated>
+      instead.</tp:deprecated>
+    <tp:changed version="0.17.23">Connection managers implementing
+      Presence MUST implement SimplePresence too.</tp:changed>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
 

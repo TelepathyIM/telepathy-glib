@@ -37,6 +37,7 @@ EXTRA_DIST = \
     Client.xml \
     Client_Approver.xml \
     Client_Handler.xml \
+    Client_Interface_Requests.xml \
     Client_Observer.xml \
     Connection_Interface_Aliasing.xml \
     Connection_Interface_Avatars.xml \
