@@ -94,10 +94,10 @@
           MUST include the following filters if calling <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.Connection.Interface.ContactCapabilities.DRAFT">SetSelfCapabilities</tp:dbus-ref>
           (clients of a <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy">ChannelDispatcher.DRAFT</tp:dbus-ref>
+            namespace="org.freedesktop.Telepathy">ChannelDispatcher</tp:dbus-ref>
           SHOULD instead arrange for the ChannelDispatcher to do this,
           by including the filters in their <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Client.Handler.DRAFT">HandlerChannelFilter</tp:dbus-ref>
+            namespace="org.freedesktop.Telepathy.Client.Handler">HandlerChannelFilter</tp:dbus-ref>
           properties):</p>
 
         <ul>

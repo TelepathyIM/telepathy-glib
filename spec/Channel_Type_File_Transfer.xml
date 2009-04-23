@@ -155,6 +155,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         property you MUST also include this property. If you omit this property from a
         <tp:dbus-ref namespace="org.freedesktop.Telepathy">Connection.Interface.Requests.CreateChannel</tp:dbus-ref>
         method call then its value will be assumed to be File_Hash_Type_None.</p>
+
+        <p>For each supported hash type, implementations SHOULD include an entry
+          in <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Connection.Interface.Requests">RequestableChannelClasses</tp:dbus-ref>
+          with this property fixed to that hash type. If the protocol supports
+          offering a file without a content hash, implementations SHOULD list
+          this property in Allowed in a requestable channel class, mapping hash
+          types they don't understand to None.
+        </p>
       </tp:docstring>
     </property>
 

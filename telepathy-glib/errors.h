@@ -68,6 +68,7 @@ typedef enum {
     TP_ERROR_BUSY,
     TP_ERROR_NO_ANSWER,
     TP_ERROR_DOES_NOT_EXIST,
+    TP_ERROR_TERMINATED,
 } TpError;
 
 G_END_DECLS

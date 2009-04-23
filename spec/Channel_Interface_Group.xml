@@ -76,6 +76,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.NetworkError"/>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable"/>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotCapable"/>
         <tp:error name="org.freedesktop.Telepathy.Error.PermissionDenied"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle"/>
         <tp:error name="org.freedesktop.Telepathy.Error.Channel.Full"/>
@@ -580,8 +581,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <tp:enum name="Channel_Group_Change_Reason" type="u">
       <tp:enumvalue suffix="None" value="0">
-        <tp:docstring>
-            No reason was provided for this change.
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>No reason was provided for this change.</p>
+
+          <p>In particular, this reason SHOULD be used when representing
+            users joining a named chatroom in the usual way, users leaving
+            a chatroom by their own request, and normal termination of a
+            StreamedMedia call by the remote user.</p>
+
+          <p>If the <tp:member-ref>SelfHandle</tp:member-ref> is removed from
+            a group for this reason and the actor is not the SelfHandle, the
+            equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.Terminated</code>.</p>
+
+          <p>If the SelfHandle is removed from a group for this reason and
+            the actor is also the SelfHandle, the equivalent D-Bus error is
+            <code>org.freedesktop.Telepathy.Error.Cancelled</code>.</p>
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="Offline" value="1">
