@@ -1,3 +1,5 @@
+include $(top_srcdir)/tools/shave.mk
+
 abs_top_builddir = @abs_top_builddir@
 
 noinst_SCRIPTS = telepathy-glib-env
@@ -27,6 +29,7 @@ EXTRA_DIST = \
     libglibcodegen.py \
     make-version-script.py \
     manager-file.py \
+    shave.mk \
     telepathy.am \
     telepathy-glib-env.in \
     with-session-bus.sh \
@@ -37,23 +40,23 @@ CLEANFILES = libtpcodegen.pyc libtpcodegen.pyo libglibcodegen.pyc libglibcodegen
 all: $(EXTRA_DIST)
 
 libglibcodegen.py: libtpcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 c-constants-gen.py: libglibcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 glib-client-marshaller-gen.py: libglibcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 glib-errors-enum-body-gen.py: libglibcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 glib-errors-enum-header-gen.py: libglibcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 glib-ginterface-gen.py: libglibcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 glib-gtypes-generator.py: libglibcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 glib-interfaces-gen.py: libglibcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 glib-signals-marshal-gen.py: libglibcodegen.py
-	touch $@
+	$(QUIET_GEN)touch $@
 
 TELEPATHY_SPEC_SRCDIR = $(top_srcdir)/../telepathy-spec
 maintainer-update-from-telepathy-spec:
