@@ -135,27 +135,32 @@ _tf_session_constructor (GType type,
   GObject *obj;
   TfSession *self;
   gchar *conftype;
+  GstElement *conf;
 
   obj = G_OBJECT_CLASS (_tf_session_parent_class)->
            constructor (type, n_props, props);
   self = (TfSession *) obj;
 
   conftype = g_strdup_printf ("fs%sconference", self->priv->session_type);
-  self->priv->fs_conference = FS_CONFERENCE (gst_object_ref (
-          gst_element_factory_make (conftype, NULL)));
+  conf = gst_element_factory_make (conftype, NULL);
   g_free (conftype);
 
-  if (!self->priv->fs_conference)
+  if (!conf)
     {
       self->priv->construction_error = g_error_new (FS_ERROR,
           FS_ERROR_CONSTRUCTION, "Invalid session type");
       return obj;
     }
 
+  self->priv->fs_conference = FS_CONFERENCE (gst_object_ref (conf));
+
   self->priv->fs_participant =
       fs_conference_new_participant (self->priv->fs_conference,
           "whatever-cname@1.2.3.4",
           &self->priv->construction_error);
+
+  if (!self->priv->fs_participant)
+    return obj;
 
   g_signal_connect (self->priv->session_handler_proxy, "invalidated",
       G_CALLBACK (invalidated_cb), obj);
