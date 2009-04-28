@@ -63,6 +63,11 @@ gchar *tp_escape_as_identifier (const gchar *name);
 
 gboolean tp_strv_contains (const gchar * const *strv, const gchar *str);
 
+gint64 tp_g_key_file_get_int64 (GKeyFile *key_file, const gchar *group_name,
+    const gchar *key, GError **error);
+guint64 tp_g_key_file_get_uint64 (GKeyFile *key_file, const gchar *group_name,
+    const gchar *key, GError **error);
+
 G_END_DECLS
 
 #endif /* __TP_UTIL_H__ */
