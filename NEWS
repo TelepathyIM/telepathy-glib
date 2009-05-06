@@ -1,3 +1,10 @@
+telepathy-farsight 0.0.7 (06 May 2009)
+======================================
+- Remove pygtk requirement
+- Print errors in its own domain
+- Update tp-glib dependency to 0.7.26 and fs2 dependency to 0.0.7
+- Make it more resilient in case of errors from other layers
+
 telepathy-farsight 0.0.6 (17 March 2009)
 ========================================
 - Add support of the RelayInfo property
