@@ -863,11 +863,16 @@ get_all_properties_cb (TpProxy *proxy,
             stream->priv->local_preferences,
             &myerror))
       {
-        tf_stream_error (stream, 0, myerror->message);
-        WARNING (stream, "Error setting codec preferences: %s",
-            myerror->message);
+        if (!(myerror->domain == FS_ERROR &&
+                myerror->code == FS_ERROR_NOT_IMPLEMENTED))
+          {
+            tf_stream_error (stream, 0, myerror->message);
+            WARNING (stream, "Error setting codec preferences: %s",
+                myerror->message);
+            g_clear_error (&myerror);
+            return;
+          }
         g_clear_error (&myerror);
-        return;
       }
 
 
