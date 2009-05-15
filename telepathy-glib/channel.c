@@ -523,7 +523,14 @@ _tp_channel_continue_introspection (TpChannel *self)
 
   g_assert (self->priv->introspect_needed != NULL);
 
-  if (g_queue_peek_head (self->priv->introspect_needed) == NULL)
+  if (tp_proxy_get_invalidated (self))
+    {
+      DEBUG ("invalidated; giving up");
+
+      g_queue_free (self->priv->introspect_needed);
+      self->priv->introspect_needed = NULL;
+    }
+  else if (g_queue_peek_head (self->priv->introspect_needed) == NULL)
     {
       g_queue_free (self->priv->introspect_needed);
       self->priv->introspect_needed = NULL;
