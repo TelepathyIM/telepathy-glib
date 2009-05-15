@@ -1099,6 +1099,10 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
 void
 _tp_channel_get_group_properties (TpChannel *self)
 {
+  TpChannelPrivate *priv = self->priv;
+  TpProxySignalConnection *sc;
+  GError *error = NULL;
+
   if (!tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
     {
@@ -1109,22 +1113,49 @@ _tp_channel_get_group_properties (TpChannel *self)
 
   DEBUG ("%p", self);
 
-  self->priv->members_changed_sig =
+  /* If this callback has been called, 'self' has not been invalidated. And we
+   * just checked above that the proxy has the Group interface. So, connecting
+   * to these signals must succeed. */
+#define DIE(sig) \
+  { \
+    g_critical ("couldn't connect to " sig ": %s", error->message); \
+    g_assert_not_reached (); \
+    g_error_free (error); \
+    return; \
+  }
+
+  priv->members_changed_sig =
       tp_cli_channel_interface_group_connect_to_members_changed (self,
-          tp_channel_group_members_changed_cb, NULL, NULL, NULL, NULL);
+          tp_channel_group_members_changed_cb, NULL, NULL, NULL, &error);
 
-  self->priv->members_changed_detailed_sig =
+  if (priv->members_changed_sig == NULL)
+    DIE ("MembersChanged");
+
+  priv->members_changed_detailed_sig =
       tp_cli_channel_interface_group_connect_to_members_changed_detailed (self,
-          tp_channel_group_members_changed_detailed_cb, NULL, NULL, NULL, NULL);
+          tp_channel_group_members_changed_detailed_cb, NULL, NULL, NULL,
+          &error);
 
-  tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
-      tp_channel_group_flags_changed_cb, NULL, NULL, NULL, NULL);
+  if (priv->members_changed_detailed_sig == NULL)
+    DIE ("MembersChangedDetailed");
 
-  tp_cli_channel_interface_group_connect_to_self_handle_changed (self,
-      tp_channel_group_self_handle_changed_cb, NULL, NULL, NULL, NULL);
+  sc = tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
+      tp_channel_group_flags_changed_cb, NULL, NULL, NULL, &error);
 
-  tp_cli_channel_interface_group_connect_to_handle_owners_changed (self,
-      tp_channel_handle_owners_changed_cb, NULL, NULL, NULL, NULL);
+  if (sc == NULL)
+    DIE ("GroupFlagsChanged");
+
+  sc = tp_cli_channel_interface_group_connect_to_self_handle_changed (self,
+      tp_channel_group_self_handle_changed_cb, NULL, NULL, NULL, &error);
+
+  if (sc == NULL)
+    DIE ("SelfHandleChanged");
+
+  sc = tp_cli_channel_interface_group_connect_to_handle_owners_changed (self,
+      tp_channel_handle_owners_changed_cb, NULL, NULL, NULL, &error);
+
+  if (sc == NULL)
+    DIE ("HandleOwnersChanged");
 
   /* First try the 0.17 API (properties). If this fails we'll fall back */
   tp_cli_dbus_properties_call_get_all (self, -1,
