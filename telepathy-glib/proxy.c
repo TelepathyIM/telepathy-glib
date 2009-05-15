@@ -482,8 +482,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
  * @self: the TpProxy
  * @interface: quark representing the interface to be added
  *
- * Declare that this proxy supports a given interface, and allocate a
- * #DBusGProxy to access it.
+ * Declare that this proxy supports a given interface.
  *
  * To use methods and signals of that interface, either call
  * tp_proxy_borrow_interface_by_id() to get the #DBusGProxy, or use the
@@ -492,7 +491,10 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
  * If the interface is the proxy's "main interface", or has already been
  * added, then do nothing.
  *
- * Returns: the borrowed DBusGProxy
+ * Returns: either %NULL or a borrowed #DBusGProxy corresponding to @interface,
+ * depending on implementation details. To reliably borrow the #DBusGProxy, use
+ * tp_proxy_borrow_interface_by_id(). (This method should probably have
+ * returned void; sorry.)
  *
  * Since: 0.7.1
  */
