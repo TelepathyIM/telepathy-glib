@@ -281,14 +281,15 @@ static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
  * tp_proxy_borrow_interface_by_id:
  * @self: the TpProxy
  * @interface: quark representing the interface required
- * @error: used to raise TP_DBUS_ERROR_NO_INTERFACE if this object does not
- * have the required interface
+ * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @interface
+ *         is invalid, @self has been invalidated or @self does not implement
+ *         @interface
  *
  * <!-- -->
  *
  * Returns: a borrowed reference to a #DBusGProxy
  * for which the bus name and object path are the same as for @self, but the
- * interface is as given (or %NULL if this proxy does not implement it).
+ * interface is as given (or %NULL if an @error is raised).
  * The reference is only valid as long as @self is.
  *
  * Since: 0.7.1
