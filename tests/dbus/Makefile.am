@@ -23,7 +23,6 @@ noinst_PROGRAMS = \
     test-get-interface-after-invalidate \
     test-group-mixin \
     test-handle-set \
-    test-invalidate-add-call \
     test-invalidated-while-invoking-signals \
     test-message-mixin \
     test-params-cm \
@@ -93,9 +92,6 @@ test_get_interface_after_invalidate_SOURCES = \
 test_group_mixin_SOURCES = group-mixin.c
 
 test_handle_set_SOURCES = handle-set.c
-
-test_invalidate_add_call_SOURCES = \
-    invalidate-add-call.c
 
 test_invalidated_while_invoking_signals_SOURCES = \
     invalidated-while-invoking-signals.c

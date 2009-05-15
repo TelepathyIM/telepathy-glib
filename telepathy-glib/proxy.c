@@ -479,7 +479,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
 
 /**
  * tp_proxy_add_interface_by_id:
- * @self: the TpProxy
+ * @self: the TpProxy, which must not have become #TpProxy::invalidated.
  * @interface: quark representing the interface to be added
  *
  * Declare that this proxy supports a given interface.
@@ -509,6 +509,8 @@ tp_proxy_add_interface_by_id (TpProxy *self,
       (tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
           NULL),
        NULL);
+
+  g_return_val_if_fail (NULL == tp_proxy_get_invalidated (self), NULL);
 
   if (iface_proxy == NULL)
     {
