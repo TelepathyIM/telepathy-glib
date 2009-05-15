@@ -300,6 +300,13 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 {
   gpointer dgproxy;
 
+  if (self->invalidated != NULL)
+    {
+      g_set_error (error, self->invalidated->domain, self->invalidated->code,
+          "%s", self->invalidated->message);
+      return NULL;
+    }
+
   if (!tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
         error))
       return NULL;
@@ -331,17 +338,9 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
       return dgproxy;
     }
 
-  if (self->invalidated != NULL)
-    {
-      g_set_error (error, self->invalidated->domain, self->invalidated->code,
-          "%s", self->invalidated->message);
-    }
-  else
-    {
-      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
-          "Object %s does not have interface %s",
-          self->object_path, g_quark_to_string (interface));
-    }
+  g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
+      "Object %s does not have interface %s",
+      self->object_path, g_quark_to_string (interface));
 
   return NULL;
 }
