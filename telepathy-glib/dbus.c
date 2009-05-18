@@ -1111,7 +1111,7 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
 /**
  * tp_dbus_daemon_release_name:
  * @self: a TpDBusDaemon
- * @well_known_name: a well-known name to acquire
+ * @well_known_name: a well-known name owned by this process to release
  * @error: used to raise an error if %FALSE is returned
  *
  * Release the given well-known name. This makes a synchronous call to the bus
