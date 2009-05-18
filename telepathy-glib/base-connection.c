@@ -250,8 +250,6 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
 
-#include "telepathy-glib/dbus-internal.h"
-
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
 
@@ -499,7 +497,7 @@ tp_base_connection_dispose (GObject *object)
     {
       if (self->bus_name != NULL)
         {
-          _tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
+          tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
         }
 
       g_object_unref (priv->bus_proxy);
@@ -1541,7 +1539,7 @@ tp_base_connection_register (TpBaseConnection *self,
   g_free (safe_proto);
   g_free (unique_name);
 
-  if (!_tp_dbus_daemon_request_name (priv->bus_proxy, self->bus_name, FALSE,
+  if (!tp_dbus_daemon_request_name (priv->bus_proxy, self->bus_name, FALSE,
         error))
     {
       g_free (self->bus_name);
