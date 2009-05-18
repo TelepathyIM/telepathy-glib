@@ -1042,7 +1042,8 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
  * @error: used to raise an error if %FALSE is returned
  *
  * Claim the given well-known name without queueing, allowing replacement
- * or replacing an existing name-owner.
+ * or replacing an existing name-owner. This makes a synchronous call to the
+ * bus daemon.
  *
  * Returns: %TRUE if @well_known_name was claimed, or %FALSE and sets @error if
  *          an error occurred.
@@ -1113,7 +1114,8 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
  * @well_known_name: a well-known name to acquire
  * @error: used to raise an error if %FALSE is returned
  *
- * Release the given well-known name.
+ * Release the given well-known name. This makes a synchronous call to the bus
+ * daemon.
  *
  * Returns: %TRUE if @well_known_name was released, or %FALSE and sets @error
  *          if an error occurred.
