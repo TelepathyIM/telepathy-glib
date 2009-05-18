@@ -65,6 +65,11 @@ gboolean tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
     const gchar *name, TpDBusDaemonNameOwnerChangedCb callback,
     gconstpointer user_data);
 
+gboolean tp_dbus_daemon_request_name (TpDBusDaemon *self,
+    const gchar *well_known_name, gboolean idempotent, GError **error);
+gboolean tp_dbus_daemon_release_name (TpDBusDaemon *self,
+    const gchar *well_known_name, GError **error);
+
 typedef enum
 {
   TP_DBUS_NAME_TYPE_UNIQUE = 1,

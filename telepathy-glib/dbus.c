@@ -1034,7 +1034,7 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
 }
 
 /**
- * _tp_dbus_daemon_request_name:
+ * tp_dbus_daemon_request_name:
  * @self: a TpDBusDaemon
  * @well_known_name: a well-known name to acquire
  * @idempotent: whether to consider it to be a success if this process
@@ -1044,13 +1044,16 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
  * Claim the given well-known name without queueing, allowing replacement
  * or replacing an existing name-owner.
  *
- * For internal use by TpBaseConnection, TpBaseConnectionManager.
+ * Returns: %TRUE if @well_known_name was claimed, or %FALSE and sets @error if
+ *          an error occurred.
+ *
+ * Since: 0.7.UNRELEASED
  */
 gboolean
-_tp_dbus_daemon_request_name (TpDBusDaemon *self,
-                              const gchar *well_known_name,
-                              gboolean idempotent,
-                              GError **error)
+tp_dbus_daemon_request_name (TpDBusDaemon *self,
+                             const gchar *well_known_name,
+                             gboolean idempotent,
+                             GError **error)
 {
   TpProxy *as_proxy = (TpProxy *) self;
   DBusGConnection *gconn = as_proxy->dbus_connection;
@@ -1105,19 +1108,22 @@ _tp_dbus_daemon_request_name (TpDBusDaemon *self,
 }
 
 /**
- * _tp_dbus_daemon_release_name:
+ * tp_dbus_daemon_release_name:
  * @self: a TpDBusDaemon
  * @well_known_name: a well-known name to acquire
  * @error: used to raise an error if %FALSE is returned
  *
  * Release the given well-known name.
  *
- * For internal use by TpBaseConnection, TpBaseConnectionManager.
+ * Returns: %TRUE if @well_known_name was released, or %FALSE and sets @error
+ *          if an error occurred.
+ *
+ * Since: 0.7.UNRELEASED
  */
 gboolean
-_tp_dbus_daemon_release_name (TpDBusDaemon *self,
-                              const gchar *well_known_name,
-                              GError **error)
+tp_dbus_daemon_release_name (TpDBusDaemon *self,
+                             const gchar *well_known_name,
+                             GError **error)
 {
   TpProxy *as_proxy = (TpProxy *) self;
   DBusGConnection *gconn = as_proxy->dbus_connection;

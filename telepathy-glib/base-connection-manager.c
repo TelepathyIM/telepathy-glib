@@ -42,8 +42,6 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
 
-#include "telepathy-glib/dbus-internal.h"
-
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "telepathy-glib/debug-internal.h"
 
@@ -999,7 +997,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   string = g_string_new (TP_CM_BUS_NAME_BASE);
   g_string_append (string, cls->cm_dbus_name);
 
-  if (!_tp_dbus_daemon_request_name (bus_proxy, string->str, TRUE, &error))
+  if (!tp_dbus_daemon_request_name (bus_proxy, string->str, TRUE, &error))
     {
       g_warning ("%s", error->message);
       g_error_free (error);
