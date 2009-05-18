@@ -510,7 +510,7 @@ tp_proxy_add_interface_by_id (TpProxy *self,
           NULL),
        NULL);
 
-  g_return_val_if_fail (NULL == tp_proxy_get_invalidated (self), NULL);
+  g_return_val_if_fail (tp_proxy_get_invalidated (self) == NULL, NULL);
 
   if (iface_proxy == NULL)
     {
