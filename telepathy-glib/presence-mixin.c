@@ -1396,19 +1396,26 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
 {
   TpPresenceMixinClass *mixin_cls =
     TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
-  struct _i_absolutely_love_g_hash_table_foreach data = {
-        mixin_cls->statuses, NULL, attributes_hash };
   GHashTable *contact_statuses;
+  GError *error = NULL;
 
-  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, NULL);
+  contact_statuses = mixin_cls->get_contact_statuses (obj, contacts, &error);
 
-  g_assert (contact_statuses != NULL);
+  if (contact_statuses == NULL)
+    {
+      DEBUG ("get_contact_statuses failed: %s", error->message);
+      g_error_free (error);
+    }
+  else
+    {
+      struct _i_absolutely_love_g_hash_table_foreach data = {
+          mixin_cls->statuses, contact_statuses, attributes_hash };
 
-  data.contact_statuses = contact_statuses;
-  g_hash_table_foreach (contact_statuses,
-      simple_presence_fill_contact_attributes_foreach, &data);
+      g_hash_table_foreach (contact_statuses,
+          simple_presence_fill_contact_attributes_foreach, &data);
 
-  g_hash_table_destroy (contact_statuses);
+      g_hash_table_destroy (contact_statuses);
+    }
 }
 
 /**
