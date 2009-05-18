@@ -1048,7 +1048,7 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
  * Returns: %TRUE if @well_known_name was claimed, or %FALSE and sets @error if
  *          an error occurred.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.30
  */
 gboolean
 tp_dbus_daemon_request_name (TpDBusDaemon *self,
@@ -1120,7 +1120,7 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
  * Returns: %TRUE if @well_known_name was released, or %FALSE and sets @error
  *          if an error occurred.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.30
  */
 gboolean
 tp_dbus_daemon_release_name (TpDBusDaemon *self,
