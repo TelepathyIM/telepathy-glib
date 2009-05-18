@@ -523,7 +523,14 @@ _tp_channel_continue_introspection (TpChannel *self)
 
   g_assert (self->priv->introspect_needed != NULL);
 
-  if (g_queue_peek_head (self->priv->introspect_needed) == NULL)
+  if (tp_proxy_get_invalidated (self))
+    {
+      DEBUG ("invalidated; giving up");
+
+      g_queue_free (self->priv->introspect_needed);
+      self->priv->introspect_needed = NULL;
+    }
+  else if (g_queue_peek_head (self->priv->introspect_needed) == NULL)
     {
       g_queue_free (self->priv->introspect_needed);
       self->priv->introspect_needed = NULL;
@@ -926,6 +933,8 @@ tp_channel_constructor (GType type,
   GObjectClass *object_class = (GObjectClass *) tp_channel_parent_class;
   TpChannel *self = TP_CHANNEL (object_class->constructor (type,
         n_params, params));
+  GError *error = NULL;
+  TpProxySignalConnection *sc;
 
   /* If our TpConnection dies, so do we. */
   self->priv->conn_invalidated_id = g_signal_connect (self->priv->connection,
@@ -933,10 +942,18 @@ tp_channel_constructor (GType type,
       self);
 
   /* Connect to my own Closed signal and self-destruct when it arrives.
-   * The channel hasn't had a chance to become invalid yet, so we can
-   * assume that this signal connection will work */
-  tp_cli_channel_connect_to_closed (self, tp_channel_closed_cb, NULL, NULL,
-      NULL, NULL);
+   * The channel hasn't had a chance to become invalid yet (it was just
+   * constructed!), so we assert that this signal connection will work */
+  sc = tp_cli_channel_connect_to_closed (self, tp_channel_closed_cb, NULL, NULL,
+      NULL, &error);
+
+  if (sc == NULL)
+    {
+      g_critical ("Couldn't connect to Closed: %s", error->message);
+      g_assert_not_reached ();
+      g_error_free (error);
+      return NULL;
+    }
 
   DEBUG ("%p: constructed with channel type \"%s\", handle #%d of type %d",
       self,

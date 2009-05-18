@@ -281,14 +281,15 @@ static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
  * tp_proxy_borrow_interface_by_id:
  * @self: the TpProxy
  * @interface: quark representing the interface required
- * @error: used to raise TP_DBUS_ERROR_NO_INTERFACE if this object does not
- * have the required interface
+ * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @interface
+ *         is invalid, @self has been invalidated or @self does not implement
+ *         @interface
  *
  * <!-- -->
  *
  * Returns: a borrowed reference to a #DBusGProxy
  * for which the bus name and object path are the same as for @self, but the
- * interface is as given (or %NULL if this proxy does not implement it).
+ * interface is as given (or %NULL if an @error is raised).
  * The reference is only valid as long as @self is.
  *
  * Since: 0.7.1
@@ -299,6 +300,13 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
                                  GError **error)
 {
   gpointer dgproxy;
+
+  if (self->invalidated != NULL)
+    {
+      g_set_error (error, self->invalidated->domain, self->invalidated->code,
+          "%s", self->invalidated->message);
+      return NULL;
+    }
 
   if (!tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
         error))
@@ -331,17 +339,9 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
       return dgproxy;
     }
 
-  if (self->invalidated != NULL)
-    {
-      g_set_error (error, self->invalidated->domain, self->invalidated->code,
-          "%s", self->invalidated->message);
-    }
-  else
-    {
-      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
-          "Object %s does not have interface %s",
-          self->object_path, g_quark_to_string (interface));
-    }
+  g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
+      "Object %s does not have interface %s",
+      self->object_path, g_quark_to_string (interface));
 
   return NULL;
 }
@@ -479,11 +479,10 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
 
 /**
  * tp_proxy_add_interface_by_id:
- * @self: the TpProxy
+ * @self: the TpProxy, which must not have become #TpProxy::invalidated.
  * @interface: quark representing the interface to be added
  *
- * Declare that this proxy supports a given interface, and allocate a
- * #DBusGProxy to access it.
+ * Declare that this proxy supports a given interface.
  *
  * To use methods and signals of that interface, either call
  * tp_proxy_borrow_interface_by_id() to get the #DBusGProxy, or use the
@@ -492,7 +491,10 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
  * If the interface is the proxy's "main interface", or has already been
  * added, then do nothing.
  *
- * Returns: the borrowed DBusGProxy
+ * Returns: either %NULL or a borrowed #DBusGProxy corresponding to @interface,
+ * depending on implementation details. To reliably borrow the #DBusGProxy, use
+ * tp_proxy_borrow_interface_by_id(). (This method should probably have
+ * returned void; sorry.)
  *
  * Since: 0.7.1
  */
@@ -507,6 +509,8 @@ tp_proxy_add_interface_by_id (TpProxy *self,
       (tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
           NULL),
        NULL);
+
+  g_return_val_if_fail (tp_proxy_get_invalidated (self) == NULL, NULL);
 
   if (iface_proxy == NULL)
     {

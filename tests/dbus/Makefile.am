@@ -20,6 +20,7 @@ noinst_PROGRAMS = \
     test-error-enum \
     test-example-no-protocols \
     test-finalized-in-invalidated-handler \
+    test-get-interface-after-invalidate \
     test-group-mixin \
     test-handle-set \
     test-invalidated-while-invoking-signals \
@@ -84,6 +85,9 @@ test_example_no_protocols_SOURCES = example-no-protocols.c
 
 test_finalized_in_invalidated_handler_SOURCES = \
     finalized-in-invalidated-handler.c
+
+test_get_interface_after_invalidate_SOURCES = \
+    get-interface-after-invalidate.c
 
 test_group_mixin_SOURCES = group-mixin.c
 
