@@ -1,3 +1,35 @@
+telepathy-glib 0.7.30 (UNRELEASED)
+==================================
+
+The "slowing down but with a sense of speeding up" release.
+
+API changes:
+
+* tp_proxy_add_interface_by_id() may not be called on an invalidated proxy. (It
+  never made sense to do this, but now telepathy-glib will complain if you do.)
+
+Enhancements:
+
+* Added tp_dbus_daemon_request_name() and tp_dbus_daemon_release_name(). (Fixes
+  fd.o#21771.)
+
+* Update to telepathy-spec 0.17.23, adding the Terminated error.
+
+* Added optional support for Shave, to give kernel-style pretty make output.
+  (This is disabled by default; to enable it, pass --enable-shave to configure.)
+  (Jonny Lamb)
+
+* Channel introspection will now fail more quickly when the channel is
+  invalidated.
+
+Fixes:
+
+* Generated GInterfaces now install type information sooner, fixing a bug where
+  object construction could make dbus-glib assert. (Ross Burton)
+
+* fd.o#21792: tp_presence_mixin_simple_presence_fill_contact_attributes asserts
+  if get_contact_statuses returns NULL.
+
 telepathy-glib 0.7.29 (2009-04-03)
 ==================================
 
