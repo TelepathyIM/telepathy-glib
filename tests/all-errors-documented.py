@@ -9,9 +9,9 @@ import xml.dom.minidom
 
 from libglibcodegen import NS_TP, camelcase_to_upper
 
-def check_all_errors_documented(abs_top_builddir):
-    error_path = os.path.join(abs_top_builddir, 'spec', 'errors.xml')
-    sections_path = os.path.join(abs_top_builddir, 'docs', 'reference',
+def check_all_errors_documented(abs_top_srcdir):
+    error_path = os.path.join(abs_top_srcdir, 'spec', 'errors.xml')
+    sections_path = os.path.join(abs_top_srcdir, 'docs', 'reference',
         'telepathy-glib-sections.txt')
     sections = open(sections_path).readlines()
 
@@ -27,4 +27,4 @@ def check_all_errors_documented(abs_top_builddir):
             sys.exit(1)
 
 if __name__ == '__main__':
-    check_all_errors_documented(os.environ['abs_top_builddir'])
+    check_all_errors_documented(os.environ['abs_top_srcdir'])

@@ -17,8 +17,9 @@ TESTS = $(noinst_PROGRAMS) \
 
 TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
+    abs_top_srcdir=@abs_top_srcdir@ \
     G_DEBUG=fatal_warnings,fatal_criticals \
-    PYTHONPATH=@abs_top_builddir@/tools
+    PYTHONPATH=@abs_top_srcdir@/tools
 
 VALGRIND_TESTS_ENVIRONMENT = \
     G_SLICE=always-malloc \
