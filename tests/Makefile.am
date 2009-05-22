@@ -35,7 +35,8 @@ check-valgrind:
 		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
 	$(MAKE) -C dbus check-valgrind
 
-EXTRA_DIST = README
+EXTRA_DIST = README \
+    all-errors-documented.py
 
 test_asv_SOURCES = \
     asv.c
