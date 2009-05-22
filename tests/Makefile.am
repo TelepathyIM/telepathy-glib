@@ -12,10 +12,13 @@ noinst_PROGRAMS = \
     test-intset \
     test-util
 
-TESTS = $(noinst_PROGRAMS)
+TESTS = $(noinst_PROGRAMS) \
+    all-errors-documented.py
+
 TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
-    G_DEBUG=fatal_warnings,fatal_criticals
+    G_DEBUG=fatal_warnings,fatal_criticals \
+    PYTHONPATH=@abs_top_builddir@/tools
 
 VALGRIND_TESTS_ENVIRONMENT = \
     G_SLICE=always-malloc \
