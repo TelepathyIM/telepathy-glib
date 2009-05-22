@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/_gen/error-str.h>
+
 G_BEGIN_DECLS
 
 GQuark tp_errors_quark (void);
