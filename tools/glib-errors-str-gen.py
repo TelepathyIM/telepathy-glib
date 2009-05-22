@@ -3,7 +3,7 @@
 import sys
 import xml.dom.minidom
 
-from libglibcodegen import NS_TP, camelcase_to_upper
+from libglibcodegen import NS_TP, camelcase_to_upper, get_docstring, xml_escape
 
 class Generator(object):
     def __init__(self, dom):
@@ -16,8 +16,17 @@ class Generator(object):
             ns = error.parentNode.getAttribute('namespace')
             nick = error.getAttribute('name').replace(' ', '')
             name = 'TP_ERROR_STR_' + camelcase_to_upper(nick.replace('.', ''))
+            error_name = '%s.%s' % (ns, nick)
 
-            print '#define %s "%s.%s"' % (name, ns, nick)
+            print ''
+            print '/**'
+            print ' * %s:' % name
+            print ' *'
+            print ' * The D-Bus error name %s' % error_name
+            print ' *'
+            print ' * %s' % xml_escape(get_docstring(error))
+            print ' */'
+            print '#define %s "%s"' % (name, error_name)
 
 if __name__ == '__main__':
     argv = sys.argv[1:]
