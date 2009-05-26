@@ -157,6 +157,7 @@ tpginclude_HEADERS = \
     util.h
 
 nodist_libtelepathy_glib_internal_la_SOURCES = \
+    _gen/error-str.c \
     _gen/error-str.h \
     _gen/signals-marshal.c \
     _gen/signals-marshal.h \
@@ -332,9 +333,11 @@ _gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
 	$(QUIET_GEN){ echo '#include "_gen/signals-marshal.h"' && \
 	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< ; } > $@
 
-_gen/error-str.h: _gen/stable-spec.xml \
+_gen/error-str.h _gen/error-str.c: _gen/stable-spec.xml \
 	$(tools_dir)/glib-errors-str-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-errors-str-gen.py $< > $@
+	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-errors-str-gen.py \
+		_gen/error-str $<
+
 # Things generated per interface
 
 _gen/tp-spec-%.xml: %.xml _gen/spec-stamp $(tools_dir)/xincludator.py
