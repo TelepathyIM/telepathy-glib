@@ -73,6 +73,8 @@ typedef enum {
     TP_ERROR_TERMINATED,
 } TpError;
 
+const gchar *tp_error_get_dbus_name (TpError error);
+
 G_END_DECLS
 
 #endif
