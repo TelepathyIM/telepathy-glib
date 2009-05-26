@@ -5,6 +5,10 @@ API changes:
 
 Enhancements:
 
+* Added TP_ERROR_STR_* constants corresponding to the members of the
+  TpError enum, and tp_error_get_dbus_name() mapping the latter to the
+  former.
+
 Fixes:
 
 telepathy-glib 0.7.30 (2009-05-18)
