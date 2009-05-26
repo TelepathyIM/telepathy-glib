@@ -225,10 +225,18 @@ typedef struct {
     GObject *weak_object;
 } WhenReadyContext;
 
+static void when_ready_context_cancel (gpointer d, GObject *corpse);
+
 static void
 when_ready_context_free (gpointer d)
 {
   WhenReadyContext *c = d;
+
+  if (c->weak_object != NULL)
+    {
+      g_object_weak_unref (c->weak_object, when_ready_context_cancel, c);
+      c->weak_object = NULL;
+    }
 
   if (c->cm != NULL)
     {
