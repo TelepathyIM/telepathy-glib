@@ -66,6 +66,7 @@ class Generator(object):
         self.prefix_ = prefix.lower()
         self.PREFIX_ = prefix.upper()
 
+        self.basename = basename
         self.signal_marshal_prefix = signal_marshal_prefix
         self.headers = headers
         self.end_headers = end_headers
@@ -671,7 +672,7 @@ class Generator(object):
         self.h('G_BEGIN_DECLS')
         self.h('')
 
-        self.b('#include "%s.h"' % basename)
+        self.b('#include "%s.h"' % self.basename)
         self.b('')
         for header in self.headers:
             self.b('#include %s' % header)
@@ -689,8 +690,8 @@ class Generator(object):
 
         self.h('')
         self.b('')
-        open(basename + '.h', 'w').write('\n'.join(self.__header))
-        open(basename + '.c', 'w').write('\n'.join(self.__body))
+        open(self.basename + '.h', 'w').write('\n'.join(self.__header))
+        open(self.basename + '.c', 'w').write('\n'.join(self.__body))
 
 
 def cmdline_error():
