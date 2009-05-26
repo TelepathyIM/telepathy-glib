@@ -138,6 +138,12 @@
  *     particular, this error SHOULD be used whenever normal termination of a
  *     1-1 StreamedMedia call by the remote user is represented as a D-Bus
  *     error name.
+ * @TP_ERROR_CONNECTION_REFUSED: org.freedesktop.Telepathy.Error.ConnectionRefused:
+ *     Raised when a connection is refused.
+ * @TP_ERROR_CONNECTION_FAILED: org.freedesktop.Telepathy.Error.ConnectionFailed:
+ *     Raised when a connection can't be established.
+ * @TP_ERROR_CONNECTION_LOST: org.freedesktop.Telepathy.Error.ConnectionLost:
+ *     Raised when a connection is broken.
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */
@@ -247,6 +253,9 @@ tp_error_get_type (void)
         { TP_ERROR_NO_ANSWER, "TP_ERROR_NO_ANSWER", "NoAnswer" },
         { TP_ERROR_DOES_NOT_EXIST, "TP_ERROR_DOES_NOT_EXIST", "DoesNotExist" },
         { TP_ERROR_TERMINATED, "TP_ERROR_TERMINATED", "Terminated" },
+        { TP_ERROR_CONNECTION_REFUSED, "TP_ERROR_CONNECTION_REFUSED", "ConnectionRefused" },
+        { TP_ERROR_CONNECTION_FAILED, "TP_ERROR_CONNECTION_FAILED", "ConnectionFailed" },
+        { TP_ERROR_CONNECTION_LOST, "TP_ERROR_CONNECTION_LOST", "ConnectionLost" },
         { 0 }
       };
 

@@ -71,6 +71,9 @@ typedef enum {
     TP_ERROR_NO_ANSWER,
     TP_ERROR_DOES_NOT_EXIST,
     TP_ERROR_TERMINATED,
+    TP_ERROR_CONNECTION_REFUSED,
+    TP_ERROR_CONNECTION_FAILED,
+    TP_ERROR_CONNECTION_LOST,
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);
