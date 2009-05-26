@@ -994,6 +994,8 @@ tp_mixin_class_get_offset
 tp_mixin_instance_get_offset
 tp_escape_as_identifier
 tp_strv_contains
+tp_g_key_file_get_int64
+tp_g_key_file_get_uint64
 </SECTION>
 
 <SECTION>
