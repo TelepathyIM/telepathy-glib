@@ -975,12 +975,29 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
                                 gchar **unique_name,
                                 GError **error)
 {
-  DBusGConnection *gconn = tp_proxy_get_dbus_connection (self);
-  DBusConnection *dbc = dbus_g_connection_get_connection (gconn);
+  DBusGConnection *gconn;
+  DBusConnection *dbc;
   DBusMessage *message;
   DBusMessage *reply;
   DBusError dbus_error;
   const char *name_in_reply;
+  const GError *invalidated;
+
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  invalidated = tp_proxy_get_invalidated (self);
+
+  if (invalidated != NULL)
+    {
+      if (error != NULL)
+        *error = g_error_copy (invalidated);
+
+      return FALSE;
+    }
+
+  gconn = tp_proxy_get_dbus_connection (self);
+  dbc = dbus_g_connection_get_connection (gconn);
 
   message = dbus_message_new_method_call (DBUS_SERVICE_DBUS, DBUS_PATH_DBUS,
       DBUS_INTERFACE_DBUS, "GetNameOwner");
