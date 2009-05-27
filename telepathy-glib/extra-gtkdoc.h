@@ -141,6 +141,17 @@
  */
 
 /**
+ * SECTION:svc-channel-tube
+ * @title: Tube channels
+ * @short_description: service-side interface for the Tube channel interface,
+ *  StreamTube channel type and DBusTube channel type.
+ *
+ * A "tube" is a mechanism for arbitrary data transfer.
+ * This section documents the auto-generated C wrappers for the Tube
+ * channel interface, StreamTube channel type and DBusTube channel type.
+ */
+
+/**
  * SECTION:svc-channel-contactlist
  * @title: Contact List channels
  * @short_description: service-side interface for the Contact List channel type
@@ -368,6 +379,18 @@
  * A "tube" is a mechanism for arbitrary data transfer.
  * This section documents the auto-generated C wrappers for the Tubes
  * channel type.
+ */
+
+/**
+ * SECTION:channel-tube
+ * @title: Tube channels
+ * @short_description: client-side wrappers for the Tube channel interface,
+ *  StreamTube channel type and DBusTube channel type.
+ * @see_also: channel-group
+ *
+ * A "tube" is a mechanism for arbitrary data transfer.
+ * This section documents the auto-generated C wrappers for the Tube
+ * channel interface, StreamTube channel type and DBusTube channel type.
  */
 
 /**
