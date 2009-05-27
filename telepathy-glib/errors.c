@@ -191,6 +191,8 @@ tp_g_set_error_unsupported_handle_type (guint type, GError **error)
  * <!-- -->
  *
  * Returns: the D-Bus error name corresponding to @error.
+ *
+ * Since: 0.7.31
  */
 /* tp_error_get_dbus_name is implemented in _gen/error-str.c by
  * tools/glib-errors-str-gen.py.

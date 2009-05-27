@@ -1,15 +1,36 @@
-telepathy-glib 0.7.31 (UNRELEASED)
+telepathy-glib 0.7.31 (2009-05-27)
 ==================================
 
-API changes:
+The "this beer tastes of Stilton!" release.
 
 Enhancements:
 
 * Added TP_ERROR_STR_* constants corresponding to the members of the
   TpError enum, and tp_error_get_dbus_name() mapping the latter to the
-  former.
+  former (cassidy/wjt)
+
+* Updated to telepathy-spec 0.17.25, adding ConnectionRefused, ConnectionFailed
+  and ConnectionLost errors, and the new-style StreamTube and DBusTube channel
+  types (cassidy)
+
+* Made tp_g_key_file_get_int64 and _uint64 into public API for Mission
+  Control's benefit (smcv)
 
 Fixes:
+
+* Changed the dbus_daemon member of TpProxy to be removed in dispose, rather
+  than just after the invalidated signal (smcv)
+
+* Fixed a null pointer dereference if a TpConnectionManager is resurrected
+  during dispose (smcv)
+
+* Fixed a use-after-free when the user-supplied object in
+  tp_connection_manager_call_when_ready is destroyed after the CM becomes
+  ready (smcv)
+
+* Fixed tp_dbus_daemon_request_name, tp_dbus_daemon_release_name and
+  _tp_dbus_daemon_get_name_owner to fail gracefully if the TpDBusDaemon has
+  been invalidated (smcv)
 
 telepathy-glib 0.7.30 (2009-05-18)
 ==================================

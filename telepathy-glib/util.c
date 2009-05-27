@@ -682,6 +682,8 @@ tp_strv_contains (const gchar * const *strv,
  *
  * Returns: the value associated with the key as a signed 64-bit integer, or
  * 0 if the key was not found or could not be parsed.
+ *
+ * Since: 0.7.31
  */
 gint64
 tp_g_key_file_get_int64 (GKeyFile *key_file,
@@ -728,6 +730,8 @@ tp_g_key_file_get_int64 (GKeyFile *key_file,
  *
  * Returns: the value associated with the key as an unsigned 64-bit integer,
  * or 0 if the key was not found or could not be parsed.
+ *
+ * Since: 0.7.31
  */
 guint64
 tp_g_key_file_get_uint64 (GKeyFile *key_file,
