@@ -354,6 +354,13 @@ tp_connection_got_interfaces_cb (TpConnection *self,
 
   DEBUG ("%p: Introspected interfaces", self);
 
+  if (tp_proxy_get_invalidated (self) != NULL)
+    {
+      DEBUG ("%p: already invalidated, not trying to become ready: %s",
+          self, tp_proxy_get_invalidated (self)->message);
+      return;
+    }
+
   g_assert (self->priv->introspect_needed == NULL);
   self->priv->introspect_needed = g_array_new (FALSE, FALSE,
       sizeof (TpConnectionProc));
