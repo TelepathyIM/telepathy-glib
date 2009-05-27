@@ -23,8 +23,6 @@ please make any changes there.
 
 from libtpcodegen import NS_TP, \
                          Signature, \
-                         camelcase_to_lower, \
-                         camelcase_to_upper, \
                          cmp_by_name, \
                          escape_as_identifier, \
                          get_by_path, \
