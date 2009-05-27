@@ -975,12 +975,29 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
                                 gchar **unique_name,
                                 GError **error)
 {
-  DBusGConnection *gconn = tp_proxy_get_dbus_connection (self);
-  DBusConnection *dbc = dbus_g_connection_get_connection (gconn);
+  DBusGConnection *gconn;
+  DBusConnection *dbc;
   DBusMessage *message;
   DBusMessage *reply;
   DBusError dbus_error;
   const char *name_in_reply;
+  const GError *invalidated;
+
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  invalidated = tp_proxy_get_invalidated (self);
+
+  if (invalidated != NULL)
+    {
+      if (error != NULL)
+        *error = g_error_copy (invalidated);
+
+      return FALSE;
+    }
+
+  gconn = tp_proxy_get_dbus_connection (self);
+  dbc = dbus_g_connection_get_connection (gconn);
 
   message = dbus_message_new_method_call (DBUS_SERVICE_DBUS, DBUS_PATH_DBUS,
       DBUS_INTERFACE_DBUS, "GetNameOwner");
@@ -1057,14 +1074,29 @@ tp_dbus_daemon_request_name (TpDBusDaemon *self,
                              GError **error)
 {
   TpProxy *as_proxy = (TpProxy *) self;
-  DBusGConnection *gconn = as_proxy->dbus_connection;
-  DBusConnection *dbc = dbus_g_connection_get_connection (gconn);
+  DBusGConnection *gconn;
+  DBusConnection *dbc;
   DBusError dbus_error;
   int result;
+  const GError *invalidated;
 
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
         TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  invalidated = tp_proxy_get_invalidated (self);
+
+  if (invalidated != NULL)
+    {
+      if (error != NULL)
+        *error = g_error_copy (invalidated);
+
+      return FALSE;
+    }
+
+  gconn = as_proxy->dbus_connection;
+  dbc = dbus_g_connection_get_connection (gconn);
 
   dbus_error_init (&dbus_error);
   result = dbus_bus_request_name (dbc, well_known_name,
@@ -1128,15 +1160,29 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
                              GError **error)
 {
   TpProxy *as_proxy = (TpProxy *) self;
-  DBusGConnection *gconn = as_proxy->dbus_connection;
-  DBusConnection *dbc = dbus_g_connection_get_connection (gconn);
+  DBusGConnection *gconn;
+  DBusConnection *dbc;
   DBusError dbus_error;
   int result;
+  const GError *invalidated;
 
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), FALSE);
   g_return_val_if_fail (tp_dbus_check_valid_bus_name (well_known_name,
         TP_DBUS_NAME_TYPE_WELL_KNOWN, error), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
+  invalidated = tp_proxy_get_invalidated (self);
+
+  if (invalidated != NULL)
+    {
+      if (error != NULL)
+        *error = g_error_copy (invalidated);
+
+      return FALSE;
+    }
+
+  gconn = as_proxy->dbus_connection;
+  dbc = dbus_g_connection_get_connection (gconn);
   dbus_error_init (&dbus_error);
   result = dbus_bus_release_name (dbc, well_known_name, &dbus_error);
 

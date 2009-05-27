@@ -412,12 +412,6 @@ tp_proxy_emit_invalidated (gpointer p)
    * to the proxies */
   tp_proxy_lose_interfaces (self);
 
-  if (self->dbus_daemon != NULL)
-    {
-      g_object_unref (self->dbus_daemon);
-      self->dbus_daemon = NULL;
-    }
-
   if (self->dbus_connection != NULL)
     {
       dbus_g_connection_unref (self->dbus_connection);
@@ -842,6 +836,12 @@ tp_proxy_dispose (GObject *object)
   DEBUG ("%p", self);
 
   tp_proxy_invalidate (self, &e);
+
+  if (self->dbus_daemon != NULL)
+    {
+      g_object_unref (self->dbus_daemon);
+      self->dbus_daemon = NULL;
+    }
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->dispose (object);
 }
