@@ -159,7 +159,6 @@ tpginclude_HEADERS = \
 
 nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/error-str.c \
-    _gen/error-str.h \
     _gen/signals-marshal.c \
     _gen/signals-marshal.h \
     _gen/signals-marshal.list \
@@ -182,6 +181,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-svc-media-stream-handler.c
 
 nodist_geninclude_HEADERS = \
+    _gen/error-str.h \
     _gen/telepathy-enums.h \
     _gen/telepathy-interfaces.h \
     _gen/gtypes.h \
