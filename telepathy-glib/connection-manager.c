@@ -187,6 +187,9 @@ struct _TpConnectionManagerPrivate {
     /* TRUE if we're waiting for ListProtocols */
     unsigned listing_protocols:1;
 
+    /* TRUE if dispose() has run already */
+    unsigned disposed:1;
+
     /* GPtrArray of TpConnectionManagerProtocol *. This is the implementation
      * for self->protocols.
      *
@@ -1230,11 +1233,19 @@ tp_connection_manager_init (TpConnectionManager *self)
 static void
 tp_connection_manager_dispose (GObject *object)
 {
-  TpProxy *as_proxy = TP_PROXY (object);
+  TpConnectionManager *self = TP_CONNECTION_MANAGER (object);
+  TpProxy *as_proxy = (TpProxy *) self;
+
+  if (self->priv->disposed)
+    goto finally;
+
+  self->priv->disposed = TRUE;
 
   tp_dbus_daemon_cancel_name_owner_watch (as_proxy->dbus_daemon,
-      as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb, object);
+      as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb,
+      object);
 
+finally:
   G_OBJECT_CLASS (tp_connection_manager_parent_class)->dispose (object);
 }
 
