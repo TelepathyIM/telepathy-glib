@@ -51,15 +51,14 @@ class Generator(object):
             self.b('      case TP_ERROR_%s:' % uc_nick)
             self.b('        return %s;' % name)
 
-        self.h('')
-        self.h("/* Work around a gtkdoc bug where it doesn't see the last")
-        self.h(" * definition in the file unless there's misc after it")
-        self.h(" */")
-
         self.b('      default:')
         self.b('        g_return_val_if_reached (NULL);')
         self.b('    }')
         self.b('}')
+
+        # make both files end with a newline
+        self.h('')
+        self.b('')
 
         open(self.basename + '.h', 'w').write('\n'.join(self.__header))
         open(self.basename + '.c', 'w').write('\n'.join(self.__body))
