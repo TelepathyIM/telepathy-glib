@@ -21,7 +21,7 @@ def check_all_errors_documented(abs_top_srcdir):
     for error in errors.getElementsByTagNameNS(NS_TP, 'error'):
         nick = error.getAttribute('name').replace(' ', '')
         name = ('TP_ERROR_STR_' +
-                error.getAttribute('name').replace('.', '_').replace(' ', '_').upper()
+                error.getAttribute('name').replace('.', '_').replace(' ', '_').upper())
 
         if '%s\n' % name not in sections:
             print "'%s' is missing in %s" % (name, sections_path)
