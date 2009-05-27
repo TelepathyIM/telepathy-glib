@@ -307,19 +307,19 @@
     </tp:docstring>
   </tp:error>
 
-  <tp:error name="ConnectionRefused">
+  <tp:error name="Connection Refused">
     <tp:docstring>
       Raised when a connection is refused.
     </tp:docstring>
   </tp:error>
 
-  <tp:error name="ConnectionFailed">
+  <tp:error name="Connection Failed">
     <tp:docstring>
       Raised when a connection can't be established.
     </tp:docstring>
   </tp:error>
 
-  <tp:error name="ConnectionLost">
+  <tp:error name="Connection Lost">
     <tp:docstring>
       Raised when a connection is broken.
     </tp:docstring>

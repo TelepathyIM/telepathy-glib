@@ -3,8 +3,7 @@
 import sys
 import xml.dom.minidom
 
-from libglibcodegen import NS_TP, camelcase_to_upper, get_docstring, \
-        get_descendant_text
+from libglibcodegen import NS_TP, get_docstring, get_descendant_text
 
 class Generator(object):
     def __init__(self, dom):
@@ -24,7 +23,8 @@ class Generator(object):
         for error in self.errors.getElementsByTagNameNS(NS_TP, 'error'):
             ns = error.parentNode.getAttribute('namespace')
             nick = error.getAttribute('name').replace(' ', '')
-            enum = 'TP_ERROR_' + camelcase_to_upper(nick.replace('.', ''))
+            enum = ('TP_ERROR_' +
+                    error.getAttribute('name').replace(' ', '_').replace('.', '_').upper())
 
             print ''
             print '  /* %s.%s */' % (ns, nick)
