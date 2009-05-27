@@ -7,7 +7,7 @@ import sys
 
 import xml.dom.minidom
 
-from libglibcodegen import NS_TP, camelcase_to_upper
+from libglibcodegen import NS_TP
 
 def check_all_errors_documented(abs_top_srcdir):
     error_path = os.path.join(abs_top_srcdir, 'spec', 'errors.xml')
@@ -20,7 +20,8 @@ def check_all_errors_documented(abs_top_srcdir):
     errors = dom.getElementsByTagNameNS(NS_TP, 'errors')[0]
     for error in errors.getElementsByTagNameNS(NS_TP, 'error'):
         nick = error.getAttribute('name').replace(' ', '')
-        name = 'TP_ERROR_STR_' + camelcase_to_upper(nick.replace('.', ''))
+        name = ('TP_ERROR_STR_' +
+                error.getAttribute('name').replace('.', '_').replace(' ', '_').upper()
 
         if '%s\n' % name not in sections:
             print "'%s' is missing in %s" % (name, sections_path)
