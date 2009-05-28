@@ -119,7 +119,6 @@ tpginclude_HEADERS = \
     channel-iface.h \
     channel-factory-iface.h \
     channel-manager.h \
-    media-interfaces.h \
     connection.h \
     connection-manager.h \
     contact.h \
