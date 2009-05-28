@@ -277,7 +277,8 @@ _tp_connection_clean_up_handle_refs (TpConnection *self)
  * tp_cli_connection_interface_contacts_run_get_contact_attributes() directly.
  * Those functions should be avoided in favour of using #TpContact,
  * tp_connection_hold_handles(), tp_connection_request_handles() and
- * tp_connection_get_contact_attributes().
+ * tp_connection_get_contact_attributes(), which along with this function
+ * perform client-side reference counting of handles.
  *
  * If @self has already become invalid, this function does nothing.
  */
@@ -462,6 +463,12 @@ connection_held_handles (TpConnection *self,
  * If they are valid, the callback will later be called with the given
  * handles; if not all of them are valid, the callback will be called with
  * an error.
+ *
+ * This function, along with tp_connection_unref_handles(),
+ * tp_connection_get_contact_attributes() and #TpContact, keeps a client-side
+ * reference count of handles; you should not use the RequestHandles,
+ * HoldHandles and GetContactAttributes D-Bus methods directly as well as these
+ * functions.
  */
 void
 tp_connection_hold_handles (TpConnection *self,
@@ -743,7 +750,11 @@ connection_got_contact_attributes (TpConnection *self,
  *
  * This is a thin wrapper around the GetContactAttributes D-Bus method, and
  * should be used in preference to
- * tp_cli_connection_interface_contacts_get_contact_attributes().
+ * tp_cli_connection_interface_contacts_get_contact_attributes(); mixing this
+ * function, tp_connection_hold_handles(), tp_connection_unref_handles(), and
+ * #TpContact with direct use of the RequestHandles, HoldHandles and
+ * GetContactAttributes D-Bus methods is unwise, as #TpConnection and
+ * #TpContact perform client-side reference counting of handles.
  * The #TpContact API provides a higher-level abstraction which should
  * usually be used instead.
  *
