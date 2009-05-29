@@ -73,6 +73,8 @@ GQuark tp_errors_disconnected_quark (void);
 TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
     const gchar *object_path, GError **error);
 
+TpConnectionAliasFlags tp_connection_get_alias_flags (TpConnection *self);
+
 TpConnectionStatus tp_connection_get_status (TpConnection *self,
     TpConnectionStatusReason *reason);
 
