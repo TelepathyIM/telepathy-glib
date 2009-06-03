@@ -3277,3 +3277,22 @@ TP_TYPE_SVC_CLIENT_HANDLER
 TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS
 TP_TYPE_SVC_CLIENT_OBSERVER
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/debugger.h</INCLUDE>
+<FILE>debugger</FILE>
+<TITLE>debugger</TITLE>
+TpDebugger
+TpDebugMessage
+tp_debugger_get_singleton
+tp_debugger_add_message
+<SUBSECTION Standard>
+tp_debugger_get_type
+TP_DEBUGGER
+TP_DEBUGGER_CLASS
+TP_DEBUGGER_GET_CLASS
+TP_IS_DEBUGGER
+TP_IS_DEBUGGER_CLASS
+TP_TYPE_DEBUGGER
+TpDebuggerClass
+</SECTION>
