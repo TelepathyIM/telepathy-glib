@@ -1,4 +1,5 @@
 include $(top_srcdir)/tools/shave.mk
+include $(top_srcdir)/tools/flymake.mk
 
 tpgincludedir=$(includedir)/telepathy-1.0/telepathy-glib
 genincludedir=$(tpgincludedir)/_gen
