@@ -15,6 +15,7 @@ EXTRA_DIST = \
     check-misc.sh \
     check-whitespace.sh \
     doc-generator.xsl \
+    flymake.mk \
     git-which-branch.sh \
     glib-client-gen.py \
     glib-client-marshaller-gen.py \
