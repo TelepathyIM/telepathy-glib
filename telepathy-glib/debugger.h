@@ -43,12 +43,6 @@ typedef struct _TpDebugMessage TpDebugMessage;
 #define TP_DEBUGGER_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DEBUGGER, TpDebuggerClass))
 
-/* On the basis that messages are around 60 bytes on average, and that 50kb is
- * a reasonable maximum size for a frame buffer.
- */
-
-#define DEBUG_MESSAGE_LIMIT 800
-
 struct _TpDebugMessage {
   /*<public>*/
   gdouble timestamp;

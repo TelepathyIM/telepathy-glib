@@ -68,6 +68,12 @@
 
 static TpDebugger *singleton = NULL;
 
+/* On the basis that messages are around 60 bytes on average, and that 50kb is
+ * a reasonable maximum size for a frame buffer.
+ */
+
+#define DEBUG_MESSAGE_LIMIT 800
+
 static void debug_iface_init (gpointer g_iface, gpointer iface_data);
 
 G_DEFINE_TYPE_WITH_CODE (TpDebugger, tp_debugger, G_TYPE_OBJECT,
