@@ -291,12 +291,9 @@ tp_debugger_init (TpDebugger *self)
 /**
  * tp_debugger_get_singleton:
  *
- * Returns the existing #TpDeugger instance, or creates one if one hasn't
- * already been created. There is no need to unref or free the  object after
- * use.
+ * <!-- -->
  *
- * Returns: the existing #TpDebugger instance, or creates one if one hasn't
- * already been created.
+ * Returns: the #TpDebugger singleton
  *
  * Since: UNRELEASED
  */
