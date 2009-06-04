@@ -1,5 +1,5 @@
 /*
- * debugger.c - Telepathy debug interface implementation
+ * debug-sender.c - Telepathy debug interface implementation
  * Copyright (C) 2009 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
@@ -17,33 +17,32 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "debugger.h"
+#include "debug-sender.h"
 #include "config.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
 
 /**
- * SECTION:debugger
- * @title: TpDebugger
+ * SECTION:debug-sender
+ * @title: TpDebugSender
  * @short_description: proxy object for Telepathy debug interface
  *
- * A #TpDebugger object is an object exposing the Telepathy debug interface.
- * They are singleton objects.
+ * A #TpDebugSender object is an object exposing the Telepathy debug interface.
  *
  * Since: UNRELEASED
  */
 
 /**
- * TpDebuggerClass:
+ * TpDebugSenderClass:
  *
- * The class of a #TpDebugger.
+ * The class of a #TpDebugSender.
  *
  * Since: UNRELEASED
  */
 
 /**
- * TpDebugger:
+ * TpDebugSender:
  * @parent: The parent class instance
  * @enabled: %TRUE if debug messages should be sent using the NewDebugMessage
  *  signal.
@@ -66,7 +65,7 @@
  * Since: UNRELEASED
  */
 
-static TpDebugger *singleton = NULL;
+static TpDebugSender *debug_sender = NULL;
 
 /* On the basis that messages are around 60 bytes on average, and that 50kb is
  * a reasonable maximum size for a frame buffer.
@@ -76,7 +75,7 @@ static TpDebugger *singleton = NULL;
 
 static void debug_iface_init (gpointer g_iface, gpointer iface_data);
 
-G_DEFINE_TYPE_WITH_CODE (TpDebugger, tp_debugger, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE (TpDebugSender, tp_debug_sender, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
         tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DEBUG, debug_iface_init));
@@ -142,12 +141,12 @@ debug_message_free (TpDebugMessage *msg)
 }
 
 static void
-tp_debugger_get_property (GObject *object,
+tp_debug_sender_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpDebugger *self = TP_DEBUGGER (object);
+  TpDebugSender *self = TP_DEBUG_SENDER (object);
 
   switch (property_id)
     {
@@ -161,12 +160,12 @@ tp_debugger_get_property (GObject *object,
 }
 
 static void
-tp_debugger_set_property (GObject *object,
+tp_debug_sender_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpDebugger *self = TP_DEBUGGER (object);
+  TpDebugSender *self = TP_DEBUG_SENDER (object);
 
   switch (property_id)
     {
@@ -180,19 +179,19 @@ tp_debugger_set_property (GObject *object,
 }
 
 static void
-tp_debugger_finalize (GObject *object)
+tp_debug_sender_finalize (GObject *object)
 {
-  TpDebugger *self = TP_DEBUGGER (object);
+  TpDebugSender *self = TP_DEBUG_SENDER (object);
 
   g_queue_foreach (self->messages, (GFunc) debug_message_free, NULL);
   g_queue_free (self->messages);
   self->messages = NULL;
 
-  G_OBJECT_CLASS (tp_debugger_parent_class)->finalize (object);
+  G_OBJECT_CLASS (tp_debug_sender_parent_class)->finalize (object);
 }
 
 static void
-tp_debugger_class_init (TpDebuggerClass *klass)
+tp_debug_sender_class_init (TpDebugSenderClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   static TpDBusPropertiesMixinPropImpl debug_props[] = {
@@ -208,12 +207,12 @@ tp_debugger_class_init (TpDebuggerClass *klass)
       { NULL }
   };
 
-  object_class->get_property = tp_debugger_get_property;
-  object_class->set_property = tp_debugger_set_property;
-  object_class->finalize = tp_debugger_finalize;
+  object_class->get_property = tp_debug_sender_get_property;
+  object_class->set_property = tp_debug_sender_set_property;
+  object_class->finalize = tp_debug_sender_finalize;
 
   /**
-   * TpDebugger:enabled
+   * TpDebugSender:enabled
    *
    * %TRUE if the NewDebugMessage signal should be emitted when a new debug
    * message is generated.
@@ -226,14 +225,14 @@ tp_debugger_class_init (TpDebuggerClass *klass)
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpDebuggerClass, dbus_props_class));
+      G_STRUCT_OFFSET (TpDebugSenderClass, dbus_props_class));
 }
 
 static void
 get_messages (TpSvcDebug *self,
     DBusGMethodInvocation *context)
 {
-  TpDebugger *dbg = TP_DEBUGGER (self);
+  TpDebugSender *dbg = TP_DEBUG_SENDER (self);
   GPtrArray *messages;
   static GType struct_type = 0;
   GList *i;
@@ -283,52 +282,64 @@ debug_iface_init (gpointer g_iface,
 }
 
 static void
-tp_debugger_init (TpDebugger *self)
+tp_debug_sender_init (TpDebugSender *self)
 {
   self->messages = g_queue_new ();
 }
 
 /**
- * tp_debugger_get_singleton:
+ * tp_debug_sender_get:
  *
  * <!-- -->
  *
- * Returns: the #TpDebugger singleton
+ * Returns: the #TpDebugSender instance for the current starter bus
  *
  * Since: UNRELEASED
  */
-TpDebugger *
-tp_debugger_get_singleton (void)
+TpDebugSender *
+tp_debug_sender_get (void)
 {
-  if (G_UNLIKELY (singleton == NULL))
+  if (G_UNLIKELY (debug_sender == NULL))
     {
-      DBusGConnection *bus;
+      TpDBusDaemon *dbus_daemon;
+      GError *error = NULL;
 
-      singleton = g_object_new (TP_TYPE_DEBUGGER, NULL);
-      bus = tp_get_bus ();
-      dbus_g_connection_register_g_object (bus,
-          "/org/freedesktop/Telepathy/debug", (GObject *) singleton);
+      debug_sender = g_object_new (TP_TYPE_DEBUG_SENDER, NULL);
+      dbus_daemon = tp_dbus_daemon_dup (&error);
+
+      if (error != NULL)
+        {
+          g_error_free (error);
+          return NULL;
+        }
+
+      dbus_g_connection_register_g_object (
+          tp_proxy_get_dbus_connection (dbus_daemon),
+          "/org/freedesktop/Telepathy/debug", (GObject *) debug_sender);
+
+      g_object_unref (dbus_daemon);
     }
 
-  return singleton;
+  return debug_sender;
 }
 
 
 /**
- * tp_debugger_add_message:
- * self: A #TpDebugger instance
+ * tp_debug_sender_add_message:
+ * self: A #TpDebugSender instance
  * timestamp: Time of the message
  * domain: Message domain
  * level: The message level
  * string: The message string itself
  *
- * Adds a new message to the debugger message queue. If the TpDebugger:enabled
- * property is set to %TRUE, then a NewDebugMessage signal will be fired too.
+ * Adds a new message to the debug sender message queue. If the
+ * TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
+ * signal will be fired too.
  *
  * Since: UNRELEASED
  */
 void
-tp_debugger_add_message (TpDebugger *self,
+tp_debug_sender_add_message (TpDebugSender *self,
     GTimeVal *timestamp,
     const gchar *domain,
     GLogLevelFlags level,

@@ -3279,20 +3279,21 @@ TP_TYPE_SVC_CLIENT_OBSERVER
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/debugger.h</INCLUDE>
-<FILE>debugger</FILE>
-<TITLE>debugger</TITLE>
-TpDebugger
+<INCLUDE>telepathy-glib/debug-sender.h</INCLUDE>
+<INCLUDE>telepathy-glib/debug-sender.h</INCLUDE>
+<FILE>debug-sender</FILE>
+<TITLE>debug-sender</TITLE>
+TpDebugSender
 TpDebugMessage
-tp_debugger_get_singleton
-tp_debugger_add_message
+tp_debug_sender_get
+tp_debug_sender_add_message
 <SUBSECTION Standard>
-tp_debugger_get_type
-TP_DEBUGGER
-TP_DEBUGGER_CLASS
-TP_DEBUGGER_GET_CLASS
-TP_IS_DEBUGGER
-TP_IS_DEBUGGER_CLASS
-TP_TYPE_DEBUGGER
-TpDebuggerClass
+tp_debug_sender_get_type
+TP_DEBUG_SENDER
+TP_DEBUG_SENDER_CLASS
+TP_DEBUG_SENDER_GET_CLASS
+TP_IS_DEBUG_SENDER
+TP_IS_DEBUG_SENDER_CLASS
+TP_TYPE_DEBUG_SENDER
+TpDebugSenderClass
 </SECTION>

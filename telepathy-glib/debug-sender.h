@@ -1,5 +1,5 @@
 /*
- * debugger.h - header for Telepathy debug interface implementation
+ * debug-sender.h - header for Telepathy debug interface implementation
  * Copyright (C) 2009 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_DEBUGGER_H__
-#define __TP_DEBUGGER_H__
+#ifndef __TP_DEBUG_SENDER_H__
+#define __TP_DEBUG_SENDER_H__
 
 #include <glib-object.h>
 
@@ -27,21 +27,21 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpDebugger TpDebugger;
-typedef struct _TpDebuggerClass TpDebuggerClass;
+typedef struct _TpDebugSender TpDebugSender;
+typedef struct _TpDebugSenderClass TpDebugSenderClass;
 typedef struct _TpDebugMessage TpDebugMessage;
 
-#define TP_TYPE_DEBUGGER tp_debugger_get_type()
-#define TP_DEBUGGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_DEBUGGER, TpDebugger))
-#define TP_DEBUGGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_DEBUGGER, TpDebuggerClass))
-#define TP_IS_DEBUGGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_DEBUGGER))
-#define TP_IS_DEBUGGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_DEBUGGER))
-#define TP_DEBUGGER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DEBUGGER, TpDebuggerClass))
+#define TP_TYPE_DEBUG_SENDER tp_debug_sender_get_type()
+#define TP_DEBUG_SENDER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_DEBUG_SENDER, TpDebugSender))
+#define TP_DEBUG_SENDER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_DEBUG_SENDER, TpDebugSenderClass))
+#define TP_IS_DEBUG_SENDER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TYPE_DEBUG_SENDER))
+#define TP_IS_DEBUG_SENDER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_DEBUG_SENDER))
+#define TP_DEBUG_SENDER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DEBUG_SENDER, TpDebugSenderClass))
 
 struct _TpDebugMessage {
   /*<public>*/
@@ -51,7 +51,7 @@ struct _TpDebugMessage {
   gchar *string;
 };
 
-struct _TpDebugger {
+struct _TpDebugSender {
   GObject parent;
 
   /*<private>*/
@@ -59,17 +59,17 @@ struct _TpDebugger {
   GQueue *messages;
 };
 
-struct _TpDebuggerClass {
+struct _TpDebugSenderClass {
   /*<private>*/
   GObjectClass parent_class;
   TpDBusPropertiesMixinClass dbus_props_class;
 };
 
-GType tp_debugger_get_type (void);
+GType tp_debug_sender_get_type (void);
 
-TpDebugger *tp_debugger_get_singleton (void);
+TpDebugSender *tp_debug_sender_get (void);
 
-void tp_debugger_add_message (TpDebugger *self,
+void tp_debug_sender_add_message (TpDebugSender *self,
     GTimeVal *timestamp,
     const gchar *domain,
     GLogLevelFlags level,
@@ -77,4 +77,4 @@ void tp_debugger_add_message (TpDebugger *self,
 
 G_END_DECLS
 
-#endif /* __TP_DEBUGGER_H__ */
+#endif /* __TP_DEBUG_SENDER_H__ */

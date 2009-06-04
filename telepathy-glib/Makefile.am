@@ -143,7 +143,7 @@ our_headers = \
     dbus-properties-mixin.h \
     defs.h \
     debug.h \
-    debugger.h \
+    debug-sender.h \
     debug-ansi.h \
     enums.h \
     errors.h \
@@ -293,7 +293,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     dbus-internal.h \
     dbus-properties-mixin.c \
     debug.c \
-    debugger.c \
+    debug-sender.c \
     interfaces.c \
     debug-internal.h \
     errors.c \
