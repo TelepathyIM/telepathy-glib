@@ -589,11 +589,13 @@ get_all_properties_cb (TpProxy *proxy,
   GList *preferred_local_candidates = NULL;
   GParameter params[MAX_STREAM_TRANS_PARAMS];
   const gchar *nat_traversal = NULL;
-  GPtrArray *stun_servers;
+  GPtrArray *stun_servers = NULL;
   gboolean got_stun = FALSE;
-  GPtrArray *dbus_relay_info;
+  GPtrArray *dbus_relay_info = NULL;
 
-  if (dbus_error)
+  if (dbus_error &&
+      !(dbus_error->domain == DBUS_GERROR &&
+          dbus_error->code == DBUS_GERROR_UNKNOWN_METHOD))
     {
       tf_stream_error (stream, 0, dbus_error->message);
       return;
@@ -635,7 +637,8 @@ get_all_properties_cb (TpProxy *proxy,
 
   memset (params, 0, sizeof(GParameter) * MAX_STREAM_TRANS_PARAMS);
 
-  nat_traversal = tp_asv_get_string (out_Properties, "NATTraversal");
+  if (out_Properties)
+    nat_traversal = tp_asv_get_string (out_Properties, "NATTraversal");
   if (!nat_traversal && stream->priv->nat_props)
     nat_traversal = stream->priv->nat_props->nat_traversal;
 
@@ -685,8 +688,9 @@ get_all_properties_cb (TpProxy *proxy,
     }
 
   /* FIXME: use correct macro when available */
-  stun_servers = tp_asv_get_boxed (out_Properties, "STUNServers",
-      tp_type_dbus_array_su ());
+  if (out_Properties)
+    stun_servers = tp_asv_get_boxed (out_Properties, "STUNServers",
+        tp_type_dbus_array_su ());
 
   if (stun_servers && stun_servers->len)
     {
@@ -753,8 +757,9 @@ get_all_properties_cb (TpProxy *proxy,
         }
     }
 
-  dbus_relay_info = tp_asv_get_boxed (out_Properties, "RelayInfo",
-      TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST);
+  if (out_Properties)
+    dbus_relay_info = tp_asv_get_boxed (out_Properties, "RelayInfo",
+        TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST);
 
   if (dbus_relay_info && dbus_relay_info->len)
     {
