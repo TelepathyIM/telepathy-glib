@@ -1020,6 +1020,9 @@ tp_channel_dispose (GObject *object)
 
   DEBUG ("%p", self);
 
+  if (self->priv->connection == NULL)
+    goto finally;
+
   if (self->priv->conn_invalidated_id != 0)
     g_signal_handler_disconnect (self->priv->connection,
         self->priv->conn_invalidated_id);
@@ -1029,6 +1032,7 @@ tp_channel_dispose (GObject *object)
   g_object_unref (self->priv->connection);
   self->priv->connection = NULL;
 
+finally:
   ((GObjectClass *) tp_channel_parent_class)->dispose (object);
 }
 
