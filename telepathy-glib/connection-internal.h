@@ -38,8 +38,6 @@ struct _TpConnectionPrivate {
     TpConnectionStatusReason status_reason;
     GError *connection_error /* initialized statically */;
 
-    TpConnectionAliasFlags alias_flags;
-
     /* GArray of GQuark */
     GArray *contact_attribute_interfaces;
 
