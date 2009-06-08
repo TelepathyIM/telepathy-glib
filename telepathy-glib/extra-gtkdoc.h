@@ -199,6 +199,34 @@
  */
 
 /**
+ * SECTION:svc-account
+ * @title: Service-side Account interfaces
+ * @short_description: GInterfaces for Telepathy Account objects
+ *
+ * These interfaces (auto-generated from the Telepathy spec) make it easier
+ * to export objects implementing the Telepathy Account and its
+ * optional interfaces, with the correct method and signal signatures,
+ * and emit signals from those objects in a type-safe way.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy AccountManager, such as Mission Control.
+ */
+
+/**
+ * SECTION:svc-account-manager
+ * @title: Service-side Account Manager interface
+ * @short_description: GInterface for Telepathy AccountManager objects
+ *
+ * The #TpSvcAccountManager interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * AccountManager interface, with the correct method and signal signatures,
+ * and emit signals from that object in a type-safe way.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy AccountManager, such as Mission Control.
+ */
+
+/**
  * SECTION:svc-media-interfaces
  * @title: Service-side media streaming helper interfaces
  * @short_description: media session and media stream

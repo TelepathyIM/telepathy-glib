@@ -39,6 +39,8 @@ ABI_LISTS = \
 
 EXTRA_DIST = \
     $(ABI_LISTS) \
+    account.xml \
+    account-manager.xml \
     channel.xml \
     connection.xml \
     connection-manager.xml \
@@ -114,6 +116,8 @@ libtelepathy_glib_la_LDFLAGS += -export-symbols-regex '^tp'
 endif # !HAVE_LD_VERSION_SCRIPT
 
 tpginclude_HEADERS = \
+    account.h \
+    account-manager.h \
     base-connection.h \
     base-connection-manager.h \
     channel.h \
@@ -166,6 +170,8 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/interfaces-body.h \
     _gen/gtypes-body.h \
     _gen/register-dbus-glib-marshallers-body.h \
+    _gen/tp-cli-account-body.h \
+    _gen/tp-cli-account-manager-body.h \
     _gen/tp-cli-channel-body.h \
     _gen/tp-cli-connection-body.h \
     _gen/tp-cli-connection-manager-body.h \
@@ -173,6 +179,8 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-generic-body.h \
     _gen/tp-cli-media-session-handler-body.h \
     _gen/tp-cli-media-stream-handler-body.h \
+    _gen/tp-svc-account.c \
+    _gen/tp-svc-account-manager.c \
     _gen/tp-svc-channel.c \
     _gen/tp-svc-connection.c \
     _gen/tp-svc-connection-manager.c \
@@ -185,6 +193,8 @@ nodist_geninclude_HEADERS = \
     _gen/telepathy-enums.h \
     _gen/telepathy-interfaces.h \
     _gen/gtypes.h \
+    _gen/tp-cli-account.h \
+    _gen/tp-cli-account-manager.h \
     _gen/tp-cli-channel.h \
     _gen/tp-cli-connection.h \
     _gen/tp-cli-connection-manager.h \
@@ -192,6 +202,8 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-generic.h \
     _gen/tp-cli-media-session-handler.h \
     _gen/tp-cli-media-stream-handler.h \
+    _gen/tp-svc-account.h \
+    _gen/tp-svc-account-manager.h \
     _gen/tp-svc-channel.h \
     _gen/tp-svc-connection.h \
     _gen/tp-svc-connection-manager.h \
@@ -221,6 +233,8 @@ check-local: check-coding-style
 
 libtelepathy_glib_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_internal_la_SOURCES = \
+    account.c \
+    account-manager.c \
     base-connection.c \
     base-connection-manager.c \
     channel.c \
@@ -363,6 +377,16 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	subclass_assert= ; \
 	case $* in \
 		generic) \
+			maybe_reentrant=--generate-reentrant; \
+			;; \
+		account-manager) \
+			subclass=--subclass=TpAccountManager; \
+			subclass_assert=--subclass-assert=TP_IS_ACCOUNT_MANAGER; \
+			maybe_reentrant=--generate-reentrant; \
+			;; \
+		account) \
+			subclass=--subclass=TpAccount; \
+			subclass_assert=--subclass-assert=TP_IS_ACCOUNT; \
 			maybe_reentrant=--generate-reentrant; \
 			;; \
 		channel) \

@@ -12,6 +12,9 @@
 <xi:include href="generic.xml"/>
 <xi:include href="dbus-daemon.xml"/>
 
+<xi:include href="account-manager.xml"/>
+<xi:include href="account.xml"/>
+
 <xi:include href="../spec/generic-types.xml"/>
 <xi:include href="../spec/errors.xml"/>
 
