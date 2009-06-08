@@ -119,8 +119,7 @@ tp_errors_disconnected_quark (void)
 
 enum
 {
-  PROP_ALIAS_FLAGS = 1,
-  PROP_STATUS,
+  PROP_STATUS = 1,
   PROP_STATUS_REASON,
   PROP_CONNECTION_READY,
   PROP_SELF_HANDLE,
@@ -141,9 +140,6 @@ tp_connection_get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_ALIAS_FLAGS:
-      g_value_set_uint (value, self->priv->alias_flags);
-      break;
     case PROP_CONNECTION_READY:
       g_value_set_boolean (value, self->priv->ready);
       break;
@@ -740,17 +736,6 @@ tp_connection_class_init (TpConnectionClass *klass)
       TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
 
   /**
-   * TpConnection:alias-flags:
-   *
-   * This connection's alias flags, or 0 if we don't know yet.
-   */
-  param_spec = g_param_spec_uint ("alias-flags", "Alias flags",
-      "The alias flags of this connection", 0, G_MAXUINT32, 0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_ALIAS_FLAGS,
-      param_spec);
-
-  /**
    * TpConnection:status:
    *
    * This connection's status, or TP_UNKNOWN_CONNECTION_STATUS if we don't
@@ -914,21 +899,6 @@ tp_connection_get_self_handle (TpConnection *self)
 {
   g_return_val_if_fail (TP_IS_CONNECTION (self), 0);
   return self->priv->self_handle;
-}
-
-/**
- * tp_connection_get_alias_flags:
- * @self: a connection
- *
- * Returns: This connection's alias flags, or 0 if we don't know yet.
- *
- * Since: 0.7.UNRELEASED
- */
-TpConnectionAliasFlags
-tp_connection_get_alias_flags (TpConnection *self)
-{
-  g_return_val_if_fail (TP_IS_CONNECTION (self), 0);
-  return self->priv->alias_flags;
 }
 
 /**
