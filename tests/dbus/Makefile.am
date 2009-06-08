@@ -1,6 +1,8 @@
 include $(top_srcdir)/tools/shave.mk
 
 noinst_PROGRAMS = \
+    test-account \
+    test-account-manager \
     test-call-cancellation \
     test-callable-example \
     test-channel-introspect \
@@ -38,6 +40,10 @@ TESTS = $(noinst_PROGRAMS)
 LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
     $(top_builddir)/tests/lib/libtp-glib-tests.la
+
+test_account_SOURCES = account.c
+
+test_account_manager_SOURCES = account-manager.c
 
 test_call_cancellation_SOURCES = call-cancellation.c
 
