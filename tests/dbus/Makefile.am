@@ -10,6 +10,7 @@ noinst_PROGRAMS = \
     test-channel-introspect \
     test-channel-request \
     test-cli-group \
+    test-client \
     test-cm \
     test-connection \
     test-connection-bug-18845 \
@@ -62,6 +63,8 @@ test_callable_example_SOURCES = callable-example.c
 test_callable_example_LDADD = \
     $(LDADD) \
     $(top_builddir)/examples/cm/callable/libexample-cm-callable.la
+
+test_client_SOURCES = client.c
 
 test_cli_group_SOURCES = cli-group.c
 

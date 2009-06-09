@@ -9,6 +9,7 @@
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/channel-request.h>
+#include <telepathy-glib/client.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/contact.h>
@@ -24,6 +25,7 @@
 #include <telepathy-glib/svc-channel-dispatcher.h>
 #include <telepathy-glib/svc-channel-dispatch-operation.h>
 #include <telepathy-glib/svc-channel-request.h>
+#include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/svc-connection-manager.h>
 #include <telepathy-glib/svc-generic.h>
@@ -41,6 +43,7 @@ tp_channel_dispatch_operation_get_type
 tp_channel_iface_get_type
 tp_channel_manager_get_type
 tp_channel_request_get_type
+tp_client_get_type
 tp_connection_get_type
 tp_connection_manager_get_type
 tp_contact_get_type
@@ -72,6 +75,11 @@ tp_svc_channel_type_room_list_get_type
 tp_svc_channel_type_streamed_media_get_type
 tp_svc_channel_type_text_get_type
 tp_svc_channel_type_tubes_get_type
+tp_svc_client_approver_get_type
+tp_svc_client_get_type
+tp_svc_client_handler_get_type
+tp_svc_client_interface_requests_get_type
+tp_svc_client_observer_get_type
 tp_svc_connection_get_type
 tp_svc_connection_interface_aliasing_get_type
 tp_svc_connection_interface_avatars_get_type

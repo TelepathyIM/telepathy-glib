@@ -92,5 +92,19 @@ G_BEGIN_DECLS
  */
 #define TP_CHANNEL_DISPATCHER_OBJECT_PATH "/org/freedesktop/Telepathy/ChannelDispatcher"
 
+/**
+ * TP_CLIENT_BUS_NAME_BASE:
+ *
+ * The common prefix of the well-known bus name for any Telepathy Client.
+ */
+#define TP_CLIENT_BUS_NAME_BASE "org.freedesktop.Telepathy.Client."
+
+/**
+ * TP_CLIENT_OBJECT_PATH_BASE
+ *
+ * The common prefix of the well-known object path for any Telepathy Client.
+ */
+#define TP_CLIENT_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/Client/"
+
 G_END_DECLS
 #endif

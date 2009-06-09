@@ -301,6 +301,16 @@
  */
 
 /**
+ * SECTION:svc-client
+ * @title: Service-side Client interfaces
+ * @short_description: interfaces used to be an Observer, Approver and Handler
+ *
+ * These interfaces (auto-generated from the telepathy spec) make it easier
+ * to export the objects used to implement a Telepathy client. Methods on
+ * these objects are primarily called by the Channel Dispatcher.
+ */
+
+/**
  * SECTION:defs
  * @title: Miscellaneous definitions
  * @short_description: Definitions useful for working with the Telepathy

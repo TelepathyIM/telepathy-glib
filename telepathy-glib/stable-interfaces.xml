@@ -19,6 +19,8 @@
 <xi:include href="channel-dispatch-operation.xml"/>
 <xi:include href="channel-request.xml"/>
 
+<xi:include href="client.xml"/>
+
 <xi:include href="../spec/generic-types.xml"/>
 <xi:include href="../spec/errors.xml"/>
 

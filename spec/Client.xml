@@ -20,8 +20,7 @@
       02110-1301, USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.Client"
-    tp:causes-havoc="not yet final">
+  <interface name="org.freedesktop.Telepathy.Client">
     <tp:added version="0.17.12">(as a draft)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
