@@ -11,6 +11,12 @@
 #include "tests/lib/util.h"
 
 void
+test_proxy_run_until_dbus_queue_processed (gpointer proxy)
+{
+  tp_cli_dbus_introspectable_run_introspect (proxy, -1, NULL, NULL, NULL);
+}
+
+void
 test_connection_run_until_dbus_queue_processed (TpConnection *connection)
 {
   tp_cli_connection_run_get_protocol (connection, -1, NULL, NULL, NULL);

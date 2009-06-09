@@ -11,7 +11,10 @@
 #ifndef TEST_LIB_UTIL_H
 #define TEST_LIB_UTIL_H
 
+#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/connection.h>
+
+void test_proxy_run_until_dbus_queue_processed (gpointer proxy);
 
 void test_connection_run_until_dbus_queue_processed (TpConnection *connection);
 
