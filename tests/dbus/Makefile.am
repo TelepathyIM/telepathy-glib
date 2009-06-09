@@ -6,7 +6,9 @@ noinst_PROGRAMS = \
     test-call-cancellation \
     test-callable-example \
     test-channel-dispatcher \
+    test-channel-dispatch-operation \
     test-channel-introspect \
+    test-channel-request \
     test-cli-group \
     test-cm \
     test-connection \
@@ -50,7 +52,11 @@ test_call_cancellation_SOURCES = call-cancellation.c
 
 test_channel_dispatcher_SOURCES = channel-dispatcher.c
 
+test_channel_dispatch_operation_SOURCES = channel-dispatch-operation.c
+
 test_channel_introspect_SOURCES = channel-introspect.c
+
+test_channel_request_SOURCES = channel-request.c
 
 test_callable_example_SOURCES = callable-example.c
 test_callable_example_LDADD = \

@@ -244,6 +244,51 @@
  */
 
 /**
+ * SECTION:svc-channel-dispatch-operation
+ * @title: Service-side Channel Dispatch Operation interface
+ * @short_description: GInterface for Telepathy ChannelDispatchOperation object
+ *
+ * This interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * ChannelDispatchOperation interface, with the correct method and signal
+ * signatures, and emit signals from that object in a type-safe way.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy ChannelDispatcher, such as Mission Control.
+ */
+
+/**
+ * SECTION:svc-channel-request
+ * @title: Service-side Channel Request interface
+ * @short_description: GInterface for Telepathy ChannelRequest object
+ *
+ * This interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * ChannelRequest interface, with the correct method and signal
+ * signatures, and emit signals from that object in a type-safe way.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy ChannelDispatcher, such as Mission Control.
+ */
+
+/**
+ * SECTION:svc-channel-dispatcher
+ * @title: Service-side Channel Dispatcher interface
+ * @short_description: GInterfaces for Telepathy ChannelDispatcher object
+ *
+ * The #TpSvcChannelDispatcher interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * ChannelDispatcher interface, with the correct method and signal signatures,
+ * and emit signals from that object in a type-safe way.
+ *
+ * Similarly, #TpSvcChannelDispatcherInterfaceOperationList helps to
+ * implement the optional OperationList interface.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy ChannelDispatcher, such as Mission Control.
+ */
+
+/**
  * SECTION:svc-media-interfaces
  * @title: Service-side media streaming helper interfaces
  * @short_description: media session and media stream
