@@ -15,6 +15,8 @@
 <xi:include href="account-manager.xml"/>
 <xi:include href="account.xml"/>
 
+<xi:include href="channel-dispatcher.xml"/>
+
 <xi:include href="../spec/generic-types.xml"/>
 <xi:include href="../spec/errors.xml"/>
 

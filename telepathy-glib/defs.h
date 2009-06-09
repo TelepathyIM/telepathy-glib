@@ -78,5 +78,19 @@ G_BEGIN_DECLS
  */
 #define TP_ACCOUNT_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/Account/"
 
+/**
+ * TP_CHANNEL_DISPATCHER_BUS_NAME:
+ *
+ * The channel dispatcher's well-known bus name
+ */
+#define TP_CHANNEL_DISPATCHER_BUS_NAME "org.freedesktop.Telepathy.ChannelDispatcher"
+
+/**
+ * TP_CHANNEL_DISPATCHER_OBJECT_PATH:
+ *
+ * The channel dispatcher's standard object path
+ */
+#define TP_CHANNEL_DISPATCHER_OBJECT_PATH "/org/freedesktop/Telepathy/ChannelDispatcher"
+
 G_END_DECLS
 #endif

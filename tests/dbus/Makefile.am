@@ -5,6 +5,7 @@ noinst_PROGRAMS = \
     test-account-manager \
     test-call-cancellation \
     test-callable-example \
+    test-channel-dispatcher \
     test-channel-introspect \
     test-cli-group \
     test-cm \
@@ -46,6 +47,8 @@ test_account_SOURCES = account.c
 test_account_manager_SOURCES = account-manager.c
 
 test_call_cancellation_SOURCES = call-cancellation.c
+
+test_channel_dispatcher_SOURCES = channel-dispatcher.c
 
 test_channel_introspect_SOURCES = channel-introspect.c
 

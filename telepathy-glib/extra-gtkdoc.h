@@ -227,6 +227,23 @@
  */
 
 /**
+ * SECTION:svc-channel-dispatcher
+ * @title: Service-side Channel Dispatcher interface
+ * @short_description: GInterfaces for Telepathy ChannelDispatcher object
+ *
+ * The #TpSvcChannelDispatcher interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * ChannelDispatcher interface, with the correct method and signal signatures,
+ * and emit signals from that object in a type-safe way.
+ *
+ * Similarly, #TpSvcChannelDispatcherInterfaceOperationList helps to
+ * implement the optional OperationList interface.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy ChannelDispatcher, such as Mission Control.
+ */
+
+/**
  * SECTION:svc-media-interfaces
  * @title: Service-side media streaming helper interfaces
  * @short_description: media session and media stream

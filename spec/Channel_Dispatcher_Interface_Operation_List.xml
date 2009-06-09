@@ -21,8 +21,7 @@
       USA.</p>
   </tp:license>
 
-  <interface name="org.freedesktop.Telepathy.ChannelDispatcher.Interface.OperationList"
-    tp:causes-havoc="not yet final">
+  <interface name="org.freedesktop.Telepathy.ChannelDispatcher.Interface.OperationList">
 
     <tp:requires interface="org.freedesktop.Telepathy.ChannelDispatcher"/>
 

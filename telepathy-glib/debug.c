@@ -109,6 +109,7 @@ static GDebugKey keys[] = {
   { "handles",       TP_DEBUG_HANDLES },
   { "contacts",      TP_DEBUG_CONTACTS },
   { "accounts",      TP_DEBUG_ACCOUNTS },
+  { "dispatcher",    TP_DEBUG_DISPATCHER },
   { 0, }
 };
 

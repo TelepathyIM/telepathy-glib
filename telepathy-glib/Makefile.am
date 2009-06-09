@@ -122,6 +122,7 @@ tpginclude_HEADERS = \
     base-connection-manager.h \
     channel.h \
     channel-iface.h \
+    channel-dispatcher.h \
     channel-factory-iface.h \
     channel-manager.h \
     connection.h \
@@ -173,6 +174,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-account-body.h \
     _gen/tp-cli-account-manager-body.h \
     _gen/tp-cli-channel-body.h \
+    _gen/tp-cli-channel-dispatcher-body.h \
     _gen/tp-cli-connection-body.h \
     _gen/tp-cli-connection-manager-body.h \
     _gen/tp-cli-dbus-daemon-body.h \
@@ -182,6 +184,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-svc-account.c \
     _gen/tp-svc-account-manager.c \
     _gen/tp-svc-channel.c \
+    _gen/tp-svc-channel-dispatcher.c \
     _gen/tp-svc-connection.c \
     _gen/tp-svc-connection-manager.c \
     _gen/tp-svc-generic.c \
@@ -196,6 +199,7 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-account.h \
     _gen/tp-cli-account-manager.h \
     _gen/tp-cli-channel.h \
+    _gen/tp-cli-channel-dispatcher.h \
     _gen/tp-cli-connection.h \
     _gen/tp-cli-connection-manager.h \
     _gen/tp-cli-dbus-daemon.h \
@@ -205,6 +209,7 @@ nodist_geninclude_HEADERS = \
     _gen/tp-svc-account.h \
     _gen/tp-svc-account-manager.h \
     _gen/tp-svc-channel.h \
+    _gen/tp-svc-channel-dispatcher.h \
     _gen/tp-svc-connection.h \
     _gen/tp-svc-connection-manager.h \
     _gen/tp-svc-generic.h \
@@ -240,6 +245,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel.c \
     channel-group.c \
     channel-internal.h \
+    channel-dispatcher.c \
     channel-manager.c \
     connection.c \
     connection-internal.h \
@@ -392,6 +398,11 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		channel) \
 			subclass=--subclass=TpChannel; \
 			subclass_assert=--subclass-assert=TP_IS_CHANNEL; \
+			maybe_reentrant=--generate-reentrant; \
+			;; \
+		channel-dispatcher) \
+			subclass=--subclass=TpChannelDispatcher; \
+			subclass_assert=--subclass-assert=TP_IS_CHANNEL_DISPATCHER; \
 			maybe_reentrant=--generate-reentrant; \
 			;; \
 		connection-manager) \
