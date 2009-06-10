@@ -54,6 +54,8 @@ TpDBusDaemon *tp_dbus_daemon_dup (GError **error);
 
 TpDBusDaemon *tp_dbus_daemon_new (DBusGConnection *connection);
 
+void tp_dbus_daemon_init_known_interfaces (void);
+
 typedef void (*TpDBusDaemonNameOwnerChangedCb) (TpDBusDaemon *bus_daemon,
     const gchar *name, const gchar *new_owner, gpointer user_data);
 
@@ -160,12 +162,12 @@ tp_asv_get_strv (const GHashTable *asv, const gchar *key);
 void tp_asv_set_strv (GHashTable *asv, const gchar *key, gchar **value);
 void tp_asv_dump (GHashTable *asv);
 
-G_END_DECLS
-
-#include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
-
 #ifndef TP_DISABLE_DEPRECATED
 DBusGProxy * tp_get_bus_proxy (void) G_GNUC_DEPRECATED;
 #endif
+
+G_END_DECLS
+
+#include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
 
 #endif /* __TELEPATHY_DBUS_H__ */

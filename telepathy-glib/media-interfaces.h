@@ -77,6 +77,9 @@ TpMediaSessionHandler *tp_media_session_handler_new (TpDBusDaemon *dbus,
 TpMediaStreamHandler *tp_media_stream_handler_new (TpDBusDaemon *dbus,
     const gchar *unique_name, const gchar *object_path, GError **error);
 
+void tp_media_session_handler_init_known_interfaces (void);
+void tp_media_stream_handler_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-media-session-handler.h>

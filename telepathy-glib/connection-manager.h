@@ -166,6 +166,8 @@ gboolean tp_connection_manager_param_is_dbus_property (
 gboolean tp_connection_manager_param_get_default (
     const TpConnectionManagerParam *param, GValue *value);
 
+void tp_connection_manager_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection-manager.h>

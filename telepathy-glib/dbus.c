@@ -1264,11 +1264,40 @@ tp_dbus_daemon_dispose (GObject *object)
   G_OBJECT_CLASS (tp_dbus_daemon_parent_class)->dispose (object);
 }
 
+/**
+ * tp_dbus_daemon_init_known_interfaces:
+ *
+ * Ensure that the known interfaces for TpDBusDaemon have been set up.
+ * This is done automatically when necessary, but for correct
+ * overriding of library interfaces by local extensions, you should
+ * call this function before calling
+ * tp_proxy_or_subclass_hook_on_interface_add() with first argument
+ * %TP_TYPE_DBUS_DAEMON.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_dbus_daemon_init_known_interfaces (void)
+{
+  static gsize once = 0;
+
+  if (g_once_init_enter (&once))
+    {
+      tp_proxy_init_known_interfaces ();
+      tp_proxy_or_subclass_hook_on_interface_add (TP_TYPE_DBUS_DAEMON,
+          tp_cli_dbus_daemon_add_signals);
+
+      g_once_init_leave (&once, 1);
+    }
+}
+
 static void
 tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
+
+  tp_dbus_daemon_init_known_interfaces ();
 
   g_type_class_add_private (klass, sizeof (TpDBusDaemonPrivate));
 
@@ -1276,8 +1305,6 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
   object_class->dispose = tp_dbus_daemon_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_DBUS_DAEMON;
-  tp_proxy_or_subclass_hook_on_interface_add (TP_TYPE_DBUS_DAEMON,
-      tp_cli_dbus_daemon_add_signals);
 }
 
 /* Auto-generated implementation of _tp_register_dbus_glib_marshallers */
