@@ -306,8 +306,11 @@
  * @short_description: interfaces used to be an Observer, Approver and Handler
  *
  * These interfaces (auto-generated from the telepathy spec) make it easier
- * to export the objects used to implement a Telepathy client. Methods on
- * these objects are primarily called by the Channel Dispatcher.
+ * to export the objects used to implement a Telepathy client.
+ *
+ * Clients such as loggers, new message notification windows and chat UIs
+ * should implement some or all of the Client types (Observer, Approver and/or
+ * Handler): see telepathy-spec for details.
  */
 
 /**
