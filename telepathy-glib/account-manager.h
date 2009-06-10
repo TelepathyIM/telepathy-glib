@@ -65,6 +65,8 @@ GType tp_account_manager_get_type (void);
 
 TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon);
 
+void tp_account_manager_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account-manager.h>

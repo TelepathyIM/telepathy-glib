@@ -71,6 +71,8 @@ TpChannelDispatchOperation *tp_channel_dispatch_operation_new (
     TpDBusDaemon *bus_daemon, const gchar *object_path,
     GHashTable *immutable_properties, GError **error);
 
+void tp_channel_dispatch_operation_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-dispatch-operation.h>

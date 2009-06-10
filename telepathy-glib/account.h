@@ -66,6 +66,8 @@ GType tp_account_get_type (void);
 TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
     GError **error);
 
+void tp_account_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account.h>

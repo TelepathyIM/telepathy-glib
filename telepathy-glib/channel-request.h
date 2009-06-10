@@ -67,6 +67,8 @@ TpChannelRequest *tp_channel_request_new (TpDBusDaemon *bus_daemon,
     const gchar *object_path, GHashTable *immutable_properties,
     GError **error);
 
+void tp_channel_request_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-request.h>

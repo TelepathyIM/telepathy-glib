@@ -167,7 +167,6 @@ tp_channel_request_constructed (GObject *object)
 static void
 tp_channel_request_class_init (TpChannelRequestClass *klass)
 {
-  GType tp_type = TP_TYPE_CHANNEL_REQUEST;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
@@ -176,10 +175,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
   object_class->constructed = tp_channel_request_constructed;
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL_REQUEST;
-  tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-      tp_cli_channel_request_add_signals);
-  tp_proxy_subclass_add_error_mapping (tp_type,
-      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+  tp_channel_request_init_known_interfaces ();
   proxy_class->must_have_unique_name = TRUE;
 
   /**
@@ -195,6 +191,37 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
       NULL, NULL,
       g_cclosure_marshal_VOID__VOID,
       G_TYPE_NONE, 0);
+}
+
+/**
+ * tp_channel_request_init_known_interfaces:
+ *
+ * Ensure that the known interfaces for TpChannelRequest have been set up.
+ * This is done automatically when necessary, but for correct
+ * overriding of library interfaces by local extensions, you should
+ * call this function before calling
+ * tp_proxy_or_subclass_hook_on_interface_add() with first argument
+ * %TP_TYPE_CHANNEL_REQUEST.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_channel_request_init_known_interfaces (void)
+{
+  static gsize once = 0;
+
+  if (g_once_init_enter (&once))
+    {
+      GType tp_type = TP_TYPE_CHANNEL_REQUEST;
+
+      tp_proxy_init_known_interfaces ();
+      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
+          tp_cli_channel_request_add_signals);
+      tp_proxy_subclass_add_error_mapping (tp_type,
+          TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+
+      g_once_init_leave (&once, 1);
+    }
 }
 
 /**

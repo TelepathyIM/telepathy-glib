@@ -66,6 +66,8 @@ GType tp_channel_dispatcher_get_type (void);
 
 TpChannelDispatcher *tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon);
 
+void tp_channel_dispatcher_init_known_interfaces (void);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-dispatcher.h>

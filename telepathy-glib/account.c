@@ -132,7 +132,6 @@ tp_account_constructed (GObject *object)
 static void
 tp_account_class_init (TpAccountClass *klass)
 {
-  GType tp_type = TP_TYPE_ACCOUNT;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
 
@@ -141,10 +140,38 @@ tp_account_class_init (TpAccountClass *klass)
   object_class->constructed = tp_account_constructed;
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT;
-  tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-      tp_cli_account_add_signals);
-  tp_proxy_subclass_add_error_mapping (tp_type,
-      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+  tp_account_init_known_interfaces ();
+}
+
+/**
+ * tp_account_init_known_interfaces:
+ *
+ * Ensure that the known interfaces for TpAccount have been set up.
+ * This is done automatically when necessary, but for correct
+ * overriding of library interfaces by local extensions, you should
+ * call this function before calling
+ * tp_proxy_or_subclass_hook_on_interface_add() with first argument
+ * %TP_TYPE_ACCOUNT.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_account_init_known_interfaces (void)
+{
+  static gsize once = 0;
+
+  if (g_once_init_enter (&once))
+    {
+      GType tp_type = TP_TYPE_ACCOUNT;
+
+      tp_proxy_init_known_interfaces ();
+      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
+          tp_cli_account_add_signals);
+      tp_proxy_subclass_add_error_mapping (tp_type,
+          TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+
+      g_once_init_leave (&once, 1);
+    }
 }
 
 /**
