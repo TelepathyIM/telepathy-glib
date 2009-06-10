@@ -1561,6 +1561,7 @@ tp_dbus_daemon_cancel_name_owner_watch
 tp_dbus_daemon_release_name
 tp_dbus_daemon_request_name
 tp_dbus_daemon_watch_name_owner
+tp_dbus_daemon_init_known_interfaces
 <SUBSECTION>
 tp_cli_dbus_daemon_call_add_match
 tp_cli_dbus_daemon_call_get_connection_se_linux_security_context
@@ -2695,6 +2696,7 @@ tp_connection_manager_param_is_dbus_property
 tp_connection_manager_param_get_default
 tp_connection_manager_check_valid_name
 tp_connection_manager_check_valid_protocol_name
+tp_connection_manager_init_known_interfaces
 <SUBSECTION Standard>
 tp_connection_manager_get_type
 TP_TYPE_CONNECTION_MANAGER
@@ -2741,10 +2743,12 @@ TpMediaSessionHandlerPrivate
 TpMediaStreamHandlerPrivate
 <SUBSECTION>
 tp_media_session_handler_new
+tp_media_session_handler_init_known_interfaces
 TpMediaSessionHandler
 TpMediaSessionHandlerClass
 <SUBSECTION>
 tp_media_stream_handler_new
+tp_media_stream_handler_init_known_interfaces
 TpMediaStreamHandler
 TpMediaStreamHandlerClass
 <SUBSECTION>
@@ -2911,6 +2915,7 @@ TP_SVC_ACCOUNT_MANAGER_GET_CLASS
 TpAccount
 TpAccountClass
 tp_account_new
+tp_account_init_known_interfaces
 <SUBSECTION>
 tp_cli_account_callback_for_reconnect
 tp_cli_account_call_reconnect
@@ -2944,6 +2949,7 @@ TpAccountClassPrivate
 TpAccountManager
 TpAccountManagerClass
 tp_account_manager_new
+tp_account_manager_init_known_interfaces
 <SUBSECTION>
 tp_cli_account_manager_callback_for_create_account
 tp_cli_account_manager_call_create_account
@@ -2970,6 +2976,7 @@ TpAccountManagerClassPrivate
 TpChannelDispatcher
 TpChannelDispatcherClass
 tp_channel_dispatcher_new
+tp_channel_dispatcher_init_known_interfaces
 <SUBSECTION>
 tp_cli_channel_dispatcher_callback_for_create_channel
 tp_cli_channel_dispatcher_call_create_channel
@@ -3029,6 +3036,7 @@ TP_SVC_CHANNEL_DISPATCHER_INTERFACE_OPERATION_LIST_GET_CLASS
 TpChannelDispatchOperation
 TpChannelDispatchOperationClass
 tp_channel_dispatch_operation_new
+tp_channel_dispatch_operation_init_known_interfaces
 <SUBSECTION>
 tp_cli_channel_dispatch_operation_callback_for_claim
 tp_cli_channel_dispatch_operation_call_claim
@@ -3055,6 +3063,7 @@ tp_channel_dispatch_operation_get_type
 TpChannelRequest
 TpChannelRequestClass
 tp_channel_request_new
+tp_channel_request_init_known_interfaces
 <SUBSECTION>
 tp_cli_channel_request_callback_for_cancel
 tp_cli_channel_request_call_cancel
@@ -3126,6 +3135,7 @@ TP_TYPE_SVC_CHANNEL_REQUEST
 <TITLE>client</TITLE>
 TpClient
 TpClientClass
+tp_client_init_known_interfaces
 <SUBSECTION>
 tp_cli_client_observer_callback_for_observe_channels
 tp_cli_client_observer_call_observe_channels
