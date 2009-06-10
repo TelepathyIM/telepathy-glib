@@ -362,29 +362,38 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	subclass= ; \
 	subclass_assert= ; \
 	case $* in \
+		generic) \
+			maybe_reentrant=--generate-reentrant; \
+			;; \
 		channel) \
 			subclass=--subclass=TpChannel; \
 			subclass_assert=--subclass-assert=TP_IS_CHANNEL; \
+			maybe_reentrant=--generate-reentrant; \
 			;; \
 		connection-manager) \
 			subclass=--subclass=TpConnectionManager; \
 			subclass_assert=--subclass-assert=TP_IS_CONNECTION_MANAGER \
+			maybe_reentrant=--generate-reentrant; \
 			;; \
 		connection) \
 			subclass=--subclass=TpConnection; \
 			subclass_assert=--subclass-assert=TP_IS_CONNECTION; \
+			maybe_reentrant=--generate-reentrant; \
 			;; \
 		media-session-handler) \
 			subclass=--subclass=TpMediaSessionHandler; \
 			subclass_assert=--subclass-assert=TP_IS_MEDIA_SESSION_HANDLER; \
+			maybe_reentrant=--generate-reentrant; \
 			;; \
 		media-stream-handler) \
 			subclass=--subclass=TpMediaStreamHandler; \
 			subclass_assert=--subclass-assert=TP_IS_MEDIA_STREAM_HANDLER; \
+			maybe_reentrant=--generate-reentrant; \
 			;; \
 		dbus-daemon) \
 			subclass=--subclass=TpDBusDaemon; \
 			subclass_assert=--subclass-assert=TP_IS_DBUS_DAEMON; \
+			maybe_reentrant=--generate-reentrant; \
 			;; \
 	esac; \
 	$(PYTHON) $(tools_dir)/glib-client-gen.py \
@@ -392,4 +401,5 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		--group `echo $* | tr - _` \
 		--iface-quark-prefix=TP_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
+		$$maybe_reentrant \
 		$< Tp_Cli _gen/tp-cli-$*

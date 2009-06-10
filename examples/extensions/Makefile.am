@@ -116,13 +116,14 @@ _gen/connection.xml: connection.xml $(wildcard *.xml) $(tools_dir)/xincludator.p
 	$(QUIET_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 _gen/cli-connection-body.h _gen/cli-connection.h: _gen/connection.xml \
-	$(tools_dir)/glib-client-gen.py
+	$(tools_dir)/glib-client-gen.py Makefile.am
 	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
 		--group=connection \
 		--subclass=TpConnection \
 		--subclass-assert=TP_IS_CONNECTION \
 		--iface-quark-prefix=EXAMPLE_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
+		--generate-reentrant \
 		$< Example_Cli _gen/cli-connection
 
 _gen/svc-connection.c _gen/svc-connection.h: _gen/connection.xml \

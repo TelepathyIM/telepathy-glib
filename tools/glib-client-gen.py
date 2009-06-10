@@ -55,6 +55,9 @@ class Generator(object):
             % opts.get('--subclass', 'TpProxy'))
         if self.proxy_arg == 'void *':
             self.proxy_arg = 'gpointer '
+        self.generate_reentrant = ('--generate-reentrant' in opts or
+                '--deprecate-reentrant' in opts)
+        self.deprecate_reentrant = opts.get('--deprecate-reentrant', None)
 
     def h(self, s):
         if isinstance(s, unicode):
@@ -801,6 +804,16 @@ class Generator(object):
         self.b('}')
         self.b('')
 
+        if self.generate_reentrant:
+            self.do_method_reentrant(method, iface_lc, member, member_lc,
+                                     in_args, out_args, collect_callback)
+
+        # leave a gap for the end of the method
+        self.b('')
+        self.h('')
+
+    def do_method_reentrant(self, method, iface_lc, member, member_lc, in_args,
+            out_args, collect_callback):
         # Reentrant blocking calls
         # Example:
         # gboolean tp_cli_properties_interface_run_get_properties
@@ -885,6 +898,9 @@ class Generator(object):
         self.b('}')
         self.b('')
 
+        if self.deprecate_reentrant:
+            self.h('#ifndef %s' % self.deprecate_reentrant)
+
         self.h('gboolean %s_%s_run_%s (%sproxy,'
                % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.h('    gint timeout_ms,')
@@ -948,7 +964,13 @@ class Generator(object):
             self.b('    %s*%s,' % (ctype, name))
 
         self.h('    GError **error,')
-        self.h('    GMainLoop **loop);')
+
+        if self.deprecate_reentrant:
+            self.h('    GMainLoop **loop) G_GNUC_DEPRECATED;')
+            self.h('#endif /* not %s */' % self.deprecate_reentrant)
+        else:
+            self.h('    GMainLoop **loop);')
+
         self.h('')
 
         self.b('    GError **error,')
@@ -1019,10 +1041,6 @@ class Generator(object):
         self.b('  return state.success;')
         self.b('}')
         self.b('')
-
-        # leave a gap for the end of the method
-        self.b('')
-        self.h('')
 
     def do_signal_add(self, signal):
         marshaller_items = []
@@ -1153,7 +1171,8 @@ def types_to_gtypes(types):
 if __name__ == '__main__':
     options, argv = gnu_getopt(sys.argv[1:], '',
                                ['group=', 'subclass=', 'subclass-assert=',
-                                'iface-quark-prefix=', 'tp-proxy-api='])
+                                'iface-quark-prefix=', 'tp-proxy-api=',
+                                'generate-reentrant', 'deprecate-reentrant='])
 
     opts = {}
 
