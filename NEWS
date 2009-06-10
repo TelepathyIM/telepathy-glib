@@ -5,7 +5,33 @@ API changes:
 
 Enhancements:
 
+* fd.o #22208: Updated to telepathy-spec 0.17.26 (smcv)
+
+* Added generated service-side bindings for AccountManager, Account,
+  ChannelDispatcher, ChannelDispatchOperation, ChannelRequest and Client (smcv)
+
+* Added minimal versions of TpAccountManager, TpAccount,
+  TpChannelDispatcher, TpChannelDispatchOperation, TpChannelRequest and
+  TpClient (smcv)
+
+* fd.o #22205: Added support for deprecating or removing _run_ methods in code
+  generation (smcv)
+
+* Added flymake support (jonnylamb)
+
 Fixes:
+
+* Made sure _gen/error-str.h and .c end with a newline, fixing compilation with
+  certain compilers (smcv)
+
+* fd.o #19741: Documented client-side handle reference counting (wjt)
+
+* fd.o #21977: Removed duplicate mention of media-interfaces.h in Makefile.am
+  (Patryk Zawadzki)
+
+* fd.o #22121: made tp_channel_dispose properly idempotent (wjt)
+
+* Removed dead code for introspecting alias flags (smcv)
 
 Deprecations:
 
