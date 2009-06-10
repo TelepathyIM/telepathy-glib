@@ -160,7 +160,13 @@ tpginclude_HEADERS = \
     proxy.h \
     proxy-subclass.h \
     run.h \
+    svc-account.h \
+    svc-account-manager.h \
+    svc-channel-dispatcher.h \
+    svc-channel-dispatch-operation.h \
     svc-channel.h \
+    svc-channel-request.h \
+    svc-client.h \
     svc-connection.h \
     svc-connection-manager.h \
     svc-generic.h \
