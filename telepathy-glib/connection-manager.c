@@ -823,6 +823,7 @@ parse_default_value (GValue *value,
       g_value_take_string (value, s);
       return (s != NULL);
 
+    case 'y':
     case 'q':
     case 'u':
     case 't':
@@ -838,6 +839,17 @@ parse_default_value (GValue *value,
           if (sig[0] == 't')
             {
               g_value_set_uint64 (value, v);
+              return TRUE;
+            }
+
+          if (sig[0] == 'y')
+            {
+              if (v > G_MAXUINT8)
+                {
+                  return FALSE;
+                }
+
+              g_value_set_uchar (value, v);
               return TRUE;
             }
 
