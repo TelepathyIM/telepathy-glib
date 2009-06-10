@@ -410,12 +410,10 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		account-manager) \
 			subclass=--subclass=TpAccountManager; \
 			subclass_assert=--subclass-assert=TP_IS_ACCOUNT_MANAGER; \
-			maybe_reentrant=--generate-reentrant; \
 			;; \
 		account) \
 			subclass=--subclass=TpAccount; \
 			subclass_assert=--subclass-assert=TP_IS_ACCOUNT; \
-			maybe_reentrant=--generate-reentrant; \
 			;; \
 		channel) \
 			subclass=--subclass=TpChannel; \
@@ -425,22 +423,18 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		channel-dispatcher) \
 			subclass=--subclass=TpChannelDispatcher; \
 			subclass_assert=--subclass-assert=TP_IS_CHANNEL_DISPATCHER; \
-			maybe_reentrant=--generate-reentrant; \
 			;; \
 		channel-dispatch-operation) \
 			subclass=--subclass=TpChannelDispatchOperation; \
 			subclass_assert=--subclass-assert=TP_IS_CHANNEL_DISPATCH_OPERATION; \
-			maybe_reentrant=--generate-reentrant; \
 			;; \
 		channel-request) \
 			subclass=--subclass=TpChannelRequest; \
 			subclass_assert=--subclass-assert=TP_IS_CHANNEL_REQUEST; \
-			maybe_reentrant=--generate-reentrant; \
 			;; \
 		client) \
 			subclass=--subclass=TpClient; \
 			subclass_assert=--subclass-assert=TP_IS_CLIENT; \
-			maybe_reentrant=--generate-reentrant; \
 			;; \
 		connection-manager) \
 			subclass=--subclass=TpConnectionManager; \

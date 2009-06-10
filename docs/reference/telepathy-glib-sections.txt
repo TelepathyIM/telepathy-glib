@@ -2935,9 +2935,6 @@ TP_ACCOUNT_CLASS
 TP_ACCOUNT_GET_CLASS
 TpAccountPrivate
 TpAccountClassPrivate
-tp_cli_account_run_reconnect
-tp_cli_account_run_remove
-tp_cli_account_run_update_parameters
 </SECTION>
 
 <SECTION>
@@ -2964,7 +2961,6 @@ TP_ACCOUNT_MANAGER_CLASS
 TP_ACCOUNT_MANAGER_GET_CLASS
 TpAccountManagerPrivate
 TpAccountManagerClassPrivate
-tp_cli_account_manager_run_create_account
 </SECTION>
 
 <SECTION>
@@ -2994,11 +2990,6 @@ TP_CHANNEL_DISPATCHER_CLASS
 TP_CHANNEL_DISPATCHER_GET_CLASS
 TpChannelDispatcherPrivate
 TpChannelDispatcherClassPrivate
-<SUBSECTION Private>
-# leaving these undocumented as a step towards deprecating all _run_ methods
-# (these ones have never been documented)
-tp_cli_channel_dispatcher_run_create_channel
-tp_cli_channel_dispatcher_run_ensure_channel
 </SECTION>
 
 <SECTION>
@@ -3055,11 +3046,6 @@ TP_IS_CHANNEL_DISPATCH_OPERATION
 TP_IS_CHANNEL_DISPATCH_OPERATION_CLASS
 TP_TYPE_CHANNEL_DISPATCH_OPERATION
 tp_channel_dispatch_operation_get_type
-<SUBSECTION Private>
-# leaving these undocumented as a step towards deprecating all _run_ methods
-# (these ones have never been documented)
-tp_cli_channel_dispatch_operation_run_claim
-tp_cli_channel_dispatch_operation_run_handle_with
 </SECTION>
 
 <SECTION>
@@ -3088,11 +3074,6 @@ TP_TYPE_CHANNEL_REQUEST
 TpChannelRequestClassPrivate
 TpChannelRequestPrivate
 tp_channel_request_get_type
-<SUBSECTION Private>
-# leaving these undocumented as a step towards deprecating all _run_ methods
-# (these ones have never been documented)
-tp_cli_channel_request_run_cancel
-tp_cli_channel_request_run_proceed
 </SECTION>
 
 <SECTION>
@@ -3168,14 +3149,6 @@ TP_IS_CLIENT_CLASS
 TP_TYPE_CLIENT
 TpClientClassPrivate
 TpClientPrivate
-<SUBSECTION Private>
-# leaving these undocumented as a step towards deprecating all _run_ methods
-# (these ones have never been documented)
-tp_cli_client_approver_run_add_dispatch_operation
-tp_cli_client_handler_run_handle_channels
-tp_cli_client_interface_requests_run_add_request
-tp_cli_client_interface_requests_run_remove_request
-tp_cli_client_observer_run_observe_channels
 </SECTION>
 
 <SECTION>
