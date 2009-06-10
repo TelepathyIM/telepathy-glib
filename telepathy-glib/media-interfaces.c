@@ -79,15 +79,11 @@ tp_media_stream_handler_init (TpMediaStreamHandler *self)
 static void
 tp_media_stream_handler_class_init (TpMediaStreamHandlerClass *klass)
 {
-  GType tp_type = TP_TYPE_MEDIA_STREAM_HANDLER;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_STREAM_HANDLER;
-  tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-      tp_cli_media_stream_handler_add_signals);
-  tp_proxy_subclass_add_error_mapping (tp_type,
-      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+  tp_media_stream_handler_init_known_interfaces ();
 }
 
 /**
@@ -167,15 +163,11 @@ tp_media_session_handler_init (TpMediaSessionHandler *self)
 static void
 tp_media_session_handler_class_init (TpMediaSessionHandlerClass *klass)
 {
-  GType tp_type = TP_TYPE_MEDIA_SESSION_HANDLER;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_MEDIA_SESSION_HANDLER;
-  tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-      tp_cli_media_session_handler_add_signals);
-  tp_proxy_subclass_add_error_mapping (tp_type,
-      TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+  tp_media_session_handler_init_known_interfaces ();
 }
 
 /**
@@ -215,4 +207,66 @@ tp_media_session_handler_new (TpDBusDaemon *dbus,
 
 finally:
   return ret;
+}
+
+/**
+ * tp_media_stream_handler_init_known_interfaces:
+ *
+ * Ensure that the known interfaces for TpMediaStreamHandler have been set up.
+ * This is done automatically when necessary, but for correct
+ * overriding of library interfaces by local extensions, you should
+ * call this function before calling
+ * tp_proxy_or_subclass_hook_on_interface_add() with first argument
+ * %TP_TYPE_MEDIA_STREAM_HANDLER.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_media_stream_handler_init_known_interfaces (void)
+{
+  static gsize once = 0;
+
+  if (g_once_init_enter (&once))
+    {
+      GType tp_type = TP_TYPE_MEDIA_STREAM_HANDLER;
+
+      tp_proxy_init_known_interfaces ();
+      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
+          tp_cli_media_stream_handler_add_signals);
+      tp_proxy_subclass_add_error_mapping (tp_type,
+          TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+
+      g_once_init_leave (&once, 1);
+    }
+}
+
+/**
+ * tp_media_session_handler_init_known_interfaces:
+ *
+ * Ensure that the known interfaces for TpMediaSessionHandler have been set up.
+ * This is done automatically when necessary, but for correct
+ * overriding of library interfaces by local extensions, you should
+ * call this function before calling
+ * tp_proxy_or_subclass_hook_on_interface_add() with first argument
+ * %TP_TYPE_MEDIA_SESSION_HANDLER.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_media_session_handler_init_known_interfaces (void)
+{
+  static gsize once = 0;
+
+  if (g_once_init_enter (&once))
+    {
+      GType tp_type = TP_TYPE_MEDIA_SESSION_HANDLER;
+
+      tp_proxy_init_known_interfaces ();
+      tp_proxy_or_subclass_hook_on_interface_add (tp_type,
+          tp_cli_media_session_handler_add_signals);
+      tp_proxy_subclass_add_error_mapping (tp_type,
+          TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
+
+      g_once_init_leave (&once, 1);
+    }
 }

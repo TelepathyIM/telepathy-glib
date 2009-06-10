@@ -1,9 +1,15 @@
+#include <telepathy-glib/account.h>
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/channel-factory-iface.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/channel-dispatcher.h>
+#include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/channel-manager.h>
+#include <telepathy-glib/channel-request.h>
+#include <telepathy-glib/client.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/contact.h>
@@ -13,19 +19,31 @@
 #include <telepathy-glib/handle-repo-static.h>
 #include <telepathy-glib/media-interfaces.h>
 #include <telepathy-glib/proxy.h>
+#include <telepathy-glib/svc-account.h>
+#include <telepathy-glib/svc-account-manager.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-channel-dispatcher.h>
+#include <telepathy-glib/svc-channel-dispatch-operation.h>
+#include <telepathy-glib/svc-channel-request.h>
+#include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/svc-connection-manager.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-media-interfaces.h>
 #include <telepathy-glib/svc-properties-interface.h>
 
+tp_account_get_type
+tp_account_manager_get_type
 tp_base_connection_get_type
 tp_base_connection_manager_get_type
 tp_channel_factory_iface_get_type
 tp_channel_get_type
+tp_channel_dispatcher_get_type
+tp_channel_dispatch_operation_get_type
 tp_channel_iface_get_type
 tp_channel_manager_get_type
+tp_channel_request_get_type
+tp_client_get_type
 tp_connection_get_type
 tp_connection_manager_get_type
 tp_contact_get_type
@@ -37,7 +55,13 @@ tp_handle_repo_iface_get_type
 tp_media_session_handler_get_type
 tp_media_stream_handler_get_type
 tp_proxy_get_type
+tp_svc_account_get_type
+tp_svc_account_interface_avatar_get_type
+tp_svc_account_manager_get_type
 tp_svc_channel_get_type
+tp_svc_channel_dispatcher_get_type
+tp_svc_channel_dispatcher_interface_operation_list_get_type
+tp_svc_channel_dispatch_operation_get_type
 tp_svc_channel_interface_call_state_get_type
 tp_svc_channel_interface_chat_state_get_type
 tp_svc_channel_interface_dtmf_get_type
@@ -45,11 +69,17 @@ tp_svc_channel_interface_group_get_type
 tp_svc_channel_interface_hold_get_type
 tp_svc_channel_interface_media_signalling_get_type
 tp_svc_channel_interface_password_get_type
+tp_svc_channel_request_get_type
 tp_svc_channel_type_contact_list_get_type
 tp_svc_channel_type_room_list_get_type
 tp_svc_channel_type_streamed_media_get_type
 tp_svc_channel_type_text_get_type
 tp_svc_channel_type_tubes_get_type
+tp_svc_client_approver_get_type
+tp_svc_client_get_type
+tp_svc_client_handler_get_type
+tp_svc_client_interface_requests_get_type
+tp_svc_client_observer_get_type
 tp_svc_connection_get_type
 tp_svc_connection_interface_aliasing_get_type
 tp_svc_connection_interface_avatars_get_type

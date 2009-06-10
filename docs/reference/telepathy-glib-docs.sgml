@@ -46,6 +46,12 @@
     <xi:include href="xml/channel-tube.xml"/>
     <xi:include href="xml/channel-roomlist.xml"/>
     <xi:include href="xml/media-interfaces.xml"/>
+    <xi:include href="xml/account-manager.xml"/>
+    <xi:include href="xml/account.xml"/>
+    <xi:include href="xml/channel-dispatcher.xml"/>
+    <xi:include href="xml/channel-dispatch-operation.xml"/>
+    <xi:include href="xml/channel-request.xml"/>
+    <xi:include href="xml/client.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">
@@ -64,6 +70,12 @@
     <xi:include href="xml/svc-connection.xml"/>
     <xi:include href="xml/svc-media-interfaces.xml"/>
     <xi:include href="xml/svc-connection-manager.xml"/>
+    <xi:include href="xml/svc-account-manager.xml"/>
+    <xi:include href="xml/svc-account.xml"/>
+    <xi:include href="xml/svc-channel-dispatcher.xml"/>
+    <xi:include href="xml/svc-channel-dispatch-operation.xml"/>
+    <xi:include href="xml/svc-channel-request.xml"/>
+    <xi:include href="xml/svc-client.xml"/>
   </chapter>
   <chapter id="ch-service-base">
     <title>Service-side implementation</title>

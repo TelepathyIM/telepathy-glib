@@ -48,6 +48,8 @@
  *    (service)</listitem>
  * <listitem><literal>handles</literal> - handle reference tracking tracking
  *    in #TpBaseConnection (service) and #TpConnection (client)</listitem>
+ * <listitem><literal>accounts</literal> - the #TpAccountManager and
+ *     #TpAccount objects (client)</listitem>
  * <listitem><literal>all</literal> - all of the above</listitem>
  * </itemizedlist>
  */
@@ -106,6 +108,8 @@ static GDebugKey keys[] = {
   { "proxy",         TP_DEBUG_PROXY },
   { "handles",       TP_DEBUG_HANDLES },
   { "contacts",      TP_DEBUG_CONTACTS },
+  { "accounts",      TP_DEBUG_ACCOUNTS },
+  { "dispatcher",    TP_DEBUG_DISPATCHER },
   { 0, }
 };
 

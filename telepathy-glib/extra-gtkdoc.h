@@ -199,6 +199,96 @@
  */
 
 /**
+ * SECTION:svc-account
+ * @title: Service-side Account interfaces
+ * @short_description: GInterfaces for Telepathy Account objects
+ *
+ * These interfaces (auto-generated from the Telepathy spec) make it easier
+ * to export objects implementing the Telepathy Account and its
+ * optional interfaces, with the correct method and signal signatures,
+ * and emit signals from those objects in a type-safe way.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy AccountManager, such as Mission Control.
+ */
+
+/**
+ * SECTION:svc-account-manager
+ * @title: Service-side Account Manager interface
+ * @short_description: GInterface for Telepathy AccountManager objects
+ *
+ * The #TpSvcAccountManager interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * AccountManager interface, with the correct method and signal signatures,
+ * and emit signals from that object in a type-safe way.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy AccountManager, such as Mission Control.
+ */
+
+/**
+ * SECTION:svc-channel-dispatcher
+ * @title: Service-side Channel Dispatcher interface
+ * @short_description: GInterfaces for Telepathy ChannelDispatcher object
+ *
+ * The #TpSvcChannelDispatcher interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * ChannelDispatcher interface, with the correct method and signal signatures,
+ * and emit signals from that object in a type-safe way.
+ *
+ * Similarly, #TpSvcChannelDispatcherInterfaceOperationList helps to
+ * implement the optional OperationList interface.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy ChannelDispatcher, such as Mission Control.
+ */
+
+/**
+ * SECTION:svc-channel-dispatch-operation
+ * @title: Service-side Channel Dispatch Operation interface
+ * @short_description: GInterface for Telepathy ChannelDispatchOperation object
+ *
+ * This interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * ChannelDispatchOperation interface, with the correct method and signal
+ * signatures, and emit signals from that object in a type-safe way.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy ChannelDispatcher, such as Mission Control.
+ */
+
+/**
+ * SECTION:svc-channel-request
+ * @title: Service-side Channel Request interface
+ * @short_description: GInterface for Telepathy ChannelRequest object
+ *
+ * This interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * ChannelRequest interface, with the correct method and signal
+ * signatures, and emit signals from that object in a type-safe way.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy ChannelDispatcher, such as Mission Control.
+ */
+
+/**
+ * SECTION:svc-channel-dispatcher
+ * @title: Service-side Channel Dispatcher interface
+ * @short_description: GInterfaces for Telepathy ChannelDispatcher object
+ *
+ * The #TpSvcChannelDispatcher interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * ChannelDispatcher interface, with the correct method and signal signatures,
+ * and emit signals from that object in a type-safe way.
+ *
+ * Similarly, #TpSvcChannelDispatcherInterfaceOperationList helps to
+ * implement the optional OperationList interface.
+ *
+ * You don't need these interfaces unless you're implementing a
+ * Telepathy ChannelDispatcher, such as Mission Control.
+ */
+
+/**
  * SECTION:svc-media-interfaces
  * @title: Service-side media streaming helper interfaces
  * @short_description: media session and media stream
@@ -208,6 +298,19 @@
  * to export the objects used to implement #TpSvcChannelTypeStreamedMedia,
  * with the correct method and signal signatures, and emit signals from those
  * objects.
+ */
+
+/**
+ * SECTION:svc-client
+ * @title: Service-side Client interfaces
+ * @short_description: interfaces used to be an Observer, Approver and Handler
+ *
+ * These interfaces (auto-generated from the telepathy spec) make it easier
+ * to export the objects used to implement a Telepathy client.
+ *
+ * Clients such as loggers, new message notification windows and chat UIs
+ * should implement some or all of the Client types (Observer, Approver and/or
+ * Handler): see telepathy-spec for details.
  */
 
 /**

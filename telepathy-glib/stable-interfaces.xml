@@ -12,6 +12,15 @@
 <xi:include href="generic.xml"/>
 <xi:include href="dbus-daemon.xml"/>
 
+<xi:include href="account-manager.xml"/>
+<xi:include href="account.xml"/>
+
+<xi:include href="channel-dispatcher.xml"/>
+<xi:include href="channel-dispatch-operation.xml"/>
+<xi:include href="channel-request.xml"/>
+
+<xi:include href="client.xml"/>
+
 <xi:include href="../spec/generic-types.xml"/>
 <xi:include href="../spec/errors.xml"/>
 
