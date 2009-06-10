@@ -896,10 +896,13 @@ parse_default_value (GValue *value,
     case 'o':
       s = g_key_file_get_string (file, group, key, NULL);
 
-      g_value_take_boxed (value, s);
+      if (s == NULL || !tp_dbus_check_valid_object_path (s, NULL))
+        {
+          g_free (s);
+          return FALSE;
+        }
 
-      if (s[0] != '/')
-        return FALSE;
+      g_value_take_boxed (value, s);
 
       return TRUE;
 
