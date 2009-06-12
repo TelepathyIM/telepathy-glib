@@ -564,6 +564,29 @@ test_complex_file_got_info (Test *test,
   g_assert_cmpstr (strv[0], ==, "");
   g_assert (strv[1] == NULL);
 
+  param = &protocol->params[19];
+  g_assert_cmpstr (param->name, ==, "true");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "b");
+  g_assert (G_VALUE_HOLDS_BOOLEAN (&param->default_value));
+  g_assert_cmpint (g_value_get_boolean (&param->default_value), ==, TRUE);
+
+  param = &protocol->params[20];
+  g_assert_cmpstr (param->name, ==, "false");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "b");
+  g_assert (G_VALUE_HOLDS_BOOLEAN (&param->default_value));
+  g_assert_cmpint (g_value_get_boolean (&param->default_value), ==, FALSE);
+
+  param = &protocol->params[21];
+  g_assert_cmpstr (param->name, ==, "y");
+  g_assert_cmpuint (param->flags, ==, TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT);
+  g_assert_cmpstr (param->dbus_signature, ==, "y");
+  g_assert (G_VALUE_HOLDS_UCHAR (&param->default_value));
+  g_assert_cmpint (g_value_get_uchar (&param->default_value), ==, 42);
+
+  param = &protocol->params[22];
+  g_assert (param->name == NULL);
 }
 
 static void

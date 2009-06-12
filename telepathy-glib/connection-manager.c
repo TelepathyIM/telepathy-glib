@@ -823,6 +823,7 @@ parse_default_value (GValue *value,
       g_value_take_string (value, s);
       return (s != NULL);
 
+    case 'y':
     case 'q':
     case 'u':
     case 't':
@@ -838,6 +839,17 @@ parse_default_value (GValue *value,
           if (sig[0] == 't')
             {
               g_value_set_uint64 (value, v);
+              return TRUE;
+            }
+
+          if (sig[0] == 'y')
+            {
+              if (v > G_MAXUINT8)
+                {
+                  return FALSE;
+                }
+
+              g_value_set_uchar (value, v);
               return TRUE;
             }
 
@@ -884,10 +896,13 @@ parse_default_value (GValue *value,
     case 'o':
       s = g_key_file_get_string (file, group, key, NULL);
 
-      g_value_take_boxed (value, s);
+      if (s == NULL || !tp_dbus_check_valid_object_path (s, NULL))
+        {
+          g_free (s);
+          return FALSE;
+        }
 
-      if (s[0] != '/')
-        return FALSE;
+      g_value_take_boxed (value, s);
 
       return TRUE;
 

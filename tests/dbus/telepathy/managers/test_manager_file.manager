@@ -84,3 +84,10 @@ default-d = 42.0
 # the value is [""]
 param-empty-string-in-list = as
 default-empty-string-in-list = ;
+
+param-true = b
+default-true = true
+param-false = b
+default-false = false
+param-y = y
+default-y = 42
