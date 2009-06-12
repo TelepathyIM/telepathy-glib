@@ -389,12 +389,14 @@ example_callable_media_stream_close (ExampleCallableMediaStream *self)
       g_message ("Sending to server: Closing stream %u",
           self->priv->id);
 
-      g_signal_emit (self, signals[SIGNAL_REMOVED], 0);
-
       if (self->priv->connected_event_id != 0)
         {
           g_source_remove (self->priv->connected_event_id);
         }
+
+      /* this has to come last, because the MediaChannel may unref us in
+       * response to the removed signal */
+      g_signal_emit (self, signals[SIGNAL_REMOVED], 0);
     }
 }
 
