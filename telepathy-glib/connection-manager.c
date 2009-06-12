@@ -1408,7 +1408,7 @@ tp_connection_manager_set_property (GObject *object,
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_CONNECTION_MANAGER.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_connection_manager_init_known_interfaces (void)

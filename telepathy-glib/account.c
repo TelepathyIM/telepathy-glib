@@ -42,7 +42,7 @@
  * The Telepathy Account Manager stores the user's configured real-time
  * communication accounts. The #TpAccount object represents a stored account.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 
 /**
@@ -70,7 +70,7 @@
  * tp_cli_account_call_remove(), tp_cli_account_call_update_parameters() and
  * tp_cli_account_call_reconnect().
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 
 /**
@@ -153,7 +153,7 @@ tp_account_class_init (TpAccountClass *klass)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_ACCOUNT.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_account_init_known_interfaces (void)

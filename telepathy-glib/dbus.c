@@ -1274,7 +1274,7 @@ tp_dbus_daemon_dispose (GObject *object)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_DBUS_DAEMON.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_dbus_daemon_init_known_interfaces (void)

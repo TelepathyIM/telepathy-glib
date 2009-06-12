@@ -77,7 +77,7 @@
  * tp_cli_dbus_properties_call_get_all() method can be used to get those
  * properties.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 
 /**
@@ -203,7 +203,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_CHANNEL_REQUEST.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_channel_request_init_known_interfaces (void)

@@ -41,7 +41,7 @@
  * The #TpAccountManager object is used to communicate with the Telepathy
  * AccountManager service.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 
 /**
@@ -59,7 +59,7 @@
  * tp_cli_dbus_properties_call_get_all() method can be used to get the D-Bus
  * properties.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 
 /**
@@ -118,7 +118,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_ACCOUNT_MANAGER.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_account_manager_init_known_interfaces (void)

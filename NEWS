@@ -1,7 +1,7 @@
-telepathy-glib 0.7.32 (UNRELEASED)
+telepathy-glib 0.7.32 (2009-06-12)
 ==================================
 
-API changes:
+The "cake wars" release.
 
 Enhancements:
 
@@ -19,6 +19,8 @@ Enhancements:
 
 * Added flymake support (jonnylamb)
 
+* fd.o #22230: Added support for byte ('y') parameters to CMs (smcv)
+
 Fixes:
 
 * Made sure _gen/error-str.h and .c end with a newline, fixing compilation with
@@ -33,7 +35,8 @@ Fixes:
 
 * Removed dead code for introspecting alias flags (smcv)
 
-Deprecations:
+* fd.o #22182: Fixed a potential use-after-free in the callable example CM
+  (smcv)
 
 Release notes for projects using code generation:
 

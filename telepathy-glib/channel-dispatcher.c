@@ -62,7 +62,7 @@
  * a later version of telepathy-glib, along with a mechanism similar to
  * tp_connection_call_when_ready().
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 
 /**
@@ -121,7 +121,7 @@ tp_channel_dispatcher_class_init (TpChannelDispatcherClass *klass)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_CHANNEL_DISPATCHER.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_channel_dispatcher_init_known_interfaces (void)

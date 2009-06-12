@@ -219,7 +219,7 @@ finally:
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_MEDIA_STREAM_HANDLER.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_media_stream_handler_init_known_interfaces (void)
@@ -250,7 +250,7 @@ tp_media_stream_handler_init_known_interfaces (void)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_MEDIA_SESSION_HANDLER.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_media_session_handler_init_known_interfaces (void)

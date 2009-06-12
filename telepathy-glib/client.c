@@ -41,7 +41,7 @@
  * the Client interface. This object represents such a client, and is mainly
  * useful in the implementation of the ChannelDispatcher itself.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 
 /**
@@ -60,7 +60,7 @@
  * tp_cli_dbus_properties_call_get_all() and tp_cli_dbus_properties_call_set()
  * methods is recommended.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 
 /**
@@ -119,7 +119,7 @@ tp_client_class_init (TpClientClass *klass)
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_CLIENT.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.32
  */
 void
 tp_client_init_known_interfaces (void)
