@@ -1686,7 +1686,11 @@ cb_fs_new_active_candidate_pair (TfStream *self,
     FsCandidate *local_candidate,
     FsCandidate *remote_candidate)
 {
-  DEBUG (self, "called");
+  DEBUG (self, "called: c:%d local: %s %s:%u  remote: %s %s:%u",
+      local_candidate->component_id,
+      local_candidate->foundation, local_candidate->ip, local_candidate->port,
+      remote_candidate->foundation, remote_candidate->ip,
+      remote_candidate->port);
 
   tp_cli_media_stream_handler_call_new_active_candidate_pair (
     self->priv->stream_handler_proxy, -1, local_candidate->foundation,
