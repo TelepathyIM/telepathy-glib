@@ -45,6 +45,7 @@ struct _TpConnectionPrivate {
     GHashTable *contacts;
 
     unsigned ready:1;
+    unsigned called_get_interfaces:1;
     unsigned tracking_aliases_changed:1;
     unsigned tracking_avatar_updated:1;
     unsigned tracking_presences_changed:1;

@@ -383,10 +383,12 @@ tp_connection_status_changed (TpConnection *self,
   g_object_notify ((GObject *) self, "status");
   g_object_notify ((GObject *) self, "status-reason");
 
-  if (status == TP_CONNECTION_STATUS_CONNECTED)
+  if (status == TP_CONNECTION_STATUS_CONNECTED &&
+      !self->priv->called_get_interfaces)
     {
       tp_cli_connection_call_get_interfaces (self, -1,
           tp_connection_got_interfaces_cb, NULL, NULL, NULL);
+      self->priv->called_get_interfaces = TRUE;
     }
 }
 
