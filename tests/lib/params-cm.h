@@ -70,10 +70,10 @@ GType param_connection_manager_get_type (void);
 
 typedef struct {
     gchar *a_string;
-    gint16 a_int16;
-    gint32 a_int32;
-    guint16 a_uint16;
-    guint32 a_uint32;
+    gint a_int16;
+    gint a_int32;
+    guint a_uint16;
+    guint a_uint32;
     gint64 a_int64;
     guint64 a_uint64;
     gboolean a_boolean;
