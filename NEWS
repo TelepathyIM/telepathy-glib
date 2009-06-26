@@ -1,7 +1,15 @@
-telepathy-glib 0.7.33 (UNRELEASED)
+telepathy-glib 0.7.33 (2009-06-26)
 ==================================
 
-???
+The "please be careful when handling the sun" release.
+
+Fixes:
+
+* Fixed a test failure in test-params-cm on certain architectures, including
+  powerpc and sparc (smcv)
+
+* Fixed an assertion failure in TpConnection if StatusChanged to CONNECTED is
+  followed immdiately by GetStatus returning CONNECTED (smcv)
 
 telepathy-glib 0.7.32 (2009-06-12)
 ==================================
