@@ -332,7 +332,7 @@ tp_proxy_pending_call_cancel (TpProxyPendingCall *pc)
           _tp_proxy_pending_call_idle_completed);
     }
 
-  if (!pc->dbus_completed)
+  if (!pc->dbus_completed && pc->pending_call != NULL)
     {
       /* Implicitly asserts that iface_proxy is non-NULL */
       DBusGProxy *iface_proxy = g_object_ref (pc->iface_proxy);
