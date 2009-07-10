@@ -29,7 +29,6 @@
  */
 
 #include <gobject/gvaluecollector.h>
-#include <gio/gunixsocketaddress.h>
 
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
@@ -37,6 +36,10 @@
 #include <string.h>
 
 #include <config.h>
+
+#ifdef HAVE_GIO_UNIX
+#include <gio/gunixsocketaddress.h>
+#endif
 
 /**
  * tp_verify:
