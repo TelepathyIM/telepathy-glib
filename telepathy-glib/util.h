@@ -91,6 +91,8 @@ GValueArray *tp_value_array_build (gsize length,
 
 GSocketAddress *tp_g_socket_address_from_variant (TpSocketAddressType type,
                                                   const GValue *variant);
+GValue *tp_address_variant_from_g_socket_address (GSocketAddress      *address,
+                                                  TpSocketAddressType *type);
 
 G_END_DECLS
 

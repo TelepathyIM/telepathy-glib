@@ -1115,3 +1115,99 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
 
   return addr;
 }
+
+/**
+ * tp_address_variant_from_g_socket_address:
+ * @address: a #GSocketAddress to convert
+ * @type: optional return of the Telepathy socket type (or NULL)
+ *
+ * Converts a #GSocketAddress to a #GValue address variant that can be used
+ * with Telepathy.
+ *
+ * Returns: a newly allocated #GValue, free with tp_g_value_slice_free()
+ */
+GValue *
+tp_address_variant_from_g_socket_address (GSocketAddress      *address,
+                                          TpSocketAddressType *type)
+{
+  GValue *variant;
+  TpSocketAddressType type_;
+
+  g_return_val_if_fail (G_IS_SOCKET_ADDRESS (address), NULL);
+
+  switch (g_socket_address_get_family (address))
+    {
+#ifdef HAVE_GIO_UNIX
+      case G_SOCKET_FAMILY_UNIX:
+          {
+            GUnixSocketAddress *unixaddr = G_UNIX_SOCKET_ADDRESS (address);
+            GArray *array;
+            const char *path = g_unix_socket_address_get_path (unixaddr);
+            gsize len = g_unix_socket_address_get_path_len (unixaddr);
+
+            if (g_unix_socket_address_get_is_abstract (unixaddr))
+              {
+                type_ = TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX;
+              }
+            else
+              {
+                type_ = TP_SOCKET_ADDRESS_TYPE_UNIX;
+              }
+
+            array = g_array_sized_new (TRUE, FALSE, sizeof (char), len);
+            array = g_array_append_vals (array, path, len);
+
+            variant = tp_g_value_slice_new (DBUS_TYPE_G_UCHAR_ARRAY);
+            g_value_set_boxed (variant, array);
+          }
+        break;
+#endif /* HAVE_GIO_UNIX */
+
+      case G_SOCKET_FAMILY_IPV4:
+      case G_SOCKET_FAMILY_IPV6:
+          {
+            GInetAddress *addr = g_inet_socket_address_get_address (
+                G_INET_SOCKET_ADDRESS (address));
+            GValueArray *array;
+            GValue value = { 0, };
+
+            switch (g_inet_address_get_family (addr))
+              {
+                case G_SOCKET_FAMILY_IPV4:
+                  type_ = TP_SOCKET_ADDRESS_TYPE_IPV4;
+                  break;
+
+                case G_SOCKET_FAMILY_IPV6:
+                  type_ = TP_SOCKET_ADDRESS_TYPE_IPV6;
+                  break;
+
+                default:
+                  g_assert_not_reached ();
+              }
+
+            array = g_value_array_new (2);
+
+            g_value_init (&value, G_TYPE_STRING);
+            g_value_take_string (&value, g_inet_address_to_string (addr));
+            g_value_array_insert (array, 0, &value);
+            g_value_unset (&value);
+
+            g_value_init (&value, G_TYPE_UINT);
+            g_value_set_uint (&value, g_inet_socket_address_get_port (
+                  G_INET_SOCKET_ADDRESS (address)));
+            g_value_array_insert (array, 1, &value);
+            g_value_unset (&value);
+
+            variant = tp_g_value_slice_new (G_TYPE_VALUE_ARRAY);
+            g_value_take_boxed (variant, array);
+          }
+        break;
+
+      default:
+        g_return_val_if_reached (NULL);
+    }
+
+  if (type) *type = type_;
+
+  return variant;
+}
