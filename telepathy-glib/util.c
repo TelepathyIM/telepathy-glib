@@ -30,6 +30,8 @@
 
 #include <gobject/gvaluecollector.h>
 
+#include <dbus/dbus-glib.h>
+
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
@@ -1055,7 +1057,8 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
     {
 #ifdef HAVE_GIO_UNIX
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
-        g_return_val_if_fail (G_VALUE_HOLDS (variant, G_TYPE_BOXED), NULL); // FIXME
+        g_return_val_if_fail (G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY),
+            NULL);
 
           {
             GArray *address = g_value_get_boxed (variant);
@@ -1069,7 +1072,8 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
         break;
 
       case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
-        g_return_val_if_fail (G_VALUE_HOLDS (variant, G_TYPE_BOXED), NULL); // FIXME
+        g_return_val_if_fail (G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY),
+            NULL);
 
           {
             GArray *address = g_value_get_boxed (variant);
