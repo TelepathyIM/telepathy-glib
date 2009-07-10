@@ -152,6 +152,18 @@ AM_CONDITIONAL([OUT_OF_TREE_BUILD], [test "z$ac_srcdir" != z.])
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
   [glib-2.0 >= 2.22, gobject-2.0 >= 2.22, gio-2.0 >= 2.22])
+
+dnl Check for GIO-Unix
+PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0 >= $GIO_VERSION],
+      have_gio_unix=yes, have_gio_unix=no)
+
+if test "x$have_gio_unix" = "xyes"; then
+  AC_DEFINE(HAVE_GIO_UNIX, [], [GIO-Unix is available])
+fi
+
+GLIB_CFLAGS="$GLIB_CFLAGS $GIO_CFLAGS $GIO_UNIX_CFLAGS"
+GLIB_LIBS="$GLIB_LIBS $GIO_LIBS $GIO_UNIX_LIBS"
+
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 

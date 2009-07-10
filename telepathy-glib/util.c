@@ -29,11 +29,14 @@
  */
 
 #include <gobject/gvaluecollector.h>
+#include <gio/gunixsocketaddress.h>
 
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
 #include <string.h>
+
+#include <config.h>
 
 /**
  * tp_verify:
@@ -1027,4 +1030,81 @@ tp_value_array_build (gsize length,
   g_warn_if_fail (arr->n_values == length);
 
   return arr;
+}
+
+/**
+ * tp_g_socket_address_from_variant:
+ * @type: a Telepathy socket address type
+ * @variant: an initialised #GValue containing an address variant
+ *
+ * Converts an address variant stored in a #GValue into a #GSocketAddress that
+ * can be used to make a socket connection with GIO.
+ *
+ * Returns: a newly allocated #GSocketAddress for the given variant
+ */
+GSocketAddress *
+tp_g_socket_address_from_variant (TpSocketAddressType type,
+                                  const GValue *variant)
+{
+  GSocketAddress *addr;
+
+  switch (type)
+    {
+#ifdef HAVE_GIO_UNIX
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+        g_return_val_if_fail (G_VALUE_HOLDS (variant, G_TYPE_BOXED), NULL); // FIXME
+
+          {
+            GArray *address = g_value_get_boxed (variant);
+            char path[address->len + 1];
+
+            strncpy (path, address->data, address->len);
+            path[address->len] = '\0';
+
+            addr = g_unix_socket_address_new (path);
+          }
+        break;
+
+      case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
+        g_return_val_if_fail (G_VALUE_HOLDS (variant, G_TYPE_BOXED), NULL); // FIXME
+
+          {
+            GArray *address = g_value_get_boxed (variant);
+
+            addr = g_unix_socket_address_new_abstract (
+                address->data, address->len);
+          }
+        break;
+#endif /* HAVE_GIO_UNIX */
+
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
+        g_return_val_if_fail (G_VALUE_HOLDS (variant, G_TYPE_VALUE_ARRAY), NULL);
+
+          {
+            GValueArray *array = g_value_get_boxed (variant);
+            GValue *hostv = g_value_array_get_nth (array, 0);
+            GValue *portv = g_value_array_get_nth (array, 1);
+            GInetAddress *address;
+            const char *host;
+            guint16 port;
+
+            g_return_val_if_fail (G_VALUE_HOLDS_STRING (hostv), NULL);
+            g_return_val_if_fail (G_VALUE_HOLDS_UINT (portv), NULL);
+
+            host = g_value_get_string (hostv);
+            port = g_value_get_uint (portv);
+
+            address = g_inet_address_new_from_string (host);
+            addr = g_inet_socket_address_new (address, port);
+
+            g_object_unref (address);
+          }
+        break;
+
+      default:
+        g_return_val_if_reached (NULL);
+    }
+
+  return addr;
 }

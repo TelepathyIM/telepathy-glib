@@ -25,7 +25,9 @@
 #define __TP_IN_UTIL_H__
 
 #include <glib-object.h>
+#include <gio/gio.h>
 
+#include <telepathy-glib/enums.h>
 #include <telepathy-glib/verify.h>
 
 #define tp_verify_statement(R) ((void) tp_verify_true (R))
@@ -86,6 +88,9 @@ gulong tp_g_signal_connect_object (gpointer instance,
 GValueArray *tp_value_array_build (gsize length,
   GType type,
   ...) G_GNUC_WARN_UNUSED_RESULT;
+
+GSocketAddress *tp_g_socket_address_from_variant (TpSocketAddressType type,
+                                                  const GValue *variant);
 
 G_END_DECLS
 
