@@ -154,6 +154,7 @@ our_headers = \
     enums.h \
     errors.h \
     exportable-channel.h \
+    gnio-util.h \
     group-mixin.h \
     gtypes.h \
     handle.h \
@@ -311,6 +312,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     debug-internal.h \
     errors.c \
     exportable-channel.c \
+    gnio-util.c \
     group-mixin.c \
     gtypes.c \
     handle.c \
