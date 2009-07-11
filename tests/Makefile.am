@@ -7,6 +7,7 @@ SUBDIRS = \
 noinst_PROGRAMS = \
     test-asv \
     test-availability-cmp \
+    test-gnio-util \
     test-heap \
     test-internal-debug \
     test-intset \
@@ -46,6 +47,9 @@ test_asv_SOURCES = \
 
 test_heap_SOURCES = \
     heap.c
+
+test_gnio_util_SOURCES = \
+    gnio-util.c
 
 test_util_SOURCES = \
     util.c
