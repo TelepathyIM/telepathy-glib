@@ -133,6 +133,35 @@ test_sockaddr_to_variant_ipv4 (void)
   tp_g_value_slice_free (variant);
 }
 
+static void
+test_sockaddr_to_variant_ipv6 (void)
+{
+  GInetAddress *hostaddr = g_inet_address_new_from_string (IPV6_ADDR);
+  GSocketAddress *sockaddr = g_inet_socket_address_new (hostaddr, PORT);
+  GValue *variant, *value;
+  GValueArray *array;
+  TpSocketAddressType type;
+
+  g_object_unref (hostaddr);
+
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+
+  g_assert (G_VALUE_HOLDS (variant, G_TYPE_VALUE_ARRAY));
+
+  array = g_value_get_boxed (variant);
+  value = g_value_array_get_nth (array, 0);
+
+  g_assert (G_VALUE_HOLDS_STRING (value));
+  g_assert (strcmp (g_value_get_string (value), IPV6_ADDR) == 0);
+
+  value = g_value_array_get_nth (array, 1);
+
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert (g_value_get_uint (value) == PORT);
+
+  tp_g_value_slice_free (variant);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -141,6 +170,7 @@ main (int argc, char **argv)
   test_variant_to_sockaddr_ipv4 ();
   test_variant_to_sockaddr_ipv6 ();
   test_sockaddr_to_variant_ipv4 ();
+  test_sockaddr_to_variant_ipv6 ();
 
   return 0;
 }
