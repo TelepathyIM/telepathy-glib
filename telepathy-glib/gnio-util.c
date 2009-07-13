@@ -24,6 +24,15 @@
  * @short_description: Telepathy/GNIO utility functions
  *
  * Utility functions for interacting between Telepathy and GNIO.
+ *
+ * Telepathy uses address variants stored in #GValue boxes for communicating
+ * network socket addresses over D-Bus to and from the Connection Manager
+ * (for instance when using the file transfer and stream tube APIs).
+ *
+ * This API provides translation between #GSocketAddress subtypes and a #GValue
+ * that can be used by telepathy-glib.
+ * #GInetSocketAddress is used for IPv4/IPv6 and #GUnixSocketAddress
+ * for UNIX sockets (only available on platforms with gio-unix).
  */
 
 #include <config.h>

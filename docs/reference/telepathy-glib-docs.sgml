@@ -104,6 +104,7 @@
   <chapter id="ch-utilities">
     <title>Utilities</title>
     <xi:include href="xml/util.xml"/>
+    <xi:include href="xml/gnio-util.xml"/>
     <xi:include href="xml/debug-ansi.xml"/>
     <xi:include href="xml/debug.xml"/>
     <xi:include href="xml/debug-sender.xml"/>

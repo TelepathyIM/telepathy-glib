@@ -1101,6 +1101,14 @@ tp_value_array_build
 </SECTION>
 
 <SECTION>
+<FILE>gnio-util</FILE>
+<TITLE>gnio-util</FILE>
+<INCLUDE>telepathy-glib/gnio-util.h</INCLUDE>
+tp_g_socket_address_from_variant
+tp_address_variant_from_g_socket_address
+</SECTION>
+
+<SECTION>
 <FILE>gtypes</FILE>
 <TITLE>gtypes</TITLE>
 <INCLUDE>telepathy-glib/gtypes.h</INCLUDE>
