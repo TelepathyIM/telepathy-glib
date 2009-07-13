@@ -292,7 +292,7 @@ tf_stream_set_property (GObject      *object,
     }
 }
 
-#define MAX_STREAM_TRANS_PARAMS 6
+#define MAX_STREAM_TRANS_PARAMS 7
 
 static GObject *
 tf_stream_constructor (GType type,
@@ -592,6 +592,8 @@ get_all_properties_cb (TpProxy *proxy,
   GPtrArray *stun_servers = NULL;
   gboolean got_stun = FALSE;
   GPtrArray *dbus_relay_info = NULL;
+  gboolean created_locally = TRUE;
+  gboolean valid = FALSE;
 
   if (dbus_error &&
       !(dbus_error->domain == DBUS_GERROR &&
@@ -823,6 +825,19 @@ get_all_properties_cb (TpProxy *proxy,
         }
 
       g_value_array_free (fs_relay_info);
+    }
+
+  if (out_Properties)
+    {
+      created_locally = tp_asv_get_boolean (out_Properties, "CreatedLocally",
+          &valid);
+      if (valid)
+        {
+          params[n_args].name = "controlling-mode";
+          g_value_init (&params[n_args].value, G_TYPE_BOOLEAN);
+          g_value_set_boolean (&params[n_args].value, created_locally);
+          n_args++;
+        }
     }
 
   if (preferred_local_candidates)
@@ -1934,8 +1949,10 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     gpointer user_data)
 {
   TfStream *self = TF_STREAM (user_data);
+  gchar *padname = gst_pad_get_name (pad);
 
-  DEBUG (self, "New pad");
+  DEBUG (self, "New pad %s: " FS_CODEC_FORMAT, padname, FS_CODEC_ARGS (codec));
+  g_free (padname);
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
 }
