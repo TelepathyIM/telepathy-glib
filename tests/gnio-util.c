@@ -19,6 +19,7 @@
 #define IPV6_ADDR "::1"
 #define UNIX_ADDR "/tmp/socket/test/123456"
 #define ABST_ADDR "\000123456"
+#define ABST_ADDR_LEN 7
 #define PORT 41414
 
 static void
@@ -209,6 +210,38 @@ test_variant_to_sockaddr_unix (void)
 }
 
 static void
+test_variant_to_sockaddr_abstract_unix (void)
+{
+  GArray *array;
+  GValue value = { 0, };
+  GSocketAddress *sockaddr;
+  GUnixSocketAddress *unixaddr;
+  guint pathlen = strlen (ABST_ADDR);
+
+  array = g_array_sized_new (TRUE, FALSE, sizeof (char), pathlen);
+  g_array_append_vals (array, ABST_ADDR, pathlen);
+
+  g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
+  g_value_take_boxed (&value, array);
+
+  sockaddr = tp_g_socket_address_from_variant (
+      TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX,
+      &value);
+  g_value_unset (&value);
+
+  g_assert (G_IS_UNIX_SOCKET_ADDRESS (sockaddr));
+
+  unixaddr = G_UNIX_SOCKET_ADDRESS (sockaddr);
+
+  g_assert (g_unix_socket_address_get_is_abstract (unixaddr) == TRUE);
+  g_assert (g_unix_socket_address_get_path_len (unixaddr) == pathlen);
+  g_assert (memcmp (g_unix_socket_address_get_path (unixaddr), ABST_ADDR,
+        pathlen) == 0);
+
+  g_object_unref (sockaddr);
+}
+
+static void
 test_sockaddr_to_variant_unix (void)
 {
   GSocketAddress *sockaddr = g_unix_socket_address_new (UNIX_ADDR);
@@ -230,6 +263,28 @@ test_sockaddr_to_variant_unix (void)
   tp_g_value_slice_free (variant);
 }
 
+static void
+test_sockaddr_to_variant_abstract_unix (void)
+{
+  GSocketAddress *sockaddr = g_unix_socket_address_new_abstract (
+      ABST_ADDR, ABST_ADDR_LEN);
+  GValue *variant;
+  GArray *array;
+  TpSocketAddressType type;
+
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+  g_object_unref (sockaddr);
+
+  g_assert (type == TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX);
+  g_assert (G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY));
+
+  array = g_value_get_boxed (variant);
+
+  g_assert (array->len == ABST_ADDR_LEN);
+  g_assert (memcmp (array->data, ABST_ADDR, ABST_ADDR_LEN) == 0);
+
+  tp_g_value_slice_free (variant);
+}
 #endif /* HAVE_GIO_UNIX */
 
 int
@@ -250,7 +305,9 @@ main (int argc, char **argv)
   test_sockaddr_to_variant_ipv6 ();
 #ifdef HAVE_GIO_UNIX
   test_variant_to_sockaddr_unix ();
+  test_variant_to_sockaddr_abstract_unix ();
   test_sockaddr_to_variant_unix ();
+  test_sockaddr_to_variant_abstract_unix ();
 #endif /* HAVE_GIO_UNIX */
 
   return 0;
