@@ -179,6 +179,36 @@ test_sockaddr_to_variant_ipv6 (void)
 
 #ifdef HAVE_GIO_UNIX
 static void
+test_variant_to_sockaddr_unix (void)
+{
+  GArray *array;
+  GValue value = { 0, };
+  GSocketAddress *sockaddr;
+  GUnixSocketAddress *unixaddr;
+  guint pathlen = strlen (UNIX_ADDR);
+
+  array = g_array_sized_new (TRUE, FALSE, sizeof (char), pathlen);
+  g_array_append_vals (array, UNIX_ADDR, pathlen);
+
+  g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
+  g_value_take_boxed (&value, array);
+
+  sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_UNIX,
+      &value);
+  g_value_unset (&value);
+
+  g_assert (G_IS_UNIX_SOCKET_ADDRESS (sockaddr));
+
+  unixaddr = G_UNIX_SOCKET_ADDRESS (sockaddr);
+
+  g_assert (g_unix_socket_address_get_is_abstract (unixaddr) == FALSE);
+  g_assert (g_unix_socket_address_get_path_len (unixaddr) == pathlen);
+  g_assert (strcmp (g_unix_socket_address_get_path (unixaddr), UNIX_ADDR) == 0);
+
+  g_object_unref (sockaddr);
+}
+
+static void
 test_sockaddr_to_variant_unix (void)
 {
   GSocketAddress *sockaddr = g_unix_socket_address_new (UNIX_ADDR);
@@ -219,6 +249,7 @@ main (int argc, char **argv)
   test_sockaddr_to_variant_ipv4 ();
   test_sockaddr_to_variant_ipv6 ();
 #ifdef HAVE_GIO_UNIX
+  test_variant_to_sockaddr_unix ();
   test_sockaddr_to_variant_unix ();
 #endif /* HAVE_GIO_UNIX */
 
