@@ -160,7 +160,7 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
             array = g_array_append_vals (array, path, len);
 
             variant = tp_g_value_slice_new (DBUS_TYPE_G_UCHAR_ARRAY);
-            g_value_set_boxed (variant, array);
+            g_value_take_boxed (variant, array);
           }
         break;
 #endif /* HAVE_GIO_UNIX */

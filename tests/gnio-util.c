@@ -40,6 +40,7 @@ test_variant_to_sockaddr_ipv4 (void)
   /* convert to a GSocketAddress */
   sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_IPV4,
                                                &value);
+  g_value_unset (&value);
 
   /* check the socket address */
   g_assert (sockaddr != NULL);
@@ -86,6 +87,7 @@ test_variant_to_sockaddr_ipv6 (void)
   /* convert to a GSocketAddress */
   sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_IPV6,
                                                &value);
+  g_value_unset (&value);
 
   /* check the socket address */
   g_assert (sockaddr != NULL);
@@ -116,7 +118,9 @@ test_sockaddr_to_variant_ipv4 (void)
   g_object_unref (hostaddr);
 
   variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+  g_object_unref (sockaddr);
 
+  g_assert (type == TP_SOCKET_ADDRESS_TYPE_IPV4);
   g_assert (G_VALUE_HOLDS (variant, G_TYPE_VALUE_ARRAY));
 
   array = g_value_get_boxed (variant);
@@ -145,7 +149,9 @@ test_sockaddr_to_variant_ipv6 (void)
   g_object_unref (hostaddr);
 
   variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+  g_object_unref (sockaddr);
 
+  g_assert (type == TP_SOCKET_ADDRESS_TYPE_IPV6);
   g_assert (G_VALUE_HOLDS (variant, G_TYPE_VALUE_ARRAY));
 
   array = g_value_get_boxed (variant);
