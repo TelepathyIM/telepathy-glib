@@ -1,15 +1,24 @@
 /* tests of the GNIO utility functions */
 
+#include <config.h>
+
 #include <string.h>
 
 #include <glib.h>
+#include <dbus/dbus-glib.h>
 #include <gio/gio.h>
+
+#ifdef HAVE_GIO_UNIX
+#include <gio/gunixsocketaddress.h>
+#endif /* HAVE_GIO_UNIX */
 
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/util.h>
 
 #define IPV4_ADDR "127.0.1.1"
 #define IPV6_ADDR "::1"
+#define UNIX_ADDR "/tmp/socket/test/123456"
+#define ABST_ADDR "\000123456"
 #define PORT 41414
 
 static void
@@ -168,15 +177,50 @@ test_sockaddr_to_variant_ipv6 (void)
   tp_g_value_slice_free (variant);
 }
 
+#ifdef HAVE_GIO_UNIX
+static void
+test_sockaddr_to_variant_unix (void)
+{
+  GSocketAddress *sockaddr = g_unix_socket_address_new (UNIX_ADDR);
+  GValue *variant;
+  GArray *array;
+  TpSocketAddressType type;
+
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+  g_object_unref (sockaddr);
+
+  g_assert (type == TP_SOCKET_ADDRESS_TYPE_UNIX);
+  g_assert (G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY));
+
+  array = g_value_get_boxed (variant);
+
+  g_assert (array->len == strlen (UNIX_ADDR));
+  g_assert (strcmp (array->data, UNIX_ADDR) == 0);
+
+  tp_g_value_slice_free (variant);
+}
+
+#endif /* HAVE_GIO_UNIX */
+
 int
 main (int argc, char **argv)
 {
+  DBusGConnection *connection;
+  GError *error = NULL;
+
   g_type_init ();
+
+  /* we seem to need to make a connection in order to initialise the special
+   * dbus-glib types, I'm sure there must be a better way to do this */
+  connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 
   test_variant_to_sockaddr_ipv4 ();
   test_variant_to_sockaddr_ipv6 ();
   test_sockaddr_to_variant_ipv4 ();
   test_sockaddr_to_variant_ipv6 ();
+#ifdef HAVE_GIO_UNIX
+  test_sockaddr_to_variant_unix ();
+#endif /* HAVE_GIO_UNIX */
 
   return 0;
 }
