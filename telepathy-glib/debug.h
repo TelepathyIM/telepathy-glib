@@ -1,5 +1,5 @@
 #ifndef __TP_DEBUG_H__
-#define __TP_DEBUG_H_
+#define __TP_DEBUG_H__
 
 #include <glib.h>
 
