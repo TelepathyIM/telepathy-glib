@@ -858,13 +858,14 @@ _tp_channel_get_properties (TpChannel *self)
     {
       gboolean valid;
 
-      tp_asv_get_uint32 (self->priv->channel_properties, "InitiatorHandle",
-          &valid);
+      tp_asv_get_uint32 (self->priv->channel_properties,
+          TP_IFACE_CHANNEL ".InitiatorHandle", &valid);
 
       if (!valid)
         goto missing;
 
-      tp_asv_get_boolean (self->priv->channel_properties, "Requested", &valid);
+      tp_asv_get_boolean (self->priv->channel_properties,
+          TP_IFACE_CHANNEL ".Requested", &valid);
 
       if (!valid)
         goto missing;
