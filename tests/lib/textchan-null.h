@@ -64,6 +64,8 @@ typedef struct _TestPropsTextChannelClass TestPropsTextChannelClass;
 
 struct _TestPropsTextChannel {
     TestTextChannelNull parent;
+
+    guint dbus_property_retrieved;
 };
 
 struct _TestPropsTextChannelClass {

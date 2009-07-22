@@ -297,6 +297,21 @@ test_text_channel_null_class_init (TestTextChannelNullClass *klass)
 }
 
 static void
+test_props_text_channel_getter_gobject_properties (GObject *object,
+    GQuark interface,
+    GQuark name,
+    GValue *value,
+    gpointer getter_data)
+{
+  TestPropsTextChannel *self = TEST_PROPS_TEXT_CHANNEL (object);
+
+  self->dbus_property_retrieved = 1;
+
+  tp_dbus_properties_mixin_getter_gobject_properties (object, interface, name,
+      value, getter_data);
+}
+
+static void
 test_props_text_channel_class_init (TestPropsTextChannelClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
@@ -312,7 +327,7 @@ test_props_text_channel_class_init (TestPropsTextChannelClass *klass)
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_CHANNEL,
-        tp_dbus_properties_mixin_getter_gobject_properties,
+        test_props_text_channel_getter_gobject_properties,
         NULL,
         channel_props,
       },
