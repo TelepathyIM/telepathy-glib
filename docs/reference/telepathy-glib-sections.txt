@@ -1057,6 +1057,7 @@ tp_g_key_file_get_uint64
 <SUBSECTION>
 # Generic
 tp_dbus_specialized_value_slice_new
+TP_ARRAY_TYPE_OBJECT_PATH_LIST
 TP_HASH_TYPE_STRING_STRING_MAP
 TP_ARRAY_TYPE_STRING_STRING_MAP_LIST
 TP_HASH_TYPE_STRING_VARIANT_MAP
@@ -1179,6 +1180,7 @@ tp_type_dbus_array_a_7bsv_7das
 tp_type_dbus_array_oa_7bsv_7d
 tp_type_dbus_array_of_a_7bsv_7d
 tp_type_dbus_array_of_a_7bss_7d
+tp_type_dbus_array_of_o
 tp_type_dbus_array_os
 tp_type_dbus_array_osuu
 tp_type_dbus_array_sa_28usuussduss_29

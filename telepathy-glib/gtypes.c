@@ -39,6 +39,27 @@
  */
 
 /**
+ * TP_ARRAY_TYPE_OBJECT_PATH_LIST:
+ *
+ * Expands to a call to a function
+ * that returns the #GType of a #GPtrArray
+ * of DBUS_TYPE_G_OBJECT_PATH.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+
+GType
+tp_type_dbus_array_of_o (void)
+{
+  static GType t = 0;
+
+  if (G_UNLIKELY (t == 0))
+    t = dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH);
+
+  return t;
+}
+
+/**
  * tp_dbus_specialized_value_slice_new:
  * @type: A D-Bus specialized type (i.e. probably a specialized GValueArray
  * representing a D-Bus struct)
