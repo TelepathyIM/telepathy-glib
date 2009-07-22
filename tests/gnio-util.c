@@ -14,6 +14,7 @@
 
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/gtypes.h>
 
 #define IPV4_ADDR "127.0.1.1"
 #define IPV6_ADDR "::1"
@@ -44,7 +45,7 @@ test_variant_to_sockaddr_ipv4 (void)
   g_value_array_append (array, &value);
   g_value_unset (&value);
 
-  g_value_init (&value, G_TYPE_VALUE_ARRAY);
+  g_value_init (&value, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4);
   g_value_take_boxed (&value, array);
 
   /* convert to a GSocketAddress */
@@ -91,7 +92,7 @@ test_variant_to_sockaddr_ipv6 (void)
   g_value_array_append (array, &value);
   g_value_unset (&value);
 
-  g_value_init (&value, G_TYPE_VALUE_ARRAY);
+  g_value_init (&value, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6);
   g_value_take_boxed (&value, array);
 
   /* convert to a GSocketAddress */
@@ -131,7 +132,7 @@ test_sockaddr_to_variant_ipv4 (void)
   g_object_unref (sockaddr);
 
   g_assert (type == TP_SOCKET_ADDRESS_TYPE_IPV4);
-  g_assert (G_VALUE_HOLDS (variant, G_TYPE_VALUE_ARRAY));
+  g_assert (G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4));
 
   array = g_value_get_boxed (variant);
   value = g_value_array_get_nth (array, 0);
@@ -162,7 +163,7 @@ test_sockaddr_to_variant_ipv6 (void)
   g_object_unref (sockaddr);
 
   g_assert (type == TP_SOCKET_ADDRESS_TYPE_IPV6);
-  g_assert (G_VALUE_HOLDS (variant, G_TYPE_VALUE_ARRAY));
+  g_assert (G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6));
 
   array = g_value_get_boxed (variant);
   value = g_value_array_get_nth (array, 0);

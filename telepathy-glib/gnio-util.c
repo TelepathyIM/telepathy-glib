@@ -47,6 +47,7 @@
 
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/gtypes.h>
 
 /**
  * tp_g_socket_address_from_variant:
@@ -97,7 +98,12 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
 
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
       case TP_SOCKET_ADDRESS_TYPE_IPV6:
-        g_return_val_if_fail (G_VALUE_HOLDS (variant, G_TYPE_VALUE_ARRAY), NULL);
+        g_return_val_if_fail (
+            (type == TP_SOCKET_ADDRESS_TYPE_IPV4 &&
+             G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4)) ||
+            (type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
+             G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6)),
+            NULL);
 
           {
             GValueArray *array = g_value_get_boxed (variant);
@@ -186,10 +192,12 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
               {
                 case G_SOCKET_FAMILY_IPV4:
                   type_ = TP_SOCKET_ADDRESS_TYPE_IPV4;
+                  variant = tp_g_value_slice_new (TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4);
                   break;
 
                 case G_SOCKET_FAMILY_IPV6:
                   type_ = TP_SOCKET_ADDRESS_TYPE_IPV6;
+                  variant = tp_g_value_slice_new (TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6);
                   break;
 
                 default:
@@ -209,7 +217,6 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
             g_value_array_insert (array, 1, &value);
             g_value_unset (&value);
 
-            variant = tp_g_value_slice_new (G_TYPE_VALUE_ARRAY);
             g_value_take_boxed (variant, array);
           }
         break;
