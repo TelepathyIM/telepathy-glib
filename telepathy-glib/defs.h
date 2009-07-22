@@ -21,6 +21,9 @@
 
 #ifndef __TP_DEFS_H__
 #define __TP_DEFS_H__
+
+#include <glib.h>
+
 G_BEGIN_DECLS
 
 /**
