@@ -171,7 +171,42 @@ class Generator(object):
         self.h(' * %s%sClass:' % (self.Prefix, node_name_mixed))
         self.h(' *')
         self.h(' * The class of %s%s.' % (self.Prefix, node_name_mixed))
+
+        if methods:
+            self.h(' *')
+            self.h(' * In a full implementation of this interface (i.e. all')
+            self.h(' * methods implemented), the interface initialization')
+            self.h(' * function used in G_IMPLEMENT_INTERFACE() would')
+            self.h(' * typically look like this:')
+            self.h(' *')
+            self.h(' * <programlisting>')
+            self.h(' * static void')
+            self.h(' * implement_%s (gpointer klass,' % self.node_name_lc)
+            self.h(' *     gpointer unused G_GNUC_UNUSED)')
+            self.h(' * {')
+            # "#" is special to gtkdoc under some circumstances; it appears
+            # that escaping "##" as "#<!---->#" or "&#35;&#35;" doesn't work,
+            # but adding an extra hash symbol does. Thanks, gtkdoc :-(
+            self.h(' * #define IMPLEMENT(x) %s%s_implement_###x (\\'
+                   % (self.prefix_, self.node_name_lc))
+            self.h(' *   klass, my_object_###x)')
+
+            for method in methods:
+                class_member_name = method.getAttribute('tp:name-for-bindings')
+                class_member_name = class_member_name.lower()
+                self.h(' *   IMPLEMENT (%s);' % class_member_name)
+
+            self.h(' * #undef IMPLEMENT')
+            self.h(' * }')
+            self.h(' * </programlisting>')
+        else:
+            self.h(' * This interface has no D-Bus methods, so an')
+            self.h(' * implementation can typically pass %NULL to')
+            self.h(' * G_IMPLEMENT_INTERFACE() as the interface')
+            self.h(' * initialization function.')
+
         self.h(' */')
+
         self.h('typedef struct _%s%sClass %s%sClass;'
                % (self.Prefix, node_name_mixed, self.Prefix, node_name_mixed))
         self.h('')
