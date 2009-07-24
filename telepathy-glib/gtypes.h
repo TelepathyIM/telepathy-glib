@@ -27,7 +27,7 @@ G_BEGIN_DECLS
 
 #include <telepathy-glib/_gen/gtypes.h>
 
-#define TP_ARRAY_TYPE_OBJECT_PATH_LIST() (tp_type_dbus_array_of_o ())
+#define TP_ARRAY_TYPE_OBJECT_PATH_LIST (tp_type_dbus_array_of_o ())
 
 GType tp_type_dbus_array_of_o (void);
 
