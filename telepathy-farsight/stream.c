@@ -92,6 +92,8 @@ struct _TfStreamPrivate
   gboolean send_local_codecs;
   gboolean send_supported_codecs;
 
+  guint tos;
+
   NewStreamCreatedCb *new_stream_created_cb;
 };
 
@@ -119,7 +121,8 @@ enum
   PROP_DIRECTION,
   PROP_NAT_PROPERTIES,
   PROP_SINK_PAD,
-  PROP_LOCAL_PREFERENCES
+  PROP_LOCAL_PREFERENCES,
+  PROP_TOS
 };
 
 static void get_all_properties_cb (TpProxy *proxy,
@@ -239,6 +242,12 @@ tf_stream_get_property (GObject    *object,
     case PROP_LOCAL_PREFERENCES:
       g_value_set_boxed (value, self->priv->local_preferences);
       break;
+    case PROP_TOS:
+      if (self->priv->fs_session)
+        g_object_get_property (G_OBJECT (self->priv->fs_session), "tos", value);
+      else
+        g_value_set_uint (value, self->priv->tos);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -285,6 +294,11 @@ tf_stream_set_property (GObject      *object,
       break;
     case PROP_LOCAL_PREFERENCES:
       self->priv->local_preferences = g_value_dup_boxed (value);
+      break;
+    case PROP_TOS:
+      self->priv->tos = g_value_get_uint (value);
+      if (self->priv->fs_session)
+        g_object_set_property (G_OBJECT (self->priv->fs_session), "tos", value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -479,6 +493,13 @@ tf_stream_class_init (TfStreamClass *klass)
           G_PARAM_CONSTRUCT_ONLY |
           G_PARAM_READWRITE |
           G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_TOS,
+      g_param_spec_uint ("tos",
+          "IP Type of Service",
+          "The IP Type of Service to set on sent packets",
+          0, 255, 0,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TfStream::closed:
@@ -861,6 +882,9 @@ get_all_properties_cb (TpProxy *proxy,
       g_clear_error (&myerror);
       return;
     }
+
+  if (stream->priv->tos)
+    g_object_set (stream->priv->fs_session, "tos", stream->priv->tos, NULL);
 
   stream->priv->fs_stream = fs_session_new_stream (stream->priv->fs_session,
       stream->priv->fs_participant,
