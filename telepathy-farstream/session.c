@@ -428,7 +428,7 @@ _tf_session_bus_message (TfSession *session,
 
             if (object == G_OBJECT (session->priv->fs_participant))
               {
-                const gchar *msg, *debugmsg;
+                const gchar *msg;
                 FsError errorno;
                 GEnumClass *enumclass;
                 GEnumValue *enumvalue;
@@ -436,13 +436,11 @@ _tf_session_bus_message (TfSession *session,
                 value = gst_structure_get_value (s, "error-no");
                 errorno = g_value_get_enum (value);
                 msg = gst_structure_get_string (s, "error-msg");
-                debugmsg = gst_structure_get_string (s, "debug-msg");
-
 
                 enumclass = g_type_class_ref (FS_TYPE_ERROR);
                 enumvalue = g_enum_get_value (enumclass, errorno);
-                g_warning ("participant error (%s (%d)): %s : %s",
-                    enumvalue->value_nick, errorno, msg, debugmsg);
+                g_warning ("participant error (%s (%d)): %s",
+                    enumvalue->value_nick, errorno, msg);
                 g_type_class_unref (enumclass);
 
                 tp_cli_media_session_handler_call_error (

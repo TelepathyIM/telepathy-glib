@@ -2447,7 +2447,6 @@ gboolean
 _tf_stream_bus_message (TfStream *stream,
     GstMessage *message)
 {
-  const gchar *debug = NULL;
   const GstStructure *s = gst_message_get_structure (message);
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
@@ -2475,12 +2474,11 @@ _tf_stream_bus_message (TfStream *stream,
           value = gst_structure_get_value (s, "error-no");
           errorno = g_value_get_enum (value);
           msg = gst_structure_get_string (s, "error-msg");
-          debug = gst_structure_get_string (s, "debug-msg");
 
           enumclass = g_type_class_ref (FS_TYPE_ERROR);
           enumvalue = g_enum_get_value (enumclass, errorno);
-          WARNING (stream, "error (%s (%d)): %s : %s",
-              enumvalue->value_nick, errorno, msg, debug);
+          WARNING (stream, "error (%s (%d)): %s",
+              enumvalue->value_nick, errorno, msg);
           g_type_class_unref (enumclass);
 
           tf_stream_error (stream, fserrorno_to_tperrorno (errorno), msg);
