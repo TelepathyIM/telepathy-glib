@@ -2477,14 +2477,6 @@ _tf_stream_bus_message (TfStream *stream,
           msg = gst_structure_get_string (s, "error-msg");
           debug = gst_structure_get_string (s, "debug-msg");
 
-          /*
-           * We ignore the Unknown Cname error because current signalling
-           * does no provide us with a cname
-           */
-          if (errorno == FS_ERROR_UNKNOWN_CNAME)
-            return TRUE;
-
-
           enumclass = g_type_class_ref (FS_TYPE_ERROR);
           enumvalue = g_enum_get_value (enumclass, errorno);
           WARNING (stream, "error (%s (%d)): %s : %s",
