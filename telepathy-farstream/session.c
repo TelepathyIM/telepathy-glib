@@ -156,7 +156,6 @@ _tf_session_constructor (GType type,
 
   self->priv->fs_participant =
       fs_conference_new_participant (self->priv->fs_conference,
-          "whatever-cname@1.2.3.4",
           &self->priv->construction_error);
 
   if (!self->priv->fs_participant)
