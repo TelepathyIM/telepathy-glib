@@ -1555,6 +1555,7 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   guint i;
   GList *fs_candidates = NULL;
   GError *error = NULL;
+  gboolean ret;
 
   for (i = 0; i < candidates->len; i++)
     {
@@ -1577,9 +1578,17 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           tp_transports_to_fs (foundation, transports));
     }
 
-  if (!fs_stream_set_remote_candidates (self->priv->fs_stream,
-                  fs_candidates, &error))
-    tf_stream_error (self, fserror_to_tperror (error), error->message);
+  ret = fs_stream_set_remote_candidates (self->priv->fs_stream,
+      fs_candidates, &error);
+  if (!ret && error &&
+      error->domain == FS_ERROR && error->code == FS_ERROR_NOT_IMPLEMENTED)
+  {
+    g_clear_error (&error);
+    ret = fs_stream_force_remote_candidates (self->priv->fs_stream,
+        fs_candidates, &error);
+  }
+  if (!ret)
+    tf_stream_error (self, fserror_to_tperror (error),  error->message);
 
   g_clear_error (&error);
   fs_candidate_list_destroy (fs_candidates);
