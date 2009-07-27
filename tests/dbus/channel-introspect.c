@@ -401,6 +401,60 @@ main (int argc,
   g_free (bad_chan_path);
   bad_chan_path = NULL;
 
+  g_message ("Channel doesn't actually implement Group (preloading immutable "
+      "properties)");
+
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  service_chan->get_handle_called = 0;
+  service_chan->get_interfaces_called = 0;
+  service_chan->get_channel_type_called = 0;
+
+  {
+    const gchar *interfaces[] = {
+        TP_IFACE_CHANNEL_INTERFACE_GROUP,
+        NULL
+    };
+
+    asv = tp_asv_new (
+        TP_IFACE_CHANNEL ".ChannelType", G_TYPE_STRING,
+            TP_IFACE_CHANNEL_TYPE_TEXT,
+        TP_IFACE_CHANNEL ".TargetHandleType", G_TYPE_UINT,
+            TP_HANDLE_TYPE_CONTACT,
+        TP_IFACE_CHANNEL ".TargetHandle", G_TYPE_UINT, handle,
+        TP_IFACE_CHANNEL ".TargetID", G_TYPE_STRING, IDENTIFIER,
+        TP_IFACE_CHANNEL ".InitiatorHandle", G_TYPE_UINT, handle,
+        TP_IFACE_CHANNEL ".InitiatorID", G_TYPE_STRING, IDENTIFIER,
+        TP_IFACE_CHANNEL ".Interfaces", G_TYPE_STRV, interfaces,
+        TP_IFACE_CHANNEL ".Requested", G_TYPE_BOOLEAN, FALSE,
+        NULL);
+  }
+
+  /* We lie and say that the basic Text channel has the Group interface; this
+   * should make introspection fail.
+   */
+  chan = tp_channel_new_from_properties (conn, chan_path, asv, &error);
+  test_assert_no_error (error);
+
+  g_hash_table_destroy (asv);
+  asv = NULL;
+
+  MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
+  MYASSERT (error != NULL, "");
+  MYASSERT (error->domain == DBUS_GERROR,
+      "%s", g_quark_to_string (error->domain));
+  MYASSERT (error->code == DBUS_GERROR_UNKNOWN_METHOD,
+      "%u", error->code);
+  g_error_free (error);
+  error = NULL;
+
+  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
+  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 0);
+
+  g_object_unref (chan);
+  chan = NULL;
+
   g_message ("Channel becomes ready and we are called back");
 
   test_connection_run_until_dbus_queue_processed (conn);

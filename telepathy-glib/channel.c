@@ -502,7 +502,7 @@ tp_channel_set_property (GObject *object,
 /* Introspection etc. */
 
 
-static void
+void
 _tp_channel_abort_introspection (TpChannel *self,
                                  const gchar *debug,
                                  const GError *error)
