@@ -84,6 +84,9 @@ struct _TpChannelPrivate {
 /* channel.c internals */
 
 void _tp_channel_continue_introspection (TpChannel *self);
+void _tp_channel_abort_introspection (TpChannel *self,
+    const gchar *debug,
+    const GError *error);
 
 /* channel-group.c internals */
 

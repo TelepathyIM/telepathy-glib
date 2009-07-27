@@ -35,6 +35,12 @@ G_DEFINE_TYPE_WITH_CODE (TestPropsTextChannel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init))
 
+G_DEFINE_TYPE_WITH_CODE (TestPropsGroupTextChannel,
+    test_props_group_text_channel,
+    TEST_TYPE_PROPS_TEXT_CHANNEL,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
+        tp_group_mixin_iface_init))
+
 static const char *test_text_channel_null_interfaces[] = { NULL };
 
 /* type definition stuff */
@@ -74,6 +80,7 @@ test_text_channel_null_init (TestTextChannelNull *self)
 static void
 test_props_text_channel_init (TestPropsTextChannel *self)
 {
+  self->dbus_property_interfaces_retrieved = g_hash_table_new (NULL, NULL);
 }
 
 static GObject *
@@ -297,8 +304,35 @@ test_text_channel_null_class_init (TestTextChannelNullClass *klass)
 }
 
 static void
+test_props_text_channel_getter_gobject_properties (GObject *object,
+    GQuark interface,
+    GQuark name,
+    GValue *value,
+    gpointer getter_data)
+{
+  TestPropsTextChannel *self = TEST_PROPS_TEXT_CHANNEL (object);
+
+  g_hash_table_insert (self->dbus_property_interfaces_retrieved,
+      GUINT_TO_POINTER (interface), GUINT_TO_POINTER (interface));
+
+  tp_dbus_properties_mixin_getter_gobject_properties (object, interface, name,
+      value, getter_data);
+}
+
+static void
+props_finalize (GObject *object)
+{
+  TestPropsTextChannel *self = TEST_PROPS_TEXT_CHANNEL (object);
+
+  g_hash_table_unref (self->dbus_property_interfaces_retrieved);
+
+  ((GObjectClass *) test_text_channel_null_parent_class)->finalize (object);
+}
+
+static void
 test_props_text_channel_class_init (TestPropsTextChannelClass *klass)
 {
+  GObjectClass *object_class = (GObjectClass *) klass;
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
       { "TargetHandleType", "handle-type", NULL },
       { "TargetHandle", "handle", NULL },
@@ -312,16 +346,96 @@ test_props_text_channel_class_init (TestPropsTextChannelClass *klass)
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_CHANNEL,
-        tp_dbus_properties_mixin_getter_gobject_properties,
+        test_props_text_channel_getter_gobject_properties,
         NULL,
         channel_props,
       },
       { NULL }
   };
 
+  object_class->finalize = props_finalize;
+
   klass->dbus_properties_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init ((GObjectClass *) klass,
+  tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TestPropsTextChannelClass, dbus_properties_class));
+}
+
+static void
+test_props_group_text_channel_init (TestPropsGroupTextChannel *self)
+{
+}
+
+static void
+group_constructed (GObject *self)
+{
+  TpBaseConnection *conn = TEST_TEXT_CHANNEL_NULL (self)->priv->conn;
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) test_props_group_text_channel_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (self);
+
+  tp_group_mixin_init (self,
+      G_STRUCT_OFFSET (TestPropsGroupTextChannel, group),
+      tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT),
+      tp_base_connection_get_self_handle (conn));
+  tp_group_mixin_change_flags (self, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
+}
+
+static void
+group_finalize (GObject *self)
+{
+  tp_group_mixin_finalize (self);
+}
+
+static gboolean
+dummy_add_remove_member (GObject *obj,
+    TpHandle handle,
+    const gchar *message,
+    GError **error)
+{
+  return TRUE;
+}
+
+static void
+group_iface_props_getter (GObject *object,
+    GQuark interface,
+    GQuark name,
+    GValue *value,
+    gpointer getter_data)
+{
+  TestPropsTextChannel *self = TEST_PROPS_TEXT_CHANNEL (object);
+
+  g_hash_table_insert (self->dbus_property_interfaces_retrieved,
+      GUINT_TO_POINTER (interface), GUINT_TO_POINTER (interface));
+
+  tp_group_mixin_get_dbus_property (object, interface, name, value, getter_data);
+}
+
+static void
+test_props_group_text_channel_class_init (TestPropsGroupTextChannelClass *klass)
+{
+  GObjectClass *object_class = (GObjectClass *) klass;
+  static TpDBusPropertiesMixinPropImpl group_props[] = {
+      { "GroupFlags", NULL, NULL },
+      { "HandleOwners", NULL, NULL },
+      { "LocalPendingMembers", NULL, NULL },
+      { "Members", NULL, NULL },
+      { "RemotePendingMembers", NULL, NULL },
+      { "SelfHandle", NULL, NULL },
+      { NULL }
+  };
+
+  object_class->constructed = group_constructed;
+  object_class->finalize = group_finalize;
+
+  tp_group_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (TestPropsGroupTextChannelClass, group_class),
+      dummy_add_remove_member,
+      dummy_add_remove_member);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP, group_iface_props_getter, NULL,
+      group_props);
 }
 
 static void

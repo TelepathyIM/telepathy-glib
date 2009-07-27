@@ -372,19 +372,20 @@ tp_channel_got_group_flags_0_16_cb (TpChannel *self,
 
   if (error != NULL)
     {
-      DEBUG ("%p GetGroupFlags() failed, assuming initial flags 0: %s", self,
-          error->message);
-      flags = 0;
+      /* GetGroupFlags() has existed with its current signature since November
+       * 2005. I think it's reasonable to say that if it doesn't work, the
+       * channel is broken.
+       */
+      _tp_channel_abort_introspection (self, "GetGroupFlags() failed", error);
+      return;
     }
-  else
+
+  /* If we reach this point, GetAll has already failed... */
+  if (flags & TP_CHANNEL_GROUP_FLAG_PROPERTIES)
     {
-      /* If we reach this point, GetAll has already failed... */
-      if (flags & TP_CHANNEL_GROUP_FLAG_PROPERTIES)
-        {
-          DEBUG ("Treason uncloaked! The channel claims to support Group "
-              "properties, but GetAll didn't work");
-          flags &= ~TP_CHANNEL_GROUP_FLAG_PROPERTIES;
-        }
+      DEBUG ("Treason uncloaked! The channel claims to support Group "
+          "properties, but GetAll didn't work");
+      flags &= ~TP_CHANNEL_GROUP_FLAG_PROPERTIES;
     }
 
   _got_initial_group_flags (self, flags);

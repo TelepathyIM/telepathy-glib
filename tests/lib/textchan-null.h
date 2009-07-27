@@ -15,6 +15,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/text-mixin.h>
+#include <telepathy-glib/group-mixin.h>
 
 G_BEGIN_DECLS
 
@@ -64,6 +65,8 @@ typedef struct _TestPropsTextChannelClass TestPropsTextChannelClass;
 
 struct _TestPropsTextChannel {
     TestTextChannelNull parent;
+
+    GHashTable *dbus_property_interfaces_retrieved;
 };
 
 struct _TestPropsTextChannelClass {
@@ -89,6 +92,41 @@ GType test_props_text_channel_get_type (void);
 #define TEST_PROPS_TEXT_CHANNEL_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TEST_TYPE_PROPS_TEXT_CHANNEL, \
                               TestPropsTextChannelClass))
+
+/* Subclass with D-Bus properties and Group */
+
+typedef struct _TestPropsGroupTextChannel TestPropsGroupTextChannel;
+typedef struct _TestPropsGroupTextChannelClass TestPropsGroupTextChannelClass;
+
+struct _TestPropsGroupTextChannel {
+    TestPropsTextChannel parent;
+
+    TpGroupMixin group;
+};
+
+struct _TestPropsGroupTextChannelClass {
+    TestPropsTextChannelClass parent;
+
+    TpGroupMixinClass group_class;
+};
+
+GType test_props_group_text_channel_get_type (void);
+
+#define TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL \
+  (test_props_group_text_channel_get_type ())
+#define TEST_PROPS_GROUP_TEXT_CHANNEL(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL, \
+                               TestPropsGroupTextChannel))
+#define TEST_PROPS_GROUP_TEXT_CHANNEL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL, \
+                            TestPropsGroupTextChannelClass))
+#define TEST_IS_PROPS_GROUP_TEXT_CHANNEL(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL))
+#define TEST_IS_PROPS_GROUP_TEXT_CHANNEL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL))
+#define TEST_PROPS_GROUP_TEXT_CHANNEL_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL, \
+                              TestPropsGroupTextChannelClass))
 
 G_END_DECLS
 

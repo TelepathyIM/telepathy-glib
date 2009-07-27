@@ -502,7 +502,7 @@ tp_channel_set_property (GObject *object,
 /* Introspection etc. */
 
 
-static void
+void
 _tp_channel_abort_introspection (TpChannel *self,
                                  const gchar *debug,
                                  const GError *error)
@@ -576,10 +576,17 @@ _tp_channel_get_interfaces (TpChannel *self)
 {
   DEBUG ("%p", self);
 
-  if (self->priv->exists &&
-      tp_asv_lookup (self->priv->channel_properties,
-          TP_IFACE_CHANNEL ".Interfaces") != NULL)
+  if (tp_asv_lookup (self->priv->channel_properties,
+          TP_IFACE_CHANNEL ".Interfaces") != NULL &&
+      (self->priv->exists ||
+       tp_proxy_has_interface_by_id (self,
+          TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)))
     {
+      /* If we already know the channel's interfaces, and either have already
+       * successfully called a method on the channel (so know it's alive) or
+       * are going to call one on it when we introspect the Group properties,
+       * then we don't need to do anything here.
+       */
       _tp_channel_continue_introspection (self);
     }
   else
@@ -858,13 +865,14 @@ _tp_channel_get_properties (TpChannel *self)
     {
       gboolean valid;
 
-      tp_asv_get_uint32 (self->priv->channel_properties, "InitiatorHandle",
-          &valid);
+      tp_asv_get_uint32 (self->priv->channel_properties,
+          TP_IFACE_CHANNEL ".InitiatorHandle", &valid);
 
       if (!valid)
         goto missing;
 
-      tp_asv_get_boolean (self->priv->channel_properties, "Requested", &valid);
+      tp_asv_get_boolean (self->priv->channel_properties,
+          TP_IFACE_CHANNEL ".Requested", &valid);
 
       if (!valid)
         goto missing;
