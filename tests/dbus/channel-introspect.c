@@ -92,10 +92,8 @@ main (int argc,
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
   TestTextChannelNull *service_chan;
-  TestTextChannelNull *service_props_chan;
-  TestTextChannelNull *service_props_group_chan;
-  TestPropsTextChannel *service_props_chan_;
-  TestPropsTextChannel *service_props_group_chan_;
+  TestPropsTextChannel *service_props_chan;
+  TestPropsGroupTextChannel *service_props_group_chan;
   TpDBusDaemon *dbus;
   TpConnection *conn;
   TpChannel *chan;
@@ -154,24 +152,21 @@ main (int argc,
 
   props_chan_path = g_strdup_printf ("%s/PropertiesChannel", conn_path);
 
-  service_props_chan = TEST_TEXT_CHANNEL_NULL (g_object_new (
+  service_props_chan = TEST_PROPS_TEXT_CHANNEL (g_object_new (
         TEST_TYPE_PROPS_TEXT_CHANNEL,
         "connection", service_conn,
         "object-path", props_chan_path,
         "handle", handle,
         NULL));
-  service_props_chan_ = TEST_PROPS_TEXT_CHANNEL (service_props_chan);
 
   props_group_chan_path = g_strdup_printf ("%s/PropsGroupChannel", conn_path);
 
-  service_props_group_chan = TEST_TEXT_CHANNEL_NULL (g_object_new (
+  service_props_group_chan = TEST_PROPS_GROUP_TEXT_CHANNEL (g_object_new (
         TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL,
         "connection", service_conn,
         "object-path", props_group_chan_path,
         "handle", handle,
         NULL));
-  service_props_group_chan_ =
-      TEST_PROPS_TEXT_CHANNEL (service_props_group_chan);
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
@@ -237,9 +232,9 @@ main (int argc,
 
   test_connection_run_until_dbus_queue_processed (conn);
 
-  service_props_chan->get_handle_called = 0;
-  service_props_chan->get_interfaces_called = 0;
-  service_props_chan->get_channel_type_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called = 0;
 
   chan = tp_channel_new (conn, props_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
@@ -247,9 +242,12 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   test_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_props_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_props_chan->get_channel_type_called, 0);
-  MYASSERT_SAME_UINT (service_props_chan->get_interfaces_called, 0);
+  MYASSERT_SAME_UINT (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, 0);
+  MYASSERT_SAME_UINT (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called, 0);
+  MYASSERT_SAME_UINT (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -261,12 +259,12 @@ main (int argc,
 
   test_connection_run_until_dbus_queue_processed (conn);
 
-  service_props_chan->get_handle_called = 0;
-  service_props_chan->get_interfaces_called = 0;
-  service_props_chan->get_channel_type_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called = 0;
 
-  g_hash_table_remove_all (
-      service_props_chan_->dbus_property_interfaces_retrieved);
+  g_hash_table_remove_all (TEST_PROPS_TEXT_CHANNEL (service_props_chan)
+      ->dbus_property_interfaces_retrieved);
 
   asv = tp_asv_new (
       TP_IFACE_CHANNEL ".ChannelType", G_TYPE_STRING,
@@ -289,11 +287,16 @@ main (int argc,
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   test_assert_no_error (error);
   MYASSERT_SAME_UINT (g_hash_table_size (
-      service_props_chan_->dbus_property_interfaces_retrieved), 0);
-  MYASSERT_SAME_UINT (service_props_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_props_chan->get_channel_type_called, 0);
+      service_props_chan->dbus_property_interfaces_retrieved), 0);
+  MYASSERT_SAME_UINT (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, 0);
+  MYASSERT_SAME_UINT (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called, 0);
   /* FIXME: with an improved fast-path we could avoid this one too maybe? */
-  /* MYASSERT_SAME_UINT (service_props_chan->get_interfaces_called, 0); */
+  /*
+  MYASSERT_SAME_UINT (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, 0);
+   */
 
   assert_chan_sane (chan, handle);
 
@@ -305,12 +308,13 @@ main (int argc,
 
   test_connection_run_until_dbus_queue_processed (conn);
 
-  service_props_group_chan->get_handle_called = 0;
-  service_props_group_chan->get_interfaces_called = 0;
-  service_props_group_chan->get_channel_type_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_group_chan)->get_handle_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_group_chan)->get_interfaces_called = 0;
+  TEST_TEXT_CHANNEL_NULL (service_props_group_chan)->get_channel_type_called
+      = 0;
 
-  g_hash_table_remove_all (
-      service_props_group_chan_->dbus_property_interfaces_retrieved);
+  g_hash_table_remove_all (TEST_PROPS_TEXT_CHANNEL (service_props_group_chan)
+      ->dbus_property_interfaces_retrieved);
 
   {
     const gchar *interfaces[] = {
@@ -340,13 +344,18 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   test_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_props_group_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_props_group_chan->get_channel_type_called, 0);
-  MYASSERT_SAME_UINT (service_props_group_chan->get_interfaces_called, 0);
+  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_handle_called, 0);
+  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_channel_type_called, 0);
+  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_interfaces_called, 0);
   MYASSERT_SAME_UINT (g_hash_table_size (
-      service_props_group_chan_->dbus_property_interfaces_retrieved), 1);
+      TEST_PROPS_TEXT_CHANNEL (service_props_group_chan)
+      ->dbus_property_interfaces_retrieved), 1);
   MYASSERT (g_hash_table_lookup (
-      service_props_group_chan_->dbus_property_interfaces_retrieved,
+      TEST_PROPS_TEXT_CHANNEL (service_props_group_chan)
+      ->dbus_property_interfaces_retrieved,
       GUINT_TO_POINTER (TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)) != NULL,
       "Only Chan.I.Group's properties should have been retrieved");
 
