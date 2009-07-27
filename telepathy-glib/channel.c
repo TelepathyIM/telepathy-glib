@@ -576,10 +576,17 @@ _tp_channel_get_interfaces (TpChannel *self)
 {
   DEBUG ("%p", self);
 
-  if (self->priv->exists &&
-      tp_asv_lookup (self->priv->channel_properties,
-          TP_IFACE_CHANNEL ".Interfaces") != NULL)
+  if (tp_asv_lookup (self->priv->channel_properties,
+          TP_IFACE_CHANNEL ".Interfaces") != NULL &&
+      (self->priv->exists ||
+       tp_proxy_has_interface_by_id (self,
+          TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)))
     {
+      /* If we already know the channel's interfaces, and either have already
+       * successfully called a method on the channel (so know it's alive) or
+       * are going to call one on it when we introspect the Group properties,
+       * then we don't need to do anything here.
+       */
       _tp_channel_continue_introspection (self);
     }
   else
