@@ -895,14 +895,13 @@ get_all_properties_cb (TpProxy *proxy,
         g_clear_error (&myerror);
       }
 
-
   if (g_object_class_find_property (
           G_OBJECT_GET_CLASS (stream->priv->fs_session),
           "no-rtcp-timeout"))
     g_object_set (stream->priv->fs_session, "no-rtcp-timeout", 0, NULL);
 
-  g_signal_connect (stream->priv->fs_stream, "src-pad-added",
-      G_CALLBACK (cb_fs_stream_src_pad_added), stream);
+  g_signal_connect_object (stream->priv->fs_stream, "src-pad-added",
+      G_CALLBACK (cb_fs_stream_src_pad_added), stream, 0);
 
   stream->priv->send_local_codecs = TRUE;
 
