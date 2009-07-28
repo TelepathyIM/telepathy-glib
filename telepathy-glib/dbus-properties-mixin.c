@@ -767,6 +767,15 @@ tp_dbus_properties_mixin_get (GObject *self,
  * g_assert() if retrieving a property fails (for instance, because it does not
  * exist).
  *
+ * Additional keys and values can be inserted into the returned hash table;
+ * if this is done, the inserted keys and values will be freed when the
+ * hash table is destroyed. The keys must be allocated with g_strdup() or
+ * equivalent, and the values must be slice-allocated (for instance with
+ * tp_g_value_slice_new_string() or a similar function).
+ *
+ * Note that in particular, tp_asv_set_string() and similar functions should
+ * not be used with this hash table.
+ *
  * Returns: a hash table mapping (gchar *) fully-qualified property names to
  *          GValues, which must be freed by the caller (at which point its
  *          contents will also be freed).
