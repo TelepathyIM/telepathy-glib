@@ -1494,7 +1494,9 @@ tp_intset_symmetric_difference
 tp_intset_dump
 TP_INTSET_ITER_INIT
 TpIntSetIter
+tp_intset_iter_init
 tp_intset_iter_next
+tp_intset_iter_reset
 </SECTION>
 
 <SECTION>

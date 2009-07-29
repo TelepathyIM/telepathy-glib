@@ -113,8 +113,9 @@ struct _TpIntSetIter
  *
  * Reset the iterator @iter to the beginning and make it iterate over @set.
  */
+#define tp_intset_iter_init(iter, set) tp_intset_iter_init_inline (iter, set)
 static inline void
-tp_intset_iter_init (TpIntSetIter *iter, const TpIntSet *set)
+tp_intset_iter_init_inline (TpIntSetIter *iter, const TpIntSet *set)
 {
   g_return_if_fail (iter != NULL);
   iter->set = set;
@@ -122,14 +123,15 @@ tp_intset_iter_init (TpIntSetIter *iter, const TpIntSet *set)
 }
 
 /**
- * tp_intset_iter_init:
+ * tp_intset_iter_reset:
  * @iter: An integer set iterator to be reset.
  *
  * Reset the iterator @iter to the beginning. It must already be associated
  * with a set.
  */
+#define tp_intset_iter_reset(iter) tp_intset_iter_reset_inline (iter)
 static inline void
-tp_intset_iter_reset (TpIntSetIter *iter)
+tp_intset_iter_reset_inline (TpIntSetIter *iter)
 {
   g_return_if_fail (iter != NULL);
   g_return_if_fail (iter->set != NULL);
