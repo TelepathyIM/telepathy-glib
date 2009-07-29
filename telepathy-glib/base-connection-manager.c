@@ -719,8 +719,8 @@ parse_parameters (const TpCMParamSpec *paramspec,
             }
           else if (paramspec[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT)
             {
-              /* FIXME: Should we add it to params_present? */
               set_param_from_default (&paramspec[i], set_param, params);
+              tp_intset_add (params_present, i);
             }
           else
             {
