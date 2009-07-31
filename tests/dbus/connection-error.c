@@ -13,6 +13,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/simple-conn.h"
@@ -63,7 +64,7 @@ example_com_error_get_type (void)
       };
       GType gtype;
 
-      g_assert (sizeof (GType) <= sizeof (gsize));
+      tp_verify_statement (sizeof (GType) <= sizeof (gsize));
 
       gtype = g_enum_register_static ("ExampleError", values);
       g_once_init_leave (&type, gtype);
