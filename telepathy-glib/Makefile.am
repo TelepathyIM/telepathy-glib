@@ -174,7 +174,8 @@ tpginclude_HEADERS = \
     svc-media-interfaces.h \
     svc-properties-interface.h \
     text-mixin.h \
-    util.h
+    util.h \
+    verify.h
 
 nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/error-str.c \
