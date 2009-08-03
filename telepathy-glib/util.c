@@ -66,6 +66,18 @@
  */
 
 /**
+ * tp_verify_statement:
+ * @R: a requirement (constant expression) to be checked at compile-time
+ *
+ * Make an assertion at compile time, like C++0x's proposed static_assert
+ * keyword. If @R is determined to be true, there is no overhead at runtime;
+ * if @R is determined to be false, compilation will fail.
+ *
+ * This macro can be used anywhere that a statement would be allowed; it
+ * is equivalent to ((void) tp_verify_true (R)).
+ */
+
+/**
  * tp_g_ptr_array_contains:
  * @haystack: The pointer array to be searched
  * @needle: The pointer to look for
