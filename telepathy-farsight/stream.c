@@ -192,6 +192,11 @@ static void cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     FsCodec *codec,
     gpointer user_data);
 
+static void cb_fs_component_state_changed (TfStream *self,
+    guint component,
+    FsStreamState fsstate);
+
+
 static void
 tf_stream_init (TfStream *self)
 {
@@ -1970,6 +1975,26 @@ _tf_stream_bus_message (TfStream *stream,
           fs_codec_destroy (codec);
         }
     }
+  else if (gst_structure_has_name (s, "farsight-component-state-changed"))
+    {
+      FsStream *fsstream;
+      const GValue *value;
+      guint component;
+      FsStreamState fsstate;
+
+      value = gst_structure_get_value (s, "stream");
+      fsstream = g_value_get_object (value);
+
+      if (fsstream != stream->priv->fs_stream)
+        return FALSE;
+
+      if (!gst_structure_get_uint (s, "component", &component) ||
+          !gst_structure_get_enum (s, "state", FS_TYPE_STREAM_STATE,
+              (gint*) &fsstate))
+        return TRUE;
+
+      cb_fs_component_state_changed (stream, component, fsstate);
+    }
 
   return FALSE;
 }
@@ -2154,4 +2179,37 @@ fserror_to_tperror (GError *error)
     return TP_MEDIA_STREAM_ERROR_UNKNOWN;
 
   return fserrorno_to_tperrorno (error->code);
+}
+
+static void
+cb_fs_component_state_changed (TfStream *self,
+    guint component,
+    FsStreamState fsstate)
+{
+  TpMediaStreamState state;
+
+  if (component != 1)
+    return;
+
+  switch (fsstate)
+  {
+    case FS_STREAM_STATE_FAILED:
+    case FS_STREAM_STATE_DISCONNECTED:
+      state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
+      break;
+    case FS_STREAM_STATE_GATHERING:
+    case FS_STREAM_STATE_CONNECTING:
+      state = TP_MEDIA_STREAM_STATE_CONNECTING;
+      break;
+    case FS_STREAM_STATE_CONNECTED:
+    case FS_STREAM_STATE_READY:
+    default:
+      state = TP_MEDIA_STREAM_STATE_CONNECTED;
+      break;
+  }
+
+  tp_cli_media_stream_handler_call_stream_state (
+      self->priv->stream_handler_proxy, -1, state,
+      async_method_callback, "Media.StreamHandler::StreamState",
+      NULL, (GObject *) self);
 }
