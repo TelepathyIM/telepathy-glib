@@ -20,10 +20,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <glib-object.h>
-
 #ifndef __TP_UTIL_H__
 #define __TP_UTIL_H__
+#define __TP_IN_UTIL_H__
+
+#include <glib-object.h>
+
+#include <telepathy-glib/verify.h>
+
+#define tp_verify_statement(R) ((void) tp_verify_true (R))
 
 G_BEGIN_DECLS
 
@@ -70,4 +75,5 @@ guint64 tp_g_key_file_get_uint64 (GKeyFile *key_file, const gchar *group_name,
 
 G_END_DECLS
 
+#undef  __TP_IN_UTIL_H__
 #endif /* __TP_UTIL_H__ */

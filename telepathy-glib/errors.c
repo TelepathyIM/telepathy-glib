@@ -23,6 +23,8 @@
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
+#include <telepathy-glib/util.h>
+
 /**
  * TP_ERROR_PREFIX:
  *
@@ -207,7 +209,7 @@ tp_errors_quark (void)
     {
       GQuark domain = g_quark_from_static_string ("tp_errors");
 
-      g_assert (sizeof (GQuark) <= sizeof (gsize));
+      tp_verify_statement (sizeof (GQuark) <= sizeof (gsize));
 
       g_type_init ();
       dbus_g_error_domain_register (domain, TP_ERROR_PREFIX,

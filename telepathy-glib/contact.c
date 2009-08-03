@@ -729,7 +729,8 @@ contacts_context_new (TpConnection *connection,
    * cares about platforms where this fails, fixing this would involve
    * slice-allocating sizeof (GCallback) bytes repeatedly, and putting *those*
    * in the queue. */
-  g_assert (sizeof (GCallback) == sizeof (gpointer));
+  tp_verify_statement (sizeof (GCallback) == sizeof (gpointer));
+
   g_queue_init (&c->todo);
 
   return c;

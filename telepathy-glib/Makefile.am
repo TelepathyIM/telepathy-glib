@@ -120,7 +120,8 @@ libtelepathy_glib_la_LDFLAGS += -export-symbols-regex '^tp'
 
 endif # !HAVE_LD_VERSION_SCRIPT
 
-tpginclude_HEADERS = \
+# headers that are subject to coding-style checks
+our_headers = \
     account.h \
     account-manager.h \
     base-connection.h \
@@ -175,6 +176,10 @@ tpginclude_HEADERS = \
     svc-properties-interface.h \
     text-mixin.h \
     util.h
+
+tpginclude_HEADERS = \
+    $(our_headers) \
+    verify.h
 
 nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/error-str.c \
@@ -256,7 +261,7 @@ distclean-local:
 	rm -rf _gen
 
 check_c_sources = \
-    $(tpginclude_HEADERS) \
+    $(our_headers) \
     $(libtelepathy_glib_internal_la_SOURCES)
 
 include $(top_srcdir)/tools/check-coding-style.mk
