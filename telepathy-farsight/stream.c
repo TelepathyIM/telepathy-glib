@@ -96,6 +96,8 @@ struct _TfStreamPrivate
 
   guint tos;
 
+  guint idle_connected_id;
+
   NewStreamCreatedCb *new_stream_created_cb;
 };
 
@@ -344,6 +346,10 @@ tf_stream_dispose (GObject *object)
 {
   TfStream *stream = TF_STREAM (object);
   TfStreamPrivate *priv = stream->priv;
+
+  if (stream->priv->idle_connected_id)
+    g_source_remove (stream->priv->idle_connected_id);
+  stream->priv->idle_connected_id = 0;
 
   if (priv->stream_handler_proxy)
     {
@@ -1999,6 +2005,21 @@ _tf_stream_bus_message (TfStream *stream,
   return FALSE;
 }
 
+static gboolean
+emit_connected (gpointer data)
+{
+  TfStream *self = TF_STREAM (data);
+
+  tp_cli_media_stream_handler_call_stream_state (
+      self->priv->stream_handler_proxy, -1, TP_MEDIA_STREAM_STATE_CONNECTED,
+      async_method_callback, "Media.StreamHandler::StreamState",
+      NULL, (GObject *) self);
+
+  self->priv->idle_connected_id = 0;
+
+  return FALSE;
+}
+
 static void
 cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
     GstPad *pad,
@@ -2010,6 +2031,9 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
 
   DEBUG (self, "New pad %s: " FS_CODEC_FORMAT, padname, FS_CODEC_ARGS (codec));
   g_free (padname);
+
+  if (!self->priv->idle_connected_id)
+    self->priv->idle_connected_id = g_idle_add (emit_connected, self);
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
 }
