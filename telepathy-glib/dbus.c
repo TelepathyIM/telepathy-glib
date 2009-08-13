@@ -1026,7 +1026,6 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
           "%s: %s", dbus_error.name, dbus_error.message);
 
       dbus_error_free (&dbus_error);
-      dbus_message_unref (reply);
       return FALSE;
     }
 
