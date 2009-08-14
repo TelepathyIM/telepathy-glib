@@ -146,6 +146,26 @@
  *     Raised when a connection can't be established.
  * @TP_ERROR_CONNECTION_LOST: org.freedesktop.Telepathy.Error.ConnectionLost:
  *     Raised when a connection is broken.
+ * @TP_ERROR_ALREADY_CONNECTED: org.freedesktop.Telepathy.Error.AlreadyConnected:
+ *     Raised on attempts to connect again to an account that is already
+ *     connected, if the protocol or server does not allow this.
+ *     Since 0.7.UNRELEASED
+ * @TP_ERROR_CONNECTION_REPLACED: org.freedesktop.Telepathy.Error.ConnectionReplaced:
+ *     Used as disconnection reason for an existing connection if it is
+ *     disconnected because a second connection to the same account is made.
+ *     Since 0.7.UNRELEASED
+ * @TP_ERROR_REGISTRATION_EXISTS: org.freedesktop.Telepathy.Error.RegistrationExists:
+ *     Raised on attempts to register an account on a server when the account
+ *     already exists.
+ *     Since 0.7.UNRELEASED
+ * @TP_ERROR_SERVICE_BUSY: org.freedesktop.Telepathy.Error.ServiceBusy:
+ *     Raised when a server or other infrastructure rejects a request because
+ *     it is too busy.
+ *     Since 0.7.UNRELEASED
+ * @TP_ERROR_RESOURCE_UNAVAILABLE: org.freedesktop.Telepathy.Error.ResourceUnavailable:
+ *     Raised when a local process rejects a request because it does not have
+ *     enough of a resource, such as memory.
+ *     Since 0.7.UNRELEASED
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */
@@ -260,6 +280,16 @@ tp_error_get_type (void)
         { TP_ERROR_CONNECTION_REFUSED, "TP_ERROR_CONNECTION_REFUSED", "ConnectionRefused" },
         { TP_ERROR_CONNECTION_FAILED, "TP_ERROR_CONNECTION_FAILED", "ConnectionFailed" },
         { TP_ERROR_CONNECTION_LOST, "TP_ERROR_CONNECTION_LOST", "ConnectionLost" },
+        /* new in telepathy-spec 0.17.27 / telepathy-glib 0.7.UNRELEASED */
+        { TP_ERROR_ALREADY_CONNECTED, "TP_ERROR_ALREADY_CONNECTED",
+          "AlreadyConnected" },
+        { TP_ERROR_CONNECTION_REPLACED, "TP_ERROR_CONNECTION_REPLACED",
+          "ConnectionReplaced" },
+        { TP_ERROR_REGISTRATION_EXISTS, "TP_ERROR_REGISTRATION_EXISTS",
+          "RegistrationExists" },
+        { TP_ERROR_SERVICE_BUSY, "TP_ERROR_SERVICE_BUSY", "ServiceBusy" },
+        { TP_ERROR_RESOURCE_UNAVAILABLE, "TP_ERROR_RESOURCE_UNAVAILABLE",
+          "ResourceUnavailable" },
         { 0 }
       };
 
