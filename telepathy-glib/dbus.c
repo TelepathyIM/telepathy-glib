@@ -608,6 +608,8 @@ struct _TpDBusDaemonPrivate
 {
   /* dup'd name => _NameOwnerWatch */
   GHashTable *name_owner_watches;
+  /* reffed */
+  DBusConnection *libdbus;
 };
 
 G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY);
@@ -1234,6 +1236,10 @@ tp_dbus_daemon_constructor (GType type,
   g_assert (!tp_strdiff (as_proxy->bus_name, DBUS_SERVICE_DBUS));
   g_assert (!tp_strdiff (as_proxy->object_path, DBUS_PATH_DBUS));
 
+  self->priv->libdbus = dbus_connection_ref (
+      dbus_g_connection_get_connection (
+        tp_proxy_get_dbus_connection (self)));
+
   return (GObject *) self;
 }
 
@@ -1258,6 +1264,12 @@ tp_dbus_daemon_dispose (GObject *object)
 
       self->priv->name_owner_watches = NULL;
       g_hash_table_destroy (tmp);
+    }
+
+  if (self->priv->libdbus != NULL)
+    {
+      dbus_connection_unref (self->priv->libdbus);
+      self->priv->libdbus = NULL;
     }
 
   G_OBJECT_CLASS (tp_dbus_daemon_parent_class)->dispose (object);
