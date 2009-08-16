@@ -1,7 +1,45 @@
-telepathy-glib 0.7.34 (UNRELEASED)
+telepathy-glib 0.7.34 (2009-08-16)
 ==================================
 
-???
+The "secret lack of example detected" release.
+
+Enhancements:
+
+* Updated to telepathy-spec 0.17.27 (smcv)
+  - generate code for Connection.Interface.Location
+  - omit Debug interface from code-generation for now: it will be enabled in a
+    future release when we have reference client- and service-side
+    implementations (possibly called TpDebugReceiver and TpDebugSender)
+  - add more errors
+  - generate code for Handler.Capabilities property
+
+* Add macros for static assertions (tp_verify, tp_verify_true,
+  tp_verify_statement) to util.h (smcv, adapted from gnulib)
+
+* Make the allocation model for tp_dbus_properties_mixin_make_properties_hash
+  part of our ABI guarantee (smcv)
+
+* Add a GType macro TP_ARRAY_TYPE_OBJECT_PATH_LIST (wjt)
+
+Fixes:
+
+* fd.o #23164: don't unref a NULL DBusMessage (wjt)
+
+* Get tp_intset_iter_init and tp_intset_iter_reset into the documentation (smcv)
+
+* Make omitted CM parameters that have a default indistinguishable from
+  explicitly-passed parameters with that value, removing the need to specify
+  the default in the Connection as well (sjoerd)
+
+* fd.o #22889: reduce introspection round-trips (wjt)
+
+* Fix header guard in debug.h (dilinger)
+
+* fd.o #18091: for interfaces with D-Bus methods, document how to write a
+  complete interface init function (smcv)
+
+* Fix a rare crash when a TpProxyPendingCall is cancelled before the
+  DBusGProxyCall is provided (smcv)
 
 telepathy-glib 0.7.33 (2009-06-26)
 ==================================

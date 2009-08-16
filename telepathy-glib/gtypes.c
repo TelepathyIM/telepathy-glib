@@ -45,7 +45,7 @@
  * that returns the #GType of a #GPtrArray
  * of DBUS_TYPE_G_OBJECT_PATH.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.34
  */
 
 GType
