@@ -549,6 +549,31 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           NATs.
         </tp:docstring>
       </tp:flag>
+
+      <tp:flag suffix="Immutable_Streams" value="32">
+        <tp:docstring>
+          Once streams have been requested for a channel to this handle (either
+          by calling <tp:member-ref>RequestStreams</tp:member-ref> on a channel
+          with no streams, or by specifying <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Channel.Type.StreamedMedia.FUTURE">InitialAudio</tp:dbus-ref>
+          or <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Channel.Type.StreamedMedia.FUTURE">InitialAudio</tp:dbus-ref>
+          = <tt>True</tt> in the channel request), then they cannot be changed;
+          subsequent calls to <tp:member-ref>RequestStreams</tp:member-ref> or
+          <tp:member-ref>RemoveStreams</tp:member-ref> will fail.
+
+          <tp:rationale>
+            For example, once an audio-only Google Talk call has started, it is
+            not possible to add a video stream; both audio and video must be
+            requested at the start of the call if video is desired. User
+            interfaces may use this pseudo-capability as a hint to display
+            separate "Audio call" and "Video call" buttons, rather than a
+            single "Call" button with the option to add and remove video once
+            the call has started for contacts without this flag.
+          </tp:rationale>
+        </tp:docstring>
+      </tp:flag>
+
     </tp:flags>
 
   </interface>

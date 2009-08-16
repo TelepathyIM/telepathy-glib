@@ -25,7 +25,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         progress or call states. The presence of this interface is no guarantee
         that call states will actually be signalled (for instance, SIP
         implementations are not guaranteed to generate status 180 Ringing, so a
-        call can be accepted without the Ringing flag ever having been set).</p>
+        call can be accepted without the Ringing flag ever having been set;
+        similarly, Jingle implementations are not guaranteed to send
+        <code>&lt;ringing/&gt;</code>).</p>
 
       <p>To notify the other participant in the call that they are on hold,
         see <tp:dbus-ref

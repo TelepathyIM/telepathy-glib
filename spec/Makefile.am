@@ -17,7 +17,6 @@ EXTRA_DIST = \
     Channel_Interface_Hold.xml \
     Channel_Interface_HTML.xml \
     Channel_Interface_Media_Signalling.xml \
-    Channel_Interface_Media_Signalling_Future.xml \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
     Channel_Interface_Transfer.xml \
