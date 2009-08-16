@@ -1267,8 +1267,18 @@ tp_dbus_daemon_dispose (GObject *object)
   if (self->priv->name_owner_watches != NULL)
     {
       GHashTable *tmp = self->priv->name_owner_watches;
+      GHashTableIter iter;
+      gpointer k, v;
 
       self->priv->name_owner_watches = NULL;
+      g_hash_table_iter_init (&iter, tmp);
+
+      while (g_hash_table_iter_next (&iter, &k, &v))
+        {
+          _tp_dbus_daemon_stop_watching (self, k, v);
+          g_hash_table_iter_remove (&iter);
+        }
+
       g_hash_table_destroy (tmp);
     }
 
