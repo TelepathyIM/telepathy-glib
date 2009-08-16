@@ -600,3 +600,17 @@
  * This section documents the auto-generated C wrappers for the
  * Presence interface, used with #TpConnection objects.
  */
+
+/**
+ * SECTION:connection-location
+ * @title: Connection Location interface
+ * @short_description: client-side wrappers for the Location interface
+ * @see_also: #TpConnection
+ *
+ * Some instant messaging protocols support "rich presence" functionality,
+ * such as geolocation (advertising the user's location to authorized
+ * contacts, and receiving contacts' locations).
+ *
+ * This section documents the auto-generated C wrappers for the
+ * Location interface, used with #TpConnection objects.
+ */
