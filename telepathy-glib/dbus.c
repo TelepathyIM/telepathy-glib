@@ -887,6 +887,18 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
     }
 }
 
+static void
+_tp_dbus_daemon_stop_watching (TpDBusDaemon *self,
+                               const gchar *name,
+                               _NameOwnerWatch *watch)
+{
+  if (watch->destroy)
+    watch->destroy (watch->user_data);
+
+  g_free (watch->last_owner);
+  g_slice_free (_NameOwnerWatch, watch);
+}
+
 /**
  * tp_dbus_daemon_cancel_name_owner_watch:
  * @self: the D-Bus daemon
@@ -925,11 +937,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
   else if (watch->callback == callback && watch->user_data == user_data)
     {
       /* Simple case: there is one name-owner watch and it's what we wanted */
-      if (watch->destroy)
-        watch->destroy (watch->user_data);
-
-      g_free (watch->last_owner);
-      g_slice_free (_NameOwnerWatch, watch);
+      _tp_dbus_daemon_stop_watching (self, name, watch);
       g_hash_table_remove (self->priv->name_owner_watches, name);
       return TRUE;
     }
@@ -954,9 +962,7 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
 
               if (array->len == 0)
                 {
-                  watch->destroy (watch->user_data);
-                  g_free (watch->last_owner);
-                  g_slice_free (_NameOwnerWatch, watch);
+                  _tp_dbus_daemon_stop_watching (self, name, watch);
                   g_hash_table_remove (self->priv->name_owner_watches, name);
                 }
 
