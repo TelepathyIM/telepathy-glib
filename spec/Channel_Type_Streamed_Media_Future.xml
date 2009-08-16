@@ -90,7 +90,7 @@
         </tp:rationale>
 
         <p>Connection managers that support the <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection.Interface">ContactCapabilities.DRAFT</tp:dbus-ref>
+            namespace="org.freedesktop.Telepathy.Connection.Interface">ContactCapabilities.DRAFT2</tp:dbus-ref>
           interface SHOULD represent the capabilities of receiving audio
           and/or video calls by including a channel class in
           a contact's capabilities with ChannelType = StreamedMedia
@@ -106,8 +106,9 @@
         </tp:rationale>
 
         <p>Clients that are willing to receive audio and/or video calls
-          SHOULD include the following filters if calling <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection.Interface.ContactCapabilities.DRAFT">SetSelfCapabilities</tp:dbus-ref>
+          SHOULD include the following among their channel classes if
+          calling <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Connection.Interface.ContactCapabilities.DRAFT2">UpdateCapabilities</tp:dbus-ref>
           (clients of a <tp:dbus-ref
             namespace="org.freedesktop.Telepathy">ChannelDispatcher</tp:dbus-ref>
           SHOULD instead arrange for the ChannelDispatcher to do this,
@@ -144,6 +145,64 @@
         <p>This property is the correct way to discover whether connection
           managers, contacts etc. support video calls; it appears in
           capabilities structures in the same way as InitialAudio.</p>
+      </tp:docstring>
+    </property>
+
+    <property name="ImmutableStreams" tp:name-for-bindings="Immutable_Streams"
+      type="b" access="read">
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>If <tt>True</tt>, once streams have been requested for this channel
+          (either by setting <tp:member-ref>InitialAudio</tp:member-ref> or
+          <tp:member-ref>InitialVideo</tp:member-ref> when the channel is
+          requested, or by calling <tp:dbus-ref
+            namespace='org.freedesktop.Telepathy.Channel.Type.StreamedMedia'>RequestStreams</tp:dbus-ref>
+          on a channel with no streams), the channel's streams cannot be changed;
+          subsequent calls to <tp:dbus-ref
+            namespace='org.freedesktop.Telepathy.Channel.Type.StreamedMedia'>RequestStreams</tp:dbus-ref>
+          or <tp:dbus-ref
+            namespace='org.freedesktop.Telepathy.Channel.Type.StreamedMedia'>RemoveStreams</tp:dbus-ref>
+          will fail.</p>
+
+        <p>If this property is missing, clients SHOULD assume that it is false,
+          and thus that the channel's streams can be changed once the call has
+          started.</p>
+
+        <p>If this property is present in all of the <tp:dbus-ref
+            namespace='org.freedesktop.Telepathy.Channel.Type'>StreamedMedia</tp:dbus-ref>
+          entries in a contact's capabilities, then user interfaces MAY choose
+          to show a separate "call" option for each class of call.</p>
+
+        <tp:rationale>
+          <p>On protocols like XMPP Jingle, it is possible to start an
+            audio-only call and then add a video stream, so the user interface
+            could be a single "call" button, which places an audio call, and an
+            "enable video" button in the call interface. However, on protocols
+            like Google Talk it is not possible to upgrade a call once it has
+            started; the user interface will thus need to adapt in order to
+            allow the user to place video calls.</p>
+        </tp:rationale>
+
+        <p>For incoming channels, this property MUST be included in the channel's immutable properties
+          (as announced in <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Connection.Interface.Requests">NewChannels</tp:dbus-ref>,
+          etc.). For outgoing calls, this property MAY be omitted from the
+          channel's immutable properties for calls without
+          <tp:member-ref>InitialAudio</tp:member-ref> or
+          <tp:member-ref>InitialVideo</tp:member-ref>, in which case its value
+          is undefined until <tp:dbus-ref
+            namespace='org.freedesktop.Telepathy.Channel.Type.StreamedMedia'>RequestStreams</tp:dbus-ref>
+          has been called at least once.</p>
+
+        <tp:rationale>
+          <p>The protocol mechanism used for the call might only be selected
+            when the CM knows what kind of call is desired. For example, if an
+            XMPP contact is signed in with Google Mail (with video support) and
+            Another client which supports modern Jingle (which supports
+            modifying the streams in a call) but only for audio calls, the
+            call's streams will be immutable if the UI requests Audio+Video,
+            but mutable if the UI just requests audio (a second audio stream
+            could be added, for instance).</p>
+        </tp:rationale>
       </tp:docstring>
     </property>
 
