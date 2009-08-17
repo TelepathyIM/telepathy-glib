@@ -3117,7 +3117,7 @@ conn_requests_create_channel (TpSvcConnectionInterfaceRequests *svc,
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (svc);
 
-  return conn_requests_requestotron (self, requested_properties,
+  conn_requests_requestotron (self, requested_properties,
       METHOD_CREATE_CHANNEL, context);
 }
 
@@ -3129,7 +3129,7 @@ conn_requests_ensure_channel (TpSvcConnectionInterfaceRequests *svc,
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (svc);
 
-  return conn_requests_requestotron (self, requested_properties,
+  conn_requests_requestotron (self, requested_properties,
       METHOD_ENSURE_CHANNEL, context);
 }
 
