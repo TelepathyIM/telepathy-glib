@@ -140,6 +140,7 @@ our_headers = \
     contact.h \
     contacts-mixin.h \
     dbus.h \
+    dbus-daemon.h \
     dbus-properties-mixin.h \
     defs.h \
     debug.h \
