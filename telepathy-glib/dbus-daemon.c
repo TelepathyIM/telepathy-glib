@@ -499,6 +499,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
       match_rule = _tp_dbus_daemon_get_noc_rule (name);
       DEBUG ("Adding match rule %s", match_rule);
       dbus_bus_add_match (self->priv->libdbus, match_rule, NULL);
+      g_free (match_rule);
 
       message = dbus_message_new_method_call (DBUS_SERVICE_DBUS,
           DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS, "GetNameOwner");
