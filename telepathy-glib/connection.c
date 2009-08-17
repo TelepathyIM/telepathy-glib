@@ -412,6 +412,7 @@ tp_connection_connection_error_cb (TpConnection *self,
 
 static void
 tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
+                                       TpConnectionStatus prev_status,
                                        GError **error)
 {
   TpError code;
@@ -440,8 +441,21 @@ tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
       break;
 
     case TP_CONNECTION_STATUS_REASON_NAME_IN_USE:
-      code = TP_ERROR_NOT_YOURS;
-      message = "Name in use";
+      if (prev_status == TP_CONNECTION_STATUS_CONNECTED)
+        {
+          code = TP_ERROR_CONNECTION_REPLACED;
+          message = "Connection replaced";
+        }
+      else
+        {
+          /* If the connection was with register=TRUE, we should ideally use
+           * REGISTRATION_EXISTS; but we can't actually tell that from here,
+           * so we'll have to rely on CMs supporting in-band registration
+           * (Gabble) to emit ConnectionError */
+          code = TP_ERROR_ALREADY_CONNECTED;
+          message = "Already connected (or if registering, registration "
+            "already exists)";
+        }
       break;
 
     case TP_CONNECTION_STATUS_REASON_CERT_NOT_PROVIDED:
@@ -500,6 +514,8 @@ tp_connection_status_changed_cb (TpConnection *self,
                                  gpointer user_data,
                                  GObject *weak_object)
 {
+  TpConnectionStatus prev_status = self->priv->status;
+
   /* GetStatus is called in the TpConnection constructor. If we don't have the
    * reply for this GetStatus call yet, ignore this signal StatusChanged in
    * order to run the interface introspection only one time. We will get the
@@ -516,7 +532,7 @@ tp_connection_status_changed_cb (TpConnection *self,
     {
       if (self->priv->connection_error == NULL)
         {
-          tp_connection_status_reason_to_gerror (reason,
+          tp_connection_status_reason_to_gerror (reason, prev_status,
               &(self->priv->connection_error));
         }
 
