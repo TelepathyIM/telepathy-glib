@@ -916,6 +916,7 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
 
 /**
  * tp_dbus_daemon_get_unique_name:
+ * @self: object representing a connection to a bus
  *
  * <!-- Returns: is enough -->
  *
