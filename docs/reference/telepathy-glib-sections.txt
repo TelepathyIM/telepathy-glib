@@ -1586,6 +1586,7 @@ TpDBusDaemon
 TpDBusDaemonClass
 tp_dbus_daemon_dup
 tp_dbus_daemon_new
+tp_dbus_daemon_get_unique_name
 TpDBusDaemonNameOwnerChangedCb
 tp_dbus_daemon_cancel_name_owner_watch
 tp_dbus_daemon_release_name

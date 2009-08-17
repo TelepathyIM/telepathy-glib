@@ -1456,6 +1456,23 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
     }
 }
 
+/**
+ * tp_dbus_daemon_get_unique_name:
+ *
+ * <!-- Returns: is enough -->
+ *
+ * Returns: the unique name of this connection to the bus, which is valid for
+ *  as long as this #TpDBusDaemon is
+ * Since: 0.7.UNRELEASED
+ */
+const gchar *
+tp_dbus_daemon_get_unique_name (TpDBusDaemon *self)
+{
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (self), NULL);
+
+  return dbus_bus_get_unique_name (self->priv->libdbus);
+}
+
 static void
 free_daemon_list (gpointer p)
 {

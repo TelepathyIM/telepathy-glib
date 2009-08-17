@@ -72,6 +72,8 @@ gboolean tp_dbus_daemon_request_name (TpDBusDaemon *self,
 gboolean tp_dbus_daemon_release_name (TpDBusDaemon *self,
     const gchar *well_known_name, GError **error);
 
+const gchar *tp_dbus_daemon_get_unique_name (TpDBusDaemon *self);
+
 typedef enum
 {
   TP_DBUS_NAME_TYPE_UNIQUE = 1,
