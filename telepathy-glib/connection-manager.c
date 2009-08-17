@@ -1723,13 +1723,13 @@ tp_list_connection_managers_cm_ready (TpConnectionManager *cm,
 
 static void
 tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
-                                       const gchar **names,
+                                       const gchar * const *names,
                                        const GError *error,
                                        gpointer user_data,
                                        GObject *weak_object)
 {
   _ListContext *list_context = user_data;
-  const gchar **name_iter;
+  const gchar * const *name_iter;
 
   if (error != NULL)
     {
@@ -1785,7 +1785,7 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
     {
       list_context->getting_names = TRUE;
       list_context->refcount++;
-      tp_cli_dbus_daemon_call_list_names (bus_daemon, 2000,
+      tp_dbus_daemon_list_names (bus_daemon, 2000,
           tp_list_connection_managers_got_names, list_context,
           (GDestroyNotify) list_context_unref, weak_object);
     }
@@ -1833,7 +1833,7 @@ tp_list_connection_managers (TpDBusDaemon *bus_daemon,
   list_context->arr = NULL;
   list_context->cms_to_ready = 0;
 
-  tp_cli_dbus_daemon_call_list_activatable_names (bus_daemon, 2000,
+  tp_dbus_daemon_list_activatable_names (bus_daemon, 2000,
       tp_list_connection_managers_got_names, list_context,
       (GDestroyNotify) list_context_unref, weak_object);
 }

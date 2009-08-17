@@ -1116,13 +1116,13 @@ OUT:
 
 static void
 tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
-                                 const gchar **names,
+                                 const gchar * const *names,
                                  const GError *error,
                                  gpointer user_data,
                                  GObject *user_object)
 {
   _ListContext *list_context = user_data;
-  const gchar **iter;
+  const gchar * const *iter;
   /* array of borrowed strings */
   GPtrArray *bus_names;
   /* array of dup'd strings */
@@ -1221,7 +1221,7 @@ tp_list_connection_names (TpDBusDaemon *bus_daemon,
   list_context->callback = callback;
   list_context->user_data = user_data;
 
-  tp_cli_dbus_daemon_call_list_names (bus_daemon, 2000,
+  tp_dbus_daemon_list_names (bus_daemon, 2000,
       tp_list_connection_names_helper, list_context,
       list_context_free, weak_object);
 }

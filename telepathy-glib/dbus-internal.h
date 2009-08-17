@@ -31,6 +31,8 @@ gboolean _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self, gint timeout_ms,
 
 void _tp_register_dbus_glib_marshallers (void);
 
+DBusGConnection *_tp_dbus_starter_bus_conn (GError **error);
+
 G_END_DECLS
 
 #endif /* __TP_INTERNAL_DBUS_GLIB_H__ */

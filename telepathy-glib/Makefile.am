@@ -140,6 +140,7 @@ our_headers = \
     contact.h \
     contacts-mixin.h \
     dbus.h \
+    dbus-daemon.h \
     dbus-properties-mixin.h \
     defs.h \
     debug.h \
@@ -289,6 +290,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     contact.c \
     contacts-mixin.c \
     dbus.c \
+    dbus-daemon.c \
     dbus-internal.h \
     dbus-properties-mixin.c \
     debug.c \

@@ -276,19 +276,16 @@ handle_priv_remove (TpDynamicHandleRepo *repo,
 static void
 handles_name_owner_changed_cb (TpDBusDaemon *dbus_daemon,
                                const gchar *name,
-                               const gchar *old_owner,
                                const gchar *new_owner,
-                               gpointer unused,
-                               GObject *object)
+                               gpointer user_data)
 {
-  TpDynamicHandleRepo *repo = (TpDynamicHandleRepo *) object;
+  TpDynamicHandleRepo *repo = user_data;
 
-  if (old_owner && old_owner[0])
+  if (new_owner == NULL || new_owner[0] == '\0')
     {
-      if (!new_owner || !new_owner[0])
-        {
-          g_datalist_remove_data (&repo->holder_to_handle_set, old_owner);
-        }
+      tp_dbus_daemon_cancel_name_owner_watch (dbus_daemon, name,
+          handles_name_owner_changed_cb, repo);
+      g_datalist_remove_data (&repo->holder_to_handle_set, name);
     }
 }
 
@@ -306,12 +303,6 @@ tp_dynamic_handle_repo_init (TpDynamicHandleRepo *self)
 
   if (self->bus_daemon == NULL)
     g_error ("Unable to connect to starter bus");
-
-  /* FIXME: if dbus-glib gets arg matching, do this on a per-holder
-   * basis so we don't wake up whenever any name owner changes... */
-
-  tp_cli_dbus_daemon_connect_to_name_owner_changed (self->bus_daemon,
-      handles_name_owner_changed_cb, NULL, NULL, (GObject *) self, NULL);
 
   return;
 }
@@ -410,12 +401,25 @@ handle_leak_debug_bt (HandleLeakEvent event)
 #endif /* ENABLE_HANDLE_LEAK_DEBUG */
 
 static void
+foreach_cancel_watch (GQuark key_id,
+    gpointer handle_set,
+    gpointer user_data)
+{
+  TpDynamicHandleRepo *self = user_data;
+
+  tp_dbus_daemon_cancel_name_owner_watch (self->bus_daemon,
+      g_quark_to_string (key_id), handles_name_owner_changed_cb, self);
+}
+
+static void
 dynamic_dispose (GObject *obj)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (obj);
 
   if (self->bus_daemon != NULL)
     {
+      g_datalist_foreach (&self->holder_to_handle_set, foreach_cancel_watch,
+          self);
       g_object_unref (self->bus_daemon);
       self->bus_daemon = NULL;
     }
@@ -652,6 +656,9 @@ dynamic_client_hold_handle (TpHandleRepoIface *repo,
                                 client_name,
                                 handle_set,
                                 (GDestroyNotify) tp_handle_set_destroy);
+
+      tp_dbus_daemon_watch_name_owner (self->bus_daemon, client_name,
+          handles_name_owner_changed_cb, self, NULL);
     }
 
   tp_handle_set_add (handle_set, handle);

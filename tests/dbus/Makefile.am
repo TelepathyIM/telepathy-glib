@@ -28,6 +28,7 @@ noinst_PROGRAMS = \
     test-finalized-in-invalidated-handler \
     test-get-interface-after-invalidate \
     test-group-mixin \
+    test-handle-repo \
     test-handle-set \
     test-invalidated-while-invoking-signals \
     test-message-mixin \
@@ -108,6 +109,8 @@ test_get_interface_after_invalidate_SOURCES = \
     get-interface-after-invalidate.c
 
 test_group_mixin_SOURCES = group-mixin.c
+
+test_handle_repo_SOURCES = handle-repo.c
 
 test_handle_set_SOURCES = handle-set.c
 
