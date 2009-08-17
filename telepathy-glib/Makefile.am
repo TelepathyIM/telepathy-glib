@@ -290,6 +290,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     contact.c \
     contacts-mixin.c \
     dbus.c \
+    dbus-daemon.c \
     dbus-internal.h \
     dbus-properties-mixin.c \
     debug.c \
