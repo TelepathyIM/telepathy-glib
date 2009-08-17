@@ -206,8 +206,6 @@ _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
   _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
 
-  DEBUG ("%s -> %s", name, new_owner);
-
   if (watch == NULL)
     return;
 
@@ -328,7 +326,6 @@ get_name_owner_context_new (TpDBusDaemon *self,
   context->self = g_object_ref (self);
   context->name = g_strdup (name);
   context->reply = NULL;
-  DEBUG ("New, 1 ref");
   context->refs = 1;
   return context;
 }
@@ -337,8 +334,6 @@ static void
 get_name_owner_context_unref (gpointer data)
 {
   GetNameOwnerContext *context = data;
-
-  DEBUG ("%lu -> %lu", (gulong) context->refs, (gulong) (context->refs-1));
 
   if (--context->refs == 0)
     {
@@ -366,9 +361,13 @@ _tp_dbus_daemon_get_name_owner_idle (gpointer data)
   else if (dbus_message_get_type (context->reply) ==
       DBUS_MESSAGE_TYPE_METHOD_RETURN)
     {
-      if (!dbus_message_get_args (context->reply, NULL,
+      if (dbus_message_get_args (context->reply, NULL,
             DBUS_TYPE_STRING, &owner,
             DBUS_TYPE_INVALID))
+        {
+          DEBUG ("GetNameOwner(%s) -> %s", context->name, owner);
+        }
+      else
         {
           DEBUG ("Malformed reply from GetNameOwner(%s), assuming no owner",
               context->name);
@@ -436,7 +435,6 @@ _tp_dbus_daemon_get_name_owner_notify (DBusPendingCall *pc,
 
   /* We have to do the real work in an idle, so we don't break re-entrant
    * calls (the dbus-glib event source isn't re-entrant) */
-  DEBUG ("%lu -> %lu", (gulong) context->refs, (gulong) (context->refs + 1));
   context->refs++;
   g_idle_add_full (G_PRIORITY_HIGH, _tp_dbus_daemon_get_name_owner_idle,
       context, get_name_owner_context_unref);
