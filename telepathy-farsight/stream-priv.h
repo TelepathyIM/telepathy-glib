@@ -68,6 +68,8 @@ gboolean _tf_stream_bus_message (TfStream *stream,
 
 void _tf_stream_try_sending_codecs (TfStream *stream);
 
+TpMediaStreamError fserror_to_tperror (GError *error);
+
 G_END_DECLS
 
 #endif /* __TF_STREAM_PRIV_H__ */

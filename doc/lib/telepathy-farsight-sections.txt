@@ -7,6 +7,7 @@ tf_stream_error
 tf_stream_get_id
 <SUBSECTION Private>
 TfStreamPrivate
+fserror_to_tperror
 <SUBSECTION Standard>
 TF_STREAM
 TF_TYPE_STREAM

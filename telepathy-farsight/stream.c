@@ -67,6 +67,8 @@ G_DEFINE_TYPE (TfStream, tf_stream, G_TYPE_OBJECT);
 
 #define STREAM_PRIVATE(o) ((o)->priv)
 
+static TpMediaStreamError fserrorno_to_tperrorno (FsError fserror);
+
 struct _TfStreamPrivate
 {
   TfChannel *channel;
@@ -620,7 +622,8 @@ get_all_properties_cb (TpProxy *proxy,
       !(dbus_error->domain == DBUS_GERROR &&
           dbus_error->code == DBUS_GERROR_UNKNOWN_METHOD))
     {
-      tf_stream_error (stream, 0, dbus_error->message);
+      tf_stream_error (stream, TP_MEDIA_STREAM_ERROR_INVALID_CM_BEHAVIOR,
+          dbus_error->message);
       return;
     }
 
@@ -877,7 +880,7 @@ get_all_properties_cb (TpProxy *proxy,
 
   if (!stream->priv->fs_session)
     {
-      tf_stream_error (stream, 0, myerror->message);
+      tf_stream_error (stream, fserror_to_tperror (myerror), myerror->message);
       WARNING (stream, "Error creating session: %s", myerror->message);
       g_clear_error (&myerror);
       return;
@@ -896,7 +899,7 @@ get_all_properties_cb (TpProxy *proxy,
 
   if (!stream->priv->fs_stream)
     {
-      tf_stream_error (stream, 0, myerror->message);
+      tf_stream_error (stream, fserror_to_tperror (myerror), myerror->message);
       WARNING (stream, "Error creating stream: %s", myerror->message);
       g_clear_error (&myerror);
       return;
@@ -910,7 +913,8 @@ get_all_properties_cb (TpProxy *proxy,
         if (!(myerror->domain == FS_ERROR &&
                 myerror->code == FS_ERROR_NOT_IMPLEMENTED))
           {
-            tf_stream_error (stream, 0, myerror->message);
+            tf_stream_error (stream, fserror_to_tperror (myerror),
+                myerror->message);
             WARNING (stream, "Error setting codec preferences: %s",
                 myerror->message);
             g_clear_error (&myerror);
@@ -1252,7 +1256,7 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   if (!fs_stream_set_remote_candidates (self->priv->fs_stream,
           fscandidates, &error))
-      tf_stream_error (self, 0, error->message);
+    tf_stream_error (self, fserror_to_tperror (error), error->message);
 
   fs_candidate_list_destroy (fscandidates);
   g_clear_error (&error);
@@ -1266,7 +1270,7 @@ remove_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 {
   TfStream *self = TF_STREAM (object);
 
-  tf_stream_error (self, 0,
+  tf_stream_error (self, TP_MEDIA_STREAM_ERROR_INVALID_CM_BEHAVIOR,
       "RemoveRemoteCandidate is DEPRECATED");
 }
 
@@ -1330,7 +1334,7 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   if (!fs_stream_set_remote_candidates (self->priv->fs_stream,
                   fs_candidates, &error))
-    tf_stream_error (self, 0, error->message);
+    tf_stream_error (self, fserror_to_tperror (error), error->message);
 
   g_clear_error (&error);
   fs_candidate_list_destroy (fs_candidates);
@@ -1405,10 +1409,9 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     /*
      * Call the error method with the proper thing here
      */
-    gchar *str = g_strdup_printf ("Codec negotiation failed: %s",
-        error->message);
-    tf_stream_error (self, 0, str);
-    g_free (str);
+    g_prefix_error (&error, "Codec negotiation failed: ");
+    tf_stream_error (self, fserror_to_tperror (error), error->message);
+    g_clear_error (&error);
     return;
   }
 
@@ -1450,7 +1453,8 @@ set_stream_playing (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           }
         else
           {
-            tf_stream_error (self, 0, "Resource Unavailable");
+            tf_stream_error (self, TP_MEDIA_STREAM_ERROR_MEDIA_ERROR,
+                "Resource Unavailable");
           }
       }
       self->priv->desired_direction |= FS_DIRECTION_RECV;
@@ -1504,7 +1508,8 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           }
         else
           {
-            tf_stream_error (self, 0, "Resource Unavailable");
+            tf_stream_error (self, TP_MEDIA_STREAM_ERROR_MEDIA_ERROR,
+                "Resource Unavailable");
           }
       }
       self->priv->desired_direction |= FS_DIRECTION_SEND;
@@ -1627,7 +1632,8 @@ set_stream_held (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
         }
       else
         {
-          tf_stream_error (self, 0, "Error unholding stream");
+          tf_stream_error (self, TP_MEDIA_STREAM_ERROR_MEDIA_ERROR,
+              "Error unholding stream");
         }
     }
 }
@@ -1847,7 +1853,7 @@ _tf_stream_bus_message (TfStream *stream,
               enumvalue->value_nick, errorno, msg, debug);
           g_type_class_unref (enumclass);
 
-          tf_stream_error (stream, 0, msg);
+          tf_stream_error (stream, fserrorno_to_tperrorno (errorno), msg);
           return TRUE;
         }
     }
@@ -2102,4 +2108,47 @@ tf_stream_get_id (TfStream *stream)
   g_return_val_if_fail (TF_IS_STREAM (stream), 0);
 
   return stream->stream_id;
+}
+
+static TpMediaStreamError
+fserrorno_to_tperrorno (FsError fserror)
+{
+  TpMediaStreamError tperror;
+
+  switch (fserror)
+  {
+    case FS_ERROR_NETWORK:
+      tperror = TP_MEDIA_STREAM_ERROR_NETWORK_ERROR;
+      break;
+    case FS_ERROR_CONNECTION_FAILED:
+      tperror = TP_MEDIA_STREAM_ERROR_CONNECTION_FAILED;
+      break;
+    case FS_ERROR_NO_CODECS:
+      tperror = TP_MEDIA_STREAM_ERROR_NO_CODECS;
+      break;
+    case FS_ERROR_NEGOTIATION_FAILED:
+      tperror = TP_MEDIA_STREAM_ERROR_CODEC_NEGOTIATION_FAILED;
+      break;
+    case FS_ERROR_INVALID_ARGUMENTS:
+      tperror = TP_MEDIA_STREAM_ERROR_INVALID_CM_BEHAVIOR;
+      break;
+    case FS_ERROR_NO_CODECS_LEFT:
+    case FS_ERROR_CONSTRUCTION:
+    case FS_ERROR_INTERNAL:
+    case FS_ERROR_NOT_IMPLEMENTED: /* Not really a real error */
+    case FS_ERROR_DISPOSED: /* Not really a real error */
+    default:
+      tperror = TP_MEDIA_STREAM_ERROR_MEDIA_ERROR;
+  }
+
+  return tperror;
+}
+
+TpMediaStreamError
+fserror_to_tperror (GError *error)
+{
+  if (!error || error->domain != FS_ERROR)
+    return TP_MEDIA_STREAM_ERROR_UNKNOWN;
+
+  return fserrorno_to_tperrorno (error->code);
 }

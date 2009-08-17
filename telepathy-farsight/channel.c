@@ -682,7 +682,7 @@ new_stream_cb (TfSession *session,
       gchar *str = g_strdup_printf ("failed to construct TpMediaStreamHandler:"
           " bad object path '%s'?", object_path);
       g_warning ("%s", str);
-      tf_channel_error (self, 0, str);
+      tf_channel_error (self, TP_MEDIA_STREAM_ERROR_UNKNOWN, str);
       g_free (str);
       return;
     }
@@ -705,12 +705,6 @@ new_stream_cb (TfSession *session,
 
   fs_codec_list_destroy (local_codec_config);
 
-  if (!stream)
-    {
-      tf_channel_error (self, 0, "Error creating stream");
-      return;
-    }
-
   g_object_unref (proxy);
   g_object_unref (fs_conference);
   g_object_unref (fs_participant);
@@ -723,7 +717,7 @@ new_stream_cb (TfSession *session,
       g_warning ("connection manager gave us a new stream with existing id "
           "%u, sending error!", stream_id);
 
-      tf_stream_error (stream, 0,
+      tf_stream_error (stream, TP_MEDIA_STREAM_ERROR_INVALID_CM_BEHAVIOR,
           "already have a stream with this ID");
 
       g_object_unref (stream);
@@ -780,13 +774,10 @@ add_session (TfChannel *self,
 
   if (proxy == NULL)
     {
-      gchar *str = g_strdup_printf ("failed to construct TpMediaSessionHandler:"
-          " %s",
-          error->message);
+      g_prefix_error (&error,"failed to construct TpMediaSessionHandler: ");
+      g_warning ("%s", error->message);
+      tf_channel_error (self, TP_MEDIA_STREAM_ERROR_UNKNOWN, error->message);
       g_error_free (error);
-      g_warning ("%s", str);
-      tf_channel_error (self, 0, str);
-      g_free (str);
       return;
     }
 
@@ -794,12 +785,10 @@ add_session (TfChannel *self,
 
   if (session == NULL)
     {
-      gchar *str = g_strdup_printf("failed to create session: %s",
-          error->message);
+      g_prefix_error (&error, "failed to create session: ");
+      g_warning ("%s", error->message);
+      tf_channel_error (self, fserror_to_tperror (error), error->message);
       g_error_free (error);
-      g_warning ("%s", str);
-      tf_channel_error (self, 0, str);
-      g_free (str);
       return;
     }
 
