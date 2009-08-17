@@ -746,6 +746,8 @@ _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
   _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
 
+  DEBUG ("%s -> %s", name, new_owner);
+
   if (watch == NULL)
     return;
 
@@ -819,6 +821,8 @@ noc_idle_context_invoke (gpointer data)
 
   daemons = dbus_connection_get_data (context->libdbus, daemons_slot);
 
+  DEBUG ("NameOwnerChanged(%s, %s -> %s)", name, old_owner, new_owner);
+
   /* should always be non-NULL, barring bugs */
   if (G_LIKELY (daemons != NULL))
     {
@@ -848,19 +852,91 @@ _tp_dbus_daemon_name_owner_changed_filter (DBusConnection *libdbus,
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
-static void
-_tp_dbus_daemon_got_name_owner (TpDBusDaemon *self,
-                                const gchar *owner,
-                                const GError *error,
-                                gpointer user_data,
-                                GObject *user_object)
+typedef struct {
+    TpDBusDaemon *self;
+    gchar *name;
+    DBusMessage *reply;
+    gsize refs;
+} GetNameOwnerContext;
+
+static GetNameOwnerContext *
+get_name_owner_context_new (TpDBusDaemon *self,
+                            const gchar *name)
 {
-  gchar *name = user_data;
+  GetNameOwnerContext *context = g_slice_new (GetNameOwnerContext);
 
-  if (error != NULL)
-    owner = "";
+  context->self = g_object_ref (self);
+  context->name = g_strdup (name);
+  context->reply = NULL;
+  DEBUG ("New, 1 ref");
+  context->refs = 1;
+  return context;
+}
 
-  _tp_dbus_daemon_name_owner_changed (self, name, owner);
+static void
+get_name_owner_context_unref (gpointer data)
+{
+  GetNameOwnerContext *context = data;
+
+  DEBUG ("%lu -> %lu", (gulong) context->refs, (gulong) (context->refs-1));
+
+  if (--context->refs == 0)
+    {
+      g_object_unref (context->self);
+      g_free (context->name);
+
+      if (context->reply != NULL)
+        dbus_message_unref (context->reply);
+
+      g_slice_free (GetNameOwnerContext, context);
+    }
+}
+
+static gboolean
+_tp_dbus_daemon_get_name_owner_idle (gpointer data)
+{
+  GetNameOwnerContext *context = data;
+  const gchar *owner = "";
+
+  if (context->reply == NULL)
+    {
+      DEBUG ("Connection disconnected or no reply to GetNameOwner(%s)",
+          context->name);
+    }
+  else if (dbus_message_get_type (context->reply) ==
+      DBUS_MESSAGE_TYPE_METHOD_RETURN)
+    {
+      if (!dbus_message_get_args (context->reply, NULL,
+            DBUS_TYPE_STRING, &owner,
+            DBUS_TYPE_INVALID))
+        {
+          DEBUG ("Malformed reply from GetNameOwner(%s), assuming no owner",
+              context->name);
+        }
+    }
+  else
+    {
+      if (DEBUGGING)
+        {
+          DBusError error = DBUS_ERROR_INIT;
+
+          if (dbus_set_error_from_message (&error, context->reply))
+            {
+              DEBUG ("GetNameOwner(%s) raised %s: %s", context->name,
+                  error.name, error.message);
+              dbus_error_free (&error);
+            }
+          else
+            {
+              DEBUG ("Unexpected message type from GetNameOwner(%s)",
+                  context->name);
+            }
+        }
+    }
+
+  _tp_dbus_daemon_name_owner_changed (context->self, context->name, owner);
+
+  return FALSE;
 }
 
 /**
@@ -885,6 +961,28 @@ _tp_dbus_daemon_get_noc_rule (const gchar *name)
       "interface='"DBUS_INTERFACE_DBUS "',"
       "member='NameOwnerChanged',"
       "arg0='%s'", name);
+}
+
+static void
+_tp_dbus_daemon_get_name_owner_notify (DBusPendingCall *pc,
+                                       gpointer data)
+{
+  GetNameOwnerContext *context = data;
+
+  /* we recycle this function for the case where the connection is already
+   * disconnected: in that case we use pc = NULL */
+  if (pc != NULL)
+    context->reply = dbus_pending_call_steal_reply (pc);
+
+  /* We have to do the real work in an idle, so we don't break re-entrant
+   * calls (the dbus-glib event source isn't re-entrant) */
+  DEBUG ("%lu -> %lu", (gulong) context->refs, (gulong) (context->refs + 1));
+  context->refs++;
+  g_idle_add_full (G_PRIORITY_HIGH, _tp_dbus_daemon_get_name_owner_idle,
+      context, get_name_owner_context_unref);
+
+  if (pc != NULL)
+    dbus_pending_call_unref (pc);
 }
 
 /**
@@ -924,6 +1022,9 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
   if (watch == NULL)
     {
       gchar *match_rule;
+      DBusMessage *message;
+      DBusPendingCall *pc = NULL;
+      GetNameOwnerContext *context = get_name_owner_context_new (self, name);
 
       /* Allocate a single watch (common case) */
       watch = g_slice_new (_NameOwnerWatch);
@@ -942,9 +1043,37 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
       DEBUG ("Adding match rule %s", match_rule);
       dbus_bus_add_match (self->priv->libdbus, match_rule, NULL);
 
-      tp_cli_dbus_daemon_call_get_name_owner (self, -1, name,
-          _tp_dbus_daemon_got_name_owner,
-          g_strdup (name), g_free, NULL);
+      message = dbus_message_new_method_call (DBUS_SERVICE_DBUS,
+          DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS, "GetNameOwner");
+
+      if (message == NULL)
+        g_error ("Out of memory");
+
+      /* We already checked that @name was in (a small subset of) UTF-8,
+       * so OOM is the only thing that can go wrong. The use of &name here
+       * is because libdbus is strange. */
+      if (!dbus_message_append_args (message,
+            DBUS_TYPE_STRING, &name,
+            DBUS_TYPE_INVALID))
+        g_error ("Out of memory");
+
+      if (!dbus_connection_send_with_reply (self->priv->libdbus,
+          message, &pc, -1))
+        g_error ("Out of memory");
+      /* pc is unreffed by _tp_dbus_daemon_get_name_owner_notify */
+
+      if (pc == NULL || dbus_pending_call_get_completed (pc))
+        {
+          /* pc can be NULL when the connection is already disconnected */
+          _tp_dbus_daemon_get_name_owner_notify (pc, context);
+          get_name_owner_context_unref (context);
+        }
+      else if (!dbus_pending_call_set_notify (pc,
+            _tp_dbus_daemon_get_name_owner_notify,
+            context, get_name_owner_context_unref))
+        {
+          g_error ("Out of memory");
+        }
     }
   else
     {
