@@ -474,7 +474,6 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
   g_return_if_fail (TP_IS_DBUS_DAEMON (self));
   g_return_if_fail (tp_dbus_check_valid_bus_name (name,
         TP_DBUS_NAME_TYPE_ANY, NULL));
-  g_return_if_fail (name != NULL);
   g_return_if_fail (callback != NULL);
 
   if (watch == NULL)
