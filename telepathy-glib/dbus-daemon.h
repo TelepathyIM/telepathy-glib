@@ -75,6 +75,16 @@ gboolean tp_dbus_daemon_release_name (TpDBusDaemon *self,
 
 const gchar *tp_dbus_daemon_get_unique_name (TpDBusDaemon *self);
 
+typedef void (*TpDBusDaemonListNamesCb) (TpDBusDaemon *bus_daemon,
+    const gchar * const *names, const GError *error, gpointer user_data,
+    GObject *weak_object);
+void tp_dbus_daemon_list_names (TpDBusDaemon *self,
+    gint timeout_ms, TpDBusDaemonListNamesCb callback,
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+void tp_dbus_daemon_list_activatable_names (TpDBusDaemon *self,
+    gint timeout_ms, TpDBusDaemonListNamesCb callback,
+    gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
