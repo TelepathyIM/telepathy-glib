@@ -2574,14 +2574,16 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
  * <listitem>Update the @status member of #TpBaseConnection</listitem>
  * <listitem>If the new state is DISCONNECTED, call the close_all_channels
  * callback on all channel factories</listitem>
- * <listitem>If the new state is DISCONNECTED, unref the @self_handle, if
- * any, and set it to 0</listitem>
  * <listitem>Emit the D-Bus StatusChanged signal</listitem>
  * <listitem>Call the subclass' status change callback</listitem>
  * <listitem>Call the channel factories' status change callbacks</listitem>
  * <listitem>If the new state is DISCONNECTED, call the subclass'
  * @shut_down callback</listitem>
  * </itemizedlist>
+ *
+ * Changed in 0.7.35: the @self_handle member of #TpBaseConnection was
+ * previously set to 0 at this stage. It now remains non-zero until the object
+ * is disposed.
  */
 void
 tp_base_connection_change_status (TpBaseConnection *self,

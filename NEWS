@@ -3,6 +3,16 @@ telepathy-glib 0.7.35 (UNRELEASED)
 
 The "dance to the sound of sirens" release.
 
+API changes:
+
+* fd.o #17751: TpBaseConnection no longer guarantees that the self-handle is
+  set to 0 when the state changes to DISCONNECTED; instead, the self-handle
+  remains valid until the connection is disposed, so that connection managers
+  can use it during teardown. (cassidy)
+  - This change will cause assertion failures on disconnection in
+    telepathy-sofiasip older than 0.5.17, and in telepathy-gabble older than
+    0.7.9.
+
 Enhancements:
 
 * Add tp_dbus_daemon_list_names() and tp_dbus_daemon_list_activatable_names(),
