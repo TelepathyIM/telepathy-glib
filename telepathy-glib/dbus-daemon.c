@@ -1300,6 +1300,13 @@ tp_dbus_daemon_dispose (GObject *object)
       if (G_LIKELY (daemons != NULL))
         {
           *daemons = g_slist_remove (*daemons, self);
+
+          if (*daemons == NULL)
+            {
+              /* this results in a call to free_daemon_list (daemons) */
+              dbus_connection_set_data (self->priv->libdbus, daemons_slot,
+                  NULL, NULL);
+            }
         }
 
       dbus_connection_unref (self->priv->libdbus);
