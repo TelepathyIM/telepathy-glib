@@ -922,7 +922,7 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
  *
  * Returns: the unique name of this connection to the bus, which is valid for
  *  as long as this #TpDBusDaemon is
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.35
  */
 const gchar *
 tp_dbus_daemon_get_unique_name (TpDBusDaemon *self)
@@ -1090,7 +1090,7 @@ _tp_dbus_daemon_list_names_notify (DBusPendingCall *pc,
  *
  * Signature of a callback for functions that list bus names.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.35
  */
 
 static void
@@ -1157,7 +1157,7 @@ _tp_dbus_daemon_list_names_common (TpDBusDaemon *self,
  * instead of calling tp_cli_dbus_daemon_call_list_names(), since that
  * function will result in wakeups for every NameOwnerChanged signal.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.35
  */
 void
 tp_dbus_daemon_list_names (TpDBusDaemon *self,
@@ -1190,7 +1190,7 @@ tp_dbus_daemon_list_names (TpDBusDaemon *self,
  * instead of calling tp_cli_dbus_daemon_call_list_activatable_names(), since
  * that function will result in wakeups for every NameOwnerChanged signal.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.35
  */
 void
 tp_dbus_daemon_list_activatable_names (TpDBusDaemon *self,
