@@ -29,6 +29,11 @@ Fixes:
 * fd.o #22957: fix compilation in some non-gcc compilers
   (based on a patch from Elaine Xiong)
 
+* As per telepathy-spec 0.17.27, represent connection status reason NAME_IN_USE
+  as TP_ERROR_CONNECTION_REPLACED or TP_ERROR_ALREADY_CONNECTED (as
+  appropriate), not as TP_ERROR_NOT_YOURS, so that NotYours can safely be given
+  special handling (smcv)
+
 telepathy-glib 0.7.34 (2009-08-16)
 ==================================
 
