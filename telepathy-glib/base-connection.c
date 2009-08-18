@@ -2687,13 +2687,6 @@ tp_base_connection_change_status (TpBaseConnection *self,
       break;
 
     case TP_CONNECTION_STATUS_DISCONNECTED:
-      if (self->self_handle != 0)
-        {
-          tp_handle_unref (self->priv->handles[TP_HANDLE_TYPE_CONTACT],
-              self->self_handle);
-          self->self_handle = 0;
-        }
-
       /* cancel all queued channel requests that weren't already cancelled by
        * the channel managers.
        */
