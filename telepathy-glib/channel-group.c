@@ -346,6 +346,13 @@ _got_initial_group_flags (TpChannel *self,
   if (flags != 0)
     g_object_notify ((GObject *) self, "group-flags");
 
+  if (tp_proxy_get_invalidated (self) != NULL)
+    {
+      /* Because the proxy has been invalidated, it is not safe to call
+       * tp_proxy_signal_connection_disconnect (below), so just return early */
+      return;
+    }
+
   /* If the channel claims to support MembersChangedDetailed, disconnect from
    * MembersChanged. Otherwise, disconnect from MembersChangedDetailed in case
    * it secretly emits it anyway, so we're only listening to one change

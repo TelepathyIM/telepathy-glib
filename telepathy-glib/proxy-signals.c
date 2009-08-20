@@ -194,6 +194,17 @@ tp_proxy_signal_connection_unref (TpProxySignalConnection *sc)
  * must not assume that the signal connection remains valid, but you must not
  * explicitly free it either.
  *
+ * It is not safe to call this function if @sc has been disconnected already,
+ * which happens in each of these situations:
+ *
+ * <itemizedlist>
+ * <listitem>the @weak_object used when @sc was created has been
+ *  destroyed</listitem>
+ * <listitem>tp_proxy_signal_connection_disconnect has already been
+ *  used</listitem>
+ * <listitem>the proxy has been invalidated</listitem>
+ * </itemizedlist>
+ *
  * Since: 0.7.1
  */
 void
