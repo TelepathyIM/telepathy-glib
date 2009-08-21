@@ -1023,7 +1023,7 @@ cb_fs_local_candidates_prepared (TfStream *self)
               3, proto,
               4, "RTP",
               5, "AVP",
-              6, (double) candidate->priority / 65536.0,
+              6, (double) (candidate->priority / 65536.0),
               7, type,
               8, candidate->username,
               9, candidate->password,
@@ -1140,7 +1140,7 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
           g_value_get_uint (g_value_array_get_nth (transport, 2))); /* port */
 
       fs_candidate->priority = (gint)
-          g_value_get_double (g_value_array_get_nth (transport, 6)) * 65536.0;
+          (g_value_get_double (g_value_array_get_nth (transport, 6)) * 65536.0);
       fs_candidate->username =
           g_value_dup_string (g_value_array_get_nth (transport, 8));
       fs_candidate->password =
