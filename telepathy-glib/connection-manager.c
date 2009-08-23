@@ -1103,6 +1103,8 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 {
   TpConnectionManager *self = TP_CONNECTION_MANAGER (data);
 
+  self->priv->manager_file_read_idle_id = 0;
+
   if (self->priv->protocols == NULL)
     {
       if (self->priv->manager_file != NULL &&
@@ -1132,11 +1134,15 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
               DEBUG ("Got info from file");
               /* previously it must have been NONE */
               self->info_source = TP_CM_INFO_SOURCE_FILE;
+
+              g_object_ref (self);
               g_object_notify ((GObject *) self, "info-source");
 
               g_signal_emit (self, signals[SIGNAL_GOT_INFO], 0,
                   self->info_source);
               tp_connection_manager_ready_or_failed (self, NULL);
+              g_object_unref (self);
+
               goto out;
             }
         }
@@ -1155,8 +1161,6 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
     }
 
 out:
-  self->priv->manager_file_read_idle_id = 0;
-
   return FALSE;
 }
 
