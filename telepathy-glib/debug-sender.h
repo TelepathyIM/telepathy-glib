@@ -68,7 +68,7 @@ struct _TpDebugSenderClass {
 
 GType tp_debug_sender_get_type (void);
 
-TpDebugSender *tp_debug_sender_get (void);
+TpDebugSender *tp_debug_sender_dup (void);
 
 void tp_debug_sender_add_message (TpDebugSender *self,
     GTimeVal *timestamp,

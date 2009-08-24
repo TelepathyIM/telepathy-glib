@@ -190,6 +190,50 @@ tp_debug_sender_finalize (GObject *object)
   G_OBJECT_CLASS (tp_debug_sender_parent_class)->finalize (object);
 }
 
+static GObject *
+tp_debug_sender_constructor (GType type,
+    guint n_construct_params,
+    GObjectConstructParam *construct_params)
+{
+  GObject *retval;
+
+  if (!debug_sender)
+    {
+      retval = G_OBJECT_CLASS (tp_debug_sender_parent_class)->constructor (
+          type, n_construct_params, construct_params);
+      debug_sender = TP_DEBUG_SENDER (retval);
+      g_object_add_weak_pointer (retval, (gpointer) &debug_sender);
+    }
+  else
+    {
+      retval = g_object_ref (debug_sender);
+    }
+
+  return retval;
+}
+
+static void
+tp_debug_sender_constructed (GObject *object)
+{
+  TpDBusDaemon *dbus_daemon;
+  GError *error = NULL;
+
+  debug_sender = g_object_new (TP_TYPE_DEBUG_SENDER, NULL);
+  dbus_daemon = tp_dbus_daemon_dup (&error);
+
+  if (error != NULL)
+    {
+      g_error_free (error);
+      return;
+    }
+
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (dbus_daemon),
+      "/org/freedesktop/Telepathy/debug", (GObject *) debug_sender);
+
+  g_object_unref (dbus_daemon);
+}
+
 static void
 tp_debug_sender_class_init (TpDebugSenderClass *klass)
 {
@@ -210,6 +254,8 @@ tp_debug_sender_class_init (TpDebugSenderClass *klass)
   object_class->get_property = tp_debug_sender_get_property;
   object_class->set_property = tp_debug_sender_set_property;
   object_class->finalize = tp_debug_sender_finalize;
+  object_class->constructor = tp_debug_sender_constructor;
+  object_class->constructed = tp_debug_sender_constructed;
 
   /**
    * TpDebugSender:enabled
@@ -288,39 +334,25 @@ tp_debug_sender_init (TpDebugSender *self)
 }
 
 /**
- * tp_debug_sender_get:
+ * tp_debug_sender_dup:
  *
- * <!-- -->
+ * Returns a #TpDebugSender instance on the bus this process was activated by
+ * (if it was launched by D-Bus service activation), or the session bus
+ * (otherwise).
  *
- * Returns: the #TpDebugSender instance for the current starter bus
+ * The returned #TpDebugSender is cached; the same #TpDebugSender object will
+ * be returned by this function repeatedly, as long as at least one reference
+ * exists.
+ *
+ * Returns: a reference to the #TpDebugSender instance for the current starter
+ *          bus daemon
  *
  * Since: 0.7.UNRELEASED
  */
 TpDebugSender *
-tp_debug_sender_get (void)
+tp_debug_sender_dup (void)
 {
-  if (G_UNLIKELY (debug_sender == NULL))
-    {
-      TpDBusDaemon *dbus_daemon;
-      GError *error = NULL;
-
-      debug_sender = g_object_new (TP_TYPE_DEBUG_SENDER, NULL);
-      dbus_daemon = tp_dbus_daemon_dup (&error);
-
-      if (error != NULL)
-        {
-          g_error_free (error);
-          return NULL;
-        }
-
-      dbus_g_connection_register_g_object (
-          tp_proxy_get_dbus_connection (dbus_daemon),
-          "/org/freedesktop/Telepathy/debug", (GObject *) debug_sender);
-
-      g_object_unref (dbus_daemon);
-    }
-
-  return debug_sender;
+  return g_object_new (TP_TYPE_DEBUG_SENDER, NULL);
 }
 
 

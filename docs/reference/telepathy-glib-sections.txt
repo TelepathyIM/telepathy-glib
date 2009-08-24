@@ -3285,7 +3285,7 @@ TP_TYPE_SVC_CLIENT_OBSERVER
 <TITLE>debug-sender</TITLE>
 TpDebugSender
 TpDebugMessage
-tp_debug_sender_get
+tp_debug_sender_dup
 tp_debug_sender_add_message
 <SUBSECTION Standard>
 tp_debug_sender_get_type
