@@ -63,6 +63,7 @@ struct _TpDebugSenderClass {
   /*<private>*/
   GObjectClass parent_class;
   TpDBusPropertiesMixinClass dbus_props_class;
+  GCallback _padding[7];
 };
 
 GType tp_debug_sender_get_type (void);
