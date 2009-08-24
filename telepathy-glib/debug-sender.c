@@ -204,7 +204,7 @@ tp_debug_sender_constructor (GType type,
     {
       retval = G_OBJECT_CLASS (tp_debug_sender_parent_class)->constructor (
           type, n_construct_params, construct_params);
-      debug_sender = (gpointer) retval;
+      debug_sender = retval;
       g_object_add_weak_pointer (retval, &debug_sender);
     }
   else
