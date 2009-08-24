@@ -362,11 +362,11 @@ tp_debug_sender_dup (void)
 
 /**
  * tp_debug_sender_add_message:
- * self: A #TpDebugSender instance
- * timestamp: Time of the message
- * domain: Message domain
- * level: The message level
- * string: The message string itself
+ * @self: A #TpDebugSender instance
+ * @timestamp: Time of the message
+ * @domain: Message domain
+ * @level: The message level
+ * @string: The message string itself
  *
  * Adds a new message to the debug sender message queue. If the
  * TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
@@ -403,10 +403,10 @@ tp_debug_sender_add_message (TpDebugSender *self,
 
 /**
  * tp_debug_sender_log_handler:
- * log_domain: domain of the message
- * log_level: log leve of the message
- * message: the message itself
- * exclude: a log domain string to exclude from the #TpDebugSender, or %NULL
+ * @log_domain: domain of the message
+ * @log_level: log leve of the message
+ * @message: the message itself
+ * @exclude: a log domain string to exclude from the #TpDebugSender, or %NULL
  *
  * A generic log handler designed to be used by CMs. It initially calls
  * g_log_default_handler(), and then sends the message on the bus
