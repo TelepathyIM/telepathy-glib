@@ -9,5 +9,6 @@
 <xi:include href="dbus-properties.xml"/>
 
 <xi:include href="../spec/Properties_Interface.xml"/>
+<xi:include href="../spec/Debug.xml"/>
 
 </tp:spec>
