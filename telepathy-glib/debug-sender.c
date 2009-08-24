@@ -45,9 +45,6 @@
 /**
  * TpDebugSender:
  * @parent: The parent class instance
- * @enabled: %TRUE if debug messages should be sent using the NewDebugMessage
- *  signal.
- * @messages: A queue of debug messages.
  *
  * A proxy object for the Telepathy debug interface.
  *
@@ -75,6 +72,12 @@ static TpDebugSender *debug_sender = NULL;
 #define DEBUG_MESSAGE_LIMIT 800
 
 static void debug_iface_init (gpointer g_iface, gpointer iface_data);
+
+struct _TpDebugSenderPrivate
+{
+  gboolean enabled;
+  GQueue *messages;
+};
 
 G_DEFINE_TYPE_WITH_CODE (TpDebugSender, tp_debug_sender, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
@@ -152,7 +155,7 @@ tp_debug_sender_get_property (GObject *object,
   switch (property_id)
     {
       case PROP_ENABLED:
-        g_value_set_boolean (value, self->enabled);
+        g_value_set_boolean (value, self->priv->enabled);
         break;
 
       default:
@@ -171,7 +174,7 @@ tp_debug_sender_set_property (GObject *object,
   switch (property_id)
     {
       case PROP_ENABLED:
-        self->enabled = g_value_get_boolean (value);
+        self->priv->enabled = g_value_get_boolean (value);
         break;
 
      default:
@@ -184,9 +187,9 @@ tp_debug_sender_finalize (GObject *object)
 {
   TpDebugSender *self = TP_DEBUG_SENDER (object);
 
-  g_queue_foreach (self->messages, (GFunc) debug_message_free, NULL);
-  g_queue_free (self->messages);
-  self->messages = NULL;
+  g_queue_foreach (self->priv->messages, (GFunc) debug_message_free, NULL);
+  g_queue_free (self->priv->messages);
+  self->priv->messages = NULL;
 
   G_OBJECT_CLASS (tp_debug_sender_parent_class)->finalize (object);
 }
@@ -252,6 +255,8 @@ tp_debug_sender_class_init (TpDebugSenderClass *klass)
       { NULL }
   };
 
+  g_type_class_add_private (klass, sizeof (TpDebugSenderPrivate));
+
   object_class->get_property = tp_debug_sender_get_property;
   object_class->set_property = tp_debug_sender_set_property;
   object_class->finalize = tp_debug_sender_finalize;
@@ -292,9 +297,9 @@ get_messages (TpSvcDebug *self,
           G_TYPE_STRING, G_TYPE_INVALID);
     }
 
-  messages = g_ptr_array_sized_new (g_queue_get_length (dbg->messages));
+  messages = g_ptr_array_sized_new (g_queue_get_length (dbg->priv->messages));
 
-  for (i = dbg->messages->head; i; i = i->next)
+  for (i = dbg->priv->messages->head; i; i = i->next)
     {
       GValue gvalue = { 0 };
       TpDebugMessage *message = (TpDebugMessage *) i->data;
@@ -331,7 +336,10 @@ debug_iface_init (gpointer g_iface,
 static void
 tp_debug_sender_init (TpDebugSender *self)
 {
-  self->messages = g_queue_new ();
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_DEBUG_SENDER,
+      TpDebugSenderPrivate);
+
+  self->priv->messages = g_queue_new ();
 }
 
 /**
@@ -380,18 +388,18 @@ tp_debug_sender_add_message (TpDebugSender *self,
 {
   TpDebugMessage *new_msg;
 
-  if (g_queue_get_length (self->messages) >= DEBUG_MESSAGE_LIMIT)
+  if (g_queue_get_length (self->priv->messages) >= DEBUG_MESSAGE_LIMIT)
     {
       TpDebugMessage *old_head =
-        (TpDebugMessage *) g_queue_pop_head (self->messages);
+        (TpDebugMessage *) g_queue_pop_head (self->priv->messages);
 
       debug_message_free (old_head);
     }
 
   new_msg = debug_message_new (timestamp, domain, level, string);
-  g_queue_push_tail (self->messages, new_msg);
+  g_queue_push_tail (self->priv->messages, new_msg);
 
-  if (self->enabled)
+  if (self->priv->enabled)
     {
       tp_svc_debug_emit_new_debug_message (self, new_msg->timestamp,
           domain, new_msg->level, string);

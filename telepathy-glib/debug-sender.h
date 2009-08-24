@@ -31,6 +31,7 @@ G_BEGIN_DECLS
 typedef struct _TpDebugSender TpDebugSender;
 typedef struct _TpDebugSenderClass TpDebugSenderClass;
 typedef struct _TpDebugMessage TpDebugMessage;
+typedef struct _TpDebugSenderPrivate TpDebugSenderPrivate;
 
 #define TP_TYPE_DEBUG_SENDER tp_debug_sender_get_type()
 #define TP_DEBUG_SENDER(obj) \
@@ -56,8 +57,7 @@ struct _TpDebugSender {
   GObject parent;
 
   /*<private>*/
-  gboolean enabled;
-  GQueue *messages;
+  TpDebugSenderPrivate *priv;
 };
 
 struct _TpDebugSenderClass {
@@ -65,6 +65,7 @@ struct _TpDebugSenderClass {
   GObjectClass parent_class;
   TpDBusPropertiesMixinClass dbus_props_class;
   GCallback _padding[7];
+  gpointer priv;
 };
 
 GType tp_debug_sender_get_type (void);
