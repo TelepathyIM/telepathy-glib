@@ -72,6 +72,9 @@ GType tp_account_get_type (void);
 TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
     GError **error);
 
+gboolean tp_account_parse_object_path (const gchar *object_path,
+    gchar **cm, gchar **protocol, gchar **account_id, GError **error);
+
 void tp_account_init_known_interfaces (void);
 
 gboolean tp_account_is_just_connected (TpAccount *account);

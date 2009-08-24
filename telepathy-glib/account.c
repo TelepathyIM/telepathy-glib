@@ -2475,3 +2475,110 @@ tp_account_get_features (TpAccount *account)
 {
   return (const GQuark *) account->priv->features_array->data;
 }
+
+static void
+set_or_free (gchar **target,
+    gchar *source)
+{
+  if (target != NULL)
+    *target = source;
+  else
+    g_free (source);
+}
+
+/**
+ * tp_parse_account_path:
+ * @object_path: a Telepathy Account's object path
+ * @cm: location at which to store the account's connection manager's name
+ * @protocol: location at which to store the account's protocol
+ * @account_id: location at which to store the account's unique identifier
+ * @error: location at which to return an error
+ *
+ * Validates and parses a Telepathy Account's object path, extracting the
+ * connection manager's name, the protocol, and the account's unique identifier
+ * from the path. This includes replacing underscores with hyphens in the
+ * protocol name, as defined in the Account specification.
+ *
+ * Any of the out parameters may be %NULL if not needed.
+ *
+ * Returns: %TRUE if @object_path was successfully parsed; %FALSE and sets
+ *          @error otherwise.
+ */
+gboolean
+tp_account_parse_object_path (const gchar *object_path,
+    gchar **cm,
+    gchar **protocol,
+    gchar **account_id,
+    GError **error)
+{
+  const gchar *suffix;
+  gchar **segments;
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return FALSE;
+
+  if (!g_str_has_prefix (object_path, TP_ACCOUNT_OBJECT_PATH_BASE))
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Account path does not start with the right prefix: %s",
+          object_path);
+      return FALSE;
+    }
+
+  suffix = object_path + strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
+
+  segments = g_strsplit (suffix, "/", 0);
+
+  if (g_strv_length (segments) != 3)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Account path '%s' is malformed: should have 3 trailing components, "
+          "not %u", object_path, g_strv_length (segments));
+      goto free_segments_and_fail;
+    }
+
+  if (!g_ascii_isalpha (segments[0][0]))
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Account path '%s' is malformed: CM name should start with a letter",
+          object_path);
+      goto free_segments_and_fail;
+    }
+
+  if (!g_ascii_isalpha (segments[1][0]))
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Account path '%s' is malformed: "
+          "protocol name should start with a letter",
+          object_path);
+      goto free_segments_and_fail;
+    }
+
+  if (!g_ascii_isalpha (segments[2][0]) && segments[2][0] != '_')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Account path '%s' is malformed: "
+          "account ID should start with a letter or underscore",
+          object_path);
+      goto free_segments_and_fail;
+    }
+
+  set_or_free (cm, segments[0]);
+
+  /* XXX: work around MC5 bug where it escapes with tp_escape_as_identifier
+   * rather than doing it properly. MC5 saves the object path in your config,
+   * so if you've ever used a buggy MC5, the path will be wrong forever.
+   */
+  g_strdelimit (segments[1], "_", '-');
+  set_or_free (protocol, segments[1]);
+
+  set_or_free (account_id, segments[2]);
+
+  /* Not g_strfreev because we stole or freed the individual strings */
+  g_free (segments);
+  return TRUE;
+
+free_segments_and_fail:
+  g_strfreev (segments);
+  return FALSE;
+}
