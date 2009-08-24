@@ -402,7 +402,7 @@ tp_debug_sender_add_message (TpDebugSender *self,
  * log_domain: domain of the message
  * log_level: log leve of the message
  * message: the message itself
- * exclude: a string of log domains to exclude
+ * exclude: a log domain string to exclude from the #TpDebugSender, or %NULL
  *
  * A generic log handler designed to be used by CMs. It initially calls
  * g_log_default_handler(), and then sends the message on the bus
