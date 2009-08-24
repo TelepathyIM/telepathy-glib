@@ -421,19 +421,19 @@ tp_debug_sender_add_message (TpDebugSender *self,
  *
  * An example of its usage, taking in mind the notes above, follows:
  * |[
- * // Create a main loop and debug sender
+ * /<!-- -->* Create a main loop and debug sender *<!-- -->/
  * GMainLoop *loop = g_main_loop_new (NULL, FALSE);
  * TpDebugSender *sender = tp_debug_sender_dup ();
  *
- * // Set the default handler
+ * /<!-- -->* Set the default handler *<!-- -->/
  * g_log_set_default_handler (tp_debug_sender_log_handler, G_LOG_DOMAIN);
  *
- * // Run the main loop, but keeping a ref on the TpDebugSender from
- * // the beginning of this code sample.
+ * /<!-- -->* Run the main loop, but keeping a ref on the TpDebugSender from
+ *  * the beginning of this code sample. *<!-- -->/
  * g_main_loop_run (loop);
  *
- * // g_main_loop_quit was called, so only now can we clean up the
- * // TpDebugSender.
+ * /<!-- -->* g_main_loop_quit was called, so only now can we clean up the
+ *  * TpDebugSender. *<!-- -->/
  * g_object_unref (sender);
  * ]|
  *
