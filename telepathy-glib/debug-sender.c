@@ -30,7 +30,7 @@
  *
  * A #TpDebugSender object is an object exposing the Telepathy debug interface.
  *
- * Since: UNRELEASED
+ * Since: 0.7.UNRELEASED
  */
 
 /**
@@ -38,7 +38,7 @@
  *
  * The class of a #TpDebugSender.
  *
- * Since: UNRELEASED
+ * Since: 0.7.UNRELEASED
  */
 
 /**
@@ -50,7 +50,7 @@
  *
  * A proxy object for the Telepathy debug interface.
  *
- * Since: UNRELEASED
+ * Since: 0.7.UNRELEASED
  */
 
 /**
@@ -62,7 +62,7 @@
  *
  * A structure representing a single debug message.
  *
- * Since: UNRELEASED
+ * Since: 0.7.UNRELEASED
  */
 
 static TpDebugSender *debug_sender = NULL;
@@ -294,7 +294,7 @@ tp_debug_sender_init (TpDebugSender *self)
  *
  * Returns: the #TpDebugSender instance for the current starter bus
  *
- * Since: UNRELEASED
+ * Since: 0.7.UNRELEASED
  */
 TpDebugSender *
 tp_debug_sender_get (void)
@@ -336,7 +336,7 @@ tp_debug_sender_get (void)
  * TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
  * signal will be fired too.
  *
- * Since: UNRELEASED
+ * Since: 0.7.UNRELEASED
  */
 void
 tp_debug_sender_add_message (TpDebugSender *self,
