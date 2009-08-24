@@ -64,7 +64,7 @@
  * Since: 0.7.UNRELEASED
  */
 
-static TpDebugSender *debug_sender = NULL;
+static gpointer debug_sender = NULL;
 
 /* On the basis that messages are around 60 bytes on average, and that 50kb is
  * a reasonable maximum size for a frame buffer.
@@ -200,16 +200,16 @@ tp_debug_sender_constructor (GType type,
 {
   GObject *retval;
 
-  if (!debug_sender)
+  if (debug_sender == NULL)
     {
       retval = G_OBJECT_CLASS (tp_debug_sender_parent_class)->constructor (
           type, n_construct_params, construct_params);
-      debug_sender = TP_DEBUG_SENDER (retval);
-      g_object_add_weak_pointer (retval, (gpointer) &debug_sender);
+      debug_sender = (gpointer) retval;
+      g_object_add_weak_pointer (retval, &debug_sender);
     }
   else
     {
-      retval = g_object_ref (debug_sender);
+      retval = g_object_ref (G_OBJECT (debug_sender));
     }
 
   return retval;
@@ -220,7 +220,6 @@ tp_debug_sender_constructed (GObject *object)
 {
   TpDBusDaemon *dbus_daemon;
 
-  debug_sender = g_object_new (TP_TYPE_DEBUG_SENDER, NULL);
   dbus_daemon = tp_dbus_daemon_dup (NULL);
 
   if (dbus_daemon != NULL)
