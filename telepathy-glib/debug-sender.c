@@ -396,3 +396,52 @@ tp_debug_sender_add_message (TpDebugSender *self,
           domain, new_msg->level, string);
     }
 }
+
+/**
+ * tp_debug_sender_log_handler:
+ * log_domain: domain of the message
+ * log_level: log leve of the message
+ * message: the message itself
+ * exclude: a string of log domains to exclude
+ *
+ * A generic log handler designed to be used by CMs. It initially calls
+ * g_log_default_handler(), and then sends the message on the bus
+ * #TpDebugSender.
+ *
+ * The @exclude parameter is designed to allow filtering of domains, instead of
+ * sending every message to the #TpDebugSender. Note that every message,
+ * regardless of domain, is given to g_log_default_hander().
+ *
+ * An example of its usage follows:
+ * |[
+ * TpDebugSender *sender = tp_debug_sender_dup ();
+ * g_log_set_default_handler (tp_debug_sender_log_handler, G_LOG_DOMAIN);
+ * ]|
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_debug_sender_log_handler (const gchar *log_domain,
+    GLogLevelFlags log_level,
+    const gchar *message,
+    gpointer exclude)
+{
+  const gchar *domain_exclude = NULL;
+
+  g_log_default_handler (log_domain, log_level, message, NULL);
+
+  if (debug_sender == NULL)
+    return;
+
+  if (exclude != NULL)
+    domain_exclude = (gchar *) exclude;
+
+  if (domain_exclude != NULL && tp_strdiff (log_domain, domain_exclude))
+    {
+      GTimeVal now;
+      g_get_current_time (&now);
+
+      tp_debug_sender_add_message (debug_sender, &now, log_domain, log_level,
+          message);
+    }
+}
