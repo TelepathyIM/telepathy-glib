@@ -30,7 +30,6 @@ G_BEGIN_DECLS
 
 typedef struct _TpDebugSender TpDebugSender;
 typedef struct _TpDebugSenderClass TpDebugSenderClass;
-typedef struct _TpDebugMessage TpDebugMessage;
 typedef struct _TpDebugSenderPrivate TpDebugSenderPrivate;
 
 #define TP_TYPE_DEBUG_SENDER tp_debug_sender_get_type()
@@ -44,14 +43,6 @@ typedef struct _TpDebugSenderPrivate TpDebugSenderPrivate;
   (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_DEBUG_SENDER))
 #define TP_DEBUG_SENDER_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DEBUG_SENDER, TpDebugSenderClass))
-
-struct _TpDebugMessage {
-  /*<public>*/
-  gdouble timestamp;
-  gchar *domain;
-  TpDebugLevel level;
-  gchar *string;
-};
 
 struct _TpDebugSender {
   GObject parent;

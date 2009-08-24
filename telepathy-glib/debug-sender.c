@@ -51,18 +51,6 @@
  * Since: 0.7.UNRELEASED
  */
 
-/**
- * TpDebugMessage:
- * @timestamp: Time of the debug message
- * @domain: Message domain
- * @level: A debug level, from #TpDebugLevel
- * @string: Message text
- *
- * A structure representing a single debug message.
- *
- * Since: 0.7.UNRELEASED
- */
-
 static TpDebugSender *debug_sender = NULL;
 
 /* On the basis that messages are around 60 bytes on average, and that 50kb is
@@ -78,6 +66,13 @@ struct _TpDebugSenderPrivate
   gboolean enabled;
   GQueue *messages;
 };
+
+typedef struct {
+  gdouble timestamp;
+  gchar *domain;
+  TpDebugLevel level;
+  gchar *string;
+} DebugMessage;
 
 G_DEFINE_TYPE_WITH_CODE (TpDebugSender, tp_debug_sender, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
@@ -120,15 +115,15 @@ log_level_flags_to_debug_level (GLogLevelFlags level)
     }
 }
 
-static TpDebugMessage *
+static DebugMessage *
 debug_message_new (GTimeVal *timestamp,
     const gchar *domain,
     GLogLevelFlags level,
     const gchar *string)
 {
-  TpDebugMessage *msg;
+  DebugMessage *msg;
 
-  msg = g_slice_new0 (TpDebugMessage);
+  msg = g_slice_new0 (DebugMessage);
   msg->timestamp = timestamp->tv_sec + timestamp->tv_usec / 1e6;
   msg->domain = g_strdup (domain);
   msg->level = log_level_flags_to_debug_level (level);
@@ -137,11 +132,11 @@ debug_message_new (GTimeVal *timestamp,
 }
 
 static void
-debug_message_free (TpDebugMessage *msg)
+debug_message_free (DebugMessage *msg)
 {
   g_free (msg->domain);
   g_free (msg->string);
-  g_slice_free (TpDebugMessage, msg);
+  g_slice_free (DebugMessage, msg);
 }
 
 static void
@@ -302,7 +297,7 @@ get_messages (TpSvcDebug *self,
   for (i = dbg->priv->messages->head; i; i = i->next)
     {
       GValue gvalue = { 0 };
-      TpDebugMessage *message = (TpDebugMessage *) i->data;
+      DebugMessage *message = (DebugMessage *) i->data;
 
       g_value_init (&gvalue, struct_type);
       g_value_take_boxed (&gvalue,
@@ -386,12 +381,12 @@ tp_debug_sender_add_message (TpDebugSender *self,
     GLogLevelFlags level,
     const gchar *string)
 {
-  TpDebugMessage *new_msg;
+  DebugMessage *new_msg;
 
   if (g_queue_get_length (self->priv->messages) >= DEBUG_MESSAGE_LIMIT)
     {
-      TpDebugMessage *old_head =
-        (TpDebugMessage *) g_queue_pop_head (self->priv->messages);
+      DebugMessage *old_head =
+        (DebugMessage *) g_queue_pop_head (self->priv->messages);
 
       debug_message_free (old_head);
     }
