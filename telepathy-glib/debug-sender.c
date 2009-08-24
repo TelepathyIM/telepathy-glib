@@ -27,9 +27,22 @@
 /**
  * SECTION:debug-sender
  * @title: TpDebugSender
- * @short_description: proxy object for Telepathy debug interface
+ * @short_description: object for exposing Telepathy debug interface
  *
  * A #TpDebugSender object is an object exposing the Telepathy debug interface.
+ * There should be one object per process as it registers the object path
+ * /org/freedesktop/Telepathy/debug. Once the object exists and has the object
+ * path, messages can be passed to it using tp_debug_sender_add_message and
+ * signals will automatically be fired.
+ *
+ * #TpDebugSender is primarily designed for use in Connection Managers, but can
+ * be used by any other part of the Telepathy stack which wants to expose its
+ * debugging information over the debug interface.
+ *
+ * In a Connection Manager, one would probably keep a ref to the #TpDebugSender
+ * in the connection manager object, and when this said object is finalized, so
+ * is the process's #TpDebugSender. A GLib log handler is also provided:
+ * tp_debug_sender_log_handler().
  *
  * Since: 0.7.UNRELEASED
  */
@@ -46,7 +59,7 @@
  * TpDebugSender:
  * @parent: The parent class instance
  *
- * A proxy object for the Telepathy debug interface.
+ * An object for exposing the Telepathy debug interface.
  *
  * Since: 0.7.UNRELEASED
  */
