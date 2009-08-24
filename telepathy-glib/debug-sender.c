@@ -22,6 +22,7 @@
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util.h>
 
 /**
  * SECTION:debug-sender

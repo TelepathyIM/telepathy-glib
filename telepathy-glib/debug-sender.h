@@ -22,8 +22,9 @@
 
 #include <glib-object.h>
 
-#include "properties-mixin.h"
-#include "dbus-properties-mixin.h"
+#include <telepathy-glib/dbus-properties-mixin.h>
+#include <telepathy-glib/enums.h>
+#include <telepathy-glib/svc-generic.h>
 
 G_BEGIN_DECLS
 
