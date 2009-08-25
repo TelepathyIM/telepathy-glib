@@ -1,3 +1,10 @@
+telepathy-farsight 0.0.8 (03 Aug 2009)
+======================================
+- Set ToS property on streams
+- Set ICE controlling according to the CreatedLocally property
+- Work around bug in the dbus-glib 0.80 of dbus properties
+- Fix bugs
+
 telepathy-farsight 0.0.7 (06 May 2009)
 ======================================
 - Remove pygtk requirement
