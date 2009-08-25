@@ -309,7 +309,7 @@ channel_ready (TpChannel *channel_proxy,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING))
     {
       GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-        "Stream Engine was passed a channel that does not implement "
+        "Channel does not implement "
         TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING };
 
       g_message ("%s", e.message);
