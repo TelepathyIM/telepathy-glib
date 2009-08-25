@@ -738,20 +738,8 @@ static void
 session_invalidated_cb (TfSession *session, gpointer user_data)
 {
   TfChannel *self = TF_CHANNEL (user_data);
-  FsConference *conf = NULL;
-  FsParticipant *part = NULL;
 
   g_signal_handlers_disconnect_by_func (session, new_stream_cb, self);
-
-  g_object_get (session,
-      "farsight-conference", &conf,
-      "farsight-participant", &part,
-      NULL);
-
-  g_signal_emit (self, signals[SESSION_INVALIDATED], 0, conf, part);
-
-  g_object_unref (conf);
-  g_object_unref (part);
 
   g_object_unref (session);
   g_ptr_array_remove_fast (self->priv->sessions, session);
