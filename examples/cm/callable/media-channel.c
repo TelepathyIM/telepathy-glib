@@ -1391,7 +1391,7 @@ dtmf_start_tone (TpSvcChannelInterfaceDTMF *iface,
       goto error;
     }
 
-  tp_svc_channel_interface_dtmf_return_from_stop_tone (context);
+  tp_svc_channel_interface_dtmf_return_from_start_tone (context);
 
   return;
 
