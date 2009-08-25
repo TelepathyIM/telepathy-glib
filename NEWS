@@ -1,3 +1,9 @@
+telepathy-farsight 0.0.9 (03 Aug 2009)
+======================================
+- Emit session-invalidated on channel dispose (prevents leak)
+- Fix ICE priority mangling (so not all candidates get 0)
+- Use new error numbers from the the 0.17.27 spec
+
 telepathy-farsight 0.0.8 (03 Aug 2009)
 ======================================
 - Set ToS property on streams
