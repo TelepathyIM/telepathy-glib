@@ -401,6 +401,32 @@ tf_channel_dispose (GObject *object)
 
   g_debug (G_STRFUNC);
 
+  if (self->priv->streams)
+    {
+      guint i;
+
+      for (i = 0; i < self->priv->streams->len; i++)
+        {
+          GObject *obj = g_ptr_array_index (self->priv->streams, i);
+
+          if (obj != NULL)
+            {
+              tf_stream_error (TF_STREAM (obj),
+                  TP_MEDIA_STREAM_ERROR_UNKNOWN,
+                  "UI stopped channel");
+
+              /* this first one covers both error and closed */
+              g_signal_handlers_disconnect_by_func (obj,
+                  stream_closed_cb, self);
+
+              g_object_unref (obj);
+            }
+        }
+
+      g_ptr_array_free (self->priv->streams, TRUE);
+      self->priv->streams = NULL;
+    }
+
   if (self->priv->sessions != NULL)
     {
       guint i;
@@ -428,28 +454,6 @@ tf_channel_dispose (GObject *object)
 
       g_ptr_array_free (self->priv->sessions, TRUE);
       self->priv->sessions = NULL;
-    }
-
-  if (self->priv->streams)
-    {
-      guint i;
-
-      for (i = 0; i < self->priv->streams->len; i++)
-        {
-          GObject *obj = g_ptr_array_index (self->priv->streams, i);
-
-          if (obj != NULL)
-            {
-              /* this first one covers both error and closed */
-              g_signal_handlers_disconnect_by_func (obj,
-                  stream_closed_cb, self);
-
-              g_object_unref (obj);
-            }
-        }
-
-      g_ptr_array_free (self->priv->streams, TRUE);
-      self->priv->streams = NULL;
     }
 
   if (self->priv->channel_ready_idle)
