@@ -1206,6 +1206,29 @@ tp_account_new (TpDBusDaemon *bus_daemon,
   return self;
 }
 
+static gchar *
+unescape_protocol (gchar *protocol)
+{
+  if (strstr (protocol, "_2d") != NULL)
+    {
+      /* Work around MC5 bug where it escapes with tp_escape_as_identifier
+       * rather than doing it properly. MC5 saves the object path in your
+       * config, so if you've ever used a buggy MC5, the path will be wrong
+       * forever.
+       */
+      gchar **chunks = g_strsplit (protocol, "_2d", 0);
+      gchar *new = g_strjoinv ("-", chunks);
+
+      g_strfreev (chunks);
+      g_free (protocol);
+      protocol = new;
+    }
+
+  g_strdelimit (protocol, "_", '-');
+
+  return protocol;
+}
+
 static void
 _tp_account_got_all_cb (TpProxy *proxy,
     GHashTable *properties,
@@ -2564,14 +2587,7 @@ tp_account_parse_object_path (const gchar *object_path,
     }
 
   set_or_free (cm, segments[0]);
-
-  /* XXX: work around MC5 bug where it escapes with tp_escape_as_identifier
-   * rather than doing it properly. MC5 saves the object path in your config,
-   * so if you've ever used a buggy MC5, the path will be wrong forever.
-   */
-  g_strdelimit (segments[1], "_", '-');
-  set_or_free (protocol, segments[1]);
-
+  set_or_free (protocol, unescape_protocol (segments[1]));
   set_or_free (account_id, segments[2]);
 
   /* Not g_strfreev because we stole or freed the individual strings */
