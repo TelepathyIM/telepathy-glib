@@ -115,7 +115,7 @@ test_new (Test *test,
   g_assert (test->account == NULL);
 
   test->account = tp_account_new (test->dbus,
-      "/org/freedesktop/Telepathy/Account/whatever", NULL);
+      "/org/freedesktop/Telepathy/Account/what/ev/er", NULL);
   g_assert (test->account != NULL);
 }
 

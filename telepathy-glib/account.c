@@ -1185,16 +1185,8 @@ tp_account_new (TpDBusDaemon *bus_daemon,
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
-  if (!tp_dbus_check_valid_object_path (object_path, error))
+  if (!tp_account_parse_object_path (object_path, NULL, NULL, NULL, error))
     return NULL;
-
-  if (!g_str_has_prefix (object_path, TP_ACCOUNT_OBJECT_PATH_BASE))
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Account path does not start with the right prefix: %s",
-          object_path);
-      return NULL;
-    }
 
   self = TP_ACCOUNT (g_object_new (TP_TYPE_ACCOUNT,
           "dbus-daemon", bus_daemon,
