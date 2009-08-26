@@ -631,13 +631,18 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
 }
 
 static gboolean
+introspection_in_progress (TpConnectionManager *self)
+{
+  return self->priv->listing_protocols || self->priv->found_protocols != NULL;
+}
+
+static gboolean
 tp_connection_manager_idle_introspect (gpointer data)
 {
   TpConnectionManager *self = data;
 
   /* Start introspecting if we want to and we're not already */
-  if (!self->priv->listing_protocols &&
-      self->priv->found_protocols == NULL &&
+  if (!introspection_in_progress (self) &&
       (self->always_introspect ||
        self->info_source == TP_CM_INFO_SOURCE_NONE))
     {
@@ -673,8 +678,7 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       self->running = FALSE;
 
       /* cancel pending introspection, if any */
-      if (self->priv->listing_protocols ||
-          self->priv->pending_protocols != NULL)
+      if (introspection_in_progress (self))
         tp_connection_manager_end_introspection (self, &e);
 
       g_signal_emit (self, signals[SIGNAL_EXITED], 0);
@@ -1633,8 +1637,13 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
 gboolean
 tp_connection_manager_activate (TpConnectionManager *self)
 {
-  if (self->running)
-    return FALSE;
+  if (self->running || introspection_in_progress (self))
+    {
+      DEBUG ("already %s", self->running ? "running" : "introspecting");
+      return FALSE;
+    }
+
+  DEBUG ("calling ListProtocols");
 
   self->priv->listing_protocols = TRUE;
   tp_cli_connection_manager_call_list_protocols (self, -1,

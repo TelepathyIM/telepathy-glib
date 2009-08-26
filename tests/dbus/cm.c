@@ -751,12 +751,20 @@ test_complex_file_ready (Test *test,
   g_free (name);
 }
 
+static gboolean
+idle_activate (gpointer cm)
+{
+  tp_connection_manager_activate (cm);
+  return FALSE;
+}
+
 static void
 test_dbus_ready (Test *test,
-                 gconstpointer data G_GNUC_UNUSED)
+                 gconstpointer data)
 {
   gchar *name;
   guint info_source;
+  const gboolean activate = GPOINTER_TO_INT (data);
 
   test->error = NULL;
   test->cm = tp_connection_manager_new (test->dbus,
@@ -766,7 +774,22 @@ test_dbus_ready (Test *test,
   g_assert (test->error == NULL);
   g_test_queue_unref (test->cm);
 
-  g_test_bug ("18291");
+  if (activate)
+    {
+      g_test_bug ("23524");
+
+      /* The bug being tested here was caused by ListProtocols being called
+       * twice on the same CM; this can be triggered by _activate()ing at
+       * exactly the wrong moment. But the wrong moment involves racing an
+       * idle. This triggered the assertion about 1/3 of the time on my laptop.
+       * --wjt
+       */
+      g_idle_add (idle_activate, test->cm);
+    }
+  else
+    {
+      g_test_bug ("18291");
+    }
 
   tp_connection_manager_call_when_ready (test->cm, ready_or_not,
       test, NULL, NULL);
@@ -862,7 +885,10 @@ main (int argc,
   g_test_add ("/cm/file", Test, NULL, setup, test_file_ready, teardown);
   g_test_add ("/cm/file (complex)", Test, NULL, setup,
       test_complex_file_ready, teardown);
-  g_test_add ("/cm/dbus", Test, NULL, setup, test_dbus_ready, teardown);
+  g_test_add ("/cm/dbus", Test, GINT_TO_POINTER (FALSE), setup,
+      test_dbus_ready, teardown);
+  g_test_add ("/cm/dbus-and-activate", Test, GINT_TO_POINTER (TRUE), setup,
+      test_dbus_ready, teardown);
 
   g_test_add ("/cm/list", Test, NULL, setup, test_list, teardown);
 
