@@ -21,6 +21,7 @@
 #include "config.h"
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
@@ -280,16 +281,8 @@ get_messages (TpSvcDebug *self,
 {
   TpDebugSender *dbg = TP_DEBUG_SENDER (self);
   GPtrArray *messages;
-  static GType struct_type = 0;
   GList *i;
   guint j;
-
-  if (G_UNLIKELY (struct_type == 0))
-    {
-      struct_type = dbus_g_type_get_struct (
-          "GValueArray", G_TYPE_DOUBLE, G_TYPE_STRING, G_TYPE_UINT,
-          G_TYPE_STRING, G_TYPE_INVALID);
-    }
 
   messages = g_ptr_array_sized_new (g_queue_get_length (dbg->priv->messages));
 
@@ -298,9 +291,9 @@ get_messages (TpSvcDebug *self,
       GValue gvalue = { 0 };
       DebugMessage *message = (DebugMessage *) i->data;
 
-      g_value_init (&gvalue, struct_type);
+      g_value_init (&gvalue, TP_STRUCT_TYPE_DEBUG_MESSAGE);
       g_value_take_boxed (&gvalue,
-          dbus_g_type_specialized_construct (struct_type));
+          dbus_g_type_specialized_construct (TP_STRUCT_TYPE_DEBUG_MESSAGE));
       dbus_g_type_struct_set (&gvalue,
           0, message->timestamp,
           1, message->domain,
@@ -313,7 +306,7 @@ get_messages (TpSvcDebug *self,
   tp_svc_debug_return_from_get_messages (context, messages);
 
   for (j = 0; j < messages->len; j++)
-    g_boxed_free (struct_type, messages->pdata[j]);
+    g_boxed_free (TP_STRUCT_TYPE_DEBUG_MESSAGE, messages->pdata[j]);
 
   g_ptr_array_free (messages, TRUE);
 }
