@@ -430,6 +430,9 @@ tp_debug_sender_add_message (TpDebugSender *self,
  * g_object_unref (sender);
  * ]|
  *
+ * (In a connection manager, replace g_main_loop_run() in the above example
+ * with tp_connection_manager_run().)
+ *
  * This function is merely for convenience if it meets the requirements.
  * It can easily be re-implemented in services, and does not need to be
  * used.
