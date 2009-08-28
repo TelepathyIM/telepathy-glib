@@ -361,7 +361,7 @@ tp_debug_sender_dup (void)
  * @string: The message string itself
  *
  * Adds a new message to the debug sender message queue. If the
- * TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
+ * #TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
  * signal will be fired too.
  *
  * Since: 0.7.UNRELEASED
@@ -406,7 +406,7 @@ tp_debug_sender_add_message (TpDebugSender *self,
  *
  * The @exclude parameter is designed to allow filtering of domains, instead of
  * sending every message to the #TpDebugSender. Note that every message,
- * regardless of domain, is given to g_log_default_hander().
+ * regardless of domain, is given to g_log_default_handler().
  *
  * Note that a ref to a #TpDebugSender must be kept at all times otherwise
  * no messages given to the handler will be sent to the Telepathy debug
@@ -431,7 +431,7 @@ tp_debug_sender_add_message (TpDebugSender *self,
  * ]|
  *
  * (In a connection manager, replace g_main_loop_run() in the above example
- * with tp_connection_manager_run().)
+ * with tp_run_connection_manager().)
  *
  * This function is merely for convenience if it meets the requirements.
  * It can easily be re-implemented in services, and does not need to be
