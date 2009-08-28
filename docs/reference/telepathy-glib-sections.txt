@@ -3281,3 +3281,23 @@ TP_TYPE_SVC_CLIENT_HANDLER
 TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS
 TP_TYPE_SVC_CLIENT_OBSERVER
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/debug-sender.h</INCLUDE>
+<INCLUDE>telepathy-glib/debug-sender.h</INCLUDE>
+<FILE>debug-sender</FILE>
+<TITLE>debug-sender</TITLE>
+TpDebugSender
+tp_debug_sender_dup
+tp_debug_sender_add_message
+tp_debug_sender_log_handler
+<SUBSECTION Standard>
+tp_debug_sender_get_type
+TP_DEBUG_SENDER
+TP_DEBUG_SENDER_CLASS
+TP_DEBUG_SENDER_GET_CLASS
+TP_IS_DEBUG_SENDER
+TP_IS_DEBUG_SENDER_CLASS
+TP_TYPE_DEBUG_SENDER
+TpDebugSenderClass
+</SECTION>
