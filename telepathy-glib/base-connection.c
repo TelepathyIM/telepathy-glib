@@ -1468,6 +1468,21 @@ tp_base_connection_init (TpBaseConnection *self)
   priv->channel_requests = g_ptr_array_new ();
 }
 
+static gchar *
+squash_name (const gchar *name, guint length)
+{
+  GChecksum *checksum;
+  gchar *squashed;
+
+  g_assert (length >= 10);
+  checksum = g_checksum_new (G_CHECKSUM_MD5);
+  g_checksum_update (checksum, (guchar *) name, -1);
+  squashed = g_strdup_printf (
+      "%.*s_%.8s", length - 9, name, g_checksum_get_string (checksum));
+  g_checksum_free (checksum);
+  return squashed;
+}
+
 /**
  * tp_base_connection_register:
  * @self: A connection
@@ -1496,6 +1511,8 @@ tp_base_connection_register (TpBaseConnection *self,
   gchar *tmp;
   gchar *safe_proto;
   gchar *unique_name;
+  guint prefix_length;
+  const guint dbus_max_name_length = 255;
 
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
   g_return_val_if_fail (cm_name != NULL, FALSE);
@@ -1513,12 +1530,38 @@ tp_base_connection_register (TpBaseConnection *self,
       safe_proto = tp_escape_as_identifier (priv->protocol);
     }
 
+  /* Plus two for the dots. */
+  prefix_length = strlen(TP_CONN_BUS_NAME_BASE) +
+      strlen (cm_name) + strlen (safe_proto) + 2;
+
   if (cls->get_unique_connection_name)
     {
+
       tmp = cls->get_unique_connection_name (self);
       g_assert (tmp != NULL);
       unique_name = tp_escape_as_identifier (tmp);
       g_free (tmp);
+
+      if (prefix_length + strlen (unique_name) > dbus_max_name_length)
+        {
+          /* Is prefix is too long to make reasonable bus name? Ten = one
+           * character of the oritinal unique name plus underscore plus
+           * 8-character hash.
+           */
+          if (prefix_length >= dbus_max_name_length - 10)
+            {
+              g_warning (
+                  "Couldn't fit CM name + protocol name + unique name into "
+                  "255 characters.");
+              g_free (unique_name);
+              return FALSE;
+            }
+
+          tmp = unique_name;
+          unique_name = squash_name (
+              tmp, dbus_max_name_length - prefix_length);
+          g_free (tmp);
+        }
     }
   else
     {
@@ -1533,6 +1576,7 @@ tp_base_connection_register (TpBaseConnection *self,
 
   self->bus_name = g_strdup_printf (TP_CONN_BUS_NAME_BASE "%s.%s.%s",
       cm_name, safe_proto, unique_name);
+  g_assert (strlen (self->bus_name) <= 255);
   self->object_path = g_strdup_printf (TP_CONN_OBJECT_PATH_BASE "%s/%s/%s",
       cm_name, safe_proto, unique_name);
 
