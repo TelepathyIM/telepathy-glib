@@ -1201,8 +1201,13 @@ TP_STRUCT_TYPE_AVATAR
 # CD, CDO and CR
 TP_STRUCT_TYPE_DISPATCH_OPERATION_DETAILS
 TP_ARRAY_TYPE_DISPATCH_OPERATION_DETAILS_LIST
+<SUBSECTION>
+# Debug
+TP_STRUCT_TYPE_DEBUG_MESSAGE
+TP_ARRAY_TYPE_DEBUG_MESSAGE_LIST
 <SUBSECTION Private>
 tp_type_dbus_array_a_7bsv_7das
+tp_type_dbus_array_dsus
 tp_type_dbus_array_oa_7bsv_7d
 tp_type_dbus_array_of_a_7bsv_7d
 tp_type_dbus_array_of_a_7bss_7d
@@ -1240,6 +1245,7 @@ tp_type_dbus_hash_uu
 tp_type_dbus_hash_uv
 tp_type_dbus_struct_a_7bsv_7das
 tp_type_dbus_struct_ays
+tp_type_dbus_struct_dsus
 tp_type_dbus_struct_oa_7bsv_7d
 tp_type_dbus_struct_os
 tp_type_dbus_struct_osuu
@@ -1902,6 +1908,8 @@ TpFileTransferStateChangeReason
 NUM_TP_FILE_TRANSFER_STATE_CHANGE_REASONS
 TpTubeChannelState
 NUM_TP_TUBE_CHANNEL_STATES
+TpDebugLevel
+NUM_TP_DEBUG_LEVELS
 </SECTION>
 
 <SECTION>
@@ -1922,6 +1930,8 @@ TP_IFACE_DBUS_PEER
 TP_IFACE_QUARK_DBUS_PEER
 TP_IFACE_DBUS_PROPERTIES
 TP_IFACE_QUARK_DBUS_PROPERTIES
+TP_IFACE_DEBUG
+TP_IFACE_QUARK_DEBUG
 TP_IFACE_CONNECTION_MANAGER
 TP_IFACE_QUARK_CONNECTION_MANAGER
 TP_IFACE_CONNECTION
@@ -2011,6 +2021,7 @@ tp_iface_quark_account_manager
 tp_iface_quark_dbus_introspectable
 tp_iface_quark_dbus_peer
 tp_iface_quark_dbus_properties
+tp_iface_quark_debug
 tp_iface_quark_channel
 tp_iface_quark_channel_interface_chat_state
 tp_iface_quark_channel_interface_destroyable
@@ -3318,4 +3329,5 @@ TP_IS_DEBUG_SENDER
 TP_IS_DEBUG_SENDER_CLASS
 TP_TYPE_DEBUG_SENDER
 TpDebugSenderClass
+TpDebugSenderPrivate
 </SECTION>
