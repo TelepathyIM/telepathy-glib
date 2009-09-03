@@ -1,0 +1,14 @@
+Version: TELEPATHY_GLIB_0.7.36
+Extends: TELEPATHY_GLIB_0.7.35
+Release: 0.7.36
+
+tp_debug_sender_add_message
+tp_debug_sender_dup
+tp_debug_sender_get_type
+tp_debug_sender_log_handler
+tp_iface_quark_debug
+tp_svc_debug_emit_new_debug_message
+tp_svc_debug_get_type
+tp_svc_debug_implement_get_messages
+tp_type_dbus_array_dsus
+tp_type_dbus_struct_dsus
