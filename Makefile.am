@@ -27,4 +27,6 @@ upload-branch-docs: all
 		$(UPLOAD_BRANCH_TO)-$(BRANCH)/
 
 include tools/lcov.am
+
+CHANGELOG_RANGE = telepathy-glib-0.6.0..
 include tools/telepathy.am
