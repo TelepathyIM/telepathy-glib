@@ -149,6 +149,8 @@ void tp_account_set_connect_automatically_async (TpAccount *account,
 gboolean tp_account_set_connect_automatically_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
 
+gboolean tp_account_get_has_been_online (TpAccount *account);
+
 const GHashTable *tp_account_get_parameters (TpAccount *account);
 
 void tp_account_refresh_properties (TpAccount *account);

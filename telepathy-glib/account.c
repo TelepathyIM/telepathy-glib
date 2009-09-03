@@ -84,6 +84,7 @@ struct _TpAccountPrivate {
   gchar *message;
 
   gboolean connect_automatically;
+  gboolean has_been_online;
 
   gboolean enabled;
   gboolean valid;
@@ -463,6 +464,12 @@ _tp_account_update (TpAccount *account,
     {
       priv->connect_automatically =
         tp_asv_get_boolean (properties, "ConnectAutomatically", NULL);
+    }
+
+  if (g_hash_table_lookup (properties, "HasBeenOnline") != NULL)
+    {
+      priv->has_been_online =
+        tp_asv_get_boolean (properties, "HasBeenOnline", NULL);
     }
 }
 
@@ -1719,4 +1726,18 @@ tp_account_set_connect_automatically_finish (TpAccount *account,
     return FALSE;
 
   return TRUE;
+}
+
+/**
+ * tp_account_get_has_been_online:
+ * @account: a #TpAccount
+ *
+ * Gets the HasBeenOnline parameter on @account.
+ *
+ * Returns: the value of the HasBeenOnline parameter on @account
+ */
+gboolean
+tp_account_get_has_been_online (TpAccount *account)
+{
+  return account->priv->has_been_online;
 }
