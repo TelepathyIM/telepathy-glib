@@ -97,6 +97,7 @@ struct _TfStreamPrivate
   guint tos;
 
   guint idle_connected_id;
+  TpMediaStreamState current_state;
 
   NewStreamCreatedCb *new_stream_created_cb;
 };
@@ -207,6 +208,7 @@ tf_stream_init (TfStream *self)
 
   self->priv = priv;
   priv->has_resource = TP_MEDIA_STREAM_DIRECTION_NONE;
+  priv->current_state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
 }
 
 static void
@@ -1756,10 +1758,14 @@ cb_fs_new_active_candidate_pair (TfStream *self,
     async_method_callback, "Media.StreamHandler::NewActiveCandidatePair",
     NULL, (GObject *) self);
 
-  tp_cli_media_stream_handler_call_stream_state (
-    self->priv->stream_handler_proxy, -1, TP_MEDIA_STREAM_STATE_CONNECTED,
-    async_method_callback, "Media.StreamHandler::StreamState",
-    NULL, (GObject *) self);
+  if (self->priv->current_state == TP_MEDIA_STREAM_STATE_DISCONNECTED)
+  {
+    tp_cli_media_stream_handler_call_stream_state (
+        self->priv->stream_handler_proxy, -1, TP_MEDIA_STREAM_STATE_CONNECTED,
+        async_method_callback, "Media.StreamHandler::StreamState",
+        NULL, (GObject *) self);
+    self->priv->current_state = TP_MEDIA_STREAM_STATE_CONNECTED;
+  }
 }
 
 static void
@@ -2231,6 +2237,8 @@ cb_fs_component_state_changed (TfStream *self,
       state = TP_MEDIA_STREAM_STATE_CONNECTED;
       break;
   }
+
+  self->priv->current_state = state;
 
   tp_cli_media_stream_handler_call_stream_state (
       self->priv->stream_handler_proxy, -1, state,
