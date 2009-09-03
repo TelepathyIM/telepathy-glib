@@ -29,6 +29,7 @@
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-connection.h>
 #include <telepathy-glib/svc-connection-manager.h>
+#include <telepathy-glib/svc-debug.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-media-interfaces.h>
 #include <telepathy-glib/svc-properties-interface.h>
@@ -93,6 +94,7 @@ tp_svc_connection_interface_simple_presence_get_type
 tp_svc_connection_manager_get_type
 tp_svc_dbus_introspectable_get_type
 tp_svc_dbus_properties_get_type
+tp_svc_debug_get_type
 tp_svc_properties_interface_get_type
 tp_svc_media_session_handler_get_type
 tp_svc_media_stream_handler_get_type
