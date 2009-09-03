@@ -83,6 +83,8 @@ struct _TpAccountPrivate {
   gchar *status;
   gchar *message;
 
+  gboolean connect_automatically;
+
   gboolean enabled;
   gboolean valid;
   gboolean ready;
@@ -455,6 +457,12 @@ _tp_account_update (TpAccount *account,
         tp_asv_get_object_path (properties, "Connection");
 
       _tp_account_set_connection (account, conn_path);
+    }
+
+  if (g_hash_table_lookup (properties, "ConnectAutomatically") != NULL)
+    {
+      priv->connect_automatically =
+        tp_asv_get_boolean (properties, "ConnectAutomatically", NULL);
     }
 }
 
@@ -1641,4 +1649,74 @@ tp_account_refresh_properties (TpAccount *account)
 {
   tp_cli_dbus_properties_call_get_all (account, -1, TP_IFACE_ACCOUNT,
       _tp_account_got_all_cb, NULL, NULL, G_OBJECT (account));
+}
+
+/**
+ * tp_account_get_connect_automatically:
+ * @account: a #TpAccount
+ *
+ * Gets the ConnectAutomatically parameter on @account.
+ *
+ * Returns: the value of the ConnectAutomatically parameter on @account
+ */
+gboolean
+tp_account_get_connect_automatically (TpAccount *account)
+{
+  return account->priv->connect_automatically;
+}
+
+/**
+ * tp_account_set_connect_automatically_async:
+ * @account: a #TpAccount
+ * @connect_automatically: new value for the parameter
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous set of the ConnectAutomatically property of
+ * @account. When the operation is finished, @callback will be called. You can
+ * then call tp_account_set_display_name_finish() to get the result of the
+ * operation.
+ */
+void
+tp_account_set_connect_automatically_async (TpAccount *account,
+    gboolean connect_automatically,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GValue value = {0, };
+
+  result = g_simple_async_result_new (G_OBJECT (account), callback,
+      user_data, tp_account_set_connect_automatically_finish);
+
+  g_value_init (&value, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&value, connect_automatically);
+
+  tp_cli_dbus_properties_call_set (account, -1, TP_IFACE_ACCOUNT,
+      "ConnectAutomatically", &value, _tp_account_property_set_cb, result,
+      NULL, G_OBJECT (account));
+}
+
+/**
+ * tp_account_set_connect_automatically_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async set of the ConnectAutomatically property.
+ *
+ * Returns: %TRUE if the call was successful, otherwise %FALSE
+ */
+gboolean
+tp_account_set_connect_automatically_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_set_connect_automatically_finish))
+    return FALSE;
+
+  return TRUE;
 }

@@ -140,6 +140,15 @@ void tp_account_request_presence_async (TpAccount *account,
 gboolean tp_account_request_presence_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
 
+gboolean tp_account_get_connect_automatically (TpAccount *account);
+
+void tp_account_set_connect_automatically_async (TpAccount *account,
+    gboolean connect_automatically, GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_set_connect_automatically_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
 const GHashTable *tp_account_get_parameters (TpAccount *account);
 
 void tp_account_refresh_properties (TpAccount *account);
