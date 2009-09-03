@@ -31,6 +31,7 @@ noinst_PROGRAMS = \
     test-handle-repo \
     test-handle-set \
     test-invalidated-while-invoking-signals \
+    test-long-connection-name \
     test-message-mixin \
     test-params-cm \
     test-properties \
@@ -116,6 +117,12 @@ test_handle_set_SOURCES = handle-set.c
 
 test_invalidated_while_invoking_signals_SOURCES = \
     invalidated-while-invoking-signals.c
+
+test_long_connection_name_LDADD = \
+    $(LDADD) \
+    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
+
+test_long_connection_name_SOURCES = long-connection-name.c
 
 test_message_mixin_LDADD = \
     $(LDADD) \
