@@ -251,6 +251,7 @@ main (int argc,
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE), "");
   MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE), "");
+  g_strfreev (interfaces);
 
   MYASSERT (tp_cli_connection_run_get_status (client_conn, -1, &status,
         &error, NULL), "");
