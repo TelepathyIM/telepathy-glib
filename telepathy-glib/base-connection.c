@@ -1744,14 +1744,12 @@ tp_base_connection_get_interfaces (TpSvcConnection *iface,
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
-
   priv = self->priv;
   klass = TP_BASE_CONNECTION_GET_CLASS (self);
 
   if (priv->interfaces)
     {
-      /* There are some extra interfaces for this channel */
+      /* There are some extra interfaces for this connection */
       interfaces = (const gchar **)(priv->interfaces->data);
     }
   else

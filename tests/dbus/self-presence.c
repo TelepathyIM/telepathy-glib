@@ -211,6 +211,8 @@ main (int argc,
   gchar *conn_path;
   GError *error = NULL;
   TpConnection *client_conn;
+  guint status;
+  gchar **interfaces;
 
   /* Setup */
 
@@ -234,6 +236,28 @@ main (int argc,
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
   test_assert_no_error (error);
+
+  /* Assert that GetInterfaces succeeds before we're CONNECTED */
+  MYASSERT (tp_cli_connection_run_get_interfaces (client_conn, -1, &interfaces,
+        &error, NULL), "");
+  test_assert_no_error (error);
+  MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING), "");
+  MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS), "");
+  MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACTS), "");
+  MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE), "");
+  MYASSERT (tp_strv_contains ((const gchar * const *) interfaces,
+      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE), "");
+  g_strfreev (interfaces);
+
+  MYASSERT (tp_cli_connection_run_get_status (client_conn, -1, &status,
+        &error, NULL), "");
+  g_assert_cmpuint (status, ==, (guint) TP_CONNECTION_STATUS_DISCONNECTED);
+  test_assert_no_error (error);
+
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
   test_assert_no_error (error);
