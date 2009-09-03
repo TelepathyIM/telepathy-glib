@@ -90,6 +90,8 @@ struct _TpAccountPrivate {
   gboolean connect_automatically;
   gboolean has_been_online;
 
+  gchar *nickname;
+
   gboolean enabled;
   gboolean valid;
   gboolean ready;
@@ -399,6 +401,12 @@ _tp_account_update (TpAccount *account,
       g_object_notify (G_OBJECT (account), "display-name");
     }
 
+  if (g_hash_table_lookup (properties, "Nickname") != NULL)
+    {
+      g_free (priv->nickname);
+      priv->nickname = g_strdup (tp_asv_get_string (properties, "Nickname"));
+    }
+
   if (g_hash_table_lookup (properties, "Icon") != NULL)
     {
       const gchar *icon_name;
@@ -648,6 +656,8 @@ _tp_account_finalize (GObject *object)
   g_free (priv->message);
   g_free (priv->requested_status);
   g_free (priv->requested_message);
+
+  g_free (priv->nickname);
 
   g_free (priv->cm_name);
   g_free (priv->proto_name);
@@ -1874,4 +1884,83 @@ const gchar *
 tp_account_get_requested_presence_message (TpAccount *account)
 {
   return account->priv->requested_message;
+}
+
+/**
+ * tp_account_get_nickname:
+ * @account: a #TpAccount
+ *
+ * Gets the value of the Nickname parameter on @account.
+ *
+ * Returns: the value of the Nickname parameter on @account
+ */
+const gchar *
+tp_account_get_nickname (TpAccount *account)
+{
+  return account->priv->nickname;
+}
+
+/**
+ * tp_account_set_nickname_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async nickname change request on @account.
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE
+ */
+gboolean
+tp_account_set_nickname_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_set_nickname_finish))
+    return FALSE;
+
+  return TRUE;
+}
+
+/**
+ * tp_account_set_nickname_async:
+ * @account: a #TpAccount
+ * @nickname: a new nickname to set
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous change of the Nickname parameter on @account. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_account_set_nickname_finish() to get the result of the operation.
+ */
+void
+tp_account_set_nickname_async (TpAccount *account,
+    const gchar *nickname,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GValue value = {0, };
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_request_presence_finish);
+
+  if (nickname == NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (account),
+          callback, user_data, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
+          "Can't set an empty nickname");
+      return;
+    }
+
+  g_value_init (&value, G_TYPE_STRING);
+  g_value_set_string (&value, nickname);
+
+  tp_cli_dbus_properties_call_set (TP_PROXY (account), -1,
+      TP_IFACE_ACCOUNT, "Nickname", &value,
+      _tp_account_property_set_cb, result, NULL, G_OBJECT (account));
+
+  g_value_unset (&value);
 }

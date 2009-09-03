@@ -171,6 +171,14 @@ const gchar *tp_account_get_requested_presence_message (TpAccount *account);
 
 const GHashTable *tp_account_get_parameters (TpAccount *account);
 
+const gchar *tp_account_get_nickname (TpAccount *account);
+
+void tp_account_set_nickname_async (TpAccount *account,
+    const gchar *nickname, GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_set_nickname_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
 void tp_account_refresh_properties (TpAccount *account);
 
 G_END_DECLS
