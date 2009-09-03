@@ -83,6 +83,10 @@ struct _TpAccountPrivate {
   gchar *status;
   gchar *message;
 
+  TpConnectionPresenceType requested_presence;
+  gchar *requested_status;
+  gchar *requested_message;
+
   gboolean connect_automatically;
   gboolean has_been_online;
 
@@ -371,6 +375,22 @@ _tp_account_update (TpAccount *account,
       priv->message = g_value_dup_string (g_value_array_get_nth (arr, 2));
     }
 
+  if (g_hash_table_lookup (properties, "RequestedPresence") != NULL)
+    {
+      arr = tp_asv_get_boxed (properties, "RequestedPresence",
+          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+      priv->requested_presence =
+        g_value_get_uint (g_value_array_get_nth (arr, 0));
+
+      g_free (priv->requested_status);
+      priv->requested_status =
+        g_value_dup_string (g_value_array_get_nth (arr, 1));
+
+      g_free (priv->requested_message);
+      priv->requested_message =
+        g_value_dup_string (g_value_array_get_nth (arr, 2));
+    }
+
   if (g_hash_table_lookup (properties, "DisplayName") != NULL)
     {
       g_free (priv->display_name);
@@ -626,6 +646,8 @@ _tp_account_finalize (GObject *object)
 
   g_free (priv->status);
   g_free (priv->message);
+  g_free (priv->requested_status);
+  g_free (priv->requested_message);
 
   g_free (priv->cm_name);
   g_free (priv->proto_name);
@@ -1740,4 +1762,116 @@ gboolean
 tp_account_get_has_been_online (TpAccount *account)
 {
   return account->priv->has_been_online;
+}
+
+/**
+ * tp_account_get_connection_status:
+ * @account: a #TpAccount
+ *
+ * Gets the ConnectionStatus parameter on @account.
+ *
+ * Returns: the value of the ConnectionStatus parameter on @account
+ */
+TpConnectionStatus
+tp_account_get_connection_status (TpAccount *account)
+{
+  return account->priv->connection_status;
+}
+
+/**
+ * tp_account_get_connection_status_reason:
+ * @account: a #TpAccount
+ *
+ * Gets the ConnectionStatusReason parameter on @account.
+ *
+ * Returns: the value of the ConnectionStatusReason parameter on @account
+ */
+TpConnectionStatusReason
+tp_account_get_connection_status_reason (TpAccount *account)
+{
+  return account->priv->reason;
+}
+
+/**
+ * tp_account_get_presence_type:
+ * @account: a #TpAccount
+ *
+ * Gets the type from the CurrentPresence parameter on @account.
+ *
+ * Returns: the type from the CurrentPresence parameter on @account
+ */
+TpConnectionPresenceType
+tp_account_get_presence_type (TpAccount *account)
+{
+  return account->priv->presence;
+}
+
+/**
+ * tp_account_get_presence_status:
+ * @account: a #TpAccount
+ *
+ * Gets the status from the CurrentPresence parameter on @account.
+ *
+ * Returns: the status from the CurrentPresence parameter on @account
+ */
+const gchar *
+tp_account_get_presence_status (TpAccount *account)
+{
+  return account->priv->status;
+}
+
+/**
+ * tp_account_get_presence_message:
+ * @account: a #TpAccount
+ *
+ * Gets the message from the CurrentPresence parameter on @account.
+ *
+ * Returns: the message from the CurrentPresence parameter on @account
+ */
+const gchar *
+tp_account_get_presence_message (TpAccount *account)
+{
+  return account->priv->message;
+}
+
+/**
+ * tp_account_get_requested_presence_type:
+ * @account: a #TpAccount
+ *
+ * Gets the presence from the RequestedPresence parameter on @account.
+ *
+ * Returns: the presence from the RequestedPresence parameter on @account
+ */
+TpConnectionPresenceType
+tp_account_get_requested_presence_type (TpAccount *account)
+{
+  return account->priv->requested_presence;
+}
+
+/**
+ * tp_account_get_requested_presence_status:
+ * @account: a #TpAccount
+ *
+ * Gets the status from the RequestedPresence parameter on @account.
+ *
+ * Returns: the status from the RequestedPresence parameter on @account
+ */
+const gchar *
+tp_account_get_requested_presence_status (TpAccount *account)
+{
+  return account->priv->requested_status;
+}
+
+/**
+ * tp_account_get_requested_presence_message:
+ * @account: a #TpAccount
+ *
+ * Gets the message from the RequestedPresence parameter on @account.
+ *
+ * Returns: the message from the RequestedPresence parameter on @account
+ */
+const gchar *
+tp_account_get_requested_presence_message (TpAccount *account)
+{
+  return account->priv->requested_message;
 }

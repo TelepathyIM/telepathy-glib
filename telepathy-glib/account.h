@@ -151,6 +151,24 @@ gboolean tp_account_set_connect_automatically_finish (TpAccount *account,
 
 gboolean tp_account_get_has_been_online (TpAccount *account);
 
+TpConnectionStatus tp_account_get_connection_status (TpAccount *account);
+
+TpConnectionStatusReason tp_account_get_connection_status_reason (
+    TpAccount *account);
+
+TpConnectionPresenceType tp_account_get_presence_type (TpAccount *account);
+
+const gchar *tp_account_get_presence_status (TpAccount *account);
+
+const gchar *tp_account_get_presence_message (TpAccount *account);
+
+TpConnectionPresenceType tp_account_get_requested_presence_type (
+    TpAccount *account);
+
+const gchar *tp_account_get_requested_presence_status (TpAccount *account);
+
+const gchar *tp_account_get_requested_presence_message (TpAccount *account);
+
 const GHashTable *tp_account_get_parameters (TpAccount *account);
 
 void tp_account_refresh_properties (TpAccount *account);
