@@ -53,6 +53,7 @@ EXTRA_DIST = \
     Connection_Interface_Simple_Presence.xml \
     Connection_Manager.xml \
     Connection.xml \
+    Debug.xml \
     errors.xml \
     generic-types.xml \
     Media_Session_Handler.xml \
