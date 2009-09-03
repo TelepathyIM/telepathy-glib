@@ -61,20 +61,6 @@
  * with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_OBJECT_REMOVED.
  *
- * This proxy is usable but very incomplete: accessors for the
- * Account's D-Bus properties will be added in a later version of
- * telepathy-glib, along with a mechanism similar to
- * tp_connection_call_when_ready().
- *
- * Most operations performed on an Account are done via D-Bus properties.
- * Until convenience methods for this are implemented, use of the generic
- * tp_cli_dbus_properties_call_get_all() and tp_cli_dbus_properties_call_set()
- * methods is recommended.
- *
- * Other useful auto-generated method wrappers on an Account include
- * tp_cli_account_call_remove(), tp_cli_account_call_update_parameters() and
- * tp_cli_account_call_reconnect().
- *
  * Since: 0.7.32
  */
 
@@ -650,6 +636,11 @@ tp_account_class_init (TpAccountClass *klass)
   object_class->dispose = _tp_account_dispose;
   object_class->finalize = _tp_account_finalize;
 
+  /**
+   * TpAccount:enabled:
+   *
+   * Whether this account is enabled or not.
+   */
   g_object_class_install_property (object_class, PROP_ENABLED,
       g_param_spec_boolean ("enabled",
           "Enabled",
@@ -657,6 +648,11 @@ tp_account_class_init (TpAccountClass *klass)
           FALSE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
 
+  /**
+   * TpAccount:ready:
+   *
+   * Whether this account is ready to be used or not.
+   */
   g_object_class_install_property (object_class, PROP_READY,
       g_param_spec_boolean ("ready",
           "Ready",
@@ -664,6 +660,11 @@ tp_account_class_init (TpAccountClass *klass)
           FALSE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccount:presence:
+   *
+   * The account connection's presence type.
+   */
   g_object_class_install_property (object_class, PROP_PRESENCE,
       g_param_spec_uint ("presence",
           "Presence",
@@ -673,6 +674,11 @@ tp_account_class_init (TpAccountClass *klass)
           TP_CONNECTION_PRESENCE_TYPE_UNSET,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccount:status:
+   *
+   * The Status string of the account.
+   */
   g_object_class_install_property (object_class, PROP_STATUS,
       g_param_spec_string ("status",
           "Status",
@@ -680,6 +686,11 @@ tp_account_class_init (TpAccountClass *klass)
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccount: status-message:
+   *
+   * The status message message of the account.
+   */
   g_object_class_install_property (object_class, PROP_STATUS_MESSAGE,
       g_param_spec_string ("status-message",
           "status-message",
@@ -687,6 +698,11 @@ tp_account_class_init (TpAccountClass *klass)
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccount:connection-status:
+   *
+   * The account's connection status type.
+   */
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS,
       g_param_spec_uint ("connection-status",
           "ConnectionStatus",
@@ -696,6 +712,11 @@ tp_account_class_init (TpAccountClass *klass)
           TP_CONNECTION_STATUS_DISCONNECTED,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccount:connection-status-reason:
+   *
+   * The account's connection status reason.
+   */
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS_REASON,
       g_param_spec_uint ("connection-status-reason",
           "ConnectionStatusReason",
@@ -705,6 +726,11 @@ tp_account_class_init (TpAccountClass *klass)
           TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccount:connection:
+   *
+   * The account's connection.
+   */
   g_object_class_install_property (object_class, PROP_CONNECTION,
       g_param_spec_object ("connection",
           "Connection",
@@ -712,6 +738,11 @@ tp_account_class_init (TpAccountClass *klass)
           TP_TYPE_CONNECTION,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccount:unique-name:
+   *
+   * The account's unique name.
+   */
   g_object_class_install_property (object_class, PROP_UNIQUE_NAME,
       g_param_spec_string ("unique-name",
           "UniqueName",
@@ -719,6 +750,11 @@ tp_account_class_init (TpAccountClass *klass)
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
+  /**
+   * TpAccount:dbus-daemon:
+   *
+   * The #TpDBusDaemon on which this account exists.
+   */
   g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
       g_param_spec_object ("dbus-daemon",
           "dbus-daemon",
@@ -726,6 +762,11 @@ tp_account_class_init (TpAccountClass *klass)
           TP_TYPE_DBUS_DAEMON,
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
+  /**
+   * TpAccount:display-name:
+   *
+   * The account's display name.
+   */
   g_object_class_install_property (object_class, PROP_DISPLAY_NAME,
       g_param_spec_string ("display-name",
           "DisplayName",
@@ -733,6 +774,15 @@ tp_account_class_init (TpAccountClass *klass)
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccount::status-changed:
+   * @account: the #TpAccount
+   * @old_status: old connection status
+   * @new_status: new connection status
+   * @reason: the reason for the status change
+   *
+   * Emitted when the connection status on the account changes.
+   */
   signals[STATUS_CHANGED] = g_signal_new ("status-changed",
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
@@ -740,6 +790,15 @@ tp_account_class_init (TpAccountClass *klass)
       _tp_marshal_VOID__UINT_UINT_UINT,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
+  /**
+   * TpAccount::presence-changed:
+   * @account: the #TpAccount
+   * @presence: the new presence
+   * @status: the new presence status
+   * @status_message: the new presence status message
+   *
+   * Emitted when the presence of the account changes.
+   */
   signals[PRESENCE_CHANGED] = g_signal_new ("presence-changed",
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
@@ -747,6 +806,12 @@ tp_account_class_init (TpAccountClass *klass)
       _tp_marshal_VOID__UINT_STRING_STRING,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
 
+  /**
+   * TpAccount::removed:
+   * @account: the #TpAccount
+   *
+   * Emitted when the account is removed.
+   */
   signals[REMOVED] = g_signal_new ("removed",
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
@@ -854,6 +919,16 @@ _tp_account_got_all_cb (TpProxy *proxy,
   _tp_account_update (self, properties);
 }
 
+/**
+ * tp_account_is_just_connected:
+ * @account: a #TpAccount
+ *
+ * Returns whether @account has connected in the last ten seconds. This
+ * is useful for determining whether the account has only just come online, or
+ * whether its status has simply changed.
+ *
+ * Returns: whether @account has only just connected
+ */
 gboolean
 tp_account_is_just_connected (TpAccount *account)
 {
@@ -892,7 +967,7 @@ tp_account_get_connection (TpAccount *account)
 /**
  * tp_account_get_connection_for_path:
  * @account: a #TpAccount
- * @patch: the path to connection object for #TpAccount
+ * @path: the path to connection object for #TpAccount
  *
  * Get the connection of the account on path. This function does not return a
  * new ref. It is not guaranteed that the returned connection object is ready
@@ -922,7 +997,9 @@ tp_account_get_connection_for_path (TpAccount *account,
  * tp_account_get_unique_name:
  * @account: a #TpAccount
  *
- * Returns: the unique name of the account.
+ * <!-- -->
+ *
+ * Returns: the unique name of @account
  **/
 const gchar *
 tp_account_get_unique_name (TpAccount *account)
@@ -936,7 +1013,9 @@ tp_account_get_unique_name (TpAccount *account)
  * tp_account_get_display_name:
  * @account: a #TpAccount
  *
- * Returns: the display name of the account.
+ * <!-- -->
+ *
+ * Returns: the display name of @account
  **/
 const gchar *
 tp_account_get_display_name (TpAccount *account)
@@ -946,6 +1025,14 @@ tp_account_get_display_name (TpAccount *account)
   return priv->display_name;
 }
 
+/**
+ * tp_account_is_valid:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: whether @account is valid
+ */
 gboolean
 tp_account_is_valid (TpAccount *account)
 {
@@ -954,6 +1041,14 @@ tp_account_is_valid (TpAccount *account)
   return priv->valid;
 }
 
+/**
+ * tp_account_get_connection_manager:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the name of the connection manager @account uses
+ */
 const gchar *
 tp_account_get_connection_manager (TpAccount *account)
 {
@@ -962,6 +1057,14 @@ tp_account_get_connection_manager (TpAccount *account)
   return priv->cm_name;
 }
 
+/**
+ * tp_account_get_protocol:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the protocol name @account uses
+ */
 const gchar *
 tp_account_get_protocol (TpAccount *account)
 {
@@ -970,6 +1073,14 @@ tp_account_get_protocol (TpAccount *account)
   return priv->proto_name;
 }
 
+/**
+ * tp_account_get_icon_name:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the Icon property on @account
+ */
 const gchar *
 tp_account_get_icon_name (TpAccount *account)
 {
@@ -978,6 +1089,14 @@ tp_account_get_icon_name (TpAccount *account)
   return priv->icon_name;
 }
 
+/**
+ * tp_account_get_parameters:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the hash table of parameters on @account
+ */
 const GHashTable *
 tp_account_get_parameters (TpAccount *account)
 {
@@ -986,6 +1105,14 @@ tp_account_get_parameters (TpAccount *account)
   return priv->parameters;
 }
 
+/**
+ * tp_account_is_enabled:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the Enabled property on @account
+ */
 gboolean
 tp_account_is_enabled (TpAccount *account)
 {
@@ -994,6 +1121,14 @@ tp_account_is_enabled (TpAccount *account)
   return priv->enabled;
 }
 
+/**
+ * tp_account_is_ready:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the same thing as the #TpAccount:ready property
+ */
 gboolean
 tp_account_is_ready (TpAccount *account)
 {
@@ -1019,6 +1154,16 @@ _tp_account_enabled_set_cb (TpProxy *proxy,
 }
 #endif
 
+/**
+ * tp_account_set_enabled_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async set of the Enabled property.
+ *
+ * Returns: %TRUE if the set was successful, otherwise %FALSE
+ */
 gboolean
 tp_account_set_enabled_finish (TpAccount *account,
     GAsyncResult *result,
@@ -1033,6 +1178,17 @@ tp_account_set_enabled_finish (TpAccount *account,
   return TRUE;
 }
 
+/**
+ * tp_account_set_enabled_async:
+ * @account: a #TpAccount
+ * @enabled: the new enabled value of @account
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous set of the Enabled property of @account. When the
+ * operation is finished, @callback will be called. You can then call
+ * tp_account_set_enabled_finish() to get the result of the operation.
+ */
 void
 tp_account_set_enabled_async (TpAccount *account,
     gboolean enabled,
@@ -1098,6 +1254,16 @@ _tp_account_reconnected_cb (TpAccount *proxy,
   g_object_unref (result);
 }
 
+/**
+ * tp_account_reconnect_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to be filled
+ *
+ * Finishes an async reconnect of @account.
+ *
+ * Returns: %TRUE if the reconnect call was successful, otherwise %FALSE
+ */
 gboolean
 tp_account_reconnect_finish (TpAccount *account,
     GAsyncResult *result,
@@ -1111,6 +1277,17 @@ tp_account_reconnect_finish (TpAccount *account,
 
   return TRUE;
 }
+
+/**
+ * tp_account_reconnect_async:
+ * @account: a #TpAccount
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous reconnect of @account. When the operation is
+ * finished, @callback will be called. You can then call
+ * tp_account_reconnect_finish() to get the result of the operation.
+ */
 
 void
 tp_account_reconnect_async (TpAccount *account,
@@ -1144,6 +1321,16 @@ _tp_account_requested_presence_cb (TpProxy *proxy,
   g_object_unref (result);
 }
 
+/**
+ * tp_account_request_presence_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async presence change request on @account.
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE
+ */
 gboolean
 tp_account_request_presence_finish (TpAccount *account,
     GAsyncResult *result,
@@ -1158,6 +1345,19 @@ tp_account_request_presence_finish (TpAccount *account,
   return TRUE;
 }
 
+/**
+ * tp_account_request_presence_async:
+ * @account: a #TpAccount
+ * @type: the requested presence
+ * @status: a status message to set, or %NULL
+ * @message: a message for the change, or %NULL
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous change of presence on @account. When the
+ * operation is finished, @callback will be called. You can then call
+ * tp_account_request_presence_finish() to get the result of the operation.
+ */
 void
 tp_account_request_presence_async (TpAccount *account,
     TpConnectionPresenceType type,
@@ -1205,6 +1405,18 @@ _tp_account_updated_cb (TpAccount *proxy,
   g_object_unref (G_OBJECT (result));
 }
 
+/**
+ * tp_account_update_settings_async:
+ * @account: a #TpAccount
+ * @parameters: new parameters to set on @account
+ * @unset_parameters: list of parameters to unset on @account
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous update of settings of @account. When the
+ * operation is finished, @callback will be called. You can then call
+ * tp_account_update_settings_finish() to get the result of the operation.
+ */
 void
 tp_account_update_settings_async (TpAccount *account,
     GHashTable *parameters,
@@ -1222,6 +1434,16 @@ tp_account_update_settings_async (TpAccount *account,
       NULL, G_OBJECT (account));
 }
 
+/**
+ * tp_account_update_settings_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async update of the settings on @account.
+ *
+ * Returns: %TRUE if the request succeeded, otherwise %FALSE
+ */
 gboolean
 tp_account_update_settings_finish (TpAccount *account,
     GAsyncResult *result,
@@ -1252,6 +1474,17 @@ _tp_account_display_name_set_cb (TpProxy *proxy,
   g_object_unref (result);
 }
 
+/**
+ * tp_account_set_display_name_async:
+ * @account: a #TpAccount
+ * @display_name: a new display name to set on @account
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous set of the DisplayName property of @account. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_account_set_display_name_finish() to get the result of the operation.
+ */
 void
 tp_account_set_display_name_async (TpAccount *account,
     const char *display_name,
@@ -1280,6 +1513,16 @@ tp_account_set_display_name_async (TpAccount *account,
       G_OBJECT (account));
 }
 
+/**
+ * tp_account_set_display_name_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async set of the DisplayName property.
+ *
+ * Returns: %TRUE if the call was successful, otherwise %FALSE
+ */
 gboolean
 tp_account_set_display_name_finish (TpAccount *account,
     GAsyncResult *result,
@@ -1309,6 +1552,17 @@ _tp_account_icon_name_set_cb (TpProxy *proxy,
   g_object_unref (result);
 }
 
+/**
+ * tp_account_set_icon_name_async:
+ * @account: a #TpAccount
+ * @icon_name: a new icon name
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous set of the Icon property of @account. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_account_set_icon_name_finish() to get the result of the operation.
+ */
 void
 tp_account_set_icon_name_async (TpAccount *account,
     const char *icon_name,
@@ -1336,9 +1590,20 @@ tp_account_set_icon_name_async (TpAccount *account,
       G_OBJECT (account));
 }
 
+/**
+ * tp_account_set_icon_name_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async set of the Icon parameter.
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE
+ */
 gboolean
 tp_account_set_icon_name_finish (TpAccount *account,
-    GAsyncResult *result, GError **error)
+    GAsyncResult *result,
+    GError **error)
 {
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
@@ -1364,6 +1629,16 @@ _tp_account_remove_cb (TpAccount *proxy,
   g_object_unref (G_OBJECT (result));
 }
 
+/**
+ * tp_account_remove_async:
+ * @account: a #TpAccount
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous removal of @account. When the operation is
+ * finished, @callback will be called. You can then call
+ * tp_account_remove_finish() to get the result of the operation.
+ */
 void
 tp_account_remove_async (TpAccount *account,
     GAsyncReadyCallback callback,
@@ -1376,6 +1651,16 @@ tp_account_remove_async (TpAccount *account,
       G_OBJECT (account));
 }
 
+/**
+ * tp_account_remove_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async removal of @account.
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE
+ */
 gboolean
 tp_account_remove_finish (TpAccount *account,
     GAsyncResult *result,
@@ -1391,6 +1676,13 @@ tp_account_remove_finish (TpAccount *account,
   return TRUE;
 }
 
+/**
+ * tp_account_refresh_properties:
+ * @account: a #TpAccount
+ *
+ * Refreshes @account's hashtable of properties with what actually exists on
+ * the account manager.
+ */
 void
 tp_account_refresh_properties (TpAccount *account)
 {
