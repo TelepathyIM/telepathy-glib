@@ -1406,19 +1406,19 @@ _tp_account_updated_cb (TpAccount *proxy,
 }
 
 /**
- * tp_account_update_settings_async:
+ * tp_account_update_parameters_async:
  * @account: a #TpAccount
  * @parameters: new parameters to set on @account
  * @unset_parameters: list of parameters to unset on @account
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Requests an asynchronous update of settings of @account. When the
+ * Requests an asynchronous update of parameters of @account. When the
  * operation is finished, @callback will be called. You can then call
- * tp_account_update_settings_finish() to get the result of the operation.
+ * tp_account_update_parameters_finish() to get the result of the operation.
  */
 void
-tp_account_update_settings_async (TpAccount *account,
+tp_account_update_parameters_async (TpAccount *account,
     GHashTable *parameters,
     const gchar **unset_parameters,
     GAsyncReadyCallback callback,
@@ -1427,7 +1427,7 @@ tp_account_update_settings_async (TpAccount *account,
   GSimpleAsyncResult *result;
 
   result = g_simple_async_result_new (G_OBJECT (account),
-      callback, user_data, tp_account_update_settings_finish);
+      callback, user_data, tp_account_update_parameters_finish);
 
   tp_cli_account_call_update_parameters (account, -1, parameters,
       unset_parameters, _tp_account_updated_cb, result,
@@ -1435,17 +1435,17 @@ tp_account_update_settings_async (TpAccount *account,
 }
 
 /**
- * tp_account_update_settings_finish:
+ * tp_account_update_parameters_finish:
  * @account: a #TpAccount
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes an async update of the settings on @account.
+ * Finishes an async update of the parameters on @account.
  *
  * Returns: %TRUE if the request succeeded, otherwise %FALSE
  */
 gboolean
-tp_account_update_settings_finish (TpAccount *account,
+tp_account_update_parameters_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
@@ -1454,7 +1454,7 @@ tp_account_update_settings_finish (TpAccount *account,
     return FALSE;
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-    G_OBJECT (account), tp_account_update_settings_finish), FALSE);
+    G_OBJECT (account), tp_account_update_parameters_finish), FALSE);
 
   return TRUE;
 }
