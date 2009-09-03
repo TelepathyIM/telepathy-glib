@@ -1137,9 +1137,8 @@ tp_account_is_ready (TpAccount *account)
   return priv->ready;
 }
 
-#if 0
 static void
-_tp_account_enabled_set_cb (TpProxy *proxy,
+_tp_account_property_set_cb (TpProxy *proxy,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -1147,12 +1146,14 @@ _tp_account_enabled_set_cb (TpProxy *proxy,
   GSimpleAsyncResult *result = user_data;
 
   if (error != NULL)
-    g_simple_async_result_set_from_error (result, (GError *) error);
+    {
+      DEBUG ("Failed to set property: %s", error->message);
+      g_simple_async_result_set_from_error (result, (GError *) error);
+    }
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
 }
-#endif
 
 /**
  * tp_account_set_enabled_finish:
@@ -1235,7 +1236,7 @@ tp_account_set_enabled_async (TpAccount *account,
 
   tp_cli_dbus_properties_call_set (TP_PROXY (account),
       -1, TP_IFACE_ACCOUNT, "Enabled", &value,
-      _tp_account_enabled_set_cb, result, NULL, G_OBJECT (account));
+      _tp_account_property_set_cb, result, NULL, G_OBJECT (account));
 #endif
 }
 
@@ -1303,24 +1304,6 @@ tp_account_reconnect_async (TpAccount *account,
       result, NULL, G_OBJECT (account));
 }
 
-static void
-_tp_account_requested_presence_cb (TpProxy *proxy,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  GSimpleAsyncResult *result = user_data;
-
-  if (error)
-    DEBUG ("Failed to set the requested presence: %s", error->message);
-
-  if (error != NULL)
-    g_simple_async_result_set_from_error (result, (GError *) error);
-
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
-}
-
 /**
  * tp_account_request_presence_finish:
  * @account: a #TpAccount
@@ -1384,7 +1367,7 @@ tp_account_request_presence_async (TpAccount *account,
 
   tp_cli_dbus_properties_call_set (TP_PROXY (account), -1,
       TP_IFACE_ACCOUNT, "RequestedPresence", &value,
-      _tp_account_requested_presence_cb, result, NULL, G_OBJECT (account));
+      _tp_account_property_set_cb, result, NULL, G_OBJECT (account));
 
   g_value_unset (&value);
 }
@@ -1459,21 +1442,6 @@ tp_account_update_parameters_finish (TpAccount *account,
   return TRUE;
 }
 
-static void
-_tp_account_display_name_set_cb (TpProxy *proxy,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  GSimpleAsyncResult *result = user_data;
-
-  if (error != NULL)
-    g_simple_async_result_set_from_error (result, (GError *) error);
-
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
-}
-
 /**
  * tp_account_set_display_name_async:
  * @account: a #TpAccount
@@ -1509,7 +1477,7 @@ tp_account_set_display_name_async (TpAccount *account,
   g_value_set_string (&value, display_name);
 
   tp_cli_dbus_properties_call_set (account, -1, TP_IFACE_ACCOUNT,
-      "DisplayName", &value, _tp_account_display_name_set_cb, result, NULL,
+      "DisplayName", &value, _tp_account_property_set_cb, result, NULL,
       G_OBJECT (account));
 }
 
@@ -1535,21 +1503,6 @@ tp_account_set_display_name_finish (TpAccount *account,
     return FALSE;
 
   return TRUE;
-}
-
-static void
-_tp_account_icon_name_set_cb (TpProxy *proxy,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  GSimpleAsyncResult *result = user_data;
-
-  if (error != NULL)
-    g_simple_async_result_set_from_error (result, (GError *) error);
-
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
 }
 
 /**
@@ -1586,7 +1539,7 @@ tp_account_set_icon_name_async (TpAccount *account,
   g_value_set_string (&value, icon_name_set);
 
   tp_cli_dbus_properties_call_set (account, -1, TP_IFACE_ACCOUNT,
-      "Icon", &value, _tp_account_icon_name_set_cb, result, NULL,
+      "Icon", &value, _tp_account_property_set_cb, result, NULL,
       G_OBJECT (account));
 }
 
