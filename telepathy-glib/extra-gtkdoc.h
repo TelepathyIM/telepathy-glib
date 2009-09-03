@@ -49,6 +49,19 @@
  */
 
 /**
+ * SECTION:svc-debug
+ * @title: Service-side Debug base interface
+ * @short_description: GInterface for Telepathy Debug objects
+ *
+ * This interface (auto-generated from the Telepathy spec) makes it easier
+ * to export objects implementing the Telepathy Debug interface.
+ *
+ * #TpDebugSender provides a reference implementation of the Debug object.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+
+/**
  * SECTION:svc-channel-group
  * @title: Service-side Channel Group interface
  * @short_description: Groups of contacts

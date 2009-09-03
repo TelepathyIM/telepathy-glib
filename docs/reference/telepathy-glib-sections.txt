@@ -3283,6 +3283,24 @@ TP_TYPE_SVC_CLIENT_OBSERVER
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/svc-debug.h</INCLUDE>
+<TITLE>svc-debug</TITLE>
+<FILE>svc-debug</FILE>
+TpSvcDebug
+TpSvcDebugClass
+tp_svc_debug_get_messages_impl
+tp_svc_debug_implement_get_messages
+tp_svc_debug_return_from_get_messages
+tp_svc_debug_emit_new_debug_message
+<SUBSECTION Standard>
+TP_SVC_DEBUG
+TP_IS_SVC_DEBUG
+TP_TYPE_SVC_DEBUG
+TP_SVC_DEBUG_GET_CLASS
+tp_svc_debug_get_type
+</SECTION>
+
+<SECTION>
 <INCLUDE>telepathy-glib/debug-sender.h</INCLUDE>
 <INCLUDE>telepathy-glib/debug-sender.h</INCLUDE>
 <FILE>debug-sender</FILE>

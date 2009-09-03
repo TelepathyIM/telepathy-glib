@@ -24,7 +24,7 @@
 
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/enums.h>
-#include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/svc-debug.h>
 
 G_BEGIN_DECLS
 

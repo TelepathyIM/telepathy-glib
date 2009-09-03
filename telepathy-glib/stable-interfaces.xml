@@ -21,6 +21,8 @@
 
 <xi:include href="client.xml"/>
 
+<xi:include href="debug.xml"/>
+
 <xi:include href="../spec/generic-types.xml"/>
 <xi:include href="../spec/errors.xml"/>
 
