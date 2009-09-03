@@ -46,7 +46,7 @@
  * is the process's #TpDebugSender. A GLib log handler is also provided:
  * tp_debug_sender_log_handler().
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.36
  */
 
 /**
@@ -54,7 +54,7 @@
  *
  * The class of a #TpDebugSender.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.36
  */
 
 /**
@@ -63,7 +63,7 @@
  *
  * An object for exposing the Telepathy debug interface.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.36
  */
 
 static gpointer debug_sender = NULL;
@@ -344,7 +344,7 @@ tp_debug_sender_init (TpDebugSender *self)
  * Returns: a reference to the #TpDebugSender instance for the current starter
  *          bus daemon
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.36
  */
 TpDebugSender *
 tp_debug_sender_dup (void)
@@ -365,7 +365,7 @@ tp_debug_sender_dup (void)
  * #TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
  * signal will be fired too.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.36
  */
 void
 tp_debug_sender_add_message (TpDebugSender *self,
@@ -438,7 +438,7 @@ tp_debug_sender_add_message (TpDebugSender *self,
  * It can easily be re-implemented in services, and does not need to be
  * used.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.36
  */
 void
 tp_debug_sender_log_handler (const gchar *log_domain,

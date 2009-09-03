@@ -58,7 +58,7 @@
  *
  * #TpDebugSender provides a reference implementation of the Debug object.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.7.36
  */
 
 /**

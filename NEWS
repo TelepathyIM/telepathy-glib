@@ -1,7 +1,34 @@
 telepathy-glib 0.7.36 (UNRELEASED)
 ==================================
 
-???
+Enhancements:
+
+* Add TpDebugSender, along with the lower-level TpSvcDebug interface that it
+  uses (jonny)
+
+* Clarify when tp_proxy_signal_connection_disconnect is safe to call (smcv)
+
+* Add support for simulating DTMF and Hold support in the 'callable' example
+  connection manager (andrunko)
+
+* fd.o #21327: truncate the ChangeLog at version 0.6 to stop it being so huge,
+  and force ISO date format (wjt)
+
+Fixes:
+
+* If the bus name for a Connection would be too long, hash the unique name
+  provided by the CM, instead of crashing (daf)
+
+* fd.o #23524: don't introspect a TpConnectionManager twice in parallel,
+  avoiding an assertion failure (wjt)
+
+* TpChannel: don't disconnect from a TpProxySignalConnection that's already
+  gone, fixing a crash (smcv)
+
+* tp_connection_manager_idle_read_manager_file: avoid using the
+  TpConnectionManager after it may have been disposed (sjoerd)
+
+* TpBaseConnection: Allow GetInterfaces() to succeed before CONNECTED (smcv)
 
 telepathy-glib 0.7.35 (2009-08-18)
 ==================================
