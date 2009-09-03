@@ -1531,7 +1531,7 @@ tp_base_connection_register (TpBaseConnection *self,
     }
 
   /* Plus two for the dots. */
-  prefix_length = strlen(TP_CONN_BUS_NAME_BASE) +
+  prefix_length = strlen (TP_CONN_BUS_NAME_BASE) +
       strlen (cm_name) + strlen (safe_proto) + 2;
 
   if (cls->get_unique_connection_name)
@@ -1545,7 +1545,7 @@ tp_base_connection_register (TpBaseConnection *self,
       if (prefix_length + strlen (unique_name) > dbus_max_name_length)
         {
           /* Is prefix is too long to make reasonable bus name? Ten = one
-           * character of the oritinal unique name plus underscore plus
+           * character of the original unique name plus underscore plus
            * 8-character hash.
            */
           if (prefix_length >= dbus_max_name_length - 10)
