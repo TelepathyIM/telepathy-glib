@@ -19,17 +19,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <string.h>
+
 #include "telepathy-glib/account.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
 #include "telepathy-glib/debug-internal.h"
 
+#include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
 
 /**
@@ -80,33 +85,412 @@
  */
 
 struct _TpAccountPrivate {
-    gpointer dummy;
+  gboolean dispose_has_run;
+
+  TpConnection *connection;
+  guint connection_invalidated_id;
+
+  TpConnectionStatus connection_status;
+  TpConnectionStatusReason reason;
+
+  TpConnectionPresenceType presence;
+  gchar *status;
+  gchar *message;
+
+  gboolean enabled;
+  gboolean valid;
+  gboolean ready;
+  gboolean removed;
+  /* Timestamp when the connection got connected in seconds since the epoch */
+  glong connect_time;
+
+  gchar *cm_name;
+  gchar *proto_name;
+  gchar *icon_name;
+
+  gchar *unique_name;
+  gchar *display_name;
+  TpDBusDaemon *dbus;
+
+  GHashTable *parameters;
 };
 
 G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
+
+/* signals */
+enum {
+  STATUS_CHANGED,
+  PRESENCE_CHANGED,
+  REMOVED,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL];
+
+/* properties */
+enum {
+  PROP_ENABLED = 1,
+  PROP_PRESENCE,
+  PROP_STATUS,
+  PROP_STATUS_MESSAGE,
+  PROP_READY,
+  PROP_CONNECTION_STATUS,
+  PROP_CONNECTION_STATUS_REASON,
+  PROP_CONNECTION,
+  PROP_UNIQUE_NAME,
+  PROP_DBUS_DAEMON,
+  PROP_DISPLAY_NAME
+};
 
 static void
 tp_account_init (TpAccount *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_ACCOUNT,
       TpAccountPrivate);
+
+  self->priv->connection_status = TP_CONNECTION_STATUS_DISCONNECTED;
 }
 
 static void
-tp_account_removed_cb (TpAccount *self,
+_tp_account_removed_cb (TpAccount *self,
     gpointer unused G_GNUC_UNUSED,
     GObject *object G_GNUC_UNUSED)
 {
   GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
-      "Account removed" };
+               "Account removed" };
+
+  if (self->priv->removed)
+    return;
+
+  self->priv->removed = TRUE;
 
   tp_proxy_invalidate ((TpProxy *) self, &e);
+
+  g_signal_emit (self, signals[REMOVED], 0);
+}
+
+static gchar *
+_tp_account_unescape_protocol (const gchar *protocol,
+    gssize len)
+{
+  gchar *result, *escape;
+  /* Bad implementation might accidentally use tp_escape_as_identifier,
+   * which escapes - in the wrong way... */
+  if ((escape = g_strstr_len (protocol, len, "_2d")) != NULL)
+    {
+      GString *str;
+      const gchar *input;
+
+      str = g_string_new ("");
+      input = protocol;
+      do {
+        g_string_append_len (str, input, escape - input);
+        g_string_append_c (str, '-');
+
+        len -= escape - input + 3;
+        input = escape + 3;
+      } while ((escape = g_strstr_len (input, len, "_2d")) != NULL);
+
+      g_string_append_len (str, input, len);
+
+      result = g_string_free (str, FALSE);
+    }
+  else
+    {
+      result = g_strndup (protocol, len);
+    }
+
+  g_strdelimit (result, "_", '-');
+
+  return result;
+}
+
+static gboolean
+_tp_account_parse_unique_name (const gchar *bus_name,
+    gchar **protocol,
+    gchar **manager)
+{
+  const gchar *proto, *proto_end;
+  const gchar *cm, *cm_end;
+
+  g_return_val_if_fail (
+      g_str_has_prefix (bus_name, TP_ACCOUNT_OBJECT_PATH_BASE), FALSE);
+
+  cm = bus_name + strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
+
+  for (cm_end = cm; *cm_end != '/' && *cm_end != '\0'; cm_end++)
+    /* pass */;
+
+  if (*cm_end == '\0')
+    return FALSE;
+
+  if (cm_end == '\0')
+    return FALSE;
+
+  proto = cm_end + 1;
+
+  for (proto_end = proto; *proto_end != '/' && *proto_end != '\0'; proto_end++)
+    /* pass */;
+
+  if (*proto_end == '\0')
+    return FALSE;
+
+  if (protocol != NULL)
+    *protocol = _tp_account_unescape_protocol (proto, proto_end - proto);
+
+  if (manager != NULL)
+    *manager = g_strndup (cm, cm_end - cm);
+
+  return TRUE;
 }
 
 static void
-tp_account_constructed (GObject *object)
+_tp_account_free_connection (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+  TpConnection *conn;
+
+  if (priv->connection == NULL)
+    return;
+
+  conn = priv->connection;
+  priv->connection = NULL;
+
+  if (priv->connection_invalidated_id != 0)
+    g_signal_handler_disconnect (conn, priv->connection_invalidated_id);
+  priv->connection_invalidated_id = 0;
+
+  g_object_unref (conn);
+}
+
+static void
+_tp_account_connection_invalidated_cb (TpProxy *self,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
+{
+  TpAccount *account = TP_ACCOUNT (user_data);
+  TpAccountPrivate *priv = account->priv;
+
+  if (priv->connection == NULL)
+    return;
+
+  DEBUG ("(%s) Connection invalidated",
+      tp_account_get_unique_name (account));
+
+  g_assert (priv->connection == TP_CONNECTION (self));
+
+  _tp_account_free_connection (account);
+
+  g_object_notify (G_OBJECT (account), "connection");
+}
+
+static void
+_tp_account_connection_ready_cb (TpConnection *connection,
+    const GError *error,
+    gpointer user_data)
+{
+  TpAccount *account = TP_ACCOUNT (user_data);
+
+  if (error != NULL)
+    {
+      DEBUG ("(%s) Connection failed to become ready: %s",
+          tp_account_get_unique_name (account), error->message);
+      _tp_account_free_connection (account);
+    }
+  else
+    {
+      DEBUG ("(%s) Connection ready",
+          tp_account_get_unique_name (account));
+      g_object_notify (G_OBJECT (account), "connection");
+    }
+}
+
+static void
+_tp_account_set_connection (TpAccount *account,
+    const gchar *path)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  if (priv->connection != NULL)
+    {
+      const gchar *current;
+
+      current = tp_proxy_get_object_path (priv->connection);
+      if (!tp_strdiff (current, path))
+        return;
+    }
+
+  _tp_account_free_connection (account);
+
+  if (tp_strdiff ("/", path))
+    {
+      GError *error = NULL;
+      priv->connection = tp_connection_new (priv->dbus, NULL, path, &error);
+
+      if (priv->connection == NULL)
+        {
+          DEBUG ("Failed to create a new TpConnection: %s",
+              error->message);
+          g_error_free (error);
+        }
+      else
+        {
+          priv->connection_invalidated_id = g_signal_connect (priv->connection,
+              "invalidated",
+              G_CALLBACK (_tp_account_connection_invalidated_cb), account);
+
+          DEBUG ("Readying connection for %s", priv->unique_name);
+          /* notify a change in the connection property when it's ready */
+          tp_connection_call_when_ready (priv->connection,
+              _tp_account_connection_ready_cb, account);
+        }
+    }
+
+  g_object_notify (G_OBJECT (account), "connection");
+}
+
+static void
+_tp_account_update (TpAccount *account,
+    GHashTable *properties)
+{
+  TpAccountPrivate *priv = account->priv;
+  GValueArray *arr;
+  TpConnectionStatus old_s = priv->connection_status;
+  gboolean presence_changed = FALSE;
+
+  if (g_hash_table_lookup (properties, "ConnectionStatus") != NULL)
+    priv->connection_status =
+      tp_asv_get_int32 (properties, "ConnectionStatus", NULL);
+
+  if (g_hash_table_lookup (properties, "ConnectionStatusReason") != NULL)
+    priv->reason = tp_asv_get_int32 (properties,
+        "ConnectionStatusReason", NULL);
+
+  if (g_hash_table_lookup (properties, "CurrentPresence") != NULL)
+    {
+      presence_changed = TRUE;
+      arr = tp_asv_get_boxed (properties, "CurrentPresence",
+          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+      priv->presence = g_value_get_uint (g_value_array_get_nth (arr, 0));
+
+      g_free (priv->status);
+      priv->status = g_value_dup_string (g_value_array_get_nth (arr, 1));
+
+      g_free (priv->message);
+      priv->message = g_value_dup_string (g_value_array_get_nth (arr, 2));
+    }
+
+  if (g_hash_table_lookup (properties, "DisplayName") != NULL)
+    {
+      g_free (priv->display_name);
+      priv->display_name =
+        g_strdup (tp_asv_get_string (properties, "DisplayName"));
+      g_object_notify (G_OBJECT (account), "display-name");
+    }
+
+  if (g_hash_table_lookup (properties, "Icon") != NULL)
+    {
+      const gchar *icon_name;
+
+      icon_name = tp_asv_get_string (properties, "Icon");
+
+      g_free (priv->icon_name);
+
+      if (icon_name == NULL || icon_name[0] == '\0')
+        priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
+      else
+        priv->icon_name = g_strdup (icon_name);
+    }
+
+  if (g_hash_table_lookup (properties, "Enabled") != NULL)
+    {
+      gboolean enabled = tp_asv_get_boolean (properties, "Enabled", NULL);
+      if (priv->enabled != enabled)
+        {
+          priv->enabled = enabled;
+          g_object_notify (G_OBJECT (account), "enabled");
+        }
+    }
+
+  if (g_hash_table_lookup (properties, "Valid") != NULL)
+    priv->valid = tp_asv_get_boolean (properties, "Valid", NULL);
+
+  if (g_hash_table_lookup (properties, "Parameters") != NULL)
+    {
+      GHashTable *parameters;
+
+      parameters = tp_asv_get_boxed (properties, "Parameters",
+          TP_HASH_TYPE_STRING_VARIANT_MAP);
+
+      if (priv->parameters != NULL)
+        g_hash_table_unref (priv->parameters);
+
+      priv->parameters = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP,
+          parameters);
+    }
+
+  if (!priv->ready)
+    {
+      priv->ready = TRUE;
+      g_object_notify (G_OBJECT (account), "ready");
+    }
+
+  if (priv->connection_status != old_s)
+    {
+      if (priv->connection_status == TP_CONNECTION_STATUS_CONNECTED)
+        {
+          GTimeVal val;
+          g_get_current_time (&val);
+
+          priv->connect_time = val.tv_sec;
+        }
+
+      g_signal_emit (account, signals[STATUS_CHANGED], 0,
+          old_s, priv->connection_status, priv->reason);
+
+      g_object_notify (G_OBJECT (account), "connection-status");
+      g_object_notify (G_OBJECT (account), "connection-status-reason");
+    }
+
+  if (presence_changed)
+    {
+      g_signal_emit (account, signals[PRESENCE_CHANGED], 0,
+          priv->presence, priv->status, priv->message);
+      g_object_notify (G_OBJECT (account), "presence");
+      g_object_notify (G_OBJECT (account), "status");
+      g_object_notify (G_OBJECT (account), "status-message");
+    }
+
+  if (g_hash_table_lookup (properties, "Connection") != NULL)
+    {
+      const gchar *conn_path =
+        tp_asv_get_object_path (properties, "Connection");
+
+      _tp_account_set_connection (account, conn_path);
+    }
+}
+
+static void
+_tp_account_properties_changed (TpAccount *proxy,
+    GHashTable *properties,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpAccount *self = TP_ACCOUNT (weak_object);
+
+  if (!self->priv->ready)
+    return;
+
+  _tp_account_update (self, properties);
+}
+
+static void
+_tp_account_constructed (GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (object);
+  TpAccountPrivate *priv = self->priv;
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_account_parent_class)->constructed;
   GError *error = NULL;
@@ -117,16 +501,139 @@ tp_account_constructed (GObject *object)
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
 
-  sc = tp_cli_account_connect_to_removed (self, tp_account_removed_cb,
+  sc = tp_cli_account_connect_to_removed (self, _tp_account_removed_cb,
       NULL, NULL, NULL, &error);
 
   if (sc == NULL)
     {
       g_critical ("Couldn't connect to Removed: %s", error->message);
       g_error_free (error);
-      g_assert_not_reached ();
-      return;
     }
+
+  _tp_account_parse_unique_name (priv->unique_name,
+      &(priv->proto_name), &(priv->cm_name));
+
+  priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
+
+  tp_cli_account_connect_to_account_property_changed (self,
+      _tp_account_properties_changed, NULL, NULL, object, NULL);
+
+  tp_account_refresh_properties (self);
+}
+
+static void
+_tp_account_set_property (GObject *object,
+    guint prop_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpAccount *self = TP_ACCOUNT (object);
+
+  switch (prop_id)
+    {
+    case PROP_ENABLED:
+      tp_account_set_enabled_async (self,
+          g_value_get_boolean (value), NULL, NULL);
+      break;
+    case PROP_UNIQUE_NAME:
+      self->priv->unique_name = g_value_dup_string (value);
+      break;
+    case PROP_DBUS_DAEMON:
+      self->priv->dbus = g_value_get_object (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+    }
+}
+
+static void
+_tp_account_get_property (GObject *object,
+    guint prop_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpAccount *self = TP_ACCOUNT (object);
+
+  switch (prop_id)
+    {
+    case PROP_ENABLED:
+      g_value_set_boolean (value, self->priv->enabled);
+      break;
+    case PROP_READY:
+      g_value_set_boolean (value, self->priv->ready);
+      break;
+    case PROP_PRESENCE:
+      g_value_set_uint (value, self->priv->presence);
+      break;
+    case PROP_STATUS:
+      g_value_set_string (value, self->priv->status);
+      break;
+    case PROP_STATUS_MESSAGE:
+      g_value_set_string (value, self->priv->message);
+      break;
+    case PROP_CONNECTION_STATUS:
+      g_value_set_uint (value, self->priv->connection_status);
+      break;
+    case PROP_CONNECTION_STATUS_REASON:
+      g_value_set_uint (value, self->priv->reason);
+      break;
+    case PROP_CONNECTION:
+      g_value_set_object (value,
+          tp_account_get_connection (self));
+      break;
+    case PROP_UNIQUE_NAME:
+      g_value_set_string (value,
+          tp_account_get_unique_name (self));
+      break;
+    case PROP_DISPLAY_NAME:
+      g_value_set_string (value,
+          tp_account_get_display_name (self));
+      break;
+    case PROP_DBUS_DAEMON:
+      g_value_set_object (value, self->priv->dbus);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+    }
+}
+
+static void
+_tp_account_dispose (GObject *object)
+{
+  TpAccount *self = TP_ACCOUNT (object);
+  TpAccountPrivate *priv = self->priv;
+
+  if (priv->dispose_has_run)
+    return;
+
+  priv->dispose_has_run = TRUE;
+
+  _tp_account_free_connection (self);
+
+  /* release any references held by the object here */
+  if (G_OBJECT_CLASS (tp_account_parent_class)->dispose != NULL)
+    G_OBJECT_CLASS (tp_account_parent_class)->dispose (object);
+}
+
+static void
+_tp_account_finalize (GObject *object)
+{
+  TpAccount *self = TP_ACCOUNT (object);
+  TpAccountPrivate *priv = self->priv;
+
+  g_free (priv->status);
+  g_free (priv->message);
+
+  g_free (priv->cm_name);
+  g_free (priv->proto_name);
+  g_free (priv->icon_name);
+  g_free (priv->display_name);
+
+  /* free any data held directly by the object here */
+  if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)
+    G_OBJECT_CLASS (tp_account_parent_class)->finalize (object);
 }
 
 static void
@@ -137,7 +644,115 @@ tp_account_class_init (TpAccountClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpAccountPrivate));
 
-  object_class->constructed = tp_account_constructed;
+  object_class->constructed = _tp_account_constructed;
+  object_class->get_property = _tp_account_get_property;
+  object_class->set_property = _tp_account_set_property;
+  object_class->dispose = _tp_account_dispose;
+  object_class->finalize = _tp_account_finalize;
+
+  g_object_class_install_property (object_class, PROP_ENABLED,
+      g_param_spec_boolean ("enabled",
+          "Enabled",
+          "Whether this account is enabled or not",
+          FALSE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
+
+  g_object_class_install_property (object_class, PROP_READY,
+      g_param_spec_boolean ("ready",
+          "Ready",
+          "Whether this account is ready to be used",
+          FALSE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  g_object_class_install_property (object_class, PROP_PRESENCE,
+      g_param_spec_uint ("presence",
+          "Presence",
+          "The account connections presence type",
+          0,
+          NUM_TP_CONNECTION_PRESENCE_TYPES,
+          TP_CONNECTION_PRESENCE_TYPE_UNSET,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  g_object_class_install_property (object_class, PROP_STATUS,
+      g_param_spec_string ("status",
+          "Status",
+          "The Status string of the account",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  g_object_class_install_property (object_class, PROP_STATUS_MESSAGE,
+      g_param_spec_string ("status-message",
+          "status-message",
+          "The Status message string of the account",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  g_object_class_install_property (object_class, PROP_CONNECTION_STATUS,
+      g_param_spec_uint ("connection-status",
+          "ConnectionStatus",
+          "The accounts connections status type",
+          0,
+          NUM_TP_CONNECTION_STATUSES,
+          TP_CONNECTION_STATUS_DISCONNECTED,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  g_object_class_install_property (object_class, PROP_CONNECTION_STATUS_REASON,
+      g_param_spec_uint ("connection-status-reason",
+          "ConnectionStatusReason",
+          "The account connections status reason",
+          0,
+          NUM_TP_CONNECTION_STATUS_REASONS,
+          TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  g_object_class_install_property (object_class, PROP_CONNECTION,
+      g_param_spec_object ("connection",
+          "Connection",
+          "The accounts connection",
+          TP_TYPE_CONNECTION,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  g_object_class_install_property (object_class, PROP_UNIQUE_NAME,
+      g_param_spec_string ("unique-name",
+          "UniqueName",
+          "The accounts unique name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
+      g_param_spec_object ("dbus-daemon",
+          "dbus-daemon",
+          "The Tp Dbus daemon on which this account exists",
+          TP_TYPE_DBUS_DAEMON,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+  g_object_class_install_property (object_class, PROP_DISPLAY_NAME,
+      g_param_spec_string ("display-name",
+          "DisplayName",
+          "The accounts display name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  signals[STATUS_CHANGED] = g_signal_new ("status-changed",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tp_marshal_VOID__UINT_UINT_UINT,
+      G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+
+  signals[PRESENCE_CHANGED] = g_signal_new ("presence-changed",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tp_marshal_VOID__UINT_STRING_STRING,
+      G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
+
+  signals[REMOVED] = g_signal_new ("removed",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT;
   tp_account_init_known_interfaces ();
@@ -208,11 +823,577 @@ tp_account_new (TpDBusDaemon *bus_daemon,
     }
 
   self = TP_ACCOUNT (g_object_new (TP_TYPE_ACCOUNT,
-        "dbus-daemon", bus_daemon,
-        "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
-        "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
-        "object-path", object_path,
-        NULL));
+          "dbus-daemon", bus_daemon,
+          "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
+          "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
+          "object-path", object_path,
+          NULL));
 
   return self;
+}
+
+static void
+_tp_account_got_all_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpAccount *self = TP_ACCOUNT (weak_object);
+
+  DEBUG ("Got whole set of properties for %s",
+      tp_account_get_unique_name (self));
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get the initial set of account properties: %s",
+          error->message);
+      return;
+    }
+
+  _tp_account_update (self, properties);
+}
+
+gboolean
+tp_account_is_just_connected (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+  GTimeVal val;
+
+  if (priv->connection_status != TP_CONNECTION_STATUS_CONNECTED)
+    return FALSE;
+
+  g_get_current_time (&val);
+
+  return (val.tv_sec - priv->connect_time) < 10;
+}
+
+/**
+ * tp_account_get_connection:
+ * @account: a #TpAccount
+ *
+ * Get the connection of the account, or NULL if account is offline or the
+ * connection is not yet ready. This function does not return a new ref.
+ *
+ * Returns: the connection of the account.
+ **/
+TpConnection *
+tp_account_get_connection (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  if (priv->connection != NULL &&
+      tp_connection_is_ready (priv->connection))
+    return priv->connection;
+
+  return NULL;
+}
+
+/**
+ * tp_account_get_connection_for_path:
+ * @account: a #TpAccount
+ * @patch: the path to connection object for #TpAccount
+ *
+ * Get the connection of the account on path. This function does not return a
+ * new ref. It is not guaranteed that the returned connection object is ready
+ *
+ * Returns: the connection of the account.
+ **/
+TpConnection *
+tp_account_get_connection_for_path (TpAccount *account,
+    const gchar *path)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  /* double-check that the object path is valid */
+  if (!tp_dbus_check_valid_object_path (path, NULL))
+    return NULL;
+
+  /* Should be a full object path, not the special "/" value */
+  if (strlen (path) == 1)
+    return NULL;
+
+  _tp_account_set_connection (account, path);
+
+  return priv->connection;
+}
+
+/**
+ * tp_account_get_unique_name:
+ * @account: a #TpAccount
+ *
+ * Returns: the unique name of the account.
+ **/
+const gchar *
+tp_account_get_unique_name (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->unique_name;
+}
+
+/**
+ * tp_account_get_display_name:
+ * @account: a #TpAccount
+ *
+ * Returns: the display name of the account.
+ **/
+const gchar *
+tp_account_get_display_name (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->display_name;
+}
+
+gboolean
+tp_account_is_valid (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->valid;
+}
+
+const gchar *
+tp_account_get_connection_manager (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->cm_name;
+}
+
+const gchar *
+tp_account_get_protocol (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->proto_name;
+}
+
+const gchar *
+tp_account_get_icon_name (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->icon_name;
+}
+
+const GHashTable *
+tp_account_get_parameters (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->parameters;
+}
+
+gboolean
+tp_account_is_enabled (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->enabled;
+}
+
+gboolean
+tp_account_is_ready (TpAccount *account)
+{
+  TpAccountPrivate *priv = account->priv;
+
+  return priv->ready;
+}
+
+#if 0
+static void
+_tp_account_enabled_set_cb (TpProxy *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, (GError *) error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+#endif
+
+gboolean
+tp_account_set_enabled_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_set_enabled_finish))
+    return FALSE;
+
+  return TRUE;
+}
+
+void
+tp_account_set_enabled_async (TpAccount *account,
+    gboolean enabled,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  /* Disabled for now due to lack of account manager */
+
+#if 0
+  TpAccountPrivate *priv = account->priv;
+  TpAccountManager *acc_manager;
+  GValue value = {0, };
+  GSimpleAsyncResult *result;
+  char *status = NULL;
+  char *status_message = NULL;
+  TpConnectionPresenceType presence;
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_set_enabled_finish);
+
+  if (priv->enabled == enabled)
+    {
+      g_simple_async_result_complete_in_idle (result);
+      return;
+    }
+
+  if (enabled)
+    {
+      acc_manager = tp_account_manager_dup_singleton ();
+      presence = tp_account_manager_get_requested_global_presence (
+          acc_manager, &status, &status_message);
+
+      if (presence != TP_CONNECTION_PRESENCE_TYPE_UNSET)
+        tp_account_request_presence (account, presence, status,
+            status_message);
+
+      g_object_unref (acc_manager);
+      g_free (status);
+      g_free (status_message);
+    }
+
+  g_value_init (&value, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&value, enabled);
+
+  tp_cli_dbus_properties_call_set (TP_PROXY (account),
+      -1, TP_IFACE_ACCOUNT, "Enabled", &value,
+      _tp_account_enabled_set_cb, result, NULL, G_OBJECT (account));
+#endif
+}
+
+static void
+_tp_account_reconnected_cb (TpAccount *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, (GError *) error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+gboolean
+tp_account_reconnect_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_reconnect_finish))
+    return FALSE;
+
+  return TRUE;
+}
+
+void
+tp_account_reconnect_async (TpAccount *account,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_reconnect_finish);
+
+  tp_cli_account_call_reconnect (account, -1, _tp_account_reconnected_cb,
+      result, NULL, G_OBJECT (account));
+}
+
+static void
+_tp_account_requested_presence_cb (TpProxy *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error)
+    DEBUG ("Failed to set the requested presence: %s", error->message);
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, (GError *) error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+gboolean
+tp_account_request_presence_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_request_presence_finish))
+    return FALSE;
+
+  return TRUE;
+}
+
+void
+tp_account_request_presence_async (TpAccount *account,
+    TpConnectionPresenceType type,
+    const gchar *status,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GValue value = {0, };
+  GValueArray *arr;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_request_presence_finish);
+
+  g_value_init (&value, TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+  g_value_take_boxed (&value, dbus_g_type_specialized_construct (
+          TP_STRUCT_TYPE_SIMPLE_PRESENCE));
+  arr = (GValueArray *) g_value_get_boxed (&value);
+
+  g_value_set_uint (arr->values, type);
+  g_value_set_static_string (arr->values + 1, status);
+  g_value_set_static_string (arr->values + 2, message);
+
+  tp_cli_dbus_properties_call_set (TP_PROXY (account), -1,
+      TP_IFACE_ACCOUNT, "RequestedPresence", &value,
+      _tp_account_requested_presence_cb, result, NULL, G_OBJECT (account));
+
+  g_value_unset (&value);
+}
+
+static void
+_tp_account_updated_cb (TpAccount *proxy,
+    const gchar **reconnect_required,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, (GError *) error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (G_OBJECT (result));
+}
+
+void
+tp_account_update_settings_async (TpAccount *account,
+    GHashTable *parameters,
+    const gchar **unset_parameters,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_update_settings_finish);
+
+  tp_cli_account_call_update_parameters (account, -1, parameters,
+      unset_parameters, _tp_account_updated_cb, result,
+      NULL, G_OBJECT (account));
+}
+
+gboolean
+tp_account_update_settings_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+      error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+    G_OBJECT (account), tp_account_update_settings_finish), FALSE);
+
+  return TRUE;
+}
+
+static void
+_tp_account_display_name_set_cb (TpProxy *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, (GError *) error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+void
+tp_account_set_display_name_async (TpAccount *account,
+    const char *display_name,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GValue value = {0, };
+
+  if (display_name == NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (account),
+          callback, user_data, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
+          "Can't set an empty display name");
+      return;
+    }
+
+  result = g_simple_async_result_new (G_OBJECT (account), callback,
+      user_data, tp_account_set_display_name_finish);
+
+  g_value_init (&value, G_TYPE_STRING);
+  g_value_set_string (&value, display_name);
+
+  tp_cli_dbus_properties_call_set (account, -1, TP_IFACE_ACCOUNT,
+      "DisplayName", &value, _tp_account_display_name_set_cb, result, NULL,
+      G_OBJECT (account));
+}
+
+gboolean
+tp_account_set_display_name_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_set_display_name_finish))
+    return FALSE;
+
+  return TRUE;
+}
+
+static void
+_tp_account_icon_name_set_cb (TpProxy *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, (GError *) error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+void
+tp_account_set_icon_name_async (TpAccount *account,
+    const char *icon_name,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GValue value = {0, };
+  const char *icon_name_set;
+
+  if (icon_name == NULL)
+    /* settings an empty icon name is allowed */
+    icon_name_set = "";
+  else
+    icon_name_set = icon_name;
+
+  result = g_simple_async_result_new (G_OBJECT (account), callback,
+      user_data, tp_account_set_icon_name_finish);
+
+  g_value_init (&value, G_TYPE_STRING);
+  g_value_set_string (&value, icon_name_set);
+
+  tp_cli_dbus_properties_call_set (account, -1, TP_IFACE_ACCOUNT,
+      "Icon", &value, _tp_account_icon_name_set_cb, result, NULL,
+      G_OBJECT (account));
+}
+
+gboolean
+tp_account_set_icon_name_finish (TpAccount *account,
+    GAsyncResult *result, GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_set_icon_name_finish))
+    return FALSE;
+
+  return TRUE;
+}
+
+static void
+_tp_account_remove_cb (TpAccount *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, (GError *) error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (G_OBJECT (result));
+}
+
+void
+tp_account_remove_async (TpAccount *account,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_remove_finish);
+
+  tp_cli_account_call_remove (account, -1, _tp_account_remove_cb, result, NULL,
+      G_OBJECT (account));
+}
+
+gboolean
+tp_account_remove_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (account), tp_account_remove_finish), FALSE);
+
+  return TRUE;
+}
+
+void
+tp_account_refresh_properties (TpAccount *account)
+{
+  tp_cli_dbus_properties_call_get_all (account, -1, TP_IFACE_ACCOUNT,
+      _tp_account_got_all_cb, NULL, NULL, G_OBJECT (account));
 }

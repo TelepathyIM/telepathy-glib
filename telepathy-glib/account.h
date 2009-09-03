@@ -22,6 +22,9 @@
 #ifndef TP_ACCOUNT_H
 #define TP_ACCOUNT_H
 
+#include <gio/gio.h>
+
+#include <telepathy-glib/connection.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/dbus.h>
 
@@ -67,6 +70,79 @@ TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
     GError **error);
 
 void tp_account_init_known_interfaces (void);
+
+gboolean tp_account_is_just_connected (TpAccount *account);
+
+TpConnection *tp_account_get_connection (TpAccount *account);
+
+TpConnection *tp_account_get_connection_for_path (TpAccount *account,
+    const gchar *path);
+
+const gchar *tp_account_get_unique_name (TpAccount *account);
+
+const gchar *tp_account_get_display_name (TpAccount *account);
+
+const gchar *tp_account_get_connection_manager (TpAccount *account);
+
+const gchar *tp_account_get_protocol (TpAccount *account);
+
+const gchar *tp_account_get_icon_name (TpAccount *account);
+
+void tp_account_set_enabled_async (TpAccount *account,
+    gboolean enabled, GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_set_enabled_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
+void tp_account_reconnect_async (TpAccount *account,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_reconnect_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
+gboolean tp_account_is_enabled (TpAccount *account);
+
+gboolean tp_account_is_valid (TpAccount *account);
+
+gboolean tp_account_is_ready (TpAccount *account);
+
+void tp_account_update_settings_async (TpAccount *account,
+    GHashTable *parameters, const gchar **unset_parameters,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_update_settings_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
+void tp_account_remove_async (TpAccount *account,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_remove_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
+void tp_account_set_display_name_async (TpAccount *account,
+    const gchar *display_name, GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_set_display_name_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
+void tp_account_set_icon_name_async (TpAccount *account,
+    const gchar *icon_name, GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_set_icon_name_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
+void tp_account_request_presence_async (TpAccount *account,
+    TpConnectionPresenceType type, const gchar *status, const gchar *message,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_request_presence_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
+const GHashTable *tp_account_get_parameters (TpAccount *account);
+
+void tp_account_refresh_properties (TpAccount *account);
 
 G_END_DECLS
 
