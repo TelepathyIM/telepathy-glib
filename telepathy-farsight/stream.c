@@ -1140,7 +1140,7 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
           g_value_get_uint (g_value_array_get_nth (transport, 0)), /*component*/
           type, proto,
 
-          g_value_dup_string (g_value_array_get_nth (transport, 1)), /* ip */
+          g_value_get_string (g_value_array_get_nth (transport, 1)), /* ip */
           g_value_get_uint (g_value_array_get_nth (transport, 2))); /* port */
 
       fs_candidate->priority = (gint)
