@@ -134,7 +134,16 @@ enum {
   PROP_CONNECTION,
   PROP_UNIQUE_NAME,
   PROP_DBUS_DAEMON,
-  PROP_DISPLAY_NAME
+  PROP_DISPLAY_NAME,
+  PROP_CONNECTION_MANAGER,
+  PROP_PROTOCOL,
+  PROP_ICON_NAME,
+  PROP_CONNECT_AUTOMATICALLY,
+  PROP_HAS_BEEN_ONLINE,
+  PROP_VALID,
+  PROP_REQUESTED_PRESENCE,
+  PROP_REQUESTED_STATUS,
+  PROP_REQUESTED_STATUS_MESSAGE
 };
 
 static void
@@ -622,6 +631,33 @@ _tp_account_get_property (GObject *object,
     case PROP_DBUS_DAEMON:
       g_value_set_object (value, self->priv->dbus);
       break;
+    case PROP_CONNECTION_MANAGER:
+      g_value_set_string (value, self->priv->cm_name);
+      break;
+    case PROP_PROTOCOL:
+      g_value_set_string (value, self->priv->proto_name);
+      break;
+    case PROP_ICON_NAME:
+      g_value_set_string (value, self->priv->icon_name);
+      break;
+    case PROP_CONNECT_AUTOMATICALLY:
+      g_value_set_boolean (value, self->priv->connect_automatically);
+      break;
+    case PROP_HAS_BEEN_ONLINE:
+      g_value_set_boolean (value, self->priv->has_been_online);
+      break;
+    case PROP_VALID:
+      g_value_set_boolean (value, self->priv->valid);
+      break;
+    case PROP_REQUESTED_PRESENCE:
+      g_value_set_uint (value, self->priv->requested_presence);
+      break;
+    case PROP_REQUESTED_STATUS:
+      g_value_set_string (value, self->priv->requested_status);
+      break;
+    case PROP_REQUESTED_STATUS_MESSAGE:
+      g_value_set_string (value, self->priv->requested_message);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -818,6 +854,118 @@ tp_account_class_init (TpAccountClass *klass)
       g_param_spec_string ("display-name",
           "DisplayName",
           "The accounts display name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:connection-manager:
+   *
+   * The account's connection manager name.
+   */
+  g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
+      g_param_spec_string ("connection-manager",
+          "Connection manager",
+          "The account's connection manager name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:protocol:
+   *
+   * The account's protocol name.
+   */
+  g_object_class_install_property (object_class, PROP_PROTOCOL,
+      g_param_spec_string ("protocol",
+          "Protocol",
+          "The account's protocol name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:icon-name:
+   *
+   * The account's icon name. To change this propery, use
+   * tp_account_set_icon_name_async().
+   */
+  g_object_class_install_property (object_class, PROP_ICON_NAME,
+      g_param_spec_string ("icon-name",
+          "Icon",
+          "The account's icon name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:connect-automatically:
+   *
+   * Whether the account should connect automatically or not. To change this
+   * property, use tp_account_set_connect_automatically_async().
+   */
+  g_object_class_install_property (object_class, PROP_CONNECT_AUTOMATICALLY,
+      g_param_spec_boolean ("connect-automatically",
+          "ConnectAutomatically",
+          "Whether this account should connect automatically or not",
+          FALSE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:has-been-online:
+   *
+   * Whether this account has been online or not.
+   */
+  g_object_class_install_property (object_class, PROP_HAS_BEEN_ONLINE,
+      g_param_spec_boolean ("has-been-online",
+          "HasBeenOnline",
+          "Whether this account has been online or not",
+          FALSE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:valid:
+   *
+   * Whether this account is valid.
+   */
+  g_object_class_install_property (object_class, PROP_VALID,
+      g_param_spec_boolean ("valid",
+          "Valid",
+          "Whether this account is valid",
+          FALSE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:requested-presence:
+   *
+   * The account's requested presence type.
+   */
+  g_object_class_install_property (object_class, PROP_REQUESTED_PRESENCE,
+      g_param_spec_uint ("requested-presence",
+          "RequestedPresence",
+          "The account's requested presence type",
+          0,
+          NUM_TP_CONNECTION_PRESENCE_TYPES,
+          TP_CONNECTION_PRESENCE_TYPE_UNSET,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:requested-status:
+   *
+   * The requested Status string of the account.
+   */
+  g_object_class_install_property (object_class, PROP_REQUESTED_STATUS,
+      g_param_spec_string ("requested-status",
+          "RequestedStatus",
+          "The account's requested status string",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount: requested-status-message:
+   *
+   * The requested status message message of the account.
+   */
+  g_object_class_install_property (object_class, PROP_REQUESTED_STATUS_MESSAGE,
+      g_param_spec_string ("requested-status-message",
+          "RequestedStatusMessage",
+          "The requested Status message string of the account",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
