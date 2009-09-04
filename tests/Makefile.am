@@ -10,7 +10,8 @@ noinst_PROGRAMS = \
     test-heap \
     test-internal-debug \
     test-intset \
-    test-util
+    test-util \
+    test-debug-domain
 
 TESTS = $(noinst_PROGRAMS) \
     all-errors-documented.py
@@ -54,10 +55,16 @@ test_intset_SOURCES = \
 test_availability_cmp_SOURCES = \
     availability-cmp.c
 
-# this needs to link against the static convenience library so that
-# _tp_debug is still visible
+test_debug_domain_SOURCES = \
+    debug-domain.c
+
 test_internal_debug_SOURCES = \
     internal-debug.c
+
+# this needs to link against the static convenience library so that
+# _tp_debug is still visible
+test_debug_domain_LDADD = \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la
 test_internal_debug_LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la
 
