@@ -404,30 +404,45 @@ _tp_account_update (TpAccount *account,
 
   if (g_hash_table_lookup (properties, "DisplayName") != NULL)
     {
-      g_free (priv->display_name);
+      gchar *old = priv->display_name;
+
       priv->display_name =
         g_strdup (tp_asv_get_string (properties, "DisplayName"));
-      g_object_notify (G_OBJECT (account), "display-name");
+
+      if (tp_strdiff (old, priv->display_name))
+        g_object_notify (G_OBJECT (account), "display-name");
+
+      g_free (old);
     }
 
   if (g_hash_table_lookup (properties, "Nickname") != NULL)
     {
-      g_free (priv->nickname);
+      gchar *old = priv->nickname;
+
       priv->nickname = g_strdup (tp_asv_get_string (properties, "Nickname"));
+
+      if (tp_strdiff (old, priv->nickname))
+        g_object_notify (G_OBJECT (account), "nickname");
+
+      g_free (old);
     }
 
   if (g_hash_table_lookup (properties, "Icon") != NULL)
     {
       const gchar *icon_name;
+      gchar *old = priv->icon_name;
 
       icon_name = tp_asv_get_string (properties, "Icon");
-
-      g_free (priv->icon_name);
 
       if (icon_name == NULL || icon_name[0] == '\0')
         priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
       else
         priv->icon_name = g_strdup (icon_name);
+
+      if (tp_strdiff (old, priv->icon_name))
+        g_object_notify (G_OBJECT (account), "icon-name");
+
+      g_free (old);
     }
 
   if (g_hash_table_lookup (properties, "Enabled") != NULL)
@@ -441,7 +456,14 @@ _tp_account_update (TpAccount *account,
     }
 
   if (g_hash_table_lookup (properties, "Valid") != NULL)
-    priv->valid = tp_asv_get_boolean (properties, "Valid", NULL);
+    {
+      gboolean old = priv->valid;
+
+      priv->valid = tp_asv_get_boolean (properties, "Valid", NULL);
+
+      if (old != priv->valid)
+        g_object_notify (G_OBJECT (account), "valid");
+    }
 
   if (g_hash_table_lookup (properties, "Parameters") != NULL)
     {
@@ -499,14 +521,24 @@ _tp_account_update (TpAccount *account,
 
   if (g_hash_table_lookup (properties, "ConnectAutomatically") != NULL)
     {
+      gboolean old = priv->connect_automatically;
+
       priv->connect_automatically =
         tp_asv_get_boolean (properties, "ConnectAutomatically", NULL);
+
+      if (old != priv->connect_automatically)
+        g_object_notify (G_OBJECT (account), "connect-automatically");
     }
 
   if (g_hash_table_lookup (properties, "HasBeenOnline") != NULL)
     {
+      gboolean old = priv->has_been_online;
+
       priv->has_been_online =
         tp_asv_get_boolean (properties, "HasBeenOnline", NULL);
+
+      if (old != priv->has_been_online)
+        g_object_notify (G_OBJECT (account), "has-been-online");
     }
 }
 
