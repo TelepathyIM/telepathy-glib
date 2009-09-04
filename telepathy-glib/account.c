@@ -1803,7 +1803,7 @@ tp_account_get_connection_status_reason (TpAccount *account)
 }
 
 /**
- * tp_account_get_presence_type:
+ * tp_account_get_presence:
  * @account: a #TpAccount
  *
  * Gets the type from the CurrentPresence parameter on @account.
@@ -1811,13 +1811,13 @@ tp_account_get_connection_status_reason (TpAccount *account)
  * Returns: the type from the CurrentPresence parameter on @account
  */
 TpConnectionPresenceType
-tp_account_get_presence_type (TpAccount *account)
+tp_account_get_presence (TpAccount *account)
 {
   return account->priv->presence;
 }
 
 /**
- * tp_account_get_presence_status:
+ * tp_account_get_status:
  * @account: a #TpAccount
  *
  * Gets the status from the CurrentPresence parameter on @account.
@@ -1825,13 +1825,13 @@ tp_account_get_presence_type (TpAccount *account)
  * Returns: the status from the CurrentPresence parameter on @account
  */
 const gchar *
-tp_account_get_presence_status (TpAccount *account)
+tp_account_get_status (TpAccount *account)
 {
   return account->priv->status;
 }
 
 /**
- * tp_account_get_presence_message:
+ * tp_account_get_status_message:
  * @account: a #TpAccount
  *
  * Gets the message from the CurrentPresence parameter on @account.
@@ -1839,13 +1839,13 @@ tp_account_get_presence_status (TpAccount *account)
  * Returns: the message from the CurrentPresence parameter on @account
  */
 const gchar *
-tp_account_get_presence_message (TpAccount *account)
+tp_account_get_status_message (TpAccount *account)
 {
   return account->priv->message;
 }
 
 /**
- * tp_account_get_requested_presence_type:
+ * tp_account_get_requested_presence:
  * @account: a #TpAccount
  *
  * Gets the presence from the RequestedPresence parameter on @account.
@@ -1853,13 +1853,13 @@ tp_account_get_presence_message (TpAccount *account)
  * Returns: the presence from the RequestedPresence parameter on @account
  */
 TpConnectionPresenceType
-tp_account_get_requested_presence_type (TpAccount *account)
+tp_account_get_requested_presence (TpAccount *account)
 {
   return account->priv->requested_presence;
 }
 
 /**
- * tp_account_get_requested_presence_status:
+ * tp_account_get_requested_status:
  * @account: a #TpAccount
  *
  * Gets the status from the RequestedPresence parameter on @account.
@@ -1867,13 +1867,13 @@ tp_account_get_requested_presence_type (TpAccount *account)
  * Returns: the status from the RequestedPresence parameter on @account
  */
 const gchar *
-tp_account_get_requested_presence_status (TpAccount *account)
+tp_account_get_requested_status (TpAccount *account)
 {
   return account->priv->requested_status;
 }
 
 /**
- * tp_account_get_requested_presence_message:
+ * tp_account_get_requested_status_message:
  * @account: a #TpAccount
  *
  * Gets the message from the RequestedPresence parameter on @account.
@@ -1881,7 +1881,7 @@ tp_account_get_requested_presence_status (TpAccount *account)
  * Returns: the message from the RequestedPresence parameter on @account
  */
 const gchar *
-tp_account_get_requested_presence_message (TpAccount *account)
+tp_account_get_requested_status_message (TpAccount *account)
 {
   return account->priv->requested_message;
 }
