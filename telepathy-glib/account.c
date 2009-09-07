@@ -105,7 +105,6 @@ struct _TpAccountPrivate {
   gchar *icon_name;
 
   gchar *display_name;
-  TpDBusDaemon *dbus;
 
   GHashTable *parameters;
 };
