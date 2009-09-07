@@ -81,8 +81,6 @@ TpAccount *tp_account_manager_get_account (TpAccountManager *manager,
 
 GList *tp_account_manager_get_accounts (TpAccountManager *manager);
 
-void tp_account_manager_remove (TpAccountManager *manager, TpAccount *account);
-
 void tp_account_manager_request_global_presence (TpAccountManager *manager,
     TpConnectionPresenceType type, const gchar *status, const gchar *message);
 
