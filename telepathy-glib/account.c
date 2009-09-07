@@ -103,7 +103,6 @@ struct _TpAccountPrivate {
   gchar *proto_name;
   gchar *icon_name;
 
-  gchar *unique_name;
   gchar *display_name;
   TpDBusDaemon *dbus;
 
@@ -132,8 +131,6 @@ enum {
   PROP_CONNECTION_STATUS,
   PROP_CONNECTION_STATUS_REASON,
   PROP_CONNECTION,
-  PROP_UNIQUE_NAME,
-  PROP_DBUS_DAEMON,
   PROP_DISPLAY_NAME,
   PROP_CONNECTION_MANAGER,
   PROP_PROTOCOL,
@@ -210,7 +207,7 @@ _tp_account_unescape_protocol (const gchar *protocol,
 }
 
 static gboolean
-_tp_account_parse_unique_name (const gchar *bus_name,
+_tp_account_parse_object_path (const gchar *object_path,
     gchar **protocol,
     gchar **manager)
 {
@@ -218,9 +215,9 @@ _tp_account_parse_unique_name (const gchar *bus_name,
   const gchar *cm, *cm_end;
 
   g_return_val_if_fail (
-      g_str_has_prefix (bus_name, TP_ACCOUNT_OBJECT_PATH_BASE), FALSE);
+      g_str_has_prefix (object_path, TP_ACCOUNT_OBJECT_PATH_BASE), FALSE);
 
-  cm = bus_name + strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
+  cm = object_path + strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
 
   for (cm_end = cm; *cm_end != '/' && *cm_end != '\0'; cm_end++)
     /* pass */;
@@ -281,7 +278,7 @@ _tp_account_connection_invalidated_cb (TpProxy *self,
     return;
 
   DEBUG ("(%s) Connection invalidated",
-      tp_account_get_unique_name (account));
+      tp_proxy_get_object_path (self));
 
   g_assert (priv->connection == TP_CONNECTION (self));
 
@@ -300,13 +297,13 @@ _tp_account_connection_ready_cb (TpConnection *connection,
   if (error != NULL)
     {
       DEBUG ("(%s) Connection failed to become ready: %s",
-          tp_account_get_unique_name (account), error->message);
+          tp_proxy_get_object_path (account), error->message);
       _tp_account_free_connection (account);
     }
   else
     {
       DEBUG ("(%s) Connection ready",
-          tp_account_get_unique_name (account));
+          tp_proxy_get_object_path (account));
       g_object_notify (G_OBJECT (account), "connection");
     }
 }
@@ -331,7 +328,8 @@ _tp_account_set_connection (TpAccount *account,
   if (tp_strdiff ("/", path))
     {
       GError *error = NULL;
-      priv->connection = tp_connection_new (priv->dbus, NULL, path, &error);
+      priv->connection = tp_connection_new (tp_proxy_get_dbus_daemon (account),
+          NULL, path, &error);
 
       if (priv->connection == NULL)
         {
@@ -345,7 +343,8 @@ _tp_account_set_connection (TpAccount *account,
               "invalidated",
               G_CALLBACK (_tp_account_connection_invalidated_cb), account);
 
-          DEBUG ("Readying connection for %s", priv->unique_name);
+          DEBUG ("Readying connection for %s",
+              tp_proxy_get_object_path (account));
           /* notify a change in the connection property when it's ready */
           tp_connection_call_when_ready (priv->connection,
               _tp_account_connection_ready_cb, account);
@@ -580,7 +579,7 @@ _tp_account_constructed (GObject *object)
       g_error_free (error);
     }
 
-  _tp_account_parse_unique_name (priv->unique_name,
+  _tp_account_parse_object_path (tp_proxy_get_object_path (self),
       &(priv->proto_name), &(priv->cm_name));
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
@@ -604,12 +603,6 @@ _tp_account_set_property (GObject *object,
     case PROP_ENABLED:
       tp_account_set_enabled_async (self,
           g_value_get_boolean (value), NULL, NULL);
-      break;
-    case PROP_UNIQUE_NAME:
-      self->priv->unique_name = g_value_dup_string (value);
-      break;
-    case PROP_DBUS_DAEMON:
-      self->priv->dbus = g_value_get_object (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -652,16 +645,9 @@ _tp_account_get_property (GObject *object,
       g_value_set_object (value,
           tp_account_get_connection (self));
       break;
-    case PROP_UNIQUE_NAME:
-      g_value_set_string (value,
-          tp_account_get_unique_name (self));
-      break;
     case PROP_DISPLAY_NAME:
       g_value_set_string (value,
           tp_account_get_display_name (self));
-      break;
-    case PROP_DBUS_DAEMON:
-      g_value_set_object (value, self->priv->dbus);
       break;
     case PROP_CONNECTION_MANAGER:
       g_value_set_string (value, self->priv->cm_name);
@@ -852,30 +838,6 @@ tp_account_class_init (TpAccountClass *klass)
           "The accounts connection",
           TP_TYPE_CONNECTION,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
-
-  /**
-   * TpAccount:unique-name:
-   *
-   * The account's unique name.
-   */
-  g_object_class_install_property (object_class, PROP_UNIQUE_NAME,
-      g_param_spec_string ("unique-name",
-          "UniqueName",
-          "The accounts unique name",
-          NULL,
-          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-  /**
-   * TpAccount:dbus-daemon:
-   *
-   * The #TpDBusDaemon on which this account exists.
-   */
-  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
-      g_param_spec_object ("dbus-daemon",
-          "dbus-daemon",
-          "The Tp Dbus daemon on which this account exists",
-          TP_TYPE_DBUS_DAEMON,
-          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   /**
    * TpAccount:display-name:
@@ -1134,7 +1096,7 @@ _tp_account_got_all_cb (TpProxy *proxy,
   TpAccount *self = TP_ACCOUNT (weak_object);
 
   DEBUG ("Got whole set of properties for %s",
-      tp_account_get_unique_name (self));
+      tp_proxy_get_object_path (proxy));
 
   if (error != NULL)
     {
@@ -1218,22 +1180,6 @@ tp_account_get_connection_for_path (TpAccount *account,
   _tp_account_set_connection (account, path);
 
   return priv->connection;
-}
-
-/**
- * tp_account_get_unique_name:
- * @account: a #TpAccount
- *
- * <!-- -->
- *
- * Returns: the unique name of @account
- **/
-const gchar *
-tp_account_get_unique_name (TpAccount *account)
-{
-  TpAccountPrivate *priv = account->priv;
-
-  return priv->unique_name;
 }
 
 /**

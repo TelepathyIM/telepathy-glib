@@ -78,8 +78,6 @@ TpConnection *tp_account_get_connection (TpAccount *account);
 TpConnection *tp_account_get_connection_for_path (TpAccount *account,
     const gchar *path);
 
-const gchar *tp_account_get_unique_name (TpAccount *account);
-
 const gchar *tp_account_get_display_name (TpAccount *account);
 
 const gchar *tp_account_get_connection_manager (TpAccount *account);
