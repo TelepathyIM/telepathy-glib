@@ -74,10 +74,10 @@ TpAccount *tp_account_manager_get_account_for_connection (
     TpAccountManager *manager, TpConnection *connection);
 
 TpAccount *tp_account_manager_ensure_account (TpAccountManager *manager,
-    const gchar *unique_name);
+    const gchar *path);
 
 TpAccount *tp_account_manager_get_account (TpAccountManager *manager,
-    const gchar *unique_name);
+    const gchar *path);
 
 GList *tp_account_manager_get_accounts (TpAccountManager *manager);
 
@@ -96,7 +96,7 @@ void tp_account_manager_create_account_async (TpAccountManager *manager,
     GAsyncReadyCallback callback, gpointer user_data);
 
 TpAccount * tp_account_manager_create_account_finish (
-    TpAccountManager *settings, GAsyncResult *result, GError **error);
+    TpAccountManager *manager, GAsyncResult *result, GError **error);
 
 G_END_DECLS
 

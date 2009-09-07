@@ -52,14 +52,6 @@
  * their configuration, places accounts online on request, and manipulates
  * accounts' presence, nicknames and avatars.
  *
- * This proxy is usable but incomplete: GObject signals and accessors for the
- * D-Bus properties will be added in a later version of telepathy-glib, along
- * with a mechanism similar to tp_connection_call_when_ready().
- *
- * Until suitable convenience methods are implemented, the generic
- * tp_cli_dbus_properties_call_get_all() method can be used to get the D-Bus
- * properties.
- *
  * Since: 0.7.32
  */
 
@@ -442,6 +434,14 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT_MANAGER;
   tp_account_manager_init_known_interfaces ();
 
+  /**
+   * TpAccountManager:ready:
+   *
+   * Initially FALSE; changes to TRUE when every account in the manager is
+   * individually ready.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   g_object_class_install_property (object_class, PROP_READY,
       g_param_spec_boolean ("ready",
           "Ready",
@@ -449,6 +449,15 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
           FALSE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
+  /**
+   * TpAccountManager::account-created:
+   * @manager: a #TpAccountManager
+   * @account: a #TpAccount
+   *
+   * Emitted when an account is created on @manager.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   signals[ACCOUNT_CREATED] = g_signal_new ("account-created",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
@@ -458,6 +467,15 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_NONE,
       1, TP_TYPE_ACCOUNT);
 
+  /**
+   * TpAccountManager::account-deleted:
+   * @manager: a #TpAccountManager
+   * @account: a #TpAccount
+   *
+   * Emitted when an account is deleted from @manager.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   signals[ACCOUNT_DELETED] = g_signal_new ("account-deleted",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
@@ -467,6 +485,15 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_NONE,
       1, TP_TYPE_ACCOUNT);
 
+  /**
+   * TpAccountManager::account-enabled:
+   * @manager: a #TpAccountManager
+   * @account: a #TpAccount
+   *
+   * Emitted when an account from @manager is enabled.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   signals[ACCOUNT_ENABLED] = g_signal_new ("account-enabled",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
@@ -476,6 +503,15 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_NONE,
       1, TP_TYPE_ACCOUNT);
 
+  /**
+   * TpAccountManager::account-disabled.
+   * @manager: a #TpAccountManager
+   * @account: a #TpAccount
+   *
+   * Emitted when an account from @manager is disabled.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   signals[ACCOUNT_DISABLED] = g_signal_new ("account-disabled",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
@@ -485,6 +521,15 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_NONE,
       1, TP_TYPE_ACCOUNT);
 
+  /**
+   * TpAccountManager::account-changed:
+   * @manager: a #TpAccountManager
+   * @account: a #TpAccount
+   *
+   * Emitted when an account @manager is changed.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   signals[ACCOUNT_CHANGED] = g_signal_new ("account-changed",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
@@ -494,6 +539,18 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       G_TYPE_NONE,
       1, TP_TYPE_ACCOUNT);
 
+  /**
+   * TpAccountManager::account-connection-changed:
+   * @manager: a #TpAccountManager
+   * @account: a #TpAccount
+   * @reason: the change reason
+   * @actual: the actual connection type
+   * @previous: the previous connection type
+   *
+   * Emitted when the connection of an account in @manager changes.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   signals[ACCOUNT_CONNECTION_CHANGED] =
     g_signal_new ("account-connection-changed",
         G_TYPE_FROM_CLASS (klass),
@@ -507,6 +564,18 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
         G_TYPE_UINT,  /* actual connection */
         G_TYPE_UINT); /* previous connection */
 
+  /**
+   * TpAccountManager::global-presence-changed:
+   * @manager: a #TpAccountManager
+   * @account: a #TpAccount
+   * @presence: new presence type
+   * @status: new status
+   * @message: new status message
+   *
+   * Emitted when the global presence on @manager changes.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   signals[GLOBAL_PRESENCE_CHANGED] =
     g_signal_new ("global-presence-changed",
         G_TYPE_FROM_CLASS (klass),
@@ -519,6 +588,15 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
         G_TYPE_STRING,  /* status */
         G_TYPE_STRING); /* stauts message*/
 
+  /**
+   * TpAccountManager::new-connection
+   * @manager: a #TpAccountManager
+   * @account: a #TpConnection
+   *
+   * Emitted when an account in @manager makes a new connection.
+   *
+   * Since: 0.7.UNRELEASED
+   */
   signals[NEW_CONNECTION] = g_signal_new ("new-connection",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
@@ -566,7 +644,12 @@ tp_account_manager_init_known_interfaces (void)
  *
  * Convenience function to create a new account manager proxy.
  *
- * Returns: a new reference to an account manager proxy
+ * The returned #TpAccountManager is cached; the same #TpAccountManager object
+ * will be returned by this function repeatedly, as long as at least one
+ * reference exists.
+ *
+ * Returns: a reference to the cached #TpAccountManager object, or a new
+ *          instance
  */
 TpAccountManager *
 tp_account_manager_new (TpDBusDaemon *bus_daemon)
@@ -775,6 +858,20 @@ _tp_account_manager_account_ready_cb (GObject *object,
   _tp_account_manager_check_ready (manager);
 }
 
+/**
+ * tp_account_manager_get_account:
+ * @manager: a #TpAccountManager
+ * @path: the object path for an account
+ *
+ * Lookup an #TpAccount in the account manager @manager. If the desired account
+ * has already been ensured then the same object will be returned, otherwise
+ * %NULL will be returned.
+ *
+ * Returns: the desired #TpAccount, or %NULL if no such account has been
+ *          ensured
+ *
+ * Since: 0.7.UNRELEASED
+ */
 TpAccount *
 tp_account_manager_get_account (TpAccountManager *manager,
     const gchar *path)
@@ -784,6 +881,22 @@ tp_account_manager_get_account (TpAccountManager *manager,
   return g_hash_table_lookup (priv->accounts, path);
 }
 
+/**
+ * tp_account_manager_ensure_account:
+ * @manager: a #TpAccountManager
+ * @path: the object path for an account
+ *
+ * Lookup an account in the account manager *manager. If the desired account
+ * has already been ensured then the same object will be returned, otherwise
+ * %NULL will be returned.
+ *
+ * The caller must keep a ref to the returned object using g_object_ref() if
+ * it is to be kept.
+ *
+ * Returns: a new #TpAccount at @path
+ *
+ * Since: 0.7.UNRELEASED
+ */
 TpAccount *
 tp_account_manager_ensure_account (TpAccountManager *manager,
     const gchar *path)
@@ -804,6 +917,17 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
   return account;
 }
 
+/**
+ * tp_account_manager_is_ready:
+ * @manager: a #TpAccountManager
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the @manager and all its accounts are ready, otherwise
+ *          %FALSE
+ *
+ * Since: 0.7.UNRELEASED
+ */
 gboolean
 tp_account_manager_is_ready (TpAccountManager *manager)
 {
@@ -812,6 +936,18 @@ tp_account_manager_is_ready (TpAccountManager *manager)
   return priv->ready;
 }
 
+/**
+ * tp_account_manager_get_account_for_connection:
+ * @manager: a #TpAccountManager
+ * @connection: a #TpConnection
+ *
+ * Looks up what #TpAccount @connection belongs to, and returns it. If
+ * no appropriate #TpAccount is found, %NULL is returned.
+ *
+ * Returns: the #TpAccount that @connection belongs to, otherwise %NULL
+ *
+ * Since: 0.7.UNRELEASED
+ */
 TpAccount *
 tp_account_manager_get_account_for_connection (TpAccountManager *manager,
     TpConnection *connection)
@@ -836,6 +972,26 @@ tp_account_manager_get_account_for_connection (TpAccountManager *manager,
   return NULL;
 }
 
+/**
+ * tp_account_manager_get_accounts:
+ * @manager: a #TpAccountManager
+ *
+ * Returns a newly allocated #GList of accounts in @manager. The list must be
+ * freed with g_list_free() after used.
+ *
+ * Note that the #TpAccount<!-- -->s in the returned #GList are not reffed
+ * before returning from this function. One could ref every item in the list
+ * like the following example:
+ * |[
+ * GList *accounts;
+ * account = tp_account_manager_get_accounts (manager);
+ * g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
+ * ]|
+ *
+ * Returns: a newly allocated #GList of accounts in @manager
+ *
+ * Since: 0.7.UNRELEASED
+ */
 GList *
 tp_account_manager_get_accounts (TpAccountManager *manager)
 {
@@ -851,6 +1007,22 @@ tp_account_manager_get_accounts (TpAccountManager *manager)
   return ret;
 }
 
+/**
+ * tp_account_manager_request_global_presence:
+ * @manager: a #TpAccountManager
+ * @type: a presence type to request
+ * @status: a status to request
+ * @message: a status message to request
+ *
+ * Requests a global presence among all accounts in @manager. Note that
+ * the presence requested here is merely a request, and if might not be
+ * satisfiable.
+ *
+ * You can find the actual global presence across all accounts by calling
+ * tp_account_manager_get_global_presence().
+ *
+ * Since: 0.7.UNRELEASED
+ */
 void
 tp_account_manager_request_global_presence (TpAccountManager *manager,
     TpConnectionPresenceType type,
@@ -894,6 +1066,18 @@ tp_account_manager_request_global_presence (TpAccountManager *manager,
     }
 }
 
+/**
+ * tp_account_manager_get_requested_global_presence:
+ * @manager: a #TpAccountManager
+ * @status: a string to fill with the requested status
+ * @message: a string to fill with the requested status message
+ *
+ * <!-- -->
+ *
+ * Returns: the requested global presence
+ *
+ * Since: 0.7.UNRELEASED
+ */
 TpConnectionPresenceType
 tp_account_manager_get_requested_global_presence (TpAccountManager *manager,
     gchar **status,
@@ -909,6 +1093,19 @@ tp_account_manager_get_requested_global_presence (TpAccountManager *manager,
 
   return priv->requested_presence;
 }
+
+/**
+ * tp_account_manager_get_global_presence:
+ * @manager: a #TpAccountManager
+ * @status: a string to fill with the actual status
+ * @message: a string to fill with the actual status message
+ *
+ * <!-- -->
+ *
+ * Returns: the actual global presence
+ *
+ * Since: 0.7.UNRELEASED
+ */
 
 TpConnectionPresenceType
 tp_account_manager_get_global_presence (TpAccountManager *manager,
@@ -953,6 +1150,24 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
   g_hash_table_insert (priv->create_results, account, my_res);
 }
 
+/**
+ * tp_account_manager_create_account_async:
+ * @manager: a #TpAccountManager
+ * @connection_manager: the name of a connection manager
+ * @protocol: the name of a protocol
+ * @display_name: the display name for the account
+ * @parameters: parameters for the new account
+ * @properties: properties for the new account
+ * @callback: a callback to bcall when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous create of an account on the account manager
+ * @manager. When the operation is finished, @callback will be called. You can
+ * then call tp_account_manager_create_account_finish() to get the result of
+ * the operation.
+ *
+ * Since: 0.7.UNRELEASED
+ */
 void
 tp_account_manager_create_account_async (TpAccountManager *manager,
     const gchar *connection_manager,
@@ -974,6 +1189,18 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
       G_OBJECT (manager));
 }
 
+/**
+ * tp_account_manager_create_account_finish:
+ * @manager: a #TpAccountManager
+ * @result: a #GAsyncResult
+ * @error: a #GError to be filled
+ *
+ * Finishes an async create account operation.
+ *
+ * Returns: %TRUE if the reconnect call was successful, otherwise %FALSE
+ *
+ * Since: 0.7.UNRELEASED
+ */
 TpAccount *
 tp_account_manager_create_account_finish (TpAccountManager *manager,
     GAsyncResult *result,
