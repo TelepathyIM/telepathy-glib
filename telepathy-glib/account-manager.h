@@ -22,6 +22,7 @@
 #ifndef TP_ACCOUNT_MANAGER_H
 #define TP_ACCOUNT_MANAGER_H
 
+#include <telepathy-glib/account.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/dbus.h>
 
@@ -66,6 +67,38 @@ GType tp_account_manager_get_type (void);
 TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon);
 
 void tp_account_manager_init_known_interfaces (void);
+
+gboolean tp_account_manager_is_ready (TpAccountManager *manager);
+
+TpAccount *tp_account_manager_get_account_for_connection (
+    TpAccountManager *manager, TpConnection *connection);
+
+TpAccount *tp_account_manager_ensure_account (TpAccountManager *manager,
+    const gchar *unique_name);
+
+TpAccount *tp_account_manager_get_account (TpAccountManager *manager,
+    const gchar *unique_name);
+
+GList *tp_account_manager_get_accounts (TpAccountManager *manager);
+
+void tp_account_manager_remove (TpAccountManager *manager, TpAccount *account);
+
+void tp_account_manager_request_global_presence (TpAccountManager *manager,
+    TpConnectionPresenceType type, const gchar *status, const gchar *message);
+
+TpConnectionPresenceType tp_account_manager_get_requested_global_presence (
+    TpAccountManager *manager, gchar **status, gchar **message);
+
+TpConnectionPresenceType tp_account_manager_get_global_presence (
+    TpAccountManager *manager, gchar **status, gchar **message);
+
+void tp_account_manager_create_account_async (TpAccountManager *manager,
+    const gchar *connection_manager, const gchar *protocol,
+    const gchar *display_name, GHashTable *parameters, GHashTable *properties,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+TpAccount * tp_account_manager_create_account_finish (
+    TpAccountManager *settings, GAsyncResult *result, GError **error);
 
 G_END_DECLS
 
