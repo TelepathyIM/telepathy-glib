@@ -23,6 +23,7 @@
 
 #include "telepathy-glib/account.h"
 
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
@@ -1371,7 +1372,6 @@ tp_account_set_enabled_async (TpAccount *account,
 {
   /* Disabled for now due to lack of account manager */
 
-#if 0
   TpAccountPrivate *priv = account->priv;
   TpAccountManager *acc_manager;
   GValue value = {0, };
@@ -1391,13 +1391,14 @@ tp_account_set_enabled_async (TpAccount *account,
 
   if (enabled)
     {
-      acc_manager = tp_account_manager_dup_singleton ();
-      presence = tp_account_manager_get_requested_global_presence (
-          acc_manager, &status, &status_message);
+      acc_manager = tp_account_manager_new (
+          tp_proxy_get_dbus_daemon (account));
+      presence = tp_account_manager_get_requested_global_presence (acc_manager,
+          &status, &status_message);
 
       if (presence != TP_CONNECTION_PRESENCE_TYPE_UNSET)
-        tp_account_request_presence (account, presence, status,
-            status_message);
+        tp_account_request_presence_async (account, presence, status,
+            status_message, NULL, NULL);
 
       g_object_unref (acc_manager);
       g_free (status);
@@ -1410,7 +1411,6 @@ tp_account_set_enabled_async (TpAccount *account,
   tp_cli_dbus_properties_call_set (TP_PROXY (account),
       -1, TP_IFACE_ACCOUNT, "Enabled", &value,
       _tp_account_property_set_cb, result, NULL, G_OBJECT (account));
-#endif
 }
 
 static void
