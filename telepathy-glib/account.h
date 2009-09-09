@@ -179,6 +179,8 @@ gboolean tp_account_set_nickname_finish (TpAccount *account,
 
 void tp_account_refresh_properties (TpAccount *account);
 
+const gchar *tp_account_get_unique_name (TpAccount *account);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account.h>

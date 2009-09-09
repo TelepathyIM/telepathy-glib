@@ -2115,3 +2115,17 @@ tp_account_set_nickname_async (TpAccount *account,
 
   g_value_unset (&value);
 }
+
+/**
+ * tp_account_get_unique_name:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the unique name of @account
+ */
+const gchar *
+tp_account_get_unique_name (TpAccount *account)
+{
+  return tp_proxy_get_object_path (account);
+}

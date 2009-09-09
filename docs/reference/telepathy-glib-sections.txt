@@ -3029,6 +3029,7 @@ tp_account_get_nickname
 tp_account_set_nickname_async
 tp_account_set_nickname_finish
 tp_account_refresh_properties
+tp_account_get_unique_name
 <SUBSECTION>
 tp_cli_account_callback_for_reconnect
 tp_cli_account_call_reconnect
