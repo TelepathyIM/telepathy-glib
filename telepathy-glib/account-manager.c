@@ -102,7 +102,6 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL];
-static gpointer manager_singleton = NULL;
 
 G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY);
 
@@ -376,28 +375,6 @@ _tp_account_manager_dispose (GObject *object)
   G_OBJECT_CLASS (tp_account_manager_parent_class)->dispose (object);
 }
 
-static GObject *
-_tp_account_manager_constructor (GType type,
-    guint n_construct_params,
-    GObjectConstructParam *construct_params)
-{
-  GObject *retval;
-
-  if (manager_singleton == NULL)
-    {
-      retval = G_OBJECT_CLASS (tp_account_manager_parent_class)->constructor (
-          type, n_construct_params, construct_params);
-      manager_singleton = retval;
-      g_object_add_weak_pointer (retval, &manager_singleton);
-    }
-  else
-    {
-      retval = g_object_ref (G_OBJECT (manager_singleton));
-    }
-
-  return retval;
-}
-
 static void
 _tp_account_manager_get_property (GObject *object,
     guint prop_id,
@@ -428,7 +405,6 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
   object_class->constructed = _tp_account_manager_constructed;
   object_class->finalize = _tp_account_manager_finalize;
   object_class->dispose = _tp_account_manager_dispose;
-  object_class->constructor = _tp_account_manager_constructor;
   object_class->get_property = _tp_account_manager_get_property;
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT_MANAGER;
@@ -644,12 +620,11 @@ tp_account_manager_init_known_interfaces (void)
  *
  * Convenience function to create a new account manager proxy.
  *
- * The returned #TpAccountManager is cached; the same #TpAccountManager object
- * will be returned by this function repeatedly, as long as at least one
- * reference exists.
+ * Use tp_account_manager_dup() instead if you want an account managerproxy
+ * on the starter or session bus (which is almost always the right thing for
+ * Telepathy).
  *
- * Returns: a reference to the cached #TpAccountManager object, or a new
- *          instance
+ * Returns: a new reference to an account manager proxy
  */
 TpAccountManager *
 tp_account_manager_new (TpDBusDaemon *bus_daemon)
@@ -666,6 +641,46 @@ tp_account_manager_new (TpDBusDaemon *bus_daemon)
           NULL));
 
   return self;
+}
+
+static gpointer starter_account_manager_proxy = NULL;
+
+/**
+ * tp_account_manager_dup:
+ *
+ * Returns an account manager proxy on the D-Bus daemon on which this
+ * process was activated (if it was launched by D-Bus service activation), or
+ * the session bus (otherwise).
+ *
+ * The returned #TpAccountManager is cached; the same #TpAccountManager object
+ * will be returned by this function repeatedly, as long as at least one
+ * reference exists.
+ *
+ * Returns: an account manager proxy on the starter or session bus, or %NULL
+ *          if it wasn't possible to get a dbus daemon proxy for the
+ *          appropriate bus
+ *
+ * Since: 0.7.UNRELEASED
+ */
+TpAccountManager *
+tp_account_manager_dup (void)
+{
+  TpDBusDaemon *dbus;
+
+  if (starter_account_manager_proxy != NULL)
+    return g_object_ref (starter_account_manager_proxy);
+
+  dbus = tp_dbus_daemon_dup (NULL);
+
+  if (dbus == NULL)
+    return NULL;
+
+  starter_account_manager_proxy = tp_account_manager_new (dbus);
+  g_assert (starter_account_manager_proxy != NULL);
+  g_object_add_weak_pointer (starter_account_manager_proxy,
+      &starter_account_manager_proxy);
+
+  return starter_account_manager_proxy;
 }
 
 static void

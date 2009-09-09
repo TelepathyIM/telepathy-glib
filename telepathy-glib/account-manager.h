@@ -66,6 +66,8 @@ GType tp_account_manager_get_type (void);
 
 TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon);
 
+TpAccountManager *tp_account_manager_dup (void);
+
 void tp_account_manager_init_known_interfaces (void);
 
 gboolean tp_account_manager_is_ready (TpAccountManager *manager);
