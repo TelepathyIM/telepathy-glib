@@ -140,7 +140,8 @@ enum {
   PROP_VALID,
   PROP_REQUESTED_PRESENCE,
   PROP_REQUESTED_STATUS,
-  PROP_REQUESTED_STATUS_MESSAGE
+  PROP_REQUESTED_STATUS_MESSAGE,
+  PROP_NICKNAME
 };
 
 static void
@@ -676,6 +677,9 @@ _tp_account_get_property (GObject *object,
     case PROP_REQUESTED_STATUS_MESSAGE:
       g_value_set_string (value, self->priv->requested_message);
       break;
+    case PROP_NICKNAME:
+      g_value_set_string (value, self->priv->nickname);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -960,6 +964,18 @@ tp_account_class_init (TpAccountClass *klass)
       g_param_spec_string ("requested-status-message",
           "RequestedStatusMessage",
           "The requested Status message string of the account",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount: nickname
+   *
+   * The account's nickname.
+   */
+  g_object_class_install_property (object_class, PROP_NICKNAME,
+      g_param_spec_string ("nickname",
+          "Nickname",
+          "The account's nickname",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
