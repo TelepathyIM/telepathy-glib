@@ -642,6 +642,7 @@ get_all_properties_cb (TpProxy *proxy,
   GPtrArray *dbus_relay_info = NULL;
   gboolean created_locally = TRUE;
   gboolean valid = FALSE;
+  guint i;
 
   if (dbus_error &&
       !(dbus_error->domain == DBUS_GERROR &&
@@ -921,6 +922,9 @@ get_all_properties_cb (TpProxy *proxy,
       n_args,
       params,
       &myerror);
+
+  for (i = 0; i < n_args; i++)
+    g_value_unset (&params[i].value);
 
   if (!stream->priv->fs_stream)
     {
