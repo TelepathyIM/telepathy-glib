@@ -1013,7 +1013,7 @@ cb_fs_local_candidates_prepared (TfStream *self)
 
           g_value_init (&transport,
               TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT);
-          g_value_set_static_boxed (&transport,
+          g_value_take_boxed (&transport,
               dbus_g_type_specialized_construct (
                   TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT));
 
@@ -1246,7 +1246,7 @@ fs_codecs_to_tp (TfStream *stream,
         }
 
       g_value_init (&codec, TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_CODEC);
-      g_value_set_static_boxed (&codec,
+      g_value_take_boxed (&codec,
           dbus_g_type_specialized_construct (TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_CODEC));
 
       dbus_g_type_struct_set (&codec,
