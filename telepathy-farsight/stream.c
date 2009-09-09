@@ -383,6 +383,18 @@ tf_stream_dispose (GObject *object)
       priv->fs_session = NULL;
     }
 
+  if (priv->fs_participant)
+    {
+      g_object_unref (priv->fs_participant);
+      priv->fs_participant = NULL;
+    }
+
+  if (priv->fs_conference)
+    {
+      g_object_unref (priv->fs_conference);
+      priv->fs_conference = NULL;
+    }
+
   if (priv->local_preferences)
     {
       fs_codec_list_destroy (priv->local_preferences);

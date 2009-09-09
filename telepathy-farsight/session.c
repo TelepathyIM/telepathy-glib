@@ -199,7 +199,6 @@ _tf_session_dispose (GObject *object)
 
   if (self->priv->fs_participant)
     {
-
       g_object_unref (self->priv->fs_participant);
       self->priv->fs_participant = NULL;
     }
