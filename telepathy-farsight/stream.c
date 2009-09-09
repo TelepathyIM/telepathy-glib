@@ -1412,8 +1412,11 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     g_prefix_error (&error, "Codec negotiation failed: ");
     tf_stream_error (self, fserror_to_tperror (error), error->message);
     g_clear_error (&error);
+    fs_codec_list_destroy (fs_remote_codecs);
     return;
   }
+
+  fs_codec_list_destroy (fs_remote_codecs);
 
   self->priv->send_supported_codecs = TRUE;
   _tf_stream_try_sending_codecs (self);
