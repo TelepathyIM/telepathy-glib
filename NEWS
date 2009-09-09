@@ -1,3 +1,10 @@
+telepathy-farsight 0.0.10 (08 Sep 2009)
+======================================
+- Fix some leaks
+- Fix possible deadlocks
+- Emit different error codes depending on the error
+- Emit stream state changes when the stream state changes according to ICE
+
 telepathy-farsight 0.0.9 (03 Aug 2009)
 ======================================
 - Emit session-invalidated on channel dispose (prevents leak)
