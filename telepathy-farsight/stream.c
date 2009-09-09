@@ -1062,7 +1062,7 @@ cb_fs_local_candidates_prepared (TfStream *self)
               9, candidate->password,
               G_MAXUINT);
 
-          g_ptr_array_add (transports, g_value_dup_boxed (&transport));
+          g_ptr_array_add (transports, g_value_get_boxed (&transport));
 
           self->priv->local_candidates = g_list_remove (
               self->priv->local_candidates, candidate);
