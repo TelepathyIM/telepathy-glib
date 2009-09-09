@@ -198,7 +198,7 @@ _tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
             {
               name = g_ptr_array_index (accounts, i);
 
-              if (!tp_strdiff (name, tp_proxy_get_object_path (account)))
+              if (!tp_strdiff (name, tp_account_get_unique_name (account)))
                 {
                   found = TRUE;
                   break;
@@ -208,7 +208,7 @@ _tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
           if (!found)
             {
               DEBUG ("Account %s was not found, remove it from the cache",
-                  tp_proxy_get_object_path (account));
+                  tp_account_get_unique_name (account));
 
               g_object_ref (account);
               g_hash_table_iter_remove (&iter);
@@ -691,7 +691,7 @@ _tp_account_manager_account_connection_cb (TpAccount *account,
   TpConnection *connection = tp_account_get_connection (account);
 
   DEBUG ("Signalling connection %p of account %s",
-      connection, tp_proxy_get_object_path (account));
+      connection, tp_account_get_unique_name (account));
 
   if (connection != NULL)
     g_signal_emit (manager, signals[NEW_CONNECTION], 0, connection);
@@ -818,7 +818,7 @@ _tp_account_manager_account_removed_cb (TpAccount *account,
 
   g_object_ref (account);
   g_hash_table_remove (priv->accounts,
-      tp_proxy_get_object_path (account));
+      tp_account_get_unique_name (account));
 
   g_signal_emit (manager, signals[ACCOUNT_DELETED], 0, account);
   g_object_unref (account);
