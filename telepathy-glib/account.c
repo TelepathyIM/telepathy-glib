@@ -1352,6 +1352,37 @@ tp_account_set_enabled_finish (TpAccount *account,
   return TRUE;
 }
 
+static void
+_tp_account_set_presence_from_global (TpAccountManager *account_manager,
+    TpAccount *account)
+{
+  TpConnectionPresenceType presence;
+  gchar *status = NULL;
+  gchar *status_message = NULL;
+
+  presence = tp_account_manager_get_requested_global_presence (account_manager,
+      &status, &status_message);
+
+  if (presence != TP_CONNECTION_PRESENCE_TYPE_UNSET)
+    tp_account_request_presence_async (account, presence, status,
+        status_message, NULL, NULL);
+
+  g_free (status);
+  g_free (status_message);
+}
+
+static void
+_tp_account_account_manager_ready_cb (TpAccountManager *account_manager,
+    GParamSpec *pspec,
+    gpointer user_data)
+{
+  TpAccount *account = TP_ACCOUNT (user_data);
+
+  _tp_account_set_presence_from_global (account_manager, account);
+
+  g_object_unref (account_manager);
+}
+
 /**
  * tp_account_set_enabled_async:
  * @account: a #TpAccount
@@ -1369,15 +1400,10 @@ tp_account_set_enabled_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  /* Disabled for now due to lack of account manager */
-
   TpAccountPrivate *priv = account->priv;
-  TpAccountManager *acc_manager;
+  TpAccountManager *account_manager;
   GValue value = {0, };
   GSimpleAsyncResult *result;
-  char *status = NULL;
-  char *status_message = NULL;
-  TpConnectionPresenceType presence;
 
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_set_enabled_finish);
@@ -1390,18 +1416,18 @@ tp_account_set_enabled_async (TpAccount *account,
 
   if (enabled)
     {
-      acc_manager = tp_account_manager_new (
-          tp_proxy_get_dbus_daemon (account));
-      presence = tp_account_manager_get_requested_global_presence (acc_manager,
-          &status, &status_message);
+      account_manager = tp_account_manager_dup ();
 
-      if (presence != TP_CONNECTION_PRESENCE_TYPE_UNSET)
-        tp_account_request_presence_async (account, presence, status,
-            status_message, NULL, NULL);
-
-      g_object_unref (acc_manager);
-      g_free (status);
-      g_free (status_message);
+      if (tp_account_manager_is_ready (account_manager))
+        {
+          _tp_account_set_presence_from_global (account_manager, account);
+          g_object_unref (account_manager);
+        }
+      else
+        {
+          g_signal_connect (G_OBJECT (account_manager), "notify::ready",
+              G_CALLBACK (_tp_account_account_manager_ready_cb), account);
+        }
     }
 
   g_value_init (&value, G_TYPE_BOOLEAN);
