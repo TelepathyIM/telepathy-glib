@@ -1370,8 +1370,8 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 {
   GList **fs_params = (GList **) user_data;
   FsCodecParameter *param = g_new0(FsCodecParameter,1);
-  param->name = key;
-  param->value = value;
+  param->name = g_strdup (key);
+  param->value = g_strdup (value);
   *fs_params = g_list_prepend (*fs_params, param);
 }
 
