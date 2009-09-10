@@ -181,6 +181,12 @@ void tp_account_refresh_properties (TpAccount *account);
 
 const gchar *tp_account_get_unique_name (TpAccount *account);
 
+void tp_account_get_avatar_async (TpAccount *account,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+const GArray *tp_account_get_avatar_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account.h>

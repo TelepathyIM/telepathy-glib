@@ -2146,3 +2146,80 @@ tp_account_get_unique_name (TpAccount *account)
 {
   return tp_proxy_get_object_path (account);
 }
+
+static void
+_tp_account_got_avatar_cb (TpProxy *proxy,
+    const GValue *out_Value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+  GValueArray *avatar;
+  GArray *res;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get avatar: %s", error->message);
+      g_simple_async_result_set_from_error (result, (GError *) error);
+    }
+  else
+    {
+      avatar = g_value_get_boxed (out_Value);
+      res = g_value_get_boxed (g_value_array_get_nth (avatar, 0));
+      g_simple_async_result_set_op_res_gpointer (result, res, NULL);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_account_get_avatar_async:
+ * @account: a #TpAccount
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous get of @account's avatar. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_account_get_avatar_finish() to get the result of the operation.
+ */
+void
+tp_account_get_avatar_async (TpAccount *account,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_get_avatar_finish);
+
+  tp_cli_dbus_properties_call_get (account, -1,
+      TP_IFACE_ACCOUNT_INTERFACE_AVATAR, "Avatar", _tp_account_got_avatar_cb,
+      result, NULL, G_OBJECT (account));
+}
+
+/**
+ * tp_account_get_avatar_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async get operation of @account's avatar.
+ *
+ * Returns: a #GArray of the account's avatar, or %NULL on failure
+ */
+const GArray *
+tp_account_get_avatar_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_get_avatar_finish))
+    return NULL;
+
+  return g_simple_async_result_get_op_res_gpointer (
+      G_SIMPLE_ASYNC_RESULT (result));
+}
