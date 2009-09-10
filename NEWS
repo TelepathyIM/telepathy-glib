@@ -1,3 +1,8 @@
+telepathy-farsight 0.0.11 (10 Sep 2009)
+=======================================
+- Fix double free
+- Fix more leaks
+
 telepathy-farsight 0.0.10 (08 Sep 2009)
 ======================================
 - Fix some leaks
