@@ -366,7 +366,8 @@ _tp_account_update (TpAccount *account,
 
   if (g_hash_table_lookup (properties, "ConnectionStatus") != NULL)
     priv->connection_status =
-      tp_asv_get_int32 (properties, "ConnectionStatus", NULL);
+      tp_asv_get_uint32 (properties, "ConnectionStatus", NULL);
+
 
   if (g_hash_table_lookup (properties, "ConnectionStatusReason") != NULL)
     priv->reason = tp_asv_get_int32 (properties,
