@@ -1,7 +1,15 @@
 telepathy-glib 0.7.37 (UNRELEASED)
 ==================================
 
-???
+Enhancements:
+
+* Set the debug domain for telepathy-glib to tp-glib/$category, e.g.
+  tp-glib/connection for TpConnection and TpBaseConnection (jonny)
+
+Fixes:
+
+* fd.o #23843: make tp_debug_sender_log_handler with exclude=NULL include
+  everything, rather than nothing (smcv)
 
 telepathy-glib 0.7.36 (2009-09-03)
 ==================================
