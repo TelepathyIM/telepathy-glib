@@ -446,17 +446,12 @@ tp_debug_sender_log_handler (const gchar *log_domain,
     const gchar *message,
     gpointer exclude)
 {
-  const gchar *domain_exclude = NULL;
-
   g_log_default_handler (log_domain, log_level, message, NULL);
 
   if (debug_sender == NULL)
     return;
 
-  if (exclude != NULL)
-    domain_exclude = (gchar *) exclude;
-
-  if (domain_exclude != NULL && tp_strdiff (log_domain, domain_exclude))
+  if (exclude == NULL || tp_strdiff (log_domain, exclude))
     {
       GTimeVal now;
       g_get_current_time (&now);
