@@ -405,9 +405,12 @@ tp_debug_sender_add_message (TpDebugSender *self,
  * g_log_default_handler(), and then sends the message on the bus
  * #TpDebugSender.
  *
- * The @exclude parameter is designed to allow filtering of domains, instead of
- * sending every message to the #TpDebugSender. Note that every message,
- * regardless of domain, is given to g_log_default_handler().
+ * The @exclude parameter is designed to allow filtering one domain, instead of
+ * sending every message to the #TpDebugSender: typical usage is for a
+ * process to filter out messages from its own %G_LOG_DOMAIN, so that it can
+ * append a category to its own messages and pass them directly to
+ * tp_debug_sender_add_message. Note that every message, regardless of
+ * domain, is given to g_log_default_handler().
  *
  * Note that a ref to a #TpDebugSender must be kept at all times otherwise
  * no messages given to the handler will be sent to the Telepathy debug
