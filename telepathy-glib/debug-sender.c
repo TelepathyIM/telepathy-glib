@@ -405,9 +405,12 @@ tp_debug_sender_add_message (TpDebugSender *self,
  * g_log_default_handler(), and then sends the message on the bus
  * #TpDebugSender.
  *
- * The @exclude parameter is designed to allow filtering of domains, instead of
- * sending every message to the #TpDebugSender. Note that every message,
- * regardless of domain, is given to g_log_default_handler().
+ * The @exclude parameter is designed to allow filtering one domain, instead of
+ * sending every message to the #TpDebugSender: typical usage is for a
+ * process to filter out messages from its own %G_LOG_DOMAIN, so that it can
+ * append a category to its own messages and pass them directly to
+ * tp_debug_sender_add_message. Note that every message, regardless of
+ * domain, is given to g_log_default_handler().
  *
  * Note that a ref to a #TpDebugSender must be kept at all times otherwise
  * no messages given to the handler will be sent to the Telepathy debug
@@ -446,17 +449,12 @@ tp_debug_sender_log_handler (const gchar *log_domain,
     const gchar *message,
     gpointer exclude)
 {
-  const gchar *domain_exclude = NULL;
-
   g_log_default_handler (log_domain, log_level, message, NULL);
 
   if (debug_sender == NULL)
     return;
 
-  if (exclude != NULL)
-    domain_exclude = (gchar *) exclude;
-
-  if (domain_exclude != NULL && tp_strdiff (log_domain, domain_exclude))
+  if (exclude == NULL || tp_strdiff (log_domain, exclude))
     {
       GTimeVal now;
       g_get_current_time (&now);
