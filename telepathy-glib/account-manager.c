@@ -901,9 +901,9 @@ tp_account_manager_get_account (TpAccountManager *manager,
  * @manager: a #TpAccountManager
  * @path: the object path for an account
  *
- * Lookup an account in the account manager *manager. If the desired account
+ * Lookup an account in the account manager @manager. If the desired account
  * has already been ensured then the same object will be returned, otherwise
- * %NULL will be returned.
+ * it will create a new #TpAccount and add it to @manager.
  *
  * The caller must keep a ref to the returned object using g_object_ref() if
  * it is to be kept.
