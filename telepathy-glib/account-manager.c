@@ -175,7 +175,6 @@ _tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
       name = g_ptr_array_index (accounts, i);
 
       account = tp_account_manager_ensure_account (manager, name);
-      tp_account_refresh_properties (account);
     }
 
   missing_accounts = g_hash_table_size (priv->accounts) - accounts->len;
