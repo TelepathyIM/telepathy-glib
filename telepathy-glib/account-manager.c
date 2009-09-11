@@ -237,11 +237,8 @@ _tp_account_manager_check_ready (TpAccountManager *manager)
   while (g_hash_table_iter_next (&iter, NULL, &value))
     {
       TpAccount *account = TP_ACCOUNT (value);
-      gboolean ready;
 
-      g_object_get (account, "ready", &ready, NULL);
-
-      if (!ready)
+      if (!tp_account_is_ready (account))
         return;
     }
 
@@ -741,7 +738,7 @@ _tp_account_manager_update_global_presence (TpAccountManager *manager)
       TpAccount *a = TP_ACCOUNT (value);
       TpConnectionPresenceType p;
 
-      g_object_get (a, "presence", &p, NULL);
+      p = tp_account_get_presence (a);
 
       if (tp_connection_presence_type_cmp_availability (p, presence) > 0)
         {
@@ -762,11 +759,10 @@ _tp_account_manager_update_global_presence (TpAccountManager *manager)
       return;
     }
 
-  g_object_get (account,
-      "presence", &priv->global_presence,
-      "status", &priv->global_status,
-      "status-message", &priv->global_status_message,
-      NULL);
+  priv->global_presence = tp_account_get_presence (account);
+  priv->global_status = g_strdup (tp_account_get_status (account));
+  priv->global_status_message = g_strdup (
+      tp_account_get_status_message (account));
 
   DEBUG ("Updated global presence to: %s (%d) \"%s\"",
       priv->global_status, priv->global_presence, priv->global_status_message);
@@ -833,11 +829,8 @@ _tp_account_manager_account_ready_cb (GObject *object,
   TpAccountManagerPrivate *priv = manager->priv;
   TpAccount *account = TP_ACCOUNT (object);
   GSimpleAsyncResult *result;
-  gboolean ready;
 
-  g_object_get (account, "ready", &ready, NULL);
-
-  if (!ready)
+  if (!tp_account_is_ready (account))
     return;
 
   /* see if there's any pending callbacks for this account */
@@ -1055,11 +1048,8 @@ tp_account_manager_request_global_presence (TpAccountManager *manager,
   while (g_hash_table_iter_next (&iter, NULL, &value))
     {
       TpAccount *account = TP_ACCOUNT (value);
-      gboolean ready;
 
-      g_object_get (account, "ready", &ready, NULL);
-
-      if (ready)
+      if (tp_account_is_ready (account))
         tp_account_request_presence_async (account, type, status, message,
             NULL, NULL);
     }
