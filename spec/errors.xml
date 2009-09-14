@@ -48,7 +48,7 @@
 
   <tp:error name="Invalid Handle">
     <tp:docstring>
-    The contact name specified is unknown on this channel or connection.
+    The handle specified is unknown on this channel or connection.
     </tp:docstring>
   </tp:error>
 

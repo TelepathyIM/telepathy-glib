@@ -29,7 +29,6 @@ EXTRA_DIST = \
     Channel_Type_Room_List.xml \
     Channel_Type_Stream_Tube.xml \
     Channel_Type_Streamed_Media.xml \
-    Channel_Type_Streamed_Media_Future.xml \
     Channel_Type_Text.xml \
     Channel_Type_Tubes.xml \
     Channel.xml \

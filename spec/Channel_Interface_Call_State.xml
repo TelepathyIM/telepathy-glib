@@ -116,6 +116,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           diverted.
         </tp:docstring>
       </tp:flag>
+
+      <tp:flag suffix="In_Progress" value="16">
+        <tp:docstring>
+          Progress has been made in placing the outgoing call, but the
+          destination contact may not have been made aware of the call yet
+          (so the Ringing state is not appropriate). This corresponds to SIP's
+          status code 183 Session Progress, and could be used when the
+          outgoing call has reached a gateway, for instance.
+        </tp:docstring>
+      </tp:flag>
     </tp:flags>
 
   </interface>

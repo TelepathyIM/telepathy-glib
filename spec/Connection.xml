@@ -251,7 +251,7 @@ USA.</p>
 
       <arg direction="out" type="as" name="Identifiers">
         <tp:docstring>
-          An array of handle names in the same order as the given numbers
+          An array of identifiers corresponding to the given handles, in the same order.
         </tp:docstring>
       </arg>
 
@@ -591,16 +591,16 @@ USA.</p>
         </tp:docstring>
       </arg>
 
-      <arg direction="in" name="Names" type="as">
+      <arg direction="in" name="Identifiers" type="as">
         <tp:docstring>
-          An array of names of entities to request handles for
+          An array of identifiers of entities to request handles for
         </tp:docstring>
       </arg>
 
       <arg direction="out" type="au" tp:type="Handle[]"
         name="Handles">
         <tp:docstring>
-          An array of integer handle numbers in the same order as the given strings
+          An array of integer handle numbers in the same order as the given identifiers.
         </tp:docstring>
       </arg>
 
@@ -611,16 +611,18 @@ USA.</p>
         client who invokes this method, and must not deallocate the handles
         until the client disconnects from the bus or calls the
         <tp:member-ref>ReleaseHandles</tp:member-ref>
-        method. Where the name refers to an entity that already has a handle
-        in this connection manager, this handle should be returned instead.
-        The handle number 0 must not be returned by the connection manager.
+        method. Where the identifier refers to an entity that already has a
+        handle in this connection manager, this handle should be returned
+        instead. The handle number 0 must not be returned by the connection
+        manager.
       </tp:docstring>
 
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle">
           <tp:docstring>
-            The given name does not identify a valid entity of the given type.
+            The given identifier does not identify a valid entity of the given
+            type.
 
             <tp:rationale>
               For instance, an XMPP connection would raise this error for
@@ -1040,9 +1042,9 @@ USA.</p>
     ambiguous. Connection manager implementations should reference count these
     handles to determine if they are in use either by any active clients or any
     open channels, and may deallocate them when this ceases to be true. Clients
-    may request handles of a given type and name with the
+    may request handles of a given type and identifier with the
     <tp:member-ref>RequestHandles</tp:member-ref> method, inspect the entity
-    name of handles with the <tp:member-ref>InspectHandles</tp:member-ref>
+    identifier with the <tp:member-ref>InspectHandles</tp:member-ref>
     method, keep handles from being released with
     <tp:member-ref>HoldHandles</tp:member-ref>, and notify that they are no
     longer storing handles with
