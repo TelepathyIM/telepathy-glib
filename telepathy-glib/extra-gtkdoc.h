@@ -544,17 +544,21 @@
 
 /**
  * SECTION:connection-caps
- * @title: Connection Capabilities interface
- * @short_description: client-side wrappers for the Capabilities interface
+ * @title: Connection ContactCapabilities and Capabilities interfaces
+ * @short_description: client-side wrappers for the capabilities interfaces
  * @see_also: #TpConnection
  *
  * Some instant messaging protocols allow discovery of the capabilities of
- * a user's client. In Telepathy, this is represented by the Capabilities
- * interface, which lets applications advertise extra capabilities for the
- * local user, and query the interfaces supported by their contacts.
+ * a user's client. In Telepathy, this is represented by the
+ * ContactCapabilities interface, which lets applications advertise extra
+ * capabilities for the local user, and query the interfaces supported by
+ * their contacts.
+ *
+ * The Capabilities interface is an older API with similar functionality.
  *
  * This section documents the auto-generated C wrappers for the
- * Capabilities interface, used with #TpConnection objects.
+ * ContactCapabilities and Capabilities interfaces, used with
+ * #TpConnection objects.
  */
 
 /**
