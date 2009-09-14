@@ -3,6 +3,12 @@ telepathy-glib 0.7.37 (UNRELEASED)
 
 Enhancements:
 
+* Update to telepathy-spec 0.17.28
+  * add ContactCapabilities interface
+  * add InitialVideo, InitialAudio, ImmutableStreams properties to
+    StreamedMedia
+  * add TP_CHANNEL_CALL_STATE_FLAG_IN_PROGRESS
+
 * Set the debug domain for telepathy-glib to tp-glib/$category, e.g.
   tp-glib/connection for TpConnection and TpBaseConnection (jonny)
 
