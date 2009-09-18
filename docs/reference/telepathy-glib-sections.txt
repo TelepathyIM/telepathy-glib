@@ -2990,7 +2990,7 @@ tp_account_new
 tp_account_init_known_interfaces
 tp_account_is_just_connected
 tp_account_get_connection
-tp_account_get_connection_for_path
+tp_account_ensure_connection
 tp_account_get_display_name
 tp_account_get_connection_manager
 tp_account_get_protocol

@@ -75,7 +75,7 @@ gboolean tp_account_is_just_connected (TpAccount *account);
 
 TpConnection *tp_account_get_connection (TpAccount *account);
 
-TpConnection *tp_account_get_connection_for_path (TpAccount *account,
+TpConnection *tp_account_ensure_connection (TpAccount *account,
     const gchar *path);
 
 const gchar *tp_account_get_display_name (TpAccount *account);

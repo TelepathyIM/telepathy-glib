@@ -1171,17 +1171,19 @@ tp_account_get_connection (TpAccount *account)
 }
 
 /**
- * tp_account_get_connection_for_path:
+ * tp_account_ensure_connection:
  * @account: a #TpAccount
  * @path: the path to connection object for #TpAccount
  *
- * Get the connection of the account on path. This function does not return a
- * new ref. It is not guaranteed that the returned connection object is ready
+ * Set the connection of the account by specifying the connection object path.
+ * This function does not return a new ref and it is not guaranteed that the
+ * returned #TpConnection object is ready
  *
- * Returns: the connection of the account.
+ * Returns: the connection of the account, or %NULL if either the object path
+ *   @path is invalid or it is the null-value "/"
  **/
 TpConnection *
-tp_account_get_connection_for_path (TpAccount *account,
+tp_account_ensure_connection (TpAccount *account,
     const gchar *path)
 {
   TpAccountPrivate *priv = account->priv;
