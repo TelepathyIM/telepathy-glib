@@ -416,7 +416,7 @@ tp_channel_get_property (GObject *object,
       g_value_set_uint (value, self->priv->handle);
       break;
     case PROP_IDENTIFIER:
-      g_value_set_string (value, self->priv->identifier);
+      g_value_set_string (value, tp_channel_get_identifier (self));
       break;
     case PROP_CHANNEL_PROPERTIES:
       g_value_set_boxed (value, self->priv->channel_properties);
