@@ -1372,11 +1372,9 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 static void
 fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 {
-  GList **fs_params = (GList **) user_data;
-  FsCodecParameter *param = g_new0(FsCodecParameter,1);
-  param->name = g_strdup (key);
-  param->value = g_strdup (value);
-  *fs_params = g_list_prepend (*fs_params, param);
+  FsCodec *codec = user_data;
+
+  fs_codec_add_optional_parameter (codec, key, value);
 }
 
 static void
@@ -1388,7 +1386,6 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   TfStream *self = TF_STREAM (object);
   GValueArray *codec;
   GHashTable *params = NULL;
-  GList *fs_params = NULL;
   GList *fs_remote_codecs = NULL;
   guint i;
   GError *error = NULL;
@@ -1421,10 +1418,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           g_value_get_uint (g_value_array_get_nth (codec, 4));
 
       params = g_value_get_boxed (g_value_array_get_nth (codec, 5));
-      fs_params = NULL;
-      g_hash_table_foreach (params, fill_fs_params, &fs_params);
-
-      fs_codec->optional_params = fs_params;
+      g_hash_table_foreach (params, fill_fs_params, fs_codec);
 
       DEBUG (self, "adding remote codec %s [%d]",
           fs_codec->encoding_name, fs_codec->id);
