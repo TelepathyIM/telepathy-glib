@@ -344,7 +344,7 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
    * global presence was requested before the manager was ready */
   if (priv->requested_presence != TP_CONNECTION_PRESENCE_TYPE_UNSET)
     {
-      tp_account_manager_request_global_presence (manager,
+      tp_account_manager_set_all_requested_presences (manager,
           priv->requested_presence, priv->requested_status,
           priv->requested_status_message);
     }
@@ -1041,15 +1041,15 @@ tp_account_manager_get_accounts (TpAccountManager *manager)
 }
 
 /**
- * tp_account_manager_request_global_presence:
+ * tp_account_manager_set_all_requested_presences:
  * @manager: a #TpAccountManager
  * @type: a presence type to request
  * @status: a status to request
  * @message: a status message to request
  *
- * Requests a global presence among all accounts in @manager. Note that
- * the presence requested here is merely a request, and if might not be
- * satisfiable.
+ * Iterates through the accounts in @manager and requests the presence
+ * (@type, @status and @message). Note that the presence requested here is
+ * merely a request, and if might not be satisfiable.
  *
  * You can find the actual global presence across all accounts by calling
  * tp_account_manager_get_global_presence().
@@ -1057,7 +1057,7 @@ tp_account_manager_get_accounts (TpAccountManager *manager)
  * Since: 0.7.UNRELEASED
  */
 void
-tp_account_manager_request_global_presence (TpAccountManager *manager,
+tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
     TpConnectionPresenceType type,
     const gchar *status,
     const gchar *message)
