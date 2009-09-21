@@ -237,7 +237,7 @@ _tp_account_manager_check_ready (TpAccountManager *manager)
     {
       TpAccount *account = TP_ACCOUNT (value);
 
-      if (!tp_account_is_ready (account))
+      if (!tp_account_is_ready (account, TP_ACCOUNT_FEATURE_CORE))
         return;
     }
 
@@ -820,16 +820,16 @@ _tp_account_manager_account_removed_cb (TpAccount *account,
 }
 
 static void
-_tp_account_manager_account_ready_cb (GObject *object,
-    GParamSpec *spec,
+_tp_account_manager_account_ready_cb (GObject *source_object,
+    GAsyncResult *res,
     gpointer user_data)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (user_data);
   TpAccountManagerPrivate *priv = manager->priv;
-  TpAccount *account = TP_ACCOUNT (object);
+  TpAccount *account = TP_ACCOUNT (source_object);
   GSimpleAsyncResult *result;
 
-  if (!tp_account_is_ready (account))
+  if (!tp_account_prepare_finish (account, res, NULL))
     return;
 
   /* see if there's any pending callbacks for this account */
@@ -910,6 +910,7 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
 {
   TpAccountManagerPrivate *priv = manager->priv;
   TpAccount *account;
+  GQuark fs[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
 
   account = g_hash_table_lookup (priv->accounts, path);
   if (account != NULL)
@@ -918,8 +919,8 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
   account = tp_account_new (tp_proxy_get_dbus_daemon (manager), path, NULL);
   g_hash_table_insert (priv->accounts, g_strdup (path), account);
 
-  g_signal_connect (account, "notify::ready",
-      G_CALLBACK (_tp_account_manager_account_ready_cb), manager);
+  tp_account_prepare_async (account, fs, _tp_account_manager_account_ready_cb,
+      manager);
 
   return account;
 }
@@ -1048,7 +1049,7 @@ tp_account_manager_request_global_presence (TpAccountManager *manager,
     {
       TpAccount *account = TP_ACCOUNT (value);
 
-      if (tp_account_is_ready (account))
+      if (tp_account_is_ready (account, TP_ACCOUNT_FEATURE_CORE))
         tp_account_request_presence_async (account, type, status, message,
             NULL, NULL);
     }

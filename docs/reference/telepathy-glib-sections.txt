@@ -3001,7 +3001,6 @@ tp_account_reconnect_async
 tp_account_reconnect_finish
 tp_account_is_enabled
 tp_account_is_valid
-tp_account_is_ready
 tp_account_update_parameters_async
 tp_account_update_parameters_finish
 tp_account_remove_async
@@ -3032,6 +3031,13 @@ tp_account_refresh_properties
 tp_account_get_unique_name
 tp_account_get_avatar_async
 tp_account_get_avatar_finish
+<SUBSECTION>
+TP_ACCOUNT_FEATURE_CORE
+tp_account_is_ready
+tp_account_prepare_async
+tp_account_prepare_finish
+tp_account_get_features
+tp_account_set_features
 <SUBSECTION>
 tp_cli_account_callback_for_reconnect
 tp_cli_account_call_reconnect

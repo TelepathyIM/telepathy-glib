@@ -66,6 +66,9 @@ GType tp_account_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_ACCOUNT, \
                               TpAccountClass))
 
+#define TP_ACCOUNT_FEATURE_CORE \
+  g_quark_from_static_string ("tp-account-feature-core")
+
 TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
     GError **error);
 
@@ -101,8 +104,6 @@ gboolean tp_account_reconnect_finish (TpAccount *account,
 gboolean tp_account_is_enabled (TpAccount *account);
 
 gboolean tp_account_is_valid (TpAccount *account);
-
-gboolean tp_account_is_ready (TpAccount *account);
 
 void tp_account_update_parameters_async (TpAccount *account,
     GHashTable *parameters, const gchar **unset_parameters,
@@ -186,6 +187,18 @@ void tp_account_get_avatar_async (TpAccount *account,
 
 const GArray *tp_account_get_avatar_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
+
+gboolean tp_account_is_ready (TpAccount *account, GQuark feature);
+
+void tp_account_prepare_async (TpAccount *account, GQuark* features,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_prepare_finish (TpAccount *account, GAsyncResult *result,
+    GError **error);
+
+gboolean tp_account_set_features (TpAccount *account, const GQuark* features);
+
+const GQuark * tp_account_get_features (TpAccount *account);
 
 G_END_DECLS
 

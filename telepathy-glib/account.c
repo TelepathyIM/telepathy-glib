@@ -95,7 +95,6 @@ struct _TpAccountPrivate {
 
   gboolean enabled;
   gboolean valid;
-  gboolean ready;
   gboolean removed;
   /* Timestamp when the connection got connected in seconds since the epoch */
   glong connect_time;
@@ -107,7 +106,22 @@ struct _TpAccountPrivate {
   gchar *display_name;
 
   GHashTable *parameters;
+
+  /* Features. */
+  GList *features;
+  GArray *features_array;
+  GList *callbacks;
 };
+
+typedef struct {
+  GQuark name;
+  gboolean ready;
+} TpAccountFeature;
+
+typedef struct {
+  GSimpleAsyncResult *result;
+  GQuark *features;
+} TpAccountFeatureCallback;
 
 G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
 
@@ -127,7 +141,6 @@ enum {
   PROP_PRESENCE,
   PROP_STATUS,
   PROP_STATUS_MESSAGE,
-  PROP_READY,
   PROP_CONNECTION_STATUS,
   PROP_CONNECTION_STATUS_REASON,
   PROP_CONNECTION,
@@ -151,6 +164,79 @@ tp_account_init (TpAccount *self)
       TpAccountPrivate);
 
   self->priv->connection_status = TP_CONNECTION_STATUS_DISCONNECTED;
+}
+
+static TpAccountFeature *
+_tp_account_get_feature (TpAccount *self,
+    GQuark feature,
+    gboolean add)
+{
+  TpAccountPrivate *priv = self->priv;
+  GList *l;
+  TpAccountFeature *feat = NULL;
+
+  for (l = priv->features; l != NULL; l = l->next)
+    {
+      feat = l->data;
+
+      if (feat->name == feature)
+        break;
+    }
+
+  if (feat == NULL && add)
+    {
+      GQuark fs[] = { feature, 0 };
+      tp_account_set_features (self, fs);
+
+      /* New feature will be the first element as we use g_list_prepend */
+      feat = priv->features->data;
+    }
+
+  return feat;
+}
+
+static void
+_tp_account_become_ready (TpAccount *self,
+    GQuark feature)
+{
+  TpAccountPrivate *priv = self->priv;
+  TpAccountFeature *f = NULL;
+  GList *l, *remove = NULL;
+
+  f = _tp_account_get_feature (self, feature, TRUE);
+
+  if (f->ready)
+    return;
+
+  f->ready = TRUE;
+
+  for (l = priv->callbacks; l != NULL; l = l->next)
+    {
+      TpAccountFeatureCallback *cb = l->data;
+      gboolean ready = TRUE;
+      guint i;
+
+      for (i = 0; cb->features[i] != 0; i++)
+        {
+          if (!tp_account_is_ready (self, cb->features[i]))
+            {
+              ready = FALSE;
+              break;
+            }
+        }
+
+      if (ready)
+        {
+          remove = g_list_prepend (remove, l);
+          g_simple_async_result_complete (cb->result);
+          g_object_unref (cb->result);
+        }
+    }
+
+  for (l = remove; l != NULL; l = l->next)
+    priv->callbacks = g_list_delete_link (priv->callbacks, l->data);
+
+  g_list_free (remove);
 }
 
 static void
@@ -480,11 +566,7 @@ _tp_account_update (TpAccount *account,
           parameters);
     }
 
-  if (!priv->ready)
-    {
-      priv->ready = TRUE;
-      g_object_notify (G_OBJECT (account), "ready");
-    }
+  _tp_account_become_ready (account, TP_ACCOUNT_FEATURE_CORE);
 
   if (priv->connection_status != old_s)
     {
@@ -551,7 +633,7 @@ _tp_account_properties_changed (TpAccount *proxy,
 {
   TpAccount *self = TP_ACCOUNT (weak_object);
 
-  if (!self->priv->ready)
+  if (!tp_account_is_ready (self, TP_ACCOUNT_FEATURE_CORE))
     return;
 
   _tp_account_update (self, properties);
@@ -571,6 +653,10 @@ _tp_account_constructed (GObject *object)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
+
+  priv->features = NULL;
+  priv->callbacks = NULL;
+  priv->features_array = g_array_new (TRUE, FALSE, sizeof (GQuark));
 
   sc = tp_cli_account_connect_to_removed (self, _tp_account_removed_cb,
       NULL, NULL, NULL, &error);
@@ -624,9 +710,6 @@ _tp_account_get_property (GObject *object,
     {
     case PROP_ENABLED:
       g_value_set_boolean (value, self->priv->enabled);
-      break;
-    case PROP_READY:
-      g_value_set_boolean (value, self->priv->ready);
       break;
     case PROP_PRESENCE:
       g_value_set_uint (value, self->priv->presence);
@@ -706,6 +789,28 @@ _tp_account_dispose (GObject *object)
 }
 
 static void
+_tp_account_feature_free (gpointer data,
+    gpointer user_data)
+{
+  g_slice_free (TpAccountFeature, data);
+}
+
+static void
+_tp_account_feature_callback_free (gpointer data,
+    gpointer user_data)
+{
+  TpAccountFeatureCallback *cb = data;
+  GError e = { TP_ERRORS, TP_ERROR_NO_ANSWER,
+               "the TpAccount was disposed before the feature(s) became ready" };
+
+  g_simple_async_result_set_from_error (cb->result, &e);
+  g_simple_async_result_complete (cb->result);
+  g_object_unref (cb->result);
+
+  g_slice_free (TpAccountFeatureCallback, data);
+}
+
+static void
 _tp_account_finalize (GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (object);
@@ -722,6 +827,16 @@ _tp_account_finalize (GObject *object)
   g_free (priv->proto_name);
   g_free (priv->icon_name);
   g_free (priv->display_name);
+
+  g_list_foreach (priv->features, _tp_account_feature_free, NULL);
+  g_list_free (priv->features);
+  priv->features = NULL;
+
+  g_list_foreach (priv->callbacks, _tp_account_feature_callback_free, NULL);
+  g_list_free (priv->callbacks);
+  priv->callbacks = NULL;
+
+  g_array_free (priv->features_array, TRUE);
 
   /* free any data held directly by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)
@@ -753,18 +868,6 @@ tp_account_class_init (TpAccountClass *klass)
           "Whether this account is enabled or not",
           FALSE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
-
-  /**
-   * TpAccount:ready:
-   *
-   * Whether this account is ready to be used or not.
-   */
-  g_object_class_install_property (object_class, PROP_READY,
-      g_param_spec_boolean ("ready",
-          "Ready",
-          "Whether this account is ready to be used",
-          FALSE,
-          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
    * TpAccount:presence:
@@ -1311,22 +1414,6 @@ tp_account_is_enabled (TpAccount *account)
   TpAccountPrivate *priv = account->priv;
 
   return priv->enabled;
-}
-
-/**
- * tp_account_is_ready:
- * @account: a #TpAccount
- *
- * <!-- -->
- *
- * Returns: the same thing as the #TpAccount:ready property
- */
-gboolean
-tp_account_is_ready (TpAccount *account)
-{
-  TpAccountPrivate *priv = account->priv;
-
-  return priv->ready;
 }
 
 static void
@@ -2224,4 +2311,166 @@ tp_account_get_avatar_finish (TpAccount *account,
 
   return g_simple_async_result_get_op_res_gpointer (
       G_SIMPLE_ASYNC_RESULT (result));
+}
+
+/**
+ * TP_ACCOUNT_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the "core" feature
+ * on a #TpAccount.
+ */
+
+/**
+ * tp_account_is_ready:
+ * @account: a #TpAccount
+ * @feature: a feature which is required
+ * @error: a #GError to fill
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE whether @feature is ready on @account, otherwise %FALSE
+ */
+gboolean
+tp_account_is_ready (TpAccount *account,
+    GQuark feature)
+{
+  TpAccountFeature *f;
+
+  f = _tp_account_get_feature (account, feature, FALSE);
+
+  if (f == NULL)
+    return FALSE;
+
+  return f->ready;
+}
+
+/**
+ * tp_account_prepare_async:
+ * @account: a #TpAccount
+ * @features: a 0-terminated list of features
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous preparation of @account with the features specified
+ * by @features. When the operation is finished, @callback will be called. You
+ * can then call tp_account_prepare_finish() to get the result of the
+ * operation.
+ */
+void
+tp_account_prepare_async (TpAccount *account,
+    GQuark* features,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpAccountPrivate *priv = account->priv;
+  GSimpleAsyncResult *result;
+  guint i;
+  gboolean already_ready = TRUE;
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_prepare_finish);
+
+  for (i = 0; features[i] != 0; i++)
+    {
+      TpAccountFeature *f;
+
+      f = _tp_account_get_feature (account, features[i], TRUE);
+
+      if (!f->ready)
+        {
+          already_ready = FALSE;
+          break;
+        }
+    }
+
+  if (already_ready)
+    {
+      g_simple_async_result_complete (result);
+      g_object_unref (result);
+    }
+  else
+    {
+      TpAccountFeatureCallback *cb;
+
+      cb = g_slice_new0 (TpAccountFeatureCallback);
+      cb->result = result;
+      cb->features = features;
+      priv->callbacks = g_list_prepend (priv->callbacks, cb);
+    }
+}
+
+/**
+ * tp_account_prepare_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async preparation of the account @account.
+ *
+ * Returns: %TRUE if the preparation was successful, otherwise %FALSE
+ */
+gboolean
+tp_account_prepare_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (account),
+          tp_account_prepare_finish))
+    return FALSE;
+
+  return TRUE;
+}
+
+/**
+ * tp_account_set_features:
+ * @account: a #TpAccount
+ * @features: a 0-terminated list of features
+ *
+ * Sets additional features on @account. Features cannot be removed from
+ * an object. Features which are already set on @account will be ignored.
+ *
+ * Returns: %TRUE if the set was successful, otherwise %FALSE
+ */
+gboolean
+tp_account_set_features (TpAccount *account,
+    const GQuark* features)
+{
+  TpAccountPrivate *priv = account->priv;
+  guint i;
+
+  for (i = 0; features[i] != 0; i++)
+    {
+      TpAccountFeature *feature;
+      GQuark f = features[i];
+
+      if (_tp_account_get_feature (account, f, FALSE) != NULL)
+        continue;
+
+      feature = g_slice_new0 (TpAccountFeature);
+      feature->name = f;
+      feature->ready = FALSE;
+      /* If _prepend is changed, _get_feature must also be changed.
+       * (see comment there) */
+      priv->features = g_list_prepend (priv->features, feature);
+
+      g_array_append_val (priv->features_array, f);
+    }
+
+  return TRUE;
+}
+
+/**
+ * tp_account_get_features:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: a 0-terminated list of features set on @account
+ */
+const GQuark *
+tp_account_get_features (TpAccount *account)
+{
+  return (const GQuark *) account->priv->features_array->data;
 }
