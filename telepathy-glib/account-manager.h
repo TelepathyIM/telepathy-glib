@@ -65,7 +65,9 @@ GType tp_account_manager_get_type (void);
                               TpAccountManagerClass))
 
 #define TP_ACCOUNT_MANAGER_FEATURE_CORE \
-  g_quark_from_static_string ("tp-account-manager-feature-core")
+  tp_account_manager_get_feature_quark_core ()
+
+GQuark tp_account_manager_get_feature_quark_core (void);
 
 TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon);
 

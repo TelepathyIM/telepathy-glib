@@ -115,6 +115,22 @@ static guint signals[LAST_SIGNAL];
 
 G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY);
 
+/**
+ * tp_account_manager_get_feature_quark_core:
+ *
+ * <!-- -->
+ *
+ * Returns: the quark used for representing the core feature of a
+ *          #TpAccountManager
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GQuark
+tp_account_manager_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-account-manager-feature-core");
+}
+
 static TpAccountManagerFeature *
 _tp_account_manager_get_feature (TpAccountManager *self,
     GQuark feature,

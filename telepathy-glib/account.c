@@ -157,6 +157,31 @@ enum {
   PROP_NICKNAME
 };
 
+/**
+ * TP_ACCOUNT_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the "core" feature
+ * on a #TpAccount.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+
+/**
+ * tp_account_get_feature_quark_core:
+ *
+ * <!-- -->
+ *
+ * Returns: the quark used for representing the core feature of a
+ *          #TpAccount
+ *
+ * Since: 0.7.UNRELEASED
+ */
+GQuark
+tp_account_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-account-feature-core");
+}
+
 static void
 tp_account_init (TpAccount *self)
 {
@@ -2455,13 +2480,6 @@ tp_account_get_avatar_finish (TpAccount *account,
   return g_simple_async_result_get_op_res_gpointer (
       G_SIMPLE_ASYNC_RESULT (result));
 }
-
-/**
- * TP_ACCOUNT_FEATURE_CORE:
- *
- * Expands to a call to a function that returns a quark for the "core" feature
- * on a #TpAccount.
- */
 
 /**
  * tp_account_is_ready:
