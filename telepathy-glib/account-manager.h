@@ -75,9 +75,6 @@ TpAccountManager *tp_account_manager_dup (void);
 
 void tp_account_manager_init_known_interfaces (void);
 
-TpAccount *tp_account_manager_get_account_for_connection (
-    TpAccountManager *manager, TpConnection *connection);
-
 TpAccount *tp_account_manager_ensure_account (TpAccountManager *manager,
     const gchar *path);
 

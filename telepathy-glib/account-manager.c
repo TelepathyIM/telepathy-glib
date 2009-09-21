@@ -1027,42 +1027,6 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_get_account_for_connection:
- * @manager: a #TpAccountManager
- * @connection: a #TpConnection
- *
- * Looks up what #TpAccount @connection belongs to, and returns it. If
- * no appropriate #TpAccount is found, %NULL is returned.
- *
- * Returns: the #TpAccount that @connection belongs to, otherwise %NULL
- *
- * Since: 0.7.UNRELEASED
- */
-TpAccount *
-tp_account_manager_get_account_for_connection (TpAccountManager *manager,
-    TpConnection *connection)
-{
-  TpAccountManagerPrivate *priv;
-  GHashTableIter iter;
-  gpointer value;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), 0);
-
-  priv = manager->priv;
-
-  g_hash_table_iter_init (&iter, priv->accounts);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      TpAccount *account = TP_ACCOUNT (value);
-
-      if (connection == tp_account_get_connection (account))
-        return account;
-    }
-
-  return NULL;
-}
-
-/**
  * tp_account_manager_get_accounts:
  * @manager: a #TpAccountManager
  *
