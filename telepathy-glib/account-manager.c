@@ -967,29 +967,6 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
 }
 
 /**
- * tp_account_manager_get_account:
- * @manager: a #TpAccountManager
- * @path: the object path for an account
- *
- * Lookup an #TpAccount in the account manager @manager. If the desired account
- * has already been ensured then the same object will be returned, otherwise
- * %NULL will be returned.
- *
- * Returns: the desired #TpAccount, or %NULL if no such account has been
- *          ensured
- *
- * Since: 0.7.UNRELEASED
- */
-TpAccount *
-tp_account_manager_get_account (TpAccountManager *manager,
-    const gchar *path)
-{
-  TpAccountManagerPrivate *priv = manager->priv;
-
-  return g_hash_table_lookup (priv->accounts, path);
-}
-
-/**
  * tp_account_manager_ensure_account:
  * @manager: a #TpAccountManager
  * @path: the object path for an account

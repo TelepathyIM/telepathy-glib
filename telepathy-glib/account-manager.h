@@ -78,9 +78,6 @@ void tp_account_manager_init_known_interfaces (void);
 TpAccount *tp_account_manager_ensure_account (TpAccountManager *manager,
     const gchar *path);
 
-TpAccount *tp_account_manager_get_account (TpAccountManager *manager,
-    const gchar *path);
-
 GList *tp_account_manager_get_accounts (TpAccountManager *manager);
 
 void tp_account_manager_request_global_presence (TpAccountManager *manager,
