@@ -64,13 +64,14 @@ GType tp_account_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_ACCOUNT_MANAGER, \
                               TpAccountManagerClass))
 
+#define TP_ACCOUNT_MANAGER_FEATURE_CORE \
+  g_quark_from_static_string ("tp-account-manager-feature-core")
+
 TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon);
 
 TpAccountManager *tp_account_manager_dup (void);
 
 void tp_account_manager_init_known_interfaces (void);
-
-gboolean tp_account_manager_is_ready (TpAccountManager *manager);
 
 TpAccount *tp_account_manager_get_account_for_connection (
     TpAccountManager *manager, TpConnection *connection);
@@ -99,6 +100,20 @@ void tp_account_manager_create_account_async (TpAccountManager *manager,
 
 TpAccount * tp_account_manager_create_account_finish (
     TpAccountManager *manager, GAsyncResult *result, GError **error);
+
+gboolean tp_account_manager_is_ready (TpAccountManager *account,
+    GQuark feature);
+
+void tp_account_manager_prepare_async (TpAccountManager *account,
+    GQuark* features, GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_manager_prepare_finish (TpAccountManager *account,
+    GAsyncResult *result, GError **error);
+
+gboolean tp_account_manager_set_features (TpAccountManager *account,
+    const GQuark* features);
+
+const GQuark * tp_account_manager_get_features (TpAccountManager *account);
 
 G_END_DECLS
 

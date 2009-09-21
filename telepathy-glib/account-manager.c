@@ -65,7 +65,6 @@ struct _TpAccountManagerPrivate {
   /* (owned) object path -> (reffed) TpAccount */
   GHashTable *accounts;
   gboolean dispose_run;
-  gboolean ready;
 
   /* global presence */
   TpAccount *global_account;
@@ -81,7 +80,22 @@ struct _TpAccountManagerPrivate {
   gchar *requested_status_message;
 
   GHashTable *create_results;
+
+  /* Features */
+  GList *features;
+  GList *callbacks;
+  GArray *features_array;
 };
+
+typedef struct {
+  GQuark name;
+  gboolean ready;
+} TpAccountManagerFeature;
+
+typedef struct {
+  GSimpleAsyncResult *result;
+  GQuark *features;
+} TpAccountManagerFeatureCallback;
 
 #define MC5_BUS_NAME "org.freedesktop.Telepathy.MissionControl5"
 
@@ -97,13 +111,82 @@ enum {
   LAST_SIGNAL
 };
 
-enum {
-  PROP_READY = 1,
-};
-
 static guint signals[LAST_SIGNAL];
 
 G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY);
+
+static TpAccountManagerFeature *
+_tp_account_manager_get_feature (TpAccountManager *self,
+    GQuark feature,
+    gboolean add)
+{
+  TpAccountManagerPrivate *priv = self->priv;
+  GList *l;
+  TpAccountManagerFeature *feat = NULL;
+
+  for (l = priv->features; l != NULL; l = l->next)
+    {
+      feat = l->data;
+
+      if (feat->name == feature)
+        break;
+    }
+
+  if (feat == NULL && add)
+    {
+      GQuark fs[] = { feature, 0 };
+      tp_account_manager_set_features (self, fs);
+
+      /* New feature will be the first element as we use g_list_prepend */
+      feat = priv->features->data;
+    }
+
+  return feat;
+}
+
+static void
+_tp_account_manager_become_ready (TpAccountManager *self,
+    GQuark feature)
+{
+  TpAccountManagerPrivate *priv = self->priv;
+  TpAccountManagerFeature *f = NULL;
+  GList *l, *remove = NULL;
+
+  f = _tp_account_manager_get_feature (self, feature, TRUE);
+
+  if (f->ready)
+    return;
+
+  f->ready = TRUE;
+
+  for (l = priv->callbacks; l != NULL; l = l->next)
+    {
+      TpAccountManagerFeatureCallback *cb = l->data;
+      gboolean ready = TRUE;
+      guint i;
+
+      for (i = 0; cb->features[i] != 0; i++)
+        {
+          if (!tp_account_manager_is_ready (self, cb->features[i]))
+            {
+              ready = FALSE;
+              break;
+            }
+        }
+
+      if (ready)
+        {
+          remove = g_list_prepend (remove, l);
+          g_simple_async_result_complete (cb->result);
+          g_object_unref (cb->result);
+        }
+    }
+
+  for (l = remove; l != NULL; l = l->next)
+    priv->callbacks = g_list_delete_link (priv->callbacks, l->data);
+
+  g_list_free (remove);
+}
 
 static void
 tp_account_manager_init (TpAccountManager *self)
@@ -223,13 +306,13 @@ _tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
 }
 
 static void
-_tp_account_manager_check_ready (TpAccountManager *manager)
+_tp_account_manager_check_core_ready (TpAccountManager *manager)
 {
   TpAccountManagerPrivate *priv = manager->priv;
   GHashTableIter iter;
   gpointer value;
 
-  if (priv->ready)
+  if (tp_account_manager_is_ready (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE))
     return;
 
   g_hash_table_iter_init (&iter, priv->accounts);
@@ -250,8 +333,7 @@ _tp_account_manager_check_ready (TpAccountManager *manager)
           priv->requested_status_message);
     }
 
-  priv->ready = TRUE;
-  g_object_notify (G_OBJECT (manager), "ready");
+  _tp_account_manager_become_ready (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE);
 }
 
 static void
@@ -276,7 +358,7 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
   if (accounts != NULL)
     _tp_account_manager_ensure_all_accounts (manager, accounts);
 
-  _tp_account_manager_check_ready (manager);
+  _tp_account_manager_check_core_ready (manager);
 }
 
 static void
@@ -300,11 +382,16 @@ _tp_account_manager_constructed (GObject *object)
   TpAccountManager *self = TP_ACCOUNT_MANAGER (object);
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_account_manager_parent_class)->constructed;
+  TpAccountManagerPrivate *priv = self->priv;
 
   if (chain_up != NULL)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
+
+  priv->features = NULL;
+  priv->callbacks = NULL;
+  priv->features_array = g_array_new (TRUE, FALSE, sizeof (GQuark));
 
   tp_dbus_daemon_watch_name_owner (tp_proxy_get_dbus_daemon (self),
       TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb,
@@ -321,6 +408,28 @@ _tp_account_manager_constructed (GObject *object)
 }
 
 static void
+_tp_account_manager_feature_free (gpointer data,
+    gpointer user_data)
+{
+  g_slice_free (TpAccountManagerFeature, data);
+}
+
+static void
+_tp_account_manager_feature_callback_free (gpointer data,
+    gpointer user_data)
+{
+  TpAccountManagerFeatureCallback *cb = data;
+  GError e = { TP_ERRORS, TP_ERROR_NO_ANSWER,
+               "the TpAccountManager was disposed before the feature(s) became ready" };
+
+  g_simple_async_result_set_from_error (cb->result, &e);
+  g_simple_async_result_complete (cb->result);
+  g_object_unref (cb->result);
+
+  g_slice_free (TpAccountManagerFeatureCallback, data);
+}
+
+static void
 _tp_account_manager_finalize (GObject *object)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (object);
@@ -334,6 +443,17 @@ _tp_account_manager_finalize (GObject *object)
 
   g_free (priv->requested_status);
   g_free (priv->requested_status_message);
+
+  g_list_foreach (priv->features, _tp_account_manager_feature_free, NULL);
+  g_list_free (priv->features);
+  priv->features = NULL;
+
+  g_list_foreach (priv->callbacks, _tp_account_manager_feature_callback_free,
+      NULL);
+  g_list_free (priv->callbacks);
+  priv->callbacks = NULL;
+
+  g_array_free (priv->features_array, TRUE);
 
   G_OBJECT_CLASS (tp_account_manager_parent_class)->finalize (object);
 }
@@ -372,25 +492,6 @@ _tp_account_manager_dispose (GObject *object)
 }
 
 static void
-_tp_account_manager_get_property (GObject *object,
-    guint prop_id,
-    GValue *value,
-    GParamSpec *pspec)
-{
-  TpAccountManager *self = TP_ACCOUNT_MANAGER (object);
-
-  switch (prop_id)
-    {
-    case PROP_READY:
-      g_value_set_boolean (value, self->priv->ready);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
-    }
-}
-
-static void
 tp_account_manager_class_init (TpAccountManagerClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
@@ -401,25 +502,9 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
   object_class->constructed = _tp_account_manager_constructed;
   object_class->finalize = _tp_account_manager_finalize;
   object_class->dispose = _tp_account_manager_dispose;
-  object_class->get_property = _tp_account_manager_get_property;
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT_MANAGER;
   tp_account_manager_init_known_interfaces ();
-
-  /**
-   * TpAccountManager:ready:
-   *
-   * Initially FALSE; changes to TRUE when every account in the manager is
-   * individually ready.
-   *
-   * Since: 0.7.UNRELEASED
-   */
-  g_object_class_install_property (object_class, PROP_READY,
-      g_param_spec_boolean ("ready",
-          "Ready",
-          "Whether the initial state dump from the account manager is finished",
-          FALSE,
-          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
    * TpAccountManager::account-created:
@@ -862,7 +947,7 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
   g_signal_connect (account, "removed",
       G_CALLBACK (_tp_account_manager_account_removed_cb), manager);
 
-  _tp_account_manager_check_ready (manager);
+  _tp_account_manager_check_core_ready (manager);
 }
 
 /**
@@ -923,25 +1008,6 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
       manager);
 
   return account;
-}
-
-/**
- * tp_account_manager_is_ready:
- * @manager: a #TpAccountManager
- *
- * <!-- -->
- *
- * Returns: %TRUE if the @manager and all its accounts are ready, otherwise
- *          %FALSE
- *
- * Since: 0.7.UNRELEASED
- */
-gboolean
-tp_account_manager_is_ready (TpAccountManager *manager)
-{
-  TpAccountManagerPrivate *priv = manager->priv;
-
-  return priv->ready;
 }
 
 /**
@@ -1226,3 +1292,176 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
   return retval;
 }
 
+/**
+ * TP_ACCOUNT_MANAGER_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the "core" feature
+ * on a #TpAccountManager.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+
+/**
+ * tp_account_manager_is_ready:
+ * @manager: a #TpAccountManager
+ * @feature: a feature which is required
+ * @error: a #GError to fill
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE whether @feature is ready on @manager, otherwise %FALSE
+ *
+ * Since: 0.7.UNRELEASED
+ */
+gboolean
+tp_account_manager_is_ready (TpAccountManager *manager,
+    GQuark feature)
+{
+  TpAccountManagerFeature *f;
+
+  f = _tp_account_manager_get_feature (manager, feature, FALSE);
+
+  if (f == NULL)
+    return FALSE;
+
+  return f->ready;
+}
+
+/**
+ * tp_account_manager_prepare_async:
+ * @manager: a #TpAccountManager
+ * @features: a 0-terminated list of features
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous preparation of @manager with the features specified
+ * by @features. When the operation is finished, @callback will be called. You
+ * can then call tp_account_manager_prepare_finish() to get the result of the
+ * operation.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+tp_account_manager_prepare_async (TpAccountManager *manager,
+    GQuark* features,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpAccountManagerPrivate *priv = manager->priv;
+  GSimpleAsyncResult *result;
+  guint i;
+  gboolean already_ready = TRUE;
+
+  result = g_simple_async_result_new (G_OBJECT (manager),
+      callback, user_data, tp_account_manager_prepare_finish);
+
+  for (i = 0; features[i] != 0; i++)
+    {
+      TpAccountManagerFeature *f;
+
+      f = _tp_account_manager_get_feature (manager, features[i], TRUE);
+
+      if (!f->ready)
+        {
+          already_ready = FALSE;
+          break;
+        }
+    }
+
+  if (already_ready)
+    {
+      g_simple_async_result_complete (result);
+      g_object_unref (result);
+    }
+  else
+    {
+      TpAccountManagerFeatureCallback *cb;
+
+      cb = g_slice_new0 (TpAccountManagerFeatureCallback);
+      cb->result = result;
+      cb->features = features;
+      priv->callbacks = g_list_prepend (priv->callbacks, cb);
+    }
+}
+
+/**
+ * tp_account_manager_prepare_finish:
+ * @manager: a #TpAccountManager
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async preparation of the account manager @manager.
+ *
+ * Returns: %TRUE if the preparation was successful, otherwise %FALSE
+ *
+ * Since: 0.7.UNRELEASED
+ */
+gboolean
+tp_account_manager_prepare_finish (TpAccountManager *manager,
+    GAsyncResult *result,
+    GError **error)
+{
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+          error) ||
+      !g_simple_async_result_is_valid (result, G_OBJECT (manager),
+          tp_account_manager_prepare_finish))
+    return FALSE;
+
+  return TRUE;
+}
+
+/**
+ * tp_account_manager_set_features:
+ * @manager: a #TpAccountManager
+ * @features: a 0-terminated list of features
+ *
+ * Sets additional features on @manager. Features cannot be removed from
+ * an object. Features which are already set on @manager will be ignored.
+ *
+ * Returns: %TRUE if the set was successful, otherwise %FALSE
+ *
+ * Since: 0.7.UNRELEASED
+ */
+gboolean
+tp_account_manager_set_features (TpAccountManager *manager,
+    const GQuark* features)
+{
+  TpAccountManagerPrivate *priv = manager->priv;
+  guint i;
+
+  for (i = 0; features[i] != 0; i++)
+    {
+      TpAccountManagerFeature *feature;
+      GQuark f = features[i];
+
+      if (_tp_account_manager_get_feature (manager, f, FALSE) != NULL)
+        continue;
+
+      feature = g_slice_new0 (TpAccountManagerFeature);
+      feature->name = f;
+      feature->ready = FALSE;
+      /* If _prepend is changed, _get_feature must also be changed.
+       * (see comment there) */
+      priv->features = g_list_prepend (priv->features, feature);
+
+      g_array_append_val (priv->features_array, f);
+    }
+
+  return TRUE;
+}
+
+/**
+ * tp_account_manager_get_features:
+ * @manager: a #TpAccountManager
+ *
+ * <!-- -->
+ *
+ * Returns: a 0-terminated list of features set on @manager
+ *
+ * Since: 0.7.UNRELEASED
+ */
+const GQuark *
+tp_account_manager_get_features (TpAccountManager *manager)
+{
+  return (const GQuark *) manager->priv->features_array->data;
+}

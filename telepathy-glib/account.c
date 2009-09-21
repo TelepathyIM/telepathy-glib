@@ -1524,7 +1524,8 @@ tp_account_set_enabled_async (TpAccount *account,
     {
       account_manager = tp_account_manager_dup ();
 
-      if (tp_account_manager_is_ready (account_manager))
+      if (tp_account_manager_is_ready (account_manager,
+              TP_ACCOUNT_MANAGER_FEATURE_CORE))
         {
           _tp_account_set_presence_from_global (account_manager, account);
           g_object_unref (account_manager);
