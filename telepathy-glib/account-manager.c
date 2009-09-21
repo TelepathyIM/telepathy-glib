@@ -973,7 +973,9 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
  *
  * Lookup an account in the account manager @manager. If the desired account
  * has already been ensured then the same object will be returned, otherwise
- * it will create a new #TpAccount and add it to @manager.
+ * it will create a new #TpAccount and add it to @manager. As a result, if
+ * @manager thinks that the account doesn't exist, this will still add it to
+ * @manager to avoid races.
  *
  * The caller must keep a ref to the returned object using g_object_ref() if
  * it is to be kept.
