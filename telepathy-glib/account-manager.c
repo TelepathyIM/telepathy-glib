@@ -1102,7 +1102,14 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
  * @status: a string to fill with the actual status
  * @message: a string to fill with the actual status message
  *
- * <!-- -->
+ * Gets the most available presence over all accounts in @manager. This
+ * function does not average presences across all accounts, but it merely
+ * finds the "most available" presence. As a result, there is a guarantee
+ * that there exists at least one account in @manager with the returned
+ * presence.
+ *
+ * If no accounts are enabled or valid the output will be
+ * (%TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", "").
  *
  * Returns: the most available presence across all accounts
  *
