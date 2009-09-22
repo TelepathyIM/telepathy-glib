@@ -131,34 +131,57 @@ tp_account_manager_get_feature_quark_core (void)
   return g_quark_from_static_string ("tp-account-manager-feature-core");
 }
 
+static const GQuark *
+_tp_account_manager_get_known_features (void)
+{
+  static GQuark features[1] = { 0 };
+
+  if (G_UNLIKELY (features[0] == 0))
+    {
+      features[0] = TP_ACCOUNT_MANAGER_FEATURE_CORE;
+    }
+
+  return features;
+}
+
 static TpAccountManagerFeature *
 _tp_account_manager_get_feature (TpAccountManager *self,
-    GQuark feature,
-    gboolean add)
+    GQuark feature)
 {
   TpAccountManagerPrivate *priv = self->priv;
   GList *l;
-  TpAccountManagerFeature *feat = NULL;
 
   for (l = priv->features; l != NULL; l = l->next)
     {
-      feat = l->data;
+      TpAccountManagerFeature *f = l->data;
 
-      if (feat->name == feature)
-        break;
+      if (f->name == feature)
+        return f;
     }
 
-  if (feat == NULL && add)
+  return NULL;
+}
+
+static gboolean
+_tp_account_manager_check_features (TpAccountManager *self,
+    const GQuark *features)
+{
+  const GQuark *f;
+
+  for (f = features; *f != 0; f++)
     {
-      feat = g_slice_new0 (TpAccountManagerFeature);
-      feat->name = feature;
-      feat->ready = FALSE;
-      priv->features = g_list_prepend (priv->features, feat);
+      TpAccountManagerFeature *feat;
 
-      g_array_append_val (priv->features_array, feature);
+      feat = _tp_account_manager_get_feature (self, *f);
+
+      /* features which are NULL (ie. don't exist) are always considered as
+       * being ready, except in _is_ready when it doesn't make sense to
+       * return TRUE. */
+      if (feat != NULL && !feat->ready)
+        return FALSE;
     }
 
-  return feat;
+  return TRUE;
 }
 
 static void
@@ -169,29 +192,22 @@ _tp_account_manager_become_ready (TpAccountManager *self,
   TpAccountManagerFeature *f = NULL;
   GList *l, *remove = NULL;
 
-  f = _tp_account_manager_get_feature (self, feature, TRUE);
+  f = _tp_account_manager_get_feature (self, feature);
+
+  g_assert (f != NULL);
 
   if (f->ready)
     return;
 
   f->ready = TRUE;
 
+  g_array_append_val (priv->features_array, feature);
+
   for (l = priv->callbacks; l != NULL; l = l->next)
     {
       TpAccountManagerFeatureCallback *cb = l->data;
-      gboolean ready = TRUE;
-      guint i;
 
-      for (i = 0; cb->features[i] != 0; i++)
-        {
-          if (!tp_account_manager_is_ready (self, cb->features[i]))
-            {
-              ready = FALSE;
-              break;
-            }
-        }
-
-      if (ready)
+      if (_tp_account_manager_check_features (self, cb->features))
         {
           remove = g_list_prepend (remove, l);
           g_simple_async_result_complete (cb->result);
@@ -400,6 +416,8 @@ _tp_account_manager_constructed (GObject *object)
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_account_manager_parent_class)->constructed;
   TpAccountManagerPrivate *priv = self->priv;
+  guint i;
+  const GQuark *known_features;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -409,6 +427,18 @@ _tp_account_manager_constructed (GObject *object)
   priv->features = NULL;
   priv->callbacks = NULL;
   priv->features_array = g_array_new (TRUE, FALSE, sizeof (GQuark));
+
+  known_features = _tp_account_manager_get_known_features ();
+
+  /* Fill features list. */
+  for (i = 0; i < G_N_ELEMENTS (known_features); i++)
+    {
+      TpAccountManagerFeature *feature;
+      feature = g_slice_new0 (TpAccountManagerFeature);
+      feature->name = known_features[i];
+      feature->ready = FALSE;
+      priv->features = g_list_prepend (priv->features, feature);
+    }
 
   tp_dbus_daemon_watch_name_owner (tp_proxy_get_dbus_daemon (self),
       TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb,
@@ -1258,7 +1288,7 @@ tp_account_manager_is_ready (TpAccountManager *manager,
 {
   TpAccountManagerFeature *f;
 
-  f = _tp_account_manager_get_feature (manager, feature, FALSE);
+  f = _tp_account_manager_get_feature (manager, feature);
 
   if (f == NULL)
     return FALSE;
@@ -1292,18 +1322,9 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 {
   TpAccountManagerPrivate *priv = manager->priv;
   GSimpleAsyncResult *result;
-  guint i;
-  gboolean already_ready = TRUE;
 
-  for (i = 0; features[i] != 0; i++)
-    {
-      TpAccountManagerFeature *f;
-
-      f = _tp_account_manager_get_feature (manager, features[i], TRUE);
-
-      if (!f->ready)
-        already_ready = FALSE;
-    }
+  /* In this object, there are no features which are activatable (core is
+   * forced on you). They'd be activated here though. */
 
   if (callback == NULL)
     return;
@@ -1311,7 +1332,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
   result = g_simple_async_result_new (G_OBJECT (manager),
       callback, user_data, tp_account_manager_prepare_finish);
 
-  if (already_ready)
+  if (_tp_account_manager_check_features (manager, features))
     {
       g_simple_async_result_complete (result);
       g_object_unref (result);
