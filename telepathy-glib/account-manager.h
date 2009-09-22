@@ -83,9 +83,6 @@ GList *tp_account_manager_get_accounts (TpAccountManager *manager);
 void tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
     TpConnectionPresenceType type, const gchar *status, const gchar *message);
 
-TpConnectionPresenceType tp_account_manager_get_requested_global_presence (
-    TpAccountManager *manager, gchar **status, gchar **message);
-
 TpConnectionPresenceType tp_account_manager_get_global_presence (
     TpAccountManager *manager, gchar **status, gchar **message);
 

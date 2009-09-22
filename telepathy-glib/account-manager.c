@@ -1097,34 +1097,6 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_get_requested_global_presence:
- * @manager: a #TpAccountManager
- * @status: a string to fill with the requested status
- * @message: a string to fill with the requested status message
- *
- * <!-- -->
- *
- * Returns: the requested global presence
- *
- * Since: 0.7.UNRELEASED
- */
-TpConnectionPresenceType
-tp_account_manager_get_requested_global_presence (TpAccountManager *manager,
-    gchar **status,
-    gchar **message)
-{
-  TpAccountManagerPrivate *priv = manager->priv;
-
-  if (status != NULL)
-    *status = g_strdup (priv->requested_status);
-
-  if (message != NULL)
-    *message = g_strdup (priv->requested_status_message);
-
-  return priv->requested_presence;
-}
-
-/**
  * tp_account_manager_get_global_presence:
  * @manager: a #TpAccountManager
  * @status: a string to fill with the actual status

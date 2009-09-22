@@ -23,7 +23,6 @@
 
 #include "telepathy-glib/account.h"
 
-#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
@@ -87,6 +86,8 @@ struct _TpAccountPrivate {
   TpConnectionPresenceType requested_presence;
   gchar *requested_status;
   gchar *requested_message;
+
+  TpConnectionPresenceType default_presence;
 
   gboolean connect_automatically;
   gboolean has_been_online;
@@ -154,7 +155,8 @@ enum {
   PROP_REQUESTED_PRESENCE,
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
-  PROP_NICKNAME
+  PROP_NICKNAME,
+  PROP_DEFAULT_PRESENCE
 };
 
 /**
@@ -717,6 +719,9 @@ _tp_account_set_property (GObject *object,
       tp_account_set_enabled_async (self,
           g_value_get_boolean (value), NULL, NULL);
       break;
+    case PROP_DEFAULT_PRESENCE:
+      self->priv->default_presence = g_value_get_uint (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -788,6 +793,9 @@ _tp_account_get_property (GObject *object,
       break;
     case PROP_NICKNAME:
       g_value_set_string (value, self->priv->nickname);
+      break;
+    case PROP_DEFAULT_PRESENCE:
+      g_value_set_uint (value, self->priv->default_presence);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1117,7 +1125,7 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount: requested-status-message:
+   * TpAccount:requested-status-message:
    *
    * The requested status message message of the account.
    *
@@ -1131,7 +1139,7 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount: nickname
+   * TpAccount:nickname
    *
    * The account's nickname.
    *
@@ -1143,6 +1151,23 @@ tp_account_class_init (TpAccountClass *klass)
           "The account's nickname",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:default-presence:
+   *
+   * The default presence that should be set on the account when it becomes
+   * enabled.
+   *
+   * Since: 0.7.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_CONNECTION_STATUS,
+      g_param_spec_uint ("default-presence",
+          "default presence",
+          "the default presence that should be set on the account when it becomes enabled",
+          0,
+          NUM_TP_CONNECTION_PRESENCE_TYPES,
+          TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
 
   /**
    * TpAccount::status-changed:
@@ -1563,34 +1588,37 @@ tp_account_set_enabled_finish (TpAccount *account,
 }
 
 static void
-_tp_account_set_presence_from_global (TpAccountManager *account_manager,
-    TpAccount *account)
+_tp_account_set_presence_from_default (TpAccount *account)
 {
-  TpConnectionPresenceType presence;
-  gchar *status = NULL;
-  gchar *status_message = NULL;
+  TpAccountPrivate *priv = account->priv;
+  const gchar *status;
 
-  presence = tp_account_manager_get_requested_global_presence (account_manager,
-      &status, &status_message);
+  switch (priv->default_presence)
+    {
+    case TP_CONNECTION_PRESENCE_TYPE_AVAILABLE:
+      status = "available";
+      break;
+    case TP_CONNECTION_PRESENCE_TYPE_AWAY:
+      status = "away";
+      break;
+    case TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY:
+      status = "xa";
+      break;
+    case TP_CONNECTION_PRESENCE_TYPE_HIDDEN:
+      status = "hidden";
+      break;
+    case TP_CONNECTION_PRESENCE_TYPE_BUSY:
+      status = "busy";
+    default:
+      status = NULL;
+      break;
+    }
 
-  if (presence != TP_CONNECTION_PRESENCE_TYPE_UNSET)
-    tp_account_request_presence_async (account, presence, status,
-        status_message, NULL, NULL);
+  if (status == NULL)
+    return;
 
-  g_free (status);
-  g_free (status_message);
-}
-
-static void
-_tp_account_account_manager_ready_cb (TpAccountManager *account_manager,
-    GParamSpec *pspec,
-    gpointer user_data)
-{
-  TpAccount *account = TP_ACCOUNT (user_data);
-
-  _tp_account_set_presence_from_global (account_manager, account);
-
-  g_object_unref (account_manager);
+  tp_account_request_presence_async (account, priv->default_presence, status,
+      NULL, NULL, NULL);
 }
 
 /**
@@ -1613,7 +1641,6 @@ tp_account_set_enabled_async (TpAccount *account,
     gpointer user_data)
 {
   TpAccountPrivate *priv = account->priv;
-  TpAccountManager *account_manager;
   GValue value = {0, };
   GSimpleAsyncResult *result;
 
@@ -1627,21 +1654,7 @@ tp_account_set_enabled_async (TpAccount *account,
     }
 
   if (enabled)
-    {
-      account_manager = tp_account_manager_dup ();
-
-      if (tp_account_manager_is_ready (account_manager,
-              TP_ACCOUNT_MANAGER_FEATURE_CORE))
-        {
-          _tp_account_set_presence_from_global (account_manager, account);
-          g_object_unref (account_manager);
-        }
-      else
-        {
-          g_signal_connect (G_OBJECT (account_manager), "notify::ready",
-              G_CALLBACK (_tp_account_account_manager_ready_cb), account);
-        }
-    }
+    _tp_account_set_presence_from_default (account);
 
   g_value_init (&value, G_TYPE_BOOLEAN);
   g_value_set_boolean (&value, enabled);
