@@ -69,7 +69,7 @@ GType tp_account_get_type (void);
 #define TP_ACCOUNT_FEATURE_CORE \
   tp_account_get_feature_quark_core ()
 
-GQuark tp_account_get_feature_quark_core (void);
+GQuark tp_account_get_feature_quark_core (void) G_GNUC_CONST;
 
 TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
     GError **error);
