@@ -1051,8 +1051,8 @@ tp_account_manager_get_accounts (TpAccountManager *manager)
  * (@type, @status and @message). Note that the presence requested here is
  * merely a request, and if might not be satisfiable.
  *
- * You can find the actual global presence across all accounts by calling
- * tp_account_manager_get_global_presence().
+ * You can find the most available presence across all accounts by calling
+ * tp_account_manager_get_most_available_presence().
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1097,20 +1097,20 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_get_global_presence:
+ * tp_account_manager_get_most_available_presence:
  * @manager: a #TpAccountManager
  * @status: a string to fill with the actual status
  * @message: a string to fill with the actual status message
  *
  * <!-- -->
  *
- * Returns: the actual global presence
+ * Returns: the most available presence across all accounts
  *
  * Since: 0.7.UNRELEASED
  */
 
 TpConnectionPresenceType
-tp_account_manager_get_global_presence (TpAccountManager *manager,
+tp_account_manager_get_most_available_presence (TpAccountManager *manager,
     gchar **status,
     gchar **message)
 {
