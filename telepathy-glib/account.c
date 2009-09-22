@@ -2670,7 +2670,7 @@ set_or_free (gchar **target,
 }
 
 /**
- * tp_parse_account_path:
+ * tp_account_parse_object_path:
  * @object_path: a Telepathy Account's object path
  * @cm: location at which to store the account's connection manager's name
  * @protocol: location at which to store the account's protocol

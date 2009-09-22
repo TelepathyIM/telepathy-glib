@@ -94,19 +94,19 @@ void tp_account_manager_create_account_async (TpAccountManager *manager,
 TpAccount * tp_account_manager_create_account_finish (
     TpAccountManager *manager, GAsyncResult *result, GError **error);
 
-gboolean tp_account_manager_is_ready (TpAccountManager *account,
+gboolean tp_account_manager_is_ready (TpAccountManager *manager,
     GQuark feature);
 
-void tp_account_manager_prepare_async (TpAccountManager *account,
+void tp_account_manager_prepare_async (TpAccountManager *manager,
     GQuark* features, GAsyncReadyCallback callback, gpointer user_data);
 
-gboolean tp_account_manager_prepare_finish (TpAccountManager *account,
+gboolean tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result, GError **error);
 
-gboolean tp_account_manager_set_features (TpAccountManager *account,
+gboolean tp_account_manager_set_features (TpAccountManager *manager,
     const GQuark* features);
 
-const GQuark * tp_account_manager_get_features (TpAccountManager *account);
+const GQuark * tp_account_manager_get_features (TpAccountManager *manager);
 
 G_END_DECLS
 
