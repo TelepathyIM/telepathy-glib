@@ -103,9 +103,6 @@ void tp_account_manager_prepare_async (TpAccountManager *manager,
 gboolean tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result, GError **error);
 
-gboolean tp_account_manager_set_features (TpAccountManager *manager,
-    const GQuark* features);
-
 const GQuark * tp_account_manager_get_features (TpAccountManager *manager);
 
 G_END_DECLS

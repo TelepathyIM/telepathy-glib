@@ -212,11 +212,12 @@ _tp_account_get_feature (TpAccount *self,
 
   if (feat == NULL && add)
     {
-      GQuark fs[] = { feature, 0 };
-      tp_account_set_features (self, fs);
+      feat = g_slice_new0 (TpAccountFeature);
+      feat->name = feature;
+      feat->ready = FALSE;
+      priv->features = g_list_prepend (priv->features, feat);
 
-      /* New feature will be the first element as we use g_list_prepend */
-      feat = priv->features->data;
+      g_array_append_val (priv->features_array, feature);
     }
 
   return feat;
@@ -2532,6 +2533,10 @@ tp_account_is_ready (TpAccount *account,
  * can then call tp_account_prepare_finish() to get the result of the
  * operation.
  *
+ * If %NULL is given to @callback, then no callback will be called when the
+ * operation is finished. Instead, it will simply set @features on @manager.
+ * Note that if @callback is %NULL, then @user_data must also be %NULL.
+ *
  * Since: 0.7.UNRELEASED
  */
 void
@@ -2545,9 +2550,6 @@ tp_account_prepare_async (TpAccount *account,
   guint i;
   gboolean already_ready = TRUE;
 
-  result = g_simple_async_result_new (G_OBJECT (account),
-      callback, user_data, tp_account_prepare_finish);
-
   for (i = 0; features[i] != 0; i++)
     {
       TpAccountFeature *f;
@@ -2555,11 +2557,14 @@ tp_account_prepare_async (TpAccount *account,
       f = _tp_account_get_feature (account, features[i], TRUE);
 
       if (!f->ready)
-        {
-          already_ready = FALSE;
-          break;
-        }
+        already_ready = FALSE;
     }
+
+  if (callback == NULL)
+    return;
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_prepare_finish);
 
   if (already_ready)
     {
@@ -2599,46 +2604,6 @@ tp_account_prepare_finish (TpAccount *account,
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
           tp_account_prepare_finish))
     return FALSE;
-
-  return TRUE;
-}
-
-/**
- * tp_account_set_features:
- * @account: a #TpAccount
- * @features: a 0-terminated list of features
- *
- * Sets additional features on @account. Features cannot be removed from
- * an object. Features which are already set on @account will be ignored.
- *
- * Returns: %TRUE if the set was successful, otherwise %FALSE
- *
- * Since: 0.7.UNRELEASED
- */
-gboolean
-tp_account_set_features (TpAccount *account,
-    const GQuark* features)
-{
-  TpAccountPrivate *priv = account->priv;
-  guint i;
-
-  for (i = 0; features[i] != 0; i++)
-    {
-      TpAccountFeature *feature;
-      GQuark f = features[i];
-
-      if (_tp_account_get_feature (account, f, FALSE) != NULL)
-        continue;
-
-      feature = g_slice_new0 (TpAccountFeature);
-      feature->name = f;
-      feature->ready = FALSE;
-      /* If _prepend is changed, _get_feature must also be changed.
-       * (see comment there) */
-      priv->features = g_list_prepend (priv->features, feature);
-
-      g_array_append_val (priv->features_array, f);
-    }
 
   return TRUE;
 }
