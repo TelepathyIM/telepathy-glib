@@ -1394,8 +1394,10 @@ unescape_protocol (gchar *protocol)
  * tp_account_get_connection:
  * @account: a #TpAccount
  *
- * Get the connection of the account, or NULL if account is offline or the
- * connection is not yet ready. This function does not return a new ref.
+ * Get the connection of the account, or NULL if account is offline.
+ * This function does not return a new ref and it is not guaranteed that the
+ * returned #TpConnection object is ready
+ *
  *
  * Returns: the connection of the account.
  *
@@ -1406,11 +1408,7 @@ tp_account_get_connection (TpAccount *account)
 {
   TpAccountPrivate *priv = account->priv;
 
-  if (priv->connection != NULL &&
-      tp_connection_is_ready (priv->connection))
-    return priv->connection;
-
-  return NULL;
+  return priv->connection;
 }
 
 /**
