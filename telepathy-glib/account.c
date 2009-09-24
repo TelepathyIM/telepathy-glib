@@ -1361,7 +1361,8 @@ tp_account_init_known_interfaces (void)
  * @object_path: The non-NULL object path of this account
  * @error: Used to raise an error if @object_path is not valid
  *
- * Convenience function to create a new account proxy.
+ * Convenience function to create a new account proxy. The returned #TpAccount
+ * is not guaranteed to be ready at the point of return.
  *
  * Returns: a new reference to an account proxy, or %NULL if @object_path is
  *    not valid
@@ -1443,7 +1444,7 @@ tp_account_get_connection (TpAccount *account)
  *
  * Set the connection of the account by specifying the connection object path.
  * This function does not return a new ref and it is not guaranteed that the
- * returned #TpConnection object is ready
+ * returned #TpConnection object is ready.
  *
  * Returns: the connection of the account, or %NULL if either the object path
  *   @path is invalid or it is the null-value "/"

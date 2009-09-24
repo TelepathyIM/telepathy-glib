@@ -793,7 +793,8 @@ tp_account_manager_init_known_interfaces (void)
  * tp_account_manager_new:
  * @bus_daemon: Proxy for the D-Bus daemon
  *
- * Convenience function to create a new account manager proxy.
+ * Convenience function to create a new account manager proxy. The returned
+ * #TpAccountManager is not guaranteed to be ready on return.
  *
  * Use tp_account_manager_dup() instead if you want an account managerproxy
  * on the starter or session bus (which is almost always the right thing for
@@ -829,7 +830,8 @@ static gpointer starter_account_manager_proxy = NULL;
  *
  * The returned #TpAccountManager is cached; the same #TpAccountManager object
  * will be returned by this function repeatedly, as long as at least one
- * reference exists.
+ * reference exists. Note that the returned #TpAccountManager is not guaranteed
+ * to be ready on return.
  *
  * Returns: an account manager proxy on the starter or session bus, or %NULL
  *          if it wasn't possible to get a dbus daemon proxy for the
@@ -1053,7 +1055,8 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
  * has already been ensured then the same object will be returned, otherwise
  * it will create a new #TpAccount and add it to @manager. As a result, if
  * @manager thinks that the account doesn't exist, this will still add it to
- * @manager to avoid races.
+ * @manager to avoid races. Note that the returned #TpAccount is not guaranteed
+ * to be ready on return.
  *
  * The caller must keep a ref to the returned object using g_object_ref() if
  * it is to be kept.
@@ -1088,7 +1091,8 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
  * @manager: a #TpAccountManager
  *
  * Returns a newly allocated #GList of accounts in @manager. The list must be
- * freed with g_list_free() after used.
+ * freed with g_list_free() after used. None of the accounts in the returned
+ * list are guaranteed to be ready.
  *
  * Note that the #TpAccount<!-- -->s in the returned #GList are not reffed
  * before returning from this function. One could ref every item in the list
@@ -1253,6 +1257,11 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
  * then call tp_account_manager_create_account_finish() to get the result of
  * the operation.
  *
+ * @callback will only be called when the newly created #TpAccount has the
+ * %TP_ACCOUNT_FEATURE_CORE feature ready on it, so when calling
+ * tp_account_manager_create_account_finish(), one can guarantee this feature
+ * will be ready.
+ *
  * Since: 0.7.UNRELEASED
  */
 void
@@ -1282,9 +1291,11 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
  * @result: a #GAsyncResult
  * @error: a #GError to be filled
  *
- * Finishes an async create account operation.
+ * Finishes an async create account operation, and returns a new #TpAccount
+ * object, with the %TP_ACCOUNT_FEATURE_CORE feature ready on it.
  *
- * Returns: %TRUE if the reconnect call was successful, otherwise %FALSE
+ * Returns: a new #TpAccount which was just created on success, otherwise
+ *          %NULL
  *
  * Since: 0.7.UNRELEASED
  */
