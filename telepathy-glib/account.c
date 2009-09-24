@@ -2588,6 +2588,9 @@ tp_account_is_ready (TpAccount *account,
 {
   TpAccountFeature *f;
 
+  if (tp_proxy_get_invalidated (account) != NULL)
+    return FALSE;
+
   f = _tp_account_get_feature (account, feature);
 
   if (f == NULL)

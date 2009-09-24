@@ -1335,6 +1335,9 @@ tp_account_manager_is_ready (TpAccountManager *manager,
 {
   TpAccountManagerFeature *f;
 
+  if (tp_proxy_get_invalidated (manager) != NULL)
+    return FALSE;
+
   f = _tp_account_manager_get_feature (manager, feature);
 
   if (f == NULL)
