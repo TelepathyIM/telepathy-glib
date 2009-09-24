@@ -1,7 +1,39 @@
-telepathy-glib 0.7.38 (UNRELEASED)
-==================================
+telepathy-glib 0.8.0 (2009-09-24)
+=================================
 
-...
+The "line in the sand" release.
+
+This release begins a bugfix-only 0.8.x branch, in which new API/ABI will no
+longer be added; 0.9.x development releases will continue to be made from
+the master branch.
+
+Summary of API changes since 0.6.x:
+
+* Since 0.7.35, it is no longer guaranteed that the self-handle in
+  TpBaseConnection is set to 0 when the state changes to DISCONNECTED;
+  instead, it remains valid until the connection is disposed. This will cause
+  assertion failures during disconnection in telepathy-sofiasip < 0.5.17 and
+  telepathy-gabble < 0.7.9.
+
+Summary of major enhancements since 0.6.x:
+
+* updated telepathy-spec from 0.16.x to 0.18.0, with many new interfaces, the
+  AccountManager, the ChannelDispatcher, and Clients
+* added TpProxy, a base class representing remote D-Bus objects
+  (see <http://smcv.pseudorandom.co.uk/2009/05/tp-proxy/>)
+* added subclasses of TpProxy for all the major Telepathy objects (apart from
+  Debug, which will be added later)
+* added TpContact, an object representing a Telepathy contact
+* added macros for interface-name GQuarks, and for Telepathy dbus-glib GTypes
+* added the tp_asv_get_foo() family of functions to manipulate a{sv} maps
+* used versioned symbols to document the ABI
+* implemented various simple example connection managers and clients
+
+Changes since 0.7.37:
+
+* spec: update from 0.17.28 to 0.18.0 (no real changes) (smcv)
+* ContactList example CM: fix a crash during shutdown (andrunko)
+* StreamedMedia example CM: check for direction changes correctly (andrunko)
 
 telepathy-glib 0.7.37 (2009-09-14)
 ==================================
