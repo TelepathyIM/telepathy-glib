@@ -45,6 +45,8 @@ AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.9 -Wno-portability])
 AM_CONFIG_HEADER(config.h)
 
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+
 dnl check for tools
 AC_PROG_CC
 AC_PROG_CC_STDC
@@ -194,8 +196,6 @@ if test -z "$NM"; then
 fi
 AM_CONDITIONAL([HAVE_LD_VERSION_SCRIPT], [test $HAVE_LD_VERSION_SCRIPT = yes])
 
-SHAVE_INIT(.)
-
 AC_OUTPUT( Makefile \
 	   docs/Makefile \
 	   docs/reference/Makefile \
@@ -219,7 +219,5 @@ AC_OUTPUT( Makefile \
 	   tests/dbus/Makefile \
 	   tests/tools/Makefile \
 	   tools/Makefile \
-	   m4/Makefile \
-	   shave \
-	   shave-libtool
+	   m4/Makefile
 )

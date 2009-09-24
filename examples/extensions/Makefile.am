@@ -9,8 +9,6 @@
 
 tools_dir = $(top_srcdir)/tools
 
-include $(tools_dir)/shave.mk
-
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     $(DBUS_CFLAGS) \
@@ -68,43 +66,43 @@ XSLTPROCFLAGS = --nonet --novalid
 
 _gen/all.xml: all.xml $(wildcard *.xml) $(tools_dir)/xincludator.py
 	$(mkdir_p) _gen
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 extensions.html: _gen/all.xml $(tools_dir)/doc-generator.xsl
-	$(QUIET_GEN)$(XSLTPROC) $(XSLTPROCFLAGS) \
+	$(AM_V_GEN)$(XSLTPROC) $(XSLTPROCFLAGS) \
 		$(tools_dir)/doc-generator.xsl \
 		$< > $@
 
 _gen/gtypes.h _gen/gtypes-body.h: _gen/all.xml \
 	$(top_srcdir)/tools/glib-gtypes-generator.py
-	$(QUIET_GEN)$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
+	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
 		$< _gen/gtypes Example
 
 _gen/signals-marshal.list: _gen/all.xml \
 	$(tools_dir)/glib-signals-marshal-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py $< > $@
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py $< > $@
 
 _gen/signals-marshal.h: _gen/signals-marshal.list Makefile.am
-	$(QUIET_GEN)$(GLIB_GENMARSHAL) --header --prefix=_example_ext_marshal $< > $@
+	$(AM_V_GEN)$(GLIB_GENMARSHAL) --header --prefix=_example_ext_marshal $< > $@
 
 _gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
-	$(QUIET_GEN){ echo '#include "_gen/signals-marshal.h"' && \
+	$(AM_V_GEN){ echo '#include "_gen/signals-marshal.h"' && \
 	$(GLIB_GENMARSHAL) --body --prefix=_example_ext_marshal $< ; } > $@
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/all.xml \
 	$(tools_dir)/glib-client-marshaller-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< \
 		_example_ext > $@
 
 _gen/enums.h: _gen/all.xml \
 	$(tools_dir)/c-constants-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
 		Example \
 		$< > $@
 
 _gen/interfaces-body.h _gen/interfaces.h: _gen/all.xml \
 	$(tools_dir)/glib-interfaces-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
 		Example _gen/interfaces-body.h _gen/interfaces.h $<
 
 # Generated files which must be generated per "category". Each TpProxy
@@ -113,11 +111,11 @@ _gen/interfaces-body.h _gen/interfaces.h: _gen/all.xml \
 
 _gen/connection.xml: connection.xml $(wildcard *.xml) $(tools_dir)/xincludator.py
 	$(mkdir_p) _gen
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 _gen/cli-connection-body.h _gen/cli-connection.h: _gen/connection.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
 		--group=connection \
 		--subclass=TpConnection \
 		--subclass-assert=TP_IS_CONNECTION \
@@ -128,7 +126,7 @@ _gen/cli-connection-body.h _gen/cli-connection.h: _gen/connection.xml \
 
 _gen/svc-connection.c _gen/svc-connection.h: _gen/connection.xml \
 	$(tools_dir)/glib-ginterface-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
 		--filename=_gen/svc-connection \
 		--signal-marshal-prefix=_example_ext \
 		--include='<telepathy-glib/dbus.h>' \

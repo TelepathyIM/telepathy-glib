@@ -70,5 +70,3 @@ tests/test-*
 tests/tools/actual.h
 tests/tools/actual-body.h
 tools/telepathy-glib-env
-shave
-shave-libtool

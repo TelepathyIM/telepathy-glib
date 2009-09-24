@@ -1,4 +1,3 @@
-include $(top_srcdir)/tools/shave.mk
 include $(top_srcdir)/tools/flymake.mk
 
 tpgincludedir=$(includedir)/telepathy-1.0/telepathy-glib
@@ -96,7 +95,7 @@ endif
 
 _gen/version-script.txt: $(ABI_LISTS) _gen/abi.txt Makefile.am \
 	$(top_srcdir)/tools/make-version-script.py
-	$(QUIET_GEN)$(PYTHON) $(top_srcdir)/tools/make-version-script.py \
+	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/make-version-script.py \
 		 --symbols=_gen/abi.txt $(MAKE_VERSION_SCRIPT_FLAGS) \
 		 $(ABI_LISTS:%=$(srcdir)/%) > $@
 	$(PYTHON) $(top_srcdir)/tools/make-version-script.py \
@@ -114,7 +113,7 @@ _gen/abi.txt: libtelepathy-glib-internal.la Makefile.am
 	grep " [DT] " < _gen/abi.nm > _gen/abi.funcs
 	cut -d" " -f3 < _gen/abi.funcs > _gen/abi.funcnames
 	grep "^tp" < _gen/abi.funcnames > _gen/abi.tpfuncnames
-	$(QUIET_GEN)sort -u < _gen/abi.tpfuncnames > $@
+	$(AM_V_GEN)sort -u < _gen/abi.tpfuncnames > $@
 
 libtelepathy_glib_la_LDFLAGS += \
     $(VERSION_SCRIPT_ARG)=_gen/version-script.txt
@@ -360,60 +359,60 @@ _gen/stable-stamp: $(wildcard *.xml) _gen/spec-stamp
 	touch $@
 
 _gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp $(tools_dir)/xincludator.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 # Things generated from the whole spec at once
 
 _gen/gtypes.h _gen/gtypes-body.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-gtypes-generator.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-gtypes-generator.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-gtypes-generator.py \
 		_gen/stable-spec.xml \
 		_gen/gtypes Tp
 
 _gen/telepathy-enums.h: _gen/stable-spec.xml \
 	$(tools_dir)/c-constants-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
 		Tp \
 		$< > $@
 
 _gen/interfaces-body.h _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-interfaces-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
 		Tp _gen/interfaces-body.h _gen/telepathy-interfaces.h $<
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-client-marshaller-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< _tp > $@
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< _tp > $@
 
 _gen/tp-signals-marshal.list: $(tools_dir)/glib-signals-marshal-gen.py \
 	_gen/stable-spec.xml
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py \
 		_gen/stable-spec.xml > $@
 
 _gen/signals-marshal.list: signals-marshal.list _gen/tp-signals-marshal.list
-	$(QUIET_GEN)sort -u $^ > $@
+	$(AM_V_GEN)sort -u $^ > $@
 
 _gen/signals-marshal.h: _gen/signals-marshal.list Makefile.am
-	$(QUIET_GEN)$(GLIB_GENMARSHAL) --header --prefix=_tp_marshal $< > $@
+	$(AM_V_GEN)$(GLIB_GENMARSHAL) --header --prefix=_tp_marshal $< > $@
 
 _gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
-	$(QUIET_GEN){ echo '#include "_gen/signals-marshal.h"' && \
+	$(AM_V_GEN){ echo '#include "_gen/signals-marshal.h"' && \
 	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< ; } > $@
 
 _gen/error-str.h _gen/error-str.c: _gen/stable-spec.xml \
 	$(tools_dir)/glib-errors-str-gen.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-errors-str-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-errors-str-gen.py \
 		_gen/error-str $<
 
 # Things generated per interface
 
 _gen/tp-spec-%.xml: %.xml _gen/spec-stamp $(tools_dir)/xincludator.py
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
 _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 	$(tools_dir)/glib-ginterface-gen.py \
 	Makefile.am
-	$(QUIET_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
 		--filename=_gen/tp-svc-$* \
 		--signal-marshal-prefix=_tp \
 		--include='<telepathy-glib/dbus.h>' \
@@ -424,7 +423,7 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	$(tools_dir)/glib-client-gen.py \
 	Makefile.am
-	$(QUIET_GEN)set -e; \
+	$(AM_V_GEN)set -e; \
 	subclass= ; \
 	subclass_assert= ; \
 	case $* in \
