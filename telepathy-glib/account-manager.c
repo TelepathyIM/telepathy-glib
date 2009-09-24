@@ -894,7 +894,7 @@ _tp_account_manager_update_global_presence (TpAccountManager *manager)
       TpAccount *a = TP_ACCOUNT (value);
       TpConnectionPresenceType p;
 
-      p = tp_account_get_presence (a);
+      p = tp_account_get_current_presence (a, NULL, NULL);
 
       if (tp_connection_presence_type_cmp_availability (p, presence) > 0)
         {
@@ -915,10 +915,8 @@ _tp_account_manager_update_global_presence (TpAccountManager *manager)
       return;
     }
 
-  priv->global_presence = tp_account_get_presence (account);
-  priv->global_status = g_strdup (tp_account_get_status (account));
-  priv->global_status_message = g_strdup (
-      tp_account_get_status_message (account));
+  priv->global_presence = tp_account_get_current_presence (account,
+      &(priv->global_status), &(priv->global_status_message));
 
   DEBUG ("Updated global presence to: %s (%d) \"%s\"",
       priv->global_status, priv->global_presence, priv->global_status_message);

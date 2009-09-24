@@ -156,11 +156,8 @@ gboolean tp_account_get_has_been_online (TpAccount *account);
 TpConnectionStatus tp_account_get_connection_status (TpAccount *account,
     TpConnectionStatusReason *reason);
 
-TpConnectionPresenceType tp_account_get_presence (TpAccount *account);
-
-const gchar *tp_account_get_status (TpAccount *account);
-
-const gchar *tp_account_get_status_message (TpAccount *account);
+TpConnectionPresenceType tp_account_get_current_presence (TpAccount *account,
+    gchar **status, gchar **status_message);
 
 TpConnectionPresenceType tp_account_get_requested_presence (
     TpAccount *account);

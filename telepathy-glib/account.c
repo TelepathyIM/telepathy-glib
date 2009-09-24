@@ -2217,51 +2217,27 @@ tp_account_get_connection_status (TpAccount *account,
 }
 
 /**
- * tp_account_get_presence:
+ * tp_account_get_current_presence:
  * @account: a #TpAccount
  *
- * Gets the type from the CurrentPresence parameter on @account.
+ * Gets the current presence, status and status message of @account.
  *
  * Returns: the type from the CurrentPresence parameter on @account
  *
  * Since: 0.7.UNRELEASED
  */
 TpConnectionPresenceType
-tp_account_get_presence (TpAccount *account)
+tp_account_get_current_presence (TpAccount *account,
+    gchar **status,
+    gchar **status_message)
 {
+  if (status != NULL)
+    *status = g_strdup (account->priv->status);
+
+  if (status_message != NULL)
+    *status_message = g_strdup (account->priv->message);
+
   return account->priv->presence;
-}
-
-/**
- * tp_account_get_status:
- * @account: a #TpAccount
- *
- * Gets the status from the CurrentPresence parameter on @account.
- *
- * Returns: the status from the CurrentPresence parameter on @account
- *
- * Since: 0.7.UNRELEASED
- */
-const gchar *
-tp_account_get_status (TpAccount *account)
-{
-  return account->priv->status;
-}
-
-/**
- * tp_account_get_status_message:
- * @account: a #TpAccount
- *
- * Gets the message from the CurrentPresence parameter on @account.
- *
- * Returns: the message from the CurrentPresence parameter on @account
- *
- * Since: 0.7.UNRELEASED
- */
-const gchar *
-tp_account_get_status_message (TpAccount *account)
-{
-  return account->priv->message;
 }
 
 /**
