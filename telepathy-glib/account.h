@@ -79,8 +79,6 @@ gboolean tp_account_parse_object_path (const gchar *object_path,
 
 void tp_account_init_known_interfaces (void);
 
-gboolean tp_account_is_just_connected (TpAccount *account);
-
 TpConnection *tp_account_get_connection (TpAccount *account);
 
 TpConnection *tp_account_ensure_connection (TpAccount *account,

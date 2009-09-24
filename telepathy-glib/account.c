@@ -1413,32 +1413,6 @@ _tp_account_got_all_cb (TpProxy *proxy,
 }
 
 /**
- * tp_account_is_just_connected:
- * @account: a #TpAccount
- *
- * Returns whether @account has connected in the last ten seconds. This
- * is useful for determining whether the account has only just come online, or
- * whether its status has simply changed.
- *
- * Returns: whether @account has only just connected
- *
- * Since: 0.7.UNRELEASED
- */
-gboolean
-tp_account_is_just_connected (TpAccount *account)
-{
-  TpAccountPrivate *priv = account->priv;
-  GTimeVal val;
-
-  if (priv->connection_status != TP_CONNECTION_STATUS_CONNECTED)
-    return FALSE;
-
-  g_get_current_time (&val);
-
-  return (val.tv_sec - priv->connect_time) < 10;
-}
-
-/**
  * tp_account_get_connection:
  * @account: a #TpAccount
  *
