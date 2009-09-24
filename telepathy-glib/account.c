@@ -123,7 +123,7 @@ typedef struct {
 
 typedef struct {
   GSimpleAsyncResult *result;
-  GQuark *features;
+  const GQuark *features;
 } TpAccountFeatureCallback;
 
 G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
@@ -2528,7 +2528,7 @@ tp_account_is_ready (TpAccount *account,
  */
 void
 tp_account_prepare_async (TpAccount *account,
-    GQuark* features,
+    const GQuark *features,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {

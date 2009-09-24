@@ -187,7 +187,7 @@ const GArray *tp_account_get_avatar_finish (TpAccount *account,
 
 gboolean tp_account_is_ready (TpAccount *account, GQuark feature);
 
-void tp_account_prepare_async (TpAccount *account, GQuark* features,
+void tp_account_prepare_async (TpAccount *account, const GQuark *features,
     GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean tp_account_prepare_finish (TpAccount *account, GAsyncResult *result,

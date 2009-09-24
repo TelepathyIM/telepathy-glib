@@ -98,7 +98,7 @@ gboolean tp_account_manager_is_ready (TpAccountManager *manager,
     GQuark feature);
 
 void tp_account_manager_prepare_async (TpAccountManager *manager,
-    GQuark* features, GAsyncReadyCallback callback, gpointer user_data);
+    const GQuark *features, GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result, GError **error);

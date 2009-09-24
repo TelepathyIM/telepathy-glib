@@ -96,7 +96,7 @@ typedef struct {
 
 typedef struct {
   GSimpleAsyncResult *result;
-  GQuark *features;
+  const GQuark *features;
 } TpAccountManagerFeatureCallback;
 
 #define MC5_BUS_NAME "org.freedesktop.Telepathy.MissionControl5"
@@ -1353,7 +1353,7 @@ tp_account_manager_is_ready (TpAccountManager *manager,
  */
 void
 tp_account_manager_prepare_async (TpAccountManager *manager,
-    GQuark* features,
+    const GQuark *features,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
