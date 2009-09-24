@@ -179,8 +179,6 @@ void tp_account_set_nickname_async (TpAccount *account,
 gboolean tp_account_set_nickname_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
 
-const gchar *tp_account_get_unique_name (TpAccount *account);
-
 void tp_account_get_avatar_async (TpAccount *account,
     GAsyncReadyCallback callback, gpointer user_data);
 

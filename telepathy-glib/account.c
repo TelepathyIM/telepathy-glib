@@ -451,7 +451,7 @@ _tp_account_connection_invalidated_cb (TpProxy *self,
     return;
 
   DEBUG ("(%s) Connection invalidated",
-      tp_account_get_unique_name (account));
+      tp_proxy_get_object_path (account));
 
   g_assert (priv->connection == TP_CONNECTION (self));
 
@@ -470,13 +470,13 @@ _tp_account_connection_ready_cb (TpConnection *connection,
   if (error != NULL)
     {
       DEBUG ("(%s) Connection failed to become ready: %s",
-          tp_account_get_unique_name (account), error->message);
+          tp_proxy_get_object_path (account), error->message);
       _tp_account_free_connection (account);
     }
   else
     {
       DEBUG ("(%s) Connection ready",
-          tp_account_get_unique_name (account));
+          tp_proxy_get_object_path (account));
       g_object_notify (G_OBJECT (account), "connection");
     }
 }
@@ -517,7 +517,7 @@ _tp_account_set_connection (TpAccount *account,
               G_CALLBACK (_tp_account_connection_invalidated_cb), account);
 
           DEBUG ("Readying connection for %s",
-              tp_account_get_unique_name (account));
+              tp_proxy_get_object_path (account));
           /* notify a change in the connection property when it's ready */
           tp_connection_call_when_ready (priv->connection,
               _tp_account_connection_ready_cb, account);
@@ -735,7 +735,7 @@ _tp_account_got_all_cb (TpProxy *proxy,
   TpAccount *self = TP_ACCOUNT (weak_object);
 
   DEBUG ("Got whole set of properties for %s",
-      tp_account_get_unique_name (self));
+      tp_proxy_get_object_path (self));
 
   if (error != NULL)
     {
@@ -791,7 +791,7 @@ _tp_account_constructed (GObject *object)
       g_error_free (error);
     }
 
-  _tp_account_parse_object_path (tp_account_get_unique_name (self),
+  _tp_account_parse_object_path (tp_proxy_get_object_path (self),
       &(priv->proto_name), &(priv->cm_name));
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
@@ -2420,22 +2420,6 @@ tp_account_set_nickname_async (TpAccount *account,
       _tp_account_property_set_cb, result, NULL, G_OBJECT (account));
 
   g_value_unset (&value);
-}
-
-/**
- * tp_account_get_unique_name:
- * @account: a #TpAccount
- *
- * <!-- -->
- *
- * Returns: the unique name of @account
- *
- * Since: 0.7.UNRELEASED
- */
-const gchar *
-tp_account_get_unique_name (TpAccount *account)
-{
-  return tp_proxy_get_object_path (account);
 }
 
 static void
