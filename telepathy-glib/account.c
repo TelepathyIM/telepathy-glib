@@ -726,6 +726,28 @@ _tp_account_properties_changed (TpAccount *proxy,
 }
 
 static void
+_tp_account_got_all_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpAccount *self = TP_ACCOUNT (weak_object);
+
+  DEBUG ("Got whole set of properties for %s",
+      tp_account_get_unique_name (self));
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get the initial set of account properties: %s",
+          error->message);
+      return;
+    }
+
+  _tp_account_update (self, properties);
+}
+
+static void
 _tp_account_constructed (GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (object);
@@ -777,7 +799,8 @@ _tp_account_constructed (GObject *object)
   tp_cli_account_connect_to_account_property_changed (self,
       _tp_account_properties_changed, NULL, NULL, object, NULL);
 
-  tp_account_refresh_properties (self);
+  tp_cli_dbus_properties_call_get_all (self, -1, TP_IFACE_ACCOUNT,
+      _tp_account_got_all_cb, NULL, NULL, G_OBJECT (self));
 }
 
 static void
@@ -1388,28 +1411,6 @@ unescape_protocol (gchar *protocol)
   g_strdelimit (protocol, "_", '-');
 
   return protocol;
-}
-
-static void
-_tp_account_got_all_cb (TpProxy *proxy,
-    GHashTable *properties,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpAccount *self = TP_ACCOUNT (weak_object);
-
-  DEBUG ("Got whole set of properties for %s",
-      tp_account_get_unique_name (self));
-
-  if (error != NULL)
-    {
-      DEBUG ("Failed to get the initial set of account properties: %s",
-          error->message);
-      return;
-    }
-
-  _tp_account_update (self, properties);
 }
 
 /**
@@ -2125,22 +2126,6 @@ tp_account_remove_finish (TpAccount *account,
           G_OBJECT (account), tp_account_remove_finish), FALSE);
 
   return TRUE;
-}
-
-/**
- * tp_account_refresh_properties:
- * @account: a #TpAccount
- *
- * Refreshes @account's hashtable of properties with what actually exists on
- * the account manager.
- *
- * Since: 0.7.UNRELEASED
- */
-void
-tp_account_refresh_properties (TpAccount *account)
-{
-  tp_cli_dbus_properties_call_get_all (account, -1, TP_IFACE_ACCOUNT,
-      _tp_account_got_all_cb, NULL, NULL, G_OBJECT (account));
 }
 
 /**
