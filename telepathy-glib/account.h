@@ -153,10 +153,8 @@ gboolean tp_account_set_connect_automatically_finish (TpAccount *account,
 
 gboolean tp_account_get_has_been_online (TpAccount *account);
 
-TpConnectionStatus tp_account_get_connection_status (TpAccount *account);
-
-TpConnectionStatusReason tp_account_get_connection_status_reason (
-    TpAccount *account);
+TpConnectionStatus tp_account_get_connection_status (TpAccount *account,
+    TpConnectionStatusReason *reason);
 
 TpConnectionPresenceType tp_account_get_presence (TpAccount *account);
 

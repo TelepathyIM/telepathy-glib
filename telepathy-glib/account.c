@@ -2238,33 +2238,22 @@ tp_account_get_has_been_online (TpAccount *account)
 /**
  * tp_account_get_connection_status:
  * @account: a #TpAccount
+ * @reason: a #TpConnectionStatusReason to fill, or %NULL
  *
- * Gets the ConnectionStatus parameter on @account.
+ * Gets the ConnectionStatus and ConnectionStatusReason parameter on @account.
  *
  * Returns: the value of the ConnectionStatus parameter on @account
  *
  * Since: 0.7.UNRELEASED
  */
 TpConnectionStatus
-tp_account_get_connection_status (TpAccount *account)
+tp_account_get_connection_status (TpAccount *account,
+    TpConnectionStatusReason *reason)
 {
-  return account->priv->connection_status;
-}
+  if (reason != NULL)
+    *reason = account->priv->reason;
 
-/**
- * tp_account_get_connection_status_reason:
- * @account: a #TpAccount
- *
- * Gets the ConnectionStatusReason parameter on @account.
- *
- * Returns: the value of the ConnectionStatusReason parameter on @account
- *
- * Since: 0.7.UNRELEASED
- */
-TpConnectionStatusReason
-tp_account_get_connection_status_reason (TpAccount *account)
-{
-  return account->priv->reason;
+  return account->priv->connection_status;
 }
 
 /**
