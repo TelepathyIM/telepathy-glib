@@ -110,8 +110,10 @@ struct _TpAccountPrivate {
 
   /* Features. */
   GList *features;
-  GArray *features_array;
   GList *callbacks;
+  GArray *requested_features;
+  GArray *actual_features;
+  GArray *missing_features;
 };
 
 typedef struct {
@@ -225,6 +227,43 @@ _tp_account_get_feature (TpAccount *self,
 }
 
 static gboolean
+_tp_account_feature_in_array (GQuark feature,
+    const GArray *array)
+{
+  const GQuark *c = (const GQuark *) array->data;
+
+  for (; *c != 0; c++)
+    {
+      if (*c == feature)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+static void
+_tp_account_update_feature_arrays (TpAccount *account,
+    const GQuark *features)
+{
+  TpAccountPrivate *priv = account->priv;
+  const GQuark *f;
+
+  for (f = features; *f != 0; f++)
+    {
+      TpAccountFeature *feature;
+
+      feature = _tp_account_get_feature (account, *f);
+
+      if (feature == NULL
+          && !_tp_account_feature_in_array (*f, priv->missing_features))
+        g_array_append_val (priv->missing_features, feature);
+
+      if (!_tp_account_feature_in_array (*f, priv->requested_features))
+        g_array_append_val (priv->requested_features, *f);
+    }
+}
+
+static gboolean
 _tp_account_check_features (TpAccount *self,
     const GQuark *features)
 {
@@ -263,7 +302,10 @@ _tp_account_become_ready (TpAccount *self,
 
   f->ready = TRUE;
 
-  g_array_append_val (priv->features_array, feature);
+  /* Possibly a useless check -- should never get this far with
+   * this expression evaluating to false. */
+  if (!_tp_account_feature_in_array (feature, priv->missing_features))
+    g_array_append_val (priv->actual_features, feature);
 
   for (l = priv->callbacks; l != NULL; l = l->next)
     {
@@ -702,7 +744,9 @@ _tp_account_constructed (GObject *object)
 
   priv->features = NULL;
   priv->callbacks = NULL;
-  priv->features_array = g_array_new (TRUE, FALSE, sizeof (GQuark));
+  priv->requested_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
+  priv->actual_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
+  priv->missing_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
 
   known_features = _tp_account_get_known_features ();
 
@@ -900,7 +944,9 @@ _tp_account_finalize (GObject *object)
   g_list_free (priv->callbacks);
   priv->callbacks = NULL;
 
-  g_array_free (priv->features_array, TRUE);
+  g_array_free (priv->requested_features, TRUE);
+  g_array_free (priv->actual_features, TRUE);
+  g_array_free (priv->missing_features, TRUE);
 
   /* free any data held directly by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)
@@ -2580,6 +2626,8 @@ tp_account_prepare_async (TpAccount *account,
   /* In this object, there are no features which are activatable (core is
    * forced on you). They'd be activated here though. */
 
+  _tp_account_update_feature_arrays (account, features);
+
   if (callback == NULL)
     return;
 
@@ -2629,19 +2677,52 @@ tp_account_prepare_finish (TpAccount *account,
 }
 
 /**
- * tp_account_get_features:
+ * tp_account_get_requested_features:
  * @account: a #TpAccount
  *
  * <!-- -->
  *
- * Returns: a 0-terminated list of features set on @account
+ * Returns: a 0-terminated list of features requested on @account
  *
  * Since: 0.7.UNRELEASED
  */
 const GQuark *
-tp_account_get_features (TpAccount *account)
+tp_account_get_requested_features (TpAccount *account)
 {
-  return (const GQuark *) account->priv->features_array->data;
+  return (const GQuark *) account->priv->requested_features->data;
+}
+
+/**
+ * tp_account_get_actual_features:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: a 0-terminated list of actual features on @account
+ *
+ * Since: 0.7.UNRELEASED
+ */
+const GQuark *
+tp_account_get_actual_features (TpAccount *account)
+{
+  return (const GQuark *) account->priv->actual_features->data;
+}
+
+/**
+ * tp_account_get_missing_features:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: a 0-terminated list of missing features from @account
+ *          that have been requested
+ *
+ * Since: 0.7.UNRELEASED
+ */
+const GQuark *
+tp_account_get_missing_features (TpAccount *account)
+{
+  return (const GQuark *) account->priv->missing_features->data;
 }
 
 static void

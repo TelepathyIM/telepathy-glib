@@ -201,7 +201,11 @@ void tp_account_prepare_async (TpAccount *account, GQuark* features,
 gboolean tp_account_prepare_finish (TpAccount *account, GAsyncResult *result,
     GError **error);
 
-const GQuark * tp_account_get_features (TpAccount *account);
+const GQuark * tp_account_get_requested_features (TpAccount *account);
+
+const GQuark * tp_account_get_actual_features (TpAccount *account);
+
+const GQuark * tp_account_get_missing_features (TpAccount *account);
 
 G_END_DECLS
 

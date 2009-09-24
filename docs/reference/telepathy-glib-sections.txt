@@ -3038,7 +3038,9 @@ tp_account_get_feature_quark_core
 tp_account_is_ready
 tp_account_prepare_async
 tp_account_prepare_finish
-tp_account_get_features
+tp_account_get_requested_features
+tp_account_get_actual_features
+tp_account_get_missing_features
 <SUBSECTION>
 tp_cli_account_callback_for_reconnect
 tp_cli_account_call_reconnect
