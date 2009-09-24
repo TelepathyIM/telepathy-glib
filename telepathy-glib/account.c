@@ -87,8 +87,6 @@ struct _TpAccountPrivate {
   gchar *requested_status;
   gchar *requested_message;
 
-  TpConnectionPresenceType default_presence;
-
   gboolean connect_automatically;
   gboolean has_been_online;
 
@@ -157,8 +155,7 @@ enum {
   PROP_REQUESTED_PRESENCE,
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
-  PROP_NICKNAME,
-  PROP_DEFAULT_PRESENCE
+  PROP_NICKNAME
 };
 
 /**
@@ -793,9 +790,6 @@ _tp_account_set_property (GObject *object,
       tp_account_set_enabled_async (self,
           g_value_get_boolean (value), NULL, NULL);
       break;
-    case PROP_DEFAULT_PRESENCE:
-      self->priv->default_presence = g_value_get_uint (value);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -867,9 +861,6 @@ _tp_account_get_property (GObject *object,
       break;
     case PROP_NICKNAME:
       g_value_set_string (value, self->priv->nickname);
-      break;
-    case PROP_DEFAULT_PRESENCE:
-      g_value_set_uint (value, self->priv->default_presence);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1227,23 +1218,6 @@ tp_account_class_init (TpAccountClass *klass)
           "The account's nickname",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
-
-  /**
-   * TpAccount:default-presence:
-   *
-   * The default presence that should be set on the account when it becomes
-   * enabled.
-   *
-   * Since: 0.7.UNRELEASED
-   */
-  g_object_class_install_property (object_class, PROP_CONNECTION_STATUS,
-      g_param_spec_uint ("default-presence",
-          "default presence",
-          "the default presence that should be set on the account when it becomes enabled",
-          0,
-          NUM_TP_CONNECTION_PRESENCE_TYPES,
-          TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
-          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
 
   /**
    * TpAccount::status-changed:
@@ -1614,40 +1588,6 @@ tp_account_set_enabled_finish (TpAccount *account,
   return TRUE;
 }
 
-static void
-_tp_account_set_presence_from_default (TpAccount *account)
-{
-  TpAccountPrivate *priv = account->priv;
-  const gchar *status;
-
-  switch (priv->default_presence)
-    {
-    case TP_CONNECTION_PRESENCE_TYPE_AVAILABLE:
-      status = "available";
-      break;
-    case TP_CONNECTION_PRESENCE_TYPE_AWAY:
-      status = "away";
-      break;
-    case TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY:
-      status = "xa";
-      break;
-    case TP_CONNECTION_PRESENCE_TYPE_HIDDEN:
-      status = "hidden";
-      break;
-    case TP_CONNECTION_PRESENCE_TYPE_BUSY:
-      status = "busy";
-    default:
-      status = NULL;
-      break;
-    }
-
-  if (status == NULL)
-    return;
-
-  tp_account_request_presence_async (account, priv->default_presence, status,
-      NULL, NULL, NULL);
-}
-
 /**
  * tp_account_set_enabled_async:
  * @account: a #TpAccount
@@ -1679,9 +1619,6 @@ tp_account_set_enabled_async (TpAccount *account,
       g_simple_async_result_complete_in_idle (result);
       return;
     }
-
-  if (enabled)
-    _tp_account_set_presence_from_default (account);
 
   g_value_init (&value, G_TYPE_BOOLEAN);
   g_value_set_boolean (&value, enabled);
