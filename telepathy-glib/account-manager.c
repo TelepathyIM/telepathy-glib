@@ -179,28 +179,6 @@ _tp_account_manager_feature_in_array (GQuark feature,
   return FALSE;
 }
 
-static void
-_tp_account_manager_update_feature_arrays (TpAccountManager *manager,
-    const GQuark *features)
-{
-  TpAccountManagerPrivate *priv = manager->priv;
-  const GQuark *f;
-
-  for (f = features; *f != 0; f++)
-    {
-      TpAccountManagerFeature *feature;
-
-      feature = _tp_account_manager_get_feature (manager, *f);
-
-      if (feature == NULL
-          && !_tp_account_manager_feature_in_array (*f, priv->missing_features))
-        g_array_append_val (priv->missing_features, feature);
-
-      if (!_tp_account_manager_feature_in_array (*f, priv->requested_features))
-        g_array_append_val (priv->requested_features, *f);
-    }
-}
-
 static gboolean
 _tp_account_manager_check_features (TpAccountManager *self,
     const GQuark *features)
@@ -240,9 +218,7 @@ _tp_account_manager_become_ready (TpAccountManager *self,
 
   f->ready = TRUE;
 
-  /* Possibly a useless check -- should never get this far with
-   * this expression evaluating to false. */
-  if (!_tp_account_manager_feature_in_array (feature, priv->missing_features))
+  if (!_tp_account_manager_feature_in_array (feature, priv->actual_features))
     g_array_append_val (priv->actual_features, feature);
 
   for (l = priv->callbacks; l != NULL; l = l->next)
@@ -1383,11 +1359,19 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 {
   TpAccountManagerPrivate *priv = manager->priv;
   GSimpleAsyncResult *result;
+  const GQuark *f;
 
   /* In this object, there are no features which are activatable (core is
    * forced on you). They'd be activated here though. */
 
-  _tp_account_manager_update_feature_arrays (manager, features);
+  for (f = features; *f != 0; f++)
+    {
+      /* Only add features to requested which exist on this object and are not
+       * already in the list. */
+      if (_tp_account_manager_get_feature (manager, *f) != NULL
+          && _tp_account_manager_feature_in_array (*f, priv->requested_features))
+        g_array_append_val (priv->requested_features, *f);
+    }
 
   if (callback == NULL)
     return;
