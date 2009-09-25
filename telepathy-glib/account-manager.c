@@ -106,7 +106,6 @@ enum {
   ACCOUNT_DELETED,
   ACCOUNT_ENABLED,
   ACCOUNT_DISABLED,
-  ACCOUNT_CHANGED,
   ACCOUNT_CONNECTION_CHANGED,
   GLOBAL_PRESENCE_CHANGED,
   NEW_CONNECTION,
@@ -661,24 +660,6 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * Since: 0.7.UNRELEASED
    */
   signals[ACCOUNT_DISABLED] = g_signal_new ("account-disabled",
-      G_TYPE_FROM_CLASS (klass),
-      G_SIGNAL_RUN_LAST,
-      0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
-      G_TYPE_NONE,
-      1, TP_TYPE_ACCOUNT);
-
-  /**
-   * TpAccountManager::account-changed:
-   * @manager: a #TpAccountManager
-   * @account: a #TpAccount
-   *
-   * Emitted when an account @manager is changed.
-   *
-   * Since: 0.7.UNRELEASED
-   */
-  signals[ACCOUNT_CHANGED] = g_signal_new ("account-changed",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
