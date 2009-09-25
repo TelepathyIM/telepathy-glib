@@ -1077,7 +1077,7 @@ tp_account_class_init (TpAccountClass *klass)
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS,
       g_param_spec_uint ("connection-status",
           "ConnectionStatus",
-          "The accounts connections status type",
+          "The account's connection status type",
           0,
           NUM_TP_CONNECTION_STATUSES,
           TP_CONNECTION_STATUS_DISCONNECTED,
@@ -1101,7 +1101,7 @@ tp_account_class_init (TpAccountClass *klass)
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS_REASON,
       g_param_spec_uint ("connection-status-reason",
           "ConnectionStatusReason",
-          "The account connections status reason",
+          "The account's connection status reason",
           0,
           NUM_TP_CONNECTION_STATUS_REASONS,
           TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
@@ -1126,7 +1126,7 @@ tp_account_class_init (TpAccountClass *klass)
   g_object_class_install_property (object_class, PROP_CONNECTION,
       g_param_spec_object ("connection",
           "Connection",
-          "The accounts connection",
+          "The account's connection",
           TP_TYPE_CONNECTION,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -1148,7 +1148,7 @@ tp_account_class_init (TpAccountClass *klass)
   g_object_class_install_property (object_class, PROP_DISPLAY_NAME,
       g_param_spec_string ("display-name",
           "DisplayName",
-          "The accounts display name",
+          "The account's display name",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -1329,7 +1329,7 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:nickname
    *
-   * The account's nickname.
+   * The nickname that should be set for the user on this account.
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
