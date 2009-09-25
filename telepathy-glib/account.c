@@ -1510,6 +1510,10 @@ tp_account_get_connection (TpAccount *account)
  * This function does not return a new ref and it is not guaranteed that the
  * returned #TpConnection object is ready.
  *
+ * The use-case for this function is in a HandleChannels callback and you
+ * already know the object path for the connection, so you can let @account
+ * create its #TpConnection and return it for use.
+ *
  * Returns: the connection of the account, or %NULL if either the object path
  *   @path is invalid or it is the null-value "/"
  *
