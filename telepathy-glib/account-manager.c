@@ -66,15 +66,15 @@ struct _TpAccountManagerPrivate {
   GHashTable *accounts;
   gboolean dispose_run;
 
-  /* global presence */
-  TpAccount *global_account;
+  /* most available presence */
+  TpAccount *most_available_account;
 
-  TpConnectionPresenceType global_presence;
-  gchar *global_status;
-  gchar *global_status_message;
+  TpConnectionPresenceType most_available_presence;
+  gchar *most_available_status;
+  gchar *most_available_status_message;
 
-  /* requested global presence, could be different
-   * from the actual global one. */
+  /* requested presence, could be different
+   * from the actual one. */
   TpConnectionPresenceType requested_presence;
   gchar *requested_status;
   gchar *requested_status_message;
@@ -107,7 +107,7 @@ enum {
   ACCOUNT_ENABLED,
   ACCOUNT_DISABLED,
   ACCOUNT_CONNECTION_CHANGED,
-  GLOBAL_PRESENCE_CHANGED,
+  MOST_AVAILABLE_PRESENCE_CHANGED,
   NEW_CONNECTION,
   LAST_SIGNAL
 };
@@ -269,7 +269,7 @@ tp_account_manager_init (TpAccountManager *self)
 
   self->priv = priv;
 
-  priv->global_presence = TP_CONNECTION_PRESENCE_TYPE_UNSET;
+  priv->most_available_presence = TP_CONNECTION_PRESENCE_TYPE_UNSET;
 
   priv->accounts = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) g_object_unref);
@@ -395,8 +395,9 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
         return;
     }
 
-  /* Rerequest global presence on the initial set of accounts for cases where a
-   * global presence was requested before the manager was ready */
+  /* Rerequest most available presence on the initial set of accounts for cases
+   * where a most available presence was requested before the manager was ready
+   */
   if (priv->requested_presence != TP_CONNECTION_PRESENCE_TYPE_UNSET)
     {
       tp_account_manager_set_all_requested_presences (manager,
@@ -526,8 +527,8 @@ _tp_account_manager_finalize (GObject *object)
   g_hash_table_destroy (priv->create_results);
   g_hash_table_destroy (priv->accounts);
 
-  g_free (priv->global_status);
-  g_free (priv->global_status_message);
+  g_free (priv->most_available_status);
+  g_free (priv->most_available_status_message);
 
   g_free (priv->requested_status);
   g_free (priv->requested_status_message);
@@ -694,19 +695,19 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
         G_TYPE_UINT); /* previous connection */
 
   /**
-   * TpAccountManager::global-presence-changed:
+   * TpAccountManager::most-available-presence-changed:
    * @manager: a #TpAccountManager
    * @account: a #TpAccount
    * @presence: new presence type
    * @status: new status
    * @message: new status message
    *
-   * Emitted when the global presence on @manager changes.
+   * Emitted when the most available presence on @manager changes.
    *
    * Since: 0.7.UNRELEASED
    */
-  signals[GLOBAL_PRESENCE_CHANGED] =
-    g_signal_new ("global-presence-changed",
+  signals[MOST_AVAILABLE_PRESENCE_CHANGED] =
+    g_signal_new ("most-available-presence-changed",
         G_TYPE_FROM_CLASS (klass),
         G_SIGNAL_RUN_LAST,
         0,
@@ -881,7 +882,7 @@ _tp_account_manager_account_status_changed_cb (TpAccount *account,
 }
 
 static void
-_tp_account_manager_update_global_presence (TpAccountManager *manager)
+_tp_account_manager_update_most_available_presence (TpAccountManager *manager)
 {
   TpAccountManagerPrivate *priv = manager->priv;
   TpConnectionPresenceType presence = TP_CONNECTION_PRESENCE_TYPE_OFFLINE;
@@ -889,7 +890,7 @@ _tp_account_manager_update_global_presence (TpAccountManager *manager)
   GHashTableIter iter;
   gpointer value;
 
-  /* Make the global presence is equal to the presence of the account with the
+  /* this presence is equal to the presence of the account with the
    * highest availability */
 
   g_hash_table_iter_init (&iter, priv->accounts);
@@ -907,23 +908,24 @@ _tp_account_manager_update_global_presence (TpAccountManager *manager)
         }
     }
 
-  priv->global_account = account;
-  g_free (priv->global_status);
-  g_free (priv->global_status_message);
+  priv->most_available_account = account;
+  g_free (priv->most_available_status);
+  g_free (priv->most_available_status_message);
 
   if (account == NULL)
     {
-      priv->global_presence = presence;
-      priv->global_status = NULL;
-      priv->global_status_message = NULL;
+      priv->most_available_presence = presence;
+      priv->most_available_status = NULL;
+      priv->most_available_status_message = NULL;
       return;
     }
 
-  priv->global_presence = tp_account_get_current_presence (account,
-      &(priv->global_status), &(priv->global_status_message));
+  priv->most_available_presence = tp_account_get_current_presence (account,
+      &(priv->most_available_status), &(priv->most_available_status_message));
 
-  DEBUG ("Updated global presence to: %s (%d) \"%s\"",
-      priv->global_status, priv->global_presence, priv->global_status_message);
+  DEBUG ("Updated most available presence to: %s (%d) \"%s\"",
+      priv->most_available_status, priv->most_available_presence,
+      priv->most_available_status_message);
 }
 
 static void
@@ -937,30 +939,31 @@ _tp_account_manager_account_presence_changed_cb (TpAccount *account,
   TpAccountManagerPrivate *priv = manager->priv;
 
   if (tp_connection_presence_type_cmp_availability (presence,
-          priv->global_presence) > 0)
+          priv->most_available_presence) > 0)
     {
-      priv->global_account = account;
+      priv->most_available_account = account;
 
-      priv->global_presence = presence;
+      priv->most_available_presence = presence;
 
-      g_free (priv->global_status);
-      priv->global_status = g_strdup (status);
+      g_free (priv->most_available_status);
+      priv->most_available_status = g_strdup (status);
 
-      g_free (priv->global_status_message);
-      priv->global_status_message = g_strdup (status_message);
+      g_free (priv->most_available_status_message);
+      priv->most_available_status_message = g_strdup (status_message);
 
       goto signal;
     }
-  else if (priv->global_account == account)
+  else if (priv->most_available_account == account)
     {
-      _tp_account_manager_update_global_presence (manager);
+      _tp_account_manager_update_most_available_presence (manager);
       goto signal;
     }
 
   return;
 signal:
-  g_signal_emit (manager, signals[GLOBAL_PRESENCE_CHANGED], 0,
-      priv->global_presence, priv->global_status, priv->global_status_message);
+  g_signal_emit (manager, signals[MOST_AVAILABLE_PRESENCE_CHANGED], 0,
+      priv->most_available_presence, priv->most_available_status,
+      priv->most_available_status_message);
 }
 
 static void
@@ -1150,7 +1153,7 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
 
   priv = manager->priv;
 
-  DEBUG ("request global presence, type: %d, status: %s, message: %s",
+  DEBUG ("request most available presence, type: %d, status: %s, message: %s",
       type, status, message);
 
   g_hash_table_iter_init (&iter, priv->accounts);
@@ -1163,8 +1166,8 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
             NULL, NULL);
     }
 
-  /* save the requested global presence, to use it in case we create
-   * new accounts or some accounts become ready. */
+  /* save the requested presence, to use it in case we create new accounts or
+   * some accounts become ready. */
   priv->requested_presence = type;
 
   if (tp_strdiff (priv->requested_status, status))
@@ -1217,12 +1220,12 @@ tp_account_manager_get_most_available_presence (TpAccountManager *manager,
   priv = manager->priv;
 
   if (status != NULL)
-    *status = g_strdup (priv->global_status);
+    *status = g_strdup (priv->most_available_status);
 
   if (message != NULL)
-    *message = g_strdup (priv->global_status_message);
+    *message = g_strdup (priv->most_available_status_message);
 
-  return priv->global_presence;
+  return priv->most_available_presence;
 }
 
 static void
