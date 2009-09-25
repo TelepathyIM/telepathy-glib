@@ -139,9 +139,9 @@ static guint signals[LAST_SIGNAL];
 /* properties */
 enum {
   PROP_ENABLED = 1,
-  PROP_PRESENCE,
-  PROP_STATUS,
-  PROP_STATUS_MESSAGE,
+  PROP_CURRENT_PRESENCE_TYPE,
+  PROP_CURRENT_STATUS,
+  PROP_CURRENT_STATUS_MESSAGE,
   PROP_CONNECTION_STATUS,
   PROP_CONNECTION_STATUS_REASON,
   PROP_CONNECTION,
@@ -152,7 +152,7 @@ enum {
   PROP_CONNECT_AUTOMATICALLY,
   PROP_HAS_BEEN_ONLINE,
   PROP_VALID,
-  PROP_REQUESTED_PRESENCE,
+  PROP_REQUESTED_PRESENCE_TYPE,
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
   PROP_NICKNAME
@@ -653,9 +653,9 @@ _tp_account_update (TpAccount *account,
     {
       g_signal_emit (account, signals[PRESENCE_CHANGED], 0,
           priv->presence, priv->status, priv->message);
-      g_object_notify (G_OBJECT (account), "presence");
-      g_object_notify (G_OBJECT (account), "status");
-      g_object_notify (G_OBJECT (account), "status-message");
+      g_object_notify (G_OBJECT (account), "current-presence-type");
+      g_object_notify (G_OBJECT (account), "current-status");
+      g_object_notify (G_OBJECT (account), "current-status-message");
     }
 
   if (g_hash_table_lookup (properties, "Connection") != NULL)
@@ -814,13 +814,13 @@ _tp_account_get_property (GObject *object,
     case PROP_ENABLED:
       g_value_set_boolean (value, self->priv->enabled);
       break;
-    case PROP_PRESENCE:
+    case PROP_CURRENT_PRESENCE_TYPE:
       g_value_set_uint (value, self->priv->presence);
       break;
-    case PROP_STATUS:
+    case PROP_CURRENT_STATUS:
       g_value_set_string (value, self->priv->status);
       break;
-    case PROP_STATUS_MESSAGE:
+    case PROP_CURRENT_STATUS_MESSAGE:
       g_value_set_string (value, self->priv->message);
       break;
     case PROP_CONNECTION_STATUS:
@@ -855,7 +855,7 @@ _tp_account_get_property (GObject *object,
     case PROP_VALID:
       g_value_set_boolean (value, self->priv->valid);
       break;
-    case PROP_REQUESTED_PRESENCE:
+    case PROP_REQUESTED_PRESENCE_TYPE:
       g_value_set_uint (value, self->priv->requested_presence);
       break;
     case PROP_REQUESTED_STATUS:
@@ -977,45 +977,45 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
 
   /**
-   * TpAccount:presence:
+   * TpAccount:current-presence-type:
    *
-   * The account connection's presence type.
+   * The account connection's current presence type.
    *
    * Since: 0.7.UNRELEASED
    */
-  g_object_class_install_property (object_class, PROP_PRESENCE,
-      g_param_spec_uint ("presence",
+  g_object_class_install_property (object_class, PROP_CURRENT_PRESENCE_TYPE,
+      g_param_spec_uint ("current-presence-type",
           "Presence",
-          "The account connections presence type",
+          "The account connection's current presence type",
           0,
           NUM_TP_CONNECTION_PRESENCE_TYPES,
           TP_CONNECTION_PRESENCE_TYPE_UNSET,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount:status:
+   * TpAccount:current-status:
    *
-   * The Status string of the account.
+   * The current Status string of the account.
    *
    * Since: 0.7.UNRELEASED
    */
-  g_object_class_install_property (object_class, PROP_STATUS,
-      g_param_spec_string ("status",
-          "Status",
+  g_object_class_install_property (object_class, PROP_CURRENT_STATUS,
+      g_param_spec_string ("current-status",
+          "Current Status",
           "The Status string of the account",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount: status-message:
+   * TpAccount: current-status-message:
    *
-   * The status message message of the account.
+   * The current status message message of the account.
    *
    * Since: 0.7.UNRELEASED
    */
-  g_object_class_install_property (object_class, PROP_STATUS_MESSAGE,
-      g_param_spec_string ("status-message",
-          "status-message",
+  g_object_class_install_property (object_class, PROP_CURRENT_STATUS_MESSAGE,
+      g_param_spec_string ("current-status-message",
+          "current-status-message",
           "The Status message string of the account",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
@@ -1167,14 +1167,14 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount:requested-presence:
+   * TpAccount:requested-presence-type:
    *
    * The account's requested presence type.
    *
    * Since: 0.7.UNRELEASED
    */
-  g_object_class_install_property (object_class, PROP_REQUESTED_PRESENCE,
-      g_param_spec_uint ("requested-presence",
+  g_object_class_install_property (object_class, PROP_REQUESTED_PRESENCE_TYPE,
+      g_param_spec_uint ("requested-presence-type",
           "RequestedPresence",
           "The account's requested presence type",
           0,
