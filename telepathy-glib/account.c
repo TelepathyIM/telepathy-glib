@@ -2161,6 +2161,8 @@ tp_account_get_connection_status (TpAccount *account,
 /**
  * tp_account_get_current_presence:
  * @account: a #TpAccount
+ * @status: return location for the current status
+ * @status_message: return location for the current status message
  *
  * Gets the current presence, status and status message of @account.
  *
@@ -2185,49 +2187,28 @@ tp_account_get_current_presence (TpAccount *account,
 /**
  * tp_account_get_requested_presence:
  * @account: a #TpAccount
+ * @status: return location for the requested status
+ * @status_message: return location for the requested status message
  *
- * Gets the presence from the RequestedPresence parameter on @account.
+ * Gets the requested presence, requested status and requested status message
+ * from @account.
  *
  * Returns: the presence from the RequestedPresence parameter on @account
  *
  * Since: 0.7.UNRELEASED
  */
 TpConnectionPresenceType
-tp_account_get_requested_presence (TpAccount *account)
+tp_account_get_requested_presence (TpAccount *account,
+    gchar **status,
+    gchar **status_message)
 {
+  if (status != NULL)
+    *status = g_strdup (account->priv->requested_status);
+
+  if (status_message != NULL)
+    *status_message = g_strdup (account->priv->requested_message);
+
   return account->priv->requested_presence;
-}
-
-/**
- * tp_account_get_requested_status:
- * @account: a #TpAccount
- *
- * Gets the status from the RequestedPresence parameter on @account.
- *
- * Returns: the status from the RequestedPresence parameter on @account
- *
- * Since: 0.7.UNRELEASED
- */
-const gchar *
-tp_account_get_requested_status (TpAccount *account)
-{
-  return account->priv->requested_status;
-}
-
-/**
- * tp_account_get_requested_status_message:
- * @account: a #TpAccount
- *
- * Gets the message from the RequestedPresence parameter on @account.
- *
- * Returns: the message from the RequestedPresence parameter on @account
- *
- * Since: 0.7.UNRELEASED
- */
-const gchar *
-tp_account_get_requested_status_message (TpAccount *account)
-{
-  return account->priv->requested_message;
 }
 
 /**
