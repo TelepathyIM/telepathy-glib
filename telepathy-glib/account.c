@@ -972,6 +972,9 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is FALSE.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_ENABLED,
@@ -989,6 +992,10 @@ tp_account_class_init (TpAccountClass *klass)
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %TP_CONNECTION_PRESENCE_TYPE_UNSET.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1010,6 +1017,10 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %NULL.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CURRENT_STATUS,
@@ -1028,6 +1039,10 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %NULL.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CURRENT_STATUS_MESSAGE,
@@ -1045,6 +1060,10 @@ tp_account_class_init (TpAccountClass *klass)
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %TP_CONNECTION_STATUS_DISCONNECTED.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1065,6 +1084,10 @@ tp_account_class_init (TpAccountClass *klass)
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1087,6 +1110,10 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %NULL.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CONNECTION,
@@ -1104,6 +1131,10 @@ tp_account_class_init (TpAccountClass *klass)
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %NULL.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1152,6 +1183,10 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %NULL.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_ICON_NAME,
@@ -1171,6 +1206,10 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %FALSE.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CONNECT_AUTOMATICALLY,
@@ -1189,6 +1228,10 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %FALSE.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_HAS_BEEN_ONLINE,
@@ -1206,6 +1249,10 @@ tp_account_class_init (TpAccountClass *klass)
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %FALSE.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1280,6 +1327,10 @@ tp_account_class_init (TpAccountClass *klass)
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_account_prepare_async() has finished; until then, the value is
+   * %NULL.
    *
    * Since: 0.7.UNRELEASED
    */

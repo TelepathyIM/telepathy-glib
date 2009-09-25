@@ -1093,6 +1093,10 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
  * g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
  * ]|
  *
+ * The return value of this function is not guaranteed to have been retrieved
+ * until tp_account_manager_prepare_async() has finished; until then, the
+ * value is %NULL.
+ *
  * Returns: a newly allocated #GList of accounts in @manager
  *
  * Since: 0.7.UNRELEASED
@@ -1125,6 +1129,9 @@ tp_account_manager_get_accounts (TpAccountManager *manager)
  *
  * You can find the most available presence across all accounts by calling
  * tp_account_manager_get_most_available_presence().
+ *
+ * Setting a requested presence on all accounts will have no effect
+ * until tp_account_manager_prepare_async() has finished.
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1182,6 +1189,10 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
  *
  * If no accounts are enabled or valid the output will be
  * (%TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", "").
+ *
+ * The return value of this function is not guaranteed to have been retrieved
+ * until tp_account_manager_prepare_async() has finished; until then, the
+ * value will be the same as if no accounts are enabled or valid.
  *
  * Returns: the most available presence across all accounts
  *
