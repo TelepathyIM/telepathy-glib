@@ -2647,7 +2647,6 @@ tp_account_prepare_async (TpAccount *account,
   const GQuark *f;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (features != NULL);
 
   priv = account->priv;
 
