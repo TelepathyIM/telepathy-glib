@@ -1443,7 +1443,7 @@ tp_account_new (TpDBusDaemon *bus_daemon,
 {
   TpAccount *self;
 
-  g_return_val_if_fail (bus_daemon != NULL, NULL);
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (bus_daemon), NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
@@ -1496,9 +1496,9 @@ unescape_protocol (gchar *protocol)
 TpConnection *
 tp_account_get_connection (TpAccount *account)
 {
-  TpAccountPrivate *priv = account->priv;
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  return priv->connection;
+  return account->priv->connection;
 }
 
 /**
@@ -1523,7 +1523,11 @@ TpConnection *
 tp_account_ensure_connection (TpAccount *account,
     const gchar *path)
 {
-  TpAccountPrivate *priv = account->priv;
+  TpAccountPrivate *priv;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  priv = account->priv;
 
   /* double-check that the object path is valid */
   if (!tp_dbus_check_valid_object_path (path, NULL))
@@ -1551,9 +1555,9 @@ tp_account_ensure_connection (TpAccount *account,
 const gchar *
 tp_account_get_display_name (TpAccount *account)
 {
-  TpAccountPrivate *priv = account->priv;
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  return priv->display_name;
+  return account->priv->display_name;
 }
 
 /**
@@ -1569,9 +1573,9 @@ tp_account_get_display_name (TpAccount *account)
 gboolean
 tp_account_is_valid (TpAccount *account)
 {
-  TpAccountPrivate *priv = account->priv;
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
 
-  return priv->valid;
+  return account->priv->valid;
 }
 
 /**
@@ -1587,9 +1591,9 @@ tp_account_is_valid (TpAccount *account)
 const gchar *
 tp_account_get_connection_manager (TpAccount *account)
 {
-  TpAccountPrivate *priv = account->priv;
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  return priv->cm_name;
+  return account->priv->cm_name;
 }
 
 /**
@@ -1605,9 +1609,9 @@ tp_account_get_connection_manager (TpAccount *account)
 const gchar *
 tp_account_get_protocol (TpAccount *account)
 {
-  TpAccountPrivate *priv = account->priv;
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  return priv->proto_name;
+  return account->priv->proto_name;
 }
 
 /**
@@ -1623,9 +1627,9 @@ tp_account_get_protocol (TpAccount *account)
 const gchar *
 tp_account_get_icon_name (TpAccount *account)
 {
-  TpAccountPrivate *priv = account->priv;
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  return priv->icon_name;
+  return account->priv->icon_name;
 }
 
 /**
@@ -1641,9 +1645,9 @@ tp_account_get_icon_name (TpAccount *account)
 const GHashTable *
 tp_account_get_parameters (TpAccount *account)
 {
-  TpAccountPrivate *priv = account->priv;
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  return priv->parameters;
+  return account->priv->parameters;
 }
 
 /**
@@ -1659,9 +1663,9 @@ tp_account_get_parameters (TpAccount *account)
 gboolean
 tp_account_is_enabled (TpAccount *account)
 {
-  TpAccountPrivate *priv = account->priv;
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
 
-  return priv->enabled;
+  return account->priv->enabled;
 }
 
 static void
@@ -1699,6 +1703,9 @@ tp_account_set_enabled_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -1727,9 +1734,13 @@ tp_account_set_enabled_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpAccountPrivate *priv = account->priv;
+  TpAccountPrivate *priv;
   GValue value = {0, };
   GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
+  priv = account->priv;
 
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_set_enabled_finish);
@@ -1780,6 +1791,9 @@ tp_account_reconnect_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -1808,6 +1822,8 @@ tp_account_reconnect_async (TpAccount *account,
 {
   GSimpleAsyncResult *result;
 
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_reconnect_finish);
 
@@ -1832,6 +1848,9 @@ tp_account_request_presence_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -1867,6 +1886,8 @@ tp_account_request_presence_async (TpAccount *account,
   GValue value = {0, };
   GValueArray *arr;
   GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
 
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_request_presence_finish);
@@ -1930,6 +1951,8 @@ tp_account_update_parameters_async (TpAccount *account,
 {
   GSimpleAsyncResult *result;
 
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_update_parameters_finish);
 
@@ -1958,7 +1981,12 @@ tp_account_update_parameters_finish (TpAccount *account,
     gchar ***reconnect_required,
     GError **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
 
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
       error))
@@ -1996,6 +2024,9 @@ tp_account_set_display_name_async (TpAccount *account,
   GSimpleAsyncResult *result;
   GValue value = {0, };
 
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+  g_return_if_fail (display_name != NULL);
+
   if (display_name == NULL)
     {
       g_simple_async_report_error_in_idle (G_OBJECT (account),
@@ -2032,6 +2063,9 @@ tp_account_set_display_name_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -2063,6 +2097,9 @@ tp_account_set_icon_name_async (TpAccount *account,
   GSimpleAsyncResult *result;
   GValue value = {0, };
   const char *icon_name_set;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+  g_return_if_fail (icon_name != NULL);
 
   if (icon_name == NULL)
     /* settings an empty icon name is allowed */
@@ -2098,6 +2135,9 @@ tp_account_set_icon_name_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -2139,7 +2179,11 @@ tp_account_remove_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GSimpleAsyncResult *result = g_simple_async_result_new (G_OBJECT (account),
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
+  result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_remove_finish);
 
   tp_cli_account_call_remove (account, -1, _tp_account_remove_cb, result, NULL,
@@ -2163,6 +2207,9 @@ tp_account_remove_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error))
     return FALSE;
@@ -2186,6 +2233,8 @@ tp_account_remove_finish (TpAccount *account,
 gboolean
 tp_account_get_connect_automatically (TpAccount *account)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+
   return account->priv->connect_automatically;
 }
 
@@ -2211,6 +2260,8 @@ tp_account_set_connect_automatically_async (TpAccount *account,
 {
   GSimpleAsyncResult *result;
   GValue value = {0, };
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
 
   result = g_simple_async_result_new (G_OBJECT (account), callback,
       user_data, tp_account_set_connect_automatically_finish);
@@ -2240,6 +2291,9 @@ tp_account_set_connect_automatically_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -2262,6 +2316,8 @@ tp_account_set_connect_automatically_finish (TpAccount *account,
 gboolean
 tp_account_get_has_been_online (TpAccount *account)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+
   return account->priv->has_been_online;
 }
 
@@ -2282,6 +2338,9 @@ TpConnectionStatus
 tp_account_get_connection_status (TpAccount *account,
     TpConnectionStatusReason *reason)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account),
+      TP_CONNECTION_STATUS_DISCONNECTED); /* there's no _UNSET */
+
   if (reason != NULL)
     *reason = account->priv->reason;
 
@@ -2307,6 +2366,9 @@ tp_account_get_current_presence (TpAccount *account,
     gchar **status,
     gchar **status_message)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account),
+      TP_CONNECTION_PRESENCE_TYPE_UNSET);
+
   if (status != NULL)
     *status = g_strdup (account->priv->status);
 
@@ -2336,6 +2398,9 @@ tp_account_get_requested_presence (TpAccount *account,
     gchar **status,
     gchar **status_message)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account),
+      TP_CONNECTION_PRESENCE_TYPE_UNSET);
+
   if (status != NULL)
     *status = g_strdup (account->priv->requested_status);
 
@@ -2358,6 +2423,8 @@ tp_account_get_requested_presence (TpAccount *account,
 const gchar *
 tp_account_get_nickname (TpAccount *account)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
   return account->priv->nickname;
 }
 
@@ -2378,6 +2445,9 @@ tp_account_set_nickname_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -2408,6 +2478,9 @@ tp_account_set_nickname_async (TpAccount *account,
 {
   GValue value = {0, };
   GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+  g_return_if_fail (nickname != NULL);
 
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_request_presence_finish);
@@ -2476,6 +2549,8 @@ tp_account_get_avatar_async (TpAccount *account,
 {
   GSimpleAsyncResult *result;
 
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_get_avatar_finish);
 
@@ -2501,6 +2576,9 @@ tp_account_get_avatar_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -2527,6 +2605,8 @@ tp_account_is_ready (TpAccount *account,
     GQuark feature)
 {
   TpAccountFeature *f;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
 
   if (tp_proxy_get_invalidated (account) != NULL)
     return FALSE;
@@ -2563,9 +2643,14 @@ tp_account_prepare_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpAccountPrivate *priv = account->priv;
+  TpAccountPrivate *priv;
   GSimpleAsyncResult *result;
   const GQuark *f;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+  g_return_if_fail (features != NULL);
+
+  priv = account->priv;
 
   /* In this object, there are no features which are activatable (core is
    * forced on you). They'd be activated here though. */
@@ -2618,6 +2703,9 @@ tp_account_prepare_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (account),
@@ -2640,6 +2728,8 @@ tp_account_prepare_finish (TpAccount *account,
 const GQuark *
 tp_account_get_requested_features (TpAccount *account)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
   return (const GQuark *) account->priv->requested_features->data;
 }
 
@@ -2656,6 +2746,8 @@ tp_account_get_requested_features (TpAccount *account)
 const GQuark *
 tp_account_get_actual_features (TpAccount *account)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
   return (const GQuark *) account->priv->actual_features->data;
 }
 
@@ -2673,6 +2765,8 @@ tp_account_get_actual_features (TpAccount *account)
 const GQuark *
 tp_account_get_missing_features (TpAccount *account)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
   return (const GQuark *) account->priv->missing_features->data;
 }
 

@@ -804,7 +804,7 @@ tp_account_manager_new (TpDBusDaemon *bus_daemon)
 {
   TpAccountManager *self;
 
-  g_return_val_if_fail (bus_daemon != NULL, NULL);
+  g_return_val_if_fail (TP_IS_DBUS_DAEMON (bus_daemon), NULL);
 
   self = TP_ACCOUNT_MANAGER (g_object_new (TP_TYPE_ACCOUNT_MANAGER,
           "dbus-daemon", bus_daemon,
@@ -1074,9 +1074,14 @@ TpAccount *
 tp_account_manager_ensure_account (TpAccountManager *manager,
     const gchar *path)
 {
-  TpAccountManagerPrivate *priv = manager->priv;
+  TpAccountManagerPrivate *priv;
   TpAccount *account;
   GQuark fs[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
+  g_return_val_if_fail (path != NULL, NULL);
+
+  priv = manager->priv;
 
   account = g_hash_table_lookup (priv->accounts, path);
   if (account != NULL)
@@ -1156,9 +1161,13 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
     const gchar *status,
     const gchar *message)
 {
-  TpAccountManagerPrivate *priv = manager->priv;
+  TpAccountManagerPrivate *priv;
   GHashTableIter iter;
   gpointer value;
+
+  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
+
+  priv = manager->priv;
 
   DEBUG ("request global presence, type: %d, status: %s, message: %s",
       type, status, message);
@@ -1219,7 +1228,12 @@ tp_account_manager_get_most_available_presence (TpAccountManager *manager,
     gchar **status,
     gchar **message)
 {
-  TpAccountManagerPrivate *priv = manager->priv;
+  TpAccountManagerPrivate *priv;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager),
+      TP_CONNECTION_PRESENCE_TYPE_UNSET);
+
+  priv = manager->priv;
 
   if (status != NULL)
     *status = g_strdup (priv->global_status);
@@ -1292,6 +1306,14 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
 {
   GSimpleAsyncResult *res;
 
+  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
+  g_return_if_fail (connection_manager != NULL);
+  g_return_if_fail (protocol != NULL);
+  g_return_if_fail (display_name != NULL);
+  g_return_if_fail (parameters != NULL);
+  g_return_if_fail (properties != NULL);
+  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
+
   res = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
       tp_account_manager_create_account_finish);
 
@@ -1321,6 +1343,8 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
     GError **error)
 {
   TpAccount *retval;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error))
@@ -1352,6 +1376,8 @@ tp_account_manager_is_ready (TpAccountManager *manager,
     GQuark feature)
 {
   TpAccountManagerFeature *f;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), FALSE);
 
   if (tp_proxy_get_invalidated (manager) != NULL)
     return FALSE;
@@ -1388,9 +1414,13 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpAccountManagerPrivate *priv = manager->priv;
+  TpAccountManagerPrivate *priv;
   GSimpleAsyncResult *result;
   const GQuark *f;
+
+  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
+
+  priv = manager->priv;
 
   /* In this object, there are no features which are activatable (core is
    * forced on you). They'd be activated here though. */
@@ -1443,6 +1473,8 @@ tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), FALSE);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error) ||
       !g_simple_async_result_is_valid (result, G_OBJECT (manager),
@@ -1465,6 +1497,8 @@ tp_account_manager_prepare_finish (TpAccountManager *manager,
 const GQuark *
 tp_account_manager_get_requested_features (TpAccountManager *manager)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
+
   return (const GQuark *) manager->priv->requested_features->data;
 }
 
@@ -1481,6 +1515,8 @@ tp_account_manager_get_requested_features (TpAccountManager *manager)
 const GQuark *
 tp_account_manager_get_actual_features (TpAccountManager *manager)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
+
   return (const GQuark *) manager->priv->actual_features->data;
 }
 
@@ -1497,5 +1533,7 @@ tp_account_manager_get_actual_features (TpAccountManager *manager)
 const GQuark *
 tp_account_manager_get_missing_features (TpAccountManager *manager)
 {
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
+
   return (const GQuark *) manager->priv->missing_features->data;
 }
