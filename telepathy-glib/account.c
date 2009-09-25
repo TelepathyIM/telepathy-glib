@@ -61,6 +61,10 @@
  * with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_OBJECT_REMOVED.
  *
+ * One can connect to the #GObject::notify signal to get change notifications
+ * for many of the properties on this object. Refer to each property's
+ * documentation for whether it can be used in this way.
+ *
  * Since: 0.7.32
  */
 
@@ -964,6 +968,10 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * Whether this account is enabled or not.
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_ENABLED,
@@ -977,6 +985,10 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount:current-presence-type:
    *
    * The account connection's current presence type.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -994,6 +1006,10 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The current Status string of the account.
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CURRENT_STATUS,
@@ -1008,6 +1024,10 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The current status message message of the account.
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CURRENT_STATUS_MESSAGE,
@@ -1021,6 +1041,10 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount:connection-status:
    *
    * The account's connection status type.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1037,6 +1061,10 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount:connection-status-reason:
    *
    * The account's connection status reason.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1055,6 +1083,10 @@ tp_account_class_init (TpAccountClass *klass)
    * The account's connection. This property returns the same as
    * tp_account_get_connection().
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CONNECTION,
@@ -1068,6 +1100,10 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount:display-name:
    *
    * The account's display name.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1112,6 +1148,10 @@ tp_account_class_init (TpAccountClass *klass)
    * The account's icon name. To change this propery, use
    * tp_account_set_icon_name_async().
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_ICON_NAME,
@@ -1127,6 +1167,10 @@ tp_account_class_init (TpAccountClass *klass)
    * Whether the account should connect automatically or not. To change this
    * property, use tp_account_set_connect_automatically_async().
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_CONNECT_AUTOMATICALLY,
@@ -1140,6 +1184,10 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount:has-been-online:
    *
    * Whether this account has been online or not.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1155,6 +1203,10 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * Whether this account is valid.
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_VALID,
@@ -1168,6 +1220,10 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount:requested-presence-type:
    *
    * The account's requested presence type.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -1185,6 +1241,10 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The requested Status string of the account.
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_STATUS,
@@ -1199,6 +1259,10 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The requested status message message of the account.
    *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
    * Since: 0.7.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_STATUS_MESSAGE,
@@ -1212,6 +1276,10 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount:nickname
    *
    * The account's nickname.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
    *
    * Since: 0.7.UNRELEASED
    */
