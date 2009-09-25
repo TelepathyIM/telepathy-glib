@@ -638,8 +638,6 @@ _tp_account_update (TpAccount *account,
           parameters);
     }
 
-  _tp_account_become_ready (account, TP_ACCOUNT_FEATURE_CORE);
-
   if (priv->connection_status != old_s)
     {
       if (priv->connection_status == TP_CONNECTION_STATUS_CONNECTED)
@@ -695,6 +693,8 @@ _tp_account_update (TpAccount *account,
       if (old != priv->has_been_online)
         g_object_notify (G_OBJECT (account), "has-been-online");
     }
+
+  _tp_account_become_ready (account, TP_ACCOUNT_FEATURE_CORE);
 }
 
 static void
