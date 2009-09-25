@@ -463,7 +463,6 @@ _tp_account_connection_ready_cb (TpConnection *connection,
     {
       DEBUG ("(%s) Connection ready",
           tp_proxy_get_object_path (account));
-      g_object_notify (G_OBJECT (account), "connection");
     }
 }
 
