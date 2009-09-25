@@ -113,7 +113,7 @@ void tp_account_update_parameters_async (TpAccount *account,
     GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean tp_account_update_parameters_finish (TpAccount *account,
-    GAsyncResult *result, GError **error);
+    GAsyncResult *result, gchar ***reconnect_required, GError **error);
 
 void tp_account_remove_async (TpAccount *account,
     GAsyncReadyCallback callback, gpointer user_data);

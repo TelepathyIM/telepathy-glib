@@ -1783,6 +1783,10 @@ _tp_account_updated_cb (TpAccount *proxy,
 
   if (error != NULL)
     g_simple_async_result_set_from_error (result, (GError *) error);
+  else
+    g_simple_async_result_set_op_res_gpointer (result,
+        g_strdupv ((gchar **) reconnect_required),
+        (GDestroyNotify) g_strfreev);
 
   g_simple_async_result_complete (result);
   g_object_unref (G_OBJECT (result));
@@ -1823,6 +1827,8 @@ tp_account_update_parameters_async (TpAccount *account,
  * tp_account_update_parameters_finish:
  * @account: a #TpAccount
  * @result: a #GAsyncResult
+ * @reconnect_required: a #GStrv to fill with properties that need a reconnect
+ *                      to take effect
  * @error: a #GError to fill
  *
  * Finishes an async update of the parameters on @account.
@@ -1834,14 +1840,21 @@ tp_account_update_parameters_async (TpAccount *account,
 gboolean
 tp_account_update_parameters_finish (TpAccount *account,
     GAsyncResult *result,
+    gchar ***reconnect_required,
     GError **error)
 {
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
       error))
     return FALSE;
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
     G_OBJECT (account), tp_account_update_parameters_finish), FALSE);
+
+  if (reconnect_required != NULL)
+    *reconnect_required =
+      g_strdupv (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
 }
