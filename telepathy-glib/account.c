@@ -1055,7 +1055,8 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:connection:
    *
-   * The account's connection.
+   * The account's connection. This property returns the same as
+   * tp_account_get_connection().
    *
    * Since: 0.7.UNRELEASED
    */
