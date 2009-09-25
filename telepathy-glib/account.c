@@ -243,11 +243,10 @@ _tp_account_check_features (TpAccount *self,
     const GQuark *features)
 {
   const GQuark *f;
+  TpAccountFeature *feat;
 
   for (f = features; *f != 0; f++)
     {
-      TpAccountFeature *feat;
-
       feat = _tp_account_get_feature (self, *f);
 
       /* features which are NULL (ie. don't exist) are always considered as
@@ -256,6 +255,12 @@ _tp_account_check_features (TpAccount *self,
       if (feat != NULL && !feat->ready)
         return FALSE;
     }
+
+  /* Special-case core: no other feature is ready unless core itself is
+   * ready. */
+  feat = _tp_account_get_feature (self, TP_ACCOUNT_FEATURE_CORE);
+  if (!feat->ready)
+    return FALSE;
 
   return TRUE;
 }

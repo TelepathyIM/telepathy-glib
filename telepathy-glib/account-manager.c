@@ -184,11 +184,10 @@ _tp_account_manager_check_features (TpAccountManager *self,
     const GQuark *features)
 {
   const GQuark *f;
+  TpAccountManagerFeature *feat;
 
   for (f = features; *f != 0; f++)
     {
-      TpAccountManagerFeature *feat;
-
       feat = _tp_account_manager_get_feature (self, *f);
 
       /* features which are NULL (ie. don't exist) are always considered as
@@ -197,6 +196,13 @@ _tp_account_manager_check_features (TpAccountManager *self,
       if (feat != NULL && !feat->ready)
         return FALSE;
     }
+
+  /* Special-case core: no other feature is ready unless core itself is
+   * ready. */
+  feat = _tp_account_manager_get_feature (self,
+      TP_ACCOUNT_MANAGER_FEATURE_CORE);
+  if (!feat->ready)
+    return FALSE;
 
   return TRUE;
 }
