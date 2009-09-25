@@ -67,6 +67,9 @@ G_DEFINE_TYPE (TfStream, tf_stream, G_TYPE_OBJECT);
 
 #define STREAM_PRIVATE(o) ((o)->priv)
 
+#define TF_STREAM_LOCK(o)   (g_static_mutex_lock (&(o)->priv->mutex))
+#define TF_STREAM_UNLOCK(o) (g_static_mutex_unlock (&(o)->priv->mutex))
+
 static TpMediaStreamError fserrorno_to_tperrorno (FsError fserror);
 
 struct _TfStreamPrivate
@@ -96,7 +99,10 @@ struct _TfStreamPrivate
 
   guint tos;
 
-  guint idle_connected_id;
+  GStaticMutex mutex;
+  guint idle_connected_id; /* Protected by mutex */
+  gboolean disposed; /* Protected by mutex */
+
   TpMediaStreamState current_state;
 
   NewStreamCreatedCb *new_stream_created_cb;
@@ -207,6 +213,7 @@ tf_stream_init (TfStream *self)
       TF_TYPE_STREAM, TfStreamPrivate);
 
   self->priv = priv;
+  g_static_mutex_init (&priv->mutex);
   priv->has_resource = TP_MEDIA_STREAM_DIRECTION_NONE;
   priv->current_state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
 }
@@ -349,9 +356,14 @@ tf_stream_dispose (GObject *object)
   TfStream *stream = TF_STREAM (object);
   TfStreamPrivate *priv = stream->priv;
 
+  TF_STREAM_LOCK (stream);
   if (stream->priv->idle_connected_id)
     g_source_remove (stream->priv->idle_connected_id);
   stream->priv->idle_connected_id = 0;
+
+  stream->priv->disposed = TRUE;
+  TF_STREAM_UNLOCK (stream);
+
 
   if (priv->stream_handler_proxy)
     {
@@ -2026,12 +2038,19 @@ emit_connected (gpointer data)
 {
   TfStream *self = TF_STREAM (data);
 
+  TF_STREAM_LOCK (self);
+  self->priv->idle_connected_id = 0;
+  if (self->priv->disposed)
+  {
+    TF_STREAM_UNLOCK (self);
+    return FALSE;
+  }
+  TF_STREAM_UNLOCK (self);
+
   tp_cli_media_stream_handler_call_stream_state (
       self->priv->stream_handler_proxy, -1, TP_MEDIA_STREAM_STATE_CONNECTED,
       async_method_callback, "Media.StreamHandler::StreamState",
       NULL, (GObject *) self);
-
-  self->priv->idle_connected_id = 0;
 
   return FALSE;
 }
@@ -2048,8 +2067,16 @@ cb_fs_stream_src_pad_added (FsStream *fsstream G_GNUC_UNUSED,
   DEBUG (self, "New pad %s: " FS_CODEC_FORMAT, padname, FS_CODEC_ARGS (codec));
   g_free (padname);
 
+  TF_STREAM_LOCK (self);
+  if (self->priv->disposed)
+  {
+    TF_STREAM_UNLOCK (self);
+    return;
+  }
+
   if (!self->priv->idle_connected_id)
     self->priv->idle_connected_id = g_idle_add (emit_connected, self);
+  TF_STREAM_UNLOCK (self);
 
   g_signal_emit (self, signals[SRC_PAD_ADDED], 0, pad, codec);
 }
