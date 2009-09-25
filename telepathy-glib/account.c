@@ -167,6 +167,13 @@ enum {
  * Expands to a call to a function that returns a quark for the "core" feature
  * on a #TpAccount.
  *
+ * When this feature is prepared, the basic properties of the Account have
+ * been retrieved and are available for use, and change-notification has been
+ * set up.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_account_prepare_async() function, and waiting for it to callback.
+ *
  * Since: 0.7.UNRELEASED
  */
 

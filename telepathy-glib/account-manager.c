@@ -118,6 +118,21 @@ static guint signals[LAST_SIGNAL];
 G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY);
 
 /**
+ * TP_ACCOUNT_MANAGER_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the "core" feature
+ * on a #TpAccountManager.
+ *
+ * When this feature is prepared, the list of accounts have been retrieved and
+ * are available for use, and change-notification has been set up.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_account_manager_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+
+/**
  * tp_account_manager_get_feature_quark_core:
  *
  * <!-- -->
@@ -1319,15 +1334,6 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
 
   return retval;
 }
-
-/**
- * TP_ACCOUNT_MANAGER_FEATURE_CORE:
- *
- * Expands to a call to a function that returns a quark for the "core" feature
- * on a #TpAccountManager.
- *
- * Since: 0.7.UNRELEASED
- */
 
 /**
  * tp_account_manager_is_ready:
