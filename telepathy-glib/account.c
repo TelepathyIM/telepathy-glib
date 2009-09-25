@@ -1228,6 +1228,10 @@ tp_account_class_init (TpAccountClass *klass)
    * @old_status: old connection status
    * @new_status: new connection status
    * @reason: the reason for the status change
+   * @dbus_error_name: currently unused, but for exposing the dbus error name
+   *                   on a connection error in the future
+   * @details: currently unused, but for exposing the error details
+   *           on a connection error in the future
    *
    * Emitted when the connection status on the account changes.
    *
@@ -1237,8 +1241,9 @@ tp_account_class_init (TpAccountClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT_UINT,
-      G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+      _tp_marshal_VOID__UINT_UINT_UINT_STRING_POINTER,
+      G_TYPE_NONE, 5, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_STRING,
+      G_TYPE_HASH_TABLE);
 
   /**
    * TpAccount::presence-changed:

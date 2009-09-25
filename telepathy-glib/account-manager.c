@@ -874,6 +874,8 @@ _tp_account_manager_account_status_changed_cb (TpAccount *account,
     TpConnectionStatus old,
     TpConnectionStatus new,
     TpConnectionStatusReason reason,
+    const gchar *dbus_error_name,
+    const GHashTable *details,
     gpointer user_data)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (user_data);
