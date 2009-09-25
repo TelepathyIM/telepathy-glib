@@ -130,7 +130,6 @@ G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
 enum {
   STATUS_CHANGED,
   PRESENCE_CHANGED,
-  REMOVED,
   LAST_SIGNAL
 };
 
@@ -317,8 +316,6 @@ _tp_account_removed_cb (TpAccount *self,
   self->priv->removed = TRUE;
 
   tp_proxy_invalidate ((TpProxy *) self, &e);
-
-  g_signal_emit (self, signals[REMOVED], 0);
 }
 
 static gchar *
@@ -1260,21 +1257,6 @@ tp_account_class_init (TpAccountClass *klass)
       0, NULL, NULL,
       _tp_marshal_VOID__UINT_STRING_STRING,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
-
-  /**
-   * TpAccount::removed:
-   * @account: the #TpAccount
-   *
-   * Emitted when the account is removed.
-   *
-   * Since: 0.7.UNRELEASED
-   */
-  signals[REMOVED] = g_signal_new ("removed",
-      G_TYPE_FROM_CLASS (object_class),
-      G_SIGNAL_RUN_LAST,
-      0, NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT;
   tp_account_init_known_interfaces ();

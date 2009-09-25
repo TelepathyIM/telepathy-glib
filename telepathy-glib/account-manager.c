@@ -966,11 +966,19 @@ signal:
 }
 
 static void
-_tp_account_manager_account_removed_cb (TpAccount *account,
+_tp_account_manager_account_invalidated_cb (TpProxy *proxy,
+    guint domain,
+    gint code,
+    gchar *message,
     gpointer user_data)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (user_data);
   TpAccountManagerPrivate *priv = manager->priv;
+  TpAccount *account = TP_ACCOUNT (proxy);
+
+  /* We only want to deal with accounts being removed here. */
+  if (code != TP_DBUS_ERROR_OBJECT_REMOVED)
+    return;
 
   g_object_ref (account);
   g_hash_table_remove (priv->accounts,
@@ -1020,8 +1028,8 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
   g_signal_connect (account, "presence-changed",
       G_CALLBACK (_tp_account_manager_account_presence_changed_cb), manager);
 
-  g_signal_connect (account, "removed",
-      G_CALLBACK (_tp_account_manager_account_removed_cb), manager);
+  g_signal_connect (account, "invalidated",
+      G_CALLBACK (_tp_account_manager_account_invalidated_cb), manager);
 
   _tp_account_manager_check_core_ready (manager);
 }
