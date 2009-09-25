@@ -1080,8 +1080,8 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:connection:
    *
-   * The account's connection. This property returns the same as
-   * tp_account_get_connection().
+   * The connection of the account, or NULL if account is offline.
+   * It is not guaranteed that the returned #TpConnection object is ready.
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -1099,7 +1099,7 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:display-name:
    *
-   * The account's display name.
+   * The account's display name, from the DisplayName property.
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -1429,12 +1429,9 @@ unescape_protocol (gchar *protocol)
  * tp_account_get_connection:
  * @account: a #TpAccount
  *
- * Get the connection of the account, or NULL if account is offline.
- * This function does not return a new ref and it is not guaranteed that the
- * returned #TpConnection object is ready
+ * <!-- -->
  *
- *
- * Returns: the connection of the account.
+ * Returns: the same as the #TpAccount:connection property
  *
  * Since: 0.7.UNRELEASED
  **/
@@ -1485,7 +1482,7 @@ tp_account_ensure_connection (TpAccount *account,
  *
  * <!-- -->
  *
- * Returns: the display name of @account
+ * Returns: the same as the #TpAccount:display-name property
  *
  * Since: 0.7.UNRELEASED
  **/
@@ -1503,7 +1500,7 @@ tp_account_get_display_name (TpAccount *account)
  *
  * <!-- -->
  *
- * Returns: whether @account is valid
+ * Returns: the same as the #TpAccount:valid property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1521,7 +1518,7 @@ tp_account_is_valid (TpAccount *account)
  *
  * <!-- -->
  *
- * Returns: the name of the connection manager @account uses
+ * Returns: the same as the #TpAccount:connection-manager property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1539,7 +1536,7 @@ tp_account_get_connection_manager (TpAccount *account)
  *
  * <!-- -->
  *
- * Returns: the protocol name @account uses
+ * Returns: the same as the #TpAccount:protocol property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1557,7 +1554,7 @@ tp_account_get_protocol (TpAccount *account)
  *
  * <!-- -->
  *
- * Returns: the Icon property on @account
+ * Returns: the same as the #TpAccount:icon-name property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -1593,7 +1590,7 @@ tp_account_get_parameters (TpAccount *account)
  *
  * <!-- -->
  *
- * Returns: the Enabled property on @account
+ * Returns: the same as the #TpAccount:enabled property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -2118,9 +2115,9 @@ tp_account_remove_finish (TpAccount *account,
  * tp_account_get_connect_automatically:
  * @account: a #TpAccount
  *
- * Gets the ConnectAutomatically parameter on @account.
+ * <!-- -->
  *
- * Returns: the value of the ConnectAutomatically parameter on @account
+ * Returns: the same as the #TpAccount:connect-automatically property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -2194,9 +2191,9 @@ tp_account_set_connect_automatically_finish (TpAccount *account,
  * tp_account_get_has_been_online:
  * @account: a #TpAccount
  *
- * Gets the HasBeenOnline parameter on @account.
+ * <!-- -->
  *
- * Returns: the value of the HasBeenOnline parameter on @account
+ * Returns: the same as the #TpAccount:has-been-online property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -2211,9 +2208,11 @@ tp_account_get_has_been_online (TpAccount *account)
  * @account: a #TpAccount
  * @reason: a #TpConnectionStatusReason to fill, or %NULL
  *
- * Gets the ConnectionStatus and ConnectionStatusReason parameter on @account.
+ * Gets the connection status and reason from @account. The two values
+ * are the same as the #TpAccount:connection-status and
+ * #TpAccount:connection-status-reason properties.
  *
- * Returns: the value of the ConnectionStatus parameter on @account
+ * Returns: the same as the #TpAccount:connection-status property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -2233,9 +2232,11 @@ tp_account_get_connection_status (TpAccount *account,
  * @status: return location for the current status
  * @status_message: return location for the current status message
  *
- * Gets the current presence, status and status message of @account.
+ * Gets the current presence, status and status message of @account. These
+ * values are the same as the #TpAccount:current-presence-type,
+ * #TpAccount:current-status and #TpAccount:current-status-message properties.
  *
- * Returns: the type from the CurrentPresence parameter on @account
+ * Returns: the same as the #TpAccount:current-presence-type property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -2259,10 +2260,12 @@ tp_account_get_current_presence (TpAccount *account,
  * @status: return location for the requested status
  * @status_message: return location for the requested status message
  *
- * Gets the requested presence, requested status and requested status message
- * from @account.
+ * Gets the requested presence, status and status message of @account. These
+ * values are the same as the #TpAccount:requested-presence-type,
+ * #TpAccount:requested-status and #TpAccount:requested-status-message
+ * properties.
  *
- * Returns: the presence from the RequestedPresence parameter on @account
+ * Returns: the same as the #TpAccount:requested-presence-type property
  *
  * Since: 0.7.UNRELEASED
  */
@@ -2284,9 +2287,9 @@ tp_account_get_requested_presence (TpAccount *account,
  * tp_account_get_nickname:
  * @account: a #TpAccount
  *
- * Gets the value of the Nickname parameter on @account.
+ * <!-- -->
  *
- * Returns: the value of the Nickname parameter on @account
+ * Returns: the same as the #TpAccount:nickname property
  *
  * Since: 0.7.UNRELEASED
  */
