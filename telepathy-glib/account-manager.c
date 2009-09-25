@@ -1377,7 +1377,7 @@ tp_account_manager_is_ready (TpAccountManager *manager,
 /**
  * tp_account_manager_prepare_async:
  * @manager: a #TpAccountManager
- * @features: a 0-terminated list of features
+ * @features: a 0-terminated list of features, or %NULL
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -1385,6 +1385,9 @@ tp_account_manager_is_ready (TpAccountManager *manager,
  * by @features. When the operation is finished, @callback will be called. You
  * can then call tp_account_manager_prepare_finish() to get the result of the
  * operation.
+ *
+ * If @features is %NULL, then @callback will be called when the implied
+ * %TP_ACCOUNT_FEATURE_CORE feature is ready.
  *
  * If %NULL is given to @callback, then no callback will be called when the
  * operation is finished. Instead, it will simply set @features on @manager.
