@@ -2670,7 +2670,7 @@ tp_account_prepare_async (TpAccount *account,
 
   if (_tp_account_check_features (account, features))
     {
-      g_simple_async_result_complete (result);
+      g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
     }
   else

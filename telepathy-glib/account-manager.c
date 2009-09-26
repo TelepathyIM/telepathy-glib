@@ -1326,7 +1326,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 
   if (_tp_account_manager_check_features (manager, features))
     {
-      g_simple_async_result_complete (result);
+      g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
     }
   else
