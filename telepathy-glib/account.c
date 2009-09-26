@@ -535,6 +535,13 @@ _tp_account_update (TpAccount *account,
 
       priv->connection_object_path =
         g_strdup (tp_asv_get_object_path (properties, "Connection"));
+
+      if (priv->connection != NULL)
+        {
+          if (tp_strdiff (priv->connection_object_path,
+                  tp_proxy_get_object_path (priv->connection)))
+            _tp_account_free_connection (account);
+        }
     }
 
   if (g_hash_table_lookup (properties, "ConnectAutomatically") != NULL)
