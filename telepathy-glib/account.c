@@ -1779,9 +1779,7 @@ _tp_account_updated_cb (TpAccount *proxy,
   if (error != NULL)
     g_simple_async_result_set_from_error (result, (GError *) error);
   else
-    g_simple_async_result_set_op_res_gpointer (result,
-        g_strdupv ((gchar **) reconnect_required),
-        (GDestroyNotify) g_strfreev);
+    g_simple_async_result_set_op_res_gpointer (result, reconnect_required, NULL);
 
   g_simple_async_result_complete (result);
   g_object_unref (G_OBJECT (result));
