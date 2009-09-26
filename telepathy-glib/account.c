@@ -340,81 +340,6 @@ _tp_account_removed_cb (TpAccount *self,
   tp_proxy_invalidate ((TpProxy *) self, &e);
 }
 
-static gchar *
-_tp_account_unescape_protocol (const gchar *protocol,
-    gssize len)
-{
-  gchar *result, *escape;
-  /* Bad implementation might accidentally use tp_escape_as_identifier,
-   * which escapes - in the wrong way... */
-  if ((escape = g_strstr_len (protocol, len, "_2d")) != NULL)
-    {
-      GString *str;
-      const gchar *input;
-
-      str = g_string_new ("");
-      input = protocol;
-      do {
-        g_string_append_len (str, input, escape - input);
-        g_string_append_c (str, '-');
-
-        len -= escape - input + 3;
-        input = escape + 3;
-      } while ((escape = g_strstr_len (input, len, "_2d")) != NULL);
-
-      g_string_append_len (str, input, len);
-
-      result = g_string_free (str, FALSE);
-    }
-  else
-    {
-      result = g_strndup (protocol, len);
-    }
-
-  g_strdelimit (result, "_", '-');
-
-  return result;
-}
-
-static gboolean
-_tp_account_parse_object_path (const gchar *object_path,
-    gchar **protocol,
-    gchar **manager)
-{
-  const gchar *proto, *proto_end;
-  const gchar *cm, *cm_end;
-
-  g_return_val_if_fail (
-      g_str_has_prefix (object_path, TP_ACCOUNT_OBJECT_PATH_BASE), FALSE);
-
-  cm = object_path + strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
-
-  for (cm_end = cm; *cm_end != '/' && *cm_end != '\0'; cm_end++)
-    /* pass */;
-
-  if (*cm_end == '\0')
-    return FALSE;
-
-  if (cm_end == '\0')
-    return FALSE;
-
-  proto = cm_end + 1;
-
-  for (proto_end = proto; *proto_end != '/' && *proto_end != '\0'; proto_end++)
-    /* pass */;
-
-  if (*proto_end == '\0')
-    return FALSE;
-
-  if (protocol != NULL)
-    *protocol = _tp_account_unescape_protocol (proto, proto_end - proto);
-
-  if (manager != NULL)
-    *manager = g_strndup (cm, cm_end - cm);
-
-  return TRUE;
-}
-
 static void
 _tp_account_free_connection (TpAccount *account)
 {
@@ -725,8 +650,8 @@ _tp_account_constructed (GObject *object)
       g_error_free (error);
     }
 
-  _tp_account_parse_object_path (tp_proxy_get_object_path (self),
-      &(priv->proto_name), &(priv->cm_name));
+  tp_account_parse_object_path (tp_proxy_get_object_path (self),
+      &(priv->cm_name), &(priv->proto_name), NULL, NULL);
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
 
