@@ -3026,7 +3026,7 @@ tp_account_get_avatar_async
 tp_account_get_avatar_finish
 <SUBSECTION>
 TP_ACCOUNT_FEATURE_CORE
-tp_account_is_ready
+tp_account_is_prepared
 tp_account_prepare_async
 tp_account_prepare_finish
 tp_account_get_requested_features
@@ -3077,7 +3077,7 @@ tp_account_manager_get_most_available_presence
 tp_account_manager_set_all_requested_presences
 <SUBSECTION>
 TP_ACCOUNT_MANAGER_FEATURE_CORE
-tp_account_manager_is_ready
+tp_account_manager_is_prepared
 tp_account_manager_prepare_async
 tp_account_manager_prepare_finish
 tp_account_manager_get_requested_features

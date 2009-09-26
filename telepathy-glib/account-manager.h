@@ -94,7 +94,7 @@ void tp_account_manager_create_account_async (TpAccountManager *manager,
 TpAccount * tp_account_manager_create_account_finish (
     TpAccountManager *manager, GAsyncResult *result, GError **error);
 
-gboolean tp_account_manager_is_ready (TpAccountManager *manager,
+gboolean tp_account_manager_is_prepared (TpAccountManager *manager,
     GQuark feature);
 
 void tp_account_manager_prepare_async (TpAccountManager *manager,

@@ -260,7 +260,7 @@ _tp_account_check_features (TpAccount *self,
       feat = _tp_account_get_feature (self, *f);
 
       /* features which are NULL (ie. don't exist) are always considered as
-       * being ready, except in _is_ready when it doesn't make sense to
+       * being ready, except in _is_prepared when it doesn't make sense to
        * return TRUE. */
       if (feat != NULL && !feat->ready)
         return FALSE;
@@ -662,7 +662,7 @@ _tp_account_properties_changed (TpAccount *proxy,
 {
   TpAccount *self = TP_ACCOUNT (weak_object);
 
-  if (!tp_account_is_ready (self, TP_ACCOUNT_FEATURE_CORE))
+  if (!tp_account_is_prepared (self, TP_ACCOUNT_FEATURE_CORE))
     return;
 
   _tp_account_update (self, properties);
@@ -2577,7 +2577,7 @@ tp_account_get_avatar_finish (TpAccount *account,
 }
 
 /**
- * tp_account_is_ready:
+ * tp_account_is_prepared:
  * @account: a #TpAccount
  * @feature: a feature which is required
  *
@@ -2588,7 +2588,7 @@ tp_account_get_avatar_finish (TpAccount *account,
  * Since: 0.7.UNRELEASED
  */
 gboolean
-tp_account_is_ready (TpAccount *account,
+tp_account_is_prepared (TpAccount *account,
     GQuark feature)
 {
   TpAccountFeature *f;

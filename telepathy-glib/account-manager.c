@@ -203,7 +203,7 @@ _tp_account_manager_check_features (TpAccountManager *self,
       feat = _tp_account_manager_get_feature (self, *f);
 
       /* features which are NULL (ie. don't exist) are always considered as
-       * being ready, except in _is_ready when it doesn't make sense to
+       * being ready, except in _is_prepared when it doesn't make sense to
        * return TRUE. */
       if (feat != NULL && !feat->ready)
         return FALSE;
@@ -393,7 +393,7 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
   GHashTableIter iter;
   gpointer value;
 
-  if (tp_account_manager_is_ready (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE))
+  if (tp_account_manager_is_prepared (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE))
     return;
 
   g_hash_table_iter_init (&iter, priv->accounts);
@@ -401,7 +401,7 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
     {
       TpAccount *account = TP_ACCOUNT (value);
 
-      if (!tp_account_is_ready (account, TP_ACCOUNT_FEATURE_CORE))
+      if (!tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE))
         return;
     }
 
@@ -1070,7 +1070,7 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
     {
       TpAccount *account = TP_ACCOUNT (value);
 
-      if (tp_account_is_ready (account, TP_ACCOUNT_FEATURE_CORE))
+      if (tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE))
         tp_account_request_presence_async (account, type, status, message,
             NULL, NULL);
     }
@@ -1257,7 +1257,7 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_is_ready:
+ * tp_account_manager_is_prepared:
  * @manager: a #TpAccountManager
  * @feature: a feature which is required
  * @error: a #GError to fill
@@ -1269,7 +1269,7 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
  * Since: 0.7.UNRELEASED
  */
 gboolean
-tp_account_manager_is_ready (TpAccountManager *manager,
+tp_account_manager_is_prepared (TpAccountManager *manager,
     GQuark feature)
 {
   TpAccountManagerFeature *f;
