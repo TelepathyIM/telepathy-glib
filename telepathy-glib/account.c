@@ -655,26 +655,6 @@ _tp_account_constructed (GObject *object)
 }
 
 static void
-_tp_account_set_property (GObject *object,
-    guint prop_id,
-    const GValue *value,
-    GParamSpec *pspec)
-{
-  TpAccount *self = TP_ACCOUNT (object);
-
-  switch (prop_id)
-    {
-    case PROP_ENABLED:
-      tp_account_set_enabled_async (self,
-          g_value_get_boolean (value), NULL, NULL);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
-    }
-}
-
-static void
 _tp_account_get_property (GObject *object,
     guint prop_id,
     GValue *value,
@@ -820,7 +800,6 @@ tp_account_class_init (TpAccountClass *klass)
 
   object_class->constructed = _tp_account_constructed;
   object_class->get_property = _tp_account_get_property;
-  object_class->set_property = _tp_account_set_property;
   object_class->dispose = _tp_account_dispose;
   object_class->finalize = _tp_account_finalize;
 
@@ -843,7 +822,7 @@ tp_account_class_init (TpAccountClass *klass)
           "Enabled",
           "Whether this account is enabled or not",
           FALSE,
-          G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
    * TpAccount:current-presence-type:
