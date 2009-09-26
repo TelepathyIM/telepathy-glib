@@ -1224,8 +1224,12 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
     GError **error)
 {
   TpAccount *retval;
+  GSimpleAsyncResult *simple;
 
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
 
   if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
           error))
@@ -1357,13 +1361,18 @@ tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result,
     GError **error)
 {
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), FALSE);
+  GSimpleAsyncResult *simple;
 
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-          error) ||
-      !g_simple_async_result_is_valid (result, G_OBJECT (manager),
-          tp_account_manager_prepare_finish))
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (manager),tp_account_manager_prepare_finish), FALSE);
 
   return TRUE;
 }
