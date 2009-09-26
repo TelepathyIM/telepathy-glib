@@ -1608,6 +1608,8 @@ tp_account_set_enabled_async (TpAccount *account,
   tp_cli_dbus_properties_call_set (TP_PROXY (account),
       -1, TP_IFACE_ACCOUNT, "Enabled", &value,
       _tp_account_property_set_cb, result, NULL, G_OBJECT (account));
+
+  g_value_reset (&value);
 }
 
 static void
@@ -1892,11 +1894,13 @@ tp_account_set_display_name_async (TpAccount *account,
       user_data, tp_account_set_display_name_finish);
 
   g_value_init (&value, G_TYPE_STRING);
-  g_value_set_string (&value, display_name);
+  g_value_set_string (&value, display_name_set);
 
   tp_cli_dbus_properties_call_set (account, -1, TP_IFACE_ACCOUNT,
       "DisplayName", &value, _tp_account_property_set_cb, result, NULL,
       G_OBJECT (account));
+
+  g_value_unset (&value);
 }
 
 /**
@@ -1972,6 +1976,8 @@ tp_account_set_icon_name_async (TpAccount *account,
   tp_cli_dbus_properties_call_set (account, -1, TP_IFACE_ACCOUNT,
       "Icon", &value, _tp_account_property_set_cb, result, NULL,
       G_OBJECT (account));
+
+  g_value_unset (&value);
 }
 
 /**
@@ -2135,6 +2141,8 @@ tp_account_set_connect_automatically_async (TpAccount *account,
   tp_cli_dbus_properties_call_set (account, -1, TP_IFACE_ACCOUNT,
       "ConnectAutomatically", &value, _tp_account_property_set_cb, result,
       NULL, G_OBJECT (account));
+
+  g_value_unset (&value);
 }
 
 /**
