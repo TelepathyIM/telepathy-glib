@@ -295,20 +295,32 @@ _tp_account_become_ready (TpAccount *self,
   if (!_tp_account_feature_in_array (feature, priv->actual_features))
     g_array_append_val (priv->actual_features, feature);
 
-  for (l = priv->callbacks; l != NULL; l = l->next)
+  /* First, find which callbacks are satisfied and add those items
+   * from the remove list. */
+  l = priv->callbacks;
+  while (l != NULL)
     {
+      GList *c = l;
       TpAccountFeatureCallback *cb = l->data;
+
+      l = l->next;
 
       if (_tp_account_check_features (self, cb->features))
         {
-          remove = g_list_prepend (remove, l);
-          g_simple_async_result_complete (cb->result);
-          g_object_unref (cb->result);
+          priv->callbacks = g_list_remove_link (priv->callbacks, c);
+          remove = g_list_concat (remove, c);
         }
     }
 
+  /* Next, complete these callbacks */
   for (l = remove; l != NULL; l = l->next)
-    priv->callbacks = g_list_delete_link (priv->callbacks, l->data);
+    {
+      TpAccountFeatureCallback *cb = l->data;
+
+      g_simple_async_result_complete (cb->result);
+      g_object_unref (cb->result);
+      g_slice_free (TpAccountFeatureCallback, cb);
+    }
 
   g_list_free (remove);
 }
