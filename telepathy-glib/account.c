@@ -1861,7 +1861,7 @@ tp_account_update_parameters_finish (TpAccount *account,
 /**
  * tp_account_set_display_name_async:
  * @account: a #TpAccount
- * @display_name: a new display name to set on @account
+ * @display_name: a new display name, or %NULL to unset the display name
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -1879,17 +1879,14 @@ tp_account_set_display_name_async (TpAccount *account,
 {
   GSimpleAsyncResult *result;
   GValue value = {0, };
+  const gchar *display_name_set;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (display_name != NULL);
 
   if (display_name == NULL)
-    {
-      g_simple_async_report_error_in_idle (G_OBJECT (account),
-          callback, user_data, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
-          "Can't set an empty display name");
-      return;
-    }
+    display_name_set = "";
+  else
+    display_name_set = display_name;
 
   result = g_simple_async_result_new (G_OBJECT (account), callback,
       user_data, tp_account_set_display_name_finish);
@@ -1938,7 +1935,7 @@ tp_account_set_display_name_finish (TpAccount *account,
 /**
  * tp_account_set_icon_name_async:
  * @account: a #TpAccount
- * @icon_name: a new icon name
+ * @icon_name: a new icon name, or %NULL to unset the icon name
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -1959,7 +1956,6 @@ tp_account_set_icon_name_async (TpAccount *account,
   const char *icon_name_set;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (icon_name != NULL);
 
   if (icon_name == NULL)
     /* settings an empty icon name is allowed */
