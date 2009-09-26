@@ -307,7 +307,7 @@ _tp_account_become_ready (TpAccount *self,
       if (_tp_account_check_features (self, cb->features))
         {
           priv->callbacks = g_list_remove_link (priv->callbacks, c);
-          remove = g_list_concat (remove, c);
+          remove = g_list_concat (c, remove);
         }
     }
 
