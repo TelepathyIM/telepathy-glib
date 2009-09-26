@@ -993,9 +993,10 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
  * g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
  * ]|
  *
- * The return value of this function is not guaranteed to have been retrieved
- * until tp_account_manager_prepare_async() has finished; until then, the
- * value is %NULL.
+ * The list of accounts on @manager is not guaranteed to have been retrieved
+ * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
+ * (tp_account_manager_prepare_async() has returned). Until this feature has
+ * been prepared, an empty list (%NULL) will be returned.
  *
  * Returns: a newly allocated #GList of accounts in @manager
  *
