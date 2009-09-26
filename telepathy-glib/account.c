@@ -100,8 +100,6 @@ struct _TpAccountPrivate {
   gboolean enabled;
   gboolean valid;
   gboolean removed;
-  /* Timestamp when the connection got connected in seconds since the epoch */
-  glong connect_time;
 
   gchar *cm_name;
   gchar *proto_name;
@@ -598,14 +596,6 @@ _tp_account_update (TpAccount *account,
 
   if (priv->connection_status != old_s)
     {
-      if (priv->connection_status == TP_CONNECTION_STATUS_CONNECTED)
-        {
-          GTimeVal val;
-          g_get_current_time (&val);
-
-          priv->connect_time = val.tv_sec;
-        }
-
       g_signal_emit (account, signals[STATUS_CHANGED], 0,
           old_s, priv->connection_status, priv->reason, NULL, NULL);
 
