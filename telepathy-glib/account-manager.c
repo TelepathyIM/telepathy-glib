@@ -521,9 +521,6 @@ _tp_account_manager_finalize (GObject *object)
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (object);
   TpAccountManagerPrivate *priv = manager->priv;
 
-  g_hash_table_destroy (priv->create_results);
-  g_hash_table_destroy (priv->accounts);
-
   g_free (priv->most_available_status);
   g_free (priv->most_available_status_message);
 
@@ -563,6 +560,8 @@ _tp_account_manager_dispose (GObject *object)
   g_assert_cmpuint (g_hash_table_size (priv->create_results), ==, 0);
   g_hash_table_destroy (priv->create_results);
   priv->create_results = NULL;
+
+  g_hash_table_destroy (priv->accounts);
 
   tp_dbus_daemon_cancel_name_owner_watch (tp_proxy_get_dbus_daemon (self),
       TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb, self);
