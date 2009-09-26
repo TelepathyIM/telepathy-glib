@@ -106,9 +106,7 @@ enum {
   ACCOUNT_DELETED,
   ACCOUNT_ENABLED,
   ACCOUNT_DISABLED,
-  ACCOUNT_CONNECTION_CHANGED,
   MOST_AVAILABLE_PRESENCE_CHANGED,
-  NEW_CONNECTION,
   LAST_SIGNAL
 };
 
@@ -670,31 +668,6 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       1, TP_TYPE_ACCOUNT);
 
   /**
-   * TpAccountManager::account-connection-changed:
-   * @manager: a #TpAccountManager
-   * @account: a #TpAccount
-   * @reason: the change reason
-   * @actual: the actual connection type
-   * @previous: the previous connection type
-   *
-   * Emitted when the connection of an account in @manager changes.
-   *
-   * Since: 0.7.UNRELEASED
-   */
-  signals[ACCOUNT_CONNECTION_CHANGED] =
-    g_signal_new ("account-connection-changed",
-        G_TYPE_FROM_CLASS (klass),
-        G_SIGNAL_RUN_LAST,
-        0,
-        NULL, NULL,
-        _tp_marshal_VOID__OBJECT_INT_UINT_UINT,
-        G_TYPE_NONE,
-        4, TP_TYPE_ACCOUNT,
-        G_TYPE_INT,   /* reason */
-        G_TYPE_UINT,  /* actual connection */
-        G_TYPE_UINT); /* previous connection */
-
-  /**
    * TpAccountManager::most-available-presence-changed:
    * @manager: a #TpAccountManager
    * @account: a #TpAccount
@@ -717,24 +690,6 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
         3, G_TYPE_UINT, /* Presence type */
         G_TYPE_STRING,  /* status */
         G_TYPE_STRING); /* stauts message*/
-
-  /**
-   * TpAccountManager::new-connection
-   * @manager: a #TpAccountManager
-   * @account: a #TpConnection
-   *
-   * Emitted when an account in @manager makes a new connection.
-   *
-   * Since: 0.7.UNRELEASED
-   */
-  signals[NEW_CONNECTION] = g_signal_new ("new-connection",
-      G_TYPE_FROM_CLASS (klass),
-      G_SIGNAL_RUN_LAST,
-      0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
-      G_TYPE_NONE,
-      1, TP_TYPE_CONNECTION);
 }
 
 /**
@@ -840,20 +795,6 @@ tp_account_manager_dup (void)
 }
 
 static void
-_tp_account_manager_account_connection_cb (TpAccount *account,
-    GParamSpec *spec,
-    gpointer manager)
-{
-  TpConnection *connection = tp_account_get_connection (account);
-
-  DEBUG ("Signalling connection %p of account %s",
-      connection, tp_proxy_get_object_path (account));
-
-  if (connection != NULL)
-    g_signal_emit (manager, signals[NEW_CONNECTION], 0, connection);
-}
-
-static void
 _tp_account_manager_account_enabled_cb (TpAccount *account,
     GParamSpec *spec,
     gpointer manager)
@@ -864,21 +805,6 @@ _tp_account_manager_account_enabled_cb (TpAccount *account,
     g_signal_emit (self, signals[ACCOUNT_ENABLED], 0, account);
   else
     g_signal_emit (self, signals[ACCOUNT_DISABLED], 0, account);
-}
-
-static void
-_tp_account_manager_account_status_changed_cb (TpAccount *account,
-    TpConnectionStatus old,
-    TpConnectionStatus new,
-    TpConnectionStatusReason reason,
-    const gchar *dbus_error_name,
-    const GHashTable *details,
-    gpointer user_data)
-{
-  TpAccountManager *manager = TP_ACCOUNT_MANAGER (user_data);
-
-  g_signal_emit (manager, signals[ACCOUNT_CONNECTION_CHANGED], 0,
-      account, reason, new, old);
 }
 
 static void
@@ -1017,14 +943,8 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
 
   g_signal_emit (manager, signals[ACCOUNT_CREATED], 0, account);
 
-  g_signal_connect (account, "notify::connection",
-      G_CALLBACK (_tp_account_manager_account_connection_cb), manager);
-
   g_signal_connect (account, "notify::enabled",
       G_CALLBACK (_tp_account_manager_account_enabled_cb), manager);
-
-  g_signal_connect (account, "status-changed",
-      G_CALLBACK (_tp_account_manager_account_status_changed_cb), manager);
 
   g_signal_connect (account, "presence-changed",
       G_CALLBACK (_tp_account_manager_account_presence_changed_cb), manager);
