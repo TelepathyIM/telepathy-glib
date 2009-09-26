@@ -200,7 +200,7 @@ _tp_account_manager_check_features (TpAccountManager *self,
   const GQuark *f;
   TpAccountManagerFeature *feat;
 
-  for (f = features; *f != 0; f++)
+  for (f = features; f != NULL && *f != 0; f++)
     {
       feat = _tp_account_manager_get_feature (self, *f);
 
@@ -1327,7 +1327,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
   /* In this object, there are no features which are activatable (core is
    * forced on you). They'd be activated here though. */
 
-  for (f = features; *f != 0; f++)
+  for (f = features; f != NULL && *f != 0; f++)
     {
       /* Only add features to requested which exist on this object and are not
        * already in the list. */
