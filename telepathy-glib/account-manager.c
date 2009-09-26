@@ -1156,8 +1156,7 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
 
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (my_res,
-          (GError *) error);
+      g_simple_async_result_set_from_error (my_res, error);
       g_simple_async_result_complete (my_res);
       g_object_unref (my_res);
 
