@@ -3029,9 +3029,6 @@ TP_ACCOUNT_FEATURE_CORE
 tp_account_is_prepared
 tp_account_prepare_async
 tp_account_prepare_finish
-tp_account_get_requested_features
-tp_account_get_actual_features
-tp_account_get_missing_features
 <SUBSECTION Private>
 tp_account_get_feature_quark_core
 <SUBSECTION>
@@ -3080,9 +3077,6 @@ TP_ACCOUNT_MANAGER_FEATURE_CORE
 tp_account_manager_is_prepared
 tp_account_manager_prepare_async
 tp_account_manager_prepare_finish
-tp_account_manager_get_requested_features
-tp_account_manager_get_actual_features
-tp_account_manager_get_missing_features
 <SUBSECTION Private>
 tp_account_manager_get_feature_quark_core
 <SUBSECTION>

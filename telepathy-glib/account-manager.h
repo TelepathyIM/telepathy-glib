@@ -103,15 +103,6 @@ void tp_account_manager_prepare_async (TpAccountManager *manager,
 gboolean tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result, GError **error);
 
-const GQuark * tp_account_manager_get_requested_features (
-    TpAccountManager *manager);
-
-const GQuark * tp_account_manager_get_actual_features (
-    TpAccountManager *manager);
-
-const GQuark * tp_account_manager_get_missing_features (
-    TpAccountManager *manager);
-
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account-manager.h>

@@ -19,6 +19,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "telepathy-glib/account-manager-internal.h"
+
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
@@ -1390,7 +1392,7 @@ tp_account_manager_prepare_finish (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_get_requested_features:
+ * _tp_account_manager_get_requested_features:
  * @manager: a #TpAccountManager
  *
  * <!-- -->
@@ -1400,7 +1402,7 @@ tp_account_manager_prepare_finish (TpAccountManager *manager,
  * Since: 0.7.UNRELEASED
  */
 const GQuark *
-tp_account_manager_get_requested_features (TpAccountManager *manager)
+_tp_account_manager_get_requested_features (TpAccountManager *manager)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 
@@ -1408,7 +1410,7 @@ tp_account_manager_get_requested_features (TpAccountManager *manager)
 }
 
 /**
- * tp_account_manager_get_actual_features:
+ * _tp_account_manager_get_actual_features:
  * @manager: a #TpAccountManager
  *
  * <!-- -->
@@ -1418,7 +1420,7 @@ tp_account_manager_get_requested_features (TpAccountManager *manager)
  * Since: 0.7.UNRELEASED
  */
 const GQuark *
-tp_account_manager_get_actual_features (TpAccountManager *manager)
+_tp_account_manager_get_actual_features (TpAccountManager *manager)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 
@@ -1426,7 +1428,7 @@ tp_account_manager_get_actual_features (TpAccountManager *manager)
 }
 
 /**
- * tp_account_manager_get_missing_features:
+ * _tp_account_manager_get_missing_features:
  * @manager: a #TpAccountManager
  *
  * <!-- -->
@@ -1436,7 +1438,7 @@ tp_account_manager_get_actual_features (TpAccountManager *manager)
  * Since: 0.7.UNRELEASED
  */
 const GQuark *
-tp_account_manager_get_missing_features (TpAccountManager *manager)
+_tp_account_manager_get_missing_features (TpAccountManager *manager)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 

@@ -21,6 +21,7 @@
 
 #include <string.h>
 
+#include "telepathy-glib/account-internal.h"
 #include "telepathy-glib/account.h"
 
 #include <telepathy-glib/dbus.h>
@@ -2709,7 +2710,7 @@ tp_account_prepare_finish (TpAccount *account,
 }
 
 /**
- * tp_account_get_requested_features:
+ * _tp_account_get_requested_features:
  * @account: a #TpAccount
  *
  * <!-- -->
@@ -2719,7 +2720,7 @@ tp_account_prepare_finish (TpAccount *account,
  * Since: 0.7.UNRELEASED
  */
 const GQuark *
-tp_account_get_requested_features (TpAccount *account)
+_tp_account_get_requested_features (TpAccount *account)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
@@ -2727,7 +2728,7 @@ tp_account_get_requested_features (TpAccount *account)
 }
 
 /**
- * tp_account_get_actual_features:
+ * _tp_account_get_actual_features:
  * @account: a #TpAccount
  *
  * <!-- -->
@@ -2737,7 +2738,7 @@ tp_account_get_requested_features (TpAccount *account)
  * Since: 0.7.UNRELEASED
  */
 const GQuark *
-tp_account_get_actual_features (TpAccount *account)
+_tp_account_get_actual_features (TpAccount *account)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
@@ -2745,7 +2746,7 @@ tp_account_get_actual_features (TpAccount *account)
 }
 
 /**
- * tp_account_get_missing_features:
+ * _tp_account_get_missing_features:
  * @account: a #TpAccount
  *
  * <!-- -->
@@ -2756,7 +2757,7 @@ tp_account_get_actual_features (TpAccount *account)
  * Since: 0.7.UNRELEASED
  */
 const GQuark *
-tp_account_get_missing_features (TpAccount *account)
+_tp_account_get_missing_features (TpAccount *account)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
