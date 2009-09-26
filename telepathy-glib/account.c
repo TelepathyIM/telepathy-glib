@@ -1526,7 +1526,7 @@ _tp_account_property_set_cb (TpProxy *proxy,
   if (error != NULL)
     {
       DEBUG ("Failed to set property: %s", error->message);
-      g_simple_async_result_set_from_error (result, (GError *) error);
+      g_simple_async_result_set_from_error (result, error);
     }
 
   g_simple_async_result_complete (result);
