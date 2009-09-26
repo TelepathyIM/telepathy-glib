@@ -502,21 +502,6 @@ _tp_account_manager_feature_free (gpointer data,
 }
 
 static void
-_tp_account_manager_feature_callback_free (gpointer data,
-    gpointer user_data)
-{
-  TpAccountManagerFeatureCallback *cb = data;
-  GError e = { TP_ERRORS, TP_ERROR_NO_ANSWER,
-               "the TpAccountManager was disposed before the feature(s) became ready" };
-
-  g_simple_async_result_set_from_error (cb->result, &e);
-  g_simple_async_result_complete (cb->result);
-  g_object_unref (cb->result);
-
-  g_slice_free (TpAccountManagerFeatureCallback, data);
-}
-
-static void
 _tp_account_manager_finalize (GObject *object)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (object);
@@ -535,8 +520,9 @@ _tp_account_manager_finalize (GObject *object)
   g_list_free (priv->features);
   priv->features = NULL;
 
-  g_list_foreach (priv->callbacks, _tp_account_manager_feature_callback_free,
-      NULL);
+  /* GSimpleAsyncResult keeps a ref to the source GObject, so this list
+   * should be empty. */
+  g_assert_cmpuint (g_list_length (priv->callbacks), ==, 0);
   g_list_free (priv->callbacks);
   priv->callbacks = NULL;
 
@@ -552,27 +538,17 @@ _tp_account_manager_dispose (GObject *object)
 {
   TpAccountManager *self = TP_ACCOUNT_MANAGER (object);
   TpAccountManagerPrivate *priv = self->priv;
-  GHashTableIter iter;
-  GSimpleAsyncResult *result;
 
   if (priv->dispose_run)
     return;
 
   priv->dispose_run = TRUE;
 
-  /* the manager is being destroyed while there are account creation
-   * processes pending; this should not happen, but emit the callbacks
-   * with an error anyway. */
-  g_hash_table_iter_init (&iter, priv->create_results);
-  while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &result))
-    {
-      g_simple_async_result_set_error (result, G_IO_ERROR,
-          G_IO_ERROR_CANCELLED, "The account manager was disposed while "
-          "creating the account");
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-    }
-  g_hash_table_remove_all (priv->create_results);
+  /* GSimpleAsyncResult keeps a ref to the source GObject, so this hash
+   * table should be empty. */
+  g_assert_cmpuint (g_hash_table_size (priv->create_results), ==, 0);
+  g_hash_table_destroy (priv->create_results);
+  priv->create_results = NULL;
 
   tp_dbus_daemon_cancel_name_owner_watch (tp_proxy_get_dbus_daemon (self),
       TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb, self);

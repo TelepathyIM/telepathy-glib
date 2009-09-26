@@ -906,21 +906,6 @@ _tp_account_feature_free (gpointer data,
 }
 
 static void
-_tp_account_feature_callback_free (gpointer data,
-    gpointer user_data)
-{
-  TpAccountFeatureCallback *cb = data;
-  GError e = { TP_ERRORS, TP_ERROR_NO_ANSWER,
-               "the TpAccount was disposed before the feature(s) became ready" };
-
-  g_simple_async_result_set_from_error (cb->result, &e);
-  g_simple_async_result_complete (cb->result);
-  g_object_unref (cb->result);
-
-  g_slice_free (TpAccountFeatureCallback, data);
-}
-
-static void
 _tp_account_finalize (GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (object);
@@ -942,7 +927,10 @@ _tp_account_finalize (GObject *object)
   g_list_free (priv->features);
   priv->features = NULL;
 
-  g_list_foreach (priv->callbacks, _tp_account_feature_callback_free, NULL);
+  /* GSimpleAsyncResult keeps a ref to the source GObject, so this list
+   * should be empty. */
+  g_assert_cmpuint (g_list_length (priv->callbacks), ==, 0);
+
   g_list_free (priv->callbacks);
   priv->callbacks = NULL;
 
