@@ -79,7 +79,6 @@ struct _TpAccountPrivate {
 
   TpConnection *connection;
   gchar *connection_object_path;
-  guint connection_invalidated_id;
 
   TpConnectionStatus connection_status;
   TpConnectionStatusReason reason;
@@ -409,62 +408,12 @@ static void
 _tp_account_free_connection (TpAccount *account)
 {
   TpAccountPrivate *priv = account->priv;
-  TpConnection *conn;
 
   if (priv->connection == NULL)
     return;
 
-  conn = priv->connection;
+  g_object_unref (priv->connection);
   priv->connection = NULL;
-
-  if (priv->connection_invalidated_id != 0)
-    g_signal_handler_disconnect (conn, priv->connection_invalidated_id);
-  priv->connection_invalidated_id = 0;
-
-  g_object_unref (conn);
-}
-
-static void
-_tp_account_connection_invalidated_cb (TpProxy *self,
-    guint domain,
-    gint code,
-    gchar *message,
-    gpointer user_data)
-{
-  TpAccount *account = TP_ACCOUNT (user_data);
-  TpAccountPrivate *priv = account->priv;
-
-  if (priv->connection == NULL)
-    return;
-
-  DEBUG ("(%s) Connection invalidated",
-      tp_proxy_get_object_path (account));
-
-  g_assert (priv->connection == TP_CONNECTION (self));
-
-  _tp_account_free_connection (account);
-
-  g_object_notify (G_OBJECT (account), "connection");
-}
-
-static void
-_tp_account_connection_ready_cb (TpConnection *connection,
-    const GError *error,
-    gpointer user_data)
-{
-  TpAccount *account = TP_ACCOUNT (user_data);
-
-  if (error != NULL)
-    {
-      DEBUG ("(%s) Connection failed to become ready: %s",
-          tp_proxy_get_object_path (account), error->message);
-      _tp_account_free_connection (account);
-    }
-  else
-    {
-      DEBUG ("(%s) Connection ready",
-          tp_proxy_get_object_path (account));
-    }
 }
 
 static void
@@ -496,17 +445,13 @@ _tp_account_set_connection (TpAccount *account,
               error->message);
           g_error_free (error);
         }
-      else
+    }
+  else
+    {
+      if (priv->connection != NULL)
         {
-          priv->connection_invalidated_id = g_signal_connect (priv->connection,
-              "invalidated",
-              G_CALLBACK (_tp_account_connection_invalidated_cb), account);
-
-          DEBUG ("Readying connection for %s",
-              tp_proxy_get_object_path (account));
-          /* notify a change in the connection property when it's ready */
-          tp_connection_call_when_ready (priv->connection,
-              _tp_account_connection_ready_cb, account);
+          /* Connection was invalidated. */
+          _tp_account_free_connection (account);
         }
     }
 
