@@ -382,14 +382,6 @@ _tp_account_set_connection (TpAccount *account,
           g_error_free (error);
         }
     }
-  else
-    {
-      if (priv->connection != NULL)
-        {
-          /* Connection was invalidated. */
-          _tp_account_free_connection (account);
-        }
-    }
 
   g_object_notify (G_OBJECT (account), "connection");
 }
