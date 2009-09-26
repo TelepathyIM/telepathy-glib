@@ -2760,3 +2760,21 @@ free_segments_and_fail:
   g_strfreev (segments);
   return FALSE;
 }
+
+/**
+ * _tp_account_refresh_properties:
+ * @account: a #TpAccount
+ *
+ * Refreshes @account's hashtable of properties with what actually exists on
+ * the account manager.
+ *
+ * Since: 0.7.UNRELEASED
+ */
+void
+_tp_account_refresh_properties (TpAccount *account)
+{
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
+  tp_cli_dbus_properties_call_get_all (account, -1, TP_IFACE_ACCOUNT,
+      _tp_account_got_all_cb, NULL, NULL, G_OBJECT (account));
+}

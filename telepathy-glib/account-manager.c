@@ -20,6 +20,7 @@
  */
 
 #include "telepathy-glib/account-manager-internal.h"
+#include "telepathy-glib/account-internal.h"
 
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/gtypes.h>
@@ -341,6 +342,7 @@ _tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
       name = g_ptr_array_index (accounts, i);
 
       account = tp_account_manager_ensure_account (manager, name);
+      _tp_account_refresh_properties (account);
     }
 
   missing_accounts = g_hash_table_size (priv->accounts) - accounts->len;

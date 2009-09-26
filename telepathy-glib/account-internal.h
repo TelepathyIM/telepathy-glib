@@ -32,6 +32,8 @@ const GQuark * _tp_account_get_actual_features (TpAccount *account);
 
 const GQuark * _tp_account_get_missing_features (TpAccount *account);
 
+void _tp_account_refresh_properties (TpAccount *account);
+
 G_END_DECLS
 
 #endif
