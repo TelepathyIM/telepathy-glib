@@ -648,7 +648,7 @@ _tp_account_update (TpAccount *account,
         }
 
       g_signal_emit (account, signals[STATUS_CHANGED], 0,
-          old_s, priv->connection_status, priv->reason);
+          old_s, priv->connection_status, priv->reason, NULL, NULL);
 
       g_object_notify (G_OBJECT (account), "connection-status");
       g_object_notify (G_OBJECT (account), "connection-status-reason");
