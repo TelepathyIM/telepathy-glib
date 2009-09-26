@@ -389,6 +389,53 @@ _tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
 }
 
 static void
+_tp_account_manager_update_most_available_presence (TpAccountManager *manager)
+{
+  TpAccountManagerPrivate *priv = manager->priv;
+  TpConnectionPresenceType presence = TP_CONNECTION_PRESENCE_TYPE_OFFLINE;
+  TpAccount *account = NULL;
+  GHashTableIter iter;
+  gpointer value;
+
+  /* this presence is equal to the presence of the account with the
+   * highest availability */
+
+  g_hash_table_iter_init (&iter, priv->accounts);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      TpAccount *a = TP_ACCOUNT (value);
+      TpConnectionPresenceType p;
+
+      p = tp_account_get_current_presence (a, NULL, NULL);
+
+      if (tp_connection_presence_type_cmp_availability (p, presence) > 0)
+        {
+          account = a;
+          presence = p;
+        }
+    }
+
+  priv->most_available_account = account;
+  g_free (priv->most_available_status);
+  g_free (priv->most_available_status_message);
+
+  if (account == NULL)
+    {
+      priv->most_available_presence = presence;
+      priv->most_available_status = NULL;
+      priv->most_available_status_message = NULL;
+      return;
+    }
+
+  priv->most_available_presence = tp_account_get_current_presence (account,
+      &(priv->most_available_status), &(priv->most_available_status_message));
+
+  DEBUG ("Updated most available presence to: %s (%d) \"%s\"",
+      priv->most_available_status, priv->most_available_presence,
+      priv->most_available_status_message);
+}
+
+static void
 _tp_account_manager_check_core_ready (TpAccountManager *manager)
 {
   TpAccountManagerPrivate *priv = manager->priv;
@@ -416,6 +463,8 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
           priv->requested_presence, priv->requested_status,
           priv->requested_status_message);
     }
+
+  _tp_account_manager_update_most_available_presence (manager);
 
   _tp_account_manager_become_ready (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE);
 }
@@ -794,53 +843,6 @@ _tp_account_manager_account_enabled_cb (TpAccount *account,
     g_signal_emit (self, signals[ACCOUNT_ENABLED], 0, account);
   else
     g_signal_emit (self, signals[ACCOUNT_DISABLED], 0, account);
-}
-
-static void
-_tp_account_manager_update_most_available_presence (TpAccountManager *manager)
-{
-  TpAccountManagerPrivate *priv = manager->priv;
-  TpConnectionPresenceType presence = TP_CONNECTION_PRESENCE_TYPE_OFFLINE;
-  TpAccount *account = NULL;
-  GHashTableIter iter;
-  gpointer value;
-
-  /* this presence is equal to the presence of the account with the
-   * highest availability */
-
-  g_hash_table_iter_init (&iter, priv->accounts);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      TpAccount *a = TP_ACCOUNT (value);
-      TpConnectionPresenceType p;
-
-      p = tp_account_get_current_presence (a, NULL, NULL);
-
-      if (tp_connection_presence_type_cmp_availability (p, presence) > 0)
-        {
-          account = a;
-          presence = p;
-        }
-    }
-
-  priv->most_available_account = account;
-  g_free (priv->most_available_status);
-  g_free (priv->most_available_status_message);
-
-  if (account == NULL)
-    {
-      priv->most_available_presence = presence;
-      priv->most_available_status = NULL;
-      priv->most_available_status_message = NULL;
-      return;
-    }
-
-  priv->most_available_presence = tp_account_get_current_presence (account,
-      &(priv->most_available_status), &(priv->most_available_status_message));
-
-  DEBUG ("Updated most available presence to: %s (%d) \"%s\"",
-      priv->most_available_status, priv->most_available_presence,
-      priv->most_available_status_message);
 }
 
 static void
