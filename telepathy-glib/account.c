@@ -78,6 +78,7 @@ struct _TpAccountPrivate {
   gboolean dispose_has_run;
 
   TpConnection *connection;
+  gchar *connection_object_path;
   guint connection_invalidated_id;
 
   TpConnectionStatus connection_status;
@@ -665,10 +666,10 @@ _tp_account_update (TpAccount *account,
 
   if (g_hash_table_lookup (properties, "Connection") != NULL)
     {
-      const gchar *conn_path =
-        tp_asv_get_object_path (properties, "Connection");
+      g_free (priv->connection_object_path);
 
-      _tp_account_set_connection (account, conn_path);
+      priv->connection_object_path =
+        g_strdup (tp_asv_get_object_path (properties, "Connection"));
     }
 
   if (g_hash_table_lookup (properties, "ConnectAutomatically") != NULL)
@@ -911,6 +912,7 @@ _tp_account_finalize (GObject *object)
   TpAccount *self = TP_ACCOUNT (object);
   TpAccountPrivate *priv = self->priv;
 
+  g_free (priv->connection_object_path);
   g_free (priv->status);
   g_free (priv->message);
   g_free (priv->requested_status);
@@ -1483,9 +1485,16 @@ unescape_protocol (gchar *protocol)
 TpConnection *
 tp_account_get_connection (TpAccount *account)
 {
+  TpAccountPrivate *priv;
+
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  return account->priv->connection;
+  priv = account->priv;
+
+  if (priv->connection == NULL && priv->connection_object_path != NULL)
+    _tp_account_set_connection (account, priv->connection_object_path);
+
+  return priv->connection;
 }
 
 /**
