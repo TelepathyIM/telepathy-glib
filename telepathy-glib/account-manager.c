@@ -335,25 +335,17 @@ _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
   TpAccountManagerPrivate *priv = manager->priv;
   TpAccount *account;
 
-  if (!valid)
-    {
-      account = g_hash_table_lookup (priv->accounts, path);
+  account = tp_account_manager_ensure_account (manager, path);
 
-      if (account != NULL)
-        {
-          g_object_ref (account);
-          g_hash_table_remove (priv->accounts, account);
-          g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
-              account, valid);
-          g_object_unref (account);
-        }
-    }
-  else
-    {
-      account = tp_account_manager_ensure_account (manager, path);
-      g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
-          account, valid);
-    }
+  g_object_ref (account);
+
+  if (!valid)
+    g_hash_table_remove (priv->accounts, path);
+
+  g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+      account, valid);
+
+  g_object_unref (account);
 }
 
 static void
