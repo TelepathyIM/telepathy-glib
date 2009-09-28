@@ -994,33 +994,33 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_get_accounts:
+ * tp_account_manager_get_valid_accounts:
  * @manager: a #TpAccountManager
  *
- * Returns a newly allocated #GList of accounts in @manager. The list must be
- * freed with g_list_free() after used. None of the accounts in the returned
- * list are guaranteed to be ready.
+ * Returns a newly allocated #GList of valid accounts in @manager. The list
+ * must be freed with g_list_free() after used. None of the accounts in the
+ * returned list are guaranteed to be ready.
  *
  * Note that the #TpAccount<!-- -->s in the returned #GList are not reffed
  * before returning from this function. One could ref every item in the list
  * like the following example:
  * |[
  * GList *accounts;
- * account = tp_account_manager_get_accounts (manager);
+ * account = tp_account_manager_get_valid_accounts (manager);
  * g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
  * ]|
  *
- * The list of accounts on @manager is not guaranteed to have been retrieved
+ * The list of valid accounts returned is not guaranteed to have been retrieved
  * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
  * (tp_account_manager_prepare_async() has returned). Until this feature has
  * been prepared, an empty list (%NULL) will be returned.
  *
- * Returns: a newly allocated #GList of accounts in @manager
+ * Returns: a newly allocated #GList of valid accounts in @manager
  *
  * Since: 0.7.UNRELEASED
  */
 GList *
-tp_account_manager_get_accounts (TpAccountManager *manager)
+tp_account_manager_get_valid_accounts (TpAccountManager *manager)
 {
   TpAccountManagerPrivate *priv;
   GList *ret;
