@@ -13,6 +13,8 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+static int exit_status = 1;
+
 static void
 got_channels (TpConnection *connection,
               const GPtrArray *channels,
@@ -48,6 +50,28 @@ got_channels (TpConnection *connection,
   g_main_loop_quit (mainloop);
 }
 
+static void
+connection_ready_cb (TpConnection *connection,
+    const GError *error,
+    gpointer user_data)
+{
+  GMainLoop *mainloop = user_data;
+
+  if (error != NULL)
+    {
+      g_warning ("%s", error->message);
+      g_main_loop_quit (mainloop);
+      return;
+    }
+
+  printf ("Connection ready\n");
+
+  tp_cli_connection_call_list_channels (connection, -1,
+      /* If ListChannels() needed any arguments, they'd go here */
+      got_channels, g_main_loop_ref (mainloop),
+      (GDestroyNotify) g_main_loop_unref, NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -57,7 +81,6 @@ main (int argc,
   GMainLoop *mainloop = NULL;
   TpDBusDaemon *daemon = NULL;
   GError *error = NULL;
-  int ret = 1;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -95,28 +118,20 @@ main (int argc,
 
   connection = tp_connection_new (daemon, bus_name, object_path, &error);
 
-  /* for this example I assume it's an existing connection on which someone
-   * else has called (or will call) Connect(), so we won't call Connect()
-   * on it ourselves
-   */
-  if (connection == NULL ||
-      !tp_connection_run_until_ready (connection, FALSE, &error, NULL))
+  if (connection == NULL)
     {
       g_warning ("%s", error->message);
       g_error_free (error);
       goto out;
     }
 
-  printf ("Connection ready\n");
-
-  /* An example non-blocking call */
-  tp_cli_connection_call_list_channels (connection, -1,
-      /* If ListChannels() needed any arguments, they'd go here */
-      got_channels, g_main_loop_ref (mainloop),
-      (GDestroyNotify) g_main_loop_unref, NULL);
+  /* for this example I assume it's an existing connection on which someone
+   * else has called (or will call) Connect(), so we won't call Connect()
+   * on it ourselves
+   */
+  tp_connection_call_when_ready (connection, connection_ready_cb, mainloop);
 
   g_main_loop_run (mainloop);
-  ret = 0;
 
 out:
   if (connection != NULL)
@@ -128,5 +143,5 @@ out:
   if (daemon != NULL)
     g_object_unref (daemon);
 
-  return ret;
+  return exit_status;
 }
