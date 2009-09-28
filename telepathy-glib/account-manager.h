@@ -103,6 +103,8 @@ void tp_account_manager_prepare_async (TpAccountManager *manager,
 gboolean tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result, GError **error);
 
+void tp_account_manager_enable_restart (TpAccountManager *manager);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account-manager.h>

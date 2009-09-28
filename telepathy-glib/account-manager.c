@@ -592,18 +592,12 @@ _tp_account_manager_constructed (GObject *object)
       priv->features = g_list_prepend (priv->features, feature);
     }
 
-  tp_dbus_daemon_watch_name_owner (tp_proxy_get_dbus_daemon (self),
-      TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb,
-      self, NULL);
-
   tp_cli_account_manager_connect_to_account_validity_changed (self,
       _tp_account_manager_validity_changed_cb, NULL,
       NULL, G_OBJECT (self), NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1, TP_IFACE_ACCOUNT_MANAGER,
       _tp_account_manager_got_all_cb, NULL, NULL, G_OBJECT (self));
-
-  _tp_account_manager_start_mc5 (tp_proxy_get_dbus_daemon (self));
 }
 
 static void
@@ -1493,4 +1487,24 @@ _tp_account_manager_get_missing_features (TpAccountManager *manager)
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 
   return (const GQuark *) manager->priv->missing_features->data;
+}
+
+/**
+ * tp_account_manager_enable_restart:
+ * @manager: a #TpAccountManager
+ *
+ * Enable autostarting the account manager D-Bus service. This means
+ * that the account manager will be restarted if it disappears from
+ * the bus.
+ */
+void
+tp_account_manager_enable_restart (TpAccountManager *manager)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
+
+  tp_dbus_daemon_watch_name_owner (tp_proxy_get_dbus_daemon (manager),
+      TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb,
+      manager, NULL);
+
+  _tp_account_manager_start_mc5 (tp_proxy_get_dbus_daemon (manager));
 }
