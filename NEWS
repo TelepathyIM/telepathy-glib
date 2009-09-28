@@ -1,7 +1,24 @@
-telepathy-glib 0.9.0 (UNRELEASED)
+telepathy-glib 0.9.0 (2009-09-28)
 =================================
 
-...
+The "purging all the lies" release.
+
+Dependencies:
+
+* telepathy-glib now links to GIO as well as GLib and GObject (in practice
+  they're packaged together, and we already depended on a new enough GLib
+  version that it would come with GIO).
+
+Enhancements:
+
+* TpAccountManager, TpAccount: add convenience API similar to libempathy's
+  (jonny, with contributions from wjt/danni/sjoerd/smcv)
+
+* telepathy-glib now uses Automake 1.11's "silent rules" feature for
+  kernel-style output; as a result, we no longer use shave. If you were
+  previously using --enable-shave to get prettier output, use
+  --enable-silent-rules instead, and upgrade to Automake >= 1.11 if you will
+  be altering the build system. (jonny)
 
 telepathy-glib 0.8.0 (2009-09-24)
 =================================
