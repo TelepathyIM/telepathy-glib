@@ -105,8 +105,8 @@ typedef struct {
 #define MC5_BUS_NAME "org.freedesktop.Telepathy.MissionControl5"
 
 enum {
-  ACCOUNT_CREATED,
-  ACCOUNT_DELETED,
+  ACCOUNT_VALIDITY_CHANGED,
+  ACCOUNT_REMOVED,
   ACCOUNT_ENABLED,
   ACCOUNT_DISABLED,
   MOST_AVAILABLE_PRESENCE_CHANGED,
@@ -325,27 +325,59 @@ _tp_account_manager_name_owner_cb (TpDBusDaemon *proxy,
 }
 
 static void
+_tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
+    const gchar *path,
+    gboolean valid,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
+  TpAccountManagerPrivate *priv = manager->priv;
+  TpAccount *account;
+
+  if (!valid)
+    {
+      account = g_hash_table_lookup (priv->accounts, path);
+
+      if (account != NULL)
+        {
+          g_object_ref (account);
+          g_hash_table_remove (priv->accounts, account);
+          g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+              account, valid);
+          g_object_unref (account);
+        }
+    }
+  else
+    {
+      tp_account_manager_ensure_account (manager, path);
+    }
+}
+
+static void
 _tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
-    GPtrArray *accounts)
+    GPtrArray *valid_accounts,
+    GPtrArray *invalid_accounts)
 {
   guint i, missing_accounts;
   GHashTableIter iter;
   TpAccountManagerPrivate *priv = manager->priv;
   gpointer value;
   TpAccount *account;
-  gboolean found = FALSE;
+  gboolean found_in_valid = FALSE;
+  gboolean found_in_invalid = FALSE;
   const gchar *name;
 
   /* ensure all accounts coming from MC5 first */
-  for (i = 0; i < accounts->len; i++)
+  for (i = 0; i < valid_accounts->len; i++)
     {
-      name = g_ptr_array_index (accounts, i);
+      name = g_ptr_array_index (valid_accounts, i);
 
       account = tp_account_manager_ensure_account (manager, name);
       _tp_account_refresh_properties (account);
     }
 
-  missing_accounts = g_hash_table_size (priv->accounts) - accounts->len;
+  missing_accounts = g_hash_table_size (priv->accounts) - valid_accounts->len;
 
   if (missing_accounts > 0)
     {
@@ -360,32 +392,57 @@ _tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
         {
           account = value;
 
-          /* look for this account in the AccountManager provided array */
-          for (i = 0; i < accounts->len; i++)
+          /* look for this account in the valid accounts array */
+          for (i = 0; i < valid_accounts->len; i++)
             {
-              name = g_ptr_array_index (accounts, i);
+              name = g_ptr_array_index (valid_accounts, i);
 
               if (!tp_strdiff (name, tp_proxy_get_object_path (account)))
                 {
-                  found = TRUE;
+                  found_in_valid = TRUE;
                   break;
                 }
             }
 
-          if (!found)
+          if (!found_in_valid)
             {
-              DEBUG ("Account %s was not found, remove it from the cache",
-                  tp_proxy_get_object_path (account));
+              /* look for this account in the invalid accounts array */
+              for (i = 0; i < invalid_accounts->len; i++)
+                {
+                  name = g_ptr_array_index (invalid_accounts, i);
 
-              g_object_ref (account);
-              g_hash_table_iter_remove (&iter);
-              g_signal_emit (manager, signals[ACCOUNT_DELETED], 0, account);
-              g_object_unref (account);
+                  if (!tp_strdiff (name, tp_proxy_get_object_path (account)))
+                    {
+                      found_in_invalid = TRUE;
+                      break;
+                    }
+                }
+
+              if (found_in_invalid)
+                {
+                  DEBUG ("Account %s's validity changed",
+                      tp_proxy_get_object_path (account));
+
+                  _tp_account_manager_validity_changed_cb (manager,
+                      tp_proxy_get_object_path (account), FALSE, NULL,
+                      G_OBJECT (manager));
+                }
+              else
+                {
+                  DEBUG ("Account %s was not found, remove it from the cache",
+                      tp_proxy_get_object_path (account));
+
+                  g_object_ref (account);
+                  g_hash_table_iter_remove (&iter);
+                  g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
+                  g_object_unref (account);
+                }
 
               missing_accounts--;
             }
 
-          found = FALSE;
+          found_in_valid = FALSE;
+          found_in_invalid = FALSE;
         }
     }
 }
@@ -479,7 +536,8 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
-  GPtrArray *accounts;
+  GPtrArray *valid_accounts;
+  GPtrArray *invalid_accounts;
 
   if (error != NULL)
     {
@@ -487,28 +545,17 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
       return;
     }
 
-  accounts = tp_asv_get_boxed (properties, "ValidAccounts",
+  valid_accounts = tp_asv_get_boxed (properties, "ValidAccounts",
       TP_ARRAY_TYPE_OBJECT_PATH_LIST);
 
-  if (accounts != NULL)
-    _tp_account_manager_ensure_all_accounts (manager, accounts);
+  invalid_accounts = tp_asv_get_boxed (properties, "InvalidAccounts",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+
+  if (valid_accounts != NULL && invalid_accounts != NULL)
+    _tp_account_manager_ensure_all_accounts (manager, valid_accounts,
+        invalid_accounts);
 
   _tp_account_manager_check_core_ready (manager);
-}
-
-static void
-_tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
-    const gchar *path,
-    gboolean valid,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
-
-  if (!valid)
-    return;
-
-  tp_account_manager_ensure_account (manager, path);
 }
 
 static void
@@ -636,33 +683,34 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
   tp_account_manager_init_known_interfaces ();
 
   /**
-   * TpAccountManager::account-created:
+   * TpAccountManager::account-validity-changed:
    * @manager: a #TpAccountManager
    * @account: a #TpAccount
+   * @valid: %TRUE if the account is now valid
    *
-   * Emitted when an account is created on @manager.
+   * Emitted when the validity on @account changes.
    *
    * Since: 0.7.UNRELEASED
    */
-  signals[ACCOUNT_CREATED] = g_signal_new ("account-created",
+  signals[ACCOUNT_VALIDITY_CHANGED] = g_signal_new ("account-validity-changed",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
       NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT,
+      _tp_marshal_VOID__OBJECT_BOOLEAN,
       G_TYPE_NONE,
-      1, TP_TYPE_ACCOUNT);
+      2, TP_TYPE_ACCOUNT, G_TYPE_BOOLEAN);
 
   /**
-   * TpAccountManager::account-deleted:
+   * TpAccountManager::account-removed:
    * @manager: a #TpAccountManager
    * @account: a #TpAccount
    *
-   * Emitted when an account is deleted from @manager.
+   * Emitted when an account is removed from @manager.
    *
    * Since: 0.7.UNRELEASED
    */
-  signals[ACCOUNT_DELETED] = g_signal_new ("account-deleted",
+  signals[ACCOUNT_REMOVED] = g_signal_new ("account-removed",
       G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       0,
@@ -904,7 +952,7 @@ _tp_account_manager_account_invalidated_cb (TpProxy *proxy,
   g_hash_table_remove (priv->accounts,
       tp_proxy_get_object_path (account));
 
-  g_signal_emit (manager, signals[ACCOUNT_DELETED], 0, account);
+  g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
   g_object_unref (account);
 }
 
@@ -934,7 +982,7 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
       g_object_unref (result);
     }
 
-  g_signal_emit (manager, signals[ACCOUNT_CREATED], 0, account);
+  g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0, account, TRUE);
 
   g_signal_connect (account, "notify::enabled",
       G_CALLBACK (_tp_account_manager_account_enabled_cb), manager);
