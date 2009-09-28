@@ -498,5 +498,6 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		--group `echo $* | tr - _` \
 		--iface-quark-prefix=TP_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
+		--deprecation-attribute=_TP_GNUC_DEPRECATED \
 		$$maybe_reentrant \
 		$< Tp_Cli _gen/tp-cli-$*
