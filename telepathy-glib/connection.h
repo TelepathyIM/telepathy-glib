@@ -22,6 +22,7 @@
 #ifndef __TP_CONNECTION_H__
 #define __TP_CONNECTION_H__
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/proxy.h>
@@ -80,9 +81,11 @@ TpHandle tp_connection_get_self_handle (TpConnection *self);
 
 gboolean tp_connection_is_ready (TpConnection *self);
 
+#ifndef TP_DISABLE_DEPRECATED
 gboolean tp_connection_run_until_ready (TpConnection *self,
     gboolean connect, GError **error,
-    GMainLoop **loop);
+    GMainLoop **loop) _TP_GNUC_DEPRECATED;
+#endif
 
 typedef void (*TpConnectionWhenReadyCb) (TpConnection *connection,
     const GError *error, gpointer user_data);
