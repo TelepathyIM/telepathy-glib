@@ -350,7 +350,9 @@ _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
     }
   else
     {
-      tp_account_manager_ensure_account (manager, path);
+      account = tp_account_manager_ensure_account (manager, path);
+      g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+          account, valid);
     }
 }
 
@@ -682,7 +684,8 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * @account: a #TpAccount
    * @valid: %TRUE if the account is now valid
    *
-   * Emitted when the validity on @account changes.
+   * Emitted when the validity on @account changes. @account is not guaranteed
+   * to be ready when this signal is emitted.
    *
    * Since: 0.7.UNRELEASED
    */
@@ -975,8 +978,6 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
       g_hash_table_remove (priv->create_results, account);
       g_object_unref (result);
     }
-
-  g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0, account, TRUE);
 
   g_signal_connect (account, "notify::enabled",
       G_CALLBACK (_tp_account_manager_account_enabled_cb), manager);
