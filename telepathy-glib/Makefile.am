@@ -279,7 +279,9 @@ check-local: check-coding-style
 libtelepathy_glib_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_internal_la_SOURCES = \
     account.c \
+    account-internal.h \
     account-manager.c \
+    account-manager-internal.h \
     base-connection.c \
     base-connection-manager.c \
     channel.c \

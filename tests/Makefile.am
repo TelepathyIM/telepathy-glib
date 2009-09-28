@@ -73,7 +73,8 @@ include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
 LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(GLIB_LIBS)
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \

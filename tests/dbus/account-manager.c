@@ -56,6 +56,28 @@ test_new (Test *test,
   test->am = tp_account_manager_new (test->dbus);
 }
 
+static void
+test_dup (Test *test,
+          gconstpointer data G_GNUC_UNUSED)
+{
+  TpAccountManager *one, *two;
+  TpDBusDaemon *dbus_one, *dbus_two;
+
+  one = tp_account_manager_dup ();
+  two = tp_account_manager_dup ();
+
+  g_assert (one == two);
+
+  dbus_one = tp_dbus_daemon_dup (NULL);
+  dbus_two = tp_proxy_get_dbus_daemon (one);
+
+  g_assert (dbus_one == dbus_two);
+
+  g_object_unref (dbus_one);
+  g_object_unref (two);
+  g_object_unref (one);
+}
+
 int
 main (int argc,
       char **argv)
@@ -64,6 +86,7 @@ main (int argc,
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/am/new", Test, NULL, setup, test_new, teardown);
+  g_test_add ("/am/dup", Test, NULL, setup, test_dup, teardown);
 
   return g_test_run ();
 }
