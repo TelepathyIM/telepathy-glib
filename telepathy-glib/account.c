@@ -173,7 +173,7 @@ enum {
  * One can ask for a feature to be prepared using the
  * tp_account_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 
 /**
@@ -184,7 +184,7 @@ enum {
  * Returns: the quark used for representing the core feature of a
  *          #TpAccount
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 GQuark
 tp_account_get_feature_quark_core (void)
@@ -822,7 +822,7 @@ tp_account_class_init (TpAccountClass *klass)
    * This is not guaranteed to have been retrieved until
    * tp_account_prepare_async() has finished; until then, the value is FALSE.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_ENABLED,
       g_param_spec_boolean ("enabled",
@@ -844,7 +844,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %TP_CONNECTION_PRESENCE_TYPE_UNSET.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_CURRENT_PRESENCE_TYPE,
       g_param_spec_uint ("current-presence-type",
@@ -868,7 +868,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_CURRENT_STATUS,
       g_param_spec_string ("current-status",
@@ -890,7 +890,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_CURRENT_STATUS_MESSAGE,
       g_param_spec_string ("current-status-message",
@@ -912,7 +912,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %TP_CONNECTION_STATUS_DISCONNECTED.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS,
       g_param_spec_uint ("connection-status",
@@ -936,7 +936,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_STATUS_REASON,
       g_param_spec_uint ("connection-status-reason",
@@ -961,7 +961,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_CONNECTION,
       g_param_spec_object ("connection",
@@ -983,7 +983,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_DISPLAY_NAME,
       g_param_spec_string ("display-name",
@@ -997,7 +997,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The account's connection manager name.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER,
       g_param_spec_string ("connection-manager",
@@ -1011,7 +1011,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The account's protocol name.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_PROTOCOL,
       g_param_spec_string ("protocol",
@@ -1034,7 +1034,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_ICON_NAME,
       g_param_spec_string ("icon-name",
@@ -1057,7 +1057,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %FALSE.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_CONNECT_AUTOMATICALLY,
       g_param_spec_boolean ("connect-automatically",
@@ -1079,7 +1079,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %FALSE.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_HAS_BEEN_ONLINE,
       g_param_spec_boolean ("has-been-online",
@@ -1101,7 +1101,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %FALSE.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_VALID,
       g_param_spec_boolean ("valid",
@@ -1119,7 +1119,7 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_PRESENCE_TYPE,
       g_param_spec_uint ("requested-presence-type",
@@ -1139,7 +1139,7 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_STATUS,
       g_param_spec_string ("requested-status",
@@ -1157,7 +1157,7 @@ tp_account_class_init (TpAccountClass *klass)
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_REQUESTED_STATUS_MESSAGE,
       g_param_spec_string ("requested-status-message",
@@ -1179,7 +1179,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_account_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   g_object_class_install_property (object_class, PROP_NICKNAME,
       g_param_spec_string ("nickname",
@@ -1201,7 +1201,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * Emitted when the connection status on the account changes.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   signals[STATUS_CHANGED] = g_signal_new ("status-changed",
       G_TYPE_FROM_CLASS (object_class),
@@ -1220,7 +1220,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * Emitted when the presence of the account changes.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   signals[PRESENCE_CHANGED] = g_signal_new ("presence-changed",
       G_TYPE_FROM_CLASS (object_class),
@@ -1331,7 +1331,7 @@ unescape_protocol (gchar *protocol)
  *
  * Returns: the same as the #TpAccount:connection property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  **/
 TpConnection *
 tp_account_get_connection (TpAccount *account)
@@ -1364,7 +1364,7 @@ tp_account_get_connection (TpAccount *account)
  * Returns: the connection of the account, or %NULL if either the object path
  *   @path is invalid or it is the null-value "/"
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  **/
 TpConnection *
 tp_account_ensure_connection (TpAccount *account,
@@ -1397,7 +1397,7 @@ tp_account_ensure_connection (TpAccount *account,
  *
  * Returns: the same as the #TpAccount:display-name property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  **/
 const gchar *
 tp_account_get_display_name (TpAccount *account)
@@ -1415,7 +1415,7 @@ tp_account_get_display_name (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:valid property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_is_valid (TpAccount *account)
@@ -1433,7 +1433,7 @@ tp_account_is_valid (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:connection-manager property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const gchar *
 tp_account_get_connection_manager (TpAccount *account)
@@ -1451,7 +1451,7 @@ tp_account_get_connection_manager (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:protocol property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const gchar *
 tp_account_get_protocol (TpAccount *account)
@@ -1469,7 +1469,7 @@ tp_account_get_protocol (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:icon-name property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const gchar *
 tp_account_get_icon_name (TpAccount *account)
@@ -1487,7 +1487,7 @@ tp_account_get_icon_name (TpAccount *account)
  *
  * Returns: the hash table of parameters on @account
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const GHashTable *
 tp_account_get_parameters (TpAccount *account)
@@ -1505,7 +1505,7 @@ tp_account_get_parameters (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:enabled property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_is_enabled (TpAccount *account)
@@ -1543,7 +1543,7 @@ _tp_account_property_set_cb (TpProxy *proxy,
  *
  * Returns: %TRUE if the set was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_set_enabled_finish (TpAccount *account,
@@ -1577,7 +1577,7 @@ tp_account_set_enabled_finish (TpAccount *account,
  * operation is finished, @callback will be called. You can then call
  * tp_account_set_enabled_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_set_enabled_async (TpAccount *account,
@@ -1637,7 +1637,7 @@ _tp_account_reconnected_cb (TpAccount *proxy,
  *
  * Returns: %TRUE if the reconnect call was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_reconnect_finish (TpAccount *account,
@@ -1670,7 +1670,7 @@ tp_account_reconnect_finish (TpAccount *account,
  * finished, @callback will be called. You can then call
  * tp_account_reconnect_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_reconnect_async (TpAccount *account,
@@ -1698,7 +1698,7 @@ tp_account_reconnect_async (TpAccount *account,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_request_presence_finish (TpAccount *account,
@@ -1734,7 +1734,7 @@ tp_account_request_presence_finish (TpAccount *account,
  * operation is finished, @callback will be called. You can then call
  * tp_account_request_presence_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_request_presence_async (TpAccount *account,
@@ -1799,7 +1799,7 @@ _tp_account_updated_cb (TpAccount *proxy,
  * operation is finished, @callback will be called. You can then call
  * tp_account_update_parameters_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_update_parameters_async (TpAccount *account,
@@ -1832,7 +1832,7 @@ tp_account_update_parameters_async (TpAccount *account,
  *
  * Returns: %TRUE if the request succeeded, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_update_parameters_finish (TpAccount *account,
@@ -1871,7 +1871,7 @@ tp_account_update_parameters_finish (TpAccount *account,
  * the operation is finished, @callback will be called. You can then call
  * tp_account_set_display_name_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_set_display_name_async (TpAccount *account,
@@ -1913,7 +1913,7 @@ tp_account_set_display_name_async (TpAccount *account,
  *
  * Returns: %TRUE if the call was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_set_display_name_finish (TpAccount *account,
@@ -1947,7 +1947,7 @@ tp_account_set_display_name_finish (TpAccount *account,
  * the operation is finished, @callback will be called. You can then call
  * tp_account_set_icon_name_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_set_icon_name_async (TpAccount *account,
@@ -1990,7 +1990,7 @@ tp_account_set_icon_name_async (TpAccount *account,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_set_icon_name_finish (TpAccount *account,
@@ -2038,7 +2038,7 @@ _tp_account_remove_cb (TpAccount *proxy,
  * finished, @callback will be called. You can then call
  * tp_account_remove_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_remove_async (TpAccount *account,
@@ -2066,7 +2066,7 @@ tp_account_remove_async (TpAccount *account,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_remove_finish (TpAccount *account,
@@ -2097,7 +2097,7 @@ tp_account_remove_finish (TpAccount *account,
  *
  * Returns: the same as the #TpAccount:connect-automatically property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_get_connect_automatically (TpAccount *account)
@@ -2119,7 +2119,7 @@ tp_account_get_connect_automatically (TpAccount *account)
  * then call tp_account_set_display_name_finish() to get the result of the
  * operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_set_connect_automatically_async (TpAccount *account,
@@ -2155,7 +2155,7 @@ tp_account_set_connect_automatically_async (TpAccount *account,
  *
  * Returns: %TRUE if the call was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_set_connect_automatically_finish (TpAccount *account,
@@ -2186,7 +2186,7 @@ tp_account_set_connect_automatically_finish (TpAccount *account,
  *
  * Returns: the same as the #TpAccount:has-been-online property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_get_has_been_online (TpAccount *account)
@@ -2207,7 +2207,7 @@ tp_account_get_has_been_online (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:connection-status property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 TpConnectionStatus
 tp_account_get_connection_status (TpAccount *account,
@@ -2234,7 +2234,7 @@ tp_account_get_connection_status (TpAccount *account,
  *
  * Returns: the same as the #TpAccount:current-presence-type property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 TpConnectionPresenceType
 tp_account_get_current_presence (TpAccount *account,
@@ -2266,7 +2266,7 @@ tp_account_get_current_presence (TpAccount *account,
  *
  * Returns: the same as the #TpAccount:requested-presence-type property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 TpConnectionPresenceType
 tp_account_get_requested_presence (TpAccount *account,
@@ -2293,7 +2293,7 @@ tp_account_get_requested_presence (TpAccount *account,
  *
  * Returns: the same as the #TpAccount:nickname property
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const gchar *
 tp_account_get_nickname (TpAccount *account)
@@ -2313,7 +2313,7 @@ tp_account_get_nickname (TpAccount *account)
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_set_nickname_finish (TpAccount *account,
@@ -2347,7 +2347,7 @@ tp_account_set_nickname_finish (TpAccount *account,
  * the operation is finished, @callback will be called. You can then call
  * tp_account_set_nickname_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_set_nickname_async (TpAccount *account,
@@ -2419,7 +2419,7 @@ _tp_account_got_avatar_cb (TpProxy *proxy,
  * the operation is finished, @callback will be called. You can then call
  * tp_account_get_avatar_finish() to get the result of the operation.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_get_avatar_async (TpAccount *account,
@@ -2448,7 +2448,7 @@ tp_account_get_avatar_async (TpAccount *account,
  *
  * Returns: a #GArray of the account's avatar, or %NULL on failure
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const GArray *
 tp_account_get_avatar_finish (TpAccount *account,
@@ -2481,7 +2481,7 @@ tp_account_get_avatar_finish (TpAccount *account,
  *
  * Returns: %TRUE whether @feature is ready on @account, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_is_prepared (TpAccount *account,
@@ -2521,7 +2521,7 @@ tp_account_is_prepared (TpAccount *account,
  * operation is finished. Instead, it will simply set @features on @manager.
  * Note that if @callback is %NULL, then @user_data must also be %NULL.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_prepare_async (TpAccount *account,
@@ -2581,7 +2581,7 @@ tp_account_prepare_async (TpAccount *account,
  *
  * Returns: %TRUE if the preparation was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_prepare_finish (TpAccount *account,
@@ -2612,7 +2612,7 @@ tp_account_prepare_finish (TpAccount *account,
  *
  * Returns: a 0-terminated list of features requested on @account
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const GQuark *
 _tp_account_get_requested_features (TpAccount *account)
@@ -2630,7 +2630,7 @@ _tp_account_get_requested_features (TpAccount *account)
  *
  * Returns: a 0-terminated list of actual features on @account
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const GQuark *
 _tp_account_get_actual_features (TpAccount *account)
@@ -2649,7 +2649,7 @@ _tp_account_get_actual_features (TpAccount *account)
  * Returns: a 0-terminated list of missing features from @account
  *          that have been requested
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const GQuark *
 _tp_account_get_missing_features (TpAccount *account)
@@ -2687,7 +2687,7 @@ set_or_free (gchar **target,
  * Returns: %TRUE if @object_path was successfully parsed; %FALSE and sets
  *          @error otherwise.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_parse_object_path (const gchar *object_path,
@@ -2768,7 +2768,7 @@ free_segments_and_fail:
  * Refreshes @account's hashtable of properties with what actually exists on
  * the account manager.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 _tp_account_refresh_properties (TpAccount *account)

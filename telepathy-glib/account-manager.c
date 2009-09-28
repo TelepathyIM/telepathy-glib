@@ -129,7 +129,7 @@ G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY);
  * One can ask for a feature to be prepared using the
  * tp_account_manager_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 
 /**
@@ -140,7 +140,7 @@ G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY);
  * Returns: the quark used for representing the core feature of a
  *          #TpAccountManager
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 GQuark
 tp_account_manager_get_feature_quark_core (void)
@@ -679,7 +679,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * Emitted when the validity on @account changes. @account is not guaranteed
    * to be ready when this signal is emitted.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   signals[ACCOUNT_VALIDITY_CHANGED] = g_signal_new ("account-validity-changed",
       G_TYPE_FROM_CLASS (klass),
@@ -697,7 +697,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * Emitted when an account is removed from @manager.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   signals[ACCOUNT_REMOVED] = g_signal_new ("account-removed",
       G_TYPE_FROM_CLASS (klass),
@@ -715,7 +715,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * Emitted when an account from @manager is enabled.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   signals[ACCOUNT_ENABLED] = g_signal_new ("account-enabled",
       G_TYPE_FROM_CLASS (klass),
@@ -733,7 +733,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * Emitted when an account from @manager is disabled.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   signals[ACCOUNT_DISABLED] = g_signal_new ("account-disabled",
       G_TYPE_FROM_CLASS (klass),
@@ -754,7 +754,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * Emitted when the most available presence on @manager changes.
    *
-   * Since: 0.7.UNRELEASED
+   * Since: 0.9.0
    */
   signals[MOST_AVAILABLE_PRESENCE_CHANGED] =
     g_signal_new ("most-available-presence-changed",
@@ -848,7 +848,7 @@ static gpointer starter_account_manager_proxy = NULL;
  *          if it wasn't possible to get a dbus daemon proxy for the
  *          appropriate bus
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 TpAccountManager *
 tp_account_manager_dup (void)
@@ -1000,7 +1000,7 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
  *
  * Returns: a new #TpAccount at @path
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 TpAccount *
 tp_account_manager_ensure_account (TpAccountManager *manager,
@@ -1052,7 +1052,7 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
  *
  * Returns: a newly allocated #GList of valid accounts in @manager
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 GList *
 tp_account_manager_get_valid_accounts (TpAccountManager *manager)
@@ -1086,7 +1086,7 @@ tp_account_manager_get_valid_accounts (TpAccountManager *manager)
  * Setting a requested presence on all accounts will have no effect
  * until tp_account_manager_prepare_async() has finished.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
@@ -1153,7 +1153,7 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
  *
  * Returns: the most available presence across all accounts
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 
 TpConnectionPresenceType
@@ -1224,7 +1224,7 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
  * tp_account_manager_create_account_finish(), one can guarantee this feature
  * will be ready.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_manager_create_account_async (TpAccountManager *manager,
@@ -1267,7 +1267,7 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
  * Returns: a new #TpAccount which was just created on success, otherwise
  *          %NULL
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 TpAccount *
 tp_account_manager_create_account_finish (TpAccountManager *manager,
@@ -1305,7 +1305,7 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
  *
  * Returns: %TRUE whether @feature is ready on @manager, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_manager_is_prepared (TpAccountManager *manager,
@@ -1345,7 +1345,7 @@ tp_account_manager_is_prepared (TpAccountManager *manager,
  * operation is finished. Instead, it will simply set @features on @manager.
  * Note that if @callback is %NULL, then @user_data must also be %NULL.
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 void
 tp_account_manager_prepare_async (TpAccountManager *manager,
@@ -1405,7 +1405,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
  *
  * Returns: %TRUE if the preparation was successful, otherwise %FALSE
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 gboolean
 tp_account_manager_prepare_finish (TpAccountManager *manager,
@@ -1436,7 +1436,7 @@ tp_account_manager_prepare_finish (TpAccountManager *manager,
  *
  * Returns: a 0-terminated list of requested features on @manager
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const GQuark *
 _tp_account_manager_get_requested_features (TpAccountManager *manager)
@@ -1454,7 +1454,7 @@ _tp_account_manager_get_requested_features (TpAccountManager *manager)
  *
  * Returns: a 0-terminated list of actual features on @manager
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const GQuark *
 _tp_account_manager_get_actual_features (TpAccountManager *manager)
@@ -1472,7 +1472,7 @@ _tp_account_manager_get_actual_features (TpAccountManager *manager)
  *
  * Returns: a 0-terminated list of missing features on @manager
  *
- * Since: 0.7.UNRELEASED
+ * Since: 0.9.0
  */
 const GQuark *
 _tp_account_manager_get_missing_features (TpAccountManager *manager)
