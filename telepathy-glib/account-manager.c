@@ -897,7 +897,7 @@ _tp_account_manager_account_invalidated_cb (TpProxy *proxy,
   TpAccount *account = TP_ACCOUNT (proxy);
 
   /* We only want to deal with accounts being removed here. */
-  if (code != TP_DBUS_ERROR_OBJECT_REMOVED)
+  if (domain != TP_DBUS_ERRORS || code != TP_DBUS_ERROR_OBJECT_REMOVED)
     return;
 
   g_object_ref (account);
