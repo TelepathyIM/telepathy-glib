@@ -807,7 +807,7 @@ tp_account_manager_init_known_interfaces (void)
  * Convenience function to create a new account manager proxy. The returned
  * #TpAccountManager is not guaranteed to be ready on return.
  *
- * Use tp_account_manager_dup() instead if you want an account managerproxy
+ * Use tp_account_manager_dup() instead if you want an account manager proxy
  * on the starter or session bus (which is almost always the right thing for
  * Telepathy).
  *
@@ -1211,7 +1211,7 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
  * @display_name: the display name for the account
  * @parameters: parameters for the new account
  * @properties: properties for the new account
- * @callback: a callback to bcall when the request is satisfied
+ * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
  * Requests an asynchronous create of an account on the account manager
