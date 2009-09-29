@@ -1526,7 +1526,7 @@ _tp_account_property_set_cb (TpProxy *proxy,
   if (error != NULL)
     {
       DEBUG ("Failed to set property: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_set_from_error (result, (GError *) error);
     }
 
   g_simple_async_result_complete (result);
@@ -1621,7 +1621,7 @@ _tp_account_reconnected_cb (TpAccount *proxy,
   GSimpleAsyncResult *result = user_data;
 
   if (error != NULL)
-    g_simple_async_result_set_from_error (result, error);
+    g_simple_async_result_set_from_error (result, (GError *) error);
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
@@ -1779,7 +1779,7 @@ _tp_account_updated_cb (TpAccount *proxy,
   GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
 
   if (error != NULL)
-    g_simple_async_result_set_from_error (result, error);
+    g_simple_async_result_set_from_error (result, (GError *) error);
   else
     g_simple_async_result_set_op_res_gpointer (result, reconnect_required, NULL);
 
@@ -2022,7 +2022,7 @@ _tp_account_remove_cb (TpAccount *proxy,
   GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
 
   if (error != NULL)
-    g_simple_async_result_set_from_error (result, error);
+    g_simple_async_result_set_from_error (result, (GError *) error);
 
   g_simple_async_result_complete (result);
   g_object_unref (G_OBJECT (result));
@@ -2396,7 +2396,7 @@ _tp_account_got_avatar_cb (TpProxy *proxy,
   if (error != NULL)
     {
       DEBUG ("Failed to get avatar: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_set_from_error (result, (GError *) error);
     }
   else
     {
