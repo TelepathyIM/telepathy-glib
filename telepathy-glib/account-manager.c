@@ -715,6 +715,9 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * Emitted when an account from @manager is enabled.
    *
+   * Note that the returned #TpAccount @account is not guaranteed to have any
+   * features pre-prepared, including %TP_ACCOUNT_FEATURE_CORE.
+   *
    * Since: 0.9.0
    */
   signals[ACCOUNT_ENABLED] = g_signal_new ("account-enabled",
