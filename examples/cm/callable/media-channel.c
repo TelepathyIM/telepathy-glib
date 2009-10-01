@@ -42,6 +42,7 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
@@ -1210,7 +1211,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
 
   tp_svc_channel_type_streamed_media_return_from_request_streams (context,
       array);
-  g_ptr_array_free (array, TRUE);
+  g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST, array);
 
   return;
 
