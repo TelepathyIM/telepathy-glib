@@ -53,6 +53,20 @@
 }
 
 {
+   interned strings can't be freed
+   Memcheck:Leak
+   ...
+   fun:g_intern_string
+}
+
+{
+   interned strings can't be freed
+   Memcheck:Leak
+   ...
+   fun:g_intern_static_string
+}
+
+{
    shared global default g_main_context
    Memcheck:Leak
    ...
