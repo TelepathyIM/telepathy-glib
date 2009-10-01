@@ -1,4 +1,5 @@
 VALGRIND = valgrind --tool=memcheck \
+    --verbose \
     --leak-check=full \
     --leak-resolution=high \
     --suppressions=$(top_srcdir)/tools/telepathy-glib.supp \
