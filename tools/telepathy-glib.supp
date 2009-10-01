@@ -99,6 +99,15 @@
    fun:g_test_run
 }
 
+{
+   GSLice initialization
+   Memcheck:Leak
+   ...
+   fun:g_malloc0
+   fun:g_slice_init_nomessage
+   fun:g_slice_alloc
+}
+
 # ============================= GObject ===============================
 
 {
@@ -205,15 +214,6 @@
 }
 
 # ============================= unclassified ==========================
-
-{
-   g_slice_init_nomessage (1)
-   Memcheck:Leak
-   fun:calloc
-   fun:g_malloc0
-   obj:/usr/lib/libglib-2.0.so.*
-   fun:g_slice_alloc
-}
 
 {
    creating param specs in tp_proxy_class_intern_init
