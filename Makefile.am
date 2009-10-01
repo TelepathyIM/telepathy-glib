@@ -14,6 +14,9 @@ check-local::
 	egrep -A 5 '[F]IXME|[T]ODO|[X]XX' $(srcdir)/telepathy-glib/*.[ch] \
 		> FIXME.out || true
 
+check-valgrind:
+	$(MAKE) -C tests check-valgrind 2>&1 | tee valgrind.log
+
 maintainer-upload-release: _maintainer-upload-release-local
 _maintainer-upload-release-local: _maintainer-upload-release-check
 	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
