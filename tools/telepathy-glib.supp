@@ -173,6 +173,21 @@
    fun:tp_proxy_subclass_add_error_mapping
 }
 
+{
+   tp_proxy_or_subclass_hook_on_interface_add never frees its list
+   Memcheck:Leak
+   ...
+   fun:tp_proxy_or_subclass_hook_on_interface_add
+}
+
+{
+   tp_dbus_daemon_constructor filter not freed til we fall off the bus
+   Memcheck:Leak
+   ...
+   fun:dbus_connection_add_filter
+   fun:tp_dbus_daemon_constructor
+}
+
 # ============================= unclassified ==========================
 
 {

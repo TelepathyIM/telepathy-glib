@@ -891,6 +891,7 @@ tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
   g_return_if_fail (g_type_is_a (proxy_or_subclass, TP_TYPE_PROXY));
   g_return_if_fail (callback != NULL);
 
+  /* never freed, suppressed in telepathy-glib.supp */
   new_link = g_slice_new0 (TpProxyInterfaceAddLink);
   new_link->callback = callback;
   new_link->next = old_link;    /* may be NULL */
