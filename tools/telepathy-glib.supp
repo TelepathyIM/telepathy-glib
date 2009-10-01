@@ -155,6 +155,22 @@
    fun:dbus_g_connection_register_g_object
 }
 
+{
+   DBusGProxy slots aren't freed unless we fall off the bus
+   Memcheck:Leak
+   ...
+   fun:dbus_connection_allocate_data_slot
+   ...
+   fun:dbus_g_proxy_constructor
+}
+
+{
+   error registrations are for life, not just for Christmas
+   Memcheck:Leak
+   ...
+   fun:dbus_g_error_domain_register
+}
+
 # ============================= telepathy-glib ========================
 
 {
