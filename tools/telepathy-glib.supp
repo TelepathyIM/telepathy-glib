@@ -72,8 +72,7 @@
    GTest admin
    Memcheck:Leak
    ...
-   fun:g_test_create_case
-   fun:main
+   fun:g_test_add_vtable
 }
 
 # ============================= GObject ===============================
