@@ -74,7 +74,8 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  bus_daemon = tp_dbus_daemon_new (tp_get_bus ());
+  bus_daemon = tp_dbus_daemon_dup (NULL);
+  g_assert (bus_daemon != NULL);
 
   /* this interface is automatically supported... */
   MYASSERT (tp_cli_dbus_daemon_run_list_names (bus_daemon, -1, NULL,
@@ -118,6 +119,8 @@ main (int argc,
   MYASSERT (freed_user_data[1], " (async call, unsupported)");
   MYASSERT (!freed_user_data[2], " (signal connection, supported)");
   MYASSERT (freed_user_data[3], " (signal connection, unsupported)");
+
+  g_object_unref (bus_daemon);
 
   return 0;
 }
