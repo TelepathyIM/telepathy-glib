@@ -5,7 +5,6 @@ VALGRIND = valgrind --tool=memcheck \
     --suppressions=$(top_srcdir)/tools/telepathy-glib.supp \
     --child-silent-after-fork=yes \
     --num-callers=20 \
-    --error-exitcode=42 \
     --gen-suppressions=all
 
 # other potentially interesting options:
