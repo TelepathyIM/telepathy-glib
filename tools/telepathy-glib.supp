@@ -89,6 +89,16 @@
    fun:g_test_add_vtable
 }
 
+{
+   GTest pseudorandomness
+   Memcheck:Leak
+   ...
+   fun:g_rand_new_with_seed_array
+   fun:test_run_seed
+   ...
+   fun:g_test_run
+}
+
 # ============================= GObject ===============================
 
 {
