@@ -1,4 +1,72 @@
 # Valgrind error suppression file
+
+# ============================= libc ==================================
+
+{
+   ld.so initialization + selinux
+   Memcheck:Leak
+   ...
+   fun:_dl_init
+   obj:/lib/ld-*.so
+}
+
+# ============================= GLib ==================================
+
+{
+   g_set_prgname copies its argument
+   Memcheck:Leak
+   ...
+   fun:g_set_prgname
+}
+
+{
+   one g_get_charset per child^Wprocess
+   Memcheck:Leak
+   ...
+   fun:g_get_charset
+}
+
+{
+   GQuarks can't be freed
+   Memcheck:Leak
+   ...
+   fun:g_quark_from_static_string
+}
+
+{
+   GQuarks can't be freed
+   Memcheck:Leak
+   ...
+   fun:g_quark_from_string
+}
+
+{
+   shared global default g_main_context
+   Memcheck:Leak
+   ...
+   fun:g_main_context_new
+   fun:g_main_context_default
+}
+
+{
+   GTest initialization
+   Memcheck:Leak
+   ...
+   fun:g_test_init
+   fun:main
+}
+
+# ============================= GObject ===============================
+
+{
+   g_type_init
+   Memcheck:Leak
+   ...
+   fun:g_type_init
+}
+
+# ============================= dbus-glib =============================
+
 {
    dbus-glib, https://bugs.freedesktop.org/show_bug.cgi?id=14125
    Memcheck:Addr4
@@ -6,6 +74,8 @@
    obj:/usr/lib/libdbus-glib-1.so.2.1.0
    fun:g_object_run_dispose
 }
+
+# ============================= unclassified ==========================
 
 {
    libdbus shared connection via tp_get_bus (1)
@@ -454,78 +524,6 @@
 }
 
 {
-   g_type_init cruft (1)
-   Memcheck:Leak
-   fun:malloc
-   fun:g_malloc
-   obj:/usr/lib/libgobject-2.0.so.*
-   obj:/usr/lib/libgobject-2.0.so.*
-   fun:g_type_init_with_debug_flags
-   fun:g_type_init
-   fun:main
-}
-
-{
-   g_type_init cruft (1), 2.16 version
-   Memcheck:Leak
-   fun:calloc
-   fun:g_malloc0
-   obj:/usr/lib/libgobject-2.0.so.*
-   obj:/usr/lib/libgobject-2.0.so.*
-   fun:g_type_init_with_debug_flags
-   fun:g_type_init
-   fun:main
-}
-
-{
-   g_type_init cruft (3)
-   Memcheck:Leak
-   fun:realloc
-   fun:g_realloc
-   obj:/usr/lib/libgobject-2.0.so.*
-   obj:/usr/lib/libgobject-2.0.so.*
-   fun:g_type_register_static
-   fun:g_param_type_register_static
-   obj:/usr/lib/libgobject-2.0.so.*
-   fun:g_type_init_with_debug_flags
-   fun:g_type_init
-}
-
-{
-   g_type_init cruft (4)
-   Memcheck:Leak
-   fun:realloc
-   fun:g_realloc
-   fun:g_boxed_type_register_static
-   fun:g_value_array_get_type
-   fun:g_param_spec_types_init
-   fun:g_type_init_with_debug_flags
-   fun:g_type_init
-}
-
-{
-   g_type_init cruft (5)
-   Memcheck:Leak
-   fun:calloc
-   fun:g_malloc0
-   obj:/usr/lib/libgobject-2.0.so.*
-   obj:/usr/lib/libgobject-2.0.so.*
-   fun:g_type_init_with_debug_flags
-}
-
-{
-   g_type_init cruft (6)
-   Memcheck:Leak
-   fun:realloc
-   fun:g_realloc
-   obj:/usr/lib/libgobject-2.0.so.*
-   fun:g_type_register_static
-   fun:g_param_type_register_static
-   obj:/usr/lib/libgobject-2.0.so.*
-   fun:g_type_init_with_debug_flags
-}
-
-{
    g_slice_init_nomessage (1)
    Memcheck:Leak
    fun:calloc
@@ -545,82 +543,6 @@
    fun:g_type_create_instance
    fun:g_param_spec_internal
    fun:g_param_spec_string
-}
-
-{
-   shared global default g_main_context (1)
-   Memcheck:Leak
-   fun:calloc
-   fun:g_malloc0
-   fun:g_main_context_new
-   fun:g_main_context_default
-}
-
-{
-   shared global default g_main_context (2)
-   Memcheck:Leak
-   fun:memalign
-   fun:posix_memalign
-   fun:slab_allocator_alloc_chunk
-   fun:g_slice_alloc
-   fun:g_ptr_array_sized_new
-   fun:g_ptr_array_new
-   fun:g_main_context_new
-   fun:g_main_context_default
-}
-
-{
-   shared global default g_main_context (2) (with G_SLICE_DEBUG=always-malloc)
-   Memcheck:Leak
-   fun:malloc
-   fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_ptr_array_sized_new
-   fun:g_ptr_array_new
-   fun:g_main_context_new
-   fun:g_main_context_default
-}
-
-{
-   GQuarks can't be freed
-   Memcheck:Leak
-   fun:malloc
-   fun:realloc
-   fun:g_realloc
-   fun:g_quark_from_static_string
-}
-
-{
-   GQuark admin
-   Memcheck:Leak
-   fun:memalign
-   fun:posix_memalign
-   fun:slab_allocator_alloc_chunk
-   fun:g_slice_alloc
-   fun:g_hash_table_new_full
-   fun:g_hash_table_new
-   fun:g_quark_from_static_string
-}
-
-{
-   GQuark admin (with G_SLICE_DEBUG=always-malloc)
-   Memcheck:Leak
-   fun:malloc
-   fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_hash_table_new_full
-   fun:g_hash_table_new
-   fun:g_quark_from_static_string
-}
-
-{
-   GQuark admin (with G_SLICE_DEBUG=always-malloc and a slightly different glib than above)
-   Memcheck:Leak
-   fun:malloc
-   fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_hash_table_new_full
-   fun:g_quark_from_static_string
 }
 
 {
@@ -768,46 +690,6 @@
 }
 
 {
-   ld.so initialization + selinux
-   Memcheck:Leak
-   fun:malloc
-   obj:/lib/libselinux.so.*
-   obj:/lib/libselinux.so.*
-   obj:/lib/libselinux.so.*
-   fun:call_init
-   fun:_dl_init
-   obj:/lib/ld-*.so
-}
-
-{
-   ld.so initialization + selinux
-   Memcheck:Leak
-   fun:malloc
-   fun:vasprintf
-   fun:asprintf
-   obj:/lib/libselinux.so.*
-   obj:/lib/libselinux.so.*
-   obj:/lib/libselinux.so.*
-   fun:call_init
-   fun:_dl_init
-   obj:/lib/ld-*.so
-}
-
-{
-   ld.so initialization + selinux
-   Memcheck:Leak
-   fun:realloc
-   fun:vasprintf
-   fun:asprintf
-   obj:/lib/libselinux.so.*
-   obj:/lib/libselinux.so.*
-   obj:/lib/libselinux.so.*
-   fun:call_init
-   fun:_dl_init
-   obj:/lib/ld-*.so
-}
-
-{
    ld.so initialization on glibc 2.9
    Memcheck:Cond
    fun:_dl_relocate_object
@@ -826,29 +708,6 @@
    fun:_dl_sysdep_start
    fun:_dl_start
    obj:/lib/ld-2.9.so
-}
-
-{
-   GTest initialization
-   Memcheck:Leak
-   fun:malloc
-   fun:g_malloc
-   fun:g_strdup
-   fun:g_set_prgname
-   fun:g_test_init
-   fun:main
-}
-
-{
-   GTest initialization
-   Memcheck:Leak
-   fun:calloc
-   fun:g_malloc0
-   fun:g_rand_new_with_seed_array
-   fun:g_rand_new
-   fun:g_random_int
-   fun:g_test_init
-   fun:main
 }
 
 {
