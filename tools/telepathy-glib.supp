@@ -168,22 +168,3 @@
    fun:_dl_start
    obj:/lib/ld-2.9.so
 }
-
-{
-   GTest logging
-   Memcheck:Leak
-   fun:malloc
-   fun:realloc
-   fun:g_realloc
-   fun:g_array_maybe_expand
-   fun:g_array_set_size
-   fun:g_static_private_set
-   fun:g_get_charset
-   fun:g_print
-   fun:g_test_log
-   fun:g_test_run_suite_internal
-   fun:g_test_run_suite_internal
-   fun:g_test_run_suite
-   fun:g_test_run
-   fun:main
-}
