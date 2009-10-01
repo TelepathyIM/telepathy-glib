@@ -56,6 +56,14 @@
    fun:main
 }
 
+{
+   GTest admin
+   Memcheck:Leak
+   ...
+   fun:g_test_create_case
+   fun:main
+}
+
 # ============================= GObject ===============================
 
 {
@@ -63,6 +71,13 @@
    Memcheck:Leak
    ...
    fun:g_type_init
+}
+
+{
+   g_type_register_static
+   Memcheck:Leak
+   ...
+   fun:g_type_register_static
 }
 
 # ============================= dbus-glib =============================
@@ -73,6 +88,21 @@
    fun:g_hash_table_foreach
    obj:/usr/lib/libdbus-glib-1.so.2.1.0
    fun:g_object_run_dispose
+}
+
+{
+   registering marshallers is permanent
+   Memcheck:Leak
+   ...
+   fun:dbus_g_object_register_marshaller_array
+   fun:dbus_g_object_register_marshaller
+}
+
+{
+   dbus-glib specialized GTypes are permanent
+   Memcheck:Leak
+   ...
+   fun:dbus_g_type_specialized_init
 }
 
 # ============================= unclassified ==========================
