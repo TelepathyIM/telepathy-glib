@@ -902,6 +902,8 @@ tp_account_manager_dup (void)
   g_object_add_weak_pointer (starter_account_manager_proxy,
       &starter_account_manager_proxy);
 
+  g_object_unref (dbus);
+
   return starter_account_manager_proxy;
 }
 
