@@ -22,15 +22,13 @@ TESTS_ENVIRONMENT = \
     G_DEBUG=fatal_warnings,fatal_criticals \
     PYTHONPATH=@abs_top_srcdir@/tools
 
+include $(top_srcdir)/tools/valgrind.mk
+
 VALGRIND_TESTS_ENVIRONMENT = \
     G_SLICE=always-malloc \
     $(TESTS_ENVIRONMENT) \
     $(top_builddir)/libtool --mode=execute \
-    valgrind --tool=memcheck --leak-check=full --show-reachable=yes \
-        --suppressions=$(top_srcdir)/examples/tp-glib-examples.supp \
-        --child-silent-after-fork=yes --num-callers=20 --error-exitcode=42 \
-        --gen-suppressions=all \
-        $(VALGRIND_FLAGS)
+    $(VALGRIND) $(VALGRIND_FLAGS)
 
 check-valgrind:
 	$(MAKE) check-TESTS \

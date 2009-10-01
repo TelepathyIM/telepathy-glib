@@ -176,15 +176,13 @@ check-valgrind:
 	$(MAKE) check-TESTS \
 		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
 
+include $(top_srcdir)/tools/valgrind.mk
+
 VALGRIND_TESTS_ENVIRONMENT = \
     G_SLICE=always-malloc \
     $(TESTS_ENVIRONMENT) \
     $(top_builddir)/libtool --mode=execute \
-    valgrind --tool=memcheck --leak-check=full --show-reachable=yes \
-        --suppressions=$(top_srcdir)/examples/tp-glib-examples.supp \
-        --child-silent-after-fork=yes --num-callers=20 --error-exitcode=42 \
-        --gen-suppressions=all \
-        $(VALGRIND_FLAGS)
+    $(VALGRIND) $(VALGRIND_FLAGS)
 
 BUILT_SOURCES = \
 	dbus-1/session.conf \

@@ -1,4 +1,4 @@
 # extensions has to be compiled first, because other examples need it.
 SUBDIRS = extensions client cm
 
-EXTRA_DIST = tp-glib-examples.supp README
+EXTRA_DIST = README
