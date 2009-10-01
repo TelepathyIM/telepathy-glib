@@ -32,6 +32,7 @@ VALGRIND_TESTS_ENVIRONMENT = \
 
 check-valgrind:
 	$(MAKE) check-TESTS \
+		TESTS='$$(noinst_PROGRAMS)'
 		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
 	$(MAKE) -C dbus check-valgrind
 
