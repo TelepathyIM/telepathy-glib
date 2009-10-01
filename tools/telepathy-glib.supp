@@ -10,6 +10,18 @@
    obj:/lib/ld-*.so
 }
 
+{
+   dlopen initialization, triggered by handle-leak-debug code
+   Memcheck:Leak
+   ...
+   fun:__libc_dlopen_mode
+   fun:init
+   fun:backtrace
+   fun:handle_leak_debug_bt
+   fun:dynamic_ensure_handle
+   fun:tp_handle_ensure
+}
+
 # ============================= GLib ==================================
 
 {
@@ -134,150 +146,6 @@
    fun:g_type_create_instance
    fun:g_param_spec_internal
    fun:g_param_spec_string
-}
-
-{
-   dlopen initialization, triggered by handle-leak-debug code on glibc 2.7
-   Memcheck:Leak
-   fun:malloc
-   fun:local_strdup
-   fun:_dl_map_object
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:do_dlopen
-   fun:_dl_catch_error
-   fun:dlerror_run
-   fun:__libc_dlopen_mode
-   fun:init
-   fun:backtrace
-   fun:handle_leak_debug_bt
-   fun:dynamic_ensure_handle
-   fun:tp_handle_ensure
-}
-
-{
-   dlopen initialization, triggered by handle-leak-debug code on older glibc
-   Memcheck:Leak
-   fun:malloc
-   fun:_dl_map_object
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:do_dlopen
-   fun:_dl_catch_error
-   fun:dlerror_run
-   fun:__libc_dlopen_mode
-   fun:init
-   fun:backtrace
-   fun:handle_leak_debug_bt
-   fun:dynamic_ensure_handle
-   fun:tp_handle_ensure
-}
-
-{
-   dlopen initialization, triggered by handle-leak-debug code (2)
-   Memcheck:Leak
-   fun:malloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:do_dlopen
-   fun:_dl_catch_error
-   fun:dlerror_run
-   fun:__libc_dlopen_mode
-   fun:init
-   fun:backtrace
-   fun:handle_leak_debug_bt
-   fun:dynamic_ensure_handle
-   fun:tp_handle_ensure
-}
-
-{
-   dlopen initialization, triggered by handle-leak-debug code (3)
-   Memcheck:Leak
-   fun:malloc
-   fun:_dl_map_object_deps
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:do_dlopen
-   fun:_dl_catch_error
-   fun:dlerror_run
-   fun:__libc_dlopen_mode
-   fun:init
-   fun:backtrace
-   fun:handle_leak_debug_bt
-   fun:dynamic_ensure_handle
-   fun:tp_handle_ensure
-}
-
-{
-   dlopen initialization, triggered by handle-leak-debug code (4)
-   Memcheck:Leak
-   fun:calloc
-   fun:_dl_check_map_versions
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:do_dlopen
-   fun:_dl_catch_error
-   fun:dlerror_run
-   fun:__libc_dlopen_mode
-   fun:init
-   fun:backtrace
-   fun:handle_leak_debug_bt
-   fun:dynamic_ensure_handle
-   fun:tp_handle_ensure
-   fun:pretend_connected
-   fun:g_timeout_dispatch
-   fun:g_main_context_dispatch
-   fun:g_main_context_iterate
-   fun:g_main_loop_run
-   fun:tp_connection_run_until_ready
-}
-
-{
-   dlopen initialization, triggered by handle-leak-debug code (5)
-   Memcheck:Leak
-   fun:calloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:do_dlopen
-   fun:_dl_catch_error
-   fun:dlerror_run
-   fun:__libc_dlopen_mode
-   fun:init
-   fun:backtrace
-   fun:handle_leak_debug_bt
-   fun:dynamic_ensure_handle
-   fun:tp_handle_ensure
-}
-
-{
-   dlopen initialization, triggered by handle-leak-debug code (6)
-   Memcheck:Leak
-   fun:calloc
-   fun:_dl_check_map_versions
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:do_dlopen
-   fun:_dl_catch_error
-   fun:dlerror_run
-   fun:__libc_dlopen_mode
-   fun:init
-   fun:backtrace
-   fun:handle_leak_debug_bt
-   fun:dynamic_ensure_handle
-   fun:tp_handle_ensure
 }
 
 {
