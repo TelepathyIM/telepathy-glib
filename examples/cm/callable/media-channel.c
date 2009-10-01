@@ -541,6 +541,8 @@ add_member (GObject *object,
           NULL /* nobody added to remote pending */,
           member /* actor */, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
+      tp_intset_destroy (set);
+
       g_hash_table_iter_init (&iter, self->priv->streams);
 
       while (g_hash_table_iter_next (&iter, NULL, &v))
