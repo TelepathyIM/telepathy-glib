@@ -137,6 +137,16 @@
    fun:dbus_g_bus_get
 }
 
+# ============================= telepathy-glib ========================
+
+{
+   tp_dbus_daemon_constructor @daemons once per DBusConnection
+   Memcheck:Leak
+   ...
+   fun:g_slice_alloc
+   fun:tp_dbus_daemon_constructor
+}
+
 # ============================= unclassified ==========================
 
 {
