@@ -476,6 +476,9 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
+  g_hash_table_destroy (self->priv->streams);
+  self->priv->streams = NULL;
+
   example_callable_media_channel_close (self, self->group.self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
