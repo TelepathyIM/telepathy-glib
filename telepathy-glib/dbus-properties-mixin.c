@@ -741,7 +741,7 @@ tp_dbus_properties_mixin_get (GObject *self,
   if ((prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_READ) == 0)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
-          "Property %s on %s is read-only", property_name, interface_name);
+          "Property %s on %s is write-only", property_name, interface_name);
       return FALSE;
     }
 
