@@ -1042,6 +1042,18 @@ tp_connection_finalize (GObject *object)
       self->priv->connection_error_details = NULL;
     }
 
+  if (self->priv->avatar_request_queue != NULL)
+    {
+      g_array_free (self->priv->avatar_request_queue, TRUE);
+      self->priv->avatar_request_queue = NULL;
+    }
+
+  if (self->priv->avatar_request_idle_id != 0)
+    {
+      g_source_remove (self->priv->avatar_request_idle_id);
+      self->priv->avatar_request_idle_id = 0;
+    }
+
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);
 }
 

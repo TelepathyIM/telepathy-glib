@@ -50,6 +50,8 @@ struct _TpConnectionPrivate {
     TpCapabilities *capabilities;
 
     TpAvatarRequirements *avatar_requirements;
+    GArray *avatar_request_queue;
+    guint avatar_request_idle_id;
 
     TpProxyPendingCall *introspection_call;
     unsigned fetching_rcc:1;
@@ -58,6 +60,7 @@ struct _TpConnectionPrivate {
     unsigned ready:1;
     unsigned tracking_aliases_changed:1;
     unsigned tracking_avatar_updated:1;
+    unsigned tracking_avatar_retrieved:1;
     unsigned tracking_presences_changed:1;
     unsigned tracking_presence_update:1;
     unsigned tracking_location_changed:1;

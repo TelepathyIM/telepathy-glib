@@ -22,6 +22,7 @@
 #define __TP_CONTACT_H__
 
 #include <glib-object.h>
+#include <gio/gio.h>
 
 #include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/connection.h>
@@ -59,7 +60,8 @@ typedef enum {
     TP_CONTACT_FEATURE_PRESENCE,
     TP_CONTACT_FEATURE_LOCATION,
     TP_CONTACT_FEATURE_CAPABILITIES,
-#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CAPABILITIES + 1)
+    TP_CONTACT_FEATURE_AVATAR_DATA,
+#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_AVATAR_DATA + 1)
 } TpContactFeature;
 
 /* Basic functionality, always available */
@@ -84,6 +86,10 @@ GHashTable *tp_contact_get_location (TpContact *self);
 
 /* TP_CONTACT_FEATURE_CAPABILITIES */
 TpCapabilities *tp_contact_get_capabilities (TpContact *self);
+
+/* TP_CONTACT_FEATURE_AVATAR_DATA */
+GFile *tp_contact_get_avatar_file (TpContact *self);
+const gchar *tp_contact_get_avatar_mimetype (TpContact *self);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,
