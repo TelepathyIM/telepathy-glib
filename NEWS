@@ -10,6 +10,7 @@ The "purging all the lies" release.
 
 Dependencies:
 
+* GLib 2.20 is now required.
 * telepathy-glib now links to GIO as well as GLib and GObject (in practice
   they're packaged together, and we already depended on a new enough GLib
   version that it would come with GIO).
