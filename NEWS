@@ -1,7 +1,15 @@
 telepathy-glib 0.9.1 (UNRELEASED)
 =================================
 
-...
+Fixes:
+
+* Corrected the GLib dependency to 2.20 (this was also needed for 0.9.0,
+  but that fact was undocumented) (smcv)
+
+* Corrected the error message given when a write-only D-Bus property
+  is read (Pekka Pessi)
+
+* Work around GLib 2.20 being less const-correct than 2.22 (jonny)
 
 telepathy-glib 0.9.0 (2009-09-28)
 =================================
