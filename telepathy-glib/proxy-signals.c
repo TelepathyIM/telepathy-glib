@@ -318,7 +318,7 @@ collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
 /**
  * tp_proxy_signal_connection_v0_new:
  * @self: a proxy
- * @interface: a quark whose string value is the D-Bus interface
+ * @iface: a quark whose string value is the D-Bus interface
  * @member: the name of the signal to which we're connecting
  * @expected_types: an array of expected GTypes for the arguments, terminated
  *  by %G_TYPE_INVALID
@@ -356,7 +356,7 @@ collect_none (DBusGProxy *dgproxy, TpProxySignalConnection *sc)
  */
 TpProxySignalConnection *
 tp_proxy_signal_connection_v0_new (TpProxy *self,
-                                   GQuark interface,
+                                   GQuark iface,
                                    const gchar *member,
                                    const GType *expected_types,
                                    GCallback collect_args,
@@ -368,10 +368,10 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
                                    GError **error)
 {
   TpProxySignalConnection *sc;
-  DBusGProxy *iface = tp_proxy_borrow_interface_by_id (self,
-      interface, error);
+  DBusGProxy *iface_proxy = tp_proxy_borrow_interface_by_id (self,
+      iface, error);
 
-  if (iface == NULL)
+  if (iface_proxy == NULL)
     {
       if (destroy != NULL)
         destroy (user_data);
@@ -392,12 +392,12 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
 
   MORE_DEBUG ("(proxy=%p, if=%s, sig=%s, collect=%p, invoke=%p, "
       "cb=%p, ud=%p, dn=%p, wo=%p) -> %p",
-      self, g_quark_to_string (interface), member, collect_args,
+      self, g_quark_to_string (iface), member, collect_args,
       invoke_callback, callback, user_data, destroy, weak_object, sc);
 
   sc->refcount = 1;
   sc->proxy = self;
-  sc->iface_proxy = g_object_ref (iface);
+  sc->iface_proxy = g_object_ref (iface_proxy);
   sc->member = g_strdup (member);
   sc->collect_args = collect_args;
   sc->invoke_callback = invoke_callback;
@@ -413,10 +413,10 @@ tp_proxy_signal_connection_v0_new (TpProxy *self,
   g_signal_connect (self, "invalidated",
       G_CALLBACK (tp_proxy_signal_connection_proxy_invalidated), sc);
 
-  g_signal_connect (iface, "destroy",
+  g_signal_connect (iface_proxy, "destroy",
       G_CALLBACK (_tp_proxy_signal_connection_dgproxy_destroy), sc);
 
-  dbus_g_proxy_connect_signal (iface, member, collect_args, sc,
+  dbus_g_proxy_connect_signal (iface_proxy, member, collect_args, sc,
       tp_proxy_signal_connection_dropped);
 
   return sc;

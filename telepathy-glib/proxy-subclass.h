@@ -46,7 +46,7 @@ void tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
 void tp_proxy_pending_call_v0_completed (gpointer p);
 
 TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
-    GQuark interface, const gchar *member,
+    GQuark iface, const gchar *member,
     const GType *expected_types,
     GCallback collect_args, TpProxyInvokeFunc invoke_callback,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
