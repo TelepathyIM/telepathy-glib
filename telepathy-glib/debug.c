@@ -405,14 +405,14 @@ tp_debug_divert_messages (const gchar *filename)
       return;
     }
 
-  if (dup2 (fd, STDOUT_FILENO) == -1)
+  if (dup2 (fd, 1) == -1)     /* STDOUT_FILENO is less universal */
     {
       g_warning ("Error duplicating stdout file descriptor: %s",
           g_strerror (errno));
       return;
     }
 
-  if (dup2 (fd, STDERR_FILENO) == -1)
+  if (dup2 (fd, 2) == -1)     /* STDERR_FILENO is less universal */
     {
       g_warning ("Error duplicating stderr file descriptor: %s",
           g_strerror (errno));
