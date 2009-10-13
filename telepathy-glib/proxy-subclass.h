@@ -61,10 +61,10 @@ typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
 void tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
     TpProxyInterfaceAddedCb callback);
 
-DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
+DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark iface,
     GError **error);
 
-DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark interface);
+DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark iface);
 
 void tp_proxy_invalidate (TpProxy *self, const GError *error);
 
