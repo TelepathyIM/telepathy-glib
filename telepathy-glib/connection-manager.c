@@ -408,7 +408,7 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
   if (error != NULL)
     {
       DEBUG ("Error getting params for %s, skipping it", protocol);
-      tp_connection_manager_continue_introspection (self);
+      goto out;
     }
 
    output = g_array_sized_new (TRUE, TRUE,
@@ -470,6 +470,7 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
       (TpConnectionManagerParam *) g_array_free (output, FALSE);
   g_ptr_array_add (self->priv->found_protocols, proto_struct);
 
+out:
   tp_connection_manager_continue_introspection (self);
 }
 
