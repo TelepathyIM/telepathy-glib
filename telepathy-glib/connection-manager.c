@@ -184,9 +184,6 @@ struct _TpConnectionManagerPrivate {
     /* FALSE if constructor hasn't run yet */
     unsigned constructed:1;
 
-    /* TRUE if we're waiting for ListProtocols */
-    unsigned listing_protocols:1;
-
     /* TRUE if dispose() has run already */
     unsigned disposed:1;
 
@@ -213,7 +210,7 @@ struct _TpConnectionManagerPrivate {
     GList *waiting_for_ready;
 
     /* the method call currently pending, or NULL if none. */
-    TpProxyPendingCall *pending_get_params;
+    TpProxyPendingCall *introspection_call;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
@@ -403,7 +400,8 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
 
   DEBUG ("Protocol name: %s", protocol);
 
-  self->priv->pending_get_params = NULL;
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
 
   if (error != NULL)
     {
@@ -514,12 +512,10 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 {
   guint i;
 
-  self->priv->listing_protocols = FALSE;
-
-  if (self->priv->pending_get_params != NULL)
+  if (self->priv->introspection_call != NULL)
     {
-      tp_proxy_pending_call_cancel (self->priv->pending_get_params);
-      self->priv->pending_get_params = NULL;
+      tp_proxy_pending_call_cancel (self->priv->introspection_call);
+      self->priv->introspection_call = NULL;
     }
 
   if (self->priv->found_protocols != NULL)
@@ -578,7 +574,7 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 
   next_protocol = g_ptr_array_remove_index_fast (self->priv->pending_protocols,
       0);
-  self->priv->pending_get_params =
+  self->priv->introspection_call =
       tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
           tp_connection_manager_got_parameters, next_protocol, g_free,
           NULL);
@@ -594,7 +590,8 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
   guint i = 0;
   const gchar **iter;
 
-  self->priv->listing_protocols = FALSE;
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
 
   if (error != NULL)
     {
@@ -634,7 +631,8 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
 static gboolean
 introspection_in_progress (TpConnectionManager *self)
 {
-  return self->priv->listing_protocols || self->priv->found_protocols != NULL;
+  return (self->priv->introspection_call != NULL ||
+      self->priv->found_protocols != NULL);
 }
 
 static gboolean
@@ -647,12 +645,10 @@ tp_connection_manager_idle_introspect (gpointer data)
       (self->always_introspect ||
        self->info_source == TP_CM_INFO_SOURCE_NONE))
     {
-      self->priv->listing_protocols = TRUE;
-
       DEBUG ("calling ListProtocols on CM");
-      tp_cli_connection_manager_call_list_protocols (self, -1,
-          tp_connection_manager_got_protocols, NULL, NULL,
-          NULL);
+      self->priv->introspection_call =
+        tp_cli_connection_manager_call_list_protocols (self, -1,
+            tp_connection_manager_got_protocols, NULL, NULL, NULL);
     }
 
   self->priv->introspect_idle_id = 0;
@@ -1646,9 +1642,9 @@ tp_connection_manager_activate (TpConnectionManager *self)
 
   DEBUG ("calling ListProtocols");
 
-  self->priv->listing_protocols = TRUE;
-  tp_cli_connection_manager_call_list_protocols (self, -1,
-      tp_connection_manager_got_protocols, NULL, NULL, NULL);
+  self->priv->introspection_call =
+    tp_cli_connection_manager_call_list_protocols (self, -1,
+        tp_connection_manager_got_protocols, NULL, NULL, NULL);
 
   return TRUE;
 }
