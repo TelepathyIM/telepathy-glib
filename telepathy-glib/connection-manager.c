@@ -181,9 +181,6 @@ struct _TpConnectionManagerPrivate {
     /* source ID for introspecting later */
     guint introspect_idle_id;
 
-    /* FALSE if constructor hasn't run yet */
-    unsigned constructed:1;
-
     /* TRUE if dispose() has run already */
     unsigned disposed:1;
 
@@ -211,6 +208,12 @@ struct _TpConnectionManagerPrivate {
 
     /* the method call currently pending, or NULL if none. */
     TpProxyPendingCall *introspection_call;
+
+    /* FALSE if initial name-owner (if any) hasn't been found yet */
+    gboolean name_known;
+    /* TRUE if someone asked us to activate but we're putting it off until
+     * name_known */
+    gboolean want_activation;
 };
 
 G_DEFINE_TYPE (TpConnectionManager,
@@ -656,6 +659,8 @@ tp_connection_manager_idle_introspect (gpointer data)
   return FALSE;
 }
 
+static gboolean tp_connection_manager_idle_read_manager_file (gpointer data);
+
 static void
 tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
                                              const gchar *name,
@@ -678,7 +683,12 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       if (introspection_in_progress (self))
         tp_connection_manager_end_introspection (self, &e);
 
-      g_signal_emit (self, signals[SIGNAL_EXITED], 0);
+      /* If our name wasn't known already, a change to "" is just the initial
+       * state, so we didn't *exit* as such. */
+      if (self->priv->name_known)
+        {
+          g_signal_emit (self, signals[SIGNAL_EXITED], 0);
+        }
     }
   else
     {
@@ -693,6 +703,27 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
       if (self->priv->introspect_idle_id == 0)
         self->priv->introspect_idle_id = g_idle_add (
             tp_connection_manager_idle_introspect, self);
+    }
+
+  /* if we haven't started introspecting yet, now would be a good time */
+  if (!self->priv->name_known)
+    {
+      g_assert (self->priv->manager_file_read_idle_id == 0);
+
+      /* now we know whether we're running or not, we can try reading the
+       * .manager file... */
+      self->priv->manager_file_read_idle_id = g_idle_add (
+          tp_connection_manager_idle_read_manager_file, self);
+
+      if (self->priv->want_activation && self->priv->introspect_idle_id == 0)
+        {
+          /* ... but if activation was requested, we should also do that */
+          self->priv->introspect_idle_id = g_idle_add (
+              tp_connection_manager_idle_introspect, self);
+        }
+
+      /* Unfreeze automatic reading of .manager file if manager-file changes */
+      self->priv->name_known = TRUE;
     }
 
   g_object_unref (self);
@@ -1232,14 +1263,6 @@ tp_connection_manager_constructor (GType type,
           tp_connection_manager_find_manager_file (self->name);
     }
 
-  g_assert (self->priv->manager_file_read_idle_id == 0);
-
-  self->priv->manager_file_read_idle_id = g_idle_add (
-      tp_connection_manager_idle_read_manager_file, self);
-
-  /* Unfreeze automatic reading of .manager file if manager-file changes */
-  self->priv->constructed = TRUE;
-
   return (GObject *) self;
 }
 
@@ -1349,12 +1372,12 @@ tp_connection_manager_set_property (GObject *object,
     case PROP_MANAGER_FILE:
       g_free (self->priv->manager_file);
 
-      /* If the constructor has already run, change the definition of where
+      /* If initial code has already run, change the definition of where
        * we expect to find the .manager file and trigger re-introspection.
-       * Otherwise, just take the value - _constructor queues the first-time
-       * manager file lookup anyway.
+       * Otherwise, just take the value - when name_known becomes TRUE we
+       * queue the first-time manager file lookup anyway.
        */
-      if (self->priv->constructed)
+      if (self->priv->name_known)
         {
           const gchar *tmp = g_value_get_string (value);
 
@@ -1634,17 +1657,24 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
 gboolean
 tp_connection_manager_activate (TpConnectionManager *self)
 {
-  if (self->running || introspection_in_progress (self))
+  if (self->priv->name_known)
     {
-      DEBUG ("already %s", self->running ? "running" : "introspecting");
-      return FALSE;
+      if (self->running)
+        {
+          DEBUG ("already running");
+          return FALSE;
+        }
+
+      if (self->priv->introspect_idle_id == 0)
+        self->priv->introspect_idle_id = g_idle_add (
+            tp_connection_manager_idle_introspect, self);
     }
-
-  DEBUG ("calling ListProtocols");
-
-  self->priv->introspection_call =
-    tp_cli_connection_manager_call_list_protocols (self, -1,
-        tp_connection_manager_got_protocols, NULL, NULL, NULL);
+  else
+    {
+      /* we'll activate later, when we know properly whether we're running */
+      DEBUG ("queueing activation for when we know what's going on");
+      self->priv->want_activation = TRUE;
+    }
 
   return TRUE;
 }
