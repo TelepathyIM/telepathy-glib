@@ -1,7 +1,19 @@
 telepathy-glib 0.8.1 (UNRELEASED)
 =================================
 
-...
+Fixes:
+
+* fd.o #23853: if a connection manager is discovered not to be running while
+  TpConnectionManager has a ListProtocols call in-flight, then a new instance
+  of the CM starts up and replies to that call, don't crash with an assertion
+  failure (smcv)
+
+* If a connection manager returns error from GetParameters(), don't dereference
+  a NULL pointer and segfault (smcv)
+
+* When asked to activate or introspect a connection manager, don't do anything
+  until we have at least worked out whether it was initially running, in order
+  to provide the documented behaviour (smcv)
 
 telepathy-glib 0.8.0 (2009-09-24)
 =================================
