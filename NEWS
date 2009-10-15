@@ -1,6 +1,8 @@
 telepathy-glib 0.8.1 (UNRELEASED)
 =================================
 
+The "TpConnectionManager was not my finest hour" release.
+
 Fixes:
 
 * fd.o #23853: if a connection manager is discovered not to be running while
@@ -14,6 +16,14 @@ Fixes:
 * When asked to activate or introspect a connection manager, don't do anything
   until we have at least worked out whether it was initially running, in order
   to provide the documented behaviour (smcv)
+
+* When getting parameter details from a running connection manager, consider
+  parameters called "password" or ending with "-password" to be secret even
+  if they lack the SECRET flag, as was already done when reading .manager
+  files (smcv)
+
+* Corrected the error message given when a write-only D-Bus property
+  is read (Pekka Pessi)
 
 telepathy-glib 0.8.0 (2009-09-24)
 =================================
