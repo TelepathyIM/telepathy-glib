@@ -1,3 +1,9 @@
+telepathy-farsight 0.0.12 (15 Oct 2009)
+=======================================
+- Fix mixup between GSlice and malloc
+- Fix potential race between src-pad-added and dispose
+- The connected state in farsight is a lie, ignore it
+
 telepathy-farsight 0.0.11 (10 Sep 2009)
 =======================================
 - Fix double free
