@@ -454,6 +454,15 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
       DEBUG ("\tParam flags: 0x%x", param->flags);
       DEBUG ("\tParam sig: %s", param->dbus_signature);
 
+      if ((!tp_strdiff (param->name, "password") ||
+          g_str_has_suffix (param->name, "-password")) &&
+          (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
+        {
+          DEBUG ("\tTreating as secret due to its name (please fix %s)",
+              self->name);
+          param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
+        }
+
 #ifdef ENABLE_DEBUG
         {
           gchar *repr = g_strdup_value_contents (&(param->default_value));
@@ -976,8 +985,9 @@ parse_default_value (GValue *value,
 }
 
 static GPtrArray *
-tp_connection_manager_read_file (const gchar *filename,
-                                 GError **error)
+tp_connection_manager_read_file (const gchar *cm_name,
+    const gchar *filename,
+    GError **error)
 {
   GKeyFile *file;
   gchar **groups, **group;
@@ -1061,12 +1071,6 @@ tp_connection_manager_read_file (const gchar *filename,
 
               param->dbus_signature = g_strdup (strv[0]);
 
-              if (!tp_strdiff (param->name, "password") ||
-                  g_str_has_suffix (param->name, "-password"))
-                {
-                  param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
-                }
-
               for (iter = strv + 1; *iter != NULL; iter++)
                 {
                   if (!tp_strdiff (*iter, "required"))
@@ -1080,6 +1084,15 @@ tp_connection_manager_read_file (const gchar *filename,
                 }
 
               g_strfreev (strv);
+
+              if ((!tp_strdiff (param->name, "password") ||
+                  g_str_has_suffix (param->name, "-password")) &&
+                  (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
+                {
+                  DEBUG ("\tTreating %s as secret due to its name (please "
+                      "fix %s)", param->name, cm_name);
+                  param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
+                }
 
               def = g_strdup_printf ("default-%s", param->name);
               value = g_key_file_get_string (file, *group, def, NULL);
@@ -1144,7 +1157,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
         {
           GError *error = NULL;
           GPtrArray *protocols = tp_connection_manager_read_file (
-              self->priv->manager_file, &error);
+              self->name, self->priv->manager_file, &error);
 
           DEBUG ("Read %s", self->priv->manager_file);
 
