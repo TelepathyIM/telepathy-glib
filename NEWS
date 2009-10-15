@@ -23,6 +23,11 @@ Fixes:
   until we have at least worked out whether it was initially running, in order
   to provide the documented behaviour (smcv)
 
+* When getting parameter details from a running connection manager, consider
+  parameters called "password" or ending with "-password" to be secret even
+  if they lack the SECRET flag, as was already done when reading .manager
+  files (smcv)
+
 telepathy-glib 0.9.0 (2009-09-28)
 =================================
 
