@@ -750,7 +750,6 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
   /**
    * TpAccountManager::most-available-presence-changed:
    * @manager: a #TpAccountManager
-   * @account: a #TpAccount
    * @presence: new presence type
    * @status: new status
    * @message: new status message
