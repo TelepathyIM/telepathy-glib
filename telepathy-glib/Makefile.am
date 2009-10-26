@@ -272,7 +272,8 @@ BUILT_SOURCES = \
     _gen/stable-stamp
 
 CLEANFILES = \
-    $(BUILT_SOURCES)
+    $(BUILT_SOURCES) \
+    $(BUILT_GIRFILES)
 
 distclean-local:
 	rm -rf _gen
@@ -507,3 +508,58 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		--deprecation-attribute=_TP_GNUC_DEPRECATED \
 		$$maybe_reentrant \
 		$< Tp_Cli _gen/tp-cli-$*
+
+BUILT_GIRFILES = \
+	TelepathyGLib-0.12.gir
+
+INTROSPECTION_FILES = \
+	proxy.c _gen/proxy-introspectable.h \
+	account.c account.h \
+	account-manager.c account-manager.h \
+	connection.c connection.h \
+	connection-handles.c \
+	connection-manager.c connection-manager.h \
+	channel.c channel.h \
+	handle.c handle.h \
+	dbus-daemon.c dbus-daemon.h \
+	interfaces.c interfaces.h \
+	intset.c intset.h \
+	dbus.c dbus.h \
+	capabilities.c capabilities.h \
+	contact.c contact.h \
+	defs.h \
+	debug.c debug.h \
+	_gen/telepathy-enums.h \
+	_gen/telepathy-interfaces.h
+
+TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) libtelepathy-glib.la
+	sed -e 's/gpointer self/TpProxy *self/' < proxy.h > _gen/proxy-introspectable.h
+	$(INTROSPECTION_SCANNER) -v \
+		--namespace TelepathyGLib \
+		--nsversion=$(VERSION) \
+		--strip-prefix=tp \
+		-I$(top_builddir) \
+		-I$(top_srcdir) \
+		--include=GLib-2.0 \
+		--include=DBusGLib-1.0 \
+		--include=Gio-2.0 \
+		--libtool="$(top_builddir)/libtool" \
+		--library=libtelepathy-glib.la \
+		--pkg gio-2.0 \
+		--pkg dbus-glib-1 \
+		--output $@ \
+		$(INTROSPECTION_FILES)
+	rm -f _gen/proxy-introspectable.h
+
+girdir = $(datadir)/gir-1.0
+gir_DATA = $(BUILT_GIRFILES)
+
+%.typelib: %.gir $(INTROSPECTION_COMPILER)
+	$(top_builddir)/libtool --mode=execute \
+	    $(INTROSPECTION_COMPILER) \
+	        --includedir=$(srcdir) \
+	        --includedir=. \
+	        $(INTROSPECTION_COMPILER_OPTS) $< -o $(@F)
+
+typelibsdir = $(libdir)/girepository-1.0/
+typelibs_DATA = $(BUILT_GIRFILES:.gir=.typelib)
