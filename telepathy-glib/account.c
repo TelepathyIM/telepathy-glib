@@ -2479,7 +2479,7 @@ tp_account_get_avatar_finish (TpAccount *account,
  *
  * <!-- -->
  *
- * Returns: %TRUE whether @feature is ready on @account, otherwise %FALSE
+ * Returns: %TRUE if @feature is ready on @account, otherwise %FALSE
  *
  * Since: 0.9.0
  */
