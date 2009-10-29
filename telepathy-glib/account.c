@@ -2531,6 +2531,7 @@ tp_account_prepare_async (TpAccount *account,
 {
   TpAccountPrivate *priv;
   GSimpleAsyncResult *result;
+  const GError *error;
   const GQuark *f;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
@@ -2555,7 +2556,15 @@ tp_account_prepare_async (TpAccount *account,
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_prepare_finish);
 
-  if (_tp_account_check_features (account, features))
+  error = tp_proxy_get_invalidated (account);
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_complete_in_idle (result);
+      g_object_unref (result);
+    }
+  else if (_tp_account_check_features (account, features))
     {
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
