@@ -11,6 +11,8 @@ libtp_glib_tests_la_SOURCES = \
     myassert.h \
     params-cm.h \
     params-cm.c \
+    simple-account-manager.c\
+    simple-account-manager.h\
     simple-conn.c \
     simple-conn.h \
     simple-manager.c \
