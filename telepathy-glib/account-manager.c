@@ -273,6 +273,31 @@ _tp_account_manager_become_ready (TpAccountManager *self,
 }
 
 static void
+_tp_account_manager_invalidated_cb (TpAccountManager *self,
+    guint domain,
+    guint code,
+    gchar *message)
+{
+  TpAccountManagerPrivate *priv = self->priv;
+  GList *l;
+
+  /* Make all currently pending callbacks fail. */
+  for (l = priv->callbacks; l != NULL; l = l->next)
+    {
+      TpAccountManagerFeatureCallback *cb = l->data;
+
+      g_simple_async_result_set_error (cb->result,
+          domain, code, "%s", message);
+      g_simple_async_result_complete (cb->result);
+      g_object_unref (cb->result);
+      g_slice_free (TpAccountManagerFeatureCallback, cb);
+    }
+
+  g_list_free (priv->callbacks);
+  priv->callbacks = NULL;
+}
+
+static void
 tp_account_manager_init (TpAccountManager *self)
 {
   TpAccountManagerPrivate *priv;
@@ -288,6 +313,9 @@ tp_account_manager_init (TpAccountManager *self)
       g_free, (GDestroyNotify) g_object_unref);
 
   priv->create_results = g_hash_table_new (g_direct_hash, g_direct_equal);
+
+  g_signal_connect (self, "invalidated",
+      G_CALLBACK (_tp_account_manager_invalidated_cb), NULL);
 }
 
 static void
@@ -536,6 +564,7 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
   if (error != NULL)
     {
       DEBUG ("Failed to get account manager properties: %s", error->message);
+      tp_proxy_invalidate (proxy, error);
       return;
     }
 
@@ -1358,6 +1387,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
   TpAccountManagerPrivate *priv;
   GSimpleAsyncResult *result;
   const GQuark *f;
+  const GError *error;
 
   g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
 
@@ -1381,7 +1411,14 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
   result = g_simple_async_result_new (G_OBJECT (manager),
       callback, user_data, tp_account_manager_prepare_finish);
 
-  if (_tp_account_manager_check_features (manager, features))
+  error = tp_proxy_get_invalidated (manager);
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_complete_in_idle (result);
+      g_object_unref (result);
+    }
+  else if (_tp_account_manager_check_features (manager, features))
     {
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
