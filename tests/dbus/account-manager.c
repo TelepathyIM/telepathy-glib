@@ -10,11 +10,15 @@
 
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/debug.h>
+#include <telepathy-glib/defs.h>
+
+#include "tests/lib/simple-account-manager.h"
 
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
 
+    SimpleAccountManager *service;
     TpAccountManager *am;
     GError *error /* initialized where needed */;
 } Test;
@@ -34,6 +38,22 @@ setup (Test *test,
 }
 
 static void
+setup_service (Test *test,
+       gconstpointer data)
+{
+  DBusGConnection *bus;
+  SimpleAccountManager *service;
+
+  setup (test, data);
+
+  bus = tp_get_bus ();
+  service = g_object_new (SIMPLE_TYPE_ACCOUNT_MANAGER, NULL);
+  dbus_g_connection_register_g_object (bus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
+      (GObject *) service);
+  test->service = service;
+}
+
+static void
 teardown (Test *test,
           gconstpointer data)
 {
@@ -47,6 +67,15 @@ teardown (Test *test,
   test->dbus = NULL;
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
+}
+
+static void
+teardown_service (Test *test,
+          gconstpointer data)
+{
+  g_object_unref (test->service);
+  test->service = NULL;
+  teardown (test, data);
 }
 
 static void
@@ -78,6 +107,11 @@ test_dup (Test *test,
   g_object_unref (one);
 }
 
+static void
+test_service (Test *test,
+          gconstpointer data G_GNUC_UNUSED)
+{
+}
 int
 main (int argc,
       char **argv)
@@ -87,6 +121,7 @@ main (int argc,
 
   g_test_add ("/am/new", Test, NULL, setup, test_new, teardown);
   g_test_add ("/am/dup", Test, NULL, setup, test_dup, teardown);
+  g_test_add ("/am/service", Test, NULL, setup_service, test_service, teardown_service);
 
   return g_test_run ();
 }
