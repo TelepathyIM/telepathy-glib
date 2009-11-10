@@ -1051,6 +1051,7 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
     return account;
 
   account = tp_account_new (tp_proxy_get_dbus_daemon (manager), path, NULL);
+  g_return_val_if_fail (account != NULL, NULL);
   g_hash_table_insert (priv->accounts, g_strdup (path), account);
 
   tp_account_prepare_async (account, fs, _tp_account_manager_account_ready_cb,
