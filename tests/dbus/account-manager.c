@@ -29,7 +29,7 @@ typedef struct {
     TpAccount *account;
     gboolean prepared /* The result of prepare_finish */;
     guint timeout_id;
-    GList *script /* A list of GAsyncReadyCallback */;
+    GQueue *script /* A list of GAsyncReadyCallback */;
 
     GError *error /* initialized where needed */;
 } Test;
@@ -56,8 +56,7 @@ script_append_action (Test *test,
     GFunc action,
     gpointer data)
 {
-  test->script = g_list_append (test->script,
-                 script_action_new (action, data));
+  g_queue_push_tail (test->script, script_action_new (action, data));
 }
 
 static void
@@ -65,9 +64,8 @@ script_continue (gpointer script_data)
 {
   Test *test = (Test *) script_data;
   ScriptAction *action;
-  /* pop the previous action */
-  test->script = g_list_remove (test->script, test->script->data);
-  action = (ScriptAction *) test->script->data;
+  /* pop the next action */
+  action = (ScriptAction *) g_queue_pop_head (test->script);
   action->action (script_data, action->user_data);
 }
 
@@ -97,13 +95,11 @@ quit_action (gpointer script_data,
 
 static void
 script_start_with_deadline (Test *test,
-                                      guint timeout)
+    guint timeout)
 {
-  ScriptAction *current_action;
   script_append_action (test, quit_action, NULL);
-  current_action = (ScriptAction *) test->script->data;
   test->timeout_id = g_timeout_add (timeout, test_timed_out, test);
-  current_action->action (test, current_action->user_data);
+  script_continue (test);
   g_main_loop_run (test->mainloop);
 }
 
@@ -126,7 +122,7 @@ setup (Test *test,
 
   test->am = NULL;
   test->timeout_id = 0;
-  test->script = NULL;
+  test->script = g_queue_new ();
 }
 
 static void
@@ -235,8 +231,8 @@ finish_prepare_action (GObject *source_object,
   g_assert (test->am == am);
   test->prepared = tp_account_manager_prepare_finish (am, res, &test->error);
   is_prepared_reply = tp_account_manager_is_prepared (test->am,
-      TP_ACCOUNT_MANAGER_FEATURE_CORE));
-  g_assert_intcmp (is_prepared_reply, ==, test->prepared);
+      TP_ACCOUNT_MANAGER_FEATURE_CORE);
+  g_assert_cmpint (is_prepared_reply, ==, test->prepared);
   script_continue (test);
 }
 
