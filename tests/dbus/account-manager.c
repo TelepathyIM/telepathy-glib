@@ -15,17 +15,61 @@
 #include "tests/lib/simple-account-manager.h"
 
 typedef struct {
+    GFunc action;
+    gpointer user_data;
+} ScriptAction;
+
+typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
     DBusGConnection *bus;
 
     SimpleAccountManager *service /* initialized in prepare_service */;
     TpAccountManager *am;
+    TpAccount *account;
     gboolean prepared /* The result of prepare_finish */;
     guint timeout_id;
+    GList *script /* A list of GAsyncReadyCallback */;
 
     GError *error /* initialized where needed */;
 } Test;
+
+/**
+  * Functions for manipulating scripts follow this comment.
+  * In order to be generally useful, the script should probably be stored in its
+  * own data structure, rather than passed around with the test, and the
+  * user_data argument would need to be the test or something. As it is, these
+  * library-like functions rely on being defined after the Test struct.
+  */
+static ScriptAction *
+script_action_new (GFunc action,
+    gpointer data)
+{
+  ScriptAction *script_action = g_new (ScriptAction, 1);
+  script_action->action = action;
+  script_action->user_data = data;
+  return script_action;
+}
+
+static void
+script_append_action (Test *test,
+    GFunc action,
+    gpointer data)
+{
+  test->script = g_list_append (test->script,
+                 script_action_new (action, data));
+}
+
+static void
+script_continue (gpointer script_data)
+{
+  Test *test = (Test *) script_data;
+  ScriptAction *action;
+  /* pop the previous action */
+  test->script = g_list_remove (test->script, test->script->data);
+  action = (ScriptAction *) test->script->data;
+  action->action (script_data, action->user_data);
+}
 
 static gboolean
 test_timed_out (gpointer data)
@@ -44,8 +88,32 @@ test_timed_out (gpointer data)
 }
 
 static void
+quit_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+script_start_with_deadline (Test *test,
+                                      guint timeout)
+{
+  ScriptAction *current_action;
+  script_append_action (test, quit_action, NULL);
+  current_action = (ScriptAction *) test->script->data;
+  test->timeout_id = g_timeout_add (timeout, test_timed_out, test);
+  current_action->action (test, current_action->user_data);
+  g_main_loop_run (test->mainloop);
+}
+
+/**
+  * Setup and teardown functions follow this comment.
+  */
+
+static void
 setup (Test *test,
-       gconstpointer data)
+    gconstpointer data)
 {
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -58,11 +126,12 @@ setup (Test *test,
 
   test->am = NULL;
   test->timeout_id = 0;
+  test->script = NULL;
 }
 
 static void
 setup_service (Test *test,
-       gconstpointer data)
+    gconstpointer data)
 {
 
   setup (test, data);
@@ -79,7 +148,7 @@ setup_service (Test *test,
 
 static void
 teardown (Test *test,
-          gconstpointer data)
+    gconstpointer data)
 {
   if (test->am != NULL)
     {
@@ -99,8 +168,9 @@ teardown (Test *test,
 
 static void
 teardown_service (Test *test,
-          gconstpointer data)
+    gconstpointer data)
 {
+  script_start_with_deadline (test, 1000);
   g_assert (
       tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
                                &test->error));
@@ -109,16 +179,20 @@ teardown_service (Test *test,
   teardown (test, data);
 }
 
+/**
+  * Non-dbus tests follow this comment
+  */
+
 static void
 test_new (Test *test,
-          gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data G_GNUC_UNUSED)
 {
   test->am = tp_account_manager_new (test->dbus);
 }
 
 static void
 test_dup (Test *test,
-          gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data G_GNUC_UNUSED)
 {
   TpAccountManager *one, *two;
   TpDBusDaemon *dbus_one, *dbus_two;
@@ -138,38 +212,137 @@ test_dup (Test *test,
   g_object_unref (one);
 }
 
-/** Tests which use the bus follow this comment. */
-
 /**
- * Used by test_prepare.
- */
-static void am_prepare_cb (GObject *source_object,
+  * Actions for use with script_append_action() follow this comment. They are
+  * used in tests which involve asyncronous actions.
+  */
+
+static void
+noop_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  script_continue (script_data);
+}
+
+static void
+finish_prepare_action (GObject *source_object,
     GAsyncResult *res,
     gpointer user_data)
 {
   Test *test = (Test *) user_data;
+  gboolean is_prepared_reply;
   TpAccountManager *am = TP_ACCOUNT_MANAGER (source_object);
   g_assert (test->am == am);
   test->prepared = tp_account_manager_prepare_finish (am, res, &test->error);
-  g_main_loop_quit (test->mainloop);
+  is_prepared_reply = tp_account_manager_is_prepared (test->am,
+      TP_ACCOUNT_MANAGER_FEATURE_CORE));
+  g_assert_intcmp (is_prepared_reply, ==, test->prepared);
+  script_continue (test);
+}
+
+static void
+prepare_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  test->am = tp_account_manager_new (test->dbus);
+  tp_account_manager_prepare_async (test->am, NULL, finish_prepare_action, test);
+}
+
+
+static void
+assert_ok_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  g_assert_no_error (test->error);
+  g_assert (test->prepared);
+
+  script_continue (script_data);
+}
+
+static void
+assert_failed_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  g_assert (test->error != NULL);
+  g_error_free (test->error);
+  test->error = NULL;
+
+  script_continue (script_data);
 }
 
 /**
- * Helper function for testing the functionality of prepare. Calls prepare
- * and then starts the mainloop until it finishes or times out after a second.
- * Not actually run as a test on its own even though it looks like one.
- * Note that test_prepare doesn't assert that the prepare
- * succeeded. Only that it didn't time out. Use test_prepare_success or
- * test_prepare_fail for this.
- */
+  * account related functions below this comment
+  */
+
+static void
+ensure_action (gpointer script_data,
+    gpointer user_data)
+{
+  char *path = (char *) user_data;
+  Test *test = (Test *) script_data;
+  g_assert (test != NULL);
+  g_assert (test->am != NULL);
+  g_assert (tp_account_manager_is_prepared (test->am, TP_ACCOUNT_MANAGER_FEATURE_CORE));
+  test->account = tp_account_manager_ensure_account (test->am,
+      path);
+
+  script_continue (script_data);
+}
+
+static void
+assert_account_ok_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+  g_assert (test->account != NULL);
+
+  script_continue (script_data);
+}
+
+static void
+finish_account_prepare_action (GObject *source_object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  Test *test = (Test *) user_data;
+  TpAccount *account = TP_ACCOUNT (source_object);
+  g_assert (test->account == account);
+  test->prepared = tp_account_prepare_finish (account, res, &test->error);
+  g_assert (test->prepared == tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
+
+  script_continue (test);
+}
+
+static void
+account_prepare_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  tp_account_prepare_async (test->account, NULL, finish_account_prepare_action, test);
+}
+
+/**
+  * Asyncronous tests below this comment. Tests append action functions and
+  * arguments to a script. Once the test function has returned, the teardown
+  * function is responsible for running the script, and quitting the mainloop
+  * afterwards.
+  * Action functions are each responsible for ensuring that the next action is
+  * called.
+  */
+
 static void
 test_prepare (Test *test,
-          gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data G_GNUC_UNUSED)
 {
-  test->am = tp_account_manager_new (test->dbus);
-  tp_account_manager_prepare_async (test->am, NULL, am_prepare_cb, test);
-  test->timeout_id = g_timeout_add (1000, test_timed_out, test);
-  g_main_loop_run (test->mainloop);
+  script_append_action (test, prepare_action, NULL);
+  script_append_action (test, noop_action, NULL);
 }
 
 /**
@@ -177,11 +350,10 @@ test_prepare (Test *test,
  */
 static void
 test_prepare_success (Test *test,
-          gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data G_GNUC_UNUSED)
 {
   test_prepare (test, data);
-  g_assert_no_error (test->error);
-  g_assert (test->prepared);
+  script_append_action (test, assert_ok_action, NULL);
 }
 
 /**
@@ -191,12 +363,14 @@ test_prepare_success (Test *test,
  */
 static void
 test_prepare_no_name (Test *test,
-          gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data G_GNUC_UNUSED)
 {
   test_prepare (test, data);
-  g_assert (test->error != NULL);
-  test->error = NULL;
-  g_assert (!test->prepared);
+
+  script_append_action (test, assert_failed_action, NULL);
+  /* Since we are using teardown rather than teardown_service, we need to
+   * run the script ourselves */
+  script_start_with_deadline (test, 1000);
 }
 
 /**
@@ -205,29 +379,30 @@ test_prepare_no_name (Test *test,
  */
 static void
 test_prepare_destroyed (Test *test,
-          gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data G_GNUC_UNUSED)
 {
   dbus_g_connection_unregister_g_object (test->bus, G_OBJECT (test->service));
   test_prepare (test, data);
-  g_assert (test->error != NULL);
-  test->error = NULL;
-  g_assert (!test->prepared);
-  dbus_g_connection_register_g_object (test->bus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
-      (GObject *) test->service);
+  script_append_action (test, assert_failed_action, NULL);
 }
 
 static void
-test_create_success (Test *test,
-          gconstpointer data G_GNUC_UNUSED)
+test_ensure (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
 {
   test_prepare (test, data);
-  g_assert_no_error (test->error);
-  g_assert (test->prepared);
+  script_append_action (test, assert_ok_action, NULL);
+
+  script_append_action (test, ensure_action,
+                        TP_ACCOUNT_OBJECT_PATH_BASE "fakecm/fakeproto/account");
+  script_append_action (test, assert_account_ok_action, NULL);
+  script_append_action (test, account_prepare_action, NULL);
+  script_append_action (test, assert_failed_action, NULL);
 }
 
 int
 main (int argc,
-      char **argv)
+    char **argv)
 {
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
@@ -242,7 +417,7 @@ main (int argc,
   g_test_add ("/am/prepare/name-not-provided", Test, NULL, setup,
               test_prepare_no_name, teardown);
 
-  g_test_add ("/am/create/success", Test, NULL, setup_service,
-              test_create_success, teardown_service);
+  g_test_add ("/am/ensure", Test, NULL, setup_service,
+              test_ensure, teardown_service);
   return g_test_run ();
 }
