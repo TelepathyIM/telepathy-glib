@@ -133,7 +133,8 @@ enum
   PROP_NAT_PROPERTIES,
   PROP_SINK_PAD,
   PROP_LOCAL_PREFERENCES,
-  PROP_TOS
+  PROP_TOS,
+  PROP_RESOURCES
 };
 
 static void get_all_properties_cb (TpProxy *proxy,
@@ -265,6 +266,9 @@ tf_stream_get_property (GObject    *object,
         g_object_get_property (G_OBJECT (self->priv->fs_session), "tos", value);
       else
         g_value_set_uint (value, self->priv->tos);
+      break;
+    case PROP_RESOURCES:
+      g_value_set_uint (value, self->priv->has_resource);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -539,6 +543,15 @@ tf_stream_class_init (TfStreamClass *klass)
           "The IP Type of Service to set on sent packets",
           0, 255, 0,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_RESOURCES,
+      g_param_spec_uint ("resources",
+          "Resources held by the stream",
+          "The resources held by a TpMediaStreamDirection",
+          TP_MEDIA_STREAM_DIRECTION_NONE,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+          TP_MEDIA_STREAM_DIRECTION_NONE,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TfStream::closed:
