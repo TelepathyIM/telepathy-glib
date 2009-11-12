@@ -52,6 +52,16 @@ script_action_new (GFunc action,
 }
 
 static void
+script_action_free (ScriptAction *action)
+{
+  g_free (action);
+}
+
+/**
+  * If data is passed in, you are responsible for freeing it. This will not be
+  * done for you.
+  */
+static void
 script_append_action (Test *test,
     GFunc action,
     gpointer data)
@@ -67,6 +77,7 @@ script_continue (gpointer script_data)
   /* pop the next action */
   action = (ScriptAction *) g_queue_pop_head (test->script);
   action->action (script_data, action->user_data);
+  script_action_free (action);
 }
 
 static gboolean
@@ -116,7 +127,6 @@ setup (Test *test,
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
 
-  g_main_loop_ref (test->mainloop);
   test->dbus = tp_dbus_daemon_dup (NULL);
   g_assert (test->dbus != NULL);
 
@@ -156,6 +166,8 @@ teardown (Test *test,
       g_source_remove (test->timeout_id);
       test->timeout_id = 0;
     }
+  g_queue_free (test->script);
+  test->script = NULL;
   g_object_unref (test->dbus);
   test->dbus = NULL;
   g_main_loop_unref (test->mainloop);
@@ -170,6 +182,7 @@ teardown_service (Test *test,
   g_assert (
       tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
                                &test->error));
+  dbus_g_connection_unregister_g_object (test->bus, G_OBJECT (test->service));
   g_object_unref (test->service);
   test->service = NULL;
   teardown (test, data);
@@ -324,6 +337,18 @@ account_prepare_action (gpointer script_data,
   tp_account_prepare_async (test->account, NULL, finish_account_prepare_action, test);
 }
 
+static void
+register_service_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  dbus_g_connection_register_g_object (test->bus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
+      (GObject *) test->service);
+
+  script_continue (test);
+}
+
 /**
   * Asyncronous tests below this comment. Tests append action functions and
   * arguments to a script. Once the test function has returned, the teardown
@@ -380,6 +405,7 @@ test_prepare_destroyed (Test *test,
   dbus_g_connection_unregister_g_object (test->bus, G_OBJECT (test->service));
   test_prepare (test, data);
   script_append_action (test, assert_failed_action, NULL);
+  script_append_action (test, register_service_action, NULL);
 }
 
 static void
