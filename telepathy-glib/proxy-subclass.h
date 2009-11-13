@@ -32,7 +32,7 @@ typedef void (*TpProxyInvokeFunc) (TpProxy *self,
     GObject *weak_object);
 
 TpProxyPendingCall *tp_proxy_pending_call_v0_new (TpProxy *self,
-    GQuark interface, const gchar *member, DBusGProxy *iface_proxy,
+    GQuark iface, const gchar *member, DBusGProxy *iface_proxy,
     TpProxyInvokeFunc invoke_callback,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
     GObject *weak_object, gboolean cancel_must_raise);
@@ -46,7 +46,7 @@ void tp_proxy_pending_call_v0_take_results (TpProxyPendingCall *pc,
 void tp_proxy_pending_call_v0_completed (gpointer p);
 
 TpProxySignalConnection *tp_proxy_signal_connection_v0_new (TpProxy *self,
-    GQuark interface, const gchar *member,
+    GQuark iface, const gchar *member,
     const GType *expected_types,
     GCallback collect_args, TpProxyInvokeFunc invoke_callback,
     GCallback callback, gpointer user_data, GDestroyNotify destroy,
@@ -61,10 +61,10 @@ typedef void (*TpProxyInterfaceAddedCb) (TpProxy *self,
 void tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
     TpProxyInterfaceAddedCb callback);
 
-DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark interface,
+DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark iface,
     GError **error);
 
-DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark interface);
+DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark iface);
 
 void tp_proxy_invalidate (TpProxy *self, const GError *error);
 

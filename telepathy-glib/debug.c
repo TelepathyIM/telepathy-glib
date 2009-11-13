@@ -405,14 +405,14 @@ tp_debug_divert_messages (const gchar *filename)
       return;
     }
 
-  if (dup2 (fd, STDOUT_FILENO) == -1)
+  if (dup2 (fd, 1) == -1)     /* STDOUT_FILENO is less universal */
     {
       g_warning ("Error duplicating stdout file descriptor: %s",
           g_strerror (errno));
       return;
     }
 
-  if (dup2 (fd, STDERR_FILENO) == -1)
+  if (dup2 (fd, 2) == -1)     /* STDERR_FILENO is less universal */
     {
       g_warning ("Error duplicating stderr file descriptor: %s",
           g_strerror (errno));
@@ -432,9 +432,9 @@ tp_debug_divert_messages (const gchar *filename)
  * @message: the message to process
  * @ignored: not used
  *
- * A #GLogFunc that prepends the local time (currently in
- * YYYY-MM-DD HH:MM:SS.SSSSSS format, with microsecond resolution) to the
- * message, then calls g_log_default_handler.
+ * A #GLogFunc that prepends the UTC time (currently in ISO 8601 format,
+ * with microsecond resolution) to the message, then calls
+ * g_log_default_handler.
  *
  * Intended usage is:
  *
@@ -444,6 +444,10 @@ tp_debug_divert_messages (const gchar *filename)
  *
  * If telepathy-glib was compiled with --disable-debug (not recommended),
  * this function is equivalent to g_log_default_handler().
+ *
+ * Changed in 0.8.UNRELEASED: timestamps are now printed in UTC, in
+ * RFC-3339 format. Previously, they were printed in local time, in a
+ * format similar to RFC-3339.
  *
  * Since: 0.7.1
  */
@@ -455,16 +459,10 @@ tp_debug_timestamped_log_handler (const gchar *log_domain,
 {
 #ifdef ENABLE_DEBUG
   GTimeVal now;
-  gchar now_str[32];
   gchar *tmp;
-  struct tm tm;
-  time_t sec;
 
   g_get_current_time (&now);
-  sec = now.tv_sec;
-  localtime_r (&sec, &tm);
-  strftime (now_str, 32, "%Y-%m-%d %H:%M:%S", &tm);
-  tmp = g_strdup_printf ("%s.%06ld: %s", now_str, now.tv_usec, message);
+  tmp = g_time_val_to_iso8601 (&now);
   message = tmp;
 #endif
 

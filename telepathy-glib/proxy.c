@@ -280,10 +280,10 @@ static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
 /**
  * tp_proxy_borrow_interface_by_id:
  * @self: the TpProxy
- * @interface: quark representing the interface required
- * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @interface
+ * @iface: quark representing the interface required
+ * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @iface
  *         is invalid, @self has been invalidated or @self does not implement
- *         @interface
+ *         @iface
  *
  * <!-- -->
  *
@@ -296,7 +296,7 @@ static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
  */
 DBusGProxy *
 tp_proxy_borrow_interface_by_id (TpProxy *self,
-                                 GQuark interface,
+                                 GQuark iface,
                                  GError **error)
 {
   gpointer dgproxy;
@@ -308,11 +308,11 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
       return NULL;
     }
 
-  if (!tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
+  if (!tp_dbus_check_valid_interface_name (g_quark_to_string (iface),
         error))
       return NULL;
 
-  dgproxy = g_datalist_id_get_data (&self->priv->interfaces, interface);
+  dgproxy = g_datalist_id_get_data (&self->priv->interfaces, iface);
 
   if (dgproxy == self)
     {
@@ -320,18 +320,18 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
        * didn't create it, to avoid binding to all the signals */
 
       dgproxy = dbus_g_proxy_new_for_name (self->dbus_connection,
-          self->bus_name, self->object_path, g_quark_to_string (interface));
-      DEBUG ("%p: %s DBusGProxy is %p", self, g_quark_to_string (interface),
+          self->bus_name, self->object_path, g_quark_to_string (iface));
+      DEBUG ("%p: %s DBusGProxy is %p", self, g_quark_to_string (iface),
           dgproxy);
 
       g_signal_connect (dgproxy, "destroy",
           G_CALLBACK (tp_proxy_iface_destroyed_cb), self);
 
-      g_datalist_id_set_data_full (&self->priv->interfaces, interface,
+      g_datalist_id_set_data_full (&self->priv->interfaces, iface,
           dgproxy, g_object_unref);
 
       g_signal_emit (self, signals[SIGNAL_INTERFACE_ADDED], 0,
-          (guint) interface, dgproxy);
+          (guint) iface, dgproxy);
     }
 
   if (dgproxy != NULL)
@@ -341,7 +341,7 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 
   g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NO_INTERFACE,
       "Object %s does not have interface %s",
-      self->object_path, g_quark_to_string (interface));
+      self->object_path, g_quark_to_string (iface));
 
   return NULL;
 }
@@ -349,7 +349,7 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 /**
  * tp_proxy_has_interface_by_id:
  * @self: the #TpProxy (or subclass)
- * @interface: quark representing the interface required
+ * @iface: quark representing the interface required
  *
  * <!-- -->
  *
@@ -359,18 +359,18 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
  */
 gboolean
 tp_proxy_has_interface_by_id (gpointer self,
-                              GQuark interface)
+                              GQuark iface)
 {
   TpProxy *proxy = TP_PROXY (self);
 
-  return (g_datalist_id_get_data (&proxy->priv->interfaces, interface)
+  return (g_datalist_id_get_data (&proxy->priv->interfaces, iface)
       != NULL);
 }
 
 /**
  * tp_proxy_has_interface:
  * @self: the #TpProxy (or subclass)
- * @interface: the interface required, as a string
+ * @iface: the interface required, as a string
  *
  * A macro wrapping tp_proxy_has_interface_by_id(). Returns %TRUE if this
  * proxy implements the given interface.
@@ -474,7 +474,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
 /**
  * tp_proxy_add_interface_by_id:
  * @self: the TpProxy, which must not have become #TpProxy::invalidated.
- * @interface: quark representing the interface to be added
+ * @iface: quark representing the interface to be added
  *
  * Declare that this proxy supports a given interface.
  *
@@ -485,7 +485,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
  * If the interface is the proxy's "main interface", or has already been
  * added, then do nothing.
  *
- * Returns: either %NULL or a borrowed #DBusGProxy corresponding to @interface,
+ * Returns: either %NULL or a borrowed #DBusGProxy corresponding to @iface,
  * depending on implementation details. To reliably borrow the #DBusGProxy, use
  * tp_proxy_borrow_interface_by_id(). (This method should probably have
  * returned void; sorry.)
@@ -494,13 +494,13 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
  */
 DBusGProxy *
 tp_proxy_add_interface_by_id (TpProxy *self,
-                              GQuark interface)
+                              GQuark iface)
 {
   DBusGProxy *iface_proxy = g_datalist_id_get_data (&self->priv->interfaces,
-      interface);
+      iface);
 
   g_return_val_if_fail
-      (tp_dbus_check_valid_interface_name (g_quark_to_string (interface),
+      (tp_dbus_check_valid_interface_name (g_quark_to_string (iface),
           NULL),
        NULL);
 
@@ -512,7 +512,7 @@ tp_proxy_add_interface_by_id (TpProxy *self,
        * helpfully wake us up on every signal, if we do. So we set a
        * dummy value (self), and replace it with the real value in
        * tp_proxy_borrow_interface_by_id */
-      g_datalist_id_set_data_full (&self->priv->interfaces, interface,
+      g_datalist_id_set_data_full (&self->priv->interfaces, iface,
           self, NULL);
     }
 

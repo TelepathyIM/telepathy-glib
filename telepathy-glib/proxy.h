@@ -108,18 +108,18 @@ GType tp_proxy_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_PROXY, \
                               TpProxyClass))
 
-gboolean tp_proxy_has_interface_by_id (gpointer self, GQuark interface);
+gboolean tp_proxy_has_interface_by_id (gpointer self, GQuark iface);
 
 static inline gboolean
-_tp_proxy_inline_has_interface (gpointer self, const gchar *interface)
+_tp_proxy_inline_has_interface (gpointer self, const gchar *iface)
 {
-  GQuark q = g_quark_try_string (interface);
+  GQuark q = g_quark_try_string (iface);
 
   return q != 0 && tp_proxy_has_interface_by_id (self, q);
 }
 
-#define tp_proxy_has_interface(self, interface) \
-    (_tp_proxy_inline_has_interface (self, interface))
+#define tp_proxy_has_interface(self, iface) \
+    (_tp_proxy_inline_has_interface (self, iface))
 
 TpDBusDaemon *tp_proxy_get_dbus_daemon (gpointer self);
 

@@ -198,9 +198,9 @@ _tp_proxy_pending_call_dgproxy_destroy (DBusGProxy *iface_proxy,
 /**
  * tp_proxy_pending_call_v0_new:
  * @self: a proxy
- * @interface: a quark whose string value is the D-Bus interface
+ * @iface: a quark whose string value is the D-Bus interface
  * @member: the name of the method being called
- * @iface_proxy: the interface-specific #DBusGProxy for @interface
+ * @iface_proxy: the interface-specific #DBusGProxy for @iface
  * @invoke_callback: an implementation of #TpProxyInvokeFunc which will
  *  invoke @callback with appropriate arguments
  * @callback: a callback to be called when the call completes
@@ -241,7 +241,7 @@ _tp_proxy_pending_call_dgproxy_destroy (DBusGProxy *iface_proxy,
  */
 TpProxyPendingCall *
 tp_proxy_pending_call_v0_new (TpProxy *self,
-                              GQuark interface,
+                              GQuark iface,
                               const gchar *member,
                               DBusGProxy *iface_proxy,
                               TpProxyInvokeFunc invoke_callback,
@@ -259,7 +259,7 @@ tp_proxy_pending_call_v0_new (TpProxy *self,
   pc = g_slice_new0 (TpProxyPendingCall);
 
   MORE_DEBUG ("(proxy=%p, if=%s, meth=%s, ic=%p; cb=%p, ud=%p, dn=%p, wo=%p)"
-      " -> %p", self, g_quark_to_string (interface), member, invoke_callback,
+      " -> %p", self, g_quark_to_string (iface), member, invoke_callback,
       callback, user_data, destroy, weak_object, pc);
 
   pc->proxy = g_object_ref (self);

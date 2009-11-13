@@ -163,7 +163,7 @@ tp_svc_interface_get_dbus_properties_info (GType g_interface)
 /**
  * TpDBusPropertiesMixinGetter:
  * @object: The exported object with the properties
- * @interface: A quark representing the D-Bus interface name
+ * @iface: A quark representing the D-Bus interface name
  * @name: A quark representing the D-Bus property name
  * @value: A GValue pre-initialized to the right type, into which to put
  *  the value
@@ -178,7 +178,7 @@ tp_svc_interface_get_dbus_properties_info (GType g_interface)
 /**
  * tp_dbus_properties_mixin_getter_gobject_properties:
  * @object: The exported object with the properties
- * @interface: A quark representing the D-Bus interface name
+ * @iface: A quark representing the D-Bus interface name
  * @name: A quark representing the D-Bus property name
  * @value: A GValue pre-initialized to the right type, into which to put
  *  the value
@@ -191,7 +191,7 @@ tp_svc_interface_get_dbus_properties_info (GType g_interface)
  */
 void
 tp_dbus_properties_mixin_getter_gobject_properties (GObject *object,
-                                                    GQuark interface,
+                                                    GQuark iface,
                                                     GQuark name,
                                                     GValue *value,
                                                     gpointer getter_data)
@@ -202,7 +202,7 @@ tp_dbus_properties_mixin_getter_gobject_properties (GObject *object,
 /**
  * TpDBusPropertiesMixinSetter:
  * @object: The exported object with the properties
- * @interface: A quark representing the D-Bus interface name
+ * @iface: A quark representing the D-Bus interface name
  * @name: A quark representing the D-Bus property name
  * @value: The new value for the property
  * @setter_data: The setter_data from the #TpDBusPropertiesMixinPropImpl
@@ -216,7 +216,7 @@ tp_dbus_properties_mixin_getter_gobject_properties (GObject *object,
 /**
  * tp_dbus_properties_mixin_setter_gobject_properties:
  * @object: The exported object with the properties
- * @interface: A quark representing the D-Bus interface name
+ * @iface: A quark representing the D-Bus interface name
  * @name: A quark representing the D-Bus property name
  * @value: The new value for the property
  * @setter_data: The setter_data from the #TpDBusPropertiesMixinPropImpl,
@@ -231,7 +231,7 @@ tp_dbus_properties_mixin_getter_gobject_properties (GObject *object,
  */
 gboolean
 tp_dbus_properties_mixin_setter_gobject_properties (GObject *object,
-                                                    GQuark interface,
+                                                    GQuark iface,
                                                     GQuark name,
                                                     const GValue *value,
                                                     gpointer setter_data,
@@ -789,7 +789,7 @@ tp_dbus_properties_mixin_make_properties_hash (
 {
   va_list ap;
   GHashTable *table;
-  const gchar *interface, *property;
+  const gchar *iface, *property;
   gboolean first = TRUE;
 
   table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
@@ -797,9 +797,9 @@ tp_dbus_properties_mixin_make_properties_hash (
 
   va_start (ap, first_property);
 
-  for (interface = first_interface;
-       interface != NULL;
-       interface = va_arg (ap, gchar *))
+  for (iface = first_interface;
+       iface != NULL;
+       iface = va_arg (ap, gchar *))
     {
       GValue *value = g_slice_new0 (GValue);
 
@@ -818,13 +818,13 @@ tp_dbus_properties_mixin_make_properties_hash (
        */
       g_assert (property != NULL);
 
-      tp_dbus_properties_mixin_get (object, interface, property,
+      tp_dbus_properties_mixin_get (object, iface, property,
             value, NULL);
       /* Fetching our immutable properties had better not fail... */
       g_assert (G_IS_VALUE (value));
 
       g_hash_table_insert (table,
-          g_strdup_printf ("%s.%s", interface, property), value);
+          g_strdup_printf ("%s.%s", iface, property), value);
     }
 
   return table;
