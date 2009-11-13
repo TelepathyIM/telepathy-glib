@@ -325,6 +325,31 @@ _tp_account_become_ready (TpAccount *self,
 }
 
 static void
+_tp_account_invalidated_cb (TpAccount *self,
+    guint domain,
+    guint code,
+    gchar *message)
+{
+  TpAccountPrivate *priv = self->priv;
+  GList *l;
+
+  /* Make all currently pending callbacks fail. */
+  for (l = priv->callbacks; l != NULL; l = l->next)
+    {
+      TpAccountFeatureCallback *cb = l->data;
+
+      g_simple_async_result_set_error (cb->result,
+          domain, code, "%s", message);
+      g_simple_async_result_complete (cb->result);
+      g_object_unref (cb->result);
+      g_slice_free (TpAccountFeatureCallback, cb);
+    }
+
+  g_list_free (priv->callbacks);
+  priv->callbacks = NULL;
+}
+
+static void
 _tp_account_removed_cb (TpAccount *self,
     gpointer unused G_GNUC_UNUSED,
     GObject *object G_GNUC_UNUSED)
@@ -599,6 +624,7 @@ _tp_account_got_all_cb (TpProxy *proxy,
     {
       DEBUG ("Failed to get the initial set of account properties: %s",
           error->message);
+      tp_proxy_invalidate ((TpProxy *) self, error);
       return;
     }
 
@@ -653,6 +679,9 @@ _tp_account_constructed (GObject *object)
       &(priv->cm_name), &(priv->proto_name), NULL, NULL);
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
+
+  g_signal_connect (self, "invalidated",
+      G_CALLBACK (_tp_account_invalidated_cb), NULL);
 
   tp_cli_account_connect_to_account_property_changed (self,
       _tp_account_properties_changed, NULL, NULL, object, NULL);
@@ -2479,7 +2508,7 @@ tp_account_get_avatar_finish (TpAccount *account,
  *
  * <!-- -->
  *
- * Returns: %TRUE whether @feature is ready on @account, otherwise %FALSE
+ * Returns: %TRUE if @feature is ready on @account, otherwise %FALSE
  *
  * Since: 0.9.0
  */
@@ -2531,6 +2560,7 @@ tp_account_prepare_async (TpAccount *account,
 {
   TpAccountPrivate *priv;
   GSimpleAsyncResult *result;
+  const GError *error;
   const GQuark *f;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
@@ -2555,7 +2585,15 @@ tp_account_prepare_async (TpAccount *account,
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_prepare_finish);
 
-  if (_tp_account_check_features (account, features))
+  error = tp_proxy_get_invalidated (account);
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_complete_in_idle (result);
+      g_object_unref (result);
+    }
+  else if (_tp_account_check_features (account, features))
     {
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
