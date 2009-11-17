@@ -124,7 +124,7 @@ typedef struct {
 
 typedef struct {
   GSimpleAsyncResult *result;
-  const GQuark *features;
+  GQuark *features;
 } TpAccountFeatureCallback;
 
 G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
@@ -274,6 +274,39 @@ _tp_account_check_features (TpAccount *self,
   return TRUE;
 }
 
+static gsize
+_tp_account_features_sizeof (const GQuark *features)
+{
+  guint n_features = 0;
+
+  while (features != NULL && features[n_features] != 0)
+    n_features++;
+
+  return sizeof (GQuark) * (n_features + 1);
+}
+
+static GQuark *
+_tp_account_features_copy (const GQuark *features)
+{
+  gsize size;
+  GQuark *copy;
+  if (features == NULL)
+    return NULL;
+  size = _tp_account_features_sizeof (features);
+  copy = (GQuark *) g_slice_copy (size, features);
+return copy;
+}
+
+static void
+_tp_account_features_free (GQuark *features)
+{
+  gsize size;
+  if (features == NULL)
+    return;
+  size = _tp_account_features_sizeof (features);
+  g_slice_free1 (size, features);
+}
+
 static void
 _tp_account_become_ready (TpAccount *self,
     GQuark feature)
@@ -318,6 +351,7 @@ _tp_account_become_ready (TpAccount *self,
 
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
+      _tp_account_features_free (cb->features);
       g_slice_free (TpAccountFeatureCallback, cb);
     }
 
@@ -342,6 +376,7 @@ _tp_account_invalidated_cb (TpAccount *self,
           domain, code, "%s", message);
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
+      _tp_account_features_free (cb->features);
       g_slice_free (TpAccountFeatureCallback, cb);
     }
 
@@ -2604,7 +2639,7 @@ tp_account_prepare_async (TpAccount *account,
 
       cb = g_slice_new0 (TpAccountFeatureCallback);
       cb->result = result;
-      cb->features = features;
+      cb->features = _tp_account_features_copy (features);
       priv->callbacks = g_list_prepend (priv->callbacks, cb);
     }
 }
