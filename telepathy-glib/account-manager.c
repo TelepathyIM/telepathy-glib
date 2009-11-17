@@ -99,7 +99,7 @@ typedef struct {
 
 typedef struct {
   GSimpleAsyncResult *result;
-  const GQuark *features;
+  GQuark *features;
 } TpAccountManagerFeatureCallback;
 
 #define MC5_BUS_NAME "org.freedesktop.Telepathy.MissionControl5"
@@ -222,6 +222,39 @@ _tp_account_manager_check_features (TpAccountManager *self,
   return TRUE;
 }
 
+static gsize
+_tp_account_manager_features_sizeof (const GQuark *features)
+{
+  guint n_features = 0;
+
+  while (features != NULL && features[n_features] != 0)
+    n_features++;
+
+  return sizeof (GQuark) * (n_features + 1);
+}
+
+static GQuark *
+_tp_account_manager_features_copy (const GQuark *features)
+{
+  gsize size;
+  GQuark *copy;
+  if (features == NULL)
+    return NULL;
+  size = _tp_account_manager_features_sizeof (features);
+  copy = (GQuark *) g_slice_copy (size, features);
+return copy;
+}
+
+static void
+_tp_account_manager_features_free (GQuark *features)
+{
+  gsize size;
+  if (features == NULL)
+    return;
+  size = _tp_account_manager_features_sizeof (features);
+  g_slice_free1 (size, features);
+}
+
 static void
 _tp_account_manager_become_ready (TpAccountManager *self,
     GQuark feature)
@@ -266,6 +299,7 @@ _tp_account_manager_become_ready (TpAccountManager *self,
 
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
+      _tp_account_manager_features_free (cb->features);
       g_slice_free (TpAccountManagerFeatureCallback, cb);
     }
 
@@ -290,6 +324,7 @@ _tp_account_manager_invalidated_cb (TpAccountManager *self,
           domain, code, "%s", message);
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
+      _tp_account_manager_features_free (cb->features);
       g_slice_free (TpAccountManagerFeatureCallback, cb);
     }
 
@@ -1430,7 +1465,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 
       cb = g_slice_new0 (TpAccountManagerFeatureCallback);
       cb->result = result;
-      cb->features = features;
+      cb->features = _tp_account_manager_features_copy (features);
       priv->callbacks = g_list_prepend (priv->callbacks, cb);
     }
 }
