@@ -26,6 +26,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
 #include "telepathy-glib/account-manager.h"
@@ -99,7 +100,7 @@ typedef struct {
 
 typedef struct {
   GSimpleAsyncResult *result;
-  GQuark *features;
+  GArray *features;
 } TpAccountManagerFeatureCallback;
 
 #define MC5_BUS_NAME "org.freedesktop.Telepathy.MissionControl5"
@@ -196,12 +197,12 @@ _tp_account_manager_feature_in_array (GQuark feature,
 
 static gboolean
 _tp_account_manager_check_features (TpAccountManager *self,
-    const GQuark *features)
+    const GArray *features)
 {
   const GQuark *f;
   TpAccountManagerFeature *feat;
 
-  for (f = features; f != NULL && *f != 0; f++)
+  for (f = (GQuark *) features->data; f != NULL && *f != 0; f++)
     {
       feat = _tp_account_manager_get_feature (self, *f);
 
@@ -220,39 +221,6 @@ _tp_account_manager_check_features (TpAccountManager *self,
     return FALSE;
 
   return TRUE;
-}
-
-static gsize
-_tp_account_manager_features_sizeof (const GQuark *features)
-{
-  guint n_features = 0;
-
-  while (features != NULL && features[n_features] != 0)
-    n_features++;
-
-  return sizeof (GQuark) * (n_features + 1);
-}
-
-static GQuark *
-_tp_account_manager_features_copy (const GQuark *features)
-{
-  gsize size;
-  GQuark *copy;
-  if (features == NULL)
-    return NULL;
-  size = _tp_account_manager_features_sizeof (features);
-  copy = (GQuark *) g_slice_copy (size, features);
-return copy;
-}
-
-static void
-_tp_account_manager_features_free (GQuark *features)
-{
-  gsize size;
-  if (features == NULL)
-    return;
-  size = _tp_account_manager_features_sizeof (features);
-  g_slice_free1 (size, features);
 }
 
 static void
@@ -299,7 +267,7 @@ _tp_account_manager_become_ready (TpAccountManager *self,
 
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
-      _tp_account_manager_features_free (cb->features);
+      g_array_unref (cb->features);
       g_slice_free (TpAccountManagerFeatureCallback, cb);
     }
 
@@ -324,7 +292,7 @@ _tp_account_manager_invalidated_cb (TpAccountManager *self,
           domain, code, "%s", message);
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
-      _tp_account_manager_features_free (cb->features);
+      g_array_unref (cb->features);
       g_slice_free (TpAccountManagerFeatureCallback, cb);
     }
 
@@ -1424,10 +1392,13 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
   GSimpleAsyncResult *result;
   const GQuark *f;
   const GError *error;
+  GArray *feature_array;
 
   g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
 
   priv = manager->priv;
+
+  feature_array = _tp_quark_array_copy (features);
 
   /* In this object, there are no features which are activatable (core is
    * forced on you). They'd be activated here though. */
@@ -1454,7 +1425,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
     }
-  else if (_tp_account_manager_check_features (manager, features))
+  else if (_tp_account_manager_check_features (manager, feature_array))
     {
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
@@ -1465,7 +1436,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 
       cb = g_slice_new0 (TpAccountManagerFeatureCallback);
       cb->result = result;
-      cb->features = _tp_account_manager_features_copy (features);
+      cb->features = feature_array;
       priv->callbacks = g_list_prepend (priv->callbacks, cb);
     }
 }
