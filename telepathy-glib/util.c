@@ -28,6 +28,7 @@
  * GLib, but aren't.
  */
 
+#include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
 #include <string.h>
@@ -807,4 +808,27 @@ tp_g_key_file_get_uint64 (GKeyFile *key_file,
 
   g_free (s);
   return v;
+}
+
+/**
+ * _tp_quark_array_copy:
+ * @quarks: A 0-terminated list of quarks to copy
+ *
+ * Returns: A new GArray containing a copy of @quarks.
+ * Be sure to unref it when finished.
+ */
+GArray *
+_tp_quark_array_copy (const GQuark *quarks)
+{
+  GArray *array;
+  const GQuark *q;
+
+  array = g_array_new (TRUE, TRUE, sizeof (GQuark));
+
+  for (q = quarks; q != NULL && *q != 0; q++)
+    {
+      g_array_append_val (array, *q);
+    }
+
+  return array;
 }
