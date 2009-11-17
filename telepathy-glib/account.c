@@ -196,7 +196,7 @@ tp_account_get_feature_quark_core (void)
 static const GQuark *
 _tp_account_get_known_features (void)
 {
-  static GQuark features[1] = { 0 };
+  static GQuark features[2] = { 0, 0 };
 
   if (G_UNLIKELY (features[0] == 0))
     {
@@ -660,7 +660,7 @@ _tp_account_constructed (GObject *object)
   known_features = _tp_account_get_known_features ();
 
   /* Fill features list */
-  for (i = 0; i < G_N_ELEMENTS (known_features); i++)
+  for (i = 0; known_features[i] != 0; i++)
     {
       TpAccountFeature *feature;
       feature = g_slice_new0 (TpAccountFeature);
@@ -2581,7 +2581,7 @@ tp_account_prepare_async (TpAccount *account,
       /* Only add features to requested which exist on this object and are not
        * already in the list. */
       if (_tp_account_get_feature (account, *f) != NULL
-          && _tp_account_feature_in_array (*f, priv->requested_features))
+          && !_tp_account_feature_in_array (*f, priv->requested_features))
         g_array_append_val (priv->requested_features, *f);
     }
 
