@@ -73,6 +73,10 @@ gint64 tp_g_key_file_get_int64 (GKeyFile *key_file, const gchar *group_name,
 guint64 tp_g_key_file_get_uint64 (GKeyFile *key_file, const gchar *group_name,
     const gchar *key, GError **error);
 
+gulong tp_g_signal_connect_object (gpointer instance,
+    const gchar *detailed_signal, GCallback c_handler, gpointer gobject,
+    GConnectFlags connect_flags);
+
 G_END_DECLS
 
 #undef  __TP_IN_UTIL_H__

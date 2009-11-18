@@ -1,0 +1,5 @@
+Version: TELEPATHY_GLIB_0.9.0
+Extends: TELEPATHY_GLIB_0.7.37
+Release: 0.9.0
+
+tp_g_signal_connect_object

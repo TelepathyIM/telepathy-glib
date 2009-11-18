@@ -810,6 +810,134 @@ tp_g_key_file_get_uint64 (GKeyFile *key_file,
   return v;
 }
 
+typedef struct {
+    GObject *instance;
+    GObject *observer;
+    GClosure *closure;
+    gulong handler_id;
+} WeakHandlerCtx;
+
+static WeakHandlerCtx *
+whc_new (GObject *instance,
+         GObject *observer)
+{
+  WeakHandlerCtx *ctx = g_slice_new0 (WeakHandlerCtx);
+
+  ctx->instance = instance;
+  ctx->observer = observer;
+
+  return ctx;
+}
+
+static void
+whc_free (WeakHandlerCtx *ctx)
+{
+  g_slice_free (WeakHandlerCtx, ctx);
+}
+
+static void observer_destroyed_cb (gpointer, GObject *);
+static void closure_invalidated_cb (gpointer, GClosure *);
+
+/*
+ * If signal handlers are removed before the object is destroyed, this
+ * callback will never get triggered.
+ */
+static void
+instance_destroyed_cb (gpointer ctx_,
+    GObject *where_the_instance_was)
+{
+  WeakHandlerCtx *ctx = ctx_;
+
+  /* No need to disconnect the signal here, the instance has gone away. */
+  g_object_weak_unref (ctx->observer, observer_destroyed_cb, ctx);
+  g_closure_remove_invalidate_notifier (ctx->closure, ctx,
+      closure_invalidated_cb);
+  whc_free (ctx);
+}
+
+/* Triggered when the observer is destroyed. */
+static void
+observer_destroyed_cb (gpointer ctx_,
+    GObject *where_the_observer_was)
+{
+  WeakHandlerCtx *ctx = ctx_;
+
+  g_closure_remove_invalidate_notifier (ctx->closure, ctx,
+      closure_invalidated_cb);
+  g_signal_handler_disconnect (ctx->instance, ctx->handler_id);
+  g_object_weak_unref (ctx->instance, instance_destroyed_cb, ctx);
+  whc_free (ctx);
+}
+
+/* Triggered when either object is destroyed or the handler is disconnected. */
+static void
+closure_invalidated_cb (gpointer ctx_,
+    GClosure *where_the_closure_was)
+{
+  WeakHandlerCtx *ctx = ctx_;
+
+  g_object_weak_unref (ctx->instance, instance_destroyed_cb, ctx);
+  g_object_weak_unref (ctx->observer, observer_destroyed_cb, ctx);
+  whc_free (ctx);
+}
+
+/**
+ * tp_g_signal_connect_object:
+ * @instance: the instance to connect to.
+ * @detailed_signal: a string of the form "signal-name::detail".
+ * @c_handler: the #GCallback to connect.
+ * @gobject: the object to pass as data to @c_handler.
+ * @connect_flags: a combination of #GConnnectFlags.
+ *
+ * Connects a #GCallback function to a signal for a particular object, as if
+ * with g_signal_connect(). Additionally, arranges for the signal handler to be
+ * disconnected if @observer is destroyed.
+ *
+ * This is similar to g_signal_connect_data(), but uses a closure which
+ * ensures that the @gobject stays alive during the call to @c_handler
+ * by temporarily adding a reference count to @gobject.
+ *
+ * This is similar to g_signal_connect_object(), but doesn't have the
+ * documented bug that everyone is too scared to fix. Also, it does not allow
+ * you to pass in NULL as @gobject
+ *
+ * This is intended to be a convenient way for objects to use themselves as
+ * user_data for callbacks without having to explicitly disconnect all the
+ * handlers in their finalizers.
+ *
+ * Returns: the handler id.
+ */
+gulong
+tp_g_signal_connect_object (gpointer instance,
+    const gchar *detailed_signal,
+    GCallback c_handler,
+    gpointer gobject,
+    GConnectFlags connect_flags)
+{
+  GObject *instance_obj = G_OBJECT (instance);
+  WeakHandlerCtx *ctx = whc_new (instance_obj, gobject);
+
+  g_return_val_if_fail (G_TYPE_CHECK_INSTANCE (instance), 0);
+  g_return_val_if_fail (detailed_signal != NULL, 0);
+  g_return_val_if_fail (c_handler != NULL, 0);
+  g_return_val_if_fail (G_IS_OBJECT (gobject), 0);
+
+  if (connect_flags & G_CONNECT_SWAPPED)
+    ctx->closure = g_cclosure_new_object_swap (c_handler, gobject);
+  else
+    ctx->closure = g_cclosure_new_object (c_handler, gobject);
+
+  ctx->handler_id = g_signal_connect_closure (instance, detailed_signal,
+      ctx->closure, 0);
+
+  g_object_weak_ref (instance_obj, instance_destroyed_cb, ctx);
+  g_object_weak_ref (gobject, observer_destroyed_cb, ctx);
+  g_closure_add_invalidate_notifier (ctx->closure, ctx,
+      closure_invalidated_cb);
+
+  return ctx->handler_id;
+}
+
 /*
  * _tp_quark_array_copy:
  * @quarks: A 0-terminated list of quarks to copy
