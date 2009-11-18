@@ -810,12 +810,16 @@ tp_g_key_file_get_uint64 (GKeyFile *key_file,
   return v;
 }
 
-/**
+/*
  * _tp_quark_array_copy:
  * @quarks: A 0-terminated list of quarks to copy
  *
+ * Copy a zero-terminated array into a GArray. The trailing
+ * 0 is not counted in the @len member of the returned
+ * array, but the @data member is guaranteed to be
+ * zero-terminated.
+ *
  * Returns: A new GArray containing a copy of @quarks.
- * Be sure to unref it when finished.
  */
 GArray *
 _tp_quark_array_copy (const GQuark *quarks)
