@@ -196,7 +196,7 @@ tp_account_get_feature_quark_core (void)
 static const GQuark *
 _tp_account_get_known_features (void)
 {
-  static GQuark features[2] = { 0, 0 };
+  static GQuark features[] = { 0, 0 };
 
   if (G_UNLIKELY (features[0] == 0))
     {
@@ -319,7 +319,7 @@ _tp_account_become_ready (TpAccount *self,
 
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
-      g_array_unref (cb->features);
+      g_array_free (cb->features, TRUE);
       g_slice_free (TpAccountFeatureCallback, cb);
     }
 
@@ -344,7 +344,7 @@ _tp_account_invalidated_cb (TpAccount *self,
           domain, code, "%s", message);
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
-      g_array_unref (cb->features);
+      g_array_free (cb->features, TRUE);
       g_slice_free (TpAccountFeatureCallback, cb);
     }
 
@@ -2598,11 +2598,13 @@ tp_account_prepare_async (TpAccount *account,
       g_simple_async_result_set_from_error (result, error);
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
+      g_array_free (feature_array, TRUE);
     }
   else if (_tp_account_check_features (account, feature_array))
     {
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
+      g_array_free (feature_array, TRUE);
     }
   else
     {
