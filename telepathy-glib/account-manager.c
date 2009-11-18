@@ -26,6 +26,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
 #include "telepathy-glib/account-manager.h"
@@ -99,7 +100,7 @@ typedef struct {
 
 typedef struct {
   GSimpleAsyncResult *result;
-  const GQuark *features;
+  GArray *features;
 } TpAccountManagerFeatureCallback;
 
 #define MC5_BUS_NAME "org.freedesktop.Telepathy.MissionControl5"
@@ -151,7 +152,7 @@ tp_account_manager_get_feature_quark_core (void)
 static const GQuark *
 _tp_account_manager_get_known_features (void)
 {
-  static GQuark features[1] = { 0 };
+  static GQuark features[] = { 0, 0 };
 
   if (G_UNLIKELY (features[0] == 0))
     {
@@ -196,12 +197,12 @@ _tp_account_manager_feature_in_array (GQuark feature,
 
 static gboolean
 _tp_account_manager_check_features (TpAccountManager *self,
-    const GQuark *features)
+    const GArray *features)
 {
   const GQuark *f;
   TpAccountManagerFeature *feat;
 
-  for (f = features; f != NULL && *f != 0; f++)
+  for (f = (GQuark *) features->data; f != NULL && *f != 0; f++)
     {
       feat = _tp_account_manager_get_feature (self, *f);
 
@@ -266,6 +267,7 @@ _tp_account_manager_become_ready (TpAccountManager *self,
 
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
+      g_array_free (cb->features, TRUE);
       g_slice_free (TpAccountManagerFeatureCallback, cb);
     }
 
@@ -290,6 +292,7 @@ _tp_account_manager_invalidated_cb (TpAccountManager *self,
           domain, code, "%s", message);
       g_simple_async_result_complete (cb->result);
       g_object_unref (cb->result);
+      g_array_free (cb->features, TRUE);
       g_slice_free (TpAccountManagerFeatureCallback, cb);
     }
 
@@ -606,7 +609,7 @@ _tp_account_manager_constructed (GObject *object)
   known_features = _tp_account_manager_get_known_features ();
 
   /* Fill features list. */
-  for (i = 0; i < G_N_ELEMENTS (known_features); i++)
+  for (i = 0; known_features[i] != 0; i++)
     {
       TpAccountManagerFeature *feature;
       feature = g_slice_new0 (TpAccountManagerFeature);
@@ -1389,6 +1392,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
   GSimpleAsyncResult *result;
   const GQuark *f;
   const GError *error;
+  GArray *feature_array;
 
   g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
 
@@ -1400,9 +1404,10 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
   for (f = features; f != NULL && *f != 0; f++)
     {
       /* Only add features to requested which exist on this object and are not
-       * already in the list. */
+       * already in the list.
+       */
       if (_tp_account_manager_get_feature (manager, *f) != NULL
-          && _tp_account_manager_feature_in_array (*f, priv->requested_features))
+          && !_tp_account_manager_feature_in_array (*f, priv->requested_features))
         g_array_append_val (priv->requested_features, *f);
     }
 
@@ -1412,17 +1417,21 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
   result = g_simple_async_result_new (G_OBJECT (manager),
       callback, user_data, tp_account_manager_prepare_finish);
 
+  feature_array = _tp_quark_array_copy (features);
+
   error = tp_proxy_get_invalidated (manager);
   if (error != NULL)
     {
       g_simple_async_result_set_from_error (result, error);
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
+      g_array_free (feature_array, TRUE);
     }
-  else if (_tp_account_manager_check_features (manager, features))
+  else if (_tp_account_manager_check_features (manager, feature_array))
     {
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
+      g_array_free (feature_array, TRUE);
     }
   else
     {
@@ -1430,7 +1439,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 
       cb = g_slice_new0 (TpAccountManagerFeatureCallback);
       cb->result = result;
-      cb->features = features;
+      cb->features = feature_array;
       priv->callbacks = g_list_prepend (priv->callbacks, cb);
     }
 }
