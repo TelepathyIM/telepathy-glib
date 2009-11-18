@@ -1398,8 +1398,6 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 
   priv = manager->priv;
 
-  feature_array = _tp_quark_array_copy (features);
-
   /* In this object, there are no features which are activatable (core is
    * forced on you). They'd be activated here though. */
 
@@ -1418,6 +1416,8 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 
   result = g_simple_async_result_new (G_OBJECT (manager),
       callback, user_data, tp_account_manager_prepare_finish);
+
+  feature_array = _tp_quark_array_copy (features);
 
   error = tp_proxy_get_invalidated (manager);
   if (error != NULL)

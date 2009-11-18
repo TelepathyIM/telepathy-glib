@@ -2571,8 +2571,6 @@ tp_account_prepare_async (TpAccount *account,
 
   priv = account->priv;
 
-  feature_array = _tp_quark_array_copy (features);
-
   /* In this object, there are no features which are activatable (core is
    * forced on you). They'd be activated here though. */
 
@@ -2590,6 +2588,8 @@ tp_account_prepare_async (TpAccount *account,
 
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_prepare_finish);
+
+  feature_array = _tp_quark_array_copy (features);
 
   error = tp_proxy_get_invalidated (account);
 
