@@ -1086,6 +1086,7 @@ tp_escape_as_identifier
 tp_strv_contains
 tp_g_key_file_get_int64
 tp_g_key_file_get_uint64
+tp_g_signal_connect_object
 </SECTION>
 
 <SECTION>

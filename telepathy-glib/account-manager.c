@@ -1005,14 +1005,17 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
       g_object_unref (result);
     }
 
-  g_signal_connect (account, "notify::enabled",
-      G_CALLBACK (_tp_account_manager_account_enabled_cb), manager);
+  tp_g_signal_connect_object (account, "notify::enabled",
+      G_CALLBACK (_tp_account_manager_account_enabled_cb),
+      G_OBJECT (manager), 0);
 
-  g_signal_connect (account, "presence-changed",
-      G_CALLBACK (_tp_account_manager_account_presence_changed_cb), manager);
+  tp_g_signal_connect_object (account, "presence-changed",
+      G_CALLBACK (_tp_account_manager_account_presence_changed_cb),
+      G_OBJECT (manager), 0);
 
-  g_signal_connect (account, "invalidated",
-      G_CALLBACK (_tp_account_manager_account_invalidated_cb), manager);
+  tp_g_signal_connect_object (account, "invalidated",
+      G_CALLBACK (_tp_account_manager_account_invalidated_cb),
+      G_OBJECT (manager), 0);
 
   _tp_account_manager_check_core_ready (manager);
 }
