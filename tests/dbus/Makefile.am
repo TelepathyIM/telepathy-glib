@@ -44,6 +44,7 @@ TESTS = $(noinst_PROGRAMS)
 LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(DBUS_LIBS) \
     $(GLIB_LIBS)
 
 test_account_SOURCES = account.c
