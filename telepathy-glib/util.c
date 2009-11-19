@@ -28,6 +28,8 @@
  * GLib, but aren't.
  */
 
+#include <gobject/gvaluecollector.h>
+
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
@@ -963,4 +965,66 @@ _tp_quark_array_copy (const GQuark *quarks)
     }
 
   return array;
+}
+
+/**
+ * tp_value_array_build:
+ * @length: The number of elements that should be in the array
+ * @type: The type of the first argument.
+ * @...: The value of the first item in the struct followed by a list of type,
+ * value pairs terminated by G_TYPE_INVALID.
+ *
+ * Creates a new #GValueArray for use with structs, containing the values
+ * passed in as parameters. The values are copied or reffed as appropriate for
+ * their type.
+ *
+ * <example>
+ *   <title> using tp_value_array_build</title>
+ *    <programlisting>
+ * GValueArray *array = gabble_value_array_build (2,
+ *    G_TYPE_STRING, host,
+ *    G_TYPE_UINT, port,
+ *    G_TYPE_INVALID);
+ *    </programlisting>
+ * </example>
+ *
+ * Returns: a newly created #GValueArray, free with g_value_array_free.
+ */
+GValueArray *
+tp_value_array_build (gsize length,
+  GType type,
+  ...)
+{
+  GValueArray *arr;
+  GType t;
+  va_list var_args;
+  char *error = NULL;
+
+  arr = g_value_array_new (length);
+
+  va_start (var_args, type);
+
+  for (t = type; t != G_TYPE_INVALID; t = va_arg (var_args, GType))
+    {
+      GValue *v = arr->values + arr->n_values;
+
+      g_value_array_append (arr, NULL);
+
+      g_value_init (v, t);
+
+      G_VALUE_COLLECT (v, var_args, 0, &error);
+
+      if (error != NULL)
+        {
+          g_critical ("%s", error);
+          g_free (error);
+
+          g_value_array_free (arr);
+          return NULL;
+        }
+    }
+
+  g_warn_if_fail (arr->n_values == length);
+
+  return arr;
 }

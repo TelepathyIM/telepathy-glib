@@ -77,6 +77,10 @@ gulong tp_g_signal_connect_object (gpointer instance,
     const gchar *detailed_signal, GCallback c_handler, gpointer gobject,
     GConnectFlags connect_flags);
 
+GValueArray *tp_value_array_build (gsize length,
+  GType type,
+  ...);
+
 G_END_DECLS
 
 #undef  __TP_IN_UTIL_H__
