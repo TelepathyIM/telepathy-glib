@@ -21,10 +21,32 @@ test_strv_contains (void)
   g_assert (!tp_strv_contains (strv, "Snakes!"));
 }
 
+static void
+test_value_array_build (void)
+{
+  GValueArray *arr;
+  const gchar *host = "badger.snakes";
+  guint port = 128;
+
+  arr = tp_value_array_build (2,
+    G_TYPE_STRING, host,
+    G_TYPE_UINT, port,
+    G_TYPE_INVALID);
+
+  g_assert (!tp_strdiff (g_value_get_string (g_value_array_get_nth (arr, 0)),
+    host));
+
+  g_assert (g_value_get_uint (g_value_array_get_nth (arr, 1)) == port);
+
+  g_value_array_free (arr);
+}
+
 int main (int argc, char **argv)
 {
   GPtrArray *ptrarray;
   gchar *string;
+
+  g_type_init ();
 
   g_assert (!tp_strdiff (NULL, NULL));
   g_assert (tp_strdiff ("badger", NULL));
@@ -53,6 +75,8 @@ int main (int argc, char **argv)
   g_free (string);
 
   test_strv_contains ();
+
+  test_value_array_build ();
 
   return 0;
 }
