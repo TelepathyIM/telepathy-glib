@@ -981,7 +981,7 @@ _tp_quark_array_copy (const GQuark *quarks)
  * <example>
  *   <title> using tp_value_array_build</title>
  *    <programlisting>
- * GValueArray *array = gabble_value_array_build (2,
+ * GValueArray *array = tp_value_array_build (2,
  *    G_TYPE_STRING, host,
  *    G_TYPE_UINT, port,
  *    G_TYPE_INVALID);
