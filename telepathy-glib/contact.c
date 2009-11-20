@@ -989,6 +989,12 @@ contacts_context_continue (ContactsContext *c)
     }
 }
 
+static gboolean
+contacts_context_idle_continue (gpointer data)
+{
+  contacts_context_continue (data);
+  return FALSE;
+}
 
 static void
 contacts_held_one (TpConnection *connection,
@@ -1839,6 +1845,34 @@ contacts_get_attributes (ContactsContext *context)
   g_free (supported_interfaces);
 }
 
+/*
+ * Returns a new GPtrArray of borrowed references to TpContacts,
+ * or NULL if any contacts could not be found.
+ */
+static GPtrArray *
+lookup_all_contacts (ContactsContext *context)
+{
+  GPtrArray *contacts = g_ptr_array_new ();
+  guint i;
+
+  for (i = 0; i < context->handles->len; i++)
+    {
+      TpContact *contact = _tp_connection_lookup_contact (context->connection,
+          g_array_index (context->handles, TpHandle, i));
+      if (contact != NULL)
+        {
+          g_ptr_array_add (contacts, contact);
+        }
+      else
+        {
+          g_ptr_array_free (contacts, TRUE);
+          contacts = NULL;
+          break;
+        }
+    }
+
+  return contacts;
+}
 
 /**
  * tp_connection_get_contacts_by_handle:
@@ -1881,6 +1915,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
 {
   ContactFeatureFlags feature_flags = 0;
   ContactsContext *context;
+  GPtrArray *contacts;
   guint i;
 
   g_return_if_fail (tp_connection_is_ready (self));
@@ -1901,6 +1936,27 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   context->callback.by_handle = callback;
 
   g_array_append_vals (context->handles, handles, n_handles);
+
+  contacts = lookup_all_contacts (context);
+
+  if (contacts != NULL)
+    {
+      /* We have already held/inspected handles, so we can skip that. */
+      for (i = 0; i < n_handles; i++)
+        {
+          TpContact *contact = g_object_ref (g_ptr_array_index (contacts, i));
+
+          g_ptr_array_add (context->contacts, contact);
+        }
+
+      contacts_context_queue_features (context, feature_flags);
+
+      g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+          contacts_context_idle_continue, context, contacts_context_unref);
+
+      g_ptr_array_free (contacts, TRUE);
+      return;
+    }
 
   if (tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
@@ -1929,14 +1985,6 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   tp_connection_hold_handles (self, -1,
       TP_HANDLE_TYPE_CONTACT, n_handles, handles,
       contacts_held_handles, context, contacts_context_unref, weak_object);
-}
-
-
-static gboolean
-contacts_context_idle_continue (gpointer data)
-{
-  contacts_context_continue (data);
-  return FALSE;
 }
 
 
