@@ -11,9 +11,7 @@
 
 #include <stdio.h>
 
-#include <telepathy-glib/contact.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/debug.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 static void
 display_contact (TpContact *contact)

@@ -15,12 +15,7 @@
 
 #include <stdio.h>
 
-#include <telepathy-glib/connection.h>
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/debug.h>
-#include <telepathy-glib/handle.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 /* Usually this'd be a top-level extensions/ directory in practice */
 #include "examples/extensions/extensions.h"

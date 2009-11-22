@@ -23,9 +23,7 @@
 
 #include <stdio.h>
 
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/debug.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 static void
 ready (TpConnectionManager *cm,

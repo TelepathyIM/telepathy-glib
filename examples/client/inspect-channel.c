@@ -11,11 +11,7 @@
 
 #include <stdio.h>
 
-#include <telepathy-glib/channel.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/debug.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 int
 main (int argc,
