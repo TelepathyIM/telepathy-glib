@@ -27,13 +27,20 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/defs.h>
+#include <telepathy-glib/intset.h>
+#include <telepathy-glib/heap.h>
 
+#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/channel-dispatcher.h>
+#include <telepathy-glib/channel-dispatch-operation.h>
+#include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/debug.h>
