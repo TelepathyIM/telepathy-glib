@@ -13,8 +13,7 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/errors.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_DEFINE_TYPE (ExampleNoProtocolsConnectionManager,
     example_no_protocols_connection_manager,

@@ -9,8 +9,7 @@
  * notice and this notice are preserved.
  */
 
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/debug.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 typedef struct {
     GMainLoop *mainloop;

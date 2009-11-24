@@ -13,11 +13,8 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/errors.h>
-#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
-#include <telepathy-glib/util.h>
 
 /* This would conventionally be extensions/extensions.h */
 #include "examples/extensions/extensions.h"
