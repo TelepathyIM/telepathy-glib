@@ -241,6 +241,7 @@ finish_prepare_action (GObject *source_object,
   Test *test = (Test *) user_data;
   gboolean is_prepared_reply;
   TpAccountManager *am = TP_ACCOUNT_MANAGER (source_object);
+
   g_assert (test->am == am);
   test->prepared = tp_account_manager_prepare_finish (am, res, &test->error);
   is_prepared_reply = tp_account_manager_is_prepared (test->am,
@@ -259,6 +260,36 @@ prepare_action (gpointer script_data,
   tp_account_manager_prepare_async (test->am, NULL, finish_prepare_action, test);
 }
 
+/* We really don't want to have MC being launched during this test */
+static void
+finish_assert_am_not_activatable_action (TpDBusDaemon *proxy,
+    const gchar * const *names,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  guint i;
+
+  g_assert (error == NULL);
+
+  for (i=0; names[i] != NULL; i++)
+    {
+      g_assert_cmpstr (names[i], !=, TP_ACCOUNT_MANAGER_BUS_NAME);
+      g_assert_cmpstr (names[i], !=, "org.freedesktop.Telepathy.MissionControl5");
+    }
+
+  script_continue (user_data);
+}
+
+static void
+assert_am_not_activatable_action (gpointer script_data,
+    gpointer user_data)
+{
+  Test *test = (Test *) script_data;
+
+  tp_dbus_daemon_list_activatable_names (test->dbus, 500,
+      finish_assert_am_not_activatable_action, test, NULL, NULL);
+}
 
 static void
 assert_ok_action (gpointer script_data,
@@ -321,6 +352,7 @@ finish_account_prepare_action (GObject *source_object,
 {
   Test *test = (Test *) user_data;
   TpAccount *account = TP_ACCOUNT (source_object);
+
   g_assert (test->account == account);
   test->prepared = tp_account_prepare_finish (account, res, &test->error);
   g_assert (test->prepared == tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
@@ -362,6 +394,7 @@ static void
 test_prepare (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  script_append_action (test, assert_am_not_activatable_action, NULL);
   script_append_action (test, prepare_action, NULL);
   script_append_action (test, noop_action, NULL);
 }
