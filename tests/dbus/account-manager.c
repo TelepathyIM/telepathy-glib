@@ -256,8 +256,17 @@ prepare_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  test->am = tp_account_manager_new (test->dbus);
   tp_account_manager_prepare_async (test->am, NULL, finish_prepare_action, test);
+}
+
+static void
+manager_new_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  test->am = tp_account_manager_new (test->dbus);
+  script_continue (test);
 }
 
 /* We really don't want to have MC being launched during this test */
@@ -289,6 +298,18 @@ assert_am_not_activatable_action (gpointer script_data,
 
   tp_dbus_daemon_list_activatable_names (test->dbus, 500,
       finish_assert_am_not_activatable_action, test, NULL, NULL);
+}
+
+static void
+assert_core_not_ready_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  g_assert (!tp_account_manager_is_prepared (test->am,
+      TP_ACCOUNT_MANAGER_FEATURE_CORE));
+
+  script_continue (script_data);
 }
 
 static void
@@ -424,6 +445,8 @@ test_prepare (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   script_append_action (test, assert_am_not_activatable_action, NULL);
+  script_append_action (test, manager_new_action, NULL);
+  script_append_action (test, assert_core_not_ready_action, NULL);
   script_append_action (test, prepare_action, NULL);
   script_append_action (test, noop_action, NULL);
 }
