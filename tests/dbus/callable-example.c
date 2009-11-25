@@ -568,16 +568,12 @@ static void
 outgoing_call (Test *test,
                const gchar *id)
 {
-  GHashTable *request = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, (GDestroyNotify) tp_g_value_slice_free);
-
-  g_hash_table_insert (request, TP_IFACE_CHANNEL ".ChannelType",
-      tp_g_value_slice_new_static_string (
-        TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA));
-  g_hash_table_insert (request, TP_IFACE_CHANNEL ".TargetHandleType",
-      tp_g_value_slice_new_uint (TP_HANDLE_TYPE_CONTACT));
-  g_hash_table_insert (request, TP_IFACE_CHANNEL ".TargetID",
-      tp_g_value_slice_new_string (id));
+  GHashTable *request = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE,
+          G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+      TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, id,
+      NULL);
 
   tp_cli_connection_interface_requests_call_create_channel (test->conn, -1,
       request, channel_created_cb, test, NULL, NULL);
@@ -1355,7 +1351,7 @@ expect_incoming_call_cb (TpConnection *conn,
       const gchar *channel_type;
 
       channel_type = tp_asv_get_string (properties,
-          TP_IFACE_CHANNEL ".ChannelType");
+          TP_PROP_CHANNEL_CHANNEL_TYPE);
       if (tp_strdiff (channel_type, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA))
         {
           /* don't care about this channel */
@@ -1363,10 +1359,10 @@ expect_incoming_call_cb (TpConnection *conn,
         }
 
       g_assert_cmpuint (tp_asv_get_uint32 (properties,
-            TP_IFACE_CHANNEL ".TargetHandleType", NULL),
+            TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL),
           ==, TP_HANDLE_TYPE_CONTACT);
       g_assert_cmpint (tp_asv_get_boolean (properties,
-            TP_IFACE_CHANNEL ".Requested", NULL), ==, FALSE);
+            TP_PROP_CHANNEL_REQUESTED, NULL), ==, FALSE);
 
       /* we only expect to receive one call */
       g_assert (test->chan == NULL);
