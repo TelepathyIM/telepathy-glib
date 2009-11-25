@@ -90,7 +90,8 @@ struct _TpConnectionManager {
     /* These are really booleans, but gboolean is signed. Thanks, GLib */
     unsigned int running:1;
     unsigned int always_introspect:1;
-    TpCMInfoSource info_source:2;
+    /* TpCMInfoSource, but can't rely on enums being unsigned */
+    unsigned int info_source:2;
     guint reserved_flags:28;
 
     TpConnectionManagerPrivate *priv;
