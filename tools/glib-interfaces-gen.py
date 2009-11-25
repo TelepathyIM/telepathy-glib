@@ -92,6 +92,22 @@ GQuark
             parent_name).lower().replace('/', ''),
        'name' : iface.getAttribute('name')})
 
+        for prop in iface.getElementsByTagNameNS(None, 'property'):
+            self.decls.write("""
+/**
+ * %(IFACE_PREFIX)s_%(PROP_UC)s:
+ *
+ * The fully-qualified property name "%(name)s.%(prop)s"
+ */
+#define %(IFACE_PREFIX)s_%(PROP_UC)s \\
+"%(name)s.%(prop)s"
+""" % {'IFACE_PREFIX' : (self.prefix + 'PROP_' + \
+                parent_name).upper().replace('/', ''),
+           'PROP_UC': prop.getAttributeNS(NS_TP, "name-for-bindings").upper(),
+           'name' : iface.getAttribute('name'),
+           'prop' : prop.getAttribute('name'),
+           })
+
 if __name__ == '__main__':
     argv = argv[1:]
     Generator(argv[0], argv[1], argv[2], xml.dom.minidom.parse(argv[3]))()

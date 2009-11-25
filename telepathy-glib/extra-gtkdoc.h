@@ -364,8 +364,9 @@
 
 /**
  * SECTION:interfaces
- * @title: Telepathy protocol interface strings
- * @short_description: D-Bus interface names from the Telepathy spec
+ * @title: Telepathy protocol interface and property names
+ * @short_description: D-Bus interface and property names from the
+ *  Telepathy spec
  *
  * This header exposes the interface names from the Telepathy specification
  * as cpp defines for strings, such as %TP_IFACE_PROPERTIES_INTERFACE.
@@ -374,6 +375,11 @@
  * Since 0.7.0 it also provides cpp defines like
  * %TP_IFACE_QUARK_PROPERTIES_INTERFACE, which expand to function calls that
  * return GQuarks for the same strings.
+ *
+ * Since 0.9.UNRELEASED it also provides cpp defines like
+ * %TP_PROP_CHANNEL_INTERFACE_GROUP_GROUP_FLAGS, which expand to string
+ * constants representing fully-qualified D-Bus property names, like
+ * <literal>org.freedesktop.Telepathy.Channel.Interface.Group.GroupFlags</literal>.
  */
 
 /**
