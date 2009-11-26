@@ -1377,7 +1377,7 @@ tp_account_manager_is_prepared (TpAccountManager *manager,
  * operation.
  *
  * If @features is %NULL, then @callback will be called when the implied
- * %TP_ACCOUNT_FEATURE_CORE feature is ready.
+ * %TP_ACCOUNT_MANAGER_FEATURE_CORE feature is ready.
  *
  * If %NULL is given to @callback, then no callback will be called when the
  * operation is finished. Instead, it will simply set @features on @manager.
