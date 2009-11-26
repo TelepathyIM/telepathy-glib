@@ -11,31 +11,71 @@
 
 #include "simple-account-manager.h"
 
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/svc-account-manager.h>
+
+static void account_manager_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (SimpleAccountManager,
     simple_account_manager,
     G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_MANAGER,
+        account_manager_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
         tp_dbus_properties_mixin_iface_init)
     )
 
-/* type definition stuff */
 
 /* TP_IFACE_ACCOUNT_MANAGER is implied */
 static const char *ACCOUNT_MANAGER_INTERFACES[] = { NULL };
+
+static gchar *VALID_ACCOUNTS[] = {
+  "/org/freedesktop/Telepathy/Account/fakecm/fakeproto/validaccount",
+  NULL };
+
+static gchar *INVALID_ACCOUNTS[] = {
+  "/org/freedesktop/Telepathy/Account/fakecm/fakeproto/invalidaccount",
+  NULL };
 
 enum
 {
   PROP_0,
   PROP_INTERFACES,
+  PROP_VALID_ACCOUNTS,
+  PROP_INVALID_ACCOUNTS,
 };
 
 struct _SimpleAccountManagerPrivate
 {
   int dummy;
 };
+
+static void
+simple_account_manager_create_account (TpSvcAccountManager *self,
+    const gchar *in_Connection_Manager,
+    const gchar *in_Protocol,
+    const gchar *in_Display_Name,
+    GHashTable *in_Parameters,
+    GHashTable *in_Properties,
+    DBusGMethodInvocation *context)
+{
+  const gchar *out_Account = "/some/fake/account/i/think";
+
+  tp_svc_account_manager_return_from_create_account (context, out_Account);
+}
+
+static void
+account_manager_iface_init (gpointer klass,
+    gpointer unused G_GNUC_UNUSED)
+{
+#define IMPLEMENT(x) tp_svc_account_manager_implement_##x (\
+  klass, simple_account_manager_##x)
+  IMPLEMENT (create_account);
+#undef IMPLEMENT
+}
+
 
 static void
 simple_account_manager_init (SimpleAccountManager *self)
@@ -50,9 +90,30 @@ simple_account_manager_get_property (GObject *object,
               GValue *value,
               GParamSpec *spec)
 {
+  GPtrArray *accounts;
+  guint i = 0;
+
   switch (property_id) {
     case PROP_INTERFACES:
       g_value_set_boxed (value, ACCOUNT_MANAGER_INTERFACES);
+      break;
+
+    case PROP_VALID_ACCOUNTS:
+      accounts = g_ptr_array_new ();
+
+      for (i=0; VALID_ACCOUNTS[i] != NULL; i++)
+        g_ptr_array_add (accounts, g_strdup (VALID_ACCOUNTS[i]));
+
+      g_value_take_boxed (value, accounts);
+      break;
+
+    case PROP_INVALID_ACCOUNTS:
+      accounts = g_ptr_array_new ();
+
+      for (i=0; INVALID_ACCOUNTS[i] != NULL; i++)
+        g_ptr_array_add (accounts, g_strdup (VALID_ACCOUNTS[i]));
+
+      g_value_take_boxed (value, accounts);
       break;
 
     default:
@@ -66,8 +127,7 @@ simple_account_manager_get_property (GObject *object,
   * tp_account_manager_prepare to succeed. This turns out to be only a working
   * Properties.GetAll(). If we wanted later to check the case where
   * tp_account_prepare succeeds, we would need to implement an account object
-  * too. In that case, it might be worth using TpSvcAccountManager
-  * as well as/instead of TpDBusPropertiesMixinPropImpl.
+  * too.
   */
 static void
 simple_account_manager_class_init (SimpleAccountManagerClass *klass)
@@ -77,16 +137,15 @@ simple_account_manager_class_init (SimpleAccountManagerClass *klass)
 
   static TpDBusPropertiesMixinPropImpl am_props[] = {
         { "Interfaces", "interfaces", NULL },
-        /*
-        { "ValidAccounts", "interfaces", NULL },
+        { "ValidAccounts", "valid-accounts", NULL },
         { "InvalidAccounts", "invalid-accounts", NULL },
+        /*
         { "SupportedAccountProperties", "supported-account-properties", NULL },
         */
         { NULL }
   };
 
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-        { NULL },
         { TP_IFACE_ACCOUNT_MANAGER,
           tp_dbus_properties_mixin_getter_gobject_properties,
           NULL,
@@ -103,6 +162,17 @@ simple_account_manager_class_init (SimpleAccountManagerClass *klass)
       G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
+  param_spec = g_param_spec_boxed ("valid-accounts", "Valid accounts",
+      "The accounts which are valid on this account. This may be a lie.",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_VALID_ACCOUNTS, param_spec);
+  param_spec = g_param_spec_boxed ("invalid-accounts", "Invalid accounts",
+      "The accounts which are invalid on this account. This may be a lie.",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      G_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_INVALID_ACCOUNTS, param_spec);
+
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (SimpleAccountManagerClass, dbus_props_class));
