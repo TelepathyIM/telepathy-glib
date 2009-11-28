@@ -28,7 +28,7 @@ import xml.dom.minidom
 from getopt import gnu_getopt
 
 from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
-        get_docstring, xml_escape
+        get_docstring, xml_escape, get_deprecated
 
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
@@ -432,6 +432,13 @@ class Generator(object):
         self.b(' * Signature of the callback called when a %s method call'
                % member)
         self.b(' * succeeds or fails.')
+
+        deprecated = method.getElementsByTagName('tp:deprecated')
+        if deprecated:
+            d = deprecated[0]
+            self.b(' *')
+            self.b(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
+
         self.b(' */')
 
         callback_name = '%s_%s_callback_for_%s' % (self.prefix_lc, iface_lc,
@@ -692,6 +699,13 @@ class Generator(object):
         self.b(' *  progress. It is borrowed from the object, and will become')
         self.b(' *  invalid when the callback is called, the call is')
         self.b(' *  cancelled or the #TpProxy becomes invalid.')
+
+        deprecated = method.getElementsByTagName('tp:deprecated')
+        if deprecated:
+            d = deprecated[0]
+            self.b(' *')
+            self.b(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
+
         self.b(' */')
         self.b('TpProxyPendingCall *\n%s_%s_call_%s (%sproxy,'
                % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
@@ -942,6 +956,13 @@ class Generator(object):
         self.b(' * %s' % xml_escape(get_docstring(method) or '(Undocumented)'))
         self.b(' *')
         self.b(' * Returns: TRUE on success, FALSE and sets @error on error')
+
+        deprecated = method.getElementsByTagName('tp:deprecated')
+        if deprecated:
+            d = deprecated[0]
+            self.b(' *')
+            self.b(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
+
         self.b(' */')
         self.b('gboolean\n%s_%s_run_%s (%sproxy,'
                % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
