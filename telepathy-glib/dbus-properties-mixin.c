@@ -827,6 +827,8 @@ tp_dbus_properties_mixin_make_properties_hash (
           g_strdup_printf ("%s.%s", iface, property), value);
     }
 
+  va_end (ap);
+
   return table;
 }
 
