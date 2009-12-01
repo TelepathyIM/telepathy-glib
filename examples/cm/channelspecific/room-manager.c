@@ -243,14 +243,14 @@ new_channel (ExampleCSHRoomManager *self,
 }
 
 static const gchar * const fixed_properties[] = {
-    TP_IFACE_CHANNEL ".ChannelType",
-    TP_IFACE_CHANNEL ".TargetHandleType",
+    TP_PROP_CHANNEL_CHANNEL_TYPE,
+    TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
     NULL
 };
 
 static const gchar * const allowed_properties[] = {
-    TP_IFACE_CHANNEL ".TargetHandle",
-    TP_IFACE_CHANNEL ".TargetID",
+    TP_PROP_CHANNEL_TARGET_HANDLE,
+    TP_PROP_CHANNEL_TARGET_ID,
     NULL
 };
 
@@ -259,14 +259,11 @@ example_csh_room_manager_foreach_channel_class (TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func,
     gpointer user_data)
 {
-    GHashTable *table = g_hash_table_new_full (g_str_hash, g_str_equal,
-        NULL, (GDestroyNotify) tp_g_value_slice_free);
-
-    g_hash_table_insert (table, TP_IFACE_CHANNEL ".ChannelType",
-        tp_g_value_slice_new_static_string (TP_IFACE_CHANNEL_TYPE_TEXT));
-
-    g_hash_table_insert (table, TP_IFACE_CHANNEL ".TargetHandleType",
-        tp_g_value_slice_new_uint (TP_HANDLE_TYPE_ROOM));
+    GHashTable *table = tp_asv_new (
+        TP_PROP_CHANNEL_CHANNEL_TYPE,
+            G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_ROOM,
+        NULL);
 
     func (manager, table, allowed_properties, user_data);
 
@@ -284,20 +281,20 @@ example_csh_room_manager_request (ExampleCSHRoomManager *self,
   GError *error = NULL;
 
   if (tp_strdiff (tp_asv_get_string (request_properties,
-          TP_IFACE_CHANNEL ".ChannelType"),
+          TP_PROP_CHANNEL_CHANNEL_TYPE),
       TP_IFACE_CHANNEL_TYPE_TEXT))
     {
       return FALSE;
     }
 
   if (tp_asv_get_uint32 (request_properties,
-      TP_IFACE_CHANNEL ".TargetHandleType", NULL) != TP_HANDLE_TYPE_ROOM)
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL) != TP_HANDLE_TYPE_ROOM)
     {
       return FALSE;
     }
 
   handle = tp_asv_get_uint32 (request_properties,
-      TP_IFACE_CHANNEL ".TargetHandle", NULL);
+      TP_PROP_CHANNEL_TARGET_HANDLE, NULL);
   g_assert (handle != 0);
 
   if (tp_channel_manager_asv_has_unknown_properties (request_properties,

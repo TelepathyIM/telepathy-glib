@@ -242,17 +242,13 @@ main (int argc,
   test_assert_no_error (error);
 
     {
-      GHashTable *request = g_hash_table_new_full (g_str_hash, g_str_equal,
-          NULL, (GDestroyNotify) tp_g_value_slice_free);
-
-      g_hash_table_insert (request, TP_IFACE_CHANNEL ".ChannelType",
-          tp_g_value_slice_new_static_string (TP_IFACE_CHANNEL_TYPE_TEXT));
-
-      g_hash_table_insert (request, TP_IFACE_CHANNEL ".TargetHandleType",
-          tp_g_value_slice_new_uint (TP_HANDLE_TYPE_CONTACT));
-
-      g_hash_table_insert (request, TP_IFACE_CHANNEL ".TargetHandle",
-          tp_g_value_slice_new_uint (handle));
+      GHashTable *request = tp_asv_new (
+          TP_PROP_CHANNEL_CHANNEL_TYPE,
+              G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+              G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+          TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
+          NULL);
 
       tp_cli_connection_interface_requests_run_create_channel (conn, -1,
           request, &chan_path, NULL, &error, NULL);

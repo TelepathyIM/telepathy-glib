@@ -595,7 +595,7 @@ exportable_channel_get_old_info (TpExportableChannel *channel,
   if (channel_type_out != NULL)
     {
       *channel_type_out = g_strdup (tp_asv_get_string (channel_properties,
-          TP_IFACE_CHANNEL ".ChannelType"));
+          TP_PROP_CHANNEL_CHANNEL_TYPE));
       g_assert (*channel_type_out != NULL);
       g_assert (tp_dbus_check_valid_interface_name (*channel_type_out, NULL));
     }
@@ -603,14 +603,14 @@ exportable_channel_get_old_info (TpExportableChannel *channel,
   if (handle_type_out != NULL)
     {
       *handle_type_out = tp_asv_get_uint32 (channel_properties,
-          TP_IFACE_CHANNEL ".TargetHandleType", &valid);
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
       g_assert (valid);
     }
 
   if (handle_out != NULL)
     {
       *handle_out = tp_asv_get_uint32 (channel_properties,
-          TP_IFACE_CHANNEL ".TargetHandle", &valid);
+          TP_PROP_CHANNEL_TARGET_HANDLE, &valid);
       g_assert (valid);
 
       if (handle_type_out != NULL)
@@ -667,15 +667,15 @@ get_channel_details (GObject *obj)
 
       value = tp_g_value_slice_new (G_TYPE_UINT);
       g_object_get_property (obj, "handle", value);
-      g_hash_table_insert (table, TP_IFACE_CHANNEL ".TargetHandle", value);
+      g_hash_table_insert (table, TP_PROP_CHANNEL_TARGET_HANDLE, value);
 
       value = tp_g_value_slice_new (G_TYPE_UINT);
       g_object_get_property (obj, "handle-type", value);
-      g_hash_table_insert (table, TP_IFACE_CHANNEL ".TargetHandleType", value);
+      g_hash_table_insert (table, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, value);
 
       value = tp_g_value_slice_new (G_TYPE_STRING);
       g_object_get_property (obj, "channel-type", value);
-      g_hash_table_insert (table, TP_IFACE_CHANNEL ".ChannelType", value);
+      g_hash_table_insert (table, TP_PROP_CHANNEL_CHANNEL_TYPE, value);
     }
 
   g_value_array_append (structure, NULL);
@@ -2170,20 +2170,15 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
 
   /* First try the channel managers */
 
-  request_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, (GDestroyNotify) tp_g_value_slice_free);
-
-  g_hash_table_insert (request_properties, TP_IFACE_CHANNEL ".ChannelType",
-      tp_g_value_slice_new_string (type));
-
-  g_hash_table_insert (request_properties,
-      TP_IFACE_CHANNEL ".TargetHandleType",
-      tp_g_value_slice_new_uint (handle_type));
+  request_properties = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, type,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, handle_type,
+      NULL);
 
   if (handle != 0)
     {
       g_hash_table_insert (request_properties,
-          TP_IFACE_CHANNEL ".TargetHandle",
+          TP_PROP_CHANNEL_TARGET_HANDLE,
           tp_g_value_slice_new_uint (handle));
     }
 
@@ -2915,26 +2910,26 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
   gboolean valid;
 
   type = tp_asv_get_string (requested_properties,
-        TP_IFACE_CHANNEL ".ChannelType");
+        TP_PROP_CHANNEL_CHANNEL_TYPE);
 
   if (type == NULL)
     RETURN_INVALID_ARGUMENT ("ChannelType is required");
 
   target_handle_type = tp_asv_get_uint32 (requested_properties,
-      TP_IFACE_CHANNEL ".TargetHandleType", &valid);
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
 
   /* Allow TargetHandleType to be missing, but not to be otherwise broken */
   if (!valid && tp_asv_lookup (requested_properties,
-          TP_IFACE_CHANNEL ".TargetHandleType") != NULL)
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE) != NULL)
     RETURN_INVALID_ARGUMENT (
         "TargetHandleType must be an integer in range 0 to 2**32-1");
 
   target_handle = tp_asv_get_uint32 (requested_properties,
-      TP_IFACE_CHANNEL ".TargetHandle", &valid);
+      TP_PROP_CHANNEL_TARGET_HANDLE, &valid);
 
   /* Allow TargetHandle to be missing, but not to be otherwise broken */
   if (!valid && tp_asv_lookup (requested_properties,
-          TP_IFACE_CHANNEL ".TargetHandle") != NULL)
+          TP_PROP_CHANNEL_TARGET_HANDLE) != NULL)
     RETURN_INVALID_ARGUMENT (
       "TargetHandle must be an integer in range 1 to 2**32-1");
 
@@ -2943,22 +2938,22 @@ conn_requests_check_basic_properties (TpBaseConnection *self,
     RETURN_INVALID_ARGUMENT ("TargetHandle may not be 0");
 
   target_id = tp_asv_get_string (requested_properties,
-      TP_IFACE_CHANNEL ".TargetID");
+      TP_PROP_CHANNEL_TARGET_ID);
 
   /* Allow TargetID to be missing, but not to be otherwise broken */
   if (target_id == NULL && tp_asv_lookup (requested_properties,
-          TP_IFACE_CHANNEL ".TargetID") != NULL)
+          TP_PROP_CHANNEL_TARGET_ID) != NULL)
     RETURN_INVALID_ARGUMENT ("TargetID must be a string");
 
-  if (tp_asv_lookup (requested_properties, TP_IFACE_CHANNEL ".InitiatorHandle")
+  if (tp_asv_lookup (requested_properties, TP_PROP_CHANNEL_INITIATOR_HANDLE)
       != NULL)
     RETURN_INVALID_ARGUMENT ("InitiatorHandle may not be requested");
 
-  if (tp_asv_lookup (requested_properties, TP_IFACE_CHANNEL ".InitiatorID")
+  if (tp_asv_lookup (requested_properties, TP_PROP_CHANNEL_INITIATOR_ID)
       != NULL)
     RETURN_INVALID_ARGUMENT ("InitiatorID may not be requested");
 
-  if (tp_asv_lookup (requested_properties, TP_IFACE_CHANNEL ".Requested")
+  if (tp_asv_lookup (requested_properties, TP_PROP_CHANNEL_REQUESTED)
       != NULL)
     RETURN_INVALID_ARGUMENT ("Requested may not be requested");
 
@@ -3045,10 +3040,10 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
 
           target_handle_value = tp_g_value_slice_new_uint (target_handle);
           g_hash_table_insert (altered_properties,
-              TP_IFACE_CHANNEL ".TargetHandle", target_handle_value);
+              TP_PROP_CHANNEL_TARGET_HANDLE, target_handle_value);
 
           g_hash_table_remove (altered_properties,
-              TP_IFACE_CHANNEL ".TargetID");
+              TP_PROP_CHANNEL_TARGET_ID);
 
           requested_properties = altered_properties;
         }

@@ -348,7 +348,7 @@ _tp_channel_maybe_set_channel_type (TpChannel *self,
 
   self->priv->channel_type = q;
   g_hash_table_insert (self->priv->channel_properties,
-      g_strdup (TP_IFACE_CHANNEL ".ChannelType"),
+      g_strdup (TP_PROP_CHANNEL_CHANNEL_TYPE),
       tp_g_value_slice_new_static_string (g_quark_to_string (q)));
 }
 
@@ -362,7 +362,7 @@ _tp_channel_maybe_set_handle (TpChannel *self,
     {
       self->priv->handle = handle;
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetHandle"),
+          g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE),
           tp_g_value_slice_new_uint (handle));
     }
 }
@@ -377,7 +377,7 @@ _tp_channel_maybe_set_handle_type (TpChannel *self,
     {
       self->priv->handle_type = handle_type;
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"),
+          g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
           tp_g_value_slice_new_uint (handle_type));
     }
 }
@@ -391,7 +391,7 @@ _tp_channel_maybe_set_identifier (TpChannel *self,
     {
       self->priv->identifier = g_strdup (identifier);
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetID"),
+          g_strdup (TP_PROP_CHANNEL_TARGET_ID),
           tp_g_value_slice_new_string (identifier));
     }
 }
@@ -422,7 +422,7 @@ _tp_channel_maybe_set_interfaces (TpChannel *self,
     }
 
   g_hash_table_insert (self->priv->channel_properties,
-      g_strdup (TP_IFACE_CHANNEL ".Interfaces"),
+      g_strdup (TP_PROP_CHANNEL_INTERFACES),
       tp_g_value_slice_new_boxed (G_TYPE_STRV, interfaces));
 }
 
@@ -470,24 +470,24 @@ tp_channel_set_property (GObject *object,
                   (GBoxedCopyFunc) tp_g_value_slice_dup);
 
               u = tp_asv_get_uint32 (self->priv->channel_properties,
-                  TP_IFACE_CHANNEL ".TargetHandleType", &valid);
+                  TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
               _tp_channel_maybe_set_handle_type (self, u, valid);
 
               u = tp_asv_get_uint32 (self->priv->channel_properties,
-                  TP_IFACE_CHANNEL ".TargetHandle", &valid);
+                  TP_PROP_CHANNEL_TARGET_HANDLE, &valid);
               _tp_channel_maybe_set_handle (self, u, valid);
 
               _tp_channel_maybe_set_identifier (self,
                   tp_asv_get_string (self->priv->channel_properties,
-                      TP_IFACE_CHANNEL ".TargetID"));
+                      TP_PROP_CHANNEL_TARGET_ID));
 
               _tp_channel_maybe_set_channel_type (self,
                   tp_asv_get_string (self->priv->channel_properties,
-                      TP_IFACE_CHANNEL ".ChannelType"));
+                      TP_PROP_CHANNEL_CHANNEL_TYPE));
 
               _tp_channel_maybe_set_interfaces (self,
                   tp_asv_get_boxed (self->priv->channel_properties,
-                      TP_IFACE_CHANNEL ".Interfaces",
+                      TP_PROP_CHANNEL_INTERFACES,
                       G_TYPE_STRV));
             }
         }
@@ -577,7 +577,7 @@ _tp_channel_get_interfaces (TpChannel *self)
   DEBUG ("%p", self);
 
   if (tp_asv_lookup (self->priv->channel_properties,
-          TP_IFACE_CHANNEL ".Interfaces") != NULL &&
+          TP_PROP_CHANNEL_INTERFACES) != NULL &&
       (self->priv->exists ||
        tp_proxy_has_interface_by_id (self,
           TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)))
@@ -671,11 +671,11 @@ tp_channel_got_handle_cb (TpChannel *self,
       self->priv->handle = handle;
 
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetHandleType"),
+          g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE_TYPE),
           tp_g_value_slice_new_uint (handle_type));
 
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetHandle"),
+          g_strdup (TP_PROP_CHANNEL_TARGET_HANDLE),
           tp_g_value_slice_new_uint (handle));
 
       g_object_notify ((GObject *) self, "handle-type");
@@ -726,7 +726,7 @@ tp_channel_got_identifier_cb (TpConnection *connection,
       self->priv->identifier = g_strdup (*identifier);
 
       g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_IFACE_CHANNEL ".TargetID"),
+          g_strdup (TP_PROP_CHANNEL_TARGET_ID),
           tp_g_value_slice_new_string (*identifier));
 
       g_object_notify ((GObject *) self, "identifier");
@@ -803,7 +803,7 @@ _tp_channel_got_properties (TpProxy *proxy,
       if (valid)
         {
           g_hash_table_insert (self->priv->channel_properties,
-              g_strdup (TP_IFACE_CHANNEL ".InitiatorHandle"),
+              g_strdup (TP_PROP_CHANNEL_INITIATOR_HANDLE),
               tp_g_value_slice_new_uint (u));
         }
 
@@ -812,7 +812,7 @@ _tp_channel_got_properties (TpProxy *proxy,
       if (s != NULL)
         {
           g_hash_table_insert (self->priv->channel_properties,
-              g_strdup (TP_IFACE_CHANNEL ".InitiatorID"),
+              g_strdup (TP_PROP_CHANNEL_INITIATOR_ID),
               tp_g_value_slice_new_string (s));
         }
 
@@ -821,7 +821,7 @@ _tp_channel_got_properties (TpProxy *proxy,
       if (valid)
         {
           g_hash_table_insert (self->priv->channel_properties,
-              g_strdup (TP_IFACE_CHANNEL ".Requested"),
+              g_strdup (TP_PROP_CHANNEL_REQUESTED),
               tp_g_value_slice_new_boolean (b));
         }
 
@@ -855,24 +855,24 @@ _tp_channel_get_properties (TpChannel *self)
       && self->priv->channel_type != 0
       /* currently we always re-fetch the interfaces later, so don't check:
       && tp_asv_get_boxed (self->priv->channel_properties,
-        TP_IFACE_CHANNEL ".Interfaces", G_TYPE_STRV) != NULL
+        TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV) != NULL
        */
       && tp_asv_get_string (self->priv->channel_properties,
-        TP_IFACE_CHANNEL ".TargetID") != NULL
+        TP_PROP_CHANNEL_TARGET_ID) != NULL
       && tp_asv_get_string (self->priv->channel_properties,
-        TP_IFACE_CHANNEL ".InitiatorID") != NULL
+        TP_PROP_CHANNEL_INITIATOR_ID) != NULL
       )
     {
       gboolean valid;
 
       tp_asv_get_uint32 (self->priv->channel_properties,
-          TP_IFACE_CHANNEL ".InitiatorHandle", &valid);
+          TP_PROP_CHANNEL_INITIATOR_HANDLE, &valid);
 
       if (!valid)
         goto missing;
 
       tp_asv_get_boolean (self->priv->channel_properties,
-          TP_IFACE_CHANNEL ".Requested", &valid);
+          TP_PROP_CHANNEL_REQUESTED, &valid);
 
       if (!valid)
         goto missing;

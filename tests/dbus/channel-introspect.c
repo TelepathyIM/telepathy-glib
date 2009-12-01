@@ -71,16 +71,16 @@ assert_chan_sane (TpChannel *chan,
   asv = tp_channel_borrow_immutable_properties (chan);
   MYASSERT (asv != NULL, "");
   MYASSERT_SAME_STRING (
-      tp_asv_get_string (asv, TP_IFACE_CHANNEL ".ChannelType"),
+      tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE),
       TP_IFACE_CHANNEL_TYPE_TEXT);
   MYASSERT_SAME_UINT (
-      tp_asv_get_uint32 (asv, TP_IFACE_CHANNEL ".TargetHandleType", NULL),
+      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL),
       TP_HANDLE_TYPE_CONTACT);
   MYASSERT_SAME_UINT (
-      tp_asv_get_uint32 (asv, TP_IFACE_CHANNEL ".TargetHandle", NULL),
+      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE, NULL),
       handle);
   MYASSERT_SAME_STRING (
-      tp_asv_get_string (asv, TP_IFACE_CHANNEL ".TargetID"),
+      tp_asv_get_string (asv, TP_PROP_CHANNEL_TARGET_ID),
       IDENTIFIER);
 }
 
@@ -267,15 +267,15 @@ main (int argc,
       ->dbus_property_interfaces_retrieved);
 
   asv = tp_asv_new (
-      TP_IFACE_CHANNEL ".ChannelType", G_TYPE_STRING,
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_TEXT,
-      TP_IFACE_CHANNEL ".TargetHandleType", G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
-      TP_IFACE_CHANNEL ".TargetHandle", G_TYPE_UINT, handle,
-      TP_IFACE_CHANNEL ".TargetID", G_TYPE_STRING, IDENTIFIER,
-      TP_IFACE_CHANNEL ".InitiatorHandle", G_TYPE_UINT, handle,
-      TP_IFACE_CHANNEL ".InitiatorID", G_TYPE_STRING, IDENTIFIER,
-      TP_IFACE_CHANNEL ".Interfaces", G_TYPE_STRV, NULL,
-      TP_IFACE_CHANNEL ".Requested", G_TYPE_BOOLEAN, FALSE,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+      TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
+      TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
+      TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
+      TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, IDENTIFIER,
+      TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, NULL,
+      TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
       NULL);
 
   chan = tp_channel_new_from_properties (conn, props_chan_path, asv, &error);
@@ -323,16 +323,16 @@ main (int argc,
     };
 
     asv = tp_asv_new (
-        TP_IFACE_CHANNEL ".ChannelType", G_TYPE_STRING,
+        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
             TP_IFACE_CHANNEL_TYPE_TEXT,
-        TP_IFACE_CHANNEL ".TargetHandleType", G_TYPE_UINT,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
             TP_HANDLE_TYPE_CONTACT,
-        TP_IFACE_CHANNEL ".TargetHandle", G_TYPE_UINT, handle,
-        TP_IFACE_CHANNEL ".TargetID", G_TYPE_STRING, IDENTIFIER,
-        TP_IFACE_CHANNEL ".InitiatorHandle", G_TYPE_UINT, handle,
-        TP_IFACE_CHANNEL ".InitiatorID", G_TYPE_STRING, IDENTIFIER,
-        TP_IFACE_CHANNEL ".Interfaces", G_TYPE_STRV, interfaces,
-        TP_IFACE_CHANNEL ".Requested", G_TYPE_BOOLEAN, FALSE,
+        TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
+        TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
+        TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
+        TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, IDENTIFIER,
+        TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, interfaces,
+        TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
         NULL);
   }
 
@@ -497,16 +497,16 @@ main (int argc,
     };
 
     asv = tp_asv_new (
-        TP_IFACE_CHANNEL ".ChannelType", G_TYPE_STRING,
+        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
             TP_IFACE_CHANNEL_TYPE_TEXT,
-        TP_IFACE_CHANNEL ".TargetHandleType", G_TYPE_UINT,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
             TP_HANDLE_TYPE_CONTACT,
-        TP_IFACE_CHANNEL ".TargetHandle", G_TYPE_UINT, handle,
-        TP_IFACE_CHANNEL ".TargetID", G_TYPE_STRING, IDENTIFIER,
-        TP_IFACE_CHANNEL ".InitiatorHandle", G_TYPE_UINT, handle,
-        TP_IFACE_CHANNEL ".InitiatorID", G_TYPE_STRING, IDENTIFIER,
-        TP_IFACE_CHANNEL ".Interfaces", G_TYPE_STRV, interfaces,
-        TP_IFACE_CHANNEL ".Requested", G_TYPE_BOOLEAN, FALSE,
+        TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
+        TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
+        TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
+        TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, IDENTIFIER,
+        TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, interfaces,
+        TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
         NULL);
   }
 
