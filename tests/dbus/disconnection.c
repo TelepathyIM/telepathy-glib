@@ -309,7 +309,7 @@ main (int argc,
   stub = g_object_new (stub_object_get_type (), NULL);
   g_object_weak_ref (stub, h_stub_destroyed, &sc);
   g_message ("Connecting signal to h");
-  sc = tp_cli_dbus_daemon_connect_to_name_owner_changed (h, noc, PTR (TEST_H),
+  tp_cli_dbus_daemon_connect_to_name_owner_changed (h, noc, PTR (TEST_H),
       destroy_user_data, stub, &error_out);
   test_assert_no_error (error_out);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_H), "");
