@@ -241,6 +241,7 @@ finish_prepare_action (GObject *source_object,
   Test *test = (Test *) user_data;
   gboolean is_prepared_reply;
   TpAccountManager *am = TP_ACCOUNT_MANAGER (source_object);
+
   g_assert (test->am == am);
   test->prepared = tp_account_manager_prepare_finish (am, res, &test->error);
   is_prepared_reply = tp_account_manager_is_prepared (test->am,
@@ -255,10 +256,90 @@ prepare_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  test->am = tp_account_manager_new (test->dbus);
   tp_account_manager_prepare_async (test->am, NULL, finish_prepare_action, test);
 }
 
+static void
+manager_new_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  test->am = tp_account_manager_new (test->dbus);
+  script_continue (test);
+}
+
+/* We really don't want to have MC being launched during this test */
+static void
+finish_assert_am_not_activatable_action (TpDBusDaemon *proxy,
+    const gchar * const *names,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  guint i;
+
+  g_assert (error == NULL);
+
+  for (i=0; names[i] != NULL; i++)
+    {
+      g_assert_cmpstr (names[i], !=, TP_ACCOUNT_MANAGER_BUS_NAME);
+      g_assert_cmpstr (names[i], !=, "org.freedesktop.Telepathy.MissionControl5");
+    }
+
+  script_continue (user_data);
+}
+
+static void
+assert_am_not_activatable_action (gpointer script_data,
+    gpointer user_data)
+{
+  Test *test = (Test *) script_data;
+
+  tp_dbus_daemon_list_activatable_names (test->dbus, 500,
+      finish_assert_am_not_activatable_action, test, NULL, NULL);
+}
+
+static void
+assert_core_not_ready_action (gpointer script_data,
+    gpointer user_data G_GNUC_UNUSED)
+{
+  Test *test = (Test *) script_data;
+
+  g_assert (!tp_account_manager_is_prepared (test->am,
+      TP_ACCOUNT_MANAGER_FEATURE_CORE));
+
+  script_continue (script_data);
+}
+
+static void
+assert_feature_not_ready_action (gpointer script_data,
+    gpointer user_data)
+{
+  Test *test = (Test *) script_data;
+
+  g_assert (!tp_account_manager_is_prepared (test->am,
+      g_quark_from_string ((gchar *) user_data)));
+
+  g_free (user_data);
+  script_continue (script_data);
+}
+
+static void
+prepare_feature_action (gpointer script_data,
+    gpointer user_data)
+{
+  Test *test = (Test *) script_data;
+  GQuark features[3];
+
+  features[0] = TP_ACCOUNT_MANAGER_FEATURE_CORE;
+  features[1] = g_quark_from_string ((gchar *) user_data);
+  features[2] = 0;
+
+  tp_account_manager_prepare_async (test->am, features, finish_prepare_action, test);
+
+  g_free (user_data);
+}
 
 static void
 assert_ok_action (gpointer script_data,
@@ -321,6 +402,7 @@ finish_account_prepare_action (GObject *source_object,
 {
   Test *test = (Test *) user_data;
   TpAccount *account = TP_ACCOUNT (source_object);
+
   g_assert (test->account == account);
   test->prepared = tp_account_prepare_finish (account, res, &test->error);
   g_assert (test->prepared == tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
@@ -362,6 +444,9 @@ static void
 test_prepare (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  script_append_action (test, assert_am_not_activatable_action, NULL);
+  script_append_action (test, manager_new_action, NULL);
+  script_append_action (test, assert_core_not_ready_action, NULL);
   script_append_action (test, prepare_action, NULL);
   script_append_action (test, noop_action, NULL);
 }
@@ -408,6 +493,20 @@ test_prepare_destroyed (Test *test,
   script_append_action (test, register_service_action, NULL);
 }
 
+/**
+ * Calling prepare with unknown features should succeed, but is_prepared()
+ * on an unknown feature should return FALSE.
+ */
+static void
+test_prepare_unknown_features (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  test_prepare_success (test, data);
+  script_append_action (test, prepare_feature_action, g_strdup ("fake-feature"));
+  script_append_action (test, assert_ok_action, NULL);
+  script_append_action (test, assert_feature_not_ready_action, g_strdup ("fake-feature"));
+}
+
 static void
 test_ensure (Test *test,
     gconstpointer data G_GNUC_UNUSED)
@@ -436,8 +535,11 @@ main (int argc,
               test_prepare_success, teardown_service);
   g_test_add ("/am/prepare/destroyed", Test, NULL, setup_service,
               test_prepare_destroyed, teardown_service);
+  /* WARNING: This test is run using setup/teardown rather than setup_service*/
   g_test_add ("/am/prepare/name-not-provided", Test, NULL, setup,
               test_prepare_no_name, teardown);
+  g_test_add ("/am/prepare/unknown_features", Test, NULL, setup_service,
+              test_prepare_unknown_features, teardown_service);
 
   g_test_add ("/am/ensure", Test, NULL, setup_service,
               test_ensure, teardown_service);

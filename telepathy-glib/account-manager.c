@@ -990,7 +990,17 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
   GSimpleAsyncResult *result;
 
   if (!tp_account_prepare_finish (account, res, NULL))
-    return;
+    {
+      g_object_ref (account);
+      g_hash_table_remove (priv->accounts,
+          tp_proxy_get_object_path (account));
+
+      g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
+      g_object_unref (account);
+
+      _tp_account_manager_check_core_ready (manager);
+      return;
+    }
 
   /* see if there's any pending callbacks for this account */
   result = g_hash_table_lookup (priv->create_results, account);

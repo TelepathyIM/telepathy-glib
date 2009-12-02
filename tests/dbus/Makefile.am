@@ -169,7 +169,8 @@ TESTS_ENVIRONMENT = \
     XDG_DATA_HOME=@abs_builddir@ \
     XDG_DATA_DIRS=@abs_srcdir@ \
     G_DEBUG=fatal_warnings,fatal_criticals \
-    sh $(top_srcdir)/tools/with-session-bus.sh --session --
+    sh $(top_srcdir)/tools/with-session-bus.sh \
+	--config-file=dbus-1/session.conf --
 
 check-valgrind:
 	$(MAKE) check-TESTS \
@@ -186,6 +187,7 @@ VALGRIND_TESTS_ENVIRONMENT = \
         $(VALGRIND_FLAGS)
 
 BUILT_SOURCES = \
+	dbus-1/session.conf \
 	_gen/errors-check.h \
 	_gen/svc.h \
 	_gen/svc.c
@@ -202,6 +204,9 @@ EXTRA_DIST = \
     telepathy/managers/test_manager_file.manager \
     telepathy/managers/test_manager_file_invalid.manager \
     with-properties.xml
+
+dbus-1/%.conf: dbus-1/%.conf.in
+	sed -e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" $< > $@
 
 _gen/svc.c _gen/svc.h: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \

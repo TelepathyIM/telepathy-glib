@@ -65,6 +65,7 @@ missing
 stamp-h1
 tags
 /telepathy-glib-0.7.*
+tests/dbus/dbus-1/session.conf
 tests/dbus/test-*
 tests/test-*
 tests/tools/actual.h
