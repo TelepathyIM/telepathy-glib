@@ -371,7 +371,7 @@ main (int argc,
   k_stub = g_object_new (stub_object_get_type (), NULL);
   g_message ("Starting call on k");
   g_object_weak_ref (k_stub, k_stub_destroyed, &pc);
-  pc = tp_cli_dbus_daemon_call_list_names (k, -1, listed_names, PTR (TEST_K),
+  tp_cli_dbus_daemon_call_list_names (k, -1, listed_names, PTR (TEST_K),
       destroy_user_data, k_stub);
   MYASSERT (!tp_intset_is_member (freed_user_data, TEST_K), "");
   MYASSERT (!tp_intset_is_member (method_ok, TEST_K), "");

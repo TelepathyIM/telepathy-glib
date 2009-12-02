@@ -155,6 +155,7 @@ tp_text_mixin_class_init (GObjectClass *obj_cls, glong offset)
       GINT_TO_POINTER (offset));
 
   mixin_cls = TP_TEXT_MIXIN_CLASS (obj_cls);
+  g_return_if_fail (mixin_cls != NULL);
 }
 
 

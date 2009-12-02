@@ -907,7 +907,7 @@ example_contact_list_manager_request (ExampleContactListManager *self,
 
   if (chan == NULL)
     {
-      chan = new_channel (self, handle_type, handle, request_token);
+      new_channel (self, handle_type, handle, request_token);
     }
   else if (require_new)
     {

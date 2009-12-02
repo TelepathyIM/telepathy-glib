@@ -221,7 +221,7 @@ channel_closed_cb (ExampleEcho2Channel *chan,
     }
 }
 
-static ExampleEcho2Channel *
+static void
 new_channel (ExampleEcho2ImManager *self,
              TpHandle handle,
              TpHandle initiator,
@@ -253,8 +253,6 @@ new_channel (ExampleEcho2ImManager *self,
   tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
       requests);
   g_slist_free (requests);
-
-  return chan;
 }
 
 static const gchar * const fixed_properties[] = {
@@ -322,7 +320,7 @@ example_echo_2_im_manager_request (ExampleEcho2ImManager *self,
 
   if (chan == NULL)
     {
-      chan = new_channel (self, handle, self->priv->conn->self_handle,
+      new_channel (self, handle, self->priv->conn->self_handle,
           request_token);
     }
   else if (require_new)

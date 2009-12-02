@@ -206,7 +206,7 @@ channel_closed_cb (ExampleCSHRoomChannel *chan,
     }
 }
 
-static ExampleCSHRoomChannel *
+static void
 new_channel (ExampleCSHRoomManager *self,
              TpHandle handle,
              TpHandle initiator,
@@ -238,8 +238,6 @@ new_channel (ExampleCSHRoomManager *self,
   tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
       requests);
   g_slist_free (requests);
-
-  return chan;
 }
 
 static const gchar * const fixed_properties[] = {
@@ -307,7 +305,7 @@ example_csh_room_manager_request (ExampleCSHRoomManager *self,
 
   if (chan == NULL)
     {
-      chan = new_channel (self, handle, self->priv->conn->self_handle,
+      new_channel (self, handle, self->priv->conn->self_handle,
           request_token);
     }
   else if (require_new)
