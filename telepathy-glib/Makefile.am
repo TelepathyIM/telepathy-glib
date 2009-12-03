@@ -332,7 +332,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     run.c \
     signals-marshal.list \
     text-mixin.c \
-    util.c
+    util.c \
+    util-internal.h
 
 AM_CFLAGS = \
     -DG_LOG_DOMAIN=\"tp-glib\" \
