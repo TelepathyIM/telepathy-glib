@@ -36,8 +36,6 @@
 
 #include "call-channel.h"
 
-#include "call-stream.h"
-
 #include <string.h>
 
 #include <telepathy-glib/base-connection.h>
@@ -46,6 +44,10 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
+
+#include "extensions/extensions.h"
+
+#include "call-stream.h"
 
 static void media_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);

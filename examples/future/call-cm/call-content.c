@@ -24,6 +24,8 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/telepathy-glib.h>
 
+#include "extensions/extensions.h"
+
 #include "call-channel.h"
 
 G_DEFINE_TYPE (ExampleCallContent,

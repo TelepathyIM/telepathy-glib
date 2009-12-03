@@ -28,7 +28,8 @@ libexample_cm_call_la_SOURCES = \
 libexample_cm_call_la_LIBADD = \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(top_builddir)/extensions/libfuture-extensions.la
 
 telepathy_example_cm_call_SOURCES = \
     main.c
