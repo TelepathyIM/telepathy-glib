@@ -42,6 +42,7 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
@@ -476,6 +477,9 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
+  g_hash_table_destroy (self->priv->streams);
+  self->priv->streams = NULL;
+
   example_callable_media_channel_close (self, self->group.self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
@@ -537,6 +541,8 @@ add_member (GObject *object,
           NULL /* nobody added to local pending */,
           NULL /* nobody added to remote pending */,
           member /* actor */, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+      tp_intset_destroy (set);
 
       g_hash_table_iter_init (&iter, self->priv->streams);
 
@@ -1205,7 +1211,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
 
   tp_svc_channel_type_streamed_media_return_from_request_streams (context,
       array);
-  g_ptr_array_free (array, TRUE);
+  g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST, array);
 
   return;
 

@@ -315,6 +315,7 @@ setup (Test *test,
   test->stream_ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
   test->contacts = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
 
+  g_hash_table_destroy (parameters);
   g_free (bus_name);
   g_free (object_path);
 }
@@ -1553,6 +1554,7 @@ teardown (Test *test,
 
   g_array_free (test->audio_request, TRUE);
   g_array_free (test->video_request, TRUE);
+  g_array_free (test->invalid_request, TRUE);
   g_array_free (test->stream_ids, TRUE);
   g_array_free (test->contacts, TRUE);
 

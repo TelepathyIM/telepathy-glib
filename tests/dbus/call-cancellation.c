@@ -438,16 +438,25 @@ main (int argc,
 
   g_message ("Dereferencing remaining proxies");
   g_object_unref (a);
+  a = NULL;
   g_object_unref (b);
+  b = NULL;
   g_object_unref (c);
+  c = NULL;
   MYASSERT (d == NULL, "");
   g_object_unref (e);
+  e = NULL;
   g_object_unref (f);
+  f = NULL;
   MYASSERT (g == NULL, "");
   MYASSERT (h == NULL, "");
   MYASSERT (i == NULL, "");
   g_object_unref (j);
+  j = NULL;
+  g_object_unref (k);
+  k = NULL;
   g_object_unref (z);
+  z = NULL;
 
   /* we should already have checked each of these at least once, but just to
    * make sure we have a systematic test that all user data is freed... */
