@@ -57,6 +57,7 @@ GType example_call_stream_get_type (void);
 
 struct _ExampleCallStreamClass {
     GObjectClass parent_class;
+    TpDBusPropertiesMixinClass dbus_properties_class;
 
     ExampleCallStreamClassPrivate *priv;
 };

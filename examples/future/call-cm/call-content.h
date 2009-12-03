@@ -57,6 +57,7 @@ GType example_call_content_get_type (void);
 
 struct _ExampleCallContentClass {
     GObjectClass parent_class;
+    TpDBusPropertiesMixinClass dbus_properties_class;
 
     ExampleCallContentClassPrivate *priv;
 };

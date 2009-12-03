@@ -50,6 +50,7 @@
 #include "call-stream.h"
 
 static void media_iface_init (gpointer iface, gpointer data);
+static void call_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 static void hold_iface_init (gpointer iface, gpointer data);
 
@@ -61,6 +62,8 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_STREAMED_MEDIA,
       media_iface_init);
+    G_IMPLEMENT_INTERFACE (FUTURE_TYPE_SVC_CHANNEL_TYPE_CALL,
+      call_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
       tp_group_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
@@ -1230,6 +1233,54 @@ media_iface_init (gpointer iface,
   IMPLEMENT (remove_streams);
   IMPLEMENT (request_stream_direction);
   IMPLEMENT (request_streams);
+#undef IMPLEMENT
+}
+
+static void
+call_ringing (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+call_accept (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+call_hangup (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
+    guint reason G_GNUC_UNUSED,
+    const gchar *detailed_reason G_GNUC_UNUSED,
+    const gchar *message G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+call_add_content (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
+    const gchar *content_name G_GNUC_UNUSED,
+    guint content_type G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+call_iface_init (gpointer iface,
+    gpointer data)
+{
+  FutureSvcChannelTypeCallClass *klass = iface;
+
+#define IMPLEMENT(x) \
+  future_svc_channel_type_call_implement_##x (klass, call_##x)
+  IMPLEMENT (ringing);
+  IMPLEMENT (hangup);
+  IMPLEMENT (accept);
+  IMPLEMENT (add_content);
 #undef IMPLEMENT
 }
 

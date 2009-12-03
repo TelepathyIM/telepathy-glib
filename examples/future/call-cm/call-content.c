@@ -28,9 +28,13 @@
 
 #include "call-channel.h"
 
-G_DEFINE_TYPE (ExampleCallContent,
+G_DEFINE_TYPE_WITH_CODE (ExampleCallContent,
     example_call_content,
-    G_TYPE_OBJECT)
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init);
+    /* no methods, so no vtable needed */
+    G_IMPLEMENT_INTERFACE (FUTURE_TYPE_SVC_CALL_CONTENT, NULL))
 
 enum
 {
@@ -131,6 +135,26 @@ dispose (GObject *object)
 static void
 example_call_content_class_init (ExampleCallContentClass *klass)
 {
+  /*
+  static TpDBusPropertiesMixinPropImpl content_props[] = {
+      { "Name", "name", NULL },
+      { "Type", "type", NULL },
+      { "Creator", "creator", NULL },
+      { "Disposition", "disposition", NULL },
+      { "Streams", "streams", NULL },
+      { NULL }
+  };
+  */
+  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+      /*
+      { FUTURE_IFACE_CALL_CONTENT,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        content_props,
+      },
+      */
+      { NULL }
+  };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
@@ -147,4 +171,9 @@ example_call_content_class_init (ExampleCallContentClass *klass)
       EXAMPLE_TYPE_CALL_CHANNEL,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
+
+  klass->dbus_properties_class.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleCallChannelClass,
+        dbus_properties_class));
 }

@@ -29,9 +29,14 @@
 #include "call-channel.h"
 #include "call-content.h"
 
-G_DEFINE_TYPE (ExampleCallStream,
+static void stream_iface_init (gpointer, gpointer);
+
+G_DEFINE_TYPE_WITH_CODE (ExampleCallStream,
     example_call_stream,
-    G_TYPE_OBJECT)
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (FUTURE_TYPE_SVC_CALL_STREAM, stream_iface_init))
 
 enum
 {
@@ -294,6 +299,22 @@ dispose (GObject *object)
 static void
 example_call_stream_class_init (ExampleCallStreamClass *klass)
 {
+  /*
+  static TpDBusPropertiesMixinPropImpl stream_props[] = {
+      { "Senders", "senders", NULL },
+      { NULL }
+  };
+  */
+  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+      /*
+      { FUTURE_IFACE_CALL_STREAM,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        stream_props,
+      },
+      */
+      { NULL }
+  };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
@@ -378,6 +399,11 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       g_cclosure_marshal_VOID__VOID,
       G_TYPE_NONE, 0);
+
+  klass->dbus_properties_class.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleCallStreamClass,
+        dbus_properties_class));
 }
 
 void
@@ -644,4 +670,34 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
 
   if (changed)
     g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+}
+
+static void
+stream_set_sending (FutureSvcCallStream *iface G_GNUC_UNUSED,
+    gboolean sending G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+stream_request_receiving (FutureSvcCallStream *iface G_GNUC_UNUSED,
+    guint contact G_GNUC_UNUSED,
+    gboolean receive G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+stream_iface_init (gpointer iface,
+    gpointer data)
+{
+  FutureSvcCallStreamClass *klass = iface;
+
+#define IMPLEMENT(x) \
+  future_svc_call_stream_implement_##x (klass, stream_##x)
+  IMPLEMENT (set_sending);
+  IMPLEMENT (request_receiving);
+#undef IMPLEMENT
 }
