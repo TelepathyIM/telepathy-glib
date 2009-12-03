@@ -49,6 +49,7 @@ docs/reference/xml
 examples/client/telepathy-example-*
 examples/cm/*/telepathy-example-*
 examples/extensions/extensions.html
+/extensions/extensions.html
 gtk-doc.make
 install-sh
 lcov.info
