@@ -1,6 +1,10 @@
 #ifndef __TPL_TEXT_CHANNEL_H__
 #define __TPL_TEXT_CHANNEL_H__
 
+/* 
+ * http://telepathy.freedesktop.org/doc/telepathy-glib/telepathy-glib-channel-text.html#tp-cli-channel-type-text-connect-to-received
+ */
+
 #include <glib-object.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/account.h>

@@ -3,6 +3,8 @@
 #include <tpl_observer.h>
 #include <tpl_channel_data.h>
 #include <tpl_text_channel_data.h>
+//#include <tpl_log_entry_text.h>
+#include <tpl_contact.h>
 
 #define TP_CONTACT_FEATURES_LEN	2
 #define	TP_CONTACT_CONTACTS_LEN	2
@@ -15,6 +17,25 @@ static TpContactFeature features[TP_CONTACT_FEATURES_LEN] = {
 };
 
 
+/* definitions */
+
+void _channel_on_sent_signal_cb (TpChannel *proxy,
+		guint arg_Timestamp,
+		guint arg_Type,
+		const gchar *arg_Text,
+		gpointer user_data,
+		GObject *weak_object);
+void _channel_on_sent_signal_cb (TpChannel *proxy,
+		guint arg_Timestamp,
+		guint arg_Type,
+		const gchar *arg_Text,
+		gpointer user_data,
+		GObject *weak_object);
+/* end of definitions */
+
+
+
+
 /* Callbacks */
 
 void _channel_on_sent_signal_cb (TpChannel *proxy,
@@ -22,11 +43,16 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 		guint arg_Type,
 		const gchar *arg_Text,
 		gpointer user_data,
-		GObject *weak_object) {
-
+		GObject *weak_object)
+{
 	TplTextChannel *tpl_text = TPL_TEXT_CHANNEL(user_data);
 	TpContact *remote,*me;
 	const gchar *my_id, *my_alias, *remote_id, *remote_alias;
+	const gchar *my_pres_msg, *my_pres_status;
+	const gchar *remote_pres_msg, *remote_pres_status;
+	TplContact *tpl_contact_sender;
+	TplContact *tpl_contact_receiver;
+
 
 	me = tpl_text_channel_get_my_contact(tpl_text);
 	remote = tpl_text_channel_get_remote_contact(tpl_text);
@@ -36,8 +62,38 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 
 	my_alias = tp_contact_get_alias(me);
 	remote_alias = tp_contact_get_alias(remote);
+
+	my_pres_status = tp_contact_get_presence_status(me);
+	remote_pres_status = tp_contact_get_presence_status(remote);
+
+	my_pres_msg = tp_contact_get_presence_message (me);
+	remote_pres_msg = tp_contact_get_presence_message (remote);
 	
 	g_message("%s (%s): %s\n", my_id, my_alias, arg_Text);
+
+	tpl_contact_sender = tpl_contact_new();
+	tpl_contact_receiver = tpl_contact_new();
+#define CONTACT_ENTRY_SET(x,y) tpl_contact_set_##x(tpl_contact_sender,y)
+	CONTACT_ENTRY_SET(contact, me);
+	CONTACT_ENTRY_SET(alias, my_alias);
+	CONTACT_ENTRY_SET(identifier, my_id);
+	CONTACT_ENTRY_SET(presence_status, my_pres_status);
+	CONTACT_ENTRY_SET(presence_message, my_pres_msg );
+#undef CONTACT_ENTRY_SET
+#define CONTACT_ENTRY_SET(x,y) tpl_contact_set_##x(tpl_contact_receiver,y)
+	CONTACT_ENTRY_SET(contact, remote);
+	CONTACT_ENTRY_SET(alias, remote_alias);
+	CONTACT_ENTRY_SET(identifier, remote_id);
+	CONTACT_ENTRY_SET(presence_status, remote_pres_status );
+	CONTACT_ENTRY_SET(presence_message, remote_pres_msg);
+#undef CONTACT_ENTRY_SET
+
+	g_message("BIS: %s (%s): %s\n", 
+			tpl_contact_get_identifier(tpl_contact_sender), 
+			tpl_contact_get_alias(tpl_contact_sender),
+			arg_Text);
+
+
 }
 
 void _channel_on_received_signal_cb (TpChannel *proxy,
@@ -53,6 +109,10 @@ void _channel_on_received_signal_cb (TpChannel *proxy,
 	TplTextChannel *tpl_text = TPL_TEXT_CHANNEL(user_data);
 	TpContact *remote,*me;
 	const gchar *my_id, *my_alias, *remote_id, *remote_alias;
+	const gchar *my_pres_msg, *my_pres_status;
+	const gchar *remote_pres_msg, *remote_pres_status;
+	TplContact *tpl_contact_sender;
+	TplContact *tpl_contact_receiver;
 
 	me = tpl_text_channel_get_my_contact(tpl_text);
 	remote = tpl_text_channel_get_remote_contact(tpl_text);
@@ -63,7 +123,36 @@ void _channel_on_received_signal_cb (TpChannel *proxy,
 	my_alias = tp_contact_get_alias(me);
 	remote_alias = tp_contact_get_alias(remote);
 
-	g_message("%s (%s): %s\n", remote_id, remote_alias, arg_Text);
+	my_pres_status = tp_contact_get_presence_status(me);
+	remote_pres_status = tp_contact_get_presence_status(remote);
+
+	my_pres_msg = tp_contact_get_presence_message (me);
+	remote_pres_msg = tp_contact_get_presence_message (remote);
+	
+	g_message("FOO%s (%s): %s\n", remote_id, remote_alias, arg_Text);
+
+	tpl_contact_sender = tpl_contact_new();
+	tpl_contact_receiver = tpl_contact_new();
+#define CONTACT_ENTRY_SET(x,y) tpl_contact_set_##x(tpl_contact_sender,y)
+	CONTACT_ENTRY_SET(contact, remote);
+	CONTACT_ENTRY_SET(alias, remote_alias);
+	CONTACT_ENTRY_SET(identifier, remote_id);
+	CONTACT_ENTRY_SET(presence_status, remote_pres_status);
+	CONTACT_ENTRY_SET(presence_message, remote_pres_msg );
+#undef CONTACT_ENTRY_SET
+#define CONTACT_ENTRY_SET(x,y) tpl_contact_set_##x(tpl_contact_receiver,y)
+	CONTACT_ENTRY_SET(contact, me);
+	CONTACT_ENTRY_SET(alias, my_alias);
+	CONTACT_ENTRY_SET(identifier, my_id);
+	CONTACT_ENTRY_SET(presence_status, my_pres_status );
+	CONTACT_ENTRY_SET(presence_message, my_pres_msg);
+#undef CONTACT_ENTRY_SET
+
+	g_message("BIS: %s (%s): %s\n", 
+			tpl_contact_get_identifier(tpl_contact_sender), 
+			tpl_contact_get_alias(tpl_contact_sender),
+			arg_Text);
+
 }
 
 /* connect signals to TplTextChannel instance */
@@ -112,7 +201,7 @@ void _tpl_text_channel_set_ready_cb(TpConnection *connection,
 	TplTextChannel *tpl_text = (TplTextChannel*) user_data;
 	
 	tpl_text_channel_set_my_contact(tpl_text, contacts[TP_CONTACT_MYSELF]);
-	tpl_text_channel_set_remote_contact(tpl_text, contacts[TP_CONTACT_MYSELF]);
+	tpl_text_channel_set_remote_contact(tpl_text, contacts[TP_CONTACT_REMOTE]);
 	
 	//g_debug("MY ALIAS: %s\n", tp_contact_get_alias(
 	//			tpl_text_channel_get_my_contact(tpl_text)));
@@ -179,7 +268,8 @@ void tpl_text_channel_free(TplTextChannel* tpl_text) {
 }
 
 
-TplChannel *tpl_text_channel_get_tpl_channel(TplTextChannel *self) {
+TplChannel *tpl_text_channel_get_tpl_channel(TplTextChannel *self) 
+{
 	return self->tpl_channel;
 }
 
