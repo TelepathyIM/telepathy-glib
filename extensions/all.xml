@@ -5,5 +5,6 @@
 <tp:title>Extensions from the future</tp:title>
 
 <xi:include href="channel.xml"/>
+<xi:include href="misc.xml"/>
 
 </tp:spec>

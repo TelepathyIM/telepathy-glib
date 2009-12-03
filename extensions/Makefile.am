@@ -12,7 +12,8 @@ AM_CFLAGS = \
 
 EXTRA_DIST = \
     all.xml \
-    channel.xml
+    channel.xml \
+    misc.xml
 
 noinst_LTLIBRARIES = libfuture-extensions.la
 
@@ -41,7 +42,9 @@ nodist_libfuture_extensions_la_SOURCES = \
     _gen/cli-channel.h \
     _gen/cli-channel-body.h \
     _gen/svc-channel.h \
-    _gen/svc-channel.c
+    _gen/svc-channel.c \
+    _gen/svc-misc.h \
+    _gen/svc-misc.c
 
 BUILT_SOURCES = \
     _gen/all.xml \
@@ -108,6 +111,8 @@ _gen/svc-%.c _gen/svc-%.h: _gen/%.xml \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		--allow-unstable \
 		$< Future_Svc_
+
+# not generating client bindings for Content, Stream etc. right now
 
 _gen/cli-channel-body.h _gen/cli-channel.h: _gen/channel.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
