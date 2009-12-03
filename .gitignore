@@ -64,7 +64,7 @@ m4/lt~obsolete.m4
 missing
 stamp-h1
 tags
-/telepathy-glib-0.7.*
+/telepathy-glib-0.*
 tests/dbus/dbus-1/session.conf
 tests/dbus/test-*
 tests/test-*

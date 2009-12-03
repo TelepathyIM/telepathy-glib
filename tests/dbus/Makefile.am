@@ -199,19 +199,21 @@ distclean-local:
 	rm -rf _gen
 
 EXTRA_DIST = \
+    dbus-1/session.conf.in \
     dbus-1/services/spurious.service \
     telepathy/managers/spurious.manager \
     telepathy/managers/test_manager_file.manager \
     telepathy/managers/test_manager_file_invalid.manager \
     with-properties.xml
 
-dbus-1/%.conf: dbus-1/%.conf.in
-	sed -e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" $< > $@
+dbus-1/%.conf: $(srcdir)/dbus-1/%.conf.in
+	$(AM_V_at)$(mkdir_p) dbus-1
+	$(AM_V_GEN)sed -e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" $< > $@
 
 _gen/svc.c _gen/svc.h: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \
 	Makefile.am
-	$(mkdir_p) _gen
+	$(AM_V_at)$(mkdir_p) _gen
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-ginterface-gen.py \
 		--filename=_gen/svc \
 		--signal-marshal-prefix=NOT_NEEDED \
@@ -219,5 +221,5 @@ _gen/svc.c _gen/svc.h: with-properties.xml \
 
 _gen/errors-check.h: $(top_srcdir)/spec/errors.xml \
 	$(top_srcdir)/tools/glib-errors-check-gen.py
-	$(mkdir_p) _gen
+	$(AM_V_at)$(mkdir_p) _gen
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-errors-check-gen.py $< > $@
