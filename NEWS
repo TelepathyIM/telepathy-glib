@@ -1,12 +1,22 @@
 telepathy-glib 0.9.2 (UNRELEASED)
 =================================
 
+Dependencies:
+
+* dbus-glib (>= 0.82) is now required
+
 Enhancements:
 
 * Add tp_value_array_build utility function (sjoerd)
 
 * Add tp_g_signal_connect_object, a non-leaky version of
   g_signal_connect_object (alsuren)
+
+* fd.o #25283: add constants for namespaced D-Bus property names,
+  such as TP_PROP_CHANNEL_CHANNEL_TYPE (smcv)
+
+* fd.o #25235: add <telepathy-glib/telepathy-glib.h> which includes
+  the most commonly-used headers (danni)
 
 Fixes:
 
@@ -28,6 +38,29 @@ Fixes:
 
 * fd.o #25121: fix failure to link when -Wl,--no-add-needed is used, which is
   the (faster) default behaviour for binutils-gold (Debian #556486) (smcv)
+
+* Fix various coverity nits, including a missing call to va_end,
+  and a typo in the documentation (smcv)
+
+* fd.o #25359: alter code generation to cope with arbitrary UTF-8 in the
+  spec (wjt)
+
+* fd.o #25335: glib-client-gen: annotate deprecated D-Bus methods (jonny)
+
+* Don't rely on enum types being unsigned (sjoerd)
+
+* fd.o #25181: avoid unnecessary D-Bus calls re-fetching existing TpContact
+  objects (alsuren)
+
+* fd.o #25384: if accounts fail to prepare while the account manager is
+  preparing, drop them from the list of valid accounts rather than
+  never terminating (alsuren)
+
+* If the fake AccountManager doesn't appear for some reason during AM
+  regression tests, don't start the system implementation (alsuren)
+
+* Fix a theoretical reference-leak in TpAccountManager, and some memory
+  leaks in examples and regression tests (smcv)
 
 telepathy-glib 0.9.1 (2009-10-15)
 =================================
