@@ -1213,6 +1213,9 @@ free_daemon_list (gpointer p)
   g_slice_free (GSList *, slistp);
 }
 
+/* If you add more slice-allocation in this function, make the suppression
+ * "tp_dbus_daemon_constructor @daemons once per DBusConnection" in
+ * telepathy-glib.supp more specific. */
 static GObject *
 tp_dbus_daemon_constructor (GType type,
                             guint n_params,
@@ -1240,6 +1243,7 @@ tp_dbus_daemon_constructor (GType type,
 
   if (daemons == NULL)
     {
+      /* This slice is never freed; it's a one-per-DBusConnection leak. */
       daemons = g_slice_new (GSList *);
 
       *daemons = NULL;

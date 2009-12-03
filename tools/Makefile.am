@@ -31,6 +31,7 @@ EXTRA_DIST = \
     manager-file.py \
     shave.mk \
     telepathy.am \
+    telepathy-glib.supp \
     telepathy-glib-env.in \
     with-session-bus.sh \
     xincludator.py

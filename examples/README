@@ -8,11 +8,8 @@ You can get more examples of telepathy-glib usage from:
   telepathy-salut, telepathy-sofiasip and telepathy-haze)
 * the regression tests (tests/ in the source release)
 
-telepathy-glib-examples.supp
-----------------------------
-A Valgrind suppressions file, used to check the examples and tests for leaks -
-it may be useful to Telepathy developers, to suppress unwanted messages
-when debugging other Telepathy components.
+A valgrind suppressions file telepathy-glib-examples.supp was previously here,
+but it's been moved to tools/telepathy-glib.supp.
 
 client/list-managers.c
 ----------------------

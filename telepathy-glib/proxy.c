@@ -891,6 +891,7 @@ tp_proxy_or_subclass_hook_on_interface_add (GType proxy_or_subclass,
   g_return_if_fail (g_type_is_a (proxy_or_subclass, TP_TYPE_PROXY));
   g_return_if_fail (callback != NULL);
 
+  /* never freed, suppressed in telepathy-glib.supp */
   new_link = g_slice_new0 (TpProxyInterfaceAddLink);
   new_link->callback = callback;
   new_link->next = old_link;    /* may be NULL */
@@ -950,6 +951,9 @@ tp_proxy_subclass_add_error_mapping (GType proxy_subclass,
   new_link = g_slice_new0 (TpProxyErrorMappingLink);
   new_link->prefix = static_prefix;
   new_link->domain = domain;
+  /* We never unref the enum type - intentional one-per-process leak.
+   * See "tp_proxy_subclass_add_error_mapping refs the enum" in our valgrind
+   * suppressions file */
   new_link->code_enum_class = g_type_class_ref (code_enum_type);
   new_link->next = old_link;    /* may be NULL */
   g_type_set_qdata (proxy_subclass, q, new_link);
