@@ -19,20 +19,22 @@ TESTS = $(noinst_PROGRAMS) \
 TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
     abs_top_srcdir=@abs_top_srcdir@ \
-    G_DEBUG=fatal_warnings,fatal_criticals \
+    G_SLICE=debug-blocks \
+    G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     PYTHONPATH=@abs_top_srcdir@/tools
 
 include $(top_srcdir)/tools/valgrind.mk
 
 VALGRIND_TESTS_ENVIRONMENT = \
-    G_SLICE=always-malloc \
     $(TESTS_ENVIRONMENT) \
+    G_SLICE=always-malloc \
     $(top_builddir)/libtool --mode=execute \
     $(VALGRIND) $(VALGRIND_FLAGS)
 
 check-valgrind:
 	$(MAKE) check-TESTS \
-		TESTS='$$(noinst_PROGRAMS)'
+		maybe_gc_friendly=,gc-friendly \
+		TESTS='$$(noinst_PROGRAMS)' \
 		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
 	$(MAKE) -C dbus check-valgrind
 

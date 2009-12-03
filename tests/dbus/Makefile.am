@@ -168,19 +168,21 @@ TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
     XDG_DATA_HOME=@abs_builddir@ \
     XDG_DATA_DIRS=@abs_srcdir@ \
-    G_DEBUG=fatal_warnings,fatal_criticals \
+    G_SLICE=debug-blocks \
+    G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     sh $(top_srcdir)/tools/with-session-bus.sh \
-	--config-file=dbus-1/session.conf --
+        --config-file=dbus-1/session.conf --
 
 check-valgrind:
 	$(MAKE) check-TESTS \
+		maybe_gc_friendly=,gc-friendly \
 		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
 
 include $(top_srcdir)/tools/valgrind.mk
 
 VALGRIND_TESTS_ENVIRONMENT = \
-    G_SLICE=always-malloc \
     $(TESTS_ENVIRONMENT) \
+    env G_SLICE=always-malloc \
     $(top_builddir)/libtool --mode=execute \
     $(VALGRIND) $(VALGRIND_FLAGS)
 
