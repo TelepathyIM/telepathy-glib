@@ -182,6 +182,7 @@ our_headers = \
     svc-generic.h \
     svc-media-interfaces.h \
     svc-properties-interface.h \
+    telepathy-glib.h \
     text-mixin.h \
     util.h
 
