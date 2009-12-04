@@ -3,6 +3,7 @@
 
 #include <glib-object.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
+#include <tpl-log-store-empathy.h>
 
 #define TP_IFACE_CHAN_TEXT "org.freedesktop.Telepathy.Channel.Type.Text"
 
@@ -27,6 +28,9 @@ typedef struct _TplObserver TplObserver;
 struct _TplObserver
 {
 	GObject parent;
+
+	/* private */
+	TplLogStoreEmpathy *logstore;
 };
 
 typedef struct _TplObserverClass TplObserverClass;

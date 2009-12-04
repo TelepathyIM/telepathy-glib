@@ -22,26 +22,32 @@
  *          Jonny Lamb <jonny.lamb@collabora.co.uk>
  */
 
-#include <config.h>
+//#include <config.h>
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <glib/gstdio.h>
 
+#include <glib-object.h>
+
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/account.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/defs.h>
 
-#include "empathy-log-store.h"
-#include "empathy-log-store-empathy.h"
-#include "empathy-log-manager.h"
-#include "empathy-contact.h"
-#include "empathy-time.h"
-#include "empathy-utils.h"
+#include <tpl-log-store.h>
+#include <tpl-log-store-empathy.h>
+#include <tpl-log-manager.h>
+#include <empathy-contact.h>
+#include <empathy-time.h>
+#include <empathy-utils.h>
+
+#include <tpl_log_entry_text.h>
+#include <tpl_contact.h>
 
 #define DEBUG_FLAG EMPATHY_DEBUG_OTHER
-#include "empathy-debug.h"
+#include <empathy-debug.h>
 
 #define LOG_DIR_CREATE_MODE       (S_IRUSR | S_IWUSR | S_IXUSR)
 #define LOG_FILE_CREATE_MODE      (S_IRUSR | S_IWUSR)
@@ -69,7 +75,7 @@ typedef struct
 static void log_store_iface_init (gpointer g_iface,gpointer iface_data);
 
 G_DEFINE_TYPE_WITH_CODE (TplLogStoreEmpathy, tpl_log_store_empathy,
-    G_TYPE_OBJECT, G_IMPLEMENT_INTERFACE (EMPATHY_TYPE_LOG_STORE,
+    G_TYPE_OBJECT, G_IMPLEMENT_INTERFACE (TPL_TYPE_LOG_STORE,
       log_store_iface_init));
 
 static void
@@ -97,7 +103,7 @@ static void
 tpl_log_store_empathy_init (TplLogStoreEmpathy *self)
 {
   TplLogStoreEmpathyPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      EMPATHY_TYPE_LOG_STORE_EMPATHY, TplLogStoreEmpathyPriv);
+      TPL_TYPE_LOG_STORE_EMPATHY, TplLogStoreEmpathyPriv);
 
   self->priv = priv;
 
@@ -164,11 +170,11 @@ log_store_empathy_get_timestamp_filename (void)
 }
 
 static gchar *
-log_store_empathy_get_timestamp_from_message (TplLogEntry *message)
+log_store_empathy_get_timestamp_from_message (TplLogEntryText *message)
 {
   time_t t;
 
-  t = empathy_message_get_timestamp (message);
+  t = tpl_log_entry_text_get_timestamp (message);
 
   /* We keep the timestamps in the messages as UTC. */
   return empathy_time_to_string_utc (t, LOG_TIME_FORMAT_FULL);
@@ -198,12 +204,12 @@ static gboolean
 log_store_empathy_add_message (TplLogStore *self,
                                const gchar *chat_id,
                                gboolean chatroom,
-                               TplLogEntry *message,
+                               TplLogEntryText *message,
                                GError **error)
 {
   FILE *file;
   TpAccount *account;
-  TpContact *sender;
+  TplContact *sender;
   const gchar *body_str;
   const gchar *str;
   //EmpathyAvatar *avatar;
@@ -218,11 +224,11 @@ log_store_empathy_add_message (TplLogStore *self,
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   g_return_val_if_fail (chat_id != NULL, FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
 
   sender = tpl_log_entry_text_get_sender (message);
   account = tpl_channel_get_account (
-	tpl_log_entry_text_get_channel (message) );
+	tpl_log_entry_text_get_tpl_channel (message) );
   body_str = tpl_log_entry_text_get_message (message);
   msg_type = tpl_log_entry_text_get_message_type (message);
 
@@ -259,10 +265,10 @@ log_store_empathy_add_message (TplLogStore *self,
   body = g_markup_escape_text (body_str, -1);
   timestamp = log_store_empathy_get_timestamp_from_message (message);
 
-  str = tp_contact_get_alias (sender);
+  str = tpl_contact_get_alias (sender);
   contact_name = g_markup_escape_text (str, -1);
 
-  str = tp_contact_get_id (sender);
+  str = tpl_contact_get_identifier (sender);
   contact_id = g_markup_escape_text (str, -1);
 /*
   avatar = empathy_contact_get_avatar (sender);
@@ -272,11 +278,13 @@ log_store_empathy_add_message (TplLogStore *self,
   g_fprintf (file,
        "<message time='%s' cm_id='%d' id='%s' name='%s' token='%s' isuser='%s' type='%s'>"
        "%s</message>\n" LOG_FOOTER, timestamp,
-       empathy_message_get_id (message),
+       tpl_log_entry_text_get_id (message),
        contact_id, contact_name,
-       avatar_token ? avatar_token : "",
-       empathy_contact_is_user (sender) ? "true" : "false",
-       empathy_message_type_to_str (msg_type), body);
+       //avatar_token ? avatar_token : "", // instead force to "" as
+       //follow
+	"",
+       tpl_contact_get_contact_type (sender) == TPL_CONTACT_USER ? "true" : "false",
+       tpl_log_entry_text_message_type_to_str (msg_type), body);
 
   fclose (file);
   g_free (filename);
@@ -284,7 +292,7 @@ log_store_empathy_add_message (TplLogStore *self,
   g_free (contact_name);
   g_free (timestamp);
   g_free (body);
-  g_free (avatar_token);
+  //g_free (avatar_token);
 
   return TRUE;
 }
@@ -446,7 +454,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
   xmlNodePtr log_node;
   xmlNodePtr node;
 
-  g_return_val_if_fail (EMPATHY_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   g_return_val_if_fail (filename != NULL, NULL);
 
   DEBUG ("Attempting to parse filename:'%s'...", filename);
@@ -481,8 +489,8 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
   /* Now get the messages. */
   for (node = log_node->children; node; node = node->next)
     {
-      TplLogEntry *message;
-      EmpathyContact *sender;
+      TplLogEntryText *message;
+      TplContact *sender;
       gchar *time_;
       time_t t;
       gchar *sender_id;
@@ -519,22 +527,30 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
         cm_id = atoi (cm_id_str);
 
       t = empathy_time_parse (time_);
+//TODO remove me
+      //sender = empathy_contact_new_for_log (account, sender_id, sender_name,
+	//				    is_user);
+      sender = tpl_contact_new();
+      tpl_contact_set_account(sender, account);
+      tpl_contact_set_identifier(sender, sender_id);
+      tpl_contact_set_alias(sender, sender_name);
 
-      sender = empathy_contact_new_for_log (account, sender_id, sender_name,
-					    is_user);
-
+      /* TODO remove avatar code
       if (!EMP_STR_EMPTY (sender_avatar_token))
         empathy_contact_load_avatar_cache (sender,
             sender_avatar_token);
+*/
 
-      message = empathy_message_new (body);
-      empathy_message_set_sender (message, sender);
-      empathy_message_set_timestamp (message, t);
-      empathy_message_set_tptype (message, msg_type);
-      empathy_message_set_is_backlog (message, TRUE);
+      message = tpl_log_entry_text_new();
+      tpl_log_entry_text_set_message(message, body);
+      tpl_log_entry_text_set_sender (message, sender);
+      tpl_log_entry_text_set_timestamp (message, t);
+      tpl_log_entry_text_set_message_type (message, msg_type);
+	//TODO uderstand if useful
+      //tpl_log_entry_text_set_is_backlog (message, TRUE);
 
       if (cm_id_str)
-        empathy_message_set_id (message, cm_id);
+        tpl_log_entry_text_set_id (message, cm_id);
 
       messages = g_list_append (messages, message);
 
@@ -609,7 +625,7 @@ log_store_empathy_search_new (TplLogStore *self,
   GList *hits = NULL;
   gchar *text_casefold;
 
-  g_return_val_if_fail (EMPATHY_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   g_return_val_if_fail (!EMP_STR_EMPTY (text), NULL);
 
   text_casefold = g_utf8_casefold (text, -1);
@@ -714,7 +730,7 @@ log_store_empathy_get_messages_for_date (TplLogStore *self,
   gchar *filename;
   GList *messages;
 
-  g_return_val_if_fail (EMPATHY_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   g_return_val_if_fail (chat_id != NULL, NULL);
   g_return_val_if_fail (account != NULL, NULL);
 

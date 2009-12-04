@@ -21,7 +21,7 @@
  * Authors: Xavier Claessens <xclaesse@gmail.com>
  */
 
-#include <config.h>
+//#include <config.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -31,14 +31,14 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
 
-#include "empathy-log-manager.h"
-#include "empathy-log-store-empathy.h"
-#include "empathy-log-store.h"
-#include "empathy-tp-chat.h"
-#include "empathy-utils.h"
+#include <tpl-log-manager.h>
+#include <tpl-log-store-empathy.h>
+#include <tpl-log-store.h>
+#include <empathy-tp-chat.h>
+#include <empathy-utils.h>
 
 #define DEBUG_FLAG EMPATHY_DEBUG_OTHER
-#include "empathy-debug.h"
+#include <empathy-debug.h>
 
 #define GET_PRIV(obj) EMPATHY_GET_PRIV (obj, EmpathyLogManager)
 typedef struct

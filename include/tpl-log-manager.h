@@ -26,8 +26,8 @@
 
 #include <glib-object.h>
 
-#include "empathy-message.h"
-#include "empathy-dispatcher.h"
+#include <empathy-message.h>
+#include <empathy-dispatcher.h>
 
 G_BEGIN_DECLS
 

@@ -15,15 +15,24 @@ G_BEGIN_DECLS
 #define TPL_IS_CONTACT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONTACT))
 #define TPL_CONTACT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONTACT, TplContactClass))
 
+
+typedef enum {
+	TPL_CONTACT_USER,
+	TPL_CONTACT_GROUP
+} TplContactType;
+
 typedef struct {
 	GObject parent;
 
 	/* Private */
 	TpContact	*contact; // maybe NULL
+	TplContactType	contact_type;
 	const gchar	*alias;
 	const gchar	*identifier;
 	const gchar	*presence_status;
 	const gchar	*presence_message;
+
+	TpAccount	*account;
 } TplContact;
 
 
@@ -42,6 +51,8 @@ TplContact *tpl_contact_new();
 	ADD_GET(identifier, const gchar *);
 	ADD_GET(presence_status, const gchar *);
 	ADD_GET(presence_message, const gchar *);
+	ADD_GET(contact_type, TplContactType);
+	ADD_GET(account, TpAccount *);
 #undef ADD_GET
 
 #define ADD_SET(x,y)	void tpl_contact_set_##x(TplContact *self, y data)
@@ -50,6 +61,8 @@ TplContact *tpl_contact_new();
 	ADD_SET(identifier, const gchar *);
 	ADD_SET(presence_status, const gchar *);
 	ADD_SET(presence_message, const gchar *);
+	ADD_SET(contact_type, TplContactType);
+	ADD_SET(account, TpAccount *);
 #undef ADD_SET
 
 G_END_DECLS

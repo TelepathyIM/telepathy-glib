@@ -23,6 +23,8 @@ TplContact *tpl_contact_new() {
 	ADD_GET(identifier, const gchar *);
 	ADD_GET(presence_status, const gchar *);
 	ADD_GET(presence_message, const gchar *);
+	ADD_GET(contact_type, TplContactType);
+	ADD_GET(account, TpAccount *);
 #undef ADD_GET
 
 #define ADD_SET(member,y)	void tpl_contact_set_##member(TplContact *self, y data) { \
@@ -30,6 +32,7 @@ TplContact *tpl_contact_new() {
 		self->member = data; \
 		_ref_object_if_not_null(data); }
 	ADD_SET(contact, TpContact *);
+	ADD_SET(account, TpAccount *);
 #undef ADD_SET
 #define ADD_SET_SIMPLE(member,y)	void tpl_contact_set_##member(TplContact *self, y data) { \
 		self->member = data;}
@@ -37,4 +40,5 @@ TplContact *tpl_contact_new() {
 	ADD_SET_SIMPLE(identifier, const gchar *);
 	ADD_SET_SIMPLE(presence_status, const gchar *);
 	ADD_SET_SIMPLE(presence_message, const gchar *);
+	ADD_SET_SIMPLE(contact_type, TplContactType);
 #undef ADD_SET_SIMPLE

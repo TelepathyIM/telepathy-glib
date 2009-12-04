@@ -3,7 +3,7 @@
 #include <tpl_observer.h>
 #include <tpl_channel_data.h>
 #include <tpl_text_channel_data.h>
-//#include <tpl_log_entry_text.h>
+#include <tpl_log_entry_text.h>
 #include <tpl_contact.h>
 
 #define TP_CONTACT_FEATURES_LEN	2
@@ -52,6 +52,7 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	const gchar *remote_pres_msg, *remote_pres_status;
 	TplContact *tpl_contact_sender;
 	TplContact *tpl_contact_receiver;
+	TplLogEntryText *log;
 
 
 	me = tpl_text_channel_get_my_contact(tpl_text);
@@ -69,8 +70,6 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	my_pres_msg = tp_contact_get_presence_message (me);
 	remote_pres_msg = tp_contact_get_presence_message (remote);
 	
-	g_message("%s (%s): %s\n", my_id, my_alias, arg_Text);
-
 	tpl_contact_sender = tpl_contact_new();
 	tpl_contact_receiver = tpl_contact_new();
 #define CONTACT_ENTRY_SET(x,y) tpl_contact_set_##x(tpl_contact_sender,y)
@@ -88,11 +87,20 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	CONTACT_ENTRY_SET(presence_message, remote_pres_msg);
 #undef CONTACT_ENTRY_SET
 
-	g_message("BIS: %s (%s): %s\n", 
-			tpl_contact_get_identifier(tpl_contact_sender), 
-			tpl_contact_get_alias(tpl_contact_sender),
-			arg_Text);
+	g_message("%s (%s): %s\n", 
+		tpl_contact_get_identifier(tpl_contact_sender), 
+		tpl_contact_get_alias(tpl_contact_sender),
+		arg_Text);
 
+
+	log = tpl_log_entry_text_new();
+	tpl_log_entry_text_set_tpl_channel(log, 
+		tpl_text_channel_get_tpl_channel(tpl_text));
+	tpl_log_entry_text_set_sender(log, tpl_contact_sender);
+	tpl_log_entry_text_set_receiver(log, tpl_contact_receiver);
+	tpl_log_entry_text_set_message(log, arg_Text);
+	tpl_log_entry_text_set_message_type(log, arg_Type);
+	tpl_log_entry_text_set_signal_type(log, TPL_LOG_ENTRY_TEXT_CHANNEL_MESSAGE);
 
 }
 
@@ -113,6 +121,7 @@ void _channel_on_received_signal_cb (TpChannel *proxy,
 	const gchar *remote_pres_msg, *remote_pres_status;
 	TplContact *tpl_contact_sender;
 	TplContact *tpl_contact_receiver;
+	TplLogEntryText *log;
 
 	me = tpl_text_channel_get_my_contact(tpl_text);
 	remote = tpl_text_channel_get_remote_contact(tpl_text);
@@ -129,8 +138,6 @@ void _channel_on_received_signal_cb (TpChannel *proxy,
 	my_pres_msg = tp_contact_get_presence_message (me);
 	remote_pres_msg = tp_contact_get_presence_message (remote);
 	
-	g_message("FOO%s (%s): %s\n", remote_id, remote_alias, arg_Text);
-
 	tpl_contact_sender = tpl_contact_new();
 	tpl_contact_receiver = tpl_contact_new();
 #define CONTACT_ENTRY_SET(x,y) tpl_contact_set_##x(tpl_contact_sender,y)
@@ -148,11 +155,20 @@ void _channel_on_received_signal_cb (TpChannel *proxy,
 	CONTACT_ENTRY_SET(presence_message, my_pres_msg);
 #undef CONTACT_ENTRY_SET
 
-	g_message("BIS: %s (%s): %s\n", 
-			tpl_contact_get_identifier(tpl_contact_sender), 
-			tpl_contact_get_alias(tpl_contact_sender),
-			arg_Text);
+	g_message("%s (%s): %s\n", 
+		tpl_contact_get_identifier(tpl_contact_sender), 
+		tpl_contact_get_alias(tpl_contact_sender),
+		arg_Text);
 
+
+	log = tpl_log_entry_text_new();
+	tpl_log_entry_text_set_tpl_channel(log,
+		tpl_text_channel_get_tpl_channel(tpl_text));
+	tpl_log_entry_text_set_sender(log, tpl_contact_sender);
+	tpl_log_entry_text_set_receiver(log, tpl_contact_receiver);
+	tpl_log_entry_text_set_message(log, arg_Text);
+	tpl_log_entry_text_set_message_type(log, arg_Type);
+	tpl_log_entry_text_set_signal_type(log, TPL_LOG_ENTRY_TEXT_CHANNEL_MESSAGE);
 }
 
 /* connect signals to TplTextChannel instance */
@@ -170,7 +186,7 @@ void _tpl_text_channel_connect_signals(TplTextChannel* self) {
 	tp_cli_channel_type_text_connect_to_received(self->tpl_channel->channel,
 		_channel_on_received_signal_cb, self, NULL, NULL, &error);
 	if (error!=NULL) {
-		g_error("receaived signal connect: %s\n", error->message);
+		g_error("received signal connect: %s\n", error->message);
 		g_clear_error(&error);
 		g_error_free(error);
 	}
