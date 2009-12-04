@@ -17,7 +17,6 @@ void tpl_headless_logger_init(void)
 	DBusGConnection *bus;
 	TpDBusDaemon *tp_bus;
 	GError *error = NULL;
-	TplLogStoreEmpathy *logstore;
 
 	bus = tp_get_bus();
 	tp_bus = tp_dbus_daemon_new(bus);
@@ -31,11 +30,9 @@ void tpl_headless_logger_init(void)
 		g_error_free(error);
 	}
 
-	logstore = g_object_new(TPL_TYPE_LOG_STORE_EMPATHY, NULL);
 
 	observer = tpl_observer_new ();
 	dbus_g_connection_register_g_object (bus,
 			TPL_OBSERVER_OBJECT_PATH,
 			G_OBJECT(observer));
-	observer->logstore = logstore;
 }

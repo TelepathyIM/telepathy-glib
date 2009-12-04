@@ -1,5 +1,7 @@
 #include <telepathy-glib/contact.h>
 
+#include <tpl-log-store.h>
+#include <tpl-log-store-empathy.h>
 #include <tpl_observer.h>
 #include <tpl_channel_data.h>
 #include <tpl_text_channel_data.h>
@@ -45,6 +47,7 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 		gpointer user_data,
 		GObject *weak_object)
 {
+	GError *error=NULL;
 	TplTextChannel *tpl_text = TPL_TEXT_CHANNEL(user_data);
 	TpContact *remote,*me;
 	const gchar *my_id, *my_alias, *remote_id, *remote_alias;
@@ -53,6 +56,7 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	TplContact *tpl_contact_sender;
 	TplContact *tpl_contact_receiver;
 	TplLogEntryText *log;
+	TplLogStoreEmpathy *logstore;
 
 
 	me = tpl_text_channel_get_my_contact(tpl_text);
@@ -78,6 +82,7 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	CONTACT_ENTRY_SET(identifier, my_id);
 	CONTACT_ENTRY_SET(presence_status, my_pres_status);
 	CONTACT_ENTRY_SET(presence_message, my_pres_msg );
+	CONTACT_ENTRY_SET(contact_type, TPL_CONTACT_USER); 
 #undef CONTACT_ENTRY_SET
 #define CONTACT_ENTRY_SET(x,y) tpl_contact_set_##x(tpl_contact_receiver,y)
 	CONTACT_ENTRY_SET(contact, remote);
@@ -85,6 +90,7 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	CONTACT_ENTRY_SET(identifier, remote_id);
 	CONTACT_ENTRY_SET(presence_status, remote_pres_status );
 	CONTACT_ENTRY_SET(presence_message, remote_pres_msg);
+	CONTACT_ENTRY_SET(contact_type, TPL_CONTACT_USER); 
 #undef CONTACT_ENTRY_SET
 
 	g_message("%s (%s): %s\n", 
@@ -100,7 +106,28 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	tpl_log_entry_text_set_receiver(log, tpl_contact_receiver);
 	tpl_log_entry_text_set_message(log, arg_Text);
 	tpl_log_entry_text_set_message_type(log, arg_Type);
-	tpl_log_entry_text_set_signal_type(log, TPL_LOG_ENTRY_TEXT_CHANNEL_MESSAGE);
+	tpl_log_entry_text_set_signal_type(log,
+			TPL_LOG_ENTRY_TEXT_CHANNEL_MESSAGE);
+	tpl_log_entry_text_set_timestamp(log, (time_t) arg_Timestamp);
+	tpl_log_entry_text_set_id(log, 123);
+
+
+	logstore = g_object_new(TPL_TYPE_LOG_STORE_EMPATHY, NULL);
+	if (!TPL_LOG_STORE_GET_INTERFACE(logstore)->add_message) {
+		g_warning("LOGSTORE IFACE: add message not implemented\n");
+		return;
+	}
+
+	tpl_log_store_add_message( TPL_LOG_STORE(logstore),
+			tpl_contact_get_identifier(tpl_contact_sender),
+			FALSE,
+			log,
+			&error);
+	if(error!=NULL) {
+		g_error("LOGSTORE: %s", error->message);
+		g_clear_error(&error);
+		g_error_free(error);
+	}
 
 }
 

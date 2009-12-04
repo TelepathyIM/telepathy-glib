@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PACKAGE_NAME="TpHeadlessLogger"
+PACKAGE_NAME="TpLogger"
 CC=${CC:-gcc}
 CCOPTS="-DPACKAGE_NAME=\"${PACKAGE_NAME}\" --std=c99 -g -I/usr/include/libempathy -I../include -Wall -Werror" # -pedantic"
 PKGS="telepathy-glib libempathy"

@@ -110,7 +110,7 @@ tpl_log_store_empathy_init (TplLogStoreEmpathy *self)
   priv->basedir = g_build_path (G_DIR_SEPARATOR_S, g_get_user_data_dir (),
     PACKAGE_NAME, "logs", NULL);
 
-  priv->name = g_strdup ("Empathy");
+  priv->name = g_strdup ("TpLogger");
   priv->account_manager = tp_account_manager_dup ();
 }
 
