@@ -32,6 +32,13 @@ enum
   PROP_CHANNEL_FILTER
 };
 
+void _observe_channel_when_ready_cb(TpChannel *channel,
+		const GError *error,
+		gpointer user_data);
+void _tp_connection_called_when_ready_cb(TpConnection *connection,
+		const GError *error,
+		gpointer user_data);
+
 
 void _observe_channel_when_ready_cb(TpChannel *channel,
 		const GError *error,
@@ -121,8 +128,7 @@ tpl_observer_observe_channels (TpSvcClientObserver   *self,
   }
 
   /* channels is of type a(oa{sv}) */
-  int i;
-  for (i = 0; i < channels->len; i++)
+  for (guint i = 0; i < channels->len; i++)
     {
       GValueArray *channel = g_ptr_array_index (channels, i);
       TpChannel *tp_chan = NULL;
@@ -162,6 +168,8 @@ tpl_observer_get_property (GObject    *self,
   g_print(" :: get_property\n");
   switch (property_id)
     {
+	GPtrArray *array;
+	GHashTable *map;
       case PROP_INTERFACES:
         g_print (" :: interfaces\n");
         g_value_set_boxed (value, client_interfaces);
@@ -171,8 +179,8 @@ tpl_observer_get_property (GObject    *self,
         g_print (" :: channel-filter\n");
 
         /* create an empty filter - which means all channels */
-        GPtrArray *array = g_ptr_array_new ();
-        GHashTable *map = g_hash_table_new (NULL, NULL);
+        array = g_ptr_array_new ();
+        map = g_hash_table_new (NULL, NULL);
 
         g_ptr_array_add (array, map);
         g_value_set_boxed (value, array);
@@ -188,8 +196,6 @@ static void
 tpl_observer_class_init (TplObserverClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  object_class->get_property = tpl_observer_get_property;
 
   /* D-Bus properties are exposed as GObject properties through the
    * TpDBusPropertiesMixin */
@@ -219,6 +225,7 @@ tpl_observer_class_init (TplObserverClass *klass)
         },
         { NULL }
   };
+  object_class->get_property = tpl_observer_get_property;
 
   g_object_class_install_property (object_class, PROP_INTERFACES,
       g_param_spec_boxed ("interfaces",

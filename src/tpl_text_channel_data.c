@@ -33,6 +33,24 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 		const gchar *arg_Text,
 		gpointer user_data,
 		GObject *weak_object);
+void _channel_on_received_signal_cb (TpChannel *proxy,
+		guint arg_ID,
+		guint arg_Timestamp,
+		guint arg_Sender,
+		guint arg_Type,
+		guint arg_Flags,
+		const gchar *arg_Text,
+		gpointer user_data,
+		GObject *weak_object);
+void _tpl_text_channel_connect_signals(TplTextChannel* self);
+void _tpl_text_channel_set_ready_cb(TpConnection *connection,
+		guint n_contacts,
+		TpContact * const *contacts,
+		guint n_failed,
+		const TpHandle *failed,
+		const GError *error,
+		gpointer user_data,
+		GObject *weak_object);
 /* end of definitions */
 
 
@@ -58,7 +76,7 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	TplLogEntryText *log;
 	TplLogStoreEmpathy *logstore;
 
-
+	/* Initialize data for TplContact */
 	me = tpl_text_channel_get_my_contact(tpl_text);
 	remote = tpl_text_channel_get_remote_contact(tpl_text);
 
@@ -99,6 +117,8 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 		arg_Text);
 
 
+	/* Initialize TplLogEntryText */
+
 	log = tpl_log_entry_text_new();
 	tpl_log_entry_text_set_tpl_channel(log, 
 		tpl_text_channel_get_tpl_channel(tpl_text));
@@ -111,6 +131,7 @@ void _channel_on_sent_signal_cb (TpChannel *proxy,
 	tpl_log_entry_text_set_timestamp(log, (time_t) arg_Timestamp);
 	tpl_log_entry_text_set_id(log, 123);
 
+	/* Initialized LogStore and send the message */
 
 	logstore = g_object_new(TPL_TYPE_LOG_STORE_EMPATHY, NULL);
 	if (!TPL_LOG_STORE_GET_INTERFACE(logstore)->add_message) {
@@ -200,7 +221,8 @@ void _channel_on_received_signal_cb (TpChannel *proxy,
 
 /* connect signals to TplTextChannel instance */
 
-void _tpl_text_channel_connect_signals(TplTextChannel* self) {
+void _tpl_text_channel_connect_signals(TplTextChannel* self)
+{
 	GError *error=NULL;
 //	 Signals for Text channels
 //	   "lost-message"                                   : Run Last / Has Details

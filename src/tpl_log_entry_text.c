@@ -22,6 +22,26 @@ TplLogEntryText *tpl_log_entry_text_new(void) {
 
 
 
+TpChannelTextMessageType
+tpl_log_entry_text_message_type_from_str (const gchar *type_str)
+{
+	if (g_strcmp0 (type_str, "normal") == 0) {
+		return TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
+	}
+	if (g_strcmp0 (type_str, "action") == 0) {
+		return TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION;
+	}
+	else if (g_strcmp0 (type_str, "notice") == 0) {
+		return TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE;
+	}
+	else if (g_strcmp0 (type_str, "auto-reply") == 0) {
+		return TP_CHANNEL_TEXT_MESSAGE_TYPE_AUTO_REPLY;
+	}
+
+	return TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
+}
+
+
 const gchar *tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
 {
        switch (msg_type) {

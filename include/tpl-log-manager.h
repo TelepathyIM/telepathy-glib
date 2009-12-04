@@ -21,47 +21,46 @@
  * Authors: Xavier Claessens <xclaesse@gmail.com>
  */
 
-#ifndef __EMPATHY_LOG_MANAGER_H__
-#define __EMPATHY_LOG_MANAGER_H__
+#ifndef __TPL_LOG_MANAGER_H__
+#define __TPL_LOG_MANAGER_H__
 
 #include <glib-object.h>
 
-#include <empathy-message.h>
-#include <empathy-dispatcher.h>
+#include <tpl_log_entry_text.h>
 
 G_BEGIN_DECLS
 
-#define EMPATHY_TYPE_LOG_MANAGER (empathy_log_manager_get_type ())
-#define EMPATHY_LOG_MANAGER(o) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((o), EMPATHY_TYPE_LOG_MANAGER, \
-                               EmpathyLogManager))
-#define EMPATHY_LOG_MANAGER_CLASS(k) \
-  (G_TYPE_CHECK_CLASS_CAST ((k), EMPATHY_TYPE_LOG_MANAGER, \
-                            EmpathyLogManagerClass))
-#define EMPATHY_IS_LOG_MANAGER(o) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((o), EMPATHY_TYPE_LOG_MANAGER))
-#define EMPATHY_IS_LOG_MANAGER_CLASS(k) \
-  (G_TYPE_CHECK_CLASS_TYPE ((k), EMPATHY_TYPE_LOG_MANAGER))
-#define EMPATHY_LOG_MANAGER_GET_CLASS(o) \
-  (G_TYPE_INSTANCE_GET_CLASS ((o), EMPATHY_TYPE_LOG_MANAGER, \
-                              EmpathyLogManagerClass))
+#define TPL_TYPE_LOG_MANAGER (tpl_log_manager_get_type ())
+#define TPL_LOG_MANAGER(o) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((o), TPL_TYPE_LOG_MANAGER, \
+                               TplLogManager))
+#define TPL_LOG_MANAGER_CLASS(k) \
+  (G_TYPE_CHECK_CLASS_CAST ((k), TPL_TYPE_LOG_MANAGER, \
+                            TplLogManagerClass))
+#define TPL_IS_LOG_MANAGER(o) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((o), TPL_TYPE_LOG_MANAGER))
+#define TPL_IS_LOG_MANAGER_CLASS(k) \
+  (G_TYPE_CHECK_CLASS_TYPE ((k), TPL_TYPE_LOG_MANAGER))
+#define TPL_LOG_MANAGER_GET_CLASS(o) \
+  (G_TYPE_INSTANCE_GET_CLASS ((o), TPL_TYPE_LOG_MANAGER, \
+                              TplLogManagerClass))
 
-typedef struct _EmpathyLogManager EmpathyLogManager;
-typedef struct _EmpathyLogManagerClass EmpathyLogManagerClass;
-typedef struct _EmpathyLogSearchHit EmpathyLogSearchHit;
+typedef struct _TplLogManager TplLogManager;
+typedef struct _TplLogManagerClass TplLogManagerClass;
+typedef struct _TplLogSearchHit TplLogSearchHit;
 
-struct _EmpathyLogManager
+struct _TplLogManager
 {
   GObject parent;
   gpointer priv;
 };
 
-struct _EmpathyLogManagerClass
+struct _TplLogManagerClass
 {
   GObjectClass parent_class;
 };
 
-struct _EmpathyLogSearchHit
+struct _TplLogSearchHit
 {
   TpAccount *account;
   gchar     *chat_id;
@@ -70,34 +69,34 @@ struct _EmpathyLogSearchHit
   gchar     *date;
 };
 
-typedef gboolean (*EmpathyLogMessageFilter) (EmpathyMessage *message,
+typedef gboolean (*TplLogMessageFilter) (TplLogEntryText *message,
     gpointer user_data);
 
-GType empathy_log_manager_get_type (void) G_GNUC_CONST;
-EmpathyLogManager *empathy_log_manager_dup_singleton (void);
-gboolean empathy_log_manager_add_message (EmpathyLogManager *manager,
-    const gchar *chat_id, gboolean chatroom, EmpathyMessage *message,
+GType tpl_log_manager_get_type (void) G_GNUC_CONST;
+TplLogManager *tpl_log_manager_dup_singleton (void);
+gboolean tpl_log_manager_add_message (TplLogManager *manager,
+    const gchar *chat_id, gboolean chatroom, TplLogEntryText *message,
     GError **error);
-gboolean empathy_log_manager_exists (EmpathyLogManager *manager,
+gboolean tpl_log_manager_exists (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
-GList *empathy_log_manager_get_dates (EmpathyLogManager *manager,
+GList *tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
-GList *empathy_log_manager_get_messages_for_date (EmpathyLogManager *manager,
+GList *tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
     const gchar *date);
-GList *empathy_log_manager_get_filtered_messages (EmpathyLogManager *manager,
+GList *tpl_log_manager_get_filtered_messages (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
-    guint num_messages, EmpathyLogMessageFilter filter, gpointer user_data);
-GList *empathy_log_manager_get_chats (EmpathyLogManager *manager,
+    guint num_messages, TplLogMessageFilter filter, gpointer user_data);
+GList *tpl_log_manager_get_chats (TplLogManager *manager,
     TpAccount *account);
-GList *empathy_log_manager_search_new (EmpathyLogManager *manager,
+GList *tpl_log_manager_search_new (TplLogManager *manager,
     const gchar *text);
-void empathy_log_manager_search_free (GList *hits);
-gchar *empathy_log_manager_get_date_readable (const gchar *date);
-void empathy_log_manager_search_hit_free (EmpathyLogSearchHit *hit);
-void empathy_log_manager_observe (EmpathyLogManager *log_manager,
-    EmpathyDispatcher *dispatcher);
+void tpl_log_manager_search_free (GList *hits);
+gchar *tpl_log_manager_get_date_readable (const gchar *date);
+void tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
+//void tpl_log_manager_observe (TplLogManager *log_manager,
+//    EmpathyDispatcher *dispatcher);
 
 G_END_DECLS
 
-#endif /* __EMPATHY_LOG_MANAGER_H__ */
+#endif /* __TPL_LOG_MANAGER_H__ */

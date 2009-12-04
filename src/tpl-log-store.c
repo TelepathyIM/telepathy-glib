@@ -161,7 +161,7 @@ tpl_log_store_get_filtered_messages (TplLogStore *self,
                                          const gchar *chat_id,
                                          gboolean chatroom,
                                          guint num_messages,
-                                         EmpathyLogMessageFilter filter,
+                                         TplLogMessageFilter filter,
                                          gpointer user_data)
 
 {

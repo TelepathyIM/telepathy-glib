@@ -43,7 +43,7 @@ typedef struct {
 
 GType  tpl_contact_get_type (void);
 
-TplContact *tpl_contact_new();
+TplContact *tpl_contact_new(void);
 
 #define ADD_GET(x,y)	y tpl_contact_get_##x(TplContact *self)
 	ADD_GET(contact, TpContact *);

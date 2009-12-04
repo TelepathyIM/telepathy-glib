@@ -5,7 +5,7 @@
 
 #include <tpl_observer.h>
 
-#include <empathy-log-store-empathy.h>
+#include <tpl-log-store-empathy.h>
 
 /* 
  * Initialization of TPL (TelePathy Logger), it futurely set all the

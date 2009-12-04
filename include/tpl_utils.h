@@ -3,6 +3,9 @@
 
 #include <glib-object.h>
 
+#define TPL_GET_PRIV(obj,type) ((type##Priv *) ((type *) obj)->priv)
+#define TPL_STR_EMPTY(x) ((x) == NULL || (x)[0] == '\0')
+
 void _unref_object_if_not_null(void* data);
 void _ref_object_if_not_null(void* data);
 

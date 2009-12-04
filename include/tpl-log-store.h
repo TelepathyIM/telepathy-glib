@@ -27,7 +27,6 @@
 
 #include <telepathy-glib/account.h>
 
-#include <empathy-message.h>
 #include <tpl-log-manager.h>
 
 #include <tpl_log_entry_text.h>
@@ -70,10 +69,10 @@ struct _TplLogStoreInterface
       gboolean chatroom, TplLogEntryText *message);
   GList * (*get_filtered_messages) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom, guint num_messages,
-      EmpathyLogMessageFilter filter, gpointer user_data);
+      TplLogMessageFilter filter, gpointer user_data);
 };
 
-GType tpl_log_store_get_type (void) G_GNUC_CONST;
+GType tpl_log_store_get_type (void);
 
 const gchar *tpl_log_store_get_name (TplLogStore *self);
 gboolean tpl_log_store_exists (TplLogStore *self,
@@ -96,7 +95,7 @@ void tpl_log_store_ack_message (TplLogStore *self,
     const gchar *chat_id, gboolean chatroom, TplLogEntryText *message);
 GList *tpl_log_store_get_filtered_messages (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
-    guint num_messages, EmpathyLogMessageFilter filter, gpointer user_data);
+    guint num_messages, TplLogMessageFilter filter, gpointer user_data);
 
 G_END_DECLS
 

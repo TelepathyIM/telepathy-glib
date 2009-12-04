@@ -55,8 +55,9 @@ typedef struct {
 
 GType tpl_log_entry_text_get_type (void);
 
-TplLogEntryText *tpl_log_entry_text_new ();
+TplLogEntryText *tpl_log_entry_text_new (void);
 
+TpChannelTextMessageType tpl_log_entry_text_message_type_from_str (const gchar *type_str);
 const gchar *tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type);
 
 
