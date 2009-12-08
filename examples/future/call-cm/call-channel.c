@@ -47,6 +47,7 @@
 
 #include "extensions/extensions.h"
 
+#include "call-content.h"
 #include "call-stream.h"
 
 static void media_iface_init (gpointer iface, gpointer data);
@@ -118,6 +119,9 @@ struct _ExampleCallChannelPrivate
 
   guint next_stream_id;
 
+  /* guint stream ID => ExampleCallContent */
+  GHashTable *stream_contents;
+  /* guint stream ID => ExampleCallStream */
   GHashTable *streams;
 
   guint hold_state;
@@ -143,6 +147,8 @@ example_call_channel_init (ExampleCallChannel *self)
       ExampleCallChannelPrivate);
 
   self->priv->next_stream_id = 1;
+  self->priv->stream_contents = g_hash_table_new_full (g_direct_hash,
+      g_direct_equal, NULL, g_object_unref);
   self->priv->streams = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, g_object_unref);
 
@@ -480,6 +486,8 @@ dispose (GObject *object)
 
   g_hash_table_destroy (self->priv->streams);
   self->priv->streams = NULL;
+  g_hash_table_destroy (self->priv->stream_contents);
+  self->priv->stream_contents = NULL;
 
   example_call_channel_close (self, self->group.self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
@@ -895,6 +903,7 @@ stream_removed_cb (ExampleCallStream *stream,
   g_signal_handlers_disconnect_matched (stream, G_SIGNAL_MATCH_DATA,
       0, 0, NULL, NULL, self);
   g_hash_table_remove (self->priv->streams, GUINT_TO_POINTER (id));
+  g_hash_table_remove (self->priv->stream_contents, GUINT_TO_POINTER (id));
   tp_svc_channel_type_streamed_media_emit_stream_removed (self, id);
 
   if (g_hash_table_size (self->priv->streams) == 0)
@@ -1042,15 +1051,32 @@ example_call_channel_add_stream (ExampleCallChannel *self,
     TpMediaStreamType media_type,
     gboolean locally_requested)
 {
+  ExampleCallContent *content;
   ExampleCallStream *stream;
   guint id = self->priv->next_stream_id++;
   guint state, direction, pending_send;
+  const gchar *type_str;
+  TpHandle creator;
+  gchar *name;
+
+  type_str = (media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
+  creator = self->priv->handle;
+  name = g_strdup_printf ("%s%u", type_str, id);
 
   if (locally_requested)
     {
-      g_message ("SIGNALLING: send: new %s stream",
-          media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
+      g_message ("SIGNALLING: send: new %s stream %s", type_str, name);
+      creator = self->priv->conn->self_handle;
     }
+
+  content = g_object_new (EXAMPLE_TYPE_CALL_CONTENT,
+      "channel", self,
+      "creator", creator,
+      "type", media_type,
+      "name", name,
+      "disposition", FUTURE_CALL_CONTENT_DISPOSITION_NONE,
+      NULL);
+  g_free (name);
 
   stream = g_object_new (EXAMPLE_TYPE_CALL_STREAM,
       "channel", self,
@@ -1061,6 +1087,8 @@ example_call_channel_add_stream (ExampleCallChannel *self,
       NULL);
 
   g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
+  g_hash_table_insert (self->priv->stream_contents,
+      GUINT_TO_POINTER (id), content);
 
   tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
       self->priv->handle, media_type);
