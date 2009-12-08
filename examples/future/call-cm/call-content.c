@@ -57,6 +57,7 @@ struct _ExampleCallContentPrivate
   TpMediaStreamType type;
   TpHandle creator;
   FutureCallContentDisposition disposition;
+  ExampleCallStream *stream;
 };
 
 static void
@@ -201,6 +202,12 @@ dispose (GObject *object)
       self->priv->channel = NULL;
     }
 
+  if (self->priv->stream != NULL)
+    {
+      g_object_unref (self->priv->stream);
+      self->priv->stream = NULL;
+    }
+
   if (self->priv->conn != NULL)
     {
       TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
@@ -309,4 +316,21 @@ example_call_content_class_init (ExampleCallContentClass *klass)
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCallContentClass,
         dbus_properties_class));
+}
+
+ExampleCallStream *
+example_call_content_get_stream (ExampleCallContent *self)
+{
+  g_return_val_if_fail (EXAMPLE_IS_CALL_CONTENT (self), NULL);
+  return self->priv->stream;
+}
+
+void
+example_call_content_add_stream (ExampleCallContent *self,
+    ExampleCallStream *stream)
+{
+  g_return_if_fail (EXAMPLE_IS_CALL_CONTENT (self));
+  g_return_if_fail (EXAMPLE_IS_CALL_STREAM (stream));
+  g_return_if_fail (self->priv->stream == NULL);
+  self->priv->stream = g_object_ref (stream);
 }

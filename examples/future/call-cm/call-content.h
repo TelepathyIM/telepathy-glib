@@ -26,6 +26,8 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+#include "call-stream.h"
+
 G_BEGIN_DECLS
 
 typedef struct _ExampleCallContent ExampleCallContent;
@@ -67,6 +69,12 @@ struct _ExampleCallContent {
 
     ExampleCallContentPrivate *priv;
 };
+
+/* In this example, each content can only have one stream. */
+ExampleCallStream *example_call_content_get_stream (ExampleCallContent *self);
+
+void example_call_content_add_stream (ExampleCallContent *self,
+    ExampleCallStream *stream);
 
 G_END_DECLS
 

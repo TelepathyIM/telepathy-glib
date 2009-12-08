@@ -126,10 +126,8 @@ struct _ExampleCallChannelPrivate
 
   guint next_stream_id;
 
-  /* guint stream ID => ExampleCallContent */
-  GHashTable *stream_contents;
-  /* guint stream ID => ExampleCallStream */
-  GHashTable *streams;
+  /* guint StreamedMedia stream ID => ExampleCallContent */
+  GHashTable *contents;
 
   guint hold_state;
   guint hold_state_reason;
@@ -154,10 +152,8 @@ example_call_channel_init (ExampleCallChannel *self)
       ExampleCallChannelPrivate);
 
   self->priv->next_stream_id = 1;
-  self->priv->stream_contents = g_hash_table_new_full (g_direct_hash,
+  self->priv->contents = g_hash_table_new_full (g_direct_hash,
       g_direct_equal, NULL, g_object_unref);
-  self->priv->streams = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-      NULL, g_object_unref);
 
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_UNHELD;
   self->priv->hold_state_reason = TP_LOCAL_HOLD_STATE_REASON_NONE;
@@ -376,11 +372,11 @@ get_property (GObject *object,
     case PROP_CONTENT_PATHS:
         {
           GPtrArray *paths = g_ptr_array_sized_new (g_hash_table_size (
-                self->priv->stream_contents));
+                self->priv->contents));
           GHashTableIter iter;
           gpointer v;
 
-          g_hash_table_iter_init (&iter, self->priv->stream_contents);
+          g_hash_table_iter_init (&iter, self->priv->contents);
 
           while (g_hash_table_iter_next (&iter, NULL, &v))
             {
@@ -572,10 +568,8 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
-  g_hash_table_destroy (self->priv->streams);
-  self->priv->streams = NULL;
-  g_hash_table_destroy (self->priv->stream_contents);
-  self->priv->stream_contents = NULL;
+  g_hash_table_destroy (self->priv->contents);
+  self->priv->contents = NULL;
 
   example_call_channel_close (self, self->group.self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
@@ -641,14 +635,19 @@ add_member (GObject *object,
 
       tp_intset_destroy (set);
 
-      g_hash_table_iter_init (&iter, self->priv->streams);
+      g_hash_table_iter_init (&iter, self->priv->contents);
 
       while (g_hash_table_iter_next (&iter, NULL, &v))
         {
+          ExampleCallStream *stream = example_call_content_get_stream (v);
+
+          if (stream == NULL)
+            continue;
+
           /* we accept the proposed stream direction... */
-          example_call_stream_accept_proposed_direction (v);
+          example_call_stream_accept_proposed_direction (stream);
           /* ... and the stream tries to connect */
-          example_call_stream_connect (v);
+          example_call_stream_connect (stream);
         }
 
       return TRUE;
@@ -945,16 +944,19 @@ media_list_streams (TpSvcChannelTypeStreamedMedia *iface,
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
   GPtrArray *array = g_ptr_array_sized_new (g_hash_table_size (
-        self->priv->streams));
+        self->priv->contents));
   GHashTableIter iter;
   gpointer v;
 
-  g_hash_table_iter_init (&iter, self->priv->streams);
+  g_hash_table_iter_init (&iter, self->priv->contents);
 
   while (g_hash_table_iter_next (&iter, NULL, &v))
     {
-      ExampleCallStream *stream = v;
+      ExampleCallStream *stream = example_call_content_get_stream (v);
       GValueArray *va;
+
+      if (stream == NULL)
+        continue;
 
       g_object_get (stream,
           "stream-info", &va,
@@ -969,6 +971,8 @@ media_list_streams (TpSvcChannelTypeStreamedMedia *iface,
   g_ptr_array_free (array, TRUE);
 }
 
+/* This is expressed in terms of streams because it's the old API, but it
+ * really means removing contents. */
 static void
 media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
     const GArray *stream_ids,
@@ -981,7 +985,7 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
     {
       guint id = g_array_index (stream_ids, guint, i);
 
-      if (g_hash_table_lookup (self->priv->streams,
+      if (g_hash_table_lookup (self->priv->contents,
             GUINT_TO_POINTER (id)) == NULL)
         {
           GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
@@ -996,9 +1000,12 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
   for (i = 0; i < stream_ids->len; i++)
     {
       guint id = g_array_index (stream_ids, guint, i);
+      ExampleCallContent *content =
+        g_hash_table_lookup (self->priv->contents, GUINT_TO_POINTER (id));
+      ExampleCallStream *stream = example_call_content_get_stream (content);
 
-      example_call_stream_close (
-          g_hash_table_lookup (self->priv->streams, GUINT_TO_POINTER (id)));
+      if (stream != NULL)
+        example_call_stream_close (stream);
     }
 
   tp_svc_channel_type_streamed_media_return_from_remove_streams (context);
@@ -1011,14 +1018,15 @@ media_request_stream_direction (TpSvcChannelTypeStreamedMedia *iface,
     DBusGMethodInvocation *context)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-  ExampleCallStream *stream = g_hash_table_lookup (
-      self->priv->streams, GUINT_TO_POINTER (stream_id));
+  ExampleCallContent *content = g_hash_table_lookup (
+      self->priv->contents, GUINT_TO_POINTER (stream_id));
+  ExampleCallStream *stream;
   GError *error = NULL;
 
-  if (stream == NULL)
+  if (content == NULL)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "No stream with ID %u in this channel", stream_id);
+          "No content with ID %u in this channel", stream_id);
       goto error;
     }
 
@@ -1028,6 +1036,8 @@ media_request_stream_direction (TpSvcChannelTypeStreamedMedia *iface,
           "Stream direction %u is not valid", stream_direction);
       goto error;
     }
+
+  stream = example_call_content_get_stream (content);
 
   /* In some protocols, streams cannot be neither sending nor receiving, so
    * if a stream is set to TP_MEDIA_STREAM_DIRECTION_NONE, this is equivalent
@@ -1047,7 +1057,7 @@ media_request_stream_direction (TpSvcChannelTypeStreamedMedia *iface,
    * directionless.
    */
 
-  if (!example_call_stream_change_direction (stream,
+  if (stream != NULL && !example_call_stream_change_direction (stream,
         stream_direction, &error))
     goto error;
 
@@ -1075,23 +1085,22 @@ stream_removed_cb (ExampleCallStream *stream,
   g_signal_handlers_disconnect_matched (stream, G_SIGNAL_MATCH_DATA,
       0, 0, NULL, NULL, self);
 
-  content = g_hash_table_lookup (self->priv->stream_contents,
+  content = g_hash_table_lookup (self->priv->contents,
       GUINT_TO_POINTER (id));
 
-  g_hash_table_remove (self->priv->streams, GUINT_TO_POINTER (id));
   tp_svc_channel_type_streamed_media_emit_stream_removed (self, id);
 
   g_object_get (content,
       "object-path", &path,
       NULL);
 
-  g_hash_table_remove (self->priv->stream_contents, GUINT_TO_POINTER (id));
+  g_hash_table_remove (self->priv->contents, GUINT_TO_POINTER (id));
   future_svc_channel_type_call_emit_content_removed (self, path);
   g_free (path);
 
-  if (g_hash_table_size (self->priv->streams) == 0)
+  if (g_hash_table_size (self->priv->contents) == 0)
     {
-      /* no streams left, so the call terminates */
+      /* no contents left, so the call terminates */
       example_call_channel_close (self, 0,
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
     }
@@ -1180,14 +1189,19 @@ simulate_contact_answered_cb (gpointer p)
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (peer_set);
 
-  g_hash_table_iter_init (&iter, self->priv->streams);
+  g_hash_table_iter_init (&iter, self->priv->contents);
 
   while (g_hash_table_iter_next (&iter, NULL, &v))
     {
+      ExampleCallStream *stream = example_call_content_get_stream (v);
+
+      if (stream == NULL)
+        continue;
+
       /* remote contact accepts our proposed stream direction... */
-      example_call_stream_simulate_contact_agreed_to_send (v);
+      example_call_stream_simulate_contact_agreed_to_send (stream);
       /* ... and the stream tries to connect */
-      example_call_stream_connect (v);
+      example_call_stream_connect (stream);
     }
 
   contact_repo = tp_base_connection_get_handles
@@ -1263,7 +1277,7 @@ example_call_channel_add_stream (ExampleCallChannel *self,
       "object-path", path,
       NULL);
 
-  g_hash_table_insert (self->priv->stream_contents,
+  g_hash_table_insert (self->priv->contents,
       GUINT_TO_POINTER (id), content);
   future_svc_channel_type_call_emit_content_added (self, path, media_type);
   g_free (path);
@@ -1279,7 +1293,7 @@ example_call_channel_add_stream (ExampleCallChannel *self,
       "object-path", path,
       NULL);
 
-  g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
+  example_call_content_add_stream (content, stream);
   tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
       self->priv->handle, media_type);
   g_free (path);
