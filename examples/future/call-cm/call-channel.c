@@ -38,6 +38,8 @@
 
 #include <string.h>
 
+#include <gobject/gvaluecollector.h>
+
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
@@ -113,7 +115,11 @@ struct _ExampleCallChannelPrivate
   gchar *object_path;
   TpHandle handle;
   TpHandle initiator;
+
   FutureCallState call_state;
+  FutureCallFlags call_flags;
+  GValueArray *call_state_reason;
+  GHashTable *call_state_details;
 
   guint simulation_delay;
 
@@ -137,6 +143,73 @@ static const char * example_call_channel_interfaces[] = {
     NULL
 };
 
+G_GNUC_NULL_TERMINATED static void
+example_call_channel_set_state (ExampleCallChannel *self,
+    FutureCallState state,
+    FutureCallFlags flags,
+    TpHandle actor,
+    FutureCallStateChangeReason reason,
+    const gchar *error,
+    ...)
+{
+  TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
+      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  TpHandle old_actor;
+  const gchar *key;
+  va_list va;
+
+  self->priv->call_state = state;
+  self->priv->call_flags = flags;
+
+  old_actor = g_value_get_uint (self->priv->call_state_reason->values + 0);
+
+  if (actor != 0)
+    tp_handle_ref (contact_handles, actor);
+
+  if (old_actor != 0)
+    tp_handle_ref (contact_handles, old_actor);
+
+  g_value_set_uint (self->priv->call_state_reason->values + 0, actor);
+  g_value_set_uint (self->priv->call_state_reason->values + 1, reason);
+  g_value_set_string (self->priv->call_state_reason->values + 2, error);
+
+  g_hash_table_remove_all (self->priv->call_state_details);
+
+  va_start (va, error);
+
+  /* This is basically tp_asv_new_va(), but that doesn't exist yet
+   * (and when it does, we still won't want to use it in this example
+   * just yet, because examples shouldn't use unreleased API) */
+  for (key = va_arg (va, const gchar *);
+       key != NULL;
+       key = va_arg (va, const gchar *))
+    {
+      GType type = va_arg (va, GType);
+      GValue *value = tp_g_value_slice_new (type);
+      gchar *collect_error = NULL;
+
+      G_VALUE_COLLECT (value, va, 0, &collect_error);
+
+      if (collect_error != NULL)
+        {
+          g_critical ("key %s: %s", key, collect_error);
+          g_free (collect_error);
+          collect_error = NULL;
+          tp_g_value_slice_free (value);
+          continue;
+        }
+
+      g_hash_table_insert (self->priv->call_state_details,
+          (gchar *) key, value);
+    }
+
+  va_end (va);
+
+  future_svc_channel_type_call_emit_call_state_changed (self,
+      self->priv->call_state, self->priv->call_flags,
+      self->priv->call_state_reason, self->priv->call_state_details);
+}
+
 static void
 example_call_channel_init (ExampleCallChannel *self)
 {
@@ -147,6 +220,16 @@ example_call_channel_init (ExampleCallChannel *self)
   self->priv->next_stream_id = 1;
   self->priv->contents = g_hash_table_new_full (g_direct_hash,
       g_direct_equal, NULL, g_object_unref);
+
+  self->priv->call_state = FUTURE_CALL_STATE_UNKNOWN; /* set in constructed */
+  self->priv->call_flags = 0;
+  self->priv->call_state_reason = tp_value_array_build (3,
+      G_TYPE_UINT, 0,   /* actor */
+      G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      G_TYPE_STRING, "",
+      G_TYPE_INVALID);
+  self->priv->call_state_details = tp_asv_new (
+      NULL, NULL);
 
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_UNHELD;
   self->priv->hold_state_reason = TP_LOCAL_HOLD_STATE_REASON_NONE;
@@ -198,14 +281,20 @@ constructed (GObject *object)
       /* Nobody is locally pending. The remote peer will turn up in
        * remote-pending state when we actually contact them, which is done
        * in RequestStreams */
-      self->priv->call_state = FUTURE_CALL_STATE_PENDING_INITIATOR;
+      example_call_channel_set_state (self,
+          FUTURE_CALL_STATE_PENDING_INITIATOR, 0, 0,
+          FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+          NULL);
       local_pending = NULL;
     }
   else
     {
       /* This is an incoming call, so the self-handle is locally
        * pending, to indicate that we need to answer. */
-      self->priv->call_state = FUTURE_CALL_STATE_PENDING_RECEIVER;
+      example_call_channel_set_state (self,
+          FUTURE_CALL_STATE_PENDING_RECEIVER, 0, self->priv->handle,
+          FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+          NULL);
       local_pending = tp_intset_new_containing (self->priv->conn->self_handle);
     }
 
@@ -388,24 +477,19 @@ get_property (GObject *object,
       break;
 
     case PROP_CALL_STATE:
-      g_value_set_uint (value, 0);  /* FIXME: stub */
+      g_value_set_uint (value, self->priv->call_state);
       break;
 
     case PROP_CALL_FLAGS:
-      g_value_set_uint (value, 0);  /* FIXME: stub */
+      g_value_set_uint (value, self->priv->call_flags);
       break;
 
     case PROP_CALL_STATE_REASON:
-      g_value_take_boxed (value,
-          tp_value_array_build (3,
-            G_TYPE_UINT, 0,         /* FIXME: stub (actor) */
-            G_TYPE_UINT, 0,         /* FIXME: stub (reason code) */
-            G_TYPE_STRING, "",      /* FIXME: stub (D-Bus error name or "") */
-            G_TYPE_INVALID));
+      g_value_set_boxed (value, self->priv->call_state_reason);
       break;
 
     case PROP_CALL_STATE_DETAILS:
-      g_value_take_boxed (value, tp_asv_new (NULL, NULL));  /* FIXME: stub */
+      g_value_set_boxed (value, self->priv->call_state_details);
       break;
 
     case PROP_HARDWARE_STREAMING:
@@ -511,7 +595,11 @@ example_call_channel_close (ExampleCallChannel *self,
     {
       TpIntSet *everyone;
 
-      self->priv->call_state = FUTURE_CALL_STATE_ENDED;
+      example_call_channel_set_state (self,
+          FUTURE_CALL_STATE_ENDED, 0, actor,
+          /* FIXME: take a reason and an error as arguments to this function */
+          FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "",
+          NULL);
 
       if (actor == self->group.self_handle)
         {
@@ -578,6 +666,9 @@ finalize (GObject *object)
   TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
+  g_value_array_free (self->priv->call_state_reason);
+  g_hash_table_destroy (self->priv->call_state_details);
+
   tp_handle_unref (contact_handles, self->priv->handle);
   tp_handle_unref (contact_handles, self->priv->initiator);
 
@@ -618,7 +709,10 @@ add_member (GObject *object,
       g_message ("SIGNALLING: send: Accepting incoming call from %s",
           tp_handle_inspect (contact_repo, self->priv->handle));
 
-      self->priv->call_state = FUTURE_CALL_STATE_ACCEPTED;
+      example_call_channel_set_state (self,
+          FUTURE_CALL_STATE_ACCEPTED, 0, self->group.self_handle,
+          FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+          NULL);
 
       tp_group_mixin_change_members (object, "",
           set /* added */,
@@ -1171,7 +1265,10 @@ simulate_contact_answered_cb (gpointer p)
 
   g_message ("SIGNALLING: receive: contact answered our call");
 
-  self->priv->call_state = FUTURE_CALL_STATE_ACCEPTED;
+  example_call_channel_set_state (self,
+      FUTURE_CALL_STATE_ACCEPTED, 0, self->priv->handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      NULL);
 
   peer_set = tp_intset_new_containing (self->priv->handle);
   tp_group_mixin_change_members ((GObject *) self, "",
@@ -1389,7 +1486,10 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
           const gchar *peer;
 
           g_message ("SIGNALLING: send: new streamed media call");
-          self->priv->call_state = FUTURE_CALL_STATE_PENDING_RECEIVER;
+          example_call_channel_set_state (self,
+              FUTURE_CALL_STATE_PENDING_RECEIVER, 0, self->group.self_handle,
+              FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+              NULL);
 
           tp_group_mixin_change_members ((GObject *) self, "",
               NULL /* nobody added */,
