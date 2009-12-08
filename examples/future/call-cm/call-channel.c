@@ -1065,6 +1065,8 @@ stream_removed_cb (ExampleCallStream *stream,
     ExampleCallChannel *self)
 {
   guint id;
+  gchar *path;
+  ExampleCallContent *content;
 
   g_object_get (stream,
       "id", &id,
@@ -1072,9 +1074,20 @@ stream_removed_cb (ExampleCallStream *stream,
 
   g_signal_handlers_disconnect_matched (stream, G_SIGNAL_MATCH_DATA,
       0, 0, NULL, NULL, self);
+
+  content = g_hash_table_lookup (self->priv->stream_contents,
+      GUINT_TO_POINTER (id));
+
   g_hash_table_remove (self->priv->streams, GUINT_TO_POINTER (id));
-  g_hash_table_remove (self->priv->stream_contents, GUINT_TO_POINTER (id));
   tp_svc_channel_type_streamed_media_emit_stream_removed (self, id);
+
+  g_object_get (content,
+      "object-path", &path,
+      NULL);
+
+  g_hash_table_remove (self->priv->stream_contents, GUINT_TO_POINTER (id));
+  future_svc_channel_type_call_emit_content_removed (self, path);
+  g_free (path);
 
   if (g_hash_table_size (self->priv->streams) == 0)
     {
@@ -1249,6 +1262,10 @@ example_call_channel_add_stream (ExampleCallChannel *self,
       "disposition", FUTURE_CALL_CONTENT_DISPOSITION_NONE,
       "object-path", path,
       NULL);
+
+  g_hash_table_insert (self->priv->stream_contents,
+      GUINT_TO_POINTER (id), content);
+  future_svc_channel_type_call_emit_content_added (self, path, media_type);
   g_free (path);
   g_free (name);
 
@@ -1261,14 +1278,11 @@ example_call_channel_add_stream (ExampleCallChannel *self,
       "locally-requested", locally_requested,
       "object-path", path,
       NULL);
-  g_free (path);
 
   g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
-  g_hash_table_insert (self->priv->stream_contents,
-      GUINT_TO_POINTER (id), content);
-
   tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
       self->priv->handle, media_type);
+  g_free (path);
 
   g_object_get (stream,
       "state", &state,
