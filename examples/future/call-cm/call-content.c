@@ -38,7 +38,8 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallContent,
 
 enum
 {
-  PROP_CHANNEL = 1,
+  PROP_OBJECT_PATH = 1,
+  PROP_CHANNEL,
   PROP_NAME,
   PROP_TYPE,
   PROP_CREATOR,
@@ -49,6 +50,7 @@ enum
 
 struct _ExampleCallContentPrivate
 {
+  gchar *object_path;
   TpBaseConnection *conn;
   ExampleCallChannel *channel;
   gchar *name;
@@ -72,9 +74,20 @@ constructed (GObject *object)
   void (*chain_up) (GObject *) =
       ((GObjectClass *) example_call_content_parent_class)->constructed;
   TpHandleRepoIface *contact_repo;
+  TpDBusDaemon *dbus_daemon;
 
   if (chain_up != NULL)
     chain_up (object);
+
+  dbus_daemon = tp_dbus_daemon_dup (NULL);
+  g_return_if_fail (dbus_daemon != NULL);
+
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (dbus_daemon),
+      self->priv->object_path, object);
+
+  g_object_unref (dbus_daemon);
+  dbus_daemon = NULL;
 
   g_object_get (self->priv->channel,
       "connection", &self->priv->conn,
@@ -95,6 +108,10 @@ get_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_OBJECT_PATH:
+      g_value_set_string (value, self->priv->object_path);
+      break;
+
     case PROP_CHANNEL:
       g_value_set_object (value, self->priv->channel);
       break;
@@ -136,6 +153,11 @@ set_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_OBJECT_PATH:
+      g_assert (self->priv->object_path == NULL);   /* construct-only */
+      self->priv->object_path = g_value_dup_string (value);
+      break;
+
     case PROP_CHANNEL:
       g_assert (self->priv->channel == NULL);
       self->priv->channel = g_value_dup_object (value);
@@ -201,6 +223,7 @@ finalize (GObject *object)
   void (*chain_up) (GObject *) =
     ((GObjectClass *) example_call_content_parent_class)->finalize;
 
+  g_free (self->priv->object_path);
   g_free (self->priv->name);
 
   if (chain_up != NULL)
@@ -237,6 +260,11 @@ example_call_content_class_init (ExampleCallContentClass *klass)
   object_class->get_property = get_property;
   object_class->dispose = dispose;
   object_class->finalize = finalize;
+
+  param_spec = g_param_spec_string ("object-path", "D-Bus object path",
+      "The D-Bus object path used for this object on the bus.", NULL,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
   param_spec = g_param_spec_object ("channel", "ExampleCallChannel",
       "Media channel that owns this content",

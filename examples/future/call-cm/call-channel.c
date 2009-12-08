@@ -378,20 +378,17 @@ get_property (GObject *object,
           GPtrArray *paths = g_ptr_array_sized_new (g_hash_table_size (
                 self->priv->stream_contents));
           GHashTableIter iter;
-          gpointer k, v;
+          gpointer v;
 
           g_hash_table_iter_init (&iter, self->priv->stream_contents);
 
-          while (g_hash_table_iter_next (&iter, &k, &v))
+          while (g_hash_table_iter_next (&iter, NULL, &v))
             {
-              ExampleCallContent *content = v;
               gchar *path;
 
-              /* FIXME: get the object path from the content, when it's
-               * actually exported on the bus */
-              (void) content;
-              path = g_strdup_printf ("%s/Content%u",
-                  self->priv->object_path, GPOINTER_TO_UINT (k));
+              g_object_get (v,
+                  "object-path", &path,
+                  NULL);
 
               g_ptr_array_add (paths, path);
             }
@@ -467,7 +464,7 @@ set_property (GObject *object,
   switch (property_id)
     {
     case PROP_OBJECT_PATH:
-      g_assert (self->priv->object_path == NULL);
+      g_assert (self->priv->object_path == NULL);   /* construct-only */
       self->priv->object_path = g_value_dup_string (value);
       break;
 
@@ -1231,6 +1228,7 @@ example_call_channel_add_stream (ExampleCallChannel *self,
   const gchar *type_str;
   TpHandle creator;
   gchar *name;
+  gchar *path;
 
   type_str = (media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
   creator = self->priv->handle;
@@ -1242,22 +1240,28 @@ example_call_channel_add_stream (ExampleCallChannel *self,
       creator = self->priv->conn->self_handle;
     }
 
+  path = g_strdup_printf ("%s/Content%u", self->priv->object_path, id);
   content = g_object_new (EXAMPLE_TYPE_CALL_CONTENT,
       "channel", self,
       "creator", creator,
       "type", media_type,
       "name", name,
       "disposition", FUTURE_CALL_CONTENT_DISPOSITION_NONE,
+      "object-path", path,
       NULL);
+  g_free (path);
   g_free (name);
 
+  path = g_strdup_printf ("%s/Stream%u", self->priv->object_path, id);
   stream = g_object_new (EXAMPLE_TYPE_CALL_STREAM,
       "channel", self,
       "id", id,
       "handle", self->priv->handle,
       "type", media_type,
       "locally-requested", locally_requested,
+      "object-path", path,
       NULL);
+  g_free (path);
 
   g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
   g_hash_table_insert (self->priv->stream_contents,

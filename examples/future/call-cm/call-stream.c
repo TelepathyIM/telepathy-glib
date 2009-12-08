@@ -40,7 +40,8 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallStream,
 
 enum
 {
-  PROP_CHANNEL = 1,
+  PROP_OBJECT_PATH = 1,
+  PROP_CHANNEL,
   PROP_CONTENT,
   PROP_ID,
   PROP_HANDLE,
@@ -65,6 +66,7 @@ static guint signals[N_SIGNALS] = { 0 };
 
 struct _ExampleCallStreamPrivate
 {
+  gchar *object_path;
   TpBaseConnection *conn;
   ExampleCallChannel *channel;
   ExampleCallContent *content;
@@ -111,11 +113,25 @@ static void
 constructed (GObject *object)
 {
   ExampleCallStream *self = EXAMPLE_CALL_STREAM (object);
+  TpDBusDaemon *dbus_daemon;
   void (*chain_up) (GObject *) =
       ((GObjectClass *) example_call_stream_parent_class)->constructed;
 
+  dbus_daemon = tp_dbus_daemon_dup (NULL);
+  g_return_if_fail (dbus_daemon != NULL);
+
   if (chain_up != NULL)
     chain_up (object);
+
+  dbus_daemon = tp_dbus_daemon_dup (NULL);
+  g_return_if_fail (dbus_daemon != NULL);
+
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (dbus_daemon),
+      self->priv->object_path, object);
+
+  g_object_unref (dbus_daemon);
+  dbus_daemon = NULL;
 
   g_object_get (self->priv->channel,
       "connection", &self->priv->conn,
@@ -142,6 +158,10 @@ get_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_OBJECT_PATH:
+      g_value_set_string (value, self->priv->object_path);
+      break;
+
     case PROP_ID:
       g_value_set_uint (value, self->priv->id);
       break;
@@ -216,6 +236,11 @@ set_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_OBJECT_PATH:
+      g_assert (self->priv->object_path == NULL);   /* construct-only */
+      self->priv->object_path = g_value_dup_string (value);
+      break;
+
     case PROP_ID:
       self->priv->id = g_value_get_uint (value);
       break;
@@ -297,6 +322,19 @@ dispose (GObject *object)
 }
 
 static void
+finalize (GObject *object)
+{
+  ExampleCallStream *self = EXAMPLE_CALL_STREAM (object);
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) example_call_stream_parent_class)->finalize;
+
+  g_free (self->priv->object_path);
+
+  if (chain_up != NULL)
+    chain_up (object);
+}
+
+static void
 example_call_stream_class_init (ExampleCallStreamClass *klass)
 {
   /*
@@ -325,6 +363,12 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
   object_class->set_property = set_property;
   object_class->get_property = get_property;
   object_class->dispose = dispose;
+  object_class->finalize = finalize;
+
+  param_spec = g_param_spec_string ("object-path", "D-Bus object path",
+      "The D-Bus object path used for this object on the bus.", NULL,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
   param_spec = g_param_spec_object ("channel", "ExampleCallChannel",
       "Media channel that owns this stream",
