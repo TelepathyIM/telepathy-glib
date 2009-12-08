@@ -134,8 +134,22 @@ get_property (GObject *object,
       break;
 
     case PROP_STREAM_PATHS:
-      /* FIXME: stub */
-      g_value_take_boxed (value, g_ptr_array_sized_new (0));
+        {
+          GPtrArray *paths = g_ptr_array_sized_new (1);
+
+          if (self->priv->stream != NULL)
+            {
+              gchar *path;
+
+              g_object_get (self->priv->stream,
+                  "object-path", &path,
+                  NULL);
+
+              g_ptr_array_add (paths, path);
+            }
+
+          g_value_take_boxed (value, paths);
+        }
       break;
 
     default:
