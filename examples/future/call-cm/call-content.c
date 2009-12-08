@@ -39,6 +39,11 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallContent,
 enum
 {
   PROP_CHANNEL = 1,
+  PROP_NAME,
+  PROP_TYPE,
+  PROP_CREATOR,
+  PROP_DISPOSITION,
+  PROP_STREAM_PATHS,
   N_PROPS
 };
 
@@ -46,6 +51,10 @@ struct _ExampleCallContentPrivate
 {
   TpBaseConnection *conn;
   ExampleCallChannel *channel;
+  gchar *name;
+  TpMediaStreamType type;
+  TpHandle creator;
+  FutureCallContentDisposition disposition;
 };
 
 static void
@@ -62,6 +71,7 @@ constructed (GObject *object)
   ExampleCallContent *self = EXAMPLE_CALL_CONTENT (object);
   void (*chain_up) (GObject *) =
       ((GObjectClass *) example_call_content_parent_class)->constructed;
+  TpHandleRepoIface *contact_repo;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -69,6 +79,10 @@ constructed (GObject *object)
   g_object_get (self->priv->channel,
       "connection", &self->priv->conn,
       NULL);
+
+  contact_repo = tp_base_connection_get_handles (self->priv->conn,
+      TP_HANDLE_TYPE_CONTACT);
+  tp_handle_ref (contact_repo, self->priv->creator);
 }
 
 static void
@@ -83,6 +97,27 @@ get_property (GObject *object,
     {
     case PROP_CHANNEL:
       g_value_set_object (value, self->priv->channel);
+      break;
+
+    case PROP_NAME:
+      g_value_set_string (value, self->priv->name);
+      break;
+
+    case PROP_CREATOR:
+      g_value_set_uint (value, self->priv->creator);
+      break;
+
+    case PROP_TYPE:
+      g_value_set_uint (value, self->priv->type);
+      break;
+
+    case PROP_DISPOSITION:
+      g_value_set_uint (value, self->priv->disposition);
+      break;
+
+    case PROP_STREAM_PATHS:
+      /* FIXME: stub */
+      g_value_take_boxed (value, g_ptr_array_sized_new (0));
       break;
 
     default:
@@ -106,6 +141,27 @@ set_property (GObject *object,
       self->priv->channel = g_value_dup_object (value);
       break;
 
+    case PROP_CREATOR:
+      /* we don't ref it here because we don't necessarily have access to the
+       * contact repo yet - instead we ref it in the constructor.
+       */
+      g_assert (self->priv->creator == 0);    /* construct-only */
+      self->priv->creator = g_value_get_uint (value);
+      break;
+
+    case PROP_NAME:
+      g_assert (self->priv->name == NULL);    /* construct-only */
+      self->priv->name = g_value_dup_string (value);
+      break;
+
+    case PROP_TYPE:
+      self->priv->type = g_value_get_uint (value);
+      break;
+
+    case PROP_DISPOSITION:
+      self->priv->disposition = g_value_get_uint (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -125,6 +181,12 @@ dispose (GObject *object)
 
   if (self->priv->conn != NULL)
     {
+      TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
+          (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+
+      tp_handle_unref (contact_handles, self->priv->creator);
+      self->priv->creator = 0;
+
       g_object_unref (self->priv->conn);
       self->priv->conn = NULL;
     }
@@ -135,24 +197,20 @@ dispose (GObject *object)
 static void
 example_call_content_class_init (ExampleCallContentClass *klass)
 {
-  /*
   static TpDBusPropertiesMixinPropImpl content_props[] = {
       { "Name", "name", NULL },
       { "Type", "type", NULL },
       { "Creator", "creator", NULL },
       { "Disposition", "disposition", NULL },
-      { "Streams", "streams", NULL },
+      { "Streams", "stream-paths", NULL },
       { NULL }
   };
-  */
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      /*
       { FUTURE_IFACE_CALL_CONTENT,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         content_props,
       },
-      */
       { NULL }
   };
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -172,8 +230,41 @@ example_call_content_class_init (ExampleCallContentClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
 
+  param_spec = g_param_spec_uint ("type", "TpMediaStreamType",
+      "Media stream type",
+      0, NUM_TP_MEDIA_STREAM_TYPES - 1, 0,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TYPE, param_spec);
+
+  param_spec = g_param_spec_uint ("disposition",
+      "FutureCallContentDisposition",
+      "Disposition of the content",
+      0, NUM_FUTURE_CALL_CONTENT_DISPOSITIONS - 1,
+      FUTURE_CALL_CONTENT_DISPOSITION_NONE,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DISPOSITION, param_spec);
+
+  param_spec = g_param_spec_uint ("creator", "Creator's handle",
+      "The contact who initiated this content",
+      0, G_MAXUINT32, 0,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CREATOR, param_spec);
+
+  param_spec = g_param_spec_string ("name", "Content name",
+      "The name of the content",
+      NULL,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_NAME, param_spec);
+
+  param_spec = g_param_spec_boxed ("stream-paths", "Stream paths",
+      "Streams' object paths",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_STREAM_PATHS,
+      param_spec);
+
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCallChannelClass,
+      G_STRUCT_OFFSET (ExampleCallContentClass,
         dbus_properties_class));
 }
