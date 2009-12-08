@@ -343,8 +343,16 @@ void
 example_call_content_add_stream (ExampleCallContent *self,
     ExampleCallStream *stream)
 {
+  gchar *path;
+
   g_return_if_fail (EXAMPLE_IS_CALL_CONTENT (self));
   g_return_if_fail (EXAMPLE_IS_CALL_STREAM (stream));
   g_return_if_fail (self->priv->stream == NULL);
+
   self->priv->stream = g_object_ref (stream);
+  g_object_get (stream,
+      "object-path", &path,
+      NULL);
+  future_svc_call_content_emit_stream_added (self, path);
+  g_free (path);
 }
