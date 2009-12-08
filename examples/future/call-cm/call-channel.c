@@ -1269,7 +1269,7 @@ example_call_channel_add_stream (ExampleCallChannel *self,
 
   path = g_strdup_printf ("%s/Content%u", self->priv->object_path, id);
   content = g_object_new (EXAMPLE_TYPE_CALL_CONTENT,
-      "channel", self,
+      "connection", self->priv->conn,
       "creator", creator,
       "type", media_type,
       "name", name,

@@ -26,8 +26,6 @@
 
 #include "extensions/extensions.h"
 
-#include "call-channel.h"
-
 G_DEFINE_TYPE_WITH_CODE (ExampleCallContent,
     example_call_content,
     G_TYPE_OBJECT,
@@ -39,7 +37,7 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallContent,
 enum
 {
   PROP_OBJECT_PATH = 1,
-  PROP_CHANNEL,
+  PROP_CONNECTION,
   PROP_NAME,
   PROP_TYPE,
   PROP_CREATOR,
@@ -52,7 +50,6 @@ struct _ExampleCallContentPrivate
 {
   gchar *object_path;
   TpBaseConnection *conn;
-  ExampleCallChannel *channel;
   gchar *name;
   TpMediaStreamType type;
   TpHandle creator;
@@ -90,10 +87,6 @@ constructed (GObject *object)
   g_object_unref (dbus_daemon);
   dbus_daemon = NULL;
 
-  g_object_get (self->priv->channel,
-      "connection", &self->priv->conn,
-      NULL);
-
   contact_repo = tp_base_connection_get_handles (self->priv->conn,
       TP_HANDLE_TYPE_CONTACT);
   tp_handle_ref (contact_repo, self->priv->creator);
@@ -113,8 +106,8 @@ get_property (GObject *object,
       g_value_set_string (value, self->priv->object_path);
       break;
 
-    case PROP_CHANNEL:
-      g_value_set_object (value, self->priv->channel);
+    case PROP_CONNECTION:
+      g_value_set_object (value, self->priv->conn);
       break;
 
     case PROP_NAME:
@@ -173,9 +166,9 @@ set_property (GObject *object,
       self->priv->object_path = g_value_dup_string (value);
       break;
 
-    case PROP_CHANNEL:
-      g_assert (self->priv->channel == NULL);
-      self->priv->channel = g_value_dup_object (value);
+    case PROP_CONNECTION:
+      g_assert (self->priv->conn == NULL);
+      self->priv->conn = g_value_dup_object (value);
       break;
 
     case PROP_CREATOR:
@@ -209,12 +202,6 @@ static void
 dispose (GObject *object)
 {
   ExampleCallContent *self = EXAMPLE_CALL_CONTENT (object);
-
-  if (self->priv->channel != NULL)
-    {
-      g_object_unref (self->priv->channel);
-      self->priv->channel = NULL;
-    }
 
   if (self->priv->stream != NULL)
     {
@@ -287,11 +274,11 @@ example_call_content_class_init (ExampleCallContentClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
-  param_spec = g_param_spec_object ("channel", "ExampleCallChannel",
-      "Media channel that owns this content",
-      EXAMPLE_TYPE_CALL_CHANNEL,
+  param_spec = g_param_spec_object ("connection", "TpBaseConnection",
+      "Connection that owns this content",
+      TP_TYPE_BASE_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
+  g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
   param_spec = g_param_spec_uint ("type", "TpMediaStreamType",
       "Media stream type",
