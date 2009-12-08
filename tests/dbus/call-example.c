@@ -29,6 +29,7 @@
 #include "examples/future/call-cm/conn.h"
 #include "examples/future/call-cm/call-channel.h"
 #include "examples/future/call-cm/call-stream.h"
+#include "extensions/extensions.h"
 
 #include "tests/lib/util.h"
 
@@ -154,6 +155,7 @@ typedef struct
   GArray *contacts;
   GPtrArray *request_streams_return;
   GPtrArray *list_streams_return;
+  GPtrArray *get_contents_return;
 
   GSList *group_events;
   gulong members_changed_detailed_id;
@@ -393,6 +395,24 @@ listed_streams_cb (TpChannel *chan G_GNUC_UNUSED,
 
   test->list_streams_return = g_boxed_copy (
       TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST, stream_info);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+got_contents_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+
+  test_assert_no_error (error);
+
+  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
+  g_assert (G_VALUE_HOLDS (value, TP_ARRAY_TYPE_OBJECT_PATH_LIST));
+  test->get_contents_return = g_value_dup_boxed (value);
 
   g_main_loop_quit (test->mainloop);
 }
@@ -643,6 +663,16 @@ test_basics (Test *test,
 
   g_assert_cmpuint (test->list_streams_return->len, ==, 0);
 
+  /* There are no Contents, either. */
+
+  tp_cli_dbus_properties_call_get (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
+      got_contents_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->get_contents_return->len, ==, 0);
+
   /* RequestStreams with bad handle must fail */
 
   tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
@@ -697,6 +727,16 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==,
       TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
+  /* Get Contents: now we have an audio stream (FIXME: assert that) */
+
+  tp_cli_dbus_properties_call_get (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
+      got_contents_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
+
   /* ListStreams again: now we have the audio stream */
 
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
@@ -722,6 +762,16 @@ test_basics (Test *test,
       TP_MEDIA_STREAM_TYPE_AUDIO);
   /* Don't assert about the state or the direction here - it might already have
    * changed to connected or bidirectional, respectively. */
+
+  /* There is one Content. FIXME: check that it is in fact audio */
+
+  tp_cli_dbus_properties_call_get (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
+      got_contents_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
 
   /* The two oldest stream events should be the addition of the audio stream,
    * and the change to the appropriate direction (StreamAdded does not signal
@@ -857,6 +907,16 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (video_info->values + 5), ==,
       TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
+  /* There are two Contents, because now we have the video stream too */
+
+  tp_cli_dbus_properties_call_get (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
+      got_contents_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->get_contents_return->len, ==, 2);
+
   /* ListStreams again: now we have the video stream too */
 
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
@@ -940,6 +1000,16 @@ test_basics (Test *test,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
+
+  /* Get contents again: now there's only the audio */
+
+  tp_cli_dbus_properties_call_get (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
+      got_contents_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
 
   /* List streams again: now there's only the audio */
 
@@ -1435,6 +1505,16 @@ test_incoming (Test *test,
   g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
         tp_channel_get_handle (test->chan, NULL)));
 
+  /* Get Contents: we have an audio stream (FIXME: assert that) */
+
+  tp_cli_dbus_properties_call_get (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
+      got_contents_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
+
   /* ListStreams: we have an audio stream */
 
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
@@ -1568,6 +1648,8 @@ teardown (Test *test,
       &test->list_streams_return);
   CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->request_streams_return);
+  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      &test->get_contents_return);
 
   g_hash_table_destroy (test->stream_directions);
   g_hash_table_destroy (test->stream_pending_sends);
