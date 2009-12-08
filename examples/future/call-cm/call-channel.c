@@ -589,7 +589,9 @@ set_property (GObject *object,
 static void
 example_call_channel_close (ExampleCallChannel *self,
     TpHandle actor,
-    TpChannelGroupChangeReason reason)
+    TpChannelGroupChangeReason reason,
+    FutureCallStateChangeReason call_reason,
+    const gchar *error_name)
 {
   if (self->priv->call_state != FUTURE_CALL_STATE_ENDED)
     {
@@ -597,8 +599,7 @@ example_call_channel_close (ExampleCallChannel *self,
 
       example_call_channel_set_state (self,
           FUTURE_CALL_STATE_ENDED, 0, actor,
-          /* FIXME: take a reason and an error as arguments to this function */
-          FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "",
+          call_reason, error_name,
           NULL);
 
       if (actor == self->group.self_handle)
@@ -653,8 +654,10 @@ dispose (GObject *object)
   g_hash_table_destroy (self->priv->contents);
   self->priv->contents = NULL;
 
+  /* FIXME: right error code? arguably we should never get here... */
   example_call_channel_close (self, self->group.self_handle,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
 
   ((GObjectClass *) example_call_channel_parent_class)->dispose (object);
 }
@@ -763,7 +766,8 @@ remove_member_with_reason (GObject *object,
 
   g_assert (member == self->group.self_handle);
 
-  example_call_channel_close (self, self->group.self_handle, reason);
+  example_call_channel_close (self, self->group.self_handle, reason,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
   return TRUE;
 }
 
@@ -982,7 +986,8 @@ channel_close (TpSvcChannel *iface,
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
 
   example_call_channel_close (self, self->group.self_handle,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
   tp_svc_channel_return_from_close (context);
 }
 
@@ -1190,7 +1195,9 @@ stream_removed_cb (ExampleCallStream *stream,
     {
       /* no contents left, so the call terminates */
       example_call_channel_close (self, 0,
-          TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+          TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+          FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
+      /* FIXME: is there an appropriate error? */
     }
 }
 
@@ -1239,7 +1246,8 @@ simulate_contact_ended_cb (gpointer p)
   g_message ("SIGNALLING: receive: call terminated: <call-terminated/>");
 
   example_call_channel_close (self, self->priv->handle,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
 
   return FALSE;
 }
@@ -1329,7 +1337,9 @@ simulate_contact_busy_cb (gpointer p)
   g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
 
   example_call_channel_close (self, self->priv->handle,
-      TP_CHANNEL_GROUP_CHANGE_REASON_BUSY);
+      TP_CHANNEL_GROUP_CHANGE_REASON_BUSY,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
+      TP_ERROR_STR_BUSY);
 
   return FALSE;
 }
