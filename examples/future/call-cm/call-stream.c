@@ -27,7 +27,6 @@
 #include "extensions/extensions.h"
 
 #include "call-channel.h"
-#include "call-content.h"
 
 static void stream_iface_init (gpointer, gpointer);
 
@@ -69,7 +68,6 @@ struct _ExampleCallStreamPrivate
   gchar *object_path;
   TpBaseConnection *conn;
   ExampleCallChannel *channel;
-  ExampleCallContent *content;
   guint id;
   TpHandle handle;
   TpMediaStreamType type;
