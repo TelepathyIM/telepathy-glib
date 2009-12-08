@@ -105,13 +105,6 @@ enum
   N_SIGNALS
 };
 
-typedef enum {
-    PROGRESS_NONE,
-    PROGRESS_CALLING,
-    PROGRESS_ACTIVE,
-    PROGRESS_ENDED
-} ExampleCallProgress;
-
 static guint signals[N_SIGNALS] = { 0 };
 
 struct _ExampleCallChannelPrivate
@@ -120,7 +113,7 @@ struct _ExampleCallChannelPrivate
   gchar *object_path;
   TpHandle handle;
   TpHandle initiator;
-  ExampleCallProgress progress;
+  FutureCallState call_state;
 
   guint simulation_delay;
 
@@ -205,14 +198,14 @@ constructed (GObject *object)
       /* Nobody is locally pending. The remote peer will turn up in
        * remote-pending state when we actually contact them, which is done
        * in RequestStreams */
-      self->priv->progress = PROGRESS_NONE;
+      self->priv->call_state = FUTURE_CALL_STATE_PENDING_INITIATOR;
       local_pending = NULL;
     }
   else
     {
       /* This is an incoming call, so the self-handle is locally
        * pending, to indicate that we need to answer. */
-      self->priv->progress = PROGRESS_CALLING;
+      self->priv->call_state = FUTURE_CALL_STATE_PENDING_RECEIVER;
       local_pending = tp_intset_new_containing (self->priv->conn->self_handle);
     }
 
@@ -340,7 +333,8 @@ get_property (GObject *object,
       break;
 
     case PROP_CHANNEL_DESTROYED:
-      g_value_set_boolean (value, (self->priv->progress == PROGRESS_ENDED));
+      g_value_set_boolean (value,
+          (self->priv->call_state == FUTURE_CALL_STATE_ENDED));
       break;
 
     case PROP_CHANNEL_PROPERTIES:
@@ -513,11 +507,11 @@ example_call_channel_close (ExampleCallChannel *self,
     TpHandle actor,
     TpChannelGroupChangeReason reason)
 {
-  if (self->priv->progress != PROGRESS_ENDED)
+  if (self->priv->call_state != FUTURE_CALL_STATE_ENDED)
     {
       TpIntSet *everyone;
 
-      self->priv->progress = PROGRESS_ENDED;
+      self->priv->call_state = FUTURE_CALL_STATE_ENDED;
 
       if (actor == self->group.self_handle)
         {
@@ -619,12 +613,12 @@ add_member (GObject *object,
       GHashTableIter iter;
       gpointer v;
 
-      g_assert (self->priv->progress == PROGRESS_CALLING);
+      g_assert (self->priv->call_state == FUTURE_CALL_STATE_PENDING_RECEIVER);
 
       g_message ("SIGNALLING: send: Accepting incoming call from %s",
           tp_handle_inspect (contact_repo, self->priv->handle));
 
-      self->priv->progress = PROGRESS_ACTIVE;
+      self->priv->call_state = FUTURE_CALL_STATE_ACCEPTED;
 
       tp_group_mixin_change_members (object, "",
           set /* added */,
@@ -1145,7 +1139,7 @@ simulate_contact_ended_cb (gpointer p)
 
   /* if the call has been cancelled while we were waiting for the
    * contact to do so, do nothing! */
-  if (self->priv->progress == PROGRESS_ENDED)
+  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
     return FALSE;
 
   g_message ("SIGNALLING: receive: call terminated: <call-terminated/>");
@@ -1167,17 +1161,17 @@ simulate_contact_answered_cb (gpointer p)
   const gchar *peer;
 
   /* if the call has been cancelled while we were waiting for the
-   * contact to answer, do nothing */
-  if (self->priv->progress == PROGRESS_ENDED)
+   * contact to answer, do nothing! */
+  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
     return FALSE;
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert (self->priv->progress == PROGRESS_CALLING);
+  g_assert (self->priv->call_state == FUTURE_CALL_STATE_PENDING_RECEIVER);
 
   g_message ("SIGNALLING: receive: contact answered our call");
 
-  self->priv->progress = PROGRESS_ACTIVE;
+  self->priv->call_state = FUTURE_CALL_STATE_ACCEPTED;
 
   peer_set = tp_intset_new_containing (self->priv->handle);
   tp_group_mixin_change_members ((GObject *) self, "",
@@ -1228,12 +1222,12 @@ simulate_contact_busy_cb (gpointer p)
 
   /* if the call has been cancelled while we were waiting for the
    * contact to answer, do nothing */
-  if (self->priv->progress == PROGRESS_ENDED)
+  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
     return FALSE;
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert (self->priv->progress == PROGRESS_CALLING);
+  g_assert (self->priv->call_state == FUTURE_CALL_STATE_PENDING_RECEIVER);
 
   g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
 
@@ -1326,7 +1320,7 @@ example_call_channel_add_stream (ExampleCallChannel *self,
   g_signal_connect (stream, "direction-changed",
       G_CALLBACK (stream_direction_changed_cb), self);
 
-  if (self->priv->progress == PROGRESS_ACTIVE)
+  if (self->priv->call_state == FUTURE_CALL_STATE_ACCEPTED)
     {
       example_call_stream_connect (stream);
     }
@@ -1358,7 +1352,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
       goto error;
     }
 
-  if (self->priv->progress == PROGRESS_ENDED)
+  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Call has terminated");
@@ -1389,13 +1383,13 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
       ExampleCallStream *stream;
       GValueArray *info;
 
-      if (self->priv->progress < PROGRESS_CALLING)
+      if (self->priv->call_state < FUTURE_CALL_STATE_PENDING_RECEIVER)
         {
           TpIntSet *peer_set = tp_intset_new_containing (self->priv->handle);
           const gchar *peer;
 
           g_message ("SIGNALLING: send: new streamed media call");
-          self->priv->progress = PROGRESS_CALLING;
+          self->priv->call_state = FUTURE_CALL_STATE_PENDING_RECEIVER;
 
           tp_group_mixin_change_members ((GObject *) self, "",
               NULL /* nobody added */,
