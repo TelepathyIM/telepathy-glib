@@ -175,18 +175,25 @@ constructed (GObject *object)
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  DBusGConnection *bus;
+  TpDBusDaemon *dbus_daemon;
   TpIntSet *members;
   TpIntSet *local_pending;
 
   if (chain_up != NULL)
     chain_up (object);
 
+  dbus_daemon = tp_dbus_daemon_dup (NULL);
+  g_return_if_fail (dbus_daemon != NULL);
+
   tp_handle_ref (contact_repo, self->priv->handle);
   tp_handle_ref (contact_repo, self->priv->initiator);
 
-  bus = tp_get_bus ();
-  dbus_g_connection_register_g_object (bus, self->priv->object_path, object);
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (dbus_daemon),
+      self->priv->object_path, object);
+
+  g_object_unref (dbus_daemon);
+  dbus_daemon = NULL;
 
   tp_group_mixin_init (object,
       G_STRUCT_OFFSET (ExampleCallChannel, group),
