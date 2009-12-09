@@ -3,8 +3,7 @@
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/debug.h>
 
-#include <tpl_observer.h>
-
+#include <tpl-observer.h>
 #include <tpl-log-store-empathy.h>
 
 /* 

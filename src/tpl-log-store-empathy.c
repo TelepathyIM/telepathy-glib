@@ -44,8 +44,8 @@
 #include <tpl-log-manager.h>
 
 #include <tpl-time.h>
-#include <tpl_log_entry_text.h>
-#include <tpl_contact.h>
+#include <tpl-log-entry-text.h>
+#include <tpl-contact.h>
 
 //#define DEBUG_FLAG EMPATHY_DEBUG_OTHER
 //#include <empathy-debug.h>
@@ -205,31 +205,130 @@ log_store_empathy_get_filename (TplLogStore *self,
   return filename;
 }
 
+static gboolean _log_store_empathy_write_to_store ( TplLogStore *self,
+			TpAccount *account,
+			const gchar *chat_id,
+			gboolean chatroom,
+			const gchar *entry,
+			GError **error)
+{
+	FILE *file;
+	gchar *filename;
+	gchar *basedir;
+
+	filename = log_store_empathy_get_filename (self, account, chat_id, chatroom);
+	basedir = g_path_get_dirname (filename);
+	if (!g_file_test (basedir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
+	{
+		DEBUG ("Creating directory:'%s'", basedir);
+		g_mkdir_with_parents (basedir, LOG_DIR_CREATE_MODE);
+	}
+	g_free (basedir);
+
+	DEBUG ("Adding log to file: '%s'", filename);
+
+	if (!g_file_test (filename, G_FILE_TEST_EXISTS))
+	{
+		file = g_fopen (filename, "w+");
+		if (file != NULL)
+			g_fprintf (file, LOG_HEADER);
+
+		g_chmod (filename, LOG_FILE_CREATE_MODE);
+	}
+	else
+	{
+		file = g_fopen (filename, "r+");
+		if (file != NULL)
+			fseek (file, - strlen (LOG_FOOTER), SEEK_END);
+	}
+
+	g_fprintf(file, entry);
+
+	fclose (file);
+	g_free (filename);
+	return TRUE;
+}
+
+static gboolean _log_store_empathy_add_message_status_changed (
+			TplLogStore *self,
+			const gchar *chat_id,
+			gboolean chatroom,
+			TplLogEntryText *message,
+			GError **error)
+
+{
+  TpAccount *account;
+  TplContact *sender;
+  const gchar *str;
+  gchar *timestamp;
+  gchar *contact_name;
+  gchar *contact_id;
+  gchar *contact_status;
+  gchar *contact_presence;
+  gchar *entry;
+  gboolean ret = FALSE;
+
+  sender = tpl_log_entry_text_get_sender (message);
+  account = tpl_channel_get_account (
+	tpl_log_entry_text_get_tpl_channel (message) );
+
+  timestamp = log_store_empathy_get_timestamp_from_message (message);
+
+  str = tpl_contact_get_alias (sender);
+  contact_name = g_markup_escape_text (str, -1);
+
+  str = tpl_contact_get_identifier (sender);
+  contact_id = g_markup_escape_text (str, -1);
+
+  str = tpl_contact_get_presence_status (sender);
+  contact_presence = g_markup_escape_text (str, -1);
+
+  str = tpl_contact_get_presence_message (sender);
+  contact_status = g_markup_escape_text (str, -1);
+
+  entry = g_strdup_printf(
+	"<statusUpdate time='%s' id='%s' name='%s' isuser='%s'"
+	"presence='%s' status='%s'/>\n" LOG_FOOTER,
+	timestamp, contact_id, contact_name,
+	tpl_contact_get_contact_type (sender) == 
+		TPL_CONTACT_USER ? "true" : "false",
+	contact_presence, contact_status);
+
+
+  ret = _log_store_empathy_write_to_store(self, 
+		  account, chat_id, chatroom, entry, error);
+
+  g_free (contact_id);
+  g_free (contact_name);
+  g_free (contact_presence);
+  g_free (contact_status);
+  g_free (timestamp);
+  g_free(entry);
+
+  return ret;
+}
+
+
 static gboolean
-log_store_empathy_add_message (TplLogStore *self,
+_log_store_empathy_add_message_chat (TplLogStore *self,
                                const gchar *chat_id,
                                gboolean chatroom,
                                TplLogEntryText *message,
                                GError **error)
 {
-  FILE *file;
+  gboolean ret;
   TpAccount *account;
   TplContact *sender;
   const gchar *body_str;
   const gchar *str;
   //EmpathyAvatar *avatar;
   //gchar *avatar_token = NULL;
-  gchar *filename;
-  gchar *basedir;
   gchar *body;
   gchar *timestamp;
   gchar *contact_name;
   gchar *contact_id;
+  gchar *entry;
   TpChannelTextMessageType msg_type;
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
-  g_return_val_if_fail (chat_id != NULL, FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
 
   sender = tpl_log_entry_text_get_sender (message);
   account = tpl_channel_get_account (
@@ -239,32 +338,6 @@ log_store_empathy_add_message (TplLogStore *self,
 
   if (TPL_STR_EMPTY (body_str))
     return FALSE;
-
-  filename = log_store_empathy_get_filename (self, account, chat_id, chatroom);
-  basedir = g_path_get_dirname (filename);
-  if (!g_file_test (basedir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
-    {
-      DEBUG ("Creating directory:'%s'", basedir);
-      g_mkdir_with_parents (basedir, LOG_DIR_CREATE_MODE);
-    }
-  g_free (basedir);
-
-  DEBUG ("Adding message: '%s' to file: '%s'", body_str, filename);
-
-  if (!g_file_test (filename, G_FILE_TEST_EXISTS))
-    {
-      file = g_fopen (filename, "w+");
-      if (file != NULL)
-        g_fprintf (file, LOG_HEADER);
-
-      g_chmod (filename, LOG_FILE_CREATE_MODE);
-    }
-  else
-    {
-      file = g_fopen (filename, "r+");
-      if (file != NULL)
-        fseek (file, - strlen (LOG_FOOTER), SEEK_END);
-    }
 
   body = g_markup_escape_text (body_str, -1);
   timestamp = log_store_empathy_get_timestamp_from_message (message);
@@ -279,10 +352,11 @@ log_store_empathy_add_message (TplLogStore *self,
   if (avatar != NULL)
     avatar_token = g_markup_escape_text (avatar->token, -1);
 */
-  g_fprintf (file,
-       "<message time='%s' cm_id='%d' id='%s' name='%s' token='%s' isuser='%s' type='%s'>"
+  entry = g_strdup_printf (
+       "<message time='%s' cm_id='%d' id='%s' name='%s'"
+	"token='%s' isuser='%s' type='%s'>"
        "%s</message>\n" LOG_FOOTER, timestamp,
-       tpl_log_entry_text_get_id (message),
+       tpl_log_entry_text_get_message_id (message),
        contact_id, contact_name,
        //avatar_token ? avatar_token : "", // instead force to "" as
        //follow
@@ -290,15 +364,53 @@ log_store_empathy_add_message (TplLogStore *self,
        tpl_contact_get_contact_type (sender) == TPL_CONTACT_USER ? "true" : "false",
        tpl_log_entry_text_message_type_to_str (msg_type), body);
 
-  fclose (file);
-  g_free (filename);
+  ret = _log_store_empathy_write_to_store(self, 
+		  account, chat_id, chatroom, entry, error);
+
   g_free (contact_id);
   g_free (contact_name);
   g_free (timestamp);
   g_free (body);
+  g_free (entry);
   //g_free (avatar_token);
 
+
   return TRUE;
+}
+
+
+static gboolean
+log_store_empathy_add_message (TplLogStore *self,
+                               const gchar *chat_id,
+                               gboolean chatroom,
+                               TplLogEntryText *message,
+                               GError **error)
+{
+  TplLogEntryTextSignalType signal_type;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
+  g_return_val_if_fail (chat_id != NULL, FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
+
+
+  signal_type = tpl_log_entry_text_get_signal_type (message);
+
+  switch (signal_type) {
+  case TPL_LOG_ENTRY_TEXT_SIGNAL_SENT:
+  case TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED:
+	return _log_store_empathy_add_message_chat(self,
+		chat_id, chatroom, message, error);
+	break;
+  case TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
+	return _log_store_empathy_add_message_status_changed(self,
+		chat_id, chatroom, message, error);
+	break;
+  case TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR:
+  case TPL_LOG_ENTRY_TEXT_SIGNAL_LOST_MESSAGE:
+  default:
+       g_warning("received an not handled signal type/signal type unknown");
+       return FALSE;
+  }
 }
 
 static gboolean
@@ -556,7 +668,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       //tpl_log_entry_text_set_is_backlog (message, TRUE);
 
       if (cm_id_str)
-        tpl_log_entry_text_set_id (message, cm_id);
+        tpl_log_entry_text_set_message_id (message, cm_id);
 
       messages = g_list_append (messages, message);
 

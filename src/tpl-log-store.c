@@ -76,7 +76,10 @@ tpl_log_store_add_message (TplLogStore *self,
                                GError **error)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->add_message)
-    return FALSE;
+  {
+	  g_warning("LogStore: add_message not implemented");
+	  return FALSE;
+  }
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->add_message (
       self, chat_id, chatroom, message, error);

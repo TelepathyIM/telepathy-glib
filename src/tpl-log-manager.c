@@ -19,9 +19,8 @@
  * Boston, MA  02110-1301  USA
  *
  * Authors: Xavier Claessens <xclaesse@gmail.com>
+ *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
-
-//#include <config.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -34,9 +33,8 @@
 #include <tpl-log-manager.h>
 #include <tpl-log-store-empathy.h>
 #include <tpl-log-store.h>
-#include <tpl_utils.h>
+#include <tpl-utils.h>
 #include <tpl-time.h>
-//#include <empathy-tp-chat.h>
 
 //#define DEBUG_FLAG EMPATHY_DEBUG_OTHER
 //#include <empathy-debug.h>
@@ -64,6 +62,10 @@ log_manager_finalize (GObject *object)
   g_list_free (priv->stores);
 }
 
+/* 
+ * - Singleton LogManager constructor -
+ * Initialises LogStores with LogStoreEmpathy instance
+ */
 static GObject *
 log_manager_constructor (GType type,
                          guint n_props,
@@ -401,62 +403,3 @@ tpl_log_manager_get_date_readable (const gchar *date)
 
   return tpl_time_to_string_local (t, "%a %d %b %Y");
 }
-
-/* TPL: useless TODO remove
-static void
-log_manager_chat_received_message_cb (EmpathyTpChat *tp_chat,
-                                      TplLogEntryText *message,
-                                      TplLogManager *log_manager)
-{
-  GError *error = NULL;
-  TpHandleType handle_type;
-  TpChannel *channel;
-
-  channel = empathy_tp_chat_get_channel (tp_chat);
-  tp_channel_get_handle (channel, &handle_type);
-
-  if (!tpl_log_manager_add_message (log_manager,
-        tp_channel_get_identifier (channel),
-        handle_type == TP_HANDLE_TYPE_ROOM,
-        message, &error))
-    {
-      DEBUG ("Failed to write message: %s",
-          error ? error->message : "No error message");
-
-      if (error != NULL)
-        g_error_free (error);
-    }
-}
-*/
-
-/* TPL: useless TODO remove
-static void
-log_manager_dispatcher_observe_cb (EmpathyDispatcher *dispatcher,
-                                   EmpathyDispatchOperation *operation,
-                                   TplLogManager *log_manager)
-{
-  GQuark channel_type;
-
-  channel_type = empathy_dispatch_operation_get_channel_type_id (operation);
-
-  if (channel_type == TP_IFACE_QUARK_CHANNEL_TYPE_TEXT)
-    {
-      EmpathyTpChat *tp_chat;
-
-      tp_chat = EMPATHY_TP_CHAT (
-          empathy_dispatch_operation_get_channel_wrapper (operation));
-
-      g_signal_connect (tp_chat, "message-received",
-          G_CALLBACK (log_manager_chat_received_message_cb), log_manager);
-    }
-}
-*/
-/*
-void
-tpl_log_manager_observe (TplLogManager *log_manager,
-                             EmpathyDispatcher *dispatcher)
-{
-  g_signal_connect (dispatcher, "observe",
-      G_CALLBACK (log_manager_dispatcher_observe_cb), log_manager);
-}
-*/

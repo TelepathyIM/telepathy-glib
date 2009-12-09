@@ -7,8 +7,8 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/svc-client.h>
 
-#include <tpl_observer.h>
-#include <tpl_utils.h>
+#include <tpl-observer.h>
+#include <tpl-utils.h>
 
 G_BEGIN_DECLS
 
@@ -33,6 +33,11 @@ typedef struct {
 	const gchar	*account_path;
 	TpConnection	*connection;
 	const gchar	*connection_path;
+
+	// temporarely storing self and remote handle
+	// no getter/setter, access the member direclty
+	// TODO find a better way to store temporarely the handle
+	TpHandle	tmp_remote;
 
 	TpSvcClientObserver	*observer;
 } TplChannel;

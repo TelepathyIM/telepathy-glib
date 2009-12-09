@@ -4,15 +4,15 @@ PACKAGE_NAME="TpLogger"
 CC=${CC:-gcc}
 CCOPTS="-D__USE_POSIX -DPACKAGE_NAME=\"${PACKAGE_NAME}\" --std=c99 -g -I../include -Wall -Werror" # -pedantic"
 PKGS="telepathy-glib libxml-2.0"
-MODULES="tpl_observer.c tpl_headless_logger_init.c
-	tpl_channel_data.c tpl_text_channel_data.c 
-	tpl_contact.c
-	tpl_utils.c
+MODULES="tpl-observer.c tpl-headless-logger-init.c
+	tpl-channel-data.c tpl-text-channel-data.c 
+	tpl-contact.c
+	tpl-utils.c
 	tpl-time.c
 	tpl-log-manager.c
 	tpl-log-store.c
 	tpl-log-store-empathy.c
-	tpl_log_entry_text.c
+	tpl-log-entry-text.c
 	test.c"
 EXECUTABLE="telepathy-logger"
 

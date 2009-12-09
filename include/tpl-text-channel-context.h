@@ -12,8 +12,9 @@
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/svc-client.h>
 
-#include <tpl_observer.h>
-#include <tpl_utils.h>
+#include <tpl-channel.h>
+#include <tpl-observer.h>
+#include <tpl-utils.h>
 
 G_BEGIN_DECLS
 
@@ -30,7 +31,15 @@ typedef struct {
 
 	/* private */
 	TplChannel	*tpl_channel;
-	TpContact	*remote_contact, *my_contact;
+	gboolean	chatroom;
+	TpContact	*my_contact;
+	TpContact	*remote_contact;	// only set if chatroom==FALSE
+	const gchar	*chatroom_id;		// only set if chatroom==TRUE
+
+	GQueue		*chain;			// queue of TplPendingProc
+
+	// only used as metadata in CB data passing
+	guint		selector;
 } TplTextChannel;
 
 typedef struct {
@@ -45,10 +54,14 @@ void tpl_text_channel_free(TplTextChannel* tpl_chan);
 TplChannel *tpl_text_channel_get_tpl_channel(TplTextChannel *self);
 TpContact *tpl_text_channel_get_remote_contact(TplTextChannel *self);
 TpContact *tpl_text_channel_get_my_contact(TplTextChannel *self);
+gboolean tpl_text_channel_is_chatroom(TplTextChannel *self);
+const gchar *tpl_text_channel_get_chatroom_id(TplTextChannel *self);
 
 void tpl_text_channel_set_tpl_channel(TplTextChannel *self, TplChannel *tpl_chan);
 void tpl_text_channel_set_remote_contact(TplTextChannel *self, TpContact *data);
 void tpl_text_channel_set_my_contact(TplTextChannel *self, TpContact *data);
+void tpl_text_channel_set_chatroom(TplTextChannel *self, gboolean data);
+void tpl_text_channel_set_chatroom_id(TplTextChannel *self, const gchar *data);
 
 G_END_DECLS
 

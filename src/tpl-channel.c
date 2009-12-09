@@ -1,6 +1,5 @@
-#include <tpl_observer.h>
-#include <tpl_channel_data.h>
-
+#include <tpl-observer.h>
+#include <tpl-channel.h>
 
 G_DEFINE_TYPE (TplChannel, tpl_channel, G_TYPE_OBJECT)
 

@@ -4,7 +4,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/contact.h>
 
-#include <tpl_channel_data.h>
+#include <tpl-channel.h>
 
 G_BEGIN_DECLS
 
@@ -43,6 +43,7 @@ typedef struct {
 
 GType  tpl_contact_get_type (void);
 
+TplContact *tpl_contact_from_tp_contact(TpContact *contact);
 TplContact *tpl_contact_new(void);
 
 #define ADD_GET(x,y)	y tpl_contact_get_##x(TplContact *self)

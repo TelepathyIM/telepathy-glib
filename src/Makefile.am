@@ -5,42 +5,33 @@ AM_CPPFLAGS =						\
 	$(ERROR_CFLAGS)					\
 	-I$(top_srcdir)                          	\
 	-I$(top_srcdir)/include                        	\
-	-DG_LOG_DOMAIN=\"tpl\"				\
+	-DG_LOG_DOMAIN=\"TPLogger\"				\
 	$(TPL_CFLAGS)					\
 	$(LIBTPL_CFLAGS)					\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 
-LDADD =								\
-	$(TPL_LIBS)						\
+LDADD = $(TPL_LIBS)						\
 	$(LIBTPL_LIBS)	
-#	$(top_builddir)/libempathy-gtk/libempathy-gtk.la	\
-#	$(top_builddir)/libempathy/libempathy.la		\
-#	$(top_builddir)/extensions/libemp-extensions.la		\
-#	$(LIBNOTIFY_LIBS)					\
-#	$(LIBCHAMPLAIN_LIBS)					\
-#	$(WEBKIT_LIBS)
 
-bin_PROGRAMS =			\
-	telepathy-logger
+bin_PROGRAMS =	telepathy-logger
 
-BUILT_SOURCES= 
-#	empathy-tube-dispatch-enumtypes.h \
-#	empathy-tube-dispatch-enumtypes.c
+#BUILT_SOURCES= 
 
 telepathy_logger_handwritten_source = \
-		test.c \
-		tpl_channel_data.c \
-		tpl_contact.c \
-		tpl_headless_logger_init.c \
-		tpl_log_entry_text.c \
-		tpl_observer.c \
-		tpl_text_channel_data.c \
-		tpl-time.c \
-		tpl_utils.c \
-		tpl-log-manager.c \
-		tpl-log-store.c \
-		tpl-log-store-empathy.c
+		test.c				\
+		tpl-observer.c			\
+		tpl-headless-logger-init.c	\
+		tpl-channel.c			\
+		tpl-text-channel-context.c	\
+		tpl-log-entry-text.c		\
+		tpl-contact.c			\
+		tpl-log-manager.c		\
+		tpl-log-store.c			\
+		tpl-log-store-empathy.c		\
+		tpl-utils.c			\
+		tpl-time.c 
+
 
 telepathy_logger_SOURCES =	\
 	$(telepathy_logger_handwritten_source)	

@@ -24,12 +24,10 @@
 #define __TPL_LOG_STORE_H__
 
 #include <glib-object.h>
-
 #include <telepathy-glib/account.h>
 
 #include <tpl-log-manager.h>
-
-#include <tpl_log_entry_text.h>
+#include <tpl-log-entry-text.h>
 
 G_BEGIN_DECLS
 

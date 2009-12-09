@@ -1,6 +1,6 @@
 #include <glib.h>
 
-#include <tpl_observer.h>
+#include <tpl-observer.h>
 
 static GMainLoop *loop = NULL;
 

@@ -5,9 +5,9 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
 
-#include <tpl_observer.h>
-#include <tpl_channel_data.h>
-#include <tpl_text_channel_data.h>
+#include <tpl-observer.h>
+#include <tpl-channel.h>
+#include <tpl-text-channel-context.h>
 
 static void observer_iface_init (gpointer, gpointer);
 
@@ -32,15 +32,7 @@ enum
   PROP_CHANNEL_FILTER
 };
 
-void _observe_channel_when_ready_cb(TpChannel *channel,
-		const GError *error,
-		gpointer user_data);
-void _tp_connection_called_when_ready_cb(TpConnection *connection,
-		const GError *error,
-		gpointer user_data);
-
-
-void _observe_channel_when_ready_cb(TpChannel *channel,
+static void _observe_channel_when_ready_cb(TpChannel *channel,
 		const GError *error,
 		gpointer user_data)
 {
@@ -72,7 +64,7 @@ void _observe_channel_when_ready_cb(TpChannel *channel,
 }
 
 
-void _tp_connection_called_when_ready_cb(TpConnection *connection,
+static void _tp_connection_called_when_ready_cb(TpConnection *connection,
 		const GError *error,
 		gpointer user_data)
 {
