@@ -327,7 +327,6 @@ setup (Test *test,
   g_array_append_val (test->invalid_request, not_a_media_type);
 
   test->stream_ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
-  test->contacts = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
 
   g_hash_table_destroy (parameters);
   g_free (bus_name);
@@ -1684,10 +1683,8 @@ test_incoming (Test *test,
       GUINT_TO_POINTER (TP_MEDIA_STREAM_STATE_DISCONNECTED));
 
   /* Accept the call */
-  g_array_set_size (test->contacts, 0);
-  g_array_append_val (test->contacts, test->self_handle);
-  tp_cli_channel_interface_group_call_add_members (test->chan,
-      -1, test->contacts, "", void_cb, test, NULL, NULL);
+  future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
+      test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
@@ -1757,7 +1754,6 @@ teardown (Test *test,
   g_array_free (test->video_request, TRUE);
   g_array_free (test->invalid_request, TRUE);
   g_array_free (test->stream_ids, TRUE);
-  g_array_free (test->contacts, TRUE);
   CLEAR_HASH (&test->get_all_return);
 
   g_slist_foreach (test->group_events, (GFunc) group_event_destroy, NULL);
