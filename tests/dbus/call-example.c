@@ -729,6 +729,22 @@ loop_until_ended (Test *test)
 }
 
 static void
+loop_until_answered (Test *test)
+{
+  while (1)
+    {
+      tp_cli_dbus_properties_call_get_all (test->chan, -1,
+          FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
+      g_main_loop_run (test->mainloop);
+      test_assert_no_error (test->error);
+
+      if (tp_asv_get_uint32 (test->get_all_return, "CallState",
+            NULL) != FUTURE_CALL_STATE_PENDING_RECEIVER)
+        return;
+    }
+}
+
+static void
 assert_ended_and_run_close (Test *test,
     TpHandle expected_actor,
     FutureCallStateChangeReason expected_reason,
@@ -919,9 +935,7 @@ test_basics (Test *test,
 
   /* Wait for the remote contact to answer, if they haven't already */
 
-  while (!tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        tp_channel_get_handle (test->chan, NULL)))
-    g_main_context_iteration (NULL, TRUE);
+  loop_until_answered (test);
 
   /* The self-handle and the peer are now the channel's members */
   g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
@@ -1355,9 +1369,7 @@ test_terminated_by_peer (Test *test,
 
   /* Wait for the remote contact to answer, if they haven't already */
 
-  while (!tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        tp_channel_get_handle (test->chan, NULL)))
-    g_main_context_iteration (NULL, TRUE);
+  loop_until_answered (test);
 
   /* After that, wait for the remote contact to end the call */
   loop_until_ended (test);
@@ -1417,9 +1429,7 @@ test_terminate_via_close (Test *test,
 
   /* Wait for the remote contact to answer, if they haven't already */
 
-  while (!tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        tp_channel_get_handle (test->chan, NULL)))
-    g_main_context_iteration (NULL, TRUE);
+  loop_until_answered (test);
 
   /* Hang up the call unceremoniously, by calling Close */
 
@@ -1483,9 +1493,7 @@ test_terminate_via_no_streams (Test *test,
 
   /* Wait for the remote contact to answer, if they haven't already */
 
-  while (!tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        tp_channel_get_handle (test->chan, NULL)))
-    g_main_context_iteration (NULL, TRUE);
+  loop_until_answered (test);
 
   /* Close the audio stream */
 
