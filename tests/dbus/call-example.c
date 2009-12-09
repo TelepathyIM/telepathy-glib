@@ -686,6 +686,26 @@ maybe_pop_stream_direction (Test *test)
 }
 
 static void
+assert_content_properties (GHashTable *get_all_return,
+    TpMediaStreamType type,
+    TpHandle creator,
+    FutureCallContentDisposition disposition)
+{
+  gboolean valid;
+
+  g_assert_cmpstr (tp_asv_get_string (get_all_return, "Name"), !=, NULL);
+  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "Type", &valid),
+      ==, type);
+  g_assert_cmpint (valid, ==, TRUE);
+  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "Creator",
+        &valid), ==, creator);
+  g_assert_cmpint (valid, ==, TRUE);
+  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "Disposition",
+        &valid), ==, disposition);
+  g_assert_cmpint (valid, ==, TRUE);
+}
+
+static void
 test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
@@ -693,7 +713,6 @@ test_basics (Test *test,
   guint not_a_stream_id = 31337;
   GroupEvent *ge;
   StreamEvent *se;
-  gboolean valid;
   const GPtrArray *stream_paths;
   guint i;
 
@@ -797,17 +816,9 @@ test_basics (Test *test,
       FUTURE_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
-
-  g_assert_cmpstr (tp_asv_get_string (test->get_all_return, "Name"), !=, NULL);
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Type", &valid),
-      ==, TP_MEDIA_STREAM_TYPE_AUDIO);
-  g_assert_cmpint (valid, ==, TRUE);
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Creator",
-        &valid), ==, test->self_handle);
-  g_assert_cmpint (valid, ==, TRUE);
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Disposition",
-        &valid), ==, FUTURE_CALL_CONTENT_DISPOSITION_NONE);
-  g_assert_cmpint (valid, ==, TRUE);
+  assert_content_properties (test->get_all_return,
+      TP_MEDIA_STREAM_TYPE_AUDIO, test->self_handle,
+      FUTURE_CALL_CONTENT_DISPOSITION_NONE);
 
   stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
           TP_ARRAY_TYPE_OBJECT_PATH_LIST);
@@ -1001,17 +1012,9 @@ test_basics (Test *test,
       FUTURE_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
-
-  g_assert_cmpstr (tp_asv_get_string (test->get_all_return, "Name"), !=, NULL);
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Type", &valid),
-      ==, TP_MEDIA_STREAM_TYPE_VIDEO);
-  g_assert_cmpint (valid, ==, TRUE);
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Creator",
-        &valid), ==, test->self_handle);
-  g_assert_cmpint (valid, ==, TRUE);
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Disposition",
-        &valid), ==, FUTURE_CALL_CONTENT_DISPOSITION_NONE);
-  g_assert_cmpint (valid, ==, TRUE);
+  assert_content_properties (test->get_all_return,
+      TP_MEDIA_STREAM_TYPE_VIDEO, test->self_handle,
+      FUTURE_CALL_CONTENT_DISPOSITION_NONE);
 
   stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
           TP_ARRAY_TYPE_OBJECT_PATH_LIST);
