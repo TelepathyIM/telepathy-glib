@@ -35,6 +35,8 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 
+#include "extensions/extensions.h"
+
 #include "call-channel.h"
 
 static void channel_manager_iface_init (gpointer, gpointer);
@@ -363,8 +365,8 @@ static const gchar * const fixed_properties[] = {
 static const gchar * const allowed_properties[] = {
     TP_PROP_CHANNEL_TARGET_HANDLE,
     TP_PROP_CHANNEL_TARGET_ID,
-    TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_AUDIO,
-    TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_VIDEO,
+    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
     NULL
 };
 
@@ -376,7 +378,7 @@ example_call_manager_foreach_channel_class (
 {
   GHashTable *table = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
-          G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
+          G_TYPE_STRING, FUTURE_IFACE_CHANNEL_TYPE_CALL,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
       NULL);
 
@@ -396,7 +398,7 @@ example_call_manager_request (ExampleCallManager *self,
 
   if (tp_strdiff (tp_asv_get_string (request_properties,
           TP_PROP_CHANNEL_CHANNEL_TYPE),
-      TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA))
+      FUTURE_IFACE_CHANNEL_TYPE_CALL))
     {
       return FALSE;
     }
@@ -457,9 +459,9 @@ example_call_manager_request (ExampleCallManager *self,
 
   new_channel (self, handle, self->priv->conn->self_handle, request_token,
       tp_asv_get_boolean (request_properties,
-        TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_AUDIO, NULL),
+        FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL),
       tp_asv_get_boolean (request_properties,
-        TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_VIDEO, NULL));
+        FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL));
   return TRUE;
 
 error:

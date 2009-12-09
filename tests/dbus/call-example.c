@@ -649,12 +649,12 @@ outgoing_call (Test *test,
 {
   GHashTable *request = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
-          G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
+          G_TYPE_STRING, FUTURE_IFACE_CHANNEL_TYPE_CALL,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
       TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, id,
-      TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_AUDIO,
+      FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
           G_TYPE_BOOLEAN, initial_audio,
-      TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_VIDEO,
+      FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
           G_TYPE_BOOLEAN, initial_video,
       NULL);
 
@@ -1546,7 +1546,7 @@ expect_incoming_call_cb (TpConnection *conn,
 
       channel_type = tp_asv_get_string (properties,
           TP_PROP_CHANNEL_CHANNEL_TYPE);
-      if (tp_strdiff (channel_type, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA))
+      if (tp_strdiff (channel_type, FUTURE_IFACE_CHANNEL_TYPE_CALL))
         {
           /* don't care about this channel */
           continue;

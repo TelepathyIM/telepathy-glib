@@ -139,7 +139,7 @@ struct _ExampleCallChannelPrivate
 };
 
 static const char * example_call_channel_interfaces[] = {
-    FUTURE_IFACE_CHANNEL_TYPE_CALL,
+    TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
     TP_IFACE_CHANNEL_INTERFACE_GROUP,
     TP_IFACE_CHANNEL_INTERFACE_HOLD,
     NULL
@@ -391,7 +391,7 @@ get_property (GObject *object,
       break;
 
     case PROP_CHANNEL_TYPE:
-      g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
+      g_value_set_static_string (value, FUTURE_IFACE_CHANNEL_TYPE_CALL);
       break;
 
     case PROP_HANDLE_TYPE:
@@ -1001,7 +1001,7 @@ channel_get_channel_type (TpSvcChannel *iface G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
   tp_svc_channel_return_from_get_channel_type (context,
-      TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
+      FUTURE_IFACE_CHANNEL_TYPE_CALL);
 }
 
 static void
