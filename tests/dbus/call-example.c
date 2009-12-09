@@ -665,10 +665,12 @@ outgoing_call (Test *test,
   request = NULL;
   g_main_loop_run (test->mainloop);
 
+  /* Do this before waiting for it to become ready - we knew its channel type
+   * and interfaces anyway */
+  test_connect_channel_signals (test);
+
   tp_channel_call_when_ready (test->chan, channel_ready_cb, test);
   g_main_loop_run (test->mainloop);
-
-  test_connect_channel_signals (test);
 }
 
 static void
