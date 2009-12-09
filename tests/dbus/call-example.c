@@ -693,6 +693,62 @@ maybe_pop_stream_direction (Test *test)
 }
 
 static void
+assert_call_properties (GHashTable *get_all_return,
+    FutureCallState call_state,
+    TpHandle actor,
+    FutureCallStateChangeReason reason,
+    const gchar *dbus_reason,
+    gboolean check_call_flags, FutureCallFlags call_flags,
+    gboolean check_initials, gboolean initial_audio, gboolean initial_video)
+{
+  gboolean valid;
+  GValueArray *state_reason;
+
+  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "CallState",
+        &valid), ==, call_state);
+  g_assert (valid);
+  state_reason = tp_asv_get_boxed (get_all_return, "CallStateReason",
+      FUTURE_STRUCT_TYPE_CALL_STATE_REASON);
+  g_assert (state_reason != NULL);
+  g_assert_cmpuint (g_value_get_uint (state_reason->values + 0), ==,
+      actor);
+  g_assert_cmpuint (g_value_get_uint (state_reason->values + 1), ==,
+      reason);
+  g_assert_cmpstr (g_value_get_string (state_reason->values + 2), ==,
+      dbus_reason);
+
+  /* Hard-coded properties */
+  g_assert_cmpint (tp_asv_get_boolean (get_all_return,
+        "HardwareStreaming", &valid), ==, TRUE);
+  g_assert (valid);
+  g_assert_cmpint (tp_asv_get_boolean (get_all_return,
+        "MutableContents", &valid), ==, TRUE);
+  g_assert (valid);
+  g_assert_cmpstr (tp_asv_get_string (get_all_return,
+        "InitialTransport"), ==, "");
+
+  if (check_call_flags)
+    {
+      g_assert_cmpuint (tp_asv_get_uint32 (get_all_return,
+            "CallFlags", &valid), ==, 0);
+      g_assert (valid);
+    }
+
+  if (check_initials)
+    {
+      g_assert_cmpint (tp_asv_get_boolean (get_all_return,
+            "InitialAudio", &valid), ==, initial_audio);
+      g_assert (valid);
+
+      g_assert_cmpint (tp_asv_get_boolean (get_all_return,
+            "InitialVideo", &valid), ==, initial_video);
+      g_assert (valid);
+    }
+
+  /* FIXME: CallStateDetails */
+}
+
+static void
 assert_content_properties (GHashTable *get_all_return,
     TpMediaStreamType type,
     TpHandle creator,
@@ -750,24 +806,18 @@ assert_ended_and_run_close (Test *test,
     FutureCallStateChangeReason expected_reason,
     const gchar *expected_error)
 {
-  GValueArray *state_reason;
-
   /* In response to whatever we just did, the call ends... */
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "CallState",
-        NULL), ==, FUTURE_CALL_STATE_ENDED);
-  state_reason = tp_asv_get_boxed (test->get_all_return, "CallStateReason",
-      FUTURE_STRUCT_TYPE_CALL_STATE_REASON);
-  g_assert (state_reason != NULL);
-  g_assert_cmpuint (g_value_get_uint (state_reason->values + 0), ==,
-      expected_actor);
-  g_assert_cmpuint (g_value_get_uint (state_reason->values + 1), ==,
-      expected_reason);
-  g_assert_cmpstr (g_value_get_string (state_reason->values + 2), ==,
-      expected_error);
+  assert_call_properties (test->get_all_return,
+      FUTURE_CALL_STATE_ENDED,
+      expected_actor,
+      expected_reason,
+      expected_error,
+      FALSE, 0, /* ignore call flags */
+      FALSE, FALSE, FALSE); /* ignore initial audio/video */
 
   /* ... which means there are no contents ... */
   tp_cli_dbus_properties_call_get (test->chan, -1,
@@ -799,7 +849,6 @@ test_basics (Test *test,
   StreamEvent *se;
   const GPtrArray *stream_paths;
   guint i;
-  gboolean valid;
 
   outgoing_call (test, "basic-test", FALSE, FALSE);
 
@@ -809,30 +858,11 @@ test_basics (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  /* The easy properties */
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return,
-        "CallState", &valid), ==, FUTURE_CALL_STATE_PENDING_INITIATOR);
-  g_assert (valid);
-  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return,
-        "CallFlags", &valid), ==, 0);
-  g_assert (valid);
-  g_assert_cmpint (tp_asv_get_boolean (test->get_all_return,
-        "HardwareStreaming", &valid), ==, TRUE);
-  g_assert (valid);
-  g_assert_cmpint (tp_asv_get_boolean (test->get_all_return,
-        "MutableContents", &valid), ==, TRUE);
-  g_assert (valid);
-  g_assert_cmpstr (tp_asv_get_string (test->get_all_return,
-        "InitialTransport"), ==, "");
-  g_assert_cmpint (tp_asv_get_boolean (test->get_all_return,
-        "InitialAudio", &valid), ==, FALSE);
-  g_assert (valid);
-  g_assert_cmpint (tp_asv_get_boolean (test->get_all_return,
-        "InitialVideo", &valid), ==, FALSE);
-  g_assert (valid);
-
-  /* FIXME: CallStateReason */
-  /* FIXME: CallStateDetails */
+  assert_call_properties (test->get_all_return,
+      FUTURE_CALL_STATE_PENDING_INITIATOR, 0,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TRUE, 0,              /* call flags */
+      TRUE, FALSE, FALSE);  /* initial audio/video must be FALSE, FALSE */
 
   /* We have no contents yet */
 
