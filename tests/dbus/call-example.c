@@ -695,6 +695,7 @@ test_basics (Test *test,
   StreamEvent *se;
   gboolean valid;
   const GPtrArray *stream_paths;
+  guint i;
 
   outgoing_call (test, "basic-test");
 
@@ -713,16 +714,7 @@ test_basics (Test *test,
   g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
         test->self_handle));
 
-  /* ListStreams: we have no streams yet */
-
-  tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
-      listed_streams_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
-
-  g_assert_cmpuint (test->list_streams_return->len, ==, 0);
-
-  /* There are no Contents, either. */
+  /* Get(Contents): we have no contents yet */
 
   tp_cli_dbus_properties_call_get (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
@@ -846,32 +838,6 @@ test_basics (Test *test,
 
   /* FIXME: also assert about the associated values */
 #endif
-
-  /* ListStreams again: now we have the audio stream */
-
-  tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
-      listed_streams_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
-
-  g_assert_cmpuint (test->list_streams_return->len, ==, 1);
-  audio_info = g_ptr_array_index (test->list_streams_return, 0);
-
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 0));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 1));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 2));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 3));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 4));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
-
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
-      test->audio_stream_id);
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 1), ==,
-      tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
-      TP_MEDIA_STREAM_TYPE_AUDIO);
-  /* Don't assert about the state or the direction here - it might already have
-   * changed to connected or bidirectional, respectively. */
 
   /* The two oldest stream events should be the addition of the audio stream,
    * and the change to the appropriate direction (StreamAdded does not signal
@@ -1007,7 +973,7 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (video_info->values + 5), ==,
       TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
-  /* There are two Contents, because now we have the video stream too */
+  /* There are two Contents, because now we have the video content too */
 
   tp_cli_dbus_properties_call_get (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
@@ -1017,38 +983,65 @@ test_basics (Test *test,
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 2);
 
-  /* ListStreams again: now we have the video stream too */
+  for (i = 0; i < test->get_contents_return->len; i++)
+    {
+      /* ignore the audio content, we already know about that one */
+      if (!tp_strdiff (g_ptr_array_index (test->get_contents_return, i),
+            tp_proxy_get_object_path (test->audio_content)))
+        continue;
 
-  tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
-      listed_streams_cb, test, NULL, NULL);
+      g_assert (test->video_content == NULL);
+      test->video_content = future_call_content_new (test->chan,
+          g_ptr_array_index (test->get_contents_return, i), NULL);
+    }
+
+  g_assert (test->video_content != NULL);
+
+  tp_cli_dbus_properties_call_get_all (test->video_content, -1,
+      FUTURE_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  g_assert_cmpuint (test->list_streams_return->len, ==, 2);
+  g_assert_cmpstr (tp_asv_get_string (test->get_all_return, "Name"), !=, NULL);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Type", &valid),
+      ==, TP_MEDIA_STREAM_TYPE_VIDEO);
+  g_assert_cmpint (valid, ==, TRUE);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Creator",
+        &valid), ==, test->self_handle);
+  g_assert_cmpint (valid, ==, TRUE);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Disposition",
+        &valid), ==, FUTURE_CALL_CONTENT_DISPOSITION_NONE);
+  g_assert_cmpint (valid, ==, TRUE);
 
-  /* this might be the video or the audio - we'll have to find out */
-  audio_info = g_ptr_array_index (test->list_streams_return, 0);
+  stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
+          TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  g_assert (stream_paths != NULL);
+  g_assert_cmpuint (stream_paths->len, ==, 1);
 
-  if (g_value_get_uint (audio_info->values + 0) == test->audio_stream_id)
-    {
-      /* our guess was right, so the other one must be the video */
-      video_info = g_ptr_array_index (test->list_streams_return, 1);
-    }
-  else
-    {
-      /* we guessed wrong, compensate for that */
-      video_info = audio_info;
-      audio_info = g_ptr_array_index (test->list_streams_return, 1);
-    }
+  g_assert (test->video_stream == NULL);
+  test->video_stream = future_call_stream_new (test->chan,
+      g_ptr_array_index (stream_paths, 0), NULL);
+  g_assert (test->video_stream != NULL);
 
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
-      test->audio_stream_id);
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
-      TP_MEDIA_STREAM_TYPE_AUDIO);
-  g_assert_cmpuint (g_value_get_uint (video_info->values + 0), ==,
-      test->video_stream_id);
-  g_assert_cmpuint (g_value_get_uint (video_info->values + 2), ==,
-      TP_MEDIA_STREAM_TYPE_VIDEO);
+  tp_cli_dbus_properties_call_get (test->video_stream, -1,
+      FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+#if 0
+  /* FIXME: enable this when Senders is implemented */
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (g_hash_table_size (test->get_senders_return), ==, 2);
+  g_assert (!g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (0), NULL, NULL));
+  g_assert (g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
+  g_assert (g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
+        NULL, NULL));
+
+  /* FIXME: also assert about the associated values */
+#endif
 
   /* After a moment, the video stream becomes connected, and the remote user
    * accepts our proposed direction change. These might happen in either
@@ -1110,28 +1103,8 @@ test_basics (Test *test,
   test_assert_no_error (test->error);
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 1);
-
-  /* List streams again: now there's only the audio */
-
-  tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
-      listed_streams_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
-
-  g_assert_cmpuint (test->list_streams_return->len, ==, 1);
-  audio_info = g_ptr_array_index (test->list_streams_return, 0);
-
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 0));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 1));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 2));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 3));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 4));
-  g_assert (G_VALUE_HOLDS_UINT (audio_info->values + 5));
-
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 0), ==,
-      test->audio_stream_id);
-  g_assert_cmpuint (g_value_get_uint (audio_info->values + 2), ==,
-      TP_MEDIA_STREAM_TYPE_AUDIO);
+  g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 0), ==,
+      tp_proxy_get_object_path (test->audio_content));
 
   /* The last event should be the removal of the video stream */
 
