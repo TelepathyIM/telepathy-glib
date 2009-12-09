@@ -1638,13 +1638,28 @@ call_accept (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
 }
 
 static void
-call_hangup (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
-    guint reason G_GNUC_UNUSED,
-    const gchar *detailed_reason G_GNUC_UNUSED,
+call_hangup (FutureSvcChannelTypeCall *iface,
+    guint reason,
+    const gchar *detailed_reason,
     const gchar *message G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
-  tp_dbus_g_method_return_not_implemented (context);
+  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
+
+  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+    {
+      GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "This call has already ended" };
+
+      dbus_g_method_return_error (context, &na);
+      return;
+    }
+  else
+    {
+      example_call_channel_terminate (self, self->group.self_handle,
+          TP_CHANNEL_GROUP_CHANGE_REASON_NONE, reason, detailed_reason);
+      future_svc_channel_type_call_return_from_hangup (context);
+    }
 }
 
 static void
