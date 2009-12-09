@@ -644,13 +644,19 @@ test_connect_channel_signals (Test *test)
 
 static void
 outgoing_call (Test *test,
-               const gchar *id)
+               const gchar *id,
+               gboolean initial_audio,
+               gboolean initial_video)
 {
   GHashTable *request = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
           G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
       TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, id,
+      TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_AUDIO,
+          G_TYPE_BOOLEAN, initial_audio,
+      TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_VIDEO,
+          G_TYPE_BOOLEAN, initial_video,
       NULL);
 
   tp_cli_connection_interface_requests_call_create_channel (test->conn, -1,
@@ -716,7 +722,7 @@ test_basics (Test *test,
   const GPtrArray *stream_paths;
   guint i;
 
-  outgoing_call (test, "basic-test");
+  outgoing_call (test, "basic-test", FALSE, FALSE);
 
   /* At this point in the channel's lifetime, we should be the channel's
    * only member */
@@ -1167,27 +1173,12 @@ test_no_answer (Test *test,
                 gconstpointer data G_GNUC_UNUSED)
 {
   GroupEvent *ge;
-  StreamEvent *se;
 
   /* This identifier contains the magic string (no answer), which means the
    * example will never answer. */
-  outgoing_call (test, "smcv (no answer)");
-
-  /* request an audio stream */
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      tp_channel_get_handle (test->chan, NULL),
-      test->audio_request, requested_streams_cb,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  outgoing_call (test, "smcv (no answer)", TRUE, FALSE);
 
   test_connection_run_until_dbus_queue_processed (test->conn);
-
-  maybe_pop_stream_direction (test);
-  g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
-  se = g_slist_nth_data (test->stream_events, 0);
-  g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
-  test->audio_stream_id = se->id;
 
   /* After the initial flurry of D-Bus messages, smcv still hasn't answered */
   g_assert_cmpuint (tp_channel_group_get_self_handle (test->chan), ==,
@@ -1246,7 +1237,7 @@ test_busy (Test *test,
 
   /* This identifier contains the magic string (busy), which means the example
    * will simulate rejection of the call as busy rather than accepting it. */
-  outgoing_call (test, "Robot101 (busy)");
+  outgoing_call (test, "Robot101 (busy)", FALSE, FALSE);
 
   /* request an audio stream */
   tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
@@ -1296,7 +1287,7 @@ test_terminated_by_peer (Test *test,
 
   /* This contact contains the magic string "(terminate)", meaning the example
    * simulates answering the call but then terminating it */
-  outgoing_call (test, "The Governator (terminate)");
+  outgoing_call (test, "The Governator (terminate)", FALSE, FALSE);
 
   /* request an audio stream */
   tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
@@ -1350,7 +1341,7 @@ test_terminate_via_close (Test *test,
   GroupEvent *ge;
   StreamEvent *se;
 
-  outgoing_call (test, "basic-test");
+  outgoing_call (test, "basic-test", FALSE, FALSE);
 
   /* request an audio stream */
   tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
@@ -1416,7 +1407,7 @@ test_terminate_via_no_streams (Test *test,
   GroupEvent *ge;
   StreamEvent *se;
 
-  outgoing_call (test, "basic-test");
+  outgoing_call (test, "basic-test", FALSE, FALSE);
 
   /* request an audio stream */
   tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
