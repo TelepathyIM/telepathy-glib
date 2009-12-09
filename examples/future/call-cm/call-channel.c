@@ -1646,7 +1646,52 @@ static void
 call_accept (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
-  tp_dbus_g_method_return_not_implemented (context);
+  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
+
+  if (self->priv->locally_requested)
+    {
+      if (self->priv->call_state == FUTURE_CALL_STATE_PENDING_INITIATOR)
+        {
+          /* FIXME: actually make the call if not already done */
+          future_svc_channel_type_call_return_from_accept (context);
+        }
+      else if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+        {
+          GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "This call has already ended" };
+
+          dbus_g_method_return_error (context, &na);
+        }
+      else
+        {
+          GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "This outgoing call has already been started" };
+
+          dbus_g_method_return_error (context, &na);
+        }
+    }
+  else
+    {
+      if (self->priv->call_state == FUTURE_CALL_STATE_PENDING_RECEIVER)
+        {
+          accept_incoming_call (self);
+          future_svc_channel_type_call_return_from_accept (context);
+        }
+      else if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+        {
+          GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "This call has already ended" };
+
+          dbus_g_method_return_error (context, &na);
+        }
+      else
+        {
+          GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+              "This incoming call has already been accepted" };
+
+          dbus_g_method_return_error (context, &na);
+        }
+    }
 }
 
 static void
