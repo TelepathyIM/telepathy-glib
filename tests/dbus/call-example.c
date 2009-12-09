@@ -730,8 +730,13 @@ loop_until_ended (Test *test)
 }
 
 static void
-assert_ended_and_run_close (Test *test)
+assert_ended_and_run_close (Test *test,
+    TpHandle expected_actor,
+    FutureCallStateChangeReason expected_reason,
+    const gchar *expected_error)
 {
+  GValueArray *state_reason;
+
   /* In response to whatever we just did, the call ends... */
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
@@ -739,6 +744,15 @@ assert_ended_and_run_close (Test *test)
   test_assert_no_error (test->error);
   g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "CallState",
         NULL), ==, FUTURE_CALL_STATE_ENDED);
+  state_reason = tp_asv_get_boxed (test->get_all_return, "CallStateReason",
+      FUTURE_STRUCT_TYPE_CALL_STATE_REASON);
+  g_assert (state_reason != NULL);
+  g_assert_cmpuint (g_value_get_uint (state_reason->values + 0), ==,
+      expected_actor);
+  g_assert_cmpuint (g_value_get_uint (state_reason->values + 1), ==,
+      expected_reason);
+  g_assert_cmpstr (g_value_get_string (state_reason->values + 2), ==,
+      expected_error);
 
   /* ... which means there are no contents ... */
   tp_cli_dbus_properties_call_get (test->chan, -1,
@@ -795,7 +809,6 @@ test_basics (Test *test,
       got_contents_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
-
   g_assert_cmpuint (test->get_contents_return->len, ==, 0);
 
   /* RequestStreams */
@@ -1180,7 +1193,9 @@ test_basics (Test *test,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
-  assert_ended_and_run_close (test);
+  assert_ended_and_run_close (test, test->self_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
+      "");
 
   /* The last event should be that the peer and the self-handle were both
    * removed */
@@ -1252,7 +1267,9 @@ test_no_answer (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  assert_ended_and_run_close (test);
+  assert_ended_and_run_close (test, test->self_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
+      "");
 
   /* The last event should be that the peer and the self-handle were both
    * removed */
@@ -1293,7 +1310,9 @@ test_busy (Test *test,
 
   /* Wait for the remote contact to end the call as busy */
   loop_until_ended (test);
-  assert_ended_and_run_close (test);
+  assert_ended_and_run_close (test, tp_channel_get_handle (test->chan, NULL),
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
+      TP_ERROR_STR_BUSY);
 
   /* The last stream event should be the removal of the stream */
 
@@ -1347,7 +1366,9 @@ test_terminated_by_peer (Test *test,
 
   /* After that, wait for the remote contact to end the call */
   loop_until_ended (test);
-  assert_ended_and_run_close (test);
+  assert_ended_and_run_close (test, tp_channel_get_handle (test->chan, NULL),
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
+      "");
 
   /* The last stream event should be the removal of the stream */
 
@@ -1481,7 +1502,9 @@ test_terminate_via_no_streams (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  assert_ended_and_run_close (test);
+  /* FIXME: is this the right error? Should the actor be us? ... */
+  assert_ended_and_run_close (test, 0,
+      FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
 
   /* The last event should be that the peer and the self-handle were both
    * removed */
@@ -1719,7 +1742,8 @@ test_incoming (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  assert_ended_and_run_close (test);
+  assert_ended_and_run_close (test, test->self_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
 }
 
 static void
