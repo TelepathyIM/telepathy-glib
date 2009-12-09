@@ -799,31 +799,47 @@ test_basics (Test *test,
   StreamEvent *se;
   const GPtrArray *stream_paths;
   guint i;
+  gboolean valid;
 
   outgoing_call (test, "basic-test", FALSE, FALSE);
 
-  /* At this point in the channel's lifetime, we should be the channel's
-   * only member */
-  g_assert_cmpuint (tp_channel_group_get_self_handle (test->chan), ==,
-      test->self_handle);
-  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
-        test->self_handle), ==, test->self_handle);
-  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
-      ==, 1);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_local_pending (test->chan)), ==, 0);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_remote_pending (test->chan)), ==, 0);
-  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        test->self_handle));
-
-  /* Get(Contents): we have no contents yet */
-
-  tp_cli_dbus_properties_call_get (test->chan, -1,
-      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents_cb, test, NULL, NULL);
+  /* Get initial state */
+  tp_cli_dbus_properties_call_get_all (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
+
+  /* The easy properties */
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return,
+        "CallState", &valid), ==, FUTURE_CALL_STATE_PENDING_INITIATOR);
+  g_assert (valid);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return,
+        "CallFlags", &valid), ==, 0);
+  g_assert (valid);
+  g_assert_cmpint (tp_asv_get_boolean (test->get_all_return,
+        "HardwareStreaming", &valid), ==, TRUE);
+  g_assert (valid);
+  g_assert_cmpint (tp_asv_get_boolean (test->get_all_return,
+        "MutableContents", &valid), ==, TRUE);
+  g_assert (valid);
+  g_assert_cmpstr (tp_asv_get_string (test->get_all_return,
+        "InitialTransport"), ==, "");
+  g_assert_cmpint (tp_asv_get_boolean (test->get_all_return,
+        "InitialAudio", &valid), ==, FALSE);
+  g_assert (valid);
+  g_assert_cmpint (tp_asv_get_boolean (test->get_all_return,
+        "InitialVideo", &valid), ==, FALSE);
+  g_assert (valid);
+
+  /* FIXME: CallStateReason */
+  /* FIXME: CallStateDetails */
+
+  /* We have no contents yet */
+
+  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
+  test->get_contents_return = g_boxed_copy (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      tp_asv_get_boxed (test->get_all_return,
+        "Contents", TP_ARRAY_TYPE_OBJECT_PATH_LIST));
   g_assert_cmpuint (test->get_contents_return->len, ==, 0);
 
   /* RequestStreams */
