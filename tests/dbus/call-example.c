@@ -740,6 +740,14 @@ assert_ended_and_run_close (Test *test)
   g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "CallState",
         NULL), ==, FUTURE_CALL_STATE_ENDED);
 
+  /* ... which means there are no contents ... */
+  tp_cli_dbus_properties_call_get (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
+      got_contents_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+  g_assert_cmpuint (test->get_contents_return->len, ==, 0);
+
   /* ... but the channel doesn't close */
   test_connection_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) == NULL);
