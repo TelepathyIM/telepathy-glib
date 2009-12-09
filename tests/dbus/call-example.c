@@ -1743,6 +1743,7 @@ int
 main (int argc,
       char **argv)
 {
+  g_set_prgname ("call-example");
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
