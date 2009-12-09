@@ -743,26 +743,6 @@ test_basics (Test *test,
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 0);
 
-  /* RequestStreams with bad handle must fail */
-
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      test->self_handle,
-      test->audio_request, requested_streams_cb,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert (test->error != NULL);
-  g_clear_error (&test->error);
-
-  /* RequestStreams with bad request must fail */
-
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      tp_channel_get_handle (test->chan, NULL),
-      test->invalid_request, requested_streams_cb,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert (test->error != NULL);
-  g_clear_error (&test->error);
-
   /* RequestStreams */
 
   tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
@@ -950,6 +930,26 @@ test_basics (Test *test,
     {
       g_main_context_iteration (NULL, TRUE);
     }
+
+  /* RequestStreams with bad handle must fail */
+
+  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
+      test->self_handle,
+      test->audio_request, requested_streams_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error != NULL);
+  g_clear_error (&test->error);
+
+  /* RequestStreams with bad request must fail */
+
+  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
+      tp_channel_get_handle (test->chan, NULL),
+      test->invalid_request, requested_streams_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error != NULL);
+  g_clear_error (&test->error);
 
   /* RequestStreams again, to add a video stream */
 
