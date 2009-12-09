@@ -7,8 +7,11 @@
 #include "extensions/_gen/enums.h"
 #include "extensions/_gen/cli-channel.h"
 #include "extensions/_gen/cli-misc.h"
+#include "extensions/_gen/svc-call-content.h"
 #include "extensions/_gen/svc-channel.h"
 #include "extensions/_gen/svc-misc.h"
+
+#include "extensions/call-content.h"
 
 G_BEGIN_DECLS
 

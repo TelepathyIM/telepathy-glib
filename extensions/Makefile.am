@@ -12,6 +12,7 @@ AM_CFLAGS = \
 
 EXTRA_DIST = \
     all.xml \
+    call-content.xml \
     channel.xml \
     misc.xml
 
@@ -25,6 +26,8 @@ libfuture_extensions_la_LIBADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la
 
 libfuture_extensions_la_SOURCES = \
+    call-content.c \
+    call-content.h \
     extensions.c \
     extensions-cli.c \
     extensions.h
@@ -39,10 +42,14 @@ nodist_libfuture_extensions_la_SOURCES = \
     _gen/gtypes-body.h \
     _gen/interfaces.h \
     _gen/interfaces-body.h \
+    _gen/cli-call-content.h \
+    _gen/cli-call-content-body.h \
     _gen/cli-channel.h \
     _gen/cli-channel-body.h \
     _gen/cli-misc.h \
     _gen/cli-misc-body.h \
+    _gen/svc-call-content.h \
+    _gen/svc-call-content.c \
     _gen/svc-channel.h \
     _gen/svc-channel.c \
     _gen/svc-misc.h \
@@ -50,6 +57,7 @@ nodist_libfuture_extensions_la_SOURCES = \
 
 BUILT_SOURCES = \
     _gen/all.xml \
+    _gen/call-content.xml \
     _gen/channel.xml \
     $(nodist_libfuture_extensions_la_SOURCES)
 
@@ -124,8 +132,18 @@ _gen/cli-channel-body.h _gen/cli-channel.h: _gen/channel.xml \
 		--tp-proxy-api=0.7.6 \
 		$< Future_Cli _gen/cli-channel
 
-# for now the Content, Stream etc. interfaces are on every TpProxy - when we
-# have a TpCallContent, TpCallStream, etc., they should appear on that
+_gen/cli-call-content-body.h _gen/cli-call-content.h: _gen/call-content.xml \
+	$(tools_dir)/glib-client-gen.py Makefile.am
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
+		--group=call_content \
+		--subclass=FutureCallContent \
+		--subclass-assert=FUTURE_IS_CALL_CONTENT \
+		--iface-quark-prefix=FUTURE_IFACE_QUARK \
+		--tp-proxy-api=0.7.6 \
+		$< Future_Cli _gen/cli-call-content
+
+# for now the Endpoint etc. interfaces are on every TpProxy - when we
+# have a TpCallEndpoint etc., they should appear on that
 
 _gen/cli-misc-body.h _gen/cli-misc.h: _gen/misc.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
