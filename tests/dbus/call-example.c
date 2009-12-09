@@ -1186,10 +1186,8 @@ test_basics (Test *test,
 
   /* Hang up the call in the recommended way */
 
-  g_array_set_size (test->contacts, 0);
-  g_array_append_val (test->contacts, test->self_handle);
-  tp_cli_channel_interface_group_call_remove_members_with_reason (test->chan,
-      -1, test->contacts, "", TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+  future_cli_channel_type_call_call_hangup (test->chan,
+      -1, FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
@@ -1259,10 +1257,8 @@ test_no_answer (Test *test,
         tp_channel_get_handle (test->chan, NULL)));
 
   /* assume we're never going to get an answer, and hang up */
-  g_array_set_size (test->contacts, 0);
-  g_array_append_val (test->contacts, test->self_handle);
-  tp_cli_channel_interface_group_call_remove_members_with_reason (test->chan,
-      -1, test->contacts, "", TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+  future_cli_channel_type_call_call_hangup (test->chan,
+      -1, FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
@@ -1734,10 +1730,8 @@ test_incoming (Test *test,
       TP_MEDIA_STREAM_STATE_CONNECTED);
 
   /* Hang up the call */
-  g_array_set_size (test->contacts, 0);
-  g_array_append_val (test->contacts, test->self_handle);
-  tp_cli_channel_interface_group_call_remove_members_with_reason (test->chan,
-      -1, test->contacts, "", TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+  future_cli_channel_type_call_call_hangup (test->chan,
+      -1, FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
