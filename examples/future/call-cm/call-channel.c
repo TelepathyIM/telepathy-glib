@@ -239,6 +239,8 @@ static ExampleCallStream *example_call_channel_add_stream (
     ExampleCallChannel *self, TpMediaStreamType media_type,
     gboolean locally_requested);
 
+static void example_call_channel_initiate_outgoing (ExampleCallChannel *self);
+
 static void
 constructed (GObject *object)
 {
@@ -280,7 +282,7 @@ constructed (GObject *object)
     {
       /* Nobody is locally pending. The remote peer will turn up in
        * remote-pending state when we actually contact them, which is done
-       * in RequestStreams */
+       * in example_call_channel_initiate_outgoing. */
       example_call_channel_set_state (self,
           FUTURE_CALL_STATE_PENDING_INITIATOR, 0, 0,
           FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
@@ -330,15 +332,28 @@ constructed (GObject *object)
    */
   tp_group_mixin_change_flags (object, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
 
-  /* Future versions of telepathy-spec will allow a channel request to
-   * say "initially include an audio stream" and/or "initially include a video
-   * stream", which would be represented like this; we don't support this
-   * usage yet, though, so ExampleCallManager will never invoke
-   * our constructor in this way. */
-  g_assert (!(self->priv->locally_requested && self->priv->initial_audio));
-  g_assert (!(self->priv->locally_requested && self->priv->initial_video));
+  if (self->priv->locally_requested)
+    {
+      if (self->priv->initial_audio || self->priv->initial_video)
+        {
+          example_call_channel_initiate_outgoing (self);
+        }
 
-  if (!self->priv->locally_requested)
+      if (self->priv->initial_audio)
+        {
+          g_message ("Channel initially has an audio stream");
+          example_call_channel_add_stream (self,
+              TP_MEDIA_STREAM_TYPE_AUDIO, TRUE);
+        }
+
+      if (self->priv->initial_video)
+        {
+          g_message ("Channel initially has a video stream");
+          example_call_channel_add_stream (self,
+              TP_MEDIA_STREAM_TYPE_VIDEO, TRUE);
+        }
+    }
+  else
     {
       /* the caller has almost certainly asked us for some streams - there's
        * not much point in having a call otherwise */

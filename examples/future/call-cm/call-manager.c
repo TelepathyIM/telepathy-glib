@@ -356,6 +356,8 @@ static const gchar * const fixed_properties[] = {
 static const gchar * const allowed_properties[] = {
     TP_PROP_CHANNEL_TARGET_HANDLE,
     TP_PROP_CHANNEL_TARGET_ID,
+    TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_AUDIO,
+    TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_VIDEO,
     NULL
 };
 
@@ -446,8 +448,11 @@ example_call_manager_request (ExampleCallManager *self,
         }
     }
 
-  new_channel (self, handle, self->priv->conn->self_handle,
-      request_token, FALSE, FALSE);
+  new_channel (self, handle, self->priv->conn->self_handle, request_token,
+      tp_asv_get_boolean (request_properties,
+        TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_AUDIO, NULL),
+      tp_asv_get_boolean (request_properties,
+        TP_PROP_CHANNEL_TYPE_STREAMED_MEDIA_INITIAL_VIDEO, NULL));
   return TRUE;
 
 error:
