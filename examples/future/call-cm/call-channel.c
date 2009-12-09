@@ -139,6 +139,7 @@ struct _ExampleCallChannelPrivate
 };
 
 static const char * example_call_channel_interfaces[] = {
+    FUTURE_IFACE_CHANNEL_TYPE_CALL,
     TP_IFACE_CHANNEL_INTERFACE_GROUP,
     TP_IFACE_CHANNEL_INTERFACE_HOLD,
     NULL
