@@ -1673,6 +1673,9 @@ main (int argc,
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
+  g_type_init ();
+  future_cli_init ();
+
   g_test_add ("/call/basics", Test, NULL, setup, test_basics, teardown);
   g_test_add ("/call/busy", Test, NULL, setup, test_busy, teardown);
   g_test_add ("/call/no-answer", Test, NULL, setup, test_no_answer,
