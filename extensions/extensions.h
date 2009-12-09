@@ -8,10 +8,12 @@
 #include "extensions/_gen/cli-channel.h"
 #include "extensions/_gen/cli-misc.h"
 #include "extensions/_gen/svc-call-content.h"
+#include "extensions/_gen/svc-call-stream.h"
 #include "extensions/_gen/svc-channel.h"
 #include "extensions/_gen/svc-misc.h"
 
 #include "extensions/call-content.h"
+#include "extensions/call-stream.h"
 
 G_BEGIN_DECLS
 

@@ -6,7 +6,5 @@
 
 <xi:include href="Call_Content_Codec_Offer.xml"/>
 <xi:include href="Call_Stream_Endpoint.xml"/>
-<xi:include href="Call_Stream_Interface_Media.xml"/>
-<xi:include href="Call_Stream.xml"/>
 
 </tp:spec>
