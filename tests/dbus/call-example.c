@@ -46,6 +46,15 @@
         } \
   } G_STMT_END
 
+#define CLEAR_HASH(h) \
+  G_STMT_START { \
+      if (*(h) != NULL) \
+        { \
+          g_hash_table_unref (*(h)); \
+          *(h) = NULL; \
+        } \
+  } G_STMT_END
+
 static void
 test_assert_uu_hash_contains (GHashTable *hash,
                               guint key,
@@ -142,6 +151,8 @@ typedef struct
   TpChannel *chan;
   TpHandle self_handle;
 
+  GHashTable *get_all_return;
+
   GArray *audio_request;
   GArray *video_request;
   GArray *invalid_request;
@@ -151,11 +162,17 @@ typedef struct
   GPtrArray *request_streams_return;
   GPtrArray *list_streams_return;
   GPtrArray *get_contents_return;
+  GHashTable *get_senders_return;
 
   GSList *group_events;
   gulong members_changed_detailed_id;
 
   GSList *stream_events;
+
+  FutureCallContent *audio_content;
+  FutureCallContent *video_content;
+  FutureCallStream *audio_stream;
+  FutureCallStream *video_stream;
 
   guint audio_stream_id;
   guint video_stream_id;
@@ -395,6 +412,26 @@ listed_streams_cb (TpChannel *chan G_GNUC_UNUSED,
 }
 
 static void
+got_all_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+
+  test_assert_no_error (error);
+
+  CLEAR_HASH (&test->get_all_return);
+  test->get_all_return = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) tp_g_value_slice_free);
+  tp_g_hash_table_update (test->get_all_return, properties,
+      (GBoxedCopyFunc) g_strdup, (GBoxedCopyFunc) tp_g_value_slice_dup);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
 got_contents_cb (TpProxy *proxy,
     const GValue *value,
     const GError *error,
@@ -408,6 +445,31 @@ got_contents_cb (TpProxy *proxy,
   CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
   g_assert (G_VALUE_HOLDS (value, TP_ARRAY_TYPE_OBJECT_PATH_LIST));
   test->get_contents_return = g_value_dup_boxed (value);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+got_senders_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+
+  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_senders_return);
+
+  /* FIXME: stub */
+  if (test->error != NULL)
+    g_clear_error (&test->error);
+
+#if 0
+  test_assert_no_error (error);
+
+  g_assert (G_VALUE_HOLDS (value, TP_ARRAY_TYPE_OBJECT_PATH_LIST));
+  test->get_senders_return = g_value_dup_boxed (value);
+#endif
 
   g_main_loop_quit (test->mainloop);
 }
@@ -631,6 +693,8 @@ test_basics (Test *test,
   guint not_a_stream_id = 31337;
   GroupEvent *ge;
   StreamEvent *se;
+  gboolean valid;
+  const GPtrArray *stream_paths;
 
   outgoing_call (test, "basic-test");
 
@@ -722,7 +786,7 @@ test_basics (Test *test,
   g_assert_cmpuint (g_value_get_uint (audio_info->values + 5), ==,
       TP_MEDIA_STREAM_PENDING_REMOTE_SEND);
 
-  /* Get Contents: now we have an audio stream (FIXME: assert that) */
+  /* Get Contents: now we have an audio content, with one stream */
 
   tp_cli_dbus_properties_call_get (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
@@ -731,6 +795,57 @@ test_basics (Test *test,
   test_assert_no_error (test->error);
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 1);
+
+  g_assert (test->audio_content == NULL);
+  test->audio_content = future_call_content_new (test->chan,
+      g_ptr_array_index (test->get_contents_return, 0), NULL);
+  g_assert (test->audio_content != NULL);
+
+  tp_cli_dbus_properties_call_get_all (test->audio_content, -1,
+      FUTURE_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpstr (tp_asv_get_string (test->get_all_return, "Name"), !=, NULL);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Type", &valid),
+      ==, TP_MEDIA_STREAM_TYPE_AUDIO);
+  g_assert_cmpint (valid, ==, TRUE);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Creator",
+        &valid), ==, test->self_handle);
+  g_assert_cmpint (valid, ==, TRUE);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "Disposition",
+        &valid), ==, FUTURE_CALL_CONTENT_DISPOSITION_NONE);
+  g_assert_cmpint (valid, ==, TRUE);
+
+  stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
+          TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  g_assert (stream_paths != NULL);
+  g_assert_cmpuint (stream_paths->len, ==, 1);
+
+  g_assert (test->audio_stream == NULL);
+  test->audio_stream = future_call_stream_new (test->chan,
+      g_ptr_array_index (stream_paths, 0), NULL);
+  g_assert (test->audio_stream != NULL);
+
+  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
+      FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+#if 0
+  /* FIXME: enable this when Senders is implemented */
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (g_hash_table_size (test->get_senders_return), ==, 2);
+  g_assert (!g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (0), NULL, NULL));
+  g_assert (g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
+  g_assert (g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
+        NULL, NULL));
+
+  /* FIXME: also assert about the associated values */
+#endif
 
   /* ListStreams again: now we have the audio stream */
 
@@ -757,16 +872,6 @@ test_basics (Test *test,
       TP_MEDIA_STREAM_TYPE_AUDIO);
   /* Don't assert about the state or the direction here - it might already have
    * changed to connected or bidirectional, respectively. */
-
-  /* There is one Content. FIXME: check that it is in fact audio */
-
-  tp_cli_dbus_properties_call_get (test->chan, -1,
-      FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
-
-  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
 
   /* The two oldest stream events should be the addition of the audio stream,
    * and the change to the appropriate direction (StreamAdded does not signal
@@ -1632,6 +1737,7 @@ teardown (Test *test,
   g_array_free (test->invalid_request, TRUE);
   g_array_free (test->stream_ids, TRUE);
   g_array_free (test->contacts, TRUE);
+  CLEAR_HASH (&test->get_all_return);
 
   g_slist_foreach (test->group_events, (GFunc) group_event_destroy, NULL);
   g_slist_free (test->group_events);
@@ -1645,11 +1751,16 @@ teardown (Test *test,
       &test->request_streams_return);
   CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
       &test->get_contents_return);
+  CLEAR_HASH (&test->get_senders_return);
 
   g_hash_table_destroy (test->stream_directions);
   g_hash_table_destroy (test->stream_pending_sends);
   g_hash_table_destroy (test->stream_states);
 
+  CLEAR_OBJECT (&test->audio_stream);
+  CLEAR_OBJECT (&test->video_stream);
+  CLEAR_OBJECT (&test->audio_content);
+  CLEAR_OBJECT (&test->video_content);
   CLEAR_OBJECT (&test->chan);
   CLEAR_OBJECT (&test->conn);
   CLEAR_OBJECT (&test->cm);
