@@ -716,6 +716,8 @@ finalize (GObject *object)
   ((GObjectClass *) example_call_channel_parent_class)->finalize (object);
 }
 
+static void accept_incoming_call (ExampleCallChannel *self);
+
 static gboolean
 add_member (GObject *object,
     TpHandle member,
@@ -723,8 +725,6 @@ add_member (GObject *object,
     GError **error)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
   /* In connection managers that supported the RequestChannel method for
    * streamed media channels, it would be necessary to support adding the
@@ -737,44 +737,7 @@ add_member (GObject *object,
       tp_handle_set_is_member (self->group.local_pending, member))
     {
       /* We're in local-pending, move to members to accept. */
-      TpIntSet *set = tp_intset_new_containing (member);
-      GHashTableIter iter;
-      gpointer v;
-
-      g_assert (self->priv->call_state == FUTURE_CALL_STATE_PENDING_RECEIVER);
-
-      g_message ("SIGNALLING: send: Accepting incoming call from %s",
-          tp_handle_inspect (contact_repo, self->priv->handle));
-
-      example_call_channel_set_state (self,
-          FUTURE_CALL_STATE_ACCEPTED, 0, self->group.self_handle,
-          FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
-          NULL);
-
-      tp_group_mixin_change_members (object, "",
-          set /* added */,
-          NULL /* nobody removed */,
-          NULL /* nobody added to local pending */,
-          NULL /* nobody added to remote pending */,
-          member /* actor */, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-      tp_intset_destroy (set);
-
-      g_hash_table_iter_init (&iter, self->priv->contents);
-
-      while (g_hash_table_iter_next (&iter, NULL, &v))
-        {
-          ExampleCallStream *stream = example_call_content_get_stream (v);
-
-          if (stream == NULL)
-            continue;
-
-          /* we accept the proposed stream direction... */
-          example_call_stream_accept_proposed_direction (stream);
-          /* ... and the stream tries to connect */
-          example_call_stream_connect (stream);
-        }
-
+      accept_incoming_call (self);
       return TRUE;
     }
 
@@ -1628,6 +1591,55 @@ call_ringing (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
   tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+accept_incoming_call (ExampleCallChannel *self)
+{
+  TpIntSet *set = tp_intset_new_containing (self->group.self_handle);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
+      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  GHashTableIter iter;
+  gpointer v;
+
+  g_assert (self->priv->call_state == FUTURE_CALL_STATE_PENDING_RECEIVER);
+
+  g_message ("SIGNALLING: send: Accepting incoming call from %s",
+      tp_handle_inspect (contact_repo, self->priv->handle));
+
+  example_call_channel_set_state (self,
+      FUTURE_CALL_STATE_ACCEPTED, 0, self->group.self_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      NULL);
+
+  tp_group_mixin_change_members ((GObject *) self, "",
+      set /* added */,
+      NULL /* nobody removed */,
+      NULL /* nobody added to local pending */,
+      NULL /* nobody added to remote pending */,
+      self->group.self_handle /* actor */,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  tp_intset_destroy (set);
+
+  g_hash_table_iter_init (&iter, self->priv->contents);
+
+  while (g_hash_table_iter_next (&iter, NULL, &v))
+    {
+      ExampleCallStream *stream = example_call_content_get_stream (v);
+
+      /* FIXME: this isn't quite right for Call, where we should look for
+       * streams where we are Pending_Send in Initial contents, and change them
+       * to Sending */
+
+      if (stream == NULL)
+        continue;
+
+      /* we accept the proposed stream direction... */
+      example_call_stream_accept_proposed_direction (stream);
+      /* ... and the stream tries to connect */
+      example_call_stream_connect (stream);
+    }
 }
 
 static void
