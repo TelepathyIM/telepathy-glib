@@ -6,6 +6,7 @@
 
 #include "extensions/_gen/enums.h"
 #include "extensions/_gen/cli-channel.h"
+#include "extensions/_gen/cli-misc.h"
 #include "extensions/_gen/svc-channel.h"
 #include "extensions/_gen/svc-misc.h"
 

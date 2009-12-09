@@ -41,6 +41,8 @@ nodist_libfuture_extensions_la_SOURCES = \
     _gen/interfaces-body.h \
     _gen/cli-channel.h \
     _gen/cli-channel-body.h \
+    _gen/cli-misc.h \
+    _gen/cli-misc-body.h \
     _gen/svc-channel.h \
     _gen/svc-channel.c \
     _gen/svc-misc.h \
@@ -112,8 +114,6 @@ _gen/svc-%.c _gen/svc-%.h: _gen/%.xml \
 		--allow-unstable \
 		$< Future_Svc_
 
-# not generating client bindings for Content, Stream etc. right now
-
 _gen/cli-channel-body.h _gen/cli-channel.h: _gen/channel.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
@@ -123,3 +123,14 @@ _gen/cli-channel-body.h _gen/cli-channel.h: _gen/channel.xml \
 		--iface-quark-prefix=FUTURE_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
 		$< Future_Cli _gen/cli-channel
+
+# for now the Content, Stream etc. interfaces are on every TpProxy - when we
+# have a TpCallContent, TpCallStream, etc., they should appear on that
+
+_gen/cli-misc-body.h _gen/cli-misc.h: _gen/misc.xml \
+	$(tools_dir)/glib-client-gen.py Makefile.am
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
+		--group=misc \
+		--iface-quark-prefix=FUTURE_IFACE_QUARK \
+		--tp-proxy-api=0.7.6 \
+		$< Future_Cli _gen/cli-misc
