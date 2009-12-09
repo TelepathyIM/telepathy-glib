@@ -69,6 +69,8 @@ struct _ExampleCallChannel {
     ExampleCallChannelPrivate *priv;
 };
 
+void example_call_channel_disconnected (ExampleCallChannel *self);
+
 G_END_DECLS
 
 #endif

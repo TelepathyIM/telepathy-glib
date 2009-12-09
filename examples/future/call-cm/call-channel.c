@@ -135,6 +135,7 @@ struct _ExampleCallChannelPrivate
   gboolean initial_audio;
   gboolean initial_video;
   gboolean disposed;
+  gboolean closed;
 };
 
 static const char * example_call_channel_interfaces[] = {
@@ -602,7 +603,7 @@ set_property (GObject *object,
 }
 
 static void
-example_call_channel_close (ExampleCallChannel *self,
+example_call_channel_terminate (ExampleCallChannel *self,
     TpHandle actor,
     TpChannelGroupChangeReason reason,
     FutureCallStateChangeReason call_reason,
@@ -652,6 +653,20 @@ example_call_channel_close (ExampleCallChannel *self,
       tp_intset_destroy (everyone);
 
       g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
+    }
+}
+
+void
+example_call_channel_disconnected (ExampleCallChannel *self)
+{
+  example_call_channel_terminate (self, 0,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      TP_ERROR_STR_DISCONNECTED);
+
+  if (!self->priv->closed)
+    {
+      self->priv->closed = TRUE;
       tp_svc_channel_emit_closed (self);
     }
 }
@@ -669,10 +684,13 @@ dispose (GObject *object)
   g_hash_table_destroy (self->priv->contents);
   self->priv->contents = NULL;
 
-  /* FIXME: right error code? arguably we should never get here... */
-  example_call_channel_close (self, self->group.self_handle,
+  /* FIXME: right error code? arguably this should always be a no-op */
+  example_call_channel_terminate (self, self->group.self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
+
+  /* the manager is meant to hold a ref to us until we've closed */
+  g_assert (self->priv->closed);
 
   ((GObjectClass *) example_call_channel_parent_class)->dispose (object);
 }
@@ -781,8 +799,9 @@ remove_member_with_reason (GObject *object,
 
   g_assert (member == self->group.self_handle);
 
-  example_call_channel_close (self, self->group.self_handle, reason,
+  example_call_channel_terminate (self, self->group.self_handle, reason,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
+
   return TRUE;
 }
 
@@ -1000,9 +1019,16 @@ channel_close (TpSvcChannel *iface,
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
 
-  example_call_channel_close (self, self->group.self_handle,
+  example_call_channel_terminate (self, self->group.self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
+
+  if (!self->priv->closed)
+    {
+      self->priv->closed = TRUE;
+      tp_svc_channel_emit_closed (self);
+    }
+
   tp_svc_channel_return_from_close (context);
 }
 
@@ -1209,7 +1235,7 @@ stream_removed_cb (ExampleCallStream *stream,
   if (g_hash_table_size (self->priv->contents) == 0)
     {
       /* no contents left, so the call terminates */
-      example_call_channel_close (self, 0,
+      example_call_channel_terminate (self, 0,
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
           FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
       /* FIXME: is there an appropriate error? */
@@ -1260,7 +1286,7 @@ simulate_contact_ended_cb (gpointer p)
 
   g_message ("SIGNALLING: receive: call terminated: <call-terminated/>");
 
-  example_call_channel_close (self, self->priv->handle,
+  example_call_channel_terminate (self, self->priv->handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
 
@@ -1351,7 +1377,7 @@ simulate_contact_busy_cb (gpointer p)
 
   g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
 
-  example_call_channel_close (self, self->priv->handle,
+  example_call_channel_terminate (self, self->priv->handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_BUSY,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       TP_ERROR_STR_BUSY);

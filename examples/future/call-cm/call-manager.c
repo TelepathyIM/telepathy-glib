@@ -91,8 +91,15 @@ example_call_manager_close_all (ExampleCallManager *self)
   if (self->priv->channels != NULL)
     {
       GHashTable *tmp = self->priv->channels;
+      GHashTableIter iter;
+      gpointer v;
 
       self->priv->channels = NULL;
+
+      g_hash_table_iter_init (&iter, tmp);
+
+      while (g_hash_table_iter_next (&iter, NULL, &v))
+        example_call_channel_disconnected (v);
 
       g_hash_table_unref (tmp);
     }

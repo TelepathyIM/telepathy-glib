@@ -714,6 +714,45 @@ assert_content_properties (GHashTable *get_all_return,
 }
 
 static void
+loop_until_ended (Test *test)
+{
+  while (1)
+    {
+      tp_cli_dbus_properties_call_get_all (test->chan, -1,
+          FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
+      g_main_loop_run (test->mainloop);
+      test_assert_no_error (test->error);
+
+      if (tp_asv_get_uint32 (test->get_all_return, "CallState",
+            NULL) == FUTURE_CALL_STATE_ENDED)
+        return;
+    }
+}
+
+static void
+assert_ended_and_run_close (Test *test)
+{
+  /* In response to whatever we just did, the call ends... */
+  tp_cli_dbus_properties_call_get_all (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+  g_assert_cmpuint (tp_asv_get_uint32 (test->get_all_return, "CallState",
+        NULL), ==, FUTURE_CALL_STATE_ENDED);
+
+  /* ... but the channel doesn't close */
+  test_connection_run_until_dbus_queue_processed (test->conn);
+  g_assert (tp_proxy_get_invalidated (test->chan) == NULL);
+
+  /* When we call Close it finally closes */
+  tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+  test_connection_run_until_dbus_queue_processed (test->conn);
+  g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
+}
+
+static void
 test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
@@ -1133,10 +1172,7 @@ test_basics (Test *test,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
-
-  /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
-  g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
+  assert_ended_and_run_close (test);
 
   /* The last event should be that the peer and the self-handle were both
    * removed */
@@ -1208,9 +1244,7 @@ test_no_answer (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
-  g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
+  assert_ended_and_run_close (test);
 
   /* The last event should be that the peer and the self-handle were both
    * removed */
@@ -1249,11 +1283,9 @@ test_busy (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  /* Wait for the remote contact to reject the call */
-  while (tp_proxy_get_invalidated (test->chan) != NULL)
-    {
-      g_main_context_iteration (NULL, TRUE);
-    }
+  /* Wait for the remote contact to end the call as busy */
+  loop_until_ended (test);
+  assert_ended_and_run_close (test);
 
   /* The last stream event should be the removal of the stream */
 
@@ -1306,10 +1338,8 @@ test_terminated_by_peer (Test *test,
     g_main_context_iteration (NULL, TRUE);
 
   /* After that, wait for the remote contact to end the call */
-  while (tp_proxy_get_invalidated (test->chan) != NULL)
-    {
-      g_main_context_iteration (NULL, TRUE);
-    }
+  loop_until_ended (test);
+  assert_ended_and_run_close (test);
 
   /* The last stream event should be the removal of the stream */
 
@@ -1443,9 +1473,7 @@ test_terminate_via_no_streams (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
-  g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
+  assert_ended_and_run_close (test);
 
   /* The last event should be that the peer and the self-handle were both
    * removed */
@@ -1683,9 +1711,7 @@ test_incoming (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
-  g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
+  assert_ended_and_run_close (test);
 }
 
 static void
