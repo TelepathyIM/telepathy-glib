@@ -1436,6 +1436,56 @@ example_call_channel_add_stream (ExampleCallChannel *self,
 }
 
 static void
+example_call_channel_initiate_outgoing (ExampleCallChannel *self)
+{
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
+      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  TpIntSet *peer_set = tp_intset_new_containing (self->priv->handle);
+  const gchar *peer;
+
+  g_message ("SIGNALLING: send: new streamed media call");
+  example_call_channel_set_state (self,
+      FUTURE_CALL_STATE_PENDING_RECEIVER, 0, self->group.self_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      NULL);
+
+  tp_group_mixin_change_members ((GObject *) self, "",
+      NULL /* nobody added */,
+      NULL /* nobody removed */,
+      NULL /* nobody added to local-pending */,
+      peer_set /* added to remote-pending */,
+      self->group.self_handle /* actor */,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  tp_intset_destroy (peer_set);
+
+  /* In this example there is no real contact, so just simulate them
+   * answering after a short time - unless the contact's name
+   * contains "(no answer)" or "(busy)" */
+
+  peer = tp_handle_inspect (contact_repo, self->priv->handle);
+
+  if (strstr (peer, "(busy)") != NULL)
+    {
+      g_timeout_add_full (G_PRIORITY_DEFAULT,
+          self->priv->simulation_delay,
+          simulate_contact_busy_cb, g_object_ref (self),
+          g_object_unref);
+    }
+  else if (strstr (peer, "(no answer)") != NULL)
+    {
+      /* do nothing - the call just rings forever */
+    }
+  else
+    {
+      g_timeout_add_full (G_PRIORITY_DEFAULT,
+          self->priv->simulation_delay,
+          simulate_contact_answered_cb, g_object_ref (self),
+          g_object_unref);
+    }
+}
+
+static void
 media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
     guint contact_handle,
     const GArray *media_types,
@@ -1492,49 +1542,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
 
       if (self->priv->call_state < FUTURE_CALL_STATE_PENDING_RECEIVER)
         {
-          TpIntSet *peer_set = tp_intset_new_containing (self->priv->handle);
-          const gchar *peer;
-
-          g_message ("SIGNALLING: send: new streamed media call");
-          example_call_channel_set_state (self,
-              FUTURE_CALL_STATE_PENDING_RECEIVER, 0, self->group.self_handle,
-              FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
-              NULL);
-
-          tp_group_mixin_change_members ((GObject *) self, "",
-              NULL /* nobody added */,
-              NULL /* nobody removed */,
-              NULL /* nobody added to local-pending */,
-              peer_set /* added to remote-pending */,
-              self->group.self_handle /* actor */,
-              TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-          tp_intset_destroy (peer_set);
-
-          /* In this example there is no real contact, so just simulate them
-           * answering after a short time - unless the contact's name
-           * contains "(no answer)" or "(busy)" */
-
-          peer = tp_handle_inspect (contact_repo, self->priv->handle);
-
-          if (strstr (peer, "(busy)") != NULL)
-            {
-              g_timeout_add_full (G_PRIORITY_DEFAULT,
-                  self->priv->simulation_delay,
-                  simulate_contact_busy_cb, g_object_ref (self),
-                  g_object_unref);
-            }
-          else if (strstr (peer, "(no answer)") != NULL)
-            {
-              /* do nothing - the call just rings forever */
-            }
-          else
-            {
-              g_timeout_add_full (G_PRIORITY_DEFAULT,
-                  self->priv->simulation_delay,
-                  simulate_contact_answered_cb, g_object_ref (self),
-                  g_object_unref);
-            }
+          example_call_channel_initiate_outgoing (self);
         }
 
       stream = example_call_channel_add_stream (self, media_type,
