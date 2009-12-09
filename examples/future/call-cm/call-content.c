@@ -195,6 +195,19 @@ dispose (GObject *object)
 }
 
 static void
+finalize (GObject *object)
+{
+  ExampleCallContent *self = EXAMPLE_CALL_CONTENT (object);
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) example_call_content_parent_class)->finalize;
+
+  g_free (self->priv->name);
+
+  if (chain_up != NULL)
+    chain_up (object);
+}
+
+static void
 example_call_content_class_init (ExampleCallContentClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl content_props[] = {
@@ -223,6 +236,7 @@ example_call_content_class_init (ExampleCallContentClass *klass)
   object_class->set_property = set_property;
   object_class->get_property = get_property;
   object_class->dispose = dispose;
+  object_class->finalize = finalize;
 
   param_spec = g_param_spec_object ("channel", "ExampleCallChannel",
       "Media channel that owns this content",

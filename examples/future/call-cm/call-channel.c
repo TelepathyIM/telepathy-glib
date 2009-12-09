@@ -40,10 +40,8 @@
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
-#include <telepathy-glib/svc-generic.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "extensions/extensions.h"
 
@@ -89,6 +87,15 @@ enum
   PROP_SIMULATION_DELAY,
   PROP_INITIAL_AUDIO,
   PROP_INITIAL_VIDEO,
+  PROP_CONTENT_PATHS,
+  PROP_CALL_STATE,
+  PROP_CALL_FLAGS,
+  PROP_CALL_STATE_REASON,
+  PROP_CALL_STATE_DETAILS,
+  PROP_HARDWARE_STREAMING,
+  PROP_CALL_MEMBERS,
+  PROP_INITIAL_TRANSPORT,
+  PROP_MUTABLE_CONTENTS,
   N_PROPS
 };
 
@@ -359,6 +366,83 @@ get_property (GObject *object,
       g_value_set_boolean (value, self->priv->initial_video);
       break;
 
+    case PROP_CONTENT_PATHS:
+        {
+          GPtrArray *paths = g_ptr_array_sized_new (g_hash_table_size (
+                self->priv->stream_contents));
+          GHashTableIter iter;
+          gpointer k, v;
+
+          g_hash_table_iter_init (&iter, self->priv->stream_contents);
+
+          while (g_hash_table_iter_next (&iter, &k, &v))
+            {
+              ExampleCallContent *content = v;
+              gchar *path;
+
+              /* FIXME: get the object path from the content, when it's
+               * actually exported on the bus */
+              (void) content;
+              path = g_strdup_printf ("%s/Content%u",
+                  self->priv->object_path, GPOINTER_TO_UINT (k));
+
+              g_ptr_array_add (paths, path);
+            }
+
+          g_value_take_boxed (value, paths);
+        }
+      break;
+
+    case PROP_CALL_STATE:
+      g_value_set_uint (value, 0);  /* FIXME: stub */
+      break;
+
+    case PROP_CALL_FLAGS:
+      g_value_set_uint (value, 0);  /* FIXME: stub */
+      break;
+
+    case PROP_CALL_STATE_REASON:
+      g_value_take_boxed (value,
+          tp_value_array_build (3,
+            G_TYPE_UINT, 0,         /* FIXME: stub (actor) */
+            G_TYPE_UINT, 0,         /* FIXME: stub (reason code) */
+            G_TYPE_STRING, "",      /* FIXME: stub (D-Bus error name or "") */
+            G_TYPE_INVALID));
+      break;
+
+    case PROP_CALL_STATE_DETAILS:
+      g_value_take_boxed (value, tp_asv_new (NULL, NULL));  /* FIXME: stub */
+      break;
+
+    case PROP_HARDWARE_STREAMING:
+      /* yes, this implementation has hardware streaming */
+      g_value_set_boolean (value, TRUE);
+      break;
+
+    case PROP_MUTABLE_CONTENTS:
+      /* yes, this implementation can add contents */
+      g_value_set_boolean (value, TRUE);
+      break;
+
+    case PROP_INITIAL_TRANSPORT:
+      /* this implementation has hardware_streaming, so the initial
+       * transport is rather meaningless */
+      g_value_set_static_string (value, "");
+      break;
+
+    case PROP_CALL_MEMBERS:
+        {
+          GHashTable *uu_map = g_hash_table_new (NULL, NULL);
+
+          /* There is one contact, other than the self-handle.
+           *
+           * FIXME: stub: we should simulate the Ringing and Hold flags */
+          g_hash_table_insert (uu_map, GUINT_TO_POINTER (self->priv->handle),
+              GUINT_TO_POINTER (0));
+          g_value_take_boxed (value, uu_map);
+        }
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -606,11 +690,30 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
       { "InitiatorID", "initiator-id", NULL },
       { NULL }
   };
+  static TpDBusPropertiesMixinPropImpl call_props[] = {
+      { "Contents", "content-paths", NULL },
+      { "CallState", "call-state", NULL },
+      { "CallFlags", "call-flags", NULL },
+      { "CallStateReason", "call-state-reason", NULL },
+      { "CallStateDetails", "call-state-details", NULL },
+      { "HardwareStreaming", "hardware-streaming", NULL },
+      { "CallMembers", "call-members", NULL },
+      { "InitialTransport", "initial-transport", NULL },
+      { "InitialAudio", "initial-audio", NULL },
+      { "InitialVideo", "initial-video", NULL },
+      { "MutableContents", "mutable-contents", NULL },
+      { NULL }
+  };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_CHANNEL,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         channel_props,
+      },
+      { FUTURE_IFACE_CHANNEL_TYPE_CALL,
+        tp_dbus_properties_mixin_getter_gobject_properties,
+        NULL,
+        call_props,
       },
       { NULL }
   };
@@ -696,6 +799,69 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
       FALSE,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INITIAL_VIDEO,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("content-paths", "Content paths",
+      "A list of the object paths of contents",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONTENT_PATHS,
+      param_spec);
+
+  param_spec = g_param_spec_uint ("call-state", "Call state",
+      "High-level state of the call",
+      0, NUM_FUTURE_CALL_STATES - 1, FUTURE_CALL_STATE_PENDING_INITIATOR,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CALL_STATE,
+      param_spec);
+
+  param_spec = g_param_spec_uint ("call-flags", "Call flags",
+      "Flags for additional sub-states",
+      0, G_MAXUINT32, 0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CALL_FLAGS,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("call-state-reason", "Call state reason",
+      "Reason for call-state and call-flags",
+      FUTURE_STRUCT_TYPE_CALL_STATE_REASON,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CALL_STATE_REASON,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("call-state-details", "Call state details",
+      "Additional details of the call state/flags/reason",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CALL_STATE_DETAILS,
+      param_spec);
+
+  param_spec = g_param_spec_boolean ("hardware-streaming",
+      "Hardware streaming?",
+      "True if this channel does all of its own streaming (it does)",
+      TRUE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HARDWARE_STREAMING,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("call-members", "Call members",
+      "A map from call members (only one in this example) to their states",
+      FUTURE_HASH_TYPE_CALL_MEMBER_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CALL_MEMBERS,
+      param_spec);
+
+  param_spec = g_param_spec_string ("initial-transport", "Initial transport",
+      "The initial transport for this channel (there is none)",
+      "",
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIAL_TRANSPORT,
+      param_spec);
+
+  param_spec = g_param_spec_boolean ("mutable-contents", "Mutable contents?",
+      "True if contents can be added to this channel (they can)",
+      TRUE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_MUTABLE_CONTENTS,
       param_spec);
 
   signals[SIGNAL_CALL_TERMINATED] = g_signal_new ("call-terminated",
