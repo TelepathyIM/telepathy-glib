@@ -69,42 +69,6 @@ test_assert_uu_hash_contains (GHashTable *hash,
   g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, expected);
 }
 
-typedef struct
-{
-  TpIntSet *added;
-  TpIntSet *removed;
-  TpIntSet *local_pending;
-  TpIntSet *remote_pending;
-  GHashTable *details;
-} GroupEvent;
-
-static GroupEvent *
-group_event_new (void)
-{
-  return g_slice_new0 (GroupEvent);
-}
-
-static void
-group_event_destroy (GroupEvent *ge)
-{
-  if (ge->added != NULL)
-    tp_intset_destroy (ge->added);
-
-  if (ge->removed != NULL)
-    tp_intset_destroy (ge->removed);
-
-  if (ge->local_pending != NULL)
-    tp_intset_destroy (ge->local_pending);
-
-  if (ge->remote_pending != NULL)
-    tp_intset_destroy (ge->remote_pending);
-
-  if (ge->details != NULL)
-    g_hash_table_destroy (ge->details);
-
-  g_slice_free (GroupEvent, ge);
-}
-
 typedef enum
 {
   STREAM_EVENT_ADDED,
@@ -165,7 +129,6 @@ typedef struct
   GPtrArray *get_contents_return;
   GHashTable *get_senders_return;
 
-  GSList *group_events;
   gulong members_changed_detailed_id;
 
   GSList *stream_events;
@@ -493,31 +456,6 @@ void_cb (TpChannel *chan G_GNUC_UNUSED,
 }
 
 static void
-members_changed_detailed_cb (TpChannel *chan G_GNUC_UNUSED,
-                             const GArray *added,
-                             const GArray *removed,
-                             const GArray *local_pending,
-                             const GArray *remote_pending,
-                             GHashTable *details,
-                             gpointer user_data)
-{
-  Test *test = user_data;
-  GroupEvent *ge = group_event_new ();
-
-  /* just log the event */
-  ge->added = tp_intset_from_array (added);
-  ge->removed = tp_intset_from_array (removed);
-  ge->local_pending = tp_intset_from_array (local_pending);
-  ge->remote_pending = tp_intset_from_array (remote_pending);
-  ge->details = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
-      (GDestroyNotify) tp_g_value_slice_free);
-  tp_g_hash_table_update (ge->details, details,
-      (GBoxedCopyFunc) g_strdup, (GBoxedCopyFunc) tp_g_value_slice_dup);
-
-  test->group_events = g_slist_prepend (test->group_events, ge);
-}
-
-static void
 stream_added_cb (TpChannel *chan G_GNUC_UNUSED,
                  guint id,
                  guint contact,
@@ -628,10 +566,6 @@ stream_state_changed_cb (TpChannel *chan G_GNUC_UNUSED,
 static void
 test_connect_channel_signals (Test *test)
 {
-  test->members_changed_detailed_id = g_signal_connect (test->chan,
-      "group-members-changed-detailed",
-      G_CALLBACK (members_changed_detailed_cb), test);
-
   tp_cli_channel_type_streamed_media_connect_to_stream_added (test->chan,
       stream_added_cb, test, NULL, NULL, NULL);
   tp_cli_channel_type_streamed_media_connect_to_stream_removed (test->chan,
@@ -1562,9 +1496,6 @@ teardown (Test *test,
   g_array_free (test->invalid_request, TRUE);
   g_array_free (test->stream_ids, TRUE);
   CLEAR_HASH (&test->get_all_return);
-
-  g_slist_foreach (test->group_events, (GFunc) group_event_destroy, NULL);
-  g_slist_free (test->group_events);
 
   g_slist_foreach (test->stream_events, (GFunc) stream_event_destroy, NULL);
   g_slist_free (test->stream_events);
