@@ -1238,30 +1238,23 @@ static void
 test_no_answer (Test *test,
                 gconstpointer data G_GNUC_UNUSED)
 {
-  GroupEvent *ge;
-
   /* This identifier contains the magic string (no answer), which means the
    * example will never answer. */
   outgoing_call (test, "smcv (no answer)", TRUE, FALSE);
 
+  /* After the initial flurry of D-Bus messages, smcv still hasn't answered */
   test_connection_run_until_dbus_queue_processed (test->conn);
 
-  /* After the initial flurry of D-Bus messages, smcv still hasn't answered */
-  g_assert_cmpuint (tp_channel_group_get_self_handle (test->chan), ==,
-      test->self_handle);
-  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
-        test->self_handle), ==, test->self_handle);
-  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
-      ==, 1);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_local_pending (test->chan)), ==, 0);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_remote_pending (test->chan)), ==, 1);
-  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        test->self_handle));
-  g_assert (tp_intset_is_member (tp_channel_group_get_remote_pending (
-          test->chan),
-        tp_channel_get_handle (test->chan, NULL)));
+  tp_cli_dbus_properties_call_get_all (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  assert_call_properties (test->get_all_return,
+      FUTURE_CALL_STATE_PENDING_RECEIVER, test->self_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TRUE, 0,              /* call flags */
+      TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */
 
   /* assume we're never going to get an answer, and hang up */
   future_cli_channel_type_call_call_hangup (test->chan,
@@ -1273,23 +1266,6 @@ test_no_answer (Test *test,
   assert_ended_and_run_close (test, test->self_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "");
-
-  /* The last event should be that the peer and the self-handle were both
-   * removed */
-  ge = g_slist_nth_data (test->group_events, 0);
-
-  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 2);
-  g_assert (tp_intset_is_member (ge->removed,
-        test->self_handle));
-  g_assert (tp_intset_is_member (ge->removed,
-        tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
-      test->self_handle);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 }
 
 static void
