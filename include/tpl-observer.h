@@ -30,7 +30,7 @@ struct _TplObserver
 	GObject parent;
 
 	/* private */
-	TplLogStoreEmpathy *logstore;
+	GHashTable *chan_map; // channel_path->tpl_IFACE_channel 
 };
 
 typedef struct _TplObserverClass TplObserverClass;
@@ -47,4 +47,4 @@ void tpl_headless_logger_init(void);
 
 G_END_DECLS
 
-#endif
+#endif // __TPL_OBSERVER_H__

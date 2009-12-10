@@ -25,9 +25,22 @@ static TpContactFeature features[TP_CONTACT_FEATURES_LEN] = {
 	TP_CONTACT_FEATURE_PRESENCE
 };
 
-
-
 /* Signal's Callbacks */
+
+static void
+_channel_on_closed_cb (TpChannel *proxy,
+		gpointer user_data,
+		GObject *weak_object)
+{
+	TplTextChannel *tpl_text = TPL_TEXT_CHANNEL(user_data);
+	TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel(tpl_text);
+	gboolean is_unreg;
+
+	is_unreg = tpl_channel_unregister_from_observer(tpl_chan);
+	g_debug("%s has been unregistered? %d\n",
+		tpl_channel_get_channel_path(tpl_chan), is_unreg);
+	g_object_unref(tpl_text);
+}
 
 static void
 _channel_on_lost_message_cb (TpChannel *proxy,
@@ -262,42 +275,61 @@ _tpl_text_channel_pendingproc_connect_signals(TplTextChannel* self)
 		tpl_text_channel_get_tpl_channel (self) );
 
 	//TODO handle data destruction
-	tp_cli_channel_type_text_connect_to_received(self->tpl_channel->channel,
-		_channel_on_received_signal_cb, self, NULL, NULL, &error);
+	tp_cli_channel_type_text_connect_to_received(
+		channel, _channel_on_received_signal_cb,
+		self, NULL, NULL, &error);
 	if (error!=NULL) {
 		g_error("received signal connect: %s\n", error->message);
 		g_clear_error(&error);
 		g_error_free(error);
+		error = NULL;
 	}
 
 	//TODO handle data destruction
-	tp_cli_channel_type_text_connect_to_sent(self->tpl_channel->channel,
-		_channel_on_sent_signal_cb, self, NULL, NULL, &error);
+	tp_cli_channel_type_text_connect_to_sent(
+		channel, _channel_on_sent_signal_cb,
+		self, NULL, NULL, &error);
 	if (error!=NULL) {
 		g_error("sent signal connect: %s\n", error->message);
 		g_clear_error(&error);
 		g_error_free(error);
+		error = NULL;
 	}
 
 	//TODO handle data destruction
 	tp_cli_channel_type_text_connect_to_send_error(
-		self->tpl_channel->channel,
-		_channel_on_send_error_cb, self, NULL, NULL, &error);
+		channel, _channel_on_send_error_cb,
+		self, NULL, NULL, &error);
 	if (error!=NULL) {
 		g_error("send error signal connect: %s\n", error->message);
 		g_clear_error(&error);
 		g_error_free(error);
+		error = NULL;
 	}
 
 	//TODO handle data destruction
 	tp_cli_channel_type_text_connect_to_lost_message(
-		self->tpl_channel->channel,
-		_channel_on_lost_message_cb, self, NULL, NULL, &error);
+			channel, _channel_on_lost_message_cb,
+			self, NULL, NULL, &error);
 	if (error!=NULL) {
 		g_error("lost message signal connect: %s\n", error->message);
 		g_clear_error(&error);
 		g_error_free(error);
+		error = NULL;
 	}
+	
+	tp_cli_channel_connect_to_closed (
+			channel, _channel_on_closed_cb,
+			self, NULL, NULL, &error);
+	if (error!=NULL) {
+		g_error("channel closed signal connect: %s\n", error->message);
+		g_clear_error(&error);
+		g_error_free(error);
+		error = NULL;
+	}
+
+
+
 
 	// TODO connect to TpContacts' notify::presence-type
 	
@@ -442,12 +474,43 @@ _tpl_text_channel_pendingproc_get_my_contact(TplTextChannel *ctx)
 G_DEFINE_TYPE (TplTextChannel, tpl_text_channel, G_TYPE_OBJECT)
 
 
-static void tpl_text_channel_class_init(TplTextChannelClass* klass) {
-	//GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
+static void
+tpl_text_channel_dispose(GObject *obj) {
+	TplTextChannel *self = TPL_TEXT_CHANNEL(obj);
+
+	tpl_object_unref_if_not_null(self->tpl_channel);
+	self->tpl_channel = NULL;
+	tpl_object_unref_if_not_null(self->my_contact);
+	self->my_contact = NULL;
+	tpl_object_unref_if_not_null(self->remote_contact);
+	self->remote_contact = NULL;
+	
+	g_queue_free(self->chain);	
+	self->chain = NULL;
+
+	G_OBJECT_CLASS (tpl_text_channel_parent_class)->dispose (obj);
+}
+
+static void
+tpl_text_channel_finalize(GObject *obj) {
+	TplTextChannel *self = TPL_TEXT_CHANNEL(obj);
+	
+	g_free ((gchar*) self->chatroom_id);
+	G_OBJECT_CLASS (tpl_text_channel_parent_class)->finalize (obj);
+
+}
+
+static void
+tpl_text_channel_class_init(TplTextChannelClass* klass) {
+	GObjectClass* object_class = G_OBJECT_CLASS (klass);
+
+	object_class->dispose = tpl_text_channel_dispose;
+	object_class->finalize = tpl_text_channel_finalize;
 }
 
 
-static void tpl_text_channel_init(TplTextChannel* self) {
+static void
+tpl_text_channel_init(TplTextChannel* self) {
 	/* Init TplTextChannel's members to zero/NULL */
 #define TPL_SET_NULL(x) tpl_text_channel_set_##x(self, NULL)
 	TPL_SET_NULL(tpl_channel);
@@ -458,7 +521,8 @@ static void tpl_text_channel_init(TplTextChannel* self) {
 	tpl_text_channel_set_chatroom(self, FALSE);
 }
 
-TplTextChannel* tpl_text_channel_new(TplChannel* tpl_channel)
+TplTextChannel *
+tpl_text_channel_new(TplChannel* tpl_channel)
 {
 	TplTextChannel *ret = g_object_new(TPL_TYPE_TEXT_CHANNEL,NULL);
 	tpl_text_channel_set_tpl_channel(ret, tpl_channel);
@@ -509,11 +573,6 @@ TplTextChannel* tpl_text_channel_new(TplChannel* tpl_channel)
 	return ret;
 }
 
-void tpl_text_channel_free(TplTextChannel* tpl_text) {
-	/* TODO free and unref other members */
-	g_free(tpl_text);
-}
-
 
 TplChannel *tpl_text_channel_get_tpl_channel(TplTextChannel *self) 
 {
@@ -537,26 +596,24 @@ const gchar *tpl_text_channel_get_chatroom_id(TplTextChannel *self)
 	return self->chatroom_id;
 }
 
-void tpl_text_channel_set_tpl_channel(TplTextChannel *self, TplChannel *data) {
-	//g_debug("SET TPL CHANNEL\n");
-	_unref_object_if_not_null(&(self->tpl_channel));
+void tpl_text_channel_set_tpl_channel(TplTextChannel *self, TplChannel *data)
+{
+	tpl_object_unref_if_not_null(self->tpl_channel);
 	self->tpl_channel = data;	
-	_ref_object_if_not_null(data);
+	tpl_object_ref_if_not_null(data);
 }
 
 void tpl_text_channel_set_remote_contact(TplTextChannel *self, TpContact *data)
 {
-	//g_debug("SET remote contact\n");
-	_unref_object_if_not_null(&(self->remote_contact));
+	tpl_object_unref_if_not_null(self->remote_contact);
 	self->remote_contact = data;
-	_ref_object_if_not_null(data);
+	tpl_object_ref_if_not_null(data);
 }
 void tpl_text_channel_set_my_contact(TplTextChannel *self, TpContact *data)
 {
-	//g_debug("SET my contact\n");
-	_unref_object_if_not_null(&(self->my_contact));
+	tpl_object_unref_if_not_null(self->my_contact);
 	self->my_contact = data;
-	_ref_object_if_not_null(data);
+	tpl_object_ref_if_not_null(data);
 }
 void tpl_text_channel_set_chatroom(TplTextChannel *self, gboolean data)
 {

@@ -9,6 +9,8 @@
 /* 
  * Initialization of TPL (TelePathy Logger), it futurely set all the
  * inernal structs. tpl_headless_logger_deinit will free/unref them
+ *
+ * TplObserver *observer
  */
 void tpl_headless_logger_init(void)
 {

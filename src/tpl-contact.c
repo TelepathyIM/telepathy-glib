@@ -51,9 +51,9 @@ TplContact *tpl_contact_new() {
 #undef ADD_GET
 
 #define ADD_SET_PTR(member,y)	void tpl_contact_set_##member(TplContact *self, y data) { \
-		_unref_object_if_not_null(&(self->member)) ; \
+		tpl_object_unref_if_not_null(self->member) ; \
 		self->member = data; \
-		_ref_object_if_not_null(data); }
+		tpl_object_ref_if_not_null(data); }
 	ADD_SET_PTR(contact, TpContact *);
 	ADD_SET_PTR(account, TpAccount *);
 #undef ADD_SET_PTR

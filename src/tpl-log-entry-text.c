@@ -116,9 +116,9 @@ const gchar *tpl_log_entry_text_get_chat_id (TplLogEntryText *self)
 
 void tpl_log_entry_text_set_tpl_text_channel(TplLogEntryText *self,				TplTextChannel *data)
 {
-	_unref_object_if_not_null(self->tpl_text);
+	tpl_object_unref_if_not_null(self->tpl_text);
 	self->tpl_text = data;
-	_ref_object_if_not_null(data);
+	tpl_object_ref_if_not_null(data);
 }
 
 void tpl_log_entry_text_set_sender (TplLogEntryText *self, TplContact *data)

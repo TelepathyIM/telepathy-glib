@@ -49,7 +49,6 @@ typedef struct {
 GType  tpl_text_channel_get_type (void);
 
 TplTextChannel* tpl_text_channel_new(TplChannel* tpl_channel);
-void tpl_text_channel_free(TplTextChannel* tpl_chan);
 
 TplChannel *tpl_text_channel_get_tpl_channel(TplTextChannel *self);
 TpContact *tpl_text_channel_get_remote_contact(TplTextChannel *self);

@@ -1,6 +1,7 @@
-#ifndef __TPL_DATA_H__
-#define __TPL_DATA_H__
+#ifndef __TPL_CHANNEL_H__
+#define __TPL_CHANNEL_H__
 
+#include <glib.h>
 #include <glib-object.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/account.h>
@@ -34,11 +35,6 @@ typedef struct {
 	TpConnection	*connection;
 	const gchar	*connection_path;
 
-	// temporarely storing self and remote handle
-	// no getter/setter, access the member direclty
-	// TODO find a better way to store temporarely the handle
-	TpHandle	tmp_remote;
-
 	TpSvcClientObserver	*observer;
 } TplChannel;
 
@@ -52,8 +48,7 @@ GType tpl_channel_get_type (void);
 TplChannel* tpl_channel_new (TpSvcClientObserver *observer);
 void tpl_channel_free(TplChannel* tpl_chan);
 
-
-TpSvcClientObserver*tpl_channel_get_observer(TplChannel *self);
+TpSvcClientObserver *tpl_channel_get_observer(TplChannel *self);
 TpAccount *tpl_channel_get_account(TplChannel *self);
 const gchar *tpl_channel_get_account_path(TplChannel *self);
 TpConnection *tpl_channel_get_connection(TplChannel *self);
@@ -75,6 +70,9 @@ void tpl_channel_set_channel_path(TplChannel *self, const gchar *data);
 void tpl_channel_set_channel_type(TplChannel *self, const gchar *data);
 void tpl_channel_set_channel_properties(TplChannel *self, GHashTable *data);
 
+gboolean tpl_channel_register_to_observer(TplChannel *self);
+gboolean tpl_channel_unregister_from_observer(TplChannel *self);
+
 G_END_DECLS
 
-#endif // __TPL_DATA_H__
+#endif // __TPL_CHANNEL_H__
