@@ -859,21 +859,13 @@ test_terminated_by_peer (Test *test,
 {
   /* This contact contains the magic string "(terminate)", meaning the example
    * simulates answering the call but then terminating it */
-  outgoing_call (test, "The Governator (terminate)", FALSE, FALSE);
-
-  /* request an audio stream */
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      tp_channel_get_handle (test->chan, NULL),
-      test->audio_request, requested_streams_cb,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  outgoing_call (test, "The Governator (terminate)", TRUE, TRUE);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
   loop_until_answered (test);
 
-  /* After that, wait for the remote contact to end the call */
+  /* After that, the remote contact immediately ends the call */
   loop_until_ended (test);
   assert_ended_and_run_close (test, tp_channel_get_handle (test->chan, NULL),
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
