@@ -65,8 +65,6 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
       media_iface_init);
     G_IMPLEMENT_INTERFACE (FUTURE_TYPE_SVC_CHANNEL_TYPE_CALL,
       call_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
-      tp_group_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
       hold_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
@@ -140,7 +138,6 @@ struct _ExampleCallChannelPrivate
 
 static const char * example_call_channel_interfaces[] = {
     TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
-    TP_IFACE_CHANNEL_INTERFACE_GROUP,
     TP_IFACE_CHANNEL_INTERFACE_HOLD,
     NULL
 };
@@ -252,8 +249,6 @@ constructed (GObject *object)
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   TpDBusDaemon *dbus_daemon;
-  TpIntSet *members;
-  TpIntSet *local_pending;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -271,15 +266,6 @@ constructed (GObject *object)
   g_object_unref (dbus_daemon);
   dbus_daemon = NULL;
 
-  tp_group_mixin_init (object,
-      G_STRUCT_OFFSET (ExampleCallChannel, group),
-      contact_repo, self->priv->conn->self_handle);
-
-  /* Initially, the channel contains the initiator as a member; they are also
-   * the actor for the change that adds any initial members. */
-
-  members = tp_intset_new_containing (self->priv->initiator);
-
   if (self->priv->locally_requested)
     {
       /* Nobody is locally pending. The remote peer will turn up in
@@ -289,7 +275,6 @@ constructed (GObject *object)
           FUTURE_CALL_STATE_PENDING_INITIATOR, 0, 0,
           FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
           NULL);
-      local_pending = NULL;
     }
   else
     {
@@ -299,40 +284,7 @@ constructed (GObject *object)
           FUTURE_CALL_STATE_PENDING_RECEIVER, 0, self->priv->handle,
           FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
           NULL);
-      local_pending = tp_intset_new_containing (self->priv->conn->self_handle);
     }
-
-  tp_group_mixin_change_members (object, "",
-      members /* added */,
-      NULL /* nobody removed */,
-      local_pending, /* added to local-pending */
-      NULL /* nobody added to remote-pending */,
-      self->priv->initiator /* actor */, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-  tp_intset_destroy (members);
-
-  if (local_pending != NULL)
-    tp_intset_destroy (local_pending);
-
-  /* We don't need to allow adding or removing members to this Group in ways
-   * that need flags set, so the only flag we set is to say we support the
-   * Properties interface to the Group.
-   *
-   * It doesn't make sense to add anyone to the Group, since we already know
-   * who we're going to call (or were called by). The only call to AddMembers
-   * we need to support is to move ourselves from local-pending to member in
-   * the incoming call case, and that's always allowed anyway.
-   *
-   * (Connection managers that support the various backwards-compatible
-   * ways to make an outgoing StreamedMedia channel have to support adding the
-   * peer to remote-pending, but that has no actual effect other than to
-   * obscure what's going on; in this one, there's no need to support that
-   * usage.)
-   *
-   * Similarly, it doesn't make sense to remove anyone from this Group apart
-   * from ourselves (to hang up), and removing the SelfHandle is always
-   * allowed anyway.
-   */
-  tp_group_mixin_change_flags (object, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
 
   if (self->priv->locally_requested)
     {
@@ -612,14 +564,12 @@ example_call_channel_terminate (ExampleCallChannel *self,
 {
   if (self->priv->call_state != FUTURE_CALL_STATE_ENDED)
     {
-      TpIntSet *everyone;
-
       example_call_channel_set_state (self,
           FUTURE_CALL_STATE_ENDED, 0, actor,
           call_reason, error_name,
           NULL);
 
-      if (actor == self->group.self_handle)
+      if (actor == tp_base_connection_get_self_handle (self->priv->conn))
         {
           const gchar *send_reason;
 
@@ -641,17 +591,6 @@ example_call_channel_terminate (ExampleCallChannel *self,
 
           g_message ("SIGNALLING: send: Terminating call: %s", send_reason);
         }
-
-      everyone = tp_intset_new_containing (self->priv->handle);
-      tp_intset_add (everyone, self->group.self_handle);
-      tp_group_mixin_change_members ((GObject *) self, "",
-          NULL /* nobody added */,
-          everyone /* removed */,
-          NULL /* nobody locally pending */,
-          NULL /* nobody remotely pending */,
-          actor,
-          reason);
-      tp_intset_destroy (everyone);
 
       g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
     }
@@ -686,7 +625,8 @@ dispose (GObject *object)
   self->priv->contents = NULL;
 
   /* FIXME: right error code? arguably this should always be a no-op */
-  example_call_channel_terminate (self, self->group.self_handle,
+  example_call_channel_terminate (self,
+      tp_base_connection_get_self_handle (self->priv->conn),
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
 
@@ -711,62 +651,7 @@ finalize (GObject *object)
 
   g_free (self->priv->object_path);
 
-  tp_group_mixin_finalize (object);
-
   ((GObjectClass *) example_call_channel_parent_class)->finalize (object);
-}
-
-static void accept_incoming_call (ExampleCallChannel *self);
-
-static gboolean
-add_member (GObject *object,
-    TpHandle member,
-    const gchar *message,
-    GError **error)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
-
-  /* In connection managers that supported the RequestChannel method for
-   * streamed media channels, it would be necessary to support adding the
-   * called contact to the members of an outgoing call. However, in this
-   * legacy-free example, we don't support that usage, so the only use for
-   * AddMembers is to accept an incoming call.
-   */
-
-  if (member == self->group.self_handle &&
-      tp_handle_set_is_member (self->group.local_pending, member))
-    {
-      /* We're in local-pending, move to members to accept. */
-      accept_incoming_call (self);
-      return TRUE;
-    }
-
-  /* Otherwise it's a meaningless request, so reject it. */
-  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-      "Cannot add handle %u to channel", member);
-  return FALSE;
-}
-
-static gboolean
-remove_member_with_reason (GObject *object,
-    TpHandle member,
-    const gchar *message,
-    guint reason,
-    GError **error)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
-
-  /* The TpGroupMixin won't call this unless removing the member is allowed
-   * by the group flags, which in this case means it must be our own handle
-   * (because the other user never appears in local-pending).
-   */
-
-  g_assert (member == self->group.self_handle);
-
-  example_call_channel_terminate (self, self->group.self_handle, reason,
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
-
-  return TRUE;
 }
 
 static void
@@ -966,15 +851,6 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCallChannelClass,
         dbus_properties_class));
-
-  tp_group_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCallChannelClass, group_class),
-      add_member,
-      NULL);
-  tp_group_mixin_class_allow_self_removal (object_class);
-  tp_group_mixin_class_set_remove_with_reason_func (object_class,
-      remove_member_with_reason);
-  tp_group_mixin_init_dbus_properties (object_class);
 }
 
 static void
@@ -983,7 +859,8 @@ channel_close (TpSvcChannel *iface,
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
 
-  example_call_channel_terminate (self, self->group.self_handle,
+  example_call_channel_terminate (self,
+      tp_base_connection_get_self_handle (self->priv->conn),
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
 
@@ -1261,7 +1138,6 @@ static gboolean
 simulate_contact_answered_cb (gpointer p)
 {
   ExampleCallChannel *self = p;
-  TpIntSet *peer_set;
   GHashTableIter iter;
   gpointer v;
   TpHandleRepoIface *contact_repo;
@@ -1282,16 +1158,6 @@ simulate_contact_answered_cb (gpointer p)
       FUTURE_CALL_STATE_ACCEPTED, 0, self->priv->handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
-
-  peer_set = tp_intset_new_containing (self->priv->handle);
-  tp_group_mixin_change_members ((GObject *) self, "",
-      peer_set /* added */,
-      NULL /* nobody removed */,
-      NULL /* nobody added to local-pending */,
-      NULL /* nobody added to remote-pending */,
-      self->priv->handle /* actor */,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-  tp_intset_destroy (peer_set);
 
   g_hash_table_iter_init (&iter, self->priv->contents);
 
@@ -1445,24 +1311,14 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 {
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpIntSet *peer_set = tp_intset_new_containing (self->priv->handle);
   const gchar *peer;
 
   g_message ("SIGNALLING: send: new streamed media call");
   example_call_channel_set_state (self,
-      FUTURE_CALL_STATE_PENDING_RECEIVER, 0, self->group.self_handle,
+      FUTURE_CALL_STATE_PENDING_RECEIVER, 0,
+      tp_base_connection_get_self_handle (self->priv->conn),
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
-
-  tp_group_mixin_change_members ((GObject *) self, "",
-      NULL /* nobody added */,
-      NULL /* nobody removed */,
-      NULL /* nobody added to local-pending */,
-      peer_set /* added to remote-pending */,
-      self->group.self_handle /* actor */,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  tp_intset_destroy (peer_set);
 
   /* In this example there is no real contact, so just simulate them
    * answering after a short time - unless the contact's name
@@ -1596,7 +1452,6 @@ call_ringing (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
 static void
 accept_incoming_call (ExampleCallChannel *self)
 {
-  TpIntSet *set = tp_intset_new_containing (self->group.self_handle);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   GHashTableIter iter;
@@ -1608,19 +1463,10 @@ accept_incoming_call (ExampleCallChannel *self)
       tp_handle_inspect (contact_repo, self->priv->handle));
 
   example_call_channel_set_state (self,
-      FUTURE_CALL_STATE_ACCEPTED, 0, self->group.self_handle,
+      FUTURE_CALL_STATE_ACCEPTED, 0,
+      tp_base_connection_get_self_handle (self->priv->conn),
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
-
-  tp_group_mixin_change_members ((GObject *) self, "",
-      set /* added */,
-      NULL /* nobody removed */,
-      NULL /* nobody added to local pending */,
-      NULL /* nobody added to remote pending */,
-      self->group.self_handle /* actor */,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  tp_intset_destroy (set);
 
   g_hash_table_iter_init (&iter, self->priv->contents);
 
@@ -1713,7 +1559,8 @@ call_hangup (FutureSvcChannelTypeCall *iface,
     }
   else
     {
-      example_call_channel_terminate (self, self->group.self_handle,
+      example_call_channel_terminate (self,
+          tp_base_connection_get_self_handle (self->priv->conn),
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE, reason, detailed_reason);
       future_svc_channel_type_call_return_from_hangup (context);
     }

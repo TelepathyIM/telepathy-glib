@@ -23,7 +23,7 @@
 #define EXAMPLE_CALL_CHANNEL_H
 
 #include <glib-object.h>
-#include <telepathy-glib/group-mixin.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 G_BEGIN_DECLS
 
@@ -56,7 +56,6 @@ GType example_call_channel_get_type (void);
 
 struct _ExampleCallChannelClass {
     GObjectClass parent_class;
-    TpGroupMixinClass group_class;
     TpDBusPropertiesMixinClass dbus_properties_class;
 
     ExampleCallChannelClassPrivate *priv;
@@ -64,7 +63,6 @@ struct _ExampleCallChannelClass {
 
 struct _ExampleCallChannel {
     GObject parent;
-    TpGroupMixin group;
 
     ExampleCallChannelPrivate *priv;
 };
