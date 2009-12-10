@@ -844,15 +844,7 @@ test_busy (Test *test,
 {
   /* This identifier contains the magic string (busy), which means the example
    * will simulate rejection of the call as busy rather than accepting it. */
-  outgoing_call (test, "Robot101 (busy)", FALSE, FALSE);
-
-  /* request an audio stream */
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      tp_channel_get_handle (test->chan, NULL),
-      test->audio_request, requested_streams_cb,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  outgoing_call (test, "Robot101 (busy)", TRUE, FALSE);
 
   /* Wait for the remote contact to end the call as busy */
   loop_until_ended (test);
