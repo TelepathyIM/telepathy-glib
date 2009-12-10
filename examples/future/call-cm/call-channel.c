@@ -288,11 +288,6 @@ constructed (GObject *object)
 
   if (self->priv->locally_requested)
     {
-      if (self->priv->initial_audio || self->priv->initial_video)
-        {
-          example_call_channel_initiate_outgoing (self);
-        }
-
       if (self->priv->initial_audio)
         {
           g_message ("Channel initially has an audio stream");
@@ -1504,7 +1499,9 @@ call_accept (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
     {
       if (self->priv->call_state == FUTURE_CALL_STATE_PENDING_INITIATOR)
         {
-          /* FIXME: actually make the call if not already done */
+          /* Take the contents we've already added, and make them happen */
+          example_call_channel_initiate_outgoing (self);
+
           future_svc_channel_type_call_return_from_accept (context);
         }
       else if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)

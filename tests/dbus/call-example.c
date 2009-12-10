@@ -92,7 +92,6 @@ typedef struct
 
   GArray *stream_ids;
   GArray *contacts;
-  GPtrArray *request_streams_return;
   GPtrArray *get_contents_return;
   GHashTable *get_senders_return;
 
@@ -256,31 +255,6 @@ added_content_cb (TpChannel *chan G_GNUC_UNUSED,
       test->added_content = future_call_content_new (test->chan, object_path,
           NULL);
       g_assert (test->added_content != NULL);
-    }
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-requested_streams_cb (TpChannel *chan G_GNUC_UNUSED,
-                      const GPtrArray *stream_info,
-                      const GError *error,
-                      gpointer user_data,
-                      GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
-      &test->request_streams_return);
-
-  if (error != NULL)
-    {
-      test->error = g_error_copy (error);
-    }
-  else
-    {
-      test->request_streams_return = g_boxed_copy (
-          TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST, stream_info);
     }
 
   g_main_loop_quit (test->mainloop);
@@ -554,7 +528,7 @@ test_basics (Test *test,
 {
   const GPtrArray *stream_paths;
 
-  outgoing_call (test, "basic-test", FALSE, FALSE);
+  outgoing_call (test, "basic-test", TRUE, FALSE);
 
   /* Get initial state */
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
@@ -566,28 +540,9 @@ test_basics (Test *test,
       FUTURE_CALL_STATE_PENDING_INITIATOR, 0,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
-      TRUE, FALSE, FALSE);  /* initial audio/video must be FALSE, FALSE */
+      TRUE, TRUE, FALSE);  /* initial audio/video must be what we said */
 
-  /* We have no contents yet */
-
-  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
-  test->get_contents_return = g_boxed_copy (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
-      tp_asv_get_boxed (test->get_all_return,
-        "Contents", TP_ARRAY_TYPE_OBJECT_PATH_LIST));
-  g_assert_cmpuint (test->get_contents_return->len, ==, 0);
-
-  /* RequestStreams */
-
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      tp_channel_get_handle (test->chan, NULL),
-      test->audio_request, requested_streams_cb,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
-
-  g_assert_cmpuint (test->request_streams_return->len, ==, 1);
-
-  /* Get Contents: now we have an audio content, with one stream */
+  /* We have one audio content but it's not active just yet */
 
   tp_cli_dbus_properties_call_get (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
@@ -640,6 +595,12 @@ test_basics (Test *test,
   /* FIXME: also assert about the associated values */
 #endif
 
+  /* OK, that looks good. Actually make the call */
+  future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
   /* Wait for the remote contact to answer, if they haven't already */
 
   loop_until_answered (test);
@@ -656,6 +617,12 @@ test_basics (Test *test,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       FALSE, FALSE, FALSE); /* don't care about initial audio/video */
+
+  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
+  test->get_contents_return = g_boxed_copy (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+      tp_asv_get_boxed (test->get_all_return,
+        "Contents", TP_ARRAY_TYPE_OBJECT_PATH_LIST));
+  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
 
   /* FIXME: check sending/pending-send state */
 
@@ -812,6 +779,11 @@ test_no_answer (Test *test,
    * example will never answer. */
   outgoing_call (test, "smcv (no answer)", TRUE, FALSE);
 
+  future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
   /* After the initial flurry of D-Bus messages, smcv still hasn't answered */
   test_connection_run_until_dbus_queue_processed (test->conn);
 
@@ -846,6 +818,11 @@ test_busy (Test *test,
    * will simulate rejection of the call as busy rather than accepting it. */
   outgoing_call (test, "Robot101 (busy)", TRUE, FALSE);
 
+  future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
   /* Wait for the remote contact to end the call as busy */
   loop_until_ended (test);
   assert_ended_and_run_close (test, tp_channel_get_handle (test->chan, NULL),
@@ -860,6 +837,11 @@ test_terminated_by_peer (Test *test,
   /* This contact contains the magic string "(terminate)", meaning the example
    * simulates answering the call but then terminating it */
   outgoing_call (test, "The Governator (terminate)", TRUE, TRUE);
+
+  future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -877,6 +859,11 @@ test_terminate_via_close (Test *test,
                           gconstpointer data G_GNUC_UNUSED)
 {
   outgoing_call (test, "basic-test", FALSE, TRUE);
+
+  future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -1074,8 +1061,6 @@ teardown (Test *test,
   g_array_free (test->stream_ids, TRUE);
   CLEAR_HASH (&test->get_all_return);
 
-  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
-      &test->request_streams_return);
   CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
       &test->get_contents_return);
   CLEAR_HASH (&test->get_senders_return);
