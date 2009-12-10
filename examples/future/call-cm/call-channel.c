@@ -234,7 +234,7 @@ example_call_channel_init (ExampleCallChannel *self)
   self->priv->hold_state_reason = TP_LOCAL_HOLD_STATE_REASON_NONE;
 }
 
-static ExampleCallStream *example_call_channel_add_stream (
+static ExampleCallContent *example_call_channel_add_content (
     ExampleCallChannel *self, TpMediaStreamType media_type,
     gboolean locally_requested);
 
@@ -296,14 +296,14 @@ constructed (GObject *object)
       if (self->priv->initial_audio)
         {
           g_message ("Channel initially has an audio stream");
-          example_call_channel_add_stream (self,
+          example_call_channel_add_content (self,
               TP_MEDIA_STREAM_TYPE_AUDIO, TRUE);
         }
 
       if (self->priv->initial_video)
         {
           g_message ("Channel initially has a video stream");
-          example_call_channel_add_stream (self,
+          example_call_channel_add_content (self,
               TP_MEDIA_STREAM_TYPE_VIDEO, TRUE);
         }
     }
@@ -315,14 +315,14 @@ constructed (GObject *object)
       if (self->priv->initial_audio)
         {
           g_message ("Channel initially has an audio stream");
-          example_call_channel_add_stream (self,
+          example_call_channel_add_content (self,
               TP_MEDIA_STREAM_TYPE_AUDIO, FALSE);
         }
 
       if (self->priv->initial_video)
         {
           g_message ("Channel initially has a video stream");
-          example_call_channel_add_stream (self,
+          example_call_channel_add_content (self,
               TP_MEDIA_STREAM_TYPE_VIDEO, FALSE);
         }
     }
@@ -1215,8 +1215,8 @@ simulate_contact_busy_cb (gpointer p)
   return FALSE;
 }
 
-static ExampleCallStream *
-example_call_channel_add_stream (ExampleCallChannel *self,
+static ExampleCallContent *
+example_call_channel_add_content (ExampleCallChannel *self,
     TpMediaStreamType media_type,
     gboolean locally_requested)
 {
@@ -1303,7 +1303,7 @@ example_call_channel_add_stream (ExampleCallChannel *self,
       example_call_stream_connect (stream);
     }
 
-  return stream;
+  return content;
 }
 
 static void
@@ -1398,6 +1398,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
   for (i = 0; i < media_types->len; i++)
     {
       guint media_type = g_array_index (media_types, guint, i);
+      ExampleCallContent *content;
       ExampleCallStream *stream;
       GValueArray *info;
 
@@ -1406,8 +1407,10 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
           example_call_channel_initiate_outgoing (self);
         }
 
-      stream = example_call_channel_add_stream (self, media_type,
+      content = example_call_channel_add_content (self, media_type,
           TRUE);
+
+      stream = example_call_content_get_stream (content);
 
       g_object_get (stream,
           "stream-info", &info,
@@ -1567,12 +1570,43 @@ call_hangup (FutureSvcChannelTypeCall *iface,
 }
 
 static void
-call_add_content (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
+call_add_content (FutureSvcChannelTypeCall *iface,
     const gchar *content_name G_GNUC_UNUSED,
-    guint content_type G_GNUC_UNUSED,
+    guint content_type,
     DBusGMethodInvocation *context)
 {
-  tp_dbus_g_method_return_not_implemented (context);
+  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
+  GError *error = NULL;
+  gchar *content_path;
+  ExampleCallContent *content;
+
+  switch (content_type)
+    {
+    case TP_MEDIA_STREAM_TYPE_AUDIO:
+    case TP_MEDIA_STREAM_TYPE_VIDEO:
+      break;
+
+    default:
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "%u is not a supported Media_Stream_Type", content_type);
+      goto error;
+    }
+
+  /* FIXME: content_name ignored for now */
+
+  content = example_call_channel_add_content (self, content_type, TRUE);
+  g_object_get (content,
+      "object-path", &content_path,
+      NULL);
+  future_svc_channel_type_call_return_from_add_content (context,
+      content_path);
+  g_free (content_path);
+
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
