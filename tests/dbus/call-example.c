@@ -1272,9 +1272,6 @@ static void
 test_busy (Test *test,
            gconstpointer data G_GNUC_UNUSED)
 {
-  GroupEvent *ge;
-  StreamEvent *se;
-
   /* This identifier contains the magic string (busy), which means the example
    * will simulate rejection of the call as busy rather than accepting it. */
   outgoing_call (test, "Robot101 (busy)", FALSE, FALSE);
@@ -1292,39 +1289,12 @@ test_busy (Test *test,
   assert_ended_and_run_close (test, tp_channel_get_handle (test->chan, NULL),
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       TP_ERROR_STR_BUSY);
-
-  /* The last stream event should be the removal of the stream */
-
-  test_connection_run_until_dbus_queue_processed (test->conn);
-
-  se = g_slist_nth_data (test->stream_events, 0);
-  g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
-
-  /* The last event should be that the peer and the self-handle were both
-   * removed by the peer, for reason BUSY */
-  ge = g_slist_nth_data (test->group_events, 0);
-
-  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 2);
-  g_assert (tp_intset_is_member (ge->removed,
-        test->self_handle));
-  g_assert (tp_intset_is_member (ge->removed,
-        tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
-      tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
-      TP_CHANNEL_GROUP_CHANGE_REASON_BUSY);
 }
 
 static void
 test_terminated_by_peer (Test *test,
                          gconstpointer data G_GNUC_UNUSED)
 {
-  GroupEvent *ge;
-  StreamEvent *se;
-
   /* This contact contains the magic string "(terminate)", meaning the example
    * simulates answering the call but then terminating it */
   outgoing_call (test, "The Governator (terminate)", FALSE, FALSE);
@@ -1346,30 +1316,6 @@ test_terminated_by_peer (Test *test,
   assert_ended_and_run_close (test, tp_channel_get_handle (test->chan, NULL),
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "");
-
-  /* The last stream event should be the removal of the stream */
-
-  test_connection_run_until_dbus_queue_processed (test->conn);
-
-  se = g_slist_nth_data (test->stream_events, 0);
-  g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
-
-  /* The last event should be that the peer and the self-handle were both
-   * removed by the peer, for no particular reason */
-  ge = g_slist_nth_data (test->group_events, 0);
-
-  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 2);
-  g_assert (tp_intset_is_member (ge->removed,
-        test->self_handle));
-  g_assert (tp_intset_is_member (ge->removed,
-        tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
-      tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 }
 
 static void
