@@ -845,7 +845,6 @@ test_basics (Test *test,
 {
   GValueArray *audio_info, *video_info;
   guint not_a_stream_id = 31337;
-  GroupEvent *ge;
   StreamEvent *se;
   const GPtrArray *stream_paths;
   guint i;
@@ -983,52 +982,18 @@ test_basics (Test *test,
 
   loop_until_answered (test);
 
-  /* The self-handle and the peer are now the channel's members */
-  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
-        test->self_handle), ==, test->self_handle);
-  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
-        tp_channel_get_handle (test->chan, NULL)),
-      ==, tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
-      ==, 2);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_local_pending (test->chan)), ==, 0);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_remote_pending (test->chan)), ==, 0);
-  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        test->self_handle));
-  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        tp_channel_get_handle (test->chan, NULL)));
+  /* Check the call state */
 
-  /* Look at the event log: what should have happened is that the remote
-   * peer was added first to remote-pending, then to members. (The event
-   * log is in reverse chronological order.) */
+  tp_cli_dbus_properties_call_get_all (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
 
-  ge = g_slist_nth_data (test->group_events, 1);
-
-  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 1);
-  g_assert (tp_intset_is_member (ge->remote_pending,
-        tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
-      test->self_handle);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  ge = g_slist_nth_data (test->group_events, 0);
-
-  g_assert_cmpuint (tp_intset_size (ge->added), ==, 1);
-  g_assert (tp_intset_is_member (ge->added,
-        tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
-      tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  assert_call_properties (test->get_all_return,
+      FUTURE_CALL_STATE_ACCEPTED, tp_channel_get_handle (test->chan, NULL),
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TRUE, 0,              /* call flags */
+      FALSE, FALSE, FALSE); /* don't care about initial audio/video */
 
   /* Immediately the call is accepted, the remote peer accepts our proposed
    * stream direction */
@@ -1253,23 +1218,6 @@ test_basics (Test *test,
   assert_ended_and_run_close (test, test->self_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "");
-
-  /* The last event should be that the peer and the self-handle were both
-   * removed */
-  ge = g_slist_nth_data (test->group_events, 0);
-
-  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 2);
-  g_assert (tp_intset_is_member (ge->removed,
-        test->self_handle));
-  g_assert (tp_intset_is_member (ge->removed,
-        tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
-      test->self_handle);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   /* The last stream event should be the removal of the audio stream */
 
