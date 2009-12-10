@@ -876,19 +876,22 @@ static void
 test_terminate_via_close (Test *test,
                           gconstpointer data G_GNUC_UNUSED)
 {
-  outgoing_call (test, "basic-test", FALSE, FALSE);
-
-  /* request an audio stream */
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      tp_channel_get_handle (test->chan, NULL),
-      test->audio_request, requested_streams_cb,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  outgoing_call (test, "basic-test", FALSE, TRUE);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
   loop_until_answered (test);
+
+  tp_cli_dbus_properties_call_get_all (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  assert_call_properties (test->get_all_return,
+      FUTURE_CALL_STATE_ACCEPTED, test->peer_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TRUE, 0,              /* call flags */
+      TRUE, FALSE, TRUE);  /* initial audio/video must be FALSE, TRUE */
 
   /* Terminate the call unceremoniously, by calling Close. This is not a
    * graceful hangup; rather, it's what the ChannelDispatcher would do to
