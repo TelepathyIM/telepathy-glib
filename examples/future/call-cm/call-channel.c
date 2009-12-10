@@ -946,6 +946,9 @@ media_list_streams (TpSvcChannelTypeStreamedMedia *iface,
   g_ptr_array_free (array, TRUE);
 }
 
+#if 0
+/* FIXME: there's no equivalent of this in Call (yet?) */
+
 /* This is expressed in terms of streams because it's the old API, but it
  * really means removing contents. */
 static void
@@ -985,6 +988,7 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
 
   tp_svc_channel_type_streamed_media_return_from_remove_streams (context);
 }
+#endif
 
 static void
 media_request_stream_direction (TpSvcChannelTypeStreamedMedia *iface,
@@ -1439,7 +1443,6 @@ media_iface_init (gpointer iface,
 #define IMPLEMENT(x) \
   tp_svc_channel_type_streamed_media_implement_##x (klass, media_##x)
   IMPLEMENT (list_streams);
-  IMPLEMENT (remove_streams);
   IMPLEMENT (request_stream_direction);
   IMPLEMENT (request_streams);
 #undef IMPLEMENT
