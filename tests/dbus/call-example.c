@@ -1322,9 +1322,6 @@ static void
 test_terminate_via_close (Test *test,
                           gconstpointer data G_GNUC_UNUSED)
 {
-  GroupEvent *ge;
-  StreamEvent *se;
-
   outgoing_call (test, "basic-test", FALSE, FALSE);
 
   /* request an audio stream */
@@ -1335,51 +1332,24 @@ test_terminate_via_close (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
-
-  maybe_pop_stream_direction (test);
-  g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
-  se = g_slist_nth_data (test->stream_events, 0);
-  g_assert_cmpuint (se->type, ==, STREAM_EVENT_ADDED);
-  test->audio_stream_id = se->id;
-
   /* Wait for the remote contact to answer, if they haven't already */
 
   loop_until_answered (test);
 
-  /* Hang up the call unceremoniously, by calling Close */
+  /* Terminate the call unceremoniously, by calling Close. This is not a
+   * graceful hangup; rather, it's what the ChannelDispatcher would do to
+   * signal a client crash, undispatchability, or whatever */
 
   tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  /* In response to hanging up, the channel closes */
+  /* In response to termination, the channel does genuinely close */
   test_connection_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
-  /* The last event should be that the peer and the self-handle were both
-   * removed */
-  ge = g_slist_nth_data (test->group_events, 0);
-
-  g_assert_cmpuint (tp_intset_size (ge->added), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->removed), ==, 2);
-  g_assert (tp_intset_is_member (ge->removed,
-        test->self_handle));
-  g_assert (tp_intset_is_member (ge->removed,
-        tp_channel_get_handle (test->chan, NULL)));
-  g_assert_cmpuint (tp_intset_size (ge->local_pending), ==, 0);
-  g_assert_cmpuint (tp_intset_size (ge->remote_pending), ==, 0);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "actor", NULL), ==,
-      test->self_handle);
-  g_assert_cmpuint (tp_asv_get_uint32 (ge->details, "change-reason", NULL), ==,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-
-  /* The last stream event should be the removal of the audio stream */
-
-  se = g_slist_nth_data (test->stream_events, 0);
-
-  g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
-  g_assert_cmpuint (se->id, ==, test->audio_stream_id);
+  /* FIXME: when we hook up signals, check for expected call state
+   * transition before invalidation */
 }
 
 static void
