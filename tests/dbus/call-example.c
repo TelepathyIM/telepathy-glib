@@ -150,6 +150,7 @@ typedef struct
   TpConnection *conn;
   TpChannel *chan;
   TpHandle self_handle;
+  TpHandle peer_handle;
 
   GHashTable *get_all_return;
 
@@ -349,6 +350,8 @@ channel_created_cb (TpConnection *connection,
   test->chan = tp_channel_new_from_properties (connection, object_path,
       immutable_properties, &new_error);
   test_assert_no_error (new_error);
+
+  test->peer_handle = tp_channel_get_handle (test->chan, NULL);
 
   g_main_loop_quit (test->mainloop);
 }
@@ -1409,6 +1412,10 @@ trigger_incoming_call (Test *test,
       g_main_context_iteration (NULL, TRUE);
     }
 
+  g_assert_cmpstr (tp_channel_get_identifier (test->chan), ==,
+      expected_caller);
+  test->peer_handle = tp_channel_get_handle (test->chan, NULL);
+
   tp_proxy_signal_connection_disconnect (new_channels_sig);
 
   tp_channel_call_when_ready (test->chan, channel_ready_cb, test);
@@ -1423,6 +1430,17 @@ test_incoming (Test *test,
   GValueArray *audio_info;
 
   trigger_incoming_call (test, "call me?", "caller");
+
+  /* ring, ring! */
+  tp_cli_dbus_properties_call_get_all (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+  assert_call_properties (test->get_all_return,
+      FUTURE_CALL_STATE_PENDING_RECEIVER, test->peer_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TRUE, 0,              /* call flags */
+      TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */
 
   /* At this point in the channel's lifetime, we should be in local-pending,
    * with the caller in members */
