@@ -1442,24 +1442,7 @@ test_incoming (Test *test,
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */
 
-  /* At this point in the channel's lifetime, we should be in local-pending,
-   * with the caller in members */
-  g_assert_cmpuint (tp_channel_group_get_self_handle (test->chan), ==,
-      test->self_handle);
-  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
-        test->self_handle), ==, test->self_handle);
-  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
-      ==, 1);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_local_pending (test->chan)), ==, 1);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_remote_pending (test->chan)), ==, 0);
-  g_assert (tp_intset_is_member (
-        tp_channel_group_get_local_pending (test->chan), test->self_handle));
-  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        tp_channel_get_handle (test->chan, NULL)));
-
-  /* Get Contents: we have an audio stream (FIXME: assert that) */
+  /* Get Contents: we have an audio content (FIXME: assert that) */
 
   tp_cli_dbus_properties_call_get (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
@@ -1519,22 +1502,15 @@ test_incoming (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  /* The self-handle and the peer are now the channel's members */
-  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
-        test->self_handle), ==, test->self_handle);
-  g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
-        tp_channel_get_handle (test->chan, NULL)),
-      ==, tp_channel_get_handle (test->chan, NULL));
-  g_assert_cmpuint (tp_intset_size (tp_channel_group_get_members (test->chan)),
-      ==, 2);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_local_pending (test->chan)), ==, 0);
-  g_assert_cmpuint (tp_intset_size (
-        tp_channel_group_get_remote_pending (test->chan)), ==, 0);
-  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        test->self_handle));
-  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->chan),
-        tp_channel_get_handle (test->chan, NULL)));
+  tp_cli_dbus_properties_call_get_all (test->chan, -1,
+      FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+  assert_call_properties (test->get_all_return,
+      FUTURE_CALL_STATE_ACCEPTED, test->self_handle,
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TRUE, 0,              /* call flags */
+      TRUE, TRUE, FALSE);  /* initial audio/video are still TRUE, FALSE */
 
   /* Immediately the call is accepted, we accept the remote peer's proposed
    * stream direction */
