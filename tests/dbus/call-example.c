@@ -526,9 +526,6 @@ static void
 test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
-  GValueArray *video_info;
-  guint video_stream_id;
-  guint not_a_stream_id = 31337;
   const GPtrArray *stream_paths;
   guint i;
 
@@ -668,11 +665,6 @@ test_basics (Test *test,
 
   g_assert_cmpuint (test->request_streams_return->len, ==, 1);
 
-  video_info = g_ptr_array_index (test->request_streams_return, 0);
-
-  g_assert (G_VALUE_HOLDS_UINT (video_info->values + 0));
-  video_stream_id = g_value_get_uint (video_info->values + 0);
-
   /* There are two Contents, because now we have the video content too */
 
   tp_cli_dbus_properties_call_get (test->chan, -1,
@@ -741,6 +733,9 @@ test_basics (Test *test,
 
   /* FIXME: check stream directionality */
 
+#if 0
+  /* FIXME: Call has no equivalent of RemoveStreams yet, afaics... */
+
   /* RemoveStreams with a bad stream ID must fail */
 
   g_array_set_size (test->stream_ids, 0);
@@ -773,6 +768,7 @@ test_basics (Test *test,
   g_assert_cmpuint (test->get_contents_return->len, ==, 1);
   g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 0), ==,
       tp_proxy_get_object_path (test->audio_content));
+#endif
 
   /* Hang up the call in the recommended way */
 
