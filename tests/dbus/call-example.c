@@ -98,6 +98,7 @@ typedef struct
 
   gulong members_changed_detailed_id;
 
+  FutureCallContent *added_content;
   FutureCallContent *audio_content;
   FutureCallContent *video_content;
   FutureCallStream *audio_stream;
@@ -232,6 +233,31 @@ channel_ready_cb (TpChannel *channel G_GNUC_UNUSED,
   Test *test = user_data;
 
   test_assert_no_error (error);
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+added_content_cb (TpChannel *chan G_GNUC_UNUSED,
+    const gchar *object_path,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+
+  CLEAR_OBJECT (&test->added_content);
+
+  if (error != NULL)
+    {
+      test->error = g_error_copy (error);
+    }
+  else
+    {
+      test->added_content = future_call_content_new (test->chan, object_path,
+          NULL);
+      g_assert (test->added_content != NULL);
+    }
+
   g_main_loop_quit (test->mainloop);
 }
 
@@ -527,7 +553,6 @@ test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
   const GPtrArray *stream_paths;
-  guint i;
 
   outgoing_call (test, "basic-test", FALSE, FALSE);
 
@@ -634,36 +659,25 @@ test_basics (Test *test,
 
   /* FIXME: check sending/pending-send state */
 
-  /* RequestStreams with bad handle must fail */
+  /* AddContent with bad content-type must fail */
 
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      test->self_handle,
-      test->audio_request, requested_streams_cb,
-      test, NULL, NULL);
+  future_cli_channel_type_call_call_add_content (test->chan, -1,
+      "", 31337, added_content_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert (test->error != NULL);
   g_clear_error (&test->error);
 
-  /* RequestStreams with bad request must fail */
+  /* AddContent again, to add a video stream */
 
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      tp_channel_get_handle (test->chan, NULL),
-      test->invalid_request, requested_streams_cb,
-      test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert (test->error != NULL);
-  g_clear_error (&test->error);
-
-  /* RequestStreams again, to add a video stream */
-
-  tp_cli_channel_type_streamed_media_call_request_streams (test->chan, -1,
-      tp_channel_get_handle (test->chan, NULL),
-      test->video_request, requested_streams_cb,
+  future_cli_channel_type_call_call_add_content (test->chan, -1,
+      "", TP_MEDIA_STREAM_TYPE_VIDEO, added_content_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
-  g_assert_cmpuint (test->request_streams_return->len, ==, 1);
+  g_assert (test->added_content != NULL);
+  CLEAR_OBJECT (&test->video_content);
+  test->video_content = g_object_ref (test->added_content);
 
   /* There are two Contents, because now we have the video content too */
 
@@ -675,19 +689,20 @@ test_basics (Test *test,
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 2);
 
-  for (i = 0; i < test->get_contents_return->len; i++)
+  /* they could be either way round */
+  if (!tp_strdiff (g_ptr_array_index (test->get_contents_return, 0),
+        tp_proxy_get_object_path (test->audio_content)))
     {
-      /* ignore the audio content, we already know about that one */
-      if (!tp_strdiff (g_ptr_array_index (test->get_contents_return, i),
-            tp_proxy_get_object_path (test->audio_content)))
-        continue;
-
-      g_assert (test->video_content == NULL);
-      test->video_content = future_call_content_new (test->chan,
-          g_ptr_array_index (test->get_contents_return, i), NULL);
+      g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 1),
+          ==, tp_proxy_get_object_path (test->video_content));
     }
-
-  g_assert (test->video_content != NULL);
+  else
+    {
+      g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 0),
+          ==, tp_proxy_get_object_path (test->video_content));
+      g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 1),
+          ==, tp_proxy_get_object_path (test->audio_content));
+    }
 
   tp_cli_dbus_properties_call_get_all (test->video_content, -1,
       FUTURE_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
@@ -1080,6 +1095,7 @@ teardown (Test *test,
 
   CLEAR_OBJECT (&test->audio_stream);
   CLEAR_OBJECT (&test->video_stream);
+  CLEAR_OBJECT (&test->added_content);
   CLEAR_OBJECT (&test->audio_content);
   CLEAR_OBJECT (&test->video_content);
   CLEAR_OBJECT (&test->chan);
