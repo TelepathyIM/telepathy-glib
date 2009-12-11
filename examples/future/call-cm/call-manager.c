@@ -353,17 +353,31 @@ new_channel (ExampleCallManager *self,
   return chan;
 }
 
-static const gchar * const fixed_properties[] = {
+static const gchar * const audio_fixed_properties[] = {
     TP_PROP_CHANNEL_CHANNEL_TYPE,
     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
     NULL
 };
 
-static const gchar * const allowed_properties[] = {
+static const gchar * const video_fixed_properties[] = {
+    TP_PROP_CHANNEL_CHANNEL_TYPE,
+    TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+    NULL
+};
+
+static const gchar * const audio_allowed_properties[] = {
+    TP_PROP_CHANNEL_TARGET_HANDLE,
+    TP_PROP_CHANNEL_TARGET_ID,
+    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+    NULL
+};
+
+static const gchar * const video_allowed_properties[] = {
     TP_PROP_CHANNEL_TARGET_HANDLE,
     TP_PROP_CHANNEL_TARGET_ID,
     FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
-    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
     NULL
 };
 
@@ -377,9 +391,16 @@ example_call_manager_foreach_channel_class (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
           G_TYPE_STRING, FUTURE_IFACE_CHANNEL_TYPE_CALL,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
       NULL);
 
-  func (manager, table, allowed_properties, user_data);
+  func (manager, table, audio_allowed_properties, user_data);
+
+  g_hash_table_remove (table, FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO);
+  tp_asv_set_boolean (table, FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+      TRUE);
+
+  func (manager, table, video_allowed_properties, user_data);
 
   g_hash_table_destroy (table);
 }
@@ -392,6 +413,7 @@ example_call_manager_request (ExampleCallManager *self,
 {
   TpHandle handle;
   GError *error = NULL;
+  gboolean initial_audio, initial_video;
 
   if (tp_strdiff (tp_asv_get_string (request_properties,
           TP_PROP_CHANNEL_CHANNEL_TYPE),
@@ -410,8 +432,22 @@ example_call_manager_request (ExampleCallManager *self,
       TP_PROP_CHANNEL_TARGET_HANDLE, NULL);
   g_assert (handle != 0);
 
+  initial_audio = tp_asv_get_boolean (request_properties,
+      FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL);
+  initial_video = tp_asv_get_boolean (request_properties,
+        FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL);
+
+  if (!initial_audio && !initial_video)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Call channels must initially have either audio or video content");
+      goto error;
+    }
+
+  /* the set of (fixed | allowed) properties is the same for audio and video,
+   * so we only need to check with one set */
   if (tp_channel_manager_asv_has_unknown_properties (request_properties,
-        fixed_properties, allowed_properties, &error))
+        audio_fixed_properties, audio_allowed_properties, &error))
     {
       goto error;
     }
@@ -455,10 +491,7 @@ example_call_manager_request (ExampleCallManager *self,
     }
 
   new_channel (self, handle, self->priv->conn->self_handle, request_token,
-      tp_asv_get_boolean (request_properties,
-        FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL),
-      tp_asv_get_boolean (request_properties,
-        FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL));
+      initial_audio, initial_video);
   return TRUE;
 
 error:
