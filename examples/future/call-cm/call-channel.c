@@ -948,29 +948,31 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
 }
 #endif
 
+static gboolean
+value_is (gpointer key G_GNUC_UNUSED,
+    gpointer value,
+    gpointer user_data)
+{
+  return value == user_data;
+}
+
 static void
-stream_removed_cb (ExampleCallStream *stream,
+stream_removed_cb (ExampleCallContent *content,
+    const gchar *stream_path G_GNUC_UNUSED,
     ExampleCallChannel *self)
 {
-  guint id;
   gchar *path;
-  ExampleCallContent *content;
 
-  g_object_get (stream,
-      "id", &id,
-      NULL);
-
-  g_signal_handlers_disconnect_matched (stream, G_SIGNAL_MATCH_DATA,
-      0, 0, NULL, NULL, self);
-
-  content = g_hash_table_lookup (self->priv->contents,
-      GUINT_TO_POINTER (id));
+  /* Contents in this example CM can only have one stream, so if their
+   * stream disappears, the content has to be removed too. */
 
   g_object_get (content,
       "object-path", &path,
       NULL);
 
-  g_hash_table_remove (self->priv->contents, GUINT_TO_POINTER (id));
+  /* FIXME: make this not be O(n) by using a more sensible hash table */
+  g_hash_table_foreach_remove (self->priv->contents, value_is, content);
+
   future_svc_channel_type_call_emit_content_removed (self, path);
   g_free (path);
 
@@ -1133,8 +1135,8 @@ example_call_channel_add_content (ExampleCallChannel *self,
   example_call_content_add_stream (content, stream);
   g_free (path);
 
-  g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
-      self);
+  tp_g_signal_connect_object (content, "stream-removed",
+      G_CALLBACK (stream_removed_cb), self, 0);
 
   return content;
 }
