@@ -26,8 +26,6 @@
 
 #include "extensions/extensions.h"
 
-#include "call-channel.h"
-
 static void stream_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleCallStream,
@@ -40,7 +38,7 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallStream,
 enum
 {
   PROP_OBJECT_PATH = 1,
-  PROP_CHANNEL,
+  PROP_CONNECTION,
   PROP_HANDLE,
   PROP_SIMULATION_DELAY,
   PROP_LOCALLY_REQUESTED,
@@ -60,7 +58,6 @@ struct _ExampleCallStreamPrivate
 {
   gchar *object_path;
   TpBaseConnection *conn;
-  ExampleCallChannel *channel;
   TpHandle handle;
   FutureSendingState local_sending_state;
   FutureSendingState remote_sending_state;
@@ -114,10 +111,6 @@ constructed (GObject *object)
   g_object_unref (dbus_daemon);
   dbus_daemon = NULL;
 
-  g_object_get (self->priv->channel,
-      "connection", &self->priv->conn,
-      NULL);
-
   if (self->priv->locally_requested)
     {
       example_call_stream_change_direction (self, TRUE, TRUE);
@@ -154,8 +147,8 @@ get_property (GObject *object,
       g_value_set_uint (value, self->priv->handle);
       break;
 
-    case PROP_CHANNEL:
-      g_value_set_object (value, self->priv->channel);
+    case PROP_CONNECTION:
+      g_value_set_object (value, self->priv->conn);
       break;
 
     case PROP_SIMULATION_DELAY:
@@ -207,9 +200,9 @@ set_property (GObject *object,
       self->priv->handle = g_value_get_uint (value);
       break;
 
-    case PROP_CHANNEL:
-      g_assert (self->priv->channel == NULL);
-      self->priv->channel = g_value_dup_object (value);
+    case PROP_CONNECTION:
+      g_assert (self->priv->conn == NULL);
+      self->priv->conn = g_value_dup_object (value);
       break;
 
     case PROP_SIMULATION_DELAY:
@@ -239,12 +232,6 @@ dispose (GObject *object)
     {
       tp_handle_unref (contact_repo, self->priv->handle);
       self->priv->handle = 0;
-    }
-
-  if (self->priv->channel != NULL)
-    {
-      g_object_unref (self->priv->channel);
-      self->priv->channel = NULL;
     }
 
   if (self->priv->conn != NULL)
@@ -301,11 +288,11 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
 
-  param_spec = g_param_spec_object ("channel", "ExampleCallChannel",
-      "Media channel that owns this stream",
-      EXAMPLE_TYPE_CALL_CHANNEL,
+  param_spec = g_param_spec_object ("connection", "TpBaseConnection",
+      "Connection that (indirectly) owns this stream",
+      TP_TYPE_BASE_CONNECTION,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
+  g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
   param_spec = g_param_spec_uint ("handle", "Peer's TpHandle",
       "The handle with which this stream communicates or 0 if not applicable",

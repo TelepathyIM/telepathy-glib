@@ -1118,7 +1118,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
 
   path = g_strdup_printf ("%s/Stream%u", self->priv->object_path, id);
   stream = g_object_new (EXAMPLE_TYPE_CALL_STREAM,
-      "channel", self,
+      "connection", self->priv->conn,
       "handle", self->priv->handle,
       "locally-requested", locally_requested,
       "object-path", path,
