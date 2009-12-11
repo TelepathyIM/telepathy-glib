@@ -307,18 +307,15 @@ got_senders_cb (TpProxy *proxy,
 {
   Test *test = user_data;
 
-  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_senders_return);
+  CLEAR_HASH (&test->get_senders_return);
 
-  /* FIXME: stub */
   if (test->error != NULL)
     g_clear_error (&test->error);
 
-#if 0
   test_assert_no_error (error);
 
-  g_assert (G_VALUE_HOLDS (value, TP_ARRAY_TYPE_OBJECT_PATH_LIST));
+  g_assert (G_VALUE_HOLDS (value, FUTURE_HASH_TYPE_CONTACT_SENDING_STATE_MAP));
   test->get_senders_return = g_value_dup_boxed (value);
-#endif
 
   g_main_loop_quit (test->mainloop);
 }
@@ -527,6 +524,7 @@ test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
   const GPtrArray *stream_paths;
+  gpointer v;
 
   outgoing_call (test, "basic-test", TRUE, FALSE);
 
@@ -579,21 +577,19 @@ test_basics (Test *test,
       FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
 
-#if 0
-  /* FIXME: enable this when Senders is implemented */
   test_assert_no_error (test->error);
 
   g_assert_cmpuint (g_hash_table_size (test->get_senders_return), ==, 2);
   g_assert (!g_hash_table_lookup_extended (test->get_senders_return,
         GUINT_TO_POINTER (0), NULL, NULL));
   g_assert (g_hash_table_lookup_extended (test->get_senders_return,
-        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
+        GUINT_TO_POINTER (test->self_handle), NULL, &v));
+  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, FUTURE_SENDING_STATE_SENDING);
   g_assert (g_hash_table_lookup_extended (test->get_senders_return,
         GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
-        NULL, NULL));
-
-  /* FIXME: also assert about the associated values */
-#endif
+        NULL, &v));
+  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==,
+      FUTURE_SENDING_STATE_PENDING_SEND);
 
   /* OK, that looks good. Actually make the call */
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
@@ -601,9 +597,23 @@ test_basics (Test *test,
   g_main_loop_run (test->mainloop);
   test_assert_no_error (test->error);
 
+  /* Calling Accept again makes no sense, but mustn't crash */
+  future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_clear_error (&test->error);
+
   /* Wait for the remote contact to answer, if they haven't already */
 
   loop_until_answered (test);
+
+  /* Calling Accept again makes no sense, but mustn't crash */
+  future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_clear_error (&test->error);
 
   /* Check the call state */
 
@@ -618,13 +628,32 @@ test_basics (Test *test,
       TRUE, 0,              /* call flags */
       FALSE, FALSE, FALSE); /* don't care about initial audio/video */
 
+  /* There's still one content */
   CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
   test->get_contents_return = g_boxed_copy (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
       tp_asv_get_boxed (test->get_all_return,
         "Contents", TP_ARRAY_TYPE_OBJECT_PATH_LIST));
   g_assert_cmpuint (test->get_contents_return->len, ==, 1);
+  g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 0),
+      ==, tp_proxy_get_object_path (test->audio_content));
 
-  /* FIXME: check sending/pending-send state */
+  /* Other contact is sending now */
+  CLEAR_HASH (&test->get_senders_return);
+  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
+      FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  test_assert_no_error (test->error);
+
+  g_assert_cmpuint (g_hash_table_size (test->get_senders_return), ==, 2);
+  g_assert (!g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (0), NULL, NULL));
+  g_assert (g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (test->self_handle), NULL, &v));
+  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, FUTURE_SENDING_STATE_SENDING);
+  g_assert (g_hash_table_lookup_extended (test->get_senders_return,
+        GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
+        NULL, &v));
+  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, FUTURE_SENDING_STATE_SENDING);
 
   /* AddContent with bad content-type must fail */
 
@@ -692,28 +721,25 @@ test_basics (Test *test,
   tp_cli_dbus_properties_call_get (test->video_stream, -1,
       FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-
-#if 0
-  /* FIXME: enable this when Senders is implemented */
   test_assert_no_error (test->error);
 
   g_assert_cmpuint (g_hash_table_size (test->get_senders_return), ==, 2);
   g_assert (!g_hash_table_lookup_extended (test->get_senders_return,
         GUINT_TO_POINTER (0), NULL, NULL));
   g_assert (g_hash_table_lookup_extended (test->get_senders_return,
-        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
+        GUINT_TO_POINTER (test->self_handle), NULL, &v));
+  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, FUTURE_SENDING_STATE_SENDING);
   g_assert (g_hash_table_lookup_extended (test->get_senders_return,
         GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
-        NULL, NULL));
-
-  /* FIXME: also assert about the associated values */
-#endif
+        NULL, &v));
 
   /* After a moment, the video stream becomes connected, and the remote user
    * accepts our proposed direction change. These might happen in either
    * order, at least in this implementation. */
 
-  /* FIXME: check stream directionality */
+  if (GPOINTER_TO_UINT (v) != FUTURE_SENDING_STATE_SENDING)
+    g_assert_cmpuint (GPOINTER_TO_UINT (v), ==,
+        FUTURE_SENDING_STATE_PENDING_SEND);
 
 #if 0
   /* FIXME: Call has no equivalent of RemoveStreams yet, afaics... */
