@@ -41,14 +41,8 @@ enum
 {
   PROP_OBJECT_PATH = 1,
   PROP_CHANNEL,
-  PROP_CONTENT,
   PROP_ID,
   PROP_HANDLE,
-  PROP_TYPE,
-  PROP_STATE,
-  PROP_PENDING_SEND,
-  PROP_DIRECTION,
-  PROP_STREAM_INFO,
   PROP_SIMULATION_DELAY,
   PROP_LOCALLY_REQUESTED,
   PROP_SENDERS,
@@ -70,8 +64,6 @@ struct _ExampleCallStreamPrivate
   ExampleCallChannel *channel;
   guint id;
   TpHandle handle;
-  TpMediaStreamType type;
-  TpMediaStreamState state;
   TpMediaStreamDirection direction;
   TpMediaStreamPendingSend pending_send;
 
@@ -95,7 +87,6 @@ example_call_stream_init (ExampleCallStream *self)
   /* start off directionless */
   self->priv->direction = TP_MEDIA_STREAM_DIRECTION_NONE;
   self->priv->pending_send = 0;
-  self->priv->state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
 }
 
 static void
@@ -179,46 +170,8 @@ get_property (GObject *object,
       g_value_set_uint (value, self->priv->handle);
       break;
 
-    case PROP_TYPE:
-      g_value_set_uint (value, self->priv->type);
-      break;
-
-    case PROP_STATE:
-      g_value_set_uint (value, self->priv->state);
-      break;
-
-    case PROP_PENDING_SEND:
-      g_value_set_uint (value, self->priv->pending_send);
-      break;
-
-    case PROP_DIRECTION:
-      g_value_set_uint (value, self->priv->direction);
-      break;
-
     case PROP_CHANNEL:
       g_value_set_object (value, self->priv->channel);
-      break;
-
-    case PROP_STREAM_INFO:
-        {
-          GValueArray *va = g_value_array_new (6);
-          guint i;
-
-          for (i = 0; i < 6; i++)
-            {
-              g_value_array_append (va, NULL);
-              g_value_init (va->values + i, G_TYPE_UINT);
-            }
-
-          g_value_set_uint (va->values + 0, self->priv->id);
-          g_value_set_uint (va->values + 1, self->priv->handle);
-          g_value_set_uint (va->values + 2, self->priv->type);
-          g_value_set_uint (va->values + 3, self->priv->state);
-          g_value_set_uint (va->values + 4, self->priv->direction);
-          g_value_set_uint (va->values + 5, self->priv->pending_send);
-
-          g_value_take_boxed (value, va);
-        }
       break;
 
     case PROP_SIMULATION_DELAY:
@@ -284,10 +237,6 @@ set_property (GObject *object,
 
     case PROP_HANDLE:
       self->priv->handle = g_value_get_uint (value);
-      break;
-
-    case PROP_TYPE:
-      self->priv->type = g_value_get_uint (value);
       break;
 
     case PROP_CHANNEL:
@@ -408,38 +357,6 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
       0, G_MAXUINT32, 0,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HANDLE, param_spec);
-
-  param_spec = g_param_spec_uint ("type", "TpMediaStreamType",
-      "Media stream type",
-      0, NUM_TP_MEDIA_STREAM_TYPES - 1, 0,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TYPE, param_spec);
-
-  param_spec = g_param_spec_uint ("state", "TpMediaStreamState",
-      "Media stream connection state",
-      0, NUM_TP_MEDIA_STREAM_STATES - 1, 0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_STATE, param_spec);
-
-  param_spec = g_param_spec_uint ("direction", "TpMediaStreamDirection",
-      "Media stream direction",
-      0, NUM_TP_MEDIA_STREAM_DIRECTIONS - 1, 0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DIRECTION, param_spec);
-
-  param_spec = g_param_spec_uint ("pending-send", "TpMediaStreamPendingSend",
-      "Requested media stream directions pending approval",
-      0,
-      TP_MEDIA_STREAM_PENDING_LOCAL_SEND | TP_MEDIA_STREAM_PENDING_REMOTE_SEND,
-      0,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_PENDING_SEND, param_spec);
-
-  param_spec = g_param_spec_boxed ("stream-info", "Stream info",
-      "6-entry GValueArray as returned by ListStreams and RequestStreams",
-      TP_STRUCT_TYPE_MEDIA_STREAM_INFO,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_STREAM_INFO, param_spec);
 
   param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
       "Delay between simulated network events",
@@ -666,30 +583,6 @@ example_call_stream_change_direction (ExampleCallStream *self,
   g_hash_table_unref (updated_senders);
 
   return TRUE;
-}
-
-static gboolean
-simulate_stream_connected_cb (gpointer p)
-{
-  ExampleCallStream *self = EXAMPLE_CALL_STREAM (p);
-
-  g_message ("MEDIA: stream connected");
-  self->priv->state = TP_MEDIA_STREAM_STATE_CONNECTED;
-  g_object_notify ((GObject *) self, "state");
-
-  return FALSE;
-}
-
-void
-example_call_stream_connect (ExampleCallStream *self)
-{
-  /* if already trying to connect, do nothing */
-  if (self->priv->connected_event_id != 0)
-    return;
-
-  /* simulate it taking a short time to connect */
-  self->priv->connected_event_id = g_timeout_add (self->priv->simulation_delay,
-      simulate_stream_connected_cb, self);
 }
 
 void

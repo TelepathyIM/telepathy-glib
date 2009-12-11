@@ -1037,10 +1037,8 @@ simulate_contact_answered_cb (gpointer p)
       if (stream == NULL)
         continue;
 
-      /* remote contact accepts our proposed stream direction... */
+      /* remote contact accepts our proposed stream direction */
       example_call_stream_simulate_contact_agreed_to_send (stream);
-      /* ... and the stream tries to connect */
-      example_call_stream_connect (stream);
     }
 
   contact_repo = tp_base_connection_get_handles
@@ -1092,7 +1090,6 @@ example_call_channel_add_content (ExampleCallChannel *self,
   ExampleCallContent *content;
   ExampleCallStream *stream;
   guint id = self->priv->next_stream_id++;
-  guint state, direction, pending_send;
   const gchar *type_str;
   TpHandle creator;
   gchar *name;
@@ -1129,7 +1126,6 @@ example_call_channel_add_content (ExampleCallChannel *self,
       "channel", self,
       "id", id,
       "handle", self->priv->handle,
-      "type", media_type,
       "locally-requested", locally_requested,
       "object-path", path,
       NULL);
@@ -1137,19 +1133,8 @@ example_call_channel_add_content (ExampleCallChannel *self,
   example_call_content_add_stream (content, stream);
   g_free (path);
 
-  g_object_get (stream,
-      "state", &state,
-      "direction", &direction,
-      "pending-send", &pending_send,
-      NULL);
-
   g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
       self);
-
-  if (self->priv->call_state == FUTURE_CALL_STATE_ACCEPTED)
-    {
-      example_call_stream_connect (stream);
-    }
 
   return content;
 }
@@ -1233,10 +1218,8 @@ accept_incoming_call (ExampleCallChannel *self)
       if (stream == NULL)
         continue;
 
-      /* we accept the proposed stream direction... */
+      /* we accept the proposed stream direction */
       example_call_stream_accept_proposed_direction (stream);
-      /* ... and the stream tries to connect */
-      example_call_stream_connect (stream);
     }
 }
 
