@@ -502,6 +502,9 @@ example_call_stream_close (ExampleCallStream *self)
 void
 example_call_stream_accept_proposed_direction (ExampleCallStream *self)
 {
+  GHashTable *updated_senders;
+  GArray *removed_senders;
+
   if (self->priv->removed ||
       !(self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND))
     return;
@@ -513,11 +516,24 @@ example_call_stream_accept_proposed_direction (ExampleCallStream *self)
   self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
 
   g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+
+  updated_senders = g_hash_table_new (NULL, NULL);
+  removed_senders = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+  g_hash_table_insert (updated_senders,
+      GUINT_TO_POINTER (tp_base_connection_get_self_handle (self->priv->conn)),
+      GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
+  future_svc_call_stream_emit_senders_changed (self, updated_senders,
+      removed_senders);
+  g_hash_table_unref (updated_senders);
+  g_array_free (removed_senders, TRUE);
 }
 
 void
 example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
 {
+  GHashTable *updated_senders;
+  GArray *removed_senders;
+
   if (self->priv->removed ||
       !(self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND))
     return;
@@ -529,6 +545,15 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
   self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
 
   g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+
+  updated_senders = g_hash_table_new (NULL, NULL);
+  removed_senders = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+  g_hash_table_insert (updated_senders, GUINT_TO_POINTER (self->priv->handle),
+      GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
+  future_svc_call_stream_emit_senders_changed (self, updated_senders,
+      removed_senders);
+  g_hash_table_unref (updated_senders);
+  g_array_free (removed_senders, TRUE);
 }
 
 static gboolean
@@ -555,7 +580,7 @@ example_call_stream_change_direction (ExampleCallStream *self,
     ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND) != 0);
   gboolean pending_local_send =
     ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND) != 0);
-  gboolean changed = FALSE;
+  GHashTable *updated_senders = g_hash_table_new (NULL, NULL);
 
   if (want_to_send)
     {
@@ -569,8 +594,12 @@ example_call_stream_change_direction (ExampleCallStream *self,
 
           g_message ("MEDIA: Sending media to peer for stream %u",
               self->priv->id);
-          changed = TRUE;
           self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
+                  self->priv->conn)),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
         }
     }
   else
@@ -581,15 +610,23 @@ example_call_stream_change_direction (ExampleCallStream *self,
               "stream %u", self->priv->id);
           g_message ("MEDIA: No longer sending media to peer for stream %u",
               self->priv->id);
-          changed = TRUE;
           self->priv->direction &= ~TP_MEDIA_STREAM_DIRECTION_SEND;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
+                  self->priv->conn)),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
       else if (pending_local_send)
         {
           g_message ("SIGNALLING: send: No, I refuse to send you media on "
               "stream %u", self->priv->id);
-          changed = TRUE;
           self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
+                  self->priv->conn)),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
     }
 
@@ -599,11 +636,14 @@ example_call_stream_change_direction (ExampleCallStream *self,
         {
           g_message ("SIGNALLING: send: Please start sending me stream %u",
               self->priv->id);
-          changed = TRUE;
           self->priv->pending_send |= TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
           g_timeout_add_full (G_PRIORITY_DEFAULT, self->priv->simulation_delay,
               simulate_contact_agreed_to_send_cb, g_object_ref (self),
               g_object_unref);
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (self->priv->handle),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_PENDING_SEND));
         }
     }
   else
@@ -614,13 +654,28 @@ example_call_stream_change_direction (ExampleCallStream *self,
               self->priv->id);
           g_message ("MEDIA: Suppressing output of stream %u",
               self->priv->id);
-          changed = TRUE;
           self->priv->direction &= ~TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (self->priv->handle),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
     }
 
-  if (changed)
-    g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+  if (g_hash_table_size (updated_senders) != 0)
+    {
+      GArray *removed_senders = g_array_sized_new (FALSE, FALSE,
+          sizeof (guint), 0);
+
+      g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+
+      future_svc_call_stream_emit_senders_changed (self, updated_senders,
+          removed_senders);
+
+      g_array_free (removed_senders, TRUE);
+    }
+
+  g_hash_table_unref (updated_senders);
 
   return TRUE;
 }
@@ -667,7 +722,7 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
     ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND) != 0);
   gboolean pending_local_send =
     ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND) != 0);
-  gboolean changed = FALSE;
+  GHashTable *updated_senders = g_hash_table_new (NULL, NULL);
 
   /* In some protocols, streams cannot be neither sending nor receiving, so
    * if a stream is set to TP_MEDIA_STREAM_DIRECTION_NONE, this is equivalent
@@ -686,7 +741,11 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
         {
           /* ask the user for permission */
           self->priv->pending_send |= TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
-          changed = TRUE;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
+                  self->priv->conn)),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_PENDING_SEND));
         }
       else
         {
@@ -705,12 +764,20 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           g_message ("MEDIA: No longer sending media to peer for stream %u",
               self->priv->id);
           self->priv->direction &= ~TP_MEDIA_STREAM_DIRECTION_SEND;
-          changed = TRUE;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
+                  self->priv->conn)),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
       else if (pending_local_send)
         {
           self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
-          changed = TRUE;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
+                  self->priv->conn)),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
       else
         {
@@ -727,7 +794,10 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
         {
           self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
           self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
-          changed = TRUE;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (self->priv->handle),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
         }
     }
   else
@@ -737,19 +807,37 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           g_message ("SIGNALLING: receive: No, I refuse to send you media on "
               "stream %u", self->priv->id);
           self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
-          changed = TRUE;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (self->priv->handle),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
       else if (receiving)
         {
           g_message ("SIGNALLING: receive: I will no longer send you media on "
               "stream %u", self->priv->id);
           self->priv->direction &= ~TP_MEDIA_STREAM_DIRECTION_RECEIVE;
-          changed = TRUE;
+
+          g_hash_table_insert (updated_senders,
+              GUINT_TO_POINTER (self->priv->handle),
+              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
     }
 
-  if (changed)
-    g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+  if (g_hash_table_size (updated_senders) != 0)
+    {
+      GArray *removed_senders = g_array_sized_new (FALSE, FALSE,
+          sizeof (guint), 0);
+
+      g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
+
+      future_svc_call_stream_emit_senders_changed (self, updated_senders,
+          removed_senders);
+
+      g_array_free (removed_senders, TRUE);
+    }
+
+  g_hash_table_unref (updated_senders);
 }
 
 static void
