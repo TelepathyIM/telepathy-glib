@@ -908,39 +908,6 @@ channel_iface_init (gpointer iface,
 #undef IMPLEMENT
 }
 
-static void
-media_list_streams (TpSvcChannelTypeStreamedMedia *iface,
-    DBusGMethodInvocation *context)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-  GPtrArray *array = g_ptr_array_sized_new (g_hash_table_size (
-        self->priv->contents));
-  GHashTableIter iter;
-  gpointer v;
-
-  g_hash_table_iter_init (&iter, self->priv->contents);
-
-  while (g_hash_table_iter_next (&iter, NULL, &v))
-    {
-      ExampleCallStream *stream = example_call_content_get_stream (v);
-      GValueArray *va;
-
-      if (stream == NULL)
-        continue;
-
-      g_object_get (stream,
-          "stream-info", &va,
-          NULL);
-
-      g_ptr_array_add (array, va);
-    }
-
-  tp_svc_channel_type_streamed_media_return_from_list_streams (context,
-      array);
-  g_ptr_array_foreach (array, (GFunc) g_value_array_free, NULL);
-  g_ptr_array_free (array, TRUE);
-}
-
 #if 0
 /* FIXME: there's no equivalent of this in Call (yet?) */
 
@@ -1346,90 +1313,6 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 }
 
 static void
-media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
-    guint contact_handle,
-    const GArray *media_types,
-    DBusGMethodInvocation *context)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  GPtrArray *array;
-  guint i;
-  GError *error = NULL;
-
-  if (!tp_handle_is_valid (contact_repo, contact_handle, &error))
-    goto error;
-
-  if (contact_handle != self->priv->handle)
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "This channel is for handle #%u, we can't make a stream to #%u",
-          self->priv->handle, contact_handle);
-      goto error;
-    }
-
-  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Call has terminated");
-      goto error;
-    }
-
-  for (i = 0; i < media_types->len; i++)
-    {
-      guint media_type = g_array_index (media_types, guint, i);
-
-      switch (media_type)
-        {
-        case TP_MEDIA_STREAM_TYPE_AUDIO:
-        case TP_MEDIA_STREAM_TYPE_VIDEO:
-          break;
-        default:
-          g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-              "%u is not a valid Media_Stream_Type", media_type);
-          goto error;
-        }
-    }
-
-  array = g_ptr_array_sized_new (media_types->len);
-
-  for (i = 0; i < media_types->len; i++)
-    {
-      guint media_type = g_array_index (media_types, guint, i);
-      ExampleCallContent *content;
-      ExampleCallStream *stream;
-      GValueArray *info;
-
-      if (self->priv->call_state < FUTURE_CALL_STATE_PENDING_RECEIVER)
-        {
-          example_call_channel_initiate_outgoing (self);
-        }
-
-      content = example_call_channel_add_content (self, media_type,
-          TRUE);
-
-      stream = example_call_content_get_stream (content);
-
-      g_object_get (stream,
-          "stream-info", &info,
-          NULL);
-
-      g_ptr_array_add (array, info);
-    }
-
-  tp_svc_channel_type_streamed_media_return_from_request_streams (context,
-      array);
-  g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST, array);
-
-  return;
-
-error:
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-}
-
-static void
 media_iface_init (gpointer iface,
     gpointer data)
 {
@@ -1437,9 +1320,7 @@ media_iface_init (gpointer iface,
 
 #define IMPLEMENT(x) \
   tp_svc_channel_type_streamed_media_implement_##x (klass, media_##x)
-  IMPLEMENT (list_streams);
   IMPLEMENT (request_stream_direction);
-  IMPLEMENT (request_streams);
 #undef IMPLEMENT
 }
 
