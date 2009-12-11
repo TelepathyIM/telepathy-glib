@@ -41,7 +41,6 @@ enum
 {
   PROP_OBJECT_PATH = 1,
   PROP_CHANNEL,
-  PROP_ID,
   PROP_HANDLE,
   PROP_SIMULATION_DELAY,
   PROP_LOCALLY_REQUESTED,
@@ -62,7 +61,6 @@ struct _ExampleCallStreamPrivate
   gchar *object_path;
   TpBaseConnection *conn;
   ExampleCallChannel *channel;
-  guint id;
   TpHandle handle;
   FutureSendingState local_sending_state;
   FutureSendingState remote_sending_state;
@@ -165,10 +163,6 @@ get_property (GObject *object,
       g_value_set_string (value, self->priv->object_path);
       break;
 
-    case PROP_ID:
-      g_value_set_uint (value, self->priv->id);
-      break;
-
     case PROP_HANDLE:
       g_value_set_uint (value, self->priv->handle);
       break;
@@ -220,10 +214,6 @@ set_property (GObject *object,
     case PROP_OBJECT_PATH:
       g_assert (self->priv->object_path == NULL);   /* construct-only */
       self->priv->object_path = g_value_dup_string (value);
-      break;
-
-    case PROP_ID:
-      self->priv->id = g_value_get_uint (value);
       break;
 
     case PROP_HANDLE:
@@ -337,12 +327,6 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL, param_spec);
 
-  param_spec = g_param_spec_uint ("id", "Stream ID",
-      "ID of this stream",
-      0, G_MAXUINT32, 0,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_ID, param_spec);
-
   param_spec = g_param_spec_uint ("handle", "Peer's TpHandle",
       "The handle with which this stream communicates or 0 if not applicable",
       0, G_MAXUINT32, 0,
@@ -387,8 +371,8 @@ example_call_stream_close (ExampleCallStream *self)
     {
       self->priv->removed = TRUE;
 
-      g_message ("Sending to server: Closing stream %u",
-          self->priv->id);
+      g_message ("%s: Sending to server: Closing stream",
+          self->priv->object_path);
 
       if (self->priv->connected_event_id != 0)
         {
@@ -411,8 +395,8 @@ example_call_stream_accept_proposed_direction (ExampleCallStream *self)
       self->priv->local_sending_state != FUTURE_SENDING_STATE_PENDING_SEND)
     return;
 
-  g_message ("SIGNALLING: send: OK, I'll send you media on stream %u",
-      self->priv->id);
+  g_message ("%s: SIGNALLING: Sending to server: OK, I'll send you media",
+      self->priv->object_path);
 
   self->priv->local_sending_state = FUTURE_SENDING_STATE_SENDING;
 
@@ -437,8 +421,8 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
       self->priv->remote_sending_state != FUTURE_SENDING_STATE_PENDING_SEND)
     return;
 
-  g_message ("SIGNALLING: receive: OK, I'll send you media on stream %u",
-      self->priv->id);
+  g_message ("%s: SIGNALLING: received: OK, I'll send you media",
+      self->priv->object_path);
 
   self->priv->remote_sending_state = FUTURE_SENDING_STATE_SENDING;
 
@@ -472,12 +456,12 @@ example_call_stream_change_direction (ExampleCallStream *self,
           if (self->priv->local_sending_state ==
               FUTURE_SENDING_STATE_PENDING_SEND)
             {
-              g_message ("SIGNALLING: send: I will now send you media on "
-                  "stream %u", self->priv->id);
+              g_message ("%s: SIGNALLING: send: I will now send you media",
+                  self->priv->object_path);
             }
 
-          g_message ("MEDIA: Sending media to peer for stream %u",
-              self->priv->id);
+          g_message ("%s: MEDIA: sending media to peer",
+              self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_SENDING;
 
           g_hash_table_insert (updated_senders,
@@ -490,10 +474,10 @@ example_call_stream_change_direction (ExampleCallStream *self,
     {
       if (self->priv->local_sending_state == FUTURE_SENDING_STATE_SENDING)
         {
-          g_message ("SIGNALLING: send: I will no longer send you media on "
-              "stream %u", self->priv->id);
-          g_message ("MEDIA: No longer sending media to peer for stream %u",
-              self->priv->id);
+          g_message ("%s: SIGNALLING: send: I will no longer send you media",
+              self->priv->object_path);
+          g_message ("%s: MEDIA: no longer sending media to peer",
+              self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
@@ -504,8 +488,8 @@ example_call_stream_change_direction (ExampleCallStream *self,
       else if (self->priv->local_sending_state ==
           FUTURE_SENDING_STATE_PENDING_SEND)
         {
-          g_message ("SIGNALLING: send: No, I refuse to send you media on "
-              "stream %u", self->priv->id);
+          g_message ("%s: SIGNALLING: send: refusing to send you media",
+              self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
@@ -519,8 +503,8 @@ example_call_stream_change_direction (ExampleCallStream *self,
     {
       if (self->priv->remote_sending_state == FUTURE_SENDING_STATE_NONE)
         {
-          g_message ("SIGNALLING: send: Please start sending me stream %u",
-              self->priv->id);
+          g_message ("%s: SIGNALLING: send: send me media, please?",
+              self->priv->object_path);
           self->priv->remote_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
           g_timeout_add_full (G_PRIORITY_DEFAULT, self->priv->simulation_delay,
               simulate_contact_agreed_to_send_cb, g_object_ref (self),
@@ -535,10 +519,10 @@ example_call_stream_change_direction (ExampleCallStream *self,
     {
       if (self->priv->remote_sending_state != FUTURE_SENDING_STATE_NONE)
         {
-          g_message ("SIGNALLING: send: Please stop sending me stream %u",
-              self->priv->id);
-          g_message ("MEDIA: Suppressing output of stream %u",
-              self->priv->id);
+          g_message ("%s: SIGNALLING: send: Please stop sending me media",
+              self->priv->object_path);
+          g_message ("%s: MEDIA: suppressing output of stream",
+              self->priv->object_path);
           self->priv->remote_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
@@ -580,8 +564,8 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
 
   if (local_send)
     {
-      g_message ("SIGNALLING: receive: Please start sending me stream %u",
-          self->priv->id);
+      g_message ("%s: SIGNALLING: send: Please start sending me media",
+          self->priv->object_path);
 
       if (self->priv->local_sending_state == FUTURE_SENDING_STATE_NONE)
         {
@@ -601,15 +585,15 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
     }
   else
     {
-      g_message ("SIGNALLING: receive: Please stop sending me stream %u",
-          self->priv->id);
-      g_message ("SIGNALLING: send: OK, not sending stream %u",
-          self->priv->id);
+      g_message ("%s: SIGNALLING: receive: Please stop sending me media",
+          self->priv->object_path);
+      g_message ("%s: SIGNALLING: reply: OK!",
+          self->priv->object_path);
 
       if (self->priv->local_sending_state == FUTURE_SENDING_STATE_SENDING)
         {
-          g_message ("MEDIA: No longer sending media to peer for stream %u",
-              self->priv->id);
+          g_message ("%s: MEDIA: no longer sending media to peer",
+              self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
@@ -635,8 +619,8 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
 
   if (remote_send)
     {
-      g_message ("SIGNALLING: receive: I will now send you media on stream %u",
-          self->priv->id);
+      g_message ("%s: SIGNALLING: receive: I will now send you media",
+          self->priv->object_path);
 
       if (self->priv->remote_sending_state != FUTURE_SENDING_STATE_SENDING)
         {
@@ -652,8 +636,8 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
       if (self->priv->remote_sending_state ==
           FUTURE_SENDING_STATE_PENDING_SEND)
         {
-          g_message ("SIGNALLING: receive: No, I refuse to send you media on "
-              "stream %u", self->priv->id);
+          g_message ("%s: SIGNALLING: receive: No, I refuse to send you media",
+              self->priv->object_path);
           self->priv->remote_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
@@ -663,8 +647,8 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
       else if (self->priv->remote_sending_state ==
           FUTURE_SENDING_STATE_SENDING)
         {
-          g_message ("SIGNALLING: receive: I will no longer send you media on "
-              "stream %u", self->priv->id);
+          g_message ("%s: SIGNALLING: receive: I will no longer send media",
+              self->priv->object_path);
           self->priv->remote_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
