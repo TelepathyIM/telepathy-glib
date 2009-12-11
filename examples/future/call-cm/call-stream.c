@@ -58,7 +58,6 @@ enum
 enum
 {
   SIGNAL_REMOVED,
-  SIGNAL_DIRECTION_CHANGED,
   N_SIGNALS
 };
 
@@ -467,11 +466,6 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
       g_cclosure_marshal_VOID__VOID,
       G_TYPE_NONE, 0);
 
-  signals[SIGNAL_DIRECTION_CHANGED] = g_signal_new ("direction-changed",
-      G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
-
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCallStreamClass,
@@ -515,8 +509,6 @@ example_call_stream_accept_proposed_direction (ExampleCallStream *self)
   self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
   self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
 
-  g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
-
   updated_senders = g_hash_table_new (NULL, NULL);
   removed_senders = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
   g_hash_table_insert (updated_senders,
@@ -543,8 +535,6 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
 
   self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
   self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
-
-  g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
 
   updated_senders = g_hash_table_new (NULL, NULL);
   removed_senders = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
@@ -666,8 +656,6 @@ example_call_stream_change_direction (ExampleCallStream *self,
     {
       GArray *removed_senders = g_array_sized_new (FALSE, FALSE,
           sizeof (guint), 0);
-
-      g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
 
       future_svc_call_stream_emit_senders_changed (self, updated_senders,
           removed_senders);
@@ -828,8 +816,6 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
     {
       GArray *removed_senders = g_array_sized_new (FALSE, FALSE,
           sizeof (guint), 0);
-
-      g_signal_emit (self, signals[SIGNAL_DIRECTION_CHANGED], 0);
 
       future_svc_call_stream_emit_senders_changed (self, updated_senders,
           removed_senders);
