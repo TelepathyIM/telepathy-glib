@@ -60,7 +60,6 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_STREAMED_MEDIA, NULL);
     G_IMPLEMENT_INTERFACE (FUTURE_TYPE_SVC_CHANNEL_TYPE_CALL,
       call_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
@@ -135,7 +134,6 @@ struct _ExampleCallChannelPrivate
 };
 
 static const char * example_call_channel_interfaces[] = {
-    TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA,
     TP_IFACE_CHANNEL_INTERFACE_HOLD,
     NULL
 };
@@ -968,8 +966,6 @@ stream_removed_cb (ExampleCallStream *stream,
   content = g_hash_table_lookup (self->priv->contents,
       GUINT_TO_POINTER (id));
 
-  tp_svc_channel_type_streamed_media_emit_stream_removed (self, id);
-
   g_object_get (content,
       "object-path", &path,
       NULL);
@@ -986,38 +982,6 @@ stream_removed_cb (ExampleCallStream *stream,
           FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
       /* FIXME: is there an appropriate error? */
     }
-}
-
-static void
-stream_direction_changed_cb (ExampleCallStream *stream,
-    ExampleCallChannel *self)
-{
-  guint id, direction, pending;
-
-  g_object_get (stream,
-      "id", &id,
-      "direction", &direction,
-      "pending-send", &pending,
-      NULL);
-
-  tp_svc_channel_type_streamed_media_emit_stream_direction_changed (self, id,
-      direction, pending);
-}
-
-static void
-stream_state_changed_cb (ExampleCallStream *stream,
-    GParamSpec *spec G_GNUC_UNUSED,
-    ExampleCallChannel *self)
-{
-  guint id, state;
-
-  g_object_get (stream,
-      "id", &id,
-      "state", &state,
-      NULL);
-
-  tp_svc_channel_type_streamed_media_emit_stream_state_changed (self, id,
-      state);
 }
 
 static gboolean
@@ -1171,8 +1135,6 @@ example_call_channel_add_content (ExampleCallChannel *self,
       NULL);
 
   example_call_content_add_stream (content, stream);
-  tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
-      self->priv->handle, media_type);
   g_free (path);
 
   g_object_get (stream,
@@ -1181,27 +1143,8 @@ example_call_channel_add_content (ExampleCallChannel *self,
       "pending-send", &pending_send,
       NULL);
 
-  /* this is the "implicit" initial state mandated by telepathy-spec */
-  if (state != TP_MEDIA_STREAM_STATE_DISCONNECTED)
-    {
-      tp_svc_channel_type_streamed_media_emit_stream_state_changed (self, id,
-          state);
-    }
-
-  /* this is the "implicit" initial direction mandated by telepathy-spec */
-  if (direction != TP_MEDIA_STREAM_DIRECTION_RECEIVE ||
-      pending_send != TP_MEDIA_STREAM_PENDING_LOCAL_SEND)
-    {
-      tp_svc_channel_type_streamed_media_emit_stream_direction_changed (self,
-          id, direction, pending_send);
-    }
-
   g_signal_connect (stream, "removed", G_CALLBACK (stream_removed_cb),
       self);
-  g_signal_connect (stream, "notify::state",
-      G_CALLBACK (stream_state_changed_cb), self);
-  g_signal_connect (stream, "direction-changed",
-      G_CALLBACK (stream_direction_changed_cb), self);
 
   if (self->priv->call_state == FUTURE_CALL_STATE_ACCEPTED)
     {
