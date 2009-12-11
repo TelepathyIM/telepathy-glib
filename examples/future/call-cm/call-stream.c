@@ -639,6 +639,14 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
     ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND) != 0);
   gboolean changed = FALSE;
 
+  /* In some protocols, streams cannot be neither sending nor receiving, so
+   * if a stream is set to TP_MEDIA_STREAM_DIRECTION_NONE, this is equivalent
+   * to removing it. (This is true in XMPP, for instance.)
+   *
+   * However, for this example we'll emulate a protocol where streams can be
+   * directionless.
+   */
+
   if (send_requested)
     {
       g_message ("SIGNALLING: receive: Please start sending me stream %u",
@@ -719,16 +727,71 @@ stream_set_sending (FutureSvcCallStream *iface G_GNUC_UNUSED,
     gboolean sending G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
-  tp_dbus_g_method_return_not_implemented (context);
+  ExampleCallStream *self = EXAMPLE_CALL_STREAM (iface);
+  TpMediaStreamDirection new_direction = self->priv->direction;
+
+  if (sending)
+    {
+      new_direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
+    }
+  else
+    {
+      new_direction &= ~TP_MEDIA_STREAM_DIRECTION_SEND;
+    }
+
+  /* this always returns TRUE in practice */
+  example_call_stream_change_direction (self, new_direction, NULL);
+
+  future_svc_call_stream_return_from_set_sending (context);
 }
 
 static void
-stream_request_receiving (FutureSvcCallStream *iface G_GNUC_UNUSED,
-    guint contact G_GNUC_UNUSED,
-    gboolean receive G_GNUC_UNUSED,
+stream_request_receiving (FutureSvcCallStream *iface,
+    TpHandle contact,
+    gboolean receive,
     DBusGMethodInvocation *context)
 {
-  tp_dbus_g_method_return_not_implemented (context);
+  ExampleCallStream *self = EXAMPLE_CALL_STREAM (iface);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
+      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  TpMediaStreamDirection new_direction = self->priv->direction;
+  GError *error = NULL;
+
+  if (!tp_handle_is_valid (contact_repo, contact, &error))
+    {
+      goto finally;
+    }
+
+  if (contact != self->priv->handle)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Can't receive from contact #%u: this stream only contains #%u",
+          contact, self->priv->handle);
+      goto finally;
+    }
+
+  if (receive)
+    {
+      new_direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+    }
+  else
+    {
+      new_direction &= ~TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+    }
+
+  /* this always returns TRUE in practice */
+  example_call_stream_change_direction (self, new_direction, NULL);
+
+finally:
+  if (error == NULL)
+    {
+      future_svc_call_stream_return_from_request_receiving (context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+    }
 }
 
 static void
