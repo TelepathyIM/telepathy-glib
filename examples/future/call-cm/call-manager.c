@@ -1,9 +1,6 @@
 /*
  * call-manager.c - an example channel manager for Call channels.
  *
- * (Not actually ported to implement Call yet - until then, it implements
- * StreamedMedia.)
- *
  * This channel manager emulates a protocol like XMPP Jingle, where you can
  * make several simultaneous calls to the same or different contacts.
  *

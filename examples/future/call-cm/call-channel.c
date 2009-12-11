@@ -1,19 +1,19 @@
 /*
- * call-channel.c - an example 1-1 streamed media call, soon to be ported to
- * implement Call instead.
+ * call-channel.c - an example 1-1 audio/video call
  *
  * For simplicity, this channel emulates a device with its own
  * audio/video user interface, like a video-equipped form of the phones
  * manipulated by telepathy-snom or gnome-phone-manager.
  *
- * As a result, this channel does not have the MediaSignalling interface, and
- * clients should not attempt to do their own streaming using
- * telepathy-farsight, telepathy-stream-engine or maemo-stream-engine.
+ * As a result, this channel has the HardwareStreaming flag, its contents
+ * and streams do not have the Media interface, and clients should not attempt
+ * to do their own streaming using telepathy-farsight, telepathy-stream-engine
+ * or maemo-stream-engine.
  *
- * In practice, nearly all connection managers also have the MediaSignalling
- * interface on their streamed media channels. Usage for those CMs is the
- * same, except that whichever client is the primary handler for the channel
- * should also hand the channel over to telepathy-farsight or
+ * In practice, nearly all connection managers do not have HardwareStreaming,
+ * and do have the Media interface on their contents/streams. Usage for those
+ * CMs is the same, except that whichever client is the primary handler
+ * for the channel should also hand the channel over to telepathy-farsight or
  * telepathy-stream-engine to implement the actual streaming.
  *
  * Copyright © 2007-2009 Collabora Ltd. <http://www.collabora.co.uk/>
