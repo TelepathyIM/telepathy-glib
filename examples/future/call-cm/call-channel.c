@@ -1209,12 +1209,14 @@ accept_incoming_call (ExampleCallChannel *self)
   while (g_hash_table_iter_next (&iter, &k, NULL))
     {
       ExampleCallStream *stream = example_call_content_get_stream (k);
+      guint disposition;
 
-      /* FIXME: this isn't quite right for Call, where we should look for
-       * streams where we are Pending_Send in Initial contents, and change them
-       * to Sending */
+      g_object_get (k,
+          "disposition", &disposition,
+          NULL);
 
-      if (stream == NULL)
+      if (stream == NULL ||
+          disposition != FUTURE_CALL_CONTENT_DISPOSITION_INITIAL)
         continue;
 
       /* we accept the proposed stream direction */
