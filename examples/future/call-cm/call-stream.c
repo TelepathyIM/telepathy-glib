@@ -138,6 +138,17 @@ constructed (GObject *object)
   self->priv->call_terminated_id = g_signal_connect (self->priv->channel,
       "call-terminated", G_CALLBACK (call_terminated_cb), self);
 
+  if (self->priv->locally_requested)
+    {
+      example_call_stream_change_direction (self,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
+    }
+  else
+    {
+      example_call_stream_receive_direction_request (self,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+    }
+
   if (self->priv->handle != 0)
     {
       TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
@@ -263,18 +274,6 @@ set_property (GObject *object,
 
     case PROP_LOCALLY_REQUESTED:
       self->priv->locally_requested = g_value_get_boolean (value);
-
-      if (self->priv->locally_requested)
-        {
-          example_call_stream_change_direction (self,
-              TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
-        }
-      else
-        {
-          example_call_stream_receive_direction_request (self,
-              TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
-        }
-
       break;
 
     default:
