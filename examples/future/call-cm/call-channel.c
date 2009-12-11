@@ -120,7 +120,7 @@ struct _ExampleCallChannelPrivate
 
   guint next_stream_id;
 
-  /* guint StreamedMedia stream ID => ExampleCallContent */
+  /* referenced ExampleCallContent => itself */
   GHashTable *contents;
 
   guint hold_state;
@@ -214,7 +214,7 @@ example_call_channel_init (ExampleCallChannel *self)
 
   self->priv->next_stream_id = 1;
   self->priv->contents = g_hash_table_new_full (g_direct_hash,
-      g_direct_equal, NULL, g_object_unref);
+      g_direct_equal, g_object_unref, NULL);
 
   self->priv->call_state = FUTURE_CALL_STATE_UNKNOWN; /* set in constructed */
   self->priv->call_flags = 0;
@@ -417,15 +417,15 @@ get_property (GObject *object,
           GPtrArray *paths = g_ptr_array_sized_new (g_hash_table_size (
                 self->priv->contents));
           GHashTableIter iter;
-          gpointer v;
+          gpointer k;
 
           g_hash_table_iter_init (&iter, self->priv->contents);
 
-          while (g_hash_table_iter_next (&iter, NULL, &v))
+          while (g_hash_table_iter_next (&iter, &k, NULL))
             {
               gchar *path;
 
-              g_object_get (v,
+              g_object_get (k,
                   "object-path", &path,
                   NULL);
 
@@ -948,14 +948,6 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
 }
 #endif
 
-static gboolean
-value_is (gpointer key G_GNUC_UNUSED,
-    gpointer value,
-    gpointer user_data)
-{
-  return value == user_data;
-}
-
 static void
 stream_removed_cb (ExampleCallContent *content,
     const gchar *stream_path G_GNUC_UNUSED,
@@ -970,8 +962,7 @@ stream_removed_cb (ExampleCallContent *content,
       "object-path", &path,
       NULL);
 
-  /* FIXME: make this not be O(n) by using a more sensible hash table */
-  g_hash_table_foreach_remove (self->priv->contents, value_is, content);
+  g_hash_table_remove (self->priv->contents, content);
 
   future_svc_channel_type_call_emit_content_removed (self, path);
   g_free (path);
@@ -1010,7 +1001,7 @@ simulate_contact_answered_cb (gpointer p)
 {
   ExampleCallChannel *self = p;
   GHashTableIter iter;
-  gpointer v;
+  gpointer k;
   TpHandleRepoIface *contact_repo;
   const gchar *peer;
 
@@ -1032,9 +1023,9 @@ simulate_contact_answered_cb (gpointer p)
 
   g_hash_table_iter_init (&iter, self->priv->contents);
 
-  while (g_hash_table_iter_next (&iter, NULL, &v))
+  while (g_hash_table_iter_next (&iter, &k, NULL))
     {
-      ExampleCallStream *stream = example_call_content_get_stream (v);
+      ExampleCallStream *stream = example_call_content_get_stream (k);
 
       if (stream == NULL)
         continue;
@@ -1117,8 +1108,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
       "object-path", path,
       NULL);
 
-  g_hash_table_insert (self->priv->contents,
-      GUINT_TO_POINTER (id), content);
+  g_hash_table_insert (self->priv->contents, content, content);
   future_svc_channel_type_call_emit_content_added (self, path, media_type);
   g_free (path);
   g_free (name);
@@ -1193,7 +1183,7 @@ accept_incoming_call (ExampleCallChannel *self)
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   GHashTableIter iter;
-  gpointer v;
+  gpointer k;
 
   g_assert (self->priv->call_state == FUTURE_CALL_STATE_PENDING_RECEIVER);
 
@@ -1208,9 +1198,9 @@ accept_incoming_call (ExampleCallChannel *self)
 
   g_hash_table_iter_init (&iter, self->priv->contents);
 
-  while (g_hash_table_iter_next (&iter, NULL, &v))
+  while (g_hash_table_iter_next (&iter, &k, NULL))
     {
-      ExampleCallStream *stream = example_call_content_get_stream (v);
+      ExampleCallStream *stream = example_call_content_get_stream (k);
 
       /* FIXME: this isn't quite right for Call, where we should look for
        * streams where we are Pending_Send in Initial contents, and change them
