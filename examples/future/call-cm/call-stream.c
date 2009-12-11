@@ -230,6 +230,34 @@ get_property (GObject *object,
       g_value_set_boolean (value, self->priv->locally_requested);
       break;
 
+    case PROP_SENDERS:
+        {
+          GHashTable *senders = g_hash_table_new (NULL, NULL);
+          FutureSendingState local_sending_state = FUTURE_SENDING_STATE_NONE;
+          FutureSendingState remote_sending_state = FUTURE_SENDING_STATE_NONE;
+
+          if (self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND)
+            local_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
+          else if (self->priv->direction & TP_MEDIA_STREAM_DIRECTION_SEND)
+            local_sending_state = FUTURE_SENDING_STATE_SENDING;
+
+          if (self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND)
+            remote_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
+          else if (self->priv->direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
+            remote_sending_state = FUTURE_SENDING_STATE_SENDING;
+
+          g_hash_table_insert (senders, GUINT_TO_POINTER (self->priv->handle),
+              GUINT_TO_POINTER (remote_sending_state));
+
+          g_hash_table_insert (senders,
+              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
+                  self->priv->conn)),
+              GUINT_TO_POINTER (local_sending_state));
+
+          g_value_take_boxed (value, senders);
+        }
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -335,20 +363,16 @@ finalize (GObject *object)
 static void
 example_call_stream_class_init (ExampleCallStreamClass *klass)
 {
-  /*
   static TpDBusPropertiesMixinPropImpl stream_props[] = {
       { "Senders", "senders", NULL },
       { NULL }
   };
-  */
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      /*
       { FUTURE_IFACE_CALL_STREAM,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         stream_props,
       },
-      */
       { NULL }
   };
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -431,6 +455,12 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOCALLY_REQUESTED,
       param_spec);
+
+  param_spec = g_param_spec_boxed ("senders", "Senders",
+      "Map from contact handles to their sending states",
+      FUTURE_HASH_TYPE_CONTACT_SENDING_STATE_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SENDERS, param_spec);
 
   signals[SIGNAL_REMOVED] = g_signal_new ("removed",
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
