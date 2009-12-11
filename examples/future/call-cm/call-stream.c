@@ -64,8 +64,8 @@ struct _ExampleCallStreamPrivate
   ExampleCallChannel *channel;
   guint id;
   TpHandle handle;
-  TpMediaStreamDirection direction;
-  TpMediaStreamPendingSend pending_send;
+  FutureSendingState local_sending_state;
+  FutureSendingState remote_sending_state;
 
   guint simulation_delay;
 
@@ -85,8 +85,8 @@ example_call_stream_init (ExampleCallStream *self)
       ExampleCallStreamPrivate);
 
   /* start off directionless */
-  self->priv->direction = TP_MEDIA_STREAM_DIRECTION_NONE;
-  self->priv->pending_send = 0;
+  self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
+  self->priv->remote_sending_state = FUTURE_SENDING_STATE_NONE;
 }
 
 static void
@@ -185,26 +185,14 @@ get_property (GObject *object,
     case PROP_SENDERS:
         {
           GHashTable *senders = g_hash_table_new (NULL, NULL);
-          FutureSendingState local_sending_state = FUTURE_SENDING_STATE_NONE;
-          FutureSendingState remote_sending_state = FUTURE_SENDING_STATE_NONE;
-
-          if (self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND)
-            local_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
-          else if (self->priv->direction & TP_MEDIA_STREAM_DIRECTION_SEND)
-            local_sending_state = FUTURE_SENDING_STATE_SENDING;
-
-          if (self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND)
-            remote_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
-          else if (self->priv->direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
-            remote_sending_state = FUTURE_SENDING_STATE_SENDING;
 
           g_hash_table_insert (senders, GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (remote_sending_state));
+              GUINT_TO_POINTER (self->priv->remote_sending_state));
 
           g_hash_table_insert (senders,
               GUINT_TO_POINTER (tp_base_connection_get_self_handle (
                   self->priv->conn)),
-              GUINT_TO_POINTER (local_sending_state));
+              GUINT_TO_POINTER (self->priv->local_sending_state));
 
           g_value_take_boxed (value, senders);
         }
@@ -417,14 +405,13 @@ example_call_stream_accept_proposed_direction (ExampleCallStream *self)
   GArray *removed_senders;
 
   if (self->priv->removed ||
-      !(self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND))
+      self->priv->local_sending_state != FUTURE_SENDING_STATE_PENDING_SEND)
     return;
 
   g_message ("SIGNALLING: send: OK, I'll send you media on stream %u",
       self->priv->id);
 
-  self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
-  self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
+  self->priv->local_sending_state = FUTURE_SENDING_STATE_SENDING;
 
   updated_senders = g_hash_table_new (NULL, NULL);
   removed_senders = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
@@ -444,14 +431,13 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
   GArray *removed_senders;
 
   if (self->priv->removed ||
-      !(self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND))
+      self->priv->remote_sending_state != FUTURE_SENDING_STATE_PENDING_SEND)
     return;
 
   g_message ("SIGNALLING: receive: OK, I'll send you media on stream %u",
       self->priv->id);
 
-  self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
-  self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
+  self->priv->remote_sending_state = FUTURE_SENDING_STATE_SENDING;
 
   updated_senders = g_hash_table_new (NULL, NULL);
   removed_senders = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
@@ -475,25 +461,18 @@ example_call_stream_change_direction (ExampleCallStream *self,
     TpMediaStreamDirection direction,
     GError **error)
 {
-  gboolean sending =
-    ((self->priv->direction & TP_MEDIA_STREAM_DIRECTION_SEND) != 0);
-  gboolean receiving =
-    ((self->priv->direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE) != 0);
   gboolean want_to_send =
     ((direction & TP_MEDIA_STREAM_DIRECTION_SEND) != 0);
   gboolean want_to_receive =
     ((direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE) != 0);
-  gboolean pending_remote_send =
-    ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND) != 0);
-  gboolean pending_local_send =
-    ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND) != 0);
   GHashTable *updated_senders = g_hash_table_new (NULL, NULL);
 
   if (want_to_send)
     {
-      if (!sending)
+      if (self->priv->local_sending_state != FUTURE_SENDING_STATE_SENDING)
         {
-          if (pending_local_send)
+          if (self->priv->local_sending_state ==
+              FUTURE_SENDING_STATE_PENDING_SEND)
             {
               g_message ("SIGNALLING: send: I will now send you media on "
                   "stream %u", self->priv->id);
@@ -501,7 +480,7 @@ example_call_stream_change_direction (ExampleCallStream *self,
 
           g_message ("MEDIA: Sending media to peer for stream %u",
               self->priv->id);
-          self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
+          self->priv->local_sending_state = FUTURE_SENDING_STATE_SENDING;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (tp_base_connection_get_self_handle (
@@ -511,24 +490,25 @@ example_call_stream_change_direction (ExampleCallStream *self,
     }
   else
     {
-      if (sending)
+      if (self->priv->local_sending_state == FUTURE_SENDING_STATE_SENDING)
         {
           g_message ("SIGNALLING: send: I will no longer send you media on "
               "stream %u", self->priv->id);
           g_message ("MEDIA: No longer sending media to peer for stream %u",
               self->priv->id);
-          self->priv->direction &= ~TP_MEDIA_STREAM_DIRECTION_SEND;
+          self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (tp_base_connection_get_self_handle (
                   self->priv->conn)),
               GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
-      else if (pending_local_send)
+      else if (self->priv->local_sending_state ==
+          FUTURE_SENDING_STATE_PENDING_SEND)
         {
           g_message ("SIGNALLING: send: No, I refuse to send you media on "
               "stream %u", self->priv->id);
-          self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
+          self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (tp_base_connection_get_self_handle (
@@ -539,11 +519,11 @@ example_call_stream_change_direction (ExampleCallStream *self,
 
   if (want_to_receive)
     {
-      if (!receiving && !pending_remote_send)
+      if (self->priv->remote_sending_state == FUTURE_SENDING_STATE_NONE)
         {
           g_message ("SIGNALLING: send: Please start sending me stream %u",
               self->priv->id);
-          self->priv->pending_send |= TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
+          self->priv->remote_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
           g_timeout_add_full (G_PRIORITY_DEFAULT, self->priv->simulation_delay,
               simulate_contact_agreed_to_send_cb, g_object_ref (self),
               g_object_unref);
@@ -555,13 +535,13 @@ example_call_stream_change_direction (ExampleCallStream *self,
     }
   else
     {
-      if (receiving)
+      if (self->priv->remote_sending_state != FUTURE_SENDING_STATE_NONE)
         {
           g_message ("SIGNALLING: send: Please stop sending me stream %u",
               self->priv->id);
           g_message ("MEDIA: Suppressing output of stream %u",
               self->priv->id);
-          self->priv->direction &= ~TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+          self->priv->remote_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (self->priv->handle),
@@ -591,18 +571,10 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
 {
   /* The remote user wants to change the direction of this stream to
    * @direction. Shall we let him? */
-  gboolean sending =
-    ((self->priv->direction & TP_MEDIA_STREAM_DIRECTION_SEND) != 0);
-  gboolean receiving =
-    ((self->priv->direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE) != 0);
   gboolean send_requested =
     ((direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE) != 0);
   gboolean receive_requested =
     ((direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE) != 0);
-  gboolean pending_remote_send =
-    ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_REMOTE_SEND) != 0);
-  gboolean pending_local_send =
-    ((self->priv->pending_send & TP_MEDIA_STREAM_PENDING_LOCAL_SEND) != 0);
   GHashTable *updated_senders = g_hash_table_new (NULL, NULL);
 
   /* In some protocols, streams cannot be neither sending nor receiving, so
@@ -618,10 +590,10 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
       g_message ("SIGNALLING: receive: Please start sending me stream %u",
           self->priv->id);
 
-      if (!sending)
+      if (self->priv->local_sending_state == FUTURE_SENDING_STATE_NONE)
         {
           /* ask the user for permission */
-          self->priv->pending_send |= TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
+          self->priv->local_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (tp_base_connection_get_self_handle (
@@ -630,7 +602,8 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
         }
       else
         {
-          /* nothing to do, we're already sending on that stream */
+          /* nothing to do, we're already sending (or asking the user for
+           * permission to do so) on that stream */
         }
     }
   else
@@ -640,20 +613,21 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
       g_message ("SIGNALLING: send: OK, not sending stream %u",
           self->priv->id);
 
-      if (sending)
+      if (self->priv->local_sending_state == FUTURE_SENDING_STATE_SENDING)
         {
           g_message ("MEDIA: No longer sending media to peer for stream %u",
               self->priv->id);
-          self->priv->direction &= ~TP_MEDIA_STREAM_DIRECTION_SEND;
+          self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (tp_base_connection_get_self_handle (
                   self->priv->conn)),
               GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
-      else if (pending_local_send)
+      else if (self->priv->local_sending_state ==
+          FUTURE_SENDING_STATE_PENDING_SEND)
         {
-          self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_LOCAL_SEND;
+          self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (tp_base_connection_get_self_handle (
@@ -671,10 +645,9 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
       g_message ("SIGNALLING: receive: I will now send you media on stream %u",
           self->priv->id);
 
-      if (!receiving)
+      if (self->priv->remote_sending_state != FUTURE_SENDING_STATE_SENDING)
         {
-          self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
-          self->priv->direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+          self->priv->remote_sending_state = FUTURE_SENDING_STATE_SENDING;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (self->priv->handle),
@@ -683,21 +656,23 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
     }
   else
     {
-      if (pending_remote_send)
+      if (self->priv->remote_sending_state ==
+          FUTURE_SENDING_STATE_PENDING_SEND)
         {
           g_message ("SIGNALLING: receive: No, I refuse to send you media on "
               "stream %u", self->priv->id);
-          self->priv->pending_send &= ~TP_MEDIA_STREAM_PENDING_REMOTE_SEND;
+          self->priv->remote_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (self->priv->handle),
               GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
         }
-      else if (receiving)
+      else if (self->priv->remote_sending_state ==
+          FUTURE_SENDING_STATE_SENDING)
         {
           g_message ("SIGNALLING: receive: I will no longer send you media on "
               "stream %u", self->priv->id);
-          self->priv->direction &= ~TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+          self->priv->remote_sending_state = FUTURE_SENDING_STATE_NONE;
 
           g_hash_table_insert (updated_senders,
               GUINT_TO_POINTER (self->priv->handle),
@@ -721,20 +696,17 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
 
 static void
 stream_set_sending (FutureSvcCallStream *iface G_GNUC_UNUSED,
-    gboolean sending G_GNUC_UNUSED,
+    gboolean sending,
     DBusGMethodInvocation *context)
 {
   ExampleCallStream *self = EXAMPLE_CALL_STREAM (iface);
-  TpMediaStreamDirection new_direction = self->priv->direction;
+  TpMediaStreamDirection new_direction = TP_MEDIA_STREAM_DIRECTION_NONE;
+
+  if (self->priv->remote_sending_state == FUTURE_SENDING_STATE_SENDING)
+    new_direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
 
   if (sending)
-    {
-      new_direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
-    }
-  else
-    {
-      new_direction &= ~TP_MEDIA_STREAM_DIRECTION_SEND;
-    }
+    new_direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
 
   /* this always returns TRUE in practice */
   example_call_stream_change_direction (self, new_direction, NULL);
@@ -751,8 +723,14 @@ stream_request_receiving (FutureSvcCallStream *iface,
   ExampleCallStream *self = EXAMPLE_CALL_STREAM (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpMediaStreamDirection new_direction = self->priv->direction;
+  TpMediaStreamDirection new_direction = TP_MEDIA_STREAM_DIRECTION_NONE;
   GError *error = NULL;
+
+  if (self->priv->local_sending_state == FUTURE_SENDING_STATE_SENDING)
+    new_direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
+
+  if (receive)
+    new_direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
 
   if (!tp_handle_is_valid (contact_repo, contact, &error))
     {
@@ -765,15 +743,6 @@ stream_request_receiving (FutureSvcCallStream *iface,
           "Can't receive from contact #%u: this stream only contains #%u",
           contact, self->priv->handle);
       goto finally;
-    }
-
-  if (receive)
-    {
-      new_direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
-    }
-  else
-    {
-      new_direction &= ~TP_MEDIA_STREAM_DIRECTION_RECEIVE;
     }
 
   /* this always returns TRUE in practice */
