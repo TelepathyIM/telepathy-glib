@@ -67,8 +67,6 @@ struct _ExampleCallStreamPrivate
 
   guint simulation_delay;
 
-  gulong call_terminated_id;
-
   guint connected_event_id;
 
   gboolean locally_requested;
@@ -85,15 +83,6 @@ example_call_stream_init (ExampleCallStream *self)
   /* start off directionless */
   self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
   self->priv->remote_sending_state = FUTURE_SENDING_STATE_NONE;
-}
-
-static void
-call_terminated_cb (ExampleCallChannel *channel,
-    ExampleCallStream *self)
-{
-  g_signal_handler_disconnect (channel, self->priv->call_terminated_id);
-  self->priv->call_terminated_id = 0;
-  example_call_stream_close (self);
 }
 
 static void example_call_stream_receive_direction_request (
@@ -128,8 +117,6 @@ constructed (GObject *object)
   g_object_get (self->priv->channel,
       "connection", &self->priv->conn,
       NULL);
-  self->priv->call_terminated_id = g_signal_connect (self->priv->channel,
-      "call-terminated", G_CALLBACK (call_terminated_cb), self);
 
   if (self->priv->locally_requested)
     {
@@ -256,13 +243,6 @@ dispose (GObject *object)
 
   if (self->priv->channel != NULL)
     {
-      if (self->priv->call_terminated_id != 0)
-        {
-          g_signal_handler_disconnect (self->priv->channel,
-              self->priv->call_terminated_id);
-          self->priv->call_terminated_id = 0;
-        }
-
       g_object_unref (self->priv->channel);
       self->priv->channel = NULL;
     }

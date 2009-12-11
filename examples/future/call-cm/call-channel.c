@@ -96,14 +96,6 @@ enum
   N_PROPS
 };
 
-enum
-{
-  SIGNAL_CALL_TERMINATED,
-  N_SIGNALS
-};
-
-static guint signals[N_SIGNALS] = { 0 };
-
 struct _ExampleCallChannelPrivate
 {
   TpBaseConnection *conn;
@@ -555,6 +547,8 @@ example_call_channel_terminate (ExampleCallChannel *self,
 {
   if (self->priv->call_state != FUTURE_CALL_STATE_ENDED)
     {
+      GList *keys;
+
       example_call_channel_set_state (self,
           FUTURE_CALL_STATE_ENDED, 0, actor,
           call_reason, error_name,
@@ -583,7 +577,21 @@ example_call_channel_terminate (ExampleCallChannel *self,
           g_message ("SIGNALLING: send: Terminating call: %s", send_reason);
         }
 
-      g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
+      /* terminate all streams: to avoid modifying the hash table (in the
+       * stream-removed handler) while iterating over it, we have to copy the
+       * keys and iterate over those */
+      keys = g_hash_table_get_keys (self->priv->contents);
+      g_list_foreach (keys, (GFunc) g_object_ref, NULL);
+
+      for (; keys != NULL; keys = g_list_delete_link (keys, keys))
+        {
+          ExampleCallStream *stream = example_call_content_get_stream (keys->data);
+
+          if (stream != NULL)
+            example_call_stream_close (stream);
+
+          g_object_unref (keys->data);
+        }
     }
 }
 
@@ -832,11 +840,6 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MUTABLE_CONTENTS,
       param_spec);
-
-  signals[SIGNAL_CALL_TERMINATED] = g_signal_new ("call-terminated",
-      G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
