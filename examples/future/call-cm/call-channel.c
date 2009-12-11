@@ -50,7 +50,6 @@
 #include "call-content.h"
 #include "call-stream.h"
 
-static void media_iface_init (gpointer iface, gpointer data);
 static void call_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 static void hold_iface_init (gpointer iface, gpointer data);
@@ -61,8 +60,7 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_STREAMED_MEDIA,
-      media_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_STREAMED_MEDIA, NULL);
     G_IMPLEMENT_INTERFACE (FUTURE_TYPE_SVC_CHANNEL_TYPE_CALL,
       call_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
@@ -953,65 +951,6 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
 #endif
 
 static void
-media_request_stream_direction (TpSvcChannelTypeStreamedMedia *iface,
-    guint stream_id,
-    guint stream_direction,
-    DBusGMethodInvocation *context)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-  ExampleCallContent *content = g_hash_table_lookup (
-      self->priv->contents, GUINT_TO_POINTER (stream_id));
-  ExampleCallStream *stream;
-  GError *error = NULL;
-
-  if (content == NULL)
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "No content with ID %u in this channel", stream_id);
-      goto error;
-    }
-
-  if (stream_direction > TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL)
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Stream direction %u is not valid", stream_direction);
-      goto error;
-    }
-
-  stream = example_call_content_get_stream (content);
-
-  /* In some protocols, streams cannot be neither sending nor receiving, so
-   * if a stream is set to TP_MEDIA_STREAM_DIRECTION_NONE, this is equivalent
-   * to removing it with RemoveStreams. (This is true in XMPP, for instance.)
-   *
-   * If this was the case, there would be code like this here:
-   *
-   * if (stream_direction == TP_MEDIA_STREAM_DIRECTION_NONE)
-   *   {
-   *     example_call_stream_close (stream);
-   *     tp_svc_channel_type_streamed_media_return_from_request_stream_direction (
-   *        context);
-   *     return;
-   *   }
-   *
-   * However, for this example we'll emulate a protocol where streams can be
-   * directionless.
-   */
-
-  if (stream != NULL && !example_call_stream_change_direction (stream,
-        stream_direction, &error))
-    goto error;
-
-  tp_svc_channel_type_streamed_media_return_from_request_stream_direction (
-      context);
-  return;
-
-error:
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-}
-
-static void
 stream_removed_cb (ExampleCallStream *stream,
     ExampleCallChannel *self)
 {
@@ -1310,18 +1249,6 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
           simulate_contact_answered_cb, g_object_ref (self),
           g_object_unref);
     }
-}
-
-static void
-media_iface_init (gpointer iface,
-    gpointer data)
-{
-  TpSvcChannelTypeStreamedMediaClass *klass = iface;
-
-#define IMPLEMENT(x) \
-  tp_svc_channel_type_streamed_media_implement_##x (klass, media_##x)
-  IMPLEMENT (request_stream_direction);
-#undef IMPLEMENT
 }
 
 static void
