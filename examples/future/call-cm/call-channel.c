@@ -1179,10 +1179,43 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 }
 
 static void
-call_ringing (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
+call_ringing (FutureSvcChannelTypeCall *iface,
     DBusGMethodInvocation *context)
 {
-  tp_dbus_g_method_return_not_implemented (context);
+  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
+  GError *error = NULL;
+
+  if (self->priv->locally_requested)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Ringing() makes no sense on an outgoing call");
+      goto finally;
+    }
+
+  if (self->priv->call_state != FUTURE_CALL_STATE_PENDING_RECEIVER)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Ringing() makes no sense now that we're not pending receiver");
+      goto finally;
+    }
+
+  g_message ("SIGNALLING: send: ring, ring!");
+
+  example_call_channel_set_state (self, FUTURE_CALL_STATE_PENDING_RECEIVER,
+      self->priv->call_flags | FUTURE_CALL_FLAG_LOCALLY_RINGING,
+      tp_base_connection_get_self_handle (self->priv->conn),
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
+
+finally:
+  if (error == NULL)
+    {
+      future_svc_channel_type_call_return_from_ringing (context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+    }
 }
 
 static void
