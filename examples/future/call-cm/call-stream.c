@@ -98,6 +98,11 @@ call_terminated_cb (ExampleCallChannel *channel,
   example_call_stream_close (self);
 }
 
+static void example_call_stream_receive_direction_request (
+    ExampleCallStream *self, gboolean local_send, gboolean remote_send);
+static void example_call_stream_change_direction (ExampleCallStream *self,
+    gboolean want_to_send, gboolean want_to_receive);
+
 static void
 constructed (GObject *object)
 {
@@ -130,13 +135,11 @@ constructed (GObject *object)
 
   if (self->priv->locally_requested)
     {
-      example_call_stream_change_direction (self,
-          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL, NULL);
+      example_call_stream_change_direction (self, TRUE, TRUE);
     }
   else
     {
-      example_call_stream_receive_direction_request (self,
-          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
+      example_call_stream_receive_direction_request (self, TRUE, TRUE);
     }
 
   if (self->priv->handle != 0)
@@ -456,15 +459,10 @@ simulate_contact_agreed_to_send_cb (gpointer p)
   return FALSE;
 }
 
-gboolean
+static void
 example_call_stream_change_direction (ExampleCallStream *self,
-    TpMediaStreamDirection direction,
-    GError **error)
+    gboolean want_to_send, gboolean want_to_receive)
 {
-  gboolean want_to_send =
-    ((direction & TP_MEDIA_STREAM_DIRECTION_SEND) != 0);
-  gboolean want_to_receive =
-    ((direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE) != 0);
   GHashTable *updated_senders = g_hash_table_new (NULL, NULL);
 
   if (want_to_send)
@@ -561,20 +559,15 @@ example_call_stream_change_direction (ExampleCallStream *self,
     }
 
   g_hash_table_unref (updated_senders);
-
-  return TRUE;
 }
 
-void
+/* The remote user wants to change the direction of this stream according
+ * to @local_send and @remote_send. Shall we let him? */
+static void
 example_call_stream_receive_direction_request (ExampleCallStream *self,
-    TpMediaStreamDirection direction)
+    gboolean local_send,
+    gboolean remote_send)
 {
-  /* The remote user wants to change the direction of this stream to
-   * @direction. Shall we let him? */
-  gboolean send_requested =
-    ((direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE) != 0);
-  gboolean receive_requested =
-    ((direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE) != 0);
   GHashTable *updated_senders = g_hash_table_new (NULL, NULL);
 
   /* In some protocols, streams cannot be neither sending nor receiving, so
@@ -585,7 +578,7 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
    * directionless.
    */
 
-  if (send_requested)
+  if (local_send)
     {
       g_message ("SIGNALLING: receive: Please start sending me stream %u",
           self->priv->id);
@@ -640,7 +633,7 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
         }
     }
 
-  if (receive_requested)
+  if (remote_send)
     {
       g_message ("SIGNALLING: receive: I will now send you media on stream %u",
           self->priv->id);
@@ -700,16 +693,9 @@ stream_set_sending (FutureSvcCallStream *iface G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
   ExampleCallStream *self = EXAMPLE_CALL_STREAM (iface);
-  TpMediaStreamDirection new_direction = TP_MEDIA_STREAM_DIRECTION_NONE;
 
-  if (self->priv->remote_sending_state == FUTURE_SENDING_STATE_SENDING)
-    new_direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
-
-  if (sending)
-    new_direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
-
-  /* this always returns TRUE in practice */
-  example_call_stream_change_direction (self, new_direction, NULL);
+  example_call_stream_change_direction (self, sending,
+      (self->priv->remote_sending_state == FUTURE_SENDING_STATE_SENDING));
 
   future_svc_call_stream_return_from_set_sending (context);
 }
@@ -723,14 +709,7 @@ stream_request_receiving (FutureSvcCallStream *iface,
   ExampleCallStream *self = EXAMPLE_CALL_STREAM (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpMediaStreamDirection new_direction = TP_MEDIA_STREAM_DIRECTION_NONE;
   GError *error = NULL;
-
-  if (self->priv->local_sending_state == FUTURE_SENDING_STATE_SENDING)
-    new_direction |= TP_MEDIA_STREAM_DIRECTION_SEND;
-
-  if (receive)
-    new_direction |= TP_MEDIA_STREAM_DIRECTION_RECEIVE;
 
   if (!tp_handle_is_valid (contact_repo, contact, &error))
     {
@@ -745,8 +724,9 @@ stream_request_receiving (FutureSvcCallStream *iface,
       goto finally;
     }
 
-  /* this always returns TRUE in practice */
-  example_call_stream_change_direction (self, new_direction, NULL);
+  example_call_stream_change_direction (self,
+      (self->priv->local_sending_state == FUTURE_SENDING_STATE_SENDING),
+      receive);
 
 finally:
   if (error == NULL)

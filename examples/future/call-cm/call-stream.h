@@ -69,8 +69,6 @@ struct _ExampleCallStream {
 };
 
 void example_call_stream_close (ExampleCallStream *self);
-gboolean example_call_stream_change_direction (ExampleCallStream *self,
-    TpMediaStreamDirection direction, GError **error);
 void example_call_stream_accept_proposed_direction (ExampleCallStream *self);
 void example_call_stream_connect (ExampleCallStream *self);
 
@@ -78,9 +76,6 @@ void example_call_stream_connect (ExampleCallStream *self);
  * a real connection manager */
 void example_call_stream_simulate_contact_agreed_to_send (
     ExampleCallStream *self);
-
-void example_call_stream_receive_direction_request (ExampleCallStream *self,
-    TpMediaStreamDirection direction);
 
 G_END_DECLS
 
