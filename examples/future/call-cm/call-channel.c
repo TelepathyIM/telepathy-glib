@@ -224,7 +224,7 @@ example_call_channel_init (ExampleCallChannel *self)
 
 static ExampleCallContent *example_call_channel_add_content (
     ExampleCallChannel *self, TpMediaStreamType media_type,
-    gboolean locally_requested);
+    gboolean locally_requested, gboolean initial);
 
 static void example_call_channel_initiate_outgoing (ExampleCallChannel *self);
 
@@ -280,14 +280,14 @@ constructed (GObject *object)
         {
           g_message ("Channel initially has an audio stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_AUDIO, TRUE);
+              TP_MEDIA_STREAM_TYPE_AUDIO, TRUE, TRUE);
         }
 
       if (self->priv->initial_video)
         {
           g_message ("Channel initially has a video stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_VIDEO, TRUE);
+              TP_MEDIA_STREAM_TYPE_VIDEO, TRUE, TRUE);
         }
     }
   else
@@ -299,14 +299,14 @@ constructed (GObject *object)
         {
           g_message ("Channel initially has an audio stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_AUDIO, FALSE);
+              TP_MEDIA_STREAM_TYPE_AUDIO, FALSE, TRUE);
         }
 
       if (self->priv->initial_video)
         {
           g_message ("Channel initially has a video stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_VIDEO, FALSE);
+              TP_MEDIA_STREAM_TYPE_VIDEO, FALSE, TRUE);
         }
     }
 }
@@ -1081,7 +1081,8 @@ simulate_contact_busy_cb (gpointer p)
 static ExampleCallContent *
 example_call_channel_add_content (ExampleCallChannel *self,
     TpMediaStreamType media_type,
-    gboolean locally_requested)
+    gboolean locally_requested,
+    gboolean initial)
 {
   ExampleCallContent *content;
   ExampleCallStream *stream;
@@ -1090,24 +1091,28 @@ example_call_channel_add_content (ExampleCallChannel *self,
   TpHandle creator;
   gchar *name;
   gchar *path;
+  FutureCallContentDisposition disposition =
+    FUTURE_CALL_CONTENT_DISPOSITION_NONE;
 
   type_str = (media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
   creator = self->priv->handle;
   name = g_strdup_printf ("%s%u", type_str, id);
+
+  if (initial)
+    disposition = FUTURE_CALL_CONTENT_DISPOSITION_INITIAL;
 
   if (locally_requested)
     {
       g_message ("SIGNALLING: send: new %s stream %s", type_str, name);
       creator = self->priv->conn->self_handle;
     }
-
   path = g_strdup_printf ("%s/Content%u", self->priv->object_path, id);
   content = g_object_new (EXAMPLE_TYPE_CALL_CONTENT,
       "connection", self->priv->conn,
       "creator", creator,
       "type", media_type,
       "name", name,
-      "disposition", FUTURE_CALL_CONTENT_DISPOSITION_NONE,
+      "disposition", disposition,
       "object-path", path,
       NULL);
 
@@ -1322,7 +1327,7 @@ call_add_content (FutureSvcChannelTypeCall *iface,
 
   /* FIXME: content_name ignored for now */
 
-  content = example_call_channel_add_content (self, content_type, TRUE);
+  content = example_call_channel_add_content (self, content_type, TRUE, FALSE);
   g_object_get (content,
       "object-path", &content_path,
       NULL);

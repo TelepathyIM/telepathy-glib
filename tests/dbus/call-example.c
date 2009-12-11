@@ -563,7 +563,7 @@ test_basics (Test *test,
   test_assert_no_error (test->error);
   assert_content_properties (test->get_all_return,
       TP_MEDIA_STREAM_TYPE_AUDIO, test->self_handle,
-      FUTURE_CALL_CONTENT_DISPOSITION_NONE);
+      FUTURE_CALL_CONTENT_DISPOSITION_INITIAL);
 
   stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
           TP_ARRAY_TYPE_OBJECT_PATH_LIST);
