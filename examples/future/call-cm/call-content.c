@@ -326,6 +326,26 @@ example_call_content_get_stream (ExampleCallContent *self)
   return self->priv->stream;
 }
 
+static void
+example_call_content_stream_removed_cb (ExampleCallContent *self,
+    ExampleCallStream *stream)
+{
+  gchar *path;
+
+  g_return_if_fail (EXAMPLE_IS_CALL_CONTENT (self));
+  g_return_if_fail (EXAMPLE_IS_CALL_STREAM (stream));
+  g_return_if_fail (self->priv->stream == stream);
+
+  g_object_get (stream,
+      "object-path", &path,
+      NULL);
+  future_svc_call_content_emit_stream_removed (self, path);
+  g_free (path);
+
+  g_object_unref (self->priv->stream);
+  self->priv->stream = NULL;
+}
+
 void
 example_call_content_add_stream (ExampleCallContent *self,
     ExampleCallStream *stream)
@@ -342,4 +362,8 @@ example_call_content_add_stream (ExampleCallContent *self,
       NULL);
   future_svc_call_content_emit_stream_added (self, path);
   g_free (path);
+
+  tp_g_signal_connect_object (stream, "removed",
+      G_CALLBACK (example_call_content_stream_removed_cb), self,
+      G_CONNECT_SWAPPED);
 }
