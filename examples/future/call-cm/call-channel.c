@@ -1483,6 +1483,12 @@ simulate_hold (gpointer p)
   g_message ("SIGNALLING: hold state changed to held");
   tp_svc_channel_interface_hold_emit_hold_state_changed (self,
       self->priv->hold_state, self->priv->hold_state_reason);
+
+  example_call_channel_set_state (self, self->priv->call_state,
+      self->priv->call_flags | FUTURE_CALL_FLAG_LOCALLY_HELD,
+      tp_base_connection_get_self_handle (self->priv->conn),
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
+
   return FALSE;
 }
 
@@ -1495,6 +1501,12 @@ simulate_unhold (gpointer p)
   g_message ("SIGNALLING: hold state changed to unheld");
   tp_svc_channel_interface_hold_emit_hold_state_changed (self,
       self->priv->hold_state, self->priv->hold_state_reason);
+
+  example_call_channel_set_state (self, self->priv->call_state,
+      self->priv->call_flags & ~FUTURE_CALL_FLAG_LOCALLY_HELD,
+      tp_base_connection_get_self_handle (self->priv->conn),
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
+
   return FALSE;
 }
 
@@ -1581,6 +1593,8 @@ hold_request_hold (TpSvcChannelInterfaceHold *iface,
              (hold ? "hold" : "unhold"));
   tp_svc_channel_interface_hold_emit_hold_state_changed (iface,
     self->priv->hold_state, self->priv->hold_state_reason);
+  /* No need to change the call flags - we never change the actual hold state
+   * here, only the pending hold state */
 
   g_timeout_add_full (G_PRIORITY_DEFAULT,
       self->priv->simulation_delay,
