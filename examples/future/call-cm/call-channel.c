@@ -107,6 +107,7 @@ struct _ExampleCallChannelPrivate
   FutureCallFlags call_flags;
   GValueArray *call_state_reason;
   GHashTable *call_state_details;
+  FutureCallMemberFlags peer_flags;
 
   guint simulation_delay;
 
@@ -464,11 +465,9 @@ get_property (GObject *object,
         {
           GHashTable *uu_map = g_hash_table_new (NULL, NULL);
 
-          /* There is one contact, other than the self-handle.
-           *
-           * FIXME: stub: we should simulate the Ringing and Hold flags */
+          /* There is one contact, other than the self-handle. */
           g_hash_table_insert (uu_map, GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (0));
+              GUINT_TO_POINTER (self->priv->peer_flags));
           g_value_take_boxed (value, uu_map);
         }
       break;
@@ -1138,19 +1137,25 @@ example_call_channel_add_content (ExampleCallChannel *self,
   return content;
 }
 
-static void
-example_call_channel_initiate_outgoing (ExampleCallChannel *self)
+static gboolean
+simulate_contact_ringing_cb (gpointer p)
 {
+  ExampleCallChannel *self = p;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   const gchar *peer;
+  GHashTable *uu_map = g_hash_table_new (NULL, NULL);
+  GArray *empty_au = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
 
-  g_message ("SIGNALLING: send: new streamed media call");
-  example_call_channel_set_state (self,
-      FUTURE_CALL_STATE_PENDING_RECEIVER, 0,
-      tp_base_connection_get_self_handle (self->priv->conn),
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
-      NULL);
+  /* ring, ring! */
+  self->priv->peer_flags = FUTURE_CALL_MEMBER_FLAG_RINGING;
+  g_hash_table_insert (uu_map, GUINT_TO_POINTER (self->priv->handle),
+      GUINT_TO_POINTER (self->priv->peer_flags));
+  future_svc_channel_type_call_emit_call_members_changed (self,
+      uu_map, empty_au);
+  g_hash_table_unref (uu_map);
+  g_array_free (empty_au, TRUE);
+
 
   /* In this example there is no real contact, so just simulate them
    * answering after a short time - unless the contact's name
@@ -1176,6 +1181,25 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
           simulate_contact_answered_cb, g_object_ref (self),
           g_object_unref);
     }
+
+  return FALSE;
+}
+
+static void
+example_call_channel_initiate_outgoing (ExampleCallChannel *self)
+{
+  g_message ("SIGNALLING: send: new streamed media call");
+  example_call_channel_set_state (self,
+      FUTURE_CALL_STATE_PENDING_RECEIVER, 0,
+      tp_base_connection_get_self_handle (self->priv->conn),
+      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      NULL);
+
+  /* After a moment, we're sent an informational message saying it's ringing */
+  g_timeout_add_full (G_PRIORITY_DEFAULT,
+      self->priv->simulation_delay,
+      simulate_contact_ringing_cb, g_object_ref (self),
+      g_object_unref);
 }
 
 static void
