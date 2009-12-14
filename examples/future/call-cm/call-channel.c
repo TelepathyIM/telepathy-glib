@@ -547,11 +547,21 @@ example_call_channel_terminate (ExampleCallChannel *self,
   if (self->priv->call_state != FUTURE_CALL_STATE_ENDED)
     {
       GList *keys;
+      GHashTable *empty_uu_map = g_hash_table_new (NULL, NULL);
+      GArray *au = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
 
       example_call_channel_set_state (self,
           FUTURE_CALL_STATE_ENDED, 0, actor,
           call_reason, error_name,
           NULL);
+
+      /* FIXME: fd.o #24936 #c20: it's unclear in the spec whether we should
+       * remove peers on call termination or not. For now this example does. */
+      g_array_append_val (au, self->priv->handle);
+      future_svc_channel_type_call_emit_call_members_changed (self,
+          empty_uu_map, au);
+      g_hash_table_unref (empty_uu_map);
+      g_array_free (au, TRUE);
 
       if (actor == tp_base_connection_get_self_handle (self->priv->conn))
         {
