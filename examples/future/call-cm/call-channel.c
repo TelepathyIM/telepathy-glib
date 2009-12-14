@@ -113,7 +113,7 @@ struct _ExampleCallChannelPrivate
 
   guint next_stream_id;
 
-  /* referenced ExampleCallContent => itself */
+  /* strdup'd name => referenced ExampleCallContent */
   GHashTable *contents;
 
   guint hold_state;
@@ -130,6 +130,12 @@ static const char * example_call_channel_interfaces[] = {
     TP_IFACE_CHANNEL_INTERFACE_HOLD,
     NULL
 };
+
+/* In practice you need one for audio, plus one per video (e.g. a
+ * presentation might have separate video contents for the slides
+ * and a camera pointed at the presenter), so having more than three
+ * would be highly unusual */
+#define MAX_CONTENTS_PER_CALL 100
 
 G_GNUC_NULL_TERMINATED static void
 example_call_channel_set_state (ExampleCallChannel *self,
@@ -206,8 +212,8 @@ example_call_channel_init (ExampleCallChannel *self)
       ExampleCallChannelPrivate);
 
   self->priv->next_stream_id = 1;
-  self->priv->contents = g_hash_table_new_full (g_direct_hash,
-      g_direct_equal, g_object_unref, NULL);
+  self->priv->contents = g_hash_table_new_full (g_str_hash,
+      g_str_equal, g_free, g_object_unref);
 
   self->priv->call_state = FUTURE_CALL_STATE_UNKNOWN; /* set in constructed */
   self->priv->call_flags = 0;
@@ -225,7 +231,8 @@ example_call_channel_init (ExampleCallChannel *self)
 
 static ExampleCallContent *example_call_channel_add_content (
     ExampleCallChannel *self, TpMediaStreamType media_type,
-    gboolean locally_requested, gboolean initial);
+    gboolean locally_requested, gboolean initial,
+    const gchar *requested_name, GError **error);
 
 static void example_call_channel_initiate_outgoing (ExampleCallChannel *self);
 
@@ -281,14 +288,14 @@ constructed (GObject *object)
         {
           g_message ("Channel initially has an audio stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_AUDIO, TRUE, TRUE);
+              TP_MEDIA_STREAM_TYPE_AUDIO, TRUE, TRUE, NULL, NULL);
         }
 
       if (self->priv->initial_video)
         {
           g_message ("Channel initially has a video stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_VIDEO, TRUE, TRUE);
+              TP_MEDIA_STREAM_TYPE_VIDEO, TRUE, TRUE, NULL, NULL);
         }
     }
   else
@@ -300,14 +307,14 @@ constructed (GObject *object)
         {
           g_message ("Channel initially has an audio stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_AUDIO, FALSE, TRUE);
+              TP_MEDIA_STREAM_TYPE_AUDIO, FALSE, TRUE, NULL, NULL);
         }
 
       if (self->priv->initial_video)
         {
           g_message ("Channel initially has a video stream");
           example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_VIDEO, FALSE, TRUE);
+              TP_MEDIA_STREAM_TYPE_VIDEO, FALSE, TRUE, NULL, NULL);
         }
     }
 }
@@ -410,15 +417,15 @@ get_property (GObject *object,
           GPtrArray *paths = g_ptr_array_sized_new (g_hash_table_size (
                 self->priv->contents));
           GHashTableIter iter;
-          gpointer k;
+          gpointer v;
 
           g_hash_table_iter_init (&iter, self->priv->contents);
 
-          while (g_hash_table_iter_next (&iter, &k, NULL))
+          while (g_hash_table_iter_next (&iter, NULL, &v))
             {
               gchar *path;
 
-              g_object_get (k,
+              g_object_get (v,
                   "object-path", &path,
                   NULL);
 
@@ -546,7 +553,7 @@ example_call_channel_terminate (ExampleCallChannel *self,
 {
   if (self->priv->call_state != FUTURE_CALL_STATE_ENDED)
     {
-      GList *keys;
+      GList *values;
       GHashTable *empty_uu_map = g_hash_table_new (NULL, NULL);
       GArray *au = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
 
@@ -589,17 +596,18 @@ example_call_channel_terminate (ExampleCallChannel *self,
       /* terminate all streams: to avoid modifying the hash table (in the
        * stream-removed handler) while iterating over it, we have to copy the
        * keys and iterate over those */
-      keys = g_hash_table_get_keys (self->priv->contents);
-      g_list_foreach (keys, (GFunc) g_object_ref, NULL);
+      values = g_hash_table_get_values (self->priv->contents);
+      g_list_foreach (values, (GFunc) g_object_ref, NULL);
 
-      for (; keys != NULL; keys = g_list_delete_link (keys, keys))
+      for (; values != NULL; values = g_list_delete_link (values, values))
         {
-          ExampleCallStream *stream = example_call_content_get_stream (keys->data);
+          ExampleCallStream *stream =
+            example_call_content_get_stream (values->data);
 
           if (stream != NULL)
             example_call_stream_close (stream);
 
-          g_object_unref (keys->data);
+          g_object_unref (values->data);
         }
     }
 }
@@ -965,19 +973,21 @@ stream_removed_cb (ExampleCallContent *content,
     const gchar *stream_path G_GNUC_UNUSED,
     ExampleCallChannel *self)
 {
-  gchar *path;
+  gchar *path, *name;
 
   /* Contents in this example CM can only have one stream, so if their
    * stream disappears, the content has to be removed too. */
 
   g_object_get (content,
       "object-path", &path,
+      "name", &name,
       NULL);
 
-  g_hash_table_remove (self->priv->contents, content);
+  g_hash_table_remove (self->priv->contents, name);
 
   future_svc_channel_type_call_emit_content_removed (self, path);
   g_free (path);
+  g_free (name);
 
   if (g_hash_table_size (self->priv->contents) == 0)
     {
@@ -1013,7 +1023,7 @@ simulate_contact_answered_cb (gpointer p)
 {
   ExampleCallChannel *self = p;
   GHashTableIter iter;
-  gpointer k;
+  gpointer v;
   TpHandleRepoIface *contact_repo;
   const gchar *peer;
 
@@ -1035,9 +1045,9 @@ simulate_contact_answered_cb (gpointer p)
 
   g_hash_table_iter_init (&iter, self->priv->contents);
 
-  while (g_hash_table_iter_next (&iter, &k, NULL))
+  while (g_hash_table_iter_next (&iter, NULL, &v))
     {
-      ExampleCallStream *stream = example_call_content_get_stream (k);
+      ExampleCallStream *stream = example_call_content_get_stream (v);
 
       if (stream == NULL)
         continue;
@@ -1091,7 +1101,9 @@ static ExampleCallContent *
 example_call_channel_add_content (ExampleCallChannel *self,
     TpMediaStreamType media_type,
     gboolean locally_requested,
-    gboolean initial)
+    gboolean initial,
+    const gchar *requested_name,
+    GError **error)
 {
   ExampleCallContent *content;
   ExampleCallStream *stream;
@@ -1102,10 +1114,43 @@ example_call_channel_add_content (ExampleCallChannel *self,
   gchar *path;
   FutureCallContentDisposition disposition =
     FUTURE_CALL_CONTENT_DISPOSITION_NONE;
+  guint i;
 
   type_str = (media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
   creator = self->priv->handle;
-  name = g_strdup_printf ("%s%u", type_str, id);
+
+  /* an arbitrary limit much less than 2**32 means we don't use ridiculous
+   * amounts of memory, and also means @i can't wrap around when we use it to
+   * uniquify content names. */
+  if (g_hash_table_size (self->priv->contents) > MAX_CONTENTS_PER_CALL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+          "What are you doing with all those contents anyway?!");
+      return NULL;
+    }
+
+  if (requested_name == NULL || requested_name[0] == '\0')
+    {
+      requested_name = type_str;
+    }
+
+  for (i = 0; ; i++)
+    {
+      if (i == 0)
+        name = g_strdup (requested_name);
+      else
+        name = g_strdup_printf ("%s (%u)", requested_name, i);
+
+      if (!g_hash_table_lookup_extended (self->priv->contents, name,
+            NULL, NULL))
+        {
+          /* this name hasn't been used - good enough */
+          break;
+        }
+
+      g_free (name);
+      name = NULL;
+    }
 
   if (initial)
     disposition = FUTURE_CALL_CONTENT_DISPOSITION_INITIAL;
@@ -1115,6 +1160,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
       g_message ("SIGNALLING: send: new %s stream %s", type_str, name);
       creator = self->priv->conn->self_handle;
     }
+
   path = g_strdup_printf ("%s/Content%u", self->priv->object_path, id);
   content = g_object_new (EXAMPLE_TYPE_CALL_CONTENT,
       "connection", self->priv->conn,
@@ -1125,10 +1171,9 @@ example_call_channel_add_content (ExampleCallChannel *self,
       "object-path", path,
       NULL);
 
-  g_hash_table_insert (self->priv->contents, content, content);
+  g_hash_table_insert (self->priv->contents, name, content);
   future_svc_channel_type_call_emit_content_added (self, path, media_type);
   g_free (path);
-  g_free (name);
 
   path = g_strdup_printf ("%s/Stream%u", self->priv->object_path, id);
   stream = g_object_new (EXAMPLE_TYPE_CALL_STREAM,
@@ -1258,7 +1303,7 @@ accept_incoming_call (ExampleCallChannel *self)
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   GHashTableIter iter;
-  gpointer k;
+  gpointer v;
 
   g_assert (self->priv->call_state == FUTURE_CALL_STATE_PENDING_RECEIVER);
 
@@ -1273,12 +1318,12 @@ accept_incoming_call (ExampleCallChannel *self)
 
   g_hash_table_iter_init (&iter, self->priv->contents);
 
-  while (g_hash_table_iter_next (&iter, &k, NULL))
+  while (g_hash_table_iter_next (&iter, NULL, &v))
     {
-      ExampleCallStream *stream = example_call_content_get_stream (k);
+      ExampleCallStream *stream = example_call_content_get_stream (v);
       guint disposition;
 
-      g_object_get (k,
+      g_object_get (v,
           "disposition", &disposition,
           NULL);
 
@@ -1373,7 +1418,7 @@ call_hangup (FutureSvcChannelTypeCall *iface,
 
 static void
 call_add_content (FutureSvcChannelTypeCall *iface,
-    const gchar *content_name G_GNUC_UNUSED,
+    const gchar *content_name,
     guint content_type,
     DBusGMethodInvocation *context)
 {
@@ -1394,9 +1439,12 @@ call_add_content (FutureSvcChannelTypeCall *iface,
       goto error;
     }
 
-  /* FIXME: content_name ignored for now */
+  content = example_call_channel_add_content (self, content_type, TRUE, FALSE,
+      content_name, &error);
 
-  content = example_call_channel_add_content (self, content_type, TRUE, FALSE);
+  if (content == NULL)
+    goto error;
+
   g_object_get (content,
       "object-path", &content_path,
       NULL);
