@@ -1,19 +1,38 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
+/*
+ * Copyright (C) 2009 Collabora Ltd.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
+ */
+
 #ifndef __TPL_CONTACT_H__
 #define __TPL_CONTACT_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/contact.h>
 
-#include <tpl-channel.h>
-
 G_BEGIN_DECLS
 
-#define TPL_TYPE_CONTACT                  (tpl_contact_get_type ())
-#define TPL_CONTACT(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CONTACT, TplContact))
-#define TPL_CONTACT_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CONTACT, TplContactClass))
-#define TPL_IS_CONTACT(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CONTACT))
-#define TPL_IS_CONTACT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONTACT))
-#define TPL_CONTACT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONTACT, TplContactClass))
+#define TPL_TYPE_CONTACT		(tpl_contact_get_type ())
+#define TPL_CONTACT(obj)		(G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CONTACT, TplContact))
+#define TPL_CONTACT_CLASS(klass)	(G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CONTACT, TplContactClass))
+#define TPL_IS_CONTACT(obj)		(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CONTACT))
+#define TPL_IS_CONTACT_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONTACT))
+#define TPL_CONTACT_GET_CLASS(obj) 	(G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONTACT, TplContactClass))
 
 
 typedef enum {
@@ -25,7 +44,7 @@ typedef struct {
 	GObject parent;
 
 	/* Private */
-	TpContact	*contact; // maybe NULL
+	TpContact	*contact;
 	TplContactType	contact_type;
 	const gchar	*alias;
 	const gchar	*identifier;
@@ -44,27 +63,36 @@ typedef struct {
 GType  tpl_contact_get_type (void);
 
 TplContact *tpl_contact_from_tp_contact(TpContact *contact);
+
 TplContact *tpl_contact_new(void);
 
-#define ADD_GET(x,y)	y tpl_contact_get_##x(TplContact *self)
-	ADD_GET(contact, TpContact *);
-	ADD_GET(alias, const gchar *);
-	ADD_GET(identifier, const gchar *);
-	ADD_GET(presence_status, const gchar *);
-	ADD_GET(presence_message, const gchar *);
-	ADD_GET(contact_type, TplContactType);
-	ADD_GET(account, TpAccount *);
-#undef ADD_GET
+TpContact *tpl_contact_get_contact(TplContact *self);
 
-#define ADD_SET(x,y)	void tpl_contact_set_##x(TplContact *self, y data)
-	ADD_SET(contact, TpContact *);
-	ADD_SET(alias, const gchar *);
-	ADD_SET(identifier, const gchar *);
-	ADD_SET(presence_status, const gchar *);
-	ADD_SET(presence_message, const gchar *);
-	ADD_SET(contact_type, TplContactType);
-	ADD_SET(account, TpAccount *);
-#undef ADD_SET
+const gchar *tpl_contact_get_alias(TplContact *self);
+
+const gchar *tpl_contact_get_identifier(TplContact *self);
+
+const gchar *tpl_contact_get_presence_status(TplContact *self);
+
+const gchar *tpl_contact_get_presence_message(TplContact *self);
+
+TplContactType tpl_contact_get_contact_type(TplContact *self);
+
+TpAccount *tpl_contact_get_account(TplContact *self);
+
+void tpl_contact_set_contact(TplContact *self, TpContact *data);
+
+void tpl_contact_set_account(TplContact *self, TpAccount *data);
+
+void tpl_contact_set_alias(TplContact *self, const gchar *data); 
+
+void tpl_contact_set_identifier(TplContact *self, const gchar *data); 
+
+void tpl_contact_set_presence_status(TplContact *self, const gchar *data); 
+
+void tpl_contact_set_presence_message(TplContact *self, const gchar *data); 
+
+void tpl_contact_set_contact_type(TplContact *self, TplContactType data);
 
 G_END_DECLS
 

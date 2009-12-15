@@ -150,6 +150,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
         {
           out = tpl_log_store_add_message (TPL_LOG_STORE (l->data),
               chat_id, chatroom, message, error);
+	  g_message("YEAH\n");
           found = TRUE;
           break;
         }

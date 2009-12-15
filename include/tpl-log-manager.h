@@ -30,70 +30,75 @@
 
 G_BEGIN_DECLS
 
-#define TPL_TYPE_LOG_MANAGER (tpl_log_manager_get_type ())
-#define TPL_LOG_MANAGER(o) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((o), TPL_TYPE_LOG_MANAGER, \
-                               TplLogManager))
-#define TPL_LOG_MANAGER_CLASS(k) \
-  (G_TYPE_CHECK_CLASS_CAST ((k), TPL_TYPE_LOG_MANAGER, \
-                            TplLogManagerClass))
-#define TPL_IS_LOG_MANAGER(o) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((o), TPL_TYPE_LOG_MANAGER))
-#define TPL_IS_LOG_MANAGER_CLASS(k) \
-  (G_TYPE_CHECK_CLASS_TYPE ((k), TPL_TYPE_LOG_MANAGER))
-#define TPL_LOG_MANAGER_GET_CLASS(o) \
-  (G_TYPE_INSTANCE_GET_CLASS ((o), TPL_TYPE_LOG_MANAGER, \
-                              TplLogManagerClass))
+#define TPL_TYPE_LOG_MANAGER		(tpl_log_manager_get_type ())
+#define TPL_LOG_MANAGER(o)		(G_TYPE_CHECK_INSTANCE_CAST ((o), TPL_TYPE_LOG_MANAGER, TplLogManager))
+#define TPL_LOG_MANAGER_CLASS(k)	(G_TYPE_CHECK_CLASS_CAST ((k), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
+#define TPL_IS_LOG_MANAGER(o)		(G_TYPE_CHECK_INSTANCE_TYPE ((o), TPL_TYPE_LOG_MANAGER))
+#define TPL_IS_LOG_MANAGER_CLASS(k) 	(G_TYPE_CHECK_CLASS_TYPE ((k), TPL_TYPE_LOG_MANAGER))
+#define TPL_LOG_MANAGER_GET_CLASS(o)	(G_TYPE_INSTANCE_GET_CLASS ((o), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
 
-typedef struct _TplLogManager TplLogManager;
-typedef struct _TplLogManagerClass TplLogManagerClass;
-typedef struct _TplLogSearchHit TplLogSearchHit;
 
-struct _TplLogManager
+typedef struct 
 {
-  GObject parent;
-  gpointer priv;
-};
+	GObject parent;
 
-struct _TplLogManagerClass
-{
-  GObjectClass parent_class;
-};
+	gpointer priv;
+} TplLogManager;
 
-struct _TplLogSearchHit
+typedef struct 
 {
-  TpAccount *account;
-  gchar     *chat_id;
-  gboolean   is_chatroom;
-  gchar     *filename;
-  gchar     *date;
-};
+	GObjectClass parent_class;
+} TplLogManagerClass;
+
+typedef struct
+{
+	TpAccount *account;
+	gchar     *chat_id;
+	gboolean   is_chatroom;
+	gchar     *filename;
+	gchar     *date;
+} TplLogSearchHit;
 
 typedef gboolean (*TplLogMessageFilter) (TplLogEntryText *message,
-    gpointer user_data);
+		gpointer user_data);
 
-GType tpl_log_manager_get_type (void) G_GNUC_CONST;
+GType tpl_log_manager_get_type (void);
+
 TplLogManager *tpl_log_manager_dup_singleton (void);
+
 gboolean tpl_log_manager_add_message (TplLogManager *manager,
-    const gchar *chat_id, gboolean chatroom, TplLogEntryText *message,
-    GError **error);
+		const gchar *chat_id, gboolean chatroom,
+		TplLogEntryText *message, GError **error);
+
 gboolean tpl_log_manager_exists (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom);
+		TpAccount *account, const gchar *chat_id,
+		gboolean chatroom);
+
 GList *tpl_log_manager_get_dates (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom);
+		TpAccount *account, const gchar *chat_id,
+		gboolean chatroom);
+
 GList *tpl_log_manager_get_messages_for_date (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom,
-    const gchar *date);
+		TpAccount *account, const gchar *chat_id,
+		gboolean chatroom, const gchar *date);
+
 GList *tpl_log_manager_get_filtered_messages (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom,
-    guint num_messages, TplLogMessageFilter filter, gpointer user_data);
+		TpAccount *account, const gchar *chat_id, gboolean chatroom,
+		guint num_messages, TplLogMessageFilter filter,
+		gpointer user_data);
+
 GList *tpl_log_manager_get_chats (TplLogManager *manager,
-    TpAccount *account);
+		TpAccount *account);
+
 GList *tpl_log_manager_search_new (TplLogManager *manager,
-    const gchar *text);
+		const gchar *text);
+
 void tpl_log_manager_search_free (GList *hits);
+
 gchar *tpl_log_manager_get_date_readable (const gchar *date);
+
 void tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
+
 //void tpl_log_manager_observe (TplLogManager *log_manager,
 //    EmpathyDispatcher *dispatcher);
 

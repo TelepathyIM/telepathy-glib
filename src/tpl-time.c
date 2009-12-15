@@ -45,8 +45,7 @@ tpl_time_get_local_time (struct tm *tm)
 	tz = g_getenv ("TZ");
 	g_setenv ("TZ", "", TRUE);
 
-	//TODO reenable 
-	//tzset ();
+	tzset ();
 
 	t = mktime (tm);
 
@@ -56,8 +55,7 @@ tpl_time_get_local_time (struct tm *tm)
 		g_unsetenv ("TZ");
 	}
 
-	//TODO reenable 
-	//tzset ();
+	tzset ();
 
 	return t;
 }

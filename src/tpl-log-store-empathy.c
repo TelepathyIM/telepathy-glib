@@ -82,12 +82,30 @@ G_DEFINE_TYPE_WITH_CODE (TplLogStoreEmpathy, tpl_log_store_empathy,
       log_store_iface_init));
 
 static void
+log_store_empathy_dispose (GObject *object)
+{
+  TplLogStoreEmpathy *self = TPL_LOG_STORE_EMPATHY (object);
+  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
+
+  // FIXME See TP-bug #25569, when dispose a non prepared TP_AM, it
+  // might segfault.
+  // To avoid it, a *klduge*, a reference in the TplObserver to
+  // the TplLogManager is kept, so that until TplObserver is instanced,
+  // there will always be a TpLogManager reference and it won't be
+  // diposed, not executing the follwoing unref (which caused the bug)
+  if (priv->account_manager != NULL) {
+	  g_object_unref (priv->account_manager);
+	  priv->account_manager = NULL;
+  }
+}
+
+
+static void
 log_store_empathy_finalize (GObject *object)
 {
   TplLogStoreEmpathy *self = TPL_LOG_STORE_EMPATHY (object);
   TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
 
-  g_object_unref (priv->account_manager);
   g_free (priv->basedir);
   g_free (priv->name);
 }
@@ -98,6 +116,7 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->finalize = log_store_empathy_finalize;
+  object_class->dispose = log_store_empathy_dispose;
 
   g_type_class_add_private (object_class, sizeof (TplLogStoreEmpathyPriv));
 }
@@ -123,7 +142,6 @@ static gchar *
 log_store_account_to_dirname (TpAccount *account)
 {
   const gchar *name;
-
   name = tp_proxy_get_object_path (account);
   if (g_str_has_prefix (name, TP_ACCOUNT_OBJECT_PATH_BASE))
     name += strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
@@ -249,7 +267,8 @@ static gboolean _log_store_empathy_write_to_store ( TplLogStore *self,
 	return TRUE;
 }
 
-static gboolean _log_store_empathy_add_message_status_changed (
+static gboolean
+_log_store_empathy_add_message_status_changed (
 			TplLogStore *self,
 			const gchar *chat_id,
 			gboolean chatroom,
@@ -311,10 +330,10 @@ static gboolean _log_store_empathy_add_message_status_changed (
 
 static gboolean
 _log_store_empathy_add_message_chat (TplLogStore *self,
-                               const gchar *chat_id,
-                               gboolean chatroom,
-                               TplLogEntryText *message,
-                               GError **error)
+		const gchar *chat_id,
+		gboolean chatroom,
+		TplLogEntryText *message,
+		GError **error)
 {
   gboolean ret;
   TpAccount *account;
@@ -374,8 +393,7 @@ _log_store_empathy_add_message_chat (TplLogStore *self,
   g_free (entry);
   //g_free (avatar_token);
 
-
-  return TRUE;
+  return ret;
 }
 
 

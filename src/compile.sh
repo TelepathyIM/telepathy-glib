@@ -2,7 +2,7 @@
 
 PACKAGE_NAME="TpLogger"
 CC=${CC:-gcc}
-CCOPTS="-D__USE_POSIX -DPACKAGE_NAME=\"${PACKAGE_NAME}\" --std=c99 -g -I../include -Wall -Werror" # -pedantic"
+CCOPTS="-D_POSIX_SOURCE -DPACKAGE_NAME=\"${PACKAGE_NAME}\" --std=c99 -g -I../include -Wall -Werror" # -pedantic"
 PKGS="telepathy-glib libxml-2.0"
 MODULES="tpl-observer.c tpl-headless-logger-init.c
 	tpl-channel.c tpl-text-channel-context.c 

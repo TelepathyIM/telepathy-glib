@@ -1,3 +1,26 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
+/*
+ * Copyright (C) 2009 Collabora Ltd.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
+ */
+
+#include <glib.h>
+
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/gtypes.h>
@@ -8,8 +31,13 @@
 #include <tpl-observer.h>
 #include <tpl-channel.h>
 #include <tpl-text-channel-context.h>
+#include <tpl-log-manager.h>
 
-static GHashTable *glob_map = NULL;
+// TODO move to a member of TplObserver
+static TplLogManager *logmanager = NULL;
+
+static void tpl_observer_finalize (GObject *obj);
+static void tpl_observer_dispose (GObject *obj);
 
 static void observer_iface_init (gpointer, gpointer);
 
@@ -22,6 +50,7 @@ G_DEFINE_TYPE_WITH_CODE (TplObserver, tpl_observer, G_TYPE_OBJECT,
 		observer_iface_init);
 );
 
+static TplObserver * observer_singleton = NULL;
 static const char *client_interfaces[] = {
     TP_IFACE_CLIENT_OBSERVER,
     NULL
@@ -67,7 +96,6 @@ _get_ready_tp_channel(TpConnection *connection,
 	tp_channel_call_when_ready (tpl_channel_get_channel(tpl_chan),
 			_observe_channel_when_ready_cb, tpl_chan);
 }
-
 
 static void
 tpl_observer_observe_channels (TpSvcClientObserver   *self,
@@ -190,10 +218,35 @@ tpl_observer_get_property (GObject    *self,
     }
 }
 
+/* Singleton Constructor */
+static GObject *
+tpl_observer_constructor (GType type, guint n_props,
+		GObjectConstructParam *props)
+{
+	GObject *retval;
+
+	if (observer_singleton) {
+		retval = g_object_ref (observer_singleton);
+	} else {
+		retval = G_OBJECT_CLASS (tpl_observer_parent_class)->constructor
+			(type, n_props, props);
+
+		observer_singleton = TPL_OBSERVER (retval);
+		g_object_add_weak_pointer (retval, (gpointer *) &observer_singleton);
+	}
+
+	return retval;
+}
+
+
 static void
 tpl_observer_class_init (TplObserverClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->constructor = tpl_observer_constructor;
+  object_class->finalize = tpl_observer_finalize;
+  object_class->dispose = tpl_observer_dispose;
 
   /* D-Bus properties are exposed as GObject properties through the
    * TpDBusPropertiesMixin */
@@ -255,10 +308,9 @@ static gboolean tpl_str_are_eq(gconstpointer data, gconstpointer data2)
 static void
 tpl_observer_init (TplObserver *self)
 {
-	//self->chan_map = g_hash_table_new_full (g_str_hash, g_strcmp0,
-	//		g_free, g_object_unref);
-	glob_map = g_hash_table_new_full (g_str_hash, tpl_str_are_eq,
+	self->channel_map = g_hash_table_new_full (g_str_hash, tpl_str_are_eq,
 			g_free, g_object_unref);
+	logmanager = tpl_log_manager_dup_singleton ();	
 }
 
 static void
@@ -272,57 +324,61 @@ observer_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
-TplObserver *tpl_observer_new (void)
+static void
+tpl_observer_dispose (GObject *obj)
+{
+	TplObserver *self = TPL_OBSERVER(obj);
+
+	g_debug("TplObserver: disposing\n");
+
+	if (self->channel_map != NULL) {
+		g_object_unref(self->channel_map);
+		self->channel_map = NULL;
+	}	
+	if (logmanager != NULL) {
+		g_object_unref(logmanager);
+		logmanager = NULL;
+	}	
+
+	G_OBJECT_CLASS (tpl_observer_parent_class)->dispose (obj);
+
+	g_debug("TplObserver: disposed\n");
+}
+
+static void
+tpl_observer_finalize (GObject *obj)
+{
+	//TplObserver *self = TPL_OBSERVER(obj);
+
+	g_debug("TplObserver: finalizing\n");
+
+	G_OBJECT_CLASS (tpl_observer_parent_class)->finalize (obj);
+
+	g_debug("TplObserver: finalized\n");
+}
+
+TplObserver *
+tpl_observer_new (void)
 {
   return g_object_new (TYPE_TPL_OBSERVER, NULL);
 }
 
-gboolean 
-tpl_channel_register_to_observer(TplChannel *self)
+
+GHashTable *
+tpl_observer_get_channel_map(TplObserver *self)
 {
-	g_return_val_if_fail( self != NULL, FALSE);
-	g_assert(glob_map != NULL);
+	g_return_val_if_fail(TPL_IS_OBSERVER(self), NULL);
 
-	//TplObserver *obs = tpl_channel_get_observer(self);
-	gchar *key;
-
-	key = g_strdup (tpl_channel_get_channel_path (self));
-	
-	if (g_hash_table_lookup(glob_map, key) != NULL) {
-		g_error("Channel path found, replacing %s\n", key);
-		g_hash_table_remove(glob_map, key);
-	} else {
-		g_message("Channel path not found, registering %s\n", key);
-	}
-	
-	// Instantiate and delegate channel handling to the right object
-	if (0==g_strcmp0 (TP_IFACE_CHAN_TEXT,
-				tpl_channel_get_channel_type(self))) {
-		// when removed, automatically frees the Key and unrefs
-		// its Value
-		g_hash_table_insert(glob_map, key, 
-			tpl_text_channel_new(self));
-	} else {
-		g_warning("%s: channel type not handled by this logger", 
-			tpl_channel_get_channel_type(self));
-	}
-
-	g_object_unref(self);
-
-	return TRUE;
+	return self->channel_map;
 }
 
-
-gboolean 
-tpl_channel_unregister_from_observer(TplChannel *self)
+void
+tpl_observer_set_channel_map (TplObserver *self, GHashTable *data)
 {
-	//TplObserver *obs = tpl_channel_get_observer(self);
-	const gchar *key;
-
-	g_return_val_if_fail( self != NULL, FALSE);
-
-	key = tpl_channel_get_channel_path (self);
-	g_message ("Unregistering channel path %s\n", key);
-
-	return g_hash_table_remove(glob_map, key); 
+	g_return_if_fail(TPL_IS_OBSERVER(self));
+	//TODO check data validity
+	
+	tpl_object_unref_if_not_null(self->channel_map);
+	self->channel_map = data;
+	tpl_object_ref_if_not_null(data);
 }
