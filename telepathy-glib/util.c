@@ -893,7 +893,7 @@ closure_invalidated_cb (gpointer ctx_,
  *
  * Connects a #GCallback function to a signal for a particular object, as if
  * with g_signal_connect(). Additionally, arranges for the signal handler to be
- * disconnected if @observer is destroyed.
+ * disconnected if @gobject is destroyed.
  *
  * This is similar to g_signal_connect_data(), but uses a closure which
  * ensures that the @gobject stays alive during the call to @c_handler
