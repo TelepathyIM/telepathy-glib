@@ -71,7 +71,7 @@ GQuark tp_errors_disconnected_quark (void);
                               TpConnectionClass))
 
 TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
-    const gchar *object_path, GError **error);
+    const gchar *object_path, GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 TpConnectionStatus tp_connection_get_status (TpConnection *self,
     TpConnectionStatusReason *reason);

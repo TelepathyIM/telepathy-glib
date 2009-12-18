@@ -64,7 +64,8 @@ GType tp_channel_dispatcher_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CHANNEL_DISPATCHER, \
                               TpChannelDispatcherClass))
 
-TpChannelDispatcher *tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon);
+TpChannelDispatcher *tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon)
+    G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_channel_dispatcher_init_known_interfaces (void);
 

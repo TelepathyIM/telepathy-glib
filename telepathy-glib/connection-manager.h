@@ -104,7 +104,8 @@ struct _TpConnectionManagerClass {
 };
 
 TpConnectionManager *tp_connection_manager_new (TpDBusDaemon *dbus,
-    const gchar *name, const gchar *manager_filename, GError **error);
+    const gchar *name, const gchar *manager_filename, GError **error)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 gboolean tp_connection_manager_activate (TpConnectionManager *self);
 
@@ -136,14 +137,16 @@ gboolean tp_connection_manager_check_valid_name (const gchar *name,
 gboolean tp_connection_manager_check_valid_protocol_name (const gchar *name,
     GError **error);
 
-gchar **tp_connection_manager_dup_protocol_names (TpConnectionManager *self);
+gchar **tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
+  G_GNUC_WARN_UNUSED_RESULT;
 gboolean tp_connection_manager_has_protocol (TpConnectionManager *self,
     const gchar *protocol);
 const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
     TpConnectionManager *self, const gchar *protocol);
 
 gchar **tp_connection_manager_protocol_dup_param_names (
-    const TpConnectionManagerProtocol *protocol);
+    const TpConnectionManagerProtocol *protocol)
+  G_GNUC_WARN_UNUSED_RESULT;
 gboolean tp_connection_manager_protocol_has_param (
     const TpConnectionManagerProtocol *protocol,
     const gchar *param);

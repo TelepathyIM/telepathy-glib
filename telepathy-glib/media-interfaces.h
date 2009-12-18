@@ -72,10 +72,12 @@ GType tp_media_session_handler_get_type (void);
                               TpMediaSessionHandlerClass))
 
 TpMediaSessionHandler *tp_media_session_handler_new (TpDBusDaemon *dbus,
-    const gchar *unique_name, const gchar *object_path, GError **error);
+    const gchar *unique_name, const gchar *object_path, GError **error)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 TpMediaStreamHandler *tp_media_stream_handler_new (TpDBusDaemon *dbus,
-    const gchar *unique_name, const gchar *object_path, GError **error);
+    const gchar *unique_name, const gchar *object_path, GError **error)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_media_session_handler_init_known_interfaces (void);
 void tp_media_stream_handler_init_known_interfaces (void);

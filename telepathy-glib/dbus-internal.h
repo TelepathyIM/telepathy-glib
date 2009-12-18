@@ -31,7 +31,8 @@ gboolean _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self, gint timeout_ms,
 
 void _tp_register_dbus_glib_marshallers (void);
 
-DBusGConnection *_tp_dbus_starter_bus_conn (GError **error);
+DBusGConnection *_tp_dbus_starter_bus_conn (GError **error)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 

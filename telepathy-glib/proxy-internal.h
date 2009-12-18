@@ -22,6 +22,7 @@
 
 #include <telepathy-glib/proxy.h>
 
-GError *_tp_proxy_take_and_remap_error (TpProxy *self, GError *error);
+GError *_tp_proxy_take_and_remap_error (TpProxy *self, GError *error)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 #endif
