@@ -210,7 +210,6 @@ tp_run_connection_manager (const char *prog_name,
                            int argc,
                            char **argv)
 {
-  GLogLevelFlags fatal_mask;
   DBusConnection *connection = NULL;
   TpDBusDaemon *bus_daemon = NULL;
   GError *error = NULL;
@@ -221,10 +220,6 @@ tp_run_connection_manager (const char *prog_name,
   g_type_init ();
 
   g_set_prgname (prog_name);
-
-  fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
-  fatal_mask |= G_LOG_LEVEL_CRITICAL;
-  g_log_set_always_fatal (fatal_mask);
 
 #ifdef ENABLE_BACKTRACE
   g_log_set_handler ("GLib-GObject",
