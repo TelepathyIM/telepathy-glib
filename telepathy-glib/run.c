@@ -65,15 +65,21 @@ static TpBaseConnectionManager *manager = NULL;
 static gboolean connections_exist = FALSE;
 static guint timeout_id = 0;
 
+static void
+quit_loop (void)
+{
+  g_object_unref (manager);
+  manager = NULL;
+  g_main_loop_quit (mainloop);
+}
+
 static gboolean
 kill_connection_manager (gpointer data)
 {
   if (!_TP_DEBUG_IS_PERSISTENT && !connections_exist)
     {
       g_debug ("no connections, and timed out");
-      g_object_unref (manager);
-      manager = NULL;
-      g_main_loop_quit (mainloop);
+      quit_loop ();
     }
 
   timeout_id = 0;
@@ -168,6 +174,7 @@ dbus_filter_function (DBusConnection *connection,
       !tp_strdiff (dbus_message_get_path (message), DBUS_PATH_LOCAL))
     {
       g_message ("Got disconnected from the session bus");
+      quit_loop ();
     }
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -204,7 +211,7 @@ tp_run_connection_manager (const char *prog_name,
                            char **argv)
 {
   GLogLevelFlags fatal_mask;
-  DBusConnection *connection;
+  DBusConnection *connection = NULL;
   TpDBusDaemon *bus_daemon = NULL;
   GError *error = NULL;
   int ret = 1;
@@ -265,6 +272,7 @@ tp_run_connection_manager (const char *prog_name,
   connection = dbus_g_connection_get_connection (
       ((TpProxy *) bus_daemon)->dbus_connection);
   dbus_connection_add_filter (connection, dbus_filter_function, NULL, NULL);
+  dbus_connection_set_exit_on_disconnect (connection, FALSE);
 
   if (!tp_base_connection_manager_register (manager))
     {
@@ -280,15 +288,21 @@ tp_run_connection_manager (const char *prog_name,
 
   g_main_loop_run (mainloop);
 
+  g_message ("Exiting");
+
   ret = 0;
 
 out:
   /* locals */
+  if (connection != NULL)
+    dbus_connection_remove_filter (connection, dbus_filter_function, NULL);
 
   if (bus_daemon != NULL)
     g_object_unref (bus_daemon);
 
   /* globals */
+  if (timeout_id != 0)
+    g_source_remove (timeout_id);
 
   if (mainloop != NULL)
     g_main_loop_unref (mainloop);
