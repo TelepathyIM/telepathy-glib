@@ -53,11 +53,16 @@ gboolean tp_dbus_check_valid_member_name (const gchar *name,
 gboolean tp_dbus_check_valid_object_path (const gchar *path,
     GError **error);
 
-GValue *tp_g_value_slice_new_bytes (guint length, gconstpointer bytes);
-GValue *tp_g_value_slice_new_take_bytes (GArray *bytes);
-GValue *tp_g_value_slice_new_object_path (const gchar *path);
-GValue *tp_g_value_slice_new_static_object_path (const gchar *path);
-GValue *tp_g_value_slice_new_take_object_path (gchar *path);
+GValue *tp_g_value_slice_new_bytes (guint length, gconstpointer bytes)
+  G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_take_bytes (GArray *bytes)
+  G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_object_path (const gchar *path)
+  G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_static_object_path (const gchar *path)
+  G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_take_object_path (gchar *path)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 #define tp_asv_size(asv) _tp_asv_size_inline (asv)
 
@@ -69,7 +74,8 @@ _tp_asv_size_inline (const GHashTable *asv)
   return g_hash_table_size /* */ ((GHashTable *) asv);
 }
 
-GHashTable *tp_asv_new (const gchar *first_key, ...) G_GNUC_NULL_TERMINATED;
+GHashTable *tp_asv_new (const gchar *first_key, ...)
+  G_GNUC_NULL_TERMINATED G_GNUC_WARN_UNUSED_RESULT;
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 void tp_asv_set_boolean (GHashTable *asv, const gchar *key, gboolean value);

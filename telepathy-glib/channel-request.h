@@ -65,7 +65,7 @@ GType tp_channel_request_get_type (void);
 
 TpChannelRequest *tp_channel_request_new (TpDBusDaemon *bus_daemon,
     const gchar *object_path, GHashTable *immutable_properties,
-    GError **error);
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_channel_request_init_known_interfaces (void);
 

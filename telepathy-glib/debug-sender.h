@@ -61,7 +61,7 @@ struct _TpDebugSenderClass {
 
 GType tp_debug_sender_get_type (void);
 
-TpDebugSender *tp_debug_sender_dup (void);
+TpDebugSender *tp_debug_sender_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_debug_sender_add_message (TpDebugSender *self,
     GTimeVal *timestamp,

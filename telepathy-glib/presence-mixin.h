@@ -105,7 +105,7 @@ struct _TpPresenceStatus {
 };
 
 TpPresenceStatus *tp_presence_status_new (guint which,
-    GHashTable *optional_arguments);
+    GHashTable *optional_arguments) G_GNUC_WARN_UNUSED_RESULT;
 void tp_presence_status_free (TpPresenceStatus *status);
 
 /**

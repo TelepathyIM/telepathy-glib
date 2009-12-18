@@ -43,33 +43,38 @@ typedef struct _TpIntSet TpIntSet;
  */
 typedef void (*TpIntFunc) (guint i, gpointer userdata);
 
-TpIntSet *tp_intset_new (void);
-TpIntSet *tp_intset_sized_new (guint size);
-TpIntSet *tp_intset_new_containing (guint element);
+TpIntSet *tp_intset_new (void) G_GNUC_WARN_UNUSED_RESULT;
+TpIntSet *tp_intset_sized_new (guint size) G_GNUC_WARN_UNUSED_RESULT;
+TpIntSet *tp_intset_new_containing (guint element) G_GNUC_WARN_UNUSED_RESULT;
 void tp_intset_destroy (TpIntSet *set);
 void tp_intset_clear (TpIntSet *set);
 
 void tp_intset_add (TpIntSet *set, guint element);
 gboolean tp_intset_remove (TpIntSet *set, guint element);
-gboolean tp_intset_is_member (const TpIntSet *set, guint element);
+gboolean tp_intset_is_member (const TpIntSet *set, guint element)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_intset_foreach (const TpIntSet *set, TpIntFunc func,
     gpointer userdata);
-GArray *tp_intset_to_array (const TpIntSet *set);
-TpIntSet *tp_intset_from_array (const GArray *array);
+GArray *tp_intset_to_array (const TpIntSet *set) G_GNUC_WARN_UNUSED_RESULT;
+TpIntSet *tp_intset_from_array (const GArray *array) G_GNUC_WARN_UNUSED_RESULT;
 
-guint tp_intset_size (const TpIntSet *set);
+guint tp_intset_size (const TpIntSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
-gboolean tp_intset_is_equal (const TpIntSet *left, const TpIntSet *right);
+gboolean tp_intset_is_equal (const TpIntSet *left, const TpIntSet *right)
+  G_GNUC_WARN_UNUSED_RESULT;
 
-TpIntSet *tp_intset_copy (const TpIntSet *orig);
-TpIntSet *tp_intset_intersection (const TpIntSet *left, const TpIntSet *right);
-TpIntSet *tp_intset_union (const TpIntSet *left, const TpIntSet *right);
-TpIntSet *tp_intset_difference (const TpIntSet *left, const TpIntSet *right);
+TpIntSet *tp_intset_copy (const TpIntSet *orig) G_GNUC_WARN_UNUSED_RESULT;
+TpIntSet *tp_intset_intersection (const TpIntSet *left, const TpIntSet *right)
+  G_GNUC_WARN_UNUSED_RESULT;
+TpIntSet *tp_intset_union (const TpIntSet *left, const TpIntSet *right)
+  G_GNUC_WARN_UNUSED_RESULT;
+TpIntSet *tp_intset_difference (const TpIntSet *left, const TpIntSet *right)
+  G_GNUC_WARN_UNUSED_RESULT;
 TpIntSet *tp_intset_symmetric_difference (const TpIntSet *left,
-    const TpIntSet *right);
+    const TpIntSet *right) G_GNUC_WARN_UNUSED_RESULT;
 
-gchar *tp_intset_dump (const TpIntSet *set);
+gchar *tp_intset_dump (const TpIntSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
 typedef struct _TpIntSetIter TpIntSetIter;
 

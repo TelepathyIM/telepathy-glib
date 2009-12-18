@@ -97,11 +97,12 @@ gboolean tp_handles_client_release (TpHandleRepoIface *self,
     const gchar *client, const GArray *handles, GError **error);
 
 const char *tp_handle_inspect (TpHandleRepoIface *self,
-    TpHandle handle);
+    TpHandle handle) G_GNUC_WARN_UNUSED_RESULT;
 TpHandle tp_handle_lookup (TpHandleRepoIface *self,
     const gchar *id, gpointer context, GError **error);
 TpHandle tp_handle_ensure (TpHandleRepoIface *self,
-    const gchar *id, gpointer context, GError **error);
+    const gchar *id, gpointer context, GError **error)
+    G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_handle_set_qdata (TpHandleRepoIface *repo, TpHandle handle,
     GQuark key_id, gpointer data, GDestroyNotify destroy);
@@ -122,10 +123,11 @@ gpointer tp_handle_get_qdata (TpHandleRepoIface *repo, TpHandle handle,
 typedef void (*TpHandleSetMemberFunc)(TpHandleSet *set, TpHandle handle,
     gpointer userdata);
 
-TpHandleSet * tp_handle_set_new (TpHandleRepoIface *repo);
+TpHandleSet * tp_handle_set_new (TpHandleRepoIface *repo)
+  G_GNUC_WARN_UNUSED_RESULT;
 void tp_handle_set_destroy (TpHandleSet *set);
 
-TpIntSet *tp_handle_set_peek (TpHandleSet *set);
+TpIntSet *tp_handle_set_peek (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_handle_set_add (TpHandleSet *set, TpHandle handle);
 gboolean tp_handle_set_remove (TpHandleSet *set, TpHandle handle);
@@ -135,11 +137,12 @@ void tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
     gpointer userdata);
 
 int tp_handle_set_size (TpHandleSet *set);
-GArray *tp_handle_set_to_array (TpHandleSet *set);
+GArray *tp_handle_set_to_array (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
-TpIntSet *tp_handle_set_update (TpHandleSet *set, const TpIntSet *add);
+TpIntSet *tp_handle_set_update (TpHandleSet *set, const TpIntSet *add)
+  G_GNUC_WARN_UNUSED_RESULT;
 TpIntSet *tp_handle_set_difference_update (TpHandleSet *set,
-    const TpIntSet *remove);
+    const TpIntSet *remove) G_GNUC_WARN_UNUSED_RESULT;
 
 /* static inline because it relies on NUM_TP_HANDLE_TYPES */
 /**

@@ -51,9 +51,10 @@ GType tp_dbus_daemon_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DBUS_DAEMON, \
                               TpDBusDaemonClass))
 
-TpDBusDaemon *tp_dbus_daemon_dup (GError **error);
+TpDBusDaemon *tp_dbus_daemon_dup (GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
-TpDBusDaemon *tp_dbus_daemon_new (DBusGConnection *connection);
+TpDBusDaemon *tp_dbus_daemon_new (DBusGConnection *connection)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_dbus_daemon_init_known_interfaces (void);
 

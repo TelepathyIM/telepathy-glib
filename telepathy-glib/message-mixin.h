@@ -40,7 +40,7 @@ struct _TpMessageMixin {
 typedef struct _TpMessage TpMessage;
 
 TpMessage *tp_message_new (TpBaseConnection *connection, guint initial_parts,
-    guint size_hint);
+    guint size_hint) G_GNUC_WARN_UNUSED_RESULT;
 void tp_message_destroy (TpMessage *self);
 guint tp_message_count_parts (TpMessage *self);
 const GHashTable *tp_message_peek (TpMessage *self, guint part);

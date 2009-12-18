@@ -69,16 +69,18 @@ GType tp_account_manager_get_type (void);
 
 GQuark tp_account_manager_get_feature_quark_core (void) G_GNUC_CONST;
 
-TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon);
+TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon)
+  G_GNUC_WARN_UNUSED_RESULT;
 
-TpAccountManager *tp_account_manager_dup (void);
+TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_manager_init_known_interfaces (void);
 
 TpAccount *tp_account_manager_ensure_account (TpAccountManager *manager,
     const gchar *path);
 
-GList *tp_account_manager_get_valid_accounts (TpAccountManager *manager);
+GList *tp_account_manager_get_valid_accounts (TpAccountManager *manager)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
     TpConnectionPresenceType type, const gchar *status, const gchar *message);
@@ -92,7 +94,8 @@ void tp_account_manager_create_account_async (TpAccountManager *manager,
     GAsyncReadyCallback callback, gpointer user_data);
 
 TpAccount * tp_account_manager_create_account_finish (
-    TpAccountManager *manager, GAsyncResult *result, GError **error);
+    TpAccountManager *manager, GAsyncResult *result, GError **error)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 gboolean tp_account_manager_is_prepared (TpAccountManager *manager,
     GQuark feature);

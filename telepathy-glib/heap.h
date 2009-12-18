@@ -29,7 +29,8 @@ G_BEGIN_DECLS
 
 typedef struct _TpHeap TpHeap;
 
-TpHeap *tp_heap_new (GCompareFunc comparator, GDestroyNotify destructor);
+TpHeap *tp_heap_new (GCompareFunc comparator, GDestroyNotify destructor)
+  G_GNUC_WARN_UNUSED_RESULT;
 void tp_heap_destroy (TpHeap *heap);
 void tp_heap_clear (TpHeap *heap);
 

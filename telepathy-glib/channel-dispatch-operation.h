@@ -69,7 +69,8 @@ GType tp_channel_dispatch_operation_get_type (void);
 
 TpChannelDispatchOperation *tp_channel_dispatch_operation_new (
     TpDBusDaemon *bus_daemon, const gchar *object_path,
-    GHashTable *immutable_properties, GError **error);
+    GHashTable *immutable_properties, GError **error)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_channel_dispatch_operation_init_known_interfaces (void);
 

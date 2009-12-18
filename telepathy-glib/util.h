@@ -34,26 +34,32 @@ G_BEGIN_DECLS
 
 gboolean tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle);
 
-GValue *tp_g_value_slice_new (GType type);
+GValue *tp_g_value_slice_new (GType type) G_GNUC_WARN_UNUSED_RESULT;
 
-GValue *tp_g_value_slice_new_boolean (gboolean b);
-GValue *tp_g_value_slice_new_int (gint n);
-GValue *tp_g_value_slice_new_int64 (gint64 n);
-GValue *tp_g_value_slice_new_uint (guint n);
-GValue *tp_g_value_slice_new_uint64 (guint64 n);
-GValue *tp_g_value_slice_new_double (double d);
+GValue *tp_g_value_slice_new_boolean (gboolean b) G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_int (gint n) G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_int64 (gint64 n) G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_uint (guint n) G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_uint64 (guint64 n) G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_double (double d) G_GNUC_WARN_UNUSED_RESULT;
 
-GValue *tp_g_value_slice_new_string (const gchar *string);
-GValue *tp_g_value_slice_new_static_string (const gchar *string);
-GValue *tp_g_value_slice_new_take_string (gchar *string);
+GValue *tp_g_value_slice_new_string (const gchar *string)
+  G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_static_string (const gchar *string)
+  G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_take_string (gchar *string)
+  G_GNUC_WARN_UNUSED_RESULT;
 
-GValue *tp_g_value_slice_new_boxed (GType type, gconstpointer p);
-GValue *tp_g_value_slice_new_static_boxed (GType type, gconstpointer p);
-GValue *tp_g_value_slice_new_take_boxed (GType type, gpointer p);
+GValue *tp_g_value_slice_new_boxed (GType type, gconstpointer p)
+  G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_static_boxed (GType type, gconstpointer p)
+  G_GNUC_WARN_UNUSED_RESULT;
+GValue *tp_g_value_slice_new_take_boxed (GType type, gpointer p)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_g_value_slice_free (GValue *value);
 
-GValue *tp_g_value_slice_dup (const GValue *value);
+GValue *tp_g_value_slice_dup (const GValue *value) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_g_hash_table_update (GHashTable *target, GHashTable *source,
     GBoxedCopyFunc key_dup, GBoxedCopyFunc value_dup);
@@ -64,7 +70,7 @@ gpointer tp_mixin_offset_cast (gpointer instance, guint offset);
 guint tp_mixin_instance_get_offset (gpointer instance, GQuark quark);
 guint tp_mixin_class_get_offset (gpointer klass, GQuark quark);
 
-gchar *tp_escape_as_identifier (const gchar *name);
+gchar *tp_escape_as_identifier (const gchar *name) G_GNUC_WARN_UNUSED_RESULT;
 
 gboolean tp_strv_contains (const gchar * const *strv, const gchar *str);
 
@@ -79,7 +85,7 @@ gulong tp_g_signal_connect_object (gpointer instance,
 
 GValueArray *tp_value_array_build (gsize length,
   GType type,
-  ...);
+  ...) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 

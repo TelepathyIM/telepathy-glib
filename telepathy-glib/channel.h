@@ -74,11 +74,11 @@ GQuark tp_errors_removed_from_group_quark (void);
 TpChannel *tp_channel_new (TpConnection *conn,
     const gchar *object_path, const gchar *optional_channel_type,
     TpHandleType optional_handle_type, TpHandle optional_handle,
-    GError **error);
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 TpChannel *tp_channel_new_from_properties (TpConnection *conn,
     const gchar *object_path, const GHashTable *immutable_properties,
-    GError **error);
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 gboolean tp_channel_run_until_ready (TpChannel *self, GError **error,
     GMainLoop **loop);

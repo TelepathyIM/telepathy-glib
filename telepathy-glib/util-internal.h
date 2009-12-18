@@ -23,6 +23,6 @@
 
 #include <glib.h>
 
-GArray *_tp_quark_array_copy (const GQuark *quarks);
+GArray *_tp_quark_array_copy (const GQuark *quarks) G_GNUC_WARN_UNUSED_RESULT;
 
 #endif /* __TP_UTIL_INTERNAL_H__ */

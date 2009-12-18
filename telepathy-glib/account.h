@@ -72,7 +72,7 @@ GType tp_account_get_type (void);
 GQuark tp_account_get_feature_quark_core (void) G_GNUC_CONST;
 
 TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
-    GError **error);
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 gboolean tp_account_parse_object_path (const gchar *object_path,
     gchar **cm, gchar **protocol, gchar **account_id, GError **error);

@@ -127,7 +127,8 @@ gboolean tp_dbus_properties_mixin_get (GObject *self,
 
 GHashTable *tp_dbus_properties_mixin_make_properties_hash (
     GObject *object, const gchar *first_interface,
-    const gchar *first_property, ...) G_GNUC_NULL_TERMINATED;
+    const gchar *first_property, ...)
+  G_GNUC_NULL_TERMINATED G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 
