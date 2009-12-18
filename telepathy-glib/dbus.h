@@ -74,8 +74,8 @@ _tp_asv_size_inline (const GHashTable *asv)
   return g_hash_table_size /* */ ((GHashTable *) asv);
 }
 
-GHashTable *tp_asv_new (const gchar *first_key, ...) G_GNUC_NULL_TERMINATED
-  G_GNUC_WARN_UNUSED_RESULT;
+GHashTable *tp_asv_new (const gchar *first_key, ...)
+  G_GNUC_NULL_TERMINATED G_GNUC_WARN_UNUSED_RESULT;
 gboolean tp_asv_get_boolean (const GHashTable *asv, const gchar *key,
     gboolean *valid);
 void tp_asv_set_boolean (GHashTable *asv, const gchar *key, gboolean value);
