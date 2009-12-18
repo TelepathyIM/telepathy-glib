@@ -97,7 +97,7 @@ gboolean tp_handles_client_release (TpHandleRepoIface *self,
     const gchar *client, const GArray *handles, GError **error);
 
 const char *tp_handle_inspect (TpHandleRepoIface *self,
-    TpHandle handle);
+    TpHandle handle) G_GNUC_WARN_UNUSED_RESULT;
 TpHandle tp_handle_lookup (TpHandleRepoIface *self,
     const gchar *id, gpointer context, GError **error);
 TpHandle tp_handle_ensure (TpHandleRepoIface *self,
@@ -127,7 +127,7 @@ TpHandleSet * tp_handle_set_new (TpHandleRepoIface *repo)
   G_GNUC_WARN_UNUSED_RESULT;
 void tp_handle_set_destroy (TpHandleSet *set);
 
-TpIntSet *tp_handle_set_peek (TpHandleSet *set);
+TpIntSet *tp_handle_set_peek (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_handle_set_add (TpHandleSet *set, TpHandle handle);
 gboolean tp_handle_set_remove (TpHandleSet *set, TpHandle handle);
