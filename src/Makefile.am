@@ -24,6 +24,7 @@ telepathy_logger_handwritten_source = \
 		tpl-headless-logger-init.c	\
 		tpl-channel.c			\
 		tpl-text-channel-context.c	\
+		tpl-log-entry.c			\
 		tpl-log-entry-text.c		\
 		tpl-contact.c			\
 		tpl-log-manager.c		\

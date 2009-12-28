@@ -26,7 +26,7 @@
 
 #include <glib-object.h>
 
-#include <tpl-log-entry-text.h>
+#include <tpl-log-entry.h>
 
 G_BEGIN_DECLS
 
@@ -36,7 +36,6 @@ G_BEGIN_DECLS
 #define TPL_IS_LOG_MANAGER(o)		(G_TYPE_CHECK_INSTANCE_TYPE ((o), TPL_TYPE_LOG_MANAGER))
 #define TPL_IS_LOG_MANAGER_CLASS(k) 	(G_TYPE_CHECK_CLASS_TYPE ((k), TPL_TYPE_LOG_MANAGER))
 #define TPL_LOG_MANAGER_GET_CLASS(o)	(G_TYPE_INSTANCE_GET_CLASS ((o), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
-
 
 typedef struct 
 {
@@ -59,7 +58,7 @@ typedef struct
 	gchar     *date;
 } TplLogSearchHit;
 
-typedef gboolean (*TplLogMessageFilter) (TplLogEntryText *message,
+typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
 		gpointer user_data);
 
 GType tpl_log_manager_get_type (void);
@@ -68,7 +67,7 @@ TplLogManager *tpl_log_manager_dup_singleton (void);
 
 gboolean tpl_log_manager_add_message (TplLogManager *manager,
 		const gchar *chat_id, gboolean chatroom,
-		TplLogEntryText *message, GError **error);
+		TplLogEntry *message, GError **error);
 
 gboolean tpl_log_manager_exists (TplLogManager *manager,
 		TpAccount *account, const gchar *chat_id,

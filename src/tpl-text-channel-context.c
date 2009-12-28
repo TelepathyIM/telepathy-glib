@@ -31,6 +31,7 @@
 #include <tpl-observer.h>
 #include <tpl-text-channel-context.h>
 #include <tpl-channel.h>
+#include <tpl-log-entry.h>
 #include <tpl-log-entry-text.h>
 #include <tpl-log-manager.h>
 #include <tpl-contact.h>
@@ -101,7 +102,8 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
 	TpContact *remote,*me;
 	TplContact *tpl_contact_sender;
 	TplContact *tpl_contact_receiver;
-	TplLogEntryText *log;
+	TplLogEntryText *tlog;
+	TplLogEntry *log;
 	TplLogManager *logmanager;
 	gchar *chat_id;
 
@@ -111,6 +113,10 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
 	/* Initialize data for TplContact */
 	me = tpl_text_channel_get_my_contact(tpl_text);
 	remote = tpl_text_channel_get_remote_contact(tpl_text);
+
+	if(!tpl_text_channel_is_chatroom(tpl_text) && remote==NULL) {
+		g_error("Sending message: Remote TplContact NULL on 1-1 Chat\n");
+	}
 
 	tpl_contact_sender = tpl_contact_from_tp_contact(me);
 	tpl_contact_set_contact_type(tpl_contact_sender,
@@ -125,20 +131,23 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
 		arg_Text);
 
 	/* Initialize TplLogEntryText */
-	log = tpl_log_entry_text_new();
-	tpl_log_entry_text_set_tpl_text_channel(log, tpl_text);
-	tpl_log_entry_text_set_sender(log, tpl_contact_sender);
-	tpl_log_entry_text_set_receiver(log, tpl_contact_receiver);
-	tpl_log_entry_text_set_message(log, arg_Text);
-	tpl_log_entry_text_set_message_type(log, arg_Type);
-	tpl_log_entry_text_set_signal_type(log,
+	log = tpl_log_entry_new ();
+	tlog = tpl_log_entry_text_new ();
+
+	tpl_log_entry_text_set_tpl_text_channel(tlog, tpl_text);
+	tpl_log_entry_text_set_sender(tlog, tpl_contact_sender);
+	tpl_log_entry_text_set_receiver(tlog, tpl_contact_receiver);
+	tpl_log_entry_text_set_message(tlog, arg_Text);
+	tpl_log_entry_text_set_message_type(tlog, arg_Type);
+	tpl_log_entry_text_set_signal_type(tlog,
 			TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
-	tpl_log_entry_text_set_timestamp(log, (time_t) arg_Timestamp);
-	tpl_log_entry_text_set_message_id(log, 123);
+	tpl_log_entry_text_set_message_id(tlog, 123);
 
-	/* Initialized LogStore and send the message */
+	tpl_log_entry_set_entry (log, tlog);
+	tpl_log_entry_set_timestamp(log, (time_t) arg_Timestamp);
 
-	// TODO use the log-manager
+	/* Initialized LogStore and send the log entry */
+
 	if (!tpl_text_channel_is_chatroom(tpl_text))
 		chat_id = g_strdup (tpl_contact_get_identifier(
 					tpl_contact_receiver));
@@ -146,12 +155,14 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
 		chat_id = g_strdup (tpl_text_channel_get_chatroom_id(
 			tpl_text));
 
-	tpl_log_entry_text_set_chat_id(log, chat_id);
+	tpl_log_entry_text_set_chat_id(tlog, chat_id);
 
 	logmanager = tpl_log_manager_dup_singleton();
+
 	tpl_log_manager_add_message(logmanager, chat_id,
 			tpl_text_channel_is_chatroom(tpl_text),
 			log, &error);
+
 	if(error!=NULL)
 	{
 		g_error("LogStore: %s", error->message);
@@ -176,36 +187,49 @@ _channel_on_received_signal_with_contact_cb(TpConnection *connection,
 		gpointer user_data,
 		GObject *weak_object)
 {
-	TplLogEntryText *log = TPL_LOG_ENTRY_TEXT(user_data);
-	TplTextChannel *tpl_text = tpl_log_entry_text_get_tpl_text_channel(log);
+	TplLogEntry *log = TPL_LOG_ENTRY(user_data);
+	TplLogEntryText *tlog =
+		TPL_LOG_ENTRY_TEXT(tpl_log_entry_get_entry(log));
+	TplTextChannel *tpl_text = tpl_log_entry_text_get_tpl_text_channel(tlog);
 	GError *e = NULL;
 	TplLogManager *logmanager;
 	TplContact *tpl_contact_sender;
 	TpContact *remote;
 	gchar *chat_id;
 
-	g_assert(TPL_IS_LOG_ENTRY_TEXT(log));
-	g_return_if_fail(TPL_IS_LOG_ENTRY_TEXT(log));
+	g_return_if_fail(TPL_IS_LOG_ENTRY(log));
+	g_return_if_fail(TPL_IS_LOG_ENTRY_TEXT(tlog));
 
 	if(error!=NULL)
 	{
-		g_error("Retrieving remote contact information: %s\n", error->message);
+		g_error("Unrecoverable error retrieving remote contact "
+				"information: %s\n", error->message);
 		g_error("Not able to log the received message: %s\n",
-			tpl_log_entry_text_get_message(log));
+			tpl_log_entry_text_get_message(tlog));
 		return;
 	}
 
-	remote = tpl_text_channel_get_remote_contact(tpl_text);
+	if(n_failed>0) {
+			g_error("%d invalid handle(s) passed to "
+					"tp_connection_get_contacts_by_handle()\n",
+					n_failed);
+			g_error("Not able to log the received message: %s\n",
+					tpl_log_entry_text_get_message(tlog));
+			return;
+	}
+	
+	remote = contacts[0];
+	tpl_text_channel_set_remote_contact(tpl_text, remote);
 	tpl_contact_sender = tpl_contact_from_tp_contact(remote);
 
 	tpl_contact_set_contact_type(tpl_contact_sender,
 			TPL_CONTACT_USER);
-	tpl_log_entry_text_set_sender(log, tpl_contact_sender);
+	tpl_log_entry_text_set_sender(tlog, tpl_contact_sender);
 
 	g_message("%s (%s): %s\n", 
 			tpl_contact_get_identifier(tpl_contact_sender), 
 			tpl_contact_get_alias(tpl_contact_sender),
-			tpl_log_entry_text_get_message(log));
+			tpl_log_entry_text_get_message(tlog));
 
 	/* Initialize LogStore and store the message */
 	
@@ -216,12 +240,11 @@ _channel_on_received_signal_with_contact_cb(TpConnection *connection,
 		chat_id = g_strdup (tpl_text_channel_get_chatroom_id(
 			tpl_text));
 
-	tpl_log_entry_text_set_chat_id(log, chat_id);
+	tpl_log_entry_text_set_chat_id(tlog, chat_id);
 
 	logmanager = tpl_log_manager_dup_singleton();
-	g_assert(TPL_IS_LOG_ENTRY_TEXT(log));
 	tpl_log_manager_add_message(logmanager,
-			tpl_log_entry_text_get_chat_id(log),
+			tpl_log_entry_text_get_chat_id(tlog),
 			tpl_text_channel_is_chatroom (tpl_text),
 			log, &e);
 	if(e!=NULL)
@@ -247,32 +270,49 @@ _channel_on_received_signal_cb (TpChannel *proxy,
 		gpointer user_data,
 		GObject *weak_object)
 {
+	TpHandle  remote_handle = (TpHandle) arg_Sender;
 	TplTextChannel *tpl_text = TPL_TEXT_CHANNEL(user_data);
 	TplChannel *tpl_chan =
 		tpl_text_channel_get_tpl_channel(tpl_text);
 	TpContact *me;
 	TplContact *tpl_contact_receiver;
-	TplLogEntryText *log;
+	TplLogEntry *log;
+	TplLogEntryText *tlog;
+
+	// TODO use the Message iface to check the delivery
+	// notification and handle it correctly
+	if(arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) {
+		g_debug("Non text contenct flag set."
+				"Probably a delivery notification for a sent message."
+				"Ignoring\n");
+		return;
+	}
 
 	/* Initialize TplLogEntryText (part 1) */
-	log = tpl_log_entry_text_new();
-	tpl_log_entry_text_set_tpl_text_channel(log, tpl_text);
-	tpl_log_entry_text_set_message(log, arg_Text);
-	tpl_log_entry_text_set_message_type(log, arg_Type);
-	tpl_log_entry_text_set_signal_type(log,
+	log = tpl_log_entry_new();
+	tlog = tpl_log_entry_text_new();
+	tpl_log_entry_set_entry(log, tlog);
+
+	tpl_log_entry_text_set_tpl_text_channel(tlog, tpl_text);
+	tpl_log_entry_text_set_message(tlog, arg_Text);
+	tpl_log_entry_text_set_message_type(tlog, arg_Type);
+	tpl_log_entry_text_set_signal_type(tlog,
 			TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
-	tpl_log_entry_text_set_timestamp(log, (time_t) arg_Timestamp);
-	tpl_log_entry_text_set_message_id(log, 123); //TODO set a real Id
+	tpl_log_entry_text_set_message_id(tlog, 123); //TODO set a real Id
 
 	me = tpl_text_channel_get_my_contact(tpl_text);
 	tpl_contact_receiver = tpl_contact_from_tp_contact(me);
 	tpl_contact_set_contact_type(tpl_contact_receiver,
 		TPL_CONTACT_USER);
-	tpl_log_entry_text_set_receiver(log, tpl_contact_receiver);
+	tpl_log_entry_text_set_receiver(tlog, tpl_contact_receiver);
+
+	tpl_log_entry_set_timestamp(log, (time_t) arg_Timestamp);
+
+	g_debug("remote handler: %d\n", arg_Sender);
 
 	tp_connection_get_contacts_by_handle(
 			tpl_channel_get_connection(tpl_chan),
-			1, &arg_Sender,
+			1, &remote_handle,
 			TP_CONTACT_FEATURES_LEN, features,
 			_channel_on_received_signal_with_contact_cb,
 			log, g_object_unref, NULL);

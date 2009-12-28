@@ -72,7 +72,7 @@ gboolean
 tpl_log_store_add_message (TplLogStore *self,
                                const gchar *chat_id,
                                gboolean chatroom,
-                               TplLogEntryText *message,
+                               TplLogEntry *message,
                                GError **error)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->add_message)
@@ -149,13 +149,12 @@ void
 tpl_log_store_ack_message (TplLogStore *self,
                                const gchar *chat_id,
                                gboolean chatroom,
-                               TplLogEntryText *message)
+                               TplLogEntry *message)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->ack_message)
     return;
 
-  TPL_LOG_STORE_GET_INTERFACE (self)->ack_message (
-      self, chat_id, chatroom, message);
+  TPL_LOG_STORE_GET_INTERFACE (self)->ack_message (self, chat_id, chatroom, message);
 }
 
 GList *

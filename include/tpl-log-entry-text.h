@@ -75,11 +75,7 @@ typedef struct {
 	const gchar	*message;
 	guint		message_id;
         const gchar	*chat_id;
-	time_t		timestamp;
 	gboolean	chatroom;
-	
-	// extra data passed, currently unuse
-	//gpointer data;
 } TplLogEntryText;
 
 typedef struct {
@@ -121,9 +117,6 @@ tpl_log_entry_text_get_signal_type (TplLogEntryText *self);
 TplLogEntryTextDirection
 tpl_log_entry_text_get_direction (TplLogEntryText *self);
 
-time_t
-tpl_log_entry_text_get_timestamp (TplLogEntryText *self);
-
 guint
 tpl_log_entry_text_get_message_id (TplLogEntryText *self);
 
@@ -143,7 +136,6 @@ void tpl_log_entry_text_set_message (TplLogEntryText *self, const gchar *data);
 void tpl_log_entry_text_set_message_type (TplLogEntryText *self, TpChannelTextMessageType data);
 void tpl_log_entry_text_set_signal_type (TplLogEntryText *self, TplLogEntryTextSignalType data);
 void tpl_log_entry_text_set_direction (TplLogEntryText *self, TplLogEntryTextDirection data);
-void tpl_log_entry_text_set_timestamp (TplLogEntryText *self, time_t data);
 void tpl_log_entry_text_set_message_id (TplLogEntryText *self, guint data);
 void tpl_log_entry_text_set_chat_id (TplLogEntryText *self, const gchar *data);
 void tpl_log_entry_text_set_chatroom (TplLogEntryText *self, gboolean data);

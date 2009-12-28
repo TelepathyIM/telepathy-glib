@@ -30,6 +30,7 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
 
+#include <tpl-log-entry.h>
 #include <tpl-log-manager.h>
 #include <tpl-log-store-empathy.h>
 #include <tpl-log-store.h>
@@ -125,7 +126,7 @@ gboolean
 tpl_log_manager_add_message (TplLogManager *manager,
                                  const gchar *chat_id,
                                  gboolean chatroom,
-                                 TplLogEntryText *message,
+                                 TplLogEntry *message,
                                  GError **error)
 {
   TplLogManagerPriv *priv;
@@ -139,7 +140,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
   g_return_val_if_fail (chat_id != NULL, FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
   priv = GET_PRIV (manager);
 
@@ -150,7 +151,6 @@ tpl_log_manager_add_message (TplLogManager *manager,
         {
           out = tpl_log_store_add_message (TPL_LOG_STORE (l->data),
               chat_id, chatroom, message, error);
-	  g_message("YEAH\n");
           found = TRUE;
           break;
         }
@@ -252,14 +252,14 @@ static gint
 log_manager_message_date_cmp (gconstpointer a,
 			      gconstpointer b)
 {
-	TplLogEntryText *one = (TplLogEntryText *) a;
-	TplLogEntryText *two = (TplLogEntryText *) b;
+	TplLogEntry *one = (TplLogEntry *) a;
+	TplLogEntry *two = (TplLogEntry *) b;
 	time_t one_time, two_time;
 
-	one_time = tpl_log_entry_text_get_timestamp (one);
-	two_time = tpl_log_entry_text_get_timestamp (two);
+	one_time = tpl_log_entry_get_timestamp (one);
+	two_time = tpl_log_entry_get_timestamp (two);
 
-        /* Return -1 of message1 is older than message2 */
+	/* Return -1 of message1 is older than message2 */
 	return one_time < two_time ? -1 : one_time - two_time;
 }
 

@@ -193,11 +193,11 @@ log_store_empathy_get_timestamp_filename (void)
 }
 
 static gchar *
-log_store_empathy_get_timestamp_from_message (TplLogEntryText *message)
+log_store_empathy_get_timestamp_from_message (TplLogEntry *message)
 {
   time_t t;
 
-  t = tpl_log_entry_text_get_timestamp (message);
+  t = tpl_log_entry_get_timestamp (message);
 
   /* We keep the timestamps in the messages as UTC. */
   return tpl_time_to_string_utc (t, LOG_TIME_FORMAT_FULL);
@@ -268,11 +268,11 @@ static gboolean _log_store_empathy_write_to_store ( TplLogStore *self,
 }
 
 static gboolean
-_log_store_empathy_add_message_status_changed (
+_log_store_empathy_add_message_text_status_changed (
 			TplLogStore *self,
 			const gchar *chat_id,
 			gboolean chatroom,
-			TplLogEntryText *message,
+			TplLogEntry *message,
 			GError **error)
 
 {
@@ -286,10 +286,12 @@ _log_store_empathy_add_message_status_changed (
   gchar *contact_presence;
   gchar *entry;
   gboolean ret = FALSE;
+  TplLogEntryText *tmessage;
 
-  sender = tpl_log_entry_text_get_sender (message);
+  tmessage = tpl_log_entry_get_entry(message);
+  sender = tpl_log_entry_text_get_sender (tmessage);
   account = tpl_channel_get_account (
-	tpl_log_entry_text_get_tpl_channel (message) );
+	tpl_log_entry_text_get_tpl_channel (tmessage) );
 
   timestamp = log_store_empathy_get_timestamp_from_message (message);
 
@@ -329,10 +331,10 @@ _log_store_empathy_add_message_status_changed (
 
 
 static gboolean
-_log_store_empathy_add_message_chat (TplLogStore *self,
+_log_store_empathy_add_message_text_chat (TplLogStore *self,
 		const gchar *chat_id,
 		gboolean chatroom,
-		TplLogEntryText *message,
+		TplLogEntry *message,
 		GError **error)
 {
   gboolean ret;
@@ -348,12 +350,15 @@ _log_store_empathy_add_message_chat (TplLogStore *self,
   gchar *contact_id;
   gchar *entry;
   TpChannelTextMessageType msg_type;
+  TplLogEntryText *tmessage;
 
-  sender = tpl_log_entry_text_get_sender (message);
+  tmessage = tpl_log_entry_get_entry(message);
+
+  sender = tpl_log_entry_text_get_sender (tmessage);
   account = tpl_channel_get_account (
-	tpl_log_entry_text_get_tpl_channel (message) );
-  body_str = tpl_log_entry_text_get_message (message);
-  msg_type = tpl_log_entry_text_get_message_type (message);
+	tpl_log_entry_text_get_tpl_channel (tmessage) );
+  body_str = tpl_log_entry_text_get_message (tmessage);
+  msg_type = tpl_log_entry_text_get_message_type (tmessage);
 
   if (TPL_STR_EMPTY (body_str))
     return FALSE;
@@ -365,6 +370,8 @@ _log_store_empathy_add_message_chat (TplLogStore *self,
   contact_name = g_markup_escape_text (str, -1);
 
   str = tpl_contact_get_identifier (sender);
+
+  g_message("%s\n", tpl_contact_get_identifier(sender));
   contact_id = g_markup_escape_text (str, -1);
 /*
   avatar = empathy_contact_get_avatar (sender);
@@ -372,10 +379,10 @@ _log_store_empathy_add_message_chat (TplLogStore *self,
     avatar_token = g_markup_escape_text (avatar->token, -1);
 */
   entry = g_strdup_printf (
-       "<message time='%s' cm_id='%d' id='%s' name='%s'"
+       "<message time='%s' cm_id='%d' id='%s' name='%s' "
 	"token='%s' isuser='%s' type='%s'>"
        "%s</message>\n" LOG_FOOTER, timestamp,
-       tpl_log_entry_text_get_message_id (message),
+       tpl_log_entry_text_get_message_id (tmessage),
        contact_id, contact_name,
        //avatar_token ? avatar_token : "", // instead force to "" as
        //follow
@@ -398,29 +405,30 @@ _log_store_empathy_add_message_chat (TplLogStore *self,
 
 
 static gboolean
-log_store_empathy_add_message (TplLogStore *self,
+_log_store_empathy_add_message_text (TplLogStore *self,
                                const gchar *chat_id,
                                gboolean chatroom,
-                               TplLogEntryText *message,
+                               TplLogEntry *message,
                                GError **error)
 {
   TplLogEntryTextSignalType signal_type;
+  TplLogEntryText *tmessage;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   g_return_val_if_fail (chat_id != NULL, FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
-
-  signal_type = tpl_log_entry_text_get_signal_type (message);
+  tmessage = tpl_log_entry_get_entry(message);
+  signal_type = tpl_log_entry_text_get_signal_type (tmessage);
 
   switch (signal_type) {
   case TPL_LOG_ENTRY_TEXT_SIGNAL_SENT:
   case TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED:
-	return _log_store_empathy_add_message_chat(self,
+	return _log_store_empathy_add_message_text_chat(self,
 		chat_id, chatroom, message, error);
 	break;
   case TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
-	return _log_store_empathy_add_message_status_changed(self,
+	return _log_store_empathy_add_message_text_status_changed(self,
 		chat_id, chatroom, message, error);
 	break;
   case TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR:
@@ -430,6 +438,28 @@ log_store_empathy_add_message (TplLogStore *self,
        return FALSE;
   }
 }
+
+
+/* First of two phases selection: understand the type LogEntry */
+static gboolean
+log_store_empathy_add_message(TplLogStore *self,
+                               const gchar *chat_id,
+                               gboolean chatroom,
+                               TplLogEntry *message,
+                               GError **error)
+{
+	g_return_val_if_fail(TPL_IS_LOG_ENTRY(message), FALSE);
+
+	switch(tpl_log_entry_get_entry_type(message)) {
+	case TPL_LOG_ENTRY_TEXT:
+		return _log_store_empathy_add_message_text(
+				self, chat_id, chatroom,
+				message, error);
+	default:
+		return FALSE;
+	}
+}
+
 
 static gboolean
 log_store_empathy_exists (TplLogStore *self,
@@ -623,7 +653,8 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
   /* Now get the messages. */
   for (node = log_node->children; node; node = node->next)
     {
-      TplLogEntryText *message;
+      TplLogEntry *message;
+      TplLogEntryText *tmessage;
       TplContact *sender;
       gchar *time_;
       time_t t;
@@ -663,9 +694,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
         cm_id = atoi (cm_id_str);
 
       t = tpl_time_parse (time_);
-//TODO remove me
-      //sender = empathy_contact_new_for_log (account, sender_id, sender_name,
-	//				    is_user);
+
       sender = tpl_contact_new();
       tpl_contact_set_account(sender, account);
       tpl_contact_set_identifier(sender, sender_id);
@@ -677,16 +706,19 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
             sender_avatar_token);
 */
 
-      message = tpl_log_entry_text_new();
-      tpl_log_entry_text_set_message(message, body);
-      tpl_log_entry_text_set_sender (message, sender);
-      tpl_log_entry_text_set_timestamp (message, t);
-      tpl_log_entry_text_set_message_type (message, msg_type);
+      tmessage = tpl_log_entry_text_new();
+      tpl_log_entry_text_set_message(tmessage, body);
+      tpl_log_entry_text_set_sender (tmessage, sender);
+      tpl_log_entry_text_set_message_type (tmessage, msg_type);
 	//TODO uderstand if useful
       //tpl_log_entry_text_set_is_backlog (message, TRUE);
 
+      message = tpl_log_entry_new ();
+      tpl_log_entry_set_timestamp (message, t);
+      tpl_log_entry_set_entry (message, tmessage); 
+
       if (cm_id_str)
-        tpl_log_entry_text_set_message_id (message, cm_id);
+        tpl_log_entry_text_set_message_id (tmessage, cm_id);
 
       messages = g_list_append (messages, message);
 

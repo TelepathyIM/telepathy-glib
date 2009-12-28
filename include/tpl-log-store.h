@@ -52,7 +52,7 @@ struct _TplLogStoreInterface
   gboolean (*exists) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom);
   gboolean (*add_message) (TplLogStore *self, const gchar *chat_id,
-      gboolean chatroom, TplLogEntryText *message, GError **error);
+      gboolean chatroom, TplLogEntry *message, GError **error);
   GList * (*get_dates) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom);
   GList * (*get_messages_for_date) (TplLogStore *self,
@@ -64,7 +64,7 @@ struct _TplLogStoreInterface
             TpAccount    *account);
   GList * (*search_new) (TplLogStore *self, const gchar *text);
   void (*ack_message) (TplLogStore *self, const gchar *chat_id,
-      gboolean chatroom, TplLogEntryText *message);
+      gboolean chatroom, TplLogEntry *message);
   GList * (*get_filtered_messages) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom, guint num_messages,
       TplLogMessageFilter filter, gpointer user_data);
@@ -76,7 +76,7 @@ const gchar *tpl_log_store_get_name (TplLogStore *self);
 gboolean tpl_log_store_exists (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
 gboolean tpl_log_store_add_message (TplLogStore *self,
-    const gchar *chat_id, gboolean chatroom, TplLogEntryText *message,
+    const gchar *chat_id, gboolean chatroom, TplLogEntry *message,
     GError **error);
 GList *tpl_log_store_get_dates (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
@@ -90,7 +90,7 @@ GList *tpl_log_store_get_chats (TplLogStore *self,
 GList *tpl_log_store_search_new (TplLogStore *self,
     const gchar *text);
 void tpl_log_store_ack_message (TplLogStore *self,
-    const gchar *chat_id, gboolean chatroom, TplLogEntryText *message);
+    const gchar *chat_id, gboolean chatroom, TplLogEntry *message);
 GList *tpl_log_store_get_filtered_messages (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
     guint num_messages, TplLogMessageFilter filter, gpointer user_data);

@@ -1,12 +1,10 @@
 Those are mini tasks still to do. They should be filed against a bug
 trucker as soon as TPL will have one:
 
-- dispose/finalize methods
-- check input types for callbacks and getters/setters with TPL_IS_... and Co.
 - global configuration object (ie disable logging partially or totally,
   choose the logstore, etc)
 - understand if direction from tpl_log_entry_text is to be removed 
-- make TplObserver a singleton
-- move glob_map in tpl-observer.c to a member of TplObserver (singleton)
 - understand if TplContact is still useful or can be substitued by a
   simple TpContact
+- use the Message interface of received messages to handle delivery
+  notifications & Co.

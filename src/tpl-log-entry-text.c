@@ -65,8 +65,6 @@ tpl_log_entry_text_dispose (GObject *obj)
 	g_debug("TplLogEntryText: disposed\n");
 }
 
-
-
 static void
 tpl_log_entry_text_finalize (GObject *obj)
 {
@@ -184,13 +182,6 @@ tpl_log_entry_text_get_direction (TplLogEntryText *self)
 	return self->direction;
 }
 
-time_t
-tpl_log_entry_text_get_timestamp (TplLogEntryText *self)
-{
-	g_return_val_if_fail(TPL_IS_LOG_ENTRY_TEXT(self), -1);
-	return self->timestamp;
-}
-
 guint
 tpl_log_entry_text_get_message_id (TplLogEntryText *self)
 {
@@ -266,13 +257,6 @@ void tpl_log_entry_text_set_direction (TplLogEntryText *self, TplLogEntryTextDir
 	g_return_if_fail(TPL_IS_LOG_ENTRY_TEXT(self));
 
 	self->direction = data;
-}
-
-void tpl_log_entry_text_set_timestamp (TplLogEntryText *self, time_t data)
-{
-	g_return_if_fail(TPL_IS_LOG_ENTRY_TEXT(self));
-
-	self->timestamp = data;
 }
 
 void tpl_log_entry_text_set_message_id (TplLogEntryText *self, guint data)
