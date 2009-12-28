@@ -445,7 +445,7 @@ tp_debug_divert_messages (const gchar *filename)
  * If telepathy-glib was compiled with --disable-debug (not recommended),
  * this function is equivalent to g_log_default_handler().
  *
- * Changed in 0.8.UNRELEASED: timestamps are now printed in UTC, in
+ * Changed in 0.9.0: timestamps are now printed in UTC, in
  * RFC-3339 format. Previously, they were printed in local time, in a
  * format similar to RFC-3339.
  *
