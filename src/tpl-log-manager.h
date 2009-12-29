@@ -24,7 +24,10 @@
 #ifndef __TPL_LOG_MANAGER_H__
 #define __TPL_LOG_MANAGER_H__
 
+
 #include <glib-object.h>
+
+#include <telepathy-glib/account.h>
 
 #include <tpl-log-entry.h>
 
@@ -65,10 +68,6 @@ GType tpl_log_manager_get_type (void);
 
 TplLogManager *tpl_log_manager_dup_singleton (void);
 
-gboolean tpl_log_manager_add_message (TplLogManager *manager,
-		const gchar *chat_id, gboolean chatroom,
-		TplLogEntry *message, GError **error);
-
 gboolean tpl_log_manager_exists (TplLogManager *manager,
 		TpAccount *account, const gchar *chat_id,
 		gboolean chatroom);
@@ -97,9 +96,6 @@ void tpl_log_manager_search_free (GList *hits);
 gchar *tpl_log_manager_get_date_readable (const gchar *date);
 
 void tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
-
-//void tpl_log_manager_observe (TplLogManager *log_manager,
-//    EmpathyDispatcher *dispatcher);
 
 G_END_DECLS
 

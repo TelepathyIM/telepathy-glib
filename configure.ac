@@ -25,26 +25,12 @@ AC_INIT(TelepathyLogger, tpl_version, http://telepathy.freedesktop.org/wiki/Logg
 AC_PREREQ(2.59)
 AC_COPYRIGHT([
   Copyright (C) 2003-2007 Imendio AB
-  Copyright (C) 2007-2008 Collabora Ltd.
+  Copyright (C) 2007-2009 Collabora Ltd.
 ])
 
 # Minimal version required
 GLIB_REQUIRED=2.22.0
-#GTK_REQUIRED=2.18.0
-#GCONF_REQUIRED=1.2.0
 TELEPATHY_GLIB_REQUIRED=0.9.0
-#ENCHANT_REQUIRED=1.2.0
-#ISO_CODES_REQUIRED=0.35
-#LIBNOTIFY_REQUIRED=0.4.4
-#LIBCANBERRA_GTK_REQUIRED=0.4
-#LIBCHAMPLAIN_REQUIRED=0.4
-#LIBCHAMPLAIN_GTK_REQUIRED=0.4
-#CLUTTER_GTK_REQUIRED=0.10
-#GEOCLUE_REQUIRED=0.11
-#WEBKIT_REQUIRED=1.1.15
-#KEYRING_REQUIRED=2.22
-#NETWORK_MANAGER_REQUIRED=0.7.0
-#NAUTILUS_SENDTO_REQUIRED=2.28.1
 
 # Use --enable-maintainer-mode to disabled deprecated symbols
 GNOME_MAINTAINER_MODE_DEFINES
@@ -139,27 +125,6 @@ PKG_CHECK_MODULES(LIBTPL,
    libxml-2.0
    telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
 ])
-## Removed libs
-#   gio-2.0 >= $GLIB_REQUIRED
-#   gio-unix-2.0 >= $GLIB_REQUIRED
-#   telepathy-farsight
-#   farsight2-0.10
-#   gstreamer-0.10
-
-#PKG_CHECK_MODULES(LIBEMPATHYGTK,
-#[
-#   glib-2.0 >= $GLIB_REQUIRED
-#   gobject-2.0
-#   gio-2.0 >= $GLIB_REQUIRED
-#   gconf-2.0 >= $GCONF_REQUIRED
-#   x11
-#   gtk+-2.0 >= $GTK_REQUIRED
-#   libcanberra-gtk >= $LIBCANBERRA_GTK_REQUIRED
-#   telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
-#   farsight2-0.10
-#   gstreamer-0.10
-#   gstreamer-interfaces-0.10
-#])
 
 PKG_CHECK_MODULES(TPL,
 [
@@ -169,17 +134,6 @@ PKG_CHECK_MODULES(TPL,
    dbus-glib-1
    telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
 ])
-### removed libs
-#   gio-2.0 >= $GLIB_REQUIRED
-#   gdk-x11-2.0
-#   gtk+-2.0 >= $GTK_REQUIRED
-#   libebook-1.2
-#   telepathy-farsight
-#   farsight2-0.10
-#   gstreamer-0.10
-#   unique-1.0
-#   gnome-keyring-1 >= $KEYRING_REQUIRED
-
 
 #PKG_CHECK_MODULES(LIBNOTIFY, libnotify >= $LIBNOTIFY_REQUIRED)
 

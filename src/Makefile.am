@@ -14,12 +14,9 @@ AM_CPPFLAGS =						\
 LDADD = $(TPL_LIBS)					\
 	$(LIBTPL_LIBS)	
 
-bin_PROGRAMS =	telepathy-logger
+lib_LTLIBRARIES = libtelepathy-logger.la
 
-#BUILT_SOURCES= 
-
-telepathy_logger_handwritten_source = \
-		test.c				\
+libtelepathy_logger_la_SOURCES = \
 		tpl-observer.c			\
 		tpl-headless-logger-init.c	\
 		tpl-channel.c			\
@@ -28,15 +25,39 @@ telepathy_logger_handwritten_source = \
 		tpl-log-entry-text.c		\
 		tpl-contact.c			\
 		tpl-log-manager.c		\
-		tpl-log-reader.c		\
 		tpl-log-store.c			\
 		tpl-log-store-empathy.c		\
 		tpl-utils.c			\
 		tpl-time.c 
 
+include_HEADERS = \
+		tpl-channel.h	\
+		tpl-contact.h	\
+		tpl-log-entry.h	\
+		tpl-log-entry-text.h	\
+		tpl-log-manager.h	\
+		tpl-log-manager-priv.h	\
+		tpl-log-store-empathy.h	\
+		tpl-log-store.h	\
+		tpl-observer.h	\
+		tpl-text-channel-context.h	\
+		tpl-time.h	\
+		tpl-utils.h
 
-telepathy_logger_SOURCES =	\
-	$(telepathy_logger_handwritten_source)	
+
+bin_PROGRAMS = \
+		telepathy-logger		\
+		test-api
+
+#BUILT_SOURCES= 
+
+
+test_api_SOURCES = test_api.c
+test_api_LDADD = libtelepathy-logger.la $(LIBTPL_LIBS)
+
+
+telepathy_logger_SOURCES = telepathy-logger.c
+telepathy_logger_LDADD = libtelepathy-logger.la $(TPL_LIBS)
 
 nodist_telepathy_logger_SOURCES = $(BUILT_SOURCES)
 

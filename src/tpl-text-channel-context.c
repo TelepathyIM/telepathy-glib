@@ -33,7 +33,7 @@
 #include <tpl-channel.h>
 #include <tpl-log-entry.h>
 #include <tpl-log-entry-text.h>
-#include <tpl-log-manager.h>
+#include <tpl-log-manager-priv.h>
 #include <tpl-contact.h>
 
 #define TP_CONTACT_FEATURES_LEN	2

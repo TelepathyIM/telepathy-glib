@@ -31,7 +31,8 @@
 #include <telepathy-glib/interfaces.h>
 
 #include <tpl-log-entry.h>
-#include <tpl-log-manager.h>
+#include <tpl-log-manager.h> // RO
+#include <tpl-log-manager-priv.h> // W
 #include <tpl-log-store-empathy.h>
 #include <tpl-log-store.h>
 #include <tpl-utils.h>
@@ -45,7 +46,7 @@
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogManager)
 typedef struct
 {
-  GList *stores;
+	GList *stores;
 } TplLogManagerPriv;
 
 G_DEFINE_TYPE (TplLogManager, tpl_log_manager, G_TYPE_OBJECT);
@@ -55,12 +56,12 @@ static TplLogManager * manager_singleton = NULL;
 static void
 log_manager_finalize (GObject *object)
 {
-  TplLogManagerPriv *priv;
+	TplLogManagerPriv *priv;
 
-  priv = GET_PRIV (object);
+	priv = GET_PRIV (object);
 
-  g_list_foreach (priv->stores, (GFunc) g_object_unref, NULL);
-  g_list_free (priv->stores);
+	g_list_foreach (priv->stores, (GFunc) g_object_unref, NULL);
+	g_list_free (priv->stores);
 }
 
 /* 
@@ -72,28 +73,28 @@ log_manager_constructor (GType type,
                          guint n_props,
                          GObjectConstructParam *props)
 {
-  GObject *retval;
-  TplLogManagerPriv *priv;
+	GObject *retval;
+	TplLogManagerPriv *priv;
 
-  if (manager_singleton)
-    {
-      retval = g_object_ref (manager_singleton);
-    }
-  else
-    {
-      retval = G_OBJECT_CLASS (tpl_log_manager_parent_class)->constructor
-          (type, n_props, props);
+	if (manager_singleton)
+	{
+		retval = g_object_ref (manager_singleton);
+	}
+	else
+	{
+		retval = G_OBJECT_CLASS (tpl_log_manager_parent_class)->constructor
+			(type, n_props, props);
 
-      manager_singleton = TPL_LOG_MANAGER (retval);
-      g_object_add_weak_pointer (retval, (gpointer *) &manager_singleton);
+		manager_singleton = TPL_LOG_MANAGER (retval);
+		g_object_add_weak_pointer (retval, (gpointer *) &manager_singleton);
 
-      priv = GET_PRIV (manager_singleton);
+		priv = GET_PRIV (manager_singleton);
 
-      priv->stores = g_list_append (priv->stores,
-          g_object_new (TPL_TYPE_LOG_STORE_EMPATHY, NULL));
-    }
+		priv->stores = g_list_append (priv->stores,
+				g_object_new (TPL_TYPE_LOG_STORE_EMPATHY, NULL));
+	}
 
-  return retval;
+	return retval;
 }
 
 static void
@@ -122,6 +123,7 @@ tpl_log_manager_dup_singleton (void)
   return g_object_new (TPL_TYPE_LOG_MANAGER, NULL);
 }
 
+
 gboolean
 tpl_log_manager_add_message (TplLogManager *manager,
                                  const gchar *chat_id,
@@ -139,7 +141,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
   const gchar *add_store = "TpLogger";
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
-  g_return_val_if_fail (chat_id != NULL, FALSE);
+  g_return_val_if_fail (!TPL_STR_EMPTY (chat_id) , FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
   priv = GET_PRIV (manager);
@@ -161,6 +163,8 @@ tpl_log_manager_add_message (TplLogManager *manager,
 
   return out;
 }
+
+
 
 gboolean
 tpl_log_manager_exists (TplLogManager *manager,
@@ -186,6 +190,7 @@ tpl_log_manager_exists (TplLogManager *manager,
   return FALSE;
 }
 
+// returns a list of gchar dates
 GList *
 tpl_log_manager_get_dates (TplLogManager *manager,
                                TpAccount *account,
@@ -322,8 +327,6 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 
   return out;
 }
-
-
 
 GList *
 tpl_log_manager_get_chats (TplLogManager *manager,
