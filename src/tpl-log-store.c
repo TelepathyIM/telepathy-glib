@@ -136,6 +136,20 @@ tpl_log_store_get_chats (TplLogStore *self,
 }
 
 
+
+GList *
+tpl_log_store_search_in_identifier_chats_new(TplLogStore *self,
+		TpAccount *account, gchar const *identifier,
+		const gchar *text)
+{
+  if (!TPL_LOG_STORE_GET_INTERFACE (self)->search_new)
+    return NULL;
+
+  return TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new (self, 
+		  account, identifier, text);
+}
+
+
 GList *
 tpl_log_store_search_new (TplLogStore *self,
                               const gchar *text)

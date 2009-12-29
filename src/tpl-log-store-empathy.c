@@ -47,9 +47,6 @@
 #include <tpl-log-entry-text.h>
 #include <tpl-contact.h>
 
-//#define DEBUG_FLAG EMPATHY_DEBUG_OTHER
-//#include <empathy-debug.h>
-
 #define DEBUG	g_debug
 
 #define LOG_DIR_CREATE_MODE       (S_IRUSR | S_IWUSR | S_IXUSR)
@@ -380,7 +377,6 @@ _log_store_empathy_add_message_text_chat (TplLogStore *self,
 
   str = tpl_contact_get_identifier (sender);
 
-  g_message("%s\n", tpl_contact_get_identifier(sender));
   contact_id = g_markup_escape_text (str, -1);
 /*
   avatar = empathy_contact_get_avatar (sender);
@@ -512,7 +508,6 @@ log_store_empathy_get_dates (TplLogStore *self,
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
 
   directory = log_store_empathy_get_dir (self, account, chat_id, chatroom);
-	g_message("dir %s\n", directory);
   dir = g_dir_open (directory, 0, NULL);
   if (!dir)
     {
@@ -600,8 +595,6 @@ log_store_empathy_search_hit_new (TplLogStore *self,
   hit->date = g_strndup (strv[len-1], end - strv[len-1]);
   hit->chat_id = g_strdup (strv[len-2]);
   hit->is_chatroom = (strcmp (strv[len-3], LOG_DIR_CHATROOMS) == 0);
-
-  g_debug("end %s, date %s, id %s\n", end, hit->date, hit->chat_id);
 
   if (hit->is_chatroom)
     account_name = strv[len-4];
@@ -781,6 +774,9 @@ log_store_empathy_get_all_files (TplLogStore *self,
 
   priv = GET_PRIV (self);
 
+  g_return_val_if_fail(TPL_IS_LOG_STORE (self), NULL);
+  // dir can be NULL, and basedir will be searched instead
+
   basedir = dir ? dir : priv->basedir;
 
   gdir = g_dir_open (basedir, 0, NULL);
@@ -813,11 +809,12 @@ log_store_empathy_get_all_files (TplLogStore *self,
   return files;
 }
 
+
 static GList *
-log_store_empathy_search_new (TplLogStore *self,
-                              const gchar *text)
+_log_store_empathy_search_in_files (TplLogStore *self,
+			      const gchar *text, GList *files)
 {
-  GList *files, *l;
+  GList *l;
   GList *hits = NULL;
   gchar *text_casefold;
 
@@ -825,9 +822,6 @@ log_store_empathy_search_new (TplLogStore *self,
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
   text_casefold = g_utf8_casefold (text, -1);
-
-  files = log_store_empathy_get_all_files (self, NULL);
-  DEBUG ("Found %d log files in total", g_list_length (files));
 
   for (l = files; l; l = g_list_next (l))
     {
@@ -872,6 +866,48 @@ log_store_empathy_search_new (TplLogStore *self,
 
   return hits;
 }
+
+
+static GList *
+log_store_empathy_search_in_identifier_chats_new (TplLogStore *self,
+		TpAccount *account, gchar const *identifier,
+		const gchar *text)
+{
+	GList *files;
+	gchar *dir, *account_dir;
+	TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
+
+	g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+	g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+	g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
+	g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
+
+	account_dir = log_store_account_to_dirname(account);	
+	dir = g_build_path(G_DIR_SEPARATOR_S, priv->basedir, account_dir, G_DIR_SEPARATOR_S, identifier, NULL);
+
+	files = log_store_empathy_get_all_files (self, dir);
+	DEBUG ("Found %d log files in total", g_list_length (files));
+
+	return _log_store_empathy_search_in_files(self, text, files);
+}
+
+
+
+static GList *
+log_store_empathy_search_new (TplLogStore *self,
+                              const gchar *text)
+{
+  GList *files;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
+
+  files = log_store_empathy_get_all_files (self, NULL);
+  DEBUG ("Found %d log files in total", g_list_length (files));
+
+  return _log_store_empathy_search_in_files(self, text, files);
+}
+
 /*
 static gboolean
 log_store_empathy_is_logfile (gchar const *filename) {
@@ -903,7 +939,6 @@ log_store_empathy_get_chats_for_dir (TplLogStore *self,
 		g_error_free (error);
 		return NULL;
 	}
-
 
 	while ((name = g_dir_read_name (gdir)) != NULL) {
 		TplLogSearchHit *hit;
@@ -967,12 +1002,9 @@ log_store_empathy_get_chats (TplLogStore *self,
 
   g_free (dir);
 
-	g_message("len: %d\n", g_list_length(hits));
 	for(guint i=0; i<g_list_length(hits);++i) {
 		TplLogSearchHit *hit;
 		hit = g_list_nth_data(hits, i);
-		g_message("hit: %s\n", hit->chat_id);
-		g_message("hit: %s\n", hit->filename);
 	}
 
 
@@ -1046,6 +1078,7 @@ log_store_iface_init (gpointer g_iface,
   iface->get_dates = log_store_empathy_get_dates;
   iface->get_messages_for_date = log_store_empathy_get_messages_for_date;
   iface->get_chats = log_store_empathy_get_chats;
+  iface->search_in_identifier_chats_new = log_store_empathy_search_in_identifier_chats_new;
   iface->search_new = log_store_empathy_search_new;
   iface->ack_message = NULL;
   iface->get_filtered_messages = log_store_empathy_get_filtered_messages;

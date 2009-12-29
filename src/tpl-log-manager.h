@@ -88,6 +88,10 @@ GList *tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 GList *tpl_log_manager_get_chats (TplLogManager *manager,
 		TpAccount *account);
 
+GList *tpl_log_manager_search_in_identifier_chats_new(
+		TplLogManager *manager, TpAccount *account,
+		gchar const* identifier, const gchar *text);
+
 GList *tpl_log_manager_search_new (TplLogManager *manager,
 		const gchar *text);
 

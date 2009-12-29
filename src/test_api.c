@@ -31,7 +31,7 @@
 int main(int argc, char *argv[])
 {
 	TplLogManager *manager;
-	GList *l;
+	//GList *l;
 	TpAccount *acc;
 	//DBusGConnection *bus;
 	TpDBusDaemon *tp_bus;
@@ -53,9 +53,14 @@ int main(int argc, char *argv[])
 
 	manager = tpl_log_manager_dup_singleton ();
 
+	tpl_log_manager_search_in_identifier_chats_new(manager, 
+		acc, "echo@test.collabora.co.uk", "foo");
+
 	tpl_log_manager_search_new(manager, "foo");
 
 
+
+/*
 	l = tpl_log_manager_get_chats(manager, acc);
 	int lenght = g_list_length(l);
 	for(int i=0;i<lenght;++i) {
@@ -80,7 +85,7 @@ int main(int argc, char *argv[])
 		}
 
 	}
-
+*/
 	//loop = g_main_loop_new (NULL, FALSE);
 	//g_main_loop_run (loop);
 

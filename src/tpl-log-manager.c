@@ -352,6 +352,33 @@ tpl_log_manager_get_chats (TplLogManager *manager,
 }
 
 GList *
+tpl_log_manager_search_in_identifier_chats_new(TplLogManager *manager,
+		TpAccount *account, gchar const* identifier,
+		const gchar *text)
+{
+  GList *l, *out = NULL;
+  TplLogManagerPriv *priv;
+
+  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
+
+  priv = GET_PRIV (manager);
+
+  for (l = priv->stores; l; l = g_list_next (l))
+    {
+      TplLogStore *store = TPL_LOG_STORE (l->data);
+
+      out = g_list_concat (out,
+	  tpl_log_store_search_in_identifier_chats_new (store, account,
+		  identifier, text));
+    }
+
+  return out;
+}
+
+GList *
 tpl_log_manager_search_new (TplLogManager *manager,
                                 const gchar *text)
 {
