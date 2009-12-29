@@ -29,6 +29,8 @@
 
 G_BEGIN_DECLS
 
+#define TPL_LOG_STORE_EMPATHY_LOGFILE_REGEX "\\d{8}.log"
+
 #define TPL_TYPE_LOG_STORE_EMPATHY \
   (tpl_log_store_empathy_get_type ())
 #define TPL_LOG_STORE_EMPATHY(obj) \

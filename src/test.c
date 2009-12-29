@@ -20,19 +20,69 @@
  */
 
 #include <glib.h>
+#include <stdio.h>
 
-#include <tpl-observer.h>
+#include <tpl-log-reader.h>
+#include <telepathy-glib/account.h>
+#include <telepathy-glib/dbus.h>
 
-static GMainLoop *loop = NULL;
+//static GMainLoop *loop = NULL;
 
 int main(int argc, char *argv[])
 {
+	TplLogReader *reader;
+	GList *l;
+	TpAccount *acc;
+	//DBusGConnection *bus;
+	TpDBusDaemon *tp_bus;
+	GError *err=NULL;
 	g_type_init ();
 
-	tpl_headless_logger_init ();
+	//tpl_headless_logger_init ();
+	
+	//bus = tp_get_bus();
+	tp_bus = tp_dbus_daemon_dup(&err);
+	acc = tp_account_new(tp_bus,
+		"/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0",
+		&err);
 
-	loop = g_main_loop_new (NULL, FALSE);
-	g_main_loop_run (loop);
+	if(err) {
+		g_debug(err->message);
+		return 0;
+	}
+
+	reader = tpl_log_reader_dup_singleton ();
+
+	tpl_log_reader_search_new(reader, "foo");
+
+
+	l = tpl_log_reader_get_chats(reader, acc);
+	int lenght = g_list_length(l);
+	for(int i=0;i<lenght;++i) {
+		TplLogSearchHit *hit = g_list_nth_data(l,i);
+		g_debug("%d: %s\n", i, hit->filename);
+		GList *gl;
+
+		gl = tpl_log_reader_get_dates (reader, acc, hit->chat_id, hit->is_chatroom);
+		g_list_foreach (gl, (GFunc) puts, NULL);
+
+		for(guint ii=0;ii<g_list_length(gl);++ii) {
+			GList *msgs;
+			gchar *date = g_list_nth_data(gl, i);
+			msgs = tpl_log_reader_get_messages_for_date(reader, acc, hit->chat_id,
+					hit->is_chatroom, date);
+			for(guint m=0;m<g_list_length(msgs);++m) {
+				TplLogEntry *log = g_list_nth_data(msgs, m);
+				TplLogEntryText *tlog = TPL_LOG_ENTRY_TEXT(tpl_log_entry_get_entry(log));
+				
+				g_message("BODY: %s\n", tpl_log_entry_text_get_message(tlog));
+			}
+		}
+
+	}
+
+	//loop = g_main_loop_new (NULL, FALSE);
+	//g_main_loop_run (loop);
 
 	return 0;
 }

@@ -135,6 +135,7 @@ tpl_log_store_get_chats (TplLogStore *self,
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_chats (self, account);
 }
 
+
 GList *
 tpl_log_store_search_new (TplLogStore *self,
                               const gchar *text)

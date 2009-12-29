@@ -4,14 +4,14 @@ include $(top_srcdir)/tools/flymake.mk
 AM_CPPFLAGS =						\
 	$(ERROR_CFLAGS)					\
 	-I$(top_srcdir)                          	\
-	-I$(top_srcdir)/include                        	\
-	-DG_LOG_DOMAIN=\"TPLogger\"				\
+	-I$(top_srcdir)/src				\
+	-DG_LOG_DOMAIN=\"TPLogger\"			\
 	$(TPL_CFLAGS)					\
-	$(LIBTPL_CFLAGS)					\
+	$(LIBTPL_CFLAGS)				\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 
-LDADD = $(TPL_LIBS)						\
+LDADD = $(TPL_LIBS)					\
 	$(LIBTPL_LIBS)	
 
 bin_PROGRAMS =	telepathy-logger
@@ -28,6 +28,7 @@ telepathy_logger_handwritten_source = \
 		tpl-log-entry-text.c		\
 		tpl-contact.c			\
 		tpl-log-manager.c		\
+		tpl-log-reader.c		\
 		tpl-log-store.c			\
 		tpl-log-store-empathy.c		\
 		tpl-utils.c			\

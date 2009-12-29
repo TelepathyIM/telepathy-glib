@@ -142,6 +142,9 @@ static gchar *
 log_store_account_to_dirname (TpAccount *account)
 {
   const gchar *name;
+
+  g_return_val_if_fail(TP_IS_ACCOUNT(account), NULL);
+
   name = tp_proxy_get_object_path (account);
   if (g_str_has_prefix (name, TP_ACCOUNT_OBJECT_PATH_BASE))
     name += strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
@@ -159,6 +162,11 @@ log_store_empathy_get_dir (TplLogStore *self,
   gchar *basedir;
   gchar *escaped;
   TplLogStoreEmpathyPriv *priv;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  // chat_id may be NULL, in order to obtain the account part of the
+  // path.
 
   priv = GET_PRIV (self);
 
@@ -243,7 +251,7 @@ static gboolean _log_store_empathy_write_to_store ( TplLogStore *self,
 	}
 	g_free (basedir);
 
-	DEBUG ("Adding log to file: '%s'", filename);
+	DEBUG ("Adding log to file: '%s': %s", filename, entry);
 
 	if (!g_file_test (filename, G_FILE_TEST_EXISTS))
 	{
@@ -267,6 +275,7 @@ static gboolean _log_store_empathy_write_to_store ( TplLogStore *self,
 	return TRUE;
 }
 
+/* currently unused */
 static gboolean
 _log_store_empathy_add_message_text_status_changed (
 			TplLogStore *self,
@@ -432,10 +441,14 @@ _log_store_empathy_add_message_text (TplLogStore *self,
 		chat_id, chatroom, message, error);
 	break;
   case TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR:
+       	g_warning("SEND_ERROR log entry not currently handled");
+	return FALSE;
   case TPL_LOG_ENTRY_TEXT_SIGNAL_LOST_MESSAGE:
+       	g_warning("LOST_MESSAGE log entry not currently handled");
+	return FALSE;
   default:
-       g_warning("received an not handled signal type/signal type unknown");
-       return FALSE;
+	g_warning("LogEntry's signal type unknown");
+	return FALSE;
   }
 }
 
@@ -470,6 +483,10 @@ log_store_empathy_exists (TplLogStore *self,
   gchar *dir;
   gboolean exists;
 
+  g_return_val_if_fail(TPL_IS_LOG_ENTRY (self), FALSE);
+  g_return_val_if_fail(TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail(!TPL_STR_EMPTY (chat_id), FALSE);
+
   dir = log_store_empathy_get_dir (self, account, chat_id, chatroom);
   exists = g_file_test (dir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR);
   g_free (dir);
@@ -491,9 +508,11 @@ log_store_empathy_get_dates (TplLogStore *self,
   const gchar *p;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  g_return_val_if_fail (chat_id != NULL, NULL);
+  g_return_val_if_fail( TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
 
   directory = log_store_empathy_get_dir (self, account, chat_id, chatroom);
+	g_message("dir %s\n", directory);
   dir = g_dir_open (directory, 0, NULL);
   if (!dir)
     {
@@ -540,6 +559,12 @@ log_store_empathy_get_filename_for_date (TplLogStore *self,
   gchar *timestamp;
   gchar *filename;
 
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail( TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (date), NULL);
+
   basedir = log_store_empathy_get_dir (self, account, chat_id, chatroom);
   timestamp = g_strconcat (date, LOG_FILENAME_SUFFIX, NULL);
   filename = g_build_filename (basedir, timestamp, NULL);
@@ -562,8 +587,9 @@ log_store_empathy_search_hit_new (TplLogStore *self,
   guint len;
   GList *accounts, *l;
 
-  if (!g_str_has_suffix (filename, LOG_FILENAME_SUFFIX))
-    return NULL;
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
+  g_return_val_if_fail (g_str_has_suffix (filename, LOG_FILENAME_SUFFIX), NULL);
 
   strv = g_strsplit (filename, G_DIR_SEPARATOR_S, -1);
   len = g_strv_length (strv);
@@ -574,6 +600,8 @@ log_store_empathy_search_hit_new (TplLogStore *self,
   hit->date = g_strndup (strv[len-1], end - strv[len-1]);
   hit->chat_id = g_strdup (strv[len-2]);
   hit->is_chatroom = (strcmp (strv[len-3], LOG_DIR_CHATROOMS) == 0);
+
+  g_debug("end %s, date %s, id %s\n", end, hit->date, hit->chat_id);
 
   if (hit->is_chatroom)
     account_name = strv[len-4];
@@ -619,7 +647,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
   xmlNodePtr node;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  g_return_val_if_fail (filename != NULL, NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY(filename), NULL);
 
   DEBUG ("Attempting to parse filename:'%s'...", filename);
 
@@ -844,47 +872,59 @@ log_store_empathy_search_new (TplLogStore *self,
 
   return hits;
 }
+/*
+static gboolean
+log_store_empathy_is_logfile (gchar const *filename) {
+	gchar **path;
+	guint len;
+	g_return_val_if_fail(!TPL_STR_EMPTY(filename), FALSE);
+	
+
+  	path = g_strsplit (filename, G_DIR_SEPARATOR_S, -1);
+	len = g_strv_length (path);
+
+	return g_regex_match_simple (
+			TPL_LOG_STORE_EMPATHY_LOGFILE_REGEX, path[len-1], 0, 0);
+}
+*/
 
 static GList *
 log_store_empathy_get_chats_for_dir (TplLogStore *self,
-                                     const gchar *dir,
-                                     gboolean is_chatroom)
+		const gchar *dir, gboolean is_chatroom)
 {
-  GDir *gdir;
-  GList *hits = NULL;
-  const gchar *name;
-  GError *error = NULL;
+	GDir *gdir;
+	GList *hits = NULL;
+	const gchar *name;
+	GError *error = NULL;
 
-  gdir = g_dir_open (dir, 0, &error);
-  if (!gdir)
-    {
-      DEBUG ("Failed to open directory: %s, error: %s", dir, error->message);
-      g_error_free (error);
-      return NULL;
-    }
+	gdir = g_dir_open (dir, 0, &error);
+	if (!gdir) {
+		DEBUG ("Failed to open directory: %s, error: %s", dir, error->message);
+		g_error_free (error);
+		return NULL;
+	}
 
-  while ((name = g_dir_read_name (gdir)) != NULL)
-    {
-      TplLogSearchHit *hit;
 
-      if (!is_chatroom && strcmp (name, LOG_DIR_CHATROOMS) == 0)
-        {
-          gchar *filename = g_build_filename (dir, name, NULL);
-          hits = g_list_concat (hits, log_store_empathy_get_chats_for_dir (
-                self, filename, TRUE));
-          g_free (filename);
-          continue;
-        }
-      hit = g_slice_new0 (TplLogSearchHit);
-      hit->chat_id = g_strdup (name);
-      hit->is_chatroom = is_chatroom;
+	while ((name = g_dir_read_name (gdir)) != NULL) {
+		TplLogSearchHit *hit;
 
-      hits = g_list_prepend (hits, hit);
-    }
+		if (!is_chatroom && strcmp (name, LOG_DIR_CHATROOMS) == 0) {
+			gchar *filename = g_build_filename (dir, name, NULL);
+			hits = g_list_concat (hits, log_store_empathy_get_chats_for_dir (
+						self, filename, TRUE));
+			g_free (filename);
+			continue;
+		}
+		hit = g_slice_new0 (TplLogSearchHit);
+		hit->chat_id = g_strdup (name);
+		hit->is_chatroom = is_chatroom;
 
-  g_dir_close (gdir);
+		hits = g_list_prepend (hits, hit);
+	}
 
-  return hits;
+	g_dir_close (gdir);
+
+	return hits;
 }
 
 
@@ -899,13 +939,13 @@ log_store_empathy_get_messages_for_date (TplLogStore *self,
   GList *messages;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  g_return_val_if_fail (chat_id != NULL, NULL);
-  g_return_val_if_fail (account != NULL, NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT(account), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY(chat_id), NULL);
 
   filename = log_store_empathy_get_filename_for_date (self, account,
-      chat_id, chatroom, date);
+		  chat_id, chatroom, date);
   messages = log_store_empathy_get_messages_for_file (self, account,
-    filename);
+		  filename);
   g_free (filename);
 
   return messages;
@@ -926,6 +966,15 @@ log_store_empathy_get_chats (TplLogStore *self,
   hits = log_store_empathy_get_chats_for_dir (self, dir, FALSE);
 
   g_free (dir);
+
+	g_message("len: %d\n", g_list_length(hits));
+	for(guint i=0; i<g_list_length(hits);++i) {
+		TplLogSearchHit *hit;
+		hit = g_list_nth_data(hits, i);
+		g_message("hit: %s\n", hit->chat_id);
+		g_message("hit: %s\n", hit->filename);
+	}
+
 
   return hits;
 }

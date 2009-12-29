@@ -31,7 +31,7 @@
 #include <telepathy-glib/interfaces.h>
 
 #include <tpl-log-entry.h>
-#include <tpl-log-manager.h>
+#include <tpl-log-reader.h>
 #include <tpl-log-store-empathy.h>
 #include <tpl-log-store.h>
 #include <tpl-utils.h>
@@ -42,20 +42,20 @@
 
 #define DEBUG g_debug
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogManager)
+#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogReader)
 typedef struct
 {
   GList *stores;
-} TplLogManagerPriv;
+} TplLogReaderPriv;
 
-G_DEFINE_TYPE (TplLogManager, tpl_log_manager, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TplLogReader, tpl_log_reader, G_TYPE_OBJECT);
 
-static TplLogManager * manager_singleton = NULL;
+static TplLogReader * reader_singleton = NULL;
 
 static void
-log_manager_finalize (GObject *object)
+log_reader_finalize (GObject *object)
 {
-  TplLogManagerPriv *priv;
+  TplLogReaderPriv *priv;
 
   priv = GET_PRIV (object);
 
@@ -64,30 +64,30 @@ log_manager_finalize (GObject *object)
 }
 
 /* 
- * - Singleton LogManager constructor -
+ * - Singleton LogReader constructor -
  * Initialises LogStores with LogStoreEmpathy instance
  */
 static GObject *
-log_manager_constructor (GType type,
+log_reader_constructor (GType type,
                          guint n_props,
                          GObjectConstructParam *props)
 {
   GObject *retval;
-  TplLogManagerPriv *priv;
+  TplLogReaderPriv *priv;
 
-  if (manager_singleton)
+  if (reader_singleton)
     {
-      retval = g_object_ref (manager_singleton);
+      retval = g_object_ref (reader_singleton);
     }
   else
     {
-      retval = G_OBJECT_CLASS (tpl_log_manager_parent_class)->constructor
+      retval = G_OBJECT_CLASS (tpl_log_reader_parent_class)->constructor
           (type, n_props, props);
 
-      manager_singleton = TPL_LOG_MANAGER (retval);
-      g_object_add_weak_pointer (retval, (gpointer *) &manager_singleton);
+      reader_singleton = TPL_LOG_READER (retval);
+      g_object_add_weak_pointer (retval, (gpointer *) &reader_singleton);
 
-      priv = GET_PRIV (manager_singleton);
+      priv = GET_PRIV (reader_singleton);
 
       priv->stores = g_list_append (priv->stores,
           g_object_new (TPL_TYPE_LOG_STORE_EMPATHY, NULL));
@@ -97,84 +97,44 @@ log_manager_constructor (GType type,
 }
 
 static void
-tpl_log_manager_class_init (TplLogManagerClass *klass)
+tpl_log_reader_class_init (TplLogReaderClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  object_class->constructor = log_manager_constructor;
-  object_class->finalize = log_manager_finalize;
+  object_class->constructor = log_reader_constructor;
+  object_class->finalize = log_reader_finalize;
 
-  g_type_class_add_private (object_class, sizeof (TplLogManagerPriv));
+  g_type_class_add_private (object_class, sizeof (TplLogReaderPriv));
 }
 
 static void
-tpl_log_manager_init (TplLogManager *manager)
+tpl_log_reader_init (TplLogReader *reader)
 {
-  TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (manager,
-      TPL_TYPE_LOG_MANAGER, TplLogManagerPriv);
+  TplLogReaderPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (reader,
+      TPL_TYPE_LOG_READER, TplLogReaderPriv);
 
-  manager->priv = priv;
+  reader->priv = priv;
 }
 
-TplLogManager *
-tpl_log_manager_dup_singleton (void)
+TplLogReader *
+tpl_log_reader_dup_singleton (void)
 {
-  return g_object_new (TPL_TYPE_LOG_MANAGER, NULL);
-}
-
-gboolean
-tpl_log_manager_add_message (TplLogManager *manager,
-                                 const gchar *chat_id,
-                                 gboolean chatroom,
-                                 TplLogEntry *message,
-                                 GError **error)
-{
-  TplLogManagerPriv *priv;
-  GList *l;
-  gboolean out = FALSE;
-  gboolean found = FALSE;
-
-  /* TODO: When multiple log stores appear with add_message implementations
-   * make this customisable. */
-  const gchar *add_store = "TpLogger";
-
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
-  g_return_val_if_fail (chat_id != NULL, FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
-
-  priv = GET_PRIV (manager);
-
-  for (l = priv->stores; l; l = g_list_next (l))
-    {
-      if (!tp_strdiff (tpl_log_store_get_name (
-              TPL_LOG_STORE (l->data)), add_store))
-        {
-          out = tpl_log_store_add_message (TPL_LOG_STORE (l->data),
-              chat_id, chatroom, message, error);
-          found = TRUE;
-          break;
-        }
-    }
-
-  if (!found)
-    DEBUG ("Failed to find chosen log store to write to.");
-
-  return out;
+  return g_object_new (TPL_TYPE_LOG_READER, NULL);
 }
 
 gboolean
-tpl_log_manager_exists (TplLogManager *manager,
+tpl_log_reader_exists (TplLogReader *reader,
                             TpAccount *account,
                             const gchar *chat_id,
                             gboolean chatroom)
 {
   GList *l;
-  TplLogManagerPriv *priv;
+  TplLogReaderPriv *priv;
 
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_READER (reader), FALSE);
   g_return_val_if_fail (chat_id != NULL, FALSE);
 
-  priv = GET_PRIV (manager);
+  priv = GET_PRIV (reader);
 
   for (l = priv->stores; l; l = g_list_next (l))
     {
@@ -186,19 +146,20 @@ tpl_log_manager_exists (TplLogManager *manager,
   return FALSE;
 }
 
+// returns a list of gchar dates
 GList *
-tpl_log_manager_get_dates (TplLogManager *manager,
+tpl_log_reader_get_dates (TplLogReader *reader,
                                TpAccount *account,
                                const gchar *chat_id,
                                gboolean chatroom)
 {
   GList *l, *out = NULL;
-  TplLogManagerPriv *priv;
+  TplLogReaderPriv *priv;
 
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_READER (reader), NULL);
   g_return_val_if_fail (chat_id != NULL, NULL);
 
-  priv = GET_PRIV (manager);
+  priv = GET_PRIV (reader);
 
   for (l = priv->stores; l; l = g_list_next (l))
     {
@@ -223,19 +184,19 @@ tpl_log_manager_get_dates (TplLogManager *manager,
 }
 
 GList *
-tpl_log_manager_get_messages_for_date (TplLogManager *manager,
+tpl_log_reader_get_messages_for_date (TplLogReader *reader,
                                            TpAccount *account,
                                            const gchar *chat_id,
                                            gboolean chatroom,
                                            const gchar *date)
 {
   GList *l, *out = NULL;
-  TplLogManagerPriv *priv;
+  TplLogReaderPriv *priv;
 
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_READER (reader), NULL);
   g_return_val_if_fail (chat_id != NULL, NULL);
 
-  priv = GET_PRIV (manager);
+  priv = GET_PRIV (reader);
 
   for (l = priv->stores; l; l = g_list_next (l))
     {
@@ -249,7 +210,7 @@ tpl_log_manager_get_messages_for_date (TplLogManager *manager,
 }
 
 static gint
-log_manager_message_date_cmp (gconstpointer a,
+log_reader_message_date_cmp (gconstpointer a,
 			      gconstpointer b)
 {
 	TplLogEntry *one = (TplLogEntry *) a;
@@ -264,7 +225,7 @@ log_manager_message_date_cmp (gconstpointer a,
 }
 
 GList *
-tpl_log_manager_get_filtered_messages (TplLogManager *manager,
+tpl_log_reader_get_filtered_messages (TplLogReader *reader,
 					   TpAccount *account,
 					   const gchar *chat_id,
 					   gboolean chatroom,
@@ -272,15 +233,15 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 					   TplLogMessageFilter filter,
 					   gpointer user_data)
 {
-  TplLogManagerPriv *priv;
+  TplLogReaderPriv *priv;
   GList *out = NULL;
   GList *l;
   guint i = 0;
 
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_READER (reader), NULL);
   g_return_val_if_fail (chat_id != NULL, NULL);
 
-  priv = GET_PRIV (manager);
+  priv = GET_PRIV (reader);
 
   /* Get num_messages from each log store and keep only the
    * newest ones in the out list. Keep that list sorted: Older first. */
@@ -297,17 +258,17 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
             {
               /* We have less message than needed so far. Keep this message */
               out = g_list_insert_sorted (out, new->data,
-                  (GCompareFunc) log_manager_message_date_cmp);
+                  (GCompareFunc) log_reader_message_date_cmp);
               i++;
             }
-          else if (log_manager_message_date_cmp (new->data, out->data) > 0)
+          else if (log_reader_message_date_cmp (new->data, out->data) > 0)
             {
               /* This message is newer than the oldest message we have in out
                * list. Remove the head of out list and insert this message */
               g_object_unref (out->data);
               out = g_list_delete_link (out, out);
               out = g_list_insert_sorted (out, new->data,
-                  (GCompareFunc) log_manager_message_date_cmp);
+                  (GCompareFunc) log_reader_message_date_cmp);
             }
           else
             {
@@ -323,19 +284,17 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
   return out;
 }
 
-
-
 GList *
-tpl_log_manager_get_chats (TplLogManager *manager,
+tpl_log_reader_get_chats (TplLogReader *reader,
                                TpAccount *account)
 {
   GList *l, *out = NULL;
-  TplLogManagerPriv *priv;
+  TplLogReaderPriv *priv;
 
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_READER (reader), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  priv = GET_PRIV (manager);
+  priv = GET_PRIV (reader);
 
   for (l = priv->stores; l; l = g_list_next (l))
     {
@@ -349,16 +308,16 @@ tpl_log_manager_get_chats (TplLogManager *manager,
 }
 
 GList *
-tpl_log_manager_search_new (TplLogManager *manager,
+tpl_log_reader_search_new (TplLogReader *reader,
                                 const gchar *text)
 {
   GList *l, *out = NULL;
-  TplLogManagerPriv *priv;
+  TplLogReaderPriv *priv;
 
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_READER (reader), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
-  priv = GET_PRIV (manager);
+  priv = GET_PRIV (reader);
 
   for (l = priv->stores; l; l = g_list_next (l))
     {
@@ -372,7 +331,7 @@ tpl_log_manager_search_new (TplLogManager *manager,
 }
 
 void
-tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
+tpl_log_reader_search_hit_free (TplLogSearchHit *hit)
 {
   if (hit->account != NULL)
     g_object_unref (hit->account);
@@ -385,13 +344,13 @@ tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
 }
 
 void
-tpl_log_manager_search_free (GList *hits)
+tpl_log_reader_search_free (GList *hits)
 {
   GList *l;
 
   for (l = hits; l; l = g_list_next (l))
     {
-      tpl_log_manager_search_hit_free (l->data);
+      tpl_log_reader_search_hit_free (l->data);
     }
 
   g_list_free (hits);
@@ -399,7 +358,7 @@ tpl_log_manager_search_free (GList *hits)
 
 /* Format is just date, 20061201. */
 gchar *
-tpl_log_manager_get_date_readable (const gchar *date)
+tpl_log_reader_get_date_readable (const gchar *date)
 {
   time_t t;
 

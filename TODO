@@ -1,6 +1,8 @@
 Those are mini tasks still to do. They should be filed against a bug
 trucker as soon as TPL will have one:
 
+- add a logstore-ro interface or split the current one in rw and ro
+  depending on what/who is using it
 - global configuration object (ie disable logging partially or totally,
   choose the logstore, etc)
 - understand if direction from tpl_log_entry_text is to be removed 
