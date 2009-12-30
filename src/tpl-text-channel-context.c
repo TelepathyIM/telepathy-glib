@@ -71,8 +71,8 @@ _channel_on_lost_message_cb (TpChannel *proxy,
 		gpointer user_data,
 		GObject *weak_object)
 {
-	g_debug("lost message signal catched");
-	// log that the system lost a message
+	g_debug("lost message signal catched. nothing logged\n");
+	// TODO log that the system lost a message
 }
 
 static void
@@ -84,8 +84,9 @@ _channel_on_send_error_cb (TpChannel *proxy,
 		gpointer user_data,
 		GObject *weak_object)
 {
-	g_error("unable to send the message: %s", arg_Text);
-	// log that the system was unable to send the message
+	g_error("unlogged event: "
+		"TP was unable to send the message: %s.\n", arg_Text);
+	// TODO log that the system was unable to send the message
 }
 
 
@@ -279,10 +280,12 @@ _channel_on_received_signal_cb (TpChannel *proxy,
 	TplLogEntry *log;
 	TplLogEntryText *tlog;
 
+	g_message("ID: %d\n", arg_ID);
+
 	// TODO use the Message iface to check the delivery
 	// notification and handle it correctly
 	if(arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) {
-		g_debug("Non text contenct flag set."
+		g_debug("Non text content flag set."
 				"Probably a delivery notification for a sent message."
 				"Ignoring\n");
 		return;
@@ -307,8 +310,6 @@ _channel_on_received_signal_cb (TpChannel *proxy,
 	tpl_log_entry_text_set_receiver(tlog, tpl_contact_receiver);
 
 	tpl_log_entry_set_timestamp(log, (time_t) arg_Timestamp);
-
-	g_debug("remote handler: %d\n", arg_Sender);
 
 	tp_connection_get_contacts_by_handle(
 			tpl_channel_get_connection(tpl_chan),
@@ -415,7 +416,6 @@ _tpl_text_channel_get_chatroom_cb (TpConnection *proxy,
 			error->message);
 	}
 
-	g_debug("SETTING CHATROOM ID: %s\n", *out_Identifiers);
 	tpl_text_channel_set_chatroom_id(tpl_text, *out_Identifiers);
 
 	context_continue(tpl_text);
@@ -630,16 +630,20 @@ tpl_text_channel_new(TplChannel* tpl_channel)
 
 	/* follows unhandled TpHandleType */
 	case TP_HANDLE_TYPE_NONE:
-		g_debug("remote handle: TP_HANDLE_TYPE_NONE: un-handled\n");
+		g_warning ("remote handle: TP_HANDLE_TYPE_NONE: "
+				"un-handled. It's probably OK.\n");
 		break;
     	case TP_HANDLE_TYPE_LIST:
-		g_debug("remote handle: TP_HANDLE_TYPE_LIST: un-handled\n");
+		g_warning ("remote handle: TP_HANDLE_TYPE_LIST: \n"
+				"un-handled. It's probably OK.\n");
 		break;
     	case TP_HANDLE_TYPE_GROUP:
-		g_debug("remote handle: TP_HANDLE_TYPE_GROUP: un-handled\n");
+		g_warning ("remote handle: TP_HANDLE_TYPE_GROUP: "
+				"un-handled. It's probably OK.\n");
 		break;
 	default:
-		g_error("remote handle unknown\n");
+		g_error ("remote handle type unknown %d.\n",
+			remote_handle_type);
 		break;
 	}
 

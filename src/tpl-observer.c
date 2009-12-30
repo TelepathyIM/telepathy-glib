@@ -318,10 +318,8 @@ observer_iface_init (gpointer g_iface, gpointer iface_data)
 {
   TpSvcClientObserverClass *klass = (TpSvcClientObserverClass *) g_iface;
 
-#define IMPLEMENT(x) tp_svc_client_observer_implement_##x (klass, \
-    tpl_observer_##x)
-  IMPLEMENT (observe_channels);
-#undef IMPLEMENT
+  tp_svc_client_observer_implement_observe_channels (klass,
+		  tpl_observer_observe_channels);
 }
 
 static void

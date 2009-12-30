@@ -26,10 +26,12 @@
 G_DEFINE_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)
 
 
-static void tpl_log_entry_finalize (GObject *obj)
+static void
+tpl_log_entry_finalize (GObject *obj)
 {}
 
-static void tpl_log_entry_dispose (GObject *obj)
+static void
+tpl_log_entry_dispose (GObject *obj)
 {
 	TplLogEntry *self = TPL_LOG_ENTRY(obj);
 
@@ -44,19 +46,22 @@ static void tpl_log_entry_dispose (GObject *obj)
 }
 
 
-static void tpl_log_entry_class_init(TplLogEntryClass* klass)
+static void
+tpl_log_entry_class_init(TplLogEntryClass* klass)
 {
 	GObjectClass* object_class = G_OBJECT_CLASS (klass);
 	object_class->finalize = tpl_log_entry_finalize;
 	object_class->dispose = tpl_log_entry_dispose;
 }
 
-static void tpl_log_entry_init(TplLogEntry* self)
+static void
+tpl_log_entry_init(TplLogEntry* self)
 {
 }
 
 
-void tpl_log_entry_set_entry(TplLogEntry *self, void* entry)
+void
+tpl_log_entry_set_entry(TplLogEntry *self, void* entry)
 {
 	g_return_if_fail(TPL_IS_LOG_ENTRY(self));
 	g_return_if_fail(self->entry.generic==NULL);
@@ -69,7 +74,8 @@ void tpl_log_entry_set_entry(TplLogEntry *self, void* entry)
 	}
 }
 
-TplLogEntryType tpl_log_entry_get_entry_type(TplLogEntry *self)
+TplLogEntryType
+tpl_log_entry_get_entry_type(TplLogEntry *self)
 {
 	g_return_val_if_fail(TPL_IS_LOG_ENTRY(self), TPL_LOG_ENTRY_ERROR);
 

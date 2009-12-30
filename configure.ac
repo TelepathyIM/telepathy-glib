@@ -21,6 +21,9 @@ m4_define(tpl_version, tpl_full_version[]tpl_maybe_datestamp)
 
 AC_INIT(TelepathyLogger, tpl_version, http://telepathy.freedesktop.org/wiki/Logger)
 
+DBUS_SERVICES_DIR="$datadir/dbus-1/services"
+AC_SUBST(DBUS_SERVICES_DIR)
+AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [Where services dir for DBUS is])
 
 AC_PREREQ(2.59)
 AC_COPYRIGHT([
@@ -407,6 +410,7 @@ SHAVE_INIT(.)
 AC_OUTPUT([
    Makefile
    src/Makefile
+   src/libtelepathy-logger.pc
    tools/Makefile
    shave
    shave-libtool

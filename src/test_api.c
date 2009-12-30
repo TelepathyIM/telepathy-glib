@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
 	//DBusGConnection *bus;
 	TpDBusDaemon *tp_bus;
 	GError *err=NULL;
+	GList *lst;
 	g_type_init ();
 
 	//tpl_headless_logger_init ();
@@ -53,8 +54,12 @@ int main(int argc, char *argv[])
 
 	manager = tpl_log_manager_dup_singleton ();
 
-	tpl_log_manager_search_in_identifier_chats_new(manager, 
+	lst = tpl_log_manager_search_in_identifier_chats_new(manager, 
 		acc, "echo@test.collabora.co.uk", "foo");
+	for(;lst;lst=g_list_next(lst)) {
+		TplLogSearchHit *hit = lst->data;
+		g_message("HIT %s\n", hit->chat_id);
+	}
 
 	tpl_log_manager_search_new(manager, "foo");
 

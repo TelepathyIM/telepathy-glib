@@ -11,14 +11,36 @@ AM_CPPFLAGS =						\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 
-LDADD = $(TPL_LIBS)					\
-	$(LIBTPL_LIBS)	
+#LDADD = $(TPL_LIBS)					\
+#	$(LIBTPL_LIBS)	
+
+BUILT_SOURCES = \
+	tpl-dbus-service-server.h	\
+	tpl-dbus-service-client.h
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libtelepathy-logger.pc
 
 lib_LTLIBRARIES = libtelepathy-logger.la
 
+LIBTPLdir = $(includedir)/telepathy-logger
+LIBTPL_HEADERS = \
+		tpl-channel.h			\
+		tpl-contact.h			\
+		tpl-log-entry.h			\
+		tpl-log-entry-text.h		\
+		tpl-log-manager.h		\
+		tpl-log-manager-priv.h		\
+		tpl-log-store-empathy.h		\
+		tpl-log-store.h			\
+		tpl-observer.h			\
+		tpl-text-channel-context.h	\
+		tpl-time.h			\
+		tpl-utils.h
+
+
 libtelepathy_logger_la_SOURCES = \
 		tpl-observer.c			\
-		tpl-headless-logger-init.c	\
 		tpl-channel.c			\
 		tpl-text-channel-context.c	\
 		tpl-log-entry.c			\
@@ -30,76 +52,44 @@ libtelepathy_logger_la_SOURCES = \
 		tpl-utils.c			\
 		tpl-time.c 
 
-include_HEADERS = \
-		tpl-channel.h	\
-		tpl-contact.h	\
-		tpl-log-entry.h	\
-		tpl-log-entry-text.h	\
-		tpl-log-manager.h	\
-		tpl-log-manager-priv.h	\
-		tpl-log-store-empathy.h	\
-		tpl-log-store.h	\
-		tpl-observer.h	\
-		tpl-text-channel-context.h	\
-		tpl-time.h	\
-		tpl-utils.h
-
-
 bin_PROGRAMS = \
-		telepathy-logger		\
+		telepathy-logger-dbus	\
+		telepathy-logger	\
 		test-api
 
-#BUILT_SOURCES= 
-
+telepathy_logger_dbus_SOURCES = \
+		tpl-dbus-service.c		\
+		telepathy-logger-dbus.c
+telepathy_logger_dbus_LDADD = libtelepathy-logger.la $(TPL_LIBS)
 
 test_api_SOURCES = test_api.c
 test_api_LDADD = libtelepathy-logger.la $(LIBTPL_LIBS)
 
-
-telepathy_logger_SOURCES = telepathy-logger.c
+telepathy_logger_SOURCES = \
+		tpl-headless-logger-init.c	\
+		telepathy-logger.c
 telepathy_logger_LDADD = libtelepathy-logger.la $(TPL_LIBS)
 
 nodist_telepathy_logger_SOURCES = $(BUILT_SOURCES)
 
 check_c_sources = \
-    $(telepathy_logger_handwritten_source) \
-    $(telepathy_logger_logs_SOURCES)
+	$(libtelepathy_logger_la_SOURCES)	\
+	$(test_api_SOURCES)			\
+	$(telepathy_logger_SOURCES)		\
+	$(telepathy_logger_dbus_SOURCES)
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
-#DISABLED#uidir = $(datadir)/telepathy-logger
-#DISABLED#ui_DATA = 					\
-#DISABLED#	empathy-accounts-dialog.ui		\
-#DISABLED#	empathy-call-window-fullscreen.ui	\
-#DISABLED#	empathy-call-window.ui			\
-#DISABLED#	empathy-chat-window.ui			\
-#DISABLED#	empathy-chatrooms-window.ui		\
-#DISABLED#	empathy-ft-manager.ui			\
-#DISABLED#	empathy-import-dialog.ui		\
-#DISABLED#	empathy-main-window.ui			\
-#DISABLED#	empathy-new-chatroom-dialog.ui		\
-#DISABLED#	empathy-preferences.ui			\
-#DISABLED#	empathy-status-icon.ui
+EXTRA_DIST = \
+		tpl-dbus-service.xml
 
-EXTRA_DIST =			\
-	$(autostart_DATA)	\
-	$(ui_DATA)
+#Rule to generate the binding headers
+tpl-dbus-service-server.h:  tpl-dbus-service.xml
+	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-server $<> $@
 
-#DISABLED#if HAVE_LIBCHAMPLAIN
-#DISABLED#empathy_handwritten_source += 				\
-#DISABLED#	empathy-map-view.c			\
-#DISABLED#	empathy-map-view.h
-#DISABLED#
-#DISABLED#ui_DATA += 					\
-#DISABLED#	empathy-map-view.ui
-#DISABLED#else
-#DISABLED#EXTRA_DIST +=					\
-#DISABLED#	empathy-map-view.c			\
-#DISABLED#	empathy-map-view.h			\
-#DISABLED#	empathy-map-view.ui
-#DISABLED#endif
+tpl-dbus-service-client.h: tpl-dbus-service.xml
+	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-client $<> $@
 
-dist_man_MANS =			
 
 # rules for making the glib enum objects
 %-enumtypes.h: %.h Makefile.in
@@ -120,3 +110,16 @@ dist_man_MANS =
 	$< > $@
 
 CLEANFILES = $(BUILT_SOURCES)
+
+# Dbus service file
+servicedir = $(DBUS_SERVICES_DIR)
+service_in_files = \
+	org.freedesktop.Telepathy.TelepathyLoggerService.service.in	\
+	org.freedesktop.Telepathy.Client.TelepathyLogger.service.in
+service_DATA = \
+	$(service_in_files:.service.in=.service) \
+	org.freedesktop.Telepathy.Client.TelepathyLogger.client
+
+# Rule to make the service file with bindir expanded
+$(service_DATA): $(service_in_files) Makefile
+	@sed -e "s|%bindir%|$(bindir)|" $<> $@

@@ -1,0 +1,3 @@
+[DBus Service]
+Name=org.freedesktop.Telepathy.Client.TelepathyLoggerDBusService
+Exec=%bindir%/telepathy-logger-dbus

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<node name="/org/freedesktop/Telepathy/Client/TelepathyLoggerDBusService">
+  <interface name="org.freedesktop.Telepathy.Client.TelepathyLoggerDBusService">
+    <annotation name="org.freedesktop.DBus.GLib.Asyn" value=""/>
+    <method name="LastMessages">
+      <arg type="o" name="account" direction="in" />
+      <arg type="s" name="identifier" direction="in" />
+      <arg type="b" name="is_chatroom" direction="in" />
+      <arg type="i" name="lines" direction="in" />
+      <arg type="as" name="str_ret" direction="out" />
+    </method>
+  </interface>
+</node>
+

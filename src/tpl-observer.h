@@ -27,9 +27,9 @@
 
 #define TP_IFACE_CHAN_TEXT "org.freedesktop.Telepathy.Channel.Type.Text"
 #define TPL_OBSERVER_WELL_KNOWN_BUS_NAME \
-		"org.freedesktop.Telepathy.Client.HeadlessLogger" 
+  "org.freedesktop.Telepathy.Client.TelepathyLogger" 
 #define TPL_OBSERVER_OBJECT_PATH \
-		"/org/freedesktop/Telepathy/Client/HeadlessLogger"
+  "/org/freedesktop/Telepathy/Client/TelepathyLogger"
 
 
 G_BEGIN_DECLS
