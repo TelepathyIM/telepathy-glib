@@ -23,11 +23,12 @@
 #define __TPL_DBUS_SERVICE_H__
 
 #define TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME \
-  "org.freedesktop.Telepathy..TelepathyLoggerService"
+  "org.freedesktop.Telepathy.TelepathyLoggerService"
 #define TPL_DBUS_SRV_OBJECT_PATH \
   "/org/freedesktop/Telepathy/TelepathyLoggerService"
 
 #include <glib-object.h>
+#include <tpl-log-manager.h>
 
 G_BEGIN_DECLS
 
@@ -38,11 +39,19 @@ G_BEGIN_DECLS
 #define TPL_IS_DBUS_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_DBUS_SERVICE))
 #define TPL_DBUS_SERVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_DBUS_SERVICE, TplDBusServiceClass))
 
+#define TPL_DBUS_SERVICE_ERROR tpl_dbus_service_error_quark ()
+GQuark
+tpl_dbus_service_error_quark (void);
+
+typedef enum {
+	TPL_DBUS_SERVICE_ERROR_GENERIC
+} TplDBusServiceErrorCode;
 
 typedef struct {
 	GObject parent;
 
 	/* Private */
+	TplLogManager *manager;
 } TplDBusService;
 
 typedef struct {

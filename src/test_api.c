@@ -20,79 +20,64 @@
  */
 
 #include <glib.h>
-#include <stdio.h>
+//#include <stdio.h>
+//#include <dbus/dbus-glib-bindings.h>
 
-#include <tpl-log-manager.h>
-#include <telepathy-glib/account.h>
+//#include <tpl-log-manager.h>
+//#include <telepathy-glib/account.h>
 #include <telepathy-glib/dbus.h>
 
-//static GMainLoop *loop = NULL;
+#include <tpl-dbus-service-client.h>
+#include <tpl-dbus-service.h>
+
+
+static GMainLoop *loop = NULL;
+
+static void cb (DBusGProxy *proxy, char *OUT_str_ret, GError *error, gpointer userdata) {
+	if(error!=NULL) {
+		g_error("ERROR: %s\n", error->message);
+		return;
+	}
+	g_message("answer it: %s\n", OUT_str_ret);
+}
 
 int main(int argc, char *argv[])
 {
-	TplLogManager *manager;
-	//GList *l;
-	TpAccount *acc;
-	//DBusGConnection *bus;
-	TpDBusDaemon *tp_bus;
-	GError *err=NULL;
-	GList *lst;
+	DBusGProxy *proxy;
+	gchar *result;
+	DBusGConnection *connection;
+	GError *error=NULL;
+
 	g_type_init ();
+	//connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	connection = tp_get_bus();
+	proxy = dbus_g_proxy_new_for_name (connection,
+			TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
+			TPL_DBUS_SRV_OBJECT_PATH,
+			TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
 
-	//tpl_headless_logger_init ();
-	
-	//bus = tp_get_bus();
-	tp_bus = tp_dbus_daemon_dup(&err);
-	acc = tp_account_new(tp_bus,
-		"/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0",
-		&err);
 
-	if(err) {
-		g_debug(err->message);
-		return 0;
+	if (!org_freedesktop_Telepathy_TelepathyLoggerService_last_messages
+			(proxy, "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0", "echo@test.collabora.co.uk", FALSE, &result, &error))
+	{
+		g_warning ("Woops remote method failed: %s", error->message);
+		g_error_free (error);
+		return 1;
 	}
+	g_message("RESULT: %s\n", result);
 
-	manager = tpl_log_manager_dup_singleton ();
-
-	lst = tpl_log_manager_search_in_identifier_chats_new(manager, 
-		acc, "echo@test.collabora.co.uk", "foo");
-	for(;lst;lst=g_list_next(lst)) {
-		TplLogSearchHit *hit = lst->data;
-		g_message("HIT %s\n", hit->chat_id);
+	if (!org_freedesktop_Telepathy_TelepathyLoggerService_last_messages_async
+			(proxy, "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0", "echofoo", FALSE, cb, NULL))
+	{
+		g_warning ("Async Woops remote method failed: %s", error->message);
+		g_error_free (error);
+		return 1;
 	}
-
-	tpl_log_manager_search_new(manager, "foo");
-
+//	g_object_unref (proxy);
 
 
-/*
-	l = tpl_log_manager_get_chats(manager, acc);
-	int lenght = g_list_length(l);
-	for(int i=0;i<lenght;++i) {
-		TplLogSearchHit *hit = g_list_nth_data(l,i);
-		g_debug("%d: %s\n", i, hit->filename);
-		GList *gl;
-
-		gl = tpl_log_manager_get_dates (manager, acc, hit->chat_id, hit->is_chatroom);
-
-		for(guint ii=0;ii<g_list_length(gl);++ii) {
-			GList *msgs;
-			gchar *date = g_list_nth_data(gl, i);
-			g_message(date);
-			msgs = tpl_log_manager_get_messages_for_date(manager, acc, hit->chat_id,
-					hit->is_chatroom, date);
-			for(guint m=0;m<g_list_length(msgs);++m) {
-				TplLogEntry *log = g_list_nth_data(msgs, m);
-				TplLogEntryText *tlog = TPL_LOG_ENTRY_TEXT(tpl_log_entry_get_entry(log));
-				
-				g_message("BODY: %s\n", tpl_log_entry_text_get_message(tlog));
-			}
-		}
-
-	}
-*/
-	//loop = g_main_loop_new (NULL, FALSE);
-	//g_main_loop_run (loop);
+	loop = g_main_loop_new (NULL, FALSE);
+	g_main_loop_run (loop);
 
 	return 0;
 }

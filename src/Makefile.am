@@ -85,10 +85,10 @@ EXTRA_DIST = \
 
 #Rule to generate the binding headers
 tpl-dbus-service-server.h:  tpl-dbus-service.xml
-	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-server $<> $@
+	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-server $< > $@
 
 tpl-dbus-service-client.h: tpl-dbus-service.xml
-	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-client $<> $@
+	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-client $< > $@
 
 
 # rules for making the glib enum objects
@@ -121,5 +121,5 @@ service_DATA = \
 	org.freedesktop.Telepathy.Client.TelepathyLogger.client
 
 # Rule to make the service file with bindir expanded
-$(service_DATA): $(service_in_files) Makefile
-	@sed -e "s|%bindir%|$(bindir)|" $<> $@
+%.service: %.service.in
+	sed -e "s|%bindir%|$(bindir)|" $< > $@
