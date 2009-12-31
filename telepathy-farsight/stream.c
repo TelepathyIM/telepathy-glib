@@ -1257,6 +1257,13 @@ fs_codecs_to_tp (TfStream *stream,
                                g_strdup (param->value));
         }
 
+      if (fsc->ABI.ABI.ptime)
+        g_hash_table_insert (params, g_strdup ("ptime"),
+            g_strdup_printf ("%u", fsc->ABI.ABI.ptime));
+      if (fsc->ABI.ABI.maxptime)
+        g_hash_table_insert (params, g_strdup ("maxptime"),
+            g_strdup_printf ("%u", fsc->ABI.ABI.maxptime));
+
       g_value_init (&codec, TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_CODEC);
       g_value_take_boxed (&codec,
           dbus_g_type_specialized_construct (TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_CODEC));
