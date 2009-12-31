@@ -1393,7 +1393,12 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
 {
   FsCodec *codec = user_data;
 
-  fs_codec_add_optional_parameter (codec, key, value);
+  if (!strcmp (key, "ptime") && atoi (value) > 0)
+    codec->ABI.ABI.ptime = atoi (value);
+  else if  (!strcmp (key, "maxptime") && atoi (value) > 0)
+    codec->ABI.ABI.maxptime = atoi (value);
+  else
+    fs_codec_add_optional_parameter (codec, key, value);
 }
 
 static void
