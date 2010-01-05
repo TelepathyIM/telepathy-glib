@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <node name="/org/freedesktop/Telepathy/TelepathyLoggerService">
   <interface name="org.freedesktop.Telepathy.TelepathyLoggerService">
-    <method name="LastMessages">
+    <method name="LastChats">
+    <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg type="o" name="account" direction="in" />
       <arg type="s" name="identifier" direction="in" />
       <arg type="b" name="is_chatroom" direction="in" />
-      <arg type="s" name="answer" direction="out" />
+      <arg type="u" name="lines" direction="in" />
+      <!-- ARRAY of (TIMESTAMP SENDER MESSAGE) -->
+      <arg type="a(ssu)" name="answer" direction="out" />
     </method>
   </interface>
 </node>

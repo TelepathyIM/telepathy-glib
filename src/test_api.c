@@ -29,52 +29,54 @@
 
 #include <tpl-dbus-service-client.h>
 #include <tpl-dbus-service.h>
+#include <tpl-time.h>
 
+#define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0"
+#define CHAT_ID	"echo@test.collabora.co.uk"
 
 static GMainLoop *loop = NULL;
 
-static void cb (DBusGProxy *proxy, char *OUT_str_ret, GError *error, gpointer userdata) {
+static void
+cb (DBusGProxy *proxy, GPtrArray *retval, GError *error,
+    gpointer userdata)
+{
 	if(error!=NULL) {
 		g_error("ERROR: %s\n", error->message);
 		return;
 	}
-	g_message("answer it: %s\n", OUT_str_ret);
+	for(guint i=0; i<retval->len; ++i) {
+		GValueArray *values = g_ptr_array_index(retval, i);
+		GValue *sender = g_value_array_get_nth(values, 0);
+		GValue *message = g_value_array_get_nth(values, 1);
+		GValue *timestamp = g_value_array_get_nth(values, 2);
+		g_message("[%s] <%s> %s\n",
+				tpl_time_to_string_local(g_value_get_uint(timestamp), "%Y-%m-%d %H:%M.%S"),
+				g_value_get_string(sender),
+				g_value_get_string(message));
+	}
 }
 
 int main(int argc, char *argv[])
 {
 	DBusGProxy *proxy;
-	gchar *result;
+//	gchar *result;
 	DBusGConnection *connection;
 	GError *error=NULL;
 
 	g_type_init ();
-	//connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 	connection = tp_get_bus();
 	proxy = dbus_g_proxy_new_for_name (connection,
 			TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
 			TPL_DBUS_SRV_OBJECT_PATH,
 			TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
 
-
-	if (!org_freedesktop_Telepathy_TelepathyLoggerService_last_messages
-			(proxy, "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0", "echo@test.collabora.co.uk", FALSE, &result, &error))
-	{
-		g_warning ("Woops remote method failed: %s", error->message);
-		g_error_free (error);
-		return 1;
-	}
-	g_message("RESULT: %s\n", result);
-
-	if (!org_freedesktop_Telepathy_TelepathyLoggerService_last_messages_async
-			(proxy, "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0", "echofoo", FALSE, cb, NULL))
+	if (!org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_async
+			(proxy, ACCOUNT_PATH, CHAT_ID, FALSE, 11, cb, NULL))
 	{
 		g_warning ("Async Woops remote method failed: %s", error->message);
 		g_error_free (error);
 		return 1;
 	}
-//	g_object_unref (proxy);
-
 
 	loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (loop);

@@ -23,6 +23,8 @@
 
 #include <tpl-log-entry.h>
 
+#define DEBUG(...)
+
 G_DEFINE_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)
 
 
@@ -35,14 +37,14 @@ tpl_log_entry_dispose (GObject *obj)
 {
 	TplLogEntry *self = TPL_LOG_ENTRY(obj);
 
-	g_debug("TplLogEntry: disposing\n");
+	DEBUG("TplLogEntry: disposing\n");
 
 	tpl_object_unref_if_not_null (tpl_log_entry_get_entry(self));
 	self->entry.generic = NULL;
 
 	G_OBJECT_CLASS (tpl_log_entry_parent_class)->finalize (obj);
 
-	g_debug("TplLogEntry: disposed\n");
+	DEBUG("TplLogEntry: disposed\n");
 }
 
 
