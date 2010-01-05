@@ -1,3 +1,8 @@
+telepathy-farsight 0.0.13 (5 Jan 2010)
+======================================
+- Export held resource in a property
+- Transfer the ptime/maxptime
+
 telepathy-farsight 0.0.12 (15 Oct 2009)
 =======================================
 - Fix mixup between GSlice and malloc

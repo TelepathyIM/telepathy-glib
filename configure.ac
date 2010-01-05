@@ -9,17 +9,17 @@ AC_PREREQ([2.59])
 
 m4_define([tp_farsight_major_version], [0])
 m4_define([tp_farsight_minor_version], [0])
-m4_define([tp_farsight_micro_version], [12])
-m4_define([tp_farsight_nano_version], [1])
+m4_define([tp_farsight_micro_version], [13])
+m4_define([tp_farsight_nano_version], [0])
 
 dnl CURRENT, REVISION, AGE
 dnl - library source changed -> increment REVISION
 dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
 dnl - interfaces added -> increment AGE
 dnl - interfaces removed -> AGE = 0
-m4_define([tp_farsight_lt_current], [0])
-m4_define([tp_farsight_lt_revision], [4])
-m4_define([tp_farsight_lt_age], [0])
+m4_define([tp_farsight_lt_current], [1])
+m4_define([tp_farsight_lt_revision], [0])
+m4_define([tp_farsight_lt_age], [1])
 
 
 # Some magic
