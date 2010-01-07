@@ -19,8 +19,9 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include <glib.h>
+#include "observer.h"
 
+#include <glib.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/gtypes.h>
@@ -28,10 +29,9 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
 
-#include <tpl-observer.h>
-#include <tpl-channel.h>
-#include <tpl-text-channel-context.h>
-#include <tpl-log-manager.h>
+#include <channel.h>
+#include <channel-text.h>
+#include <log-manager.h>
 
 // TODO move to a member of TplObserver
 static TplLogManager *logmanager = NULL;
@@ -308,9 +308,30 @@ static gboolean tpl_str_are_eq(gconstpointer data, gconstpointer data2)
 static void
 tpl_observer_init (TplObserver *self)
 {
+	DBusGConnection *bus;
+	TpDBusDaemon *tp_bus;
+	GError *error = NULL;
+
 	self->channel_map = g_hash_table_new_full (g_str_hash, tpl_str_are_eq,
 			g_free, g_object_unref);
 	logmanager = tpl_log_manager_dup_singleton ();	
+
+	bus = tp_get_bus();
+	tp_bus = tp_dbus_daemon_new(bus);
+	
+	if ( tp_dbus_daemon_request_name (tp_bus, TPL_OBSERVER_WELL_KNOWN_BUS_NAME,
+			TRUE, &error) ) {
+		g_debug("%s DBus well known name registered\n",
+				TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
+	} else {
+		g_error("Well Known name request error: %s\n", error->message);
+		g_clear_error(&error);
+		g_error_free(error);
+	}
+
+	dbus_g_connection_register_g_object (bus,
+			TPL_OBSERVER_OBJECT_PATH,
+			G_OBJECT(self));
 }
 
 static void

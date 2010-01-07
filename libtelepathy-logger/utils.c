@@ -19,7 +19,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include <tpl-utils.h>
+#include "utils.h"
 
 void tpl_object_unref_if_not_null(void* data) {
 	if (data && G_IS_OBJECT(data)) { 

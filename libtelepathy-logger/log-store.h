@@ -26,8 +26,8 @@
 #include <glib-object.h>
 #include <telepathy-glib/account.h>
 
-#include <tpl-log-manager.h>
-#include <tpl-log-entry-text.h>
+#include <log-manager.h>
+#include <log-entry-text.h>
 
 G_BEGIN_DECLS
 

@@ -20,13 +20,14 @@
  * Authors: Richard Hult <richard@imendio.com>
  */
 
-#include <time.h>
+#include "datetime.h"
+
+#include <glib/gi18n.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glib/gi18n.h>
+#include <time.h>
 
-#include <tpl-time.h>
 
 /* Note: TplTime is always in UTC. */
 

@@ -25,16 +25,17 @@
  * signals.
  */
 
+#include "channel-text.h"
+
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/enums.h>
 
-#include <tpl-observer.h>
-#include <tpl-text-channel-context.h>
-#include <tpl-channel.h>
-#include <tpl-log-entry.h>
-#include <tpl-log-entry-text.h>
-#include <tpl-log-manager-priv.h>
-#include <tpl-contact.h>
+#include <contact.h>
+#include <channel.h>
+#include <observer.h>
+#include <log-entry.h>
+#include <log-entry-text.h>
+#include <log-manager-priv.h>
 
 #define TP_CONTACT_FEATURES_LEN	2
 #define	TP_CONTACT_MYSELF	0

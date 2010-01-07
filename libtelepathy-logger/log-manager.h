@@ -26,10 +26,9 @@
 
 
 #include <glib-object.h>
-
 #include <telepathy-glib/account.h>
 
-#include <tpl-log-entry.h>
+#include <log-entry.h>
 
 G_BEGIN_DECLS
 

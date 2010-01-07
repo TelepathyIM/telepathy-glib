@@ -20,22 +20,26 @@
  */
 
 #include <glib.h>
+#include <gconf/gconf-client.h>
 //#include <stdio.h>
 //#include <dbus/dbus-glib-bindings.h>
 
-//#include <tpl-log-manager.h>
 //#include <telepathy-glib/account.h>
 #include <telepathy-glib/dbus.h>
 
-#include <tpl-dbus-service-client.h>
-#include <tpl-dbus-service.h>
-#include <tpl-time.h>
+//#include <log-manager.h>
+#include <dbus-service-client.h>
+#include <dbus-service.h>
+#include <datetime.h>
 
 #define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0"
 #define CHAT_ID	"echo@test.collabora.co.uk"
 
-static GMainLoop *loop = NULL;
+#define GCONF_LIST "/apps/telepathy-logger/disabling/accounts/blocklist"
 
+
+static GMainLoop *loop = NULL;
+/*
 static void
 cb (DBusGProxy *proxy, GPtrArray *retval, GError *error,
     gpointer userdata)
@@ -55,7 +59,7 @@ cb (DBusGProxy *proxy, GPtrArray *retval, GError *error,
 				g_value_get_string(message));
 	}
 }
-
+*/
 int main(int argc, char *argv[])
 {
 	DBusGProxy *proxy;
@@ -69,13 +73,47 @@ int main(int argc, char *argv[])
 			TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
 			TPL_DBUS_SRV_OBJECT_PATH,
 			TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
-
+/*
 	if (!org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_async
 			(proxy, ACCOUNT_PATH, CHAT_ID, FALSE, 11, cb, NULL))
 	{
 		g_warning ("Async Woops remote method failed: %s", error->message);
+		g_clear_error (&error);
 		g_error_free (error);
 		return 1;
+	}
+*/
+	GConfClient *client = gconf_client_get_default();
+	GConfValue *val;
+	GSList *lst=NULL;
+
+	val = gconf_client_get (client, GCONF_LIST, &error);
+	if (val==NULL) {
+		g_message("NULL LIST\n");
+	}
+	else {
+		lst = gconf_value_get_list(val);
+		for(guint i=0; i<g_slist_length(lst);++i) {
+			g_message("pre GLIST %d: %s\n",i, (gchar*)g_slist_nth_data(lst, i));
+		}
+	}
+
+	lst = g_slist_prepend(lst, gconf_value_new_from_string(
+		GCONF_VALUE_STRING, "FOO", NULL));
+
+	val = gconf_value_new(GCONF_VALUE_LIST);
+	gconf_value_set_list_type(val, GCONF_VALUE_STRING);
+	gconf_value_set_list(val, lst);
+	gconf_client_set(client, GCONF_LIST,
+		val, NULL);
+
+	val = gconf_client_get (client, GCONF_LIST, &error);
+	lst = gconf_value_get_list(val);
+	if (lst==NULL) g_message("NULL LIST\n");
+	else {
+		for(guint i=0; i<g_slist_length(lst);++i) {
+			g_message("post GLIST %d: %s\n", i, (char*)g_slist_nth_data(lst, i));
+		}
 	}
 
 	loop = g_main_loop_new (NULL, FALSE);

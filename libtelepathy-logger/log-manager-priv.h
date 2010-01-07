@@ -24,7 +24,7 @@
 #ifndef __TPL_LOG_MANAGER_PRIV_H__
 #define __TPL_LOG_MANAGER_PRIV_H__
 
-#include <tpl-log-manager.h>
+#include <log-manager.h>
 
 gboolean tpl_log_manager_add_message (TplLogManager *manager,
 		const gchar *chat_id, gboolean chatroom,

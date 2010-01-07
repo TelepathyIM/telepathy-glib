@@ -27,15 +27,15 @@
  */
 
 #include <glib-object.h>
-#include <telepathy-glib/channel.h>
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/svc-client.h>
 
-#include <tpl-channel.h>
-#include <tpl-observer.h>
-#include <tpl-utils.h>
+#include <channel.h>
+#include <observer.h>
+#include <utils.h>
 
 G_BEGIN_DECLS
 

@@ -19,18 +19,20 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "log-entry.h"
+
 #include <glib.h>
 
-#include <tpl-log-entry.h>
-
-#define DEBUG(...)
+#include <debug.h>
 
 G_DEFINE_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)
 
 
 static void
 tpl_log_entry_finalize (GObject *obj)
-{}
+{
+	G_OBJECT_CLASS (tpl_log_entry_parent_class)->finalize (obj);
+}
 
 static void
 tpl_log_entry_dispose (GObject *obj)
@@ -42,7 +44,7 @@ tpl_log_entry_dispose (GObject *obj)
 	tpl_object_unref_if_not_null (tpl_log_entry_get_entry(self));
 	self->entry.generic = NULL;
 
-	G_OBJECT_CLASS (tpl_log_entry_parent_class)->finalize (obj);
+	G_OBJECT_CLASS (tpl_log_entry_parent_class)->dispose (obj);
 
 	DEBUG("TplLogEntry: disposed\n");
 }

@@ -20,7 +20,7 @@
  * Authors: Jonny Lamb <jonny.lamb@collabora.co.uk>
  */
 
-#include <tpl-log-store.h>
+#include "log-store.h"
 
 GType
 tpl_log_store_get_type (void)

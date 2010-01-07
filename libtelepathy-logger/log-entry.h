@@ -24,7 +24,7 @@
 
 #include <glib-object.h>
 
-#include <tpl-log-entry-text.h>
+#include <log-entry-text.h>
 
 G_BEGIN_DECLS
 

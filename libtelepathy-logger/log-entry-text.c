@@ -19,10 +19,11 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include <tpl-log-entry-text.h>
-#include <tpl-channel.h>
-#include <tpl-contact.h>
-#include <tpl-utils.h>
+#include "log-entry-text.h"
+
+#include <channel.h>
+#include <contact.h>
+#include <utils.h>
 
 G_DEFINE_TYPE (TplLogEntryText, tpl_log_entry_text, G_TYPE_OBJECT)
 

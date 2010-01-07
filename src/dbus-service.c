@@ -19,14 +19,15 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "dbus-service.h"
+
 #include <glib.h>
 #include <glib/gprintf.h>
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/account.h>
 
-#include <tpl-dbus-service.h>
-#include <tpl-log-manager.h>
+#include <log-manager.h>
 
 #define DBUS_STRUCT_STRING_STRING_UINT \
 	(dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_INVALID))
@@ -38,7 +39,7 @@ tpl_dbus_service_last_chats (TplDBusService *self,
 		gboolean is_chatroom, guint lines, DBusGMethodInvocation *context);
 
 
-#include <tpl-dbus-service-server.h>
+#include <dbus-service-server.h>
 
 G_DEFINE_TYPE (TplDBusService, tpl_dbus_service, G_TYPE_OBJECT)
 
@@ -176,15 +177,15 @@ tpl_dbus_service_last_chats (TplDBusService *self,
 		return FALSE;
 	}
 
-	GList *dates = tpl_log_manager_get_dates(self->manager, account, identifier, is_chatroom);
+	GList *dates = tpl_log_manager_get_dates(self->manager, account,
+			identifier, is_chatroom);
 	if(!dates) {
-		g_set_error(&error,
+		g_set_error_literal(&error,
 				TPL_DBUS_SERVICE_ERROR,
-				TPL_DBUS_SERVICE_ERROR_GENERIC,
+				TPL_DBUS_SERVICE_ERROR_FAILED,
 				"Error during date list retrieving");
-		g_error(error->message);
 		dbus_g_method_return_error(context, error);
-		g_error_free(error);
+		//g_error_free(error);
 		g_object_unref(tp_dbus);
 		g_object_unref(dbus);
 		return FALSE;

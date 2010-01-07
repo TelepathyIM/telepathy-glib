@@ -19,40 +19,14 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "channel.h"
+
 #include <glib.h>
-#include <tpl-observer.h>
-#include <tpl-channel.h>
-#include <tpl-text-channel-context.h>
+
+#include <channel-text.h>
+#include <observer.h>
 
 G_DEFINE_TYPE (TplChannel, tpl_channel, G_TYPE_OBJECT)
-
-static void tpl_channel_dispose (GObject *obj);
-static void tpl_channel_finalize (GObject *obj);
-
-static void tpl_channel_class_init (TplChannelClass* klass)
-{
-	GObjectClass* object_class = G_OBJECT_CLASS (klass);
-
-	object_class->dispose = tpl_channel_dispose;
-	object_class->finalize = tpl_channel_finalize;
-}
-
-
-static void tpl_channel_init (TplChannel* self)
-{
-	/* Init TplChannel's members to zero/NULL */
-#define TPL_SET_NULL(x) tpl_channel_set_##x(self, NULL)
-	TPL_SET_NULL(channel);
-	TPL_SET_NULL(channel_path);
-	TPL_SET_NULL(channel_type);
-	TPL_SET_NULL(channel_properties);
-	TPL_SET_NULL(account);
-	TPL_SET_NULL(account_path);
-	TPL_SET_NULL(connection);
-	TPL_SET_NULL(connection_path);
-	TPL_SET_NULL(observer);
-#undef TPL_SET_NULL
-}
 
 static void tpl_channel_dispose (GObject* obj)
 {
@@ -93,6 +67,32 @@ static void tpl_channel_finalize (GObject* obj)
 	g_debug("TplChannel instance finalized\n");
 }
 
+static void tpl_channel_class_init (TplChannelClass* klass)
+{
+	GObjectClass* object_class = G_OBJECT_CLASS (klass);
+
+	object_class->dispose = tpl_channel_dispose;
+	object_class->finalize = tpl_channel_finalize;
+}
+
+
+static void tpl_channel_init (TplChannel* self)
+{
+	/* Init TplChannel's members to zero/NULL */
+/* TODO remove the comment
+#define TPL_SET_NULL(x) tpl_channel_set_##x(self, NULL)
+	TPL_SET_NULL(channel);
+	TPL_SET_NULL(channel_path);
+	TPL_SET_NULL(channel_type);
+	TPL_SET_NULL(channel_properties);
+	TPL_SET_NULL(account);
+	TPL_SET_NULL(account_path);
+	TPL_SET_NULL(connection);
+	TPL_SET_NULL(connection_path);
+	TPL_SET_NULL(observer);
+#undef TPL_SET_NULL
+*/
+}
 
 
 TplChannel* tpl_channel_new(TpSvcClientObserver* observer)

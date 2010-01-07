@@ -26,6 +26,7 @@
 #define __TPL_LOG_STORE_EMPATHY_H__
 
 #include <glib.h>
+#include <glib-object.h>
 
 G_BEGIN_DECLS
 

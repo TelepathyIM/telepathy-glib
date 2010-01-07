@@ -28,7 +28,8 @@
   "/org/freedesktop/Telepathy/TelepathyLoggerService"
 
 #include <glib-object.h>
-#include <tpl-log-manager.h>
+
+#include <log-manager.h>
 
 G_BEGIN_DECLS
 
@@ -41,8 +42,8 @@ G_BEGIN_DECLS
 
 #define TPL_DBUS_SERVICE_ERROR g_quark_from_static_string ("tpl-dbus-service-error-quark")
 typedef enum {
-	TPL_DBUS_SERVICE_ERROR_GENERIC
-} TplDBusServiceErrorCode;
+	TPL_DBUS_SERVICE_ERROR_FAILED
+} TplDBusServiceError;
 
 typedef struct {
 	GObject parent;

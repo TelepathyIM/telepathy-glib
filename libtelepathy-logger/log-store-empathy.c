@@ -22,30 +22,26 @@
  *          Jonny Lamb <jonny.lamb@collabora.co.uk>
  */
 
-//#include <config.h>
+#include "log-store-empathy.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <glib/gstdio.h>
 
+#include <glib-object.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-
-#include <glib-object.h>
-
-#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/account.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/util.h>
 
-#include <tpl-log-store.h>
-#include <tpl-log-store-empathy.h>
-#include <tpl-log-manager.h>
-
-#include <tpl-time.h>
-#include <tpl-log-entry-text.h>
-#include <tpl-contact.h>
+#include <contact.h>
+#include <log-manager.h>
+#include <log-store.h>
+#include <log-entry-text.h>
+#include <datetime.h>
 
 #define DEBUG	g_debug
 

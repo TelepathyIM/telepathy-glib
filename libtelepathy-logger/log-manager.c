@@ -22,21 +22,22 @@
  *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "log-manager.h" // RO
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <glib/gstdio.h>
-
-#include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util.h>
 
-#include <tpl-log-entry.h>
-#include <tpl-log-manager.h> // RO
-#include <tpl-log-manager-priv.h> // W
-#include <tpl-log-store-empathy.h>
-#include <tpl-log-store.h>
-#include <tpl-utils.h>
-#include <tpl-time.h>
+#include <log-entry.h>
+#include <log-manager-priv.h> // W
+#include <log-store.h>
+#include <log-store-empathy.h>
+#include <datetime.h>
+#include <utils.h>
 
 //#define DEBUG_FLAG EMPATHY_DEBUG_OTHER
 //#include <empathy-debug.h>

@@ -25,8 +25,8 @@
 #include <glib-object.h>
 #include <telepathy-glib/enums.h>
 
-#include <tpl-text-channel-context.h>
-#include <tpl-contact.h>
+#include <channel-text.h>
+#include <contact.h>
 
 G_BEGIN_DECLS
 

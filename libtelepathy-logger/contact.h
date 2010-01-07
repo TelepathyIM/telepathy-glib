@@ -24,6 +24,7 @@
 
 #include <glib-object.h>
 #include <telepathy-glib/contact.h>
+#include <telepathy-glib/account.h>
 
 G_BEGIN_DECLS
 
@@ -36,6 +37,7 @@ G_BEGIN_DECLS
 
 
 typedef enum {
+	TPL_CONTACT_UNKNOWN,
 	TPL_CONTACT_USER,
 	TPL_CONTACT_GROUP
 } TplContactType;
@@ -46,10 +48,10 @@ typedef struct {
 	/* Private */
 	TpContact	*contact;
 	TplContactType	contact_type;
-	const gchar	*alias;
-	const gchar	*identifier;
-	const gchar	*presence_status;
-	const gchar	*presence_message;
+	gchar	*alias;
+	gchar	*identifier;
+	gchar	*presence_status;
+	gchar	*presence_message;
 
 	TpAccount	*account;
 } TplContact;
@@ -68,13 +70,13 @@ TplContact *tpl_contact_new(void);
 
 TpContact *tpl_contact_get_contact(TplContact *self);
 
-const gchar *tpl_contact_get_alias(TplContact *self);
+gchar *tpl_contact_get_alias(TplContact *self);
 
-const gchar *tpl_contact_get_identifier(TplContact *self);
+gchar *tpl_contact_get_identifier(TplContact *self);
 
-const gchar *tpl_contact_get_presence_status(TplContact *self);
+gchar *tpl_contact_get_presence_status(TplContact *self);
 
-const gchar *tpl_contact_get_presence_message(TplContact *self);
+gchar *tpl_contact_get_presence_message(TplContact *self);
 
 TplContactType tpl_contact_get_contact_type(TplContact *self);
 
@@ -84,13 +86,13 @@ void tpl_contact_set_contact(TplContact *self, TpContact *data);
 
 void tpl_contact_set_account(TplContact *self, TpAccount *data);
 
-void tpl_contact_set_alias(TplContact *self, const gchar *data); 
+void tpl_contact_set_alias(TplContact *self, gchar *data); 
 
-void tpl_contact_set_identifier(TplContact *self, const gchar *data); 
+void tpl_contact_set_identifier(TplContact *self, gchar *data); 
 
-void tpl_contact_set_presence_status(TplContact *self, const gchar *data); 
+void tpl_contact_set_presence_status(TplContact *self, gchar *data); 
 
-void tpl_contact_set_presence_message(TplContact *self, const gchar *data); 
+void tpl_contact_set_presence_message(TplContact *self, gchar *data); 
 
 void tpl_contact_set_contact_type(TplContact *self, TplContactType data);
 

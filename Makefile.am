@@ -8,9 +8,7 @@ DISTCHECK_CONFIGURE_FLAGS =		\
 
 EXTRA_DIST = 			\
         ChangeLog               \
-        ChangeLog.old           \
         README                  \
-	CONTRIBUTORS		\
 	autogen.sh
 
 DISTCLEANFILES = 		\
@@ -28,7 +26,7 @@ distclean-local:
 ChangeLog:
 	@echo Creating $@
 	@if test -d "$(srcdir)/.git"; then \
-	  (GIT_DIR=$(top_srcdir)/.git ./missing --run git log EMPATHY_2_27_1.. --stat) | fmt --split-only > $@.tmp \
+	  (GIT_DIR=$(top_srcdir)/.git ./missing --run git log TPL_1.0.. --stat) | fmt --split-only > $@.tmp \
 	  && mv -f $@.tmp $@ \
 	  || ($(RM) $@.tmp; \
 	      echo Failed to generate ChangeLog, your ChangeLog may be outdated >&2; \

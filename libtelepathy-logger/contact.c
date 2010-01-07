@@ -19,10 +19,11 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "contact.h"
+
 #include <telepathy-glib/account.h>
 
-#include <tpl-contact.h>
-#include <tpl-utils.h>
+#include <utils.h>
 
 G_DEFINE_TYPE (TplContact, tpl_contact, G_TYPE_OBJECT)
 
@@ -38,40 +39,31 @@ static void tpl_contact_class_init(TplContactClass *klass)
 
 static void tpl_contact_init(TplContact *self)
 {
-#define SET_NULL(member) self->member = NULL
-	SET_NULL(contact);
-	SET_NULL(alias);
-	SET_NULL(identifier);
-	SET_NULL(presence_status);
-	SET_NULL(presence_message);
-#undef SET_NULL
 }
 
 static void tpl_contact_finalize(GObject *obj)
 {
 	TplContact *self = TPL_CONTACT(obj);
 
-	g_free ((gchar*) self->alias);
+	g_free (self->alias);
 	self->alias = NULL;
-	g_free ((gchar*) self->identifier);
+	g_free (self->identifier);
 	self->identifier = NULL;
-	g_free ((gchar*) self->presence_status);
+	g_free (self->presence_status);
 	self->presence_status = NULL;
-	g_free ((gchar*) self->presence_message);
+	g_free (self->presence_message);
 	self->presence_message = NULL;
 
 	G_OBJECT_CLASS (tpl_contact_parent_class)->finalize (obj);
-	g_debug("TplContact finalized\n");
 }
 static void tpl_contact_dispose(GObject *obj)
 {
 	TplContact *self = TPL_CONTACT(obj);
-	
+
 	tpl_object_unref_if_not_null(self->contact);
 	self->contact = NULL;
-	
+
 	G_OBJECT_CLASS (tpl_contact_parent_class)->dispose (obj);
-	g_debug("TplContact disposed\n");
 }
 
 
@@ -79,22 +71,13 @@ static void tpl_contact_dispose(GObject *obj)
 TplContact *tpl_contact_from_tp_contact (TpContact *contact)
 {
 	TplContact *ret;
-	const gchar *identifier, *alias;
-	const gchar *presence_message, *presence_status;
 
 	ret = tpl_contact_new ();
-	identifier = tp_contact_get_identifier (contact);
-	alias = tp_contact_get_alias (contact);
-	presence_status = tp_contact_get_presence_status (contact);
-	presence_message = tp_contact_get_presence_message (contact);
-
-#define CONTACT_ENTRY_SET(x) tpl_contact_set_##x(ret, x)
-	CONTACT_ENTRY_SET(contact);
-	CONTACT_ENTRY_SET(alias);
-	CONTACT_ENTRY_SET(identifier);
-	CONTACT_ENTRY_SET(presence_status);
-	CONTACT_ENTRY_SET(presence_message);
-#undef CONTACT_ENTRY_SET
+	tpl_contact_set_contact (ret, contact);
+	tpl_contact_set_identifier (ret, (gchar*) tp_contact_get_identifier (contact));
+	tpl_contact_set_alias (ret, (gchar*) tp_contact_get_alias (contact));
+	tpl_contact_set_presence_status (ret, (gchar*) tp_contact_get_presence_status (contact));
+	tpl_contact_set_presence_message (ret, (gchar*) tp_contact_get_presence_message (contact));
 
 	return ret;
 }
@@ -106,44 +89,49 @@ TplContact *tpl_contact_new(void)
 
 TpContact *tpl_contact_get_contact(TplContact *self)
 {
+	g_return_val_if_fail(TPL_IS_CONTACT(self), NULL);
 	return self->contact;
 }
 
-const gchar *tpl_contact_get_alias(TplContact *self)
+gchar *tpl_contact_get_alias(TplContact *self)
 {
+	g_return_val_if_fail(TPL_IS_CONTACT(self), NULL);
 	return self->alias;
 }
 
-const gchar *tpl_contact_get_identifier(TplContact *self)
+gchar *tpl_contact_get_identifier(TplContact *self)
 {
+	g_return_val_if_fail(TPL_IS_CONTACT(self), NULL);
 	return self->identifier;
 }
 
-const gchar *tpl_contact_get_presence_status(TplContact *self)
+gchar *tpl_contact_get_presence_status(TplContact *self)
 {
+	g_return_val_if_fail(TPL_IS_CONTACT(self), NULL);
 	return self->presence_status;
 }
 
-const gchar *tpl_contact_get_presence_message(TplContact *self)
+gchar *tpl_contact_get_presence_message(TplContact *self)
 {
+	g_return_val_if_fail(TPL_IS_CONTACT(self), NULL);
 	return self->presence_message;
 }
 
 TplContactType tpl_contact_get_contact_type(TplContact *self)
 {
+	g_return_val_if_fail (TPL_IS_CONTACT (self), TPL_CONTACT_UNKNOWN);
 	return self->contact_type;
 }
 
 TpAccount *tpl_contact_get_account(TplContact *self)
 {
+	g_return_val_if_fail(TPL_IS_CONTACT(self), NULL);
 	return self->account;
 }
 
 
 void tpl_contact_set_contact(TplContact *self, TpContact *data)
 {
-	g_assert(TPL_IS_CONTACT(self));
-	g_assert(TP_IS_CONTACT(data)||data==NULL);
 	g_return_if_fail(TPL_IS_CONTACT(self));
 	g_return_if_fail(TP_IS_CONTACT(data)||data==NULL);
 
@@ -154,8 +142,6 @@ void tpl_contact_set_contact(TplContact *self, TpContact *data)
 
 void tpl_contact_set_account(TplContact *self, TpAccount *data)
 {
-	g_assert(TPL_IS_CONTACT(self));
-	g_assert(TP_IS_ACCOUNT(data)||data==NULL);
 	g_return_if_fail(TPL_IS_CONTACT(self));
 	g_return_if_fail(TP_IS_ACCOUNT(data)||data==NULL);
 
@@ -164,52 +150,42 @@ void tpl_contact_set_account(TplContact *self, TpAccount *data)
 	tpl_object_ref_if_not_null(data);
 }
 
-void tpl_contact_set_alias(TplContact *self, const gchar *data) 
-{ 
-	g_assert(TPL_IS_CONTACT(self));
+void tpl_contact_set_alias(TplContact *self, gchar *data)
+{
 	g_return_if_fail(TPL_IS_CONTACT(self));
-	// TODO check data validity
 
-	g_free( (gchar*) self->alias); 
-	self->alias = g_strdup (data); 
+	g_free (self->alias);
+	self->alias = g_strdup (data);
 }
 
-void tpl_contact_set_identifier(TplContact *self, const gchar *data) 
-{ 
-	g_assert(TPL_IS_CONTACT(self));
+void tpl_contact_set_identifier(TplContact *self, gchar *data)
+{
 	g_return_if_fail(TPL_IS_CONTACT(self));
-	// TODO check data validity
 
-	g_free( (gchar*) self->identifier); 
-	self->identifier = g_strdup (data); 
+	g_free (self->identifier);
+	self->identifier = g_strdup (data);
 }
 
-void tpl_contact_set_presence_status(TplContact *self, const gchar *data) 
-{ 
-	g_assert(TPL_IS_CONTACT(self));
-	g_return_if_fail(TPL_IS_CONTACT(self));
-	// TODO check data validity
+void tpl_contact_set_presence_status(TplContact *self, gchar *data)
+{
+	g_return_if_fail (TPL_IS_CONTACT(self));
 
-	g_free( (gchar*) self->presence_status); 
-	self->presence_status = g_strdup (data); 
+	g_free (self->presence_status);
+	self->presence_status = g_strdup (data);
 }
 
-void tpl_contact_set_presence_message(TplContact *self, const gchar *data) 
-{ 
-	g_assert(TPL_IS_CONTACT(self));
-	g_return_if_fail(TPL_IS_CONTACT(self));
-	// TODO check data validity
+void tpl_contact_set_presence_message(TplContact *self, gchar *data)
+{
+	g_return_if_fail (TPL_IS_CONTACT(self));
 
-	g_free( (gchar*) self->presence_message); 
-	self->presence_message = g_strdup (data); 
+	g_free(self->presence_message);
+	self->presence_message = g_strdup (data);
 }
 
 
 void tpl_contact_set_contact_type(TplContact *self, TplContactType data)
 {
-	g_assert(TPL_IS_CONTACT(self));
 	g_return_if_fail(TPL_IS_CONTACT(self));
-	// TODO check data validity
 
 	self->contact_type = data;
 }
