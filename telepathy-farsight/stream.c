@@ -1102,7 +1102,8 @@ cb_fs_local_candidates_prepared (TfStream *self)
             return;
           }
 
-          DEBUG (self, "candidate->ip = '%s'", candidate->ip);
+          DEBUG (self, "ip = '%s port = %u component = %u'", candidate->ip,
+              candidate->port, candidate->component_id);
 
           dbus_g_type_struct_set (&transport,
               0, candidate->component_id,
@@ -1322,7 +1323,7 @@ fs_codecs_to_tp (TfStream *stream,
 
       g_hash_table_destroy (params);
 
-      DEBUG (stream, "adding codec %s [%d]", fsc->encoding_name, fsc->id);
+      DEBUG (stream, "adding codec " FS_CODEC_FORMAT, FS_CODEC_ARGS (fsc));
 
       g_ptr_array_add (tp_codecs, g_value_get_boxed (&codec));
     }
