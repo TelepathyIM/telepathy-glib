@@ -8,7 +8,8 @@ lcov-report:
 		--remove @top_builddir@/lcov.info.tmp telepathy-glib-scan.c
 	rm @top_builddir@/lcov.info.tmp
 	$(mkdir_p) @top_builddir@/lcov.html
-	genhtml --title telepathy-glib \
+	git_commit=`GIT_DIR=@top_srcdir@/.git git log -1 --pretty=format:%h 2>/dev/null`;\
+	genhtml --title "@PACKAGE_STRING@ $$git_commit" \
 		--output-directory @top_builddir@/lcov.html lcov.info
 	@echo
 	@echo 'lcov report can be found in:'
@@ -17,7 +18,7 @@ lcov-report:
 
 lcov-check:
 	$(MAKE) lcov-reset
-	$(MAKE) check
+	$(MAKE) check $(LCOV_CHECK_ARGS)
 	$(MAKE) lcov-report
 
 ## vim:set ft=automake:
