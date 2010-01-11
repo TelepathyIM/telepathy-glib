@@ -376,7 +376,7 @@
  * %TP_IFACE_QUARK_PROPERTIES_INTERFACE, which expand to function calls that
  * return GQuarks for the same strings.
  *
- * Since 0.9.UNRELEASED it also provides cpp defines like
+ * Since 0.9.2 it also provides cpp defines like
  * %TP_PROP_CHANNEL_INTERFACE_GROUP_GROUP_FLAGS, which expand to string
  * constants representing fully-qualified D-Bus property names, like
  * <literal>org.freedesktop.Telepathy.Channel.Interface.Group.GroupFlags</literal>.
