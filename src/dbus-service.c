@@ -27,7 +27,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/account.h>
 
-#include <log-manager.h>
+#include <telepathy-logger/log-manager.h>
 
 #define DBUS_STRUCT_STRING_STRING_UINT \
 	(dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_INVALID))

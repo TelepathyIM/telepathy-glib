@@ -21,7 +21,7 @@
 
 #include <glib.h>
 
-#include <observer.h>
+#include <telepathy-logger/observer.h>
 
 static GMainLoop *loop = NULL;
 

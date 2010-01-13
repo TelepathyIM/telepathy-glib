@@ -29,9 +29,7 @@
 #include <glib-object.h>
 
 G_BEGIN_DECLS
-
 #define TPL_LOG_STORE_EMPATHY_LOGFILE_REGEX "\\d{8}.log"
-
 #define TPL_TYPE_LOG_STORE_EMPATHY \
   (tpl_log_store_empathy_get_type ())
 #define TPL_LOG_STORE_EMPATHY(obj) \
@@ -47,7 +45,6 @@ G_BEGIN_DECLS
 #define TPL_LOG_STORE_EMPATHY_GET_CLASS(inst) \
   (G_TYPE_INSTANCE_GET_CLASS ((inst), TPL_TYPE_LOG_STORE_EMPATHY, \
                               TplLogStoreEmpathyClass))
-
 typedef struct _TplLogStoreEmpathy TplLogStoreEmpathy;
 typedef struct _TplLogStoreEmpathyClass TplLogStoreEmpathyClass;
 
@@ -65,5 +62,4 @@ struct _TplLogStoreEmpathyClass
 GType tpl_log_store_empathy_get_type (void);
 
 G_END_DECLS
-
 #endif /* __TPL_LOG_STORE_EMPATHY_H__ */

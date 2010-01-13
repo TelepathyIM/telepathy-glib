@@ -33,7 +33,22 @@
 #define tpl_object_unref_if_not_null(obj)	if (obj && G_IS_OBJECT(obj)) \
 							g_object_unref(obj);
 */
-void tpl_object_unref_if_not_null(void* data);
-void tpl_object_ref_if_not_null(void* data);
+void tpl_object_unref_if_not_null (void *data);
+void tpl_object_ref_if_not_null (void *data);
+
+#define tpl_call_with_err_if_fail(guard, obj, PREFIX, POSTFIX, msg, func, user_data) \
+  if (!(guard)) \
+    { \
+      if (func != NULL) \
+        { \
+          GError *e; \
+          e = g_error_new ( PREFIX ## _ERROR, \
+              PREFIX ## _ERROR_ ## POSTFIX, \
+              msg); \
+          func (obj, FALSE, e, user_data); \
+          g_error_free (e); \
+        } \
+      return; \
+    }
 
 #endif // __TPL_UTILS_H__

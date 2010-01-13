@@ -29,7 +29,7 @@
 
 #include <glib-object.h>
 
-#include <log-manager.h>
+#include <telepathy-logger/log-manager.h>
 
 G_BEGIN_DECLS
 

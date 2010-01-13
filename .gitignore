@@ -5,7 +5,6 @@ configure.in
 observer.py
 tags
 TAGS
-config.*
 aclocal.m4
 autom4te.cache/
 depcomp
@@ -24,6 +23,9 @@ shave-libtool
 libtool
 stamp-h1
 
+config.*
+*~
+
 src/*.o
 src/*.lo
 src/*.la
@@ -37,9 +39,9 @@ src/dbus-service-server.h
 src/*.service
 src/*.client
 
-libtelepathy-logger/*.o
-libtelepathy-logger/*.lo
-libtelepathy-logger/*.la
-libtelepathy-logger/.libs
-libtelepathy-logger/.deps/
-libtelepathy-logger/libtelepathy-logger.pc
+telepathy-logger/*.o
+telepathy-logger/*.lo
+telepathy-logger/*.la
+telepathy-logger/.libs
+telepathy-logger/.deps/
+telepathy-logger/libtelepathy-logger.pc

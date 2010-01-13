@@ -121,6 +121,7 @@ AC_SUBST(ERROR_CFLAGS)
 PKG_CHECK_MODULES(LIBTPL,
 [
    gconf-2.0
+   gio-2.0
    glib-2.0 >= $GLIB_REQUIRED
    gobject-2.0
    libxml-2.0
@@ -164,8 +165,8 @@ SHAVE_INIT(.)
 AC_OUTPUT([
    Makefile
    src/Makefile
-   libtelepathy-logger/Makefile
-   libtelepathy-logger/libtelepathy-logger.pc
+   telepathy-logger/Makefile
+   telepathy-logger/libtelepathy-logger.pc
    tools/Makefile
    shave
    shave-libtool

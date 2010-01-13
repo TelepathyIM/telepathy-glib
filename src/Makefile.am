@@ -3,7 +3,7 @@ include $(top_srcdir)/tools/flymake.mk
 
 AM_CPPFLAGS =						\
 	$(ERROR_CFLAGS)					\
-	-I$(top_srcdir)/libtelepathy-logger		\
+	-I$(top_srcdir)					\
 	-DG_LOG_DOMAIN=\"TPLogger\"			\
 	$(LIBTPL_CFLAGS)				\
 	$(TPL_CFLAGS)					\
@@ -12,11 +12,11 @@ AM_CPPFLAGS =						\
 
 
 LDADD = \
-	$(top_builddir)/libtelepathy-logger/libtelepathy-logger.la \
+	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
 	$(LIBTPL_LIBS)
 
 # TODO removeme: kludge to let the compilation work, or it doesn't know how to buld the lib
-$(top_builddir)/libtelepathy-logger/libtelepathy-logger.la:
+$(top_builddir)/telepathy-logger/libtelepathy-logger.la:
 	$(MAKE) -C $(top_builddir)/libtelepathy-logger libtelepathy-logger.la
 
 BUILT_SOURCES = \

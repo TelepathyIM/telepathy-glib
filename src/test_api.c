@@ -20,104 +20,84 @@
  */
 
 #include <glib.h>
-#include <gconf/gconf-client.h>
-//#include <stdio.h>
-//#include <dbus/dbus-glib-bindings.h>
+#include <telepathy-logger/log-manager.h>
 
-//#include <telepathy-glib/account.h>
-#include <telepathy-glib/dbus.h>
-
-//#include <log-manager.h>
-#include <dbus-service-client.h>
-#include <dbus-service.h>
-#include <datetime.h>
+#include <telepathy-logger/datetime.h>
 
 #define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0"
-#define CHAT_ID	"echo@test.collabora.co.uk"
-
-#define GCONF_LIST "/apps/telepathy-logger/disabling/accounts/blocklist"
-
+#define ID "echo@test.collabora.co.uk"
 
 static GMainLoop *loop = NULL;
-/*
+
 static void
-cb (DBusGProxy *proxy, GPtrArray *retval, GError *error,
-    gpointer userdata)
+get_messages_cb (TplLogManager * manager, gpointer result, GError * error,
+		 gpointer user_data)
 {
-	if(error!=NULL) {
-		g_error("ERROR: %s\n", error->message);
-		return;
-	}
-	for(guint i=0; i<retval->len; ++i) {
-		GValueArray *values = g_ptr_array_index(retval, i);
-		GValue *sender = g_value_array_get_nth(values, 0);
-		GValue *message = g_value_array_get_nth(values, 1);
-		GValue *timestamp = g_value_array_get_nth(values, 2);
-		g_message("[%s] <%s> %s\n",
-				tpl_time_to_string_local(g_value_get_uint(timestamp), "%Y-%m-%d %H:%M.%S"),
-				g_value_get_string(sender),
-				g_value_get_string(message));
-	}
+  guint len;
+  if (result)
+    len = g_list_length ((GList *) result);
+  else
+    len = 0;
+  g_message ("GOTCHA: %d\n", len);
+
+  if(error) {
+	  g_error("get messages: %s", error->message);
+	  return;
+  }
+
+  for (guint i = g_list_length (result); i > 0; --i)
+    {
+      TplLogEntry *entry = (TplLogEntry *) g_list_nth_data (result, i - 1);
+      time_t t = tpl_log_entry_get_timestamp (entry);
+      g_print ("LIST msgs(%d): %s\n", i,
+	       tpl_time_to_string_utc (t, "%Y%m%d %H%M-%S"));
+    }
 }
-*/
-int main(int argc, char *argv[])
+
+static void
+get_dates_cb (TplLogManager * manager, gpointer result, GError * error,
+	      gpointer user_data)
 {
-	DBusGProxy *proxy;
-//	gchar *result;
-	DBusGConnection *connection;
-	GError *error=NULL;
+  guint len;
 
-	g_type_init ();
-	connection = tp_get_bus();
-	proxy = dbus_g_proxy_new_for_name (connection,
-			TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
-			TPL_DBUS_SRV_OBJECT_PATH,
-			TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
-/*
-	if (!org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_async
-			(proxy, ACCOUNT_PATH, CHAT_ID, FALSE, 11, cb, NULL))
-	{
-		g_warning ("Async Woops remote method failed: %s", error->message);
-		g_clear_error (&error);
-		g_error_free (error);
-		return 1;
-	}
-*/
-	GConfClient *client = gconf_client_get_default();
-	GConfValue *val;
-	GSList *lst=NULL;
+  if(error) {
+	  g_error("get dates: %s", error->message);
+	  g_clear_error(&error);
+	  g_error_free(error);
+	  return;
+  }
 
-	val = gconf_client_get (client, GCONF_LIST, &error);
-	if (val==NULL) {
-		g_message("NULL LIST\n");
-	}
-	else {
-		lst = gconf_value_get_list(val);
-		for(guint i=0; i<g_slist_length(lst);++i) {
-			g_message("pre GLIST %d: %s\n",i, (gchar*)g_slist_nth_data(lst, i));
-		}
-	}
+  if (result)
+    len = g_list_length ((GList *) result);
+  else
+    len = 0;
+  g_message ("GOTCHAi: %d\n", len);
 
-	lst = g_slist_prepend(lst, gconf_value_new_from_string(
-		GCONF_VALUE_STRING, "FOO", NULL));
+  for (guint i = g_list_length (result); i > 0; --i)
+    g_print ("LIST dates(%d): %s\n", i, (gchar *) g_list_nth_data (result, i - 1));
+}
 
-	val = gconf_value_new(GCONF_VALUE_LIST);
-	gconf_value_set_list_type(val, GCONF_VALUE_STRING);
-	gconf_value_set_list(val, lst);
-	gconf_client_set(client, GCONF_LIST,
-		val, NULL);
+int
+main (int argc, char *argv[])
+{
+  g_type_init ();
+  TpDBusDaemon *tpbus;
+  TpAccount *acc;
 
-	val = gconf_client_get (client, GCONF_LIST, &error);
-	lst = gconf_value_get_list(val);
-	if (lst==NULL) g_message("NULL LIST\n");
-	else {
-		for(guint i=0; i<g_slist_length(lst);++i) {
-			g_message("post GLIST %d: %s\n", i, (char*)g_slist_nth_data(lst, i));
-		}
-	}
+  TplLogManager *manager = tpl_log_manager_dup_singleton ();
 
-	loop = g_main_loop_new (NULL, FALSE);
-	g_main_loop_run (loop);
+  tpbus = tp_dbus_daemon_dup (NULL);
+  acc = tp_account_new (tpbus, ACCOUNT_PATH, NULL);
 
-	return 0;
+  tpl_log_manager_get_dates_async (manager, acc, ID, FALSE,
+				   get_dates_cb, NULL, NULL);
+
+  tpl_log_manager_get_messages_for_date_async (manager, acc, ID,
+					       FALSE, "20091230",
+					       get_messages_cb, NULL, NULL);
+
+  loop = g_main_loop_new (NULL, FALSE);
+  g_main_loop_run (loop);
+
+  return 0;
 }

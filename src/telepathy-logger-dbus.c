@@ -24,7 +24,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-logger-dbus.h>
 
-#include <dbus-service.h>
+#include "dbus-service.h"
 
 static GMainLoop *loop = NULL;
 
