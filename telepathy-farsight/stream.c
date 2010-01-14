@@ -750,6 +750,10 @@ get_all_properties_cb (TpProxy *proxy,
       g_value_set_uint (&params[n_args].value, 3);
       n_args++;
     }
+  else if (!strcmp (nat_traversal, "shm"))
+    {
+      transmitter = "shm";
+    }
   else
     {
       transmitter = "rawudp";
