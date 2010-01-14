@@ -52,12 +52,12 @@ G_BEGIN_DECLS
   TplChannel *tpl_channel;
   gboolean chatroom;
   TpContact *my_contact;
-  TpContact *remote_contact;	// only set if chatroom==FALSE
-  const gchar *chatroom_id;	// only set if chatroom==TRUE
+  TpContact *remote_contact;	/* only set if chatroom==FALSE */
+  gchar *chatroom_id;		/* only set if chatroom==TRUE */
 
-  GQueue *chain;		// queue of TplPendingProc
+  GQueue *chain;		/* queue of TplPendingProc */
 
-  // only used as metadata in CB data passing
+  /* only used as metadata in CB data passing */
   guint selector;
 } TplTextChannel;
 
@@ -87,4 +87,4 @@ void tpl_text_channel_set_chatroom_id (TplTextChannel * self,
 				       const gchar * data);
 
 G_END_DECLS
-#endif // __TPL_TEXT_CHANNEL_H__
+#endif /* __TPL_TEXT_CHANNEL_H__ */

@@ -29,6 +29,7 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
 
+#include <telepathy-logger/conf.h>
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/channel-text.h>
 #include <telepathy-logger/log-manager.h>
@@ -81,7 +82,6 @@ _observe_channel_when_ready_cb (TpChannel * channel,
   tpl_channel_set_channel_type (tpl_chan,
 				tp_channel_get_channel_type
 				(tpl_chan->channel));
-
   tpl_channel_register_to_observer (tpl_chan);
 }
 
@@ -109,7 +109,21 @@ tpl_observer_observe_channels (TpSvcClientObserver * self,
   TpAccount *tp_acc;
   TpConnection *tp_conn;
   TpDBusDaemon *tp_bus_daemon;
+  TplConf *conf;
   GError *error = NULL;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account) );
+  g_return_if_fail (TP_IS_CONNECTION (connection) );
+
+  /* Check if logging if enabled globally and for the given account_path,
+   * return imemdiatly if it's not
+   */
+
+  conf = tpl_conf_dup();
+  if (!tpl_conf_is_globally_enabled(conf, NULL))
+	  return;
+  if (tpl_conf_is_account_ignored(conf, account, NULL))
+	  return;
 
   tp_bus_daemon = tp_dbus_daemon_dup (&error);
   if (tp_bus_daemon == NULL)
@@ -354,8 +368,6 @@ tpl_observer_dispose (GObject * obj)
 {
   TplObserver *self = TPL_OBSERVER (obj);
 
-  g_debug ("TplObserver: disposing\n");
-
   if (self->channel_map != NULL)
     {
       g_object_unref (self->channel_map);
@@ -368,8 +380,6 @@ tpl_observer_dispose (GObject * obj)
     }
 
   G_OBJECT_CLASS (tpl_observer_parent_class)->dispose (obj);
-
-  g_debug ("TplObserver: disposed\n");
 }
 
 static void
@@ -377,11 +387,7 @@ tpl_observer_finalize (GObject * obj)
 {
   //TplObserver *self = TPL_OBSERVER(obj);
 
-  g_debug ("TplObserver: finalizing\n");
-
   G_OBJECT_CLASS (tpl_observer_parent_class)->finalize (obj);
-
-  g_debug ("TplObserver: finalized\n");
 }
 
 TplObserver *

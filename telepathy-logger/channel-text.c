@@ -137,7 +137,7 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
   tpl_log_entry_text_set_message (tlog, arg_Text);
   tpl_log_entry_text_set_message_type (tlog, arg_Type);
   tpl_log_entry_text_set_signal_type (tlog, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
-  tpl_log_entry_text_set_message_id (tlog, 123);
+  tpl_log_entry_text_set_message_id (tlog, arg_Timestamp);
 
   tpl_log_entry_set_entry (log, tlog);
   tpl_log_entry_set_timestamp (log, (time_t) arg_Timestamp);
@@ -150,11 +150,11 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
     chat_id = g_strdup (tpl_text_channel_get_chatroom_id (tpl_text));
 
   tpl_log_entry_text_set_chat_id (tlog, chat_id);
+  tpl_log_entry_text_set_chatroom (tlog,
+		  tpl_text_channel_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-
-  tpl_log_manager_add_message (logmanager, chat_id,
-			       tpl_text_channel_is_chatroom (tpl_text),
+  tpl_log_manager_add_message (logmanager,
 			       log, &error);
 
   if (error != NULL)
@@ -231,11 +231,11 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
     chat_id = g_strdup (tpl_text_channel_get_chatroom_id (tpl_text));
 
   tpl_log_entry_text_set_chat_id (tlog, chat_id);
+  tpl_log_entry_text_set_chatroom (tlog,
+		  tpl_text_channel_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
   tpl_log_manager_add_message (logmanager,
-			       tpl_log_entry_text_get_chat_id (tlog),
-			       tpl_text_channel_is_chatroom (tpl_text),
 			       log, &e);
   if (e != NULL)
     {
@@ -267,8 +267,6 @@ _channel_on_received_signal_cb (TpChannel * proxy,
   TplLogEntry *log;
   TplLogEntryText *tlog;
 
-  g_message ("ID: %d\n", arg_ID);
-
   // TODO use the Message iface to check the delivery
   // notification and handle it correctly
   if (arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
@@ -289,7 +287,7 @@ _channel_on_received_signal_cb (TpChannel * proxy,
   tpl_log_entry_text_set_message_type (tlog, arg_Type);
   tpl_log_entry_text_set_signal_type (tlog,
 				      TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
-  tpl_log_entry_text_set_message_id (tlog, 123);	//TODO set a real Id
+  tpl_log_entry_text_set_message_id (tlog, arg_Timestamp);	//TODO set a real Id
 
   me = tpl_text_channel_get_my_contact (tpl_text);
   tpl_contact_receiver = tpl_contact_from_tp_contact (me);
@@ -530,11 +528,10 @@ _tpl_text_channel_pendingproc_get_my_contact (TplTextChannel * ctx)
 
 
 G_DEFINE_TYPE (TplTextChannel, tpl_text_channel, G_TYPE_OBJECT)
-     static void tpl_text_channel_dispose (GObject * obj)
+
+static void tpl_text_channel_dispose (GObject * obj)
 {
   TplTextChannel *self = TPL_TEXT_CHANNEL (obj);
-
-  g_debug ("TplTextChannel: disposing\n");
 
   tpl_object_unref_if_not_null (self->tpl_channel);
   self->tpl_channel = NULL;
@@ -546,8 +543,6 @@ G_DEFINE_TYPE (TplTextChannel, tpl_text_channel, G_TYPE_OBJECT)
   self->chain = NULL;
 
   G_OBJECT_CLASS (tpl_text_channel_parent_class)->dispose (obj);
-
-  g_debug ("TplTextChannel: disposed\n");
 }
 
 static void
@@ -555,12 +550,8 @@ tpl_text_channel_finalize (GObject * obj)
 {
   TplTextChannel *self = TPL_TEXT_CHANNEL (obj);
 
-  g_debug ("TplTextChannel: finalizing\n");
-
-  g_free ((gchar *) self->chatroom_id);
+  g_free (self->chatroom_id);
   G_OBJECT_CLASS (tpl_text_channel_parent_class)->finalize (obj);
-
-  g_debug ("TplTextChannel: finalized\n");
 }
 
 static void
@@ -577,12 +568,13 @@ static void
 tpl_text_channel_init (TplTextChannel * self)
 {
   /* Init TplTextChannel's members to zero/NULL */
-#undef TPL_SET_NULL
+	/*
   tpl_text_channel_set_tpl_channel (self, NULL);
   tpl_text_channel_set_my_contact (self, NULL);
   tpl_text_channel_set_remote_contact (self, NULL);
   tpl_text_channel_set_chatroom_id (self, NULL);
   tpl_text_channel_set_chatroom (self, FALSE);
+  */
 }
 
 TplTextChannel *
@@ -591,14 +583,18 @@ tpl_text_channel_new (TplChannel * tpl_channel)
   TplTextChannel *ret = g_object_new (TPL_TYPE_TEXT_CHANNEL, NULL);
   tpl_text_channel_set_tpl_channel (ret, tpl_channel);
 
-  // here some post instance-initialization, the object needs
-  // to set some type's members and probably access (futurely) some
-  // props
+  /* here some post instance-initialization, the object needs
+     to set some type's members and probably access (futurely) some
+     props */
   TpHandleType remote_handle_type;
   tp_channel_get_handle (tpl_channel_get_channel (tpl_channel),
 			 &remote_handle_type);
 
   ret->chain = g_queue_new ();
+
+  g_queue_push_tail (ret->chain,
+		     _tpl_text_channel_pendingproc_connect_signals);
+
   g_queue_push_tail (ret->chain,
 		     _tpl_text_channel_pendingproc_get_my_contact);
 
@@ -631,10 +627,7 @@ tpl_text_channel_new (TplChannel * tpl_channel)
       break;
     }
 
-  g_queue_push_tail (ret->chain,
-		     _tpl_text_channel_pendingproc_connect_signals);
-
-  // start the chain consuming
+  // start the queue consuming
   context_continue (ret);
   return ret;
 }
@@ -661,18 +654,23 @@ tpl_text_channel_get_my_contact (TplTextChannel * self)
 gboolean
 tpl_text_channel_is_chatroom (TplTextChannel * self)
 {
+  g_return_val_if_fail(TPL_IS_TEXT_CHANNEL (self), FALSE);
   return self->chatroom;
 }
 
 const gchar *
 tpl_text_channel_get_chatroom_id (TplTextChannel * self)
 {
+  g_return_val_if_fail(TPL_IS_TEXT_CHANNEL (self), NULL);
   return self->chatroom_id;
 }
 
 void
 tpl_text_channel_set_tpl_channel (TplTextChannel * self, TplChannel * data)
 {
+  g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
+  g_return_if_fail (TPL_IS_CHANNEL (data));
+
   tpl_object_unref_if_not_null (self->tpl_channel);
   self->tpl_channel = data;
   tpl_object_ref_if_not_null (data);
@@ -681,6 +679,9 @@ tpl_text_channel_set_tpl_channel (TplTextChannel * self, TplChannel * data)
 void
 tpl_text_channel_set_remote_contact (TplTextChannel * self, TpContact * data)
 {
+  g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
+  g_return_if_fail (TP_IS_CONTACT (data));
+
   tpl_object_unref_if_not_null (self->remote_contact);
   self->remote_contact = data;
   tpl_object_ref_if_not_null (data);
@@ -689,6 +690,9 @@ tpl_text_channel_set_remote_contact (TplTextChannel * self, TpContact * data)
 void
 tpl_text_channel_set_my_contact (TplTextChannel * self, TpContact * data)
 {
+  g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
+  g_return_if_fail (TP_IS_CONTACT (data));
+
   tpl_object_unref_if_not_null (self->my_contact);
   self->my_contact = data;
   tpl_object_ref_if_not_null (data);
@@ -697,12 +701,16 @@ tpl_text_channel_set_my_contact (TplTextChannel * self, TpContact * data)
 void
 tpl_text_channel_set_chatroom (TplTextChannel * self, gboolean data)
 {
+  g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
+
   self->chatroom = data;
 }
 
 void
 tpl_text_channel_set_chatroom_id (TplTextChannel * self, const gchar * data)
 {
-  g_free ((gchar *) self->chatroom_id);
+  g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
+
+  g_free (self->chatroom_id);
   self->chatroom_id = g_strdup (data);
 }

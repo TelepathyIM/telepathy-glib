@@ -71,9 +71,9 @@ typedef struct
   // status changed signals set only the sender
   TplContact *sender;
   TplContact *receiver;
-  const gchar *message;
+  gchar *message;
   guint message_id;
-  const gchar *chat_id;
+  gchar *chat_id;
   gboolean chatroom;
 } TplLogEntryText;
 
@@ -87,8 +87,7 @@ GType tpl_log_entry_text_get_type (void);
 TplLogEntryText *tpl_log_entry_text_new (void);
 
 TpChannelTextMessageType tpl_log_entry_text_message_type_from_str (const gchar
-								   *
-								   type_str);
+								   * type_str);
 
 const gchar *tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType
 						     msg_type);

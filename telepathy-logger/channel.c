@@ -27,11 +27,10 @@
 #include <telepathy-logger/observer.h>
 
 G_DEFINE_TYPE (TplChannel, tpl_channel, G_TYPE_OBJECT)
-     static void tpl_channel_dispose (GObject * obj)
+
+static void tpl_channel_dispose (GObject * obj)
 {
   TplChannel *self = TPL_CHANNEL (obj);
-
-  g_debug ("TplChannel dispose start\n");
 
   tpl_object_unref_if_not_null (self->channel);
   self->channel = NULL;
@@ -50,21 +49,18 @@ G_DEFINE_TYPE (TplChannel, tpl_channel, G_TYPE_OBJECT)
   self->observer = NULL;
 
   G_OBJECT_CLASS (tpl_channel_parent_class)->dispose (obj);
-  g_debug ("TplChannel dispose end\n");
 }
 
 static void
 tpl_channel_finalize (GObject * obj)
 {
   TplChannel *self = TPL_CHANNEL (obj);
-  g_free ((gchar *) self->channel_path);
-  g_free ((gchar *) self->channel_type);
-  g_free ((gchar *) self->account_path);
-  g_free ((gchar *) self->connection_path);
+  g_free (self->channel_path);
+  g_free (self->channel_type);
+  g_free (self->account_path);
+  g_free (self->connection_path);
 
   G_OBJECT_CLASS (tpl_channel_parent_class)->finalize (obj);
-
-  g_debug ("TplChannel instance finalized\n");
 }
 
 static void
@@ -200,7 +196,7 @@ tpl_channel_set_account_path (TplChannel * self, const gchar * data)
   g_return_if_fail (TPL_IS_CHANNEL (self));
   // TODO check validity of data
 
-  g_free ((gchar *) self->account_path);
+  g_free (self->account_path);
   self->account_path = g_strdup (data);
 }
 
@@ -221,7 +217,7 @@ tpl_channel_set_connection_path (TplChannel * self, const gchar * data)
   g_return_if_fail (TPL_IS_CHANNEL (self));
   // TODO check validity of data
 
-  g_free ((gchar *) self->connection_path);
+  g_free (self->connection_path);
   self->connection_path = g_strdup (data);
 }
 
@@ -242,7 +238,7 @@ tpl_channel_set_channel_path (TplChannel * self, const gchar * data)
   g_return_if_fail (TPL_IS_CHANNEL (self));
   // TODO check validity of data
 
-  g_free ((gchar *) self->channel_path);
+  g_free (self->channel_path);
   self->channel_path = g_strdup (data);
 }
 
@@ -252,7 +248,7 @@ tpl_channel_set_channel_type (TplChannel * self, const gchar * data)
   g_return_if_fail (TPL_IS_CHANNEL (self));
   // TODO check validity of data
 
-  g_free ((gchar *) self->channel_type);
+  g_free (self->channel_type);
   self->channel_type = g_strdup (data);
 }
 
@@ -292,12 +288,12 @@ tpl_channel_register_to_observer (TplChannel * self)
       g_debug ("Channel path not found, registering %s\n", key);
     }
 
-  // Instantiate and delegate channel handling to the right object
+  /* Instantiate and delegate channel handling to the right object */
   if (0 == g_strcmp0 (TP_IFACE_CHAN_TEXT,
 		      tpl_channel_get_channel_type (self)))
     {
-      // when removed, automatically frees the Key and unrefs
-      // its Value
+      /* when removed, automatically frees the Key and unrefs
+	       its Value */
       TplTextChannel *chan_text = tpl_text_channel_new (self);
       g_hash_table_insert (glob_map, key, chan_text);
     }
@@ -327,8 +323,9 @@ tpl_channel_unregister_from_observer (TplChannel * self)
   key = tpl_channel_get_channel_path (self);
   g_debug ("Unregistering channel path %s\n", key);
 
-  // this will destroy the associated value object: at this point
-  // the hash table reference should be the only one for the
-  // value's object
+  /* this will destroy the associated value object: at this point
+     the hash table reference should be the only one for the
+     value's object
+   */
   return g_hash_table_remove (glob_map, key);
 }

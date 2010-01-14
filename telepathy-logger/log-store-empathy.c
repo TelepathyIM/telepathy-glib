@@ -273,8 +273,6 @@ _log_store_empathy_write_to_store (TplLogStore * self,
 /* currently unused */
 static gboolean
 _log_store_empathy_add_message_text_status_changed (TplLogStore * self,
-						    const gchar * chat_id,
-						    gboolean chatroom,
 						    TplLogEntry * message,
 						    GError ** error)
 {
@@ -289,8 +287,12 @@ _log_store_empathy_add_message_text_status_changed (TplLogStore * self,
   gchar *entry;
   gboolean ret = FALSE;
   TplLogEntryText *tmessage;
+  const gchar *chat_id;
+  gboolean chatroom;
 
   tmessage = tpl_log_entry_get_entry (message);
+  chat_id = tpl_log_entry_text_get_chat_id(tmessage);
+  chatroom = tpl_log_entry_text_is_chatroom(tmessage);
   sender = tpl_log_entry_text_get_sender (tmessage);
   account =
     tpl_channel_get_account (tpl_log_entry_text_get_tpl_channel (tmessage));
@@ -335,8 +337,6 @@ _log_store_empathy_add_message_text_status_changed (TplLogStore * self,
 
 static gboolean
 _log_store_empathy_add_message_text_chat (TplLogStore * self,
-					  const gchar * chat_id,
-					  gboolean chatroom,
 					  TplLogEntry * message,
 					  GError ** error)
 {
@@ -352,10 +352,15 @@ _log_store_empathy_add_message_text_chat (TplLogStore * self,
   gchar *contact_name;
   gchar *contact_id;
   gchar *entry;
+  const gchar *chat_id;
+  gboolean chatroom;
   TpChannelTextMessageType msg_type;
   TplLogEntryText *tmessage;
 
   tmessage = tpl_log_entry_get_entry (message);
+  chat_id = tpl_log_entry_text_get_chat_id(tmessage);
+  chatroom = tpl_log_entry_text_is_chatroom(tmessage);
+
 
   sender = tpl_log_entry_text_get_sender (tmessage);
   account =
@@ -410,18 +415,19 @@ _log_store_empathy_add_message_text_chat (TplLogStore * self,
 
 static gboolean
 _log_store_empathy_add_message_text (TplLogStore * self,
-				     const gchar * chat_id,
-				     gboolean chatroom,
 				     TplLogEntry * message, GError ** error)
 {
   TplLogEntryTextSignalType signal_type;
   TplLogEntryText *tmessage;
+  const gchar *chat_id;
+  gboolean chatroom;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
-  g_return_val_if_fail (chat_id != NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
   tmessage = tpl_log_entry_get_entry (message);
+  chat_id = tpl_log_entry_text_get_chat_id (tmessage);
+  chatroom = tpl_log_entry_text_is_chatroom (tmessage);
   signal_type = tpl_log_entry_text_get_signal_type (tmessage);
 
   switch (signal_type)
@@ -429,13 +435,10 @@ _log_store_empathy_add_message_text (TplLogStore * self,
     case TPL_LOG_ENTRY_TEXT_SIGNAL_SENT:
     case TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED:
       return _log_store_empathy_add_message_text_chat (self,
-						       chat_id, chatroom,
 						       message, error);
       break;
     case TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
       return _log_store_empathy_add_message_text_status_changed (self,
-								 chat_id,
-								 chatroom,
 								 message,
 								 error);
       break;
@@ -455,8 +458,6 @@ _log_store_empathy_add_message_text (TplLogStore * self,
 /* First of two phases selection: understand the type LogEntry */
 static gboolean
 log_store_empathy_add_message (TplLogStore * self,
-			       const gchar * chat_id,
-			       gboolean chatroom,
 			       TplLogEntry * message, GError ** error)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
@@ -464,8 +465,7 @@ log_store_empathy_add_message (TplLogStore * self,
   switch (tpl_log_entry_get_entry_type (message))
     {
     case TPL_LOG_ENTRY_TEXT:
-      return _log_store_empathy_add_message_text (self, chat_id, chatroom,
-						  message, error);
+      return _log_store_empathy_add_message_text (self, message, error);
     default:
       return FALSE;
     }

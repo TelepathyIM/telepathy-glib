@@ -39,20 +39,12 @@ G_DEFINE_TYPE (TplLogEntryText, tpl_log_entry_text, G_TYPE_OBJECT)
 static void
 tpl_log_entry_text_init (TplLogEntryText * self)
 {
-#define TPL_SET_NULL(x) tpl_log_entry_text_set_##x(self, NULL)
-  TPL_SET_NULL (tpl_text_channel);
-  TPL_SET_NULL (sender);
-  TPL_SET_NULL (receiver);
-  TPL_SET_NULL (message);
-  TPL_SET_NULL (chat_id);
-#undef TPL_SET_NULL
 }
 
 static void
 tpl_log_entry_text_dispose (GObject * obj)
 {
   TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (obj);
-  g_debug ("TplLogEntryText: disposing\n");
 
   tpl_object_unref_if_not_null (self->tpl_text);
   self->tpl_text = NULL;
@@ -62,8 +54,6 @@ tpl_log_entry_text_dispose (GObject * obj)
   self->receiver = NULL;
 
   G_OBJECT_CLASS (tpl_log_entry_text_parent_class)->finalize (obj);
-
-  g_debug ("TplLogEntryText: disposed\n");
 }
 
 static void
@@ -71,16 +61,12 @@ tpl_log_entry_text_finalize (GObject * obj)
 {
   TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (obj);
 
-  g_debug ("TplLogEntryText: finalizing\n");
-
-  g_free ((gchar *) self->message);
+  g_free (self->message);
   self->message = NULL;
-  g_free ((gchar *) self->chat_id);
+  g_free (self->chat_id);
   self->chat_id = NULL;
 
   G_OBJECT_CLASS (tpl_log_entry_text_parent_class)->dispose (obj);
-
-  g_debug ("TplLogEntryText: finalized\n");
 }
 
 
@@ -132,6 +118,14 @@ tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
     }
 }
 
+
+gboolean
+tpl_log_entry_text_is_chatroom (TplLogEntryText * self)
+{
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), FALSE);
+
+  return self->chatroom;
+}
 
 TplChannel *
 tpl_log_entry_text_get_tpl_channel (TplLogEntryText * self)
@@ -243,7 +237,7 @@ tpl_log_entry_text_set_message (TplLogEntryText * self, const gchar * data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
 
-  g_free ((gchar *) self->message);
+  g_free (self->message);
   self->message = g_strdup (data);
 }
 
@@ -287,6 +281,15 @@ tpl_log_entry_text_set_chat_id (TplLogEntryText * self, const gchar * data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
 
-  g_free ((gchar *) self->chat_id);
+  g_free (self->chat_id);
   self->chat_id = g_strdup (data);
+}
+
+
+void
+tpl_log_entry_text_set_chatroom (TplLogEntryText * self, gboolean data)
+{
+  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
+
+  self->chatroom = data;
 }

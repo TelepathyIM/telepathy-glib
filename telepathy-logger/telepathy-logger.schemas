@@ -2,21 +2,21 @@
   <schemalist>
 
     <schema>
-      <key>/schemas/apps/telepathy-logger/disabling/global</key>
-      <applyto>/apps/telepathy-logger/disabling/global</applyto>
+      <key>/schemas/apps/telepathy-logger/logging/turned_on</key>
+      <applyto>/apps/telepathy-logger/logging/turned_on</applyto>
       <owner>telepathy-logger</owner>
       <type>bool</type>
       <default>TRUE</default>
       <locale name="C">
-        <short>Globally enable or to disable logging</short>
+        <short>Turn on/off logging</short>
         <long>Globally enable or disable the telepathy logging system.
-Setting it to "false" will completely disable any logging</long>
+Setting it to "false" will completely disable any logging facility (it won't shut down the service)</long>
       </locale>
     </schema>
 
     <schema>
-      <key>/schemas/apps/telepathy-logger/disabling/accounts/blocklist</key>
-      <applyto>/apps/telepathy-logger/disabling/accounts/blocklist</applyto>
+      <key>/schemas/apps/telepathy-logger/logging/accounts/ignorelist</key>
+      <applyto>/apps/telepathy-logger/logging/accounts/ignorelist</applyto>
       <owner>telepathy-logger</owner>
       <type>list</type>
       <list_type>string</list_type>
@@ -24,7 +24,7 @@ Setting it to "false" will completely disable any logging</long>
       <locale name="C">
         <short>A list of accounts for which logging is disabled</short>
         <long>Disables logging for the named accounts, when logging is
-globally enabled. Globally disabling logging will ignore this key.</long>
+globally enabled. Meaningful only if global logging is turned on/enabled</long>
       </locale>
     </schema>
 

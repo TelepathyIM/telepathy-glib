@@ -20,84 +20,64 @@
  */
 
 #include <glib.h>
-#include <telepathy-logger/log-manager.h>
 
-#include <telepathy-logger/datetime.h>
+#include <telepathy-logger/conf.h>
 
 #define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0"
 #define ID "echo@test.collabora.co.uk"
 
 static GMainLoop *loop = NULL;
 
-static void
-get_messages_cb (TplLogManager * manager, gpointer result, GError * error,
-		 gpointer user_data)
-{
-  guint len;
-  if (result)
-    len = g_list_length ((GList *) result);
-  else
-    len = 0;
-  g_message ("GOTCHA: %d\n", len);
-
-  if(error) {
-	  g_error("get messages: %s", error->message);
-	  return;
-  }
-
-  for (guint i = g_list_length (result); i > 0; --i)
-    {
-      TplLogEntry *entry = (TplLogEntry *) g_list_nth_data (result, i - 1);
-      time_t t = tpl_log_entry_get_timestamp (entry);
-      g_print ("LIST msgs(%d): %s\n", i,
-	       tpl_time_to_string_utc (t, "%Y%m%d %H%M-%S"));
-    }
-}
-
-static void
-get_dates_cb (TplLogManager * manager, gpointer result, GError * error,
-	      gpointer user_data)
-{
-  guint len;
-
-  if(error) {
-	  g_error("get dates: %s", error->message);
-	  g_clear_error(&error);
-	  g_error_free(error);
-	  return;
-  }
-
-  if (result)
-    len = g_list_length ((GList *) result);
-  else
-    len = 0;
-  g_message ("GOTCHAi: %d\n", len);
-
-  for (guint i = g_list_length (result); i > 0; --i)
-    g_print ("LIST dates(%d): %s\n", i, (gchar *) g_list_nth_data (result, i - 1));
-}
-
 int
 main (int argc, char *argv[])
 {
+
+  TplConf *conf;
+  GSList *list;
+  GSList *newlist = NULL;
+
   g_type_init ();
-  TpDBusDaemon *tpbus;
-  TpAccount *acc;
 
-  TplLogManager *manager = tpl_log_manager_dup_singleton ();
+  conf = tpl_conf_dup();
 
-  tpbus = tp_dbus_daemon_dup (NULL);
-  acc = tp_account_new (tpbus, ACCOUNT_PATH, NULL);
+  g_message ("enabled: %d\n",
+		  tpl_conf_is_globally_enabled(conf, NULL));
 
-  tpl_log_manager_get_dates_async (manager, acc, ID, FALSE,
-				   get_dates_cb, NULL, NULL);
 
-  tpl_log_manager_get_messages_for_date_async (manager, acc, ID,
-					       FALSE, "20091230",
-					       get_messages_cb, NULL, NULL);
+  list = tpl_conf_get_accounts_ignorelist(conf, NULL);
+  while (list)
+  {
+    g_message("list elemnet: %s\n",(gchar*)list->data);
+    list = g_slist_next(list);
+  }
+  g_message("FINISH\n");
+
+  /* set */
+  tpl_conf_togle_globally_enable(conf, FALSE, NULL);
+  newlist = g_slist_append(newlist, "foo");
+  newlist = g_slist_append(newlist, "bar");
+  tpl_conf_set_accounts_ignorelist(conf, newlist, NULL);
+
+  /* re-read */
+  g_message ("enabled: %d\n",
+		  tpl_conf_is_globally_enabled(conf, NULL));
+
+
+  list = tpl_conf_get_accounts_ignorelist(conf, NULL);
+  while (list)
+  {
+    g_message("list elemnet: %s\n",(gchar*)list->data);
+    list = g_slist_next(list);
+  }
+  g_message("FINISH\n");
+
+  g_message("FOUND: %d\n",
+    tpl_conf_is_account_ignored(conf, "fooa", NULL));
+
 
   loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (loop);
+
 
   return 0;
 }

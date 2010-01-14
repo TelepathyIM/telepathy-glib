@@ -15,8 +15,10 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 
 LIBTPLdir = $(includedir)/telepathy-logger
 LIBTPL_HEADERS = \
-		observer.h			\
+		utils.h				\
 		channel.h			\
+		channel-text.h			\
+		conf.h				\
 		contact.h			\
 		log-entry.h			\
 		log-entry-text.h		\
@@ -24,23 +26,23 @@ LIBTPL_HEADERS = \
 		log-manager-priv.h		\
 		log-store-empathy.h		\
 		log-store.h			\
-		channel-text.h			\
-		datetime.h			\
-		utils.h
+		observer.h			\
+		datetime.h
 
 
 libtelepathy_logger_la_SOURCES = \
-		observer.c			\
+		datetime.c			\
 		channel.c			\
 		channel-text.c			\
+		conf.c				\
+		contact.c			\
 		log-entry.c			\
 		log-entry-text.c		\
-		contact.c			\
 		log-manager.c			\
 		log-store.c			\
 		log-store-empathy.c		\
-		utils.c				\
-		datetime.c
+		observer.c			\
+		utils.c
 
 schemadir   = @GCONF_SCHEMA_FILE_DIR@
 schema_DATA = telepathy-logger.schemas

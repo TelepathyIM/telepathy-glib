@@ -25,6 +25,7 @@
 #include <glib-object.h>
 
 #define TPL_GET_PRIV(obj,type) ((type##Priv *) ((type *) obj)->priv)
+
 #define TPL_STR_EMPTY(x) ((x) == NULL || (x)[0] == '\0')
 
 /*

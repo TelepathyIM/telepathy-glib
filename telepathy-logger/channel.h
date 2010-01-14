@@ -47,14 +47,14 @@ G_BEGIN_DECLS
 
   /* private */
   TpChannel *channel;
-  const gchar *channel_path;
-  const gchar *channel_type;
+  gchar *channel_path;
+  gchar *channel_type;
   GHashTable *channel_properties;
 
   TpAccount *account;
-  const gchar *account_path;
+  gchar *account_path;
   TpConnection *connection;
-  const gchar *connection_path;
+  gchar *connection_path;
 
   TpSvcClientObserver *observer;
 } TplChannel;

@@ -51,6 +51,33 @@ typedef struct
   GList *stores;
 } TplLogManagerPriv;
 
+
+typedef void (*TplLogManagerFreeFunc) (gpointer * data);
+
+typedef struct
+{
+  TplLogManager *manager;
+  gpointer request;
+  TplLogManagerFreeFunc request_free;
+  TplLogManagerAsyncCallback cb;
+  gpointer user_data;
+} TplLogManagerAsyncData;
+
+
+typedef struct
+{
+  TpAccount *account;
+  gchar *chat_id;
+  gboolean is_chatroom;
+  gchar *date;
+  guint num_messages;
+  TplLogMessageFilter filter;
+  gchar *search_text;
+  gpointer user_data;
+  TplLogEntry *logentry;
+} TplLogManagerChatInfo;
+
+
 G_DEFINE_TYPE (TplLogManager, tpl_log_manager, G_TYPE_OBJECT);
 
 static TplLogManager *manager_singleton = NULL;
@@ -92,8 +119,8 @@ log_manager_constructor (GType type,
       priv = GET_PRIV (manager_singleton);
 
       priv->stores = g_list_append (priv->stores,
-				    g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
-						  NULL));
+		      g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
+			      NULL));
     }
 
   return retval;
@@ -116,8 +143,19 @@ tpl_log_manager_init (TplLogManager * manager)
   TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (manager,
 							 TPL_TYPE_LOG_MANAGER,
 							 TplLogManagerPriv);
-
   manager->priv = priv;
+
+  /* initialise thread support. It can be called just once, so check it already
+   * ON and call if if it's not.
+   * Threads are needed by Async APIs.
+   */
+  if (!g_thread_supported ())
+  {
+	  g_debug ("Initializing GThread\n");
+	  g_thread_init (NULL);
+  }
+  else
+	  g_debug ("GThread already initialized. Brilliant.\n");
 }
 
 TplLogManager *
@@ -129,8 +167,6 @@ tpl_log_manager_dup_singleton (void)
 
 gboolean
 tpl_log_manager_add_message (TplLogManager * manager,
-			     const gchar * chat_id,
-			     gboolean chatroom,
 			     TplLogEntry * message, GError ** error)
 {
   TplLogManagerPriv *priv;
@@ -143,7 +179,6 @@ tpl_log_manager_add_message (TplLogManager * manager,
   const gchar *add_store = "TpLogger";
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
-  g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
   priv = GET_PRIV (manager);
@@ -154,7 +189,7 @@ tpl_log_manager_add_message (TplLogManager * manager,
 	  (tpl_log_store_get_name (TPL_LOG_STORE (l->data)), add_store))
 	{
 	  out = tpl_log_store_add_message (TPL_LOG_STORE (l->data),
-					   chat_id, chatroom, message, error);
+					   message, error);
 	  found = TRUE;
 	  break;
 	}
@@ -442,13 +477,13 @@ tpl_log_manager_get_date_readable (const gchar * date)
 
 /* Async */
 
-TplLogManagerAsyncData *
+static TplLogManagerAsyncData *
 tpl_log_manager_async_data_new (void)
 {
   return g_slice_new (TplLogManagerAsyncData);
 }
-
-void
+/*
+static void
 tpl_log_manager_async_data_free (TplLogManagerAsyncData * data)
 {
   g_return_if_fail (TPL_IS_LOG_MANAGER (data->manager));
@@ -458,16 +493,16 @@ tpl_log_manager_async_data_free (TplLogManagerAsyncData * data)
   data->request_free (data->request);
   g_free (data);
 }
+*/
 
 
-
-TplLogManagerChatInfo *
+static TplLogManagerChatInfo *
 tpl_log_manager_chat_info_new (void)
 {
   return g_slice_new0 (TplLogManagerChatInfo);
 }
 
-void
+static void
 tpl_log_manager_chat_info_free (TplLogManagerChatInfo * data)
 {
   tpl_object_unref_if_not_null (data->account);
@@ -486,7 +521,6 @@ _tpl_log_manager_async_operation_finish (TplLogManager * manager,
 					 TplLogManagerAsyncData * async_data)
 {
   GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-  g_print ("FINISH CALLED\n");
   return g_simple_async_result_get_op_res_gpointer (simple);
 }
 
@@ -499,7 +533,6 @@ _tpl_log_manager_async_operation_cb (GObject * source_object,
   TplLogManagerAsyncData *async_data = (TplLogManagerAsyncData *) user_data;
   gpointer retval;
 
-  g_message ("GSimple CB called: calling _finish to retrieve the result\n");
   retval =
     _tpl_log_manager_async_operation_finish (manager, result, async_data);
 
@@ -522,7 +555,6 @@ _tpl_log_manager_call_async_operation (TplLogManager * manager,
 {
   GSimpleAsyncResult *simple;
 
-  g_message ("called async\n");
   simple = g_simple_async_result_new (G_OBJECT (manager),
 				      _tpl_log_manager_async_operation_cb,
 				      async_data,
@@ -534,11 +566,78 @@ _tpl_log_manager_call_async_operation (TplLogManager * manager,
 
 /* end of Async common function */
 
-gboolean
+/* Start of add_message async implementation */
+
+static void
+_add_message_async_thread (GSimpleAsyncResult * simple, GObject * object,
+			 GCancellable * cancellable)
+{
+  TplLogManagerAsyncData *async_data;
+  TplLogManagerChatInfo *chat_info;
+  GError *error;
+
+  async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
+  chat_info = async_data->request;
+
+  tpl_log_manager_add_message (async_data->manager, chat_info->logentry,
+		  &error);
+
+  if(error!=NULL) {
+	  g_error("synchronous operation error: %s", error->message);
+	  g_simple_async_result_set_from_error(simple, error);
+	  g_clear_error(&error);
+	  g_error_free(error);
+  } else
+	  g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+}
+
+void
 tpl_log_manager_add_message_async (TplLogManager * manager,
-			     const gchar * chat_id,
-			     gboolean chatroom,
-			     TplLogEntry * message, GError ** error)
+			     TplLogEntry * message,
+			     TplLogManagerAsyncCallback callback,
+			     gpointer user_data,
+			     GDestroyNotify destroy)
+{
+  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+
+  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
+			     TPL_LOG_MANAGER, FAILED,
+			     "manager argument passed is not a TplManager instance",
+			     callback, user_data);
+  tpl_call_with_err_if_fail (TPL_IS_LOG_ENTRY (message), manager,
+			     TPL_LOG_MANAGER, FAILED,
+			     "message argument passed is not a TplLogEntry instance",
+			     callback, user_data);
+
+  /* TODO check account, chat_id within entry, after TplLogEntry refactoring
+  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), manager,
+			     TPL_LOG_MANAGER, FAILED,
+			     "account argument is not a TpAccount instance",
+			     callback, user_data);
+  tpl_call_with_err_if_fail (!TPL_STR_EMPTY (chat_id), manager,
+			     TPL_LOG_MANAGER, FAILED,
+			     "chat_id argument passed cannot be empty string or NULL ptr",
+			     callback, user_data);
+   */
+
+
+  chat_info->logentry = message;
+  g_object_ref (chat_info->logentry);
+
+  async_data->manager = manager;
+  g_object_ref (manager);
+  async_data->request = (gpointer) chat_info;
+  async_data->request_free =
+    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+  async_data->cb = callback;
+  async_data->user_data = user_data;
+
+  _tpl_log_manager_call_async_operation (manager, _add_message_async_thread,
+					 async_data, callback);
+}
+
+/* End of get_dates async implementation */
 
 
 /* Start of get_dates async implementation */
@@ -553,13 +652,11 @@ _get_dates_async_thread (GSimpleAsyncResult * simple, GObject * object,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  // use the sync method
   lst = tpl_log_manager_get_dates (async_data->manager,
 				   chat_info->account, chat_info->chat_id,
 				   chat_info->is_chatroom);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);	// TODO add destructor
-  g_message ("THREAD!: GASYNC RESULT: SET GLIST PTR\n");
 }
 
 
@@ -624,7 +721,6 @@ _get_messages_for_date_async_thread (GSimpleAsyncResult * simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  // use the sync method
   lst = tpl_log_manager_get_messages_for_date (async_data->manager,
 					       chat_info->account,
 					       chat_info->chat_id,
@@ -632,7 +728,6 @@ _get_messages_for_date_async_thread (GSimpleAsyncResult * simple,
 					       chat_info->date);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);	// TODO add destructor
-  g_message ("THREAD!: GASYNC RESULT: SET GLIST PTR\n");
 }
 
 
@@ -703,7 +798,6 @@ _get_filtered_messages_thread (GSimpleAsyncResult * simple, GObject * object,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  // use the sync method
   lst = tpl_log_manager_get_filtered_messages (async_data->manager,
 					       chat_info->account,
 					       chat_info->chat_id,
@@ -713,7 +807,6 @@ _get_filtered_messages_thread (GSimpleAsyncResult * simple, GObject * object,
 					       chat_info->user_data);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);	// TODO add destructor
-  g_message ("THREAD!: GASYNC RESULT: SET GLIST PTR\n");
 }
 
 
@@ -789,7 +882,6 @@ _get_chats_thread (GSimpleAsyncResult * simple, GObject * object,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  // use the sync method
   lst = tpl_log_manager_get_chats (async_data->manager, chat_info->account);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);	// TODO add destructor
@@ -831,3 +923,119 @@ tpl_log_manager_get_chats_async (TplLogManager * manager,
 }
 
 /* End of get_filtered_messages async implementation */
+
+/* Start of tpl_log_manager_search_in_identifier_chats_new async implementation */
+static void
+_search_in_identifier_chats_new_thread (GSimpleAsyncResult * simple,
+		GObject * object,
+		GCancellable * cancellable)
+{
+  TplLogManagerAsyncData *async_data;
+  TplLogManagerChatInfo *chat_info;
+  GList *lst;
+
+  async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
+  chat_info = async_data->request;
+
+  lst = tpl_log_manager_search_in_identifier_chats_new (async_data->manager, chat_info->account,
+		  chat_info->chat_id, chat_info->search_text);
+
+  // TODO add destructor
+  g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
+}
+
+
+void
+tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *
+						       manager,
+						       TpAccount * account,
+						       gchar const
+						       *identifier,
+						       const gchar * text,
+						       TplLogManagerAsyncCallback callback,
+						       gpointer user_data,
+						       GDestroyNotify destroy)
+{
+  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+
+  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
+			     TPL_LOG_MANAGER, FAILED,
+			     "manager argument is not a TplManager instance",
+			     callback, user_data);
+  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), manager,
+			     TPL_LOG_MANAGER, FAILED,
+			     "account argument is not a TpAccount instance",
+			     callback, user_data);
+
+  chat_info->account = account;
+  g_object_ref (account);
+  chat_info->chat_id = g_strdup(identifier);
+  chat_info->search_text = g_strdup(text);
+
+  async_data->manager = manager;
+  g_object_ref (manager);
+  async_data->request = (gpointer) chat_info;
+  async_data->request_free =
+    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+  async_data->cb = callback;
+  async_data->user_data = user_data;
+
+  _tpl_log_manager_call_async_operation (manager,
+					 _search_in_identifier_chats_new_thread,
+					 async_data, callback);
+}
+/* End of tpl_log_manager_search_in_identifier_chats_new async implementation */
+
+
+/* Start of tpl_log_manager_search_new async implementation */
+static void
+_search_new_thread (GSimpleAsyncResult * simple,
+		GObject * object,
+		GCancellable * cancellable)
+{
+  TplLogManagerAsyncData *async_data;
+  TplLogManagerChatInfo *chat_info;
+  GList *lst;
+
+  async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
+  chat_info = async_data->request;
+
+  lst = tpl_log_manager_search_new (async_data->manager, chat_info->search_text);
+
+  // TODO add destructor
+  g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
+}
+
+
+void
+tpl_log_manager_search_new_async (TplLogManager * manager,
+						       const gchar * text,
+						       TplLogManagerAsyncCallback callback,
+						       gpointer user_data,
+						       GDestroyNotify destroy)
+{
+  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+
+  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
+			     TPL_LOG_MANAGER, FAILED,
+			     "manager argument is not a TplManager instance",
+			     callback, user_data);
+
+  chat_info->search_text = g_strdup(text);
+
+  async_data->manager = manager;
+  g_object_ref (manager);
+  async_data->request = (gpointer) chat_info;
+  async_data->request_free =
+    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+  async_data->cb = callback;
+  async_data->user_data = user_data;
+
+  _tpl_log_manager_call_async_operation (manager,
+					 _search_new_thread,
+					 async_data, callback);
+}
+
+/* End of tpl_log_manager_search_new async implementation */

@@ -36,14 +36,10 @@ tpl_log_entry_dispose (GObject * obj)
 {
   TplLogEntry *self = TPL_LOG_ENTRY (obj);
 
-  DEBUG ("TplLogEntry: disposing\n");
-
   tpl_object_unref_if_not_null (tpl_log_entry_get_entry (self));
   self->entry.generic = NULL;
 
   G_OBJECT_CLASS (tpl_log_entry_parent_class)->dispose (obj);
-
-  DEBUG ("TplLogEntry: disposed\n");
 }
 
 
