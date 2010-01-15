@@ -161,7 +161,7 @@ example_call_channel_set_state (ExampleCallChannel *self,
     tp_handle_ref (contact_handles, actor);
 
   if (old_actor != 0)
-    tp_handle_ref (contact_handles, old_actor);
+    tp_handle_unref (contact_handles, old_actor);
 
   g_value_set_uint (self->priv->call_state_reason->values + 0, actor);
   g_value_set_uint (self->priv->call_state_reason->values + 1, reason);
