@@ -1,3 +1,0 @@
-[DBus Service]
-Name=org.freedesktop.Telepathy.TelepathyLoggerService
-Exec=/usr/local/bin/telepathy-logger-dbus

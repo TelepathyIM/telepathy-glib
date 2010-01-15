@@ -44,13 +44,6 @@ libtelepathy_logger_la_SOURCES = \
 		observer.c			\
 		utils.c
 
-schemadir   = @GCONF_SCHEMA_FILE_DIR@
-schema_DATA = telepathy-logger.schemas
-
-install-data-local:
-	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) \
-			    --makefile-install-rule $(srcdir)/$(schema_DATA)
-
 check_c_sources = \
 	$(libtelepathy_logger_la_SOURCES)	\
 include $(top_srcdir)/tools/check-coding-style.mk

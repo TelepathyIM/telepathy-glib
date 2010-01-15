@@ -164,6 +164,7 @@ SHAVE_INIT(.)
 
 AC_OUTPUT([
    Makefile
+   data/Makefile
    src/Makefile
    telepathy-logger/Makefile
    telepathy-logger/libtelepathy-logger.pc

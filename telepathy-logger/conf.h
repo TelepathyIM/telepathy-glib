@@ -55,16 +55,14 @@ GConfClient *tpl_conf_get_gconf_client(TplConf *self);
 
 gboolean  tpl_conf_is_globally_enabled (TplConf * self, GError **error);
 
-void tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist, GError
-		**error);
-
-void tpl_conf_togle_globally_enable (TplConf *self, gboolean enable, GError **error);
+gboolean tpl_conf_is_account_ignored (TplConf *self, const gchar *account_path, GError **error);
 
 GSList *tpl_conf_get_accounts_ignorelist (TplConf * self, GError **error);
 
-gboolean tpl_conf_is_account_ignored (TplConf *self, const gchar *account_path, GError **error);
+void tpl_conf_togle_globally_enable (TplConf *self, gboolean enable, GError **error);
 
-
+void tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist, GError
+		**error);
 G_END_DECLS
 
 #endif // __TPL_CONF_H__
