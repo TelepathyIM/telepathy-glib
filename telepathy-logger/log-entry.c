@@ -22,6 +22,7 @@
 #include "log-entry.h"
 
 #include <glib.h>
+#include <telepathy-glib/util.h>
 
 #include <telepathy-logger/debug.h>
 
@@ -70,7 +71,7 @@ tpl_log_entry_set_entry (TplLogEntry * self, void *entry)
     }
   else
     {
-      g_error ("TplLogEntry does handle only Text channels\n");
+      g_error ("TplLogEntry does handle only Text channels");
     }
 }
 
@@ -124,4 +125,25 @@ tpl_log_entry_set_timestamp (TplLogEntry * self, time_t data)
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
 
   self->timestamp = data;
+}
+
+gboolean
+tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2)
+{
+        //TplLogEntryPriv *priv1;
+        //TplLogEntryPriv *priv2;
+
+        g_return_val_if_fail (TPL_IS_LOG_ENTRY (message1), FALSE);
+        g_return_val_if_fail (TPL_IS_LOG_ENTRY (message2), FALSE);
+
+        //priv1 = GET_PRIV (message1);
+        //priv2 = GET_PRIV (message2);
+
+        //if (priv1->id == priv2->id && !tp_strdiff (priv1->body, priv2->body)) {
+        if (message1->type == message2->type)
+		if (!tp_strdiff (message1->entry.text->message, message2->entry.text->message)) {
+			return TRUE;
+		}
+
+        return FALSE;
 }

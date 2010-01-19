@@ -320,7 +320,7 @@ tpl_log_manager_get_filtered_messages (TplLogManager * manager,
   guint i = 0;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
-  g_return_val_if_fail (chat_id != NULL, NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
 
   priv = GET_PRIV (manager);
 

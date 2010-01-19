@@ -168,7 +168,7 @@ tpl_dbus_service_last_chats (TplDBusService *self,
 
 	account = tp_account_new(tp_dbus, account_path, &error);
 	if (error!=NULL) {
-		g_error("TpAccount creation: %s\n",
+		g_error("TpAccount creation: %s",
 				error->message);
 		dbus_g_method_return_error(context, error);
 		g_error_free(error);

@@ -70,13 +70,13 @@ TplContact *tpl_contact_new (void);
 
 TpContact *tpl_contact_get_contact (TplContact * self);
 
-gchar *tpl_contact_get_alias (TplContact * self);
+const gchar *tpl_contact_get_alias (TplContact * self);
 
-gchar *tpl_contact_get_identifier (TplContact * self);
+const gchar *tpl_contact_get_identifier (TplContact * self);
 
-gchar *tpl_contact_get_presence_status (TplContact * self);
+const gchar *tpl_contact_get_presence_status (TplContact * self);
 
-gchar *tpl_contact_get_presence_message (TplContact * self);
+const gchar *tpl_contact_get_presence_message (TplContact * self);
 
 TplContactType tpl_contact_get_contact_type (TplContact * self);
 
@@ -86,13 +86,13 @@ void tpl_contact_set_contact (TplContact * self, TpContact * data);
 
 void tpl_contact_set_account (TplContact * self, TpAccount * data);
 
-void tpl_contact_set_alias (TplContact * self, gchar * data);
+void tpl_contact_set_alias (TplContact * self, const gchar * data);
 
-void tpl_contact_set_identifier (TplContact * self, gchar * data);
+void tpl_contact_set_identifier (TplContact * self, const gchar * data);
 
-void tpl_contact_set_presence_status (TplContact * self, gchar * data);
+void tpl_contact_set_presence_status (TplContact * self, const gchar * data);
 
-void tpl_contact_set_presence_message (TplContact * self, gchar * data);
+void tpl_contact_set_presence_message (TplContact * self, const gchar * data);
 
 void tpl_contact_set_contact_type (TplContact * self, TplContactType data);
 

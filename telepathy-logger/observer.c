@@ -28,6 +28,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
+#include <telepathy-glib/util.h>
 
 #include <telepathy-logger/conf.h>
 #include <telepathy-logger/channel.h>
@@ -73,7 +74,7 @@ _observe_channel_when_ready_cb (TpChannel * channel,
 
   if (error != NULL)
     {
-      g_error ("%s\n", error->message);
+      g_error ("%s", error->message);
       g_error ("giving up observing channel '%s'", tpl_chan->channel_path);
       g_object_unref (tpl_chan);
       return;
@@ -112,23 +113,37 @@ tpl_observer_observe_channels (TpSvcClientObserver * self,
   TplConf *conf;
   GError *error = NULL;
 
-  g_return_if_fail (TP_IS_ACCOUNT (account) );
-  g_return_if_fail (TP_IS_CONNECTION (connection) );
+  g_return_if_fail (!TPL_STR_EMPTY (account) );
+  g_return_if_fail (!TPL_STR_EMPTY (connection) );
 
   /* Check if logging if enabled globally and for the given account_path,
    * return imemdiatly if it's not
    */
 
   conf = tpl_conf_dup();
-  if (!tpl_conf_is_globally_enabled(conf, NULL))
+  if (!tpl_conf_is_globally_enabled(conf, &error))
+  {
+	  if (error)
+	  {
+		  g_debug ("%s", error->message);
+	  }
+	  else
+	  {
+		  g_debug ("Logging is globally disabled. Skipping channel logging.");
+	  }
 	  return;
-  if (tpl_conf_is_account_ignored(conf, account, NULL))
+  }
+  if (tpl_conf_is_account_ignored(conf, account, &error))
+  {
+	  g_debug("Logging is disabled for account %s. "
+			  "Skipping channel logging.", account);
 	  return;
+  }
 
   tp_bus_daemon = tp_dbus_daemon_dup (&error);
   if (tp_bus_daemon == NULL)
     {
-      g_error ("%s\n", error->message);
+      g_error ("%s", error->message);
       g_clear_error (&error);
       g_error_free (error);
       return;
@@ -137,7 +152,7 @@ tpl_observer_observe_channels (TpSvcClientObserver * self,
   tp_acc = tp_account_new (tp_bus_daemon, account, &error);
   if (tp_acc == NULL)
     {
-      g_error ("%s\n", error->message);
+      g_error ("%s", error->message);
       g_clear_error (&error);
       g_error_free (error);
       g_object_unref (tp_bus_daemon);
@@ -148,7 +163,7 @@ tpl_observer_observe_channels (TpSvcClientObserver * self,
   tp_conn = tp_connection_new (tp_bus_daemon, NULL, connection, &error);
   if (tp_conn == NULL)
     {
-      g_error ("%s\n", error->message);
+      g_error ("%s", error->message);
       g_clear_error (&error);
       g_error_free (error);
       g_object_unref (tp_bus_daemon);
@@ -314,14 +329,6 @@ tpl_observer_class_init (TplObserverClass * klass)
 							dbus_props_class));
 }
 
-
-static gboolean
-tpl_str_are_eq (gconstpointer data, gconstpointer data2)
-{
-  return g_strcmp0 (data, data2) ? FALSE : TRUE;
-}
-
-
 static void
 tpl_observer_init (TplObserver * self)
 {
@@ -329,7 +336,7 @@ tpl_observer_init (TplObserver * self)
   TpDBusDaemon *tp_bus;
   GError *error = NULL;
 
-  self->channel_map = g_hash_table_new_full (g_str_hash, tpl_str_are_eq,
+  self->channel_map = g_hash_table_new_full (g_str_hash, (GEqualFunc) tp_strdiff,
 					     g_free, g_object_unref);
   logmanager = tpl_log_manager_dup_singleton ();
 
@@ -344,7 +351,7 @@ tpl_observer_init (TplObserver * self)
     }
   else
     {
-      g_error ("Well Known name request error: %s\n", error->message);
+      g_error ("Well Known name request error: %s", error->message);
       g_clear_error (&error);
       g_error_free (error);
     }

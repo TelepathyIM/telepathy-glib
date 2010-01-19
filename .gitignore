@@ -37,8 +37,9 @@ src/test-api
 src/telepathy-logger-dbus
 src/dbus-service-client.h
 src/dbus-service-server.h
-src/*.service
-src/*.client
+
+data/*.service
+data/*.client
 
 telepathy-logger/*.o
 telepathy-logger/*.lo

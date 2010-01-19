@@ -34,6 +34,16 @@ G_BEGIN_DECLS
 #define TPL_IS_CONF_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONF))
 #define TPL_CONF_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONF, TplConfClass))
 
+#define TPL_CONF_ERROR g_quark_from_static_string ("tpl-conf-error-quark")
+
+typedef enum
+{
+  /* generic error */
+  TPL_CONF_ERROR_FAILED,
+  /* GCONF KEY ERROR */
+  TPL_CONF_ERROR_GCONF_KEY
+} TplConfError;
+
 typedef struct
 {
   GObject parent;

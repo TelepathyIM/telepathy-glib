@@ -115,7 +115,7 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
 
   if (!tpl_text_channel_is_chatroom (tpl_text) && remote == NULL)
     {
-      g_error ("Sending message: Remote TplContact NULL on 1-1 Chat\n");
+      g_error ("Sending message: Remote TplContact NULL on 1-1 Chat");
     }
 
   tpl_contact_sender = tpl_contact_from_tp_contact (me);
@@ -197,7 +197,7 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
     {
       g_error ("Unrecoverable error retrieving remote contact "
 	       "information: %s\n", error->message);
-      g_error ("Not able to log the received message: %s\n",
+      g_error ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (tlog));
       return;
     }
@@ -206,7 +206,7 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
     {
       g_error ("%d invalid handle(s) passed to "
 	       "tp_connection_get_contacts_by_handle()\n", n_failed);
-      g_error ("Not able to log the received message: %s\n",
+      g_error ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (tlog));
       return;
     }
@@ -340,7 +340,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel * self)
 						self, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("received signal connect: %s\n", error->message);
+      g_error ("received signal connect: %s", error->message);
       g_clear_error (&error);
       g_error_free (error);
       error = NULL;
@@ -351,7 +351,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel * self)
 					    NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("sent signal connect: %s\n", error->message);
+      g_error ("sent signal connect: %s", error->message);
       g_clear_error (&error);
       g_error_free (error);
       error = NULL;
@@ -362,7 +362,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel * self)
 						  self, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("send error signal connect: %s\n", error->message);
+      g_error ("send error signal connect: %s", error->message);
       g_clear_error (&error);
       g_error_free (error);
       error = NULL;
@@ -373,7 +373,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel * self)
 						    self, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("lost message signal connect: %s\n", error->message);
+      g_error ("lost message signal connect: %s", error->message);
       g_clear_error (&error);
       g_error_free (error);
       error = NULL;
@@ -383,7 +383,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel * self)
 				    self, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("channel closed signal connect: %s\n", error->message);
+      g_error ("channel closed signal connect: %s", error->message);
       g_clear_error (&error);
       g_error_free (error);
       error = NULL;
@@ -403,7 +403,7 @@ _tpl_text_channel_get_chatroom_cb (TpConnection * proxy,
 
   if (error != NULL)
     {
-      g_error ("retrieving chatroom identifier: %s\n", error->message);
+      g_error ("retrieving chatroom identifier: %s", error->message);
     }
 
   tpl_text_channel_set_chatroom_id (tpl_text, *out_Identifiers);
@@ -456,8 +456,8 @@ _tpl_text_channel_get_contact_cb (TpConnection * connection,
 
   if (n_failed > 0)
     {
-      g_error ("error resolving self handle for connection %s.\n"
-	       "Aborting channel %s observation\n",
+      g_error ("Error resolving self handle for connection %s."
+	       " Aborting channel %s observation",
 	       tpl_channel_get_connection_path
 	       (tpl_text_channel_get_tpl_channel (tpl_text)),
 	       tpl_channel_get_channel_path (tpl_text_channel_get_tpl_channel
@@ -623,7 +623,7 @@ tpl_text_channel_new (TplChannel * tpl_channel)
 		 "un-handled. It's probably OK.\n");
       break;
     default:
-      g_error ("remote handle type unknown %d.\n", remote_handle_type);
+      g_error ("remote handle type unknown %d.", remote_handle_type);
       break;
     }
 

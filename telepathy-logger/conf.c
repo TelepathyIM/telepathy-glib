@@ -27,7 +27,6 @@
 
 //#define DEBUG(...)
 #define GET_PRIV(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TPL_TYPE_CONF, TplConfPriv))
-//#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplConf)
 #define GCONF_KEY_LOGGING_TURNED_ON "/apps/telepathy-logger/logging/turned_on"
 #define GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST "/apps/telepathy-logger/logging/accounts/ignorelist"
 
@@ -132,7 +131,12 @@ tpl_conf_is_globally_enabled (TplConf * self, GError **error)
   gboolean ret;
   GError *loc_error = NULL;
 
-  g_return_val_if_fail (TPL_IS_CONF (self), FALSE);
+  if (!TPL_IS_CONF (self))
+  {
+	  g_set_error (error, TPL_CONF_ERROR, TPL_CONF_ERROR_GCONF_KEY,
+			  "NOT A OBJ, %d", 1);
+	  return FALSE;
+  }
 
   ret = gconf_client_get_bool (GET_PRIV(self)->client, GCONF_KEY_LOGGING_TURNED_ON,
       &loc_error);

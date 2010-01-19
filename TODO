@@ -1,7 +1,12 @@
 Those are mini tasks still to do. They should be filed against a bug
 trucker as soon as TPL will have one:
 
+- TplChannel TplChannelText refactoring
+- TplLogEntry refactoring
+- use Private struct
 - fix dbus_g_method_return_error
+- fix race condition with connecting signals in observer
+
 - global configuration object (ie disable logging partially or totally,
   choose the logstore, etc)
 - understand if direction from tpl_log_entry_text is to be removed 

@@ -70,5 +70,8 @@ time_t tpl_log_entry_get_timestamp (TplLogEntry * self);
 void tpl_log_entry_set_entry (TplLogEntry * self, void *entry);
 void tpl_log_entry_set_timestamp (TplLogEntry * self, time_t data);
 
+gboolean tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2);
+
+
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_H__

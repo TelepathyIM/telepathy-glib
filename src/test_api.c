@@ -53,7 +53,7 @@ main (int argc, char *argv[])
   g_message("FINISH\n");
 
   /* set */
-  tpl_conf_togle_globally_enable(conf, FALSE, NULL);
+  tpl_conf_togle_globally_enable(conf, TRUE, NULL);
   newlist = g_slist_append(newlist, "foo");
   newlist = g_slist_append(newlist, "bar");
   tpl_conf_set_accounts_ignorelist(conf, newlist, NULL);

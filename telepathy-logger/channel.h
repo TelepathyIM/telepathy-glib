@@ -39,13 +39,16 @@ G_BEGIN_DECLS
 #define TPL_IS_CHANNEL(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CHANNEL))
 #define TPL_IS_CHANNEL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CHANNEL))
 #define TPL_CHANNEL_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CHANNEL, TplChannelClass))
-// TODO test the following macros
-//#define TPL_CHANNEL_INTERFACE(obj)  (G_TYPE_INSTANCE_GET_INTERFACE((obj), TPL_TYPE_CHANNEL, TplChannelClass))
-  typedef struct
+
+typedef struct _TplChannelPriv TplChannelPriv;
+
+typedef struct
 {
   GObject parent;
 
   /* private */
+  TplChannelPriv *priv;
+
   TpChannel *channel;
   gchar *channel_path;
   gchar *channel_type;

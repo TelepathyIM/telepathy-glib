@@ -16,17 +16,10 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 LIBTPLdir = $(includedir)/telepathy-logger
 LIBTPL_HEADERS = \
 		utils.h				\
-		channel.h			\
-		channel-text.h			\
-		conf.h				\
 		contact.h			\
 		log-entry.h			\
 		log-entry-text.h		\
 		log-manager.h			\
-		log-manager-priv.h		\
-		log-store-empathy.h		\
-		log-store.h			\
-		observer.h			\
 		datetime.h
 
 

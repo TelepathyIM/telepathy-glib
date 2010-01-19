@@ -28,6 +28,22 @@
 
 G_DEFINE_TYPE (TplChannel, tpl_channel, G_TYPE_OBJECT)
 
+struct
+{
+  TpChannel *channel;
+  gchar *channel_path;
+  gchar *channel_type;
+  GHashTable *channel_properties;
+
+  TpAccount *account;
+  gchar *account_path;
+  TpConnection *connection;
+  gchar *connection_path;
+
+  TpSvcClientObserver *observer;
+
+} _TplChannelPriv;
+
 static void tpl_channel_dispose (GObject * obj)
 {
   TplChannel *self = TPL_CHANNEL (obj);
@@ -76,20 +92,6 @@ tpl_channel_class_init (TplChannelClass * klass)
 static void
 tpl_channel_init (TplChannel * self)
 {
-  /* Init TplChannel's members to zero/NULL */
-/* TODO remove the comment
-#define TPL_SET_NULL(x) tpl_channel_set_##x(self, NULL)
-	TPL_SET_NULL(channel);
-	TPL_SET_NULL(channel_path);
-	TPL_SET_NULL(channel_type);
-	TPL_SET_NULL(channel_properties);
-	TPL_SET_NULL(account);
-	TPL_SET_NULL(account_path);
-	TPL_SET_NULL(connection);
-	TPL_SET_NULL(connection_path);
-	TPL_SET_NULL(observer);
-#undef TPL_SET_NULL
-*/
 }
 
 
@@ -280,7 +282,7 @@ tpl_channel_register_to_observer (TplChannel * self)
 
   if (g_hash_table_lookup (glob_map, key) != NULL)
     {
-      g_error ("Channel path found, replacing %s\n", key);
+      g_error ("Channel path found, replacing %s", key);
       g_hash_table_remove (glob_map, key);
     }
   else
