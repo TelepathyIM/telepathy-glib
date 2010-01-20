@@ -246,8 +246,6 @@ _log_store_empathy_write_to_store (TplLogStore * self,
     }
   g_free (basedir);
 
-  DEBUG ("Adding log to file: '%s': %s", filename, entry);
-
   if (!g_file_test (filename, G_FILE_TEST_EXISTS))
     {
       file = g_fopen (filename, "w+");
