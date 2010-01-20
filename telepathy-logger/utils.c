@@ -21,6 +21,8 @@
 
 #include "utils.h"
 
+#include <telepathy-glib/util.h>
+
 void
 tpl_object_unref_if_not_null (void *data)
 {
@@ -37,4 +39,10 @@ tpl_object_ref_if_not_null (void *data)
     {
       g_object_ref (data);
     }
+}
+
+gboolean
+tpl_strequal (const gchar *left, const gchar *right)
+{
+	return ! tp_strdiff(left, right);
 }

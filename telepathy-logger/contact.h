@@ -51,6 +51,7 @@ typedef struct
   gchar *identifier;
   gchar *presence_status;
   gchar *presence_message;
+  gchar *avatar_token;
 
   TpAccount *account;
 } TplContact;
@@ -80,6 +81,8 @@ const gchar *tpl_contact_get_presence_message (TplContact * self);
 
 TplContactType tpl_contact_get_contact_type (TplContact * self);
 
+const gchar * tpl_contact_get_avatar_token (TplContact * self);
+
 TpAccount *tpl_contact_get_account (TplContact * self);
 
 void tpl_contact_set_contact (TplContact * self, TpContact * data);
@@ -95,6 +98,9 @@ void tpl_contact_set_presence_status (TplContact * self, const gchar * data);
 void tpl_contact_set_presence_message (TplContact * self, const gchar * data);
 
 void tpl_contact_set_contact_type (TplContact * self, TplContactType data);
+
+void tpl_contact_set_avatar_token (TplContact * self, const gchar *data);
+
 
 G_END_DECLS
 #endif // __TPL_CONTACT_H__

@@ -151,11 +151,11 @@ tpl_log_manager_init (TplLogManager * manager)
    */
   if (!g_thread_supported ())
   {
-	  g_debug ("Initializing GThread\n");
+	  g_debug ("Initializing GThread");
 	  g_thread_init (NULL);
   }
   else
-	  g_debug ("GThread already initialized. Brilliant.\n");
+	  g_debug ("GThread already initialized. Brilliant!");
 }
 
 TplLogManager *

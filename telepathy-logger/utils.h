@@ -37,6 +37,9 @@
 void tpl_object_unref_if_not_null (void *data);
 void tpl_object_ref_if_not_null (void *data);
 
+gboolean tpl_strequal (const gchar *left, const gchar *right);
+
+
 #define tpl_call_with_err_if_fail(guard, obj, PREFIX, POSTFIX, msg, func, user_data) \
   if (!(guard)) \
     { \

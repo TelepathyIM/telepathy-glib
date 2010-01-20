@@ -480,7 +480,7 @@ log_store_empathy_exists (TplLogStore * self,
   gchar *dir;
   gboolean exists;
 
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), FALSE);
 

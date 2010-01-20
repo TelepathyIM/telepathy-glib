@@ -28,7 +28,6 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
-#include <telepathy-glib/util.h>
 
 #include <telepathy-logger/conf.h>
 #include <telepathy-logger/channel.h>
@@ -336,7 +335,7 @@ tpl_observer_init (TplObserver * self)
   TpDBusDaemon *tp_bus;
   GError *error = NULL;
 
-  self->channel_map = g_hash_table_new_full (g_str_hash, (GEqualFunc) tp_strdiff,
+  self->channel_map = g_hash_table_new_full (g_str_hash, (GEqualFunc) tpl_strequal,
 					     g_free, g_object_unref);
   logmanager = tpl_log_manager_dup_singleton ();
 
@@ -346,7 +345,7 @@ tpl_observer_init (TplObserver * self)
   if (tp_dbus_daemon_request_name (tp_bus, TPL_OBSERVER_WELL_KNOWN_BUS_NAME,
 				   TRUE, &error))
     {
-      g_debug ("%s DBus well known name registered\n",
+      g_debug ("%s DBus well known name registered",
 	       TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
     }
   else

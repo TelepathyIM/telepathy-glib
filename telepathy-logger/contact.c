@@ -142,6 +142,14 @@ tpl_contact_get_contact_type (TplContact * self)
   return self->contact_type;
 }
 
+const gchar *
+tpl_contact_get_avatar_token (TplContact * self)
+{
+  g_return_val_if_fail (TPL_IS_CONTACT (self), NULL);
+
+  return self->avatar_token;
+}
+
 TpAccount *
 tpl_contact_get_account (TplContact * self)
 {
@@ -217,4 +225,13 @@ tpl_contact_set_contact_type (TplContact * self, TplContactType data)
   g_return_if_fail (TPL_IS_CONTACT (self));
 
   self->contact_type = data;
+}
+
+void
+tpl_contact_set_avatar_token (TplContact * self, const gchar *data)
+{
+  g_return_if_fail (TPL_IS_CONTACT (self));
+
+  g_free (self->avatar_token);
+  self->avatar_token = g_strdup (data);
 }

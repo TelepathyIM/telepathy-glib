@@ -61,7 +61,7 @@ _channel_on_closed_cb (TpChannel * proxy,
   chan_path = g_strdup (tpl_channel_get_channel_path (tpl_chan));
 
   if (!tpl_channel_unregister_from_observer (tpl_chan))
-    g_warning ("Channel %s couldn't be unregistered correctly (BUG?)\n",
+    g_warning ("Channel %s couldn't be unregistered correctly (BUG?)",
 	       chan_path);
 
   g_free (chan_path);
@@ -71,7 +71,7 @@ static void
 _channel_on_lost_message_cb (TpChannel * proxy,
 			     gpointer user_data, GObject * weak_object)
 {
-  g_debug ("lost message signal catched. nothing logged\n");
+  g_debug ("lost message signal catched. nothing logged");
   // TODO log that the system lost a message
 }
 
@@ -84,7 +84,7 @@ _channel_on_send_error_cb (TpChannel * proxy,
 			   gpointer user_data, GObject * weak_object)
 {
   g_error ("unlogged event: "
-	   "TP was unable to send the message: %s.\n", arg_Text);
+	   "TP was unable to send the message: %s", arg_Text);
   // TODO log that the system was unable to send the message
 }
 
@@ -106,7 +106,6 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
   TplLogManager *logmanager;
   gchar *chat_id;
 
-  g_assert (TPL_IS_TEXT_CHANNEL (tpl_text));
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (tpl_text));
 
   /* Initialize data for TplContact */
@@ -123,7 +122,7 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
   tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
   tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
 
-  g_message ("%s (%s): %s\n",
+  g_message ("%s (%s): %s",
 	     tpl_contact_get_identifier (tpl_contact_sender),
 	     tpl_contact_get_alias (tpl_contact_sender), arg_Text);
 
@@ -196,7 +195,7 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
   if (error != NULL)
     {
       g_error ("Unrecoverable error retrieving remote contact "
-	       "information: %s\n", error->message);
+	       "information: %s", error->message);
       g_error ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (tlog));
       return;
@@ -205,7 +204,7 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
   if (n_failed > 0)
     {
       g_error ("%d invalid handle(s) passed to "
-	       "tp_connection_get_contacts_by_handle()\n", n_failed);
+	       "tp_connection_get_contacts_by_handle()", n_failed);
       g_error ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (tlog));
       return;
@@ -218,7 +217,7 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
   tpl_contact_set_contact_type (tpl_contact_sender, TPL_CONTACT_USER);
   tpl_log_entry_text_set_sender (tlog, tpl_contact_sender);
 
-  g_message ("%s (%s): %s\n",
+  g_message ("%s (%s): %s",
 	     tpl_contact_get_identifier (tpl_contact_sender),
 	     tpl_contact_get_alias (tpl_contact_sender),
 	     tpl_log_entry_text_get_message (tlog));
@@ -273,7 +272,7 @@ _channel_on_received_signal_cb (TpChannel * proxy,
     {
       g_debug ("Non text content flag set."
 	       "Probably a delivery notification for a sent message."
-	       "Ignoring\n");
+	       "Ignoring");
       return;
     }
 
@@ -477,8 +476,8 @@ _tpl_text_channel_get_contact_cb (TpConnection * connection,
       break;
     default:
       g_error ("retrieving TpContacts: passing invalid value "
-	       "for selector: %d\n"
-	       "Aborting channel %s observation\n",
+	       "for selector: %d"
+	       "Aborting channel %s observation",
 	       tpl_text->selector,
 	       tpl_channel_get_channel_path (tpl_text_channel_get_tpl_channel
 					     (tpl_text)));
@@ -612,15 +611,15 @@ tpl_text_channel_new (TplChannel * tpl_channel)
       /* follows unhandled TpHandleType */
     case TP_HANDLE_TYPE_NONE:
       g_warning ("remote handle: TP_HANDLE_TYPE_NONE: "
-		 "un-handled. It's probably OK.\n");
+		 "un-handled. It's probably OK.");
       break;
     case TP_HANDLE_TYPE_LIST:
-      g_warning ("remote handle: TP_HANDLE_TYPE_LIST: \n"
-		 "un-handled. It's probably OK.\n");
+      g_warning ("remote handle: TP_HANDLE_TYPE_LIST: "
+		 "un-handled. It's probably OK.");
       break;
     case TP_HANDLE_TYPE_GROUP:
       g_warning ("remote handle: TP_HANDLE_TYPE_GROUP: "
-		 "un-handled. It's probably OK.\n");
+		 "un-handled. It's probably OK.");
       break;
     default:
       g_error ("remote handle type unknown %d.", remote_handle_type);

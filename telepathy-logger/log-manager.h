@@ -131,8 +131,7 @@ void tpl_log_manager_get_filtered_messages_async (TplLogManager * manager,
 						  guint num_messages,
 						  TplLogMessageFilter filter,
 						  gpointer filter_user_data,
-						  TplLogManagerAsyncCallback
-						  callback,
+						  TplLogManagerAsyncCallback callback,
 						  gpointer user_data,
 						  GDestroyNotify destroy);
 

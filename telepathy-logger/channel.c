@@ -287,7 +287,7 @@ tpl_channel_register_to_observer (TplChannel * self)
     }
   else
     {
-      g_debug ("Channel path not found, registering %s\n", key);
+      g_debug ("Channel path not found, registering %s", key);
     }
 
   /* Instantiate and delegate channel handling to the right object */
@@ -317,13 +317,11 @@ tpl_channel_unregister_from_observer (TplChannel * self)
   GHashTable *glob_map = tpl_observer_get_channel_map (obs);
   const gchar *key;
 
-  g_assert (TPL_IS_CHANNEL (self));
-  g_assert (glob_map != NULL);
   g_return_val_if_fail (TPL_IS_CHANNEL (self), FALSE);
   g_return_val_if_fail (glob_map != NULL, FALSE);
 
   key = tpl_channel_get_channel_path (self);
-  g_debug ("Unregistering channel path %s\n", key);
+  g_debug ("Unregistering channel path %s", key);
 
   /* this will destroy the associated value object: at this point
      the hash table reference should be the only one for the
