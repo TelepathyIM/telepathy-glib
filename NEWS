@@ -1,7 +1,37 @@
 telepathy-glib 0.9.3 (UNRELEASED)
 =================================
 
-...
+Enhancements:
+
+* Add compile-time warnings if the results of functions that allocate memory
+  are ignored; for a couple of these functions it's not obvious that a
+  result is allocated, leading to non-obvious leaks (smcv)
+
+* Add compile-time warnings if the results of certain functions with no
+  side-effects are ignored, which is harmless but makes no sense (smcv)
+
+* Improve lcov.am, syncing with telepathy-gabble (smcv)
+
+Fixes:
+
+* fd.o #23848: when making a release, make the build system check for files
+  that indicate unreleased status; correct a few such comments (wjt)
+
+* fd.o #25149: when a TpAccount is invalidated (deleted), signal connection
+  disconnection first (smcv)
+)
+* Exit the main loop gracefully when CMs are disconnected from the session bus
+  (sjoerd)
+
+* fd.o #14603: don't set fatal criticals in tp_run_connection_manager, CMs
+  are now responsible for doing this (sjoerd)
+
+* fd.o #25600: fix inadvertant GLib 2.20 dependency (jonny)
+
+* In code generation tools (glib-ginterface-gen.py), allow D-Bus methods whose
+  names are C keywords (smcv)
+
+* Fix with-session-bus.sh dbus-monitor logging when /bin/sh is not bash (smcv)
 
 telepathy-glib 0.9.2 (2009-12-03)
 =================================
