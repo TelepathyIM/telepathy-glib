@@ -3,25 +3,34 @@ EXTRA_DIST = \
     Account_Manager.xml \
     Account.xml \
     all.xml \
+    Call_Content.xml \
+    Call_Content_Interface_Media.xml \
+    Call_Content_Codec_Offer.xml \
+    Call_Stream.xml \
+    Call_Stream_Interface_Media.xml \
+    Call_Stream_Endpoint.xml \
     Channel_Dispatch_Operation.xml \
     Channel_Dispatcher.xml \
     Channel_Dispatcher_Interface_Operation_List.xml \
     Channel_Future.xml \
     Channel_Handler.xml \
-    Channel_Interface_Call_Merging.xml \
     Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
+    Channel_Interface_Conference.xml \
     Channel_Interface_Destroyable.xml \
     Channel_Interface_DTMF.xml \
     Channel_Interface_Group.xml \
     Channel_Interface_Hold.xml \
     Channel_Interface_HTML.xml \
     Channel_Interface_Media_Signalling.xml \
+    Channel_Interface_Mergeable_Conference.xml \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
+    Channel_Interface_Splittable.xml \
     Channel_Interface_Transfer.xml \
     Channel_Interface_Tube.xml \
     Channel_Request.xml \
+    Channel_Type_Call.xml \
     Channel_Type_Contact_List.xml \
     Channel_Type_Contact_Search.xml \
     Channel_Type_DBus_Tube.xml \
@@ -35,10 +44,13 @@ EXTRA_DIST = \
     Client.xml \
     Client_Approver.xml \
     Client_Handler.xml \
+    Client_Handler_Future.xml \
     Client_Interface_Requests.xml \
     Client_Observer.xml \
+    Connection_Future.xml \
     Connection_Interface_Aliasing.xml \
     Connection_Interface_Avatars.xml \
+    Connection_Interface_Balance.xml \
     Connection_Interface_Capabilities.xml \
     Connection_Interface_Contact_Capabilities.xml \
     Connection_Interface_Contact_Info.xml \

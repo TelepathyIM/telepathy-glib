@@ -878,7 +878,7 @@ USA.</p>
 
         <p>Whenever this signal is emitted, it MUST immediately be followed by
           a <tp:member-ref>StatusChanged</tp:member-ref> signal with status
-          Connection_Status_Reason_Disconnected and an appropriate reason
+          Connection_Status_Disconnected and an appropriate reason
           code.</p>
 
         <p>Connection managers SHOULD emit this signal on disconnection, but
