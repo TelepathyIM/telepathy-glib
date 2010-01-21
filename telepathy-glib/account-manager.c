@@ -762,7 +762,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
       1, TP_TYPE_ACCOUNT);
 
   /**
-   * TpAccountManager::account-disabled.
+   * TpAccountManager::account-disabled:
    * @manager: a #TpAccountManager
    * @account: a #TpAccount
    *
