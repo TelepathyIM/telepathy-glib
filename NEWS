@@ -1,7 +1,19 @@
-telepathy-glib 0.9.3 (UNRELEASED)
-=================================
+telepathy-glib 0.10.0 (2010-01-21)
+==================================
 
-Enhancements:
+The "where did you get your bear?" release.
+
+This release begins a bugfix-only 0.10.x branch, in which new API/ABI will no
+longer be added; 0.11.x development releases will continue to be made from
+the master branch. The 0.10.x branch targets the D-Bus API from
+telepathy-spec 0.18.0.
+
+The major enhancement since 0.8.x is that TpAccountManager and TpAccount,
+previously simple stub classes, now have high-level API to manipulate
+accounts. GLib 2.20 and dbus-glib 0.82 are now required, and telepathy-glib
+now links against GIO.
+
+Enhancements since 0.9.2:
 
 * Add compile-time warnings if the results of functions that allocate memory
   are ignored; for a couple of these functions it's not obvious that a
@@ -12,14 +24,14 @@ Enhancements:
 
 * Improve lcov.am, syncing with telepathy-gabble (smcv)
 
-Fixes:
+Fixes since 0.9.2:
 
 * fd.o #23848: when making a release, make the build system check for files
   that indicate unreleased status; correct a few such comments (wjt)
 
 * fd.o #25149: when a TpAccount is invalidated (deleted), signal connection
   disconnection first (smcv)
-)
+
 * Exit the main loop gracefully when CMs are disconnected from the session bus
   (sjoerd)
 
