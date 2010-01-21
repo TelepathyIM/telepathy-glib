@@ -151,7 +151,7 @@ AM_CONDITIONAL([OUT_OF_TREE_BUILD], [test "z$ac_srcdir" != z.])
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
-  [glib-2.0 >= 2.20, gobject-2.0 >= 2.20, gio-2.0 >= 2.20])
+  [glib-2.0 >= 2.22, gobject-2.0 >= 2.22, gio-2.0 >= 2.22])
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
