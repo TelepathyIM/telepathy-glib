@@ -38,7 +38,7 @@ m4_define([tp_glib_version],
               [tp_glib_base_version].[tp_glib_nano_version])])
 
 AC_INIT([Telepathy-GLib], [tp_glib_version],
-        [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy])
+        [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=tp-glib])
 
 AC_CONFIG_MACRO_DIR([m4])
 
