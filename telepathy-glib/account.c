@@ -2616,7 +2616,7 @@ tp_account_prepare_async (TpAccount *account,
 
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (result, (GError *) error);
+      g_simple_async_result_set_from_error (result, error);
       g_simple_async_result_complete_in_idle (result);
       g_object_unref (result);
       g_array_free (feature_array, TRUE);
