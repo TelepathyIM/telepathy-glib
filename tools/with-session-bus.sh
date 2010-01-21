@@ -79,7 +79,7 @@ export DBUS_SESSION_BUS_ADDRESS
 if [ -n "$WITH_SESSION_BUS_FORK_DBUS_MONITOR" ] ; then
   echo -n "Forking dbus-monitor $WITH_SESSION_BUS_FORK_DBUS_MONITOR_OPT" >&2
   dbus-monitor $WITH_SESSION_BUS_FORK_DBUS_MONITOR_OPT \
-        &> $me-$$.dbus-monitor-logs &
+        > $me-$$.dbus-monitor-logs 2>&1 &
 fi
 
 "$@" || e=$?
