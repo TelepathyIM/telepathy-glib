@@ -12,20 +12,11 @@ AC_PREREQ([2.59])
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [10])
 m4_define([tp_glib_micro_version], [0])
-m4_define([tp_glib_nano_version], [0])
+m4_define([tp_glib_nano_version], [1])
 
-# If library source has changed since last release, increment revision
-# If interfaces have been added, removed or changed since last release,
-#  increment current and set revision to 0
-# If interfaces have been added since last release, increment age
-# If interfaces have been removed since last release, set age to 0
-#
-# If interfaces have been added, release builds will fail unless you add a new
-# file like telepathy-glib/versions/0.7.3.abi to add them to the official ABI.
-# This also forces binaries built against devel versions to be rebuilt
-# (we don't guarantee that we won't add ABI then remove it again, if it was
-# never seen in a release).
-
+# If library source has changed since last release, increment revision.
+# Do not add new API or ABI, or make incompatible changes, on this branch
+# (which means that current and age should remain 32).
 m4_define([tp_glib_lt_current], [32])
 m4_define([tp_glib_lt_revision], [1])
 m4_define([tp_glib_lt_age], [32])
@@ -38,7 +29,7 @@ m4_define([tp_glib_version],
               [tp_glib_base_version].[tp_glib_nano_version])])
 
 AC_INIT([Telepathy-GLib], [tp_glib_version],
-        [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=tp-glib])
+        [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=tp-glib&version=0.10])
 
 AC_CONFIG_MACRO_DIR([m4])
 
