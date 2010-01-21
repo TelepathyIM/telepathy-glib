@@ -637,3 +637,17 @@
  * This section documents the auto-generated C wrappers for the
  * Location interface, used with #TpConnection objects.
  */
+
+/**
+ * SECTION:connection-balance
+ * @title: Connection Balance interface
+ * @short_description: client-side wrappers for the Balance interface
+ * @see_also: #TpConnection
+ *
+ * In some real-time communication services the user can pay for certain
+ * services, typically calls to the PSTN, in advance. In (at least) Skype,
+ * it's possible to query the current balance in a machine-readable way.
+ *
+ * This section documents the auto-generated C wrappers for the
+ * Balance interface, used with #TpConnection objects.
+ */
