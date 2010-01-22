@@ -57,9 +57,7 @@ AM_PROG_LIBTOOL
 AM_PROG_MKDIR_P
 AM_PATH_GLIB_2_0
 AC_PATH_XTRA
-IT_PROG_INTLTOOL([0.35.0])
 GNOME_DOC_INIT([0.17.3])
-IDT_COMPILE_WARNINGS
 AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
 AC_PATH_PROG(GCONFTOOL, gconftool-2)
 AM_GCONF_SOURCE_2
@@ -70,8 +68,6 @@ AC_CHECK_PROGS([XSLTPROC], [xsltproc])
 if test -z "$XSLTPROC"; then
   AC_MSG_ERROR([xsltproc (from libxslt) is required])
 fi
-
-TPL_ARG_VALGRIND
 
 
 # -----------------------------------------------------------
@@ -181,18 +177,4 @@ Configure summary:
 	Prefix......................:  ${prefix}
 	Shaved build................:  ${enable_shave}
 	Coding style checks.........:  ${ENABLE_CODING_STYLE_CHECKS}
-
-    Features:
-	Spell checking (enchant)....:  ${have_enchant}
-	Display maps (libchamplain).:  ${have_libchamplain}
-	Location awareness (Geoclue):  ${have_geoclue}
-	Adium themes (Webkit).......:  ${have_webkit}
-	Moblin widgets .............:  ${have_moblin}
-
-    Connectivity:
-	NetworkManager integration..:  ${have_nm}
-	ConnMan integration.........:  ${have_connman}
-
-    Extras:
-	Nautilus-sendto plugin......:  ${have_nst}
 "
