@@ -1,9 +1,5 @@
 schemasdir	 = $(GCONF_SCHEMA_FILE_DIR)
-schemas_in_files =
-schemas_DATA 	 = \
-	$(schemas_in_files:.schemas.in=.schemas) \
-	telepathy-logger.schemas
-@INTLTOOL_SCHEMAS_RULE@
+schemas_DATA 	 = telepathy-logger.schemas
 
 servicefiledir = $(datadir)/dbus-1/services
 servicefile_in_files = \
@@ -27,12 +23,6 @@ else
 install-data-local:
 endif
 
-#install-data-local:
-#	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) \
-#			    --makefile-install-rule $(srcdir)/$(schema_DATA)
-
-
-
 EXTRA_DIST = 				\
 	$(schemas_in_files)		\
 	$(schemas_DATA)			\
@@ -40,6 +30,4 @@ EXTRA_DIST = 				\
 	$(servicefile_in_files)
 
 DISTCLEANFILES = 		\
-	$(desktop_DATA)		\
-	$(schemas_DATA)		\
 	$(servicefile_DATA)

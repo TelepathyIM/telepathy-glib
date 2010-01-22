@@ -105,7 +105,7 @@ static gboolean
 _pack_last_chats_answer (GList *data, GPtrArray **array)
 {
 	guint data_idx;
-	GPtrArray *retval; 
+	GPtrArray *retval;
 
 	(*array) = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 	retval = *array;
