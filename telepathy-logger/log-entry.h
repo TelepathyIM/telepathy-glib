@@ -24,7 +24,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-logger/log-entry-text.h>
+#include <telepathy-logger/contact.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_ENTRY                  (tpl_log_entry_get_type ())
@@ -33,24 +33,43 @@ G_BEGIN_DECLS
 #define TPL_IS_LOG_ENTRY(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_ENTRY))
 #define TPL_IS_LOG_ENTRY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_LOG_ENTRY))
 #define TPL_LOG_ENTRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_ENTRY, TplLogEntryClass))
-  typedef enum
+
+typedef enum
+{
+  TPL_LOG_ENTRY_DIRECTION_NONE = 0,
+
+  TPL_LOG_ENTRY_DIRECTION_IN,
+  TPL_LOG_ENTRY_DIRECTION_OUT
+} TplLogEntryDirection;
+
+typedef enum
+{
+  TPL_LOG_ENTRY_SIGNAL_NONE = 0,
+
+  TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SENT,
+  TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED,
+  TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR,
+  TPL_LOG_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE,
+  TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
+
+  TPL_LOG_ENTRY_CHANNEL_SIGNAL_CHANNEL_CLOSED
+
+} TplLogEntrySignalType;
+
+typedef enum
 {
   TPL_LOG_ENTRY_ERROR,
   TPL_LOG_ENTRY_TEXT
 } TplLogEntryType;
+
+typedef struct _TplLogEntryPriv TplLogEntryPriv;
 
 typedef struct
 {
   GObject parent;
 
   /* Private */
-  TplLogEntryType type;
-  union
-  {
-    TplLogEntryText *text;
-    void *generic;
-  } entry;
-  time_t timestamp;
+  TplLogEntryPriv *priv;
 } TplLogEntry;
 
 typedef struct
@@ -59,19 +78,28 @@ typedef struct
 } TplLogEntryClass;
 
 GType tpl_log_entry_get_type (void);
+TplLogEntry *tpl_log_entry_new (guint log_id, const gchar *chat_id,
+    TplLogEntryDirection direction);
 
-TplLogEntry *tpl_log_entry_new (void);
-
-TplLogEntryType tpl_log_entry_get_entry_type (TplLogEntry * data);
-void *tpl_log_entry_get_entry (TplLogEntry * data);
 time_t tpl_log_entry_get_timestamp (TplLogEntry * self);
+TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry * self);
+guint tpl_log_entry_get_log_id (TplLogEntry *self);
+const gchar *tpl_log_entry_get_chat_id (TplLogEntry * self);
 
-// sets entry type and its object
-void tpl_log_entry_set_entry (TplLogEntry * self, void *entry);
+TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry * self);
+TplContact *tpl_log_entry_get_sender (TplLogEntry * self);
+TplContact *tpl_log_entry_get_receiver (TplLogEntry * self);
+
 void tpl_log_entry_set_timestamp (TplLogEntry * self, time_t data);
+void tpl_log_entry_set_signal_type (TplLogEntry *self,
+    TplLogEntrySignalType data);
+void tpl_log_entry_set_direction (TplLogEntry * self,
+    TplLogEntryDirection data);
+void tpl_log_entry_set_chat_id (TplLogEntry * self, const gchar * data);
+void tpl_log_entry_set_sender (TplLogEntry * self, TplContact * data);
+void tpl_log_entry_set_receiver (TplLogEntry * self, TplContact * data);
 
 gboolean tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2);
-
 
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_H__

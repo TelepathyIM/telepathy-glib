@@ -101,8 +101,7 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
   TpContact *remote, *me;
   TplContact *tpl_contact_sender;
   TplContact *tpl_contact_receiver;
-  TplLogEntryText *tlog;
-  TplLogEntry *log;
+  TplLogEntryText *log;
   TplLogManager *logmanager;
   gchar *chat_id;
 
@@ -122,39 +121,36 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
   tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
   tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
 
-  g_message ("%s (%s): %s",
+  g_message ("sent: %s (%s): %s",
 	     tpl_contact_get_identifier (tpl_contact_sender),
-	     tpl_contact_get_alias (tpl_contact_sender), arg_Text);
+	     tpl_contact_get_alias (tpl_contact_sender),
+       arg_Text);
 
-  /* Initialize TplLogEntryText */
-  log = tpl_log_entry_new ();
-  tlog = tpl_log_entry_text_new ();
-
-  tpl_log_entry_text_set_tpl_text_channel (tlog, tpl_text);
-  tpl_log_entry_text_set_sender (tlog, tpl_contact_sender);
-  tpl_log_entry_text_set_receiver (tlog, tpl_contact_receiver);
-  tpl_log_entry_text_set_message (tlog, arg_Text);
-  tpl_log_entry_text_set_message_type (tlog, arg_Type);
-  tpl_log_entry_text_set_signal_type (tlog, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
-  tpl_log_entry_text_set_message_id (tlog, arg_Timestamp);
-
-  tpl_log_entry_set_entry (log, tlog);
-  tpl_log_entry_set_timestamp (log, (time_t) arg_Timestamp);
-
-  /* Initialized LogStore and send the log entry */
+  /* Initialise TplLogEntryText */
 
   if (!tpl_text_channel_is_chatroom (tpl_text))
     chat_id = g_strdup (tpl_contact_get_identifier (tpl_contact_receiver));
   else
     chat_id = g_strdup (tpl_text_channel_get_chatroom_id (tpl_text));
 
-  tpl_log_entry_text_set_chat_id (tlog, chat_id);
-  tpl_log_entry_text_set_chatroom (tlog,
+  log = tpl_log_entry_text_new (arg_Timestamp, chat_id,
+      TPL_LOG_ENTRY_DIRECTION_OUT);
+  g_free (chat_id);
+
+  tpl_log_entry_set_timestamp (TPL_LOG_ENTRY (log), (time_t) arg_Timestamp);
+  tpl_log_entry_set_signal_type (TPL_LOG_ENTRY (log), TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
+  tpl_log_entry_set_sender (TPL_LOG_ENTRY (log), tpl_contact_sender);
+  tpl_log_entry_set_receiver (TPL_LOG_ENTRY (log), tpl_contact_receiver);
+  tpl_log_entry_text_set_message (log, arg_Text);
+  tpl_log_entry_text_set_message_type (log, arg_Type);
+  tpl_log_entry_text_set_tpl_text_channel (log, tpl_text);
+
+  /* Initialized LogStore and send the log entry */
+  tpl_log_entry_text_set_chatroom (log,
 		  tpl_text_channel_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-  tpl_log_manager_add_message (logmanager,
-			       log, &error);
+  tpl_log_manager_add_message (logmanager, (gpointer) log, &error);
 
   if (error != NULL)
     {
@@ -167,7 +163,6 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
   g_object_unref (tpl_contact_sender);
   g_object_unref (logmanager);
   g_object_unref (log);
-  g_free (chat_id);
 }
 
 static void
@@ -180,24 +175,22 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
 					     gpointer user_data,
 					     GObject * weak_object)
 {
-  TplLogEntry *log = TPL_LOG_ENTRY (user_data);
-  TplLogEntryText *tlog = TPL_LOG_ENTRY_TEXT (tpl_log_entry_get_entry (log));
-  TplTextChannel *tpl_text = tpl_log_entry_text_get_tpl_text_channel (tlog);
+  TplLogEntryText *log = TPL_LOG_ENTRY_TEXT (user_data);
+  TplTextChannel *tpl_text = tpl_log_entry_text_get_tpl_text_channel (log);
   GError *e = NULL;
   TplLogManager *logmanager;
   TplContact *tpl_contact_sender;
   TpContact *remote;
   gchar *chat_id;
 
-  g_return_if_fail (TPL_IS_LOG_ENTRY (log));
-  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (tlog));
+  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (log));
 
   if (error != NULL)
     {
       g_error ("Unrecoverable error retrieving remote contact "
 	       "information: %s", error->message);
       g_error ("Not able to log the received message: %s",
-	       tpl_log_entry_text_get_message (tlog));
+	       tpl_log_entry_text_get_message (log));
       return;
     }
 
@@ -206,7 +199,7 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
       g_error ("%d invalid handle(s) passed to "
 	       "tp_connection_get_contacts_by_handle()", n_failed);
       g_error ("Not able to log the received message: %s",
-	       tpl_log_entry_text_get_message (tlog));
+	       tpl_log_entry_text_get_message (log));
       return;
     }
 
@@ -215,27 +208,26 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
   tpl_contact_sender = tpl_contact_from_tp_contact (remote);
 
   tpl_contact_set_contact_type (tpl_contact_sender, TPL_CONTACT_USER);
-  tpl_log_entry_text_set_sender (tlog, tpl_contact_sender);
+  tpl_log_entry_set_sender (TPL_LOG_ENTRY (log), tpl_contact_sender);
 
-  g_message ("%s (%s): %s",
+  g_message ("recvd: %s (%s): %s",
 	     tpl_contact_get_identifier (tpl_contact_sender),
 	     tpl_contact_get_alias (tpl_contact_sender),
-	     tpl_log_entry_text_get_message (tlog));
+	     tpl_log_entry_text_get_message (log));
 
-  /* Initialize LogStore and store the message */
+  /* Initialise LogStore and store the message */
 
   if (!tpl_text_channel_is_chatroom (tpl_text))
     chat_id = g_strdup (tpl_contact_get_identifier (tpl_contact_sender));
   else
     chat_id = g_strdup (tpl_text_channel_get_chatroom_id (tpl_text));
 
-  tpl_log_entry_text_set_chat_id (tlog, chat_id);
-  tpl_log_entry_text_set_chatroom (tlog,
+  tpl_log_entry_set_chat_id (TPL_LOG_ENTRY (log), chat_id);
+  tpl_log_entry_text_set_chatroom (log,
 		  tpl_text_channel_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-  tpl_log_manager_add_message (logmanager,
-			       log, &e);
+  tpl_log_manager_add_message (logmanager, (gpointer) log, &e);
   if (e != NULL)
     {
       g_error ("LogStore: %s", e->message);
@@ -263,8 +255,7 @@ _channel_on_received_signal_cb (TpChannel * proxy,
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (tpl_text);
   TpContact *me;
   TplContact *tpl_contact_receiver;
-  TplLogEntry *log;
-  TplLogEntryText *tlog;
+  TplLogEntryText *log;
 
   // TODO use the Message iface to check the delivery
   // notification and handle it correctly
@@ -277,23 +268,20 @@ _channel_on_received_signal_cb (TpChannel * proxy,
     }
 
   /* Initialize TplLogEntryText (part 1) */
-  log = tpl_log_entry_new ();
-  tlog = tpl_log_entry_text_new ();
-  tpl_log_entry_set_entry (log, tlog);
+  log = tpl_log_entry_text_new (arg_Timestamp, NULL,
+      TPL_LOG_ENTRY_DIRECTION_IN);
 
-  tpl_log_entry_text_set_tpl_text_channel (tlog, tpl_text);
-  tpl_log_entry_text_set_message (tlog, arg_Text);
-  tpl_log_entry_text_set_message_type (tlog, arg_Type);
-  tpl_log_entry_text_set_signal_type (tlog,
-				      TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
-  tpl_log_entry_text_set_message_id (tlog, arg_Timestamp);	//TODO set a real Id
+  tpl_log_entry_text_set_tpl_text_channel (log, tpl_text);
+  tpl_log_entry_text_set_message (log, arg_Text);
+  tpl_log_entry_text_set_message_type (log, arg_Type);
+  tpl_log_entry_set_signal_type (TPL_LOG_ENTRY (log), TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
 
   me = tpl_text_channel_get_my_contact (tpl_text);
   tpl_contact_receiver = tpl_contact_from_tp_contact (me);
   tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
-  tpl_log_entry_text_set_receiver (tlog, tpl_contact_receiver);
+  tpl_log_entry_set_receiver (TPL_LOG_ENTRY (log), tpl_contact_receiver);
 
-  tpl_log_entry_set_timestamp (log, (time_t) arg_Timestamp);
+  tpl_log_entry_set_timestamp (TPL_LOG_ENTRY (log), (time_t) arg_Timestamp);
 
   tp_connection_get_contacts_by_handle (tpl_channel_get_connection (tpl_chan),
 					1, &remote_handle,
@@ -566,14 +554,6 @@ tpl_text_channel_class_init (TplTextChannelClass * klass)
 static void
 tpl_text_channel_init (TplTextChannel * self)
 {
-  /* Init TplTextChannel's members to zero/NULL */
-	/*
-  tpl_text_channel_set_tpl_channel (self, NULL);
-  tpl_text_channel_set_my_contact (self, NULL);
-  tpl_text_channel_set_remote_contact (self, NULL);
-  tpl_text_channel_set_chatroom_id (self, NULL);
-  tpl_text_channel_set_chatroom (self, FALSE);
-  */
 }
 
 TplTextChannel *

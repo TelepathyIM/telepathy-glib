@@ -23,7 +23,7 @@
 
 #include <glib.h>
 
-#include <telepathy-logger/utils.h>
+#include <telepathy-logger/util.h>
 
 //#define DEBUG(...)
 #define GET_PRIV(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TPL_TYPE_CONF, TplConfPriv))

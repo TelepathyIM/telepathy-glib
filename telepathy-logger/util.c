@@ -19,12 +19,12 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include "utils.h"
+#include "util.h"
 
 #include <telepathy-glib/util.h>
 
 void
-tpl_object_unref_if_not_null (void *data)
+tpl_object_unref_if_not_null (gpointer data)
 {
   if (data && G_IS_OBJECT (data))
     {
@@ -33,7 +33,7 @@ tpl_object_unref_if_not_null (void *data)
 }
 
 void
-tpl_object_ref_if_not_null (void *data)
+tpl_object_ref_if_not_null (gpointer data)
 {
   if (data && G_IS_OBJECT (data))
     {

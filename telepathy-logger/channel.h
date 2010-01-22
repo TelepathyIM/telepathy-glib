@@ -30,7 +30,7 @@
 #include <telepathy-glib/svc-client.h>
 
 #include <telepathy-logger/observer.h>
-#include <telepathy-logger/utils.h>
+#include <telepathy-logger/util.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_CHANNEL                  (tpl_channel_get_type ())

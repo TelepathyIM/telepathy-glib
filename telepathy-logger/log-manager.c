@@ -38,7 +38,7 @@
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-empathy.h>
 #include <telepathy-logger/datetime.h>
-#include <telepathy-logger/utils.h>
+#include <telepathy-logger/util.h>
 
 //#define DEBUG_FLAG EMPATHY_DEBUG_OTHER
 //#include <empathy-debug.h>
@@ -74,7 +74,7 @@ typedef struct
   TplLogMessageFilter filter;
   gchar *search_text;
   gpointer user_data;
-  TplLogEntry *logentry;
+  gpointer logentry;
 } TplLogManagerChatInfo;
 
 
@@ -164,10 +164,12 @@ tpl_log_manager_dup_singleton (void)
   return g_object_new (TPL_TYPE_LOG_MANAGER, NULL);
 }
 
-
+/*
+ * @message: a TplLogEntry subclass
+ */
 gboolean
 tpl_log_manager_add_message (TplLogManager * manager,
-			     TplLogEntry * message, GError ** error)
+			     gpointer message, GError ** error)
 {
   TplLogManagerPriv *priv;
   GList *l;
@@ -593,7 +595,7 @@ _add_message_async_thread (GSimpleAsyncResult * simple, GObject * object,
 
 void
 tpl_log_manager_add_message_async (TplLogManager * manager,
-			     TplLogEntry * message,
+			     gpointer message,
 			     TplLogManagerAsyncCallback callback,
 			     gpointer user_data,
 			     GDestroyNotify destroy)
@@ -634,7 +636,7 @@ tpl_log_manager_add_message_async (TplLogManager * manager,
   async_data->user_data = user_data;
 
   _tpl_log_manager_call_async_operation (manager, _add_message_async_thread,
-					 async_data, callback);
+      async_data, callback);
 }
 
 /* End of get_dates async implementation */

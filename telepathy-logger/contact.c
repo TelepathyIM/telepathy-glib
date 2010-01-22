@@ -23,7 +23,7 @@
 
 #include <telepathy-glib/account.h>
 
-#include <telepathy-logger/utils.h>
+#include <telepathy-logger/util.h>
 
 G_DEFINE_TYPE (TplContact, tpl_contact, G_TYPE_OBJECT)
 
@@ -39,6 +39,13 @@ struct _TplContactPriv
   gchar *avatar_token;
 
   TpAccount *account;
+};
+
+enum
+{
+  PROP0,
+  PROP_IDENTIFIER,
+  PROP_ALIAS
 };
 
 static void
@@ -71,14 +78,71 @@ tpl_contact_dispose (GObject * obj)
   G_OBJECT_CLASS (tpl_contact_parent_class)->dispose (obj);
 }
 
+static void
+tpl_contact_get_prop (GObject *object, guint param_id, GValue *value,
+    GParamSpec *pspec)
+{
+  TplContactPriv *priv = GET_PRIV (object);
+
+  switch (param_id)
+    {
+      case PROP_IDENTIFIER:
+        g_value_set_string (value, priv->identifier);
+        break;
+      case PROP_ALIAS:
+        g_value_set_string (value, priv->alias);
+        break;
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
+        break;
+    };
+}
+
+
+static void
+tpl_contact_set_prop (GObject *object, guint param_id, const GValue *value,
+    GParamSpec *pspec)
+{
+  TplContact *self = TPL_CONTACT (object);
+
+  switch (param_id) {
+      case PROP_IDENTIFIER:
+        tpl_contact_set_identifier (self, g_value_get_string (value));
+        break;
+      case PROP_ALIAS:
+        tpl_contact_set_alias (self, g_value_get_string (value));
+        break;
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
+        break;
+  };
+
+}
 
 
 static void tpl_contact_class_init (TplContactClass * klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *param_spec;
 
   object_class->finalize = tpl_contact_finalize;
   object_class->dispose = tpl_contact_dispose;
+  object_class->get_property = tpl_contact_get_prop;
+  object_class->set_property = tpl_contact_set_prop;
+
+  param_spec = g_param_spec_string ("identifier",
+      "Identifier",
+      "The contact's identifier",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_IDENTIFIER, param_spec);
+
+  param_spec = g_param_spec_string ("alias",
+      "Alias",
+      "The contact's alias",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplContactPriv));
 }
@@ -116,7 +180,9 @@ tpl_contact_new (const gchar *identifier)
 {
   g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
 
-  return g_object_new (TPL_TYPE_CONTACT, NULL);
+  return g_object_new (TPL_TYPE_CONTACT,
+      "identifier", identifier,
+      NULL);
 }
 
 TpContact *
@@ -232,7 +298,6 @@ tpl_contact_set_alias (TplContact * self, const gchar * data)
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
 
   g_free (priv->alias);
   priv->alias = g_strdup (data);

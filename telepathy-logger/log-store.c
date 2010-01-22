@@ -70,7 +70,7 @@ tpl_log_store_exists (TplLogStore * self,
 
 gboolean
 tpl_log_store_add_message (TplLogStore * self,
-			   TplLogEntry * message, GError ** error)
+			   gpointer message, GError ** error)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->add_message)
     {
