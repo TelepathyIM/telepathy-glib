@@ -261,7 +261,7 @@ _log_store_empathy_write_to_store (TplLogStore * self,
 	fseek (file, -strlen (LOG_FOOTER), SEEK_END);
     }
 
-  g_fprintf (file, entry);
+  g_fprintf (file, "%s", entry);
 
   fclose (file);
   g_free (filename);
