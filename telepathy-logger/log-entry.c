@@ -59,7 +59,8 @@ enum {
     PROP_RECEIVER
 };
 
-static void tpl_log_entry_finalize (GObject * obj)
+
+static void tpl_log_entry_finalize (GObject *obj)
 {
   TplLogEntryPriv *priv = GET_PRIV (obj);
 
@@ -69,8 +70,9 @@ static void tpl_log_entry_finalize (GObject * obj)
   G_OBJECT_CLASS (tpl_log_entry_parent_class)->finalize (obj);
 }
 
+
 static void
-tpl_log_entry_dispose (GObject * obj)
+tpl_log_entry_dispose (GObject *obj)
 {
   TplLogEntry *self = TPL_LOG_ENTRY (obj);
   TplLogEntryPriv *priv = GET_PRIV (self);
@@ -83,8 +85,11 @@ tpl_log_entry_dispose (GObject * obj)
   G_OBJECT_CLASS (tpl_log_entry_parent_class)->dispose (obj);
 }
 
+
 static void
-tpl_log_entry_get_prop (GObject *object, guint param_id, GValue *value,
+tpl_log_entry_get_prop (GObject *object,
+    guint param_id,
+    GValue *value,
     GParamSpec *pspec)
 {
   TplLogEntryPriv *priv = GET_PRIV (object);
@@ -118,8 +123,11 @@ tpl_log_entry_get_prop (GObject *object, guint param_id, GValue *value,
     };
 }
 
+
 static void
-tpl_log_entry_set_prop (GObject *object, guint param_id, const GValue *value,
+tpl_log_entry_set_prop (GObject *object,
+    guint param_id,
+    const GValue *value,
     GParamSpec *pspec)
 {
   TplLogEntry *self = TPL_LOG_ENTRY (object);
@@ -216,27 +224,31 @@ tpl_log_entry_class_init (TplLogEntryClass * klass)
   g_type_class_add_private (object_class, sizeof (TplLogEntryPriv));
 }
 
+
 static void
-tpl_log_entry_init (TplLogEntry * self)
+tpl_log_entry_init (TplLogEntry *self)
 {
   TplLogEntryPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_ENTRY, TplLogEntryPriv);
   self->priv = priv;
 }
 
+
 TplLogEntry *
-tpl_log_entry_new (guint log_id, const gchar *chat_id,
+tpl_log_entry_new (guint log_id,
+    const gchar *chat_id,
     TplLogEntryDirection direction)
 {
   return g_object_new (TPL_TYPE_LOG_ENTRY,
       "log-id", log_id,
-	    "chat-id", chat_id,
+      "chat-id", chat_id,
       "direction", direction,
       NULL);
 }
 
+
 time_t
-tpl_log_entry_get_timestamp (TplLogEntry * self)
+tpl_log_entry_get_timestamp (TplLogEntry *self)
 {
   TplLogEntryPriv *priv = GET_PRIV (self);
 
@@ -246,20 +258,21 @@ tpl_log_entry_get_timestamp (TplLogEntry * self)
   return priv->timestamp;
 }
 
+
 TplLogEntrySignalType
-tpl_log_entry_get_signal_type (TplLogEntry * self)
+tpl_log_entry_get_signal_type (TplLogEntry *self)
 {
   TplLogEntryPriv *priv;
 
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY (self),
-      TPL_LOG_ENTRY_SIGNAL_NONE);
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), TPL_LOG_ENTRY_SIGNAL_NONE);
 
   priv = GET_PRIV (self);
   return priv->signal_type;
 }
 
+
 guint
-tpl_log_entry_get_log_id (TplLogEntry * self)
+tpl_log_entry_get_log_id (TplLogEntry *self)
 {
   TplLogEntryPriv *priv;
 
@@ -269,8 +282,9 @@ tpl_log_entry_get_log_id (TplLogEntry * self)
   return priv->log_id;
 }
 
+
 TplLogEntryDirection
-tpl_log_entry_get_direction (TplLogEntry * self)
+tpl_log_entry_get_direction (TplLogEntry *self)
 {
   TplLogEntryPriv *priv;
 
@@ -281,8 +295,9 @@ tpl_log_entry_get_direction (TplLogEntry * self)
   return priv->direction;
 }
 
+
 TplContact *
-tpl_log_entry_get_sender (TplLogEntry * self)
+tpl_log_entry_get_sender (TplLogEntry *self)
 {
   TplLogEntryPriv *priv;
 
@@ -292,8 +307,9 @@ tpl_log_entry_get_sender (TplLogEntry * self)
   return priv->sender;
 }
 
+
 TplContact *
-tpl_log_entry_get_receiver (TplLogEntry * self)
+tpl_log_entry_get_receiver (TplLogEntry *self)
 {
   TplLogEntryPriv *priv;
 
@@ -303,8 +319,9 @@ tpl_log_entry_get_receiver (TplLogEntry * self)
   return priv->receiver;
 }
 
+
 const gchar *
-tpl_log_entry_get_chat_id (TplLogEntry * self)
+tpl_log_entry_get_chat_id (TplLogEntry *self)
 {
   TplLogEntryPriv *priv;
 
@@ -313,8 +330,11 @@ tpl_log_entry_get_chat_id (TplLogEntry * self)
   priv = GET_PRIV (self);
   return priv->chat_id;
 }
+
+
 void
-tpl_log_entry_set_timestamp (TplLogEntry * self, time_t data)
+tpl_log_entry_set_timestamp (TplLogEntry *self,
+    time_t data)
 {
   TplLogEntryPriv *priv = GET_PRIV (self);
 
@@ -325,8 +345,9 @@ tpl_log_entry_set_timestamp (TplLogEntry * self, time_t data)
   g_object_notify (G_OBJECT(self), "timestamp");
 }
 
+
 void
-tpl_log_entry_set_signal_type (TplLogEntry * self,
+tpl_log_entry_set_signal_type (TplLogEntry *self,
     TplLogEntrySignalType data)
 {
   TplLogEntryPriv *priv;
@@ -338,8 +359,10 @@ tpl_log_entry_set_signal_type (TplLogEntry * self,
   g_object_notify (G_OBJECT(self), "signal-type");
 }
 
+
 static void
-_set_log_id (TplLogEntry * self, guint data)
+_set_log_id (TplLogEntry *self,
+    guint data)
 {
   TplLogEntryPriv *priv;
 
@@ -350,8 +373,9 @@ _set_log_id (TplLogEntry * self, guint data)
   g_object_notify (G_OBJECT(self), "log-id");
 }
 
+
 void
-tpl_log_entry_set_direction (TplLogEntry * self,
+tpl_log_entry_set_direction (TplLogEntry *self,
     TplLogEntryDirection data)
 {
   TplLogEntryPriv *priv;
@@ -363,8 +387,10 @@ tpl_log_entry_set_direction (TplLogEntry * self,
   g_object_notify (G_OBJECT(self), "direction");
 }
 
+
 void
-tpl_log_entry_set_sender (TplLogEntry * self, TplContact * data)
+tpl_log_entry_set_sender (TplLogEntry *self,
+    TplContact *data)
 {
   TplLogEntryPriv *priv;
 
@@ -379,8 +405,10 @@ tpl_log_entry_set_sender (TplLogEntry * self, TplContact * data)
   g_object_notify (G_OBJECT(self), "sender");
 }
 
+
 void
-tpl_log_entry_set_receiver (TplLogEntry * self, TplContact * data)
+tpl_log_entry_set_receiver (TplLogEntry *self,
+    TplContact *data)
 {
   TplLogEntryPriv *priv;
 
@@ -394,8 +422,10 @@ tpl_log_entry_set_receiver (TplLogEntry * self, TplContact * data)
   g_object_notify (G_OBJECT(self), "receiver");
 }
 
+
 void
-tpl_log_entry_set_chat_id (TplLogEntry * self, const gchar * data)
+tpl_log_entry_set_chat_id (TplLogEntry *self,
+    const gchar *data)
 {
   TplLogEntryPriv *priv;
 
@@ -406,8 +436,10 @@ tpl_log_entry_set_chat_id (TplLogEntry * self, const gchar * data)
   priv->chat_id = g_strdup (data);
 }
 
+
 gboolean
-tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2)
+tpl_log_entry_equal (TplLogEntry *message1,
+    TplLogEntry *message2)
 {
   TplLogEntryPriv *priv1 = GET_PRIV (message1);
   TplLogEntryPriv *priv2 = GET_PRIV (message2);
@@ -415,12 +447,12 @@ tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2)
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message1), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message2), FALSE);
 
-  //if (priv1->id == priv2->id && !tp_strdiff (priv1->body, priv2->body)) {
-  //if (priv1->type == priv2->type)
-    //if (!tp_strdiff (priv1->entry.text->message, priv2->entry.text->message)) {
-    //}
-  g_debug ("TODO: tpl_log_entry_equal update!");
+  /*
+  if (priv1->id == priv2->id && !tp_strdiff (priv1->body, priv2->body)) {
+  if (priv1->type == priv2->type)
+    if (!tp_strdiff (priv1->entry.text->message, priv2->entry.text->message)) {
+    }
+  */
+  g_debug ("TODO: do a tpl_log_entry_equal rewrite!");
   return priv1->log_id == priv2->log_id;
-
-  return FALSE;
 }
