@@ -75,17 +75,39 @@ typedef struct
 typedef struct
 {
   GObjectClass parent_class;
+
+  void (*dispose) (GObject *obj);
+  void (*finalize) (GObject *obj);
+
+  time_t (*get_timestamp) (TplLogEntry *self);
+  TplLogEntrySignalType (*get_signal_type) (TplLogEntry *self);
+  guint (*get_log_id) (TplLogEntry *self);
+  TplLogEntryDirection (*get_direction) (TplLogEntry *self);
+  TplContact * (*get_sender) (TplLogEntry *self);
+  TplContact * (*get_receiver) (TplLogEntry *self);
+  const gchar * (*get_chat_id) (TplLogEntry *self);
+
+  void (*set_timestamp) (TplLogEntry *self, time_t data);
+  void (*set_signal_type) (TplLogEntry *self, TplLogEntrySignalType data);
+  void (*set_log_id) (TplLogEntry *self, guint data);
+  void (*set_direction) (TplLogEntry *self, TplLogEntryDirection data);
+  void (*set_sender) (TplLogEntry *self, TplContact *data);
+  void (*set_receiver) (TplLogEntry *self, TplContact *data);
+  void (*set_chat_id) (TplLogEntry *self, const gchar *data);
+
+  /* to be implemented by subclasses */
+  gboolean (*equal) (TplLogEntry *entry1, TplLogEntry *entry2);
 } TplLogEntryClass;
 
 GType tpl_log_entry_get_type (void);
 TplLogEntry *tpl_log_entry_new (guint log_id, const gchar *chat_id,
     TplLogEntryDirection direction);
 
+/*
 time_t tpl_log_entry_get_timestamp (TplLogEntry * self);
 TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry * self);
 guint tpl_log_entry_get_log_id (TplLogEntry *self);
 const gchar *tpl_log_entry_get_chat_id (TplLogEntry * self);
-
 TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry * self);
 TplContact *tpl_log_entry_get_sender (TplLogEntry * self);
 TplContact *tpl_log_entry_get_receiver (TplLogEntry * self);
@@ -100,6 +122,7 @@ void tpl_log_entry_set_sender (TplLogEntry * self, TplContact * data);
 void tpl_log_entry_set_receiver (TplLogEntry * self, TplContact * data);
 
 gboolean tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2);
+*/
 
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_H__

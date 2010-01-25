@@ -27,9 +27,28 @@
 #include <telepathy-logger/debug.h>
 #include <telepathy-logger/util.h>
 
-G_DEFINE_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)
 
-static void _set_log_id (TplLogEntry * self, guint data);
+static void tpl_log_entry_set_log_id (TplLogEntry *self, guint data);
+static time_t tpl_log_entry_get_timestamp (TplLogEntry* self);
+static TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry* self);
+static guint tpl_log_entry_get_log_id (TplLogEntry *self);
+static const gchar *tpl_log_entry_get_chat_id (TplLogEntry *self);
+static TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry *self);
+static TplContact *tpl_log_entry_get_sender (TplLogEntry *self);
+static TplContact *tpl_log_entry_get_receiver (TplLogEntry *self);
+
+static void tpl_log_entry_set_timestamp (TplLogEntry *self, time_t data);
+static void tpl_log_entry_set_signal_type (TplLogEntry *self,
+    TplLogEntrySignalType data);
+static void tpl_log_entry_set_direction (TplLogEntry *self,
+    TplLogEntryDirection data);
+static void tpl_log_entry_set_chat_id (TplLogEntry *self,
+    const gchar *data);
+static void tpl_log_entry_set_sender (TplLogEntry *self, TplContact *data);
+static void tpl_log_entry_set_receiver (TplLogEntry *self, TplContact *data);
+
+static gboolean tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2);
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogEntry)
 struct _TplLogEntryPriv
@@ -140,7 +159,7 @@ tpl_log_entry_set_prop (GObject *object,
         tpl_log_entry_set_signal_type (self, g_value_get_uint (value));
         break;
       case PROP_LOG_ID:
-        _set_log_id (self, g_value_get_uint (value));
+        tpl_log_entry_set_log_id (self, g_value_get_uint (value));
         break;
       case PROP_DIRECTION:
         tpl_log_entry_set_direction (self, g_value_get_uint (value));
@@ -167,10 +186,12 @@ tpl_log_entry_class_init (TplLogEntryClass * klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
+  /* to be used by subclasses */
+  klass->finalize = tpl_log_entry_finalize;
+  klass->dispose = tpl_log_entry_dispose;
+
   object_class->get_property = tpl_log_entry_get_prop;
   object_class->set_property = tpl_log_entry_set_prop;
-  object_class->finalize = tpl_log_entry_finalize;
-  object_class->dispose = tpl_log_entry_dispose;
 
   param_spec = g_param_spec_uint ("timestamp",
       "Timestamp",
@@ -222,6 +243,23 @@ tpl_log_entry_class_init (TplLogEntryClass * klass)
   g_object_class_install_property (object_class, PROP_RECEIVER, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogEntryPriv));
+
+  klass->get_timestamp = tpl_log_entry_get_timestamp;
+  klass->get_signal_type = tpl_log_entry_get_signal_type;
+  klass->get_log_id = tpl_log_entry_get_log_id;
+  klass->get_direction = tpl_log_entry_get_direction;
+  klass->get_sender = tpl_log_entry_get_sender;
+  klass->get_receiver = tpl_log_entry_get_receiver;
+  klass->get_chat_id = tpl_log_entry_get_chat_id;
+
+  klass->set_timestamp = tpl_log_entry_set_timestamp;
+  klass->set_signal_type = tpl_log_entry_set_signal_type;
+  klass->set_direction = tpl_log_entry_set_direction;
+  klass->set_sender = tpl_log_entry_set_sender;
+  klass->set_receiver = tpl_log_entry_set_receiver;
+  klass->set_chat_id = tpl_log_entry_set_chat_id;
+
+  klass->equal = NULL;
 }
 
 
@@ -361,7 +399,7 @@ tpl_log_entry_set_signal_type (TplLogEntry *self,
 
 
 static void
-_set_log_id (TplLogEntry *self,
+tpl_log_entry_set_log_id (TplLogEntry *self,
     guint data)
 {
   TplLogEntryPriv *priv;
@@ -434,25 +472,4 @@ tpl_log_entry_set_chat_id (TplLogEntry *self,
   priv = GET_PRIV (self);
   g_free (priv->chat_id);
   priv->chat_id = g_strdup (data);
-}
-
-
-gboolean
-tpl_log_entry_equal (TplLogEntry *message1,
-    TplLogEntry *message2)
-{
-  TplLogEntryPriv *priv1 = GET_PRIV (message1);
-  TplLogEntryPriv *priv2 = GET_PRIV (message2);
-
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY (message1), FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY (message2), FALSE);
-
-  /*
-  if (priv1->id == priv2->id && !tp_strdiff (priv1->body, priv2->body)) {
-  if (priv1->type == priv2->type)
-    if (!tp_strdiff (priv1->entry.text->message, priv2->entry.text->message)) {
-    }
-  */
-  g_debug ("TODO: do a tpl_log_entry_equal rewrite!");
-  return priv1->log_id == priv2->log_id;
 }
