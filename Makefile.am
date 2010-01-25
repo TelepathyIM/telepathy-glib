@@ -37,11 +37,5 @@ ChangeLog:
 	  echo A git checkout and git-log is required to generate this file >> $@); \
 	fi
 
-ctags:
-	$(MAKE) -C telepathy-logger ctags
-	$(MAKE) -C src ctags
-	cat telepathy-logger/tags src/tags >> tags
-
-
 .PHONY: ChangeLog
 

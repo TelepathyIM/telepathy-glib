@@ -45,12 +45,11 @@ gboolean tpl_strequal (const gchar *left, const gchar *right);
     { \
       if (func != NULL) \
         { \
-          GError *e; \
-          e = g_error_new ( PREFIX ## _ERROR, \
+          GSimpleAsyncResult *result=NULL; \
+          g_simple_async_result_set_error (result, PREFIX ## _ERROR, \
               PREFIX ## _ERROR_ ## POSTFIX, \
               msg); \
-          func (obj, FALSE, e, user_data); \
-          g_error_free (e); \
+          return func (G_OBJECT (obj), G_ASYNC_RESULT (result), user_data); \
         } \
       return; \
     }

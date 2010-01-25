@@ -26,14 +26,10 @@
 
 #include <telepathy-logger/log-manager.h>
 
-gboolean tpl_log_manager_add_message (TplLogManager * manager,
-				      TplLogEntry * message, GError ** error);
+gboolean tpl_log_manager_add_message (TplLogManager *manager,
+				      TplLogEntry *message, GError **error);
 
-void tpl_log_manager_add_message_async (TplLogManager * manager,
-			     TplLogEntry * message,
-			     TplLogManagerAsyncCallback callback,
-			     gpointer user_data,
-			     GDestroyNotify destroy);
-
+void tpl_log_manager_add_message_async (TplLogManager *manager,
+    TplLogEntry *message, GAsyncReadyCallback callback, gpointer user_data);
 
 #endif /* __TPL_LOG_MANAGER_PRIV_H__ */
