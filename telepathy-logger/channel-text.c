@@ -59,7 +59,9 @@ _channel_on_closed_cb (TpChannel *proxy,
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (tpl_text);
   gchar *chan_path;
 
-  chan_path = g_strdup (tpl_channel_get_channel_path (tpl_chan));
+  /* set chan_path from the TpConnection's property */
+  g_object_get (G_OBJECT (tp_channel_borrow_connection (TP_CHANNEL (tpl_chan))),
+      "object-path", &chan_path, NULL);
 
   if (!tpl_channel_unregister_from_observer (tpl_chan))
     g_warning ("Channel %s couldn't be unregistered correctly (BUG?)",
@@ -288,11 +290,10 @@ _channel_on_received_signal_cb (TpChannel *proxy,
 
   tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
 
-  tp_connection_get_contacts_by_handle (tpl_channel_get_connection (tpl_chan),
-					1, &remote_handle,
-					TP_CONTACT_FEATURES_LEN, features,
-					_channel_on_received_signal_with_contact_cb,
-					log, g_object_unref, NULL);
+  tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (
+      TP_CHANNEL (tpl_chan)), 1, &remote_handle, TP_CONTACT_FEATURES_LEN,
+      features, _channel_on_received_signal_with_contact_cb, log,
+      g_object_unref, NULL);
 
   g_object_unref (tpl_contact_receiver);
 }
@@ -325,11 +326,10 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel *self)
   GError *error = NULL;
   TpChannel *channel = NULL;
 
-  channel = tpl_channel_get_channel (tpl_text_channel_get_tpl_channel (self));
+  channel = TP_CHANNEL (tpl_text_channel_get_tpl_channel (self));
 
   tp_cli_channel_type_text_connect_to_received (channel,
-						_channel_on_received_signal_cb,
-						self, NULL, NULL, &error);
+      _channel_on_received_signal_cb, self, NULL, NULL, &error);
   if (error != NULL)
     {
       g_error ("received signal connect: %s", error->message);
@@ -339,8 +339,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel *self)
     }
 
   tp_cli_channel_type_text_connect_to_sent (channel,
-					    _channel_on_sent_signal_cb, self,
-					    NULL, NULL, &error);
+      _channel_on_sent_signal_cb, self, NULL, NULL, &error);
   if (error != NULL)
     {
       g_error ("sent signal connect: %s", error->message);
@@ -350,8 +349,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel *self)
     }
 
   tp_cli_channel_type_text_connect_to_send_error (channel,
-						  _channel_on_send_error_cb,
-						  self, NULL, NULL, &error);
+      _channel_on_send_error_cb, self, NULL, NULL, &error);
   if (error != NULL)
     {
       g_error ("send error signal connect: %s", error->message);
@@ -361,8 +359,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel *self)
     }
 
   tp_cli_channel_type_text_connect_to_lost_message (channel,
-						    _channel_on_lost_message_cb,
-						    self, NULL, NULL, &error);
+      _channel_on_lost_message_cb, self, NULL, NULL, &error);
   if (error != NULL)
     {
       g_error ("lost message signal connect: %s", error->message);
@@ -372,7 +369,7 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel *self)
     }
 
   tp_cli_channel_connect_to_closed (channel, _channel_on_closed_cb,
-				    self, NULL, NULL, &error);
+      self, NULL, NULL, &error);
   if (error != NULL)
     {
       g_error ("channel closed signal connect: %s", error->message);
@@ -381,15 +378,17 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel *self)
       error = NULL;
     }
 
-  // TODO connect to TpContacts' notify::presence-type
+  /* TODO connect to TpContacts' notify::presence-type */
+
   context_continue (self);
 }
 
 static void
 _tpl_text_channel_get_chatroom_cb (TpConnection *proxy,
-				   const gchar **out_Identifiers,
-				   const GError *error,
-				   gpointer user_data, GObject *weak_object)
+    const gchar **out_Identifiers,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (user_data);
 
@@ -407,13 +406,13 @@ static void
 _tpl_text_channel_pendingproc_get_chatroom_id (TplTextChannel *ctx)
 {
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (ctx);
-  TpConnection *connection = tpl_channel_get_connection (tpl_chan);
+  TpConnection *connection = tp_channel_borrow_connection (TP_CHANNEL (
+        tpl_chan));
   TpHandle room_handle;
   GArray *handles;
 
   handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
-  room_handle = tp_channel_get_handle (tpl_channel_get_channel (tpl_chan),
-				       NULL);
+  room_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan), NULL);
   g_array_append_val (handles, room_handle);
 
   tpl_text_channel_set_chatroom (ctx, TRUE);
@@ -442,6 +441,9 @@ _tpl_text_channel_get_contact_cb (TpConnection *connection,
           GObject *weak_object)
 {
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (user_data);
+  TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (tpl_text);
+  TpChannel *tp_chan = TP_CHANNEL (tpl_chan);
+  gchar *conn_path, *chan_path;
 
   g_assert_cmpuint (n_failed, ==, 0);
   g_assert_cmpuint (n_contacts, ==, 1);
@@ -449,14 +451,17 @@ _tpl_text_channel_get_contact_cb (TpConnection *connection,
 
   if (n_failed > 0)
     {
-      g_error ("Error resolving self handle for connection %s."
-	       " Aborting channel %s observation",
-	       tpl_channel_get_connection_path
-	       (tpl_text_channel_get_tpl_channel (tpl_text)),
-	       tpl_channel_get_channel_path (tpl_text_channel_get_tpl_channel
-					     (tpl_text)));
+      g_object_get (G_OBJECT (tp_channel_borrow_connection
+            (tp_chan)), "object-path", &conn_path, NULL);
+      g_object_get (G_OBJECT (tp_chan), "object-path", &chan_path, NULL);
+
+      g_debug ("Error resolving self handle for connection %s."
+	       " Aborting channel %s observation", conn_path, chan_path);
       tpl_channel_unregister_from_observer (tpl_text_channel_get_tpl_channel
 					    (tpl_text));
+
+      g_free (conn_path);
+      g_free (chan_path);
       return;
     }
 
@@ -469,12 +474,11 @@ _tpl_text_channel_get_contact_cb (TpConnection *connection,
       tpl_text_channel_set_remote_contact (tpl_text, *contacts);
       break;
     default:
-      g_error ("retrieving TpContacts: passing invalid value "
-	       "for selector: %d"
-	       "Aborting channel %s observation",
-	       tpl_text->selector,
-	       tpl_channel_get_channel_path (tpl_text_channel_get_tpl_channel
-					     (tpl_text)));
+      g_object_get (G_OBJECT (tp_chan), "object-path", &chan_path, NULL);
+
+      g_error ("retrieving TpContacts: passing invalid value for selector: %d"
+         "Aborting channel %s observation", tpl_text->selector, chan_path);
+      g_free (chan_path);
       tpl_channel_unregister_from_observer (tpl_text_channel_get_tpl_channel
 					    (tpl_text));
       return;
@@ -491,34 +495,35 @@ _tpl_text_channel_pendingproc_get_remote_contact (TplTextChannel *ctx)
   TpHandleType remote_handle_type;
   TpHandle remote_handle;
 
-  remote_handle = tp_channel_get_handle (tpl_channel_get_channel (tpl_chan),
-					 &remote_handle_type);
+  remote_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan),
+      &remote_handle_type);
 
   ctx->selector = TP_CONTACT_REMOTE;
-  tp_connection_get_contacts_by_handle (tpl_channel_get_connection (tpl_chan),
-					1, &remote_handle,
-					TP_CONTACT_FEATURES_LEN, features,
-					_tpl_text_channel_get_contact_cb,
-					ctx, NULL, NULL);
+  tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (
+      TP_CHANNEL (tpl_chan)),
+      1, &remote_handle,
+      TP_CONTACT_FEATURES_LEN, features,
+      _tpl_text_channel_get_contact_cb,
+      ctx, NULL, NULL);
 }
 
 static void
 _tpl_text_channel_pendingproc_get_my_contact (TplTextChannel *ctx)
 {
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (ctx);
-  TpHandle my_handle =
-    tp_connection_get_self_handle (tpl_channel_get_connection (tpl_chan));
+  TpHandle my_handle = tp_connection_get_self_handle (
+      tp_channel_borrow_connection (TP_CHANNEL (tpl_chan)));
 
   ctx->selector = TP_CONTACT_MYSELF;
-  tp_connection_get_contacts_by_handle (tpl_channel_get_connection (tpl_chan),
-					1, &my_handle,
-					TP_CONTACT_FEATURES_LEN, features,
-					_tpl_text_channel_get_contact_cb,
-					ctx, NULL, NULL);
+  tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (
+      TP_CHANNEL (tpl_chan)),
+      1, &my_handle,
+      TP_CONTACT_FEATURES_LEN, features,
+      _tpl_text_channel_get_contact_cb,
+      ctx, NULL, NULL);
 }
 
 /* end of async Callbacks */
-
 
 G_DEFINE_TYPE (TplTextChannel, tpl_text_channel, G_TYPE_OBJECT)
 
@@ -572,16 +577,15 @@ tpl_text_channel_new (TplChannel *tpl_channel)
      to set some type's members and probably access (futurely) some
      props */
   TpHandleType remote_handle_type;
-  tp_channel_get_handle (tpl_channel_get_channel (tpl_channel),
-			 &remote_handle_type);
+  tp_channel_get_handle (TP_CHANNEL (tpl_channel), &remote_handle_type);
 
   ret->chain = g_queue_new ();
 
   g_queue_push_tail (ret->chain,
-		     _tpl_text_channel_pendingproc_connect_signals);
+      _tpl_text_channel_pendingproc_connect_signals);
 
   g_queue_push_tail (ret->chain,
-		     _tpl_text_channel_pendingproc_get_my_contact);
+      _tpl_text_channel_pendingproc_get_my_contact);
 
   switch (remote_handle_type)
     {
@@ -651,7 +655,8 @@ tpl_text_channel_get_chatroom_id (TplTextChannel *self)
 }
 
 void
-tpl_text_channel_set_tpl_channel (TplTextChannel *self, TplChannel *data)
+tpl_text_channel_set_tpl_channel (TplTextChannel *self,
+    TplChannel *data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
   g_return_if_fail (TPL_IS_CHANNEL (data));
@@ -662,7 +667,8 @@ tpl_text_channel_set_tpl_channel (TplTextChannel *self, TplChannel *data)
 }
 
 void
-tpl_text_channel_set_remote_contact (TplTextChannel *self, TpContact *data)
+tpl_text_channel_set_remote_contact (TplTextChannel *self,
+    TpContact *data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
   g_return_if_fail (TP_IS_CONTACT (data));
@@ -673,7 +679,8 @@ tpl_text_channel_set_remote_contact (TplTextChannel *self, TpContact *data)
 }
 
 void
-tpl_text_channel_set_my_contact (TplTextChannel *self, TpContact *data)
+tpl_text_channel_set_my_contact (TplTextChannel *self,
+    TpContact *data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
   g_return_if_fail (TP_IS_CONTACT (data));
@@ -684,7 +691,8 @@ tpl_text_channel_set_my_contact (TplTextChannel *self, TpContact *data)
 }
 
 void
-tpl_text_channel_set_chatroom (TplTextChannel *self, gboolean data)
+tpl_text_channel_set_chatroom (TplTextChannel *self,
+    gboolean data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
 
@@ -692,7 +700,8 @@ tpl_text_channel_set_chatroom (TplTextChannel *self, gboolean data)
 }
 
 void
-tpl_text_channel_set_chatroom_id (TplTextChannel *self, const gchar *data)
+tpl_text_channel_set_chatroom_id (TplTextChannel *self,
+    const gchar *data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
 

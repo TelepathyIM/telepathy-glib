@@ -66,45 +66,49 @@ enum
 
 
 static void
-_observe_channel_when_ready_cb (TpChannel * channel,
-				const GError * error, gpointer user_data)
+_observe_channel_when_ready_cb (TpChannel *channel,
+    const GError *error,
+    gpointer user_data)
 {
   TplChannel *tpl_chan = TPL_CHANNEL (user_data);
 
   if (error != NULL)
     {
-      g_error ("%s", error->message);
-      g_error ("giving up observing channel '%s'", tpl_chan->channel_path);
+      gchar *chan_path;
+
+      g_object_get (G_OBJECT (tpl_chan), "object-path", &chan_path, NULL);
+      g_debug ("%s. Giving up channel '%s' observation", error->message,
+          chan_path);
+
       g_object_unref (tpl_chan);
+      g_free (chan_path);
       return;
     }
 
-  tpl_channel_set_channel_type (tpl_chan,
-				tp_channel_get_channel_type
-				(tpl_chan->channel));
   tpl_channel_register_to_observer (tpl_chan);
 }
 
 
 static void
-_get_ready_tp_channel (TpConnection * connection,
-		       const GError * error, gpointer user_data)
+_get_ready_tp_channel (TpConnection *connection,
+    const GError *error,
+    gpointer user_data)
 {
   TplChannel *tpl_chan = TPL_CHANNEL (user_data);
 
-  tp_channel_call_when_ready (tpl_channel_get_channel (tpl_chan),
+  tp_channel_call_when_ready (TP_CHANNEL (tpl_chan),
 			      _observe_channel_when_ready_cb, tpl_chan);
 }
 
 static void
-tpl_observer_observe_channels (TpSvcClientObserver * self,
-			       const char *account,
-			       const char *connection,
-			       const GPtrArray * channels,
-			       const char *dispatch_op,
-			       const GPtrArray * requests_satisfied,
-			       GHashTable * observer_info,
-			       DBusGMethodInvocation * context)
+tpl_observer_observe_channels (TpSvcClientObserver *self,
+    const char *account,
+    const char *connection,
+    const GPtrArray *channels,
+    const char *dispatch_op,
+    const GPtrArray *requests_satisfied,
+    GHashTable *observer_info,
+    DBusGMethodInvocation *context)
 {
   TpAccount *tp_acc;
   TpConnection *tp_conn;
@@ -158,7 +162,6 @@ tpl_observer_observe_channels (TpSvcClientObserver * self,
       return;
     }
 
-
   tp_conn = tp_connection_new (tp_bus_daemon, NULL, connection, &error);
   if (tp_conn == NULL)
     {
@@ -174,38 +177,28 @@ tpl_observer_observe_channels (TpSvcClientObserver * self,
   for (guint i = 0; i < channels->len; i++)
     {
       GValueArray *channel = g_ptr_array_index (channels, i);
-      TpChannel *tp_chan;
       TplChannel *tpl_chan;
 
       gchar *path = g_value_get_boxed (g_value_array_get_nth (channel, 0));
       // propertyNameStr/value hash
       GHashTable *map =
-	g_value_get_boxed (g_value_array_get_nth (channel, 1));
+          g_value_get_boxed (g_value_array_get_nth (channel, 1));
 
-      tp_chan = tp_channel_new (tp_conn, path, NULL,
-				TP_UNKNOWN_HANDLE_TYPE, 0, &error);
-      if (tp_conn == NULL)
-	{
-	  // log and skip to next channel
-	  g_error ("%s", error->message);
-	  g_clear_error (&error);
-	  g_error_free (error);
-	  error = NULL;
-	  continue;
-	}
+      tpl_chan = tpl_channel_new (tp_conn, path, map, TPL_OBSERVER (self), &error);
+      if (tpl_chan == NULL)
+        {
+          g_debug ("%s", error->message);
+          g_clear_error (&error);
+          g_error_free (error);
+          error = NULL;
+          continue;
+        }
 
-      tpl_chan = tpl_channel_new (self);
       tpl_channel_set_account (tpl_chan, tp_acc);
       tpl_channel_set_account_path (tpl_chan, account);
-      tpl_channel_set_connection (tpl_chan, tp_conn);
-      tpl_channel_set_connection_path (tpl_chan, connection);
-      tpl_channel_set_channel (tpl_chan, tp_chan);
-      tpl_channel_set_channel_path (tpl_chan, path);
-      tpl_channel_set_channel_properties (tpl_chan, map);
 
-      tp_connection_call_when_ready (tp_conn,
-				     _get_ready_tp_channel, tpl_chan);
-
+      tp_connection_call_when_ready (tp_conn, _get_ready_tp_channel,
+          tpl_chan);
     }
 
   g_object_unref (tp_acc);
@@ -216,9 +209,10 @@ tpl_observer_observe_channels (TpSvcClientObserver * self,
 }
 
 static void
-tpl_observer_get_property (GObject * self,
-			   guint property_id,
-			   GValue * value, GParamSpec * pspec)
+tpl_observer_get_property (GObject *self,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   switch (property_id)
     {
@@ -246,8 +240,9 @@ tpl_observer_get_property (GObject * self,
 
 /* Singleton Constructor */
 static GObject *
-tpl_observer_constructor (GType type, guint n_props,
-			  GObjectConstructParam * props)
+tpl_observer_constructor (GType type,
+    guint n_props,
+    GObjectConstructParam *props)
 {
   GObject *retval;
 
@@ -269,7 +264,7 @@ tpl_observer_constructor (GType type, guint n_props,
 
 
 static void
-tpl_observer_class_init (TplObserverClass * klass)
+tpl_observer_class_init (TplObserverClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -329,7 +324,7 @@ tpl_observer_class_init (TplObserverClass * klass)
 }
 
 static void
-tpl_observer_init (TplObserver * self)
+tpl_observer_init (TplObserver *self)
 {
   DBusGConnection *bus;
   TpDBusDaemon *tp_bus;
@@ -361,7 +356,8 @@ tpl_observer_init (TplObserver * self)
 }
 
 static void
-observer_iface_init (gpointer g_iface, gpointer iface_data)
+observer_iface_init (gpointer g_iface,
+    gpointer iface_data)
 {
   TpSvcClientObserverClass *klass = (TpSvcClientObserverClass *) g_iface;
 
@@ -370,7 +366,7 @@ observer_iface_init (gpointer g_iface, gpointer iface_data)
 }
 
 static void
-tpl_observer_dispose (GObject * obj)
+tpl_observer_dispose (GObject *obj)
 {
   TplObserver *self = TPL_OBSERVER (obj);
 
@@ -389,7 +385,7 @@ tpl_observer_dispose (GObject * obj)
 }
 
 static void
-tpl_observer_finalize (GObject * obj)
+tpl_observer_finalize (GObject *obj)
 {
   //TplObserver *self = TPL_OBSERVER(obj);
 
@@ -399,12 +395,12 @@ tpl_observer_finalize (GObject * obj)
 TplObserver *
 tpl_observer_new (void)
 {
-  return g_object_new (TYPE_TPL_OBSERVER, NULL);
+  return g_object_new (TPL_TYPE_OBSERVER, NULL);
 }
 
 
 GHashTable *
-tpl_observer_get_channel_map (TplObserver * self)
+tpl_observer_get_channel_map (TplObserver *self)
 {
   g_return_val_if_fail (TPL_IS_OBSERVER (self), NULL);
 
@@ -412,7 +408,8 @@ tpl_observer_get_channel_map (TplObserver * self)
 }
 
 void
-tpl_observer_set_channel_map (TplObserver * self, GHashTable * data)
+tpl_observer_set_channel_map (TplObserver *self,
+    GHashTable *data)
 {
   g_return_if_fail (TPL_IS_OBSERVER (self));
   //TODO check data validity

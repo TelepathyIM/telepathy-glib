@@ -53,7 +53,7 @@ tpl_log_entry_text_dispose (GObject * obj)
   tpl_object_unref_if_not_null (priv->tpl_text);
   priv->tpl_text = NULL;
 
-  TPL_LOG_ENTRY_CLASS (tpl_log_entry_text_parent_class)->finalize (obj);
+  G_OBJECT_CLASS (tpl_log_entry_text_parent_class)->finalize (obj);
 }
 
 
@@ -66,7 +66,7 @@ tpl_log_entry_text_finalize (GObject * obj)
   g_free (priv->message);
   priv->message = NULL;
 
-  TPL_LOG_ENTRY_CLASS (tpl_log_entry_text_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (tpl_log_entry_text_parent_class)->dispose (obj);
 }
 
 
