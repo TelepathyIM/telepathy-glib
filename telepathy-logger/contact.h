@@ -40,20 +40,13 @@ G_BEGIN_DECLS
   TPL_CONTACT_GROUP
 } TplContactType;
 
+typedef struct _TplContactPriv TplContactPriv;
 typedef struct
 {
   GObject parent;
 
   /* Private */
-  TpContact *contact;
-  TplContactType contact_type;
-  gchar *alias;
-  gchar *identifier;
-  gchar *presence_status;
-  gchar *presence_message;
-  gchar *avatar_token;
-
-  TpAccount *account;
+  TplContactPriv *priv;
 } TplContact;
 
 
@@ -67,7 +60,7 @@ GType tpl_contact_get_type (void);
 
 TplContact *tpl_contact_from_tp_contact (TpContact * contact);
 
-TplContact *tpl_contact_new (void);
+TplContact *tpl_contact_new (const gchar *identifier);
 
 TpContact *tpl_contact_get_contact (TplContact * self);
 

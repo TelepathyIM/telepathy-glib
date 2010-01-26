@@ -15,7 +15,7 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 
 LIBTPLdir = $(includedir)/telepathy-logger
 LIBTPL_HEADERS = \
-		utils.h				\
+		util.h				\
 		contact.h			\
 		log-entry.h			\
 		log-entry-text.h		\
@@ -35,7 +35,7 @@ libtelepathy_logger_la_SOURCES = \
 		log-store.c			\
 		log-store-empathy.c		\
 		observer.c			\
-		utils.c
+		util.c
 
 check_c_sources = \
 	$(libtelepathy_logger_la_SOURCES)	\

@@ -26,6 +26,7 @@
 #include <telepathy-glib/account.h>
 
 #include <telepathy-logger/log-manager.h>
+#include <telepathy-logger/log-entry-text.h>
 
 #define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0"
 #define ID "echo@test.collabora.co.uk"
@@ -53,9 +54,8 @@ static void foo(TplLogEntry *f)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY (f));
 
-  if (tpl_log_entry_is_text() == TRUE)
-    tpl_log_entry_text_some_op ( TPL_LOG_ENTRY_TEXT (f), ...);
-  TPL_LOG_ENTRY_CALL (f)
+  if (TPL_IS_LOG_ENTRY_TEXT (f))
+    g_debug ("FOO");
 }
 
 int
@@ -66,9 +66,10 @@ main (int argc, char *argv[])
   TpDBusDaemon *dbus;
   TpAccount *acc;
 
-  TplLogEntryText *t = tpl_log_entry_text_new ();
-
   g_type_init ();
+
+  TplLogEntryText *t = tpl_log_entry_text_new (0, ID,
+      TPL_LOG_ENTRY_DIRECTION_IN);
 
   foo(TPL_LOG_ENTRY (t));
 

@@ -38,7 +38,7 @@
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-empathy.h>
 #include <telepathy-logger/datetime.h>
-#include <telepathy-logger/utils.h>
+#include <telepathy-logger/util.h>
 
 //#define DEBUG_FLAG EMPATHY_DEBUG_OTHER
 //#include <empathy-debug.h>
@@ -74,7 +74,7 @@ typedef struct
   TplLogMessageFilter filter;
   gchar *search_text;
   gpointer user_data;
-  TplLogEntry *logentry;
+  gpointer logentry;
 } TplLogManagerChatInfo;
 
 
@@ -168,7 +168,9 @@ tpl_log_manager_dup_singleton (void)
   return g_object_new (TPL_TYPE_LOG_MANAGER, NULL);
 }
 
-
+/*
+ * @message: a TplLogEntry subclass
+ */
 gboolean
 tpl_log_manager_add_message (TplLogManager *manager,
     TplLogEntry *message,
@@ -308,8 +310,10 @@ log_manager_message_date_cmp (gconstpointer a,
   TplLogEntry *two = (TplLogEntry *) b;
   time_t one_time, two_time;
 
-  one_time = tpl_log_entry_get_timestamp (one);
-  two_time = tpl_log_entry_get_timestamp (two);
+  /* TODO better to use a real method call, instead or dereferencing it's
+   * pointer */
+  one_time = TPL_LOG_ENTRY_GET_CLASS (one)->get_timestamp (one);
+  two_time = TPL_LOG_ENTRY_GET_CLASS (two)->get_timestamp (two);
 
   /* Return -1 of message1 is older than message2 */
   return one_time < two_time ? -1 : one_time - two_time;

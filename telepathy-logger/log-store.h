@@ -49,7 +49,7 @@ struct _TplLogStoreInterface
   const gchar *(*get_name) (TplLogStore * self);
     gboolean (*exists) (TplLogStore * self, TpAccount * account,
 			const gchar * chat_id, gboolean chatroom);
-    gboolean (*add_message) (TplLogStore * self, TplLogEntry * message,
+    gboolean (*add_message) (TplLogStore * self, gpointer message,
 			     GError ** error);
   GList *(*get_dates) (TplLogStore * self, TpAccount * account,
 		       const gchar * chat_id, gboolean chatroom);
@@ -79,7 +79,7 @@ const gchar *tpl_log_store_get_name (TplLogStore * self);
 gboolean tpl_log_store_exists (TplLogStore * self,
 			       TpAccount * account, const gchar * chat_id,
 			       gboolean chatroom);
-gboolean tpl_log_store_add_message (TplLogStore * self, TplLogEntry * message,
+gboolean tpl_log_store_add_message (TplLogStore * self, gpointer message,
 				    GError ** error);
 GList *tpl_log_store_get_dates (TplLogStore * self, TpAccount * account,
 				const gchar * chat_id, gboolean chatroom);

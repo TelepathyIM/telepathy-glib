@@ -41,7 +41,7 @@
 #define	TP_CONTACT_MYSELF	0
 #define	TP_CONTACT_REMOTE	1
 
-typedef void (*TplPendingProc) (TplTextChannel * self);
+typedef void (*TplPendingProc) (TplTextChannel *self);
 
 static TpContactFeature features[TP_CONTACT_FEATURES_LEN] = {
   TP_CONTACT_FEATURE_ALIAS,
@@ -51,8 +51,9 @@ static TpContactFeature features[TP_CONTACT_FEATURES_LEN] = {
 /* Signal's Callbacks */
 
 static void
-_channel_on_closed_cb (TpChannel * proxy,
-		       gpointer user_data, GObject * weak_object)
+_channel_on_closed_cb (TpChannel *proxy,
+		       gpointer user_data,
+           GObject *weak_object)
 {
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (user_data);
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (tpl_text);
@@ -68,20 +69,22 @@ _channel_on_closed_cb (TpChannel * proxy,
 }
 
 static void
-_channel_on_lost_message_cb (TpChannel * proxy,
-			     gpointer user_data, GObject * weak_object)
+_channel_on_lost_message_cb (TpChannel *proxy,
+			     gpointer user_data,
+           GObject *weak_object)
 {
   g_debug ("lost message signal catched. nothing logged");
   // TODO log that the system lost a message
 }
 
 static void
-_channel_on_send_error_cb (TpChannel * proxy,
+_channel_on_send_error_cb (TpChannel *proxy,
 			   guint arg_Error,
 			   guint arg_Timestamp,
 			   guint arg_Type,
-			   const gchar * arg_Text,
-			   gpointer user_data, GObject * weak_object)
+			   const gchar *arg_Text,
+			   gpointer user_data,
+         GObject *weak_object)
 {
   g_error ("unlogged event: "
 	   "TP was unable to send the message: %s", arg_Text);
@@ -90,19 +93,19 @@ _channel_on_send_error_cb (TpChannel * proxy,
 
 
 static void
-_channel_on_sent_signal_cb (TpChannel * proxy,
+_channel_on_sent_signal_cb (TpChannel *proxy,
 			    guint arg_Timestamp,
 			    guint arg_Type,
-			    const gchar * arg_Text,
-			    gpointer user_data, GObject * weak_object)
+			    const gchar *arg_Text,
+			    gpointer user_data,
+          GObject *weak_object)
 {
   GError *error = NULL;
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (user_data);
   TpContact *remote, *me;
   TplContact *tpl_contact_sender;
   TplContact *tpl_contact_receiver;
-  TplLogEntryText *tlog;
-  TplLogEntry *log;
+  TplLogEntryText *log;
   TplLogManager *logmanager;
   gchar *chat_id;
 
@@ -122,39 +125,36 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
   tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
   tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
 
-  g_message ("%s (%s): %s",
+  g_message ("sent: %s (%s): %s",
 	     tpl_contact_get_identifier (tpl_contact_sender),
-	     tpl_contact_get_alias (tpl_contact_sender), arg_Text);
+	     tpl_contact_get_alias (tpl_contact_sender),
+       arg_Text);
 
-  /* Initialize TplLogEntryText */
-  log = tpl_log_entry_new ();
-  tlog = tpl_log_entry_text_new ();
-
-  tpl_log_entry_text_set_tpl_text_channel (tlog, tpl_text);
-  tpl_log_entry_text_set_sender (tlog, tpl_contact_sender);
-  tpl_log_entry_text_set_receiver (tlog, tpl_contact_receiver);
-  tpl_log_entry_text_set_message (tlog, arg_Text);
-  tpl_log_entry_text_set_message_type (tlog, arg_Type);
-  tpl_log_entry_text_set_signal_type (tlog, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
-  tpl_log_entry_text_set_message_id (tlog, arg_Timestamp);
-
-  tpl_log_entry_set_entry (log, tlog);
-  tpl_log_entry_set_timestamp (log, (time_t) arg_Timestamp);
-
-  /* Initialized LogStore and send the log entry */
+  /* Initialise TplLogEntryText */
 
   if (!tpl_text_channel_is_chatroom (tpl_text))
     chat_id = g_strdup (tpl_contact_get_identifier (tpl_contact_receiver));
   else
     chat_id = g_strdup (tpl_text_channel_get_chatroom_id (tpl_text));
 
-  tpl_log_entry_text_set_chat_id (tlog, chat_id);
-  tpl_log_entry_text_set_chatroom (tlog,
+  log = tpl_log_entry_text_new (arg_Timestamp, chat_id,
+      TPL_LOG_ENTRY_DIRECTION_OUT);
+  g_free (chat_id);
+
+  tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
+  tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
+  tpl_log_entry_text_set_sender (log, tpl_contact_sender);
+  tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
+  tpl_log_entry_text_set_message (log, arg_Text);
+  tpl_log_entry_text_set_message_type (log, arg_Type);
+  tpl_log_entry_text_set_tpl_text_channel (log, tpl_text);
+
+  /* Initialized LogStore and send the log entry */
+  tpl_log_entry_text_set_chatroom (log,
 		  tpl_text_channel_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-  tpl_log_manager_add_message (logmanager,
-			       log, &error);
+  tpl_log_manager_add_message (logmanager, TPL_LOG_ENTRY (log), &error);
 
   if (error != NULL)
     {
@@ -167,37 +167,34 @@ _channel_on_sent_signal_cb (TpChannel * proxy,
   g_object_unref (tpl_contact_sender);
   g_object_unref (logmanager);
   g_object_unref (log);
-  g_free (chat_id);
 }
 
 static void
-_channel_on_received_signal_with_contact_cb (TpConnection * connection,
+_channel_on_received_signal_with_contact_cb (TpConnection *connection,
 					     guint n_contacts,
-					     TpContact * const *contacts,
+					     TpContact *const *contacts,
 					     guint n_failed,
-					     const TpHandle * failed,
-					     const GError * error,
+					     const TpHandle *failed,
+					     const GError *error,
 					     gpointer user_data,
-					     GObject * weak_object)
+					     GObject *weak_object)
 {
-  TplLogEntry *log = TPL_LOG_ENTRY (user_data);
-  TplLogEntryText *tlog = TPL_LOG_ENTRY_TEXT (tpl_log_entry_get_entry (log));
-  TplTextChannel *tpl_text = tpl_log_entry_text_get_tpl_text_channel (tlog);
+  TplLogEntryText *log = TPL_LOG_ENTRY_TEXT (user_data);
+  TplTextChannel *tpl_text = tpl_log_entry_text_get_tpl_text_channel (log);
   GError *e = NULL;
   TplLogManager *logmanager;
   TplContact *tpl_contact_sender;
   TpContact *remote;
   gchar *chat_id;
 
-  g_return_if_fail (TPL_IS_LOG_ENTRY (log));
-  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (tlog));
+  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (log));
 
   if (error != NULL)
     {
       g_error ("Unrecoverable error retrieving remote contact "
 	       "information: %s", error->message);
       g_error ("Not able to log the received message: %s",
-	       tpl_log_entry_text_get_message (tlog));
+	       tpl_log_entry_text_get_message (log));
       return;
     }
 
@@ -206,7 +203,7 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
       g_error ("%d invalid handle(s) passed to "
 	       "tp_connection_get_contacts_by_handle()", n_failed);
       g_error ("Not able to log the received message: %s",
-	       tpl_log_entry_text_get_message (tlog));
+	       tpl_log_entry_text_get_message (log));
       return;
     }
 
@@ -215,27 +212,26 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
   tpl_contact_sender = tpl_contact_from_tp_contact (remote);
 
   tpl_contact_set_contact_type (tpl_contact_sender, TPL_CONTACT_USER);
-  tpl_log_entry_text_set_sender (tlog, tpl_contact_sender);
+  tpl_log_entry_text_set_sender (log, tpl_contact_sender);
 
-  g_message ("%s (%s): %s",
+  g_message ("recvd: %s (%s): %s",
 	     tpl_contact_get_identifier (tpl_contact_sender),
 	     tpl_contact_get_alias (tpl_contact_sender),
-	     tpl_log_entry_text_get_message (tlog));
+	     tpl_log_entry_text_get_message (log));
 
-  /* Initialize LogStore and store the message */
+  /* Initialise LogStore and store the message */
 
   if (!tpl_text_channel_is_chatroom (tpl_text))
     chat_id = g_strdup (tpl_contact_get_identifier (tpl_contact_sender));
   else
     chat_id = g_strdup (tpl_text_channel_get_chatroom_id (tpl_text));
 
-  tpl_log_entry_text_set_chat_id (tlog, chat_id);
-  tpl_log_entry_text_set_chatroom (tlog,
-		  tpl_text_channel_is_chatroom (tpl_text));
+  tpl_log_entry_text_set_chat_id (log, chat_id);
+  tpl_log_entry_text_set_chatroom (log,
+      tpl_text_channel_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-  tpl_log_manager_add_message (logmanager,
-			       log, &e);
+  tpl_log_manager_add_message (logmanager, TPL_LOG_ENTRY (log), &e);
   if (e != NULL)
     {
       g_error ("LogStore: %s", e->message);
@@ -249,22 +245,22 @@ _channel_on_received_signal_with_contact_cb (TpConnection * connection,
 }
 
 static void
-_channel_on_received_signal_cb (TpChannel * proxy,
+_channel_on_received_signal_cb (TpChannel *proxy,
 				guint arg_ID,
 				guint arg_Timestamp,
 				guint arg_Sender,
 				guint arg_Type,
 				guint arg_Flags,
-				const gchar * arg_Text,
-				gpointer user_data, GObject * weak_object)
+				const gchar *arg_Text,
+				gpointer user_data,
+        GObject *weak_object)
 {
   TpHandle remote_handle = (TpHandle) arg_Sender;
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (user_data);
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (tpl_text);
   TpContact *me;
   TplContact *tpl_contact_receiver;
-  TplLogEntry *log;
-  TplLogEntryText *tlog;
+  TplLogEntryText *log;
 
   // TODO use the Message iface to check the delivery
   // notification and handle it correctly
@@ -277,23 +273,20 @@ _channel_on_received_signal_cb (TpChannel * proxy,
     }
 
   /* Initialize TplLogEntryText (part 1) */
-  log = tpl_log_entry_new ();
-  tlog = tpl_log_entry_text_new ();
-  tpl_log_entry_set_entry (log, tlog);
+  log = tpl_log_entry_text_new (arg_Timestamp, NULL,
+      TPL_LOG_ENTRY_DIRECTION_IN);
 
-  tpl_log_entry_text_set_tpl_text_channel (tlog, tpl_text);
-  tpl_log_entry_text_set_message (tlog, arg_Text);
-  tpl_log_entry_text_set_message_type (tlog, arg_Type);
-  tpl_log_entry_text_set_signal_type (tlog,
-				      TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
-  tpl_log_entry_text_set_message_id (tlog, arg_Timestamp);	//TODO set a real Id
+  tpl_log_entry_text_set_tpl_text_channel (log, tpl_text);
+  tpl_log_entry_text_set_message (log, arg_Text);
+  tpl_log_entry_text_set_message_type (log, arg_Type);
+  tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
 
   me = tpl_text_channel_get_my_contact (tpl_text);
   tpl_contact_receiver = tpl_contact_from_tp_contact (me);
   tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
-  tpl_log_entry_text_set_receiver (tlog, tpl_contact_receiver);
+  tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
 
-  tpl_log_entry_set_timestamp (log, (time_t) arg_Timestamp);
+  tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
 
   tp_connection_get_contacts_by_handle (tpl_channel_get_connection (tpl_chan),
 					1, &remote_handle,
@@ -310,7 +303,7 @@ _channel_on_received_signal_cb (TpChannel * proxy,
 /* Context related operations  */
 
 static void
-context_continue (TplTextChannel * ctx)
+context_continue (TplTextChannel *ctx)
 {
   if (g_queue_is_empty (ctx->chain))
     {
@@ -327,7 +320,7 @@ context_continue (TplTextChannel * ctx)
 
 /* Connect signals to TplTextChannel instance */
 static void
-_tpl_text_channel_pendingproc_connect_signals (TplTextChannel * self)
+_tpl_text_channel_pendingproc_connect_signals (TplTextChannel *self)
 {
   GError *error = NULL;
   TpChannel *channel = NULL;
@@ -393,10 +386,10 @@ _tpl_text_channel_pendingproc_connect_signals (TplTextChannel * self)
 }
 
 static void
-_tpl_text_channel_get_chatroom_cb (TpConnection * proxy,
-				   const gchar ** out_Identifiers,
-				   const GError * error,
-				   gpointer user_data, GObject * weak_object)
+_tpl_text_channel_get_chatroom_cb (TpConnection *proxy,
+				   const gchar **out_Identifiers,
+				   const GError *error,
+				   gpointer user_data, GObject *weak_object)
 {
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (user_data);
 
@@ -411,7 +404,7 @@ _tpl_text_channel_get_chatroom_cb (TpConnection * proxy,
 }
 
 static void
-_tpl_text_channel_pendingproc_get_chatroom_id (TplTextChannel * ctx)
+_tpl_text_channel_pendingproc_get_chatroom_id (TplTextChannel *ctx)
 {
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (ctx);
   TpConnection *connection = tpl_channel_get_connection (tpl_chan);
@@ -439,13 +432,14 @@ _tpl_text_channel_pendingproc_get_chatroom_id (TplTextChannel * ctx)
 
 // used by _get_my_contact and _get_remote_contact
 static void
-_tpl_text_channel_get_contact_cb (TpConnection * connection,
+_tpl_text_channel_get_contact_cb (TpConnection *connection,
 				  guint n_contacts,
-				  TpContact * const *contacts,
+				  TpContact *const *contacts,
 				  guint n_failed,
-				  const TpHandle * failed,
-				  const GError * error,
-				  gpointer user_data, GObject * weak_object)
+				  const TpHandle *failed,
+				  const GError *error,
+				  gpointer user_data,
+          GObject *weak_object)
 {
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (user_data);
 
@@ -491,7 +485,7 @@ _tpl_text_channel_get_contact_cb (TpConnection * connection,
 
 
 static void
-_tpl_text_channel_pendingproc_get_remote_contact (TplTextChannel * ctx)
+_tpl_text_channel_pendingproc_get_remote_contact (TplTextChannel *ctx)
 {
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (ctx);
   TpHandleType remote_handle_type;
@@ -509,7 +503,7 @@ _tpl_text_channel_pendingproc_get_remote_contact (TplTextChannel * ctx)
 }
 
 static void
-_tpl_text_channel_pendingproc_get_my_contact (TplTextChannel * ctx)
+_tpl_text_channel_pendingproc_get_my_contact (TplTextChannel *ctx)
 {
   TplChannel *tpl_chan = tpl_text_channel_get_tpl_channel (ctx);
   TpHandle my_handle =
@@ -528,7 +522,7 @@ _tpl_text_channel_pendingproc_get_my_contact (TplTextChannel * ctx)
 
 G_DEFINE_TYPE (TplTextChannel, tpl_text_channel, G_TYPE_OBJECT)
 
-static void tpl_text_channel_dispose (GObject * obj)
+static void tpl_text_channel_dispose (GObject *obj)
 {
   TplTextChannel *self = TPL_TEXT_CHANNEL (obj);
 
@@ -545,7 +539,7 @@ static void tpl_text_channel_dispose (GObject * obj)
 }
 
 static void
-tpl_text_channel_finalize (GObject * obj)
+tpl_text_channel_finalize (GObject *obj)
 {
   TplTextChannel *self = TPL_TEXT_CHANNEL (obj);
 
@@ -554,7 +548,7 @@ tpl_text_channel_finalize (GObject * obj)
 }
 
 static void
-tpl_text_channel_class_init (TplTextChannelClass * klass)
+tpl_text_channel_class_init (TplTextChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -564,20 +558,12 @@ tpl_text_channel_class_init (TplTextChannelClass * klass)
 
 
 static void
-tpl_text_channel_init (TplTextChannel * self)
+tpl_text_channel_init (TplTextChannel *self)
 {
-  /* Init TplTextChannel's members to zero/NULL */
-	/*
-  tpl_text_channel_set_tpl_channel (self, NULL);
-  tpl_text_channel_set_my_contact (self, NULL);
-  tpl_text_channel_set_remote_contact (self, NULL);
-  tpl_text_channel_set_chatroom_id (self, NULL);
-  tpl_text_channel_set_chatroom (self, FALSE);
-  */
 }
 
 TplTextChannel *
-tpl_text_channel_new (TplChannel * tpl_channel)
+tpl_text_channel_new (TplChannel *tpl_channel)
 {
   TplTextChannel *ret = g_object_new (TPL_TYPE_TEXT_CHANNEL, NULL);
   tpl_text_channel_set_tpl_channel (ret, tpl_channel);
@@ -633,39 +619,39 @@ tpl_text_channel_new (TplChannel * tpl_channel)
 
 
 TplChannel *
-tpl_text_channel_get_tpl_channel (TplTextChannel * self)
+tpl_text_channel_get_tpl_channel (TplTextChannel *self)
 {
   return self->tpl_channel;
 }
 
 TpContact *
-tpl_text_channel_get_remote_contact (TplTextChannel * self)
+tpl_text_channel_get_remote_contact (TplTextChannel *self)
 {
   return self->remote_contact;
 }
 
 TpContact *
-tpl_text_channel_get_my_contact (TplTextChannel * self)
+tpl_text_channel_get_my_contact (TplTextChannel *self)
 {
   return self->my_contact;
 }
 
 gboolean
-tpl_text_channel_is_chatroom (TplTextChannel * self)
+tpl_text_channel_is_chatroom (TplTextChannel *self)
 {
   g_return_val_if_fail(TPL_IS_TEXT_CHANNEL (self), FALSE);
   return self->chatroom;
 }
 
 const gchar *
-tpl_text_channel_get_chatroom_id (TplTextChannel * self)
+tpl_text_channel_get_chatroom_id (TplTextChannel *self)
 {
   g_return_val_if_fail(TPL_IS_TEXT_CHANNEL (self), NULL);
   return self->chatroom_id;
 }
 
 void
-tpl_text_channel_set_tpl_channel (TplTextChannel * self, TplChannel * data)
+tpl_text_channel_set_tpl_channel (TplTextChannel *self, TplChannel *data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
   g_return_if_fail (TPL_IS_CHANNEL (data));
@@ -676,7 +662,7 @@ tpl_text_channel_set_tpl_channel (TplTextChannel * self, TplChannel * data)
 }
 
 void
-tpl_text_channel_set_remote_contact (TplTextChannel * self, TpContact * data)
+tpl_text_channel_set_remote_contact (TplTextChannel *self, TpContact *data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
   g_return_if_fail (TP_IS_CONTACT (data));
@@ -687,7 +673,7 @@ tpl_text_channel_set_remote_contact (TplTextChannel * self, TpContact * data)
 }
 
 void
-tpl_text_channel_set_my_contact (TplTextChannel * self, TpContact * data)
+tpl_text_channel_set_my_contact (TplTextChannel *self, TpContact *data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
   g_return_if_fail (TP_IS_CONTACT (data));
@@ -698,7 +684,7 @@ tpl_text_channel_set_my_contact (TplTextChannel * self, TpContact * data)
 }
 
 void
-tpl_text_channel_set_chatroom (TplTextChannel * self, gboolean data)
+tpl_text_channel_set_chatroom (TplTextChannel *self, gboolean data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
 
@@ -706,7 +692,7 @@ tpl_text_channel_set_chatroom (TplTextChannel * self, gboolean data)
 }
 
 void
-tpl_text_channel_set_chatroom_id (TplTextChannel * self, const gchar * data)
+tpl_text_channel_set_chatroom_id (TplTextChannel *self, const gchar *data)
 {
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (self));
 
