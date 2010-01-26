@@ -95,7 +95,7 @@ typedef struct
   void (*set_receiver) (TplLogEntry *self, TplContact *data);
   void (*set_chat_id) (TplLogEntry *self, const gchar *data);
 
-  /* to be implemented by subclasses */
+  /* to be implemented only by subclasses */
   gboolean (*equal) (TplLogEntry *entry1, TplLogEntry *entry2);
 } TplLogEntryClass;
 
@@ -103,7 +103,6 @@ GType tpl_log_entry_get_type (void);
 TplLogEntry *tpl_log_entry_new (guint log_id, const gchar *chat_id,
     TplLogEntryDirection direction);
 
-/*
 time_t tpl_log_entry_get_timestamp (TplLogEntry * self);
 TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry * self);
 guint tpl_log_entry_get_log_id (TplLogEntry *self);
@@ -121,8 +120,8 @@ void tpl_log_entry_set_chat_id (TplLogEntry * self, const gchar * data);
 void tpl_log_entry_set_sender (TplLogEntry * self, TplContact * data);
 void tpl_log_entry_set_receiver (TplLogEntry * self, TplContact * data);
 
-gboolean tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2);
-*/
+gboolean tpl_log_entry_equal (TplLogEntry *self, TplLogEntry *data);
+
 
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_H__

@@ -27,6 +27,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/account.h>
 
+#include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
 
 #define DBUS_STRUCT_STRING_STRING_UINT \
@@ -42,7 +43,6 @@ tpl_dbus_service_last_chats (TplDBusService *self,
 #include <dbus-service-server.h>
 
 G_DEFINE_TYPE (TplDBusService, tpl_dbus_service, G_TYPE_OBJECT)
-
 
 static void
 tpl_dbus_service_finalize (GObject *obj)
@@ -82,7 +82,8 @@ tpl_dbus_service_init(TplDBusService* self)
 }
 
 
-TplDBusService *tpl_dbus_service_new (void)
+TplDBusService *
+tpl_dbus_service_new (void)
 {
 	return g_object_new(TPL_TYPE_DBUS_SERVICE, NULL);
 }
@@ -102,10 +103,11 @@ tpl_dbus_service_chat_message_free(TplDBusServiceChatMessage *data)
 */
 
 static gboolean
-_pack_last_chats_answer (GList *data, GPtrArray **array)
+_pack_last_chats_answer (GList *data,
+    GPtrArray **array)
 {
 	guint data_idx;
-	GPtrArray *retval; 
+	GPtrArray *retval;
 
 	(*array) = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 	retval = *array;
@@ -117,31 +119,22 @@ _pack_last_chats_answer (GList *data, GPtrArray **array)
 		GValue *value = g_new0(GValue, 1);
 
 		gchar *message = g_strdup (
-				tpl_log_entry_text_get_message (
-					log->entry.text)
-				);
-		gchar *sender = g_strdup (
-				tpl_contact_get_identifier(
-					tpl_log_entry_text_get_sender (
-						log->entry.text)) );
+				tpl_log_entry_text_get_message (TPL_LOG_ENTRY_TEXT (log)));
+    gchar *sender = g_strdup (tpl_contact_get_identifier(
+          tpl_log_entry_text_get_sender (TPL_LOG_ENTRY_TEXT (log))));
 		guint timestamp = tpl_log_entry_get_timestamp (log);
-
 
 		g_value_init(value, DBUS_STRUCT_STRING_STRING_UINT);
 		g_value_take_boxed (value, dbus_g_type_specialized_construct
-				(DBUS_STRUCT_STRING_STRING_UINT));
+        (DBUS_STRUCT_STRING_STRING_UINT));
 
-		dbus_g_type_struct_set (value, 0, sender,
-				1, message,
-				2, timestamp,
-				G_MAXUINT);
+    dbus_g_type_struct_set (value, 0, sender, 1, message, 2, timestamp,
+      G_MAXUINT);
 		g_ptr_array_add (retval, g_value_get_boxed (value));
 		g_free (value);
 
 		g_debug ("retval[%d]=\"[%d] <%s>: %s\"\n", data_idx,
-				timestamp,
-				sender, 
-				message); 
+				timestamp, sender, message);
 	}
 	return TRUE;
 }

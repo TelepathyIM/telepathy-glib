@@ -300,8 +300,10 @@ log_manager_message_date_cmp (gconstpointer a, gconstpointer b)
   TplLogEntry *two = (TplLogEntry *) b;
   time_t one_time, two_time;
 
-  one_time = tpl_log_entry_get_timestamp (one);
-  two_time = tpl_log_entry_get_timestamp (two);
+  /* TODO better to use a real method call, instead or dereferencing it's
+   * pointer */
+  one_time = TPL_LOG_ENTRY_GET_CLASS (one)->get_timestamp (one);
+  two_time = TPL_LOG_ENTRY_GET_CLASS (two)->get_timestamp (two);
 
   /* Return -1 of message1 is older than message2 */
   return one_time < two_time ? -1 : one_time - two_time;

@@ -27,28 +27,21 @@
 #include <telepathy-logger/debug.h>
 #include <telepathy-logger/util.h>
 
+/**
+ * SECTION:LogEntry
+ * @title: TplLogEntry
+ * @short_description: Abstract representation of a log entry
+ * @see_also: #TplLogEntryText and other subclasses when they'll exist
+ *
+ * The TPLogger log entry abstract representation. This class is supposed to
+ * be subclassed by a class representing a specific type of log (i.e., Text
+ * chat, Call, etc).
+ *
+ */
+
 G_DEFINE_ABSTRACT_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)
 
 static void tpl_log_entry_set_log_id (TplLogEntry *self, guint data);
-static time_t tpl_log_entry_get_timestamp (TplLogEntry* self);
-static TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry* self);
-static guint tpl_log_entry_get_log_id (TplLogEntry *self);
-static const gchar *tpl_log_entry_get_chat_id (TplLogEntry *self);
-static TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry *self);
-static TplContact *tpl_log_entry_get_sender (TplLogEntry *self);
-static TplContact *tpl_log_entry_get_receiver (TplLogEntry *self);
-
-static void tpl_log_entry_set_timestamp (TplLogEntry *self, time_t data);
-static void tpl_log_entry_set_signal_type (TplLogEntry *self,
-    TplLogEntrySignalType data);
-static void tpl_log_entry_set_direction (TplLogEntry *self,
-    TplLogEntryDirection data);
-static void tpl_log_entry_set_chat_id (TplLogEntry *self,
-    const gchar *data);
-static void tpl_log_entry_set_sender (TplLogEntry *self, TplContact *data);
-static void tpl_log_entry_set_receiver (TplLogEntry *self, TplContact *data);
-
-static gboolean tpl_log_entry_equal (TplLogEntry *message1, TplLogEntry *message2);
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogEntry)
 struct _TplLogEntryPriv
@@ -79,7 +72,8 @@ enum {
 };
 
 
-static void tpl_log_entry_finalize (GObject *obj)
+static void
+tpl_log_entry_finalize (GObject *obj)
 {
   TplLogEntryPriv *priv = GET_PRIV (obj);
 
@@ -397,7 +391,7 @@ tpl_log_entry_set_signal_type (TplLogEntry *self,
   g_object_notify (G_OBJECT(self), "signal-type");
 }
 
-
+/* set just on construction time */
 static void
 tpl_log_entry_set_log_id (TplLogEntry *self,
     guint data)
@@ -472,4 +466,25 @@ tpl_log_entry_set_chat_id (TplLogEntry *self,
   priv = GET_PRIV (self);
   g_free (priv->chat_id);
   priv->chat_id = g_strdup (data);
+  g_object_notify (G_OBJECT(self), "chat-id");
+}
+
+/**
+ * log_entry:
+ * @self: TplLogEntry subclass instance
+ * @data: an instance of the same class of @self, 
+ *
+ * Checks if two instances of TplLogEntry represent the same data
+ *
+ * Returns: %TRUE if @data is the same type of @self and they hold the same
+ * data, %FALSE otherwise
+ */
+gboolean
+tpl_log_entry_equal (TplLogEntry *self,
+    TplLogEntry *data)
+{
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY (data), FALSE);
+
+  return TPL_LOG_ENTRY_GET_CLASS (self)->equal (self, data);
 }
