@@ -29,9 +29,11 @@
 G_BEGIN_DECLS
 
 GSocketAddress *tp_g_socket_address_from_variant (TpSocketAddressType type,
-                                                  const GValue *variant);
+                                                  const GValue *variant)
+                                                  G_GNUC_WARN_UNUSED_RESULT;
 GValue *tp_address_variant_from_g_socket_address (GSocketAddress      *address,
-                                                  TpSocketAddressType *type);
+                                                  TpSocketAddressType *type)
+                                                  G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 
