@@ -19,7 +19,7 @@
 #define IPV4_ADDR "127.0.1.1"
 #define IPV6_ADDR "::1"
 #define UNIX_ADDR "/tmp/socket/test/123456"
-#define ABST_ADDR "\000123456"
+#define ABST_ADDR "\000" "123456"
 #define ABST_ADDR_LEN 7
 #define PORT 41414
 
@@ -33,6 +33,7 @@ test_variant_to_sockaddr_ipv4 (void)
   GInetAddress *hostaddr;
   char *host;
   guint16 port;
+  GError *error = NULL;
 
   /* set up an address variant */
   array = tp_value_array_build (2,
@@ -45,10 +46,11 @@ test_variant_to_sockaddr_ipv4 (void)
 
   /* convert to a GSocketAddress */
   sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_IPV4,
-                                               &value, NULL);
+                                               &value, &error);
   g_value_unset (&value);
 
   /* check the socket address */
+  g_assert_no_error (error);
   g_assert (sockaddr != NULL);
   g_assert (G_IS_INET_SOCKET_ADDRESS (sockaddr));
 
@@ -58,8 +60,8 @@ test_variant_to_sockaddr_ipv4 (void)
   host = g_inet_address_to_string (hostaddr);
   port = g_inet_socket_address_get_port (inetaddr);
 
-  g_assert (strcmp (host, IPV4_ADDR) == 0);
-  g_assert (port == PORT);
+  g_assert_cmpstr (host, ==, IPV4_ADDR);
+  g_assert_cmpuint (port, ==, PORT);
 
   g_free (host);
   g_object_unref (sockaddr);
@@ -75,6 +77,7 @@ test_variant_to_sockaddr_ipv6 (void)
   GInetAddress *hostaddr;
   char *host;
   guint16 port;
+  GError *error = NULL;
 
   /* set up an address variant */
   array = tp_value_array_build (2,
@@ -87,10 +90,11 @@ test_variant_to_sockaddr_ipv6 (void)
 
   /* convert to a GSocketAddress */
   sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_IPV6,
-                                               &value, NULL);
+                                               &value, &error);
   g_value_unset (&value);
 
   /* check the socket address */
+  g_assert_no_error (error);
   g_assert (sockaddr != NULL);
   g_assert (G_IS_INET_SOCKET_ADDRESS (sockaddr));
 
@@ -100,8 +104,8 @@ test_variant_to_sockaddr_ipv6 (void)
   host = g_inet_address_to_string (hostaddr);
   port = g_inet_socket_address_get_port (inetaddr);
 
-  g_assert (strcmp (host, IPV6_ADDR) == 0);
-  g_assert (port == PORT);
+  g_assert_cmpstr (host, ==, IPV6_ADDR);
+  g_assert_cmpuint (port, ==, PORT);
 
   g_free (host);
   g_object_unref (sockaddr);
@@ -115,25 +119,27 @@ test_sockaddr_to_variant_ipv4 (void)
   GValue *variant, *value;
   GValueArray *array;
   TpSocketAddressType type;
+  GError *error = NULL;
 
   g_object_unref (hostaddr);
 
-  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, NULL);
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, &error);
   g_object_unref (sockaddr);
 
-  g_assert (type == TP_SOCKET_ADDRESS_TYPE_IPV4);
+  g_assert_no_error (error);
+  g_assert_cmpuint (type, ==, TP_SOCKET_ADDRESS_TYPE_IPV4);
   g_assert (G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4));
 
   array = g_value_get_boxed (variant);
   value = g_value_array_get_nth (array, 0);
 
   g_assert (G_VALUE_HOLDS_STRING (value));
-  g_assert (strcmp (g_value_get_string (value), IPV4_ADDR) == 0);
+  g_assert_cmpstr (g_value_get_string (value), ==, IPV4_ADDR);
 
   value = g_value_array_get_nth (array, 1);
 
   g_assert (G_VALUE_HOLDS_UINT (value));
-  g_assert (g_value_get_uint (value) == PORT);
+  g_assert_cmpuint (g_value_get_uint (value), ==, PORT);
 
   tp_g_value_slice_free (variant);
 }
@@ -146,25 +152,27 @@ test_sockaddr_to_variant_ipv6 (void)
   GValue *variant, *value;
   GValueArray *array;
   TpSocketAddressType type;
+  GError *error = NULL;
 
   g_object_unref (hostaddr);
 
-  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, NULL);
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, &error);
   g_object_unref (sockaddr);
 
-  g_assert (type == TP_SOCKET_ADDRESS_TYPE_IPV6);
+  g_assert_no_error (error);
+  g_assert_cmpuint (type, ==, TP_SOCKET_ADDRESS_TYPE_IPV6);
   g_assert (G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6));
 
   array = g_value_get_boxed (variant);
   value = g_value_array_get_nth (array, 0);
 
   g_assert (G_VALUE_HOLDS_STRING (value));
-  g_assert (strcmp (g_value_get_string (value), IPV6_ADDR) == 0);
+  g_assert_cmpstr (g_value_get_string (value), ==, IPV6_ADDR);
 
   value = g_value_array_get_nth (array, 1);
 
   g_assert (G_VALUE_HOLDS_UINT (value));
-  g_assert (g_value_get_uint (value) == PORT);
+  g_assert_cmpuint (g_value_get_uint (value), ==, PORT);
 
   tp_g_value_slice_free (variant);
 }
@@ -178,6 +186,7 @@ test_variant_to_sockaddr_unix (void)
   GSocketAddress *sockaddr;
   GUnixSocketAddress *unixaddr;
   guint pathlen = strlen (UNIX_ADDR);
+  GError *error = NULL;
 
   array = g_array_sized_new (TRUE, FALSE, sizeof (char), pathlen);
   g_array_append_vals (array, UNIX_ADDR, pathlen);
@@ -186,16 +195,17 @@ test_variant_to_sockaddr_unix (void)
   g_value_take_boxed (&value, array);
 
   sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_UNIX,
-      &value, NULL);
+      &value, &error);
   g_value_unset (&value);
 
+  g_assert_no_error (error);
   g_assert (G_IS_UNIX_SOCKET_ADDRESS (sockaddr));
 
   unixaddr = G_UNIX_SOCKET_ADDRESS (sockaddr);
 
   g_assert (g_unix_socket_address_get_is_abstract (unixaddr) == FALSE);
-  g_assert (g_unix_socket_address_get_path_len (unixaddr) == pathlen);
-  g_assert (strcmp (g_unix_socket_address_get_path (unixaddr), UNIX_ADDR) == 0);
+  g_assert_cmpuint (g_unix_socket_address_get_path_len (unixaddr), ==, pathlen);
+  g_assert_cmpstr (g_unix_socket_address_get_path (unixaddr), ==, UNIX_ADDR);
 
   g_object_unref (sockaddr);
 }
@@ -207,27 +217,29 @@ test_variant_to_sockaddr_abstract_unix (void)
   GValue value = { 0, };
   GSocketAddress *sockaddr;
   GUnixSocketAddress *unixaddr;
-  guint pathlen = strlen (ABST_ADDR);
+  GError *error = NULL;
 
-  array = g_array_sized_new (TRUE, FALSE, sizeof (char), pathlen);
-  g_array_append_vals (array, ABST_ADDR, pathlen);
+  array = g_array_sized_new (TRUE, FALSE, sizeof (char), ABST_ADDR_LEN);
+  g_array_append_vals (array, ABST_ADDR, ABST_ADDR_LEN);
 
   g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
   g_value_take_boxed (&value, array);
 
   sockaddr = tp_g_socket_address_from_variant (
       TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX,
-      &value, NULL);
+      &value, &error);
   g_value_unset (&value);
 
+  g_assert_no_error (error);
   g_assert (G_IS_UNIX_SOCKET_ADDRESS (sockaddr));
 
   unixaddr = G_UNIX_SOCKET_ADDRESS (sockaddr);
 
   g_assert (g_unix_socket_address_get_is_abstract (unixaddr) == TRUE);
-  g_assert (g_unix_socket_address_get_path_len (unixaddr) == pathlen);
+  g_assert_cmpuint (g_unix_socket_address_get_path_len (unixaddr), ==,
+      ABST_ADDR_LEN);
   g_assert (memcmp (g_unix_socket_address_get_path (unixaddr), ABST_ADDR,
-        pathlen) == 0);
+        ABST_ADDR_LEN) == 0);
 
   g_object_unref (sockaddr);
 }
@@ -239,17 +251,19 @@ test_sockaddr_to_variant_unix (void)
   GValue *variant;
   GArray *array;
   TpSocketAddressType type;
+  GError *error = NULL;
 
-  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, NULL);
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, &error);
   g_object_unref (sockaddr);
 
-  g_assert (type == TP_SOCKET_ADDRESS_TYPE_UNIX);
+  g_assert_no_error (error);
+  g_assert_cmpuint (type, ==, TP_SOCKET_ADDRESS_TYPE_UNIX);
   g_assert (G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY));
 
   array = g_value_get_boxed (variant);
 
-  g_assert (array->len == strlen (UNIX_ADDR));
-  g_assert (strcmp (array->data, UNIX_ADDR) == 0);
+  g_assert_cmpuint (array->len, ==, strlen (UNIX_ADDR));
+  g_assert_cmpstr (array->data, ==, UNIX_ADDR);
 
   tp_g_value_slice_free (variant);
 }
@@ -262,16 +276,18 @@ test_sockaddr_to_variant_abstract_unix (void)
   GValue *variant;
   GArray *array;
   TpSocketAddressType type;
+  GError *error = NULL;
 
-  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, NULL);
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, &error);
   g_object_unref (sockaddr);
 
-  g_assert (type == TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX);
+  g_assert_no_error (error);
+  g_assert_cmpuint (type, ==, TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX);
   g_assert (G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY));
 
   array = g_value_get_boxed (variant);
 
-  g_assert (array->len == ABST_ADDR_LEN);
+  g_assert_cmpuint (array->len, ==, ABST_ADDR_LEN);
   g_assert (memcmp (array->data, ABST_ADDR, ABST_ADDR_LEN) == 0);
 
   tp_g_value_slice_free (variant);
@@ -281,14 +297,8 @@ test_sockaddr_to_variant_abstract_unix (void)
 int
 main (int argc, char **argv)
 {
-  DBusGConnection *connection;
-  GError *error = NULL;
-
   g_type_init ();
-
-  /* we seem to need to make a connection in order to initialise the special
-   * dbus-glib types, I'm sure there must be a better way to do this */
-  connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+  dbus_g_type_specialized_init ();
 
   test_variant_to_sockaddr_ipv4 ();
   test_variant_to_sockaddr_ipv6 ();
