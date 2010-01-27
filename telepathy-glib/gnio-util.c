@@ -145,10 +145,10 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
  */
 GValue *
 tp_address_variant_from_g_socket_address (GSocketAddress      *address,
-                                          TpSocketAddressType *type)
+                                          TpSocketAddressType *ret_type)
 {
   GValue *variant;
-  TpSocketAddressType type_;
+  TpSocketAddressType type;
 
   g_return_val_if_fail (G_IS_SOCKET_ADDRESS (address), NULL);
 
@@ -163,13 +163,9 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
             gsize len = g_unix_socket_address_get_path_len (unixaddr);
 
             if (g_unix_socket_address_get_is_abstract (unixaddr))
-              {
-                type_ = TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX;
-              }
+                type = TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX;
             else
-              {
-                type_ = TP_SOCKET_ADDRESS_TYPE_UNIX;
-              }
+                type = TP_SOCKET_ADDRESS_TYPE_UNIX;
 
             array = g_array_sized_new (TRUE, FALSE, sizeof (char), len);
             array = g_array_append_vals (array, path, len);
@@ -192,12 +188,12 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
             switch (g_inet_address_get_family (addr))
               {
                 case G_SOCKET_FAMILY_IPV4:
-                  type_ = TP_SOCKET_ADDRESS_TYPE_IPV4;
+                  type = TP_SOCKET_ADDRESS_TYPE_IPV4;
                   variant = tp_g_value_slice_new (TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4);
                   break;
 
                 case G_SOCKET_FAMILY_IPV6:
-                  type_ = TP_SOCKET_ADDRESS_TYPE_IPV6;
+                  type = TP_SOCKET_ADDRESS_TYPE_IPV6;
                   variant = tp_g_value_slice_new (TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6);
                   break;
 
@@ -224,7 +220,8 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
         g_return_val_if_reached (NULL);
     }
 
-  if (type) *type = type_;
+  if (ret_type != NULL)
+    *ret_type = type;
 
   return variant;
 }
