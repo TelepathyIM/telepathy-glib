@@ -26,7 +26,7 @@
 static void
 test_variant_to_sockaddr_ipv4 (void)
 {
-  GValueArray *array = g_value_array_new (2);
+  GValueArray *array;
   GValue value = { 0, };
   GSocketAddress *sockaddr;
   GInetSocketAddress *inetaddr;
@@ -35,15 +35,10 @@ test_variant_to_sockaddr_ipv4 (void)
   guint16 port;
 
   /* set up an address variant */
-  g_value_init (&value, G_TYPE_STRING);
-  g_value_set_string (&value, IPV4_ADDR);
-  g_value_array_append (array, &value);
-  g_value_unset (&value);
-
-  g_value_init (&value, G_TYPE_UINT);
-  g_value_set_uint (&value, PORT);
-  g_value_array_append (array, &value);
-  g_value_unset (&value);
+  array = tp_value_array_build (2,
+      G_TYPE_STRING, IPV4_ADDR,
+      G_TYPE_UINT, PORT,
+      G_TYPE_INVALID);
 
   g_value_init (&value, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4);
   g_value_take_boxed (&value, array);
@@ -73,7 +68,7 @@ test_variant_to_sockaddr_ipv4 (void)
 static void
 test_variant_to_sockaddr_ipv6 (void)
 {
-  GValueArray *array = g_value_array_new (2);
+  GValueArray *array;
   GValue value = { 0, };
   GSocketAddress *sockaddr;
   GInetSocketAddress *inetaddr;
@@ -82,15 +77,10 @@ test_variant_to_sockaddr_ipv6 (void)
   guint16 port;
 
   /* set up an address variant */
-  g_value_init (&value, G_TYPE_STRING);
-  g_value_set_string (&value, IPV6_ADDR);
-  g_value_array_append (array, &value);
-  g_value_unset (&value);
-
-  g_value_init (&value, G_TYPE_UINT);
-  g_value_set_uint (&value, PORT);
-  g_value_array_append (array, &value);
-  g_value_unset (&value);
+  array = tp_value_array_build (2,
+      G_TYPE_STRING, IPV6_ADDR,
+      G_TYPE_UINT, PORT,
+      G_TYPE_INVALID);
 
   g_value_init (&value, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6);
   g_value_take_boxed (&value, array);

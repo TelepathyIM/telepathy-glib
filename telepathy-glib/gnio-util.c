@@ -186,7 +186,8 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
             GInetAddress *addr = g_inet_socket_address_get_address (
                 G_INET_SOCKET_ADDRESS (address));
             GValueArray *array;
-            GValue value = { 0, };
+            char *address_str;
+            guint port;
 
             switch (g_inet_address_get_family (addr))
               {
@@ -204,18 +205,16 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
                   g_assert_not_reached ();
               }
 
-            array = g_value_array_new (2);
+            address_str = g_inet_address_to_string (addr);
+            port = g_inet_socket_address_get_port (
+                G_INET_SOCKET_ADDRESS (address));
 
-            g_value_init (&value, G_TYPE_STRING);
-            g_value_take_string (&value, g_inet_address_to_string (addr));
-            g_value_array_insert (array, 0, &value);
-            g_value_unset (&value);
+            array = tp_value_array_build (2,
+                G_TYPE_STRING, address_str,
+                G_TYPE_UINT, port,
+                G_TYPE_INVALID);
 
-            g_value_init (&value, G_TYPE_UINT);
-            g_value_set_uint (&value, g_inet_socket_address_get_port (
-                  G_INET_SOCKET_ADDRESS (address)));
-            g_value_array_insert (array, 1, &value);
-            g_value_unset (&value);
+            g_free (address_str);
 
             g_value_take_boxed (variant, array);
           }
