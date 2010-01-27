@@ -45,7 +45,7 @@ test_variant_to_sockaddr_ipv4 (void)
 
   /* convert to a GSocketAddress */
   sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_IPV4,
-                                               &value);
+                                               &value, NULL);
   g_value_unset (&value);
 
   /* check the socket address */
@@ -87,7 +87,7 @@ test_variant_to_sockaddr_ipv6 (void)
 
   /* convert to a GSocketAddress */
   sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_IPV6,
-                                               &value);
+                                               &value, NULL);
   g_value_unset (&value);
 
   /* check the socket address */
@@ -118,7 +118,7 @@ test_sockaddr_to_variant_ipv4 (void)
 
   g_object_unref (hostaddr);
 
-  variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, NULL);
   g_object_unref (sockaddr);
 
   g_assert (type == TP_SOCKET_ADDRESS_TYPE_IPV4);
@@ -149,7 +149,7 @@ test_sockaddr_to_variant_ipv6 (void)
 
   g_object_unref (hostaddr);
 
-  variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, NULL);
   g_object_unref (sockaddr);
 
   g_assert (type == TP_SOCKET_ADDRESS_TYPE_IPV6);
@@ -186,7 +186,7 @@ test_variant_to_sockaddr_unix (void)
   g_value_take_boxed (&value, array);
 
   sockaddr = tp_g_socket_address_from_variant (TP_SOCKET_ADDRESS_TYPE_UNIX,
-      &value);
+      &value, NULL);
   g_value_unset (&value);
 
   g_assert (G_IS_UNIX_SOCKET_ADDRESS (sockaddr));
@@ -217,7 +217,7 @@ test_variant_to_sockaddr_abstract_unix (void)
 
   sockaddr = tp_g_socket_address_from_variant (
       TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX,
-      &value);
+      &value, NULL);
   g_value_unset (&value);
 
   g_assert (G_IS_UNIX_SOCKET_ADDRESS (sockaddr));
@@ -240,7 +240,7 @@ test_sockaddr_to_variant_unix (void)
   GArray *array;
   TpSocketAddressType type;
 
-  variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, NULL);
   g_object_unref (sockaddr);
 
   g_assert (type == TP_SOCKET_ADDRESS_TYPE_UNIX);
@@ -263,7 +263,7 @@ test_sockaddr_to_variant_abstract_unix (void)
   GArray *array;
   TpSocketAddressType type;
 
-  variant = tp_address_variant_from_g_socket_address (sockaddr, &type);
+  variant = tp_address_variant_from_g_socket_address (sockaddr, &type, NULL);
   g_object_unref (sockaddr);
 
   g_assert (type == TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX);

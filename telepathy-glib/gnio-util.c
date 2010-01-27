@@ -40,6 +40,7 @@
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/errors.h>
 
 #include <string.h>
 
@@ -53,15 +54,18 @@
  * tp_g_socket_address_from_variant:
  * @type: a Telepathy socket address type
  * @variant: an initialised #GValue containing an address variant
+ * @error: return location for a #GError (or NULL)
  *
  * Converts an address variant stored in a #GValue into a #GSocketAddress that
  * can be used to make a socket connection with GIO.
  *
- * Returns: a newly allocated #GSocketAddress for the given variant
+ * Returns: a newly allocated #GSocketAddress for the given variant, or NULL
+ * on error
  */
 GSocketAddress *
 tp_g_socket_address_from_variant (TpSocketAddressType type,
-                                  const GValue *variant)
+    const GValue *variant,
+    GError **error)
 {
   GSocketAddress *addr;
 
@@ -69,9 +73,15 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
     {
 #ifdef HAVE_GIO_UNIX
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
-        g_return_val_if_fail (G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY),
-            NULL);
+        if (!G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY))
+          {
+            g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                "variant is %s not DBUS_TYPE_G_UCHAR_ARRAY",
+                G_VALUE_TYPE_NAME (variant));
 
+            return NULL;
+          }
+        else
           {
             GArray *address = g_value_get_boxed (variant);
             char path[address->len + 1];
@@ -84,9 +94,15 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
         break;
 
       case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
-        g_return_val_if_fail (G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY),
-            NULL);
+        if (!G_VALUE_HOLDS (variant, DBUS_TYPE_G_UCHAR_ARRAY))
+          {
+            g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                "variant is %s not DBUS_TYPE_G_UCHAR_ARRAY",
+                G_VALUE_TYPE_NAME (variant));
 
+            return NULL;
+          }
+        else
           {
             GArray *address = g_value_get_boxed (variant);
 
@@ -98,13 +114,25 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
 
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
       case TP_SOCKET_ADDRESS_TYPE_IPV6:
-        g_return_val_if_fail (
-            (type == TP_SOCKET_ADDRESS_TYPE_IPV4 &&
-             G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4)) ||
-            (type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
-             G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6)),
-            NULL);
+        if (type == TP_SOCKET_ADDRESS_TYPE_IPV4 &&
+            !G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4))
+          {
+            g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                "variant is %s not TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4",
+                G_VALUE_TYPE_NAME (variant));
 
+            return NULL;
+          }
+        else if (type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
+            !G_VALUE_HOLDS (variant, TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6))
+          {
+            g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                "variant is %s not TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV6",
+                G_VALUE_TYPE_NAME (variant));
+
+            return NULL;
+          }
+        else
           {
             GValueArray *array = g_value_get_boxed (variant);
             GValue *hostv = g_value_array_get_nth (array, 0);
@@ -127,7 +155,11 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
         break;
 
       default:
-        g_return_val_if_reached (NULL);
+        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "Unknown TpSocketAddressType (%i)",
+            type);
+
+        return NULL;
     }
 
   return addr;
@@ -137,6 +169,7 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
  * tp_address_variant_from_g_socket_address:
  * @address: a #GSocketAddress to convert
  * @type: optional return of the Telepathy socket type (or NULL)
+ * @error: return location for a #GError (or NULL)
  *
  * Converts a #GSocketAddress to a #GValue address variant that can be used
  * with Telepathy.
@@ -144,8 +177,9 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
  * Returns: a newly allocated #GValue, free with tp_g_value_slice_free()
  */
 GValue *
-tp_address_variant_from_g_socket_address (GSocketAddress      *address,
-                                          TpSocketAddressType *ret_type)
+tp_address_variant_from_g_socket_address (GSocketAddress *address,
+    TpSocketAddressType *ret_type,
+    GError **error)
 {
   GValue *variant;
   TpSocketAddressType type;
@@ -217,7 +251,11 @@ tp_address_variant_from_g_socket_address (GSocketAddress      *address,
         break;
 
       default:
-        g_return_val_if_reached (NULL);
+        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "Unknown GSocketAddressFamily %i",
+            g_socket_address_get_family (address));
+
+        return NULL;
     }
 
   if (ret_type != NULL)
