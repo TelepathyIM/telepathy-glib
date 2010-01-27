@@ -37,6 +37,10 @@
 
 #include <config.h>
 
+#include <telepathy-glib/gnio-util.h>
+#include <telepathy-glib/util.h>
+#include <telepathy-glib/gtypes.h>
+
 #include <string.h>
 
 #include <dbus/dbus-glib.h>
@@ -44,10 +48,6 @@
 #ifdef HAVE_GIO_UNIX
 #include <gio/gunixsocketaddress.h>
 #endif /* HAVE_GIO_UNIX */
-
-#include <telepathy-glib/gnio-util.h>
-#include <telepathy-glib/util.h>
-#include <telepathy-glib/gtypes.h>
 
 /**
  * tp_g_socket_address_from_variant:
