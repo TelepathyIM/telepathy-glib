@@ -79,6 +79,10 @@ static void pendingproc_get_chatroom_id (TplActionChain *ctx);
 static void _tpl_channel_text_get_chatroom_cb (TpConnection *proxy,
     const gchar **out_Identifiers, const GError *error, gpointer user_data,
     GObject *weak_object);
+static void pendingproc_get_my_contact (TplActionChain *ctx);
+static void pendingproc_get_remote_contact (TplActionChain *ctx);
+static void pendingproc_get_remote_handle_type (TplActionChain *ctx);
+static void keepon (TplLogEntryText *log);
 
 
 /* retrieve contacts (me and remote buddy/chatroom) and set TplChannelText
@@ -183,6 +187,7 @@ pendingproc_get_my_contact (TplActionChain *ctx)
       TP_CHANNEL (tpl_chan)), 1, &my_handle, TP_CONTACT_FEATURES_LEN,
       features, _tpl_channel_text_get_contact_cb, ctx, NULL, NULL);
 }
+
 
 static void
 pendingproc_get_remote_handle_type (TplActionChain *ctx)
@@ -703,23 +708,21 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
 
 static void
 _channel_on_received_signal_with_contact_cb (TpConnection *connection,
-					     guint n_contacts,
-					     TpContact *const *contacts,
-					     guint n_failed,
-					     const TpHandle *failed,
-					     const GError *error,
-					     gpointer user_data,
-					     GObject *weak_object)
+    guint n_contacts,
+    TpContact *const *contacts,
+    guint n_failed,
+    const TpHandle *failed,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
   TplLogEntryText *log = TPL_LOG_ENTRY_TEXT (user_data);
-  TplChannelText *tpl_text = tpl_log_entry_text_get_tpl_channel_text (log);
-  GError *e = NULL;
-  TplLogManager *logmanager;
-  TplContact *tpl_contact_sender;
+  TplChannelText *tpl_text;
   TpContact *remote;
-  gchar *chat_id;
 
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (log));
+
+  tpl_text = tpl_log_entry_text_get_tpl_channel_text (log);
 
   if (error != NULL)
     {
@@ -727,6 +730,7 @@ _channel_on_received_signal_with_contact_cb (TpConnection *connection,
 	       "information: %s", error->message);
       g_error ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (log));
+      g_object_unref (log);
       return;
     }
 
@@ -736,20 +740,39 @@ _channel_on_received_signal_with_contact_cb (TpConnection *connection,
 	       "tp_connection_get_contacts_by_handle()", n_failed);
       g_error ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (log));
+      g_object_unref (log);
       return;
     }
 
   remote = contacts[0];
   tpl_channel_text_set_remote_contact (tpl_text, remote);
-  tpl_contact_sender = tpl_contact_from_tp_contact (remote);
 
+  keepon (log);
+}
+
+static void
+keepon (TplLogEntryText *log)
+{
+  TplChannelText *tpl_text;
+  GError *e = NULL;
+  TplLogManager *logmanager;
+  TplContact *tpl_contact_sender;
+  TpContact *remote;
+  gchar *chat_id;
+
+  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (log));
+
+  tpl_text = tpl_log_entry_text_get_tpl_channel_text (log);
+  remote = tpl_channel_text_get_remote_contact (tpl_text);
+
+  tpl_contact_sender = tpl_contact_from_tp_contact (remote);
   tpl_contact_set_contact_type (tpl_contact_sender, TPL_CONTACT_USER);
   tpl_log_entry_text_set_sender (log, tpl_contact_sender);
 
   g_message ("recvd: %s (%s): %s",
-	     tpl_contact_get_identifier (tpl_contact_sender),
-	     tpl_contact_get_alias (tpl_contact_sender),
-	     tpl_log_entry_text_get_message (log));
+	    tpl_contact_get_identifier (tpl_contact_sender),
+	    tpl_contact_get_alias (tpl_contact_sender),
+	    tpl_log_entry_text_get_message (log));
 
   /* Initialise LogStore and store the message */
 
@@ -790,16 +813,17 @@ _channel_on_received_signal_cb (TpChannel *proxy,
   TpHandle remote_handle = (TpHandle) arg_Sender;
   TplChannelText *tpl_text = TPL_CHANNEL_TEXT (user_data);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
+  TpConnection *tp_conn;
   TpContact *me;
   TplContact *tpl_contact_receiver;
   TplLogEntryText *log;
 
-  // TODO use the Message iface to check the delivery
-  // notification and handle it correctly
+  /* TODO use the Message iface to check the delivery
+     notification and handle it correctly */
   if (arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
     {
-      g_debug ("Non text content flag set."
-	       "Probably a delivery notification for a sent message."
+      g_debug ("Non text content flag set. "
+	       "Probably a delivery notification for a sent message. "
 	       "Ignoring");
       return;
     }
@@ -820,10 +844,15 @@ _channel_on_received_signal_cb (TpChannel *proxy,
 
   tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
 
-  tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (
-      TP_CHANNEL (tpl_chan)), 1, &remote_handle, TP_CONTACT_FEATURES_LEN,
-      features, _channel_on_received_signal_with_contact_cb, log,
-      g_object_unref, NULL);
+  tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_chan));
+  /* it's a chatroom and no contact has been pre-cached */
+  if (tpl_channel_text_get_remote_contact (tpl_text) == NULL)
+    tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
+        TP_CONTACT_FEATURES_LEN, features,
+        _channel_on_received_signal_with_contact_cb, log, g_object_unref,
+        NULL);
+  else
+    keepon (log);
 
   g_object_unref (tpl_contact_receiver);
 }

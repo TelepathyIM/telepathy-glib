@@ -397,8 +397,7 @@ tpl_observer_register_channel (TplObserver *self,
   g_return_val_if_fail (glob_map != NULL, FALSE);
 
   /* 'key' will be freed by the hash table on key removal/destruction */
-  g_object_get (G_OBJECT (tp_channel_borrow_connection (
-      TP_CHANNEL (channel))), "object-path", &key, NULL);
+  g_object_get (G_OBJECT (channel), "object-path", &key, NULL);
 
   if (g_hash_table_lookup (glob_map, key) != NULL)
     {
@@ -406,9 +405,7 @@ tpl_observer_register_channel (TplObserver *self,
       g_hash_table_remove (glob_map, key);
     }
   else
-    {
       g_debug ("Channel path not found, registering %s", key);
-    }
 
   g_hash_table_insert (glob_map, key, channel);
 
@@ -429,8 +426,7 @@ tpl_observer_unregister_channel (TplObserver *self,
   g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
   g_return_val_if_fail (glob_map != NULL, FALSE);
 
-  g_object_get (G_OBJECT (tp_channel_borrow_connection (
-      TP_CHANNEL (channel))), "object-path", &key, NULL);
+  g_object_get (G_OBJECT (channel), "object-path", &key, NULL);
 
   g_debug ("Unregistering channel path %s", key);
 
