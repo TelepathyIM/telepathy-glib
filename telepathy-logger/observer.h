@@ -25,7 +25,8 @@
 #include <glib-object.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 
-#define TP_IFACE_CHAN_TEXT "org.freedesktop.Telepathy.Channel.Type.Text"
+#include <telepathy-logger/channel.h>
+
 #define TPL_OBSERVER_WELL_KNOWN_BUS_NAME \
   "org.freedesktop.Telepathy.Client.TelepathyLogger"
 #define TPL_OBSERVER_OBJECT_PATH \
@@ -64,7 +65,11 @@ TplObserver *tpl_observer_new (void);
 void tpl_headless_logger_init (void);
 
 GHashTable *tpl_observer_get_channel_map (TplObserver * self);
-void tpl_observer_set_channel_map (TplObserver * self, GHashTable * data);
+
+gboolean tpl_observer_register_channel (TplObserver *self, TplChannel *chann);
+gboolean tpl_observer_unregister_channel (TplObserver *self,
+    TplChannel *chann);
+
 
 G_END_DECLS
 #endif // __TPL_OBSERVER_H__

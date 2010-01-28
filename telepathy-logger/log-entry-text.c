@@ -29,7 +29,7 @@ G_DEFINE_TYPE (TplLogEntryText, tpl_log_entry_text, TPL_TYPE_LOG_ENTRY)
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogEntryText)
 struct _TplLogEntryTextPriv
 {
-  TplTextChannel *tpl_text;
+  TplChannelText *tpl_text;
   TpChannelTextMessageType message_type;
   gchar *message;
   gboolean chatroom;
@@ -40,7 +40,7 @@ enum
   PROP0,
   PROP_MESSAGE_TYPE,
   PROP_MESSAGE,
-  PROP_TPL_TEXT_CHANNEL
+  PROP_TPL_CHANNEL_TEXT
 };
 
 
@@ -84,7 +84,7 @@ tpl_log_entry_text_get_prop (GObject *object, guint param_id, GValue *value,
       case PROP_MESSAGE:
         g_value_set_string (value, priv->message);
         break;
-      case PROP_TPL_TEXT_CHANNEL:
+      case PROP_TPL_CHANNEL_TEXT:
         g_value_set_object (value, priv->tpl_text);
         break;
       default:
@@ -107,8 +107,8 @@ tpl_log_entry_text_set_prop (GObject *object, guint param_id, const GValue *valu
       case PROP_MESSAGE:
         tpl_log_entry_text_set_message (self, g_value_get_string (value));
         break;
-      case PROP_TPL_TEXT_CHANNEL:
-        tpl_log_entry_text_set_tpl_text_channel (self,
+      case PROP_TPL_CHANNEL_TEXT:
+        tpl_log_entry_text_set_tpl_channel_text (self,
             g_value_get_object (value));
         break;
       default:
@@ -146,9 +146,9 @@ static void tpl_log_entry_text_class_init (TplLogEntryTextClass * klass)
   param_spec = g_param_spec_object ("tpl-channel-text",
       "TplChannelText",
       "The TplChannelText instance associated with the log entry, if any",
-      TPL_TYPE_TEXT_CHANNEL,
+      TPL_TYPE_CHANNEL_TEXT,
       G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TPL_TEXT_CHANNEL, param_spec);
+  g_object_class_install_property (object_class, PROP_TPL_CHANNEL_TEXT, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogEntryTextPriv));
 
@@ -231,18 +231,8 @@ tpl_log_entry_text_is_chatroom (TplLogEntryText * self)
 }
 
 
-TplChannel *
-tpl_log_entry_text_get_tpl_channel (TplLogEntryText * self)
-{
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), NULL);
-
-  return tpl_text_channel_get_tpl_channel (
-      tpl_log_entry_text_get_tpl_text_channel (self));
-}
-
-
-TplTextChannel *
-tpl_log_entry_text_get_tpl_text_channel (TplLogEntryText * self)
+TplChannelText *
+tpl_log_entry_text_get_tpl_channel_text (TplLogEntryText * self)
 {
   TplLogEntryTextPriv *priv;
 
@@ -281,13 +271,13 @@ tpl_log_entry_text_get_message_type (TplLogEntryText * self)
 
 
 void
-tpl_log_entry_text_set_tpl_text_channel (TplLogEntryText * self,
-    TplTextChannel *data)
+tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
+    TplChannelText *data)
 {
   TplLogEntryTextPriv *priv;
 
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
-  g_return_if_fail (TPL_IS_TEXT_CHANNEL (data) || data == NULL);
+  g_return_if_fail (TPL_IS_CHANNEL_TEXT (data) || data == NULL);
 
   priv = GET_PRIV (self);
   tpl_object_unref_if_not_null (priv->tpl_text);

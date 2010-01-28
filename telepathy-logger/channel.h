@@ -22,14 +22,13 @@
 #ifndef __TPL_CHANNEL_H__
 #define __TPL_CHANNEL_H__
 
+#include <gio/gio.h>
 #include <glib.h>
 #include <glib-object.h>
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/channel.h>
-#include <telepathy-glib/svc-client.h>
 
-#include <telepathy-logger/observer.h>
 #include <telepathy-logger/util.h>
 
 G_BEGIN_DECLS
@@ -53,27 +52,20 @@ typedef struct
 typedef struct
 {
   TpChannelClass parent_class;
+
+  void (*call_when_ready) (TplChannel *self, GAsyncReadyCallback cb,
+      gpointer user_data);
 } TplChannelClass;
 
 
 GType tpl_channel_get_type (void);
 
-TplChannel *tpl_channel_new (TpConnection *conn,
-    const gchar *object_path,
-    GHashTable *tp_chan_props,
-    TplObserver *observer,
-    GError **error);
-
-TplObserver *tpl_channel_get_observer (TplChannel * self);
 TpAccount *tpl_channel_get_account (TplChannel * self);
 const gchar *tpl_channel_get_account_path (TplChannel * self);
 
-void tpl_channel_set_observer (TplChannel * self, TplObserver* data);
-void tpl_channel_set_account (TplChannel * self, TpAccount * data);
-void tpl_channel_set_account_path (TplChannel * self, const gchar * data);
-
-gboolean tpl_channel_register_to_observer (TplChannel * self);
-gboolean tpl_channel_unregister_from_observer (TplChannel * self);
+typedef TplChannel* (*TplChannelConstructor) (TpConnection *conn,
+    const gchar *object_path, GHashTable *tp_chan_props, GError **error);
+TplChannelConstructor *tpl_channel_factory (const gchar *channel_type);
 
 G_END_DECLS
 #endif // __TPL_CHANNEL_H__

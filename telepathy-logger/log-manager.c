@@ -99,8 +99,8 @@ log_manager_finalize (GObject *object)
  * Initialises LogStores with LogStoreEmpathy instance
  */
 static GObject *
-log_manager_constructor (GType type,
-    guint n_props, GObjectConstructParam *props)
+log_manager_constructor (GType type, guint n_props,
+    GObjectConstructParam *props)
 {
   GObject *retval;
   TplLogManagerPriv *priv;
@@ -144,8 +144,7 @@ static void
 tpl_log_manager_init (TplLogManager *manager)
 {
   TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (manager,
-      TPL_TYPE_LOG_MANAGER,
-      TplLogManagerPriv);
+      TPL_TYPE_LOG_MANAGER, TplLogManagerPriv);
   manager->priv = priv;
 
   /* initialise thread support. It can be called just once, so check it already

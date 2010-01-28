@@ -75,22 +75,19 @@ TpChannelTextMessageType tpl_log_entry_text_message_type_from_str (
 const gchar *tpl_log_entry_text_message_type_to_str (
     TpChannelTextMessageType msg_type);
 
-TplChannel *tpl_log_entry_text_get_tpl_channel (TplLogEntryText *self);
-
-TplTextChannel *tpl_log_entry_text_get_tpl_text_channel (
+TplChannelText *tpl_log_entry_text_get_tpl_channel_text (
     TplLogEntryText *self);
+const gchar *tpl_log_entry_text_get_message (TplLogEntryText *self);
+TpChannelTextMessageType tpl_log_entry_text_get_message_type (TplLogEntryText *self);
+gboolean tpl_log_entry_text_is_chatroom (TplLogEntryText *self);
 
-const gchar *tpl_log_entry_text_get_message (TplLogEntryText * self);
-TpChannelTextMessageType tpl_log_entry_text_get_message_type (TplLogEntryText * self);
-gboolean tpl_log_entry_text_is_chatroom (TplLogEntryText * self);
-void tpl_log_entry_text_set_tpl_text_channel (TplLogEntryText * self,
-    TplTextChannel * data);
-
-void tpl_log_entry_text_set_message (TplLogEntryText * self,
-    const gchar * data);
-void tpl_log_entry_text_set_message_type (TplLogEntryText * self,
+void tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText *self,
+    TplChannelText *data);
+void tpl_log_entry_text_set_message (TplLogEntryText *self,
+    const gchar *data);
+void tpl_log_entry_text_set_message_type (TplLogEntryText *self,
     TpChannelTextMessageType data);
-void tpl_log_entry_text_set_chatroom (TplLogEntryText * self, gboolean data);
+void tpl_log_entry_text_set_chatroom (TplLogEntryText *self, gboolean data);
 
 
 /* Methods inherited by TplLogEntry */

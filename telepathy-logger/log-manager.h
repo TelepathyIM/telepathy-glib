@@ -71,7 +71,7 @@ typedef struct
 } TplLogSearchHit;
 
 
-typedef gboolean (*TplLogMessageFilter) (TplLogEntry * message,
+typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
     gpointer user_data);
 
 
@@ -83,57 +83,57 @@ gpointer tpl_log_manager_async_operation_finish (GAsyncResult *result,
 
 TplLogManager *tpl_log_manager_dup_singleton (void);
 
-gboolean tpl_log_manager_exists (TplLogManager * manager,
-    TpAccount * account, const gchar * chat_id, gboolean chatroom);
+gboolean tpl_log_manager_exists (TplLogManager *manager,
+    TpAccount *account, const gchar *chat_id, gboolean chatroom);
 
-GList *tpl_log_manager_get_dates (TplLogManager * manager,
-    TpAccount * account, const gchar * chat_id, gboolean chatroom);
+GList *tpl_log_manager_get_dates (TplLogManager *manager,
+    TpAccount *account, const gchar *chat_id, gboolean chatroom);
 
-void tpl_log_manager_get_dates_async (TplLogManager * manager,
-    TpAccount * account, const gchar * chat_id, gboolean is_chatroom,
+void tpl_log_manager_get_dates_async (TplLogManager *manager,
+    TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
     GAsyncReadyCallback callback, gpointer user_data);
 
-GList *tpl_log_manager_get_messages_for_date (TplLogManager * manager,
-    TpAccount * account, const gchar * chat_id, gboolean chatroom,
-    const gchar * date);
+GList *tpl_log_manager_get_messages_for_date (TplLogManager *manager,
+    TpAccount *account, const gchar *chat_id, gboolean chatroom,
+    const gchar *date);
 
-void tpl_log_manager_get_messages_for_date_async (TplLogManager * manager,
-    TpAccount * account, const gchar * chat_id, gboolean is_chatroom,
-    const gchar * date, GAsyncReadyCallback callback, gpointer user_data);
+void tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
+    TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
+    const gchar *date, GAsyncReadyCallback callback, gpointer user_data);
 
-GList *tpl_log_manager_get_filtered_messages (TplLogManager * manager,
-    TpAccount * account, const gchar * chat_id, gboolean chatroom,
+GList *tpl_log_manager_get_filtered_messages (TplLogManager *manager,
+    TpAccount *account, const gchar *chat_id, gboolean chatroom,
     guint num_messages, TplLogMessageFilter filter, gpointer user_data);
 
-void tpl_log_manager_get_filtered_messages_async (TplLogManager * manager,
-    TpAccount * account, const gchar * chat_id, gboolean is_chatroom,
+void tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
+    TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
     guint num_messages, TplLogMessageFilter filter, gpointer filter_user_data,
     GAsyncReadyCallback callback, gpointer user_data);
 
-GList *tpl_log_manager_get_chats (TplLogManager * manager,
-    TpAccount * account);
+GList *tpl_log_manager_get_chats (TplLogManager *manager,
+    TpAccount *account);
 
-void tpl_log_manager_get_chats_async (TplLogManager * manager,
-    TpAccount * account, GAsyncReadyCallback callback, gpointer user_data);
+void tpl_log_manager_get_chats_async (TplLogManager *manager,
+    TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
 
 GList *tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
-    TpAccount * account, gchar const *chat_id, const gchar * text);
+    TpAccount *account, gchar const *chat_id, const gchar *text);
 
 void tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
-    TpAccount * account, gchar const *chat_id, const gchar *text,
+    TpAccount *account, gchar const *chat_id, const gchar *text,
     GAsyncReadyCallback callback, gpointer user_data);
 
-GList *tpl_log_manager_search_new (TplLogManager * manager,
-    const gchar * text);
+GList *tpl_log_manager_search_new (TplLogManager *manager,
+    const gchar *text);
 
-void tpl_log_manager_search_new_async (TplLogManager * manager,
-    const gchar * text, GAsyncReadyCallback callback, gpointer user_data);
+void tpl_log_manager_search_new_async (TplLogManager *manager,
+    const gchar *text, GAsyncReadyCallback callback, gpointer user_data);
 
-void tpl_log_manager_search_free (GList * hits);
+void tpl_log_manager_search_free (GList *hits);
 
-gchar *tpl_log_manager_get_date_readable (const gchar * date);
+gchar *tpl_log_manager_get_date_readable (const gchar *date);
 
-void tpl_log_manager_search_hit_free (TplLogSearchHit * hit);
+void tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
 
 G_END_DECLS
 #endif /* __TPL_LOG_MANAGER_H__ */

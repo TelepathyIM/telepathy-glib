@@ -46,3 +46,67 @@ tpl_strequal (const gchar *left, const gchar *right)
 {
 	return ! tp_strdiff(left, right);
 }
+
+TplActionChain *
+tpl_actionchain_new (GObject *obj,
+    GAsyncReadyCallback cb,
+    gpointer user_data)
+{
+  TplActionChain *ret = g_slice_new0 (TplActionChain);
+
+  ret->chain = g_queue_new ();
+  ret->simple = g_simple_async_result_new (obj, cb, user_data,
+      tpl_actionchain_finish);
+
+  return ret;
+}
+
+
+gpointer
+tpl_actionchain_get_object (TplActionChain *self)
+{
+  g_return_val_if_fail ( self != NULL && self->simple != NULL, NULL);
+
+  return g_async_result_get_source_object (G_ASYNC_RESULT (self->simple));
+}
+
+
+void
+tpl_actionchain_free (TplActionChain *self)
+{
+  g_queue_free (self->chain);
+  /* TODO free self->simple, I canont understand how */
+  g_free (self);
+}
+
+
+void
+tpl_actionchain_append (TplActionChain *self,
+    TplPendingAction func)
+{
+  g_queue_push_tail (self->chain, func);
+}
+
+
+void
+tpl_actionchain_continue (TplActionChain *self)
+{
+  if (g_queue_is_empty (self->chain))
+    {
+      g_debug ("QUEUE EMPTY");
+      g_simple_async_result_complete (self->simple);
+    }
+  else
+    {
+      TplPendingAction next_action = g_queue_pop_head (self->chain);
+      next_action(self);
+    }
+}
+
+
+gboolean
+tpl_actionchain_finish (GAsyncResult *result)
+{
+  /* TODO returnm the real result */
+  return TRUE;
+}

@@ -39,8 +39,10 @@ static TplLogManager *logmanager = NULL;
 
 static void tpl_observer_finalize (GObject * obj);
 static void tpl_observer_dispose (GObject * obj);
-
 static void observer_iface_init (gpointer, gpointer);
+static void got_tpl_channel_text_ready_cb (GObject *obj, GAsyncResult *result,
+    gpointer user_data);
+
 
 G_DEFINE_TYPE_WITH_CODE (TplObserver, tpl_observer, G_TYPE_OBJECT,
 			 G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
@@ -61,44 +63,9 @@ enum
 {
   PROP_0,
   PROP_INTERFACES,
-  PROP_CHANNEL_FILTER
+  PROP_CHANNEL_FILTER,
+  PROP_REGISTERED_CHANNELS
 };
-
-
-static void
-_observe_channel_when_ready_cb (TpChannel *channel,
-    const GError *error,
-    gpointer user_data)
-{
-  TplChannel *tpl_chan = TPL_CHANNEL (user_data);
-
-  if (error != NULL)
-    {
-      gchar *chan_path;
-
-      g_object_get (G_OBJECT (tpl_chan), "object-path", &chan_path, NULL);
-      g_debug ("%s. Giving up channel '%s' observation", error->message,
-          chan_path);
-
-      g_object_unref (tpl_chan);
-      g_free (chan_path);
-      return;
-    }
-
-  tpl_channel_register_to_observer (tpl_chan);
-}
-
-
-static void
-_get_ready_tp_channel (TpConnection *connection,
-    const GError *error,
-    gpointer user_data)
-{
-  TplChannel *tpl_chan = TPL_CHANNEL (user_data);
-
-  tp_channel_call_when_ready (TP_CHANNEL (tpl_chan),
-			      _observe_channel_when_ready_cb, tpl_chan);
-}
 
 static void
 tpl_observer_observe_channels (TpSvcClientObserver *self,
@@ -125,23 +92,19 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
 
   conf = tpl_conf_dup();
   if (!tpl_conf_is_globally_enabled(conf, &error))
-  {
-	  if (error)
-	  {
-		  g_debug ("%s", error->message);
-	  }
-	  else
-	  {
-		  g_debug ("Logging is globally disabled. Skipping channel logging.");
-	  }
-	  return;
-  }
+    {
+      if (error != NULL)
+        g_debug ("%s", error->message);
+      else
+        g_debug ("Logging is globally disabled. Skipping channel logging.");
+      return;
+    }
   if (tpl_conf_is_account_ignored(conf, account, &error))
-  {
-	  g_debug("Logging is disabled for account %s. "
-			  "Skipping channel logging.", account);
-	  return;
-  }
+    {
+      g_debug("Logging is disabled for account %s. "
+          "Skipping channel logging.", account);
+      return;
+    }
 
   tp_bus_daemon = tp_dbus_daemon_dup (&error);
   if (tp_bus_daemon == NULL)
@@ -180,11 +143,15 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
       TplChannel *tpl_chan;
 
       gchar *path = g_value_get_boxed (g_value_array_get_nth (channel, 0));
-      // propertyNameStr/value hash
-      GHashTable *map =
-          g_value_get_boxed (g_value_array_get_nth (channel, 1));
+      // d.bus.propertyName.str/gvalue hash
+      GHashTable *map = g_value_get_boxed (g_value_array_get_nth (channel,
+          1));
 
-      tpl_chan = tpl_channel_new (tp_conn, path, map, TPL_OBSERVER (self), &error);
+      //tpl_channel_factory (g_value_get_string (g_hash_table_lookup (map,
+      //    TP_PROP_CHANNEL_CHANNEL_TYPE)));
+
+      tpl_chan = TPL_CHANNEL (tpl_channel_text_new (tp_conn, path, map,
+            tp_acc, &error));
       if (tpl_chan == NULL)
         {
           g_debug ("%s", error->message);
@@ -193,48 +160,60 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
           error = NULL;
           continue;
         }
-
-      tpl_channel_set_account (tpl_chan, tp_acc);
-      tpl_channel_set_account_path (tpl_chan, account);
-
-      tp_connection_call_when_ready (tp_conn, _get_ready_tp_channel,
-          tpl_chan);
+      tpl_channel_text_call_when_ready (TPL_CHANNEL_TEXT (tpl_chan),
+          got_tpl_channel_text_ready_cb, context);
     }
 
   g_object_unref (tp_acc);
   g_object_unref (tp_conn);
   g_object_unref (tp_bus_daemon);
+}
 
+
+static void
+got_tpl_channel_text_ready_cb (GObject *obj,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  DBusGMethodInvocation *context = user_data;
   tp_svc_client_observer_return_from_observe_channels (context);
 }
 
 static void
-tpl_observer_get_property (GObject *self,
+get_prop (GObject *self,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
+  GPtrArray *array;
+  GList *key_list;
+  GHashTable *map;
+
   switch (property_id)
     {
-      GPtrArray *array;
-      GHashTable *map;
-    case PROP_INTERFACES:
-      g_value_set_boxed (value, client_interfaces);
-      break;
+      case PROP_INTERFACES:
+        g_value_set_boxed (value, client_interfaces);
+        break;
 
-    case PROP_CHANNEL_FILTER:
+      case PROP_CHANNEL_FILTER:
+        /* create an empty filter - which means all channels */
+        array = g_ptr_array_new ();
+        map = g_hash_table_new (NULL, NULL);
+        g_ptr_array_add (array, map);
+        g_value_set_boxed (value, array);
+        break;
 
-      /* create an empty filter - which means all channels */
-      array = g_ptr_array_new ();
-      map = g_hash_table_new (NULL, NULL);
+      case PROP_REGISTERED_CHANNELS:
+        array = g_ptr_array_new ();
+        key_list = g_hash_table_get_keys (tpl_observer_get_channel_map (
+              TPL_OBSERVER (self)));
+        g_ptr_array_add (array, key_list);
+        g_value_set_boxed (value, array);
+        break;
 
-      g_ptr_array_add (array, map);
-      g_value_set_boxed (value, array);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (self, property_id, pspec);
-      break;
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (self, property_id, pspec);
+        break;
     }
 }
 
@@ -298,30 +277,31 @@ tpl_observer_class_init (TplObserverClass *klass)
      client_observer_props},
     {NULL}
   };
-  object_class->get_property = tpl_observer_get_property;
+
+  object_class->get_property = get_prop;
 
   g_object_class_install_property (object_class, PROP_INTERFACES,
-				   g_param_spec_boxed ("interfaces",
-						       "Interfaces",
-						       "Available D-Bus Interfaces",
-						       G_TYPE_STRV,
-						       G_PARAM_READABLE |
-						       G_PARAM_STATIC_STRINGS));
+      g_param_spec_boxed ("interfaces", "Interfaces",
+        "Available D-Bus Interfaces", G_TYPE_STRV, G_PARAM_READABLE |
+        G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_CHANNEL_FILTER,
-				   g_param_spec_boxed ("channel-filter",
-						       "Channel Filter",
-						       "Filter for channels we observe",
-						       TP_ARRAY_TYPE_CHANNEL_CLASS_LIST,
-						       G_PARAM_READABLE |
-						       G_PARAM_STATIC_STRINGS));
+      g_param_spec_boxed ("channel-filter", "Channel Filter",
+        "Filter for channels we observe", TP_ARRAY_TYPE_CHANNEL_CLASS_LIST,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_REGISTERED_CHANNELS,
+      g_param_spec_boxed ("registered-channels", "Registered Channels",
+        "open TpChannels which the TplObserver is logging",
+        TP_ARRAY_TYPE_CHANNEL_CLASS_LIST, G_PARAM_READABLE |
+        G_PARAM_STATIC_STRINGS));
 
   /* call our mixin class init */
   klass->dbus_props_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-				       G_STRUCT_OFFSET (TplObserverClass,
-							dbus_props_class));
+  tp_dbus_properties_mixin_class_init (object_class, G_STRUCT_OFFSET (
+      TplObserverClass, dbus_props_class));
 }
+
 
 static void
 tpl_observer_init (TplObserver *self)
@@ -331,17 +311,17 @@ tpl_observer_init (TplObserver *self)
   GError *error = NULL;
 
   self->channel_map = g_hash_table_new_full (g_str_hash, (GEqualFunc) tpl_strequal,
-					     g_free, g_object_unref);
+      g_free, g_object_unref);
   logmanager = tpl_log_manager_dup_singleton ();
 
   bus = tp_get_bus ();
   tp_bus = tp_dbus_daemon_new (bus);
 
   if (tp_dbus_daemon_request_name (tp_bus, TPL_OBSERVER_WELL_KNOWN_BUS_NAME,
-				   TRUE, &error))
+      TRUE, &error))
     {
       g_debug ("%s DBus well known name registered",
-	       TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
+          TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
     }
   else
     {
@@ -350,9 +330,8 @@ tpl_observer_init (TplObserver *self)
       g_error_free (error);
     }
 
-  dbus_g_connection_register_g_object (bus,
-				       TPL_OBSERVER_OBJECT_PATH,
-				       G_OBJECT (self));
+  dbus_g_connection_register_g_object (bus, TPL_OBSERVER_OBJECT_PATH,
+      G_OBJECT (self));
 }
 
 static void
@@ -362,7 +341,7 @@ observer_iface_init (gpointer g_iface,
   TpSvcClientObserverClass *klass = (TpSvcClientObserverClass *) g_iface;
 
   tp_svc_client_observer_implement_observe_channels (klass,
-						     tpl_observer_observe_channels);
+      tpl_observer_observe_channels);
 }
 
 static void
@@ -387,8 +366,6 @@ tpl_observer_dispose (GObject *obj)
 static void
 tpl_observer_finalize (GObject *obj)
 {
-  //TplObserver *self = TPL_OBSERVER(obj);
-
   G_OBJECT_CLASS (tpl_observer_parent_class)->finalize (obj);
 }
 
@@ -407,14 +384,61 @@ tpl_observer_get_channel_map (TplObserver *self)
   return self->channel_map;
 }
 
-void
-tpl_observer_set_channel_map (TplObserver *self,
-    GHashTable *data)
-{
-  g_return_if_fail (TPL_IS_OBSERVER (self));
-  //TODO check data validity
 
-  tpl_object_unref_if_not_null (self->channel_map);
-  self->channel_map = data;
-  tpl_object_ref_if_not_null (data);
+gboolean
+tpl_observer_register_channel (TplObserver *self,
+    TplChannel *channel)
+{
+  GHashTable *glob_map = tpl_observer_get_channel_map (self);
+  gchar *key;
+
+  g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
+  g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
+  g_return_val_if_fail (glob_map != NULL, FALSE);
+
+  /* 'key' will be freed by the hash table on key removal/destruction */
+  g_object_get (G_OBJECT (tp_channel_borrow_connection (
+      TP_CHANNEL (channel))), "object-path", &key, NULL);
+
+  if (g_hash_table_lookup (glob_map, key) != NULL)
+    {
+      g_error ("Channel path found, replacing %s", key);
+      g_hash_table_remove (glob_map, key);
+    }
+  else
+    {
+      g_debug ("Channel path not found, registering %s", key);
+    }
+
+  g_hash_table_insert (glob_map, key, channel);
+
+  g_object_unref (channel);
+
+  return TRUE;
+}
+
+gboolean
+tpl_observer_unregister_channel (TplObserver *self,
+    TplChannel *channel)
+{
+  GHashTable *glob_map = tpl_observer_get_channel_map (self);
+  gboolean retval;
+  gchar *key;
+
+  g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
+  g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
+  g_return_val_if_fail (glob_map != NULL, FALSE);
+
+  g_object_get (G_OBJECT (tp_channel_borrow_connection (
+      TP_CHANNEL (channel))), "object-path", &key, NULL);
+
+  g_debug ("Unregistering channel path %s", key);
+
+  /* this will destroy the associated value object: at this point
+     the hash table reference should be the only one for the
+     value's object
+   */
+  retval = g_hash_table_remove (glob_map, key);
+  g_free (key);
+  return retval;
 }

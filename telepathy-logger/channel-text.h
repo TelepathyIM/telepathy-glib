@@ -19,8 +19,8 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_TEXT_CHANNEL_H__
-#define __TPL_TEXT_CHANNEL_H__
+#ifndef __TPL_CHANNEL_TEXT_H__
+#define __TPL_CHANNEL_TEXT_H__
 
 /* 
  * http://telepathy.freedesktop.org/doc/telepathy-glib/telepathy-glib-channel-text.html#tp-cli-channel-type-text-connect-to-received
@@ -35,56 +35,54 @@
 
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/observer.h>
-#include <telepathy-logger/utils.h>
+#include <telepathy-logger/util.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_TEXT_CHANNEL                  (tpl_text_channel_get_type ())
-#define TPL_TEXT_CHANNEL(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_TEXT_CHANNEL, TplTextChannel))
-#define TPL_TEXT_CHANNEL_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_TEXT_CHANNEL, TplTextChannelClass))
-#define TPL_IS_TEXT_CHANNEL(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_TEXT_CHANNEL))
-#define TPL_IS_TEXT_CHANNEL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_TEXT_CHANNEL))
-#define TPL_TEXT_CHANNEL_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_TEXT_CHANNEL, TplTextChannelClass))
-  typedef struct
+#define TPL_TYPE_CHANNEL_TEXT                  (tpl_channel_text_get_type ())
+#define TPL_CHANNEL_TEXT(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CHANNEL_TEXT, TplChannelText))
+#define TPL_CHANNEL_TEXT_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CHANNEL_TEXT, TplChannelTextClass))
+#define TPL_IS_CHANNEL_TEXT(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CHANNEL_TEXT))
+#define TPL_IS_CHANNEL_TEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CHANNEL_TEXT))
+#define TPL_CHANNEL_TEXT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CHANNEL_TEXT, TplChannelTextClass))
+
+typedef struct _TplChannelTextPriv TplChannelTextPriv;
+typedef struct
 {
-  GObject parent;
+  TplChannel parent;
 
   /* private */
-  TplChannel *tpl_channel;
-  gboolean chatroom;
-  TpContact *my_contact;
-  TpContact *remote_contact;	/* only set if chatroom==FALSE */
-  gchar *chatroom_id;		/* only set if chatroom==TRUE */
-
-  GQueue *chain;		/* queue of TplPendingProc */
-
-  /* only used as metadata in CB data passing */
-  guint selector;
-} TplTextChannel;
+  TplChannelTextPriv *priv;
+} TplChannelText;
 
 typedef struct
 {
-  GObjectClass parent_class;
-} TplTextChannelClass;
+  TplChannelClass parent_class;
+} TplChannelTextClass;
 
-GType tpl_text_channel_get_type (void);
+GType tpl_channel_text_get_type (void);
 
-TplTextChannel *tpl_text_channel_new (TplChannel * tpl_channel);
+TplChannelText *tpl_channel_text_new (TpConnection *conn,
+    const gchar *object_path, GHashTable *tp_chan_props, TpAccount *account,
+    GError **error);
 
-TplChannel *tpl_text_channel_get_tpl_channel (TplTextChannel * self);
-TpContact *tpl_text_channel_get_remote_contact (TplTextChannel * self);
-TpContact *tpl_text_channel_get_my_contact (TplTextChannel * self);
-gboolean tpl_text_channel_is_chatroom (TplTextChannel * self);
-const gchar *tpl_text_channel_get_chatroom_id (TplTextChannel * self);
+TplChannel *tpl_channel_text_get_tpl_channel (TplChannelText * self);
+TpContact *tpl_channel_text_get_remote_contact (TplChannelText * self);
+TpContact *tpl_channel_text_get_my_contact (TplChannelText * self);
+gboolean tpl_channel_text_is_chatroom (TplChannelText * self);
+const gchar *tpl_channel_text_get_chatroom_id (TplChannelText * self);
 
-void tpl_text_channel_set_tpl_channel (TplTextChannel * self,
+void tpl_channel_text_set_tpl_channel (TplChannelText * self,
 				       TplChannel * tpl_chan);
-void tpl_text_channel_set_remote_contact (TplTextChannel * self,
+void tpl_channel_text_set_remote_contact (TplChannelText * self,
 					  TpContact * data);
-void tpl_text_channel_set_my_contact (TplTextChannel * self,
+void tpl_channel_text_set_my_contact (TplChannelText * self,
 				      TpContact * data);
-void tpl_text_channel_set_chatroom (TplTextChannel * self, gboolean data);
-void tpl_text_channel_set_chatroom_id (TplTextChannel * self,
+void tpl_channel_text_set_chatroom (TplChannelText * self, gboolean data);
+void tpl_channel_text_set_chatroom_id (TplChannelText * self,
 				       const gchar * data);
 
+void tpl_channel_text_call_when_ready (TplChannelText *self,
+    GAsyncReadyCallback cb, gpointer user_data);
+
 G_END_DECLS
-#endif /* __TPL_TEXT_CHANNEL_H__ */
+#endif /* __TPL_CHANNEL_TEXT_H__ */

@@ -269,9 +269,9 @@ _log_store_empathy_write_to_store (TplLogStore * self,
 }
 
 static gboolean
-_log_store_empathy_add_message_text_chat (TplLogStore * self,
-					  TplLogEntryText *message,
-					  GError ** error)
+add_message_text_chat (TplLogStore *self,
+    TplLogEntryText *message,
+    GError **error)
 {
   gboolean ret;
   TpAccount *account;
@@ -292,10 +292,10 @@ _log_store_empathy_add_message_text_chat (TplLogStore * self,
   chat_id = tpl_log_entry_get_chat_id(TPL_LOG_ENTRY (message));
   chatroom = tpl_log_entry_text_is_chatroom(message);
 
-
   sender = tpl_log_entry_get_sender (TPL_LOG_ENTRY (message));
   account =
-    tpl_channel_get_account (tpl_log_entry_text_get_tpl_channel (message));
+    tpl_channel_get_account (TPL_CHANNEL (
+          tpl_log_entry_text_get_tpl_channel_text (message)));
   body_str = tpl_log_entry_text_get_message (message);
   msg_type = tpl_log_entry_text_get_message_type (message);
 
@@ -346,8 +346,8 @@ _log_store_empathy_add_message_text_chat (TplLogStore * self,
 
 
 static gboolean
-_log_store_empathy_add_message_text (TplLogStore * self,
-				     TplLogEntryText *message, GError ** error)
+add_message_text (TplLogStore *self,
+				     TplLogEntryText *message, GError **error)
 {
   TplLogEntryTextSignalType signal_type;
   const gchar *chat_id;
@@ -362,32 +362,31 @@ _log_store_empathy_add_message_text (TplLogStore * self,
 
   switch (signal_type)
     {
-    case TPL_LOG_ENTRY_TEXT_SIGNAL_SENT:
-    case TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED:
-      return _log_store_empathy_add_message_text_chat (self,
-						       message, error);
-      break;
-    case TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
-      g_warning ("STATUS_CHANGED log entry not currently handled");
-      return FALSE;
-      break;
-    case TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR:
-      g_warning ("SEND_ERROR log entry not currently handled");
-      return FALSE;
-    case TPL_LOG_ENTRY_TEXT_SIGNAL_LOST_MESSAGE:
-      g_warning ("LOST_MESSAGE log entry not currently handled");
-      return FALSE;
-    default:
-      g_warning ("LogEntry's signal type unknown");
-      return FALSE;
+      case TPL_LOG_ENTRY_TEXT_SIGNAL_SENT:
+      case TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED:
+        return add_message_text_chat (self, message, error);
+        break;
+      case TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
+        g_warning ("STATUS_CHANGED log entry not currently handled");
+        return FALSE;
+        break;
+      case TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR:
+        g_warning ("SEND_ERROR log entry not currently handled");
+        return FALSE;
+      case TPL_LOG_ENTRY_TEXT_SIGNAL_LOST_MESSAGE:
+        g_warning ("LOST_MESSAGE log entry not currently handled");
+        return FALSE;
+      default:
+        g_warning ("LogEntry's signal type unknown");
+        return FALSE;
     }
 }
 
 
 /* First of two phases selection: understand the type LogEntry */
 static gboolean
-log_store_empathy_add_message (TplLogStore * self,
-			       gpointer message, GError ** error)
+log_store_empathy_add_message (TplLogStore *self,
+    gpointer message, GError **error)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
@@ -398,7 +397,7 @@ log_store_empathy_add_message (TplLogStore * self,
       case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR:
       case TPL_LOG_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE:
       case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
-        return _log_store_empathy_add_message_text (self,
+        return add_message_text (self,
             TPL_LOG_ENTRY_TEXT (message), error);
       default:
         return FALSE;
