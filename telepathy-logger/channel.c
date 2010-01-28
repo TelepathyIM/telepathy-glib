@@ -32,8 +32,8 @@
 #define TPCHAN_PROP_PREFIX_LEN strlen(TPCHAN_PROP_PREFIX)
 
 static void tpl_channel_set_account (TplChannel *self, TpAccount *data);
-static void tpl_channel_call_when_ready (TplChannel *self, GAsyncReadyCallback cb,
-    gpointer user_data);
+static void call_when_ready_protected (TplChannel *self,
+    GAsyncReadyCallback cb, gpointer user_data);
 static void pendingproc_get_ready_tp_connection (TplActionChain *ctx);
 static void got_ready_tp_connection_cb (TpConnection *connection,
     const GError *error, gpointer user_data);
@@ -41,17 +41,6 @@ static void pendingproc_get_ready_tp_channel (TplActionChain *ctx);
 static void got_ready_tp_channel_cb (TpChannel *channel,
     const GError *error, gpointer user_data);
 static void pendingproc_register_tpl_channel (TplActionChain *ctx);
-
-static gchar *channel_types[] = {
-  "org.freedesktop.Telepathy.Channel.Type.Text",
-  NULL
-};
-
-static TplChannelConstructor *channel_constructors[] = {
-    (TplChannelConstructor*) tpl_channel_text_new,
-    NULL
-};
-
 
 G_DEFINE_ABSTRACT_TYPE (TplChannel, tpl_channel, TP_TYPE_CHANNEL)
 
@@ -132,7 +121,7 @@ tpl_channel_class_init (TplChannelClass *klass)
   object_class->get_property = get_prop;
   object_class->set_property = set_prop;
 
-  klass->call_when_ready = tpl_channel_call_when_ready;
+  klass->call_when_ready_protected = call_when_ready_protected;
 
   param_spec = g_param_spec_object ("account",
       "Account", "TpAccount instance associated with TplChannel",
@@ -179,25 +168,6 @@ tpl_channel_set_account (TplChannel *self,
 }
 
 
-TplChannelConstructor *
-tpl_channel_factory (const gchar *channel_type)
-{
-  guint i;
-
-  if (G_N_ELEMENTS (channel_types) != G_N_ELEMENTS (channel_constructors))
-    g_critical ("channel_types and channel_constructors have different sizes");
-
-  for(i=0; i < G_N_ELEMENTS (channel_types); ++i)
-    if (tp_strdiff (channel_type, channel_types[i]))
-      return channel_constructors[i];
-
-  /* if the flow reaches here, it means that channel_type is not among the
-     recognized ones */
-  g_debug ("%s: channel type not handled by this logger", channel_type);
-  return NULL;
-}
-
-
 /**
  * It has to be called by all the child classes in order to prepare all the
  * objects involved in the logging process.
@@ -205,8 +175,20 @@ tpl_channel_factory (const gchar *channel_type)
  * It internally calls _call_when_ready for TpAccount TpConnection and
  * TpChannel itself. When everything is ready calls the user passed callback.
  */
+void tpl_channel_call_when_ready (TplChannel *self,
+    GAsyncReadyCallback cb,
+    gpointer user_data)
+{
+  g_return_if_fail (TPL_IS_CHANNEL (self));
+  /* Subclasses have to implement it */
+  g_return_if_fail (TPL_CHANNEL_GET_CLASS (self)->call_when_ready != NULL);
+
+  TPL_CHANNEL_GET_CLASS (self)->call_when_ready (self, cb, user_data);
+}
+
+
 static void
-tpl_channel_call_when_ready (TplChannel *self,
+call_when_ready_protected (TplChannel *self,
     GAsyncReadyCallback cb,
     gpointer user_data)
 {

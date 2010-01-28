@@ -31,7 +31,7 @@
 
 #include <telepathy-logger/conf.h>
 #include <telepathy-logger/channel.h>
-#include <telepathy-logger/channel-text.h>
+#include <telepathy-logger/channel-factory.h>
 #include <telepathy-logger/log-manager.h>
 
 // TODO move to a member of TplObserver
@@ -82,6 +82,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   TpDBusDaemon *tp_bus_daemon;
   TplConf *conf;
   GError *error = NULL;
+  const gchar *chan_type;
 
   g_return_if_fail (!TPL_STR_EMPTY (account) );
   g_return_if_fail (!TPL_STR_EMPTY (connection) );
@@ -143,15 +144,15 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
       TplChannel *tpl_chan;
 
       gchar *path = g_value_get_boxed (g_value_array_get_nth (channel, 0));
-      // d.bus.propertyName.str/gvalue hash
+      /* d.bus.propertyName.str/gvalue hash */
       GHashTable *map = g_value_get_boxed (g_value_array_get_nth (channel,
           1));
 
-      //tpl_channel_factory (g_value_get_string (g_hash_table_lookup (map,
-      //    TP_PROP_CHANNEL_CHANNEL_TYPE)));
-
-      tpl_chan = TPL_CHANNEL (tpl_channel_text_new (tp_conn, path, map,
-            tp_acc, &error));
+      chan_type = g_value_get_string (g_hash_table_lookup (map,
+            TP_PROP_CHANNEL_CHANNEL_TYPE));
+      g_debug ("CHAN TYPE %s", chan_type);
+      tpl_chan = tpl_channel_factory (chan_type, tp_conn, path, map, tp_acc,
+            &error);
       if (tpl_chan == NULL)
         {
           g_debug ("%s", error->message);
@@ -160,8 +161,8 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
           error = NULL;
           continue;
         }
-      tpl_channel_text_call_when_ready (TPL_CHANNEL_TEXT (tpl_chan),
-          got_tpl_channel_text_ready_cb, context);
+      tpl_channel_call_when_ready (tpl_chan, got_tpl_channel_text_ready_cb,
+          context);
     }
 
   g_object_unref (tp_acc);

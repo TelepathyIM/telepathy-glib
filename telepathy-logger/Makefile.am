@@ -26,6 +26,7 @@ LIBTPL_HEADERS = \
 libtelepathy_logger_la_SOURCES = \
 		datetime.c			\
 		channel.c			\
+		channel-factory.c		\
 		channel-text.c			\
 		conf.c				\
 		contact.c			\

@@ -52,20 +52,20 @@ typedef struct
 typedef struct
 {
   TpChannelClass parent_class;
-
+  /* Virtual method, to be implemented by subclasses */
   void (*call_when_ready) (TplChannel *self, GAsyncReadyCallback cb,
       gpointer user_data);
+  /* Protected method, should be called only by subclasses to prepare
+   * TplChannel */
+  void (*call_when_ready_protected) (TplChannel *self, GAsyncReadyCallback cb,
+      gpointer user_data);
 } TplChannelClass;
-
 
 GType tpl_channel_get_type (void);
 
 TpAccount *tpl_channel_get_account (TplChannel * self);
-const gchar *tpl_channel_get_account_path (TplChannel * self);
-
-typedef TplChannel* (*TplChannelConstructor) (TpConnection *conn,
-    const gchar *object_path, GHashTable *tp_chan_props, GError **error);
-TplChannelConstructor *tpl_channel_factory (const gchar *channel_type);
+void tpl_channel_call_when_ready (TplChannel *self, GAsyncReadyCallback cb,
+    gpointer user_data);
 
 G_END_DECLS
 #endif // __TPL_CHANNEL_H__

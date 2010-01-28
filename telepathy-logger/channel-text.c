@@ -58,6 +58,8 @@ static TpContactFeature features[TP_CONTACT_FEATURES_LEN] = {
   TP_CONTACT_FEATURE_PRESENCE
 };
 
+static void call_when_ready_wrapper (TplChannel *tpl_chan, GAsyncReadyCallback
+    cb, gpointer user_data);
 static void got_tpl_chan_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
 static void _channel_on_closed_cb (TpChannel *proxy, gpointer user_data,
@@ -258,10 +260,12 @@ static void
 tpl_channel_text_class_init (TplChannelTextClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  TplChannelClass *tpl_chan_class = TPL_CHANNEL_CLASS (klass);
 
   object_class->dispose = tpl_channel_text_dispose;
   object_class->finalize = tpl_channel_text_finalize;
-  //object_class->constructor = tpl_channel_text_constructor;
+
+  tpl_chan_class->call_when_ready = call_when_ready_wrapper;
 
   g_type_class_add_private (object_class, sizeof (TplChannelTextPriv));
 }
@@ -305,6 +309,7 @@ tpl_channel_text_new (TpConnection *conn,
 
   /* Do what tpl_channel_new does + set TplChannelText specific properties */
 
+g_debug ("TPL CHAN TEXT NEW!");
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (object_path), NULL);
@@ -419,6 +424,14 @@ tpl_channel_text_set_chatroom_id (TplChannelText *self,
   priv->chatroom_id = g_strdup (data);
 }
 
+static void
+call_when_ready_wrapper (TplChannel *tpl_chan,
+    GAsyncReadyCallback cb,
+    gpointer user_data)
+{
+  tpl_channel_text_call_when_ready( TPL_CHANNEL_TEXT (tpl_chan), cb,
+      user_data);
+}
 
 void
 tpl_channel_text_call_when_ready (TplChannelText *self,
@@ -448,7 +461,7 @@ pendingproc_prepare_tpl_channel (TplActionChain *ctx)
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_actionchain_get_object (ctx));
 
   g_debug ("prepare tpl");
-  TPL_CHANNEL_GET_CLASS (tpl_chan)->call_when_ready (tpl_chan,
+  TPL_CHANNEL_GET_CLASS (tpl_chan)->call_when_ready_protected (tpl_chan,
       got_tpl_chan_ready_cb, ctx);
 }
 
