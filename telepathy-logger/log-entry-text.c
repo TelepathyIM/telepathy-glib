@@ -21,6 +21,8 @@
 
 #include "log-entry-text.h"
 
+#include <telepathy-glib/util.h>
+
 #include <telepathy-logger/util.h>
 #include <telepathy-logger/log-entry.h>
 
@@ -177,27 +179,23 @@ tpl_log_entry_text_new (guint log_id, const gchar *chat_id,
 		  NULL);
 }
 
+static gchar *message_types[] = {
+    "normal",
+    "action",
+    "notice",
+    "auto-reply",
+    "delivery-report",
+    NULL };
 
 TpChannelTextMessageType
-tpl_log_entry_text_message_type_from_str (const gchar * type_str)
+tpl_log_entry_text_message_type_from_str (const gchar *type_str)
 {
-  if (g_strcmp0 (type_str, "normal") == 0)
-    {
-      return TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
-    }
-  else if (g_strcmp0 (type_str, "action") == 0)
-    {
-      return TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION;
-    }
-  else if (g_strcmp0 (type_str, "notice") == 0)
-    {
-      return TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE;
-    }
-  else if (g_strcmp0 (type_str, "auto-reply") == 0)
-    {
-      return TP_CHANNEL_TEXT_MESSAGE_TYPE_AUTO_REPLY;
-    }
+  guint i;
+  for(i = 0; i < G_N_ELEMENTS (message_types); ++i)
+    if (!tp_strdiff (type_str, message_types[i]))
+      return (TpChannelTextMessageType) i;
 
+  /* default case */
   return TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
 }
 

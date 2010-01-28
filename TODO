@@ -1,12 +1,11 @@
 Those are mini tasks still to do. They should be filed against a bug
 trucker as soon as TPL will have one:
 
-- TplChannel TplChannelText refactoring
-- TplLogEntry refactoring
 - use Private struct
 - include Avatar token in logstore
 - fix dbus_g_method_return_error
-- fix race condition with connecting signals in observer
+- use DBus TP spec and Co.
+- use debug.c/h
 
 - understand if TplContact is still useful or can be substitued by a
   simple TpContact
