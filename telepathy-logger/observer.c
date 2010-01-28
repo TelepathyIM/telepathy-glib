@@ -33,27 +33,27 @@
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/channel-factory.h>
 #include <telepathy-logger/log-manager.h>
+#include <telepathy-logger/util.h>
 
 // TODO move to a member of TplObserver
-static TplLogManager *logmanager = NULL;
 
 static void tpl_observer_finalize (GObject * obj);
 static void tpl_observer_dispose (GObject * obj);
 static void observer_iface_init (gpointer, gpointer);
 static void got_tpl_channel_text_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
+static GHashTable *tpl_observer_get_channel_map (TplObserver *self);
 
 
-G_DEFINE_TYPE_WITH_CODE (TplObserver, tpl_observer, G_TYPE_OBJECT,
-			 G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-						tp_dbus_properties_mixin_iface_init);
-			 G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CLIENT,
-						NULL);
-			 G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CLIENT_OBSERVER,
-						observer_iface_init);
-  );
+#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplObserver)
+struct _TplObserverPriv {
+    // mapping channel_path->TplChannel instances 
+    GHashTable *channel_map;
+    TplLogManager *logmanager;
+};
 
 static TplObserver *observer_singleton = NULL;
+
 static const char *client_interfaces[] = {
   TP_IFACE_CLIENT_OBSERVER,
   NULL
@@ -66,6 +66,13 @@ enum
   PROP_CHANNEL_FILTER,
   PROP_REGISTERED_CHANNELS
 };
+
+G_DEFINE_TYPE_WITH_CODE (TplObserver, tpl_observer, G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CLIENT, NULL);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CLIENT_OBSERVER, observer_iface_init);
+    );
 
 static void
 tpl_observer_observe_channels (TpSvcClientObserver *self,
@@ -301,6 +308,8 @@ tpl_observer_class_init (TplObserverClass *klass)
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class, G_STRUCT_OFFSET (
       TplObserverClass, dbus_props_class));
+
+  g_type_class_add_private (object_class, sizeof (TplObserverPriv));
 }
 
 
@@ -311,9 +320,13 @@ tpl_observer_init (TplObserver *self)
   TpDBusDaemon *tp_bus;
   GError *error = NULL;
 
-  self->channel_map = g_hash_table_new_full (g_str_hash, (GEqualFunc) tpl_strequal,
-      g_free, g_object_unref);
-  logmanager = tpl_log_manager_dup_singleton ();
+  TplObserverPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TPL_TYPE_OBSERVER, TplObserverPriv);
+  self->priv = priv;
+
+  priv->channel_map = g_hash_table_new_full (g_str_hash, (GEqualFunc)
+      tpl_strequal, g_free, g_object_unref);
+  priv->logmanager = tpl_log_manager_dup_singleton ();
 
   bus = tp_get_bus ();
   tp_bus = tp_dbus_daemon_new (bus);
@@ -348,18 +361,12 @@ observer_iface_init (gpointer g_iface,
 static void
 tpl_observer_dispose (GObject *obj)
 {
-  TplObserver *self = TPL_OBSERVER (obj);
+  TplObserverPriv *priv = GET_PRIV (obj);
 
-  if (self->channel_map != NULL)
-    {
-      g_object_unref (self->channel_map);
-      self->channel_map = NULL;
-    }
-  if (logmanager != NULL)
-    {
-      g_object_unref (logmanager);
-      logmanager = NULL;
-    }
+  tpl_object_unref_if_not_null (priv->channel_map);
+  priv->channel_map = NULL;
+  tpl_object_unref_if_not_null (priv->logmanager);
+  priv->logmanager = NULL;
 
   G_OBJECT_CLASS (tpl_observer_parent_class)->dispose (obj);
 }
@@ -377,12 +384,12 @@ tpl_observer_new (void)
 }
 
 
-GHashTable *
+static GHashTable *
 tpl_observer_get_channel_map (TplObserver *self)
 {
   g_return_val_if_fail (TPL_IS_OBSERVER (self), NULL);
 
-  return self->channel_map;
+  return GET_PRIV (self)->channel_map;
 }
 
 

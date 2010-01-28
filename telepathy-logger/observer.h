@@ -40,36 +40,28 @@ G_BEGIN_DECLS
 #define TPL_IS_OBSERVER(obj)	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_OBSERVER))
 #define TPL_IS_OBSERVER_CLASS(obj)	(G_TYPE_CHECK_CLASS_TYPE ((obj), TPL_TYPE_OBSERVER))
 #define TPL_OBSERVER_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_OBSERVER, TplObserverClass))
-typedef struct _TplObserver TplObserver;
-struct _TplObserver
+typedef struct _TplObserverPriv TplObserverPriv;
+typedef struct
 {
   GObject parent;
 
   /* private */
+  TplObserverPriv *priv;
+} TplObserver;
 
-  // mapping channel_path_str->Tpl<Interface>Channel instances 
-  GHashTable *channel_map;
-};
-
-typedef struct _TplObserverClass TplObserverClass;
-struct _TplObserverClass
+typedef struct
 {
   GObjectClass parent_class;
   TpDBusPropertiesMixinClass dbus_props_class;
-};
+} TplObserverClass;
 
 GType tpl_observer_get_type (void);
 
 TplObserver *tpl_observer_new (void);
 
-void tpl_headless_logger_init (void);
-
-GHashTable *tpl_observer_get_channel_map (TplObserver * self);
-
 gboolean tpl_observer_register_channel (TplObserver *self, TplChannel *chann);
 gboolean tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *chann);
-
 
 G_END_DECLS
 #endif // __TPL_OBSERVER_H__
