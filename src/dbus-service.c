@@ -22,8 +22,6 @@
 #include "dbus-service.h"
 
 #include <glib.h>
-#include <glib/gprintf.h>
-
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/account.h>
 
@@ -62,7 +60,7 @@ tpl_dbus_service_dispose (GObject *obj)
 
 
 static void
-tpl_dbus_service_class_init (TplDBusServiceClass* klass)
+tpl_dbus_service_class_init (TplDBusServiceClass *klass)
 {
 	GObjectClass* object_class = G_OBJECT_CLASS (klass);
 
@@ -77,7 +75,7 @@ tpl_dbus_service_class_init (TplDBusServiceClass* klass)
 
 
 static void
-tpl_dbus_service_init(TplDBusService* self)
+tpl_dbus_service_init (TplDBusService *self)
 {
   TplDBusServicePriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_DBUS_SERVICE, TplDBusServicePriv);
@@ -110,7 +108,7 @@ _pack_last_chats_answer (GList *data,
     {
       TplLogEntry *log = g_list_nth_data (data, data_idx);
 
-      GValue *value = g_new0(GValue, 1);
+      GValue *value = g_new0 (GValue, 1);
 
       gchar *message = g_strdup (tpl_log_entry_text_get_message (
           TPL_LOG_ENTRY_TEXT (log)));
@@ -143,70 +141,71 @@ tpl_dbus_service_last_chats (TplDBusService *self,
 {
 	guint dates_idx;
 	gint msgs_idx;
-	GError *error=NULL;
+	GError *error = NULL;
 	TpAccount *account;
 	DBusGConnection *dbus;
 	TpDBusDaemon *tp_dbus;
-	GList *ret=NULL;
+	GList *ret = NULL;
 	GPtrArray *answer;
 	guint left_lines = lines;
   TplDBusServicePriv *priv = GET_PRIV (self);
 
   g_return_val_if_fail (TPL_IS_DBUS_SERVICE (self), FALSE);
-	g_return_val_if_fail(context != NULL, FALSE);
+	g_return_val_if_fail (context != NULL, FALSE);
 
-	dbus = tp_get_bus();
-	tp_dbus = tp_dbus_daemon_new(dbus);
+	dbus = tp_get_bus ();
+	tp_dbus = tp_dbus_daemon_new (dbus);
 
-	account = tp_account_new(tp_dbus, account_path, &error);
-	if (error!=NULL)
+	account = tp_account_new (tp_dbus, account_path, &error);
+	if (error != NULL)
     {
-      g_error("TpAccount creation: %s", error->message);
-      dbus_g_method_return_error(context, error);
-      g_error_free(error);
-      g_object_unref(tp_dbus);
-      g_object_unref(dbus);
+      g_error ("TpAccount creation: %s", error->message);
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      g_object_unref (tp_dbus);
+      g_object_unref (dbus);
       return FALSE;
     }
 
-  GList *dates = tpl_log_manager_get_dates(priv->manager, account, identifier,
+  GList *dates = tpl_log_manager_get_dates (priv->manager, account, identifier,
       is_chatroom);
-	if(dates != NULL)
+	if (dates != NULL)
     {
-      g_set_error_literal(&error, TPL_DBUS_SERVICE_ERROR,
+      g_set_error_literal (&error, TPL_DBUS_SERVICE_ERROR,
           TPL_DBUS_SERVICE_ERROR_FAILED, "Error during date list retrieving");
-      dbus_g_method_return_error(context, error);
-      g_object_unref(tp_dbus);
-      g_object_unref(dbus);
+      dbus_g_method_return_error (context, error);
+      g_object_unref (tp_dbus);
+      g_object_unref (dbus);
       return FALSE;
     }
-	dates = g_list_reverse(dates);
+	dates = g_list_reverse (dates);
 
-	for(dates_idx=0; dates_idx<g_list_length(dates) && left_lines>0; ++dates_idx)
+  for(dates_idx = 0; dates_idx < g_list_length (dates) && left_lines > 0;
+      ++dates_idx)
     {
-      gchar *date = g_list_nth_data(dates, dates_idx);
-      GList *messages = tpl_log_manager_get_messages_for_date(priv->manager,
+      gchar *date = g_list_nth_data (dates, dates_idx);
+      GList *messages = tpl_log_manager_get_messages_for_date (priv->manager,
           account, identifier, is_chatroom, date);
       guint msgs_len = g_list_length (messages);
       gint guard = (msgs_len>=left_lines ? left_lines : msgs_len);
 
-      for(msgs_idx=msgs_len-1; guard>0 && left_lines>0; --guard, --msgs_idx)
+      for (msgs_idx=msgs_len-1; guard>0 && left_lines>0; --guard, --msgs_idx)
         {
-          TplLogEntry *log = g_list_nth_data(messages, msgs_idx);
-          g_object_ref(log);
-          ret = g_list_prepend(ret, log);
+          TplLogEntry *log = g_list_nth_data (messages, msgs_idx);
+          g_object_ref (log);
+          ret = g_list_prepend (ret, log);
           left_lines-=1;
         }
-      g_list_foreach(messages, (GFunc) g_object_unref, NULL);
+      g_list_foreach (messages, (GFunc) g_object_unref, NULL);
     }
-  g_list_foreach(dates, (GFunc) g_free, NULL);
+  g_list_foreach (dates, (GFunc) g_free, NULL);
 
-  _pack_last_chats_answer(ret, &answer);
-  g_list_foreach(ret, (GFunc) g_object_unref, NULL);
+  _pack_last_chats_answer (ret, &answer);
+  g_list_foreach (ret, (GFunc) g_object_unref, NULL);
 
-  dbus_g_method_return(context, answer);
+  dbus_g_method_return (context, answer);
 
-  g_object_unref(tp_dbus);
+  g_object_unref (tp_dbus);
 
   return TRUE;
 }
