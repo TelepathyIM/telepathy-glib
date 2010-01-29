@@ -27,16 +27,25 @@ test_value_array_build (void)
   GValueArray *arr;
   const gchar *host = "badger.snakes";
   guint port = 128;
+  gchar *host_out = NULL;
+  guint port_out = 1234;
 
   arr = tp_value_array_build (2,
     G_TYPE_STRING, host,
     G_TYPE_UINT, port,
     G_TYPE_INVALID);
 
-  g_assert (!tp_strdiff (g_value_get_string (g_value_array_get_nth (arr, 0)),
-    host));
+  g_assert_cmpstr (g_value_get_string (g_value_array_get_nth (arr, 0)), ==,
+      host);
+  g_assert_cmpuint (g_value_get_uint (g_value_array_get_nth (arr, 1)), ==,
+      port);
 
-  g_assert (g_value_get_uint (g_value_array_get_nth (arr, 1)) == port);
+  tp_value_array_unpack (arr, 2,
+      &host_out,
+      &port_out);
+
+  g_assert_cmpstr (host_out, ==, host);
+  g_assert_cmpuint (port_out, ==, port);
 
   g_value_array_free (arr);
 }
