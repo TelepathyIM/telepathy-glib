@@ -1,0 +1,73 @@
+<?xml version="1.0" ?>
+<node name="/Telepathy_Logger"
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <tp:copyright>Copyright © 2009 Collabora Ltd.</tp:copyright>
+  <tp:license xmlns="http://www.w3.org/1999/xhtml">
+    <p>This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.</p>
+
+<p>This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
+  </tp:license>
+  <interface name="org.freedesktop.Telepathy.TelepathyLoggerService.DRAFT"
+    tp:causes-havoc="experimental">
+    <tp:added version="0.1">(as a draft)</tp:added>
+
+    <tp:struct name="Chat_Message_Field" array-name="Chat_Message_Field_List">
+      <tp:member type="s" name="Sender">
+        <tp:docstring>
+          The identifier of the contact who originated this message.
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="s" name="Message">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        The body of the message sent to a 1-1 Chat or a Chat Room.
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="u" name="Timestamp">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        Unix timestamp for the log entry
+        </tp:docstring>
+      </tp:member>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+      <p>It represents a single message, received or sent.</p>
+      <p>The receiver is implicit in the request: if the sender is the user,
+      the receiver is the identifier in chat_id paramenter, if the sender is
+      not the user, the user is consequently the receiver of the message<p>
+      </tp:docstring>
+    </tp:struct>
+
+    <method name="LastChats"
+      tp:name-for-bindings="LastChats">
+      <arg direction="in" name="Account" type="o" tp:type="Contact_Handle[]">
+        <tp:docstring>
+          An array of handles representing contacts.
+        </tp:docstring>
+      </arg>
+      <arg direction="in" name="Identifier" type="s"
+        tp:type="Contact_Info_Map">
+        <tp:docstring>
+          A dictionary mapping contact handles to information, whose keys are
+          the subset of the requested list of handles for which information was
+          cached.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Request the last Lines entries of logs for the specified couple Account+Identifier.
+      </tp:docstring>
+    </method>
+
+    <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+    An interface for requesting informatiosn about the Telepathy Logger entries.
+    </tp:docstring>
+  </interface>
+</node>
+<!-- vim:set sw=2 sts=2 et ft=xml: -->

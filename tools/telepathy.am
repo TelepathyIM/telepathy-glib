@@ -3,9 +3,20 @@
 dist-hook:
 	chmod u+w ${distdir}/ChangeLog
 	if test -d ${top_srcdir}/.git; then \
-		git log --stat > ${distdir}/ChangeLog || \
-		git log > ${distdir}/ChangeLog; \
+		git log --date=iso $(CHANGELOG_RANGE) > ${distdir}/ChangeLog; \
 	fi
+
+distcheck-hook:
+	@case @VERSION@ in \
+		*.*.*.*) ;; \
+		*) \
+			if grep -r UNRELEASED $(CHECK_FOR_UNRELEASED); \
+			then \
+				echo "^^^ This is meant to be a release, but some files say UNRELEASED" >&2; \
+				exit 2; \
+			fi \
+			;; \
+	esac
 
 maintainer-upload-release: _maintainer-upload-release
 

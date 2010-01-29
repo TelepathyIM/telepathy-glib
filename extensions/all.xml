@@ -1,0 +1,157 @@
+<tp:spec
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
+  xmlns:xi="http://www.w3.org/2001/XInclude">
+
+<tp:title>TelepathyLogger-specific extensions to the Telepathy interfaces</tp:title>
+
+<tp:copyright>Copyright (C) 2009-2010 Collabora Limited</tp:copyright>
+
+<tp:license xmlns="http://www.w3.org/1999/xhtml">
+<p>This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.</p>
+
+<p>This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA</p>
+</tp:license>
+
+<tp:generic-types>
+  <tp:external-type name="Room_Handle" type="u"
+    from="Telepathy specification"/>
+  <tp:external-type name="Handle_Type" type="u"
+    from="Telepathy specification"/>
+  <tp:external-type name="Contact_Handle" type="u"
+    from="Telepathy specification"/>
+  <tp:external-type name="DBus_Unique_Name" type="s"
+    from="Telepathy specification"/>
+</tp:generic-types>
+
+<xi:include href="Telepathy_Logger.xml"/>
+
+<tp:generic-types>
+  <tp:external-type name="Contact_Handle" type="u"
+    from="Telepathy specification"/>
+  <tp:external-type name="DBus_Interface" type="s"
+    from="Telepathy specification"/>
+  <tp:external-type name="DBus_Qualified_Member" type="s"
+    from="Telepathy specification"/>
+  <tp:external-type name="Qualified_Property_Value_Map" type="a{sv}"
+    from="Telepathy specification"/>
+  <tp:external-type name="DBus_Error_Name" type="s"
+    from="Telepathy specification"/>
+  <tp:external-type name="DBus_Well_Known_Name" type="s"
+    from="Telepathy specification"/>
+  <tp:external-type name="Handler_Capability_Token" type="s"
+    from="Telepathy specification"/>
+
+  <!-- for localisation -->
+  <tp:external-type name="Rich_Presence_Access_Control_Type" type="u"
+    from="Telepathy specification"/>
+  <tp:external-type name="Rich_Presence_Access_Control" type="(uv)"
+    from="Telepathy specification"/>
+  <tp:external-type name="Unix_Timestamp64" type="t"
+    from="Telepathy specification"/>
+  <tp:external-type name="Unix_Timestamp" type="u"
+    from="Telepathy specification"/>
+  <tp:external-type name="String_String_Map" type="a{ss}"
+    from="Telepathy specification"/>
+
+  <tp:external-type name="String_Variant_Map" type="a{sv}"
+    from="Telepathy specification"/>
+
+  <!-- use types from Connection_Interface_Requests -->
+  <tp:external-type name="Channel_Class" type="a{sv}"
+    from="Telepathy specification"/>
+
+  <!-- use types from Channel_Type_Tubes -->
+  <tp:external-type name="Socket_Address_Type" type="u"
+    from="Telepathy specification"/>
+  <tp:external-type name="Socket_Access_Control" type="u"
+    from="Telepathy specification"/>
+  <tp:external-type name="Supported_Socket_Map" type="a{uau}"
+    from="Telepathy specification"/>
+  <tp:external-type name="DBus_Tube_Member" type="(us)"
+    from="Telepathy specification"/>
+
+  <!-- use types from Connection_Interface_Contact_Capabilities -->
+  <tp:external-type name="Requestable_Channel_Class" type="(a{sv}as)"
+    from="Telepathy specification"/>
+
+  <tp:external-type name="Connection_Status" type="u"
+    from="Telepathy specification"/>
+
+  <!-- use types from Channel_Type_Streamed_Media.xml -->
+  <tp:enum name="Media_Stream_Type" type="u"
+    array-name="Media_Stream_Type_List">
+    <tp:enumvalue suffix="Audio" value="0">
+      <tp:docstring>An audio stream</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="Video" value="1">
+      <tp:docstring>A video stream</tp:docstring>
+    </tp:enumvalue>
+  </tp:enum>
+
+  <!-- use types from generic-types.xml -->
+  <tp:struct name="Socket_Address_IP" array-name="Socket_Address_IP_List">
+    <tp:docstring>An IP address and port.</tp:docstring>
+    <tp:member type="s" name="Address">
+      <tp:docstring>Either a dotted-quad IPv4 address literal as for
+        <tp:type>Socket_Address_IPv4</tp:type>, or an RFC2373 IPv6 address
+        as for <tp:type>Socket_Address_IPv6</tp:type>.
+      </tp:docstring>
+    </tp:member>
+    <tp:member type="q" name="Port">
+      <tp:docstring>The TCP or UDP port number.</tp:docstring>
+    </tp:member>
+  </tp:struct>
+
+  <tp:struct name="Socket_Address_IPv4">
+    <tp:docstring>An IPv4 address and port.</tp:docstring>
+    <tp:member type="s" name="Address">
+      <tp:docstring>A dotted-quad IPv4 address literal: four ASCII decimal
+        numbers, each between 0 and 255 inclusive, e.g.
+        "192.168.0.1".</tp:docstring>
+    </tp:member>
+    <tp:member type="q" name="Port">
+      <tp:docstring>The TCP or UDP port number.</tp:docstring>
+    </tp:member>
+  </tp:struct>
+
+  <tp:struct name="Socket_Address_IPv6">
+    <tp:docstring>An IPv6 address and port.</tp:docstring>
+    <tp:member type="s" name="Address">
+      <tp:docstring>An IPv6 address literal as specified by RFC2373
+        section 2.2, e.g. "2001:DB8::8:800:200C:4171".</tp:docstring>
+    </tp:member>
+    <tp:member type="q" name="Port">
+      <tp:docstring>The TCP or UDP port number.</tp:docstring>
+    </tp:member>
+  </tp:struct>
+
+  <tp:enum name="Media_Stream_State" type="u">
+    <tp:enumvalue suffix="Disconnected" value="0">
+      <tp:docstring>The stream is disconnected.</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="Connecting" value="1">
+      <tp:docstring>The stream is trying to connect.</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="Connected" value="2">
+      <tp:docstring>The stream is connected.</tp:docstring>
+    </tp:enumvalue>
+  </tp:enum>
+
+  <tp:simple-type name="Handle" type="u" array-name="Handle_List">
+    <tp:docstring>An unsigned 32-bit integer representing a
+      handle</tp:docstring>
+  </tp:simple-type>
+</tp:generic-types>
+
+
+</tp:spec>
