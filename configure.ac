@@ -33,6 +33,8 @@ AC_COPYRIGHT([
 
 # Minimal version required
 GLIB_REQUIRED=2.22.0
+DBUS_REQUIRED=1.1.0
+DBUS_GLIB_REQUIRED=0.82
 TELEPATHY_GLIB_REQUIRED=0.9.0
 
 # Use --enable-maintainer-mode to disabled deprecated symbols
@@ -64,10 +66,28 @@ AM_GCONF_SOURCE_2
 GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
 AC_SUBST(GLIB_GENMARSHAL)
 
+# -----------------------------------------------------------
+# Check for code generation tools
+# -----------------------------------------------------------
+XSLTPROC=
 AC_CHECK_PROGS([XSLTPROC], [xsltproc])
 if test -z "$XSLTPROC"; then
   AC_MSG_ERROR([xsltproc (from libxslt) is required])
 fi
+
+# -----------------------------------------------------------
+# Check for a Python >= 2.5 with Twisted, to run the tests
+# -----------------------------------------------------------
+AM_PATH_PYTHON([2.5])
+AC_MSG_CHECKING([for Python with Twisted])
+if $PYTHON -c "import twisted.internet.reactor" >/dev/null 2>&1; then
+    TEST_PYTHON="$PYTHON"
+else
+    TEST_PYTHON=false
+fi
+AC_MSG_RESULT([$TEST_PYTHON])
+AC_SUBST(TEST_PYTHON)
+AM_CONDITIONAL([WANT_TWISTED_TESTS], test false != "$TEST_PYTHON")
 
 
 # -----------------------------------------------------------
@@ -126,7 +146,8 @@ PKG_CHECK_MODULES(LIBTPL,
 
 PKG_CHECK_MODULES(TPL,
 [
-   dbus-glib-1
+   dbus-1 >= $DBUS_REQUIRED
+   dbus-glib-1 >= $DBUS_GLIB_REQUIRED
    glib-2.0 >= $GLIB_REQUIRED
    gobject-2.0
    libxml-2.0
@@ -150,7 +171,7 @@ fi
 # -----------------------------------------------------------
 AC_ARG_ENABLE(coding-style-checks,
   AC_HELP_STRING([--disable-coding-style-checks],
-                 [don't check coding style using grep]),
+                 [do not check coding style using grep]),
     [ENABLE_CODING_STYLE_CHECKS=$enableval], [ENABLE_CODING_STYLE_CHECKS=yes])
 
 AC_SUBST([ENABLE_CODING_STYLE_CHECKS])
@@ -165,6 +186,7 @@ AC_OUTPUT([
    telepathy-logger/Makefile
    telepathy-logger/libtelepathy-logger.pc
    tools/Makefile
+   tests/Makefile
    shave
    shave-libtool
 ])
@@ -177,4 +199,5 @@ Configure summary:
 	Prefix......................:  ${prefix}
 	Shaved build................:  ${enable_shave}
 	Coding style checks.........:  ${ENABLE_CODING_STYLE_CHECKS}
+	Python Twisted tests........:  ${TEST_PYTHON}
 "

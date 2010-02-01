@@ -1,0 +1,86 @@
+To run all tests:
+
+  make check
+
+or with coverage info:
+
+  ./configure --enable-compiler-coverage
+  make lcov-check
+
+== C tests ==
+
+To run all C tests (assuming the current directory is $top_srcdir):
+
+  make -C tests check-TESTS
+
+To run an individual test:
+
+  make -C tests check-TESTS TESTS=test-handles
+
+To run tests under Valgrind:
+
+  make -C tests check-valgrind
+
+To run an individual test under Valgrind:
+
+  make -C tests check-valgrind TESTS=test-handles
+
+== Twisted tests ==
+
+To run all Twisted tests:
+
+  make check-twisted
+
+To run an individual Twisted test:
+
+  make -C tests/twisted check-twisted TWISTED_TESTS=test-connect.py
+
+or:
+
+  cd tests/twisted
+  sh tools/with-session-bus.sh --config-file=tools/tmp-session-bus.conf \
+        -- python test-connect.py
+
+To run with debug information:
+
+  make -C tests/twisted check-twisted TWISTED_TESTS=test-connect.py \
+        CHECK_TWISTED_VERBOSE=1
+
+or:
+
+  cd tests/twisted
+  sh tools/with-session-bus.sh --config-file=tools/tmp-session-bus.conf \
+        -- python test-connect.py -v
+
+To debug an individual test you can set one of the following env variable:
+
+  * GABBLE_TEST_VALGRIND : to run Gabble inside valgrind. The report is
+    added to tools/gabble-testing.log.
+        export GABBLE_TEST_VALGRIND=1
+
+  * GABBLE_TEST_REFDBG : to run Gabble inside refdbg. The report is written
+    to tools/refdbg.log. You can change GABBLE_WRAPPER to use an alternative
+    refdbg and change REFDBG_OPTIONS to set your own parameters. Example:
+        export GABBLE_TEST_REFDBG=1
+        export GABBLE_WRAPPER="/path/to/refdbg"
+        export REFDBG_OPTIONS="btnum=16"
+
+  * GABBLE_WRAPPER="nemiver" : to run Gabble inside the graphical debugger
+    nemiver. You'll be able to set up breakpoints; then hit the "continue"
+    button to launch Gabble.
+
+  * GABBLE_TEST_STRACE : to run Gabble inside strace. The report is written
+    to tools/strace.log.
+        export GABBLE_TEST_STRACE=1
+
+
+== Jingle tests ==
+
+Various jingle tests run the same tests with different dialects. To only test
+certain dialects use the JINGLE_DIALECTS environment variable. Currently
+supported are jingle015, jingle031, gtalk03 and gtalk04. For example to only
+run generic tests with the two jingle dialects you can do:
+
+  make -C tests/twisted check-twisted  TWISTED_TESTS=jingle/\*.py \
+    JINGLE_DIALECTS=jingle015,jingle031
+
