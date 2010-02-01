@@ -35,8 +35,6 @@
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/util.h>
 
-// TODO move to a member of TplObserver
-
 static void tpl_observer_finalize (GObject * obj);
 static void tpl_observer_dispose (GObject * obj);
 static void observer_iface_init (gpointer, gpointer);
@@ -46,11 +44,18 @@ static GHashTable *tpl_observer_get_channel_map (TplObserver *self);
 
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplObserver)
-struct _TplObserverPriv {
+struct _TplObserverPriv
+{
     // mapping channel_path->TplChannel instances 
     GHashTable *channel_map;
     TplLogManager *logmanager;
 };
+
+typedef struct
+{
+  guint chan_n;
+  DBusGMethodInvocation *dbus_ctx;
+} ObservingContext;
 
 static TplObserver *observer_singleton = NULL;
 
@@ -74,6 +79,7 @@ G_DEFINE_TYPE_WITH_CODE (TplObserver, tpl_observer, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CLIENT_OBSERVER, observer_iface_init);
     );
 
+
 static void
 tpl_observer_observe_channels (TpSvcClientObserver *self,
     const char *account,
@@ -82,22 +88,21 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
     const char *dispatch_op,
     const GPtrArray *requests_satisfied,
     GHashTable *observer_info,
-    DBusGMethodInvocation *context)
+    DBusGMethodInvocation *dbus_context)
 {
   TpAccount *tp_acc;
   TpConnection *tp_conn;
   TpDBusDaemon *tp_bus_daemon;
   TplConf *conf;
   GError *error = NULL;
+  ObservingContext *observing_ctx = NULL;
   const gchar *chan_type;
 
   g_return_if_fail (!TPL_STR_EMPTY (account) );
   g_return_if_fail (!TPL_STR_EMPTY (connection) );
 
   /* Check if logging if enabled globally and for the given account_path,
-   * return imemdiatly if it's not
-   */
-
+   * return imemdiatly if it's not */
   conf = tpl_conf_dup();
   if (!tpl_conf_is_globally_enabled(conf, &error))
     {
@@ -109,11 +114,13 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
     }
   if (tpl_conf_is_account_ignored(conf, account, &error))
     {
-      g_debug("Logging is disabled for account %s. "
+      g_debug ("Logging is disabled for account %s. "
           "Skipping channel logging.", account);
       return;
     }
 
+  /* Instantiating objects to pass to - or needed by them - the Tpl Channel Factory in order to
+   * obtain a TplChannelXXX instance */
   tp_bus_daemon = tp_dbus_daemon_dup (&error);
   if (tp_bus_daemon == NULL)
     {
@@ -144,6 +151,12 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
       return;
     }
 
+  /* when all TplChannel will be ready, the counter will be 0 and
+   * tp_svc_client_observer_return_from_observe_channels can be called */
+  observing_ctx = g_slice_new0 (ObservingContext);
+  observing_ctx->chan_n = channels->len;
+  observing_ctx->dbus_ctx = dbus_context;
+
   /* channels is of type a(oa{sv}) */
   for (guint i = 0; i < channels->len; i++)
     {
@@ -156,10 +169,9 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
           1));
 
       chan_type = g_value_get_string (g_hash_table_lookup (map,
-            TP_PROP_CHANNEL_CHANNEL_TYPE));
-      g_debug ("CHAN TYPE %s", chan_type);
+          TP_PROP_CHANNEL_CHANNEL_TYPE));
       tpl_chan = tpl_channel_factory (chan_type, tp_conn, path, map, tp_acc,
-            &error);
+          &error);
       if (tpl_chan == NULL)
         {
           g_debug ("%s", error->message);
@@ -169,7 +181,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
           continue;
         }
       tpl_channel_call_when_ready (tpl_chan, got_tpl_channel_text_ready_cb,
-          context);
+          observing_ctx);
     }
 
   g_object_unref (tp_acc);
@@ -183,8 +195,16 @@ got_tpl_channel_text_ready_cb (GObject *obj,
     GAsyncResult *result,
     gpointer user_data)
 {
-  DBusGMethodInvocation *context = user_data;
-  tp_svc_client_observer_return_from_observe_channels (context);
+  ObservingContext *observing_ctx = user_data;
+  DBusGMethodInvocation *dbus_ctx = observing_ctx->dbus_ctx;
+
+  observing_ctx->chan_n -= 1;
+  g_debug ("CHAN LEN %d", observing_ctx->chan_n);
+  if (observing_ctx->chan_n == 0)
+    {
+      tp_svc_client_observer_return_from_observe_channels (dbus_ctx);
+      g_slice_free (ObservingContext, observing_ctx);
+    }
 }
 
 static void

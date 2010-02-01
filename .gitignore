@@ -47,3 +47,10 @@ telepathy-logger/*.la
 telepathy-logger/.libs
 telepathy-logger/.deps/
 telepathy-logger/libtelepathy-logger.pc
+
+tools/*.pyc
+tools/*.pyo
+
+extensions/.deps/
+extensions/_gen/
+extensions/extensions.html
