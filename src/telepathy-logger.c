@@ -21,18 +21,35 @@
 
 #include <glib.h>
 
+#include <telepathy-logger/channel-factory.h>
+#include <telepathy-logger/channel-text.h>
 #include <telepathy-logger/observer.h>
 
 static GMainLoop *loop = NULL;
 
 int main(int argc, char *argv[])
 {
-	g_type_init ();
+  TplObserver *observer;
+  GError *error = NULL;
 
-	tpl_observer_new ();
+	g_type_init ();
+  tpl_channel_factory_init ();
+
+  tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
+      (TplChannelConstructor) tpl_channel_text_new);
+
+	observer = tpl_observer_new ();
+  if (tpl_observer_register_dbus (observer, &error) == FALSE)
+    {
+      g_debug ("Error during D-Bus registration: %s", error->message);
+      return 1;
+    }
 
 	loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (loop);
+
+  g_object_unref (observer);
+  tpl_channel_factory_deinit ();
 
 	return 0;
 }

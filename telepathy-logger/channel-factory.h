@@ -31,7 +31,13 @@
 typedef TplChannel* (*TplChannelConstructor) (TpConnection *conn,
     const gchar *object_path, GHashTable *tp_chan_props, TpAccount *tp_acc,
     GError **error);
-TplChannel *tpl_channel_factory (const gchar *channel_type,
+
+void tpl_channel_factory_init (void);
+void tpl_channel_factory_deinit (void);
+void tpl_channel_factory_add (const gchar *type,
+    TplChannelConstructor constructor);
+TplChannelConstructor tpl_channel_factory_lookup (const gchar *type);
+TplChannel *tpl_channel_factory_build (const gchar *channel_type,
     TpConnection *conn, const gchar *object_path, GHashTable *tp_chan_props,
     TpAccount *tp_acc, GError **error);
 

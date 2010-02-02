@@ -58,8 +58,8 @@ static TpContactFeature features[TP_CONTACT_FEATURES_LEN] = {
   TP_CONTACT_FEATURE_PRESENCE
 };
 
-static void call_when_ready_wrapper (TplChannel *tpl_chan, GAsyncReadyCallback
-    cb, gpointer user_data);
+static void call_when_ready_wrapper (TplChannel *tpl_chan,
+    GAsyncReadyCallback cb, gpointer user_data);
 static void got_tpl_chan_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
 static void _channel_on_closed_cb (TpChannel *proxy, gpointer user_data,
@@ -233,7 +233,8 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx)
 
 G_DEFINE_TYPE (TplChannelText, tpl_channel_text, TPL_TYPE_CHANNEL)
 
-static void tpl_channel_text_dispose (GObject *obj)
+static void
+tpl_channel_text_dispose (GObject *obj)
 {
   TplChannelTextPriv *priv = GET_PRIV (obj);
 

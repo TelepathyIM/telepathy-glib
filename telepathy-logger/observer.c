@@ -35,6 +35,47 @@
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/util.h>
 
+/**
+ * SECTION:observer
+ * @title: TplObserver
+ * @short_description: TPL Observer main class, used to handle received
+ * signals
+ * @see_also: #TpSvcClientObserver
+ *
+ * The Telepathy Logger's Observer implements
+ * org.freedesktop.Telepathy.Client.Observer DBus interface and is called by
+ * the Channel Dispatcher when a new channel is created, in order to log
+ * received signals.
+ *
+ * Since: 0.1
+ */
+
+/**
+ * TplObserver:
+ *
+ * The Telepathy Logger's Observer implements
+ * org.freedesktop.Telepathy.Client.Observer DBus interface and is called by
+ * the Channel Dispatcher when a new channel is created, in order to log
+ * received signals using its #LogManager.
+ *
+ * This object is a signleton, any call to tpl_observer_new will return the
+ * same object with an incremented reference counter. One has to
+ * unreference the object properly when the used reference is not used
+ * anymore.
+ *
+ * This object will register to it's DBus interface when
+ * tpl_observer_register_dbus is called, ensuring that the registration will
+ * happen only once per singleton instance.
+ *
+ * Since: 0.1
+ */
+
+/**
+ * TplObserverClass:
+ *
+ * The class of a #TplObserver.
+ */
+
 static void tpl_observer_finalize (GObject * obj);
 static void tpl_observer_dispose (GObject * obj);
 static void observer_iface_init (gpointer, gpointer);
@@ -49,6 +90,7 @@ struct _TplObserverPriv
     // mapping channel_path->TplChannel instances 
     GHashTable *channel_map;
     TplLogManager *logmanager;
+    gboolean  dbus_registered;
 };
 
 typedef struct
@@ -170,7 +212,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
 
       chan_type = g_value_get_string (g_hash_table_lookup (map,
           TP_PROP_CHANNEL_CHANNEL_TYPE));
-      tpl_chan = tpl_channel_factory (chan_type, tp_conn, path, map, tp_acc,
+      tpl_chan = tpl_channel_factory_build (chan_type, tp_conn, path, map, tp_acc,
           &error);
       if (tpl_chan == NULL)
         {
@@ -254,13 +296,11 @@ tpl_observer_constructor (GType type,
   GObject *retval;
 
   if (observer_singleton)
-    {
-      retval = g_object_ref (observer_singleton);
-    }
+    retval = g_object_ref (observer_singleton);
   else
     {
-      retval = G_OBJECT_CLASS (tpl_observer_parent_class)->constructor
-	(type, n_props, props);
+      retval = G_OBJECT_CLASS (tpl_observer_parent_class)->constructor (type,
+          n_props, props);
 
       observer_singleton = TPL_OBSERVER (retval);
       g_object_add_weak_pointer (retval, (gpointer *) & observer_singleton);
@@ -280,8 +320,7 @@ tpl_observer_class_init (TplObserverClass *klass)
   object_class->dispose = tpl_observer_dispose;
 
   /* D-Bus properties are exposed as GObject properties through the
-   * TpDBusPropertiesMixin */
-  /* properties on the Client interface */
+   * TpDBusPropertiesMixin properties on the Client interface */
   static TpDBusPropertiesMixinPropImpl client_props[] = {
     {"Interfaces", "interfaces", NULL},
     {NULL}
@@ -308,18 +347,46 @@ tpl_observer_class_init (TplObserverClass *klass)
 
   object_class->get_property = get_prop;
 
+  /**
+   * TplObserver:interfaces:
+   *
+   * Interfaces implemented by this object.
+   *
+   * Since: 0.1.0
+   */
   g_object_class_install_property (object_class, PROP_INTERFACES,
       g_param_spec_boxed ("interfaces", "Interfaces",
         "Available D-Bus Interfaces", G_TYPE_STRV, G_PARAM_READABLE |
         G_PARAM_STATIC_STRINGS));
 
+  /**
+   * TplObserver:interfaces:
+   *
+   * Channels that this object will accept and manage from the Channel
+   * Dispatcher
+   *
+   * Since: 0.1.0
+   */
   g_object_class_install_property (object_class, PROP_CHANNEL_FILTER,
-      g_param_spec_boxed ("channel-filter", "Channel Filter",
-        "Filter for channels we observe", TP_ARRAY_TYPE_CHANNEL_CLASS_LIST,
-        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+      g_param_spec_boxed ("channel-filter",
+        "Channel Filter",
+        "Filter for channels we observe",
+        TP_ARRAY_TYPE_CHANNEL_CLASS_LIST, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * TplObserver:interfaces:
+   *
+   * A list of channel's paths currently registered to this object.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
+   * Since: 0.1.0
+   */
   g_object_class_install_property (object_class, PROP_REGISTERED_CHANNELS,
-      g_param_spec_boxed ("registered-channels", "Registered Channels",
+      g_param_spec_boxed ("registered-channels",
+        "Registered Channels",
         "open TpChannels which the TplObserver is logging",
         TP_ARRAY_TYPE_CHANNEL_CLASS_LIST, G_PARAM_READABLE |
         G_PARAM_STATIC_STRINGS));
@@ -336,36 +403,62 @@ tpl_observer_class_init (TplObserverClass *klass)
 static void
 tpl_observer_init (TplObserver *self)
 {
-  DBusGConnection *bus;
-  TpDBusDaemon *tp_bus;
-  GError *error = NULL;
-
   TplObserverPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_OBSERVER, TplObserverPriv);
   self->priv = priv;
 
-  priv->channel_map = g_hash_table_new_full (g_str_hash, (GEqualFunc)
-      tpl_strequal, g_free, g_object_unref);
+  priv->channel_map = g_hash_table_new_full (g_str_hash,
+      (GEqualFunc) tpl_strequal, g_free, g_object_unref);
   priv->logmanager = tpl_log_manager_dup_singleton ();
+}
+
+
+/**
+ * tpl_observer_register_dbus:
+ * @self: #TplObserver instance, cannot be %NULL.
+ * @error: Used to raise an error if DBus registration fails
+ *
+ * Registers the object using #TPL_OBSERVER_WELL_KNOWN_BUS_NAME well known
+ * name.
+ *
+ * Returns: %TRUE if registration suceeds or if the object is already
+ * registered to DBus. or %FALSE if the object is not alerady registered and
+ * the registration failed, in which case @error is set.
+ */
+gboolean
+tpl_observer_register_dbus (TplObserver *self,
+    GError **error)
+{
+  TplObserverPriv* priv = GET_PRIV (self);
+  DBusGConnection *bus;
+  TpDBusDaemon *tp_bus;
+
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
+
+  /* just return TRUE if the Observer interface is actually already registered
+   * to DBus */
+  if (priv->dbus_registered == TRUE)
+    return TRUE;
 
   bus = tp_get_bus ();
   tp_bus = tp_dbus_daemon_new (bus);
 
-  if (tp_dbus_daemon_request_name (tp_bus, TPL_OBSERVER_WELL_KNOWN_BUS_NAME,
-      TRUE, &error))
+  if (FALSE == tp_dbus_daemon_request_name (tp_bus,
+        TPL_OBSERVER_WELL_KNOWN_BUS_NAME, TRUE, error))
     {
-      g_debug ("%s DBus well known name registered",
-          TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
     }
-  else
-    {
-      g_error ("Well Known name request error: %s", error->message);
-      g_clear_error (&error);
-      g_error_free (error);
-    }
+
+  priv->dbus_registered = TRUE;
+  g_debug ("%s DBus well known name registered",
+      TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
 
   dbus_g_connection_register_g_object (bus, TPL_OBSERVER_OBJECT_PATH,
       G_OBJECT (self));
+
+  return TRUE;
 }
 
 static void
@@ -378,24 +471,30 @@ observer_iface_init (gpointer g_iface,
       tpl_observer_observe_channels);
 }
 
+
 static void
 tpl_observer_dispose (GObject *obj)
 {
   TplObserverPriv *priv = GET_PRIV (obj);
 
-  tpl_object_unref_if_not_null (priv->channel_map);
-  priv->channel_map = NULL;
+  if (priv->channel_map != NULL)
+    {
+      g_hash_table_unref (priv->channel_map);
+      priv->channel_map = NULL;
+    }
   tpl_object_unref_if_not_null (priv->logmanager);
   priv->logmanager = NULL;
 
   G_OBJECT_CLASS (tpl_observer_parent_class)->dispose (obj);
 }
 
+
 static void
 tpl_observer_finalize (GObject *obj)
 {
   G_OBJECT_CLASS (tpl_observer_parent_class)->finalize (obj);
 }
+
 
 TplObserver *
 tpl_observer_new (void)
@@ -436,11 +535,33 @@ tpl_observer_register_channel (TplObserver *self,
       g_debug ("Channel path not found, registering %s", key);
 
   g_hash_table_insert (glob_map, key, channel);
+  g_object_notify (G_OBJECT(self), "registered-channels");
 
   g_object_unref (channel);
 
   return TRUE;
 }
+
+
+/**
+ * tpl_observer_unregister_channel:
+ * @self: #TplObserver instance, cannot be %NULL.
+ * @channel: a #TplChannel cast of a TplChannel subclass instance
+ *
+ * Un-registers a TplChannel subclass instance, i.e. TplChannelText instance, as
+ * TplChannel instance.
+ * It is supposed to be called when the Closed signal for a channel is
+ * emitted or when an un-recoverable error during the life or a TplChannel
+ * happens.
+ *
+ * Every time that a channel is registered or unregistered, a notification is
+ * sent for the 'registered-channels' property.
+ *
+ * Returns: %TRUE if @channel is registered and can thus be un-registered or %FALSE
+ * if the @channel is not currently among registered channels and thus cannot
+ * be un-registered.
+ */
+
 
 gboolean
 tpl_observer_unregister_channel (TplObserver *self,
@@ -463,6 +584,8 @@ tpl_observer_unregister_channel (TplObserver *self,
      value's object
    */
   retval = g_hash_table_remove (glob_map, key);
+  if (retval)
+    g_object_notify (G_OBJECT(self), "registered-channels");
   g_free (key);
   return retval;
 }

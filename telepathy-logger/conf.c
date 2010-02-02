@@ -75,8 +75,8 @@ tpl_conf_constructor (GType type,
     }
   else
     {
-      retval = G_OBJECT_CLASS (tpl_conf_parent_class)->constructor
-        (type, n_props, props);
+      retval = G_OBJECT_CLASS (tpl_conf_parent_class)->constructor (type,
+          n_props, props);
       conf_singleton = TPL_CONF (retval);
       g_object_add_weak_pointer (retval, (gpointer *) &conf_singleton);
     }

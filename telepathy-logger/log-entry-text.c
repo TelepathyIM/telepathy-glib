@@ -187,6 +187,16 @@ static gchar *message_types[] = {
     "delivery-report",
     NULL };
 
+
+/**
+ * tpl_log_entry_text_message_type_to_str
+ * @type_str: string to transform into a #TpChannelTextMessageType
+ *
+ * Maps strings into enum #TpChannelTextMessageType values.
+ *
+ * Returns: the relative value from enum #TpChannelTextMessageType if a
+ * mapping is found, or defaults to %TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL if not.
+ */
 TpChannelTextMessageType
 tpl_log_entry_text_message_type_from_str (const gchar *type_str)
 {
@@ -200,20 +210,21 @@ tpl_log_entry_text_message_type_from_str (const gchar *type_str)
 }
 
 
+/**
+ * tpl_log_entry_text_message_type_to_str
+ * @msg_type: message type to transform into a string
+ *
+ * Maps enum #TpChannelTextMessageType values into strings
+ *
+ * Returns: a string representation for @msg_type or NULL if @msg_type is not
+ * a legal value for %TpChannelTextMessageType.
+ */
 const gchar *
 tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
 {
-  switch (msg_type)
-    {
-    case TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION:
-      return "action";
-    case TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE:
-      return "notice";
-    case TP_CHANNEL_TEXT_MESSAGE_TYPE_AUTO_REPLY:
-      return "auto-reply";
-    default:
-      return "normal";
-    }
+  g_return_val_if_fail (G_N_ELEMENTS (message_types) >= msg_type, NULL);
+
+  return message_types[msg_type];
 }
 
 

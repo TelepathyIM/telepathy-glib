@@ -59,9 +59,11 @@ GType tpl_observer_get_type (void);
 
 TplObserver *tpl_observer_new (void);
 
-gboolean tpl_observer_register_channel (TplObserver *self, TplChannel *chann);
+gboolean tpl_observer_register_channel (TplObserver *self,
+    TplChannel *channel);
 gboolean tpl_observer_unregister_channel (TplObserver *self,
-    TplChannel *chann);
+    TplChannel *channel);
+gboolean tpl_observer_register_dbus (TplObserver *self, GError **error);
 
 G_END_DECLS
 #endif // __TPL_OBSERVER_H__

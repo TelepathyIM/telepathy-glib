@@ -25,51 +25,71 @@
 
 #include <telepathy-logger/channel-text.h>
 
-/*
-static TplChannel *
-text_new_wrap (TpConnection *conn,
-    const gchar *object_path,
-    GHashTable *tp_chan_props,
-    TpAccount *account,
-    GError **error)
+static GHashTable *channel_table = NULL;
+
+void
+tpl_channel_factory_init (void)
 {
-  g_debug ("FOO");
-  return TPL_CHANNEL (tpl_channel_text_new (conn, object_path, tp_chan_props,
-        account, error));
+  g_return_if_fail (channel_table == NULL);
+
+  channel_table = g_hash_table_new_full (g_str_hash,
+      (GEqualFunc) tpl_strequal, g_free, NULL);
 }
-*/
-static gchar *channel_types[] = {
-  "org.freedesktop.Telepathy.Channel.Type.Text",
-  NULL
-};
-static TplChannelConstructor channel_constructors[] = {
-    (TplChannelConstructor) tpl_channel_text_new,
-    NULL
-};
 
 
+void
+tpl_channel_factory_add (const gchar *type,
+    TplChannelConstructor constructor)
+{
+  gchar *key;
+
+  g_return_if_fail (!TPL_STR_EMPTY (type));
+  g_return_if_fail (constructor != NULL);
+  g_return_if_fail (channel_table != NULL);
+
+  key = g_strdup (type);
+
+  if (g_hash_table_lookup (channel_table, type) != NULL)
+    {
+      g_warning ("Type %s already mapped. replacing constructor.", type);
+      g_hash_table_replace (channel_table, key, constructor);
+    }
+  else
+    g_hash_table_insert (channel_table, key, constructor);
+}
+
+
+TplChannelConstructor
+tpl_channel_factory_lookup (const gchar *type)
+{
+  g_return_val_if_fail (!TPL_STR_EMPTY (type), NULL);
+  g_return_val_if_fail (channel_table != NULL, NULL);
+
+  return g_hash_table_lookup (channel_table, type);
+}
+
+void
+tpl_channel_factory_deinit (void)
+{
+  g_return_if_fail (channel_table != NULL);
+
+  g_hash_table_unref (channel_table);
+  channel_table = NULL;
+}
 
 TplChannel *
-tpl_channel_factory (const gchar *channel_type,
+tpl_channel_factory_build (const gchar *channel_type,
     TpConnection *conn,
     const gchar *object_path,
     GHashTable *tp_chan_props,
     TpAccount *tp_acc,
     GError **error)
 {
-  guint i;
-  TplChannelConstructor chan_constructor = NULL;
+  TplChannelConstructor chan_constructor;
 
-  if (G_N_ELEMENTS (channel_types) != G_N_ELEMENTS (channel_constructors))
-    g_critical ("channel_types and channel_constructors have different sizes."
-        " An update to the channel factory's data is needed.");
+  g_return_val_if_fail (channel_table != NULL, NULL);
 
-  for(i=0; i < G_N_ELEMENTS (channel_types); ++i)
-    if (!tp_strdiff (channel_type, channel_types[i])) {
-      chan_constructor = channel_constructors[i];
-      continue;
-    }
-
+  chan_constructor = tpl_channel_factory_lookup (channel_type);
   if (chan_constructor == NULL)
     {
       g_debug ("%s: channel type not handled by this logger", channel_type);
@@ -78,4 +98,3 @@ tpl_channel_factory (const gchar *channel_type,
 
   return chan_constructor (conn, object_path, tp_chan_props, tp_acc, error);
 }
-
