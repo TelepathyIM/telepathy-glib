@@ -81,6 +81,7 @@ static void tpl_observer_dispose (GObject * obj);
 static void observer_iface_init (gpointer, gpointer);
 static void got_tpl_channel_text_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
+static TplChannelFactory tpl_observer_get_channel_factory (TplObserver *self);
 static GHashTable *tpl_observer_get_channel_map (TplObserver *self);
 
 
@@ -91,6 +92,7 @@ struct _TplObserverPriv
     GHashTable *channel_map;
     TplLogManager *logmanager;
     gboolean  dbus_registered;
+    TplChannelFactory channel_factory;
 };
 
 typedef struct
@@ -135,6 +137,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   TpAccount *tp_acc;
   TpConnection *tp_conn;
   TpDBusDaemon *tp_bus_daemon;
+  TplChannelFactory chan_factory;
   TplConf *conf;
   GError *error = NULL;
   ObservingContext *observing_ctx = NULL;
@@ -142,6 +145,8 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
 
   g_return_if_fail (!TPL_STR_EMPTY (account) );
   g_return_if_fail (!TPL_STR_EMPTY (connection) );
+
+  chan_factory = tpl_observer_get_channel_factory (TPL_OBSERVER (self));
 
   /* Check if logging if enabled globally and for the given account_path,
    * return imemdiatly if it's not */
@@ -212,8 +217,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
 
       chan_type = g_value_get_string (g_hash_table_lookup (map,
           TP_PROP_CHANNEL_CHANNEL_TYPE));
-      tpl_chan = tpl_channel_factory_build (chan_type, tp_conn, path, map, tp_acc,
-          &error);
+      tpl_chan = chan_factory (chan_type, tp_conn, path, map, tp_acc, &error);
       if (tpl_chan == NULL)
         {
           g_debug ("%s", error->message);
@@ -588,4 +592,29 @@ tpl_observer_unregister_channel (TplObserver *self,
     g_object_notify (G_OBJECT(self), "registered-channels");
   g_free (key);
   return retval;
+}
+
+
+static TplChannelFactory
+tpl_observer_get_channel_factory (TplObserver *self)
+{
+  g_return_val_if_fail (TPL_IS_OBSERVER (self), NULL);
+
+  return GET_PRIV (self)->channel_factory;
+}
+
+
+void
+tpl_observer_set_channel_factory (TplObserver *self,
+    TplChannelFactory factory)
+{
+  TplObserverPriv *priv = GET_PRIV (self);
+
+  g_return_if_fail (TPL_IS_OBSERVER (self));
+  g_return_if_fail (factory != NULL);
+  g_return_if_fail (factory != NULL);
+  g_return_if_fail (priv->channel_factory == NULL);
+
+  priv->channel_factory = factory;
+
 }

@@ -27,7 +27,9 @@
 
 static GMainLoop *loop = NULL;
 
-int main(int argc, char *argv[])
+int
+main(int argc,
+    char *argv[])
 {
   TplObserver *observer;
   GError *error = NULL;
@@ -35,10 +37,13 @@ int main(int argc, char *argv[])
 	g_type_init ();
   tpl_channel_factory_init ();
 
+  g_debug ("Initialising TPL Channel Factory");
   tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
       (TplChannelConstructor) tpl_channel_text_new);
 
 	observer = tpl_observer_new ();
+  g_debug ("Registering channel factory");
+  tpl_observer_set_channel_factory (observer, tpl_channel_factory_build);
   if (tpl_observer_register_dbus (observer, &error) == FALSE)
     {
       g_debug ("Error during D-Bus registration: %s", error->message);

@@ -26,6 +26,7 @@
 #include <telepathy-glib/dbus-properties-mixin.h>
 
 #include <telepathy-logger/channel.h>
+#include <telepathy-logger/channel-factory.h>
 
 #define TPL_OBSERVER_WELL_KNOWN_BUS_NAME \
   "org.freedesktop.Telepathy.Client.TelepathyLogger"
@@ -64,6 +65,9 @@ gboolean tpl_observer_register_channel (TplObserver *self,
 gboolean tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel);
 gboolean tpl_observer_register_dbus (TplObserver *self, GError **error);
+void tpl_observer_set_channel_factory (TplObserver *self,
+    TplChannelFactory factory);
+
 
 G_END_DECLS
 #endif // __TPL_OBSERVER_H__

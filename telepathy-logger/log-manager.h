@@ -110,8 +110,7 @@ void tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
     guint num_messages, TplLogMessageFilter filter, gpointer filter_user_data,
     GAsyncReadyCallback callback, gpointer user_data);
 
-GList *tpl_log_manager_get_chats (TplLogManager *manager,
-    TpAccount *account);
+GList *tpl_log_manager_get_chats (TplLogManager *manager, TpAccount *account);
 
 void tpl_log_manager_get_chats_async (TplLogManager *manager,
     TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
