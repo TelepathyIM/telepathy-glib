@@ -27,11 +27,15 @@ config.*
 *~
 *.swp
 
-src/*.o
-src/*.lo
-src/*.la
-src/.libs
-src/.deps/
+.libs
+.deps
+
+*.o
+*.lo
+*.la
+*.pyc
+*.pyo
+
 src/telepathy-logger
 src/test-api
 src/telepathy-logger-dbus
@@ -41,16 +45,8 @@ src/dbus-service-server.h
 data/*.service
 data/*.client
 
-telepathy-logger/*.o
-telepathy-logger/*.lo
-telepathy-logger/*.la
-telepathy-logger/.libs
-telepathy-logger/.deps/
 telepathy-logger/libtelepathy-logger.pc
 
-tools/*.pyc
-tools/*.pyo
-
-extensions/.deps/
 extensions/_gen/
 extensions/extensions.html
+tests/test-*[^ch]
