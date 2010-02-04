@@ -17,7 +17,8 @@
  * Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
  * Boston, MA  02110-1301  USA
  *
- * Authors: Jonny Lamb <jonny.lamb@collabora.co.uk>
+ * Authors: Jonny Lamb <jonny.lamb@collabora.co.uk>,
+ *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
 #include "log-store.h"
@@ -29,21 +30,22 @@ tpl_log_store_get_type (void)
   if (type == 0)
     {
       static const GTypeInfo info = {
-	sizeof (TplLogStoreInterface),
-	NULL,			/* base_init */
-	NULL,			/* base_finalize */
-	NULL,			/* class_init */
-	NULL,			/* class_finalize */
-	NULL,			/* class_data */
-	0,
-	0,			/* n_preallocs */
-	NULL			/* instance_init */
+          sizeof (TplLogStoreInterface),
+          NULL,			/* base_init */
+          NULL,			/* base_finalize */
+          NULL,			/* class_init */
+          NULL,			/* class_finalize */
+          NULL,			/* class_data */
+          0,
+          0,			/* n_preallocs */
+          NULL			/* instance_init */
       };
       type = g_type_register_static (G_TYPE_INTERFACE, "TplLogStore",
-				     &info, 0);
+          &info, 0);
     }
   return type;
 }
+
 
 const gchar *
 tpl_log_store_get_name (TplLogStore * self)
@@ -54,23 +56,25 @@ tpl_log_store_get_name (TplLogStore * self)
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_name (self);
 }
 
+
 gboolean
-tpl_log_store_exists (TplLogStore * self,
-		      TpAccount * account,
-		      const gchar * chat_id, gboolean chatroom)
+tpl_log_store_exists (TplLogStore *self,
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->exists)
     return FALSE;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->exists (self, account, chat_id,
-						     chatroom);
+      chatroom);
 }
 
 
-
 gboolean
-tpl_log_store_add_message (TplLogStore * self,
-			   gpointer message, GError ** error)
+tpl_log_store_add_message (TplLogStore *self,
+    gpointer message,
+    GError **error)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->add_message)
     {
@@ -79,52 +83,56 @@ tpl_log_store_add_message (TplLogStore * self,
     }
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->add_message (self, message,
-							  error);
+      error);
 }
 
+
 GList *
-tpl_log_store_get_dates (TplLogStore * self,
-			 TpAccount * account,
-			 const gchar * chat_id, gboolean chatroom)
+tpl_log_store_get_dates (TplLogStore *self,
+			 TpAccount *account,
+			 const gchar *chat_id,
+       gboolean chatroom)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_dates)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_dates (self, account,
-							chat_id, chatroom);
+      chat_id, chatroom);
 }
 
+
 GList *
-tpl_log_store_get_messages_for_date (TplLogStore * self,
-				     TpAccount * account,
-				     const gchar * chat_id,
-				     gboolean chatroom, const gchar * date)
+tpl_log_store_get_messages_for_date (TplLogStore *self,
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom,
+    const gchar *date)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date (self,
-								    account,
-								    chat_id,
-								    chatroom,
-								    date);
+      account, chat_id, chatroom, date);
 }
 
+
 GList *
-tpl_log_store_get_last_messages (TplLogStore * self,
-				 TpAccount * account,
-				 const gchar * chat_id, gboolean chatroom)
+tpl_log_store_get_last_messages (TplLogStore *self,
+				 TpAccount *account,
+				 const gchar *chat_id,
+         gboolean chatroom)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_last_messages)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_last_messages (self, account,
-								chat_id,
-								chatroom);
+      chat_id, chatroom);
 }
 
+
 GList *
-tpl_log_store_get_chats (TplLogStore * self, TpAccount * account)
+tpl_log_store_get_chats (TplLogStore *self,
+    TpAccount *account)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_chats)
     return NULL;
@@ -135,24 +143,21 @@ tpl_log_store_get_chats (TplLogStore * self, TpAccount * account)
 
 
 GList *
-tpl_log_store_search_in_identifier_chats_new (TplLogStore * self,
-					      TpAccount * account,
-					      gchar const *identifier,
-					      const gchar * text)
+tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
+    TpAccount *account,
+    gchar const *identifier,
+    const gchar *text)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->search_new)
     return NULL;
 
-  return
-    TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new (self,
-									account,
-									identifier,
-									text);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new (self,
+      account, identifier, text);
 }
 
 
 GList *
-tpl_log_store_search_new (TplLogStore * self, const gchar * text)
+tpl_log_store_search_new (TplLogStore *self, const gchar *text)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->search_new)
     return NULL;
@@ -160,10 +165,12 @@ tpl_log_store_search_new (TplLogStore * self, const gchar * text)
   return TPL_LOG_STORE_GET_INTERFACE (self)->search_new (self, text);
 }
 
+
 void
-tpl_log_store_ack_message (TplLogStore * self,
-			   const gchar * chat_id,
-			   gboolean chatroom, TplLogEntry * message)
+tpl_log_store_ack_message (TplLogStore *self,
+    const gchar *chat_id,
+    gboolean chatroom,
+    TplLogEntry *message)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->ack_message)
     return;
@@ -172,23 +179,19 @@ tpl_log_store_ack_message (TplLogStore * self,
 						   message);
 }
 
+
 GList *
-tpl_log_store_get_filtered_messages (TplLogStore * self,
-				     TpAccount * account,
-				     const gchar * chat_id,
-				     gboolean chatroom,
-				     guint num_messages,
-				     TplLogMessageFilter filter,
-				     gpointer user_data)
+tpl_log_store_get_filtered_messages (TplLogStore *self,
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom,
+    guint num_messages,
+    TplLogMessageFilter filter,
+    gpointer user_data)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_messages)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_messages (self,
-								    account,
-								    chat_id,
-								    chatroom,
-								    num_messages,
-								    filter,
-								    user_data);
+      account, chat_id, chatroom, num_messages, filter, user_data);
 }

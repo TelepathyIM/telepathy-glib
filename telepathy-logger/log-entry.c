@@ -175,7 +175,7 @@ set_prop (GObject *object,
 
 
 static void
-tpl_log_entry_class_init (TplLogEntryClass * klass)
+tpl_log_entry_class_init (TplLogEntryClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;

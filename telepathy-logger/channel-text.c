@@ -91,7 +91,7 @@ static void keepon (TplLogEntryText *log);
  * members  */
 
 
-// used by _get_my_contact and _get_remote_contact
+/* used by _get_my_contact and _get_remote_contact */
 static void
 _tpl_channel_text_get_contact_cb (TpConnection *connection,
     guint n_contacts,
@@ -183,7 +183,6 @@ pendingproc_get_my_contact (TplActionChain *ctx)
   TpHandle my_handle = tp_connection_get_self_handle (
       tp_channel_borrow_connection (TP_CHANNEL (tpl_chan)));
 
-  g_debug ("get my contact");
   GET_PRIV (tpl_text)->selector = TP_CONTACT_MYSELF;
   tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (
       TP_CHANNEL (tpl_chan)), 1, &my_handle, TP_CONTACT_FEATURES_LEN,
@@ -310,7 +309,6 @@ tpl_channel_text_new (TpConnection *conn,
 
   /* Do what tpl_channel_new does + set TplChannelText specific properties */
 
-g_debug ("TPL CHAN TEXT NEW!");
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (object_path), NULL);
@@ -461,7 +459,6 @@ pendingproc_prepare_tpl_channel (TplActionChain *ctx)
 {
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_actionchain_get_object (ctx));
 
-  g_debug ("prepare tpl");
   TPL_CHANNEL_GET_CLASS (tpl_chan)->call_when_ready_protected (tpl_chan,
       got_tpl_chan_ready_cb, ctx);
 }
@@ -473,9 +470,8 @@ got_tpl_chan_ready_cb (GObject *obj,
     gpointer user_data)
 {
   TplActionChain *ctx = user_data;
-  g_debug ("PREPARE");
 
-  if (tpl_actionchain_finish (result) == TRUE)
+  if (tpl_actionchain_finish (result))
     tpl_actionchain_continue (ctx);
   return;
 }
@@ -532,8 +528,6 @@ pendingproc_connect_signals (TplActionChain *ctx)
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
   GError *error = NULL;
   TpChannel *channel = NULL;
-
-  g_debug ("CONNECT");
 
   channel = TP_CHANNEL (TPL_CHANNEL (tpl_text));
 
@@ -625,7 +619,7 @@ _channel_on_lost_message_cb (TpChannel *proxy,
            GObject *weak_object)
 {
   g_debug ("lost message signal catched. nothing logged");
-  // TODO log that the system lost a message
+  /* TODO log that the system lost a message */
 }
 
 static void
@@ -639,7 +633,7 @@ _channel_on_send_error_cb (TpChannel *proxy,
 {
   g_error ("unlogged event: "
 	   "TP was unable to send the message: %s", arg_Text);
-  // TODO log that the system was unable to send the message
+  /* TODO log that the system was unable to send the message */
 }
 
 
@@ -668,7 +662,7 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
   tpl_contact_sender = tpl_contact_from_tp_contact (me);
   tpl_contact_set_contact_type (tpl_contact_sender, TPL_CONTACT_USER);
 
-  if (tpl_channel_text_is_chatroom (tpl_text) == FALSE)
+  if (!tpl_channel_text_is_chatroom (tpl_text))
     {
       remote = tpl_channel_text_get_remote_contact (tpl_text);
       if (remote == NULL)

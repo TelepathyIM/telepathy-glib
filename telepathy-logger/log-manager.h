@@ -29,6 +29,7 @@
 #include <telepathy-glib/account.h>
 
 #include <telepathy-logger/log-entry.h>
+#include <telepathy-logger/log-store.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_MANAGER		(tpl_log_manager_get_type ())
@@ -71,12 +72,7 @@ typedef struct
 } TplLogSearchHit;
 
 
-typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
-    gpointer user_data);
-
-
 GType tpl_log_manager_get_type (void);
-
 
 gpointer tpl_log_manager_async_operation_finish (GAsyncResult *result,
     GError **error);
@@ -133,6 +129,11 @@ void tpl_log_manager_search_free (GList *hits);
 gchar *tpl_log_manager_get_date_readable (const gchar *date);
 
 void tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
+gint tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
+    TplLogSearchHit *b);
+
+void tpl_log_manager_register_logstore (TplLogManager *self,
+    TplLogStore *logstore);
 
 G_END_DECLS
 #endif /* __TPL_LOG_MANAGER_H__ */
