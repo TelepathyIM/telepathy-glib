@@ -162,7 +162,8 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   if (tpl_conf_is_account_ignored(conf, account, &error))
     {
       g_debug ("Logging is disabled for account %s. "
-          "Skipping channel logging.", account);
+          "Channel associated to this account. "
+          "Skipping this channel logging.", account);
       return;
     }
 
@@ -198,8 +199,9 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
       return;
     }
 
-  /* when all TplChannel will be ready, the counter will be 0 and
-   * tp_svc_client_observer_return_from_observe_channels can be called */
+  /* Parallelize TplChannel preparations, when the last one will be ready, the
+   * counter will be 0 and tp_svc_client_observer_return_from_observe_channels
+   * can be called */
   observing_ctx = g_slice_new0 (ObservingContext);
   observing_ctx->chan_n = channels->len;
   observing_ctx->dbus_ctx = dbus_context;
@@ -220,7 +222,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
       tpl_chan = chan_factory (chan_type, tp_conn, path, map, tp_acc, &error);
       if (tpl_chan == NULL)
         {
-          g_debug ("%s", error->message);
+          g_debug ("Creating TplChannel: %s", error->message);
           g_clear_error (&error);
           g_error_free (error);
           error = NULL;
@@ -245,13 +247,13 @@ got_tpl_channel_text_ready_cb (GObject *obj,
   DBusGMethodInvocation *dbus_ctx = observing_ctx->dbus_ctx;
 
   observing_ctx->chan_n -= 1;
-  g_debug ("CHAN LEN %d", observing_ctx->chan_n);
   if (observing_ctx->chan_n == 0)
     {
       tp_svc_client_observer_return_from_observe_channels (dbus_ctx);
       g_slice_free (ObservingContext, observing_ctx);
     }
 }
+
 
 static void
 get_prop (GObject *self,
@@ -412,7 +414,7 @@ tpl_observer_init (TplObserver *self)
   self->priv = priv;
 
   priv->channel_map = g_hash_table_new_full (g_str_hash,
-      (GEqualFunc) tpl_strequal, g_free, g_object_unref);
+      (GEqualFunc) g_str_equal, g_free, g_object_unref);
   priv->logmanager = tpl_log_manager_dup_singleton ();
 }
 
@@ -442,14 +444,14 @@ tpl_observer_register_dbus (TplObserver *self,
 
   /* just return TRUE if the Observer interface is actually already registered
    * to DBus */
-  if (priv->dbus_registered == TRUE)
+  if (priv->dbus_registered)
     return TRUE;
 
   bus = tp_get_bus ();
   tp_bus = tp_dbus_daemon_new (bus);
 
-  if (FALSE == tp_dbus_daemon_request_name (tp_bus,
-        TPL_OBSERVER_WELL_KNOWN_BUS_NAME, TRUE, error))
+  if (!tp_dbus_daemon_request_name (tp_bus, TPL_OBSERVER_WELL_KNOWN_BUS_NAME,
+        TRUE, error))
     {
       g_assert (error == NULL || *error != NULL);
       return FALSE;
@@ -464,6 +466,7 @@ tpl_observer_register_dbus (TplObserver *self,
 
   return TRUE;
 }
+
 
 static void
 observer_iface_init (gpointer g_iface,

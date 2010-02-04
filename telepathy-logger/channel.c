@@ -194,7 +194,6 @@ call_when_ready_protected (TplChannel *self,
 {
   TplActionChain *actions;
 
-  g_debug ("tp_connection_call_when_ready");
   actions = tpl_actionchain_new (G_OBJECT(self), cb, user_data);
   tpl_actionchain_append (actions, pendingproc_get_ready_tp_connection);
   tpl_actionchain_append (actions, pendingproc_get_ready_tp_channel);
@@ -210,7 +209,6 @@ pendingproc_get_ready_tp_connection (TplActionChain *ctx)
   TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (
       tpl_chan));
 
-  g_debug ("Preparing TpConnection");
   tp_connection_call_when_ready (tp_conn, got_ready_tp_connection_cb, ctx);
 }
 
@@ -233,7 +231,6 @@ got_ready_tp_connection_cb (TpConnection *connection,
       g_object_unref (tpl_chan);
       return;
     }
-  g_debug ("2");
 
   tpl_actionchain_continue (ctx);
 }
@@ -242,8 +239,6 @@ static void
 pendingproc_get_ready_tp_channel (TplActionChain *ctx)
 {
   TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
-
-  g_debug ("Preparing TpChannel");
 
   /* user_data is a TplChannel instance */
   tp_channel_call_when_ready (TP_CHANNEL (tpl_chan), got_ready_tp_channel_cb,

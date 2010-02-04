@@ -50,14 +50,10 @@ tpl_time_get_local_time (struct tm * tm)
 
   t = mktime (tm);
 
-  if (tz)
-    {
-      g_setenv ("TZ", tz, TRUE);
-    }
+  if (tz != NULL)
+    g_setenv ("TZ", tz, TRUE);
   else
-    {
-      g_unsetenv ("TZ");
-    }
+    g_unsetenv ("TZ");
 
   tzset ();
 

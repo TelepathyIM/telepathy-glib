@@ -2,13 +2,18 @@ if WANT_TWISTED_TESTS
 CHECKTWISTED = twisted
 endif
 
-#SUBDIRS = $(CHECKTWISTED) suppressions
+SUBDIRS = $(CHECKTWISTED) suppressions
 
 noinst_PROGRAMS = \
 	test-tpl-channel	\
 	test-tpl-conf		\
 	test-tpl-log-entry	\
-	test-tpl-observer
+	test-tpl-observer	\
+	test-searches
+
+test_tpl_channel_SOURCES = \
+	test-tpl-channel.c	\
+	tpl-channel-test.c
 
 LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
@@ -38,11 +43,12 @@ check-valgrind: $(TESTS)
 
 check_c_sources = \
 	$(dbus_test_sources)	\
-	tpl-channel-child.c	\
+	tpl-channel-test.c	\
 	test-tpl-channel.c	\
 	test-tpl-conf.c		\
 	test-tpl-log-entry.c	\
-	test-tpl-observer.c
+	test-tpl-observer.c	\
+	test-searches.c
 
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style

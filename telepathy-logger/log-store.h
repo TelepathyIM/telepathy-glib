@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
+/*-*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
  * Copyright (C) 2008 Collabora Ltd.
  *
@@ -18,6 +18,7 @@
  * Boston, MA  02110-1301  USA
  *
  * Authors: Jonny Lamb <jonny.lamb@collabora.co.uk>
+ *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
 #ifndef __TPL_LOG_STORE_H__
@@ -26,88 +27,74 @@
 #include <glib-object.h>
 #include <telepathy-glib/account.h>
 
-#include <telepathy-logger/log-manager.h>
-#include <telepathy-logger/log-entry-text.h>
+#include <telepathy-logger/log-entry.h>
 
 G_BEGIN_DECLS
+
 #define TPL_TYPE_LOG_STORE (tpl_log_store_get_type ())
-#define TPL_LOG_STORE(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_STORE, \
-                               TplLogStore))
-#define TPL_IS_LOG_STORE(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_STORE))
-#define TPL_LOG_STORE_GET_INTERFACE(inst) \
-  (G_TYPE_INSTANCE_GET_INTERFACE ((inst), TPL_TYPE_LOG_STORE, \
-                                  TplLogStoreInterface))
-typedef struct _TplLogStore TplLogStore;	/* dummy object */
+#define TPL_LOG_STORE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+      TPL_TYPE_LOG_STORE, TplLogStore))
+#define TPL_IS_LOG_STORE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+      TPL_TYPE_LOG_STORE))
+#define TPL_LOG_STORE_GET_INTERFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE ( \
+      (inst), TPL_TYPE_LOG_STORE, TplLogStoreInterface))
+
+typedef struct _TplLogStore TplLogStore;	/*dummy object */
 typedef struct _TplLogStoreInterface TplLogStoreInterface;
+typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
+    gpointer user_data);
+
 
 struct _TplLogStoreInterface
 {
   GTypeInterface parent;
 
-  const gchar *(*get_name) (TplLogStore * self);
-    gboolean (*exists) (TplLogStore * self, TpAccount * account,
-			const gchar * chat_id, gboolean chatroom);
-    gboolean (*add_message) (TplLogStore * self, gpointer message,
-			     GError ** error);
-  GList *(*get_dates) (TplLogStore * self, TpAccount * account,
-		       const gchar * chat_id, gboolean chatroom);
-  GList *(*get_messages_for_date) (TplLogStore * self, TpAccount * account,
-				   const gchar * chat_id, gboolean chatroom,
-				   const gchar * date);
-  GList *(*get_last_messages) (TplLogStore * self, TpAccount * account,
-			       const gchar * chat_id, gboolean chatroom);
-  GList *(*get_chats) (TplLogStore * self, TpAccount * account);
-  GList *(*search_new) (TplLogStore * self, const gchar * text);
-  GList *(*search_in_identifier_chats_new) (TplLogStore * self,
-					    TpAccount * account,
-					    gchar const *identifier,
-					    const gchar * text);
-  void (*ack_message) (TplLogStore * self, const gchar * chat_id,
-		       gboolean chatroom, TplLogEntry * message);
-  GList *(*get_filtered_messages) (TplLogStore * self, TpAccount * account,
-				   const gchar * chat_id, gboolean chatroom,
-				   guint num_messages,
-				   TplLogMessageFilter filter,
-				   gpointer user_data);
+  const gchar * (*get_name) (TplLogStore *self);
+  gboolean (*exists) (TplLogStore *self, TpAccount *account,
+      const gchar *chat_id, gboolean chatroom);
+  gboolean (*add_message) (TplLogStore *self, gpointer message,
+      GError **error);
+  GList * (*get_dates) (TplLogStore *self, TpAccount *account,
+      const gchar *chat_id, gboolean chatroom);
+  GList * (*get_messages_for_date) (TplLogStore *self, TpAccount *account,
+      const gchar *chat_id, gboolean chatroom, const gchar *date);
+  GList * (*get_last_messages) (TplLogStore *self, TpAccount *account,
+      const gchar *chat_id, gboolean chatroom);
+  GList * (*get_chats) (TplLogStore *self, TpAccount *account);
+  GList * (*search_new) (TplLogStore *self, const gchar *text);
+  GList * (*search_in_identifier_chats_new) (TplLogStore *self,
+      TpAccount *account, gchar const *identifier, const gchar *text);
+  void (*ack_message) (TplLogStore *self, const gchar *chat_id,
+      gboolean chatroom, TplLogEntry *message);
+  GList * (*get_filtered_messages) (TplLogStore *self, TpAccount *account,
+      const gchar *chat_id, gboolean chatroom, guint num_messages,
+      TplLogMessageFilter filter, gpointer user_data);
 };
 
 GType tpl_log_store_get_type (void);
 
-const gchar *tpl_log_store_get_name (TplLogStore * self);
-gboolean tpl_log_store_exists (TplLogStore * self,
-			       TpAccount * account, const gchar * chat_id,
-			       gboolean chatroom);
-gboolean tpl_log_store_add_message (TplLogStore * self, gpointer message,
-				    GError ** error);
-GList *tpl_log_store_get_dates (TplLogStore * self, TpAccount * account,
-				const gchar * chat_id, gboolean chatroom);
-GList *tpl_log_store_get_messages_for_date (TplLogStore * self,
-					    TpAccount * account,
-					    const gchar * chat_id,
-					    gboolean chatroom,
-					    const gchar * date);
-GList *tpl_log_store_get_last_messages (TplLogStore * self,
-					TpAccount * account,
-					const gchar * chat_id,
-					gboolean chatroom);
-GList *tpl_log_store_get_chats (TplLogStore * self, TpAccount * account);
-GList *tpl_log_store_search_in_identifier_chats_new (TplLogStore * self,
-						     TpAccount * account,
-						     gchar const *identifier,
-						     const gchar * text);
-GList *tpl_log_store_search_new (TplLogStore * self, const gchar * text);
-void tpl_log_store_ack_message (TplLogStore * self,
-				const gchar * chat_id, gboolean chatroom,
-				TplLogEntry * message);
-GList *tpl_log_store_get_filtered_messages (TplLogStore * self,
-					    TpAccount * account,
-					    const gchar * chat_id,
-					    gboolean chatroom,
-					    guint num_messages,
-					    TplLogMessageFilter filter,
-					    gpointer user_data);
+const gchar *tpl_log_store_get_name (TplLogStore *self);
+gboolean tpl_log_store_exists (TplLogStore *self, TpAccount *account,
+    const gchar *chat_id, gboolean chatroom);
+gboolean tpl_log_store_add_message (TplLogStore *self, gpointer message,
+    GError **error);
+GList *tpl_log_store_get_dates (TplLogStore *self, TpAccount *account,
+    const gchar *chat_id, gboolean chatroom);
+GList *tpl_log_store_get_messages_for_date (TplLogStore *self,
+    TpAccount *account, const gchar *chat_id, gboolean chatroom,
+    const gchar *date);
+GList *tpl_log_store_get_last_messages (TplLogStore *self, TpAccount *account,
+    const gchar *chat_id, gboolean chatroom);
+GList *tpl_log_store_get_chats (TplLogStore *self, TpAccount *account);
+GList *tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
+    TpAccount *account, gchar const *identifier, const gchar *text);
+GList *tpl_log_store_search_new (TplLogStore *self, const gchar *text);
+void tpl_log_store_ack_message (TplLogStore *self,
+    const gchar *chat_id, gboolean chatroom, TplLogEntry *message);
+GList *tpl_log_store_get_filtered_messages (TplLogStore *self,
+    TpAccount *account, const gchar *chat_id, gboolean chatroom,
+    guint num_messages, TplLogMessageFilter filter, gpointer user_data);
 
 G_END_DECLS
-#endif /* __TPL_LOG_STORE_H__ */
+
+#endif /*__TPL_LOG_STORE_H__ */

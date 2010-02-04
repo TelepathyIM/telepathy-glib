@@ -25,6 +25,7 @@
 #define __TPL_LOG_MANAGER_PRIV_H__
 
 #include <telepathy-logger/log-manager.h>
+#include <telepathy-logger/log-store-factory.h>
 
 gboolean tpl_log_manager_add_message (TplLogManager *manager,
 				      TplLogEntry *message, GError **error);

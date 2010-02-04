@@ -40,9 +40,6 @@
 #include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
 
-//#define DEBUG_FLAG EMPATHY_DEBUG_OTHER
-//#include <empathy-debug.h>
-
 #define DEBUG g_debug
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogManager)
@@ -104,11 +101,10 @@ log_manager_constructor (GType type, guint n_props,
 {
   GObject *retval;
   TplLogManagerPriv *priv;
+  TplLogStoreEmpathy *tplogger;
 
   if (manager_singleton)
-    {
-      retval = g_object_ref (manager_singleton);
-    }
+    retval = g_object_ref (manager_singleton);
   else
     {
       retval = G_OBJECT_CLASS (tpl_log_manager_parent_class)->constructor
@@ -119,9 +115,22 @@ log_manager_constructor (GType type, guint n_props,
 
       priv = GET_PRIV (manager_singleton);
 
-      priv->stores = g_list_append (priv->stores,
-          g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
-          NULL));
+      /* TODO currently I instantiate two LogStore, one read-only, and the
+       * default one, TpLogger, which will be used by add_message to store
+       * (write_access) new entries.
+       * NEXT step: use a LogStore map here, and instantiate LogStores
+       * using it. LogStore map should map names into (TPL_TYPE_LOG_STORE_FOO,
+       * is_writable, is_readable) to be passed to g_object_new cycling over
+       * its keys */
+      tplogger = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY, "name", "TpLogger",
+          "writable", FALSE, "readable", TRUE, NULL);
+      if (tplogger == NULL)
+        {
+          g_debug ("Error during TplLogStoreEmpathy (name=TpLogger) initialisation.");
+          return NULL;
+        }
+
+      priv->stores = g_list_append (priv->stores, tplogger);
     }
 
   return retval;
@@ -167,8 +176,12 @@ tpl_log_manager_dup_singleton (void)
   return g_object_new (TPL_TYPE_LOG_MANAGER, NULL);
 }
 
-/*
- * @message: a TplLogEntry subclass
+/**
+ * tpl_log_manager_add_message
+ * @manager: the log manager
+ * @message: a TplLogEntry subclass's instance
+ *
+ * Returns: %TRUE if the message has been added successfully, %FALSE else.
  */
 gboolean
 tpl_log_manager_add_message (TplLogManager *manager,
@@ -180,8 +193,10 @@ tpl_log_manager_add_message (TplLogManager *manager,
   gboolean out = FALSE;
   gboolean found = FALSE;
 
-  /* TODO: When multiple log stores appear with add_message implementations
-   * make this customisable. */
+  /* TODO: currently it look for a fixed string (add_store) to know there to
+   * send messages. 
+   * NEXT step: it will cycle priv->stores and check which has is_writable flag on, and send the log
+   * to every entry with it TRUE. Multiple writers are possible here */
   const gchar *add_store = "TpLogger";
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
@@ -189,6 +204,9 @@ tpl_log_manager_add_message (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
+  /* TODO find a way to select just one LogStore, ie just the default one, or
+   * just "zeitgeist" in case an application is only interested in a specific
+   * store */
   for (l = priv->stores; l; l = g_list_next (l))
     {
       if (!tp_strdiff
@@ -205,6 +223,20 @@ tpl_log_manager_add_message (TplLogManager *manager,
     DEBUG ("Failed to find chosen log store to write to.");
 
   return out;
+}
+
+
+void
+tpl_log_manager_register_logstore (TplLogManager *self,
+    TplLogStore *logstore)
+{
+  TplLogManagerPriv *priv = GET_PRIV (self);
+
+  g_return_if_fail (TPL_IS_LOG_MANAGER (self));
+  g_return_if_fail (TPL_IS_LOG_STORE (logstore));
+  g_return_if_fail (priv->stores != NULL);
+
+  priv->stores = g_list_append (priv->stores, logstore);
 }
 
 
@@ -290,11 +322,8 @@ tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
-      out =
-        g_list_concat (out,
-            tpl_log_store_get_messages_for_date (store, account,
-              chat_id, chatroom,
-              date));
+      out = g_list_concat (out, tpl_log_store_get_messages_for_date (store,
+          account, chat_id, chatroom, date));
     }
 
   return out;
@@ -346,8 +375,7 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
       GList *new;
 
       new = tpl_log_store_get_filtered_messages (store, account, chat_id,
-          chatroom, num_messages,
-          filter, user_data);
+          chatroom, num_messages, filter, user_data);
       while (new)
         {
           if (i < num_messages)
@@ -383,6 +411,34 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 }
 
 
+gint
+tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
+    TplLogSearchHit *b)
+{
+  gint ret;
+
+  if (g_strcmp0 (a->chat_id, b->chat_id) == 0)
+    /* if chat_ids differ, just return their sorting return value */
+    ret = 0;
+  else
+    /* if they are the same, check if the entries are actually equal or not
+     have the same chat_id but one is a chatroom and the other not */
+    ret = a->is_chatroom && b->is_chatroom ? 0 : 1;
+  return ret;
+}
+
+/**
+ * tpl_log_manager_get_chats
+ * @manager: the log manager
+ * @account: a TpAccount the query will return data related to
+ *
+ * It queries the readable TplLogStores in @manager for all the buddies the
+ * log store has at least a conversation stored originated using @account.
+ *
+ * Returns: a list of pointer to TplLogSearchHit, having chat_id and
+ * is_chatroom fields filled. the result needs to be freed after use using
+ * #tpl_log_manager_search_hit_free
+ */
 GList *
 tpl_log_manager_get_chats (TplLogManager *manager,
     TpAccount *account)
@@ -398,8 +454,19 @@ tpl_log_manager_get_chats (TplLogManager *manager,
   for (l = priv->stores; l; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
+      GList *in;
 
-      out = g_list_concat (out, tpl_log_store_get_chats (store, account));
+      /* merge the lists avoiding duplicates */
+      for (in = tpl_log_store_get_chats (store, account); in != NULL;
+          in = g_list_next (in))
+        if (g_list_find_custom (out, in->data,
+              (GCompareFunc) tpl_log_manager_search_hit_compare) == NULL)
+          /* add data if not already present */
+          out = g_list_prepend (out, in->data);
+        else
+          /* free in->data if already present in out */
+          tpl_log_manager_search_hit_free (in->data);
+      g_list_free (in);
     }
 
   return out;
@@ -514,9 +581,9 @@ static void
 tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
 {
   tpl_object_unref_if_not_null (data->account);
-  if (data->chat_id)
+  if (data->chat_id != NULL)
     g_free (data->chat_id);
-  if (data->date)
+  if (data->date != NULL)
     g_free (data->date);
   g_free (data);
 }
@@ -797,12 +864,8 @@ _get_filtered_messages_thread (GSimpleAsyncResult *simple,
   chat_info = async_data->request;
 
   lst = tpl_log_manager_get_filtered_messages (async_data->manager,
-      chat_info->account,
-      chat_info->chat_id,
-      chat_info->is_chatroom,
-      chat_info->num_messages,
-      chat_info->filter,
-      chat_info->user_data);
+      chat_info->account, chat_info->chat_id, chat_info->is_chatroom,
+      chat_info->num_messages, chat_info->filter, chat_info->user_data);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
 }
@@ -860,8 +923,7 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
   async_data->user_data = user_data;
 
   _tpl_log_manager_call_async_operation (manager,
-      _get_filtered_messages_thread,
-      async_data, callback);
+      _get_filtered_messages_thread, async_data, callback);
 }
 /* End of get_filtered_messages async implementation */
 
@@ -914,8 +976,7 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  _tpl_log_manager_call_async_operation (manager,
-      _get_chats_thread,
+  _tpl_log_manager_call_async_operation (manager, _get_chats_thread,
       async_data, callback);
 }
 
@@ -976,8 +1037,7 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
   async_data->user_data = user_data;
 
   _tpl_log_manager_call_async_operation (manager,
-      _search_in_identifier_chats_new_thread,
-      async_data, callback);
+      _search_in_identifier_chats_new_thread, async_data, callback);
 }
 /* End of tpl_log_manager_search_in_identifier_chats_new async implementation */
 

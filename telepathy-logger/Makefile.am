@@ -20,6 +20,8 @@ LIBTPL_HEADERS = \
 		log-entry.h			\
 		log-entry-text.h		\
 		log-manager.h			\
+		log-store.h			\
+		log-store-empathy.h		\
 		datetime.h
 
 
@@ -35,6 +37,7 @@ libtelepathy_logger_la_SOURCES = \
 		log-manager.c			\
 		log-store.c			\
 		log-store-empathy.c		\
+		log-store-factory.c		\
 		observer.c			\
 		util.c
 
