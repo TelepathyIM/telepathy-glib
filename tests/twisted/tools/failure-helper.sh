@@ -29,7 +29,7 @@ stripdiff()
     rm "$a" "$b"
 }
 
-prog=gabble
+prog=tpl
 test_name="$1"
 log_dir="$2"
 

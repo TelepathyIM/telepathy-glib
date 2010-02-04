@@ -1,26 +1,19 @@
-#include <telepathy-logger/conf.h>
+#include <telepathy-logger/log-entry-text.h>
 
 #define gconf_client_get_bool(obj,key,err) g_print ("%s", key)
 
+#define LOG_ID 0
+#define CHAT_ID "echo@test.collabora.co.uk"
+#define DIRECTION TPL_LOG_ENTRY_DIRECTION_IN
+
 int main (int argc, char **argv)
 {
-  TplConf *conf, *conf2;
-  GError *error;
+  TplLogEntryText *log;
 
   g_type_init ();
 
-  conf = tpl_conf_dup ();
+  log = tpl_log_entry_text_new (LOG_ID, CHAT_ID, DIRECTION);
 
-  /* TplConf is a singleton, be sure both point to the same memory */
-  conf2 = tpl_conf_dup ();
-  g_assert (conf == conf2);
-
-  /* unref the second singleton pointer and check that the it is still
-   * valid: checking correct object ref-counting after each _dup() call */
-  g_object_unref (conf2);
-  g_assert (TPL_IS_CONF (conf));
-
-  g_object_unref (conf);
 
   return 0;
 }

@@ -1,27 +1,8 @@
+SUBDIRS = tools
+
 TWISTED_TESTS = \
-	avatar-requirements.py \
-	caps_helper.py \
-	gateways.py \
-	text/initiate.py \
-	text/initiate-requestotron.py \
-	text/destroy.py \
-	text/ensure.py \
-	text/respawn.py \
-	text/send-error.py \
-	text/send-to-correct-resource.py \
-	text/test-chat-state.py \
-	text/test-text-delayed.py \
-	text/test-text-no-body.py \
-	text/test-text.py \
-	test-debug.py \
-	test-disco.py \
-	test-disco-no-reply.py \
-	test-fallback-socks5-proxy.py \
-	test-register.py \
-	test-set-status-idempotence.py \
-	test-location.py \
-	pubsub.py \
-	sidecars.py
+	channel_text/init.py \
+	observer/init.py
 
 TESTS =
 
@@ -61,70 +42,45 @@ else
 DEBUGGING_PYBOOL = False
 endif
 
-if ENABLE_PLUGINS
-PLUGINS_ENABLED_PYBOOL = True
+if ENABLE_CHANNEL_TYPE_TEXT
+CHANNEL_TYPE_TEXT_ENABLED_PYBOOL = True
 else
-PLUGINS_ENABLED_PYBOOL = False
-endif
-
-if ENABLE_CHANNEL_TYPE_CALL
-CHANNEL_TYPE_CALL_ENABLED_PYBOOL = True
-else
-CHANNEL_TYPE_CALL_ENABLED_PYBOOL = False
+CHANNEL_TYPE_TEXT_ENABLED_PYBOOL = False
 endif
 
 config.py: Makefile
 	$(AM_V_GEN) { \
 		echo "PACKAGE_STRING = \"$(PACKAGE_STRING)\""; \
 		echo "DEBUGGING = $(DEBUGGING_PYBOOL)"; \
-		echo "PLUGINS_ENABLED = $(PLUGINS_ENABLED_PYBOOL)"; \
-		echo "CHANNEL_TYPE_CALL_ENABLED = $(CHANNEL_TYPE_CALL_ENABLED_PYBOOL)"; \
+		echo "CHANNEL_TYPE_TEXT_ENABLED = $(CHANNEL_TYPE_TEXT_ENABLED_PYBOOL)"; \
 	} > $@
 
 BUILT_SOURCES = config.py
 
 EXTRA_DIST = \
 	$(TWISTED_TESTS) \
-	bytestream.py \
 	constants.py \
-	gabbletest.py \
-	httptest.py \
-	servicetest.py \
-	jingle/jingletest.py \
-	jingle/jingletest2.py \
-	mucutil.py \
-	ns.py \
-	olpc/util.py \
-	tubes/muctubeutil.py \
-	tubes/tubetestutil.py \
-	search/search_helper.py \
-	file-transfer/file_transfer_helper.py
+	tpltest.py \
+	servicetest.py
 
 noinst_PROGRAMS = \
-	telepathy-gabble-debug
+	telepathy-logger-debug
 
-telepathy_gabble_debug_SOURCES = \
-    main-debug.c \
-    test-resolver.c \
-    test-resolver.h
+telepathy_logger_debug_SOURCES = \
+    main-debug.c
 
-telepathy_gabble_debug_LDADD = \
-    $(top_builddir)/src/libgabble-convenience.la \
-    $(ALL_LIBS)
+telepathy_logger_debug_LDADD = \
+    $(top_builddir)/telepathy-logger/libtelepathy-logger.la \
+    $(LIBTPL_LIBS)
 
-telepathy_gabble_debug_LDFLAGS = -export-dynamic
+telepathy_logger_debug_LDFLAGS = -export-dynamic
 
-AM_CFLAGS = $(ERROR_CFLAGS) @DBUS_CFLAGS@ @GLIB_CFLAGS@ @WOCKY_CFLAGS@ \
-    @TP_GLIB_CFLAGS@ \
-    -I $(top_srcdir)/src -I $(top_builddir)/src \
-     -I $(top_srcdir)/lib -I $(top_builddir)/lib \
-    -I $(top_srcdir) -I $(top_builddir)
-ALL_LIBS = @DBUS_LIBS@ @GLIB_LIBS@ @WOCKY_LIBS@ @TP_GLIB_LIBS@
+AM_CFLAGS = \
+	$(ERROR_CFLAGS)	\
+	${TPL_CFLAGS}
 
-CLEANFILES = gabble-[1-9]*.log *.pyc */*.pyc config.py
+CLEANFILES = tpl-[1-9]*.log *.pyc */*.pyc config.py
 
 check_misc_sources = $(TESTS)
 
 include $(top_srcdir)/tools/check-coding-style.mk
-
-SUBDIRS = tools

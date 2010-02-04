@@ -19,53 +19,45 @@
 
 #include <stdlib.h>
 
-#include "gabble.h"
-#include "connection.h"
-#include "vcard-manager.h"
-#include "jingle-factory.h"
-#include "jingle-session.h"
-
-#include "test-resolver.h"
-
 #include <dbus/dbus.h>
+
+#include <telepathy-logger/observer.h>
+#include <telepathy-logger/channel-factory.h>
+#include <telepathy-logger/channel-text.h>
+
+
+static TplObserver *
+tpl_init(void)
+{
+  TplObserver *observer;
+
+	g_type_init ();
+  tpl_channel_factory_init ();
+
+  tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
+      (TplChannelConstructor) tpl_channel_text_new);
+
+	observer = tpl_observer_new ();
+#if 0
+  if (tpl_observer_register_dbus (observer, &error) == FALSE)
+    {
+      g_debug ("Error during D-Bus registration: %s", error->message);
+      return 1;
+    }
+#endif
+
+  return observer;
+}
+
 
 int
 main (int argc,
       char **argv)
 {
   int ret = 1;
-  GResolver *kludged;
+  TplObserver *observer;
 
-  gabble_init ();
-
-  /* needed for test-disco-no-reply.py */
-  gabble_connection_set_disco_reply_timeout (3);
-  /* needed for test-avatar-async.py */
-  gabble_vcard_manager_set_suspend_reply_timeout (3);
-  gabble_vcard_manager_set_default_request_timeout (3);
-
-  /* hook up the fake DNS resolver that lets us divert A and SRV queries *
-   * into our local cache before asking the real DNS                     */
-  kludged = g_object_new (TEST_TYPE_RESOLVER, NULL);
-  g_resolver_set_default (kludged);
-  g_object_unref (kludged);
-
-  test_resolver_add_A (TEST_RESOLVER (kludged),
-      "resolves-to-5.4.3.2", "5.4.3.2");
-  test_resolver_add_A (TEST_RESOLVER (kludged),
-      "resolves-to-1.2.3.4", "1.2.3.4");
-  test_resolver_add_A (TEST_RESOLVER (kludged),
-      "localhost", "127.0.0.1");
-  test_resolver_add_A (TEST_RESOLVER (kludged),
-      "stun.telepathy.im", "6.7.8.9");
-
-  gabble_jingle_factory_set_test_mode ();
-
-  ret = gabble_main (argc, argv);
-
-  /* Hack, remove the ref g_resolver has on this object, atm there is no way to
-   * unset a custom resolver */
-  g_object_unref (kludged);
+  observer = tpl_init ();
 
   dbus_shutdown ();
 

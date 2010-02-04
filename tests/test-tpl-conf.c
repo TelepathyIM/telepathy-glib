@@ -23,7 +23,7 @@ main (int argc, char **argv)
 
   /* proper disposal for the singleton when no references are present */
   g_object_unref (conf);
-  g_assert (!TPL_IS_CONF (conf));
+  g_assert (TPL_IS_CONF (conf) == FALSE);
 
   return 0;
 }

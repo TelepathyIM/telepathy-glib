@@ -19,7 +19,7 @@ m4_define(tpl_maybe_datestamp,
 m4_define(tpl_version, tpl_full_version[]tpl_maybe_datestamp)
 
 
-AC_INIT(TelepathyLogger, tpl_version, http://telepathy.freedesktop.org/wiki/Logger)
+AC_INIT(TelepathyLogger, tpl_version, https://bugs.freedesktop.org/buglist.cgi?product=Telepathy&component=logger)
 
 DBUS_SERVICES_DIR="$datadir/dbus-1/services"
 AC_SUBST(DBUS_SERVICES_DIR)
@@ -28,7 +28,7 @@ AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [Where services dir 
 AC_PREREQ(2.59)
 AC_COPYRIGHT([
   Copyright (C) 2003-2007 Imendio AB
-  Copyright (C) 2007-20010 Collabora Ltd.
+  Copyright (C) 2007-2010 Collabora Ltd.
 ])
 
 # Minimal version required
@@ -96,6 +96,16 @@ AM_CONDITIONAL([WANT_TWISTED_TESTS], test false != "$TEST_PYTHON")
 AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
 AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
 
+AC_ARG_ENABLE(debug,
+  AC_HELP_STRING([--disable-debug],[compile without debug code]),
+    enable_debug=$enableval, enable_debug=yes)
+
+#### TODO test this
+#AC_ARG_ENABLE(handle-leak-debug,
+#  AC_HELP_STRING([--enable-handle-leak-debug],[compile with -rdynamic so telepathy-glib handle leak debugging code will work]),
+#  enable_handle_leak_debug=$enableval, enable_handle_leak_debug=no )
+
+
 AC_ARG_ENABLE(Werror,
   AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
     werror=$enableval, :)
@@ -154,6 +164,22 @@ PKG_CHECK_MODULES(TPL,
    telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
 ])
 
+
+
+# -----------------------------------------------------------
+# Enable Channel types
+# -----------------------------------------------------------
+
+AC_ARG_ENABLE(channeltext,
+  AC_HELP_STRING([--disable-channeltext],[compile without Channel.Text support]),
+    enable_channeltext=$enableval, enable_channeltext=yes )
+
+if test x$enable_channeltext = xyes; then
+  AC_DEFINE(ENABLE_CHANNEL_TYPE_TEXT, [], [Enable Channel Text])
+fi
+AM_CONDITIONAL([ENABLE_CHANNEL_TYPE_TEXT], [test "x$enable_channeltext" = xyes])
+
+
 # -----------------------------------------------------------
 # Enable debug
 # -----------------------------------------------------------
@@ -165,6 +191,13 @@ AC_ARG_ENABLE(debug,
 if test x$enable_debug = xyes; then
   AC_DEFINE(ENABLE_DEBUG, [], [Enable debug code])
 fi
+AM_CONDITIONAL([ENABLE_DEBUG], [test "x$enable_debug" = xyes])
+
+if test x$enable_handle_leak_debug = xyes; then
+  AC_DEFINE(ENABLE_HANDLE_LEAK_DEBUG, [], [Enable handle leak debug code])
+  HANDLE_LEAK_DEBUG_CFLAGS="-rdynamic"
+fi
+AC_SUBST(HANDLE_LEAK_DEBUG_CFLAGS)
 
 # -----------------------------------------------------------
 # Coding style checks
@@ -187,6 +220,8 @@ AC_OUTPUT([
    telepathy-logger/libtelepathy-logger.pc
    tools/Makefile
    tests/Makefile
+   tests/twisted/Makefile
+   tests/twisted/tools/Makefile
    shave
    shave-libtool
 ])
@@ -200,4 +235,8 @@ Configure summary:
 	Shaved build................:  ${enable_shave}
 	Coding style checks.........:  ${ENABLE_CODING_STYLE_CHECKS}
 	Python Twisted tests........:  ${TEST_PYTHON}
+	Bugreporting URL............:  ${PACKAGE_BUGREPORT}
+	Enable Text Channel.........:  ${enable_channeltext}
+
+
 "

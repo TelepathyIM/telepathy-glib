@@ -1,6 +1,6 @@
 
 """
-Infrastructure code for testing Gabble by pretending to be a Jabber server.
+Infrastructure code for testing TPL by pretending to be a TP Channel Dispatcher.
 """
 
 import base64
@@ -359,6 +359,7 @@ def disconnect_conn(q, conn, stream, expected_before=[], expected_after=[]):
 def exec_test_deferred(fun, params, protocol=None, timeout=None,
                         authenticator=None):
     # hack to ease debugging
+    # TODO ? only gabble (1)
     domish.Element.__repr__ = domish.Element.toXml
     colourer = None
 
@@ -373,6 +374,7 @@ def exec_test_deferred(fun, params, protocol=None, timeout=None,
     bus = dbus.SessionBus()
     conn = make_connection(bus, queue.append, params)
     resource = params.get('resource') if params is not None else None
+    print "resource!"
     (stream, port) = make_stream(queue.append, protocol=protocol,
         authenticator=authenticator, resource=resource)
 
