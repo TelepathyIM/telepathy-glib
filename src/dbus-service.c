@@ -104,7 +104,7 @@ _pack_last_chats_answer (GList *data,
 	(*array) = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 	retval = *array;
 
-  for(data_idx=0; data_idx<g_list_length(data); ++data_idx)
+  for(data_idx = 0; data_idx < g_list_length (data); ++data_idx)
     {
       TplLogEntry *log = g_list_nth_data (data, data_idx);
 

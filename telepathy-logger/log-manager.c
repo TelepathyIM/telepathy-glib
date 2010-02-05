@@ -176,12 +176,18 @@ tpl_log_manager_dup_singleton (void)
   return g_object_new (TPL_TYPE_LOG_MANAGER, NULL);
 }
 
+
 /**
  * tpl_log_manager_add_message
  * @manager: the log manager
  * @message: a TplLogEntry subclass's instance
  *
- * Returns: %TRUE if the message has been added successfully, %FALSE else.
+ * It stores @message, sending it to all the registered TplLogStore which have
+ * the "writable" property set to %TRUE.
+ * Every TplLogManager is guaranteed to have at least TplLogStore a readable
+ * and a writable LogStore regitered.
+ *
+ * Returns: %TRUE if the message has been successfully added, %FALSE otherwise.
  */
 gboolean
 tpl_log_manager_add_message (TplLogManager *manager,
@@ -209,11 +215,11 @@ tpl_log_manager_add_message (TplLogManager *manager,
    * store */
   for (l = priv->stores; l; l = g_list_next (l))
     {
-      if (!tp_strdiff
-          (tpl_log_store_get_name (TPL_LOG_STORE (l->data)), add_store))
+      if (!tp_strdiff (tpl_log_store_get_name (TPL_LOG_STORE (l->data)),
+            add_store))
         {
-          out = tpl_log_store_add_message (TPL_LOG_STORE (l->data),
-              message, error);
+          out = tpl_log_store_add_message (TPL_LOG_STORE (l->data), message,
+              error);
           found = TRUE;
           break;
         }
@@ -225,6 +231,21 @@ tpl_log_manager_add_message (TplLogManager *manager,
   return out;
 }
 
+
+/**
+ * tpl_log_manager_register_logstore
+ * @manager: the log manager
+ * @logstore: a TplLogStore interface implementation
+ *
+ * It registers @logstore into @manager, the log store has to be an
+ * implementation of the TplLogStore interface.
+ *
+ * @logstore has to properly implement the add_message method if the
+ * "writable" propertly is set to %TRUE.
+ *
+ * @logstore has to properly implement all the search/query methods if the
+ * "readable" propertly is set to %TRUE.
+ */
 
 void
 tpl_log_manager_register_logstore (TplLogManager *self,

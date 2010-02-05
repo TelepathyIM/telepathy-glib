@@ -93,7 +93,6 @@ tpl_actionchain_continue (TplActionChain *self)
 {
   if (g_queue_is_empty (self->chain))
     {
-      g_debug ("QUEUE EMPTY");
       g_simple_async_result_complete (self->simple);
     }
   else

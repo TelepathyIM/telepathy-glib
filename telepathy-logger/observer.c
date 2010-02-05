@@ -211,15 +211,17 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
     {
       GValueArray *channel = g_ptr_array_index (channels, i);
       TplChannel *tpl_chan;
+      GHashTable *prop_map;
+      gchar *path;
 
-      gchar *path = g_value_get_boxed (g_value_array_get_nth (channel, 0));
+      path = g_value_get_boxed (g_value_array_get_nth (channel, 0));
       /* d.bus.propertyName.str/gvalue hash */
-      GHashTable *map = g_value_get_boxed (g_value_array_get_nth (channel,
-          1));
+      prop_map = g_value_get_boxed (g_value_array_get_nth (channel, 1));
 
-      chan_type = g_value_get_string (g_hash_table_lookup (map,
+      chan_type = g_value_get_string (g_hash_table_lookup (prop_map,
           TP_PROP_CHANNEL_CHANNEL_TYPE));
-      tpl_chan = chan_factory (chan_type, tp_conn, path, map, tp_acc, &error);
+      tpl_chan = chan_factory (chan_type, tp_conn, path, prop_map, tp_acc,
+          &error);
       if (tpl_chan == NULL)
         {
           g_debug ("Creating TplChannel: %s", error->message);

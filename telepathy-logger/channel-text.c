@@ -27,6 +27,7 @@
 
 #include "channel-text.h"
 
+#include <glib.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/enums.h>
 
@@ -60,25 +61,29 @@ static TpContactFeature features[TP_CONTACT_FEATURES_LEN] = {
 
 static void call_when_ready_wrapper (TplChannel *tpl_chan,
     GAsyncReadyCallback cb, gpointer user_data);
+void got_pending_messages_cb (TpChannel *proxy, const GPtrArray *result,
+    const GError *error, gpointer user_data, GObject *weak_object);
+
 static void got_tpl_chan_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
-static void _channel_on_closed_cb (TpChannel *proxy, gpointer user_data,
+static void on_closed_cb (TpChannel *proxy, gpointer user_data,
     GObject *weak_object);
-static void _channel_on_lost_message_cb (TpChannel *proxy, gpointer user_data,
+static void on_lost_message_cb (TpChannel *proxy, gpointer user_data,
     GObject *weak_object);
-static void _channel_on_received_signal_cb (TpChannel *proxy, guint arg_ID,
+static void on_received_signal_cb (TpChannel *proxy, guint arg_ID,
     guint arg_Timestamp, guint arg_Sender, guint arg_Type, guint arg_Flags,
     const gchar *arg_Text, gpointer user_data, GObject *weak_object);
-static void _channel_on_sent_signal_cb (TpChannel *proxy, guint arg_Timestamp,
+static void on_sent_signal_cb (TpChannel *proxy, guint arg_Timestamp,
     guint arg_Type, const gchar *arg_Text,  gpointer user_data,
     GObject *weak_object);
-static void _channel_on_send_error_cb (TpChannel *proxy, guint arg_Error,
+static void on_send_error_cb (TpChannel *proxy, guint arg_Error,
     guint arg_Timestamp, guint arg_Type, const gchar *arg_Text,
     gpointer user_data, GObject *weak_object);
-static void pendingproc_prepare_tpl_channel (TplActionChain *ctx);
 static void pendingproc_connect_signals (TplActionChain *ctx);
+static void pendingproc_get_pending_messages (TplActionChain *ctx);
+static void pendingproc_prepare_tpl_channel (TplActionChain *ctx);
 static void pendingproc_get_chatroom_id (TplActionChain *ctx);
-static void _tpl_channel_text_get_chatroom_cb (TpConnection *proxy,
+static void get_chatroom_id_cb (TpConnection *proxy,
     const gchar **out_Identifiers, const GError *error, gpointer user_data,
     GObject *weak_object);
 static void pendingproc_get_my_contact (TplActionChain *ctx);
@@ -142,7 +147,7 @@ _tpl_channel_text_get_contact_cb (TpConnection *connection,
       break;
     default:
       g_object_get (G_OBJECT (tp_chan), "object-path", &chan_path, NULL);
-      g_error ("retrieving TpContacts: passing invalid value for selector: %d"
+      g_debug ("retrieving TpContacts: passing invalid value for selector: %d"
          "Aborting channel %s observation", priv->selector, chan_path);
       g_free (chan_path);
       tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
@@ -206,12 +211,11 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx)
       case TP_HANDLE_TYPE_ROOM:
         tpl_actionchain_append (ctx, pendingproc_get_chatroom_id);
         break;
-
-      /* follows unhandled TpHandleType */
       case TP_HANDLE_TYPE_NONE:
-        g_warning ("remote handle: TP_HANDLE_TYPE_NONE: "
-            "un-handled. Check the TelepathyLogger.client file.");
+        g_debug ("HANDLE_TYPE_NONE received, probably an anonymous chat, like "
+            "MSN ones. TODO: implement this possibility");
         break;
+      /* follows unhandled TpHandleType */
       case TP_HANDLE_TYPE_LIST:
         g_warning ("remote handle: TP_HANDLE_TYPE_LIST: "
             "un-handled. Check the TelepathyLogger.client file.");
@@ -221,13 +225,12 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx)
             "un-handled. Check the TelepathyLogger.client file.");
         break;
       default:
-        g_error ("remote handle type unknown %d.", remote_handle_type);
+        g_debug ("remote handle type unknown %d.", remote_handle_type);
         break;
     }
 
   tpl_actionchain_continue (ctx);
 }
-
 /* end of async Callbacks */
 
 G_DEFINE_TYPE (TplChannelText, tpl_channel_text, TPL_TYPE_CHANNEL)
@@ -251,6 +254,7 @@ tpl_channel_text_finalize (GObject *obj)
   TplChannelTextPriv *priv = GET_PRIV(obj);
 
   g_free (priv->chatroom_id);
+  priv->chatroom_id = NULL;
 
   G_OBJECT_CLASS (tpl_channel_text_parent_class)->finalize (obj);
 }
@@ -276,6 +280,7 @@ tpl_channel_text_init (TplChannelText *self)
 {
   TplChannelTextPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_CHANNEL_TEXT, TplChannelTextPriv);
+
   self->priv = priv;
 }
 
@@ -288,16 +293,21 @@ tpl_channel_text_init (TplChannelText *self)
  * @error: location of the GError, used in case a problem is raised while
  * creating the channel
  *
- * Convenience function to create a new TPL Channel Text proxy. The returned
- * #TplChannelText is not guaranteed to be ready at the point of return. Use #TpChannel
- * methods casting the #TplChannelText instance to a TpChannel
+ * Convenience function to create a new TPL Channel Text proxy.
+ * The returned #TplChannelText is not guaranteed to be ready at the point of
+ * return.
  *
- * TplChannelText instances are subclasses or the abstract TplChannel which is
+ * TplChannelText is actually a subclass of the abstract TplChannel which is a
  * subclass of TpChannel.
+ * Use #TpChannel methods, casting the #TplChannelText instance to a
+ * TpChannel, to access TpChannel data/methods from it.
+ *
+ * TplChannelText is usually created using #tpl_channel_factory_build, from
+ * within a #TplObserver singleton, when its Observer_Channel method is called
+ * by the Channel Dispatcher.
  *
  * Returns: the TplChannelText instance or %NULL in @object_path is not valid
  */
-
 TplChannelText *
 tpl_channel_text_new (TpConnection *conn,
     const gchar *object_path,
@@ -449,6 +459,7 @@ tpl_channel_text_call_when_ready (TplChannelText *self,
   tpl_actionchain_append (actions, pendingproc_prepare_tpl_channel);
   tpl_actionchain_append (actions, pendingproc_get_my_contact);
   tpl_actionchain_append (actions, pendingproc_get_remote_handle_type);
+  tpl_actionchain_append (actions, pendingproc_get_pending_messages);
   /* start the queue consuming */
   tpl_actionchain_continue (actions);
 }
@@ -478,6 +489,65 @@ got_tpl_chan_ready_cb (GObject *obj,
 
 
 static void
+pendingproc_get_pending_messages (TplActionChain *ctx)
+{
+  TplChannelText *chan_text = tpl_actionchain_get_object (ctx);
+
+  g_debug ("PENDING MESSAGE: START");
+  tp_cli_channel_type_text_call_list_pending_messages (TP_CHANNEL (chan_text),
+      -1, FALSE, got_pending_messages_cb, ctx, NULL, NULL);
+  g_debug ("PENDING MESSAGE: PAST");
+}
+
+void
+got_pending_messages_cb (TpChannel *proxy,
+    const GPtrArray *result,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TplActionChain *ctx = user_data;
+  guint i;
+
+  if (error != NULL)
+    {
+      g_debug ("retrieving pending messages: %s", error->message);
+      tpl_actionchain_continue (ctx);
+      return;
+    }
+
+  for (i = 0; i < result->len; ++i)
+    {
+    GValueArray    *message_struct;
+    const gchar    *message_body;
+    guint           message_id;
+    guint           timestamp;
+    guint           from_handle;
+    guint           message_type;
+    guint           message_flags;
+
+    message_struct = g_ptr_array_index (result, i);
+
+    message_id = g_value_get_uint (g_value_array_get_nth (message_struct, 0));
+    timestamp = g_value_get_uint (g_value_array_get_nth (message_struct, 1));
+    from_handle = g_value_get_uint (g_value_array_get_nth (message_struct, 2));
+    message_type = g_value_get_uint (g_value_array_get_nth (message_struct, 3));
+    message_flags = g_value_get_uint (g_value_array_get_nth (message_struct, 4));
+    message_body = g_value_get_string (g_value_array_get_nth (message_struct, 5));
+
+    g_debug ("Pending message id %d found (timestamp %d)", message_id,
+        timestamp);
+
+    /* call the received signal callback to trigger the storing */
+    on_received_signal_cb (proxy, message_id, timestamp, from_handle,
+        message_type, message_flags, message_body, TPL_CHANNEL_TEXT (proxy),
+        NULL);
+    }
+
+  tpl_actionchain_continue (ctx);
+}
+
+static void
 pendingproc_get_chatroom_id (TplActionChain *ctx)
 {
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
@@ -493,7 +563,7 @@ pendingproc_get_chatroom_id (TplActionChain *ctx)
 
   tpl_channel_text_set_chatroom (tpl_text, TRUE);
   tp_cli_connection_call_inspect_handles (connection,
-      -1, TP_HANDLE_TYPE_ROOM, handles, _tpl_channel_text_get_chatroom_cb,
+      -1, TP_HANDLE_TYPE_ROOM, handles, get_chatroom_id_cb,
       ctx, NULL, NULL);
 
   g_array_unref (handles);
@@ -501,7 +571,7 @@ pendingproc_get_chatroom_id (TplActionChain *ctx)
 
 
 static void
-_tpl_channel_text_get_chatroom_cb (TpConnection *proxy,
+get_chatroom_id_cb (TpConnection *proxy,
     const gchar **out_Identifiers,
     const GError *error,
     gpointer user_data,
@@ -513,7 +583,7 @@ _tpl_channel_text_get_chatroom_cb (TpConnection *proxy,
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
   if (error != NULL)
-    g_error ("retrieving chatroom identifier: %s", error->message);
+    g_debug ("retrieving chatroom identifier: %s", error->message);
 
   g_debug ("Chatroom id: %s", *out_Identifiers);
   tpl_channel_text_set_chatroom_id (tpl_text, *out_Identifiers);
@@ -532,52 +602,46 @@ pendingproc_connect_signals (TplActionChain *ctx)
   channel = TP_CHANNEL (TPL_CHANNEL (tpl_text));
 
   tp_cli_channel_type_text_connect_to_received (channel,
-      _channel_on_received_signal_cb, tpl_text, NULL, NULL, &error);
+      on_received_signal_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("received signal connect: %s", error->message);
-      g_clear_error (&error);
+      g_debug ("received signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
     }
 
   tp_cli_channel_type_text_connect_to_sent (channel,
-      _channel_on_sent_signal_cb, tpl_text, NULL, NULL, &error);
+      on_sent_signal_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("sent signal connect: %s", error->message);
-      g_clear_error (&error);
+      g_debug ("sent signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
     }
 
   tp_cli_channel_type_text_connect_to_send_error (channel,
-      _channel_on_send_error_cb, tpl_text, NULL, NULL, &error);
+      on_send_error_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("send error signal connect: %s", error->message);
-      g_clear_error (&error);
+      g_debug ("send error signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
     }
 
   tp_cli_channel_type_text_connect_to_lost_message (channel,
-      _channel_on_lost_message_cb, tpl_text, NULL, NULL, &error);
+      on_lost_message_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_error ("lost message signal connect: %s", error->message);
-      g_clear_error (&error);
+      g_debug ("lost message signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
     }
 
-  tp_cli_channel_connect_to_closed (channel, _channel_on_closed_cb,
+  tp_cli_channel_connect_to_closed (channel, on_closed_cb,
       tpl_text, NULL, NULL, &error);
-
   if (error != NULL)
     {
-      g_error ("channel closed signal connect: %s", error->message);
-      g_clear_error (&error);
+      g_debug ("channel closed signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
     }
@@ -591,7 +655,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
 
 /* Signal's Callbacks */
 static void
-_channel_on_closed_cb (TpChannel *proxy,
+on_closed_cb (TpChannel *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -614,7 +678,7 @@ _channel_on_closed_cb (TpChannel *proxy,
 
 
 static void
-_channel_on_lost_message_cb (TpChannel *proxy,
+on_lost_message_cb (TpChannel *proxy,
 			     gpointer user_data,
            GObject *weak_object)
 {
@@ -622,8 +686,9 @@ _channel_on_lost_message_cb (TpChannel *proxy,
   /* TODO log that the system lost a message */
 }
 
+
 static void
-_channel_on_send_error_cb (TpChannel *proxy,
+on_send_error_cb (TpChannel *proxy,
 			   guint arg_Error,
 			   guint arg_Timestamp,
 			   guint arg_Type,
@@ -631,14 +696,13 @@ _channel_on_send_error_cb (TpChannel *proxy,
 			   gpointer user_data,
          GObject *weak_object)
 {
-  g_error ("unlogged event: "
-	   "TP was unable to send the message: %s", arg_Text);
+  g_debug ("unlogged event: TP was unable to send the message: %s", arg_Text);
   /* TODO log that the system was unable to send the message */
 }
 
 
 static void
-_channel_on_sent_signal_cb (TpChannel *proxy,
+on_sent_signal_cb (TpChannel *proxy,
 			    guint arg_Timestamp,
 			    guint arg_Type,
 			    const gchar *arg_Text,
@@ -666,7 +730,7 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
     {
       remote = tpl_channel_text_get_remote_contact (tpl_text);
       if (remote == NULL)
-        g_error ("sending message: Remote TplContact=NULL on 1-1 Chat");
+        g_debug ("sending message: Remote TplContact=NULL on 1-1 Chat");
       tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
       tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
     }
@@ -702,8 +766,7 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
 
   if (error != NULL)
     {
-      g_error ("LogStore: %s", error->message);
-      g_clear_error (&error);
+      g_debug ("LogStore: %s", error->message);
       g_error_free (error);
     }
 
@@ -715,7 +778,7 @@ _channel_on_sent_signal_cb (TpChannel *proxy,
 }
 
 static void
-_channel_on_received_signal_with_contact_cb (TpConnection *connection,
+on_received_signal_with_contact_cb (TpConnection *connection,
     guint n_contacts,
     TpContact *const *contacts,
     guint n_failed,
@@ -734,9 +797,9 @@ _channel_on_received_signal_with_contact_cb (TpConnection *connection,
 
   if (error != NULL)
     {
-      g_error ("Unrecoverable error retrieving remote contact "
+      g_debug ("Unrecoverable error retrieving remote contact "
 	       "information: %s", error->message);
-      g_error ("Not able to log the received message: %s",
+      g_debug ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (log));
       g_object_unref (log);
       return;
@@ -744,9 +807,9 @@ _channel_on_received_signal_with_contact_cb (TpConnection *connection,
 
   if (n_failed > 0)
     {
-      g_error ("%d invalid handle(s) passed to "
+      g_debug ("%d invalid handle(s) passed to "
 	       "tp_connection_get_contacts_by_handle()", n_failed);
-      g_error ("Not able to log the received message: %s",
+      g_debug ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (log));
       g_object_unref (log);
       return;
@@ -797,8 +860,7 @@ keepon (TplLogEntryText *log)
   tpl_log_manager_add_message (logmanager, TPL_LOG_ENTRY (log), &e);
   if (e != NULL)
     {
-      g_error ("LogStore: %s", e->message);
-      g_clear_error (&e);
+      g_debug ("LogStore: %s", e->message);
       g_error_free (e);
     }
 
@@ -808,7 +870,7 @@ keepon (TplLogEntryText *log)
 }
 
 static void
-_channel_on_received_signal_cb (TpChannel *proxy,
+on_received_signal_cb (TpChannel *proxy,
 				guint arg_ID,
 				guint arg_Timestamp,
 				guint arg_Sender,
@@ -856,9 +918,8 @@ _channel_on_received_signal_cb (TpChannel *proxy,
   /* it's a chatroom and no contact has been pre-cached */
   if (tpl_channel_text_get_remote_contact (tpl_text) == NULL)
     tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
-        TP_CONTACT_FEATURES_LEN, features,
-        _channel_on_received_signal_with_contact_cb, log, g_object_unref,
-        NULL);
+        TP_CONTACT_FEATURES_LEN, features, on_received_signal_with_contact_cb,
+        log, g_object_unref, NULL);
   else
     keepon (log);
 

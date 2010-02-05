@@ -31,25 +31,28 @@ G_DEFINE_TYPE (TplContact, tpl_contact, G_TYPE_OBJECT)
 struct _TplContactPriv
 {
   TpContact *contact;
+  TpAccount *account;
+
   TplContactType contact_type;
   gchar *alias;
   gchar *identifier;
   gchar *presence_status;
   gchar *presence_message;
   gchar *avatar_token;
-
-  TpAccount *account;
 };
 
 enum
 {
   PROP0,
   PROP_IDENTIFIER,
-  PROP_ALIAS
+  PROP_ALIAS,
+  PROP_PRESENCE_STATUS,
+  PROP_PRESENCE_MESSAGE,
+  PROP_AVATAR_TOKEN
 };
 
 static void
-tpl_contact_finalize (GObject * obj)
+tpl_contact_finalize (GObject *obj)
 {
   TplContact *self = TPL_CONTACT (obj);
   TplContactPriv *priv = GET_PRIV (self);
@@ -66,8 +69,9 @@ tpl_contact_finalize (GObject * obj)
   G_OBJECT_CLASS (tpl_contact_parent_class)->finalize (obj);
 }
 
+
 static void
-tpl_contact_dispose (GObject * obj)
+tpl_contact_dispose (GObject *obj)
 {
   TplContact *self = TPL_CONTACT (obj);
   TplContactPriv *priv = GET_PRIV (self);
@@ -77,6 +81,7 @@ tpl_contact_dispose (GObject * obj)
 
   G_OBJECT_CLASS (tpl_contact_parent_class)->dispose (obj);
 }
+
 
 static void
 tpl_contact_get_prop (GObject *object, guint param_id, GValue *value,
@@ -91,6 +96,15 @@ tpl_contact_get_prop (GObject *object, guint param_id, GValue *value,
         break;
       case PROP_ALIAS:
         g_value_set_string (value, priv->alias);
+        break;
+      case PROP_PRESENCE_STATUS:
+        g_value_set_string (value, priv->presence_status);
+        break;
+      case PROP_PRESENCE_MESSAGE:
+        g_value_set_string (value, priv->presence_message);
+        break;
+      case PROP_AVATAR_TOKEN:
+        g_value_set_string (value, priv->avatar_token);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -112,6 +126,16 @@ tpl_contact_set_prop (GObject *object, guint param_id, const GValue *value,
       case PROP_ALIAS:
         tpl_contact_set_alias (self, g_value_get_string (value));
         break;
+      case PROP_PRESENCE_STATUS:
+        tpl_contact_set_presence_status (self, g_value_get_string (value));
+        break;
+      case PROP_PRESENCE_MESSAGE:
+        tpl_contact_set_presence_message (self, g_value_get_string (value));
+        break;
+      case PROP_AVATAR_TOKEN:
+        tpl_contact_set_avatar_token (self, g_value_get_string (value));
+        break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -120,7 +144,7 @@ tpl_contact_set_prop (GObject *object, guint param_id, const GValue *value,
 }
 
 
-static void tpl_contact_class_init (TplContactClass * klass)
+static void tpl_contact_class_init (TplContactClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
@@ -144,21 +168,43 @@ static void tpl_contact_class_init (TplContactClass * klass)
       G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
+  param_spec = g_param_spec_string ("presence-status",
+      "PresenceStatus",
+      "The contact's presence status string",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
+
+  param_spec = g_param_spec_string ("presence-message",
+      "PresenceMessage",
+      "The contact's presence message",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
+
+  param_spec = g_param_spec_string ("avatar-token",
+      "AvatarToken",
+      "The contact's avatar's token",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
+
   g_type_class_add_private (object_class, sizeof (TplContactPriv));
 }
 
+
 static void
-tpl_contact_init (TplContact * self)
+tpl_contact_init (TplContact *self)
 {
   TplContactPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_CONTACT, TplContactPriv);
-  self->priv = priv;
 
+  self->priv = priv;
 }
 
 
 TplContact *
-tpl_contact_from_tp_contact (TpContact * contact)
+tpl_contact_from_tp_contact (TpContact *contact)
 {
   TplContact *ret;
 
@@ -167,13 +213,16 @@ tpl_contact_from_tp_contact (TpContact * contact)
   ret = tpl_contact_new (tp_contact_get_identifier (contact));
   tpl_contact_set_contact (ret, contact);
   tpl_contact_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
-  tpl_contact_set_presence_status (ret,
-           tp_contact_get_presence_status (contact));
-  tpl_contact_set_presence_message (ret,
-            tp_contact_get_presence_message (contact));
+  if (tp_contact_get_presence_status (contact))
+    tpl_contact_set_presence_status (ret,
+        tp_contact_get_presence_status (contact));
+  if (tp_contact_get_presence_message (contact) != NULL)
+    tpl_contact_set_presence_message (ret,
+        tp_contact_get_presence_message (contact));
 
   return ret;
 }
+
 
 TplContact *
 tpl_contact_new (const gchar *identifier)
@@ -181,12 +230,12 @@ tpl_contact_new (const gchar *identifier)
   g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
 
   return g_object_new (TPL_TYPE_CONTACT,
-      "identifier", identifier,
-      NULL);
+      "identifier", identifier, NULL);
 }
 
+
 TpContact *
-tpl_contact_get_contact (TplContact * self)
+tpl_contact_get_contact (TplContact *self)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -195,8 +244,9 @@ tpl_contact_get_contact (TplContact * self)
   return priv->contact;
 }
 
+
 const gchar *
-tpl_contact_get_alias (TplContact * self)
+tpl_contact_get_alias (TplContact *self)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -205,8 +255,9 @@ tpl_contact_get_alias (TplContact * self)
   return priv->alias;
 }
 
+
 const gchar *
-tpl_contact_get_identifier (TplContact * self)
+tpl_contact_get_identifier (TplContact *self)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -215,8 +266,9 @@ tpl_contact_get_identifier (TplContact * self)
   return priv->identifier;
 }
 
+
 const gchar *
-tpl_contact_get_presence_status (TplContact * self)
+tpl_contact_get_presence_status (TplContact *self)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -225,8 +277,9 @@ tpl_contact_get_presence_status (TplContact * self)
   return priv->presence_status;
 }
 
+
 const gchar *
-tpl_contact_get_presence_message (TplContact * self)
+tpl_contact_get_presence_message (TplContact *self)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -235,8 +288,9 @@ tpl_contact_get_presence_message (TplContact * self)
   return priv->presence_message;
 }
 
+
 TplContactType
-tpl_contact_get_contact_type (TplContact * self)
+tpl_contact_get_contact_type (TplContact *self)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -245,8 +299,9 @@ tpl_contact_get_contact_type (TplContact * self)
   return priv->contact_type;
 }
 
+
 const gchar *
-tpl_contact_get_avatar_token (TplContact * self)
+tpl_contact_get_avatar_token (TplContact *self)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -255,8 +310,9 @@ tpl_contact_get_avatar_token (TplContact * self)
   return priv->avatar_token;
 }
 
+
 TpAccount *
-tpl_contact_get_account (TplContact * self)
+tpl_contact_get_account (TplContact *self)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -267,78 +323,94 @@ tpl_contact_get_account (TplContact * self)
 
 
 void
-tpl_contact_set_contact (TplContact * self, TpContact * data)
+tpl_contact_set_contact (TplContact *self,
+    TpContact *data)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
-  g_return_if_fail (TP_IS_CONTACT (data) || data == NULL);
+  g_return_if_fail (TP_IS_CONTACT (data));
+  g_return_if_fail (priv->contact == NULL);
 
-  tpl_object_unref_if_not_null (priv->contact);
   priv->contact = data;
-  tpl_object_ref_if_not_null (data);
+  g_object_ref (data);
 }
 
+
 void
-tpl_contact_set_account (TplContact * self, TpAccount * data)
+tpl_contact_set_account (TplContact *self,
+    TpAccount *data)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
-  g_return_if_fail (TP_IS_ACCOUNT (data) || data == NULL);
+  g_return_if_fail (TP_IS_ACCOUNT (data));
+  g_return_if_fail (priv->account == NULL);
 
-  tpl_object_unref_if_not_null (priv->account);
   priv->account = data;
-  tpl_object_ref_if_not_null (data);
+  g_object_ref (data);
 }
 
+
 void
-tpl_contact_set_alias (TplContact * self, const gchar * data)
+tpl_contact_set_alias (TplContact *self,
+    const gchar *data)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (priv->alias == NULL);
 
-  g_free (priv->alias);
   priv->alias = g_strdup (data);
 }
 
+
 void
-tpl_contact_set_identifier (TplContact * self, const gchar * data)
+tpl_contact_set_identifier (TplContact *self,
+    const gchar *data)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (priv->identifier == NULL);
 
-  g_free (priv->identifier);
   priv->identifier = g_strdup (data);
 }
 
+
 void
-tpl_contact_set_presence_status (TplContact * self, const gchar * data)
+tpl_contact_set_presence_status (TplContact *self,
+    const gchar *data)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
+  g_return_if_fail (priv->presence_status == NULL);
+  /* data can be NULL, if no presence_status is set */
 
-  g_free (priv->presence_status);
   priv->presence_status = g_strdup (data);
 }
 
+
 void
-tpl_contact_set_presence_message (TplContact * self, const gchar * data)
+tpl_contact_set_presence_message (TplContact *self,
+    const gchar *data)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
+  g_return_if_fail (priv->presence_message == NULL);
+  /* data can be NULL, if no presence_message is set */
 
-  g_free (priv->presence_message);
   priv->presence_message = g_strdup (data);
 }
 
 
 void
-tpl_contact_set_contact_type (TplContact * self, TplContactType data)
+tpl_contact_set_contact_type (TplContact *self,
+    TplContactType data)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
@@ -347,13 +419,16 @@ tpl_contact_set_contact_type (TplContact * self, TplContactType data)
   priv->contact_type = data;
 }
 
+
 void
-tpl_contact_set_avatar_token (TplContact * self, const gchar *data)
+tpl_contact_set_avatar_token (TplContact *self,
+    const gchar *data)
 {
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (priv->avatar_token == NULL);
 
-  g_free (priv->avatar_token);
   priv->avatar_token = g_strdup (data);
 }
