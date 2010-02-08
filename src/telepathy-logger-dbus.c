@@ -37,7 +37,7 @@ void telepathy_logger_dbus_init(void)
 
 	bus = tp_get_bus();
 	tp_bus = tp_dbus_daemon_new(bus);
-	
+
 	if ( tp_dbus_daemon_request_name (tp_bus, TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
 			TRUE, &error) ) {
 		g_print("%s DBus well known name registered\n",

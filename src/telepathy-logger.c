@@ -40,10 +40,12 @@ main(int argc,
   g_debug ("Initialising TPL Channel Factory");
   tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
       (TplChannelConstructor) tpl_channel_text_new);
+  g_debug ("- TplChannelText registred.");
 
 	observer = tpl_observer_new ();
-  g_debug ("Registering channel factory");
+  g_debug ("Registering channel factory into TplObserver");
   tpl_observer_set_channel_factory (observer, tpl_channel_factory_build);
+
   if (tpl_observer_register_dbus (observer, &error) == FALSE)
     {
       g_debug ("Error during D-Bus registration: %s", error->message);
