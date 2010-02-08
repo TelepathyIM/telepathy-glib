@@ -212,14 +212,16 @@ tpl_contact_from_tp_contact (TpContact *contact)
 
   ret = tpl_contact_new (tp_contact_get_identifier (contact));
   tpl_contact_set_contact (ret, contact);
-  tpl_contact_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
+  if (tp_contact_get_alias (contact) != NULL)
+    tpl_contact_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
   if (tp_contact_get_presence_status (contact))
-    tpl_contact_set_presence_status (ret,
-        tp_contact_get_presence_status (contact));
+    tpl_contact_set_presence_status (ret, tp_contact_get_presence_status (
+          contact));
   if (tp_contact_get_presence_message (contact) != NULL)
     tpl_contact_set_presence_message (ret,
         tp_contact_get_presence_message (contact));
-
+  if (tp_contact_get_avatar_token (contact) != NULL)
+    tpl_contact_set_avatar_token (ret, tp_contact_get_avatar_token (contact));
   return ret;
 }
 
@@ -427,8 +429,8 @@ tpl_contact_set_avatar_token (TplContact *self,
   TplContactPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_CONTACT (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
   g_return_if_fail (priv->avatar_token == NULL);
+  /* data can be NULL, if no avatar_token is set */
 
   priv->avatar_token = g_strdup (data);
 }

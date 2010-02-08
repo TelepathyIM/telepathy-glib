@@ -56,7 +56,9 @@ TplActionChain *tpl_actionchain_new (GObject *obj, GAsyncReadyCallback cb,
 void tpl_actionchain_free (TplActionChain *self);
 typedef void (*TplPendingAction) (TplActionChain *ctx);
 void tpl_actionchain_append (TplActionChain *self, TplPendingAction func);
+void tpl_actionchain_prepend (TplActionChain *self, TplPendingAction func);
 void tpl_actionchain_continue (TplActionChain *self);
+void tpl_actionchain_terminate (TplActionChain *self);
 gpointer tpl_actionchain_get_object (TplActionChain *self);
 gboolean tpl_actionchain_finish (GAsyncResult *result);
 

@@ -65,16 +65,18 @@
 typedef struct
 {
   gchar *basedir;
-  gchar *type_name;
-  gchar *instance_name;
+  gchar *name;
+  gboolean readable;
+  gboolean writable;
   TpAccountManager *account_manager;
 } TplLogStoreEmpathyPriv;
 
 enum {
     PROP_0,
-    PROP_INSTANCE_NAME,
+    PROP_NAME,
     PROP_READABLE,
-    PROP_WRITABLE
+    PROP_WRITABLE,
+    PROP_BASEDIR
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
@@ -82,10 +84,16 @@ static void get_prop (GObject *object, guint param_id, GValue *value,
     GParamSpec *pspec);
 static void set_prop (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
-static const gchar *log_store_empathy_get_instance_name (TplLogStore *self);
-static void log_store_empathy_set_instance_name (TplLogStore *self, const gchar *data);
-static GObject *log_store_empathy_constructor (GType type, guint n_props,
-    GObjectConstructParam *props);
+static const gchar *log_store_empathy_get_name (TplLogStore *self);
+static void log_store_empathy_set_name (TplLogStore *self, const gchar *data);
+static const gchar *log_store_empathy_get_basedir (TplLogStore *self);
+static void log_store_empathy_set_basedir (TplLogStore *self,
+    const gchar *data);
+static gboolean log_store_empathy_is_writable (TplLogStore *self);
+static gboolean log_store_empathy_is_readable (TplLogStore *self);
+static void log_store_empathy_set_writable (TplLogStore *self, gboolean data);
+static void log_store_empathy_set_readable (TplLogStore *self, gboolean data);
+
 
 G_DEFINE_TYPE_WITH_CODE (TplLogStoreEmpathy, tpl_log_store_empathy,
     G_TYPE_OBJECT,
@@ -122,10 +130,10 @@ log_store_empathy_finalize (GObject *object)
       g_free (priv->basedir);
       priv->basedir = NULL;
     }
-  if (priv->instance_name != NULL)
+  if (priv->name != NULL)
     {
-      g_free (priv->instance_name);
-      priv->instance_name = NULL;
+      g_free (priv->name);
+      priv->name = NULL;
     }
 }
 
@@ -140,14 +148,16 @@ get_prop (GObject *object,
 
   switch (param_id)
     {
-      case PROP_INSTANCE_NAME:
-        g_value_set_string (value, priv->instance_name);
-        break;
-      case PROP_READABLE:
-        /* ignore */
+      case PROP_NAME:
+        g_value_set_string (value, priv->name);
         break;
       case PROP_WRITABLE:
         /* ignore */
+      case PROP_READABLE:
+        /* ignore */
+        break;
+      case PROP_BASEDIR:
+        g_value_set_string (value, priv->basedir);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -163,19 +173,20 @@ set_prop (GObject *object,
     GParamSpec *pspec)
 {
   TplLogStore *self = TPL_LOG_STORE (object);
-  TplLogStoreEmpathyPriv *priv = GET_PRIV (object);
 
   switch (param_id)
     {
-      case PROP_INSTANCE_NAME:
-        g_assert (priv->instance_name == NULL);
-        log_store_empathy_set_instance_name (self, g_value_get_string (value));
+      case PROP_NAME:
+        log_store_empathy_set_name (self, g_value_get_string (value));
         break;
       case PROP_READABLE:
         /* ignore */
         break;
       case PROP_WRITABLE:
         /* ignore */
+        break;
+      case PROP_BASEDIR:
+        log_store_empathy_set_basedir (self, g_value_get_string (value));
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -194,14 +205,25 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
   object_class->dispose = log_store_empathy_dispose;
   object_class->get_property = get_prop;
   object_class->set_property = set_prop;
-  object_class->constructor = log_store_empathy_constructor;
 
   param_spec = g_param_spec_string ("name",
       "Name",
       "The TplLogStore implementation's name",
       NULL, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
       G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INSTANCE_NAME, param_spec);
+  g_object_class_install_property (object_class, PROP_NAME, param_spec);
+
+  /* the default value for the basedir prop is composed by user_data_dir() +
+   * prop "name" value, it's not possible to know it at param_spec time, so
+   * it's set to NULL and let to get_basedir to set it to its default if
+   * priv->basedir == NULL
+   */
+  param_spec = g_param_spec_string ("basedir",
+      "Basedir",
+      "The TplLogStore implementation's name",
+      NULL, G_PARAM_READABLE | G_PARAM_WRITABLE |
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
 
   param_spec = g_param_spec_boolean ("readable",
       "Readable",
@@ -230,36 +252,7 @@ tpl_log_store_empathy_init (TplLogStoreEmpathy *self)
       TPL_TYPE_LOG_STORE_EMPATHY, TplLogStoreEmpathyPriv);
 
   self->priv = priv;
-}
-
-
-static GObject *
-log_store_empathy_constructor (GType type,
-    guint n_props,
-    GObjectConstructParam *props)
-{
-  GObject *retval;
-  TplLogStoreEmpathy *self;
-  TplLogStoreEmpathyPriv *priv;
-
-  retval = G_OBJECT_CLASS (tpl_log_store_empathy_parent_class)->constructor(
-      type, n_props, props);
-  self = TPL_LOG_STORE_EMPATHY (retval);
-
-  /* set a default value if no property has been set at g_object_new time */
-  if (log_store_empathy_get_instance_name (TPL_LOG_STORE (self)) == NULL)
-    log_store_empathy_set_instance_name (TPL_LOG_STORE (self), "TpLogger");
-
-  priv = GET_PRIV (self);
-  priv->basedir = g_build_path (G_DIR_SEPARATOR_S, g_get_user_data_dir (),
-      log_store_empathy_get_instance_name (TPL_LOG_STORE (self)), "logs", NULL);
   priv->account_manager = tp_account_manager_dup ();
-
-  g_debug ("LogStoreName: %s", log_store_empathy_get_instance_name (TPL_LOG_STORE
-        (self)));
-  g_debug ("LogStore Dir: %s", priv->basedir);
-
-  return retval;
 }
 
 
@@ -282,9 +275,9 @@ log_store_account_to_dirname (TpAccount *account)
  * If non-NULL, the returned dir will be composed until the chat_id part */
 static gchar *
 log_store_empathy_get_dir (TplLogStore *self,
-			   TpAccount *account,
-			   const gchar *chat_id,
-         gboolean chatroom)
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom)
 {
   gchar *basedir;
   gchar *escaped;
@@ -300,11 +293,12 @@ log_store_empathy_get_dir (TplLogStore *self,
   escaped = log_store_account_to_dirname (account);
 
   if (chatroom)
-    basedir = g_build_path (G_DIR_SEPARATOR_S, priv->basedir, escaped,
-        LOG_DIR_CHATROOMS, chat_id, NULL);
+    basedir = g_build_path (G_DIR_SEPARATOR_S,
+        log_store_empathy_get_basedir (self), escaped, LOG_DIR_CHATROOMS,
+        chat_id, NULL);
   else
-    basedir = g_build_path (G_DIR_SEPARATOR_S, priv->basedir,
-        escaped, chat_id, NULL);
+    basedir = g_build_path (G_DIR_SEPARATOR_S,
+        log_store_empathy_get_basedir (self), escaped, chat_id, NULL);
 
   g_free (escaped);
 
@@ -330,7 +324,7 @@ log_store_empathy_get_timestamp_filename (void)
 
 
 static gchar *
-log_store_empathy_get_timestamp_from_message (TplLogEntry * message)
+log_store_empathy_get_timestamp_from_message (TplLogEntry *message)
 {
   time_t t;
 
@@ -343,39 +337,42 @@ log_store_empathy_get_timestamp_from_message (TplLogEntry * message)
 
 static gchar *
 log_store_empathy_get_filename (TplLogStore *self,
-				TpAccount *account,
-				const gchar *chat_id,
-        gboolean chatroom)
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom)
 {
-  gchar *basedir;
+  gchar *chatid_dir;
   gchar *timestamp;
   gchar *filename;
 
-  basedir = log_store_empathy_get_dir (self, account, chat_id, chatroom);
+  chatid_dir = log_store_empathy_get_dir (self, account, chat_id, chatroom);
   timestamp = log_store_empathy_get_timestamp_filename ();
-  filename = g_build_filename (basedir, timestamp, NULL);
+  filename = g_build_filename (chatid_dir, timestamp, NULL);
 
-  g_free (basedir);
+  g_free (chatid_dir);
   g_free (timestamp);
 
   return filename;
 }
 
 
+/* this is a method used at the end of the add_message process, used by any
+ * LogEntry<Type> instance. it should the only method allowed to write to the
+ * store */
 static gboolean
 _log_store_empathy_write_to_store (TplLogStore *self,
-				   TpAccount *account,
-				   const gchar *chat_id,
-				   gboolean chatroom,
-				   const gchar *entry,
-           GError **error)
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom,
+    const gchar *entry,
+    GError **error)
 {
   FILE *file;
   gchar *filename;
   gchar *basedir;
 
-  filename =
-    log_store_empathy_get_filename (self, account, chat_id, chatroom);
+  filename = log_store_empathy_get_filename (self, account, chat_id,
+      chatroom);
   basedir = g_path_get_dirname (filename);
   if (!g_file_test (basedir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
     {
@@ -711,8 +708,8 @@ log_store_empathy_search_hit_new (TplLogStore *self,
 
 static GList *
 log_store_empathy_get_messages_for_file (TplLogStore *self,
-					 TpAccount *account,
-					 const gchar *filename)
+    TpAccount *account,
+    const gchar *filename)
 {
   GList *messages = NULL;
   xmlParserCtxtPtr ctxt;
@@ -857,7 +854,7 @@ log_store_empathy_get_all_files (TplLogStore *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   /* dir can be NULL, do not check :-) */
 
-  basedir = (dir != NULL) ? dir : priv->basedir;
+  basedir = (dir != NULL) ? dir : log_store_empathy_get_basedir (self);
 
   gdir = g_dir_open (basedir, 0, NULL);
   if (!gdir)
@@ -957,7 +954,6 @@ log_store_empathy_search_in_identifier_chats_new (TplLogStore *self,
 {
   GList *files;
   gchar *dir, *account_dir;
-  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
@@ -965,8 +961,8 @@ log_store_empathy_search_in_identifier_chats_new (TplLogStore *self,
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
   account_dir = log_store_account_to_dirname (account);
-  dir = g_build_path (G_DIR_SEPARATOR_S, priv->basedir, account_dir,
-      G_DIR_SEPARATOR_S, identifier, NULL);
+  dir = g_build_path (G_DIR_SEPARATOR_S, log_store_empathy_get_basedir (self),
+      account_dir, identifier, NULL);
 
   files = log_store_empathy_get_all_files (self, dir);
   DEBUG ("Found %d log files in total", g_list_length (files));
@@ -1084,26 +1080,113 @@ log_store_empathy_get_chats (TplLogStore *self,
 
 
 static const gchar *
-log_store_empathy_get_instance_name (TplLogStore *self)
+log_store_empathy_get_name (TplLogStore *self)
 {
   TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_EMPATHY (self), NULL);
 
-  return priv->instance_name;
+  return priv->name;
+}
+
+/* returns am absolute path for the base directory of LogStore */
+static const gchar *
+log_store_empathy_get_basedir (TplLogStore *self)
+{
+  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_EMPATHY (self), NULL);
+
+  /* set default based on name if NULL, see prop's comment about it in
+   * class_init method */
+  if (priv->basedir == NULL)
+    {
+      gchar *dir;
+
+      dir = g_build_path (G_DIR_SEPARATOR_S, g_get_user_data_dir (),
+          log_store_empathy_get_name (self), "logs", NULL);
+      log_store_empathy_set_basedir (self, dir);
+      g_free (dir);
+    }
+
+  return priv->basedir;
 }
 
 
+static gboolean
+log_store_empathy_is_readable (TplLogStore *self)
+{
+  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_EMPATHY (self), FALSE);
+
+  return priv->readable;
+}
+
+
+static gboolean
+log_store_empathy_is_writable (TplLogStore *self)
+{
+  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_EMPATHY (self), FALSE);
+
+  return priv->writable;
+}
+
 static void
-log_store_empathy_set_instance_name (TplLogStore *self,
+log_store_empathy_set_name (TplLogStore *self,
     const gchar *data)
 {
   TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_LOG_STORE_EMPATHY (self));
-  g_return_if_fail (priv->instance_name == NULL);
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (priv->name == NULL);
 
-  priv->instance_name = g_strdup (data);
+  priv->name = g_strdup (data);
+}
+
+static void
+log_store_empathy_set_basedir (TplLogStore *self,
+    const gchar *data)
+{
+  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
+
+  g_return_if_fail (TPL_IS_LOG_STORE_EMPATHY (self));
+  g_return_if_fail (priv->basedir == NULL);
+  /* data may be NULL when the class is initialized and the default value is
+   * set */
+
+  priv->basedir = g_strdup (data);
+
+  /* at install_spec time, default value is set to NULL, ignore it */
+  if (priv->basedir != NULL)
+    g_debug ("logstore set to dir: %s", data);
+}
+
+
+static void
+log_store_empathy_set_readable (TplLogStore *self,
+    gboolean data)
+{
+  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
+
+  g_return_if_fail (TPL_IS_LOG_STORE_EMPATHY (self));
+
+  priv->readable = data;
+}
+
+
+static void
+log_store_empathy_set_writable (TplLogStore *self,
+    gboolean data)
+{
+  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
+
+  g_return_if_fail (TPL_IS_LOG_STORE_EMPATHY (self));
+
+  priv->writable = data;
 }
 
 
@@ -1159,7 +1242,7 @@ log_store_iface_init (gpointer g_iface,
 {
   TplLogStoreInterface *iface = (TplLogStoreInterface *) g_iface;
 
-  iface->get_name = log_store_empathy_get_instance_name;
+  iface->get_name = log_store_empathy_get_name;
   iface->exists = log_store_empathy_exists;
   iface->add_message = log_store_empathy_add_message;
   iface->get_dates = log_store_empathy_get_dates;
@@ -1170,4 +1253,8 @@ log_store_iface_init (gpointer g_iface,
   iface->search_new = log_store_empathy_search_new;
   iface->ack_message = NULL;
   iface->get_filtered_messages = log_store_empathy_get_filtered_messages;
+  iface->set_writable = log_store_empathy_set_writable;
+  iface->set_readable = log_store_empathy_set_readable;
+  iface->is_writable = log_store_empathy_is_writable;
+  iface->is_readable = log_store_empathy_is_readable;
 }

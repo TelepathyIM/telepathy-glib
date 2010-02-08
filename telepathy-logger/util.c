@@ -27,25 +27,25 @@ void
 tpl_object_unref_if_not_null (gpointer data)
 {
   if (data && G_IS_OBJECT (data))
-    {
-      g_object_unref (data);
-    }
+    g_object_unref (data);
 }
+
 
 void
 tpl_object_ref_if_not_null (gpointer data)
 {
   if (data && G_IS_OBJECT (data))
-    {
-      g_object_ref (data);
-    }
+    g_object_ref (data);
 }
 
+
 gboolean
-tpl_strequal (const gchar *left, const gchar *right)
+tpl_strequal (const gchar *left,
+    const gchar *right)
 {
 	return ! tp_strdiff(left, right);
 }
+
 
 TplActionChain *
 tpl_actionchain_new (GObject *obj,
@@ -62,21 +62,29 @@ tpl_actionchain_new (GObject *obj,
 }
 
 
+void
+tpl_actionchain_free (TplActionChain *self)
+{
+  g_queue_free (self->chain);
+  /* TODO free self->simple, I canont understand how */
+  g_slice_free (TplActionChain, self);
+}
+
+
 gpointer
 tpl_actionchain_get_object (TplActionChain *self)
 {
-  g_return_val_if_fail ( self != NULL && self->simple != NULL, NULL);
+  g_return_val_if_fail (self != NULL && self->simple != NULL, NULL);
 
   return g_async_result_get_source_object (G_ASYNC_RESULT (self->simple));
 }
 
 
 void
-tpl_actionchain_free (TplActionChain *self)
+tpl_actionchain_prepend (TplActionChain *self,
+    TplPendingAction func)
 {
-  g_queue_free (self->chain);
-  /* TODO free self->simple, I canont understand how */
-  g_free (self);
+  g_queue_push_head (self->chain, func);
 }
 
 
@@ -93,7 +101,10 @@ tpl_actionchain_continue (TplActionChain *self)
 {
   if (g_queue_is_empty (self->chain))
     {
-      g_simple_async_result_complete (self->simple);
+      GSimpleAsyncResult *simple = self->simple;
+      tpl_actionchain_free (self);
+      g_simple_async_result_set_op_res_gboolean ((GSimpleAsyncResult*) simple, TRUE);
+      g_simple_async_result_complete (simple);
     }
   else
     {
@@ -103,9 +114,18 @@ tpl_actionchain_continue (TplActionChain *self)
 }
 
 
+void
+tpl_actionchain_terminate (TplActionChain *self)
+{
+  GSimpleAsyncResult *simple = self->simple;
+
+  tpl_actionchain_free (self);
+  g_simple_async_result_set_op_res_gboolean ((GSimpleAsyncResult*) simple, FALSE);
+  g_simple_async_result_complete (simple);
+}
+
 gboolean
 tpl_actionchain_finish (GAsyncResult *result)
 {
-  /* TODO returnm the real result */
-  return TRUE;
+  return g_simple_async_result_get_op_res_gboolean ((GSimpleAsyncResult*) result);
 }

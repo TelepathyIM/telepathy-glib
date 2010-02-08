@@ -49,6 +49,11 @@ struct _TplLogStoreInterface
 {
   GTypeInterface parent;
 
+  void (*set_writable) (TplLogStore *self, gboolean data);
+  gboolean (*is_writable) (TplLogStore *self);
+  void (*set_readable) (TplLogStore *self, gboolean data);
+  gboolean (*is_readable) (TplLogStore *self);
+
   const gchar * (*get_name) (TplLogStore *self);
   gboolean (*exists) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom);
@@ -94,6 +99,11 @@ void tpl_log_store_ack_message (TplLogStore *self,
 GList *tpl_log_store_get_filtered_messages (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
     guint num_messages, TplLogMessageFilter filter, gpointer user_data);
+void tpl_log_store_set_writable (TplLogStore *self, gboolean data);
+gboolean tpl_log_store_is_writable (TplLogStore *self);
+void tpl_log_store_set_readable (TplLogStore *self, gboolean data);
+gboolean tpl_log_store_is_readable (TplLogStore *self);
+
 
 G_END_DECLS
 

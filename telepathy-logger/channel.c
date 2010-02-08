@@ -229,6 +229,7 @@ got_ready_tp_connection_cb (TpConnection *connection,
 
       g_free (chan_path);
       g_object_unref (tpl_chan);
+      tpl_actionchain_terminate (ctx);
       return;
     }
 
@@ -267,6 +268,7 @@ got_ready_tp_channel_cb (TpChannel *channel,
       g_free (chan_path);
       g_object_unref (tpl_chan);
       g_object_unref (tp_conn);
+      tpl_actionchain_terminate (ctx);
       return;
     }
 
