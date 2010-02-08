@@ -23,17 +23,13 @@ BUILT_SOURCES = \
 	dbus-service-client.h
 
 bin_PROGRAMS = \
-		telepathy-logger-dbus	\
 		telepathy-logger	\
 		test-api
 
-telepathy_logger_dbus_SOURCES = \
-		dbus-service.c		\
-		telepathy-logger-dbus.c
-
 test_api_SOURCES = test_api.c
 
-telepathy_logger_SOURCES = telepathy-logger.c
+telepathy_logger_SOURCES = telepathy-logger.c \
+	dbus-service.c
 
 nodist_telepathy_logger_SOURCES = $(BUILT_SOURCES)
 
