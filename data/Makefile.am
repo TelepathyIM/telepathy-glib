@@ -27,7 +27,8 @@ EXTRA_DIST = 				\
 	$(schemas_in_files)		\
 	$(schemas_DATA)			\
 	$(clientfile_DATA)		\
-	$(servicefile_in_files)
+	$(servicefile_in_files)		\
+	dbus-service.xml
 
 DISTCLEANFILES = 		\
 	$(servicefile_DATA)
