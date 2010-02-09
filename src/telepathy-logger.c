@@ -19,7 +19,6 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include "dbus-service.h"
 
 #include <glib.h>
 #include <telepathy-glib/dbus.h>
@@ -27,6 +26,7 @@
 #include <telepathy-logger/channel-factory.h>
 #include <telepathy-logger/channel-text.h>
 #include <telepathy-logger/observer.h>
+#include <telepathy-logger/dbus-service.h>
 
 static GMainLoop *loop = NULL;
 
@@ -39,23 +39,24 @@ telepathy_logger_dbus_init (void)
 	TpDBusDaemon *tp_bus;
 	GError *error = NULL;
 
-	bus = tp_get_bus();
-	tp_bus = tp_dbus_daemon_new(bus);
+	bus = tp_get_bus ();
+	tp_bus = tp_dbus_daemon_new (bus);
 
-	if ( tp_dbus_daemon_request_name (tp_bus, TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
-			TRUE, &error) ) {
-		g_print("%s DBus well known name registered\n",
-				TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
-	} else {
-		g_print("Well Known name request error: %s\n", error->message);
-		g_clear_error(&error);
-		g_error_free(error);
-	}
+  if (tp_dbus_daemon_request_name (tp_bus, TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
+        TRUE, &error))
+    {
+      g_debug ("%s DBus well known name registered",
+          TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
+    }
+  else
+    {
+      g_debug ("Well Known name request error: %s", error->message);
+      g_error_free (error);
+    }
 
 	dbus_srv = tpl_dbus_service_new ();
-	dbus_g_connection_register_g_object (bus,
-			TPL_DBUS_SRV_OBJECT_PATH,
-			G_OBJECT(dbus_srv));
+	dbus_g_connection_register_g_object (bus, TPL_DBUS_SRV_OBJECT_PATH,
+			G_OBJECT (dbus_srv));
 }
 
 
@@ -78,7 +79,7 @@ main(int argc,
   g_debug ("Registering channel factory into TplObserver");
   tpl_observer_set_channel_factory (observer, tpl_channel_factory_build);
 
-  if (tpl_observer_register_dbus (observer, &error) == FALSE)
+  if (!tpl_observer_register_dbus (observer, &error))
     {
       g_debug ("Error during D-Bus registration: %s", error->message);
       return 1;

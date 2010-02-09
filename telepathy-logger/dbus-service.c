@@ -209,3 +209,15 @@ tpl_dbus_service_last_chats (TplDBusService *self,
 
   return TRUE;
 }
+
+
+DBusGProxyCall *tpl_dbus_service_last_chats_async (DBusGProxy *proxy, const
+    char* IN_account, const char * IN_identifier, const gboolean
+    IN_is_chatroom, const guint IN_lines,
+    org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_reply
+    callback, gpointer userdata)
+{
+  return org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_async (
+      proxy, IN_account, IN_identifier, IN_is_chatroom, IN_lines, callback,
+      userdata);
+}

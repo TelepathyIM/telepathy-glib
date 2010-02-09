@@ -10,28 +10,24 @@ AM_CPPFLAGS =						\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 
-LDADD = \
-	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(LIBTPL_LIBS)
 
 # TODO removeme: kludge to let the compilation work, or it doesn't know how to buld the lib
 #$(top_builddir)/telepathy-logger/libtelepathy-logger.la:
 #	$(MAKE) -C $(top_builddir)/libtelepathy-logger libtelepathy-logger.la
 
-BUILT_SOURCES = \
-	dbus-service-server.h	\
-	dbus-service-client.h
 
 bin_PROGRAMS = \
 		telepathy-logger	\
 		test-api
 
-test_api_SOURCES = test_api.c
+telepathy_logger_LDADD = \
+	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
+	$(LIBTPL_LIBS)
 
-telepathy_logger_SOURCES = telepathy-logger.c \
-	dbus-service.c
+test_api_LDADD = \
+	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
+	$(LIBTPL_LIBS)
 
-nodist_telepathy_logger_SOURCES = $(BUILT_SOURCES)
 
 check_c_sources = \
 	$(test_api_SOURCES)			\
@@ -40,17 +36,7 @@ check_c_sources = \
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
-EXTRA_DIST = dbus-service.xml
-
-#Rule to generate the binding headers
-dbus-service-server.h:  dbus-service.xml
-	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-server $< > $@
-
-dbus-service-client.h: dbus-service.xml
-	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-client $< > $@
-
-
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = $(BUILT_SOURCES) $(bin_PROGRAMS)
 
 # Dbus service file
 #servicedir = $(DBUS_SERVICES_DIR)

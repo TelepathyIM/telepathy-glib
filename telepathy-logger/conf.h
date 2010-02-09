@@ -69,7 +69,7 @@ gboolean tpl_conf_is_account_ignored (TplConf *self, const gchar *account_path, 
 
 GSList *tpl_conf_get_accounts_ignorelist (TplConf * self, GError **error);
 
-void tpl_conf_togle_globally_enable (TplConf *self, gboolean enable, GError **error);
+void tpl_conf_globally_enable (TplConf *self, gboolean enable, GError **error);
 
 void tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist, GError
 		**error);

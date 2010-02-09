@@ -110,6 +110,7 @@ tpl_channel_finalize (GObject *obj)
   G_OBJECT_CLASS (tpl_channel_parent_class)->finalize (obj);
 }
 
+
 static void
 tpl_channel_class_init (TplChannelClass *klass)
 {
@@ -283,7 +284,6 @@ pendingproc_register_tpl_channel (TplActionChain *ctx)
   TplObserver *observer = tpl_observer_new ();
   TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
 
-  g_debug ("Registering TplChannel into TplObserver");
   tpl_observer_register_channel (observer, tpl_chan);
   g_object_unref (observer);
 
