@@ -66,6 +66,9 @@ AM_GCONF_SOURCE_2
 GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
 AC_SUBST(GLIB_GENMARSHAL)
 
+
+GTK_DOC_CHECK([1.10])
+
 # -----------------------------------------------------------
 # Check for code generation tools
 # -----------------------------------------------------------
@@ -215,6 +218,9 @@ SHAVE_INIT(.)
 AC_OUTPUT([
    Makefile
    data/Makefile
+   doc/Makefile
+   doc/reference/Makefile
+   doc/reference/libtelepathy-logger/Makefile
    src/Makefile
    telepathy-logger/Makefile
    telepathy-logger/libtelepathy-logger.pc

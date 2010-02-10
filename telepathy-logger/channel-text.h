@@ -31,11 +31,8 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
-#include <telepathy-glib/svc-client.h>
 
 #include <telepathy-logger/channel.h>
-#include <telepathy-logger/observer.h>
-#include <telepathy-logger/util.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_CHANNEL_TEXT                  (tpl_channel_text_get_type ())

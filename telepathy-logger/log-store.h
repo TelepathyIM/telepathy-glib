@@ -40,12 +40,10 @@ G_BEGIN_DECLS
       (inst), TPL_TYPE_LOG_STORE, TplLogStoreInterface))
 
 typedef struct _TplLogStore TplLogStore;	/*dummy object */
-typedef struct _TplLogStoreInterface TplLogStoreInterface;
 typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
     gpointer user_data);
 
-
-struct _TplLogStoreInterface
+typedef struct
 {
   GTypeInterface parent;
 
@@ -74,7 +72,7 @@ struct _TplLogStoreInterface
   GList * (*get_filtered_messages) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom, guint num_messages,
       TplLogMessageFilter filter, gpointer user_data);
-};
+} TplLogStoreInterface;
 
 GType tpl_log_store_get_type (void);
 

@@ -154,6 +154,11 @@ static void tpl_contact_class_init (TplContactClass *klass)
   object_class->get_property = tpl_contact_get_prop;
   object_class->set_property = tpl_contact_set_prop;
 
+  /**
+   * TplContact:identifier:
+   *
+   * The contact's identifier
+   */
   param_spec = g_param_spec_string ("identifier",
       "Identifier",
       "The contact's identifier",
@@ -161,6 +166,11 @@ static void tpl_contact_class_init (TplContactClass *klass)
       G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IDENTIFIER, param_spec);
 
+  /**
+   * TplContact:alias:
+   *
+   * The contact's alias
+   */
   param_spec = g_param_spec_string ("alias",
       "Alias",
       "The contact's alias",
@@ -168,6 +178,11 @@ static void tpl_contact_class_init (TplContactClass *klass)
       G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
+  /**
+   * TplContact:presence-status:
+   *
+   * The contact's presence status string
+   */
   param_spec = g_param_spec_string ("presence-status",
       "PresenceStatus",
       "The contact's presence status string",
@@ -175,6 +190,11 @@ static void tpl_contact_class_init (TplContactClass *klass)
       G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
+  /**
+   * TplContact:presence-message:
+   *
+   * The contact's presence message string
+   */
   param_spec = g_param_spec_string ("presence-message",
       "PresenceMessage",
       "The contact's presence message",
@@ -182,6 +202,11 @@ static void tpl_contact_class_init (TplContactClass *klass)
       G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
+  /**
+   * TplContact:avatar-token:
+   *
+   * The contact's avatar token
+   */
   param_spec = g_param_spec_string ("avatar-token",
       "AvatarToken",
       "The contact's avatar's token",

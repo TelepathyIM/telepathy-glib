@@ -98,7 +98,6 @@ tpl_channel_test_init (TplChannelTest *self)
  *
  * Returns: the TplChannelTest instance or %NULL in @object_path is not valid
  */
-
 TplChannelTest *
 tpl_channel_test_new (TpConnection *conn,
     const gchar *object_path,
@@ -106,28 +105,8 @@ tpl_channel_test_new (TpConnection *conn,
     TpAccount *account,
     GError **error)
 {
-  TpProxy *conn_proxy = TP_PROXY (conn);
-
-  /* Do what tpl_channel_new does + set TplChannelTest specific properties */
-
-  g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (object_path), NULL);
-  g_return_val_if_fail (tp_chan_props != NULL, NULL);
-
-  if (!tp_dbus_check_valid_object_path (object_path, error))
-    return NULL;
-
   return g_object_new (TPL_TYPE_CHANNEL_TEST,
-      /* TplChannel properties */
       "account", account,
-      /* TpChannel properties */
-      "connection", conn,
-      "dbus-daemon", conn_proxy->dbus_daemon,
-      "bus-name", conn_proxy->bus_name,
-      "object-path", object_path,
-      "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
-      "channel-properties", tp_chan_props,
       NULL);
 }
 

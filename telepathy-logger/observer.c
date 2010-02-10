@@ -359,8 +359,6 @@ tpl_observer_class_init (TplObserverClass *klass)
    * TplObserver:interfaces:
    *
    * Interfaces implemented by this object.
-   *
-   * Since: 0.1.0
    */
   g_object_class_install_property (object_class, PROP_INTERFACES,
       g_param_spec_boxed ("interfaces", "Interfaces",
@@ -372,8 +370,6 @@ tpl_observer_class_init (TplObserverClass *klass)
    *
    * Channels that this object will accept and manage from the Channel
    * Dispatcher
-   *
-   * Since: 0.1.0
    */
   g_object_class_install_property (object_class, PROP_CHANNEL_FILTER,
       g_param_spec_boxed ("channel-filter",
@@ -389,8 +385,6 @@ tpl_observer_class_init (TplObserverClass *klass)
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
-   *
-   * Since: 0.1.0
    */
   g_object_class_install_property (object_class, PROP_REGISTERED_CHANNELS,
       g_param_spec_boxed ("registered-channels",

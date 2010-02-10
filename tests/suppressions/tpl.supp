@@ -1,5 +1,20 @@
 # Valgrind error suppression file
 
+
+# ============================= selinux ==================================
+
+{
+  selinux getdelim
+  Memcheck:Leak
+  fun:malloc
+  fun:getdelim
+  obj:/lib/libselinux.so.1
+  obj:/lib/libselinux.so.1
+  obj:/lib/libselinux.so.1
+}
+
+
+
 # ============================= libc ==================================
 
 {

@@ -126,7 +126,7 @@ tpl_conf_get_gconf_client (TplConf *self) {
  * Convenience function to obtain a TPL Configuration object, which is a
  * singleton.
  *
- * Returns a TplConf signleton instance with its reference counter
+ * Returns: a TplConf signleton instance with its reference counter
  * incremented. Remember to unref the counter.
  */
 TplConf *
@@ -144,9 +144,9 @@ tpl_conf_dup (void)
  *
  * Wether TPL is globally enabled or not. If it's not globally enabled, no
  * signals will be logged at all.
- * To enable/disable a single account use #tpl_conf_set_accounts_ignorelist
+ * To enable/disable a single account use tpl_conf_set_accounts_ignorelist()
  *
- * Returns %TRUE if TPL logging is globally enable, otherwise returns %FALSE
+ * Returns: %TRUE if TPL logging is globally enable, otherwise returns %FALSE
  * and @error will be used.
  */
 gboolean
@@ -157,22 +157,22 @@ tpl_conf_is_globally_enabled (TplConf *self,
   GError *loc_error = NULL;
 
   if (!TPL_IS_CONF (self))
-  {
-    g_set_error_literal (error, TPL_CONF_ERROR, TPL_CONF_ERROR_GCONF_KEY,
-        "arg1 passed to tpl_conf_is_globally_enabled is not TplConf instance");
-    return FALSE;
-  }
+    {
+      g_set_error_literal (error, TPL_CONF_ERROR, TPL_CONF_ERROR_GCONF_KEY,
+          "arg1 passed to tpl_conf_is_globally_enabled is not TplConf instance");
+      return FALSE;
+    }
 
   ret = gconf_client_get_bool (GET_PRIV (self)->client,
       GCONF_KEY_LOGGING_TURNED_ON, &loc_error);
   if (loc_error != NULL)
-  {
+    {
       g_debug ("Accessing " GCONF_KEY_LOGGING_TURNED_ON ": %s",
           loc_error->message);
       g_propagate_error (error, loc_error);
       g_error_free (loc_error);
       return FALSE;
-  }
+    }
 
   return ret;
 }
@@ -212,14 +212,14 @@ tpl_conf_globally_enable (TplConf *self,
    * times the schema+APIs will match and no error will be raised.
    */
   if (loc_error != NULL)
-  {
+    {
       g_error ("Probably the Telepathy-Logger GConf's schema has changed "
           "and you're using an out of date library\n");
       g_propagate_error (error, loc_error);
       g_clear_error (&loc_error);
       g_error_free (loc_error);
       return;
-  }
+    }
 
 }
 
@@ -233,7 +233,7 @@ tpl_conf_globally_enable (TplConf *self,
  * The list of ignored accounts. If an account is ignored, no signals for this
  * account will be logged.
  *
- * Returns a GList of (gchar*) contaning ignored accounts' object paths or
+ * Returns: a GList of (gchar*) contaning ignored accounts' object paths or
  * %NULL with @error set otherwise.
  */
 GSList *
@@ -262,7 +262,7 @@ tpl_conf_get_accounts_ignorelist (TplConf *self,
 
 
 /**
- * tpl_conf_get_accounts_ignorelist
+ * tpl_conf_set_accounts_ignorelist
  * @self: a TplConf instance
  * @newlist: a new GList containing account's object paths (gchar*) to be ignored
  * @error: memory adress where to store a GError, in case of error, or %NULL
@@ -296,14 +296,14 @@ tpl_conf_set_accounts_ignorelist (TplConf *self,
    * the schema+APIs will match and no error will be raised.
    */
   if (loc_error != NULL)
-  {
+    {
       g_error ("Probably the Telepathy-Logger GConf's schema has changed "
           "and you're using an out of date library\n");
       g_propagate_error (error, loc_error);
       g_clear_error (&loc_error);
       g_error_free (loc_error);
       return;
-  }
+    }
 }
 
 
@@ -316,7 +316,7 @@ tpl_conf_set_accounts_ignorelist (TplConf *self,
  *
  * Wether @account_path is enabled or disable (aka ignored).
  *
- * Returns %TRUE if @account_path is ignored, %FALSE if it's not or %FALSE
+ * Returns: %TRUE if @account_path is ignored, %FALSE if it's not or %FALSE
  * and @error set if an error occurs.
  */
 gboolean

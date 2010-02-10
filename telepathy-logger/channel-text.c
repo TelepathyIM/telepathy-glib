@@ -299,10 +299,12 @@ tpl_channel_text_init (TplChannelText *self)
 
 
 /**
+ * tpl_channel_text_new
  * @conn: TpConnection instance owning the channel
  * @object_path: the channel's DBus path
  * @tp_chan_props: channel's immutable properties, obtained for example by
  * %tp_channel_borrow_immutable_properties()
+ * @account: TpAccount instance, related to the new #TplChannelText
  * @error: location of the GError, used in case a problem is raised while
  * creating the channel
  *
@@ -937,8 +939,8 @@ on_received_signal_cb (TpChannel *proxy,
       return;
     }
 
-  /* Initialize TplLogEntryText (part 1) */
-  log = tpl_log_entry_text_new (arg_Timestamp, NULL,
+  /* Initialize TplLogEntryText (part 1) - chat_id still unknown */
+  log = tpl_log_entry_text_new (arg_ID, NULL,
       TPL_LOG_ENTRY_DIRECTION_IN);
 
   tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);

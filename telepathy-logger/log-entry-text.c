@@ -21,6 +21,7 @@
 
 #include "log-entry-text.h"
 
+#include <glib-object.h>
 #include <telepathy-glib/util.h>
 
 #include <telepathy-logger/util.h>

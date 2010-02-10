@@ -181,9 +181,10 @@ tpl_log_manager_dup_singleton (void)
  * tpl_log_manager_add_message
  * @manager: the log manager
  * @message: a TplLogEntry subclass's instance
+ * @error: the memory location of GError, filled if an error occurs
  *
  * It stores @message, sending it to all the registered TplLogStore which have
- * the "writable" property set to %TRUE.
+ * #TplLogStore:writable set to %TRUE.
  * Every TplLogManager is guaranteed to have at least TplLogStore a readable
  * and a writable LogStore regitered.
  *
@@ -234,19 +235,18 @@ tpl_log_manager_add_message (TplLogManager *manager,
 
 /**
  * tpl_log_manager_register_logstore
- * @manager: the log manager
+ * @self: the log manager
  * @logstore: a TplLogStore interface implementation
  *
  * It registers @logstore into @manager, the log store has to be an
  * implementation of the TplLogStore interface.
  *
  * @logstore has to properly implement the add_message method if the
- * "writable" propertly is set to %TRUE.
+ * #TplLogStore:writable is set to %TRUE.
  *
  * @logstore has to properly implement all the search/query methods if the
- * "readable" propertly is set to %TRUE.
+ * #TplLogStore:readable is set to %TRUE.
  */
-
 void
 tpl_log_manager_register_logstore (TplLogManager *self,
     TplLogStore *logstore)

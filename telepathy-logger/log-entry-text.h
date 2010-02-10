@@ -23,10 +23,8 @@
 #define __TPL_LOG_ENTRY_TEXT_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/enums.h>
 
 #include <telepathy-logger/channel-text.h>
-#include <telepathy-logger/contact.h>
 #include <telepathy-logger/log-entry.h>
 
 G_BEGIN_DECLS

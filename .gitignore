@@ -22,6 +22,7 @@ shave
 shave-libtool
 libtool
 stamp-h1
+gtk-doc.make
 
 config.*
 *~
@@ -38,15 +39,32 @@ config.*
 
 src/telepathy-logger
 src/test-api
-src/telepathy-logger-dbus
-src/dbus-service-client.h
-src/dbus-service-server.h
 
 data/*.service
 data/*.client
 
+telepathy-logger/dbus-service-client.h
+telepathy-logger/dbus-service-server.h
 telepathy-logger/libtelepathy-logger.pc
 
 extensions/_gen/
 extensions/extensions.html
 tests/test-*[^ch]
+tests/twisted/telepathy-logger-debug
+tests/twisted/tools/org.freedesktop.Telepathy.Client.TelepathyLogger.service
+
+doc/reference/libtelepathy-logger/*.stamp
+doc/reference/libtelepathy-logger/html/
+doc/reference/libtelepathy-logger/tmpl/
+doc/reference/libtelepathy-logger/xml/
+doc/reference/libtelepathy-logger/telepathy-logger-*.txt
+doc/reference/libtelepathy-logger/telepathy-logger-*.bak
+doc/reference/libtelepathy-logger/telepathy-logger-*.sgml
+doc/reference/libtelepathy-logger/telepathy-logger.args
+doc/reference/libtelepathy-logger/telepathy-logger.hierarchy
+doc/reference/libtelepathy-logger/telepathy-logger.interfaces
+doc/reference/libtelepathy-logger/telepathy-logger.prerequisites
+doc/reference/libtelepathy-logger/telepathy-logger.signals
+doc/reference/libtelepathy-logger/telepathy-logger.types
+
+

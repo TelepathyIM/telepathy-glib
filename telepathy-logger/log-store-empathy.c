@@ -206,6 +206,13 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
   object_class->get_property = get_prop;
   object_class->set_property = set_prop;
 
+  /**
+   * TplLogStoreEmpathy:name:
+   *
+   * The log store's name. No default available, it has to be passed at object
+   * creation.
+   * As defined in #TplLogStore.
+   */
   param_spec = g_param_spec_string ("name",
       "Name",
       "The TplLogStore implementation's name",
@@ -218,6 +225,12 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
    * it's set to NULL and let to get_basedir to set it to its default if
    * priv->basedir == NULL
    */
+
+  /**
+   * TplLogStoreEmpathy:basedir:
+   *
+   * The log store's basedir.
+   */
   param_spec = g_param_spec_string ("basedir",
       "Basedir",
       "The TplLogStore implementation's name",
@@ -225,6 +238,13 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
 
+  /**
+   * TplLogStoreEmpathy:readable:
+   *
+   * Wether the log store is readable.
+   * Default: %TRUE
+   * As defined in #TplLogStore.
+   */
   param_spec = g_param_spec_boolean ("readable",
       "Readable",
       "Defines wether the LogStore is readable or not, allowing searching "
@@ -233,6 +253,13 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
       G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_READABLE, param_spec);
 
+  /**
+   * TplLogStoreEmpathy:writable:
+   *
+   * Wether the log store is writable.
+   * Default: %FALSE
+   * As defined in #TplLogStore.
+   */
   param_spec = g_param_spec_boolean ("writable",
       "Writable",
       "Defines wether the LogStore is writable or not, allowing message "

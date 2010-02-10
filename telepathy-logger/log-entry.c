@@ -28,15 +28,13 @@
 #include <telepathy-logger/util.h>
 
 /**
- * SECTION:LogEntry
+ * SECTION:log-entry
  * @title: TplLogEntry
  * @short_description: Abstract representation of a log entry
  * @see_also: #TplLogEntryText and other subclasses when they'll exist
  *
- * The TPLogger log entry abstract representation. This class is supposed to
- * be subclassed by a class representing a specific type of log (i.e., Text
- * chat, Call, etc).
- *
+ * The TPLogger log entry represent a generic log entry, which will be
+ * specialied by subclasses of #TplLogEntry.
  */
 
 G_DEFINE_ABSTRACT_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)

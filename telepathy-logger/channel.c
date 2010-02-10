@@ -20,6 +20,7 @@
  */
 
 #include "channel.h"
+#include "observer.h"
 
 #include <string.h>
 
@@ -124,6 +125,11 @@ tpl_channel_class_init (TplChannelClass *klass)
 
   klass->call_when_ready_protected = call_when_ready_protected;
 
+  /**
+   * TplObserver:account:
+   *
+   * the TpAccount instance associated with TplChannel
+   */
   param_spec = g_param_spec_object ("account",
       "Account", "TpAccount instance associated with TplChannel",
       TP_TYPE_ACCOUNT, G_PARAM_READABLE | G_PARAM_WRITABLE |
@@ -170,11 +176,19 @@ tpl_channel_set_account (TplChannel *self,
 
 
 /**
- * It has to be called by all the child classes in order to prepare all the
- * objects involved in the logging process.
+ * tpl_channel_call_when_ready
+ * @self: a TplChannel instance
+ * @cb: a callback
+ * @user_data: user's data passed to the callback
  *
- * It internally calls _call_when_ready for TpAccount TpConnection and
- * TpChannel itself. When everything is ready calls the user passed callback.
+ * The TplObserver has no idea of what TplChannel subclass intance it's
+ * dealing with.
+ * In order to prepare the subclass instance this method has to
+ * be called, which will call #TplChannelClass.call_when_ready
+ * virtual method, implemented (mandatory) by #TplChannel subclasses.
+ * Such method has to call, internally,
+ * #TplChannelClass.call_when_ready_protected  in order to prepare also the
+ * #TplChannel instance.
  */
 void tpl_channel_call_when_ready (TplChannel *self,
     GAsyncReadyCallback cb,
@@ -188,6 +202,17 @@ void tpl_channel_call_when_ready (TplChannel *self,
 }
 
 
+/**
+ * call_when_ready_protected
+ * @self: a TplChannel instance
+ * @cb: a callback
+ * @user_data: user's data passed to the callback
+ *
+ * This static method is called from #TplChannelClass.call_when_ready, implemented by
+ * #TplChannel subclasses.
+ *
+ * See also: tpl_channel_call_when_ready()
+ */
 static void
 call_when_ready_protected (TplChannel *self,
     GAsyncReadyCallback cb,

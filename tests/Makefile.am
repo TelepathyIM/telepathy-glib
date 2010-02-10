@@ -4,6 +4,10 @@ endif
 
 SUBDIRS = $(CHECKTWISTED) suppressions
 
+LDADD = \
+	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
+	$(LIBTPL_LIBS)
+
 noinst_PROGRAMS = \
 	test-tpl-channel	\
 	test-tpl-conf		\
@@ -15,9 +19,10 @@ test_tpl_channel_SOURCES = \
 	test-tpl-channel.c	\
 	tpl-channel-test.c
 
-LDADD = \
-	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(LIBTPL_LIBS)
+test_tpl_observer_SOURCES = \
+	test-tpl-observer.c	\
+	tpl-channel-test.c
+
 
 AM_CFLAGS = $(ERROR_CFLAGS) $(LIBTPL_CFLAGS) \
     -I $(top_srcdir)/telepathy-logger -I $(top_builddir)/src
@@ -36,8 +41,7 @@ check-valgrind: $(TESTS)
 			--show-reachable=no \
 			--gen-suppressions=all \
 			--num-callers=20 \
-			--suppressions=@abs_top_srcdir@/tests/suppressions/gabble.supp \
-			--suppressions=@abs_top_srcdir@/tests/suppressions/tp-glib.supp \
+			--suppressions=@abs_top_srcdir@/tests/suppressions/tpl.supp \
 			--error-exitcode=1" \
 		check-TESTS
 

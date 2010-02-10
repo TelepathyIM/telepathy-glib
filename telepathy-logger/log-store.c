@@ -23,6 +23,39 @@
 
 #include "log-store.h"
 
+/**
+ * SECTION:log-store
+ * @title: TplLogStore
+ * @short_description: LogStore interface can register into #TplLogManager as
+ * #TplLogStore:writable or #TplLogStore:readable log stores.
+ * @see_also: #log-entry-text:TplLogEntryText and other subclasses when they'll exist
+ *
+ * The #TplLogStore defines all the public methods that a TPL Log Store has to
+ * implement in order to be used into a #TplLogManager.
+ */
+
+/**
+ * TplLogStore:writable:
+ *
+ * Defines wether the object is writable for a #TplLogManager.
+ *
+ * If an TplLogStore implementation is writable, the #TplLogManager will call
+ * it's tpl_log_store_add_message() method every time a loggable even occurs,
+ * i.e., everytime tpl_log_manager_add_message() is called.
+ */
+
+/**
+ * TplLogStore:readable:
+ *
+ * Defines wether the object is readable for a #TplLogManager.
+ *
+ * If an TplLogStore implementation is readable, the #TplLogManager will
+ * use the query methods against the instance (i.e., tpl_log_store_get_dates())
+ * every time a #TplLogManager instance is queried (i.e.,
+ * tpl_log_manager_get_date()).
+ */
+
+
 GType
 tpl_log_store_get_type (void)
 {
@@ -48,7 +81,7 @@ tpl_log_store_get_type (void)
 
 
 const gchar *
-tpl_log_store_get_name (TplLogStore * self)
+tpl_log_store_get_name (TplLogStore *self)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_name)
     return NULL;

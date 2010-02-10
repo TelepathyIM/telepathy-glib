@@ -8,6 +8,10 @@ AM_CPPFLAGS =						\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 
+BUILT_SOURCES = \
+	dbus-service-server.h	\
+	dbus-service-client.h
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libtelepathy-logger.pc
 
@@ -15,23 +19,28 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 
 LIBTPLdir = $(includedir)/telepathy-logger
 LIBTPL_HEADERS = \
-		util.h				\
 		contact.h			\
+		channel.h			\
+		channel-text.h			\
+		datetime.h			\
+		dbus-service.h			\
+		dbus-service-client.h		\
 		log-entry.h			\
 		log-entry-text.h		\
 		log-manager.h			\
 		log-store.h			\
 		log-store-empathy.h		\
-		datetime.h
+		util.h
 
 
 libtelepathy_logger_la_SOURCES = \
-		datetime.c			\
 		channel.c			\
 		channel-factory.c		\
 		channel-text.c			\
 		conf.c				\
 		contact.c			\
+		datetime.c			\
+		dbus-service.c			\
 		log-entry.c			\
 		log-entry-text.c		\
 		log-manager.c			\
@@ -47,3 +56,11 @@ include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
 CLEANFILES = $(BUILT_SOURCES)
+
+#Rule to generate the binding headers
+dbus-service-server.h:  $(top_srcdir)/data/dbus-service.xml
+	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-server $< > $@
+
+dbus-service-client.h: $(top_srcdir)/data/dbus-service.xml
+	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-client $< > $@
+

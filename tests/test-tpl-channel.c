@@ -2,8 +2,6 @@
 
 #include <telepathy-logger/conf.h>
 
-#define gconf_client_get_bool(obj,key,err) g_print ("%s", key)
-
 #define CONNECTION_PATH "org.freedesktop.Telepathy.Connection.gabble.jabber.cosimo_2ealfarano_40collabora_2eco_2euk_2fKazoo"
 #define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/FOO/BAR/BAZ"
 #define CHANNEL_PATH "/BAZ"
@@ -60,6 +58,5 @@ int main (int argc, char **argv)
     }
 */
 
-  g_debug ("FOO");
   return 0;
 }

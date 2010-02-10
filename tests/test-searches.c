@@ -54,4 +54,6 @@ main (int argc, char *argv[])
             loc->next->data) != 0);
   g_list_foreach (ret, (GFunc) tpl_log_manager_search_hit_free, NULL);
   g_list_free (ret);
+
+
 }

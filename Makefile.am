@@ -1,8 +1,9 @@
-SUBDIRS = tools telepathy-logger data src tests
+SUBDIRS = tools telepathy-logger data src tests doc
 
 ACLOCAL_AMFLAGS = -I m4
 
 DISTCHECK_CONFIGURE_FLAGS =		\
+	--enable-gtk-doc		\
 	--disable-scrollkeeper		\
 	--disable-schemas-install
 
