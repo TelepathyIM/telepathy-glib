@@ -12,6 +12,7 @@ noinst_PROGRAMS = \
 	test-tpl-channel	\
 	test-tpl-conf		\
 	test-tpl-log-entry	\
+	test-tpl-log-manager	\
 	test-tpl-observer	\
 	test-searches
 

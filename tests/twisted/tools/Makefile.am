@@ -30,4 +30,4 @@ EXTRA_DIST = \
 
 CLEANFILES = \
     $(BUILT_SOURCES) \
-    gabble-testing.log
+    tpl-testing.log

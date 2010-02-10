@@ -1,5 +1,5 @@
 /*
- * main.c - entry point for telepathy-gabble-debug used by tests
+ * main.c - entry point for telepathy-tpl-debug used by tests
  * Copyright (C) 2008 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or

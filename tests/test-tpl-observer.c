@@ -20,7 +20,6 @@ int
 main (int argc, char **argv)
 {
   TplObserver *obs, *obs2;
-  TplChannel *chan;
 
   g_type_init ();
 
@@ -42,10 +41,6 @@ main (int argc, char **argv)
   /* register a ChanFactory and test ObserveChannel() */
   tpl_observer_set_channel_factory (obs, mock_factory);
 
-
-  /* register a channel */
-  chan = TPL_CHANNEL (tpl_channel_test_new (NULL, NULL, NULL, NULL, NULL));
-  tpl_observer_register_channel (obs, chan);
 
   /* proper disposal for the singleton when no references are present */
   g_object_unref (obs);
