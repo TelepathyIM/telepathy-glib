@@ -22,6 +22,7 @@ shave
 shave-libtool
 libtool
 stamp-h1
+INSTALL
 
 config.*
 *~
