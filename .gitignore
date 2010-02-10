@@ -23,6 +23,7 @@ shave-libtool
 libtool
 stamp-h1
 gtk-doc.make
+INSTALL
 
 config.*
 *~
