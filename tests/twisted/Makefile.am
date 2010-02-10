@@ -67,7 +67,8 @@ noinst_PROGRAMS = \
 	telepathy-logger-debug
 
 telepathy_logger_debug_SOURCES = \
-    main-debug.c
+    main-debug.c	\
+    ../tpl-channel-test.c
 
 telepathy_logger_debug_LDADD = \
     $(top_builddir)/telepathy-logger/libtelepathy-logger.la \

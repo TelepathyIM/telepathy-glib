@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "../tpl-channel-test.h"
+
 #include <stdlib.h>
 
 #include <dbus/dbus.h>
@@ -27,24 +29,24 @@
 
 
 static TplObserver *
-tpl_init(void)
+tpl_init (void)
 {
   TplObserver *observer;
+  GError *error;
 
 	g_type_init ();
-  tpl_channel_factory_init ();
 
+  tpl_channel_factory_init ();
   tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
-      (TplChannelConstructor) tpl_channel_text_new);
+      (TplChannelConstructor) tpl_channel_test_new);
 
 	observer = tpl_observer_new ();
-#if 0
   if (tpl_observer_register_dbus (observer, &error) == FALSE)
     {
       g_debug ("Error during D-Bus registration: %s", error->message);
-      return 1;
+      g_error_free (error);
+      return NULL;
     }
-#endif
 
   return observer;
 }
@@ -52,7 +54,7 @@ tpl_init(void)
 
 int
 main (int argc,
-      char **argv)
+    char *argv[])
 {
   int ret = 1;
   TplObserver *observer;

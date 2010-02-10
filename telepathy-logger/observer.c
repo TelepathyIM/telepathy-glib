@@ -19,6 +19,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+
 #include "observer.h"
 
 #include <glib.h>
@@ -35,6 +36,8 @@
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/util.h>
 
+#define DEBUG_FLAG TPL_DEBUG_OBSERVER
+#include <telepathy-logger/debug.h>
 /**
  * SECTION:observer
  * @title: TplObserver
@@ -154,14 +157,14 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   if (!tpl_conf_is_globally_enabled(conf, &error))
     {
       if (error != NULL)
-        g_debug ("%s", error->message);
+        DEBUG ("%s", error->message);
       else
-        g_debug ("Logging is globally disabled. Skipping channel logging.");
+        DEBUG ("Logging is globally disabled. Skipping channel logging.");
       return;
     }
   if (tpl_conf_is_account_ignored(conf, account, &error))
     {
-      g_debug ("Logging is disabled for account %s. "
+      DEBUG ("Logging is disabled for account %s. "
           "Channel associated to this account. "
           "Skipping this channel logging.", account);
       return;
@@ -172,8 +175,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   tp_bus_daemon = tp_dbus_daemon_dup (&error);
   if (tp_bus_daemon == NULL)
     {
-      g_error ("%s", error->message);
-      g_clear_error (&error);
+      DEBUG ("%s", error->message);
       g_error_free (error);
       return;
     }
@@ -181,8 +183,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   tp_acc = tp_account_new (tp_bus_daemon, account, &error);
   if (tp_acc == NULL)
     {
-      g_error ("%s", error->message);
-      g_clear_error (&error);
+      DEBUG ("%s", error->message);
       g_error_free (error);
       g_object_unref (tp_bus_daemon);
       return;
@@ -191,8 +192,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   tp_conn = tp_connection_new (tp_bus_daemon, NULL, connection, &error);
   if (tp_conn == NULL)
     {
-      g_error ("%s", error->message);
-      g_clear_error (&error);
+      DEBUG ("%s", error->message);
       g_error_free (error);
       g_object_unref (tp_bus_daemon);
       g_object_unref (tp_acc);
@@ -224,8 +224,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
           &error);
       if (tpl_chan == NULL)
         {
-          g_debug ("Creating TplChannel: %s", error->message);
-          g_clear_error (&error);
+          DEBUG ("Creating TplChannel: %s", error->message);
           g_error_free (error);
           error = NULL;
           continue;
@@ -454,7 +453,7 @@ tpl_observer_register_dbus (TplObserver *self,
     }
 
   priv->dbus_registered = TRUE;
-  g_debug ("%s DBus well known name registered",
+  DEBUG ("%s DBus well known name registered",
       TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
 
   dbus_g_connection_register_g_object (bus, TPL_OBSERVER_OBJECT_PATH,
@@ -531,11 +530,11 @@ tpl_observer_register_channel (TplObserver *self,
 
   if (g_hash_table_lookup (glob_map, key) != NULL)
     {
-      g_error ("Channel path found, replacing %s", key);
+      DEBUG ("Channel path found, replacing %s", key);
       g_hash_table_remove (glob_map, key);
     }
   else
-      g_debug ("Channel path not found, registering %s", key);
+      DEBUG ("Channel path not found, registering %s", key);
 
   g_hash_table_insert (glob_map, key, channel);
   g_object_notify (G_OBJECT(self), "registered-channels");
@@ -580,7 +579,7 @@ tpl_observer_unregister_channel (TplObserver *self,
 
   g_object_get (G_OBJECT (channel), "object-path", &key, NULL);
 
-  g_debug ("Unregistering channel path %s", key);
+  DEBUG ("Unregistering channel path %s", key);
 
   /* this will destroy the associated value object: at this point
      the hash table reference should be the only one for the

@@ -610,7 +610,7 @@ tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
 }
 
 
-gpointer
+GList *
 tpl_log_manager_async_operation_finish (GAsyncResult *result,
     GError **error)
 {

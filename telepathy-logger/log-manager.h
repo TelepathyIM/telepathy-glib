@@ -74,7 +74,7 @@ typedef struct
 
 GType tpl_log_manager_get_type (void);
 
-gpointer tpl_log_manager_async_operation_finish (GAsyncResult *result,
+GList *tpl_log_manager_async_operation_finish (GAsyncResult *result,
     GError **error);
 
 TplLogManager *tpl_log_manager_dup_singleton (void);

@@ -25,6 +25,7 @@ LIBTPL_HEADERS = \
 		datetime.h			\
 		dbus-service.h			\
 		dbus-service-client.h		\
+		debug.h				\
 		log-entry.h			\
 		log-entry-text.h		\
 		log-manager.h			\
@@ -41,6 +42,7 @@ libtelepathy_logger_la_SOURCES = \
 		contact.c			\
 		datetime.c			\
 		dbus-service.c			\
+		debug.c				\
 		log-entry.c			\
 		log-entry-text.c		\
 		log-manager.c			\

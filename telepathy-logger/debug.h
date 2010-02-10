@@ -1,2 +1,85 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
+/*
+ * Copyright (C) 2009 Collabora Ltd.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
+ */
 
-#define DEBUG(...)
+#ifndef __TPL_DEBUG_H__
+#define __TPL_DEBUG_H__
+
+#include "../config.h"
+
+#include <glib.h>
+
+#ifdef ENABLE_DEBUG
+
+G_BEGIN_DECLS
+
+typedef enum
+{
+  TPL_DEBUG_OBSERVER      = 1 << 0,
+  TPL_DEBUG_CHANNEL       = 1 << 1,
+  TPL_DEBUG_LOG_MANAGER   = 1 << 2,
+  TPL_DEBUG_LOG_STORE     = 1 << 3,
+  TPL_DEBUG_CONF          = 1 << 4
+} TplDebugFlags;
+
+void tpl_debug_set_flags_from_env (void);
+void tpl_debug_set_flags (TplDebugFlags flags);
+gboolean tpl_debug_flag_is_set (TplDebugFlags flag);
+void tpl_debug_free (void);
+void tpl_debug (TplDebugFlags flag, const gchar *format, ...)
+    G_GNUC_PRINTF (2, 3);
+
+
+G_END_DECLS
+
+#ifdef DEBUG_FLAG
+
+#define DEBUG(format, ...) \
+  tpl_debug (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
+
+#define DEBUGGING gabble_debug_flag_is_set (DEBUG_FLAG)
+
+#define CHAN_DEBUG(chan, format, ...) \
+G_STMT_START { \
+  gchar *path; \
+  g_assert (TP_IS_CHANNEL (chan)); \
+  g_object_get (TP_CHANNEL (chan), "object-path", &path, NULL); \
+  tpl_debug (DEBUG_FLAG, "%s: %s: " format , G_STRFUNC, path, \
+    ##__VA_ARGS__); \
+  g_free (path); \
+} G_STMT_END
+
+#endif /* DEBUG_FLAG */
+
+#else /* ENABLE_DEBUG */
+
+#ifdef DEBUG_FLAG
+
+#define DEBUG(format, ...) G_STMT_START { } G_STMT_END
+#define DEBUGGING 0
+#define CHAN_DEBUG(chan, format, ...) G_STMT_START { } G_STMT_END
+
+#endif /* DEBUG_FLAG */
+
+#define tpl_debug_free() G_STMT_START { } G_STMT_END
+
+#endif /* ENABLE_DEBUG */
+
+#endif /* __TPL_DEBUG_H__ */

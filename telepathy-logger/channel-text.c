@@ -25,6 +25,9 @@
  * signals.
  */
 
+#define DEBUG_FLAG  TPL_DEBUG_CHANNEL
+
+#include "../config.h"
 #include "channel-text.h"
 
 #include <glib.h>
@@ -33,6 +36,7 @@
 
 #include <telepathy-logger/contact.h>
 #include <telepathy-logger/channel.h>
+#include <telepathy-logger/debug.h>
 #include <telepathy-logger/observer.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager-priv.h>
@@ -41,11 +45,6 @@
 #define TP_CONTACT_FEATURES_LEN	3
 #define	TP_CONTACT_MYSELF	0
 #define	TP_CONTACT_REMOTE	1
-
-#define DEBUG(_chan, _str, ...) { gchar *_path; \
-    g_object_get (G_OBJECT (_chan), "object-path", &_path, NULL); \
-    g_debug ("%s: " _str, _path+38, ## __VA_ARGS__); \
-    g_free (_path); }
 
 #define GET_PRIV(obj)    TPL_GET_PRIV (obj, TplChannelText)
 struct _TplChannelTextPriv
@@ -132,7 +131,7 @@ got_contact_cb (TpConnection *connection,
       g_object_get (G_OBJECT (tp_channel_borrow_connection
           (tp_chan)), "object-path", &conn_path, NULL);
 
-      DEBUG (tpl_text, "Error resolving self handle for connection %s."
+      CHAN_DEBUG (tpl_text, "Error resolving self handle for connection %s."
 	       " Aborting channel observation", conn_path);
       tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
 
@@ -151,7 +150,7 @@ got_contact_cb (TpConnection *connection,
       tpl_channel_text_set_remote_contact (tpl_text, *contacts);
       break;
     default:
-      DEBUG (tpl_text, "retrieving TpContacts: passing invalid value for selector: %d"
+      CHAN_DEBUG (tpl_text, "retrieving TpContacts: passing invalid value for selector: %d"
          "Aborting channel observation", priv->selector);
       tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
       g_object_unref (observer);
@@ -214,26 +213,26 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx)
         tpl_actionchain_prepend (ctx, pendingproc_get_chatroom_id);
         break;
       case TP_HANDLE_TYPE_NONE:
-        DEBUG (tpl_text, "HANDLE_TYPE_NONE received, probably an anonymous "
+        CHAN_DEBUG (tpl_text, "HANDLE_TYPE_NONE received, probably an anonymous "
             "chat, like MSN ones. TODO: implement this possibility");
         tpl_actionchain_terminate (ctx);
         return;
         break;
       /* follows unhandled TpHandleType */
       case TP_HANDLE_TYPE_LIST:
-        DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_LIST: "
+        CHAN_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_LIST: "
             "un-handled. Check the TelepathyLogger.client file.");
         tpl_actionchain_terminate (ctx);
         return;
         break;
       case TP_HANDLE_TYPE_GROUP:
-        DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_GROUP: "
+        CHAN_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_GROUP: "
             "un-handled. Check the TelepathyLogger.client file.");
         tpl_actionchain_terminate (ctx);
         return;
         break;
       default:
-        DEBUG (tpl_text, "remote handle type unknown %d.",
+        CHAN_DEBUG (tpl_text, "remote handle type unknown %d.",
             remote_handle_type);
         tpl_actionchain_terminate (ctx);
         return;
@@ -537,12 +536,12 @@ got_pending_messages_cb (TpChannel *proxy,
 
   if (error != NULL)
     {
-      g_debug ("retrieving pending messages: %s", error->message);
+      CHAN_DEBUG (proxy, "retrieving pending messages: %s", error->message);
       tpl_actionchain_terminate (ctx);
       return;
     }
 
-  DEBUG (proxy, "%d pending message(s)", result->len);
+  CHAN_DEBUG (proxy, "%d pending message(s)", result->len);
   for (i = 0; i < result->len; ++i)
     {
       GValueArray    *message_struct;
@@ -608,12 +607,12 @@ get_chatroom_id_cb (TpConnection *proxy,
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
   if (error != NULL) {
-    g_debug ("retrieving chatroom identifier: %s", error->message);
+    CHAN_DEBUG (proxy, "retrieving chatroom identifier: %s", error->message);
     tpl_actionchain_terminate (ctx);
     return;
   }
 
-  g_debug ("Chatroom id: %s", *out_Identifiers);
+  CHAN_DEBUG (proxy, "Chatroom id: %s", *out_Identifiers);
   tpl_channel_text_set_chatroom_id (tpl_text, *out_Identifiers);
 
   tpl_actionchain_continue (ctx);
@@ -634,7 +633,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_received_signal_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_debug ("received signal connect: %s", error->message);
+      CHAN_DEBUG (tpl_text, "received signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -644,7 +643,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_sent_signal_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_debug ("sent signal connect: %s", error->message);
+      CHAN_DEBUG (tpl_text, "sent signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -654,7 +653,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_send_error_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_debug ("send error signal connect: %s", error->message);
+      CHAN_DEBUG (tpl_text, "send error signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -664,7 +663,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_lost_message_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_debug ("lost message signal connect: %s", error->message);
+      CHAN_DEBUG (tpl_text, "lost message signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -674,7 +673,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      g_debug ("channel closed signal connect: %s", error->message);
+      CHAN_DEBUG (tpl_text, "channel closed signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -701,7 +700,7 @@ on_closed_cb (TpChannel *proxy,
   TplObserver *observer = tpl_observer_new ();
 
   if (!tpl_observer_unregister_channel (observer, tpl_chan))
-    DEBUG (tpl_chan, "Channel couldn't be unregistered correctly (BUG?)");
+    CHAN_DEBUG (tpl_chan, "Channel couldn't be unregistered correctly (BUG?)");
 
   g_object_unref (observer);
 }
@@ -712,7 +711,7 @@ on_lost_message_cb (TpChannel *proxy,
 			     gpointer user_data,
            GObject *weak_object)
 {
-  g_debug ("lost message signal catched. nothing logged");
+  CHAN_DEBUG (proxy, "lost message signal catched. nothing logged");
   /* TODO log that the system lost a message */
 }
 
@@ -726,7 +725,7 @@ on_send_error_cb (TpChannel *proxy,
 			   gpointer user_data,
          GObject *weak_object)
 {
-  g_debug ("unlogged event: TP was unable to send the message: %s", arg_Text);
+  CHAN_DEBUG (proxy, "unlogged event: TP was unable to send the message: %s", arg_Text);
   /* TODO log that the system was unable to send the message */
 }
 
@@ -760,7 +759,8 @@ on_sent_signal_cb (TpChannel *proxy,
     {
       remote = tpl_channel_text_get_remote_contact (tpl_text);
       if (remote == NULL)
-        g_debug ("sending message: Remote TplContact=NULL on 1-1 Chat");
+        CHAN_DEBUG (tpl_text, "sending message: Remote TplContact=NULL on 1-1"
+            "Chat");
       tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
       tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
     }
@@ -800,7 +800,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   if (error != NULL)
     {
-      g_debug ("LogStore: %s", error->message);
+      CHAN_DEBUG (tpl_text, "LogStore: %s", error->message);
       g_error_free (error);
     }
 
@@ -831,7 +831,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 
   if (error != NULL)
     {
-      g_debug ("Unrecoverable error retrieving remote contact "
+      CHAN_DEBUG (tpl_text, "Unrecoverable error retrieving remote contact "
 	       "information: %s", error->message);
       g_debug ("Not able to log the received message: %s",
 	       tpl_log_entry_text_get_message (log));
