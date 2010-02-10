@@ -226,6 +226,7 @@ AC_OUTPUT([
    telepathy-logger/libtelepathy-logger.pc
    tools/Makefile
    tests/Makefile
+   tests/suppressions/Makefile
    tests/twisted/Makefile
    tests/twisted/tools/Makefile
    shave
