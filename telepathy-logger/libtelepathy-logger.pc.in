@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@/telepathy-logger
 
-Name: something
-Description: Telepathy Logger library
+Name: Telepathy Logger library
+Description: Access to Telepathy logs
 Requires: telepathy-glib libxml-2.0
 Version: @VERSION@
 Libs: -L${libdir} -llibtelepathy-logger

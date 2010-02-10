@@ -47,6 +47,7 @@ data/*.client
 telepathy-logger/dbus-service-client.h
 telepathy-logger/dbus-service-server.h
 telepathy-logger/libtelepathy-logger.pc
+telepathy-logger/libtelepathy-logger-uninstalled.pc
 
 extensions/_gen/
 extensions/extensions.html

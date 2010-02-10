@@ -224,6 +224,7 @@ AC_OUTPUT([
    src/Makefile
    telepathy-logger/Makefile
    telepathy-logger/libtelepathy-logger.pc
+   telepathy-logger/libtelepathy-logger-uninstalled.pc
    tools/Makefile
    tests/Makefile
    tests/suppressions/Makefile

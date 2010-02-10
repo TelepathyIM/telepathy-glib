@@ -1,0 +1,11 @@
+prefix=
+exec_prefix=
+abs_top_srcdir=@abs_top_srcdir@
+abs_top_builddir=@abs_top_builddir@
+
+Name: Telepathy Logger library (uninstalled copy)
+Description: Access to Telepathy logs
+Requires: telepathy-glib libxml-2.0
+Version: @VERSION@
+Libs: ${abs_top_builddir}/telepathy-logger/libtelepathy-logger.la
+Cflags: -I${abs_top_srcdir} -I${abs_top_builddir}
