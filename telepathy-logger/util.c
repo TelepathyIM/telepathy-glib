@@ -43,7 +43,7 @@ gboolean
 tpl_strequal (const gchar *left,
     const gchar *right)
 {
-	return ! tp_strdiff(left, right);
+  return !tp_strdiff (left, right);
 }
 
 
@@ -103,13 +103,13 @@ tpl_actionchain_continue (TplActionChain *self)
     {
       GSimpleAsyncResult *simple = self->simple;
       tpl_actionchain_free (self);
-      g_simple_async_result_set_op_res_gboolean ((GSimpleAsyncResult*) simple, TRUE);
+      g_simple_async_result_set_op_res_gboolean ((GSimpleAsyncResult *) simple, TRUE);
       g_simple_async_result_complete (simple);
     }
   else
     {
       TplPendingAction next_action = g_queue_pop_head (self->chain);
-      next_action(self);
+      next_action (self);
     }
 }
 
@@ -120,12 +120,12 @@ tpl_actionchain_terminate (TplActionChain *self)
   GSimpleAsyncResult *simple = self->simple;
 
   tpl_actionchain_free (self);
-  g_simple_async_result_set_op_res_gboolean ((GSimpleAsyncResult*) simple, FALSE);
+  g_simple_async_result_set_op_res_gboolean ((GSimpleAsyncResult *) simple, FALSE);
   g_simple_async_result_complete (simple);
 }
 
 gboolean
 tpl_actionchain_finish (GAsyncResult *result)
 {
-  return g_simple_async_result_get_op_res_gboolean ((GSimpleAsyncResult*) result);
+  return g_simple_async_result_get_op_res_gboolean ((GSimpleAsyncResult *) result);
 }

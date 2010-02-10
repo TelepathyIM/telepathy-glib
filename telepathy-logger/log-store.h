@@ -39,7 +39,7 @@ G_BEGIN_DECLS
 #define TPL_LOG_STORE_GET_INTERFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE ( \
       (inst), TPL_TYPE_LOG_STORE, TplLogStoreInterface))
 
-typedef struct _TplLogStore TplLogStore;	/*dummy object */
+typedef struct _TplLogStore TplLogStore;  /*dummy object */
 typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
     gpointer user_data);
 

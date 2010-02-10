@@ -27,12 +27,12 @@
 #include <telepathy-glib/account.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_CONTACT		(tpl_contact_get_type ())
-#define TPL_CONTACT(obj)		(G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CONTACT, TplContact))
-#define TPL_CONTACT_CLASS(klass)	(G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CONTACT, TplContactClass))
-#define TPL_IS_CONTACT(obj)		(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CONTACT))
-#define TPL_IS_CONTACT_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONTACT))
-#define TPL_CONTACT_GET_CLASS(obj) 	(G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONTACT, TplContactClass))
+#define TPL_TYPE_CONTACT    (tpl_contact_get_type ())
+#define TPL_CONTACT(obj)    (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CONTACT, TplContact))
+#define TPL_CONTACT_CLASS(klass)  (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CONTACT, TplContactClass))
+#define TPL_IS_CONTACT(obj)    (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CONTACT))
+#define TPL_IS_CONTACT_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONTACT))
+#define TPL_CONTACT_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONTACT, TplContactClass))
 
 typedef enum
 {

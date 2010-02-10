@@ -64,7 +64,7 @@ tpl_conf_dispose (GObject *obj)
 
 static GObject *
 tpl_conf_constructor (GType type,
-		guint n_props,
+    guint n_props,
     GObjectConstructParam *props)
 {
   GObject *retval;
@@ -122,7 +122,7 @@ tpl_conf_get_gconf_client (TplConf *self) {
 
 /**
  * tpl_conf_dup
- * 
+ *
  * Convenience function to obtain a TPL Configuration object, which is a
  * singleton.
  *
@@ -233,7 +233,7 @@ tpl_conf_globally_enable (TplConf *self,
  * The list of ignored accounts. If an account is ignored, no signals for this
  * account will be logged.
  *
- * Returns: a GList of (gchar*) contaning ignored accounts' object paths or
+ * Returns: a GList of (gchar *) contaning ignored accounts' object paths or
  * %NULL with @error set otherwise.
  */
 GSList *
@@ -247,7 +247,7 @@ tpl_conf_get_accounts_ignorelist (TplConf *self,
 
   ret = gconf_client_get_list (GET_PRIV (self)->client,
       GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST, GCONF_VALUE_STRING,
-		  &loc_error);
+      &loc_error);
   if (loc_error != NULL)
     {
       g_warning ("Accessing " GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST": %s",
@@ -264,7 +264,7 @@ tpl_conf_get_accounts_ignorelist (TplConf *self,
 /**
  * tpl_conf_set_accounts_ignorelist
  * @self: a TplConf instance
- * @newlist: a new GList containing account's object paths (gchar*) to be ignored
+ * @newlist: a new GList containing account's object paths (gchar *) to be ignored
  * @error: memory adress where to store a GError, in case of error, or %NULL
  * to ignore error reporting.
  *
@@ -333,7 +333,7 @@ tpl_conf_is_account_ignored (TplConf *self,
 
   ignored_list = gconf_client_get_list (GET_PRIV (self)->client,
       GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST, GCONF_VALUE_STRING,
-		  &loc_error);
+      &loc_error);
   if (loc_error != NULL)
     {
       g_warning ("Accessing " GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST": %s",

@@ -34,13 +34,13 @@ static GMainLoop *loop = NULL;
 static void
 telepathy_logger_dbus_init (void)
 {
-	TplDBusService *dbus_srv;
-	DBusGConnection *bus;
-	TpDBusDaemon *tp_bus;
-	GError *error = NULL;
+  TplDBusService *dbus_srv;
+  DBusGConnection *bus;
+  TpDBusDaemon *tp_bus;
+  GError *error = NULL;
 
-	bus = tp_get_bus ();
-	tp_bus = tp_dbus_daemon_new (bus);
+  bus = tp_get_bus ();
+  tp_bus = tp_dbus_daemon_new (bus);
 
   if (tp_dbus_daemon_request_name (tp_bus, TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
         TRUE, &error))
@@ -54,20 +54,20 @@ telepathy_logger_dbus_init (void)
       g_error_free (error);
     }
 
-	dbus_srv = tpl_dbus_service_new ();
-	dbus_g_connection_register_g_object (bus, TPL_DBUS_SRV_OBJECT_PATH,
-			G_OBJECT (dbus_srv));
+  dbus_srv = tpl_dbus_service_new ();
+  dbus_g_connection_register_g_object (bus, TPL_DBUS_SRV_OBJECT_PATH,
+      G_OBJECT (dbus_srv));
 }
 
 
 int
-main(int argc,
+main (int argc,
     char *argv[])
 {
   TplObserver *observer;
   GError *error = NULL;
 
-	g_type_init ();
+  g_type_init ();
   tpl_channel_factory_init ();
 
   g_debug ("Initialising TPL Channel Factory");
@@ -75,7 +75,7 @@ main(int argc,
       (TplChannelConstructor) tpl_channel_text_new);
   g_debug ("- TplChannelText registred.");
 
-	observer = tpl_observer_new ();
+  observer = tpl_observer_new ();
   g_debug ("Registering channel factory into TplObserver");
   tpl_observer_set_channel_factory (observer, tpl_channel_factory_build);
 
@@ -87,11 +87,11 @@ main(int argc,
 
   telepathy_logger_dbus_init ();
 
-	loop = g_main_loop_new (NULL, FALSE);
-	g_main_loop_run (loop);
+  loop = g_main_loop_new (NULL, FALSE);
+  g_main_loop_run (loop);
 
   g_object_unref (observer);
   tpl_channel_factory_deinit ();
 
-	return 0;
+  return 0;
 }

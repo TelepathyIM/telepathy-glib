@@ -32,12 +32,12 @@
 #include <telepathy-logger/log-store.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_LOG_MANAGER		(tpl_log_manager_get_type ())
-#define TPL_LOG_MANAGER(o)		(G_TYPE_CHECK_INSTANCE_CAST ((o), TPL_TYPE_LOG_MANAGER, TplLogManager))
-#define TPL_LOG_MANAGER_CLASS(k)	(G_TYPE_CHECK_CLASS_CAST ((k), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
-#define TPL_IS_LOG_MANAGER(o)		(G_TYPE_CHECK_INSTANCE_TYPE ((o), TPL_TYPE_LOG_MANAGER))
-#define TPL_IS_LOG_MANAGER_CLASS(k) 	(G_TYPE_CHECK_CLASS_TYPE ((k), TPL_TYPE_LOG_MANAGER))
-#define TPL_LOG_MANAGER_GET_CLASS(o)	(G_TYPE_INSTANCE_GET_CLASS ((o), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
+#define TPL_TYPE_LOG_MANAGER  (tpl_log_manager_get_type ())
+#define TPL_LOG_MANAGER(o)  (G_TYPE_CHECK_INSTANCE_CAST ((o), TPL_TYPE_LOG_MANAGER, TplLogManager))
+#define TPL_LOG_MANAGER_CLASS(k)  (G_TYPE_CHECK_CLASS_CAST ((k), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
+#define TPL_IS_LOG_MANAGER(o) (G_TYPE_CHECK_INSTANCE_TYPE ((o), TPL_TYPE_LOG_MANAGER))
+#define TPL_IS_LOG_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), TPL_TYPE_LOG_MANAGER))
+#define TPL_LOG_MANAGER_GET_CLASS(o)  (G_TYPE_INSTANCE_GET_CLASS ((o), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
 
 #define TPL_LOG_MANAGER_ERROR g_quark_from_static_string ("tpl-log-manager-error-quark")
 

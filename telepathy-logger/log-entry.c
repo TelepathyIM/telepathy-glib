@@ -469,7 +469,7 @@ tpl_log_entry_set_chat_id (TplLogEntry *self,
 /**
  * log_entry:
  * @self: TplLogEntry subclass instance
- * @data: an instance of the same class of @self, 
+ * @data: an instance of the same TplLogEntry subclass of @self
  *
  * Checks if two instances of TplLogEntry represent the same data
  *

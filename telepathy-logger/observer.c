@@ -91,7 +91,7 @@ static GHashTable *tpl_observer_get_channel_map (TplObserver *self);
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplObserver)
 struct _TplObserverPriv
 {
-    // mapping channel_path->TplChannel instances 
+    /* mapping channel_path->TplChannel instances */
     GHashTable *channel_map;
     TplLogManager *logmanager;
     gboolean  dbus_registered;
@@ -153,8 +153,8 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
 
   /* Check if logging if enabled globally and for the given account_path,
    * return imemdiatly if it's not */
-  conf = tpl_conf_dup();
-  if (!tpl_conf_is_globally_enabled(conf, &error))
+  conf = tpl_conf_dup ();
+  if (!tpl_conf_is_globally_enabled (conf, &error))
     {
       if (error != NULL)
         DEBUG ("%s", error->message);
@@ -162,7 +162,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
         DEBUG ("Logging is globally disabled. Skipping channel logging.");
       return;
     }
-  if (tpl_conf_is_account_ignored(conf, account, &error))
+  if (tpl_conf_is_account_ignored (conf, account, &error))
     {
       DEBUG ("Logging is disabled for account %s. "
           "Channel associated to this account. "
@@ -537,7 +537,7 @@ tpl_observer_register_channel (TplObserver *self,
       DEBUG ("Channel path not found, registering %s", key);
 
   g_hash_table_insert (glob_map, key, channel);
-  g_object_notify (G_OBJECT(self), "registered-channels");
+  g_object_notify (G_OBJECT (self), "registered-channels");
 
   g_object_unref (channel);
 
@@ -587,7 +587,7 @@ tpl_observer_unregister_channel (TplObserver *self,
    */
   retval = g_hash_table_remove (glob_map, key);
   if (retval)
-    g_object_notify (G_OBJECT(self), "registered-channels");
+    g_object_notify (G_OBJECT (self), "registered-channels");
   g_free (key);
   return retval;
 }

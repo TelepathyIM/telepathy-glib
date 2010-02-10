@@ -25,6 +25,9 @@
 
 #include <telepathy-logger/util.h>
 
+#define DEBUG_FLAG TPL_DEBUG_CONTACT
+#include <telepathy-logger/debug.h>
+
 G_DEFINE_TYPE (TplContact, tpl_contact, G_TYPE_OBJECT)
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplContact)
@@ -247,6 +250,9 @@ tpl_contact_from_tp_contact (TpContact *contact)
         tp_contact_get_presence_message (contact));
   if (tp_contact_get_avatar_token (contact) != NULL)
     tpl_contact_set_avatar_token (ret, tp_contact_get_avatar_token (contact));
+
+  DEBUG ("ID: %s, TOK: %s", tpl_contact_get_identifier (ret),
+      tpl_contact_get_avatar_token (ret));
   return ret;
 }
 

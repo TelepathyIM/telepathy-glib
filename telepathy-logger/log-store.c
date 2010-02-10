@@ -64,14 +64,14 @@ tpl_log_store_get_type (void)
     {
       static const GTypeInfo info = {
           sizeof (TplLogStoreInterface),
-          NULL,			/* base_init */
-          NULL,			/* base_finalize */
-          NULL,			/* class_init */
-          NULL,			/* class_finalize */
-          NULL,			/* class_data */
+          NULL, /* base_init */
+          NULL, /* base_finalize */
+          NULL, /* class_init */
+          NULL, /* class_finalize */
+          NULL, /* class_data */
           0,
-          0,			/* n_preallocs */
-          NULL			/* instance_init */
+          0,    /* n_preallocs */
+          NULL  /* instance_init */
       };
       type = g_type_register_static (G_TYPE_INTERFACE, "TplLogStore",
           &info, 0);
@@ -122,9 +122,9 @@ tpl_log_store_add_message (TplLogStore *self,
 
 GList *
 tpl_log_store_get_dates (TplLogStore *self,
-			 TpAccount *account,
-			 const gchar *chat_id,
-       gboolean chatroom)
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_dates)
     return NULL;
@@ -151,9 +151,9 @@ tpl_log_store_get_messages_for_date (TplLogStore *self,
 
 GList *
 tpl_log_store_get_last_messages (TplLogStore *self,
-				 TpAccount *account,
-				 const gchar *chat_id,
-         gboolean chatroom)
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_last_messages)
     return NULL;
@@ -209,7 +209,7 @@ tpl_log_store_ack_message (TplLogStore *self,
     return;
 
   TPL_LOG_STORE_GET_INTERFACE (self)->ack_message (self, chat_id, chatroom,
-						   message);
+      message);
 }
 
 

@@ -22,7 +22,7 @@
 #ifndef __TPL_CHANNEL_TEXT_H__
 #define __TPL_CHANNEL_TEXT_H__
 
-/* 
+/*
  * http://telepathy.freedesktop.org/doc/telepathy-glib/telepathy-glib-channel-text.html#tp-cli-channel-type-text-connect-to-received
  */
 
@@ -69,14 +69,14 @@ gboolean tpl_channel_text_is_chatroom (TplChannelText * self);
 const gchar *tpl_channel_text_get_chatroom_id (TplChannelText * self);
 
 void tpl_channel_text_set_tpl_channel (TplChannelText * self,
-				       TplChannel * tpl_chan);
+  TplChannel * tpl_chan);
 void tpl_channel_text_set_remote_contact (TplChannelText * self,
-					  TpContact * data);
+            TpContact * data);
 void tpl_channel_text_set_my_contact (TplChannelText * self,
-				      TpContact * data);
+              TpContact * data);
 void tpl_channel_text_set_chatroom (TplChannelText * self, gboolean data);
 void tpl_channel_text_set_chatroom_id (TplChannelText * self,
-				       const gchar * data);
+               const gchar * data);
 
 void tpl_channel_text_call_when_ready (TplChannelText *self,
     GAsyncReadyCallback cb, gpointer user_data);

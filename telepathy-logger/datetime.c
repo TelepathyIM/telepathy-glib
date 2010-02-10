@@ -38,7 +38,7 @@ tpl_time_get_current (void)
 }
 
 time_t
-tpl_time_get_local_time (struct tm * tm)
+tpl_time_get_local_time (struct tm *tm)
 {
   const gchar *tz;
   time_t t;
@@ -64,7 +64,7 @@ tpl_time_get_local_time (struct tm * tm)
  * failure. The alternative format "20021209" is also accepted.
  */
 time_t
-tpl_time_parse (const gchar * str)
+tpl_time_parse (const gchar *str)
 {
   struct tm tm;
   gint year, month;
@@ -73,8 +73,8 @@ tpl_time_parse (const gchar * str)
   memset (&tm, 0, sizeof (struct tm));
 
   n_parsed = sscanf (str, "%4d%2d%2dT%2d:%2d:%2d",
-		     &year, &month, &tm.tm_mday, &tm.tm_hour,
-		     &tm.tm_min, &tm.tm_sec);
+      &year, &month, &tm.tm_mday, &tm.tm_hour,
+      &tm.tm_min, &tm.tm_sec);
   if (n_parsed != 3 && n_parsed != 6)
     {
       return 0;
@@ -89,7 +89,8 @@ tpl_time_parse (const gchar * str)
 
 /* Converts the UTC timestamp to a string, also in UTC. Returns NULL on failure. */
 gchar *
-tpl_time_to_string_utc (time_t t, const gchar * format)
+tpl_time_to_string_utc (time_t t,
+    const gchar * format)
 {
   gchar stamp[128];
   struct tm *tm;
@@ -107,7 +108,8 @@ tpl_time_to_string_utc (time_t t, const gchar * format)
 
 /* Converts the UTC timestamp to a string, in local time. Returns NULL on failure. */
 gchar *
-tpl_time_to_string_local (time_t t, const gchar * format)
+tpl_time_to_string_local (time_t t,
+    const gchar *format)
 {
   gchar stamp[128];
   struct tm *tm;
@@ -135,45 +137,45 @@ tpl_time_to_string_relative (time_t then)
   if (seconds > 0)
     {
       if (seconds < 60)
-	{
-	  return g_strdup_printf (ngettext ("%d second ago",
-					    "%d seconds ago", seconds),
-				  seconds);
-	}
+        {
+          return g_strdup_printf (ngettext ("%d second ago",
+                "%d seconds ago", seconds),
+              seconds);
+        }
       else if (seconds < (60 * 60))
-	{
-	  seconds /= 60;
-	  return g_strdup_printf (ngettext ("%d minute ago",
-					    "%d minutes ago", seconds),
-				  seconds);
-	}
+        {
+          seconds /= 60;
+          return g_strdup_printf (ngettext ("%d minute ago",
+                "%d minutes ago", seconds),
+              seconds);
+        }
       else if (seconds < (60 * 60 * 24))
-	{
-	  seconds /= 60 * 60;
-	  return g_strdup_printf (ngettext ("%d hour ago",
-					    "%d hours ago", seconds),
-				  seconds);
-	}
+        {
+          seconds /= 60 * 60;
+          return g_strdup_printf (ngettext ("%d hour ago",
+                "%d hours ago", seconds),
+              seconds);
+        }
       else if (seconds < (60 * 60 * 24 * 7))
-	{
-	  seconds /= 60 * 60 * 24;
-	  return g_strdup_printf (ngettext ("%d day ago",
-					    "%d days ago", seconds), seconds);
-	}
+        {
+          seconds /= 60 * 60 * 24;
+          return g_strdup_printf (ngettext ("%d day ago",
+                "%d days ago", seconds), seconds);
+        }
       else if (seconds < (60 * 60 * 24 * 30))
-	{
-	  seconds /= 60 * 60 * 24 * 7;
-	  return g_strdup_printf (ngettext ("%d week ago",
-					    "%d weeks ago", seconds),
-				  seconds);
-	}
+        {
+          seconds /= 60 * 60 * 24 * 7;
+          return g_strdup_printf (ngettext ("%d week ago",
+                "%d weeks ago", seconds),
+              seconds);
+        }
       else
-	{
-	  seconds /= 60 * 60 * 24 * 30;
-	  return g_strdup_printf (ngettext ("%d month ago",
-					    "%d months ago", seconds),
-				  seconds);
-	}
+        {
+          seconds /= 60 * 60 * 24 * 30;
+          return g_strdup_printf (ngettext ("%d month ago",
+                "%d months ago", seconds),
+              seconds);
+        }
     }
   else
     {

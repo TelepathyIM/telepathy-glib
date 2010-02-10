@@ -177,7 +177,7 @@ tpl_log_entry_text_new (guint log_id, const gchar *chat_id,
       "log-id", log_id,
       "chat-id", chat_id,
       "direction", direction,
-		  NULL);
+      NULL);
 }
 
 static gchar *message_types[] = {
@@ -202,7 +202,7 @@ TpChannelTextMessageType
 tpl_log_entry_text_message_type_from_str (const gchar *type_str)
 {
   guint i;
-  for(i = 0; i < G_N_ELEMENTS (message_types); ++i)
+  for (i = 0; i < G_N_ELEMENTS (message_types); ++i)
     if (!tp_strdiff (type_str, message_types[i]))
       return (TpChannelTextMessageType) i;
 

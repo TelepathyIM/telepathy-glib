@@ -29,7 +29,7 @@
 #include <telepathy-logger/log-manager.h>
 
 #define DBUS_STRUCT_STRING_STRING_UINT \
-	(dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_INVALID))
+  (dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_INVALID))
 
 
 static gboolean tpl_dbus_service_last_chats (TplDBusService *self,
@@ -49,23 +49,23 @@ G_DEFINE_TYPE (TplDBusService, tpl_dbus_service, G_TYPE_OBJECT)
 static void
 tpl_dbus_service_finalize (GObject *obj)
 {
-	G_OBJECT_CLASS (tpl_dbus_service_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (tpl_dbus_service_parent_class)->dispose (obj);
 }
 
 static void
 tpl_dbus_service_dispose (GObject *obj)
 {
-	G_OBJECT_CLASS (tpl_dbus_service_parent_class)->finalize (obj);
+  G_OBJECT_CLASS (tpl_dbus_service_parent_class)->finalize (obj);
 }
 
 
 static void
 tpl_dbus_service_class_init (TplDBusServiceClass *klass)
 {
-	GObjectClass* object_class = G_OBJECT_CLASS (klass);
+  GObjectClass* object_class = G_OBJECT_CLASS (klass);
 
-	object_class->finalize = tpl_dbus_service_finalize;
-	object_class->dispose = tpl_dbus_service_dispose;
+  object_class->finalize = tpl_dbus_service_finalize;
+  object_class->dispose = tpl_dbus_service_dispose;
 
   dbus_g_object_type_install_info (TPL_TYPE_DBUS_SERVICE,
       &dbus_glib_tpl_dbus_service_object_info);
@@ -83,14 +83,14 @@ tpl_dbus_service_init (TplDBusService *self)
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
 
   self->priv = priv;
-	GET_PRIV (self)->manager = tpl_log_manager_dup_singleton ();
+  GET_PRIV (self)->manager = tpl_log_manager_dup_singleton ();
 }
 
 
 TplDBusService *
 tpl_dbus_service_new (void)
 {
-	return g_object_new(TPL_TYPE_DBUS_SERVICE, NULL);
+  return g_object_new (TPL_TYPE_DBUS_SERVICE, NULL);
 }
 
 
@@ -98,13 +98,13 @@ static gboolean
 _pack_last_chats_answer (GList *data,
     GPtrArray **array)
 {
-	guint data_idx;
-	GPtrArray *retval;
+  guint data_idx;
+  GPtrArray *retval;
 
-	(*array) = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
-	retval = *array;
+  (*array) = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
+  retval = *array;
 
-  for(data_idx = 0; data_idx < g_list_length (data); ++data_idx)
+  for (data_idx = 0; data_idx < g_list_length (data); ++data_idx)
     {
       TplLogEntry *log = g_list_nth_data (data, data_idx);
 
@@ -128,36 +128,36 @@ _pack_last_chats_answer (GList *data,
       g_debug ("retval[%d]=\"[%d] <%s>: %s\"\n", data_idx,
           timestamp, sender, message);
     }
-	return TRUE;
+  return TRUE;
 }
 
 static gboolean
 tpl_dbus_service_last_chats (TplDBusService *self,
-		const gchar *account_path,
+    const gchar *account_path,
     const gchar *identifier,
-		gboolean is_chatroom,
+    gboolean is_chatroom,
     guint lines,
     DBusGMethodInvocation *context)
 {
-	guint dates_idx;
-	gint msgs_idx;
-	GError *error = NULL;
-	TpAccount *account;
-	DBusGConnection *dbus;
-	TpDBusDaemon *tp_dbus;
-	GList *ret = NULL;
-	GPtrArray *answer;
-	guint left_lines = lines;
+  guint dates_idx;
+  gint msgs_idx;
+  GError *error = NULL;
+  TpAccount *account;
+  DBusGConnection *dbus;
+  TpDBusDaemon *tp_dbus;
+  GList *ret = NULL;
+  GPtrArray *answer;
+  guint left_lines = lines;
   TplDBusServicePriv *priv = GET_PRIV (self);
 
   g_return_val_if_fail (TPL_IS_DBUS_SERVICE (self), FALSE);
-	g_return_val_if_fail (context != NULL, FALSE);
+  g_return_val_if_fail (context != NULL, FALSE);
 
-	dbus = tp_get_bus ();
-	tp_dbus = tp_dbus_daemon_new (dbus);
+  dbus = tp_get_bus ();
+  tp_dbus = tp_dbus_daemon_new (dbus);
 
-	account = tp_account_new (tp_dbus, account_path, &error);
-	if (error != NULL)
+  account = tp_account_new (tp_dbus, account_path, &error);
+  if (error != NULL)
     {
       g_error ("TpAccount creation: %s", error->message);
       dbus_g_method_return_error (context, error);
@@ -169,7 +169,7 @@ tpl_dbus_service_last_chats (TplDBusService *self,
 
   GList *dates = tpl_log_manager_get_dates (priv->manager, account, identifier,
       is_chatroom);
-	if (dates != NULL)
+  if (dates != NULL)
     {
       g_set_error_literal (&error, TPL_DBUS_SERVICE_ERROR,
           TPL_DBUS_SERVICE_ERROR_FAILED, "Error during date list retrieving");
@@ -178,9 +178,9 @@ tpl_dbus_service_last_chats (TplDBusService *self,
       g_object_unref (dbus);
       return FALSE;
     }
-	dates = g_list_reverse (dates);
+  dates = g_list_reverse (dates);
 
-  for(dates_idx = 0; dates_idx < g_list_length (dates) && left_lines > 0;
+  for (dates_idx = 0; dates_idx < g_list_length (dates) && left_lines > 0;
       ++dates_idx)
     {
       gchar *date = g_list_nth_data (dates, dates_idx);
@@ -211,11 +211,14 @@ tpl_dbus_service_last_chats (TplDBusService *self,
 }
 
 
-DBusGProxyCall *tpl_dbus_service_last_chats_async (DBusGProxy *proxy, const
-    char* IN_account, const char * IN_identifier, const gboolean
-    IN_is_chatroom, const guint IN_lines,
+DBusGProxyCall *tpl_dbus_service_last_chats_async (DBusGProxy *proxy,
+    const char *IN_account,
+    const char *IN_identifier,
+    const gboolean IN_is_chatroom,
+    const guint IN_lines,
     org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_reply
-    callback, gpointer userdata)
+    callback,
+    gpointer userdata)
 {
   return org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_async (
       proxy, IN_account, IN_identifier, IN_is_chatroom, IN_lines, callback,

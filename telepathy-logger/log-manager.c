@@ -22,8 +22,8 @@
  *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include "log-manager.h"	// RO
-#include "log-manager-priv.h"	// W
+#include "log-manager.h"
+#include "log-manager-priv.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -91,7 +91,7 @@ log_manager_finalize (GObject *object)
 }
 
 
-/* 
+/*
  * - Singleton LogManager constructor -
  * Initialises LogStores with LogStoreEmpathy instance
  */
@@ -201,7 +201,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
   gboolean found = FALSE;
 
   /* TODO: currently it look for a fixed string (add_store) to know there to
-   * send messages. 
+   * send messages.
    * NEXT step: it will cycle priv->stores and check which has is_writable flag on, and send the log
    * to every entry with it TRUE. Multiple writers are possible here */
   const gchar *add_store = "TpLogger";
@@ -634,24 +634,8 @@ _tpl_log_manager_async_operation_cb (GObject *source_object,
     }
 
   /* is it needed?
-   * tpl_log_manager_async_data_free(async_data); */
+   * tpl_log_manager_async_data_free (async_data); */
 }
-
-/* wrapper around GIO's GSimpleAsync* */
-/*
-static void _result_list_with_string_free(GList *lst)
-{
-  g_list_foreach(lst, (GFunc) g_free, NULL);
-  g_list_free(lst);
-}
-
-
-static void _result_list_with_gobject_free(GList *lst)
-{
-  g_list_foreach(lst, (GFunc) g_object_unref, NULL);
-  g_list_free(lst);
-}
-*/
 
 
 static void
@@ -680,7 +664,7 @@ _add_message_async_thread (GSimpleAsyncResult *simple,
 {
   TplLogManagerAsyncData *async_data;
   TplLogManagerChatInfo *chat_info;
-  GError *error;
+  GError *error = NULL;
 
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
@@ -688,12 +672,13 @@ _add_message_async_thread (GSimpleAsyncResult *simple,
   tpl_log_manager_add_message (async_data->manager, chat_info->logentry,
       &error);
 
-  if(error!=NULL) {
-      g_error("synchronous operation error: %s", error->message);
-      g_simple_async_result_set_from_error(simple, error);
-      g_clear_error(&error);
-      g_error_free(error);
-  } else
+  if (error!=NULL)
+    {
+      g_error ("synchronous operation error: %s", error->message);
+      g_simple_async_result_set_from_error (simple, error);
+      g_error_free (error);
+    }
+  else
     g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 }
 
@@ -854,7 +839,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
   g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
   chat_info->is_chatroom = is_chatroom;
-  chat_info->date = g_strdup(date);
+  chat_info->date = g_strdup (date);
 
   async_data->manager = manager;
   g_object_ref (manager);
@@ -1046,8 +1031,8 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 
   chat_info->account = account;
   g_object_ref (account);
-  chat_info->chat_id = g_strdup(identifier);
-  chat_info->search_text = g_strdup(text);
+  chat_info->chat_id = g_strdup (identifier);
+  chat_info->search_text = g_strdup (text);
 
   async_data->manager = manager;
   g_object_ref (manager);
@@ -1096,7 +1081,7 @@ tpl_log_manager_search_new_async (TplLogManager *manager,
       "manager argument is not a TplManager instance",
       callback, user_data);
 
-  chat_info->search_text = g_strdup(text);
+  chat_info->search_text = g_strdup (text);
 
   async_data->manager = manager;
   g_object_ref (manager);

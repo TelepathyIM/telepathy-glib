@@ -76,7 +76,7 @@ int
 main (int argc, char *argv[])
 {
   DBusGConnection *connection;
-  GError *error;
+  GError *error = NULL;
   DBusGProxy *proxy;
 
   g_type_init ();

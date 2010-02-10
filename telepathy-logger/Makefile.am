@@ -54,6 +54,7 @@ libtelepathy_logger_la_SOURCES = \
 
 check_c_sources = \
 	$(libtelepathy_logger_la_SOURCES)	\
+	$(LIBTPL_HEADERS)
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 

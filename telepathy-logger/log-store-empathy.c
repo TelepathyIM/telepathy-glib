@@ -44,7 +44,8 @@
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/datetime.h>
 
-#define DEBUG	g_debug
+#define DEBUG_FLAG TPL_DEBUG_LOG_STORE
+#include <telepathy-logger/debug.h>
 
 #define LOG_DIR_CREATE_MODE       (S_IRUSR | S_IWUSR | S_IXUSR)
 #define LOG_FILE_CREATE_MODE      (S_IRUSR | S_IWUSR)
@@ -220,7 +221,7 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
       G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_NAME, param_spec);
 
-  /* the default value for the basedir prop is composed by user_data_dir() +
+  /* the default value for the basedir prop is composed by user_data_dir () +
    * prop "name" value, it's not possible to know it at param_spec time, so
    * it's set to NULL and let to get_basedir to set it to its default if
    * priv->basedir == NULL
@@ -441,8 +442,7 @@ add_message_text_chat (TplLogStore *self,
   TplContact *sender;
   const gchar *body_str;
   const gchar *str;
-  //EmpathyAvatar *avatar;
-  //gchar *avatar_token = NULL;
+  gchar *avatar_token = NULL;
   gchar *body;
   gchar *timestamp;
   gchar *contact_name;
@@ -452,8 +452,8 @@ add_message_text_chat (TplLogStore *self,
   gboolean chatroom;
   TpChannelTextMessageType msg_type;
 
-  chat_id = tpl_log_entry_get_chat_id(TPL_LOG_ENTRY (message));
-  chatroom = tpl_log_entry_text_is_chatroom(message);
+  chat_id = tpl_log_entry_get_chat_id (TPL_LOG_ENTRY (message));
+  chatroom = tpl_log_entry_text_is_chatroom (message);
 
   sender = tpl_log_entry_get_sender (TPL_LOG_ENTRY (message));
   account =
@@ -475,34 +475,28 @@ add_message_text_chat (TplLogStore *self,
   str = tpl_contact_get_identifier (sender);
 
   contact_id = g_markup_escape_text (str, -1);
-/*
-  avatar = empathy_contact_get_avatar (sender);
-  if (avatar != NULL)
-    avatar_token = g_markup_escape_text (avatar->token, -1);
-*/
+  avatar_token = g_markup_escape_text (tpl_contact_get_avatar_token (sender), -1);
   entry = g_strdup_printf ("<message time='%s' cm_id='%d' id='%s' name='%s' "
-			   "token='%s' isuser='%s' type='%s'>"
-			   "%s</message>\n" LOG_FOOTER, timestamp,
-			   tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
-			   contact_id, contact_name,
-			   //avatar_token ? avatar_token : "", // instead force to "" as
-			   //follow
-			   "",
-			   tpl_contact_get_contact_type (sender) ==
-			   TPL_CONTACT_USER ? "true" : "false",
-			   tpl_log_entry_text_message_type_to_str (msg_type),
-			   body);
+      "token='%s' isuser='%s' type='%s'>"
+      "%s</message>\n" LOG_FOOTER, timestamp,
+      tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
+      contact_id, contact_name,
+      avatar_token ? avatar_token : "",
+      tpl_contact_get_contact_type (sender) ==
+      TPL_CONTACT_USER ? "true" : "false",
+      tpl_log_entry_text_message_type_to_str (msg_type),
+      body);
 
   ret = _log_store_empathy_write_to_store (self,
-					   account, chat_id, chatroom, entry,
-					   error);
+      account, chat_id, chatroom, entry,
+      error);
 
   g_free (contact_id);
   g_free (contact_name);
   g_free (timestamp);
   g_free (body);
   g_free (entry);
-  //g_free (avatar_token);
+  g_free (avatar_token);
 
   return ret;
 }
@@ -593,9 +587,9 @@ log_store_empathy_exists (TplLogStore *self,
 
 static GList *
 log_store_empathy_get_dates (TplLogStore *self,
-			     TpAccount *account,
-			     const gchar *chat_id,
-           gboolean chatroom)
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom)
 {
   GList *dates = NULL;
   gchar *date;
@@ -622,16 +616,16 @@ log_store_empathy_get_dates (TplLogStore *self,
   while ((filename = g_dir_read_name (dir)) != NULL)
     {
       if (!g_str_has_suffix (filename, LOG_FILENAME_SUFFIX))
-	continue;
+        continue;
 
       p = strstr (filename, LOG_FILENAME_SUFFIX);
       date = g_strndup (filename, p - filename);
 
       if (!date)
-	continue;
+        continue;
 
       if (!g_regex_match_simple ("\\d{8}", date, 0, 0))
-	continue;
+        continue;
 
       dates = g_list_insert_sorted (dates, date, (GCompareFunc) strcmp);
     }
@@ -688,7 +682,7 @@ log_store_empathy_search_hit_new (TplLogStore *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
   g_return_val_if_fail (g_str_has_suffix (filename, LOG_FILENAME_SUFFIX),
-			NULL);
+      NULL);
 
   strv = g_strsplit (filename, G_DIR_SEPARATOR_S, -1);
   len = g_strv_length (strv);
@@ -716,11 +710,11 @@ log_store_empathy_search_hit_new (TplLogStore *self,
 
       name = log_store_account_to_dirname (account);
       if (!tp_strdiff (name, account_name))
-	{
-	  g_assert (hit->account == NULL);
-	  hit->account = account;
-	  g_object_ref (account);
-	}
+        {
+          g_assert (hit->account == NULL);
+          hit->account = account;
+          g_object_ref (account);
+        }
       g_free (name);
     }
   g_list_free (accounts);
@@ -785,7 +779,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       time_t t;
       gchar *sender_id;
       gchar *sender_name;
-      //gchar *sender_avatar_token;
+      gchar *sender_avatar_token;
       gchar *body;
       gchar *is_user_str;
       gboolean is_user = FALSE;
@@ -801,10 +795,8 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       time_ = (gchar *) xmlGetProp (node, (const xmlChar *) "time");
       sender_id = (gchar *) xmlGetProp (node, (const xmlChar *) "id");
       sender_name = (gchar *) xmlGetProp (node, (const xmlChar *) "name");
-      /*
-         sender_avatar_token = (gchar *) xmlGetProp (node,
-         (const xmlChar *) "token");
-       */
+      sender_avatar_token = (gchar *) xmlGetProp (node,
+          (const xmlChar *) "token");
       is_user_str = (gchar *) xmlGetProp (node, (const xmlChar *) "isuser");
       msg_type_str = (gchar *) xmlGetProp (node, (const xmlChar *) "type");
       cm_id_str = (gchar *) xmlGetProp (node, (const xmlChar *) "cm_id");
@@ -826,12 +818,6 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       tpl_contact_set_account (sender, account);
       tpl_contact_set_alias (sender, sender_name);
 
-      /* TODO remove avatar code
-         if (!TPL_STR_EMPTY (sender_avatar_token))
-         empathy_contact_load_avatar_cache (sender,
-         sender_avatar_token);
-       */
-
       message = tpl_log_entry_text_new (cm_id, NULL,
           TPL_LOG_ENTRY_DIRECTION_NONE);
       tpl_log_entry_set_sender (TPL_LOG_ENTRY (message), sender);
@@ -852,7 +838,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       xmlFree (is_user_str);
       xmlFree (msg_type_str);
       xmlFree (cm_id_str);
-      //xmlFree (sender_avatar_token);
+      xmlFree (sender_avatar_token);
     }
 
   DEBUG ("Parsed %d messages", g_list_length (messages));
@@ -1014,7 +1000,7 @@ log_store_empathy_search_new (TplLogStore *self,
   return _log_store_empathy_search_in_files (self, text, files);
 }
 
-/* Returns: (GList*) of (TplLogSearchHit*) */
+/* Returns: (GList *) of (TplLogSearchHit *) */
 static GList *
 log_store_empathy_get_chats_for_dir (TplLogStore *self,
     const gchar *dir,

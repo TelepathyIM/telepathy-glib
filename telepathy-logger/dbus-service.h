@@ -59,12 +59,12 @@ typedef struct
 
 typedef struct
 {
-  GObjectClass	parent_class;
+  GObjectClass  parent_class;
 } TplDBusServiceClass;
 
 typedef struct
 {
-  long unsigned	timestamp;
+  long unsigned timestamp;
   gchar *sender;
   gchar *message;
 } TplDBusServiceChatMessage;
