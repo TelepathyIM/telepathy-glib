@@ -1,20 +1,31 @@
 #!/bin/sh
-# Run this to generate all the initial makefiles, etc.
+set -e
 
-srcdir=`dirname $0`
-test -z "$srcdir" && srcdir=.
+if test -n "$AUTOMAKE"; then
+    : # don't override an explicit user request
+elif automake-1.9 --version >/dev/null 2>/dev/null && \
+     aclocal-1.9 --version >/dev/null 2>/dev/null; then
+    # If we have automake-1.9, use it. This helps to ensure that our build
+    # system doesn't accidentally grow automake-1.10 dependencies.
+    AUTOMAKE=automake-1.9
+    export AUTOMAKE
+    ACLOCAL=aclocal-1.9
+    export ACLOCAL
+fi
 
-PKG_NAME="TelepathyLogger"
-REQUIRED_AUTOMAKE_VERSION=1.9
+autoreconf -i -f
 
-(test -f $srcdir/configure.ac) || {
-    echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
-    echo " top-level gnome directory"
-    exit 1
-}
+run_configure=true
+for arg in $*; do
+    case $arg in
+        --no-configure)
+            run_configure=false
+            ;;
+        *)
+            ;;
+    esac
+done
 
-which gnome-autogen.sh || {
-    echo "You need to install gnome-common from the GNOME CVS"
-    exit 1
-}
-USE_GNOME2_MACROS=1 USE_COMMON_DOC_BUILD=yes . gnome-autogen.sh
+if test $run_configure = true; then
+    ./configure "$@"
+fi
