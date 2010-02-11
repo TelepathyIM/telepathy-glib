@@ -137,9 +137,9 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
     GHashTable *observer_info,
     DBusGMethodInvocation *dbus_context)
 {
-  TpAccount *tp_acc;
-  TpConnection *tp_conn;
-  TpDBusDaemon *tp_bus_daemon;
+  TpAccount *tp_acc = NULL;
+  TpConnection *tp_conn = NULL;
+  TpDBusDaemon *tp_bus_daemon = NULL;
   TplChannelFactory chan_factory;
   TplConf *conf;
   GError *error = NULL;
@@ -160,14 +160,16 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
         DEBUG ("%s", error->message);
       else
         DEBUG ("Logging is globally disabled. Skipping channel logging.");
-      return;
+
+      goto error;
     }
   if (tpl_conf_is_account_ignored (conf, account, &error))
     {
       DEBUG ("Logging is disabled for account %s. "
           "Channel associated to this account. "
           "Skipping this channel logging.", account);
-      return;
+
+      goto error;
     }
 
   /* Instantiating objects to pass to - or needed by them - the Tpl Channel Factory in order to
@@ -176,27 +178,24 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   if (tp_bus_daemon == NULL)
     {
       DEBUG ("%s", error->message);
-      g_error_free (error);
-      return;
+
+      goto error;
     }
 
   tp_acc = tp_account_new (tp_bus_daemon, account, &error);
   if (tp_acc == NULL)
     {
       DEBUG ("%s", error->message);
-      g_error_free (error);
-      g_object_unref (tp_bus_daemon);
-      return;
+
+      goto error;
     }
 
   tp_conn = tp_connection_new (tp_bus_daemon, NULL, connection, &error);
   if (tp_conn == NULL)
     {
       DEBUG ("%s", error->message);
-      g_error_free (error);
-      g_object_unref (tp_bus_daemon);
-      g_object_unref (tp_acc);
-      return;
+
+      goto error;
     }
 
   /* Parallelize TplChannel preparations, when the last one will be ready, the
@@ -236,6 +235,20 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   g_object_unref (tp_acc);
   g_object_unref (tp_conn);
   g_object_unref (tp_bus_daemon);
+
+  return;
+
+error:
+  if (tp_acc != NULL)
+    g_object_unref (tp_acc);
+  if (tp_conn != NULL)
+    g_object_unref (tp_conn);
+  if (tp_bus_daemon != NULL)
+    g_object_unref (tp_bus_daemon);
+
+  g_clear_error (&error);
+
+  tp_svc_client_observer_return_from_observe_channels (dbus_context);
 }
 
 
