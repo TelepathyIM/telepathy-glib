@@ -22,7 +22,6 @@ LIBTPL_HEADERS = \
 		channel-text.h			\
 		datetime.h			\
 		dbus-service.h			\
-		dbus-service-client.h		\
 		debug.h				\
 		log-entry.h			\
 		log-entry-text.h		\
