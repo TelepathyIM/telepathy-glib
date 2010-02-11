@@ -35,8 +35,6 @@
 
 static GMainLoop *loop = NULL;
 
-#define ENABLE_DEBUG /* FIXME: make this a configure option */
-
 #ifdef ENABLE_DEBUG
 static TpDebugSender *debug_sender = NULL;
 static gboolean stamp_logs = FALSE;
