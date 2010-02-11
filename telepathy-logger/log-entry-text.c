@@ -27,6 +27,9 @@
 #include <telepathy-logger/util.h>
 #include <telepathy-logger/log-entry.h>
 
+#define DEBUG_FLAG TPL_DEBUG_LOG_STORE
+#include <telepathy-logger/debug.h>
+
 G_DEFINE_TYPE (TplLogEntryText, tpl_log_entry_text, TPL_TYPE_LOG_ENTRY)
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogEntryText)
@@ -455,7 +458,7 @@ tpl_log_entry_text_equal (TplLogEntry *message1,
     if (!tp_strdiff (priv1->entry.text->message, priv2->entry.text->message)) {
     }
   */
-  g_debug ("TODO: do a tpl_log_entry_equal rewrite!");
+  DEBUG ("TODO: do a tpl_log_entry_equal rewrite!");
   return tpl_log_entry_text_get_log_id (TPL_LOG_ENTRY_TEXT (message1)) ==
       tpl_log_entry_text_get_log_id ( TPL_LOG_ENTRY_TEXT (message2));
 }

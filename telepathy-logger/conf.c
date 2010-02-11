@@ -25,7 +25,9 @@
 
 #include <telepathy-logger/util.h>
 
-//#define DEBUG(...)
+#define DEBUG_FLAG TPL_DEBUG_CONF
+#include <telepathy-logger/debug.h>
+
 #define GET_PRIV(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TPL_TYPE_CONF, TplConfPriv))
 #define GCONF_KEY_LOGGING_TURNED_ON "/apps/telepathy-logger/logging/turned_on"
 #define GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST "/apps/telepathy-logger/logging/accounts/ignorelist"
@@ -167,7 +169,7 @@ tpl_conf_is_globally_enabled (TplConf *self,
       GCONF_KEY_LOGGING_TURNED_ON, &loc_error);
   if (loc_error != NULL)
     {
-      g_debug ("Accessing " GCONF_KEY_LOGGING_TURNED_ON ": %s",
+      DEBUG ("Accessing " GCONF_KEY_LOGGING_TURNED_ON ": %s",
           loc_error->message);
       g_propagate_error (error, loc_error);
       g_error_free (loc_error);

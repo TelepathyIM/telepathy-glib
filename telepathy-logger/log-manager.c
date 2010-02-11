@@ -40,7 +40,8 @@
 #include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
 
-#define DEBUG g_debug
+#define DEBUG_FLAG TPL_DEBUG_LOG_MANAGER
+#include <telepathy-logger/debug.h>
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogManager)
 typedef struct
@@ -126,7 +127,7 @@ log_manager_constructor (GType type, guint n_props,
           "writable", FALSE, "readable", TRUE, NULL);
       if (tplogger == NULL)
         {
-          g_debug ("Error during TplLogStoreEmpathy (name=TpLogger) initialisation.");
+          DEBUG ("Error during TplLogStoreEmpathy (name=TpLogger) initialisation.");
           return NULL;
         }
 
@@ -162,11 +163,11 @@ tpl_log_manager_init (TplLogManager *manager)
    */
   if (!g_thread_supported ())
     {
-      g_debug ("Initializing GThread");
+      DEBUG ("Initializing GThread");
       g_thread_init (NULL);
     }
   else
-    g_debug ("GThread already initialized. Brilliant!");
+    DEBUG ("GThread already initialized. Brilliant!");
 }
 
 

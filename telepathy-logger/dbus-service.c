@@ -30,6 +30,9 @@
 
 #include <extensions/extensions.h>
 
+#define DEBUG_FLAG TPL_DEBUG_DBUS_SERVICE
+#include <telepathy-logger/debug.h>
+
 #define DBUS_STRUCT_STRING_STRING_UINT \
   (dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_INVALID))
 
@@ -104,7 +107,7 @@ _pack_last_chats_answer (GList *data,
       g_ptr_array_add (retval, g_value_get_boxed (value));
       g_free (value);
 
-      g_debug ("retval[%d]=\"[%d] <%s>: %s\"\n", data_idx,
+      DEBUG ("retval[%d]=\"[%d] <%s>: %s\"\n", data_idx,
           timestamp, sender, message);
     }
   return TRUE;

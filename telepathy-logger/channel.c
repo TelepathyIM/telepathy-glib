@@ -29,6 +29,9 @@
 
 #include <telepathy-logger/channel-text.h>
 
+#define DEBUG_FLAG TPL_DEBUG_CHANNEL
+#include <telepathy-logger/debug.h>
+
 #define TPCHAN_PROP_PREFIX "org.freedesktop.Telepathy.Channel."
 #define TPCHAN_PROP_PREFIX_LEN strlen(TPCHAN_PROP_PREFIX)
 
@@ -250,7 +253,7 @@ got_ready_tp_connection_cb (TpConnection *connection,
   if (error != NULL)
     {
       g_object_get (G_OBJECT (tpl_chan), "object-path", &chan_path, NULL);
-      g_debug ("%s. Giving up channel '%s' observation", error->message,
+      DEBUG ("%s. Giving up channel '%s' observation", error->message,
           chan_path);
 
       g_free (chan_path);
@@ -288,7 +291,7 @@ got_ready_tp_channel_cb (TpChannel *channel,
 
       g_object_get (channel, "connection", &tp_conn, NULL);
       g_object_get (G_OBJECT (channel), "object-path", &chan_path, NULL);
-      g_debug ("%s. Giving up channel '%s' observation", error->message,
+      DEBUG ("%s. Giving up channel '%s' observation", error->message,
           chan_path);
 
       g_free (chan_path);

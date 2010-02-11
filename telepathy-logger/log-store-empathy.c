@@ -1175,7 +1175,7 @@ log_store_empathy_set_basedir (TplLogStore *self,
 
   /* at install_spec time, default value is set to NULL, ignore it */
   if (priv->basedir != NULL)
-    g_debug ("logstore set to dir: %s", data);
+    DEBUG ("logstore set to dir: %s", data);
 }
 
 

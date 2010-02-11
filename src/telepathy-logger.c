@@ -104,12 +104,12 @@ telepathy_logger_dbus_init (void)
   if (tp_dbus_daemon_request_name (tp_bus, TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
         TRUE, &error))
     {
-      g_debug ("%s DBus well known name registered",
+      DEBUG ("%s DBus well known name registered",
           TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
     }
   else
     {
-      g_debug ("Well Known name request error: %s", error->message);
+      DEBUG ("Well Known name request error: %s", error->message);
       g_error_free (error);
     }
 
@@ -141,18 +141,18 @@ main (int argc,
 
   tpl_channel_factory_init ();
 
-  g_debug ("Initialising TPL Channel Factory");
+  DEBUG ("Initialising TPL Channel Factory");
   tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
       (TplChannelConstructor) tpl_channel_text_new);
-  g_debug ("- TplChannelText registred.");
+  DEBUG ("- TplChannelText registred.");
 
   observer = tpl_observer_new ();
-  g_debug ("Registering channel factory into TplObserver");
+  DEBUG ("Registering channel factory into TplObserver");
   tpl_observer_set_channel_factory (observer, tpl_channel_factory_build);
 
   if (!tpl_observer_register_dbus (observer, &error))
     {
-      g_debug ("Error during D-Bus registration: %s", error->message);
+      DEBUG ("Error during D-Bus registration: %s", error->message);
       return 1;
     }
 

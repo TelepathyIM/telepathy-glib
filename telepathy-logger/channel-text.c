@@ -25,8 +25,6 @@
  * signals.
  */
 
-#define DEBUG_FLAG  TPL_DEBUG_CHANNEL
-
 #include "../config.h"
 #include "channel-text.h"
 
@@ -835,7 +833,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     {
       CHAN_DEBUG (tpl_text, "Unrecoverable error retrieving remote contact "
          "information: %s", error->message);
-      g_debug ("Not able to log the received message: %s",
+      DEBUG ("Not able to log the received message: %s",
          tpl_log_entry_text_get_message (log));
       g_object_unref (log);
       return;
@@ -843,9 +841,9 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 
   if (n_failed > 0)
     {
-      g_debug ("%d invalid handle(s) passed to "
+      DEBUG ("%d invalid handle(s) passed to "
          "tp_connection_get_contacts_by_handle()", n_failed);
-      g_debug ("Not able to log the received message: %s",
+      DEBUG ("Not able to log the received message: %s",
          tpl_log_entry_text_get_message (log));
       g_object_unref (log);
       return;
@@ -903,7 +901,7 @@ keepon (TplLogEntryText *log)
   tpl_log_manager_add_message (logmanager, TPL_LOG_ENTRY (log), &e);
   if (e != NULL)
     {
-      g_debug ("LogStore: %s", e->message);
+      DEBUG ("LogStore: %s", e->message);
       g_error_free (e);
     }
 
@@ -935,7 +933,7 @@ on_received_signal_cb (TpChannel *proxy,
      notification and handle it correctly */
   if (arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
     {
-      g_debug ("Non text content flag set. "
+      DEBUG ("Non text content flag set. "
           "Probably a delivery notification for a sent message. "
           "Ignoring");
       return;

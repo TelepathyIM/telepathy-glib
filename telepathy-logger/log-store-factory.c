@@ -24,6 +24,9 @@
 #include <telepathy-logger/util.h>
 #include <telepathy-logger/log-store-empathy.h>
 
+#define DEBUG_FLAG TPL_DEBUG_LOG_STORE
+#include <telepathy-logger/debug.h>
+
 static GHashTable *logstores_table = NULL;
 
 void
@@ -90,7 +93,7 @@ tpl_log_store_factory_build (const gchar *logstore_type,
   constructor = tpl_log_store_factory_lookup (logstore_type);
   if (constructor == NULL)
     {
-      g_debug ("%s: log store type not handled by this logger", logstore_type);
+      DEBUG ("%s: log store type not handled by this logger", logstore_type);
       return NULL;
     }
 

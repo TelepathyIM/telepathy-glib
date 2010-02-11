@@ -25,6 +25,9 @@
 
 #include <telepathy-logger/channel-text.h>
 
+#define DEBUG_FLAG TPL_DEBUG_CHANNEL
+#include <telepathy-logger/debug.h>
+
 static GHashTable *channel_table = NULL;
 
 void
@@ -92,7 +95,7 @@ tpl_channel_factory_build (const gchar *channel_type,
   chan_constructor = tpl_channel_factory_lookup (channel_type);
   if (chan_constructor == NULL)
     {
-      g_debug ("%s: channel type not handled by this logger", channel_type);
+      DEBUG ("%s: channel type not handled by this logger", channel_type);
       return NULL;
     }
 
