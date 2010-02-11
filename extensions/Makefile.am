@@ -20,6 +20,8 @@ nodist_libtpl_extensions_la_SOURCES = \
     _gen/gtypes-body.h \
     _gen/interfaces.h \
     _gen/interfaces-body.h \
+    _gen/cli.h \
+    _gen/cli-body.h \
     _gen/svc.h \
     _gen/svc.c
 
@@ -55,6 +57,15 @@ _gen/svc.c _gen/svc.h: _gen/all.xml $(tools_dir)/glib-ginterface-gen.py \
 		--allow-unstable \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tpl_Svc_
+
+_gen/cli.c _gen/cli.h: _gen/all.xml $(tools_dir)/glib-ginterface-gen.py \
+	Makefile.am
+	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
+		--subclass=TpProxy \
+		--subclass-assert=TP_IS_PROXY \
+		--iface-quark-prefix=TPL_IFACE_QUARK \
+		--tp-proxy-api=0.7.6 \
+		$< Tpl_Cli _gen/cli
 
 _gen/signals-marshal.list: _gen/all.xml \
 	$(tools_dir)/glib-signals-marshal-gen.py \
