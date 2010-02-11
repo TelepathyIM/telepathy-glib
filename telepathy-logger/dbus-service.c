@@ -28,13 +28,12 @@
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
 
+#include <extensions/extensions.h>
+
 #define DBUS_STRUCT_STRING_STRING_UINT \
   (dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_INVALID))
 
-
-static gboolean tpl_dbus_service_last_chats (TplDBusService *self,
-    const gchar *account_path, const gchar *identifier, gboolean is_chatroom,
-    guint lines, DBusGMethodInvocation *context);
+static void tpl_logger_iface_init (gpointer iface, gpointer iface_data);
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplDBusService)
 struct _TplDBusServicePriv
@@ -42,33 +41,13 @@ struct _TplDBusServicePriv
   TplLogManager *manager;
 };
 
-#include <dbus-service-server.h>
-
-G_DEFINE_TYPE (TplDBusService, tpl_dbus_service, G_TYPE_OBJECT)
-
-static void
-tpl_dbus_service_finalize (GObject *obj)
-{
-  G_OBJECT_CLASS (tpl_dbus_service_parent_class)->dispose (obj);
-}
-
-static void
-tpl_dbus_service_dispose (GObject *obj)
-{
-  G_OBJECT_CLASS (tpl_dbus_service_parent_class)->finalize (obj);
-}
-
+G_DEFINE_TYPE_WITH_CODE (TplDBusService, tpl_dbus_service, G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TPL_TYPE_SVC_LOGGER, tpl_logger_iface_init));
 
 static void
 tpl_dbus_service_class_init (TplDBusServiceClass *klass)
 {
   GObjectClass* object_class = G_OBJECT_CLASS (klass);
-
-  object_class->finalize = tpl_dbus_service_finalize;
-  object_class->dispose = tpl_dbus_service_dispose;
-
-  dbus_g_object_type_install_info (TPL_TYPE_DBUS_SERVICE,
-      &dbus_glib_tpl_dbus_service_object_info);
 
   g_type_class_add_private (object_class, sizeof (TplDBusServicePriv));
 }
@@ -131,8 +110,8 @@ _pack_last_chats_answer (GList *data,
   return TRUE;
 }
 
-static gboolean
-tpl_dbus_service_last_chats (TplDBusService *self,
+static void
+tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
     const gchar *account_path,
     const gchar *identifier,
     gboolean is_chatroom,
@@ -150,8 +129,9 @@ tpl_dbus_service_last_chats (TplDBusService *self,
   guint left_lines = lines;
   TplDBusServicePriv *priv = GET_PRIV (self);
 
-  g_return_val_if_fail (TPL_IS_DBUS_SERVICE (self), FALSE);
-  g_return_val_if_fail (context != NULL, FALSE);
+  /* FIXME: return an invalid parameters error */
+  g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
+  g_return_if_fail (context != NULL);
 
   dbus = tp_get_bus ();
   tp_dbus = tp_dbus_daemon_new (dbus);
@@ -159,12 +139,15 @@ tpl_dbus_service_last_chats (TplDBusService *self,
   account = tp_account_new (tp_dbus, account_path, &error);
   if (error != NULL)
     {
-      g_error ("TpAccount creation: %s", error->message);
+      g_critical ("TpAccount creation: %s", error->message);
+
       dbus_g_method_return_error (context, error);
+
       g_error_free (error);
       g_object_unref (tp_dbus);
       g_object_unref (dbus);
-      return FALSE;
+
+      return;
     }
 
   GList *dates = tpl_log_manager_get_dates (priv->manager, account, identifier,
@@ -173,10 +156,12 @@ tpl_dbus_service_last_chats (TplDBusService *self,
     {
       g_set_error_literal (&error, TPL_DBUS_SERVICE_ERROR,
           TPL_DBUS_SERVICE_ERROR_FAILED, "Error during date list retrieving");
+
       dbus_g_method_return_error (context, error);
       g_object_unref (tp_dbus);
       g_object_unref (dbus);
-      return FALSE;
+
+      return;
     }
   dates = g_list_reverse (dates);
 
@@ -203,24 +188,19 @@ tpl_dbus_service_last_chats (TplDBusService *self,
   _pack_last_chats_answer (ret, &answer);
   g_list_foreach (ret, (GFunc) g_object_unref, NULL);
 
-  dbus_g_method_return (context, answer);
+  tpl_svc_logger_return_from_get_recent_messages (context, answer);
 
   g_object_unref (tp_dbus);
-
-  return TRUE;
 }
 
 
-DBusGProxyCall *tpl_dbus_service_last_chats_async (DBusGProxy *proxy,
-    const char *IN_account,
-    const char *IN_identifier,
-    const gboolean IN_is_chatroom,
-    const guint IN_lines,
-    org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_reply
-    callback,
-    gpointer userdata)
+static void
+tpl_logger_iface_init (gpointer iface,
+    gpointer iface_data)
 {
-  return org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_async (
-      proxy, IN_account, IN_identifier, IN_is_chatroom, IN_lines, callback,
-      userdata);
+  TplSvcLoggerClass *klass = (TplSvcLoggerClass *) iface;
+
+#define IMPLEMENT(x) tpl_svc_logger_implement_##x (klass, tpl_dbus_service_##x)
+  IMPLEMENT (get_recent_messages);
+#undef IMPLEMENT
 }

@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.freedesktop.Telepathy.Logger
+Exec=%bindir%/telepathy-logger

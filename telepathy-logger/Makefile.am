@@ -8,9 +8,7 @@ AM_CPPFLAGS =						\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 
-BUILT_SOURCES = \
-	dbus-service-server.h	\
-	dbus-service-client.h
+BUILT_SOURCES =
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libtelepathy-logger.pc
@@ -52,6 +50,9 @@ libtelepathy_logger_la_SOURCES = \
 		observer.c			\
 		util.c
 
+libtelepathy_logger_la_LIBADD = \
+	$(top_builddir)/extensions/libtpl-extensions.la
+
 check_c_sources = \
 	$(libtelepathy_logger_la_SOURCES)	\
 	$(LIBTPL_HEADERS)
@@ -59,11 +60,3 @@ include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
 CLEANFILES = $(BUILT_SOURCES)
-
-#Rule to generate the binding headers
-dbus-service-server.h:  $(top_srcdir)/data/dbus-service.xml
-	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-server $< > $@
-
-dbus-service-client.h: $(top_srcdir)/data/dbus-service.xml
-	dbus-binding-tool --prefix=tpl_dbus_service --mode=glib-client $< > $@
-

@@ -25,6 +25,7 @@
 #include <telepathy-glib/dbus.h>
 
 #include <telepathy-logger/dbus-service.h>
+#include <extensions/extensions.h>
 
 #define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0"
 #define ID "echo@test.collabora.co.uk"
@@ -32,21 +33,17 @@
 //static GMainLoop *loop = NULL;
 
 static void
-last_chats_cb (DBusGProxy *proxy,
-    GPtrArray *result,
-    GError *error,
-    gpointer userdata)
+last_chats_cb (TpProxy *logger,
+    const GPtrArray *result,
+    const GError *error,
+    gpointer userdata,
+    GObject *weak_obj)
 {
   /* Just do demonstrate remote exceptions versus regular GError */
-  if (error != NULL) {
-      if (error->domain == DBUS_GERROR && error->code == DBUS_GERROR_REMOTE_EXCEPTION)
-        g_printerr ("Caught remote method exception %s: %s",
-            dbus_g_error_get_name (error),
-            error->message);
-      else
-        g_printerr ("Error: %s\n", error->message);
-      g_error_free (error);
-      return;
+  if (error != NULL)
+  {
+    g_printerr ("Error: %s\n", error->message);
+    return;
   }
 
   g_print ("Names on the message bus:\n");
@@ -75,31 +72,26 @@ last_chats_cb (DBusGProxy *proxy,
 int
 main (int argc, char *argv[])
 {
-  DBusGConnection *connection;
+  TpDBusDaemon *bus;
+  TpProxy *proxy;
   GError *error = NULL;
-  DBusGProxy *proxy;
 
   g_type_init ();
 
-  error = NULL;
-  connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-  if (connection == NULL)
-    {
-      g_printerr ("Failed to open connection to bus: %s\n",
-          error->message);
-      g_error_free (error);
-      return 1;
-    }
+  bus = tp_dbus_daemon_dup (&error);
+  g_assert_no_error (error);
 
-  /* Create a proxy object for the "bus driver" (name "org.freedesktop.DBus") */
+  proxy = g_object_new (TP_TYPE_PROXY,
+      "bus-name", TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
+      "object-path", TPL_DBUS_SRV_OBJECT_PATH,
+      "dbus-daemon", bus,
+      NULL);
 
-  proxy = dbus_g_proxy_new_for_name (connection,
-      TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
-      TPL_DBUS_SRV_OBJECT_PATH,
-      TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
+  g_object_unref (bus);
 
-  tpl_dbus_service_last_chats_async (proxy, ACCOUNT_PATH, ID, FALSE, 5,
-        last_chats_cb, NULL);
+  tpl_cli_logger_call_get_recent_messages (proxy, -1,
+      ACCOUNT_PATH, ID, FALSE, 5,
+      last_chats_cb, NULL, NULL, NULL);
 
   g_object_unref (proxy);
 

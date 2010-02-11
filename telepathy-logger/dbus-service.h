@@ -28,9 +28,9 @@
 #include <telepathy-logger/log-manager.h>
 
 #define TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME \
-  "org.freedesktop.Telepathy.TelepathyLoggerService"
+  "org.freedesktop.Telepathy.Logger"
 #define TPL_DBUS_SRV_OBJECT_PATH \
-  "/org/freedesktop/Telepathy/TelepathyLoggerService"
+  "/org/freedesktop/Telepathy/Logger"
 
 G_BEGIN_DECLS
 
@@ -72,12 +72,6 @@ typedef struct
 GType tpl_dbus_service_get_type (void);
 
 TplDBusService *tpl_dbus_service_new (void);
-
-DBusGProxyCall *tpl_dbus_service_last_chats_async (DBusGProxy *proxy, const
-    char* IN_account, const char * IN_identifier, const gboolean
-    IN_is_chatroom, const guint IN_lines,
-    org_freedesktop_Telepathy_TelepathyLoggerService_last_chats_reply
-    callback, gpointer userdata);
 
 G_END_DECLS
 
