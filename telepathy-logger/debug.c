@@ -41,7 +41,8 @@ static GDebugKey keys[] = {
   { 0, },
 };
 
-void tpl_debug_set_flags_from_env ()
+void
+tpl_debug_set_flags_from_env (void)
 {
   guint nkeys;
   const gchar *flags_string;
@@ -57,17 +58,22 @@ void tpl_debug_set_flags_from_env ()
           nkeys));
 }
 
-void tpl_debug_set_flags (TplDebugFlags new_flags)
+
+void
+tpl_debug_set_flags (TplDebugFlags new_flags)
 {
   flags |= new_flags;
 }
 
-gboolean tpl_debug_flag_is_set (TplDebugFlags flag)
+
+gboolean
+tpl_debug_flag_is_set (TplDebugFlags flag)
 {
   return flag & flags;
 }
 
 GHashTable *flag_to_domains = NULL;
+
 
 static const gchar *
 debug_flag_to_domain (TplDebugFlags flag)
