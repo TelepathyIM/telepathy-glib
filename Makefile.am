@@ -1,4 +1,4 @@
-SUBDIRS = tools telepathy-logger data src tests doc
+SUBDIRS = tools extensions telepathy-logger data src tests doc
 
 ACLOCAL_AMFLAGS = -I m4
 

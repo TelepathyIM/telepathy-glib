@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<node name="/Telepathy_Logger"
+<node name="/Logger"
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <tp:copyright>Copyright © 2009 Collabora Ltd.</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
@@ -17,11 +17,17 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.TelepathyLoggerService.DRAFT"
+  <interface name="org.freedesktop.Telepathy.Logger.DRAFT"
     tp:causes-havoc="experimental">
     <tp:added version="0.1">(as a draft)</tp:added>
 
-    <tp:struct name="Chat_Message_Field" array-name="Chat_Message_Field_List">
+    <tp:docstring>
+      <!-- FIXME -->
+      An interface for requesting information from the Telepathy Logger
+      service.
+    </tp:docstring>
+
+    <tp:struct name="Chat_Message" array-name="Chat_Message_List">
       <tp:member type="s" name="Sender">
         <tp:docstring>
           The identifier of the contact who originated this message.
@@ -41,33 +47,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <p>It represents a single message, received or sent.</p>
       <p>The receiver is implicit in the request: if the sender is the user,
       the receiver is the identifier in chat_id paramenter, if the sender is
-      not the user, the user is consequently the receiver of the message<p>
+      not the user, the user is consequently the receiver of the message</p>
       </tp:docstring>
     </tp:struct>
 
-    <method name="LastChats"
-      tp:name-for-bindings="LastChats">
-      <arg direction="in" name="Account" type="o" tp:type="Contact_Handle[]">
+    <method name="GetRecentMessages"
+            tp:name-for-bindings="Get_Recent_Messages">
+      <arg direction="in" name="Account" type="o" tp:type="Account">
         <tp:docstring>
-          An array of handles representing contacts.
+          <!-- FIXME -->
         </tp:docstring>
       </arg>
-      <arg direction="in" name="Identifier" type="s"
-        tp:type="Contact_Info_Map">
+      <arg direction="in" name="Identifier" type="s">
         <tp:docstring>
-          A dictionary mapping contact handles to information, whose keys are
-          the subset of the requested list of handles for which information was
-          cached.
+          <!-- FIXME -->
         </tp:docstring>
       </arg>
+      <arg direction="in" name="Is_Chatroom" type="b" />
+      <arg direction="in" name="Lines" type="u" />
+      <arg direction="out" name="Messages" type="a(ssu)"
+           tp:type="Chat_Message[]" />
       <tp:docstring>
-        Request the last Lines entries of logs for the specified couple Account+Identifier.
+        Request the last Lines entries of logs for the specified couple
+        Account+Identifier.
       </tp:docstring>
     </method>
 
-    <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-    An interface for requesting informatiosn about the Telepathy Logger entries.
-    </tp:docstring>
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->

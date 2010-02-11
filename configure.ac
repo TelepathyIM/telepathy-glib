@@ -221,6 +221,7 @@ AC_OUTPUT([
    doc/Makefile
    doc/reference/Makefile
    doc/reference/libtelepathy-logger/Makefile
+   extensions/Makefile
    src/Makefile
    telepathy-logger/Makefile
    telepathy-logger/libtelepathy-logger.pc

@@ -50,7 +50,7 @@ telepathy-logger/libtelepathy-logger.pc
 telepathy-logger/libtelepathy-logger-uninstalled.pc
 
 extensions/_gen/
-extensions/extensions.html
+extensions/doc/
 tests/test-*[^ch]
 tests/twisted/telepathy-logger-debug
 tests/twisted/tools/org.freedesktop.Telepathy.Client.TelepathyLogger.service
