@@ -20,7 +20,6 @@
  */
 
 #include "channel.h"
-#include "observer.h"
 
 #include <string.h>
 
@@ -28,6 +27,7 @@
 #include <telepathy-glib/util.h>
 
 #include <telepathy-logger/channel-text.h>
+#include <telepathy-logger/observer.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/debug.h>
