@@ -128,11 +128,11 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
   DBusGConnection *dbus;
   TpDBusDaemon *tp_dbus;
   GList *ret = NULL;
-  GPtrArray *answer;
+  GPtrArray *answer = NULL;
+  GList *dates = NULL;
   guint left_lines = lines;
   TplDBusServicePriv *priv = GET_PRIV (self);
 
-  /* FIXME: return an invalid parameters error */
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
 
@@ -142,28 +142,31 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
   account = tp_account_new (tp_dbus, account_path, &error);
   if (error != NULL)
     {
-      g_critical ("TpAccount creation: %s", error->message);
+      GError *loc_error = NULL;
 
-      dbus_g_method_return_error (context, error);
+      DEBUG ("TpAccount creation: %s", error->message);
+      g_propagate_error (&loc_error, error);
+      dbus_g_method_return_error (context, loc_error);
 
       g_error_free (error);
+      g_error_free (loc_error);
       g_object_unref (tp_dbus);
       g_object_unref (dbus);
-
       return;
     }
 
-  GList *dates = tpl_log_manager_get_dates (priv->manager, account, identifier,
+  dates = tpl_log_manager_get_dates (priv->manager, account, identifier,
       is_chatroom);
-  if (dates != NULL)
+  if (dates == NULL)
     {
-      g_set_error_literal (&error, TPL_DBUS_SERVICE_ERROR,
-          TPL_DBUS_SERVICE_ERROR_FAILED, "Error during date list retrieving");
-
+      error = g_error_new_literal (TPL_DBUS_SERVICE_ERROR,
+          TPL_DBUS_SERVICE_ERROR_FAILED, "Error during date list retrieving, "
+          "probably the account path or the identifier are does not exist");
       dbus_g_method_return_error (context, error);
+
+      g_object_unref (account);
       g_object_unref (tp_dbus);
       g_object_unref (dbus);
-
       return;
     }
   dates = g_list_reverse (dates);
@@ -193,7 +196,9 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
 
   tpl_svc_logger_return_from_get_recent_messages (context, answer);
 
+  g_object_unref (account);
   g_object_unref (tp_dbus);
+  g_object_unref (dbus);
 }
 
 

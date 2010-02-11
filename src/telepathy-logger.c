@@ -93,9 +93,9 @@ log_handler (const gchar *log_domain,
 static void
 telepathy_logger_dbus_init (void)
 {
-  TplDBusService *dbus_srv;
-  DBusGConnection *bus;
-  TpDBusDaemon *tp_bus;
+  TplDBusService *dbus_srv = NULL;
+  DBusGConnection *bus = NULL;
+  TpDBusDaemon *tp_bus = NULL;
   GError *error = NULL;
 
   bus = tp_get_bus ();

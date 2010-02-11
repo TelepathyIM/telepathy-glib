@@ -41,7 +41,8 @@ G_BEGIN_DECLS
 #define TPL_IS_DBUS_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_DBUS_SERVICE))
 #define TPL_DBUS_SERVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_DBUS_SERVICE, TplDBusServiceClass))
 
-#define TPL_DBUS_SERVICE_ERROR g_quark_from_static_string ("tpl-dbus-service-error-quark")
+#define TPL_DBUS_SERVICE_ERROR g_quark_from_string ( \
+    "tpl-dbus-service-error-quark")
 typedef enum
 {
   TPL_DBUS_SERVICE_ERROR_FAILED
@@ -51,7 +52,6 @@ typedef struct _TplDBusServicePriv TplDBusServicePriv;
 typedef struct
 {
   GObject parent;
-
   /* Private */
   TplDBusServicePriv *priv;
 } TplDBusService;
