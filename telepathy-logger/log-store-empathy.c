@@ -154,6 +154,7 @@ tpl_log_store_get_property (GObject *object,
         break;
       case PROP_WRITABLE:
         /* ignore */
+        break;
       case PROP_READABLE:
         /* ignore */
         break;
