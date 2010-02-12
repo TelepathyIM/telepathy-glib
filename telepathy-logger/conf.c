@@ -215,7 +215,7 @@ tpl_conf_globally_enable (TplConf *self,
    */
   if (loc_error != NULL)
     {
-      g_error ("Probably the Telepathy-Logger GConf's schema has changed "
+      g_critical ("Probably the Telepathy-Logger GConf's schema has changed "
           "and you're using an out of date library\n");
       g_propagate_error (error, loc_error);
       g_clear_error (&loc_error);
@@ -299,10 +299,9 @@ tpl_conf_set_accounts_ignorelist (TplConf *self,
    */
   if (loc_error != NULL)
     {
-      g_error ("Probably the Telepathy-Logger GConf's schema has changed "
+      g_critical ("Probably the Telepathy-Logger GConf's schema has changed "
           "and you're using an out of date library\n");
       g_propagate_error (error, loc_error);
-      g_clear_error (&loc_error);
       g_error_free (loc_error);
       return;
     }
