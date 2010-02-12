@@ -32,6 +32,7 @@
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/enums.h>
 
+#include <telepathy-logger/action-chain.h>
 #include <telepathy-logger/contact.h>
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/observer.h>

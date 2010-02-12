@@ -26,6 +26,7 @@
 #include <glib.h>
 #include <telepathy-glib/util.h>
 
+#include <telepathy-logger/action-chain.h>
 #include <telepathy-logger/channel-text.h>
 #include <telepathy-logger/observer.h>
 

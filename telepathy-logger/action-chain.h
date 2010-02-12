@@ -19,13 +19,26 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include "util.h"
+#ifndef __TPL_ACTION_CHAIN_H__
+#define __TPL_ACTION_CHAIN_H__
 
-#include <telepathy-glib/util.h>
+#include <glib-object.h>
+#include <gio/gio.h>
 
-gboolean
-tpl_strequal (const gchar *left,
-    const gchar *right)
-{
-  return !tp_strdiff (left, right);
-}
+typedef struct {
+    GQueue *chain;
+    GSimpleAsyncResult *simple;
+} TplActionChain;
+
+TplActionChain *tpl_actionchain_new (GObject *obj, GAsyncReadyCallback cb,
+    gpointer user_data);
+void tpl_actionchain_free (TplActionChain *self);
+typedef void (*TplPendingAction) (TplActionChain *ctx);
+void tpl_actionchain_append (TplActionChain *self, TplPendingAction func);
+void tpl_actionchain_prepend (TplActionChain *self, TplPendingAction func);
+void tpl_actionchain_continue (TplActionChain *self);
+void tpl_actionchain_terminate (TplActionChain *self);
+gpointer tpl_actionchain_get_object (TplActionChain *self);
+gboolean tpl_actionchain_finish (GAsyncResult *result);
+
+#endif // __TPL_ACTION_CHAIN_H__
