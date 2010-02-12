@@ -183,6 +183,22 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   object_class->get_property = tpl_log_entry_get_property;
   object_class->set_property = tpl_log_entry_set_property;
 
+  klass->get_timestamp = tpl_log_entry_get_timestamp;
+  klass->get_signal_type = tpl_log_entry_get_signal_type;
+  klass->get_log_id = tpl_log_entry_get_log_id;
+  klass->get_direction = tpl_log_entry_get_direction;
+  klass->get_sender = tpl_log_entry_get_sender;
+  klass->get_receiver = tpl_log_entry_get_receiver;
+  klass->get_chat_id = tpl_log_entry_get_chat_id;
+  klass->equal = NULL;
+
+  klass->set_timestamp = tpl_log_entry_set_timestamp;
+  klass->set_signal_type = tpl_log_entry_set_signal_type;
+  klass->set_direction = tpl_log_entry_set_direction;
+  klass->set_sender = tpl_log_entry_set_sender;
+  klass->set_receiver = tpl_log_entry_set_receiver;
+  klass->set_chat_id = tpl_log_entry_set_chat_id;
+
   param_spec = g_param_spec_uint ("timestamp",
       "Timestamp",
       "The timestamp (gint64) for the log entry",
@@ -230,24 +246,7 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   g_object_class_install_property (object_class, PROP_RECEIVER, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogEntryPriv));
-
-  klass->get_timestamp = tpl_log_entry_get_timestamp;
-  klass->get_signal_type = tpl_log_entry_get_signal_type;
-  klass->get_log_id = tpl_log_entry_get_log_id;
-  klass->get_direction = tpl_log_entry_get_direction;
-  klass->get_sender = tpl_log_entry_get_sender;
-  klass->get_receiver = tpl_log_entry_get_receiver;
-  klass->get_chat_id = tpl_log_entry_get_chat_id;
-
-  klass->set_timestamp = tpl_log_entry_set_timestamp;
-  klass->set_signal_type = tpl_log_entry_set_signal_type;
-  klass->set_direction = tpl_log_entry_set_direction;
-  klass->set_sender = tpl_log_entry_set_sender;
-  klass->set_receiver = tpl_log_entry_set_receiver;
-  klass->set_chat_id = tpl_log_entry_set_chat_id;
-
-  klass->equal = NULL;
-}
+  }
 
 
 static void

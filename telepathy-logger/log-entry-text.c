@@ -123,20 +123,21 @@ tpl_log_entry_text_set_prop (GObject *object,
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
-  };
-
+  }
 }
 
 
-static void tpl_log_entry_text_class_init (TplLogEntryTextClass * klass)
+static void tpl_log_entry_text_class_init (TplLogEntryTextClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  TplLogEntryClass *log_entry_class = TPL_LOG_ENTRY_CLASS (klass);
   GParamSpec *param_spec;
 
   object_class->finalize = tpl_log_entry_text_finalize;
   object_class->dispose = tpl_log_entry_text_dispose;
   object_class->get_property = tpl_log_entry_text_get_prop;
   object_class->set_property = tpl_log_entry_text_set_prop;
+  log_entry_class->equal = tpl_log_entry_text_equal;
 
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
@@ -159,8 +160,6 @@ static void tpl_log_entry_text_class_init (TplLogEntryTextClass * klass)
 
   g_type_class_add_private (object_class, sizeof (TplLogEntryTextPriv));
 
-  TPL_LOG_ENTRY_CLASS (tpl_log_entry_text_parent_class)->equal =
-    tpl_log_entry_text_equal;
 }
 
 
