@@ -52,15 +52,6 @@ typedef struct
 
 typedef void (*TplLogManagerFreeFunc) (gpointer *data);
 
-typedef struct
-{
-  TplLogManager *manager;
-  gpointer request;
-  TplLogManagerFreeFunc request_free;
-  GAsyncReadyCallback cb;
-  gpointer user_data;
-} TplLogManagerAsyncData;
-
 
 typedef struct
 {
@@ -72,8 +63,19 @@ typedef struct
   TplLogMessageFilter filter;
   gchar *search_text;
   gpointer user_data;
-  gpointer logentry;
+  TplLogEntry *logentry;
 } TplLogManagerChatInfo;
+
+
+typedef struct
+{
+  TplLogManager *manager;
+  TplLogManagerChatInfo *request;
+  TplLogManagerFreeFunc request_free;
+  GAsyncReadyCallback cb;
+  gpointer user_data;
+} TplLogManagerAsyncData;
+
 
 
 G_DEFINE_TYPE (TplLogManager, tpl_log_manager, G_TYPE_OBJECT);
@@ -206,13 +208,13 @@ tpl_log_manager_add_message (TplLogManager *manager,
   /* TODO find a way to select just one LogStore, ie just the default one, or
    * just "zeitgeist" in case an application is only interested in a specific
    * store */
-  for (l = priv->stores; l; l = g_list_next (l))
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
-      if (!tp_strdiff (tpl_log_store_get_name (TPL_LOG_STORE (l->data)),
-            add_store))
+      TplLogStore *store = l->data;
+
+      if (!tp_strdiff (tpl_log_store_get_name (store), add_store))
         {
-          out = tpl_log_store_add_message (TPL_LOG_STORE (l->data), message,
-              error);
+          out = tpl_log_store_add_message (store, message, error);
           found = TRUE;
           break;
         }
@@ -430,13 +432,16 @@ gint
 tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
     TplLogSearchHit *b)
 {
+  /* if chat_ids differ, just return their sorting return value */
   gint ret;
 
-  if (g_strcmp0 (a->chat_id, b->chat_id) == 0)
-    /* if chat_ids differ, just return their sorting return value */
-    ret = 0;
-  else
-    /* if they are the same, check if the entries are actually equal or not
+  g_return_val_if_fail (a != NULL && a->chat_id != NULL, 1);
+  g_return_val_if_fail (b != NULL && b->chat_id != NULL, -1);
+
+  ret = g_strcmp0 (a->chat_id, b->chat_id);
+
+  if (ret == 0)
+    /* if chat_id are the same, check if the entries are actually equal or not
      have the same chat_id but one is a chatroom and the other not */
     ret = a->is_chatroom && b->is_chatroom ? 0 : 1;
   return ret;
@@ -581,18 +586,30 @@ tpl_log_manager_get_date_readable (const gchar *date)
   return tpl_time_to_string_local (t, "%a %d %b %Y");
 }
 
+
 /* start of Async definitions */
 static TplLogManagerAsyncData *
 tpl_log_manager_async_data_new (void)
 {
-  return g_slice_new (TplLogManagerAsyncData);
+  return g_slice_new0 (TplLogManagerAsyncData);
 }
+
+
+static void
+tpl_log_manager_async_data_free (TplLogManagerAsyncData *data)
+{
+  tpl_object_unref_if_not_null (data->manager);
+  data->request_free ((gpointer) data->request);
+  g_slice_free (TplLogManagerAsyncData, data);
+}
+
 
 static TplLogManagerChatInfo *
 tpl_log_manager_chat_info_new (void)
 {
   return g_slice_new0 (TplLogManagerChatInfo);
 }
+
 
 static void
 tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
@@ -602,7 +619,7 @@ tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
     g_free (data->chat_id);
   if (data->date != NULL)
     g_free (data->date);
-  g_free (data);
+  g_slice_free (TplLogManagerChatInfo, data);
 }
 
 
@@ -625,12 +642,10 @@ _tpl_log_manager_async_operation_cb (GObject *source_object,
   TplLogManagerAsyncData *async_data = (TplLogManagerAsyncData *) user_data;
 
   if (async_data->cb)
-    {
-      async_data->cb (G_OBJECT (async_data->manager), result, async_data->user_data);
-    }
+    async_data->cb (G_OBJECT (async_data->manager), result,
+        async_data->user_data);
 
-  /* is it needed?
-   * tpl_log_manager_async_data_free (async_data); */
+  tpl_log_manager_async_data_free (async_data);
 }
 
 
@@ -701,7 +716,7 @@ tpl_log_manager_add_message_async (TplLogManager *manager,
 
   async_data->manager = manager;
   g_object_ref (manager);
-  async_data->request = (gpointer) chat_info;
+  async_data->request = chat_info;
   async_data->request_free =
       (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
@@ -760,14 +775,12 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
       "chat_id argument passed cannot be empty string or NULL ptr",
       callback, user_data);
 
-  chat_info->account = account;
-  g_object_ref (account);
+  chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
   chat_info->is_chatroom = is_chatroom;
 
-  async_data->manager = manager;
-  g_object_ref (manager);
-  async_data->request = (gpointer) chat_info;
+  async_data->manager = g_object_ref (manager);
+  async_data->request = chat_info;
   async_data->request_free =
       (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
@@ -839,7 +852,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
 
   async_data->manager = manager;
   g_object_ref (manager);
-  async_data->request = (gpointer) chat_info;
+  async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
@@ -918,7 +931,7 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 
   async_data->manager = manager;
   g_object_ref (manager);
-  async_data->request = (gpointer) chat_info;
+  async_data->request = chat_info;
   async_data->request_free =
       (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
@@ -972,7 +985,7 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
 
   async_data->manager = manager;
   g_object_ref (manager);
-  async_data->request = (gpointer) chat_info;
+  async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
@@ -1032,7 +1045,7 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 
   async_data->manager = manager;
   g_object_ref (manager);
-  async_data->request = (gpointer) chat_info;
+  async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
@@ -1081,7 +1094,7 @@ tpl_log_manager_search_new_async (TplLogManager *manager,
 
   async_data->manager = manager;
   g_object_ref (manager);
-  async_data->request = (gpointer) chat_info;
+  async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
