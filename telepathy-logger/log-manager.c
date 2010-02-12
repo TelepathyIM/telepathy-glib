@@ -89,6 +89,8 @@ log_manager_finalize (GObject *object)
 
   g_list_foreach (priv->stores, (GFunc) g_object_unref, NULL);
   g_list_free (priv->stores);
+
+  G_OBJECT_CLASS (tpl_log_manager_parent_class)->finalize (object);
 }
 
 
