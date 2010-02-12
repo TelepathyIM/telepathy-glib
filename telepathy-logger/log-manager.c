@@ -155,19 +155,8 @@ tpl_log_manager_init (TplLogManager *manager)
 {
   TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (manager,
       TPL_TYPE_LOG_MANAGER, TplLogManagerPriv);
-  manager->priv = priv;
 
-  /* initialise thread support. It can be called just once, so check it already
-   * ON and call if if it's not.
-   * Threads are needed by Async APIs.
-   */
-  if (!g_thread_supported ())
-    {
-      DEBUG ("Initializing GThread");
-      g_thread_init (NULL);
-    }
-  else
-    DEBUG ("GThread already initialized. Brilliant!");
+  manager->priv = priv;
 }
 
 

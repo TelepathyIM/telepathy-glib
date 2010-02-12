@@ -134,6 +134,18 @@ main (int argc,
 
   g_type_init ();
 
+  /* initialise thread support. It can be called just once, so check it already
+   * ON and call if if it's not.
+   * Threads are needed by Async APIs.
+   */
+  if (!g_thread_supported ())
+    {
+      DEBUG ("Initializing GThread");
+      g_thread_init (NULL);
+    }
+  else
+    DEBUG ("GThread already initialized. Brilliant!");
+
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
 
 #ifdef ENABLE_DEBUG
