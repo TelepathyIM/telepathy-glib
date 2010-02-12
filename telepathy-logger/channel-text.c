@@ -410,8 +410,7 @@ tpl_channel_text_set_remote_contact (TplChannelText *self,
   g_return_if_fail (TP_IS_CONTACT (data));
   g_return_if_fail (priv->remote_contact == NULL);
 
-  priv->remote_contact = data;
-  g_object_ref (data);
+  priv->remote_contact = g_object_ref (data);
 }
 
 
@@ -425,8 +424,7 @@ tpl_channel_text_set_my_contact (TplChannelText *self,
   g_return_if_fail (TP_IS_CONTACT (data));
   g_return_if_fail (priv->my_contact == NULL);
 
-  priv->my_contact = data;
-  g_object_ref (data);
+  priv->my_contact = g_object_ref (data);
 }
 
 

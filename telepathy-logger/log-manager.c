@@ -711,11 +711,9 @@ tpl_log_manager_add_message_async (TplLogManager *manager,
       "message argument passed is not a TplLogEntry instance",
       callback, user_data);
 
-  chat_info->logentry = message;
-  g_object_ref (chat_info->logentry);
+  chat_info->logentry = g_object_ref (message);
 
-  async_data->manager = manager;
-  g_object_ref (manager);
+  async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
       (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
@@ -844,14 +842,12 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
       "date argument passed cannot be empty string or NULL ptr",
       callback, user_data);
 
-  chat_info->account = account;
-  g_object_ref (account);
+  chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
   chat_info->is_chatroom = is_chatroom;
   chat_info->date = g_strdup (date);
 
-  async_data->manager = manager;
-  g_object_ref (manager);
+  async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
@@ -921,16 +917,14 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
       "filter function should be not NULL",
       callback, user_data);
 
-  chat_info->account = account;
-  g_object_ref (account);
+  chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
   chat_info->is_chatroom = is_chatroom;
   chat_info->num_messages = num_messages;
   chat_info->filter = filter;
   chat_info->user_data = filter_user_data;
 
-  async_data->manager = manager;
-  g_object_ref (manager);
+  async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
       (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
@@ -980,11 +974,9 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
       "account argument is not a TpAccount instance",
       callback, user_data);
 
-  chat_info->account = account;
-  g_object_ref (account);
+  chat_info->account = g_object_ref (account);
 
-  async_data->manager = manager;
-  g_object_ref (manager);
+  async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
@@ -1038,13 +1030,11 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
       "account argument is not a TpAccount instance",
       callback, user_data);
 
-  chat_info->account = account;
-  g_object_ref (account);
+  chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (identifier);
   chat_info->search_text = g_strdup (text);
 
-  async_data->manager = manager;
-  g_object_ref (manager);
+  async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
@@ -1092,8 +1082,7 @@ tpl_log_manager_search_new_async (TplLogManager *manager,
 
   chat_info->search_text = g_strdup (text);
 
-  async_data->manager = manager;
-  g_object_ref (manager);
+  async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;

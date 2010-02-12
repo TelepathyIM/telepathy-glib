@@ -367,8 +367,7 @@ tpl_contact_set_contact (TplContact *self,
   g_return_if_fail (TP_IS_CONTACT (data));
   g_return_if_fail (priv->contact == NULL);
 
-  priv->contact = data;
-  g_object_ref (data);
+  priv->contact = g_object_ref (data);
 }
 
 
@@ -382,8 +381,7 @@ tpl_contact_set_account (TplContact *self,
   g_return_if_fail (TP_IS_ACCOUNT (data));
   g_return_if_fail (priv->account == NULL);
 
-  priv->account = data;
-  g_object_ref (data);
+  priv->account = g_object_ref (data);
 }
 
 

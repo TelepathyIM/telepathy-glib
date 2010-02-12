@@ -712,8 +712,7 @@ log_store_empathy_search_hit_new (TplLogStore *self,
       if (!tp_strdiff (name, account_name))
         {
           g_assert (hit->account == NULL);
-          hit->account = account;
-          g_object_ref (account);
+          hit->account = g_object_ref (account);
         }
       g_free (name);
     }

@@ -174,8 +174,7 @@ tpl_channel_set_account (TplChannel *self,
   g_return_if_fail (TP_IS_ACCOUNT (data));
   g_return_if_fail (priv->account == NULL);
 
-  priv->account = data;
-  g_object_ref (data);
+  priv->account = g_object_ref (data);
 }
 
 
