@@ -65,7 +65,7 @@ tpl_dbus_service_init (TplDBusService *self)
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
 
   self->priv = priv;
-  GET_PRIV (self)->manager = tpl_log_manager_dup_singleton ();
+  priv->manager = tpl_log_manager_dup_singleton ();
 }
 
 
@@ -76,20 +76,20 @@ tpl_dbus_service_new (void)
 }
 
 
-static gboolean
-_pack_last_chats_answer (GList *data,
-    GPtrArray **array)
+static GPtrArray *
+tpl_assu_marshal (GList *data)
 {
-  guint data_idx;
+  guint idx;
+  GList *data_ptr;
   GPtrArray *retval;
 
-  (*array) = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
-  retval = *array;
+  retval = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 
-  for (data_idx = 0; data_idx < g_list_length (data); ++data_idx)
+  DEBUG ("Marshalled a(ssu) data:");
+  for (idx = 0, data_ptr = data; data_ptr != NULL;
+      data_ptr = g_list_next (data_ptr), ++idx)
     {
-      TplLogEntry *log = g_list_nth_data (data, data_idx);
-
+      TplLogEntry *log = data_ptr->data;
       GValue *value = g_new0 (GValue, 1);
 
       gchar *message = g_strdup (tpl_log_entry_text_get_message (
@@ -107,11 +107,12 @@ _pack_last_chats_answer (GList *data,
       g_ptr_array_add (retval, g_value_get_boxed (value));
       g_free (value);
 
-      DEBUG ("retval[%d]=\"[%d] <%s>: %s\"\n", data_idx,
-          timestamp, sender, message);
+      DEBUG ("%d = %s / %s / %d", idx, sender,
+          message, timestamp);
     }
-  return TRUE;
+  return retval;
 }
+
 
 static void
 tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
@@ -121,17 +122,15 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
     guint lines,
     DBusGMethodInvocation *context)
 {
-  guint dates_idx;
-  gint msgs_idx;
   TplDBusServicePriv *priv = GET_PRIV (self);
   TpAccount *account = NULL;
   TpDBusDaemon *tp_dbus = NULL;
   GList *ret = NULL;
-  GPtrArray *answer = NULL;
+  GPtrArray *packed = NULL;
   GList *dates = NULL;
+  GList *dates_ptr = NULL;
   GError *error = NULL;
   guint left_lines = lines;
-  TplDBusServicePriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
@@ -158,36 +157,43 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
     {
       error = g_error_new_literal (TPL_DBUS_SERVICE_ERROR,
           TPL_DBUS_SERVICE_ERROR_FAILED, "Error during date list retrieving, "
-          "probably the account path or the identifier are does not exist");
+          "probably the account path or the identifier does not exist");
       dbus_g_method_return_error (context, error);
       goto out;
     }
-  dates = g_list_reverse (dates);
-
-  for (dates_idx = 0; dates_idx < g_list_length (dates) && left_lines > 0;
-      ++dates_idx)
+  /* for each date returned, get at most <lines> lines, then if needed
+   * check the previous date for the missing ones, and so on until
+   * <lines> is reached, most recent date first */
+  for (dates_ptr = g_list_reverse (dates);
+      dates_ptr != NULL && left_lines > 0;
+      dates_ptr = g_list_next (dates_ptr))
     {
-      gchar *date = g_list_nth_data (dates, dates_idx);
+      gchar *date = dates_ptr->data;
       GList *messages = tpl_log_manager_get_messages_for_date (priv->manager,
           account, identifier, is_chatroom, date);
-      guint msgs_len = g_list_length (messages);
-      gint guard = (msgs_len>=left_lines ? left_lines : msgs_len);
+      GList *messages_ptr;
 
-      for (msgs_idx=msgs_len-1; guard>0 && left_lines>0; --guard, --msgs_idx)
+      /* from the most recent message, backward */
+      for (messages_ptr = g_list_reverse (messages);
+          messages_ptr != NULL && left_lines > 0;
+          messages_ptr = g_list_next (messages_ptr))
         {
-          TplLogEntry *log = g_list_nth_data (messages, msgs_idx);
-          g_object_ref (log);
-          ret = g_list_prepend (ret, log);
-          left_lines-=1;
+          TplLogEntry *log = messages_ptr->data;
+              /* keeps the reference and add to the result */
+              ret = g_list_prepend (ret, g_object_ref (log));
+              left_lines -= 1;
         }
       g_list_foreach (messages, (GFunc) g_object_unref, NULL);
+      g_list_free (messages);
     }
   g_list_foreach (dates, (GFunc) g_free, NULL);
+  g_list_free (dates);
 
-  _pack_last_chats_answer (ret, &answer);
+  packed = tpl_assu_marshal (ret);
   g_list_foreach (ret, (GFunc) g_object_unref, NULL);
+  g_list_free (ret);
 
-  tpl_svc_logger_return_from_get_recent_messages (context, answer);
+  tpl_svc_logger_return_from_get_recent_messages (context, packed);
 
 out:
   tpl_object_unref_if_not_null (account);
