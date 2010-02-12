@@ -534,12 +534,13 @@ tpl_observer_register_channel (TplObserver *self,
   if (g_hash_table_lookup (glob_map, key) != NULL)
     {
       DEBUG ("Channel path found, replacing %s", key);
-      g_hash_table_remove (glob_map, key);
+      g_hash_table_replace (glob_map, key, channel);
     }
   else
+    {
       DEBUG ("Channel path not found, registering %s", key);
-
-  g_hash_table_insert (glob_map, key, channel);
+      g_hash_table_insert (glob_map, key, channel);
+    }
   g_object_notify (G_OBJECT (self), "registered-channels");
 
   g_object_unref (channel);
