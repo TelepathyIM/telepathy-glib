@@ -132,7 +132,7 @@ void tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
 gint tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
     TplLogSearchHit *b);
 
-void tpl_log_manager_register_logstore (TplLogManager *self,
+void tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore);
 
 G_END_DECLS

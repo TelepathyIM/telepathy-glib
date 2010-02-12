@@ -224,7 +224,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
 
 
 /**
- * tpl_log_manager_register_logstore
+ * tpl_log_manager_register_log_store
  * @self: the log manager
  * @logstore: a TplLogStore interface implementation
  *
@@ -238,7 +238,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
  * #TplLogStore:readable is set to %TRUE.
  */
 void
-tpl_log_manager_register_logstore (TplLogManager *self,
+tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore)
 {
   TplLogManagerPriv *priv = GET_PRIV (self);
