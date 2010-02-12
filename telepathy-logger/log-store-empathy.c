@@ -81,9 +81,9 @@ enum {
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
-static void get_prop (GObject *object, guint param_id, GValue *value,
+static void tpl_log_store_get_property (GObject *object, guint param_id, GValue *value,
     GParamSpec *pspec);
-static void set_prop (GObject *object, guint param_id, const GValue *value,
+static void tpl_log_store_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
 static const gchar *log_store_empathy_get_name (TplLogStore *self);
 static void log_store_empathy_set_name (TplLogStore *self, const gchar *data);
@@ -140,7 +140,7 @@ log_store_empathy_finalize (GObject *object)
 
 
 static void
-get_prop (GObject *object,
+tpl_log_store_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
@@ -168,7 +168,7 @@ get_prop (GObject *object,
 
 
 static void
-set_prop (GObject *object,
+tpl_log_store_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
@@ -204,8 +204,8 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
 
   object_class->finalize = log_store_empathy_finalize;
   object_class->dispose = log_store_empathy_dispose;
-  object_class->get_property = get_prop;
-  object_class->set_property = set_prop;
+  object_class->get_property = tpl_log_store_get_property;
+  object_class->set_property = tpl_log_store_set_property;
 
   /**
    * TplLogStoreEmpathy:name:

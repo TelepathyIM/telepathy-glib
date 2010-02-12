@@ -270,7 +270,7 @@ got_tpl_channel_text_ready_cb (GObject *obj,
 
 
 static void
-get_prop (GObject *self,
+tpl_observer_get_property (GObject *self,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
@@ -338,6 +338,7 @@ tpl_observer_class_init (TplObserverClass *klass)
   object_class->constructor = tpl_observer_constructor;
   object_class->finalize = tpl_observer_finalize;
   object_class->dispose = tpl_observer_dispose;
+  object_class->get_property = tpl_observer_get_property;
 
   /* D-Bus properties are exposed as GObject properties through the
    * TpDBusPropertiesMixin properties on the Client interface */
@@ -364,8 +365,6 @@ tpl_observer_class_init (TplObserverClass *klass)
      client_observer_props},
     {NULL}
   };
-
-  object_class->get_property = get_prop;
 
   /**
    * TplObserver:interfaces:

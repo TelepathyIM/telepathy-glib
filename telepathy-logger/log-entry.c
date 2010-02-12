@@ -59,8 +59,7 @@ struct _TplLogEntryPriv
 };
 
 enum {
-    PROP0,
-    PROP_TIMESTAMP,
+    PROP_TIMESTAMP = 1,
     PROP_SIGNAL_TYPE,
     PROP_LOG_ID,
     PROP_DIRECTION,
@@ -98,7 +97,7 @@ tpl_log_entry_dispose (GObject *obj)
 
 
 static void
-get_prop (GObject *object,
+tpl_log_entry_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
@@ -136,7 +135,7 @@ get_prop (GObject *object,
 
 
 static void
-set_prop (GObject *object,
+tpl_log_entry_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
@@ -181,56 +180,53 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   /* to be used by subclasses */
   object_class->finalize = tpl_log_entry_finalize;
   object_class->dispose = tpl_log_entry_dispose;
-  object_class->get_property = get_prop;
-  object_class->set_property = set_prop;
+  object_class->get_property = tpl_log_entry_get_property;
+  object_class->set_property = tpl_log_entry_set_property;
 
   param_spec = g_param_spec_uint ("timestamp",
       "Timestamp",
-      "The timestamp (time_t) for the log entry",
-      0, G_MAXUINT32, 0,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      "The timestamp (gint64) for the log entry",
+      0, G_MAXUINT32, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TIMESTAMP, param_spec);
 
   param_spec = g_param_spec_uint ("signal-type",
       "SignalType",
       "The signal type which caused the log entry",
-      0, G_MAXUINT32, TPL_LOG_ENTRY_SIGNAL_NONE,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      0, G_MAXUINT32, TPL_LOG_ENTRY_SIGNAL_NONE, G_PARAM_READWRITE |
+      G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIGNAL_TYPE, param_spec);
 
   param_spec = g_param_spec_uint ("log-id",
       "LogId",
       "Log identification number: the triple LogId+AccountName+ChatId is unique",
-      0, G_MAXUINT32, 0,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+      0, G_MAXUINT32, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+      G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOG_ID, param_spec);
 
   param_spec = g_param_spec_uint ("direction",
       "Direction",
       "The direction of the log entry (in/out)",
-      0, G_MAXUINT32, TPL_LOG_ENTRY_DIRECTION_NONE,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+      0, G_MAXUINT32, TPL_LOG_ENTRY_DIRECTION_NONE, G_PARAM_READWRITE |
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DIRECTION, param_spec);
 
   param_spec = g_param_spec_string ("chat-id",
       "ChatId",
       "The chat id relative to the log entry's account name",
       NULL,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHAT_ID, param_spec);
 
   param_spec = g_param_spec_object ("sender",
       "Sender",
       "TplContact instance who originated the log entry",
-      TPL_TYPE_CONTACT,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      TPL_TYPE_CONTACT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SENDER, param_spec);
 
   param_spec = g_param_spec_object ("receiver",
       "Receiver",
       "TplContact instance destination for the log entry",
-      TPL_TYPE_CONTACT,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      TPL_TYPE_CONTACT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_RECEIVER, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogEntryPriv));

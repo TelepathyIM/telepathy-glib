@@ -61,7 +61,7 @@ enum
 };
 
 static void
-get_prop (GObject *object,
+tpl_observer_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
@@ -80,7 +80,7 @@ get_prop (GObject *object,
 }
 
 static void
-set_prop (GObject *object,
+tpl_observer_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
@@ -123,8 +123,8 @@ tpl_channel_class_init (TplChannelClass *klass)
 
   object_class->dispose = tpl_channel_dispose;
   object_class->finalize = tpl_channel_finalize;
-  object_class->get_property = get_prop;
-  object_class->set_property = set_prop;
+  object_class->get_property = tpl_observer_get_property;
+  object_class->set_property = tpl_observer_set_property;
 
   klass->call_when_ready_protected = call_when_ready_protected;
 
@@ -135,8 +135,8 @@ tpl_channel_class_init (TplChannelClass *klass)
    */
   param_spec = g_param_spec_object ("account",
       "Account", "TpAccount instance associated with TplChannel",
-      TP_TYPE_ACCOUNT, G_PARAM_READABLE | G_PARAM_WRITABLE |
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+      TP_TYPE_ACCOUNT, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+      G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplChannelPriv));

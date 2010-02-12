@@ -43,8 +43,7 @@ struct _TplLogEntryTextPriv
 
 enum
 {
-  PROP0,
-  PROP_MESSAGE_TYPE,
+  PROP_MESSAGE_TYPE = 1,
   PROP_MESSAGE,
   PROP_TPL_CHANNEL_TEXT
 };
@@ -77,7 +76,9 @@ tpl_log_entry_text_finalize (GObject * obj)
 
 
 static void
-tpl_log_entry_text_get_prop (GObject *object, guint param_id, GValue *value,
+tpl_log_entry_text_get_prop (GObject *object,
+    guint param_id,
+    GValue *value,
     GParamSpec *pspec)
 {
   TplLogEntryTextPriv *priv = GET_PRIV (object);
@@ -96,12 +97,14 @@ tpl_log_entry_text_get_prop (GObject *object, guint param_id, GValue *value,
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
-    };
+    }
 }
 
 
 static void
-tpl_log_entry_text_set_prop (GObject *object, guint param_id, const GValue *value,
+tpl_log_entry_text_set_prop (GObject *object,
+    guint param_id,
+    const GValue *value,
     GParamSpec *pspec)
 {
   TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (object);
@@ -138,22 +141,20 @@ static void tpl_log_entry_text_class_init (TplLogEntryTextClass * klass)
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
       "The message type for a Text log entry",
-      0, G_MAXUINT32, TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      0, G_MAXUINT32, TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, G_PARAM_READWRITE |
+      G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE_TYPE, param_spec);
 
   param_spec = g_param_spec_string ("message",
       "Message",
       "The text message of the log entry",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE, param_spec);
 
   param_spec = g_param_spec_object ("tpl-channel-text",
       "TplChannelText",
       "The TplChannelText instance associated with the log entry, if any",
-      TPL_TYPE_CHANNEL_TEXT,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      TPL_TYPE_CHANNEL_TEXT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TPL_CHANNEL_TEXT, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogEntryTextPriv));

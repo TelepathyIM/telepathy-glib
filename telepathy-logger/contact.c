@@ -87,7 +87,9 @@ tpl_contact_dispose (GObject *obj)
 
 
 static void
-tpl_contact_get_prop (GObject *object, guint param_id, GValue *value,
+tpl_contact_get_property (GObject *object,
+    guint param_id,
+    GValue *value,
     GParamSpec *pspec)
 {
   TplContactPriv *priv = GET_PRIV (object);
@@ -117,7 +119,7 @@ tpl_contact_get_prop (GObject *object, guint param_id, GValue *value,
 
 
 static void
-tpl_contact_set_prop (GObject *object, guint param_id, const GValue *value,
+tpl_contact_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec)
 {
   TplContact *self = TPL_CONTACT (object);
@@ -154,8 +156,8 @@ static void tpl_contact_class_init (TplContactClass *klass)
 
   object_class->finalize = tpl_contact_finalize;
   object_class->dispose = tpl_contact_dispose;
-  object_class->get_property = tpl_contact_get_prop;
-  object_class->set_property = tpl_contact_set_prop;
+  object_class->get_property = tpl_contact_get_property;
+  object_class->set_property = tpl_contact_set_property;
 
   /**
    * TplContact:identifier:
@@ -166,7 +168,7 @@ static void tpl_contact_class_init (TplContactClass *klass)
       "Identifier",
       "The contact's identifier",
       NULL,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IDENTIFIER, param_spec);
 
   /**
@@ -178,7 +180,7 @@ static void tpl_contact_class_init (TplContactClass *klass)
       "Alias",
       "The contact's alias",
       NULL,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
   /**
@@ -190,7 +192,7 @@ static void tpl_contact_class_init (TplContactClass *klass)
       "PresenceStatus",
       "The contact's presence status string",
       NULL,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
   /**
@@ -202,7 +204,7 @@ static void tpl_contact_class_init (TplContactClass *klass)
       "PresenceMessage",
       "The contact's presence message",
       NULL,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
   /**
@@ -214,7 +216,7 @@ static void tpl_contact_class_init (TplContactClass *klass)
       "AvatarToken",
       "The contact's avatar's token",
       NULL,
-      G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplContactPriv));
