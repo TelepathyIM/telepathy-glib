@@ -650,7 +650,6 @@ log_store_empathy_get_filename_for_date (TplLogStore *self,
   gchar *timestamp;
   gchar *filename;
 
-
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);

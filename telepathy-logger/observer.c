@@ -145,9 +145,10 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   GError *error = NULL;
   ObservingContext *observing_ctx = NULL;
   const gchar *chan_type;
+  guint i;
 
-  g_return_if_fail (!TPL_STR_EMPTY (account) );
-  g_return_if_fail (!TPL_STR_EMPTY (connection) );
+  g_return_if_fail (!TPL_STR_EMPTY (account));
+  g_return_if_fail (!TPL_STR_EMPTY (connection));
 
   chan_factory = tpl_observer_get_channel_factory (TPL_OBSERVER (self));
 
@@ -206,7 +207,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   observing_ctx->dbus_ctx = dbus_context;
 
   /* channels is of type a(oa{sv}) */
-  for (guint i = 0; i < channels->len; i++)
+  for (i = 0; i < channels->len; i++)
     {
       GValueArray *channel = g_ptr_array_index (channels, i);
       TplChannel *tpl_chan;
@@ -217,13 +218,12 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
       /* d.bus.propertyName.str/gvalue hash */
       prop_map = g_value_get_boxed (g_value_array_get_nth (channel, 1));
 
-      chan_type = g_value_get_string (g_hash_table_lookup (prop_map,
-          TP_PROP_CHANNEL_CHANNEL_TYPE));
+      chan_type = tp_asv_get_string (prop_map, TP_PROP_CHANNEL_CHANNEL_TYPE);
       tpl_chan = chan_factory (chan_type, tp_conn, path, prop_map, tp_acc,
           &error);
       if (tpl_chan == NULL)
         {
-          DEBUG ("Creating TplChannel: %s", error->message);
+          DEBUG ("%s", error->message);
           g_error_free (error);
           error = NULL;
           continue;
@@ -417,7 +417,7 @@ tpl_observer_init (TplObserver *self)
   self->priv = priv;
 
   priv->channel_map = g_hash_table_new_full (g_str_hash,
-      (GEqualFunc) g_str_equal, g_free, g_object_unref);
+      g_str_equal, g_free, g_object_unref);
   priv->logmanager = tpl_log_manager_dup_singleton ();
 }
 

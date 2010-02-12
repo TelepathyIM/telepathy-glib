@@ -265,7 +265,7 @@ tpl_log_manager_exists (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l; l = g_list_next (l))
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       if (tpl_log_store_exists (TPL_LOG_STORE (l->data),
             account, chat_id, chatroom))
@@ -291,7 +291,7 @@ tpl_log_manager_get_dates (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l; l = g_list_next (l))
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *new;
@@ -329,7 +329,7 @@ tpl_log_manager_get_messages_for_date (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l; l = g_list_next (l))
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
@@ -349,13 +349,17 @@ log_manager_message_date_cmp (gconstpointer a,
   TplLogEntry *two = (TplLogEntry *) b;
   time_t one_time, two_time;
 
+  g_assert (TPL_IS_LOG_ENTRY (one));
+  g_assert (TPL_IS_LOG_ENTRY (two));
+
   /* TODO better to use a real method call, instead or dereferencing it's
    * pointer */
   one_time = TPL_LOG_ENTRY_GET_CLASS (one)->get_timestamp (one);
   two_time = TPL_LOG_ENTRY_GET_CLASS (two)->get_timestamp (two);
 
-  /* Return -1 of message1 is older than message2 */
-  return one_time < two_time ? -1 : one_time - two_time;
+  /* return -1, o or 1 depending on message1 is newer, the same or older than
+   * message2 */
+  return CLAMP (one_time - two_time, -1, 1);
 }
 
 
@@ -380,7 +384,7 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 
   /* Get num_messages from each log store and keep only the
    * newest ones in the out list. Keep that list sorted: Older first. */
-  for (l = priv->stores; l; l = g_list_next (l))
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *new;
@@ -393,8 +397,7 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
             {
               /* We have less message than needed so far. Keep this message */
               out = g_list_insert_sorted (out, new->data,
-                  (GCompareFunc)
-                  log_manager_message_date_cmp);
+                  (GCompareFunc) log_manager_message_date_cmp);
               i++;
             }
           else if (log_manager_message_date_cmp (new->data, out->data) > 0)
@@ -404,8 +407,7 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
               g_object_unref (out->data);
               out = g_list_delete_link (out, out);
               out = g_list_insert_sorted (out, new->data,
-                  (GCompareFunc)
-                  log_manager_message_date_cmp);
+                  (GCompareFunc) log_manager_message_date_cmp);
             }
           else
             {
@@ -462,21 +464,23 @@ tpl_log_manager_get_chats (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l; l = g_list_next (l))
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *in;
 
       /* merge the lists avoiding duplicates */
-      for (in = tpl_log_store_get_chats (store, account); in != NULL;
-          in = g_list_next (in))
-        if (g_list_find_custom (out, in->data,
-              (GCompareFunc) tpl_log_manager_search_hit_compare) == NULL)
-          /* add data if not already present */
-          out = g_list_prepend (out, in->data);
-        else
-          /* free in->data if already present in out */
-          tpl_log_manager_search_hit_free (in->data);
+      for (in = tpl_log_store_get_chats (store, account);
+          in != NULL; in = g_list_next (in))
+        {
+          if (g_list_find_custom (out, in->data,
+                (GCompareFunc) tpl_log_manager_search_hit_compare) == NULL)
+            /* add data if not already present */
+            out = g_list_prepend (out, in->data);
+          else
+            /* free in->data if already present in out */
+            tpl_log_manager_search_hit_free (in->data);
+        }
       g_list_free (in);
     }
 
@@ -500,7 +504,7 @@ tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l; l = g_list_next (l))
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
@@ -525,7 +529,7 @@ tpl_log_manager_search_new (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l; l = g_list_next (l))
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
@@ -555,7 +559,7 @@ tpl_log_manager_search_free (GList *hits)
 {
   GList *l;
 
-  for (l = hits; l; l = g_list_next (l))
+  for (l = hits; l != NULL; l = g_list_next (l))
     {
       tpl_log_manager_search_hit_free (l->data);
     }

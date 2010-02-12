@@ -308,13 +308,14 @@ tpl_log_entry_text_set_message (TplLogEntryText *self, const gchar *data)
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
 
   priv = GET_PRIV (self);
+
   g_free (priv->message);
   priv->message = g_strdup (data);
 }
 
 
 void
-tpl_log_entry_text_set_message_type (TplLogEntryText * self,
+tpl_log_entry_text_set_message_type (TplLogEntryText *self,
     TpChannelTextMessageType data)
 {
   TplLogEntryTextPriv *priv;
@@ -328,7 +329,8 @@ tpl_log_entry_text_set_message_type (TplLogEntryText * self,
 
 
 void
-tpl_log_entry_text_set_chatroom (TplLogEntryText * self, gboolean data)
+tpl_log_entry_text_set_chatroom (TplLogEntryText *self,
+    gboolean data)
 {
   TplLogEntryTextPriv *priv;
 

@@ -27,6 +27,7 @@
 
 #include "tpl-channel-test.h"
 
+#include <telepathy-logger/action-chain.h>
 #include <telepathy-logger/channel.h>
 
 static void call_when_ready_wrapper (TplChannel *tpl_chan, GAsyncReadyCallback
