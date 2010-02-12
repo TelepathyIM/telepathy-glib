@@ -373,7 +373,7 @@ tpl_observer_class_init (TplObserverClass *klass)
         G_PARAM_STATIC_STRINGS));
 
   /**
-   * TplObserver:interfaces:
+   * TplObserver:channel-filter:
    *
    * Channels that this object will accept and manage from the Channel
    * Dispatcher
@@ -385,7 +385,7 @@ tpl_observer_class_init (TplObserverClass *klass)
         TP_ARRAY_TYPE_CHANNEL_CLASS_LIST, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
-   * TplObserver:interfaces:
+   * TplObserver:registered-channels:
    *
    * A list of channel's paths currently registered to this object.
    *
@@ -553,8 +553,8 @@ tpl_observer_register_channel (TplObserver *self,
  * @self: #TplObserver instance, cannot be %NULL.
  * @channel: a #TplChannel cast of a TplChannel subclass instance
  *
- * Un-registers a TplChannel subclass instance, i.e. TplChannelText instance, as
- * TplChannel instance.
+ * Un-registers a TplChannel subclass instance, i.e. TplChannelText instance,
+ * as TplChannel instance.
  * It is supposed to be called when the Closed signal for a channel is
  * emitted or when an un-recoverable error during the life or a TplChannel
  * happens.
@@ -562,12 +562,10 @@ tpl_observer_register_channel (TplObserver *self,
  * Every time that a channel is registered or unregistered, a notification is
  * sent for the 'registered-channels' property.
  *
- * Returns: %TRUE if @channel is registered and can thus be un-registered or %FALSE
- * if the @channel is not currently among registered channels and thus cannot
- * be un-registered.
+ * Returns: %TRUE if @channel is registered and can thus be un-registered or
+ * %FALSE if the @channel is not currently among registered channels and thus
+ * cannot be un-registered.
  */
-
-
 gboolean
 tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel)
