@@ -39,6 +39,7 @@ static GMainLoop *loop = NULL;
 static TpDebugSender *debug_sender = NULL;
 static gboolean stamp_logs = FALSE;
 
+
 static void
 log_to_debug_sender (const gchar *log_domain,
     GLogLevelFlags log_level,
@@ -53,6 +54,7 @@ log_to_debug_sender (const gchar *log_domain,
   tp_debug_sender_add_message (debug_sender, &now, log_domain, log_level,
       string);
 }
+
 
 static void
 log_handler (const gchar *log_domain,
@@ -92,28 +94,34 @@ static void
 telepathy_logger_dbus_init (void)
 {
   TplDBusService *dbus_srv = NULL;
-  DBusGConnection *bus = NULL;
   TpDBusDaemon *tp_bus = NULL;
   GError *error = NULL;
 
-  bus = tp_get_bus ();
-  tp_bus = tp_dbus_daemon_new (bus);
 
-  if (tp_dbus_daemon_request_name (tp_bus, TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
-        TRUE, &error))
+  tp_bus = tp_dbus_daemon_dup (&error);
+  if (tp_bus == NULL)
     {
-      DEBUG ("%s DBus well known name registered",
-          TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
+      g_critical ("Failed to acquire bus daemon: %s", error->message);
+      goto out;
     }
-  else
+
+  if (!tp_dbus_daemon_request_name (tp_bus, TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME,
+        FALSE, &error))
     {
-      DEBUG ("Well Known name request error: %s", error->message);
-      g_error_free (error);
+      g_critical ("Failed to acquire bus name %s: %s",
+          TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME, error->message);
+      goto out;
     }
 
   dbus_srv = tpl_dbus_service_new ();
-  dbus_g_connection_register_g_object (bus, TPL_DBUS_SRV_OBJECT_PATH,
+  dbus_g_connection_register_g_object (tp_get_bus(), TPL_DBUS_SRV_OBJECT_PATH,
       G_OBJECT (dbus_srv));
+
+out:
+  if (error != NULL)
+    g_error_free (error);
+  g_object_unref (tp_bus);
+  g_object_unref (dbus_srv);
 }
 
 

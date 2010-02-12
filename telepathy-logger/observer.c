@@ -171,30 +171,30 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
 
       goto error;
     }
+  g_object_unref (conf);
 
-  /* Instantiating objects to pass to - or needed by them - the Tpl Channel Factory in order to
-   * obtain a TplChannelXXX instance */
+  /* Instantiating objects to pass to - or needed by them - the Tpl Channel
+   * Factory in order to obtain a TplChannelXXX instance */
   tp_bus_daemon = tp_dbus_daemon_dup (&error);
   if (tp_bus_daemon == NULL)
     {
-      DEBUG ("%s", error->message);
-
+      DEBUG ("Failed to acquire bus daemon: %s", error->message);
       goto error;
     }
 
   tp_acc = tp_account_new (tp_bus_daemon, account, &error);
   if (tp_acc == NULL)
     {
-      DEBUG ("%s", error->message);
-
+      DEBUG ("Failed to acquire account proxy for %s: %s", account,
+          error->message);
       goto error;
     }
 
   tp_conn = tp_connection_new (tp_bus_daemon, NULL, connection, &error);
   if (tp_conn == NULL)
     {
-      DEBUG ("%s", error->message);
-
+      DEBUG ("Failed to acquire connection proxy for %s: %s", connection,
+          error->message);
       goto error;
     }
 
@@ -239,13 +239,9 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   return;
 
 error:
-  if (tp_acc != NULL)
-    g_object_unref (tp_acc);
-  if (tp_conn != NULL)
-    g_object_unref (tp_conn);
-  if (tp_bus_daemon != NULL)
-    g_object_unref (tp_bus_daemon);
-
+  tpl_object_unref_if_not_null (tp_acc);
+  tpl_object_unref_if_not_null (tp_conn);
+  tpl_object_unref_if_not_null (tp_bus_daemon);
   g_clear_error (&error);
 
   tp_svc_client_observer_return_from_observe_channels (dbus_context);
@@ -434,44 +430,39 @@ tpl_observer_init (TplObserver *self)
  * Registers the object using #TPL_OBSERVER_WELL_KNOWN_BUS_NAME well known
  * name.
  *
- * Returns: %TRUE if registration suceeds or if the object is already
- * registered to DBus. or %FALSE if the object is not alerady registered and
- * the registration failed, in which case @error is set.
+ * Returns: %TRUE if the registration is successful, %FALSE with @error set if
+ * it fails.
  */
 gboolean
 tpl_observer_register_dbus (TplObserver *self,
     GError **error)
 {
-  TplObserverPriv* priv = GET_PRIV (self);
-  DBusGConnection *bus;
   TpDBusDaemon *tp_bus;
+  gboolean ret = TRUE;
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
 
-  /* just return TRUE if the Observer interface is actually already registered
-   * to DBus */
-  if (priv->dbus_registered)
-    return TRUE;
-
-  bus = tp_get_bus ();
-  tp_bus = tp_dbus_daemon_new (bus);
-
-  if (!tp_dbus_daemon_request_name (tp_bus, TPL_OBSERVER_WELL_KNOWN_BUS_NAME,
-        TRUE, error))
+  tp_bus = tp_dbus_daemon_dup (error);
+  if (tp_bus == NULL)
     {
-      g_assert (error == NULL || *error != NULL);
-      return FALSE;
+      ret = FALSE;
+      goto out;
     }
 
-  priv->dbus_registered = TRUE;
-  DEBUG ("%s DBus well known name registered",
-      TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
+  if (!tp_dbus_daemon_request_name (tp_bus, TPL_OBSERVER_WELL_KNOWN_BUS_NAME,
+        FALSE, error))
+    {
+      ret = FALSE;
+      goto out;
+    }
 
-  dbus_g_connection_register_g_object (bus, TPL_OBSERVER_OBJECT_PATH,
-      G_OBJECT (self));
-
-  return TRUE;
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (TP_PROXY (tp_bus)),
+      TPL_OBSERVER_OBJECT_PATH, G_OBJECT (self));
+out:
+  g_object_unref (tp_bus);
+  return ret;
 }
 
 

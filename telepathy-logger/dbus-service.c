@@ -123,36 +123,33 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
 {
   guint dates_idx;
   gint msgs_idx;
-  GError *error = NULL;
-  TpAccount *account;
-  DBusGConnection *dbus;
-  TpDBusDaemon *tp_dbus;
+  TplDBusServicePriv *priv = GET_PRIV (self);
+  TpAccount *account = NULL;
+  TpDBusDaemon *tp_dbus = NULL;
   GList *ret = NULL;
   GPtrArray *answer = NULL;
   GList *dates = NULL;
+  GError *error = NULL;
   guint left_lines = lines;
   TplDBusServicePriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
 
-  dbus = tp_get_bus ();
-  tp_dbus = tp_dbus_daemon_new (dbus);
+  tp_dbus = tp_dbus_daemon_dup (&error);
+  if (tp_dbus == NULL)
+    {
+      DEBUG ("Unable to acquire the bus daemon: %s", error->message);
+      goto out;
+    }
 
   account = tp_account_new (tp_dbus, account_path, &error);
-  if (error != NULL)
+  if (account == NULL)
     {
-      GError *loc_error = NULL;
-
-      DEBUG ("TpAccount creation: %s", error->message);
-      g_propagate_error (&loc_error, error);
-      dbus_g_method_return_error (context, loc_error);
-
-      g_error_free (error);
-      g_error_free (loc_error);
-      g_object_unref (tp_dbus);
-      g_object_unref (dbus);
-      return;
+      DEBUG ("Unable to acquire the account for %s: %s", account_path,
+          error->message);
+      dbus_g_method_return_error (context, error);
+      goto out;
     }
 
   dates = tpl_log_manager_get_dates (priv->manager, account, identifier,
@@ -163,11 +160,7 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
           TPL_DBUS_SERVICE_ERROR_FAILED, "Error during date list retrieving, "
           "probably the account path or the identifier are does not exist");
       dbus_g_method_return_error (context, error);
-
-      g_object_unref (account);
-      g_object_unref (tp_dbus);
-      g_object_unref (dbus);
-      return;
+      goto out;
     }
   dates = g_list_reverse (dates);
 
@@ -196,9 +189,9 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
 
   tpl_svc_logger_return_from_get_recent_messages (context, answer);
 
-  g_object_unref (account);
-  g_object_unref (tp_dbus);
-  g_object_unref (dbus);
+out:
+  tpl_object_unref_if_not_null (account);
+  tpl_object_unref_if_not_null (tp_dbus);
 }
 
 
