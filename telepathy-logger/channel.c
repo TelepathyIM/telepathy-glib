@@ -248,15 +248,14 @@ got_ready_tp_connection_cb (TpConnection *connection,
 {
   TplActionChain *ctx = user_data;
   TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
-  gchar *chan_path;
+  const gchar *chan_path;
 
   if (error != NULL)
     {
-      g_object_get (G_OBJECT (tpl_chan), "object-path", &chan_path, NULL);
+      chan_path = tp_proxy_get_object_path (TP_PROXY (tpl_chan));
       DEBUG ("%s. Giving up channel '%s' observation", error->message,
           chan_path);
 
-      g_free (chan_path);
       g_object_unref (tpl_chan);
       tpl_actionchain_terminate (ctx);
       return;
@@ -286,15 +285,14 @@ got_ready_tp_channel_cb (TpChannel *channel,
 
   if (error != NULL)
     {
-      gchar *chan_path;
+      const gchar *chan_path;
       TpConnection *tp_conn;
 
-      g_object_get (channel, "connection", &tp_conn, NULL);
-      g_object_get (G_OBJECT (channel), "object-path", &chan_path, NULL);
+      tp_conn = tp_channel_borrow_connection (TP_CHANNEL (channel));
+      chan_path = tp_proxy_get_object_path (TP_PROXY (tp_conn));
       DEBUG ("%s. Giving up channel '%s' observation", error->message,
           chan_path);
 
-      g_free (chan_path);
       g_object_unref (tpl_chan);
       g_object_unref (tp_conn);
       tpl_actionchain_terminate (ctx);

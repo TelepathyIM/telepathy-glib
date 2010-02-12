@@ -529,7 +529,7 @@ tpl_observer_register_channel (TplObserver *self,
   g_return_val_if_fail (glob_map != NULL, FALSE);
 
   /* 'key' will be freed by the hash table on key removal/destruction */
-  g_object_get (G_OBJECT (channel), "object-path", &key, NULL);
+  key = g_strdup (tp_proxy_get_object_path (G_OBJECT (channel)));
 
   if (g_hash_table_lookup (glob_map, key) != NULL)
     {
