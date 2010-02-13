@@ -22,7 +22,7 @@
 #ifndef __TPL_DEBUG_H__
 #define __TPL_DEBUG_H__
 
-#include "../config.h"
+#include "config.h"
 
 #include <glib.h>
 
