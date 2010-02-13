@@ -22,8 +22,8 @@
 #include "config.h"
 #include "log-store-factory.h"
 
-#include <telepathy-logger/util.h>
 #include <telepathy-logger/log-store-empathy.h>
+#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug.h>
@@ -36,7 +36,7 @@ tpl_log_store_factory_init (void)
   g_return_if_fail (logstores_table == NULL);
 
   logstores_table = g_hash_table_new_full (g_str_hash,
-      (GEqualFunc) tpl_strequal, g_free, NULL);
+      (GEqualFunc) g_str_equal, g_free, NULL);
 }
 
 

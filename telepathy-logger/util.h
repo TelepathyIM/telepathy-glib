@@ -42,12 +42,4 @@
       return; \
     }
 
-#define tpl_object_unref_if_not_null(obj) if (obj != NULL && G_IS_OBJECT (obj)) \
-                                            g_object_unref (obj);
-#define tpl_object_ref_if_not_null(obj) if (obj != NULL && G_IS_OBJECT (obj)) \
-                                            g_object_ref (obj);
-
-
-gboolean tpl_strequal (const gchar *left, const gchar *right);
-
 #endif // __TPL_UTIL_H__

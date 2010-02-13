@@ -49,8 +49,11 @@ tpl_conf_finalize (GObject *obj)
 
   priv = GET_PRIV (obj);
 
-  tpl_object_unref_if_not_null (priv->client);
-  priv->client = NULL;
+  if (priv->client != NULL)
+    {
+      g_object_unref (priv->client);
+      priv->client = NULL;
+    }
 
   G_OBJECT_CLASS (tpl_conf_parent_class)->finalize (obj);
 }

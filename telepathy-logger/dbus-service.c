@@ -28,6 +28,7 @@
 
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
+#include <telepathy-logger/util.h>
 
 #include <extensions/extensions.h>
 
@@ -197,8 +198,11 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
   tpl_svc_logger_return_from_get_recent_messages (context, packed);
 
 out:
-  tpl_object_unref_if_not_null (account);
-  tpl_object_unref_if_not_null (tp_dbus);
+  if (account != NULL)
+    g_object_unref (account);
+
+  if (tp_dbus != NULL)
+    g_object_unref (tp_dbus);
 }
 
 

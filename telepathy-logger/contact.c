@@ -80,8 +80,11 @@ tpl_contact_dispose (GObject *obj)
   TplContact *self = TPL_CONTACT (obj);
   TplContactPriv *priv = GET_PRIV (self);
 
-  tpl_object_unref_if_not_null (priv->contact);
-  priv->contact = NULL;
+  if (priv->contact != NULL)
+    {
+      g_object_unref (priv->contact);
+      priv->contact = NULL;
+    }
 
   G_OBJECT_CLASS (tpl_contact_parent_class)->dispose (obj);
 }

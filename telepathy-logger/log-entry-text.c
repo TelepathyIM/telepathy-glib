@@ -56,8 +56,11 @@ tpl_log_entry_text_dispose (GObject * obj)
   TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (obj);
   TplLogEntryTextPriv *priv = GET_PRIV (self);
 
-  tpl_object_unref_if_not_null (priv->tpl_text);
-  priv->tpl_text = NULL;
+  if (priv->tpl_text != NULL)
+    {
+      g_object_unref (priv->tpl_text);
+      priv->tpl_text = NULL;
+    }
 
   G_OBJECT_CLASS (tpl_log_entry_text_parent_class)->dispose (obj);
 }
@@ -294,9 +297,9 @@ tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (data) || data == NULL);
 
   priv = GET_PRIV (self);
-  tpl_object_unref_if_not_null (priv->tpl_text);
-  priv->tpl_text = data;
-  tpl_object_ref_if_not_null (data);
+  if (priv->tpl_text != NULL)
+    g_object_unref (priv->tpl_text);
+  priv->tpl_text = g_object_ref (data);
 }
 
 

@@ -25,6 +25,7 @@
 #include <telepathy-glib/util.h>
 
 #include <telepathy-logger/channel-text.h>
+#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/debug.h>
@@ -37,7 +38,7 @@ tpl_channel_factory_init (void)
   g_return_if_fail (channel_table == NULL);
 
   channel_table = g_hash_table_new_full (g_str_hash,
-      (GEqualFunc) tpl_strequal, g_free, NULL);
+      (GEqualFunc) g_str_equal, g_free, NULL);
 }
 
 

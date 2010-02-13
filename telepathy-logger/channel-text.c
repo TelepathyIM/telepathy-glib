@@ -246,10 +246,16 @@ tpl_channel_text_dispose (GObject *obj)
 {
   TplChannelTextPriv *priv = GET_PRIV (obj);
 
-  tpl_object_unref_if_not_null (priv->my_contact);
-  priv->my_contact = NULL;
-  tpl_object_unref_if_not_null (priv->remote_contact);
-  priv->remote_contact = NULL;
+  if (priv->my_contact != NULL)
+    {
+      g_object_unref (priv->my_contact);
+      priv->my_contact = NULL;
+    }
+  if (priv->remote_contact != NULL)
+    {
+      g_object_unref (priv->remote_contact);
+      priv->remote_contact = NULL;
+    }
 
   G_OBJECT_CLASS (tpl_channel_text_parent_class)->dispose (obj);
 }

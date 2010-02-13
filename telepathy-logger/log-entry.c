@@ -91,10 +91,16 @@ tpl_log_entry_dispose (GObject *obj)
   TplLogEntry *self = TPL_LOG_ENTRY (obj);
   TplLogEntryPriv *priv = GET_PRIV (self);
 
-  tpl_object_unref_if_not_null (priv->sender);
-  priv->sender = NULL;
-  tpl_object_unref_if_not_null (priv->receiver);
-  priv->receiver = NULL;
+  if (priv->sender != NULL)
+    {
+      g_object_unref (priv->sender);
+      priv->sender = NULL;
+    }
+  if (priv->receiver)
+    {
+      g_object_unref (priv->receiver);
+      priv->receiver = NULL;
+    }
 
   G_OBJECT_CLASS (tpl_log_entry_parent_class)->dispose (obj);
 }
@@ -427,9 +433,9 @@ tpl_log_entry_set_sender (TplLogEntry *self,
 
   priv = GET_PRIV (self);
 
-  tpl_object_unref_if_not_null (priv->sender);
-  priv->sender = data;
-  tpl_object_ref_if_not_null (data);
+  if (priv->sender != NULL)
+    g_object_unref (priv->sender);
+  priv->sender = g_object_ref (data);
   g_object_notify (G_OBJECT(self), "sender");
 }
 
@@ -444,9 +450,9 @@ tpl_log_entry_set_receiver (TplLogEntry *self,
   g_return_if_fail (TPL_IS_CONTACT (data) || data == NULL);
 
   priv = GET_PRIV (self);
-  tpl_object_unref_if_not_null (priv->receiver);
-  priv->receiver = data;
-  tpl_object_ref_if_not_null (data);
+  if (priv->receiver != NULL)
+    g_object_unref (priv->receiver);
+  priv->receiver = g_object_ref (data);
   g_object_notify (G_OBJECT(self), "receiver");
 }
 

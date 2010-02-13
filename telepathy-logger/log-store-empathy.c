@@ -40,10 +40,11 @@
 #include <telepathy-glib/util.h>
 
 #include <telepathy-logger/contact.h>
+#include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store.h>
-#include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/datetime.h>
+#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug.h>

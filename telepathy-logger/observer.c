@@ -240,9 +240,12 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   return;
 
 error:
-  tpl_object_unref_if_not_null (tp_acc);
-  tpl_object_unref_if_not_null (tp_conn);
-  tpl_object_unref_if_not_null (tp_bus_daemon);
+  if (tp_acc != NULL)
+    g_object_unref (tp_acc);
+  if (tp_conn != NULL)
+    g_object_unref (tp_conn);
+  if (tp_bus_daemon != NULL)
+    g_object_unref (tp_bus_daemon);
   g_clear_error (&error);
 
   tp_svc_client_observer_return_from_observe_channels (dbus_context);
@@ -488,8 +491,11 @@ tpl_observer_dispose (GObject *obj)
       g_hash_table_unref (priv->channel_map);
       priv->channel_map = NULL;
     }
-  tpl_object_unref_if_not_null (priv->logmanager);
-  priv->logmanager = NULL;
+  if (priv->logmanager != NULL)
+    {
+      g_object_unref (priv->logmanager);
+      priv->logmanager = NULL;
+    }
 
   G_OBJECT_CLASS (tpl_observer_parent_class)->dispose (obj);
 }

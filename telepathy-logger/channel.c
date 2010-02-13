@@ -30,6 +30,7 @@
 #include <telepathy-logger/action-chain.h>
 #include <telepathy-logger/channel-text.h>
 #include <telepathy-logger/observer.h>
+#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/debug.h>
@@ -104,8 +105,11 @@ tpl_channel_dispose (GObject *obj)
 {
   TplChannelPriv *priv = GET_PRIV (obj);
 
-  tpl_object_unref_if_not_null (priv->account);
-  priv->account = NULL;
+  if (priv->account != NULL)
+    {
+      g_object_unref (priv->account);
+      priv->account = NULL;
+    }
 
   G_OBJECT_CLASS (tpl_channel_parent_class)->dispose (obj);
 }

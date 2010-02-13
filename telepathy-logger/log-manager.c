@@ -599,7 +599,8 @@ tpl_log_manager_async_data_new (void)
 static void
 tpl_log_manager_async_data_free (TplLogManagerAsyncData *data)
 {
-  tpl_object_unref_if_not_null (data->manager);
+  if (data->manager != NULL)
+    g_object_unref (data->manager);
   data->request_free ((gpointer) data->request);
   g_slice_free (TplLogManagerAsyncData, data);
 }
@@ -615,7 +616,8 @@ tpl_log_manager_chat_info_new (void)
 static void
 tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
 {
-  tpl_object_unref_if_not_null (data->account);
+  if (data->account != NULL)
+     g_object_unref (data->account);
   if (data->chat_id != NULL)
     g_free (data->chat_id);
   if (data->date != NULL)

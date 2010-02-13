@@ -48,8 +48,7 @@ libtelepathy_logger_la_SOURCES = \
 		log-store.c			\
 		log-store-empathy.c		\
 		log-store-factory.c		\
-		observer.c			\
-		util.c
+		observer.c
 
 libtelepathy_logger_la_LIBADD = \
 	$(top_builddir)/extensions/libtpl-extensions.la
