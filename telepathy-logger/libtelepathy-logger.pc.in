@@ -7,5 +7,5 @@ Name: Telepathy Logger library
 Description: Access to Telepathy logs
 Requires: telepathy-glib libxml-2.0
 Version: @VERSION@
-Libs: -L${libdir} -llibtelepathy-logger
+Libs: -L${libdir} -ltelepathy-logger
 Cflags: -I${includedir}
