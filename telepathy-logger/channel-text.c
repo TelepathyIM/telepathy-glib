@@ -89,7 +89,7 @@ static void get_chatroom_id_cb (TpConnection *proxy,
 static void pendingproc_get_my_contact (TplActionChain *ctx);
 static void pendingproc_get_remote_contact (TplActionChain *ctx);
 static void pendingproc_get_remote_handle_type (TplActionChain *ctx);
-static void keepon (TplLogEntryText *log);
+static void keepon_on_receiving_signal (TplLogEntryText *log);
 
 
 /* retrieve contacts (me and remote buddy/chatroom) and set TplChannelText
@@ -851,11 +851,11 @@ on_received_signal_with_contact_cb (TpConnection *connection,
   remote = contacts[0];
   tpl_channel_text_set_remote_contact (tpl_text, remote);
 
-  keepon (log);
+  keepon_on_receiving_signal (log);
 }
 
 static void
-keepon (TplLogEntryText *log)
+keepon_on_receiving_signal (TplLogEntryText *log)
 {
   TplChannelText *tpl_text;
   GError *e = NULL;
@@ -961,7 +961,7 @@ on_received_signal_cb (TpChannel *proxy,
         TP_CONTACT_FEATURES_LEN, features, on_received_signal_with_contact_cb,
         log, g_object_unref, NULL);
   else
-    keepon (log);
+    keepon_on_receiving_signal (log);
 
   g_object_unref (tpl_contact_receiver);
 }
