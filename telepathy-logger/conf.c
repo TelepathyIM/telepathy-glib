@@ -19,7 +19,8 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include "conf.h"
+#include "config.h" /* autoheader generated */
+#include "conf.h" /* conf.c module headers */
 
 #include <glib.h>
 

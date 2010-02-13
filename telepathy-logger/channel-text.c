@@ -19,13 +19,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-/*
- * This object acts as a Text Channel context, handling a automaton to
- * set up all the needed information before connect to Text iface
- * signals.
- */
-
-#include "../config.h"
+#include "config.h"
 #include "channel-text.h"
 
 #include <glib.h>

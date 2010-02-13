@@ -19,6 +19,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "config.h"
 #include "dbus-service.h"
 
 #include <glib.h>

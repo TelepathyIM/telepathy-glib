@@ -20,6 +20,7 @@
  * Authors: Richard Hult <richard@imendio.com>
  */
 
+#include "config.h"
 #include "datetime.h"
 
 #include <glib/gi18n.h>

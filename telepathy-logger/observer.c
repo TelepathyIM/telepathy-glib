@@ -19,7 +19,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-
+#include "config.h"
 #include "observer.h"
 
 #include <glib.h>
@@ -38,6 +38,7 @@
 
 #define DEBUG_FLAG TPL_DEBUG_OBSERVER
 #include <telepathy-logger/debug.h>
+
 /**
  * SECTION:observer
  * @title: TplObserver

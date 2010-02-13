@@ -18,6 +18,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "config.h"
 #include "log-entry.h"
 
 #include <glib.h>
@@ -26,6 +27,9 @@
 #include <telepathy-logger/contact.h>
 #include <telepathy-logger/debug.h>
 #include <telepathy-logger/util.h>
+
+#define DEBUG_FLAG TPL_DEBUG_LOG_ENTRY
+#include <telepathy-logger/debug.h>
 
 /**
  * SECTION:log-entry

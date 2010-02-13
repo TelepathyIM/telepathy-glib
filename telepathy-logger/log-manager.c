@@ -22,6 +22,7 @@
  *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "config.h"
 #include "log-manager.h"
 #include "log-manager-priv.h"
 

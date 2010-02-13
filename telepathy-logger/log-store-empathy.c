@@ -23,6 +23,7 @@
  *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "config.h"
 #include "log-store-empathy.h"
 
 #include <string.h>

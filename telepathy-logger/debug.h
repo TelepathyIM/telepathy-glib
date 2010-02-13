@@ -32,14 +32,16 @@ G_BEGIN_DECLS
 
 typedef enum
 {
-  TPL_DEBUG_OBSERVER      = 1 << 0,
-  TPL_DEBUG_CHANNEL       = 1 << 1,
-  TPL_DEBUG_LOG_MANAGER   = 1 << 2,
-  TPL_DEBUG_LOG_STORE     = 1 << 3,
-  TPL_DEBUG_CONF          = 1 << 4,
-  TPL_DEBUG_CONTACT       = 1 << 5,
-  TPL_DEBUG_MAIN          = 1 << 6,
-  TPL_DEBUG_DBUS_SERVICE  = 1 << 7
+  TPL_DEBUG_ACTION_CHAIN  = 1 << 0,
+  TPL_DEBUG_CONF          = 1 << 1,
+  TPL_DEBUG_CONTACT       = 1 << 2,
+  TPL_DEBUG_CHANNEL       = 1 << 3,
+  TPL_DEBUG_DBUS_SERVICE  = 1 << 4,
+  TPL_DEBUG_LOG_ENTRY     = 1 << 5,
+  TPL_DEBUG_LOG_MANAGER   = 1 << 6,
+  TPL_DEBUG_LOG_STORE     = 1 << 7,
+  TPL_DEBUG_MAIN          = 1 << 8,
+  TPL_DEBUG_OBSERVER      = 1 << 9
 } TplDebugFlags;
 
 void tpl_debug_set_flags_from_env (void);

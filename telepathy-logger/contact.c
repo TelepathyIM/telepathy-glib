@@ -19,6 +19,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "config.h"
 #include "contact.h"
 
 #include <telepathy-glib/account.h>

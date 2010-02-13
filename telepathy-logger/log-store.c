@@ -21,7 +21,11 @@
  *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#include "config.h"
 #include "log-store.h"
+
+#define DEBUG_FLAG TPL_DEBUG_LOG_STORE
+#include <telepathy-logger/debug.h>
 
 /**
  * SECTION:log-store

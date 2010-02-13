@@ -30,14 +30,16 @@
 static TplDebugFlags flags = 0;
 
 static GDebugKey keys[] = {
-  { "observer",     TPL_DEBUG_OBSERVER },
+  { "action-chain", TPL_DEBUG_ACTION_CHAIN },
   { "channel",      TPL_DEBUG_CHANNEL },
-  { "log-manager",  TPL_DEBUG_LOG_MANAGER },
-  { "log-store",    TPL_DEBUG_LOG_STORE },
   { "conf",         TPL_DEBUG_CONF },
   { "contact",      TPL_DEBUG_CONTACT },
-  { "main",         TPL_DEBUG_MAIN },
   { "dbus-service", TPL_DEBUG_DBUS_SERVICE },
+  { "log-entry",    TPL_DEBUG_LOG_ENTRY },
+  { "log-manager",  TPL_DEBUG_LOG_MANAGER },
+  { "log-store",    TPL_DEBUG_LOG_STORE },
+  { "main",         TPL_DEBUG_MAIN },
+  { "observer",     TPL_DEBUG_OBSERVER },
   { 0, },
 };
 
