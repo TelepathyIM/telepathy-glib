@@ -586,7 +586,7 @@ tpl_observer_unregister_channel (TplObserver *self,
   g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
   g_return_val_if_fail (glob_map != NULL, FALSE);
 
-  g_object_get (G_OBJECT (channel), "object-path", &key, NULL);
+  key = g_strdup (tp_proxy_get_object_path (TP_PROXY (channel)));
 
   DEBUG ("Unregistering channel path %s", key);
 

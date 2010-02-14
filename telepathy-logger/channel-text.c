@@ -113,7 +113,6 @@ got_contact_cb (TpConnection *connection,
   TplChannelTextPriv *priv = GET_PRIV (tpl_text);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpChannel *tp_chan = TP_CHANNEL (tpl_chan);
-  gchar *conn_path;
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
@@ -123,8 +122,10 @@ got_contact_cb (TpConnection *connection,
 
   if (n_failed > 0)
     {
-      g_object_get (G_OBJECT (tp_channel_borrow_connection
-          (tp_chan)), "object-path", &conn_path, NULL);
+      TpConnection *tp_conn = tp_channel_borrow_connection (tp_chan);
+      gchar *conn_path;
+
+      conn_path = g_strdup (tp_proxy_get_object_path (TP_PROXY (tp_conn)));
 
       CHAN_DEBUG (tpl_text, "Error resolving self handle for connection %s."
          " Aborting channel observation", conn_path);
