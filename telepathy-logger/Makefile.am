@@ -3,7 +3,7 @@ include $(top_srcdir)/tools/flymake.mk
 
 AM_CPPFLAGS =						\
 	$(ERROR_CFLAGS)					\
-	-DG_LOG_DOMAIN=\"telepathy-logger\"		\
+	-DG_LOG_DOMAIN=\"libtelepathy-logger\"		\
 	$(LIBTPL_CFLAGS)				\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
