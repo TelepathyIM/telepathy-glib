@@ -19,7 +19,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include <config.h>
+#include <../config.h>
 
 #include <glib.h>
 #include <telepathy-glib/telepathy-glib.h>
@@ -90,7 +90,7 @@ log_handler (const gchar *log_domain,
 }
 #endif /* ENABLE_DEBUG */
 
-static void
+static TplDBusService *
 telepathy_logger_dbus_init (void)
 {
   TplDBusService *dbus_srv = NULL;
@@ -98,6 +98,7 @@ telepathy_logger_dbus_init (void)
   GError *error = NULL;
 
 
+  DEBUG ("Initializing TPL DBus service");
   tp_bus = tp_dbus_daemon_dup (&error);
   if (tp_bus == NULL)
     {
@@ -117,11 +118,15 @@ telepathy_logger_dbus_init (void)
   dbus_g_connection_register_g_object (tp_get_bus(), TPL_DBUS_SRV_OBJECT_PATH,
       G_OBJECT (dbus_srv));
 
+  DEBUG ("TPL DBus service registered to: %s",
+      TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME);
+
 out:
   if (error != NULL)
     g_error_free (error);
   g_object_unref (tp_bus);
-  g_object_unref (dbus_srv);
+
+  return dbus_srv;
 }
 
 
@@ -129,7 +134,8 @@ int
 main (int argc,
     char *argv[])
 {
-  TplObserver *observer;
+  TplDBusService *dbus_srv = NULL;
+  TplObserver *observer = NULL;
   GError *error = NULL;
 
   g_type_init ();
@@ -173,13 +179,15 @@ main (int argc,
       DEBUG ("Error during D-Bus registration: %s", error->message);
       return 1;
     }
+  DEBUG ("TPL Observer registered to: %s", TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
 
-  telepathy_logger_dbus_init ();
+  dbus_srv = telepathy_logger_dbus_init ();
 
   loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (loop);
 
   g_object_unref (observer);
+  g_object_unref (dbus_srv);
   tpl_channel_factory_deinit ();
 
 #ifdef ENABLE_DEBUG
