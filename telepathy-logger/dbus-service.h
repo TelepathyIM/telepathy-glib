@@ -24,7 +24,6 @@
 
 #include <glib-object.h>
 
-#include <telepathy-logger/dbus-service-client.h>
 #include <telepathy-logger/log-manager.h>
 
 #define TPL_DBUS_SRV_WELL_KNOWN_BUS_NAME \
