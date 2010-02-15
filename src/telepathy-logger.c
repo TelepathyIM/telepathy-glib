@@ -90,6 +90,7 @@ log_handler (const gchar *log_domain,
 }
 #endif /* ENABLE_DEBUG */
 
+
 static TplDBusService *
 telepathy_logger_dbus_init (void)
 {
@@ -123,8 +124,9 @@ telepathy_logger_dbus_init (void)
 
 out:
   if (error != NULL)
-    g_error_free (error);
-  g_object_unref (tp_bus);
+      g_clear_error (&error);
+  if (tp_bus != NULL)
+    g_object_unref (tp_bus);
 
   return dbus_srv;
 }
@@ -186,8 +188,11 @@ main (int argc,
   loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (loop);
 
-  g_object_unref (observer);
-  g_object_unref (dbus_srv);
+out:
+  if (observer != NULL)
+    g_object_unref (observer);
+  if (dbus_srv != NULL)
+    g_object_unref (dbus_srv);
   tpl_channel_factory_deinit ();
 
 #ifdef ENABLE_DEBUG

@@ -465,7 +465,8 @@ tpl_observer_register_dbus (TplObserver *self,
       tp_proxy_get_dbus_connection (TP_PROXY (tp_bus)),
       TPL_OBSERVER_OBJECT_PATH, G_OBJECT (self));
 out:
-  g_object_unref (tp_bus);
+  if (tp_bus != NULL)
+    g_object_unref (tp_bus);
   return ret;
 }
 
