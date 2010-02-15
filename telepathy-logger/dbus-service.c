@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/util.h>
 
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
@@ -34,9 +35,6 @@
 
 #define DEBUG_FLAG TPL_DEBUG_DBUS_SERVICE
 #include <telepathy-logger/debug.h>
-
-#define DBUS_STRUCT_STRING_STRING_UINT \
-  (dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_INVALID))
 
 static void tpl_logger_iface_init (gpointer iface, gpointer iface_data);
 
@@ -88,11 +86,11 @@ tpl_assu_marshal (GList *data)
   retval = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 
   DEBUG ("Marshalled a(ssu) data:");
-  for (idx = 0, data_ptr = data; data_ptr != NULL;
+  for (idx = 0, data_ptr = data;
+      data_ptr != NULL;
       data_ptr = g_list_next (data_ptr), ++idx)
     {
       TplLogEntry *log = data_ptr->data;
-      GValue *value = g_new0 (GValue, 1);
 
       gchar *message = g_strdup (tpl_log_entry_text_get_message (
           TPL_LOG_ENTRY_TEXT (log)));
@@ -100,17 +98,13 @@ tpl_assu_marshal (GList *data)
           tpl_log_entry_text_get_sender (TPL_LOG_ENTRY_TEXT (log))));
       guint timestamp = tpl_log_entry_get_timestamp (log);
 
-      g_value_init (value, DBUS_STRUCT_STRING_STRING_UINT);
-      g_value_take_boxed (value, dbus_g_type_specialized_construct (
-          DBUS_STRUCT_STRING_STRING_UINT));
+      g_ptr_array_add (retval, tp_value_array_build (3,
+          G_TYPE_STRING, sender,
+          G_TYPE_STRING, message,
+          G_TYPE_INT64, timestamp,
+          G_TYPE_INVALID));
 
-      dbus_g_type_struct_set (value, 0, sender, 1, message, 2, timestamp,
-          G_MAXUINT);
-      g_ptr_array_add (retval, g_value_get_boxed (value));
-      g_free (value);
-
-      DEBUG ("%d = %s / %s / %d", idx, sender,
-          message, timestamp);
+      DEBUG ("%d = %s / %s / %d", idx, sender, message, timestamp);
     }
   return retval;
 }
