@@ -61,14 +61,14 @@ G_END_DECLS
 
 #define DEBUGGING gabble_debug_flag_is_set (DEBUG_FLAG)
 
-#define CHAN_DEBUG(chan, format, ...) \
+/* The same of DEBUG, printing also the object-path property for the TpProxy
+ * passed as first arg */
+#define PATH_DEBUG(proxy, format, ...) \
 G_STMT_START { \
-  gchar *path; \
-  g_assert (TP_IS_CHANNEL (chan)); \
-  g_object_get (TP_CHANNEL (chan), "object-path", &path, NULL); \
-  tpl_debug (DEBUG_FLAG, "%s: %s: " format , G_STRFUNC, path, \
-    ##__VA_ARGS__); \
-  g_free (path); \
+  const gchar *path; \
+  g_assert (TP_IS_PROXY (proxy)); \
+  path = tp_proxy_get_object_path (TP_PROXY (proxy)); \
+  DEBUG (" %s: " format, path, ##__VA_ARGS__); \
 } G_STMT_END
 
 #endif /* DEBUG_FLAG */
@@ -79,7 +79,7 @@ G_STMT_START { \
 
 #define DEBUG(format, ...) G_STMT_START { } G_STMT_END
 #define DEBUGGING 0
-#define CHAN_DEBUG(chan, format, ...) G_STMT_START { } G_STMT_END
+#define PATH_DEBUG(chan, format, ...) G_STMT_START { } G_STMT_END
 
 #endif /* DEBUG_FLAG */
 

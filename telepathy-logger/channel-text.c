@@ -125,7 +125,7 @@ got_contact_cb (TpConnection *connection,
 
       conn_path = tp_proxy_get_object_path (TP_PROXY (tp_conn));
 
-      CHAN_DEBUG (tpl_text, "Error resolving self handle for connection %s."
+      PATH_DEBUG (tpl_text, "Error resolving self handle for connection %s."
          " Aborting channel observation", conn_path);
       tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
 
@@ -143,7 +143,7 @@ got_contact_cb (TpConnection *connection,
         tpl_channel_text_set_remote_contact (tpl_text, contacts[0]);
         break;
       default:
-        CHAN_DEBUG (tpl_text, "retrieving TpContacts: passing invalid value"
+        PATH_DEBUG (tpl_text, "retrieving TpContacts: passing invalid value"
             " for selector: %d Aborting channel observation", priv->selector);
         tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
         g_object_unref (observer);
@@ -204,26 +204,26 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx)
         tpl_actionchain_prepend (ctx, pendingproc_get_chatroom_id);
         break;
       case TP_HANDLE_TYPE_NONE:
-        CHAN_DEBUG (tpl_text, "HANDLE_TYPE_NONE received, probably an anonymous "
+        PATH_DEBUG (tpl_text, "HANDLE_TYPE_NONE received, probably an anonymous "
             "chat, like MSN ones. TODO: implement this possibility");
         tpl_actionchain_terminate (ctx);
         return;
         break;
       /* follows unhandled TpHandleType */
       case TP_HANDLE_TYPE_LIST:
-        CHAN_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_LIST: "
+        PATH_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_LIST: "
             "un-handled. Check the TelepathyLogger.client file.");
         tpl_actionchain_terminate (ctx);
         return;
         break;
       case TP_HANDLE_TYPE_GROUP:
-        CHAN_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_GROUP: "
+        PATH_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_GROUP: "
             "un-handled. Check the TelepathyLogger.client file.");
         tpl_actionchain_terminate (ctx);
         return;
         break;
       default:
-        CHAN_DEBUG (tpl_text, "remote handle type unknown %d.",
+        PATH_DEBUG (tpl_text, "remote handle type unknown %d.",
             remote_handle_type);
         tpl_actionchain_terminate (ctx);
         return;
@@ -530,12 +530,12 @@ got_pending_messages_cb (TpChannel *proxy,
 
   if (error != NULL)
     {
-      CHAN_DEBUG (proxy, "retrieving pending messages: %s", error->message);
+      PATH_DEBUG (proxy, "retrieving pending messages: %s", error->message);
       tpl_actionchain_terminate (ctx);
       return;
     }
 
-  CHAN_DEBUG (proxy, "%d pending message(s)", result->len);
+  PATH_DEBUG (proxy, "%d pending message(s)", result->len);
   for (i = 0; i < result->len; ++i)
     {
       GValueArray    *message_struct;
@@ -599,12 +599,12 @@ get_chatroom_id_cb (TpConnection *proxy,
 
   if (error != NULL)
     {
-      CHAN_DEBUG (proxy, "retrieving chatroom identifier: %s", error->message);
+      PATH_DEBUG (proxy, "retrieving chatroom identifier: %s", error->message);
       tpl_actionchain_terminate (ctx);
       return;
     }
 
-  CHAN_DEBUG (proxy, "Chatroom id: %s", identifiers[0]);
+  PATH_DEBUG (proxy, "Chatroom id: %s", identifiers[0]);
   tpl_channel_text_set_chatroom_id (tpl_text, identifiers[0]);
 
   tpl_actionchain_continue (ctx);
@@ -625,7 +625,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_received_signal_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      CHAN_DEBUG (tpl_text, "received signal connect: %s", error->message);
+      PATH_DEBUG (tpl_text, "received signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -635,7 +635,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_sent_signal_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      CHAN_DEBUG (tpl_text, "sent signal connect: %s", error->message);
+      PATH_DEBUG (tpl_text, "sent signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -645,7 +645,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_send_error_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      CHAN_DEBUG (tpl_text, "send error signal connect: %s", error->message);
+      PATH_DEBUG (tpl_text, "send error signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -655,7 +655,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_lost_message_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      CHAN_DEBUG (tpl_text, "lost message signal connect: %s", error->message);
+      PATH_DEBUG (tpl_text, "lost message signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -665,7 +665,7 @@ pendingproc_connect_signals (TplActionChain *ctx)
       tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      CHAN_DEBUG (tpl_text, "channel closed signal connect: %s", error->message);
+      PATH_DEBUG (tpl_text, "channel closed signal connect: %s", error->message);
       g_error_free (error);
       error = NULL;
       is_error = TRUE;
@@ -692,7 +692,7 @@ on_closed_cb (TpChannel *proxy,
   TplObserver *observer = tpl_observer_new ();
 
   if (!tpl_observer_unregister_channel (observer, tpl_chan))
-    CHAN_DEBUG (tpl_chan, "Channel couldn't be unregistered correctly (BUG?)");
+    PATH_DEBUG (tpl_chan, "Channel couldn't be unregistered correctly (BUG?)");
 
   g_object_unref (observer);
 }
@@ -703,7 +703,7 @@ on_lost_message_cb (TpChannel *proxy,
            gpointer user_data,
            GObject *weak_object)
 {
-  CHAN_DEBUG (proxy, "lost message signal catched. nothing logged");
+  PATH_DEBUG (proxy, "lost message signal catched. nothing logged");
   /* TODO log that the system lost a message */
 }
 
@@ -717,7 +717,7 @@ on_send_error_cb (TpChannel *proxy,
          gpointer user_data,
          GObject *weak_object)
 {
-  CHAN_DEBUG (proxy, "unlogged event: TP was unable to send the message: %s",
+  PATH_DEBUG (proxy, "unlogged event: TP was unable to send the message: %s",
       arg_Text);
   /* TODO log that the system was unable to send the message */
 }
@@ -752,7 +752,7 @@ on_sent_signal_cb (TpChannel *proxy,
     {
       remote = tpl_channel_text_get_remote_contact (tpl_text);
       if (remote == NULL)
-        CHAN_DEBUG (tpl_text, "sending message: Remote TplContact=NULL on 1-1"
+        PATH_DEBUG (tpl_text, "sending message: Remote TplContact=NULL on 1-1"
             "Chat");
       tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
       tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
@@ -793,7 +793,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   if (error != NULL)
     {
-      CHAN_DEBUG (tpl_text, "LogStore: %s", error->message);
+      PATH_DEBUG (tpl_text, "LogStore: %s", error->message);
       g_error_free (error);
     }
 
@@ -824,7 +824,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 
   if (error != NULL)
     {
-      CHAN_DEBUG (tpl_text, "Unrecoverable error retrieving remote contact "
+      PATH_DEBUG (tpl_text, "Unrecoverable error retrieving remote contact "
          "information: %s", error->message);
       DEBUG ("Not able to log the received message: %s",
          tpl_log_entry_text_get_message (log));
