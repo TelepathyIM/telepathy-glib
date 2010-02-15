@@ -1,8 +1,30 @@
 #include "constants.h"
 
+#include <glib.h>
+
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-empathy.h>
+
+
+static GMainLoop *loop = NULL;
+
+static void
+got_dates_cb (GObject *obj, GAsyncResult *result, gpointer user_data)
+{
+  GList *ret = tpl_log_manager_async_operation_finish (result, NULL);
+
+  for (; ret != NULL; ret = g_list_next (ret))
+    {
+      gchar *date = ret->data;
+      /* g_assert (!tp_strdiff (date, "12345678")); */
+      g_free (date);
+    }
+    g_list_free (ret);
+    g_main_loop_quit (loop);
+}
+
+
 
 int
 main (int argc, char *argv[])
@@ -45,6 +67,7 @@ main (int argc, char *argv[])
   g_list_foreach (ret, (GFunc) g_free, NULL);
   g_list_free (ret);
 
+
   /* we do not want duplicates */
   ret = tpl_log_manager_get_chats (manager, acc);
   ret = g_list_sort (ret, (GCompareFunc) tpl_log_manager_search_hit_compare);
@@ -56,4 +79,8 @@ main (int argc, char *argv[])
   g_list_free (ret);
 
 
+  tpl_log_manager_get_dates_async (manager, acc, ID, FALSE, got_dates_cb, NULL);
+
+  loop = g_main_loop_new (NULL, FALSE);
+  g_main_loop_run (loop);
 }
