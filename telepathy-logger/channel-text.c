@@ -37,7 +37,6 @@
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/debug.h>
 
-#define TP_CONTACT_FEATURES_LEN 3
 #define TP_CONTACT_MYSELF 0
 #define TP_CONTACT_REMOTE 1
 
@@ -53,7 +52,7 @@ struct _TplChannelTextPriv
   guint selector;
 };
 
-static TpContactFeature features[TP_CONTACT_FEATURES_LEN] = {
+static TpContactFeature features[3] = {
   TP_CONTACT_FEATURE_ALIAS,
   TP_CONTACT_FEATURE_PRESENCE,
   TP_CONTACT_FEATURE_AVATAR_TOKEN
@@ -174,7 +173,7 @@ pendingproc_get_remote_contact (TplActionChain *ctx)
 
   GET_PRIV (tpl_text)->selector = TP_CONTACT_REMOTE;
   tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
-      TP_CONTACT_FEATURES_LEN, features, got_contact_cb, ctx, NULL, NULL);
+      G_N_ELEMENTS (features), features, got_contact_cb, ctx, NULL, NULL);
 }
 
 
@@ -188,7 +187,7 @@ pendingproc_get_my_contact (TplActionChain *ctx)
 
   GET_PRIV (tpl_text)->selector = TP_CONTACT_MYSELF;
   tp_connection_get_contacts_by_handle (tp_conn, 1, &my_handle,
-      TP_CONTACT_FEATURES_LEN, features, got_contact_cb, ctx, NULL, NULL);
+      G_N_ELEMENTS (features), features, got_contact_cb, ctx, NULL, NULL);
 }
 
 
@@ -959,7 +958,7 @@ on_received_signal_cb (TpChannel *proxy,
   /* it's a chatroom and no contact has been pre-cached */
   if (tpl_channel_text_get_remote_contact (tpl_text) == NULL)
     tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
-        TP_CONTACT_FEATURES_LEN, features, on_received_signal_with_contact_cb,
+        G_N_ELEMENTS (features), features, on_received_signal_with_contact_cb,
         log, g_object_unref, NULL);
   else
     keepon_on_receiving_signal (log);
