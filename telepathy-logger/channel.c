@@ -135,7 +135,7 @@ tpl_channel_class_init (TplChannelClass *klass)
   klass->call_when_ready_protected = call_when_ready_protected;
 
   /**
-   * TplObserver:account:
+   * TplChannel:account:
    *
    * the TpAccount instance associated with TplChannel
    */
