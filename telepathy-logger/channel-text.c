@@ -83,7 +83,7 @@ static void pendingproc_get_pending_messages (TplActionChain *ctx);
 static void pendingproc_prepare_tpl_channel (TplActionChain *ctx);
 static void pendingproc_get_chatroom_id (TplActionChain *ctx);
 static void get_chatroom_id_cb (TpConnection *proxy,
-    const gchar **out_Identifiers, const GError *error, gpointer user_data,
+    const gchar **identifiers, const GError *error, gpointer user_data,
     GObject *weak_object);
 static void pendingproc_get_my_contact (TplActionChain *ctx);
 static void pendingproc_get_remote_contact (TplActionChain *ctx);
@@ -138,19 +138,19 @@ got_contact_cb (TpConnection *connection,
 
   switch (priv->selector)
     {
-    case TP_CONTACT_MYSELF:
-      tpl_channel_text_set_my_contact (tpl_text, *contacts);
-      break;
-    case TP_CONTACT_REMOTE:
-      tpl_channel_text_set_remote_contact (tpl_text, *contacts);
-      break;
-    default:
-      CHAN_DEBUG (tpl_text, "retrieving TpContacts: passing invalid value for selector: %d"
-         "Aborting channel observation", priv->selector);
-      tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
-      g_object_unref (observer);
-      tpl_actionchain_terminate (ctx);
-      return;
+      case TP_CONTACT_MYSELF:
+        tpl_channel_text_set_my_contact (tpl_text, contacts[0]);
+        break;
+      case TP_CONTACT_REMOTE:
+        tpl_channel_text_set_remote_contact (tpl_text, contacts[0]);
+        break;
+      default:
+        CHAN_DEBUG (tpl_text, "retrieving TpContacts: passing invalid value"
+            " for selector: %d Aborting channel observation", priv->selector);
+        tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
+        g_object_unref (observer);
+        tpl_actionchain_terminate (ctx);
+        return;
     }
 
   g_object_unref (observer);
@@ -578,24 +578,20 @@ pendingproc_get_chatroom_id (TplActionChain *ctx)
   TpConnection *connection = tp_channel_borrow_connection (TP_CHANNEL (
         tpl_chan));
   TpHandle room_handle;
-  GArray *handles;
+  GArray handles = { (gchar*) &room_handle, 1 };
 
-  handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
   room_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan), NULL);
-  g_array_append_val (handles, room_handle);
 
   tpl_channel_text_set_chatroom (tpl_text, TRUE);
   tp_cli_connection_call_inspect_handles (connection,
-      -1, TP_HANDLE_TYPE_ROOM, handles, get_chatroom_id_cb,
+      -1, TP_HANDLE_TYPE_ROOM, &handles, get_chatroom_id_cb,
       ctx, NULL, NULL);
-
-  g_array_unref (handles);
 }
 
 
 static void
 get_chatroom_id_cb (TpConnection *proxy,
-    const gchar **out_Identifiers,
+    const gchar **identifiers,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -611,8 +607,8 @@ get_chatroom_id_cb (TpConnection *proxy,
     return;
   }
 
-  CHAN_DEBUG (proxy, "Chatroom id: %s", *out_Identifiers);
-  tpl_channel_text_set_chatroom_id (tpl_text, *out_Identifiers);
+  CHAN_DEBUG (proxy, "Chatroom id: %s", identifiers[0]);
+  tpl_channel_text_set_chatroom_id (tpl_text, identifiers[0]);
 
   tpl_actionchain_continue (ctx);
 }
