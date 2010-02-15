@@ -123,7 +123,9 @@ tpl_contact_get_property (GObject *object,
 
 
 static void
-tpl_contact_set_property (GObject *object, guint param_id, const GValue *value,
+tpl_contact_set_property (GObject *object,
+    guint param_id,
+    const GValue *value,
     GParamSpec *pspec)
 {
   TplContact *self = TPL_CONTACT (object);
