@@ -166,9 +166,9 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
   /* for each date returned, get at most <lines> lines, then if needed
    * check the previous date for the missing ones, and so on until
    * <lines> is reached, most recent date first */
-  for (dates_ptr = g_list_reverse (dates);
+  for (dates_ptr = g_list_last (dates);
       dates_ptr != NULL && left_lines > 0;
-      dates_ptr = g_list_next (dates_ptr))
+      dates_ptr = g_list_previous (dates_ptr))
     {
       gchar *date = dates_ptr->data;
       GList *messages = tpl_log_manager_get_messages_for_date (priv->manager,
@@ -176,9 +176,9 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
       GList *messages_ptr;
 
       /* from the most recent message, backward */
-      for (messages_ptr = g_list_reverse (messages);
+      for (messages_ptr = g_list_last (messages);
           messages_ptr != NULL && left_lines > 0;
-          messages_ptr = g_list_next (messages_ptr))
+          messages_ptr = g_list_previous (messages_ptr))
         {
           TplLogEntry *log = messages_ptr->data;
               /* keeps the reference and add to the result */
