@@ -91,8 +91,7 @@ static void pendingproc_get_remote_handle_type (TplActionChain *ctx);
 static void keepon_on_receiving_signal (TplLogEntryText *log);
 
 
-/* retrieve contacts (me and remote buddy/chatroom) and set TplChannelText
- * members  */
+G_DEFINE_TYPE (TplChannelText, tpl_channel_text, TPL_TYPE_CHANNEL)
 
 
 /* used by _get_my_contact and _get_remote_contact */
@@ -238,8 +237,6 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx)
 }
 /* end of async Callbacks */
 
-
-G_DEFINE_TYPE (TplChannelText, tpl_channel_text, TPL_TYPE_CHANNEL)
 
 static void
 tpl_channel_text_dispose (GObject *obj)
