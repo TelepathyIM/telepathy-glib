@@ -49,7 +49,7 @@ static void tpl_log_entry_set_log_id (TplLogEntry *self, guint data);
 struct _TplLogEntryPriv
 {
   guint log_id;
-  time_t timestamp;
+  gint64 timestamp;
   TplLogEntrySignalType signal_type;
   gchar *chat_id;
 
@@ -281,7 +281,7 @@ tpl_log_entry_new (guint log_id,
 }
 
 
-time_t
+gint64
 tpl_log_entry_get_timestamp (TplLogEntry *self)
 {
   TplLogEntryPriv *priv = GET_PRIV (self);
@@ -368,7 +368,7 @@ tpl_log_entry_get_chat_id (TplLogEntry *self)
 
 void
 tpl_log_entry_set_timestamp (TplLogEntry *self,
-    time_t data)
+    gint64 data)
 {
   TplLogEntryPriv *priv = GET_PRIV (self);
 

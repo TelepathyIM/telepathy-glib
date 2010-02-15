@@ -79,7 +79,7 @@ typedef struct
   void (*dispose) (GObject *obj);
   void (*finalize) (GObject *obj);
 
-  time_t (*get_timestamp) (TplLogEntry *self);
+  gint64 (*get_timestamp) (TplLogEntry *self);
   TplLogEntrySignalType (*get_signal_type) (TplLogEntry *self);
   guint (*get_log_id) (TplLogEntry *self);
   TplLogEntryDirection (*get_direction) (TplLogEntry *self);
@@ -87,7 +87,7 @@ typedef struct
   TplContact * (*get_receiver) (TplLogEntry *self);
   const gchar * (*get_chat_id) (TplLogEntry *self);
 
-  void (*set_timestamp) (TplLogEntry *self, time_t data);
+  void (*set_timestamp) (TplLogEntry *self, gint64 data);
   void (*set_signal_type) (TplLogEntry *self, TplLogEntrySignalType data);
   void (*set_log_id) (TplLogEntry *self, guint data);
   void (*set_direction) (TplLogEntry *self, TplLogEntryDirection data);
@@ -103,7 +103,7 @@ GType tpl_log_entry_get_type (void);
 TplLogEntry *tpl_log_entry_new (guint log_id, const gchar *chat_id,
     TplLogEntryDirection direction);
 
-time_t tpl_log_entry_get_timestamp (TplLogEntry * self);
+gint64 tpl_log_entry_get_timestamp (TplLogEntry * self);
 TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry * self);
 guint tpl_log_entry_get_log_id (TplLogEntry *self);
 const gchar *tpl_log_entry_get_chat_id (TplLogEntry * self);
@@ -111,7 +111,7 @@ TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry * self);
 TplContact *tpl_log_entry_get_sender (TplLogEntry * self);
 TplContact *tpl_log_entry_get_receiver (TplLogEntry * self);
 
-void tpl_log_entry_set_timestamp (TplLogEntry * self, time_t data);
+void tpl_log_entry_set_timestamp (TplLogEntry * self, gint64 data);
 void tpl_log_entry_set_signal_type (TplLogEntry *self,
     TplLogEntrySignalType data);
 void tpl_log_entry_set_direction (TplLogEntry * self,
