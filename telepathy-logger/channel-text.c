@@ -161,13 +161,11 @@ pendingproc_get_remote_contact (TplActionChain *ctx)
 {
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
-  TpHandleType remote_handle_type;
   TpHandle remote_handle;
   TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (
         tpl_chan));
 
-  remote_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan),
-      &remote_handle_type);
+  remote_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan), NULL);
 
   GET_PRIV (tpl_text)->selector = TP_CONTACT_REMOTE;
   tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
