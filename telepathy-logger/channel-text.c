@@ -121,15 +121,14 @@ got_contact_cb (TpConnection *connection,
   if (n_failed > 0)
     {
       TpConnection *tp_conn = tp_channel_borrow_connection (tp_chan);
-      gchar *conn_path;
+      const gchar *conn_path;
 
-      conn_path = g_strdup (tp_proxy_get_object_path (TP_PROXY (tp_conn)));
+      conn_path = tp_proxy_get_object_path (TP_PROXY (tp_conn));
 
       CHAN_DEBUG (tpl_text, "Error resolving self handle for connection %s."
          " Aborting channel observation", conn_path);
       tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
 
-      g_free (conn_path);
       g_object_unref (observer);
       tpl_actionchain_terminate (ctx);
       return;
@@ -857,7 +856,7 @@ keepon_on_receiving_signal (TplLogEntryText *log)
   TplContact *tpl_contact_receiver;
   TpContact *remote;
   TpContact *local;
-  gchar *chat_id;
+  const gchar *chat_id;
 
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (log));
 
@@ -881,9 +880,9 @@ keepon_on_receiving_signal (TplLogEntryText *log)
   /* Initialise LogStore and store the message */
 
   if (!tpl_channel_text_is_chatroom (tpl_text))
-    chat_id = g_strdup (tpl_contact_get_identifier (tpl_contact_sender));
+    chat_id = tpl_contact_get_identifier (tpl_contact_sender);
   else
-    chat_id = g_strdup (tpl_channel_text_get_chatroom_id (tpl_text));
+    chat_id = tpl_channel_text_get_chatroom_id (tpl_text);
 
   tpl_log_entry_text_set_chat_id (log, chat_id);
   tpl_log_entry_text_set_chatroom (log,
@@ -899,7 +898,6 @@ keepon_on_receiving_signal (TplLogEntryText *log)
 
   g_object_unref (tpl_contact_sender);
   g_object_unref (logmanager);
-  g_free (chat_id);
 }
 
 static void
