@@ -178,8 +178,8 @@ main (int argc,
 
   if (!tpl_observer_register_dbus (observer, &error))
     {
-      DEBUG ("Error during D-Bus registration: %s", error->message);
-      return 1;
+      g_critical ("Error during D-Bus registration: %s", error->message);
+      goto out;
     }
   DEBUG ("TPL Observer registered to: %s", TPL_OBSERVER_WELL_KNOWN_BUS_NAME);
 
