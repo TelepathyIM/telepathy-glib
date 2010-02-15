@@ -177,8 +177,8 @@ static void
 pendingproc_get_my_contact (TplActionChain *ctx)
 {
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
-  TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (
-        tpl_text));
+  TpConnection *tp_conn = tp_channel_borrow_connection (
+      TP_CHANNEL (tpl_text));
   TpHandle my_handle = tp_connection_get_self_handle (tp_conn);
 
   GET_PRIV (tpl_text)->selector = TP_CONTACT_MYSELF;
@@ -517,6 +517,7 @@ pendingproc_get_pending_messages (TplActionChain *ctx)
       -1, FALSE, got_pending_messages_cb, ctx, NULL, NULL);
 }
 
+
 void
 got_pending_messages_cb (TpChannel *proxy,
     const GPtrArray *result,
@@ -548,8 +549,8 @@ got_pending_messages_cb (TpChannel *proxy,
       message_struct = g_ptr_array_index (result, i);
 
       message_id = g_value_get_uint (g_value_array_get_nth (message_struct, 0));
-      message_timestamp = g_value_get_uint (g_value_array_get_nth
-          (message_struct, 1));
+      message_timestamp = g_value_get_uint (g_value_array_get_nth (
+            message_struct, 1));
       from_handle = g_value_get_uint (g_value_array_get_nth (message_struct, 2));
       message_type = g_value_get_uint (g_value_array_get_nth (message_struct, 3));
       message_flags = g_value_get_uint (g_value_array_get_nth (message_struct, 4));
@@ -563,6 +564,7 @@ got_pending_messages_cb (TpChannel *proxy,
 
   tpl_actionchain_continue (ctx);
 }
+
 
 static void
 pendingproc_get_chatroom_id (TplActionChain *ctx)
@@ -595,11 +597,12 @@ get_chatroom_id_cb (TpConnection *proxy,
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
-  if (error != NULL) {
-    CHAN_DEBUG (proxy, "retrieving chatroom identifier: %s", error->message);
-    tpl_actionchain_terminate (ctx);
-    return;
-  }
+  if (error != NULL)
+    {
+      CHAN_DEBUG (proxy, "retrieving chatroom identifier: %s", error->message);
+      tpl_actionchain_terminate (ctx);
+      return;
+    }
 
   CHAN_DEBUG (proxy, "Chatroom id: %s", identifiers[0]);
   tpl_channel_text_set_chatroom_id (tpl_text, identifiers[0]);
@@ -714,18 +717,19 @@ on_send_error_cb (TpChannel *proxy,
          gpointer user_data,
          GObject *weak_object)
 {
-  CHAN_DEBUG (proxy, "unlogged event: TP was unable to send the message: %s", arg_Text);
+  CHAN_DEBUG (proxy, "unlogged event: TP was unable to send the message: %s",
+      arg_Text);
   /* TODO log that the system was unable to send the message */
 }
 
 
 static void
 on_sent_signal_cb (TpChannel *proxy,
-          guint arg_Timestamp,
-          guint arg_Type,
-          const gchar *arg_Text,
-          gpointer user_data,
-          GObject *weak_object)
+    guint arg_Timestamp,
+    guint arg_Type,
+    const gchar *arg_Text,
+    gpointer user_data,
+    GObject *weak_object)
 {
   GError *error = NULL;
   TplChannelText *tpl_text = TPL_CHANNEL_TEXT (user_data);

@@ -194,7 +194,8 @@ tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
 
 
 GList *
-tpl_log_store_search_new (TplLogStore *self, const gchar *text)
+tpl_log_store_search_new (TplLogStore *self,
+    const gchar *text)
 {
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->search_new)
     return NULL;

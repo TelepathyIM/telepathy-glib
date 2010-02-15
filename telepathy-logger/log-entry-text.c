@@ -80,7 +80,7 @@ tpl_log_entry_text_finalize (GObject * obj)
 
 
 static void
-tpl_log_entry_text_get_prop (GObject *object,
+tpl_log_entry_text_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
@@ -106,7 +106,7 @@ tpl_log_entry_text_get_prop (GObject *object,
 
 
 static void
-tpl_log_entry_text_set_prop (GObject *object,
+tpl_log_entry_text_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
@@ -139,8 +139,8 @@ static void tpl_log_entry_text_class_init (TplLogEntryTextClass *klass)
 
   object_class->finalize = tpl_log_entry_text_finalize;
   object_class->dispose = tpl_log_entry_text_dispose;
-  object_class->get_property = tpl_log_entry_text_get_prop;
-  object_class->set_property = tpl_log_entry_text_set_prop;
+  object_class->get_property = tpl_log_entry_text_get_property;
+  object_class->set_property = tpl_log_entry_text_set_property;
   log_entry_class->equal = tpl_log_entry_text_equal;
 
   param_spec = g_param_spec_uint ("message-type",

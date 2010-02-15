@@ -27,12 +27,12 @@
 #include <telepathy-logger/contact.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_LOG_ENTRY                  (tpl_log_entry_get_type ())
-#define TPL_LOG_ENTRY(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_ENTRY, TplLogEntry))
-#define TPL_LOG_ENTRY_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_LOG_ENTRY, TplLogEntryClass))
-#define TPL_IS_LOG_ENTRY(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_ENTRY))
+#define TPL_TYPE_LOG_ENTRY (tpl_log_entry_get_type ())
+#define TPL_LOG_ENTRY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_ENTRY, TplLogEntry))
+#define TPL_LOG_ENTRY_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_LOG_ENTRY, TplLogEntryClass))
+#define TPL_IS_LOG_ENTRY(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_ENTRY))
 #define TPL_IS_LOG_ENTRY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_LOG_ENTRY))
-#define TPL_LOG_ENTRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_ENTRY, TplLogEntryClass))
+#define TPL_LOG_ENTRY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_ENTRY, TplLogEntryClass))
 
 typedef enum
 {
@@ -103,22 +103,22 @@ GType tpl_log_entry_get_type (void);
 TplLogEntry *tpl_log_entry_new (guint log_id, const gchar *chat_id,
     TplLogEntryDirection direction);
 
-gint64 tpl_log_entry_get_timestamp (TplLogEntry * self);
-TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry * self);
+gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
+TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry *self);
 guint tpl_log_entry_get_log_id (TplLogEntry *self);
 const gchar *tpl_log_entry_get_chat_id (TplLogEntry * self);
-TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry * self);
-TplContact *tpl_log_entry_get_sender (TplLogEntry * self);
-TplContact *tpl_log_entry_get_receiver (TplLogEntry * self);
+TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry *self);
+TplContact *tpl_log_entry_get_sender (TplLogEntry *self);
+TplContact *tpl_log_entry_get_receiver (TplLogEntry *self);
 
-void tpl_log_entry_set_timestamp (TplLogEntry * self, gint64 data);
+void tpl_log_entry_set_timestamp (TplLogEntry *self, gint64 data);
 void tpl_log_entry_set_signal_type (TplLogEntry *self,
     TplLogEntrySignalType data);
-void tpl_log_entry_set_direction (TplLogEntry * self,
+void tpl_log_entry_set_direction (TplLogEntry *self,
     TplLogEntryDirection data);
-void tpl_log_entry_set_chat_id (TplLogEntry * self, const gchar * data);
-void tpl_log_entry_set_sender (TplLogEntry * self, TplContact * data);
-void tpl_log_entry_set_receiver (TplLogEntry * self, TplContact * data);
+void tpl_log_entry_set_chat_id (TplLogEntry *self, const gchar *data);
+void tpl_log_entry_set_sender (TplLogEntry *self, TplContact *data);
+void tpl_log_entry_set_receiver (TplLogEntry *self, TplContact *data);
 
 gboolean tpl_log_entry_equal (TplLogEntry *self, TplLogEntry *data);
 
