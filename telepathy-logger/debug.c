@@ -53,11 +53,10 @@ tpl_debug_set_flags_from_env (void)
 
   flags_string = g_getenv ("TPL_DEBUG");
 
-  tp_debug_set_flags (flags_string);
-
   if (flags_string != NULL)
-    tpl_debug_set_flags (g_parse_debug_string (flags_string, keys,
-          nkeys));
+    tpl_debug_set_flags (g_parse_debug_string (flags_string, keys, nkeys));
+
+  tp_debug_set_flags (g_getenv ("TP_DEBUG"));
 }
 
 
