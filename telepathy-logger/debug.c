@@ -23,7 +23,6 @@
 #include "debug.h"
 
 #include <telepathy-glib/debug.h>
-#include <telepathy-glib/debug-sender.h>
 
 #ifdef ENABLE_DEBUG
 
@@ -76,31 +75,6 @@ tpl_debug_flag_is_set (TplDebugFlags flag)
 GHashTable *flag_to_domains = NULL;
 
 
-static const gchar *
-debug_flag_to_domain (TplDebugFlags flag)
-{
-  if (G_UNLIKELY (flag_to_domains == NULL))
-    {
-      guint i;
-
-      flag_to_domains = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-          NULL, g_free);
-
-      for (i = 0; keys[i].value; i++)
-        {
-          GDebugKey key = (GDebugKey) keys[i];
-          gchar *val;
-
-          val = g_strdup_printf ("%s/%s", G_LOG_DOMAIN, key.key);
-          g_hash_table_insert (flag_to_domains,
-              GUINT_TO_POINTER (key.value), val);
-        }
-    }
-
-  return g_hash_table_lookup (flag_to_domains, GUINT_TO_POINTER (flag));
-}
-
-
 void
 tpl_debug_free (void)
 {
@@ -111,22 +85,6 @@ tpl_debug_free (void)
   flag_to_domains = NULL;
 }
 
-static void
-log_to_debug_sender (TplDebugFlags flag,
-    const gchar *message)
-{
-  TpDebugSender *dbg;
-  GTimeVal now;
-
-  dbg = tp_debug_sender_dup ();
-
-  g_get_current_time (&now);
-
-  tp_debug_sender_add_message (dbg, &now, debug_flag_to_domain (flag),
-      G_LOG_LEVEL_DEBUG, message);
-
-  g_object_unref (dbg);
-}
 
 void tpl_debug (TplDebugFlags flag,
     const gchar *format,
@@ -138,8 +96,6 @@ void tpl_debug (TplDebugFlags flag,
   va_start (args, format);
   message = g_strdup_vprintf (format, args);
   va_end (args);
-
-  log_to_debug_sender (flag, message);
 
   if (flag & flags)
     g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "%s", message);
