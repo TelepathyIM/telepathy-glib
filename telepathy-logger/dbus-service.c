@@ -77,7 +77,7 @@ tpl_dbus_service_new (void)
 
 
 static GPtrArray *
-tpl_assu_marshal (GList *data)
+tpl_chat_message_marshal (GList *data)
 {
   guint idx;
   GList *data_ptr;
@@ -85,18 +85,18 @@ tpl_assu_marshal (GList *data)
 
   retval = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 
-  DEBUG ("Marshalled a(ssu) data:");
+  DEBUG ("Marshalled a(ssx) data:");
+
   for (idx = 0, data_ptr = data;
       data_ptr != NULL;
       data_ptr = g_list_next (data_ptr), ++idx)
     {
       TplLogEntry *log = data_ptr->data;
-
-      gchar *message = g_strdup (tpl_log_entry_text_get_message (
-          TPL_LOG_ENTRY_TEXT (log)));
-      gchar *sender = g_strdup (tpl_contact_get_identifier (
-          tpl_log_entry_text_get_sender (TPL_LOG_ENTRY_TEXT (log))));
-      guint timestamp = tpl_log_entry_get_timestamp (log);
+      const gchar *message = tpl_log_entry_text_get_message (
+          TPL_LOG_ENTRY_TEXT (log));
+      const gchar *sender = tpl_contact_get_identifier (
+          tpl_log_entry_text_get_sender (TPL_LOG_ENTRY_TEXT (log)));
+      gint64 timestamp = tpl_log_entry_get_timestamp (log);
 
       g_ptr_array_add (retval, tp_value_array_build (3,
           G_TYPE_STRING, sender,
@@ -104,8 +104,10 @@ tpl_assu_marshal (GList *data)
           G_TYPE_INT64, timestamp,
           G_TYPE_INVALID));
 
-      DEBUG ("%d = %s / %s / %d", idx, sender, message, timestamp);
+      DEBUG ("%d = %s / %s / %" G_GINT64_FORMAT,
+		      idx, sender, message, timestamp);
     }
+
   return retval;
 }
 
@@ -185,7 +187,7 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
   g_list_foreach (dates, (GFunc) g_free, NULL);
   g_list_free (dates);
 
-  packed = tpl_assu_marshal (ret);
+  packed = tpl_chat_message_marshal (ret);
   g_list_foreach (ret, (GFunc) g_object_unref, NULL);
   g_list_free (ret);
 

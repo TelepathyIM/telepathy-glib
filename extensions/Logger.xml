@@ -39,7 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:member>
 
-      <tp:member type="u" name="Timestamp">
+      <tp:member type="x" name="Timestamp" tp:type="Unix_Timestamp64">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         Unix timestamp for the log entry
         </tp:docstring>
@@ -69,7 +69,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <arg direction="in" name="Is_Chatroom" type="b">
         <tp:docstring>
-        Whether the conversation is a chatroom (i.e., XMMP's MUC) or not
+        Whether the conversation is a chatroom (i.e., XMPP MUC) or not
         </tp:docstring>
       </arg>
 
@@ -77,12 +77,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:docstring>
         how many entries will be returned.
 
-        NOTE: to retreive information that would generate hight traffic, use
-        the library API approach instead of DBbus.
+        NOTE: to retreive information that would generate high traffic, use
+        the library API approach instead of DBus.
         </tp:docstring>
       </arg>
 
-      <arg direction="out" name="Messages" type="a(ssu)"
+      <arg direction="out" name="Messages" type="a(ssx)"
            tp:type="Chat_Message[]" />
 
       <tp:docstring>
