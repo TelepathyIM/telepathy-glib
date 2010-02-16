@@ -53,7 +53,9 @@ extensions/_gen/
 extensions/doc/
 tests/test-*[^ch]
 tests/twisted/telepathy-logger-debug
+tests/twisted/tools/exec-with-log.sh
 tests/twisted/tools/org.freedesktop.Telepathy.Client.TelepathyLogger.service
+tests/twisted/tools/tmp-session-bus.conf
 
 doc/reference/libtelepathy-logger/*.stamp
 doc/reference/libtelepathy-logger/html/
