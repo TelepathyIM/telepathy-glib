@@ -286,7 +286,8 @@ tpl_log_manager_exists (TplLogManager *manager,
 GList *
 tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account,
-    const gchar *chat_id, gboolean chatroom)
+    const gchar *chat_id,
+    gboolean chatroom)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
