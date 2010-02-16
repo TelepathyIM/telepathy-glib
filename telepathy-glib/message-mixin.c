@@ -171,8 +171,6 @@ struct _TpMessage {
 
     /* for receiving */
     guint32 incoming_id;
-    /* A non-NULL reference until we have been queued; borrowed afterwards */
-    GObject *incoming_target;
 
     /* for sending */
     DBusGMethodInvocation *outgoing_context;
@@ -1419,11 +1417,9 @@ tp_message_mixin_get_message_types_async (TpSvcChannelTypeText *iface,
 }
 
 
-static gboolean
-queue_pending (gpointer data)
+static void
+queue_pending (GObject *object, TpMessage *pending)
 {
-  TpMessage *pending = data;
-  GObject *object = pending->incoming_target;
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
   TpChannelTextMessageFlags flags;
   TpChannelTextMessageType type;
@@ -1486,10 +1482,6 @@ queue_pending (gpointer data)
 
       g_free (text);
     }
-
-  g_object_unref (object);
-
-  return FALSE;
 }
 
 
@@ -1533,12 +1525,13 @@ tp_message_mixin_take_received (GObject *object,
     tp_message_set_uint64 (message, 0, "message-received",
         time (NULL));
 
-  /* We don't actually add the pending message to the queue immediately,
-   * to guarantee that the caller of this function gets to see the message ID
-   * before anyone else does (so that it can acknowledge the message to the
-   * network). */
-  message->incoming_target = g_object_ref (object);
-  g_idle_add (queue_pending, message);
+  /* Here we add the message to the incoming queue: Although we have not
+   * returned the message ID to the caller directly at this point, we
+   * have poked it into the TpMessage, which the caller (and anyone connected
+   * to the relevant signals) has access to, so there isn't actually a race
+   * between putting the message into the queue and making its ID available.
+   */
+  queue_pending (object, message);
 
   return message->incoming_id;
 }
