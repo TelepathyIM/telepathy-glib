@@ -22,15 +22,13 @@
 
 #include <glib.h>
 
-#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #include <telepathy-logger/dbus-service.h>
 #include <extensions/extensions.h>
 
-#define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/gabble/jabber/cosimo_2ealfarano_40collabora_2eco_2euk0"
-#define ID "echo@test.collabora.co.uk"
-
-//static GMainLoop *loop = NULL;
+static GMainLoop *mainloop = NULL;
 
 static void
 last_chats_cb (TpProxy *logger,
@@ -50,23 +48,25 @@ last_chats_cb (TpProxy *logger,
 
   for (guint i = 0; i < result->len; ++i)
     {
-      GValueArray    *message_struct;
-      const gchar    *message_body;
-      const gchar           *message_sender;
-      guint           message_timestamp;
+      GValueArray *message_struct;
+      const gchar *message_body;
+      const gchar *message_sender;
+      guint message_timestamp;
 
       message_struct = g_ptr_array_index (result, i);
 
-      message_body = g_value_get_string (g_value_array_get_nth
-          (message_struct, 0));
-      message_sender = g_value_get_string (g_value_array_get_nth
-          (message_struct, 1));
-      message_timestamp = g_value_get_uint (g_value_array_get_nth
+      message_sender = g_value_get_string (
+          g_value_array_get_nth (message_struct, 0));
+      message_body = g_value_get_string (
+          g_value_array_get_nth (message_struct, 1));
+      message_timestamp = g_value_get_int64 (g_value_array_get_nth
           (message_struct, 2));
 
-      g_debug ("%d: [%d] from=%s - %s", i, message_timestamp, message_sender,
+      g_print ("%d: [%d] from=%s: %s\n", i, message_timestamp, message_sender,
           message_body);
     }
+
+  g_main_loop_quit (mainloop);
 }
 
 int
@@ -75,8 +75,19 @@ main (int argc, char *argv[])
   TpDBusDaemon *bus;
   TpProxy *proxy;
   GError *error = NULL;
+  char *account, *identifer;
 
   g_type_init ();
+  mainloop = g_main_loop_new (NULL, FALSE);
+
+  if (argc != 3)
+    {
+      g_printerr ("Usage: ./test-api <account> <identifier>\n");
+      return -1;
+    }
+
+  account = g_strdup_printf ("%s%s", TP_ACCOUNT_OBJECT_PATH_BASE, argv[1]);
+  identifer = argv[2];
 
   bus = tp_dbus_daemon_dup (&error);
   g_assert_no_error (error);
@@ -89,9 +100,15 @@ main (int argc, char *argv[])
 
   g_object_unref (bus);
 
+  tp_proxy_add_interface_by_id (proxy, TPL_IFACE_QUARK_LOGGER);
+
   tpl_cli_logger_call_get_recent_messages (proxy, -1,
-      ACCOUNT_PATH, ID, FALSE, 5,
+      account, identifer, FALSE, 5,
       last_chats_cb, NULL, NULL, NULL);
+
+  g_free (account);
+
+  g_main_loop_run (mainloop);
 
   g_object_unref (proxy);
 
