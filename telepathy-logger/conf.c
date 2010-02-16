@@ -30,8 +30,10 @@
 #include <telepathy-logger/debug.h>
 
 #define GET_PRIV(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TPL_TYPE_CONF, TplConfPriv))
-#define GCONF_KEY_LOGGING_TURNED_ON "/apps/telepathy-logger/logging/turned_on"
-#define GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST "/apps/telepathy-logger/logging/accounts/ignorelist"
+
+#define GCONF_KEY_BASE "/apps/telepathy-logger/"
+#define GCONF_KEY_LOGGING_TURNED_ON GCONF_KEY_BASE "logging/turned_on"
+#define GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST GCONF_KEY_BASE "logging/accounts/ignorelist"
 
 G_DEFINE_TYPE (TplConf, tpl_conf, G_TYPE_OBJECT)
 
@@ -121,7 +123,8 @@ tpl_conf_init (TplConf *self)
  * Returns: an GConfClient instance, owned by the TplConfInstance.
  */
 GConfClient *
-tpl_conf_get_gconf_client (TplConf *self) {
+tpl_conf_get_gconf_client (TplConf *self)
+{
   return GET_PRIV (self)->client;
 }
 
@@ -159,6 +162,7 @@ gboolean
 tpl_conf_is_globally_enabled (TplConf *self,
     GError **error)
 {
+  GConfValue *value;
   gboolean ret;
   GError *loc_error = NULL;
 
@@ -169,7 +173,7 @@ tpl_conf_is_globally_enabled (TplConf *self,
       return FALSE;
     }
 
-  ret = gconf_client_get_bool (GET_PRIV (self)->client,
+  value = gconf_client_get (GET_PRIV (self)->client,
       GCONF_KEY_LOGGING_TURNED_ON, &loc_error);
   if (loc_error != NULL)
     {
@@ -177,8 +181,19 @@ tpl_conf_is_globally_enabled (TplConf *self,
           loc_error->message);
       g_propagate_error (error, loc_error);
       g_error_free (loc_error);
-      return FALSE;
+
+      return TRUE;
     }
+
+  if (value == NULL)
+    {
+      /* built in default is to log */
+      DEBUG ("No value set or schema installed, defaulting to log");
+      return TRUE;
+    }
+
+  ret = gconf_value_get_bool (value);
+  gconf_value_free (value);
 
   return ret;
 }
@@ -210,7 +225,7 @@ tpl_conf_globally_enable (TplConf *self,
       GCONF_KEY_LOGGING_TURNED_ON, enable, &loc_error);
 
   /* According to GConf ref manual, an error is raised only if <key> is
-   * actually holding a differnt type than gboolean. It means something wrong
+   * actually holding a different type than gboolean. It means something wrong
    * is happening outside the library.
    *
    * TODO: is it better to return a GError as well? The above situation is not
@@ -222,11 +237,9 @@ tpl_conf_globally_enable (TplConf *self,
       g_critical ("Probably the Telepathy-Logger GConf's schema has changed "
           "and you're using an out of date library\n");
       g_propagate_error (error, loc_error);
-      g_clear_error (&loc_error);
       g_error_free (loc_error);
       return;
     }
-
 }
 
 
@@ -270,12 +283,13 @@ tpl_conf_get_accounts_ignorelist (TplConf *self,
 /**
  * tpl_conf_set_accounts_ignorelist
  * @self: a TplConf instance
- * @newlist: a new GList containing account's object paths (gchar *) to be ignored
+ * @newlist: a new GList containing account's object paths (gchar *) to be
+ * ignored
  * @error: memory adress where to store a GError, in case of error, or %NULL
  * to ignore error reporting.
  *
- * Globally disables logging for @newlist account's path. If an account is disabled, no
- * signals for such account will be logged.
+ * Globally disables logging for @newlist account's path. If an account is
+ * disabled, no signals for such account will be logged.
  *
  * Note that this will change the global TPL configuration, affecting all the
  * TPL instances, including the TPL logging process and all the clients using
