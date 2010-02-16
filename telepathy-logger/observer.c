@@ -248,6 +248,7 @@ error:
     g_object_unref (tp_bus_daemon);
   g_clear_error (&error);
 
+  DEBUG ("Returning from observe channels");
   tp_svc_client_observer_return_from_observe_channels (dbus_context);
 }
 
@@ -263,6 +264,7 @@ got_tpl_channel_text_ready_cb (GObject *obj,
   observing_ctx->chan_n -= 1;
   if (observing_ctx->chan_n == 0)
     {
+      DEBUG ("Returning from observe channels");
       tp_svc_client_observer_return_from_observe_channels (dbus_ctx);
       g_slice_free (ObservingContext, observing_ctx);
     }

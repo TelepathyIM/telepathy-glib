@@ -625,9 +625,8 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_received_signal_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      PATH_DEBUG (tpl_text, "received signal connect: %s", error->message);
-      g_error_free (error);
-      error = NULL;
+      PATH_DEBUG (tpl_text, "'received' signal connect: %s", error->message);
+      g_clear_error (&error);
       is_error = TRUE;
     }
 
@@ -635,9 +634,8 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_sent_signal_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      PATH_DEBUG (tpl_text, "sent signal connect: %s", error->message);
-      g_error_free (error);
-      error = NULL;
+      PATH_DEBUG (tpl_text, "'sent' signal connect: %s", error->message);
+      g_clear_error (&error);
       is_error = TRUE;
     }
 
@@ -645,9 +643,8 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_send_error_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      PATH_DEBUG (tpl_text, "send error signal connect: %s", error->message);
-      g_error_free (error);
-      error = NULL;
+      PATH_DEBUG (tpl_text, "'send error' signal connect: %s", error->message);
+      g_clear_error (&error);
       is_error = TRUE;
     }
 
@@ -655,9 +652,8 @@ pendingproc_connect_signals (TplActionChain *ctx)
       on_lost_message_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      PATH_DEBUG (tpl_text, "lost message signal connect: %s", error->message);
-      g_error_free (error);
-      error = NULL;
+      PATH_DEBUG (tpl_text, "'lost message' signal connect: %s", error->message);
+      g_clear_error (&error);
       is_error = TRUE;
     }
 
@@ -665,9 +661,8 @@ pendingproc_connect_signals (TplActionChain *ctx)
       tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      PATH_DEBUG (tpl_text, "channel closed signal connect: %s", error->message);
-      g_error_free (error);
-      error = NULL;
+      PATH_DEBUG (tpl_text, "'closed' signal connect: %s", error->message);
+      g_clear_error (&error);
       is_error = TRUE;
     }
 
