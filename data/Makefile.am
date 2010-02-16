@@ -3,7 +3,7 @@ schemas_DATA 	 = telepathy-logger.schemas
 
 servicefiledir = $(datadir)/dbus-1/services
 servicefile_in_files = \
-	org.freedesktop.Telepathy.Client.TelepathyLogger.service.in	\
+	org.freedesktop.Telepathy.Client.Logger.service.in	\
 	org.freedesktop.Telepathy.Logger.service.in
 servicefile_DATA = $(servicefile_in_files:.service.in=.service)
 %.service: %.service.in Makefile

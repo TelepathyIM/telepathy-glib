@@ -29,9 +29,9 @@
 #include <telepathy-logger/channel-factory.h>
 
 #define TPL_OBSERVER_WELL_KNOWN_BUS_NAME \
-  "org.freedesktop.Telepathy.Client.TelepathyLogger"
+  "org.freedesktop.Telepathy.Client.Logger"
 #define TPL_OBSERVER_OBJECT_PATH \
-  "/org/freedesktop/Telepathy/Client/TelepathyLogger"
+  "/org/freedesktop/Telepathy/Client/Logger"
 
 
 G_BEGIN_DECLS
