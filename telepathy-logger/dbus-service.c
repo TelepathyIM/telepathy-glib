@@ -188,10 +188,12 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
   g_list_free (dates);
 
   packed = tpl_chat_message_marshal (ret);
-  g_list_foreach (ret, (GFunc) g_object_unref, NULL);
-  g_list_free (ret);
 
   tpl_svc_logger_return_from_get_recent_messages (context, packed);
+
+  g_list_foreach (ret, (GFunc) g_object_unref, NULL);
+  g_list_free (ret);
+  g_ptr_array_free (packed, TRUE);
 
 out:
   if (account != NULL)
@@ -199,6 +201,8 @@ out:
 
   if (tp_dbus != NULL)
     g_object_unref (tp_dbus);
+
+  g_clear_error (&error);
 }
 
 
