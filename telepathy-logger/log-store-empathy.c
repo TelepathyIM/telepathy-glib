@@ -547,7 +547,7 @@ add_message_text (TplLogStore *self,
 /* First of two phases selection: understand the type LogEntry */
 static gboolean
 log_store_empathy_add_message (TplLogStore *self,
-    gpointer message,
+    TplLogEntry *message,
     GError **error)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
@@ -559,8 +559,7 @@ log_store_empathy_add_message (TplLogStore *self,
       case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR:
       case TPL_LOG_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE:
       case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
-        return add_message_text (self,
-            TPL_LOG_ENTRY_TEXT (message), error);
+        return add_message_text (self, TPL_LOG_ENTRY_TEXT (message), error);
       default:
         return FALSE;
     }
