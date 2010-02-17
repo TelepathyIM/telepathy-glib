@@ -763,13 +763,15 @@ on_sent_signal_cb (TpChannel *proxy,
 
   /* Initialise TplLogEntryText */
   if (!tpl_channel_text_is_chatroom (tpl_text))
-    chat_id = g_strdup (tpl_contact_get_identifier (tpl_contact_receiver));
+    chat_id = tpl_contact_get_identifier (tpl_contact_receiver);
   else
-    chat_id = g_strdup (tpl_channel_text_get_chatroom_id (tpl_text));
+    chat_id = tpl_channel_text_get_chatroom_id (tpl_text);
 
-  log = tpl_log_entry_text_new (arg_Timestamp, chat_id,
+  account_path = tp_proxy_get_object_path (
+      TP_PROXY (tpl_channel_get_account (TPL_CHANNEL (tpl_text))));
+
+  log = tpl_log_entry_text_new (arg_Timestamp, account_path, chat_id,
       TPL_LOG_ENTRY_DIRECTION_OUT);
-  g_free (chat_id);
 
   tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
   tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
