@@ -64,7 +64,8 @@ typedef struct
 
 GType tpl_log_entry_text_get_type (void);
 
-TplLogEntryText *tpl_log_entry_text_new (guint log_id, const gchar *chat_id,
+TplLogEntryText *tpl_log_entry_text_new (guint log_id,
+    const gchar *account_path, const gchar *chat_id,
     TplLogEntryDirection direction);
 
 TpChannelTextMessageType tpl_log_entry_text_message_type_from_str (

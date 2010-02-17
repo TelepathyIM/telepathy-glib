@@ -177,11 +177,14 @@ tpl_log_entry_text_init (TplLogEntryText * self)
 
 
 TplLogEntryText *
-tpl_log_entry_text_new (guint log_id, const gchar *chat_id,
+tpl_log_entry_text_new (guint log_id,
+    const gchar *account_path,
+    const gchar *chat_id,
     TplLogEntryDirection direction)
 {
   return g_object_new (TPL_TYPE_LOG_ENTRY_TEXT,
       "log-id", log_id,
+      "account-path", account_path,
       "chat-id", chat_id,
       "direction", direction,
       NULL);

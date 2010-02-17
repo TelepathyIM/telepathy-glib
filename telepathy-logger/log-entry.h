@@ -86,6 +86,7 @@ typedef struct
   TplContact * (*get_sender) (TplLogEntry *self);
   TplContact * (*get_receiver) (TplLogEntry *self);
   const gchar * (*get_chat_id) (TplLogEntry *self);
+  const gchar * (*get_account_path) (TplLogEntry *self);
 
   void (*set_timestamp) (TplLogEntry *self, gint64 data);
   void (*set_signal_type) (TplLogEntry *self, TplLogEntrySignalType data);
@@ -107,6 +108,8 @@ gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
 TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry *self);
 guint tpl_log_entry_get_log_id (TplLogEntry *self);
 const gchar *tpl_log_entry_get_chat_id (TplLogEntry * self);
+const gchar *tpl_log_entry_get_account_path (TplLogEntry *self);
+
 TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry *self);
 TplContact *tpl_log_entry_get_sender (TplLogEntry *self);
 TplContact *tpl_log_entry_get_receiver (TplLogEntry *self);

@@ -734,7 +734,8 @@ on_sent_signal_cb (TpChannel *proxy,
   TplContact *tpl_contact_receiver = NULL;
   TplLogEntryText *log;
   TplLogManager *logmanager;
-  gchar *chat_id;
+  const gchar *account_path;
+  const gchar *chat_id;
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
@@ -801,6 +802,7 @@ on_sent_signal_cb (TpChannel *proxy,
   g_object_unref (log);
 }
 
+
 static void
 on_received_signal_with_contact_cb (TpConnection *connection,
     guint n_contacts,
@@ -844,6 +846,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 
   keepon_on_receiving_signal (log);
 }
+
 
 static void
 keepon_on_receiving_signal (TplLogEntryText *log)
@@ -899,6 +902,7 @@ keepon_on_receiving_signal (TplLogEntryText *log)
   g_object_unref (logmanager);
 }
 
+
 static void
 on_received_signal_cb (TpChannel *proxy,
     guint arg_ID,
@@ -917,6 +921,8 @@ on_received_signal_cb (TpChannel *proxy,
   TpContact *me;
   TplContact *tpl_contact_receiver;
   TplLogEntryText *log;
+  TpAccount *account = tpl_channel_get_account (TPL_CHANNEL (tpl_text));
+  const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
 
   /* TODO use the Message iface to check the delivery
      notification and handle it correctly */
@@ -929,7 +935,7 @@ on_received_signal_cb (TpChannel *proxy,
     }
 
   /* Initialize TplLogEntryText (part 1) - chat_id still unknown */
-  log = tpl_log_entry_text_new (arg_ID, NULL,
+  log = tpl_log_entry_text_new (arg_ID, account_path, NULL,
       TPL_LOG_ENTRY_DIRECTION_IN);
 
   tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);

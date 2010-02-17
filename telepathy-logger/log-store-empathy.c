@@ -36,6 +36,7 @@
 #include <libxml/tree.h>
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/util.h>
 
@@ -261,7 +262,9 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
    * TplLogStoreEmpathy:writable:
    *
    * Wether the log store is writable.
-   * Default: %FALSE
+   * Default: %FALSE.
+   * Setting a LogStore to %TRUE might result in duplicate entries among logs.
+   *
    * As defined in #TplLogStore.
    */
   param_spec = g_param_spec_boolean ("writable",
@@ -407,7 +410,7 @@ _log_store_empathy_write_to_store (TplLogStore *self,
   basedir = g_path_get_dirname (filename);
   if (!g_file_test (basedir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
     {
-      DEBUG ("Creating directory:'%s'", basedir);
+      DEBUG ("Creating directory: '%s'", basedir);
       g_mkdir_with_parents (basedir, LOG_DIR_CREATE_MODE);
     }
   g_free (basedir);
@@ -440,45 +443,48 @@ add_message_text_chat (TplLogStore *self,
     TplLogEntryText *message,
     GError **error)
 {
-  gboolean ret;
+  gboolean ret = FALSE;
+  TpDBusDaemon *bus_daemon;
   TpAccount *account;
   TplContact *sender;
   const gchar *body_str;
-  const gchar *str;
   gchar *avatar_token = NULL;
   gchar *body;
   gchar *timestamp;
   gchar *contact_name;
   gchar *contact_id;
   gchar *entry;
-  const gchar *chat_id;
-  gboolean chatroom;
   TpChannelTextMessageType msg_type;
 
-  chat_id = tpl_log_entry_get_chat_id (TPL_LOG_ENTRY (message));
-  chatroom = tpl_log_entry_text_is_chatroom (message);
+  bus_daemon = tp_dbus_daemon_dup (error);
+  if (bus_daemon == NULL)
+    {
+      DEBUG ("Error acquiring bus daemon: %s", (*error)->message);
+      goto out;
+    }
 
-  sender = tpl_log_entry_get_sender (TPL_LOG_ENTRY (message));
-  account =
-    tpl_channel_get_account (TPL_CHANNEL (
-          tpl_log_entry_text_get_tpl_channel_text (message)));
+  account = tp_account_new (bus_daemon,
+      tpl_log_entry_get_account_path (TPL_LOG_ENTRY (message)), error);
+  if (account == NULL)
+    {
+      DEBUG ("Error acquiring TpAccount proxy: %s", (*error)->message);
+      goto out;
+    }
+
   body_str = tpl_log_entry_text_get_message (message);
-  msg_type = tpl_log_entry_text_get_message_type (message);
-
   if (TPL_STR_EMPTY (body_str))
-    return FALSE;
+    goto out;
 
   body = g_markup_escape_text (body_str, -1);
+  msg_type = tpl_log_entry_text_get_message_type (message);
   timestamp = log_store_empathy_get_timestamp_from_message (
       TPL_LOG_ENTRY (message));
 
-  str = tpl_contact_get_alias (sender);
-  contact_name = g_markup_escape_text (str, -1);
-
-  str = tpl_contact_get_identifier (sender);
-
-  contact_id = g_markup_escape_text (str, -1);
+  sender = tpl_log_entry_get_sender (TPL_LOG_ENTRY (message));
+  contact_name = g_markup_escape_text (tpl_contact_get_alias (sender), -1);
+  contact_id = g_markup_escape_text (tpl_contact_get_identifier (sender), -1);
   avatar_token = g_markup_escape_text (tpl_contact_get_avatar_token (sender), -1);
+
   entry = g_strdup_printf ("<message time='%s' cm_id='%d' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'>"
       "%s</message>\n" LOG_FOOTER, timestamp,
@@ -490,16 +496,23 @@ add_message_text_chat (TplLogStore *self,
       tpl_log_entry_text_message_type_to_str (msg_type),
       body);
 
-  ret = _log_store_empathy_write_to_store (self,
-      account, chat_id, chatroom, entry,
-      error);
+  ret = _log_store_empathy_write_to_store (self, account,
+      tpl_log_entry_get_chat_id (TPL_LOG_ENTRY (message)),
+      tpl_log_entry_text_is_chatroom (message),
+      entry, error);
 
+out:
   g_free (contact_id);
   g_free (contact_name);
   g_free (timestamp);
   g_free (body);
   g_free (entry);
   g_free (avatar_token);
+
+  if (bus_daemon != NULL)
+    g_object_unref (bus_daemon);
+  if (account != NULL)
+    g_object_unref (account);
 
   return ret;
 }
@@ -739,6 +752,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
   xmlNodePtr node;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
 
   DEBUG ("Attempting to parse filename:'%s'...", filename);
@@ -817,8 +831,10 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       sender = tpl_contact_new (sender_id);
       tpl_contact_set_account (sender, account);
       tpl_contact_set_alias (sender, sender_name);
+      tpl_contact_set_avatar_token (sender, sender_avatar_token);
 
-      message = tpl_log_entry_text_new (cm_id, NULL,
+      message = tpl_log_entry_text_new (cm_id,
+          tp_proxy_get_object_path (account), NULL,
           TPL_LOG_ENTRY_DIRECTION_NONE);
       tpl_log_entry_set_sender (TPL_LOG_ENTRY (message), sender);
       tpl_log_entry_set_timestamp (TPL_LOG_ENTRY (message), t);

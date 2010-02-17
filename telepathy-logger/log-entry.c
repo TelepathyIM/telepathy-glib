@@ -44,6 +44,9 @@
 G_DEFINE_ABSTRACT_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)
 
 static void tpl_log_entry_set_log_id (TplLogEntry *self, guint data);
+static void tpl_log_entry_set_account_path (TplLogEntry *self,
+    const gchar *data);
+
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogEntry)
 struct _TplLogEntryPriv
@@ -52,6 +55,7 @@ struct _TplLogEntryPriv
   gint64 timestamp;
   TplLogEntrySignalType signal_type;
   gchar *chat_id;
+  gchar *account_path;
 
   /* incoming/outgoing */
   TplLogEntryDirection direction;
@@ -68,6 +72,7 @@ enum {
     PROP_LOG_ID,
     PROP_DIRECTION,
     PROP_CHAT_ID,
+    PROP_ACCOUNT_PATH,
     PROP_SENDER,
     PROP_RECEIVER
 };
@@ -80,6 +85,8 @@ tpl_log_entry_finalize (GObject *obj)
 
   g_free (priv->chat_id);
   priv->chat_id = NULL;
+  g_free (priv->account_path);
+  priv->account_path = NULL;
 
   G_OBJECT_CLASS (tpl_log_entry_parent_class)->finalize (obj);
 }
@@ -96,7 +103,7 @@ tpl_log_entry_dispose (GObject *obj)
       g_object_unref (priv->sender);
       priv->sender = NULL;
     }
-  if (priv->receiver)
+  if (priv->receiver != NULL)
     {
       g_object_unref (priv->receiver);
       priv->receiver = NULL;
@@ -130,6 +137,9 @@ tpl_log_entry_get_property (GObject *object,
         break;
       case PROP_CHAT_ID:
         g_value_set_string (value, priv->chat_id);
+        break;
+      case PROP_ACCOUNT_PATH:
+        g_value_set_string (value, priv->account_path);
         break;
       case PROP_SENDER:
         g_value_set_object (value, priv->sender);
@@ -167,6 +177,9 @@ tpl_log_entry_set_property (GObject *object,
         break;
       case PROP_CHAT_ID:
         tpl_log_entry_set_chat_id (self, g_value_get_string (value));
+        break;
+      case PROP_ACCOUNT_PATH:
+        tpl_log_entry_set_account_path (self, g_value_get_string (value));
         break;
       case PROP_SENDER:
         tpl_log_entry_set_sender (self, g_value_get_object (value));
@@ -236,12 +249,22 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DIRECTION, param_spec);
 
+  /* FIXME: G_PARAM_CONSTRUCT and not G_PARAM_CONSTRUCT_ONLY because it needs to be
+   * set not at instance time in channel_text.c on_received_signal.
+   * It would be much better using G_PARAM_CONSTRUCT_ONLY */
   param_spec = g_param_spec_string ("chat-id",
       "ChatId",
-      "The chat id relative to the log entry's account name",
+      "The chat identifier to which the log entry is related.",
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHAT_ID, param_spec);
+
+  param_spec = g_param_spec_string ("account-path",
+      "AccountPath",
+      "The account path of the TpAccount to which the log entry is related",
+      NULL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ACCOUNT_PATH, param_spec);
 
   param_spec = g_param_spec_object ("sender",
       "Sender",
@@ -366,6 +389,18 @@ tpl_log_entry_get_chat_id (TplLogEntry *self)
 }
 
 
+const gchar *
+tpl_log_entry_get_account_path (TplLogEntry *self)
+{
+  TplLogEntryPriv *priv;
+
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
+
+  priv = GET_PRIV (self);
+  return priv->account_path;
+}
+
+
 void
 tpl_log_entry_set_timestamp (TplLogEntry *self,
     gint64 data)
@@ -463,13 +498,33 @@ tpl_log_entry_set_chat_id (TplLogEntry *self,
 {
   TplLogEntryPriv *priv;
 
-  g_return_if_fail (TPL_IS_LOG_ENTRY (self));
-
   priv = GET_PRIV (self);
-  g_free (priv->chat_id);
+
+  g_return_if_fail (TPL_IS_LOG_ENTRY (self));
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (priv->chat_id == NULL);
+
   priv->chat_id = g_strdup (data);
   g_object_notify (G_OBJECT(self), "chat-id");
 }
+
+
+static void
+tpl_log_entry_set_account_path (TplLogEntry *self,
+    const gchar *data)
+{
+  TplLogEntryPriv *priv;
+
+  priv = GET_PRIV (self);
+
+  g_return_if_fail (TPL_IS_LOG_ENTRY (self));
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (priv->account_path == NULL);
+
+  priv->account_path = g_strdup (data);
+  g_object_notify (G_OBJECT(self), "account-path");
+}
+
 
 /**
  * log_entry:
