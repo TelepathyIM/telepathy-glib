@@ -29,6 +29,7 @@ LIBTPL_HEADERS = \
 		log-manager.h			\
 		log-store.h			\
 		log-store-empathy.h		\
+		observer.h			\
 		util.h
 
 
