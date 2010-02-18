@@ -57,9 +57,6 @@ typedef struct
 {
   GTypeInterface parent;
 
-  gboolean (*is_writable) (TplLogStore *self);
-  gboolean (*is_readable) (TplLogStore *self);
-
   const gchar * (*get_name) (TplLogStore *self);
   gboolean (*exists) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom);

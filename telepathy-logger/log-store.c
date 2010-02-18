@@ -38,27 +38,7 @@
  * implement in order to be used into a #TplLogManager.
  */
 
-/**
- * TplLogStore:writable:
- *
- * Defines wether the object is writable for a #TplLogManager.
- *
- * If an TplLogStore implementation is writable, the #TplLogManager will call
- * it's tpl_log_store_add_message() method every time a loggable even occurs,
- * i.e., everytime tpl_log_manager_add_message() is called.
- */
-
-/**
- * TplLogStore:readable:
- *
- * Defines wether the object is readable for a #TplLogManager.
- *
- * If an TplLogStore implementation is readable, the #TplLogManager will
- * use the query methods against the instance (i.e., tpl_log_store_get_dates())
- * every time a #TplLogManager instance is queried (i.e.,
- * tpl_log_manager_get_date()).
- */
-
+static void tpl_log_store_init (gpointer g_iface);
 
 GType
 tpl_log_store_get_type (void)
@@ -70,7 +50,7 @@ tpl_log_store_get_type (void)
           sizeof (TplLogStoreInterface),
           NULL, /* base_init */
           NULL, /* base_finalize */
-          NULL, /* class_init */
+          (GClassInitFunc) tpl_log_store_init, /* class_init */
           NULL, /* class_finalize */
           NULL, /* class_data */
           0,
@@ -83,6 +63,49 @@ tpl_log_store_get_type (void)
   return type;
 }
 
+static void
+tpl_log_store_init (gpointer g_iface)
+{
+  g_object_interface_install_property (g_iface,
+      g_param_spec_string ("name",
+        "Name",
+        "The TplLogStore implementation's name",
+        NULL,
+        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TplLogStore:writable:
+   *
+   * Defines wether the object is writable for a #TplLogManager.
+   *
+   * If an TplLogStore implementation is writable, the #TplLogManager will call
+   * it's tpl_log_store_add_message() method every time a loggable even occurs,
+   * i.e., everytime tpl_log_manager_add_message() is called.
+   */
+  g_object_interface_install_property (g_iface,
+      g_param_spec_boolean ("readable",
+        "Readable",
+        "Whether this log store is readable",
+        TRUE,
+        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TplLogStore:readable:
+   *
+   * Defines wether the object is readable for a #TplLogManager.
+   *
+   * If an TplLogStore implementation is readable, the #TplLogManager will
+   * use the query methods against the instance (i.e. tpl_log_store_get_dates())
+   * every time a #TplLogManager instance is queried (i.e.,
+   * tpl_log_manager_get_date()).
+   */
+  g_object_interface_install_property (g_iface,
+      g_param_spec_boolean ("writable",
+        "Writable",
+        "Whether this log store is writable",
+        TRUE,
+        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+}
 
 const gchar *
 tpl_log_store_get_name (TplLogStore *self)
@@ -319,18 +342,28 @@ tpl_log_store_get_filtered_messages (TplLogStore *self,
 gboolean
 tpl_log_store_is_writable (TplLogStore *self)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->is_writable)
-    return FALSE;
+  gboolean writable;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->is_writable (self);
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
+
+  g_object_get (self,
+      "writable", &writable,
+      NULL);
+
+  return writable;
 }
 
 
 gboolean
 tpl_log_store_is_readable (TplLogStore *self)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->is_readable)
-    return FALSE;
+  gboolean readable;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->is_readable (self);
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
+
+  g_object_get (self,
+      "writable", &readable,
+      NULL);
+
+  return readable;
 }

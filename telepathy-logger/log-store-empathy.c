@@ -84,17 +84,11 @@ enum {
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
-static void tpl_log_store_get_property (GObject *object, guint param_id, GValue *value,
-    GParamSpec *pspec);
-static void tpl_log_store_set_property (GObject *object, guint param_id, const GValue *value,
-    GParamSpec *pspec);
 static const gchar *log_store_empathy_get_name (TplLogStore *self);
 static void log_store_empathy_set_name (TplLogStore *self, const gchar *data);
 static const gchar *log_store_empathy_get_basedir (TplLogStore *self);
 static void log_store_empathy_set_basedir (TplLogStore *self,
     const gchar *data);
-static gboolean log_store_empathy_is_writable (TplLogStore *self);
-static gboolean log_store_empathy_is_readable (TplLogStore *self);
 static void log_store_empathy_set_writable (TplLogStore *self, gboolean data);
 static void log_store_empathy_set_readable (TplLogStore *self, gboolean data);
 
@@ -104,7 +98,7 @@ G_DEFINE_TYPE_WITH_CODE (TplLogStoreEmpathy, tpl_log_store_empathy,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_LOG_STORE, log_store_iface_init))
 
 static void
-log_store_empathy_dispose (GObject *object)
+tpl_log_store_empathy_dispose (GObject *object)
 {
   TplLogStoreEmpathy *self = TPL_LOG_STORE_EMPATHY (object);
   TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
@@ -124,7 +118,7 @@ log_store_empathy_dispose (GObject *object)
 
 
 static void
-log_store_empathy_finalize (GObject *object)
+tpl_log_store_empathy_finalize (GObject *object)
 {
   TplLogStoreEmpathy *self = TPL_LOG_STORE_EMPATHY (object);
   TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
@@ -143,7 +137,7 @@ log_store_empathy_finalize (GObject *object)
 
 
 static void
-tpl_log_store_get_property (GObject *object,
+tpl_log_store_empathy_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
@@ -172,7 +166,7 @@ tpl_log_store_get_property (GObject *object,
 
 
 static void
-tpl_log_store_set_property (GObject *object,
+tpl_log_store_empathy_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
@@ -206,24 +200,14 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  object_class->finalize = log_store_empathy_finalize;
-  object_class->dispose = log_store_empathy_dispose;
-  object_class->get_property = tpl_log_store_get_property;
-  object_class->set_property = tpl_log_store_set_property;
+  object_class->finalize = tpl_log_store_empathy_finalize;
+  object_class->dispose = tpl_log_store_empathy_dispose;
+  object_class->get_property = tpl_log_store_empathy_get_property;
+  object_class->set_property = tpl_log_store_empathy_set_property;
 
-  /**
-   * TplLogStoreEmpathy:name:
-   *
-   * The log store's name. No default available, it has to be passed at object
-   * creation.
-   * As defined in #TplLogStore.
-   */
-  param_spec = g_param_spec_string ("name",
-      "Name",
-      "The TplLogStore implementation's name",
-      NULL, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_NAME, param_spec);
+  g_object_class_override_property (object_class, PROP_NAME, "name");
+  g_object_class_override_property (object_class, PROP_READABLE, "readable");
+  g_object_class_override_property (object_class, PROP_WRITABLE, "writable");
 
   /* the default value for the basedir prop is composed by user_data_dir () +
    * prop "name" value, it's not possible to know it at param_spec time, so
@@ -242,39 +226,6 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
       NULL, G_PARAM_READABLE | G_PARAM_WRITABLE |
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
-
-  /**
-   * TplLogStoreEmpathy:readable:
-   *
-   * Wether the log store is readable.
-   * Default: %TRUE
-   *
-   * As defined in #TplLogStore.
-   */
-  param_spec = g_param_spec_boolean ("readable",
-      "Readable",
-      "Defines wether the LogStore is readable or not, allowing searching "
-      "into this instance",
-      TRUE, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_READABLE, param_spec);
-
-  /**
-   * TplLogStoreEmpathy:writable:
-   *
-   * Wether the log store is writable.
-   * Default: %FALSE.
-   * Setting a LogStore to %TRUE might result in duplicate entries among logs.
-   *
-   * As defined in #TplLogStore.
-   */
-  param_spec = g_param_spec_boolean ("writable",
-      "Writable",
-      "Defines wether the LogStore is writable or not, allowing message "
-      "to be stored into this instance",
-      FALSE, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_WRITABLE, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogStoreEmpathyPriv));
 }
@@ -1152,27 +1103,6 @@ log_store_empathy_get_basedir (TplLogStore *self)
 }
 
 
-static gboolean
-log_store_empathy_is_readable (TplLogStore *self)
-{
-  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE_EMPATHY (self), FALSE);
-
-  return priv->readable;
-}
-
-
-static gboolean
-log_store_empathy_is_writable (TplLogStore *self)
-{
-  TplLogStoreEmpathyPriv *priv = GET_PRIV (self);
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE_EMPATHY (self), FALSE);
-
-  return priv->writable;
-}
-
 static void
 log_store_empathy_set_name (TplLogStore *self,
     const gchar *data)
@@ -1291,6 +1221,4 @@ log_store_iface_init (gpointer g_iface,
     log_store_empathy_search_in_identifier_chats_new;
   iface->search_new = log_store_empathy_search_new;
   iface->get_filtered_messages = log_store_empathy_get_filtered_messages;
-  iface->is_writable = log_store_empathy_is_writable;
-  iface->is_readable = log_store_empathy_is_readable;
 }
