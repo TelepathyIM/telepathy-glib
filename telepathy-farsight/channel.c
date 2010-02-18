@@ -177,7 +177,7 @@ cb_properties_changed (TpProxy *proxy G_GNUC_UNUSED,
           g_free (self->priv->nat_props.nat_traversal);
           self->priv->nat_props.nat_traversal = NULL;
 
-          if (G_VALUE_HOLDS_STRING (value))
+          if (G_VALUE_HOLDS_STRING (value) && g_value_get_string (value)[0])
             self->priv->nat_props.nat_traversal = g_value_dup_string (value);
         }
       else if (id == self->priv->prop_id_stun_server)
@@ -185,7 +185,7 @@ cb_properties_changed (TpProxy *proxy G_GNUC_UNUSED,
           g_free (self->priv->nat_props.stun_server);
           self->priv->nat_props.stun_server = NULL;
 
-          if (G_VALUE_HOLDS_STRING (value))
+          if (G_VALUE_HOLDS_STRING (value) && g_value_get_string (value)[0])
             self->priv->nat_props.stun_server = g_value_dup_string (value);
         }
       else if (id == self->priv->prop_id_gtalk_p2p_relay_token)
@@ -193,7 +193,7 @@ cb_properties_changed (TpProxy *proxy G_GNUC_UNUSED,
           g_free (self->priv->nat_props.relay_token);
           self->priv->nat_props.relay_token = NULL;
 
-          if (G_VALUE_HOLDS_STRING (value))
+          if (G_VALUE_HOLDS_STRING (value) && g_value_get_string (value)[0])
             self->priv->nat_props.relay_token = g_value_dup_string (value);
         }
       else if (id == self->priv->prop_id_stun_port)
