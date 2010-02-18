@@ -29,6 +29,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
+#include <telepathy-glib/account-manager.h>
 
 #include <telepathy-logger/conf.h>
 #include <telepathy-logger/channel.h>
@@ -87,6 +88,16 @@ static void got_tpl_channel_text_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
 static TplChannelFactory tpl_observer_get_channel_factory (TplObserver *self);
 static GHashTable *tpl_observer_get_channel_map (TplObserver *self);
+
+/* Get open channels API */
+static void tpl_observer_get_open_channels (void);
+static void tpl_observer_prepared_account_manager_cb (GObject *obj,
+    GAsyncResult *result, gpointer user_data);
+static void tpl_observer_got_channel_list_cb (TpProxy *proxy,
+    const GValue *out_Value, const GError *error, gpointer user_data,
+    GObject *weak_object);
+
+/* end of Get open channels API */
 
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplObserver)
@@ -225,8 +236,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
       if (tpl_chan == NULL)
         {
           DEBUG ("%s", error->message);
-          g_error_free (error);
-          error = NULL;
+          g_clear_error (&error);
           continue;
         }
       PATH_DEBUG (tpl_chan, "Starting preparation fo TplChannel instance");
@@ -249,9 +259,13 @@ error:
     g_object_unref (tp_bus_daemon);
   g_clear_error (&error);
 
-  DEBUG ("Returning from observe channels on error condition. "
+  /* observer_channels has been called by the Channel Dispatcher */
+  if (dbus_context != NULL)
+    {
+      DEBUG ("Returning from observe channels on error condition. "
           "Unable to log the channel");
-  tp_svc_client_observer_return_from_observe_channels (dbus_context);
+      tp_svc_client_observer_return_from_observe_channels (dbus_context);
+    }
 }
 
 
@@ -266,8 +280,12 @@ got_tpl_channel_text_ready_cb (GObject *obj,
   observing_ctx->chan_n -= 1;
   if (observing_ctx->chan_n == 0)
     {
-      DEBUG ("Returning from observe channels");
-      tp_svc_client_observer_return_from_observe_channels (dbus_ctx);
+      /* observer_channels has been called by the Channel Dispatcher */
+      if (dbus_ctx != NULL)
+        {
+          DEBUG ("Returning from observe channels");
+          tp_svc_client_observer_return_from_observe_channels (dbus_ctx);
+        }
       g_slice_free (ObservingContext, observing_ctx);
     }
 }
@@ -427,6 +445,8 @@ tpl_observer_init (TplObserver *self)
   priv->channel_map = g_hash_table_new_full (g_str_hash,
       g_str_equal, g_free, g_object_unref);
   priv->logmanager = tpl_log_manager_dup_singleton ();
+
+  tpl_observer_get_open_channels ();
 }
 
 
@@ -622,11 +642,99 @@ tpl_observer_set_channel_factory (TplObserver *self,
 {
   TplObserverPriv *priv = GET_PRIV (self);
 
-  g_return_if_fail (TPL_IS_OBSERVER (self));
-  g_return_if_fail (factory != NULL);
   g_return_if_fail (factory != NULL);
   g_return_if_fail (priv->channel_factory == NULL);
+  g_return_if_fail (TPL_IS_OBSERVER (self));
 
   priv->channel_factory = factory;
+}
 
+/* Retrieving open channel */
+/* This part can be removed when the Channel Dispatcher will implement a
+ * proper API for
+ * org.freedesktop.Telepathy.Connection.Interface.Requests.Channels */
+static void
+tpl_observer_get_open_channels (void)
+{
+  const GQuark features[2] = { TP_ACCOUNT_MANAGER_FEATURE_CORE, 0 };
+
+  TpAccountManager *acc_man = tp_account_manager_dup ();
+  tp_account_manager_prepare_async (acc_man, features,
+      tpl_observer_prepared_account_manager_cb, NULL);
+}
+
+
+static void
+tpl_observer_prepared_account_manager_cb (GObject *obj,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpAccountManager *am = TP_ACCOUNT_MANAGER (obj);
+  GList *list, *l;
+  GError *error = NULL;
+
+  if (!tp_account_manager_prepare_finish (TP_ACCOUNT_MANAGER (obj), result,
+        &error))
+    {
+      DEBUG ("Unable to prepare connection manager: %s", error->message);
+      return;
+    }
+
+  list = tp_account_manager_get_valid_accounts (am);
+
+  for (l = list; l != NULL; l = g_list_next (l))
+    {
+      TpConnection *conn = NULL;
+      TpAccount *acc = l->data;
+      g_assert (TP_IS_ACCOUNT (acc));
+
+      if (!tp_account_is_enabled (acc))
+        continue;
+
+      conn = tp_account_get_connection (acc);
+      /* account's connection is offline */
+      if (conn == NULL)
+        continue;
+
+      tp_cli_dbus_properties_call_get (conn, -1,
+          TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+          "Channels",
+          tpl_observer_got_channel_list_cb, acc, NULL, NULL);
+    }
+  g_list_free (list);
+}
+
+
+void tpl_observer_got_channel_list_cb (TpProxy *proxy,
+    const GValue *out_Value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpAccount *acc = TP_ACCOUNT (user_data);
+  TpConnection *conn = TP_CONNECTION (proxy);
+  TplObserver *observer = tpl_observer_new ();
+  GPtrArray *channels;
+
+  if (error != NULL)
+    {
+      DEBUG ("%s", error->message);
+      return;
+    }
+
+  g_return_if_fail (G_VALUE_HOLDS (out_Value, TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST));
+
+  channels = g_value_get_boxed (out_Value);
+
+  /* call observe_channels with
+   * Dispatch_Operation = NULL, Requests_Satisfied = NULL,
+   * Observer_Info = NULL and DBusGMethodInvocation = NULL
+   * so that it will undertand that it's not been called by a Channel
+   * Dispatcher */
+  tpl_observer_observe_channels (TP_SVC_CLIENT_OBSERVER (observer),
+      tp_proxy_get_object_path (TP_PROXY (acc)),
+      tp_proxy_get_object_path (TP_PROXY (conn)),
+      channels, NULL, NULL, NULL, NULL);
+
+  g_object_unref (observer);
 }
