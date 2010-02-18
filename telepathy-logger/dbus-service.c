@@ -104,8 +104,8 @@ tpl_chat_message_marshal (GList *data)
           G_TYPE_INT64, timestamp,
           G_TYPE_INVALID));
 
-      DEBUG ("%d = %s / %s / %" G_GINT64_FORMAT,
-		      idx, sender, message, timestamp);
+      DEBUG ("%d = %s / %s / %" G_GINT64_FORMAT, idx, sender, message,
+          timestamp);
     }
 
   return retval;

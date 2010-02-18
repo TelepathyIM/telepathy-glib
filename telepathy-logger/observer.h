@@ -35,12 +35,12 @@
 
 
 G_BEGIN_DECLS
-#define TPL_TYPE_OBSERVER	(tpl_observer_get_type ())
-#define TPL_OBSERVER(obj)	(G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_OBSERVER, TplObserver))
-#define TPL_OBSERVER_CLASS(obj)	(G_TYPE_CHECK_CLASS_CAST ((obj), TPL_TYPE_OBSERVER, TplObserverClass))
-#define TPL_IS_OBSERVER(obj)	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_OBSERVER))
-#define TPL_IS_OBSERVER_CLASS(obj)	(G_TYPE_CHECK_CLASS_TYPE ((obj), TPL_TYPE_OBSERVER))
-#define TPL_OBSERVER_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_OBSERVER, TplObserverClass))
+#define TPL_TYPE_OBSERVER (tpl_observer_get_type ())
+#define TPL_OBSERVER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_OBSERVER, TplObserver))
+#define TPL_OBSERVER_CLASS(obj) (G_TYPE_CHECK_CLASS_CAST ((obj), TPL_TYPE_OBSERVER, TplObserverClass))
+#define TPL_IS_OBSERVER(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_OBSERVER))
+#define TPL_IS_OBSERVER_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE ((obj), TPL_TYPE_OBSERVER))
+#define TPL_OBSERVER_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_OBSERVER, TplObserverClass))
 typedef struct _TplObserverPriv TplObserverPriv;
 typedef struct
 {

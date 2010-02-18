@@ -574,7 +574,7 @@ pendingproc_get_chatroom_id (TplActionChain *ctx)
   TpConnection *connection = tp_channel_borrow_connection (TP_CHANNEL (
         tpl_chan));
   TpHandle room_handle;
-  GArray handles = { (gchar*) &room_handle, 1 };
+  GArray handles = { (gchar *) &room_handle, 1 };
 
   room_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan), NULL);
 
