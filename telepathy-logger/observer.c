@@ -162,6 +162,10 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
   g_return_if_fail (!TPL_STR_EMPTY (account));
   g_return_if_fail (!TPL_STR_EMPTY (connection));
 
+  if (dbus_context == NULL)
+    DEBUG ("called during open channel inspection, not by the Channel "
+        "Dispatcher. OK.");
+
   chan_factory = tpl_observer_get_channel_factory (TPL_OBSERVER (self));
 
   /* Check if logging if enabled globally and for the given account_path,
@@ -280,9 +284,9 @@ got_tpl_channel_text_ready_cb (GObject *obj,
   observing_ctx->chan_n -= 1;
   if (observing_ctx->chan_n == 0)
     {
-      /* observer_channels has been called by the Channel Dispatcher */
       if (dbus_ctx != NULL)
         {
+          /* observer_channels has been called by the Channel Dispatcher */
           DEBUG ("Returning from observe channels");
           tp_svc_client_observer_return_from_observe_channels (dbus_ctx);
         }
