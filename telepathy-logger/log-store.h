@@ -47,9 +47,7 @@ typedef struct
 {
   GTypeInterface parent;
 
-  void (*set_writable) (TplLogStore *self, gboolean data);
   gboolean (*is_writable) (TplLogStore *self);
-  void (*set_readable) (TplLogStore *self, gboolean data);
   gboolean (*is_readable) (TplLogStore *self);
 
   const gchar * (*get_name) (TplLogStore *self);
@@ -67,8 +65,6 @@ typedef struct
   GList * (*search_new) (TplLogStore *self, const gchar *text);
   GList * (*search_in_identifier_chats_new) (TplLogStore *self,
       TpAccount *account, gchar const *identifier, const gchar *text);
-  void (*ack_message) (TplLogStore *self, const gchar *chat_id,
-      gboolean chatroom, TplLogEntry *message);
   GList * (*get_filtered_messages) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom, guint num_messages,
       TplLogMessageFilter filter, gpointer user_data);
@@ -92,14 +88,10 @@ GList *tpl_log_store_get_chats (TplLogStore *self, TpAccount *account);
 GList *tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
     TpAccount *account, gchar const *identifier, const gchar *text);
 GList *tpl_log_store_search_new (TplLogStore *self, const gchar *text);
-void tpl_log_store_ack_message (TplLogStore *self,
-    const gchar *chat_id, gboolean chatroom, TplLogEntry *message);
 GList *tpl_log_store_get_filtered_messages (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
     guint num_messages, TplLogMessageFilter filter, gpointer user_data);
-void tpl_log_store_set_writable (TplLogStore *self, gboolean data);
 gboolean tpl_log_store_is_writable (TplLogStore *self);
-void tpl_log_store_set_readable (TplLogStore *self, gboolean data);
 gboolean tpl_log_store_is_readable (TplLogStore *self);
 
 

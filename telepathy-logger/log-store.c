@@ -204,20 +204,6 @@ tpl_log_store_search_new (TplLogStore *self,
 }
 
 
-void
-tpl_log_store_ack_message (TplLogStore *self,
-    const gchar *chat_id,
-    gboolean chatroom,
-    TplLogEntry *message)
-{
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->ack_message)
-    return;
-
-  TPL_LOG_STORE_GET_INTERFACE (self)->ack_message (self, chat_id, chatroom,
-      message);
-}
-
-
 GList *
 tpl_log_store_get_filtered_messages (TplLogStore *self,
     TpAccount *account,
@@ -233,3 +219,25 @@ tpl_log_store_get_filtered_messages (TplLogStore *self,
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_messages (self,
       account, chat_id, chatroom, num_messages, filter, user_data);
 }
+
+
+gboolean
+tpl_log_store_is_writable (TplLogStore *self)
+{
+  if (!TPL_LOG_STORE_GET_INTERFACE (self)->is_writable)
+    return FALSE;
+
+  return TPL_LOG_STORE_GET_INTERFACE (self)->is_writable (self);
+}
+
+
+gboolean
+tpl_log_store_is_readable (TplLogStore *self)
+{
+  if (!TPL_LOG_STORE_GET_INTERFACE (self)->is_readable)
+    return FALSE;
+
+  return TPL_LOG_STORE_GET_INTERFACE (self)->is_readable (self);
+}
+
+

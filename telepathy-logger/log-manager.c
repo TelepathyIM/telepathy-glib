@@ -48,6 +48,8 @@
 typedef struct
 {
   GList *stores;
+  GList *writable_stores;
+  GList *readable_stores;
 } TplLogManagerPriv;
 
 
@@ -92,6 +94,9 @@ log_manager_finalize (GObject *object)
 
   g_list_foreach (priv->stores, (GFunc) g_object_unref, NULL);
   g_list_free (priv->stores);
+  /* no unref needed here, the only reference kept is in priv->stores */
+  g_list_free (priv->writable_stores);
+  g_list_free (priv->readable_stores);
 
   G_OBJECT_CLASS (tpl_log_manager_parent_class)->finalize (object);
 }
@@ -105,9 +110,10 @@ static GObject *
 log_manager_constructor (GType type, guint n_props,
     GObjectConstructParam *props)
 {
-  GObject *retval;
+  GObject *retval = NULL;
   TplLogManagerPriv *priv;
-  TplLogStoreEmpathy *tplogger;
+  TplLogStoreEmpathy *tplogger = NULL;
+  TplLogStoreEmpathy *empathy = NULL;
 
   if (manager_singleton)
     retval = g_object_ref (manager_singleton);
@@ -115,28 +121,49 @@ log_manager_constructor (GType type, guint n_props,
     {
       retval = G_OBJECT_CLASS (tpl_log_manager_parent_class)->constructor
           (type, n_props, props);
+      if (retval == NULL)
+        return NULL;
 
       manager_singleton = TPL_LOG_MANAGER (retval);
       g_object_add_weak_pointer (retval, (gpointer *) & manager_singleton);
 
       priv = GET_PRIV (manager_singleton);
 
-      /* TODO currently I instantiate two LogStore, one read-only, and the
-       * default one, TpLogger, which will be used by add_message to store
-       * (write_access) new entries.
-       * NEXT step: use a LogStore map here, and instantiate LogStores
-       * using it. LogStore map should map names into (TPL_TYPE_LOG_STORE_FOO,
-       * is_writable, is_readable) to be passed to g_object_new cycling over
-       * its keys */
-      tplogger = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY, "name", "TpLogger",
-          "writable", FALSE, "readable", TRUE, NULL);
+      /* The TPL's default read-write logstore */
+      tplogger = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
+          "name", TPL_LOG_MANAGER_LOG_STORE_DEFAULT,
+          "writable", TRUE,
+          "readable", TRUE,
+          NULL);
       if (tplogger == NULL)
+          g_critical ("Error during TplLogStoreEmpathy (name=TpLogger) initialisation.");
+      else
         {
-          DEBUG ("Error during TplLogStoreEmpathy (name=TpLogger) initialisation.");
-          return NULL;
+          /* manual registration, to set up priv->stores for
+           * tpl_log_manager_register_log_store */
+          priv->stores = g_list_prepend (priv->stores, tplogger);
+          priv->writable_stores = g_list_prepend (priv->writable_stores,
+              tplogger);
+          priv->readable_stores = g_list_prepend (priv->readable_stores,
+              tplogger);
         }
 
-      priv->stores = g_list_append (priv->stores, tplogger);
+      /* Load by default the Empathy's legacy 'past coversations' LogStore */
+      empathy = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
+          "name", "Empathy",
+          "writable", FALSE,
+          "readable", TRUE,
+          NULL);
+      if (empathy == NULL)
+        g_critical ("Error during TplLogStoreEmpathy (name=Empathy) initialisation.");
+      else if (!tpl_log_manager_register_log_store (manager_singleton,
+            TPL_LOG_STORE (empathy)))
+        g_critical ("Not able to register the TplLogStore with name=Emapathy. "
+            "Empathy's legacy logs won't be available.");
+
+      /* internally referenced within register_logstore */
+      if (empathy != NULL)
+        g_object_unref (empathy);
     }
 
   return retval;
@@ -192,39 +219,26 @@ tpl_log_manager_add_message (TplLogManager *manager,
 {
   TplLogManagerPriv *priv;
   GList *l;
-  gboolean out = FALSE;
-  gboolean found = FALSE;
-
-  /* TODO: currently it look for a fixed string (add_store) to know there to
-   * send messages.
-   * NEXT step: it will cycle priv->stores and check which has is_writable flag on, and send the log
-   * to every entry with it TRUE. Multiple writers are possible here */
-  const gchar *add_store = "TpLogger";
+  gboolean retval = FALSE;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
   priv = GET_PRIV (manager);
 
-  /* TODO find a way to select just one LogStore, ie just the default one, or
-   * just "zeitgeist" in case an application is only interested in a specific
-   * store */
-  for (l = priv->stores; l != NULL; l = g_list_next (l))
+  /* send the message to any writable log store */
+  for (l = priv->writable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = l->data;
+      gboolean result;
 
-      if (!tp_strdiff (tpl_log_store_get_name (store), add_store))
-        {
-          out = tpl_log_store_add_message (store, message, error);
-          found = TRUE;
-          break;
-        }
+      result = tpl_log_store_add_message (store, message, error);
+      /* TRUE if at least one LogStore succeeds */
+      retval = result || retval;
     }
-
-  if (!found)
-    DEBUG ("Failed to find chosen log store to write to.");
-
-  return out;
+  if (!retval)
+    g_critical ("Failed to write to at least writable LogStore.");
+  return retval;
 }
 
 
@@ -242,17 +256,44 @@ tpl_log_manager_add_message (TplLogManager *manager,
  * @logstore has to properly implement all the search/query methods if the
  * #TplLogStore:readable is set to %TRUE.
  */
-void
+gboolean
 tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore)
 {
   TplLogManagerPriv *priv = GET_PRIV (self);
+  GList *l;
+  gboolean found = FALSE;
 
-  g_return_if_fail (TPL_IS_LOG_MANAGER (self));
-  g_return_if_fail (TPL_IS_LOG_STORE (logstore));
-  g_return_if_fail (priv->stores != NULL);
+  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_STORE (logstore), FALSE);
+  g_return_val_if_fail (priv->stores != NULL, FALSE);
+  /* for consistency, at least the default log store is RW */
+  g_return_val_if_fail (priv->writable_stores != NULL, FALSE);
+  g_return_val_if_fail (priv->readable_stores != NULL, FALSE);
 
-  priv->stores = g_list_append (priv->stores, logstore);
+  /* check that the logstore name is not already used */
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
+    {
+      TplLogStore *store = l->data;
+      const gchar *name = tpl_log_store_get_name (logstore);
+
+      if (!tp_strdiff (name, tpl_log_store_get_name (store)))
+        found = TRUE;
+    }
+  if (found)
+    return FALSE;
+
+  if (tpl_log_store_is_readable (logstore))
+    priv->readable_stores = g_list_prepend (priv->readable_stores, logstore);
+
+  if (tpl_log_store_is_writable (logstore))
+    priv->writable_stores = g_list_prepend (priv->writable_stores, logstore);
+
+  /* reference just once, writable/readable lists are kept in sync with the
+   * general list and never written separatedly */
+  priv->stores = g_list_prepend (priv->stores, g_object_ref (logstore));
+
+  return TRUE;
 }
 
 
@@ -1009,7 +1050,7 @@ _search_in_identifier_chats_new_thread (GSimpleAsyncResult *simple,
   lst = tpl_log_manager_search_in_identifier_chats_new (async_data->manager, chat_info->account,
       chat_info->chat_id, chat_info->search_text);
 
-  // TODO add destructor
+  /* TODO add destructor */
   g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
 }
 

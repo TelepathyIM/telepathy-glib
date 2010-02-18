@@ -156,10 +156,10 @@ tpl_log_store_get_property (GObject *object,
         g_value_set_string (value, priv->name);
         break;
       case PROP_WRITABLE:
-        /* ignore */
+        g_value_set_boolean (value, priv->writable);
         break;
       case PROP_READABLE:
-        /* ignore */
+        g_value_set_boolean (value, priv->readable);
         break;
       case PROP_BASEDIR:
         g_value_set_string (value, priv->basedir);
@@ -185,10 +185,10 @@ tpl_log_store_set_property (GObject *object,
         log_store_empathy_set_name (self, g_value_get_string (value));
         break;
       case PROP_READABLE:
-        /* ignore */
+        log_store_empathy_set_readable (self, g_value_get_boolean (value));
         break;
       case PROP_WRITABLE:
-        /* ignore */
+        log_store_empathy_set_writable (self, g_value_get_boolean (value));
         break;
       case PROP_BASEDIR:
         log_store_empathy_set_basedir (self, g_value_get_string (value));
@@ -248,6 +248,7 @@ tpl_log_store_empathy_class_init (TplLogStoreEmpathyClass *klass)
    *
    * Wether the log store is readable.
    * Default: %TRUE
+   *
    * As defined in #TplLogStore.
    */
   param_spec = g_param_spec_boolean ("readable",
@@ -1280,10 +1281,7 @@ log_store_iface_init (gpointer g_iface,
   iface->search_in_identifier_chats_new =
     log_store_empathy_search_in_identifier_chats_new;
   iface->search_new = log_store_empathy_search_new;
-  iface->ack_message = NULL;
   iface->get_filtered_messages = log_store_empathy_get_filtered_messages;
-  iface->set_writable = log_store_empathy_set_writable;
-  iface->set_readable = log_store_empathy_set_readable;
   iface->is_writable = log_store_empathy_is_writable;
   iface->is_readable = log_store_empathy_is_readable;
 }
