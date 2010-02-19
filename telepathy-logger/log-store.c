@@ -154,15 +154,15 @@ tpl_log_store_get_messages_for_date (TplLogStore *self,
 
 
 GList *
-tpl_log_store_get_last_messages (TplLogStore *self,
+tpl_log_store_get_recent_messages (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_last_messages)
+  if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_messages)
     return NULL;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->get_last_messages (self, account,
+  return TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_messages (self, account,
       chat_id, chatroom);
 }
 
