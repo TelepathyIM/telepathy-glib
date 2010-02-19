@@ -28,6 +28,16 @@
 
 #include <telepathy-logger/channel.h>
 
+#define TPL_CHANNEL_FACTORY_ERROR g_quark_from_static_string ( \
+    "tpl-channel-factory-error-quark")
+typedef enum
+{
+  /* generic error */
+  TPL_CHANNEL_FACTORY_ERROR_FAILED,
+  TPL_CHANNEL_FACTORY_ERROR_CHANNEL_TYPE_NOT_HANDLED
+} TplChannelFactoryError;
+
+
 typedef TplChannel* (*TplChannelConstructor) (TpConnection *conn,
     const gchar *object_path, GHashTable *tp_chan_props, TpAccount *tp_acc,
     GError **error);
