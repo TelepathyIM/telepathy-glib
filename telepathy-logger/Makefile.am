@@ -34,10 +34,12 @@ LIBTPL_HEADERS = \
 		log-manager.h			\
 		log-manager-priv.h		\
 		log-store.h			\
+		log-store-counter.h		\
 		log-store-empathy.h		\
 		log-store-factory.h		\
 		observer.h			\
-		util.h
+		util.h				\
+		$(NULL)
 
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
@@ -53,9 +55,11 @@ libtelepathy_logger_la_SOURCES = \
 		log-entry-text.c		\
 		log-manager.c			\
 		log-store.c			\
+		log-store-counter.c		\
 		log-store-empathy.c		\
 		log-store-factory.c		\
-		observer.c
+		observer.c			\
+		$(NULL)
 
 libtelepathy_logger_la_LIBADD = \
 	$(top_builddir)/extensions/libtpl-extensions.la

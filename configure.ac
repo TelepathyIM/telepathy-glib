@@ -155,6 +155,7 @@ PKG_CHECK_MODULES(LIBTPL,
    gobject-2.0
    libxml-2.0
    telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
+   sqlite3
 ])
 
 PKG_CHECK_MODULES(TPL,

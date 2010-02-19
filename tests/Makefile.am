@@ -12,9 +12,11 @@ noinst_PROGRAMS = \
 	test-tpl-channel	\
 	test-tpl-conf		\
 	test-tpl-log-entry	\
+	test-tpl-log-store-counter \
 	test-tpl-log-manager	\
 	test-tpl-observer	\
-	test-searches
+	test-searches		\
+	$(NULL)
 
 test_tpl_channel_SOURCES = \
 	test-tpl-channel.c	\
@@ -60,7 +62,8 @@ check_c_sources = \
 	test-tpl-conf.c		\
 	test-tpl-log-entry.c	\
 	test-tpl-observer.c	\
-	test-searches.c
+	test-searches.c		\
+	$(NULL)
 
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
