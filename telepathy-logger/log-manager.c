@@ -549,11 +549,25 @@ tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
   ret = g_strcmp0 (a->chat_id, b->chat_id);
 
   if (ret == 0)
-    /* if chat_id are the same, check if the entries are actually equal or not
-     have the same chat_id but one is a chatroom and the other not */
-    ret = a->is_chatroom && b->is_chatroom ? 0 : 1;
+    {
+      /* if chat_id are the same, a further check needed: chat_id may be equal
+       * but one can refer to a chatroom and the other not.
+       * Definition: chatroom < not_chatroom */
+      if (a->is_chatroom != b->is_chatroom)
+        {
+          if (a->is_chatroom)
+            ret = 1; /* b > a */
+          else
+            ret = -1; /* a > b */
+        }
+      else
+        ret = 0; /* a = b */
+    }
+  /* else original strcmp result is returned */
+
   return ret;
 }
+
 
 /**
  * tpl_log_manager_get_chats
@@ -586,15 +600,20 @@ tpl_log_manager_get_chats (TplLogManager *manager,
 
       /* merge the lists avoiding duplicates */
       for (in = tpl_log_store_get_chats (store, account);
-          in != NULL; in = g_list_next (in))
+          in != NULL;
+          in = g_list_next (in))
         {
-          if (g_list_find_custom (out, in->data,
+          TplLogSearchHit *hit = in->data;
+
+          if (g_list_find_custom (out, hit,
                 (GCompareFunc) tpl_log_manager_search_hit_compare) == NULL)
-            /* add data if not already present */
-            out = g_list_prepend (out, in->data);
+            {
+              /* add data if not already present */
+              out = g_list_prepend (out, hit);
+            }
           else
-            /* free in->data if already present in out */
-            tpl_log_manager_search_hit_free (in->data);
+            /* free hit if already present in out */
+            tpl_log_manager_search_hit_free (hit);
         }
       g_list_free (in);
     }
