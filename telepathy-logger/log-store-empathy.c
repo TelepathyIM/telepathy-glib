@@ -379,11 +379,18 @@ log_store_empathy_get_filename (TplLogStore *self,
   gchar *chatid_dir;
   gchar *timestamp;
   gchar *filename;
+  gchar *esc_chat_id;
 
-  chatid_dir = log_store_empathy_get_dir (self, account, chat_id, chatroom);
+  /* avoid that 1-1 conversation generated from a chatroom, having id similar
+   * to room@conference.domain/My_Alias (in XMPP) are threated as a directory
+   * path, creating My_Alias as a subdirectory of room@conference.domain */
+  esc_chat_id = g_strdelimit (g_strdup (chat_id), "/", '_');
+  chatid_dir = log_store_empathy_get_dir (self, account, esc_chat_id,
+      chatroom);
   timestamp = log_store_empathy_get_timestamp_filename ();
   filename = g_build_filename (chatid_dir, timestamp, NULL);
 
+  g_free (esc_chat_id);
   g_free (chatid_dir);
   g_free (timestamp);
 
