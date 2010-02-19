@@ -108,6 +108,16 @@ tpl_log_store_exists (TplLogStore *self,
 }
 
 
+/**
+ * tpl_log_store_add_message:
+ * @self: a TplLogStore
+ * @message: an instance of a subclass of TplLogEntry (ie TplLogEntryText)
+ * @error: memory location used if an error occurs
+ *
+ * Sends @message to the LogStore @self, in order to be stored.
+ *
+ * Returns: %TRUE if succeeds, %FALSE with @error set otherwise
+ */
 gboolean
 tpl_log_store_add_message (TplLogStore *self,
     TplLogEntry *message,
@@ -124,6 +134,22 @@ tpl_log_store_add_message (TplLogStore *self,
 }
 
 
+/**
+ * tpl_log_store_get_dates:
+ * @self: a TplLogStore
+ * @account: a TpAccount
+ * @chat_id: a non-NULL chat identifier
+ * @chatroom: whather if the request is related to a chatroom or not.
+ *
+ * Retrieves a list of dates, in string form YYYYMMDD, corrisponding to each day
+ * at least a message was sent to or received from @chat_id.
+ * @chat_id may be the id of a buddy or a chatroom, depending on the value of
+ * @chatroom.
+ *
+ * Returns: a GList of (char *), to be freed using something like
+ * g_list_foreach (lst, g_free, NULL);
+ * g_list_free (lst);
+ */
 GList *
 tpl_log_store_get_dates (TplLogStore *self,
     TpAccount *account,
@@ -138,6 +164,20 @@ tpl_log_store_get_dates (TplLogStore *self,
 }
 
 
+/**
+ * tpl_log_store_get_messages_for_date:
+ * @self: a TplLogStore
+ * @account: a TpAccount
+ * @chat_id: a non-NULL chat identifier
+ * @chatroom: whather if the request is related to a chatroom or not.
+ * @date: a date, in YYYYMMDD string form
+ *
+ * Retrieves a list of text messages, with timestamp matching @date.
+ *
+ * Returns: a GList of TplLogEntryText, to be freed using something like
+ * g_list_foreach (lst, g_object_unref, NULL);
+ * g_list_free (lst);
+ */
 GList *
 tpl_log_store_get_messages_for_date (TplLogStore *self,
     TpAccount *account,
@@ -167,6 +207,18 @@ tpl_log_store_get_recent_messages (TplLogStore *self,
 }
 
 
+/**
+ * tpl_log_store_get_chats:
+ * @self: a TplLogStore
+ * @account: a TpAccount
+ *
+ * Retrieves a list of search hits, corrisponding to each buddy/chatroom id
+ * the user exchanged at least a message with, using @account.
+ *
+ * Returns: a GList of (TplLogSearchHit *), to be freed using something like
+ * g_list_foreach (lst, tpl_log_manager_search_free, NULL);
+ * g_list_free (lst);
+ */
 GList *
 tpl_log_store_get_chats (TplLogStore *self,
     TpAccount *account)
@@ -178,21 +230,45 @@ tpl_log_store_get_chats (TplLogStore *self,
 }
 
 
-
+/**
+ * tpl_log_store_search_in_identifier_chats_new:
+ * @self: a TplLogStore
+ * @account: a TpAccount
+ * @chat_id: a chat_id
+ * @text: a text to be searched among @chat_id messages
+ *
+ * Searches textual log entries related to @chat_id and matching @text
+ *
+ * Returns: a GList of (TplLogSearchHit *), to be freed using something like
+ * g_list_foreach (lst, tpl_log_manager_search_free, NULL);
+ * g_list_free (lst);
+ */
 GList *
 tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
     TpAccount *account,
-    gchar const *identifier,
+    gchar const *chat_id,
     const gchar *text)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->search_new)
+  if (!TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new (self,
-      account, identifier, text);
+      account, chat_id, text);
 }
 
 
+/**
+ * tpl_log_store_search_new:
+ * @self: a TplLogStore
+ * @text: a text to be searched among @chat_id messages
+ *
+ * Searches all textual log entries (all accounts and all chat_ids)  matching
+ * @text
+ *
+ * Returns: a GList of (TplLogSearchHit *), to be freed using something like
+ * g_list_foreach (lst, tpl_log_manager_search_free, NULL);
+ * g_list_free (lst);
+ */
 GList *
 tpl_log_store_search_new (TplLogStore *self,
     const gchar *text)
@@ -204,6 +280,25 @@ tpl_log_store_search_new (TplLogStore *self,
 }
 
 
+/**
+ * tpl_log_store_search_in_identifier_chats_new:
+ * @self: a TplLogStore
+ * @account: a TpAccount
+ * @chat_id: a chat_id
+ * @chatroom: whether the @chat_id is related to a chatroom or not
+ * @num_messages: max number of messages to return
+ * @filter: filter function
+ * @user_data: data be passed to @filter, may be NULL
+ *
+ * Filters all messages related to @chat_id, using the boolean function
+ * @filter.
+ * It will return at most the last (ie most recent) @num_messages messages.
+ * Pass G_MAXUINT if all the message are needed.
+ *
+ * Returns: a GList of TplLogEntryText, to be freed using something like
+ * g_list_foreach (lst, g_object_unref, NULL);
+ * g_list_free (lst);
+ */
 GList *
 tpl_log_store_get_filtered_messages (TplLogStore *self,
     TpAccount *account,
@@ -239,5 +334,3 @@ tpl_log_store_is_readable (TplLogStore *self)
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->is_readable (self);
 }
-
-

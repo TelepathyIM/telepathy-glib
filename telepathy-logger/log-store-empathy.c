@@ -740,7 +740,7 @@ log_store_empathy_search_hit_new (TplLogStore *self,
   return hit;
 }
 
-
+/* returns a Glist of TplLogEntryText instances */
 static GList *
 log_store_empathy_get_messages_for_file (TplLogStore *self,
     TpAccount *account,
@@ -817,7 +817,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       cm_id_str = (gchar *) xmlGetProp (node, (const xmlChar *) "cm_id");
 
       if (is_user_str)
-        is_user = strcmp (is_user_str, "true") == 0;
+        is_user = (!tp_strdiff (is_user_str, "true"));
 
       if (msg_type_str)
         msg_type = tpl_log_entry_text_message_type_from_str (msg_type_str);
@@ -1061,6 +1061,7 @@ log_store_empathy_get_chats_for_dir (TplLogStore *self,
 }
 
 
+/* returns a Glist of TplLogEntryText instances */
 static GList *
 log_store_empathy_get_messages_for_date (TplLogStore *self,
     TpAccount *account,
@@ -1083,6 +1084,7 @@ log_store_empathy_get_messages_for_date (TplLogStore *self,
 
   return messages;
 }
+
 
 static GList *
 log_store_empathy_get_chats (TplLogStore *self,
@@ -1118,6 +1120,7 @@ log_store_empathy_get_name (TplLogStore *self)
 
   return priv->name;
 }
+
 
 /* returns am absolute path for the base directory of LogStore */
 static const gchar *
@@ -1234,7 +1237,7 @@ log_store_empathy_get_filtered_messages (TplLogStore *self,
 
   dates = log_store_empathy_get_dates (self, account, chat_id, chatroom);
 
-  for (l = g_list_last (dates); l && i < num_messages;
+  for (l = g_list_last (dates); l != NULL && i < num_messages;
        l = g_list_previous (l))
     {
       GList *new_messages, *n, *next;

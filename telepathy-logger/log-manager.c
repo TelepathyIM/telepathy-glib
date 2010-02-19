@@ -94,7 +94,7 @@ log_manager_finalize (GObject *object)
 
   g_list_foreach (priv->stores, (GFunc) g_object_unref, NULL);
   g_list_free (priv->stores);
-  /* no unref needed here, the only reference kept is in priv->stores */
+  /* no unref needed here, the only references kept is in priv->stores */
   g_list_free (priv->writable_stores);
   g_list_free (priv->readable_stores);
 
@@ -210,6 +210,9 @@ tpl_log_manager_dup_singleton (void)
  * Every TplLogManager is guaranteed to have at least TplLogStore a readable
  * and a writable LogStore regitered.
  *
+ * It applies for any registered TplLogStore with #TplLogstore:writable property
+ * %TRUE
+ *
  * Returns: %TRUE if the message has been successfully added, %FALSE otherwise.
  */
 gboolean
@@ -310,7 +313,22 @@ tpl_log_manager_register_log_store (TplLogManager *self,
   return TRUE;
 }
 
+/**
+ * tpl_log_manager_exists:
+ * @manager: TplLogManager
+ * @account: TpAccount
+ * @chat_id: a non-NULL chat id
+ * @chatroom: whether @chat_id is a chatroom or not
+ *
+ * Checks if @chat_id does exist for @account and
+ * - is a chatroom, if @chatroom is %TRUE
+ * - is not a chatroom, if @chatroom is %FALSE
+ *
+ * It applies for any registered TplLogStore with the #TplLogStore:readable
+ * property %TRUE.
 
+ * Returns: %TRUE if @chat_id exists, %FALSE otherwise
+ */
 gboolean
 tpl_log_manager_exists (TplLogManager *manager,
     TpAccount *account,
@@ -335,8 +353,25 @@ tpl_log_manager_exists (TplLogManager *manager,
   return FALSE;
 }
 
-/*
- * @returns a list of gchar dates
+
+/**
+ * tpl_log_manager_get_dates:
+ * @manager: a TplLogManager
+ * @account: a TpAccount
+ * @chat_id: a non-NULL chat identifier
+ * @chatroom: whather if the request is related to a chatroom or not.
+ *
+ * Retrieves a list of dates, in string form YYYYMMDD, corrisponding to each day
+ * at least a message was sent to or received from @chat_id.
+ * @chat_id may be the id of a buddy or a chatroom, depending on the value of
+ * @chatroom.
+ *
+ * It applies for any registered TplLogStore with the #TplLogStore:readable
+ * property %TRUE.
+ *
+ * Returns: a GList of (char *), to be freed using something like
+ * g_list_foreach (lst, g_free, NULL);
+ * g_list_free (lst);
  */
 GList *
 tpl_log_manager_get_dates (TplLogManager *manager,
@@ -352,7 +387,7 @@ tpl_log_manager_get_dates (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l != NULL; l = g_list_next (l))
+  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *new;
@@ -375,6 +410,7 @@ tpl_log_manager_get_dates (TplLogManager *manager,
   return out;
 }
 
+
 GList *
 tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     TpAccount *account,
@@ -390,7 +426,7 @@ tpl_log_manager_get_messages_for_date (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l != NULL; l = g_list_next (l))
+  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
@@ -445,14 +481,14 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 
   /* Get num_messages from each log store and keep only the
    * newest ones in the out list. Keep that list sorted: Older first. */
-  for (l = priv->stores; l != NULL; l = g_list_next (l))
+  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *new;
 
       new = tpl_log_store_get_filtered_messages (store, account, chat_id,
           chatroom, num_messages, filter, user_data);
-      while (new)
+      while (new != NULL)
         {
           if (i < num_messages)
             {
@@ -485,6 +521,21 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 }
 
 
+/**
+ * tpl_log_manager_search_hit_compare:
+ * @a: a TplLogSerachHit
+ * @b: a TplLogSerachHit
+ *
+ * Compare @a and @b, returning an ordered relation between the two.
+ * Acts similar to the strcmp family, with the difference that since
+ * TplLogSerachHit is not a plain string, but a struct, the order relation
+ * will be a coposition of:
+ * - the order relation between @a.chat_it and @b.chat_id
+ * - the order relation between @a.chatroom and @b.chatroom, being
+ *   chatroom = %FALSE > chatroom = %TRUE (meaning: a 1-1 message is greater
+ *   than a chatroom one).
+ *
+ * Returns: -1 if a > b, 1 if a < b or 0 is a == b */
 gint
 tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
     TplLogSearchHit *b)
@@ -673,7 +724,7 @@ static void
 tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
 {
   if (data->account != NULL)
-     g_object_unref (data->account);
+    g_object_unref (data->account);
   if (data->chat_id != NULL)
     g_free (data->chat_id);
   if (data->date != NULL)
@@ -726,6 +777,7 @@ _tpl_log_manager_call_async_operation (TplLogManager *manager,
 }
 /* end of Async common function */
 
+
 /* Start of add_message async implementation */
 static void
 _add_message_async_thread (GSimpleAsyncResult *simple,
@@ -774,7 +826,7 @@ tpl_log_manager_add_message_async (TplLogManager *manager,
   async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
-      (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
@@ -849,7 +901,7 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
   async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
-      (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
@@ -1020,7 +1072,7 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
   async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
   async_data->request_free =
-      (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
