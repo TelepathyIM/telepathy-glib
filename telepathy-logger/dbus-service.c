@@ -137,6 +137,7 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
   if (tp_dbus == NULL)
     {
       DEBUG ("Unable to acquire the bus daemon: %s", error->message);
+      dbus_g_method_return_error (context, error);
       goto out;
     }
 
@@ -159,6 +160,7 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
       dbus_g_method_return_error (context, error);
       goto out;
     }
+
   /* for each date returned, get at most <lines> lines, then if needed
    * check the previous date for the missing ones, and so on until
    * <lines> is reached, most recent date first */
