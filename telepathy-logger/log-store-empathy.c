@@ -525,14 +525,10 @@ add_message_text (TplLogStore *self,
     GError **error)
 {
   TplLogEntryTextSignalType signal_type;
-  const gchar *chat_id;
-  gboolean chatroom;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
 
-  chat_id = tpl_log_entry_get_chat_id (TPL_LOG_ENTRY (message));
-  chatroom = tpl_log_entry_text_is_chatroom (message);
   signal_type = tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message));
 
   switch (signal_type)
@@ -575,6 +571,10 @@ log_store_empathy_add_message (TplLogStore *self,
       case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
         return add_message_text (self, TPL_LOG_ENTRY_TEXT (message), error);
       default:
+        g_set_error (error, TPL_LOG_STORE_ERROR,
+            TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+            "LogEntrySignalType not handled by this LogStore (%s)",
+            log_store_empathy_get_name (self));
         return FALSE;
     }
 }

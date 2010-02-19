@@ -46,6 +46,7 @@ typedef enum
 {
   /* generic error */
   TPL_LOG_MANAGER_ERROR_FAILED,
+  TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
   /* arg passed is not a valid GObject or in the expected format */
   TPL_LOG_MANAGER_ERROR_BAD_ARG
 } TplLogManagerError;

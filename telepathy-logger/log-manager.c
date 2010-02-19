@@ -221,6 +221,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
   GList *l;
   gboolean retval = FALSE;
 
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
@@ -229,15 +230,28 @@ tpl_log_manager_add_message (TplLogManager *manager,
   /* send the message to any writable log store */
   for (l = priv->writable_stores; l != NULL; l = g_list_next (l))
     {
+      GError *loc_error = NULL;
       TplLogStore *store = l->data;
       gboolean result;
 
-      result = tpl_log_store_add_message (store, message, error);
+      result = tpl_log_store_add_message (store, message, &loc_error);
+      if (!result)
+        {
+          DEBUG ("add_message method for logstore name=%s: %s",
+              tpl_log_store_get_name (store), loc_error->message);
+          g_clear_error (&loc_error);
+        }
       /* TRUE if at least one LogStore succeeds */
       retval = result || retval;
     }
   if (!retval)
-    g_critical ("Failed to write to at least writable LogStore.");
+    {
+      g_critical ("Failed to write to at least writable LogStore.");
+      g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
+          TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
+          "Not recoverable error occurred during log manager's "
+          "add_message() execution");
+    }
   return retval;
 }
 
@@ -727,10 +741,9 @@ _add_message_async_thread (GSimpleAsyncResult *simple,
 
   tpl_log_manager_add_message (async_data->manager, chat_info->logentry,
       &error);
-
-  if (error!=NULL)
+  if (error != NULL)
     {
-      g_error ("synchronous operation error: %s", error->message);
+      DEBUG ("synchronous operation error: %s", error->message);
       g_simple_async_result_set_from_error (simple, error);
       g_error_free (error);
     }

@@ -39,6 +39,16 @@ G_BEGIN_DECLS
 #define TPL_LOG_STORE_GET_INTERFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE ( \
       (inst), TPL_TYPE_LOG_STORE, TplLogStoreInterface))
 
+#define TPL_LOG_STORE_ERROR g_quark_from_static_string ("tpl-log-store-error-quark")
+typedef enum
+{
+  /* generic error */
+  TPL_LOG_STORE_ERROR_FAILED,
+  TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+} TplLogStoreError;
+
+
+
 typedef struct _TplLogStore TplLogStore;  /*dummy object */
 typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
     gpointer user_data);
