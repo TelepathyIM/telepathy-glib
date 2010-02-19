@@ -593,7 +593,7 @@ tpl_log_manager_get_chats (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l != NULL; l = g_list_next (l))
+  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *in;
@@ -638,7 +638,7 @@ tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l != NULL; l = g_list_next (l))
+  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
@@ -663,7 +663,7 @@ tpl_log_manager_search_new (TplLogManager *manager,
 
   priv = GET_PRIV (manager);
 
-  for (l = priv->stores; l != NULL; l = g_list_next (l))
+  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
