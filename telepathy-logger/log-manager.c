@@ -774,6 +774,17 @@ tpl_log_manager_add_message_async (TplLogManager *manager,
 
 /* Start of get_dates async implementation */
 static void
+_get_dates_async_result_free (gpointer data)
+{
+  GList *lst = data; /* list of (char *) */
+  g_return_if_fail (data != NULL);
+
+  g_list_foreach (lst, (GFunc) g_free, NULL);
+  g_list_free (lst);
+}
+
+
+static void
 _get_dates_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -789,8 +800,8 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
       chat_info->account, chat_info->chat_id,
       chat_info->is_chatroom);
 
-  /* TODO add destructor */
-  g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
+  g_simple_async_result_set_op_res_gpointer (simple, lst,
+      _get_dates_async_result_free);
 }
 
 
@@ -837,6 +848,17 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 
 /* Start of get_messages_for_date async implementation */
 static void
+_get_messages_for_date_async_result_free (gpointer data)
+{
+  GList *lst = data; /* list of TPL_LOG_ENTRY */
+  g_return_if_fail (data != NULL);
+
+  g_list_foreach (lst, (GFunc) g_object_unref, NULL);
+  g_list_free (lst);
+}
+
+
+static void
 _get_messages_for_date_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -854,7 +876,8 @@ _get_messages_for_date_async_thread (GSimpleAsyncResult *simple,
       chat_info->is_chatroom,
       chat_info->date);
 
-  g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
+  g_simple_async_result_set_op_res_gpointer (simple, lst,
+      _get_messages_for_date_async_result_free);
 }
 
 
@@ -908,6 +931,17 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
 
 /* Start of get_filtered_messages async implementation */
 static void
+_get_filtered_messages_async_result_free (gpointer data)
+{
+  GList *lst = data; /* list of TPL_LOG_ENTRY */
+  g_return_if_fail (data != NULL);
+  DEBUG ("FREED!");
+
+  g_list_foreach (lst, (GFunc) g_object_unref, NULL);
+  g_list_free (lst);
+}
+
+static void
 _get_filtered_messages_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -923,7 +957,8 @@ _get_filtered_messages_thread (GSimpleAsyncResult *simple,
       chat_info->account, chat_info->chat_id, chat_info->is_chatroom,
       chat_info->num_messages, chat_info->filter, chat_info->user_data);
 
-  g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
+  g_simple_async_result_set_op_res_gpointer (simple, lst,
+      _get_filtered_messages_async_result_free);
 }
 
 
@@ -984,6 +1019,17 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 
 /* Start of get_chats async implementation */
 static void
+_get_chats_async_result_free (gpointer data)
+{
+  GList *lst = data; /* list of (gchar *) */
+  g_return_if_fail (data != NULL);
+
+  g_list_foreach (lst, (GFunc) g_free, NULL);
+  g_list_free (lst);
+}
+
+
+static void
 _get_chats_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -997,7 +1043,8 @@ _get_chats_thread (GSimpleAsyncResult *simple,
 
   lst = tpl_log_manager_get_chats (async_data->manager, chat_info->account);
 
-  g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
+  g_simple_async_result_set_op_res_gpointer (simple, lst,
+      _get_chats_async_result_free);
 }
 
 
@@ -1036,6 +1083,17 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
 
 /* Start of tpl_log_manager_search_in_identifier_chats_new async implementation */
 static void
+_search_in_identifier_chats_new_async_result_free (gpointer data)
+{
+  GList *lst = data; /* list of TplSearchHit */
+  g_return_if_fail (data != NULL);
+
+  g_list_foreach (lst, (GFunc) tpl_log_manager_search_hit_free, NULL);
+  g_list_free (lst);
+}
+
+
+static void
 _search_in_identifier_chats_new_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -1050,8 +1108,8 @@ _search_in_identifier_chats_new_thread (GSimpleAsyncResult *simple,
   lst = tpl_log_manager_search_in_identifier_chats_new (async_data->manager, chat_info->account,
       chat_info->chat_id, chat_info->search_text);
 
-  /* TODO add destructor */
-  g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
+  g_simple_async_result_set_op_res_gpointer (simple, lst,
+      _search_in_identifier_chats_new_async_result_free);
 }
 
 
@@ -1094,6 +1152,17 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 
 /* Start of tpl_log_manager_search_new async implementation */
 static void
+_search_new_async_result_free (gpointer data)
+{
+  GList *lst = data; /* list of TplSearchHit */
+  g_return_if_fail (data != NULL);
+
+  g_list_foreach (lst, (GFunc) tpl_log_manager_search_hit_free, NULL);
+  g_list_free (lst);
+}
+
+
+static void
 _search_new_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -1107,7 +1176,8 @@ _search_new_thread (GSimpleAsyncResult *simple,
 
   lst = tpl_log_manager_search_new (async_data->manager, chat_info->search_text);
 
-  g_simple_async_result_set_op_res_gpointer (simple, lst, NULL);
+  g_simple_async_result_set_op_res_gpointer (simple, lst,
+      _search_new_async_result_free);
 }
 
 
