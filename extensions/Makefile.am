@@ -67,6 +67,7 @@ BUILT_SOURCES = \
     _gen/call-content.xml \
     _gen/call-stream.xml \
     _gen/channel.xml \
+    _gen/misc.xml \
     $(nodist_libfuture_extensions_la_SOURCES)
 
 CLEANFILES = $(BUILT_SOURCES)
