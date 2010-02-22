@@ -4,7 +4,7 @@
 
 <tp:title>Call Content</tp:title>
 
-<xi:include href="Call_Content.xml"/>
-<xi:include href="Call_Content_Interface_Media.xml"/>
+<xi:include href="../spec/Call_Content.xml"/>
+<xi:include href="../spec/Call_Content_Interface_Media.xml"/>
 
 </tp:spec>

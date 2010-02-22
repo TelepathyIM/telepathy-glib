@@ -4,7 +4,7 @@
 
 <tp:title>Call Stream</tp:title>
 
-<xi:include href="Call_Stream.xml"/>
-<xi:include href="Call_Stream_Interface_Media.xml"/>
+<xi:include href="../spec/Call_Stream.xml"/>
+<xi:include href="../spec/Call_Stream_Interface_Media.xml"/>
 
 </tp:spec>
