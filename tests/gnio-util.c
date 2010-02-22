@@ -19,7 +19,7 @@
 #define IPV4_ADDR "127.0.1.1"
 #define IPV6_ADDR "::1"
 #define UNIX_ADDR "/tmp/socket/test/123456"
-#define ABST_ADDR "\000" "123456"
+#define ABST_ADDR "\000" "123456" "NOT_COPIED"
 #define ABST_ADDR_LEN 7
 #define PORT 41414
 

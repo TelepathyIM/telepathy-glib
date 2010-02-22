@@ -158,7 +158,7 @@ PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0],
   have_gio_unix=yes, have_gio_unix=no)
 
 if test "x$have_gio_unix" = "xyes"; then
-  AC_DEFINE(HAVE_GIO_UNIX, [], [GIO-Unix is available])
+  AC_DEFINE(HAVE_GIO_UNIX, [], [Define if GIO-Unix is available])
 
   GLIB_CFLAGS="$GLIB_CFLAGS $GIO_UNIX_CFLAGS"
   GLIB_LIBS="$GLIB_LIBS $GIO_UNIX_LIBS"
