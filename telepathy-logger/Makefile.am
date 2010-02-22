@@ -5,7 +5,7 @@ AM_CPPFLAGS =						\
 	-I$(top_builddir)				\
 	-I$(top_srcdir)					\
 	$(ERROR_CFLAGS)					\
-	-DG_LOG_DOMAIN=\"libtelepathy-logger\"		\
+	-DG_LOG_DOMAIN=\"tp-logger\"			\
 	$(LIBTPL_CFLAGS)				\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
