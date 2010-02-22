@@ -94,7 +94,7 @@ log_manager_finalize (GObject *object)
 
   g_list_foreach (priv->stores, (GFunc) g_object_unref, NULL);
   g_list_free (priv->stores);
-  /* no unref needed here, the only references kept is in priv->stores */
+  /* no unref needed here, the only reference kept is in priv->stores */
   g_list_free (priv->writable_stores);
   g_list_free (priv->readable_stores);
 
@@ -111,59 +111,18 @@ log_manager_constructor (GType type, guint n_props,
     GObjectConstructParam *props)
 {
   GObject *retval = NULL;
-  TplLogManagerPriv *priv;
-  TplLogStoreEmpathy *tplogger = NULL;
-  TplLogStoreEmpathy *empathy = NULL;
 
   if (manager_singleton)
     retval = g_object_ref (manager_singleton);
   else
     {
-      retval = G_OBJECT_CLASS (tpl_log_manager_parent_class)->constructor
-          (type, n_props, props);
+      retval = G_OBJECT_CLASS (tpl_log_manager_parent_class)->constructor (
+          type, n_props, props);
       if (retval == NULL)
         return NULL;
 
       manager_singleton = TPL_LOG_MANAGER (retval);
-      g_object_add_weak_pointer (retval, (gpointer *) & manager_singleton);
-
-      priv = GET_PRIV (manager_singleton);
-
-      /* The TPL's default read-write logstore */
-      tplogger = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
-          "name", TPL_LOG_MANAGER_LOG_STORE_DEFAULT,
-          "writable", TRUE,
-          "readable", TRUE,
-          NULL);
-      if (tplogger == NULL)
-          g_critical ("Error during TplLogStoreEmpathy (name=TpLogger) initialisation.");
-      else
-        {
-          /* manual registration, to set up priv->stores for
-           * tpl_log_manager_register_log_store */
-          priv->stores = g_list_prepend (priv->stores, tplogger);
-          priv->writable_stores = g_list_prepend (priv->writable_stores,
-              tplogger);
-          priv->readable_stores = g_list_prepend (priv->readable_stores,
-              tplogger);
-        }
-
-      /* Load by default the Empathy's legacy 'past coversations' LogStore */
-      empathy = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
-          "name", "Empathy",
-          "writable", FALSE,
-          "readable", TRUE,
-          NULL);
-      if (empathy == NULL)
-        g_critical ("Error during TplLogStoreEmpathy (name=Empathy) initialisation.");
-      else if (!tpl_log_manager_register_log_store (manager_singleton,
-            TPL_LOG_STORE (empathy)))
-        g_critical ("Not able to register the TplLogStore with name=Emapathy. "
-            "Empathy's legacy logs won't be available.");
-
-      /* internally referenced within register_logstore */
-      if (empathy != NULL)
-        g_object_unref (empathy);
+      g_object_add_weak_pointer (retval, (gpointer *) &manager_singleton);
     }
 
   return retval;
@@ -183,12 +142,51 @@ tpl_log_manager_class_init (TplLogManagerClass *klass)
 
 
 static void
-tpl_log_manager_init (TplLogManager *manager)
+tpl_log_manager_init (TplLogManager *self)
 {
-  TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (manager,
+  TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_MANAGER, TplLogManagerPriv);
+  TplLogStore *tplogger = NULL;
+  TplLogStore *empathy = NULL;
 
-  manager->priv = priv;
+  self->priv = priv;
+
+  /* The TPL's default read-write logstore */
+  tplogger = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
+      "name", TPL_LOG_MANAGER_LOG_STORE_DEFAULT,
+      "writable", TRUE,
+      "readable", TRUE,
+      NULL);
+  if (tplogger == NULL)
+    g_critical ("Error during TplLogStoreEmpathy (name=TpLogger) initialisation.");
+  else
+    {
+      /* manual registration, to set up priv->stores for
+       * tpl_log_manager_register_log_store. no need of unref */
+      priv->stores = g_list_prepend (priv->stores, tplogger);
+      priv->writable_stores = g_list_prepend (priv->writable_stores,
+          tplogger);
+      priv->readable_stores = g_list_prepend (priv->readable_stores,
+          tplogger);
+      DEBUG ("default logstore (name=TpLogger) initialised");
+    }
+
+  /* Load by default the Empathy's legacy 'past coversations' LogStore */
+  empathy = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
+      "name", "Empathy",
+      "writable", FALSE,
+      "readable", TRUE,
+      NULL);
+  if (empathy == NULL)
+    g_critical ("Error during TplLogStoreEmpathy (name=Empathy) initialisation.");
+  else if (!tpl_log_manager_register_log_store (self,
+        TPL_LOG_STORE (empathy)))
+    g_critical ("Not able to register the TplLogStore with name=Emapathy. "
+        "Empathy's legacy logs won't be available.");
+
+  /* internally referenced within register_logstore */
+  if (empathy != NULL)
+    g_object_unref (empathy);
 }
 
 
@@ -298,7 +296,10 @@ tpl_log_manager_register_log_store (TplLogManager *self,
         found = TRUE;
     }
   if (found)
-    return FALSE;
+    {
+      DEBUG ("name=%s: already registered", tpl_log_store_get_name (logstore));
+      return FALSE;
+    }
 
   if (tpl_log_store_is_readable (logstore))
     priv->readable_stores = g_list_prepend (priv->readable_stores, logstore);
@@ -309,6 +310,7 @@ tpl_log_manager_register_log_store (TplLogManager *self,
   /* reference just once, writable/readable lists are kept in sync with the
    * general list and never written separatedly */
   priv->stores = g_list_prepend (priv->stores, g_object_ref (logstore));
+  DEBUG ("LogStore name=%s registered", tpl_log_store_get_name (logstore));
 
   return TRUE;
 }
