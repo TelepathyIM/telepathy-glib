@@ -62,13 +62,13 @@ G_END_DECLS
 #define DEBUGGING gabble_debug_flag_is_set (DEBUG_FLAG)
 
 /* The same of DEBUG, printing also the object-path property for the TpProxy
- * passed as first arg */
-#define PATH_DEBUG(proxy, format, ...) \
+ * passed as first arg. prepending '_' not not shadow any local variable */
+#define PATH_DEBUG(_proxy, _format, ...) \
 G_STMT_START { \
-  const gchar *path; \
-  g_assert (TP_IS_PROXY (proxy)); \
-  path = tp_proxy_get_object_path (TP_PROXY (proxy)); \
-  DEBUG (" %s: " format, path, ##__VA_ARGS__); \
+  const gchar *_path; \
+  g_assert (TP_IS_PROXY (_proxy)); \
+  _path = tp_proxy_get_object_path (TP_PROXY (_proxy)); \
+  DEBUG (" %s: " _format, _path, ##__VA_ARGS__); \
 } G_STMT_END
 
 #endif /* DEBUG_FLAG */
