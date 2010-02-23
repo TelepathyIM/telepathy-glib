@@ -752,15 +752,23 @@ on_sent_signal_cb (TpChannel *proxy,
             "Chat");
       tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
       tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
+
+      DEBUG ("sent:\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+          tpl_contact_get_identifier (tpl_contact_receiver),
+          tpl_contact_get_alias (tpl_contact_receiver),
+          tpl_contact_get_identifier (tpl_contact_sender),
+          tpl_contact_get_alias (tpl_contact_sender),
+          arg_Text);
+
     }
-
-  DEBUG ("sent:\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-      tpl_contact_get_identifier (tpl_contact_receiver),
-      tpl_contact_get_alias (tpl_contact_receiver),
-      tpl_contact_get_identifier (tpl_contact_sender),
-      tpl_contact_get_alias (tpl_contact_sender),
-      arg_Text);
-
+  else
+    {
+      DEBUG ("sent:\n\tto chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+          tpl_channel_text_get_chatroom_id (tpl_text),
+          tpl_contact_get_identifier (tpl_contact_sender),
+          tpl_contact_get_alias (tpl_contact_sender),
+          arg_Text);
+    }
 
   /* Initialise TplLogEntryText */
   if (!tpl_channel_text_is_chatroom (tpl_text))
@@ -778,7 +786,9 @@ on_sent_signal_cb (TpChannel *proxy,
   tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
   tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
   tpl_log_entry_text_set_sender (log, tpl_contact_sender);
-  tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
+  /* NULL when it's a chatroom */
+  if (tpl_contact_receiver != NULL)
+    tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
   tpl_log_entry_text_set_message (log, arg_Text);
   tpl_log_entry_text_set_message_type (log, arg_Type);
   tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);
@@ -796,7 +806,7 @@ on_sent_signal_cb (TpChannel *proxy,
       g_error_free (error);
     }
 
-  if (tpl_contact_receiver)
+  if (tpl_contact_receiver != NULL)
     g_object_unref (tpl_contact_receiver);
   g_object_unref (tpl_contact_sender);
   g_object_unref (logmanager);

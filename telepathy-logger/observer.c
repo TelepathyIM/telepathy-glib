@@ -229,6 +229,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
           error = NULL;
           continue;
         }
+      PATH_DEBUG (tpl_chan, "Starting preparation fo TplChannel instance");
       tpl_channel_call_when_ready (tpl_chan, got_tpl_channel_text_ready_cb,
           observing_ctx);
     }
@@ -248,7 +249,8 @@ error:
     g_object_unref (tp_bus_daemon);
   g_clear_error (&error);
 
-  DEBUG ("Returning from observe channels");
+  DEBUG ("Returning from observe channels on error condition. "
+          "Unable to log the channel");
   tp_svc_client_observer_return_from_observe_channels (dbus_context);
 }
 
