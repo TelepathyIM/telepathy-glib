@@ -256,7 +256,7 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
       "ChatId",
       "The chat identifier to which the log entry is related.",
       NULL,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHAT_ID, param_spec);
 
   param_spec = g_param_spec_string ("account-path",
@@ -288,19 +288,6 @@ tpl_log_entry_init (TplLogEntry *self)
   TplLogEntryPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_ENTRY, TplLogEntryPriv);
   self->priv = priv;
-}
-
-
-TplLogEntry *
-tpl_log_entry_new (guint log_id,
-    const gchar *chat_id,
-    TplLogEntryDirection direction)
-{
-  return g_object_new (TPL_TYPE_LOG_ENTRY,
-      "log-id", log_id,
-      "chat-id", chat_id,
-      "direction", direction,
-      NULL);
 }
 
 

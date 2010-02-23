@@ -771,9 +771,10 @@ on_sent_signal_cb (TpChannel *proxy,
   account_path = tp_proxy_get_object_path (
       TP_PROXY (tpl_channel_get_account (TPL_CHANNEL (tpl_text))));
 
-  log = tpl_log_entry_text_new (arg_Timestamp, account_path, chat_id,
+  log = tpl_log_entry_text_new (arg_Timestamp, account_path,
       TPL_LOG_ENTRY_DIRECTION_OUT);
 
+  tpl_log_entry_text_set_chat_id (log, chat_id);
   tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
   tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
   tpl_log_entry_text_set_sender (log, tpl_contact_sender);
@@ -858,7 +859,6 @@ keepon_on_receiving_signal (TplLogEntryText *log)
   TplContact *tpl_contact_receiver;
   TpContact *remote;
   TpContact *local;
-  const gchar *chat_id;
 
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (log));
 
@@ -882,11 +882,12 @@ keepon_on_receiving_signal (TplLogEntryText *log)
   /* Initialise LogStore and store the message */
 
   if (!tpl_channel_text_is_chatroom (tpl_text))
-    chat_id = tpl_contact_get_identifier (tpl_contact_sender);
+    tpl_log_entry_text_set_chat_id (log, tpl_contact_get_identifier (
+          tpl_contact_sender));
   else
-    chat_id = tpl_channel_text_get_chatroom_id (tpl_text);
+    tpl_log_entry_text_set_chat_id (log, tpl_channel_text_get_chatroom_id (
+          tpl_text));
 
-  tpl_log_entry_text_set_chat_id (log, chat_id);
   tpl_log_entry_text_set_chatroom (log,
       tpl_channel_text_is_chatroom (tpl_text));
 
@@ -935,7 +936,7 @@ on_received_signal_cb (TpChannel *proxy,
     }
 
   /* Initialize TplLogEntryText (part 1) - chat_id still unknown */
-  log = tpl_log_entry_text_new (arg_ID, account_path, NULL,
+  log = tpl_log_entry_text_new (arg_ID, account_path,
       TPL_LOG_ENTRY_DIRECTION_IN);
 
   tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);

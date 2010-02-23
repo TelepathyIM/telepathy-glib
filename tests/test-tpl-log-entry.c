@@ -13,7 +13,7 @@ int main (int argc, char **argv)
 
   g_type_init ();
 
-  log = tpl_log_entry_text_new (LOG_ID, ACCOUNT_PATH, CHAT_ID, DIRECTION);
+  log = tpl_log_entry_text_new (LOG_ID, ACCOUNT_PATH, DIRECTION);
 
 
   return 0;

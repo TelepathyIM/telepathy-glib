@@ -842,8 +842,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       tpl_contact_set_avatar_token (sender, sender_avatar_token);
 
       message = tpl_log_entry_text_new (cm_id,
-          tp_proxy_get_object_path (account), NULL,
-          TPL_LOG_ENTRY_DIRECTION_NONE);
+          tp_proxy_get_object_path (account), TPL_LOG_ENTRY_DIRECTION_NONE);
       tpl_log_entry_set_sender (TPL_LOG_ENTRY (message), sender);
       tpl_log_entry_set_timestamp (TPL_LOG_ENTRY (message), t);
       tpl_log_entry_text_set_message (message, body);
