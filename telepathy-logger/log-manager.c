@@ -38,6 +38,7 @@
 #include <telepathy-logger/log-entry.h>
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-empathy.h>
+#include <telepathy-logger/log-store-counter.h>
 #include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
 
@@ -140,57 +141,52 @@ tpl_log_manager_class_init (TplLogManagerClass *klass)
   g_type_class_add_private (object_class, sizeof (TplLogManagerPriv));
 }
 
+static void
+add_log_store (TplLogManager *self,
+    GType type,
+    const char *name,
+    gboolean readable,
+    gboolean writable)
+{
+  TplLogStore *store;
+
+  g_return_if_fail (g_type_is_a (type, TPL_TYPE_LOG_STORE));
+
+  store = g_object_new (type,
+      "name", name,
+      "readable", readable,
+      "writable", writable,
+      NULL);
+
+  if (store == NULL)
+    g_critical ("Error creating %s (name=%s)", g_type_name (type), name);
+  else if (!tpl_log_manager_register_log_store (self, store))
+    g_critical ("Failed to register store name=%s", name);
+
+  if (store != NULL)
+    /* drop the initial ref */
+    g_object_unref (store);
+}
 
 static void
 tpl_log_manager_init (TplLogManager *self)
 {
   TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_MANAGER, TplLogManagerPriv);
-  TplLogStore *tplogger = NULL;
-  TplLogStore *empathy = NULL;
 
   self->priv = priv;
 
   DEBUG ("Initialising the Log Manager");
 
   /* The TPL's default read-write logstore */
-  tplogger = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
-      "name", TPL_LOG_MANAGER_LOG_STORE_DEFAULT,
-      "writable", TRUE,
-      "readable", TRUE,
-      NULL);
-  if (tplogger == NULL)
-    g_critical ("Error during TplLogStoreEmpathy (name=TpLogger) "
-        "initialisation.");
-  else
-    {
-      /* manual registration, to set up priv->stores for
-       * tpl_log_manager_register_log_store. no need of unref */
-      priv->stores = g_list_prepend (priv->stores, tplogger);
-      priv->writable_stores = g_list_prepend (priv->writable_stores,
-          tplogger);
-      priv->readable_stores = g_list_prepend (priv->readable_stores,
-          tplogger);
-      DEBUG ("default logstore (name=TpLogger) initialised");
-    }
+  add_log_store (self, TPL_TYPE_LOG_STORE_EMPATHY,
+      TPL_LOG_MANAGER_LOG_STORE_DEFAULT, TRUE, TRUE);
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
-  empathy = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
-      "name", "Empathy",
-      "writable", FALSE,
-      "readable", TRUE,
-      NULL);
-  if (empathy == NULL)
-    g_critical ("Error during TplLogStoreEmpathy (name=Empathy) initialisation.");
-  else if (!tpl_log_manager_register_log_store (self,
-        TPL_LOG_STORE (empathy)))
-    g_critical ("Not able to register the TplLogStore with name=Emapathy. "
-        "Empathy's legacy logs won't be available.");
+  add_log_store (self, TPL_TYPE_LOG_STORE_EMPATHY, "Empathy", FALSE, TRUE);
 
-  /* internally referenced within register_logstore */
-  if (empathy != NULL)
-    g_object_unref (empathy);
-
+  /* Load the message counting cache */
+  add_log_store (self, TPL_TYPE_LOG_STORE_COUNTER, "MessageCounts", TRUE, TRUE);
 
   DEBUG ("Log Manager initialised");
 }
@@ -287,10 +283,6 @@ tpl_log_manager_register_log_store (TplLogManager *self,
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE (logstore), FALSE);
-  g_return_val_if_fail (priv->stores != NULL, FALSE);
-  /* for consistency, at least the default log store is RW */
-  g_return_val_if_fail (priv->writable_stores != NULL, FALSE);
-  g_return_val_if_fail (priv->readable_stores != NULL, FALSE);
 
   /* check that the logstore name is not already used */
   for (l = priv->stores; l != NULL; l = g_list_next (l))
@@ -299,7 +291,10 @@ tpl_log_manager_register_log_store (TplLogManager *self,
       const gchar *name = tpl_log_store_get_name (logstore);
 
       if (!tp_strdiff (name, tpl_log_store_get_name (store)))
-        found = TRUE;
+        {
+          found = TRUE;
+          break;
+        }
     }
   if (found)
     {
