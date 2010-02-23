@@ -406,7 +406,8 @@ tpl_log_entry_text_get_receiver (TplLogEntryText *self)
 
 
 void
-tpl_log_entry_text_set_timestamp (TplLogEntryText *self, time_t data)
+tpl_log_entry_text_set_timestamp (TplLogEntryText *self,
+    time_t data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   TPL_LOG_ENTRY_GET_CLASS (self)->set_timestamp (logentry, data);
@@ -421,6 +422,7 @@ tpl_log_entry_text_set_signal_type (TplLogEntryText *self,
   TPL_LOG_ENTRY_GET_CLASS (self)->set_signal_type (logentry, data);
 }
 
+
 void
 tpl_log_entry_text_set_direction (TplLogEntryText *self,
     TplLogEntryDirection data)
@@ -431,26 +433,29 @@ tpl_log_entry_text_set_direction (TplLogEntryText *self,
 
 
 void
-tpl_log_entry_text_set_chat_id (TplLogEntryText *self, const gchar *data)
+tpl_log_entry_text_set_chat_id (TplLogEntryText *self,
+    const gchar *data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
-  TPL_LOG_ENTRY_GET_CLASS (self)->set_chat_id (logentry, data);
+  TPL_LOG_ENTRY_GET_CLASS (logentry)->set_chat_id (logentry, data);
 }
 
 
 void
-tpl_log_entry_text_set_sender (TplLogEntryText *self, TplContact *data)
+tpl_log_entry_text_set_sender (TplLogEntryText *self,
+    TplContact *data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
-  TPL_LOG_ENTRY_GET_CLASS (self)->set_sender (logentry, data);
+  TPL_LOG_ENTRY_GET_CLASS (logentry)->set_sender (logentry, data);
 }
 
 
 void
-tpl_log_entry_text_set_receiver (TplLogEntryText *self, TplContact *data)
+tpl_log_entry_text_set_receiver (TplLogEntryText *self,
+    TplContact *data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
-  TPL_LOG_ENTRY_GET_CLASS (self)->set_receiver (logentry, data);
+  TPL_LOG_ENTRY_GET_CLASS (logentry)->set_receiver (logentry, data);
 }
 
 

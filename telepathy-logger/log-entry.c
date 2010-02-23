@@ -411,7 +411,7 @@ tpl_log_entry_set_timestamp (TplLogEntry *self,
 
   priv = GET_PRIV (self);
   priv->timestamp = data;
-  g_object_notify (G_OBJECT(self), "timestamp");
+  g_object_notify (G_OBJECT (self), "timestamp");
 }
 
 
@@ -425,7 +425,7 @@ tpl_log_entry_set_signal_type (TplLogEntry *self,
 
   priv = GET_PRIV (self);
   priv->signal_type = data;
-  g_object_notify (G_OBJECT(self), "signal-type");
+  g_object_notify (G_OBJECT (self), "signal-type");
 }
 
 /* set just on construction time */
@@ -439,7 +439,7 @@ tpl_log_entry_set_log_id (TplLogEntry *self,
 
   priv = GET_PRIV (self);
   priv->log_id = data;
-  g_object_notify (G_OBJECT(self), "log-id");
+  g_object_notify (G_OBJECT (self), "log-id");
 }
 
 
@@ -453,7 +453,7 @@ tpl_log_entry_set_direction (TplLogEntry *self,
 
   priv = GET_PRIV (self);
   priv->direction = data;
-  g_object_notify (G_OBJECT(self), "direction");
+  g_object_notify (G_OBJECT (self), "direction");
 }
 
 
@@ -471,7 +471,7 @@ tpl_log_entry_set_sender (TplLogEntry *self,
   if (priv->sender != NULL)
     g_object_unref (priv->sender);
   priv->sender = g_object_ref (data);
-  g_object_notify (G_OBJECT(self), "sender");
+  g_object_notify (G_OBJECT (self), "sender");
 }
 
 
@@ -488,7 +488,7 @@ tpl_log_entry_set_receiver (TplLogEntry *self,
   if (priv->receiver != NULL)
     g_object_unref (priv->receiver);
   priv->receiver = g_object_ref (data);
-  g_object_notify (G_OBJECT(self), "receiver");
+  g_object_notify (G_OBJECT (self), "receiver");
 }
 
 
@@ -505,7 +505,7 @@ tpl_log_entry_set_chat_id (TplLogEntry *self,
   g_return_if_fail (priv->chat_id == NULL);
 
   priv->chat_id = g_strdup (data);
-  g_object_notify (G_OBJECT(self), "chat-id");
+  g_object_notify (G_OBJECT (self), "chat-id");
 }
 
 
@@ -522,7 +522,7 @@ tpl_log_entry_set_account_path (TplLogEntry *self,
   g_return_if_fail (priv->account_path == NULL);
 
   priv->account_path = g_strdup (data);
-  g_object_notify (G_OBJECT(self), "account-path");
+  g_object_notify (G_OBJECT (self), "account-path");
 }
 
 
