@@ -13,7 +13,7 @@ AM_CPPFLAGS =						\
 BUILT_SOURCES =
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libtelepathy-logger.pc
+pkgconfig_DATA = telepathy-logger.pc
 
 lib_LTLIBRARIES = libtelepathy-logger.la
 
