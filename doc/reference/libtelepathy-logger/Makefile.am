@@ -82,7 +82,10 @@ GTKDOC_LIBS= \
 include $(top_srcdir)/gtk-doc.make
 
 if ENABLE_GTK_DOC
-check-local:
+# Enable this enforce the documenting of symbols in `make check`
+# check-local: check-undocumented
+
+check-undocumented:
 	@if grep '^0 symbols incomplete' \
 		$(srcdir)/telepathy-logger-undocumented.txt; then\
 		:; else \

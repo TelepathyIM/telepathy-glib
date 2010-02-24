@@ -9,7 +9,8 @@ TESTS =
 TESTS_ENVIRONMENT = \
 	PYTHONPATH=@abs_top_srcdir@/tests/twisted:@abs_top_builddir@/tests/twisted
 
-check-local: check-coding-style check-twisted
+# check-local: check-coding-style check-twisted
+check-local: check-coding-style
 
 # set to 6 when using refdbg, to give Gabble time to exit
 CHECK_TWISTED_SLEEP=0
