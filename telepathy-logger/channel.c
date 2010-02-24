@@ -41,13 +41,16 @@
 static void tpl_channel_set_account (TplChannel *self, TpAccount *data);
 static void call_when_ready_protected (TplChannel *self,
     GAsyncReadyCallback cb, gpointer user_data);
-static void pendingproc_get_ready_tp_connection (TplActionChain *ctx);
+static void pendingproc_get_ready_tp_connection (TplActionChain *ctx,
+    gpointer user_data);
 static void got_ready_tp_connection_cb (TpConnection *connection,
     const GError *error, gpointer user_data);
-static void pendingproc_get_ready_tp_channel (TplActionChain *ctx);
+static void pendingproc_get_ready_tp_channel (TplActionChain *ctx,
+    gpointer user_data);
 static void got_ready_tp_channel_cb (TpChannel *channel,
     const GError *error, gpointer user_data);
-static void pendingproc_register_tpl_channel (TplActionChain *ctx);
+static void pendingproc_register_tpl_channel (TplActionChain *ctx,
+    gpointer user_data);
 
 G_DEFINE_ABSTRACT_TYPE (TplChannel, tpl_channel, TP_TYPE_CHANNEL)
 
@@ -229,15 +232,16 @@ call_when_ready_protected (TplChannel *self,
   TplActionChain *actions;
 
   actions = tpl_actionchain_new (G_OBJECT (self), cb, user_data);
-  tpl_actionchain_append (actions, pendingproc_get_ready_tp_connection);
-  tpl_actionchain_append (actions, pendingproc_get_ready_tp_channel);
-  tpl_actionchain_append (actions, pendingproc_register_tpl_channel);
+  tpl_actionchain_append (actions, pendingproc_get_ready_tp_connection, NULL);
+  tpl_actionchain_append (actions, pendingproc_get_ready_tp_channel, NULL);
+  tpl_actionchain_append (actions, pendingproc_register_tpl_channel, NULL);
   tpl_actionchain_continue (actions);
 }
 
 
 static void
-pendingproc_get_ready_tp_connection (TplActionChain *ctx)
+pendingproc_get_ready_tp_connection (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
   TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (
@@ -272,7 +276,8 @@ got_ready_tp_connection_cb (TpConnection *connection,
 }
 
 static void
-pendingproc_get_ready_tp_channel (TplActionChain *ctx)
+pendingproc_get_ready_tp_channel (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
 
@@ -311,7 +316,8 @@ got_ready_tp_channel_cb (TpChannel *channel,
 
 
 static void
-pendingproc_register_tpl_channel (TplActionChain *ctx)
+pendingproc_register_tpl_channel (TplActionChain *ctx,
+    gpointer user_data)
 {
   /* singleton */
   TplObserver *observer = tpl_observer_new ();

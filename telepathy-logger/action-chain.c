@@ -22,6 +22,12 @@
 #include "config.h"
 #include "action-chain.h"
 
+typedef struct {
+  TplPendingAction action;
+  gpointer user_data;
+} TplActionLink;
+
+
 TplActionChain *
 tpl_actionchain_new (GObject *obj,
     GAsyncReadyCallback cb,
@@ -37,9 +43,18 @@ tpl_actionchain_new (GObject *obj,
 }
 
 
+static void
+link_free (gpointer data,
+    gpointer user_data)
+{
+  g_slice_free (TplActionLink, data);
+}
+
+
 void
 tpl_actionchain_free (TplActionChain *self)
 {
+  g_queue_foreach (self->chain, link_free, NULL);
   g_queue_free (self->chain);
   /* TODO free self->simple, I canont understand how */
   g_slice_free (TplActionChain, self);
@@ -57,17 +72,31 @@ tpl_actionchain_get_object (TplActionChain *self)
 
 void
 tpl_actionchain_prepend (TplActionChain *self,
-    TplPendingAction func)
+    TplPendingAction func,
+    gpointer user_data)
 {
-  g_queue_push_head (self->chain, func);
+  TplActionLink *link;
+
+  link = g_slice_new0 (TplActionLink);
+  link->action = func;
+  link->user_data = user_data;
+
+  g_queue_push_head (self->chain, link);
 }
 
 
 void
 tpl_actionchain_append (TplActionChain *self,
-    TplPendingAction func)
+    TplPendingAction func,
+    gpointer user_data)
 {
-  g_queue_push_tail (self->chain, func);
+  TplActionLink *link;
+
+  link = g_slice_new0 (TplActionLink);
+  link->action = func;
+  link->user_data = user_data;
+
+  g_queue_push_tail (self->chain, link);
 }
 
 
@@ -83,8 +112,10 @@ tpl_actionchain_continue (TplActionChain *self)
     }
   else
     {
-      TplPendingAction next_action = g_queue_pop_head (self->chain);
-      next_action (self);
+      TplActionLink *link = g_queue_pop_head (self->chain);
+
+      link->action (self, link->user_data);
+      g_slice_free (TplActionLink, link);
     }
 }
 

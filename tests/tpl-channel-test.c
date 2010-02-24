@@ -32,7 +32,8 @@
 
 static void call_when_ready_wrapper (TplChannel *tpl_chan, GAsyncReadyCallback
     cb, gpointer user_data);
-static void pendingproc_prepare_tpl_channel (TplActionChain *ctx);
+static void pendingproc_prepare_tpl_channel (TplActionChain *ctx,
+    gpointer user_data);
 static void got_tpl_chan_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
 
@@ -133,14 +134,15 @@ tpl_channel_test_call_when_ready (TplChannelTest *self,
    * are unreferenced by g_object_unref: after the order change, it might
    * happend that an object still has to be created after the change */
   actions = tpl_actionchain_new (G_OBJECT (self), cb, user_data);
-  tpl_actionchain_append (actions, pendingproc_prepare_tpl_channel);
+  tpl_actionchain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   /* start the queue consuming */
   tpl_actionchain_continue (actions);
 }
 
 
 static void
-pendingproc_prepare_tpl_channel (TplActionChain *ctx)
+pendingproc_prepare_tpl_channel (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_actionchain_get_object (ctx));
 

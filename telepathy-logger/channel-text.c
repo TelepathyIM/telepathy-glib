@@ -78,16 +78,23 @@ static void on_sent_signal_cb (TpChannel *proxy, guint arg_Timestamp,
 static void on_send_error_cb (TpChannel *proxy, guint arg_Error,
     guint arg_Timestamp, guint arg_Type, const gchar *arg_Text,
     gpointer user_data, GObject *weak_object);
-static void pendingproc_connect_signals (TplActionChain *ctx);
-static void pendingproc_get_pending_messages (TplActionChain *ctx);
-static void pendingproc_prepare_tpl_channel (TplActionChain *ctx);
-static void pendingproc_get_chatroom_id (TplActionChain *ctx);
+static void pendingproc_connect_signals (TplActionChain *ctx,
+    gpointer user_data);
+static void pendingproc_get_pending_messages (TplActionChain *ctx,
+   gpointer user_data);
+static void pendingproc_prepare_tpl_channel (TplActionChain *ctx,
+   gpointer user_data);
+static void pendingproc_get_chatroom_id (TplActionChain *ctx,
+   gpointer user_data);
 static void get_chatroom_id_cb (TpConnection *proxy,
     const gchar **identifiers, const GError *error, gpointer user_data,
     GObject *weak_object);
-static void pendingproc_get_my_contact (TplActionChain *ctx);
-static void pendingproc_get_remote_contact (TplActionChain *ctx);
-static void pendingproc_get_remote_handle_type (TplActionChain *ctx);
+static void pendingproc_get_my_contact (TplActionChain *ctx,
+   gpointer user_data);
+static void pendingproc_get_remote_contact (TplActionChain *ctx,
+   gpointer user_data);
+static void pendingproc_get_remote_handle_type (TplActionChain *ctx,
+   gpointer user_data);
 static void keepon_on_receiving_signal (TplLogEntryText *log);
 
 
@@ -157,7 +164,8 @@ got_contact_cb (TpConnection *connection,
 
 
 static void
-pendingproc_get_remote_contact (TplActionChain *ctx)
+pendingproc_get_remote_contact (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
@@ -174,7 +182,8 @@ pendingproc_get_remote_contact (TplActionChain *ctx)
 
 
 static void
-pendingproc_get_my_contact (TplActionChain *ctx)
+pendingproc_get_my_contact (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
   TpConnection *tp_conn = tp_channel_borrow_connection (
@@ -188,7 +197,8 @@ pendingproc_get_my_contact (TplActionChain *ctx)
 
 
 static void
-pendingproc_get_remote_handle_type (TplActionChain *ctx)
+pendingproc_get_remote_handle_type (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
   TpHandleType remote_handle_type;
@@ -198,10 +208,10 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx)
   switch (remote_handle_type)
     {
       case TP_HANDLE_TYPE_CONTACT:
-        tpl_actionchain_prepend (ctx, pendingproc_get_remote_contact);
+        tpl_actionchain_prepend (ctx, pendingproc_get_remote_contact, NULL);
         break;
       case TP_HANDLE_TYPE_ROOM:
-        tpl_actionchain_prepend (ctx, pendingproc_get_chatroom_id);
+        tpl_actionchain_prepend (ctx, pendingproc_get_chatroom_id, NULL);
         break;
       case TP_HANDLE_TYPE_NONE:
         PATH_DEBUG (tpl_text, "HANDLE_TYPE_NONE received, probably an anonymous "
@@ -472,18 +482,19 @@ tpl_channel_text_call_when_ready (TplChannelText *self,
    * are unreferenced by g_object_unref but used by a next action AND what object are actually not
    * prepared but used anyway */
   actions = tpl_actionchain_new (G_OBJECT (self), cb, user_data);
-  tpl_actionchain_append (actions, pendingproc_connect_signals);
-  tpl_actionchain_append (actions, pendingproc_prepare_tpl_channel);
-  tpl_actionchain_append (actions, pendingproc_get_my_contact);
-  tpl_actionchain_append (actions, pendingproc_get_remote_handle_type);
-  tpl_actionchain_append (actions, pendingproc_get_pending_messages);
+  tpl_actionchain_append (actions, pendingproc_connect_signals, NULL);
+  tpl_actionchain_append (actions, pendingproc_prepare_tpl_channel, NULL);
+  tpl_actionchain_append (actions, pendingproc_get_my_contact, NULL);
+  tpl_actionchain_append (actions, pendingproc_get_remote_handle_type, NULL);
+  tpl_actionchain_append (actions, pendingproc_get_pending_messages, NULL);
   /* start the chain consuming */
   tpl_actionchain_continue (actions);
 }
 
 
 static void
-pendingproc_prepare_tpl_channel (TplActionChain *ctx)
+pendingproc_prepare_tpl_channel (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_actionchain_get_object (ctx));
 
@@ -509,7 +520,8 @@ got_tpl_chan_ready_cb (GObject *obj,
 
 
 static void
-pendingproc_get_pending_messages (TplActionChain *ctx)
+pendingproc_get_pending_messages (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannelText *chan_text = tpl_actionchain_get_object (ctx);
 
@@ -567,7 +579,8 @@ got_pending_messages_cb (TpChannel *proxy,
 
 
 static void
-pendingproc_get_chatroom_id (TplActionChain *ctx)
+pendingproc_get_chatroom_id (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
@@ -612,7 +625,8 @@ get_chatroom_id_cb (TpConnection *proxy,
 
 
 static void
-pendingproc_connect_signals (TplActionChain *ctx)
+pendingproc_connect_signals (TplActionChain *ctx,
+    gpointer user_data)
 {
   TplChannelText *tpl_text = tpl_actionchain_get_object (ctx);
   GError *error = NULL;
