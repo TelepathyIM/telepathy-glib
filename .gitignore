@@ -41,6 +41,7 @@ config.*
 
 telepathy-logger-*/
 telepathy-logger-*.tar.bz2
+telepathy-logger-*.tar.bz2.asc
 
 src/telepathy-logger
 src/test-api

@@ -40,3 +40,4 @@ ChangeLog:
 
 .PHONY: ChangeLog
 
+include tools/telepathy.am

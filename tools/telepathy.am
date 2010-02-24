@@ -1,22 +1,7 @@
 ## Useful top-level Makefile.am snippets for Telepathy projects.
 
-dist-hook:
-	chmod u+w ${distdir}/ChangeLog
-	if test -d ${top_srcdir}/.git; then \
-		git log --date=iso $(CHANGELOG_RANGE) > ${distdir}/ChangeLog; \
-	fi
-
-distcheck-hook:
-	@case @VERSION@ in \
-		*.*.*.*) ;; \
-		*) \
-			if grep -r UNRELEASED $(CHECK_FOR_UNRELEASED); \
-			then \
-				echo "^^^ This is meant to be a release, but some files say UNRELEASED" >&2; \
-				exit 2; \
-			fi \
-			;; \
-	esac
+maintainer-sign-release:
+	gpg --detach-sign -a @PACKAGE@-@VERSION@.tar.bz2
 
 maintainer-upload-release: _maintainer-upload-release
 
@@ -27,12 +12,12 @@ _maintainer-upload-release-check:
 			exit 2; \
 			;; \
 	esac
-	test -f @PACKAGE@-@VERSION@.tar.gz
-	test -f @PACKAGE@-@VERSION@.tar.gz.asc
-	gpg --verify @PACKAGE@-@VERSION@.tar.gz.asc
+	test -f @PACKAGE@-@VERSION@.tar.bz2
+	test -f @PACKAGE@-@VERSION@.tar.bz2.asc
+	gpg --verify @PACKAGE@-@VERSION@.tar.bz2.asc
 
 _maintainer-upload-release: _maintainer-upload-release-check
-	rsync -vzP @PACKAGE@-@VERSION@.tar.gz telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.gz
-	rsync -vzP @PACKAGE@-@VERSION@.tar.gz.asc telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.gz.asc
+	rsync -vzP @PACKAGE@-@VERSION@.tar.bz2 telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.bz2
+	rsync -vzP @PACKAGE@-@VERSION@.tar.bz2.asc telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/releases/@PACKAGE@/@PACKAGE@-@VERSION@.tar.bz2.asc
 
 ## vim:set ft=automake:
