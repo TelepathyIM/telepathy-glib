@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/enums.h>
+#include <telepathy-glib/proxy.h>
 
 #include <telepathy-logger/action-chain.h>
 #include <telepathy-logger/contact.h>
@@ -33,6 +34,7 @@
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager-priv.h>
 #include <telepathy-logger/util.h>
+
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/debug.h>
@@ -96,6 +98,12 @@ static void pendingproc_get_remote_contact (TplActionChain *ctx,
 static void pendingproc_get_remote_handle_type (TplActionChain *ctx,
    gpointer user_data);
 static void keepon_on_receiving_signal (TplLogEntryText *log);
+static void got_message_pending_messages_cb (TpProxy *proxy,
+    const GValue *out_Value, const GError *error, gpointer user_data,
+    GObject *weak_object);
+static void got_text_pending_messages_cb (TpChannel *proxy,
+    const GPtrArray *result, const GError *error, gpointer user_data,
+    GObject *weak_object);
 
 
 G_DEFINE_TYPE (TplChannelText, tpl_channel_text, TPL_TYPE_CHANNEL)
@@ -525,13 +533,102 @@ pendingproc_get_pending_messages (TplActionChain *ctx,
 {
   TplChannelText *chan_text = tpl_actionchain_get_object (ctx);
 
-  tp_cli_channel_type_text_call_list_pending_messages (TP_CHANNEL (chan_text),
-      -1, FALSE, got_pending_messages_cb, ctx, NULL, NULL);
+  if (tp_proxy_has_interface (chan_text,
+        "org.freedesktop.Telepathy.Channel.Interface.Messages"))
+    tp_cli_dbus_properties_call_get (chan_text, -1,
+        "org.freedesktop.Telepathy.Channel.Interface.Messages",
+        "PendingMessages", got_message_pending_messages_cb, ctx, NULL, NULL);
+  else
+    tp_cli_channel_type_text_call_list_pending_messages (TP_CHANNEL (chan_text),
+        -1, FALSE, got_text_pending_messages_cb, ctx, NULL, NULL);
+}
+
+/* PendingMessages CB for Message interface */
+static void
+got_message_pending_messages_cb (TpProxy *proxy,
+    const GValue *out_Value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TplActionChain *ctx = user_data;
+  GPtrArray *result = NULL;
+  guint i;
+
+  g_return_if_fail (TPL_IS_CHANNEL (proxy));
+
+  if (error != NULL)
+    DEBUG ("retrieving messages for Message iface: %s", error->message);
+
+  /* It's aaa{vs}, a list of message each containing a list of message's parts
+   * each contain a dictioanry k:v */
+  result = g_value_get_boxed (out_Value);
+
+  /* cycle the list of messages */
+  PATH_DEBUG (proxy, "%d pending message(s) from Message iface", result->len);
+  for (i = 0; i < result->len; ++i)
+    {
+      GPtrArray *message_parts;
+      GHashTable *message_headers; /* string:gvalue */
+      GHashTable *message_part; /* string:gvalue */
+      const gchar *message_token;
+      guint64 message_timestamp;
+      guint message_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
+      guint message_flags = 0;
+      guint message_id;
+      TpHandle message_sender_handle;
+      gboolean is_scrollback;
+      gboolean is_rescued;
+      const gchar *message_body;
+
+      /* list of message's parts */
+      message_parts = g_ptr_array_index (result, i);
+
+      /* message part 0 is the message's headers */
+      message_headers = g_ptr_array_index (message_parts, 0);
+      /* message part 1 is is the first part, the most 'faithful' among
+       * alternatives.
+       * TODO fully support alternatives and attachments/images
+       * related to them */
+      message_part = g_ptr_array_index (message_parts, 1);
+
+      message_token = tp_asv_get_string (message_headers, "message-token");
+      message_id = tp_asv_get_uint32 (message_headers, "pending-message-id",
+          NULL);
+      //tp_asv_get_uint32 (message_headers, "pending-message-id", NULL);
+      message_timestamp = tp_asv_get_uint64 (message_headers,
+          "message-received", NULL);
+      message_sender_handle = tp_asv_get_uint32 (message_headers,
+          "message-sender", NULL);
+
+      if (g_hash_table_lookup (message_headers, "message-type") != NULL)
+        message_type = tp_asv_get_uint32 (message_headers, "message-type",
+            NULL);
+
+      is_rescued = tp_asv_get_boolean (message_headers, "rescued", NULL);
+      is_scrollback = tp_asv_get_boolean (message_headers, "scrollback",
+          NULL);
+      message_flags = (is_rescued ? TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED : 0);
+      message_flags |= (is_scrollback ?
+          TP_CHANNEL_TEXT_MESSAGE_FLAG_SCROLLBACK : 0);
+
+      message_body = tp_asv_get_string (message_part, "content");
+
+      DEBUG ("pending message");
+      on_received_signal_cb (TP_CHANNEL (proxy), message_id, message_timestamp,
+          message_sender_handle, message_type, message_flags, message_body,
+          TPL_CHANNEL_TEXT (proxy),
+          NULL);
+    }
+
+  tpl_actionchain_continue (ctx);
+
 }
 
 
-void
-got_pending_messages_cb (TpChannel *proxy,
+/* PendingMessages CB for Text interface */
+static void
+got_text_pending_messages_cb (TpChannel *proxy,
     const GPtrArray *result,
     const GError *error,
     gpointer user_data,
@@ -542,21 +639,21 @@ got_pending_messages_cb (TpChannel *proxy,
 
   if (error != NULL)
     {
-      PATH_DEBUG (proxy, "retrieving pending messages: %s", error->message);
+      PATH_DEBUG (proxy, "retrieving pending messages for Text iface: %s", error->message);
       tpl_actionchain_terminate (ctx);
       return;
     }
 
-  PATH_DEBUG (proxy, "%d pending message(s)", result->len);
+  PATH_DEBUG (proxy, "%d pending message(s) for Text iface", result->len);
   for (i = 0; i < result->len; ++i)
     {
-      GValueArray    *message_struct;
-      const gchar    *message_body;
-      guint           message_id;
-      guint           message_timestamp;
-      guint           from_handle;
-      guint           message_type;
-      guint           message_flags;
+      GValueArray *message_struct;
+      const gchar *message_body;
+      guint message_id;
+      guint message_timestamp;
+      guint from_handle;
+      guint message_type;
+      guint message_flags;
 
       message_struct = g_ptr_array_index (result, i);
 
@@ -567,6 +664,7 @@ got_pending_messages_cb (TpChannel *proxy,
       message_type = g_value_get_uint (g_value_array_get_nth (message_struct, 3));
       message_flags = g_value_get_uint (g_value_array_get_nth (message_struct, 4));
       message_body = g_value_get_string (g_value_array_get_nth (message_struct, 5));
+
 
       /* call the received signal callback to trigger the message storing */
       on_received_signal_cb (proxy, message_id, message_timestamp, from_handle,
