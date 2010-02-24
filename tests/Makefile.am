@@ -18,15 +18,22 @@ noinst_PROGRAMS = \
 
 test_tpl_channel_SOURCES = \
 	test-tpl-channel.c	\
-	tpl-channel-test.c
+	tpl-channel-test.c	\
+	tpl-channel-test.h
 
 test_tpl_observer_SOURCES = \
 	test-tpl-observer.c	\
 	tpl-channel-test.c
 
+test_searches_SOURCES = \
+	test-searches.c \
+	constants.h
 
-AM_CFLAGS = $(ERROR_CFLAGS) $(LIBTPL_CFLAGS) \
-    -I $(top_srcdir)/telepathy-logger -I $(top_builddir)/src
+AM_CFLAGS = \
+	$(ERROR_CFLAGS) \
+	$(LIBTPL_CFLAGS) \
+	-I$(top_srcdir) \
+	-I$(top_builddir)
 
 TESTS = $(noinst_PROGRAMS)
 

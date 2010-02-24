@@ -4,14 +4,18 @@ EXTRA_DIST = \
     check-c-style.sh \
     check-misc.sh \
     check-whitespace.sh \
+    doc-generator.py \
     doc-generator.xsl \
+    glib-client-gen.py \
     glib-ginterface-gen.py \
     glib-gtypes-generator.py \
     glib-interfaces-gen.py \
     glib-signals-marshal-gen.py \
+    identity.xsl \
     lcov.am \
     libglibcodegen.py \
     libtpcodegen.py \
+    specparser.py \
     telepathy.am \
     xincludator.py
 

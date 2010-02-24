@@ -2,6 +2,8 @@ include $(top_srcdir)/tools/shave.mk
 include $(top_srcdir)/tools/flymake.mk
 
 AM_CPPFLAGS =						\
+	-I$(top_builddir)				\
+	-I$(top_srcdir)					\
 	$(ERROR_CFLAGS)					\
 	-DG_LOG_DOMAIN=\"libtelepathy-logger\"		\
 	$(LIBTPL_CFLAGS)				\
@@ -18,17 +20,21 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 LIBTPLdir = $(includedir)/telepathy-logger
 LIBTPL_HEADERS = \
 		action-chain.h			\
-		contact.h			\
 		channel.h			\
+		channel-factory.h		\
 		channel-text.h			\
+		conf.h				\
+		contact.h			\
 		datetime.h			\
 		dbus-service.h			\
 		debug.h				\
 		log-entry.h			\
 		log-entry-text.h		\
 		log-manager.h			\
+		log-manager-priv.h		\
 		log-store.h			\
 		log-store-empathy.h		\
+		log-store-factory.h		\
 		observer.h			\
 		util.h
 

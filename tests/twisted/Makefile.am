@@ -77,6 +77,9 @@ telepathy_logger_debug_LDADD = \
 telepathy_logger_debug_LDFLAGS = -export-dynamic
 
 AM_CFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/tests \
+	-I$(top_builddir) \
 	$(ERROR_CFLAGS)	\
 	${TPL_CFLAGS}
 

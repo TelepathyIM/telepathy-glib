@@ -13,7 +13,7 @@ exec-with-log.sh: exec-with-log.sh.in
 # Don't use the full filename for the .in if > 99 character: >99 char filenames
 # in tarballs are non-portable (and automake 1.8 doesn't let us build
 # non-archaic tarballs)
-service_in_files = org.freedesktop.Telepathy.Client.TelepathyLogger.service.in
+service_in_files = org.freedesktop.Telepathy.Client.Logger.service.in
 service_files = $(service_in_files:.service.in=.service)
 
 # D-Bus config file for testing

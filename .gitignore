@@ -1,3 +1,4 @@
+ChangeLog
 Makefile
 Makefile.in
 configure
@@ -38,6 +39,9 @@ config.*
 *.pyc
 *.pyo
 
+telepathy-logger-*/
+telepathy-logger-*.tar.bz2
+
 src/telepathy-logger
 src/test-api
 
@@ -54,7 +58,7 @@ extensions/doc/
 tests/test-*[^ch]
 tests/twisted/telepathy-logger-debug
 tests/twisted/tools/exec-with-log.sh
-tests/twisted/tools/org.freedesktop.Telepathy.Client.TelepathyLogger.service
+tests/twisted/tools/org.freedesktop.Telepathy.Client.Logger.service
 tests/twisted/tools/tmp-session-bus.conf
 
 doc/reference/libtelepathy-logger/*.stamp

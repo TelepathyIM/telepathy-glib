@@ -19,7 +19,7 @@ m4_define(tpl_maybe_datestamp,
 m4_define(tpl_version, tpl_full_version[]tpl_maybe_datestamp)
 
 
-AC_INIT(TelepathyLogger, tpl_version, https://bugs.freedesktop.org/buglist.cgi?product=Telepathy&component=logger)
+AC_INIT(telepathy-logger, tpl_version, https://bugs.freedesktop.org/buglist.cgi?product=Telepathy&component=logger)
 
 DBUS_SERVICES_DIR="$datadir/dbus-1/services"
 AC_SUBST(DBUS_SERVICES_DIR)
@@ -51,7 +51,7 @@ AC_CONFIG_AUX_DIR(.)
 
 GNOME_COMMON_INIT
 
-AM_INIT_AUTOMAKE(1.9 dist-bzip2 no-define -Wno-portability)
+AM_INIT_AUTOMAKE(1.9 dist-bzip2 no-define no-dist-gzip tar-ustar -Wno-portability)
 AC_ISC_POSIX
 AC_PROG_CC
 AC_HEADER_STDC
