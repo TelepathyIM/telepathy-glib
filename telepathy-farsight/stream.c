@@ -125,8 +125,9 @@ enum
 {
   PROP_CHANNEL = 1,
   PROP_FARSIGHT_CONFERENCE,
-  PROP_FARSIGHT_PARTICIPANT,
+  PROP_FARSIGHT_SESSION,
   PROP_FARSIGHT_STREAM,
+  PROP_FARSIGHT_PARTICIPANT,
   PROP_PROXY,
   PROP_STREAM_ID,
   PROP_MEDIA_TYPE,
@@ -238,6 +239,9 @@ tf_stream_get_property (GObject    *object,
       break;
     case PROP_FARSIGHT_PARTICIPANT:
       g_value_set_object (value, self->priv->fs_participant);
+      break;
+    case PROP_FARSIGHT_SESSION:
+      g_value_set_object (value, self->priv->fs_session);
       break;
     case PROP_FARSIGHT_STREAM:
       g_value_set_object (value, self->priv->fs_stream);
@@ -468,6 +472,13 @@ tf_stream_class_init (TfStreamClass *klass)
           "create streams for.",
           FS_TYPE_PARTICIPANT,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_FARSIGHT_SESSION,
+      g_param_spec_object ("farsight-session",
+          "Farsight session",
+          "The Farsight session",
+          FS_TYPE_SESSION,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_FARSIGHT_STREAM,
       g_param_spec_object ("farsight-stream",
