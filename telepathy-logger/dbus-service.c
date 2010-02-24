@@ -76,39 +76,134 @@ tpl_dbus_service_new (void)
 }
 
 
-static GPtrArray *
-tpl_chat_message_marshal (GList *data)
+typedef struct
 {
-  guint idx;
-  GList *data_ptr;
-  GPtrArray *retval;
+  TplDBusService *self;
+  TpAccount *account;
+  char *identifier;
+  gboolean is_chatroom;
+  guint lines;
+  DBusGMethodInvocation *context;
+  GPtrArray *packed;
+  GList *dates, *ptr;
+} RecentMessagesContext;
 
-  retval = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
+static void _lookup_next_date (RecentMessagesContext *ctx);
 
-  DEBUG ("Marshalled a(ssx) data:");
+static void
+_get_messages_return (GObject *manager,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  RecentMessagesContext *ctx = user_data;
+  GList *messages, *ptr;
+  GError *error = NULL;
 
-  for (idx = 0, data_ptr = data;
-      data_ptr != NULL;
-      data_ptr = g_list_next (data_ptr), ++idx)
+  messages = tpl_log_manager_get_messages_for_date_async_finish (res, &error);
+  if (error != NULL)
     {
-      TplLogEntry *log = data_ptr->data;
-      const gchar *message = tpl_log_entry_text_get_message (
+      DEBUG ("Failed to get messages: %s", error->message);
+
+      g_clear_error (&error);
+      messages = NULL; /* just to be sure */
+    }
+
+  /* from the most recent message, backward */
+  for (ptr = g_list_last (messages);
+       ptr != NULL && ctx->lines > 0;
+       ptr = g_list_previous (ptr))
+    {
+      TplLogEntry *log = ptr->data;
+      const char *message = tpl_log_entry_text_get_message (
           TPL_LOG_ENTRY_TEXT (log));
-      const gchar *sender = tpl_contact_get_identifier (
+      const char *sender = tpl_contact_get_identifier (
           tpl_log_entry_text_get_sender (TPL_LOG_ENTRY_TEXT (log)));
       gint64 timestamp = tpl_log_entry_get_timestamp (log);
 
-      g_ptr_array_add (retval, tp_value_array_build (3,
+      DEBUG ("Message: %" G_GINT64_FORMAT " <%s> %s",
+          timestamp, sender, message);
+
+      g_ptr_array_add (ctx->packed, tp_value_array_build (3,
           G_TYPE_STRING, sender,
           G_TYPE_STRING, message,
           G_TYPE_INT64, timestamp,
           G_TYPE_INVALID));
 
-      DEBUG ("%d = %s / %s / %" G_GINT64_FORMAT, idx, sender, message,
-          timestamp);
+      ctx->lines--;
     }
 
-  return retval;
+  g_list_foreach (messages, (GFunc) g_object_unref, NULL);
+  g_list_free (messages);
+
+  _lookup_next_date (ctx);
+}
+
+
+static void
+_lookup_next_date (RecentMessagesContext *ctx)
+{
+  TplDBusServicePriv *priv = GET_PRIV (ctx->self);
+
+  if (ctx->ptr != NULL && ctx->lines > 0)
+    {
+      char *date = ctx->ptr->data;
+
+      DEBUG ("Looking up date %s", date);
+
+      tpl_log_manager_get_messages_for_date_async (priv->manager,
+          ctx->account, ctx->identifier, ctx->is_chatroom, date,
+          _get_messages_return, ctx);
+
+      ctx->ptr = g_list_previous (ctx->ptr);
+    }
+  else
+    {
+      /* return and release */
+      DEBUG ("complete, returning");
+
+      g_list_foreach (ctx->dates, (GFunc) g_free, NULL);
+      g_list_free (ctx->dates);
+
+      tpl_svc_logger_return_from_get_recent_messages (ctx->context,
+          ctx->packed);
+
+      g_ptr_array_free (ctx->packed, TRUE);
+      g_free (ctx->identifier);
+      g_object_unref (ctx->account);
+      g_slice_free (RecentMessagesContext, ctx);
+    }
+}
+
+
+static void
+_get_dates_return (GObject *manager,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  RecentMessagesContext *ctx = user_data;
+  GError *error = NULL;
+
+  ctx->dates = tpl_log_manager_get_dates_async_finish (res, &error);
+  if (ctx->dates == NULL)
+    {
+      DEBUG ("Failed to get dates: %s", error->message);
+
+      dbus_g_method_return_error (ctx->context, error);
+
+      g_clear_error (&error);
+
+      g_free (ctx->identifier);
+      g_object_unref (ctx->account);
+      g_slice_free (RecentMessagesContext, ctx);
+
+      return;
+    }
+
+  ctx->ptr = g_list_last (ctx->dates);
+  ctx->packed = g_ptr_array_new_with_free_func (
+      (GDestroyNotify) g_value_array_free);
+
+  _lookup_next_date (ctx);
 }
 
 
@@ -121,14 +216,10 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
     DBusGMethodInvocation *context)
 {
   TplDBusServicePriv *priv = GET_PRIV (self);
-  TpAccount *account = NULL;
-  TpDBusDaemon *tp_dbus = NULL;
-  GList *ret = NULL;
-  GPtrArray *packed = NULL;
-  GList *dates = NULL;
-  GList *dates_ptr = NULL;
+  TpDBusDaemon *tp_dbus;
+  TpAccount *account;
+  RecentMessagesContext *ctx;
   GError *error = NULL;
-  guint left_lines = lines;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
@@ -150,56 +241,19 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
       goto out;
     }
 
-  dates = tpl_log_manager_get_dates (priv->manager, account, identifier,
-      is_chatroom);
-  if (dates == NULL)
-    {
-      error = g_error_new_literal (TPL_DBUS_SERVICE_ERROR,
-          TPL_DBUS_SERVICE_ERROR_FAILED, "Error during date list retrieving, "
-          "probably the account path or the identifier does not exist");
-      dbus_g_method_return_error (context, error);
-      goto out;
-    }
+  ctx = g_slice_new (RecentMessagesContext);
+  ctx->self = TPL_DBUS_SERVICE (self);
+  ctx->account = account;
+  ctx->identifier = g_strdup (identifier);
+  ctx->is_chatroom = is_chatroom;
+  ctx->lines = lines;
+  ctx->context = context;
 
-  /* for each date returned, get at most <lines> lines, then if needed
-   * check the previous date for the missing ones, and so on until
-   * <lines> is reached, most recent date first */
-  for (dates_ptr = g_list_last (dates);
-      dates_ptr != NULL && left_lines > 0;
-      dates_ptr = g_list_previous (dates_ptr))
-    {
-      gchar *date = dates_ptr->data;
-      GList *messages = tpl_log_manager_get_messages_for_date (priv->manager,
-          account, identifier, is_chatroom, date);
-      GList *messages_ptr;
-
-      /* from the most recent message, backward */
-      for (messages_ptr = g_list_last (messages);
-          messages_ptr != NULL && left_lines > 0;
-          messages_ptr = g_list_previous (messages_ptr))
-        {
-          TplLogEntry *log = messages_ptr->data;
-              /* keeps the reference and add to the result */
-              ret = g_list_prepend (ret, g_object_ref (log));
-              left_lines -= 1;
-        }
-      g_list_foreach (messages, (GFunc) g_object_unref, NULL);
-      g_list_free (messages);
-    }
-  g_list_foreach (dates, (GFunc) g_free, NULL);
-  g_list_free (dates);
-
-  packed = tpl_chat_message_marshal (ret);
-
-  tpl_svc_logger_return_from_get_recent_messages (context, packed);
-
-  g_list_foreach (ret, (GFunc) g_object_unref, NULL);
-  g_list_free (ret);
-  g_ptr_array_free (packed, TRUE);
+  tpl_log_manager_get_dates_async (priv->manager,
+      account, identifier, is_chatroom,
+      _get_dates_return, ctx);
 
 out:
-  if (account != NULL)
-    g_object_unref (account);
 
   if (tp_dbus != NULL)
     g_object_unref (tp_dbus);
