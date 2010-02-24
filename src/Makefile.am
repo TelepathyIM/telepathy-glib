@@ -14,7 +14,9 @@ AM_CPPFLAGS =						\
 BUILT_SOURCES =
 
 bin_PROGRAMS = \
-	telepathy-logger	\
+	telepathy-logger
+
+noinst_PROGRAMS = \
 	test-api
 
 telepathy_logger_LDADD = \
