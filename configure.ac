@@ -1,5 +1,5 @@
 dnl If not 1, append datestamp to the version number
-m4_define(tpl_released, 0)
+m4_define(tpl_released, 1)
 
 m4_define([tpl_major_version], [0])
 m4_define([tpl_minor_version], [1])

@@ -1,0 +1,29 @@
+telepathy-logger 0.1.0 (2010-02-24)
+===================================
+
+The ``Calamity Ensues'' release
+
+This is the first preview release of the telepathy-logger. You should be aware
+that this is a piece of software that is still very much in development,
+everything is subject to change.
+
+The idea behind tp-logger is that it will become a generic logging daemon usable
+anywhere in Telepathy, with any Telepathy client.
+
+Things that mostly work:
+
+ - logging of text channels into an Empathy style log format using a Telepathy
+   Observer client
+ - Telepathy-style D-Bus API to retrieve logs (will be extended soon with more
+   functionality)
+ - libtelepathy-logger API to allow clients to access logs en-masse
+ - GConf preferences to control what accounts to log
+
+Things that don't work:
+
+ - existing channels won't be logged when the logger starts
+ - preference changes aren't noticed asynchronously
+
+Note that tp-logger won't import your existing logs from Empathy, for the time
+being, if you're running it, you are going to end up with two sets of logs,
+one from Empathy and one from tp-logger.
