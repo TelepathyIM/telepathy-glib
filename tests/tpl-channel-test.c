@@ -117,8 +117,7 @@ call_when_ready_wrapper (TplChannel *tpl_chan,
     GAsyncReadyCallback cb,
     gpointer user_data)
 {
-  tpl_channel_test_call_when_ready( TPL_CHANNEL_TEST (tpl_chan), cb,
-      user_data);
+  tpl_channel_test_call_when_ready (TPL_CHANNEL_TEST (tpl_chan), cb, user_data);
 }
 
 void

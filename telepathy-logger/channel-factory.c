@@ -97,7 +97,7 @@ tpl_channel_factory_build (const gchar *channel_type,
   chan_constructor = tpl_channel_factory_lookup (channel_type);
   if (chan_constructor == NULL)
     {
-      g_set_error(error, TPL_CHANNEL_FACTORY_ERROR,
+      g_set_error (error, TPL_CHANNEL_FACTORY_ERROR,
           TPL_CHANNEL_FACTORY_ERROR_CHANNEL_TYPE_NOT_HANDLED,
           "%s: channel type not handled by this logger", channel_type);
       return NULL;

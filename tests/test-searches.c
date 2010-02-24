@@ -50,7 +50,7 @@ main (int argc, char *argv[])
     }
 
   /* get the LogManager and register a non-default LogManager */
-  manager = tpl_log_manager_dup_singleton();
+  manager = tpl_log_manager_dup_singleton ();
   logstore = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
       "name", "Empathy", NULL);
   tpl_log_manager_register_log_store (manager, logstore);

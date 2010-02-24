@@ -61,7 +61,7 @@ GType tpl_conf_get_type (void);
 
 TplConf *tpl_conf_dup (void);
 
-GConfClient *tpl_conf_get_gconf_client(TplConf *self);
+GConfClient *tpl_conf_get_gconf_client (TplConf *self);
 
 gboolean  tpl_conf_is_globally_enabled (TplConf * self, GError **error);
 
@@ -71,8 +71,8 @@ GSList *tpl_conf_get_accounts_ignorelist (TplConf * self, GError **error);
 
 void tpl_conf_globally_enable (TplConf *self, gboolean enable, GError **error);
 
-void tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist, GError
-		**error);
+void tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist,
+    GError **error);
 G_END_DECLS
 
 #endif // __TPL_CONF_H__
