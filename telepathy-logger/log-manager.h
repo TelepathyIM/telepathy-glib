@@ -76,9 +76,6 @@ typedef struct
 
 GType tpl_log_manager_get_type (void);
 
-GList *tpl_log_manager_async_operation_finish (GAsyncResult *result,
-    GError **error);
-
 TplLogManager *tpl_log_manager_dup_singleton (void);
 
 gboolean tpl_log_manager_exists (TplLogManager *manager,
@@ -86,6 +83,9 @@ gboolean tpl_log_manager_exists (TplLogManager *manager,
 
 GList *tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
+
+GList *tpl_log_manager_get_dates_async_finish (GAsyncResult *result,
+    GError **error);
 
 void tpl_log_manager_get_dates_async (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
@@ -95,6 +95,9 @@ GList *tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
     const gchar *date);
 
+GList *tpl_log_manager_get_messages_for_date_async_finish (GAsyncResult *result,
+    GError **error);
+
 void tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
     const gchar *date, GAsyncReadyCallback callback, gpointer user_data);
@@ -103,6 +106,9 @@ GList *tpl_log_manager_get_filtered_messages (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
     guint num_messages, TplLogMessageFilter filter, gpointer user_data);
 
+GList *tpl_log_manager_get_filtered_messages_async_finish (GAsyncResult *result,
+    GError **error);
+
 void tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
     guint num_messages, TplLogMessageFilter filter, gpointer filter_user_data,
@@ -110,11 +116,17 @@ void tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 
 GList *tpl_log_manager_get_chats (TplLogManager *manager, TpAccount *account);
 
+GList *tpl_log_manager_get_chats_async_finish (GAsyncResult *result,
+    GError **error);
+
 void tpl_log_manager_get_chats_async (TplLogManager *manager,
     TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
 
 GList *tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
     TpAccount *account, gchar const *chat_id, const gchar *text);
+
+GList *tpl_log_manager_search_in_identifier_chats_new_async_finish (
+    GAsyncResult *result, GError **error);
 
 void tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
     TpAccount *account, gchar const *chat_id, const gchar *text,
@@ -122,6 +134,9 @@ void tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manage
 
 GList *tpl_log_manager_search_new (TplLogManager *manager,
     const gchar *text);
+
+GList *tpl_log_manager_search_new_async_finish (GAsyncResult *result,
+    GError **error);
 
 void tpl_log_manager_search_new_async (TplLogManager *manager,
     const gchar *text, GAsyncReadyCallback callback, gpointer user_data);

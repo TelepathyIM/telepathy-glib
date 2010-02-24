@@ -30,6 +30,9 @@
 gboolean tpl_log_manager_add_message (TplLogManager *manager,
     TplLogEntry *message, GError **error);
 
+gboolean tpl_log_manager_add_message_async_finish (GAsyncResult *result,
+    GError **error);
+
 void tpl_log_manager_add_message_async (TplLogManager *manager,
     TplLogEntry *message, GAsyncReadyCallback callback, gpointer user_data);
 

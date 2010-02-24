@@ -754,17 +754,6 @@ tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
 }
 
 
-GList *
-tpl_log_manager_async_operation_finish (GAsyncResult *result,
-    GError **error)
-{
-  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-  return g_simple_async_result_get_op_res_gpointer (simple);
-}
-
-
 static void
 _tpl_log_manager_async_operation_cb (GObject *source_object,
     GAsyncResult *result,
@@ -778,28 +767,21 @@ _tpl_log_manager_async_operation_cb (GObject *source_object,
 
   tpl_log_manager_async_data_free (async_data);
 }
-
-
-static void
-_tpl_log_manager_call_async_operation (TplLogManager *manager,
-    GSimpleAsyncThreadFunc
-    operation_thread_func,
-    TplLogManagerAsyncData *async_data,
-    GAsyncReadyCallback callback)
-{
-  GSimpleAsyncResult *simple;
-
-  simple = g_simple_async_result_new (G_OBJECT (manager),
-      _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_async_operation_finish);
-
-  g_simple_async_result_run_in_thread (simple, operation_thread_func, 0,
-      NULL);
-}
 /* end of Async common function */
 
 
 /* Start of add_message async implementation */
+gboolean
+tpl_log_manager_add_message_async_finish (GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+  return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+
 static void
 _add_message_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
@@ -832,6 +814,7 @@ tpl_log_manager_add_message_async (TplLogManager *manager,
 {
   TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+  GSimpleAsyncResult *simple;
 
   tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
       TPL_LOG_MANAGER, FAILED,
@@ -851,14 +834,28 @@ tpl_log_manager_add_message_async (TplLogManager *manager,
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  _tpl_log_manager_call_async_operation (manager, _add_message_async_thread,
-      async_data, callback);
-}
+  simple = g_simple_async_result_new (G_OBJECT (manager),
+      _tpl_log_manager_async_operation_cb, async_data,
+      tpl_log_manager_add_message_async_finish);
 
-/* End of get_dates async implementation */
+  g_simple_async_result_run_in_thread (simple, _add_message_async_thread, 0,
+      NULL);
+}
+/* End of add_message async implementation */
 
 
 /* Start of get_dates async implementation */
+GList *
+tpl_log_manager_get_dates_async_finish (GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+  return g_simple_async_result_get_op_res_gpointer (simple);
+}
+
+
 static void
 _get_dates_async_result_free (gpointer data)
 {
@@ -901,6 +898,7 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 {
   TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+  GSimpleAsyncResult *simple;
 
   tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
       TPL_LOG_MANAGER, FAILED,
@@ -926,13 +924,27 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  _tpl_log_manager_call_async_operation (manager, _get_dates_async_thread,
-      async_data, callback);
-}
+  simple = g_simple_async_result_new (G_OBJECT (manager),
+      _tpl_log_manager_async_operation_cb, async_data,
+      tpl_log_manager_get_dates_async_finish);
 
+  g_simple_async_result_run_in_thread (simple, _get_dates_async_thread, 0,
+      NULL);
+}
 /* End of get_dates async implementation */
 
 /* Start of get_messages_for_date async implementation */
+GList *
+tpl_log_manager_get_messages_for_date_async_finish (GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+  return g_simple_async_result_get_op_res_gpointer (simple);
+}
+
+
 static void
 _get_messages_for_date_async_result_free (gpointer data)
 {
@@ -978,6 +990,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
 {
   TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+  GSimpleAsyncResult *simple;
 
   tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
       TPL_LOG_MANAGER, FAILED,
@@ -1008,14 +1021,28 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  _tpl_log_manager_call_async_operation (manager,
-      _get_messages_for_date_async_thread,
-      async_data, callback);
+  simple = g_simple_async_result_new (G_OBJECT (manager),
+      _tpl_log_manager_async_operation_cb, async_data,
+      tpl_log_manager_get_messages_for_date_async_finish);
+
+  g_simple_async_result_run_in_thread (simple,
+      _get_messages_for_date_async_thread, 0, NULL);
 }
 /* End of get_messages_for_date async implementation */
 
 
 /* Start of get_filtered_messages async implementation */
+GList *
+tpl_log_manager_get_filtered_messages_async_finish (GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+  return g_simple_async_result_get_op_res_gpointer (simple);
+}
+
+
 static void
 _get_filtered_messages_async_result_free (gpointer data)
 {
@@ -1028,7 +1055,7 @@ _get_filtered_messages_async_result_free (gpointer data)
 }
 
 static void
-_get_filtered_messages_thread (GSimpleAsyncResult *simple,
+_get_filtered_messages_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
@@ -1061,6 +1088,7 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 {
   TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+  GSimpleAsyncResult *simple;
 
   tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
       TPL_LOG_MANAGER, FAILED,
@@ -1097,13 +1125,28 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  _tpl_log_manager_call_async_operation (manager,
-      _get_filtered_messages_thread, async_data, callback);
+  simple = g_simple_async_result_new (G_OBJECT (manager),
+      _tpl_log_manager_async_operation_cb, async_data,
+      tpl_log_manager_get_filtered_messages_async_finish);
+
+  g_simple_async_result_run_in_thread (simple,
+      _get_filtered_messages_async_thread, 0, NULL);
 }
 /* End of get_filtered_messages async implementation */
 
 
 /* Start of get_chats async implementation */
+GList *
+tpl_log_manager_get_chats_async_finish (GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+  return g_simple_async_result_get_op_res_gpointer (simple);
+}
+
+
 static void
 _get_chats_async_result_free (gpointer data)
 {
@@ -1116,7 +1159,7 @@ _get_chats_async_result_free (gpointer data)
 
 
 static void
-_get_chats_thread (GSimpleAsyncResult *simple,
+_get_chats_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
@@ -1142,6 +1185,7 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
 {
   TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+  GSimpleAsyncResult *simple;
 
   tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
       TPL_LOG_MANAGER, FAILED,
@@ -1161,13 +1205,28 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  _tpl_log_manager_call_async_operation (manager, _get_chats_thread,
-      async_data, callback);
-}
+  simple = g_simple_async_result_new (G_OBJECT (manager),
+      _tpl_log_manager_async_operation_cb, async_data,
+      tpl_log_manager_get_chats_async_finish);
 
-/* End of get_filtered_messages async implementation */
+  g_simple_async_result_run_in_thread (simple, _get_chats_async_thread, 0,
+      NULL);
+}
+/* End of get_chats async implementation */
 
 /* Start of tpl_log_manager_search_in_identifier_chats_new async implementation */
+GList *
+tpl_log_manager_search_in_identifier_chats_new_async_finish (
+    GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+  return g_simple_async_result_get_op_res_gpointer (simple);
+}
+
+
 static void
 _search_in_identifier_chats_new_async_result_free (gpointer data)
 {
@@ -1180,7 +1239,7 @@ _search_in_identifier_chats_new_async_result_free (gpointer data)
 
 
 static void
-_search_in_identifier_chats_new_thread (GSimpleAsyncResult *simple,
+_search_in_identifier_chats_new_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
@@ -1209,6 +1268,7 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 {
   TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+  GSimpleAsyncResult *simple;
 
   tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
       TPL_LOG_MANAGER, FAILED,
@@ -1230,13 +1290,28 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  _tpl_log_manager_call_async_operation (manager,
-      _search_in_identifier_chats_new_thread, async_data, callback);
+  simple = g_simple_async_result_new (G_OBJECT (manager),
+      _tpl_log_manager_async_operation_cb, async_data,
+      tpl_log_manager_search_in_identifier_chats_new_async_finish);
+
+  g_simple_async_result_run_in_thread (simple,
+      _search_in_identifier_chats_new_async_thread, 0, NULL);
 }
 /* End of tpl_log_manager_search_in_identifier_chats_new async implementation */
 
 
 /* Start of tpl_log_manager_search_new async implementation */
+GList *
+tpl_log_manager_search_new_async_finish (GAsyncResult *result,
+    GError **error)
+{
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+  return g_simple_async_result_get_op_res_gpointer (simple);
+}
+
+
 static void
 _search_new_async_result_free (gpointer data)
 {
@@ -1249,7 +1324,7 @@ _search_new_async_result_free (gpointer data)
 
 
 static void
-_search_new_thread (GSimpleAsyncResult *simple,
+_search_new_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
@@ -1275,6 +1350,7 @@ tpl_log_manager_search_new_async (TplLogManager *manager,
 {
   TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
+  GSimpleAsyncResult *simple;
 
   tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
       TPL_LOG_MANAGER, FAILED,
@@ -1290,8 +1366,11 @@ tpl_log_manager_search_new_async (TplLogManager *manager,
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  _tpl_log_manager_call_async_operation (manager, _search_new_thread,
-      async_data, callback);
-}
+  simple = g_simple_async_result_new (G_OBJECT (manager),
+      _tpl_log_manager_async_operation_cb, async_data,
+      tpl_log_manager_search_new_async_finish);
 
+  g_simple_async_result_run_in_thread (simple, _search_new_async_thread, 0,
+      NULL);
+}
 /* End of tpl_log_manager_search_new async implementation */
