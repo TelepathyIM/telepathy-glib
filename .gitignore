@@ -49,10 +49,8 @@ src/test-api
 data/*.service
 data/*.client
 
-telepathy-logger/dbus-service-client.h
-telepathy-logger/dbus-service-server.h
-telepathy-logger/libtelepathy-logger.pc
-telepathy-logger/libtelepathy-logger-uninstalled.pc
+telepathy-logger/telepathy-logger.pc
+telepathy-logger/telepathy-logger-uninstalled.pc
 
 extensions/_gen/
 extensions/doc/
