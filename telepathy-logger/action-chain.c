@@ -44,17 +44,16 @@ tpl_actionchain_new (GObject *obj,
 
 
 static void
-link_free (gpointer data,
-    gpointer user_data)
+link_free (TplActionLink *link)
 {
-  g_slice_free (TplActionLink, data);
+  g_slice_free (TplActionLink, link);
 }
 
 
 void
 tpl_actionchain_free (TplActionChain *self)
 {
-  g_queue_foreach (self->chain, link_free, NULL);
+  g_queue_foreach (self->chain, (GFunc) link_free, NULL);
   g_queue_free (self->chain);
   /* TODO free self->simple, I canont understand how */
   g_slice_free (TplActionChain, self);
@@ -115,7 +114,7 @@ tpl_actionchain_continue (TplActionChain *self)
       TplActionLink *link = g_queue_pop_head (self->chain);
 
       link->action (self, link->user_data);
-      g_slice_free (TplActionLink, link);
+      link_free (link);
     }
 }
 
