@@ -6,6 +6,7 @@ AM_CPPFLAGS =						\
 	-I$(top_srcdir)					\
 	$(ERROR_CFLAGS)					\
 	-DG_LOG_DOMAIN=\"tp-logger\"			\
+	-DTPL_DATA_DIR=\"$(PACKAGE_NAME)\"		\
 	$(LIBTPL_CFLAGS)				\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
@@ -37,7 +38,6 @@ LIBTPL_HEADERS = \
 		log-store-factory.h		\
 		observer.h			\
 		util.h
-
 
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\

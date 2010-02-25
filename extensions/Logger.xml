@@ -91,6 +91,89 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
+    <method name="GetFavouriteContacts"
+            tp:name-for-bindings="Get_Favourite_Contacts">
+      <arg direction="out" name="Favourite_Contacts" type="a(oas)">
+        <tp:docstring>
+        The favourite contacts, as an array of TpAccounts and their contact
+        identifiers.
+        </tp:docstring>
+      </arg>
+
+      <tp:docstring>
+        Returns the favourite contacts.
+      </tp:docstring>
+    </method>
+
+    <method name="AddFavouriteContact"
+            tp:name-for-bindings="Add_Favourite_Contact">
+      <arg direction="in" name="Account" type="o" tp:type="Account">
+        <tp:docstring>
+        The object path for the TpAccount to which the contact belongs
+        </tp:docstring>
+      </arg>
+
+      <arg direction="in" name="Identifier" type="s">
+        <tp:docstring>
+        The favourite contact's identifier
+        </tp:docstring>
+      </arg>
+
+      <tp:docstring>
+        Add a contact's designation as a favourite. This method may not be
+        called until the service is ready. See the <tp:dbus-ref
+        namespace="org.freedesktop.Telepathy.Logger.DRAFT">FavouriteContactsReady</tp:dbus-ref> signal and <tp:dbus-ref
+        namespace="org.freedesktop.Telepathy.Logger.DRAFT">FavouriteContactsIsReady</tp:dbus-ref> property.
+      </tp:docstring>
+    </method>
+
+    <method name="RemoveFavouriteContact"
+            tp:name-for-bindings="Remove_Favourite_Contact">
+      <arg direction="in" name="Account" type="o" tp:type="Account">
+        <tp:docstring>
+        The object path for the TpAccount to which the contact belongs
+        </tp:docstring>
+      </arg>
+
+      <arg direction="in" name="Identifier" type="s">
+        <tp:docstring>
+        The favourite contact's identifier
+        </tp:docstring>
+      </arg>
+
+      <tp:docstring>
+        Remove a contact's designation as a favourite. This method may not be
+        called until the service is ready. See the <tp:dbus-ref
+        namespace="org.freedesktop.Telepathy.Logger.DRAFT">FavouriteContactsReady</tp:dbus-ref> signal and <tp:dbus-ref
+        namespace="org.freedesktop.Telepathy.Logger.DRAFT">FavouriteContactsIsReady</tp:dbus-ref> property.
+      </tp:docstring>
+    </method>
+
+    <signal name="FavouriteContactsChanged"
+      tp:name-for-bindings="Favourite_Contacts_Changed">
+      <tp:docstring>
+        The set of favourite contacts has changed.
+      </tp:docstring>
+
+      <arg name="Account" type="o" tp:type="Account">
+        <tp:docstring>
+          An account associated with the contact.
+        </tp:docstring>
+      </arg>
+
+      <arg name="Added" type="as">
+        <tp:docstring>
+        List of contact identifiers of contacts which are now favourites.
+        </tp:docstring>
+      </arg>
+
+      <arg name="Removed" type="as">
+        <tp:docstring>
+        List of contact identifiers of contacts which are no longer favourites.
+        </tp:docstring>
+      </arg>
+    </signal>
+
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->

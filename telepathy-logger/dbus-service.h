@@ -23,6 +23,7 @@
 #define __TPL_DBUS_SERVICE_H__
 
 #include <glib-object.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 
 #include <telepathy-logger/log-manager.h>
 
@@ -44,7 +45,10 @@ G_BEGIN_DECLS
     "tpl-dbus-service-error-quark")
 typedef enum
 {
-  TPL_DBUS_SERVICE_ERROR_FAILED
+  TPL_DBUS_SERVICE_ERROR_FAILED,
+  /* >= 1 argument(s) is/are invalid */
+  TPL_DBUS_SERVICE_ERROR_INVALID_ARGS,
+  TPL_DBUS_SERVICE_ERROR_NOT_READY,
 } TplDBusServiceError;
 
 typedef struct _TplDBusServicePriv TplDBusServicePriv;
