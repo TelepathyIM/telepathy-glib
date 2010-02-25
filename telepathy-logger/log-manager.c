@@ -151,6 +151,8 @@ tpl_log_manager_init (TplLogManager *self)
 
   self->priv = priv;
 
+  DEBUG ("Initialising the Log Manager");
+
   /* The TPL's default read-write logstore */
   tplogger = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
       "name", TPL_LOG_MANAGER_LOG_STORE_DEFAULT,
@@ -158,7 +160,8 @@ tpl_log_manager_init (TplLogManager *self)
       "readable", TRUE,
       NULL);
   if (tplogger == NULL)
-    g_critical ("Error during TplLogStoreEmpathy (name=TpLogger) initialisation.");
+    g_critical ("Error during TplLogStoreEmpathy (name=TpLogger) "
+        "initialisation.");
   else
     {
       /* manual registration, to set up priv->stores for
@@ -187,6 +190,9 @@ tpl_log_manager_init (TplLogManager *self)
   /* internally referenced within register_logstore */
   if (empathy != NULL)
     g_object_unref (empathy);
+
+
+  DEBUG ("Log Manager initialised");
 }
 
 
