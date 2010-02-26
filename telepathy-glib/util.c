@@ -989,6 +989,8 @@ _tp_quark_array_copy (const GQuark *quarks)
  * </example>
  *
  * Returns: a newly created #GValueArray, free with g_value_array_free.
+ *
+ * Since: 0.9.2
  */
 GValueArray *
 tp_value_array_build (gsize length,
