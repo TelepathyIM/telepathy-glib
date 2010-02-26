@@ -1,3 +1,23 @@
+telepathy-logger 0.1.1 (2010-02-26)
+===================================
+
+The ``brick by brick'' release.
+
+This is the second previous release of the telepathy-logger. You should be aware
+that this is a piece of software that is still very much in development,
+everything is subject to change.
+
+The idea behind tp-logger is that it will become a generic logging daemon usable
+anywhere in Telepathy, with any Telepathy client.
+
+Changes in this release:
+ - libtelepathy-logger.pc is now just telepathy-logger.pc
+ - asynchronous API has _finish() methods.
+ - Fix a crasher in handling MUCs
+ - Logger now observes channels that are open when it starts
+ - API now includes support for storing favourite contacts in a way that can
+   be shared between Telepathy clients
+
 telepathy-logger 0.1.0 (2010-02-24)
 ===================================
 
