@@ -61,8 +61,8 @@ G_END_DECLS
 
 #define DEBUGGING gabble_debug_flag_is_set (DEBUG_FLAG)
 
-/* The same of DEBUG, printing also the object-path property for the TpProxy
- * passed as first arg. prepending '_' not not shadow any local variable */
+/* The same of DEBUG, printing also the object-path property for the TpProxy,
+ * passed as first arg. prepending '_' to avoid shadowing local variables */
 #define PATH_DEBUG(_proxy, _format, ...) \
 G_STMT_START { \
   const gchar *_path; \
