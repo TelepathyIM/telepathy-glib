@@ -88,22 +88,7 @@ static void got_tpl_channel_text_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
 static TplChannelFactory tpl_observer_get_channel_factory (TplObserver *self);
 static GHashTable *tpl_observer_get_channel_map (TplObserver *self);
-
-/* Get open channels API */
 static void tpl_observer_get_open_channels (void);
-static void tpl_observer_prepared_account_manager_cb (GObject *obj,
-    GAsyncResult *result, gpointer user_data);
-static void tpl_observer_got_channel_list_cb (TpProxy *proxy,
-    const GValue *out_Value, const GError *error, gpointer user_data,
-    GObject *weak_object);
-static void tpl_observer_get_open_channels_prepare_account_cb (GObject *proxy,
-    GAsyncResult *result, gpointer user_data);
-static void tpl_observer_get_open_channels_prepared_connection (TpConnection *conn,
-    const GError *error, gpointer user_data);
-
-
-
-/* end of Get open channels API */
 
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplObserver)
@@ -659,16 +644,111 @@ tpl_observer_set_channel_factory (TplObserver *self,
   priv->channel_factory = factory;
 }
 
-/* Retrieving open channel */
-/* This part can be removed when the Channel Dispatcher will implement a
- * proper API for
- * org.freedesktop.Telepathy.Connection.Interface.Requests.Channels */
+
 static void
-tpl_observer_get_open_channels (void)
+tpl_observer_got_channel_list_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
-  TpAccountManager *acc_man = tp_account_manager_dup ();
-  tp_account_manager_prepare_async (acc_man, NULL,
-      tpl_observer_prepared_account_manager_cb, NULL);
+  TpAccount *account = TP_ACCOUNT (user_data);
+  TpConnection *conn = TP_CONNECTION (proxy);
+  TplObserver *observer = tpl_observer_new ();
+  GPtrArray *channels;
+
+  g_return_if_fail (TP_IS_CONNECTION (conn));
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
+  if (error != NULL)
+    {
+      DEBUG ("unable to retrieve channels for connection %s: %s",
+          tp_proxy_get_object_path (TP_PROXY (conn)),
+          error->message);
+      return;
+    }
+
+  if (!G_VALUE_HOLDS (value, TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST))
+    {
+      g_critical ("channel list GValue does not hold "
+          "TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST");
+      return;
+    }
+
+  channels = g_value_get_boxed (value);
+
+  /* call observe_channels with
+   * Dispatch_Operation = NULL, Requests_Satisfied = NULL,
+   * Observer_Info = NULL and DBusGMethodInvocation = NULL
+   * so that it will undertand that it's not been called by a Channel
+   * Dispatcher */
+  tpl_observer_observe_channels (TP_SVC_CLIENT_OBSERVER (observer),
+      tp_proxy_get_object_path (TP_PROXY (account)),
+      tp_proxy_get_object_path (TP_PROXY (conn)),
+      channels, NULL, NULL, NULL, NULL);
+}
+
+
+static void
+tpl_observer_get_open_channels_prepared_connection (TpConnection *conn,
+    const GError *error,
+    gpointer user_data)
+{
+  TpAccount *account = TP_ACCOUNT (user_data);
+
+  g_return_if_fail (TP_IS_CONNECTION (conn));
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
+  if (error != NULL)
+    {
+      DEBUG ("unable to prepare connection for open channel retrieval: %s",
+          error->message);
+      goto out;
+    }
+
+  /* I do not pass the observer as a weak_object or I will leak some
+   * references to account and connection in the callback in case is destroyed
+   * and the call canceled */
+  tp_cli_dbus_properties_call_get (conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_REQUESTS, "Channels",
+      tpl_observer_got_channel_list_cb,
+      g_object_ref (account), g_object_unref, NULL);
+
+out:
+  g_object_unref (account);
+}
+
+
+static void
+tpl_observer_get_open_channels_prepare_account_cb (GObject *proxy,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpAccount *account = TP_ACCOUNT (proxy);
+  TpConnection *conn;
+  GError *error = NULL;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
+  if (!tp_account_prepare_finish (account, result, &error))
+    {
+      DEBUG ("unable to prapare account: %s", error->message);
+      g_error_free (error);
+    }
+
+  if (!tp_account_is_enabled (account))
+    return;
+
+  conn = tp_account_get_connection (account);
+
+  /* check if account's connection is offline */
+  if (conn == NULL)
+    return;
+
+  /* ref here, unref in callbacks on error or at the end of the chain */
+  tp_connection_call_when_ready (conn,
+      tpl_observer_get_open_channels_prepared_connection,
+      g_object_ref (account));
 }
 
 
@@ -685,7 +765,6 @@ tpl_observer_prepared_account_manager_cb (GObject *obj,
         &error))
     {
       DEBUG ("Unable to prepare connection manager: %s", error->message);
-      g_object_unref (am);
       return;
     }
 
@@ -694,157 +773,29 @@ tpl_observer_prepared_account_manager_cb (GObject *obj,
 
   for (l = list; l != NULL; l = g_list_next (l))
     {
-      TpAccount *acc = l->data;
+      TpAccount *account = l->data;
 
-      g_assert (TP_IS_ACCOUNT (acc));
+      g_assert (TP_IS_ACCOUNT (account));
 
-      /* ref here, unref in callbacks on error or at the end of the
-       * chain */
-      tp_account_prepare_async (g_object_ref (acc), NULL,
+      tp_account_prepare_async (account, NULL,
           tpl_observer_get_open_channels_prepare_account_cb, NULL);
     }
+
   g_list_free (list);
 }
 
 
+/* Retrieving open channel */
+/* This part can be removed when the Channel Dispatcher will implement a
+ * proper API for
+ * org.freedesktop.Telepathy.Connection.Interface.Requests.Channels */
 static void
-tpl_observer_get_open_channels_prepare_account_cb (GObject *proxy,
-    GAsyncResult *result,
-    gpointer user_data)
+tpl_observer_get_open_channels (void)
 {
-  TpAccount *account = TP_ACCOUNT (proxy);
-  TpConnection *conn;
-  GError *error = NULL;
+  TpAccountManager *am = tp_account_manager_dup ();
 
-  g_return_if_fail (TP_IS_ACCOUNT (account));
+  tp_account_manager_prepare_async (am, NULL,
+      tpl_observer_prepared_account_manager_cb, NULL);
 
-  if (!tp_account_is_enabled (account))
-    goto early_out;
-
-  if (!tp_account_prepare_finish (account, result, &error))
-    {
-      DEBUG ("unable to prapare account: %s", error->message);
-      goto early_out;
-    }
-
-  conn = tp_account_get_connection (account);
-  /* account's connection is offline */
-  if (conn == NULL)
-    goto early_out;
-
-  /* ref here, unref in callbacks on error or at the end of the chain */
-  tp_connection_call_when_ready (g_object_ref (conn),
-      tpl_observer_get_open_channels_prepared_connection, account);
-
-  return;
-
-early_out:
-  if (error != NULL)
-    g_error_free (error);
-  if (account != NULL)
-    g_object_unref (account);
-}
-
-
-static void
-tpl_observer_get_open_channels_prepared_connection (TpConnection *conn,
-    const GError *error,
-    gpointer user_data)
-{
-  TpAccount *account = TP_ACCOUNT (user_data);
-
-  /* not use g_return_* or it will leak refs */
-  if (!TP_IS_CONNECTION (conn))
-    {
-      DEBUG ("conn is not TP_CONNECTION");
-      goto err;
-    }
-  if (!TP_IS_ACCOUNT (account))
-    {
-      DEBUG ("account is not TP_ACCOUNT");
-      goto err;
-    }
-
-
-  if (error != NULL)
-    {
-      DEBUG ("unable to prepare connection for open channel retrieval: %s",
-          error->message);
-      goto err;
-    }
-
-  /* I do not pass the observer as a weak_object or I will leak some
-   * references to account and connection in the callback in case is destroyed
-   * and the call canceled */
-  tp_cli_dbus_properties_call_get (conn, -1,
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS, "Channels",
-      tpl_observer_got_channel_list_cb, account, NULL, NULL);
-  return;
-
-err:
-  if (conn != NULL)
-    g_object_unref (conn);
-  if (account != NULL)
-    g_object_unref (account);
-}
-
-
-void tpl_observer_got_channel_list_cb (TpProxy *proxy,
-    const GValue *out_Value,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpAccount *account = TP_ACCOUNT (user_data);
-  TpConnection *conn = TP_CONNECTION (proxy);
-  TplObserver *observer = tpl_observer_new ();
-  GPtrArray *channels;
-
-  /* not use g_return_* or it will leak refs */
-  if (!TP_IS_CONNECTION (conn))
-    {
-      DEBUG ("conn is not TP_CONNECTION");
-      goto out;
-    }
-  if (!TP_IS_ACCOUNT (account))
-    {
-      DEBUG ("account is not TP_ACCOUNT");
-      goto out;
-    }
-
-  if (error != NULL)
-    {
-      DEBUG ("unable to retrieve channels for connection %s: %s",
-          tp_proxy_get_object_path (TP_PROXY (conn)),
-          error->message);
-      goto out;
-    }
-
-  /* not use g_return_* or it will leak refs */
-  if (!G_VALUE_HOLDS (out_Value, TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST))
-    {
-      g_critical ("channel list GValue does not hold "
-          "TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST");
-      goto out;
-    }
-
-  channels = g_value_get_boxed (out_Value);
-
-  /* call observe_channels with
-   * Dispatch_Operation = NULL, Requests_Satisfied = NULL,
-   * Observer_Info = NULL and DBusGMethodInvocation = NULL
-   * so that it will undertand that it's not been called by a Channel
-   * Dispatcher */
-  tpl_observer_observe_channels (TP_SVC_CLIENT_OBSERVER (observer),
-      tp_proxy_get_object_path (TP_PROXY (account)),
-      tp_proxy_get_object_path (TP_PROXY (conn)),
-      channels, NULL, NULL, NULL, NULL);
-
-out:
-  if (account != NULL)
-    g_object_unref (account);
-  if (conn != NULL)
-    g_object_unref (conn);
-  if (observer != NULL)
-    g_object_unref (observer);
+  g_object_unref (am);
 }
