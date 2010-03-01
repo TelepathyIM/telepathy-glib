@@ -184,12 +184,9 @@ class Generator(object):
             self.h(' * implement_%s (gpointer klass,' % self.node_name_lc)
             self.h(' *     gpointer unused G_GNUC_UNUSED)')
             self.h(' * {')
-            # "#" is special to gtkdoc under some circumstances; it appears
-            # that escaping "##" as "#<!---->#" or "&#35;&#35;" doesn't work,
-            # but adding an extra hash symbol does. Thanks, gtkdoc :-(
-            self.h(' * #define IMPLEMENT(x) %s%s_implement_###x (\\'
+            self.h(' * #define IMPLEMENT(x) %s%s_implement_&num;&num;x (\\'
                    % (self.prefix_, self.node_name_lc))
-            self.h(' *   klass, my_object_###x)')
+            self.h(' *   klass, my_object_&num;&num;x)')
 
             for method in methods:
                 class_member_name = method.getAttribute('tp:name-for-bindings')
