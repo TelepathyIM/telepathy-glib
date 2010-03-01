@@ -102,7 +102,7 @@ void tp_contacts_mixin_add_contact_attributes_iface (GObject *obj,
     TpContactsMixinFillContactAttributesFunc fill_contact_attributes);
 
 void tp_contacts_mixin_set_contact_attribute (GHashTable *contact_attributes,
-    TpHandle handle, gchar *attribute, GValue *value);
+    TpHandle handle, const gchar *attribute, GValue *value);
 
 G_END_DECLS
 
