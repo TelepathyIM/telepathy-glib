@@ -1349,11 +1349,10 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
  * tp_account_manager_is_prepared:
  * @manager: a #TpAccountManager
  * @feature: a feature which is required
- * @error: a #GError to fill
  *
  * <!-- -->
  *
- * Returns: %TRUE whether @feature is ready on @manager, otherwise %FALSE
+ * Returns: %TRUE if @feature is ready on @manager, otherwise %FALSE
  *
  * Since: 0.9.0
  */
