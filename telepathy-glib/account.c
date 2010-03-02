@@ -931,7 +931,7 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount: current-status-message:
+   * TpAccount:current-status-message:
    *
    * The current status message message of the account.
    *
