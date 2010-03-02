@@ -97,15 +97,15 @@
  *  Telepathy client. The hash table will be freed after the function returns;
  *  if the channel manager wants to keep it around, it must copy it.
  *
- * Signature of an implementation of #TpChannelManagerIface::create_channel and
- * #TpChannelManagerIface::request_channel.
+ * Signature of an implementation of #TpChannelManagerIface.create_channel and
+ * #TpChannelManagerIface.request_channel.
  *
  * Implementations should inspect the contents of @request_properties to see if
  * it matches a channel class handled by this manager.  If so, they should
  * return %TRUE to accept responsibility for the request, and ultimately emit
- * exactly one of the #TpChannelManagerIface::new-channels,
- * #TpChannelManagerIface::already-satisfied and
- * #TpChannelManagerIface::request-failed signals (including @request_token in
+ * exactly one of the #TpChannelManager::new-channels,
+ * #TpChannelManager::already-satisfied and
+ * #TpChannelManager::request-failed signals (including @request_token in
  * the appropriate argument).
  *
  * If the implementation does not want to handle the request, it should return
@@ -672,7 +672,7 @@ tp_channel_manager_ensure_channel (TpChannelManager *manager,
  *
  * Checks whether the keys of @properties are elements of one of @fixed and
  * @allowed.  This is intended to be used by implementations of
- * #TpChannelManager::create_channel which have decided to accept a request,
+ * #TpChannelManagerIface.create_channel which have decided to accept a request,
  * to conform with the specification's requirement that unknown requested
  * properties must cause a request to fail, not be silently ignored.
  *
