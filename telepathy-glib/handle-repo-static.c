@@ -36,7 +36,7 @@
  * time.
  *
  * Most connection managers will use this for handles of type
- * %TP_HANDLE_TYPE_CONTACT_LIST.
+ * %TP_HANDLE_TYPE_LIST.
  */
 
 #include <telepathy-glib/handle-repo-static.h>
