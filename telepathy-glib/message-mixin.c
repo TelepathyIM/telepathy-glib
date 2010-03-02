@@ -24,7 +24,7 @@
  * @short_description: a mixin implementation of the text channel type and the
  *  Messages interface
  * @see_also: #TpSvcChannelTypeText, #TpSvcChannelInterfaceMessages,
- *  #TpDBusPropertiesMixin
+ *  <link linkend="dbus-properties-mixin">TpDBusPropertiesMixin</link>
  *
  * This mixin can be added to a channel GObject class to implement the
  * text channel type (with the Messages interface) in a general way.
@@ -1631,7 +1631,7 @@ struct _TpMessageMixinOutgoingMessagePrivate {
  * @message: The outgoing message
  * @flags: The flags used when sending the message, which may be a subset of
  *  those passed to the #TpMessageMixinSendImpl implementation if not all are
- *  supported, or %0 on error.
+ *  supported, or 0 on error.
  * @token: A token representing the sent message (see the Telepathy D-Bus API
  *  specification), or an empty string if no suitable identifier is available,
  *  or %NULL on error

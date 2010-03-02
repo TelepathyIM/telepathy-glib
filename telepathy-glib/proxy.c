@@ -68,11 +68,11 @@ tp_dbus_errors_quark (void)
  * TpDBusError:
  * @TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR: Raised if the error raised by
  *  a remote D-Bus object is not recognised
- * @TP_DBUS_ERROR_PROXY_UNREFERENCED: Emitted in #TpProxy:invalidated
+ * @TP_DBUS_ERROR_PROXY_UNREFERENCED: Emitted in #TpProxy::invalidated
  *  when the #TpProxy has lost its last reference
  * @TP_DBUS_ERROR_NO_INTERFACE: Raised by #TpProxy methods if the remote
  *  object does not appear to have the required interface
- * @TP_DBUS_ERROR_NAME_OWNER_LOST: Emitted in #TpProxy:invalidated if the
+ * @TP_DBUS_ERROR_NAME_OWNER_LOST: Emitted in #TpProxy::invalidated if the
  *  remote process loses ownership of its bus name, and raised by
  *  any #TpProxy methods that have not had a reply at that time or are called
  *  after the proxy becomes invalid in this way (usually meaning it crashed)
@@ -85,7 +85,7 @@ tp_dbus_errors_quark (void)
  * @TP_DBUS_ERROR_INVALID_MEMBER_NAME: Raised if a D-Bus method or signal
  *  name given is not valid
  * @TP_DBUS_ERROR_OBJECT_REMOVED: A generic error which can be used with
- *  #TpProxy:invalidated to indicate an application-specific indication
+ *  #TpProxy::invalidated to indicate an application-specific indication
  *  that the remote object no longer exists, if no more specific error
  *  is available.
  * @TP_DBUS_ERROR_CANCELLED: Raised from calls that re-enter the main
@@ -427,7 +427,7 @@ tp_proxy_emit_invalidated (gpointer p)
  * @error: an error causing the invalidation
  *
  * Mark @self as having been invalidated - no further calls will work, and
- * if not already invalidated, the #TpProxy:invalidated signal will be emitted
+ * if not already invalidated, the #TpProxy::invalidated signal will be emitted
  * with the given error.
  *
  * Since: 0.7.1

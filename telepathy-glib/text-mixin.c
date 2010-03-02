@@ -39,7 +39,7 @@
  * tp_text_mixin_finalize() from your dispose or finalize function.
  *
  * To use the text mixin as the implementation of
- * #TpSvcTextInterface, in the function you pass to G_IMPLEMENT_INTERFACE,
+ * #TpSvcChannelTypeText, in the function you pass to G_IMPLEMENT_INTERFACE,
  * you should first call tp_text_mixin_iface_init(), then call
  * tp_svc_channel_type_text_implement_send() to register your implementation
  * of the Send method.

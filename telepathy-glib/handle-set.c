@@ -37,7 +37,7 @@ struct _TpHandleSet
 
 /**
  * tp_handle_set_new:
- * @repo: #TpHandleRepo that holds the handles to be reffed by this set
+ * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
  *
  * Creates a new #TpHandleSet
  *
@@ -95,8 +95,8 @@ tp_handle_set_peek (TpHandleSet *set)
  * @set: #TpHandleSet to add this handle to
  * @handle: handle to add
  *
- * Add a handle to a #TpHandleSet,and reference it in the attched
- * #TpHandleRepo
+ * Add a handle to a #TpHandleSet, and reference it in the attached
+ * #TpHandleRepoIface
  *
  */
 void
@@ -117,8 +117,8 @@ tp_handle_set_add (TpHandleSet *set, TpHandle handle)
  * @set: #TpHandleSet to remove this handle from
  * @handle: handle to remove
  *
- * Remove a handle to a #TpHandleSet,and unreference it in the attched
- * #TpHandleRepo
+ * Remove a handle from a #TpHandleSet, and unreference it in the attached
+ * #TpHandleRepoIface
  *
  * Returns: FALSE if the handle was invalid, or was not in this set
  */
