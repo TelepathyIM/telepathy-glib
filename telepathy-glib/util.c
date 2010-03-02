@@ -895,7 +895,7 @@ closure_invalidated_cb (gpointer ctx_,
  * @detailed_signal: a string of the form "signal-name::detail".
  * @c_handler: the #GCallback to connect.
  * @gobject: the object to pass as data to @c_handler.
- * @connect_flags: a combination of #GConnnectFlags.
+ * @connect_flags: a combination of #GConnectFlags.
  *
  * Connects a #GCallback function to a signal for a particular object, as if
  * with g_signal_connect(). Additionally, arranges for the signal handler to be
