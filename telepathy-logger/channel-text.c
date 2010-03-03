@@ -33,7 +33,7 @@
 #include <telepathy-logger/observer.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager-priv.h>
-#include <telepathy-logger/log-store-index.h>
+#include <telepathy-logger/log-store-sqlite.h>
 #include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
 
@@ -559,8 +559,9 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data)
 {
   /* five days ago in seconds */
-  const time_t time_limit = tpl_time_get_current () - (86400*5);
-  TplLogStore *index = tpl_log_store_index_dup ();
+  const time_t time_limit = tpl_time_get_current () -
+    TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT;
+  TplLogStore *index = tpl_log_store_sqlite_dup ();
   GList *l;
   GError *error = NULL;
 
@@ -570,7 +571,7 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
       goto out;
     }
 
-  l = tpl_log_store_index_get_log_ids (index, NULL, time_limit,
+  l = tpl_log_store_sqlite_get_log_ids (index, NULL, time_limit,
       &error);
   if (error != NULL)
     {
@@ -587,7 +588,7 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
       gchar *log_id = l->data;
 
       /* brutally ACK the stale message and ignore any error */
-      tpl_log_store_index_set_acknowledgment (index, log_id, NULL);
+      tpl_log_store_sqlite_set_acknowledgment (index, log_id, NULL);
 
       g_free (log_id);
       l = g_list_remove_link (l, l);
@@ -625,7 +626,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   const gchar *channel_path = tp_proxy_get_object_path (proxy);
-  TplLogStore *index = tpl_log_store_index_dup ();
+  TplLogStore *index = tpl_log_store_sqlite_dup ();
   TplActionChain *ctx = user_data;
   GPtrArray *result = NULL;
   GList *indexed_pending_msg = NULL;
@@ -646,7 +647,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
   result = g_value_get_boxed (out_Value);
 
   /* getting messages ids known to be pending at last TPL exit */
-  indexed_pending_msg = tpl_log_store_index_get_pending_messages (index,
+  indexed_pending_msg = tpl_log_store_sqlite_get_pending_messages (index,
       TP_CHANNEL (proxy), &loc_error);
   if (loc_error != NULL)
     {
@@ -753,7 +754,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
       gchar *log_id = indexed_pending_msg->data;
 
       PATH_DEBUG (proxy, "%s is stale, removing from DB", log_id);
-      tpl_log_store_index_set_acknowledgment (index, log_id, &loc_error);
+      tpl_log_store_sqlite_set_acknowledgment (index, log_id, &loc_error);
       if (loc_error != NULL)
         {
           g_critical ("Unable to set %s as acknoledged in TPL DB: %s", log_id,
@@ -958,14 +959,14 @@ on_pending_messages_removed_cb (TpChannel *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplLogStore *index = tpl_log_store_index_dup ();
+  TplLogStore *index = tpl_log_store_sqlite_dup ();
   guint i;
   GError *error = NULL;
 
   for (i = 0; i < arg_Message_IDs->len; ++i)
     {
       guint msg_id = g_array_index (arg_Message_IDs, guint, i);
-      tpl_log_store_index_set_acknowledgment_by_msg_id (index, proxy, msg_id,
+      tpl_log_store_sqlite_set_acknowledgment_by_msg_id (index, proxy, msg_id,
           &error);
       PATH_DEBUG (proxy, "msg_id %d acknowledged", msg_id);
       if (error != NULL)
@@ -1251,7 +1252,7 @@ on_received_signal_cb (TpChannel *proxy,
   TplContact *tpl_contact_receiver = NULL;
   TplLogEntryText *log;
   TpAccount *account = tpl_channel_get_account (TPL_CHANNEL (tpl_text));
-  TplLogStore *index = tpl_log_store_index_dup ();
+  TplLogStore *index = tpl_log_store_sqlite_dup ();
   const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   gchar *log_id = create_message_token (channel_path,
@@ -1269,7 +1270,7 @@ on_received_signal_cb (TpChannel *proxy,
    * handler has already received and logged the message.
    * In the latter (here), the handler will detect that the P.M.L analisys
    * has found and logged it, returning immediatly */
-  if (tpl_log_store_index_log_id_is_present (index, log_id))
+  if (tpl_log_store_sqlite_log_id_is_present (index, log_id))
     {
       PATH_DEBUG (tpl_text, "%s found, not logging", log_id);
       goto out;

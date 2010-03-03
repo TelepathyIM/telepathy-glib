@@ -188,17 +188,6 @@ tpl_log_manager_init (TplLogManager *self)
   /* Load the message counting cache */
   add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE, TRUE);
 
-  index = tpl_log_store_index_dup ();
-  if (index == NULL)
-    g_critical ("Error during TplLogStoreIndex (name=TplMessageIndex) initialisation.");
-  else if (!tpl_log_manager_register_log_store (self, TPL_LOG_STORE (index)))
-    g_critical ("Not able to register the TplLogStore with "
-        "name=TplMessageIndex.");
-
-  /* internally referenced within register_logstore */
-  if (index != NULL)
-    g_object_unref (index);
-
   DEBUG ("Log Manager initialised");
 }
 
