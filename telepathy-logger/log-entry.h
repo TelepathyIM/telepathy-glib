@@ -34,6 +34,9 @@ G_BEGIN_DECLS
 #define TPL_IS_LOG_ENTRY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_LOG_ENTRY))
 #define TPL_LOG_ENTRY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_ENTRY, TplLogEntryClass))
 
+/* value used to identify a ack'd message with the 'pending-msg-id' prop */
+#define TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED -1
+
 typedef enum
 {
   TPL_LOG_ENTRY_DIRECTION_NONE = 0,
@@ -80,46 +83,53 @@ typedef struct
   void (*finalize) (GObject *obj);
 
   gint64 (*get_timestamp) (TplLogEntry *self);
+  gint64 (*get_pending_msg_id) (TplLogEntry *self);
+  gboolean (*is_pending) (TplLogEntry *self);
   TplLogEntrySignalType (*get_signal_type) (TplLogEntry *self);
-  guint (*get_log_id) (TplLogEntry *self);
+  const gchar* (*get_log_id) (TplLogEntry *self);
   TplLogEntryDirection (*get_direction) (TplLogEntry *self);
   TplContact * (*get_sender) (TplLogEntry *self);
   TplContact * (*get_receiver) (TplLogEntry *self);
   const gchar * (*get_chat_id) (TplLogEntry *self);
   const gchar * (*get_account_path) (TplLogEntry *self);
+  const gchar * (*get_channel_path) (TplLogEntry *self);
 
   void (*set_timestamp) (TplLogEntry *self, gint64 data);
+  void (*set_pending_msg_id) (TplLogEntry *self, gint64 data);
   void (*set_signal_type) (TplLogEntry *self, TplLogEntrySignalType data);
   void (*set_log_id) (TplLogEntry *self, guint data);
   void (*set_direction) (TplLogEntry *self, TplLogEntryDirection data);
   void (*set_sender) (TplLogEntry *self, TplContact *data);
   void (*set_receiver) (TplLogEntry *self, TplContact *data);
   void (*set_chat_id) (TplLogEntry *self, const gchar *data);
+  void (*set_channel_path) (TplLogEntry *self, const gchar *data);
 
   /* to be implemented only by subclasses */
   gboolean (*equal) (TplLogEntry *entry1, TplLogEntry *entry2);
 } TplLogEntryClass;
 
 GType tpl_log_entry_get_type (void);
-TplLogEntry *tpl_log_entry_new (guint log_id, const gchar *chat_id,
-    TplLogEntryDirection direction);
-
 gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
+gint64 tpl_log_entry_get_pending_msg_id (TplLogEntry *self);
+gboolean tpl_log_entry_is_pending (TplLogEntry *self);
 TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry *self);
-guint tpl_log_entry_get_log_id (TplLogEntry *self);
+const gchar* tpl_log_entry_get_log_id (TplLogEntry *self);
 const gchar *tpl_log_entry_get_chat_id (TplLogEntry * self);
 const gchar *tpl_log_entry_get_account_path (TplLogEntry *self);
+const gchar *tpl_log_entry_get_channel_path (TplLogEntry *self);
 
 TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry *self);
 TplContact *tpl_log_entry_get_sender (TplLogEntry *self);
 TplContact *tpl_log_entry_get_receiver (TplLogEntry *self);
 
 void tpl_log_entry_set_timestamp (TplLogEntry *self, gint64 data);
+void tpl_log_entry_set_pending_msg_id (TplLogEntry *self, gint64 data);
 void tpl_log_entry_set_signal_type (TplLogEntry *self,
     TplLogEntrySignalType data);
 void tpl_log_entry_set_direction (TplLogEntry *self,
     TplLogEntryDirection data);
 void tpl_log_entry_set_chat_id (TplLogEntry *self, const gchar *data);
+void tpl_log_entry_set_channel_path (TplLogEntry *self, const gchar *data);
 void tpl_log_entry_set_sender (TplLogEntry *self, TplContact *data);
 void tpl_log_entry_set_receiver (TplLogEntry *self, TplContact *data);
 

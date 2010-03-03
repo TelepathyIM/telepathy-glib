@@ -19,31 +19,26 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_UTIL_H__
-#define __TPL_UTIL_H__
+#include "util.h"
 
-#include <glib-object.h>
-#include <gio/gio.h>
+/* Bug#26838 prevents us to trust Messages' iface message-token
+ * header, so I need to create a token which TPL can trust to be unique
+ * within itself */
+gchar *
+create_message_token (const gchar *channel,
+    const gchar *date,
+    guint msgid)
+{
+  GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
+  gchar *retval;
 
-#define TPL_GET_PRIV(obj,type) ((type##Priv *) ((type *) obj)->priv)
-#define TPL_STR_EMPTY(x) ((x) == NULL || (x)[0] == '\0')
+  g_checksum_update (log_id, (guchar *) channel, -1);
+  g_checksum_update (log_id, (guchar *) date, -1);
+  g_checksum_update (log_id, (guchar *) &msgid, sizeof (unsigned int));
 
-#define tpl_call_with_err_if_fail(guard, obj, PREFIX, POSTFIX, msg, func, user_data) \
-  if (!(guard)) \
-    { \
-      if (func != NULL) \
-        { \
-          GSimpleAsyncResult *result=NULL; \
-          g_simple_async_result_set_error (result, PREFIX ## _ERROR, \
-              PREFIX ## _ERROR_ ## POSTFIX, \
-              msg); \
-          return func (G_OBJECT (obj), G_ASYNC_RESULT (result), user_data); \
-        } \
-      return; \
-    }
+  retval = g_strdup (g_checksum_get_string (log_id));
 
-gchar *create_message_token (const gchar *channel, const gchar *date,
-    guint msgid);
+  g_checksum_free (log_id);
 
-
-#endif // __TPL_UTIL_H__
+  return retval;
+}

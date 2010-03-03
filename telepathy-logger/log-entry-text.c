@@ -177,7 +177,7 @@ tpl_log_entry_text_init (TplLogEntryText * self)
 
 
 TplLogEntryText *
-tpl_log_entry_text_new (guint log_id,
+tpl_log_entry_text_new (const gchar *log_id,
     const gchar *account_path,
     TplLogEntryDirection direction)
 {
@@ -363,13 +363,28 @@ tpl_log_entry_text_get_signal_type (TplLogEntryText *self)
 }
 
 
-guint
+const gchar *
 tpl_log_entry_text_get_log_id (TplLogEntryText *self)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   return TPL_LOG_ENTRY_GET_CLASS (self)->get_log_id (logentry);
 }
 
+
+gint64
+tpl_log_entry_text_get_pending_msg_id (TplLogEntryText *self)
+{
+  TplLogEntry *logentry = TPL_LOG_ENTRY (self);
+  return TPL_LOG_ENTRY_GET_CLASS (self)->get_pending_msg_id (logentry);
+}
+
+
+gboolean
+tpl_log_entry_text_is_pending (TplLogEntry *self)
+{
+  TplLogEntry *logentry = TPL_LOG_ENTRY (self);
+  return TPL_LOG_ENTRY_GET_CLASS (self)->is_pending (logentry);
+}
 
 const gchar *
 tpl_log_entry_text_get_chat_id (TplLogEntryText *self)
@@ -457,6 +472,15 @@ tpl_log_entry_text_set_receiver (TplLogEntryText *self,
 }
 
 
+void
+tpl_log_entry_text_set_pending_msg_id (TplLogEntryText *self,
+    gint64 data)
+{
+  TplLogEntry *logentry = TPL_LOG_ENTRY (self);
+  TPL_LOG_ENTRY_GET_CLASS (logentry)->set_pending_msg_id (logentry, data);
+}
+
+
 gboolean
 tpl_log_entry_text_equal (TplLogEntry *message1,
     TplLogEntry *message2)
@@ -470,7 +494,6 @@ tpl_log_entry_text_equal (TplLogEntry *message1,
     if (!tp_strdiff (priv1->entry.text->message, priv2->entry.text->message)) {
     }
   */
-  DEBUG ("TODO: do a tpl_log_entry_equal rewrite!");
-  return tpl_log_entry_text_get_log_id (TPL_LOG_ENTRY_TEXT (message1)) ==
-      tpl_log_entry_text_get_log_id ( TPL_LOG_ENTRY_TEXT (message2));
+  return !tp_strdiff (tpl_log_entry_get_log_id (message1),
+      tpl_log_entry_get_log_id (message2));
 }

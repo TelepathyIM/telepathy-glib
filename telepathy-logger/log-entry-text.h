@@ -64,7 +64,7 @@ typedef struct
 
 GType tpl_log_entry_text_get_type (void);
 
-TplLogEntryText *tpl_log_entry_text_new (guint log_id,
+TplLogEntryText *tpl_log_entry_text_new (const gchar* log_id,
     const gchar *account_path, TplLogEntryDirection direction);
 
 TpChannelTextMessageType tpl_log_entry_text_message_type_from_str (
@@ -92,7 +92,9 @@ void tpl_log_entry_text_set_chatroom (TplLogEntryText *self, gboolean data);
 time_t tpl_log_entry_text_get_timestamp (TplLogEntryText *self);
 TplLogEntrySignalType tpl_log_entry_text_get_signal_type (
     TplLogEntryText *self);
-guint tpl_log_entry_text_get_log_id (TplLogEntryText *self);
+const gchar *tpl_log_entry_text_get_log_id (TplLogEntryText *self);
+gint64 tpl_log_entry_text_get_pending_msg_id (TplLogEntryText *self);
+gboolean tpl_log_entry_text_is_pending (TplLogEntry *self);
 const gchar *tpl_log_entry_text_get_chat_id (TplLogEntryText *self);
 TplLogEntryDirection tpl_log_entry_text_get_direction (TplLogEntryText *self);
 TplContact *tpl_log_entry_text_get_sender (TplLogEntryText *self);
@@ -108,6 +110,7 @@ void tpl_log_entry_text_set_chat_id (TplLogEntryText *self,
 void tpl_log_entry_text_set_sender (TplLogEntryText *self, TplContact *data);
 void tpl_log_entry_text_set_receiver (TplLogEntryText *self,
     TplContact *data);
+void tpl_log_entry_text_set_pending_msg_id (TplLogEntryText *self, gint64 data);
 
 gboolean tpl_log_entry_text_equal (TplLogEntry *message1, TplLogEntry *message2);
 /* Methods inherited by TplLogEntry */

@@ -43,19 +43,20 @@
 
 G_DEFINE_ABSTRACT_TYPE (TplLogEntry, tpl_log_entry, G_TYPE_OBJECT)
 
-static void tpl_log_entry_set_log_id (TplLogEntry *self, guint data);
+static void tpl_log_entry_set_log_id (TplLogEntry *self, const gchar *data);
 static void tpl_log_entry_set_account_path (TplLogEntry *self,
     const gchar *data);
-
 
 #define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogEntry)
 struct _TplLogEntryPriv
 {
-  guint log_id;
+  gchar *log_id;
   gint64 timestamp;
   TplLogEntrySignalType signal_type;
   gchar *chat_id;
   gchar *account_path;
+  gchar *channel_path;
+  gint64 pending_msg_id;
 
   /* incoming/outgoing */
   TplLogEntryDirection direction;
@@ -70,9 +71,11 @@ enum {
     PROP_TIMESTAMP = 1,
     PROP_SIGNAL_TYPE,
     PROP_LOG_ID,
+    PROP_PENDING_MSG_ID,
     PROP_DIRECTION,
     PROP_CHAT_ID,
     PROP_ACCOUNT_PATH,
+    PROP_CHANNEL_PATH,
     PROP_SENDER,
     PROP_RECEIVER
 };
@@ -129,8 +132,11 @@ tpl_log_entry_get_property (GObject *object,
       case PROP_SIGNAL_TYPE:
         g_value_set_uint (value, priv->signal_type);
         break;
+      case PROP_PENDING_MSG_ID:
+        g_value_set_uint (value, priv->pending_msg_id);
+        break;
       case PROP_LOG_ID:
-        g_value_set_uint (value, priv->log_id);
+        g_value_set_string (value, priv->log_id);
         break;
       case PROP_DIRECTION:
         g_value_set_uint (value, priv->direction);
@@ -140,6 +146,9 @@ tpl_log_entry_get_property (GObject *object,
         break;
       case PROP_ACCOUNT_PATH:
         g_value_set_string (value, priv->account_path);
+        break;
+      case PROP_CHANNEL_PATH:
+        g_value_set_string (value, priv->channel_path);
         break;
       case PROP_SENDER:
         g_value_set_object (value, priv->sender);
@@ -169,8 +178,11 @@ tpl_log_entry_set_property (GObject *object,
       case PROP_SIGNAL_TYPE:
         tpl_log_entry_set_signal_type (self, g_value_get_uint (value));
         break;
+      case PROP_PENDING_MSG_ID:
+        tpl_log_entry_set_pending_msg_id (self, g_value_get_uint (value));
+        break;
       case PROP_LOG_ID:
-        tpl_log_entry_set_log_id (self, g_value_get_uint (value));
+        tpl_log_entry_set_log_id (self, g_value_get_string (value));
         break;
       case PROP_DIRECTION:
         tpl_log_entry_set_direction (self, g_value_get_uint (value));
@@ -180,6 +192,9 @@ tpl_log_entry_set_property (GObject *object,
         break;
       case PROP_ACCOUNT_PATH:
         tpl_log_entry_set_account_path (self, g_value_get_string (value));
+        break;
+      case PROP_CHANNEL_PATH:
+        tpl_log_entry_set_channel_path (self, g_value_get_string (value));
         break;
       case PROP_SENDER:
         tpl_log_entry_set_sender (self, g_value_get_object (value));
@@ -213,6 +228,8 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   klass->get_sender = tpl_log_entry_get_sender;
   klass->get_receiver = tpl_log_entry_get_receiver;
   klass->get_chat_id = tpl_log_entry_get_chat_id;
+  klass->get_pending_msg_id = tpl_log_entry_get_pending_msg_id;
+  klass->is_pending = tpl_log_entry_is_pending;
   klass->equal = NULL;
 
   klass->set_timestamp = tpl_log_entry_set_timestamp;
@@ -221,6 +238,7 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   klass->set_sender = tpl_log_entry_set_sender;
   klass->set_receiver = tpl_log_entry_set_receiver;
   klass->set_chat_id = tpl_log_entry_set_chat_id;
+  klass->set_pending_msg_id = tpl_log_entry_set_pending_msg_id;
 
   param_spec = g_param_spec_uint ("timestamp",
       "Timestamp",
@@ -235,11 +253,35 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
       G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIGNAL_TYPE, param_spec);
 
-  param_spec = g_param_spec_uint ("log-id",
+  /**
+   * TplLogEntry::pending-msg-id:
+   *
+   * The pending message id for the current log entry.
+   * The construction-time value if #TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED,
+   * meaning that the log entry is considered already acknoledged.
+   * An object instantiating a TplLogEntry subclass should explicitly set ths
+   *
+   * The pending message id value is only meaningful when associated to the
+   * #TplLogEntry::channel-path property.
+   * The couple (channel-path, pending-msg-id) cannot be considered unique.
+   * Use #TplLogEntry::log-id for a TPL-unique identifier.
+   */
+  param_spec = g_param_spec_int64 ("pending-msg-id",
+      "PendingMessageId",
+      "Pending Message ID, if set, the log entry is set as pending for ACK."
+      " Default to -1 meaning not pending.",
+      -1, G_MAXUINT32, TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_PENDING_MSG_ID,
+      param_spec);
+
+  param_spec = g_param_spec_string ("log-id",
       "LogId",
-      "Log identification number: the triple LogId+AccountName+ChatId is unique",
-      0, G_MAXUINT32, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_STATIC_STRINGS);
+      "Log identification token, it's unique among existing LogEntry, if two "
+      "messages have the same token, they are the same entry (maybe logged "
+      "by two different TplLogStore)",
+      NULL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOG_ID, param_spec);
 
   param_spec = g_param_spec_uint ("direction",
@@ -265,6 +307,13 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT_PATH, param_spec);
+
+  param_spec = g_param_spec_string ("channel-path",
+      "ChannelPath",
+      "The channel path of the TpChannel to which the log entry is related",
+      NULL,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_PATH, param_spec);
 
   param_spec = g_param_spec_object ("sender",
       "Sender",
@@ -303,6 +352,25 @@ tpl_log_entry_get_timestamp (TplLogEntry *self)
 }
 
 
+gint64
+tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
+{
+  TplLogEntryPriv *priv = GET_PRIV (self);
+
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), -1);
+
+  priv = GET_PRIV (self);
+  return priv->pending_msg_id;
+}
+
+
+gboolean
+tpl_log_entry_is_pending (TplLogEntry *self)
+{
+  return (tpl_log_entry_get_pending_msg_id (self) !=
+    TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED);
+}
+
 TplLogEntrySignalType
 tpl_log_entry_get_signal_type (TplLogEntry *self)
 {
@@ -315,7 +383,7 @@ tpl_log_entry_get_signal_type (TplLogEntry *self)
 }
 
 
-guint
+const gchar *
 tpl_log_entry_get_log_id (TplLogEntry *self)
 {
   TplLogEntryPriv *priv;
@@ -388,6 +456,18 @@ tpl_log_entry_get_account_path (TplLogEntry *self)
 }
 
 
+const gchar *
+tpl_log_entry_get_channel_path (TplLogEntry *self)
+{
+  TplLogEntryPriv *priv;
+
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
+
+  priv = GET_PRIV (self);
+  return priv->channel_path;
+}
+
+
 void
 tpl_log_entry_set_timestamp (TplLogEntry *self,
     gint64 data)
@@ -415,17 +495,42 @@ tpl_log_entry_set_signal_type (TplLogEntry *self,
   g_object_notify (G_OBJECT (self), "signal-type");
 }
 
-/* set just on construction time */
-static void
-tpl_log_entry_set_log_id (TplLogEntry *self,
-    guint data)
+/**
+ * tpl_log_entry_set_pending_msg_id:
+ * @self: TplLogentry instance
+ * @data: the pending message ID
+ *
+ * Sets the value of the pending message id, or
+ * #TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED to set @self as aknowledged.
+ */
+void
+tpl_log_entry_set_pending_msg_id (TplLogEntry *self,
+    gint64 data)
 {
-  TplLogEntryPriv *priv;
+  TplLogEntryPriv *priv = GET_PRIV (self);
 
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
 
   priv = GET_PRIV (self);
-  priv->log_id = data;
+  priv->pending_msg_id = data;
+  g_object_notify (G_OBJECT (self), "pending-msg-id");
+}
+
+
+/* set just on construction time */
+static void
+tpl_log_entry_set_log_id (TplLogEntry *self,
+    const gchar* data)
+{
+  TplLogEntryPriv *priv;
+
+  priv = GET_PRIV (self);
+
+  g_return_if_fail (TPL_IS_LOG_ENTRY (self));
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (priv->log_id == NULL);
+
+  priv->log_id = g_strdup (data);
   g_object_notify (G_OBJECT (self), "log-id");
 }
 
@@ -512,6 +617,22 @@ tpl_log_entry_set_account_path (TplLogEntry *self,
   g_object_notify (G_OBJECT (self), "account-path");
 }
 
+
+void
+tpl_log_entry_set_channel_path (TplLogEntry *self,
+    const gchar *data)
+{
+  TplLogEntryPriv *priv;
+
+  priv = GET_PRIV (self);
+
+  g_return_if_fail (TPL_IS_LOG_ENTRY (self));
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (priv->channel_path == NULL);
+
+  priv->channel_path = g_strdup (data);
+  g_object_notify (G_OBJECT (self), "channel-path");
+}
 
 /**
  * log_entry:

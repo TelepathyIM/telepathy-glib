@@ -33,6 +33,7 @@
 #include <telepathy-logger/observer.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager-priv.h>
+#include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
 
 
@@ -846,8 +847,11 @@ on_sent_signal_cb (TpChannel *proxy,
   TplContact *tpl_contact_receiver = NULL;
   TplLogEntryText *log;
   TplLogManager *logmanager;
-  const gchar *account_path;
   const gchar *chat_id;
+  const gchar *account_path;
+  const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
+  gchar *log_id = create_message_token (channel_path,
+      tpl_time_to_string_local (arg_Timestamp, "%Y%m%d"), G_MAXUINT);
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
@@ -865,7 +869,8 @@ on_sent_signal_cb (TpChannel *proxy,
       tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
       tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
 
-      DEBUG ("sent:\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+          log_id,
           tpl_contact_get_identifier (tpl_contact_receiver),
           tpl_contact_get_alias (tpl_contact_receiver),
           tpl_contact_get_identifier (tpl_contact_sender),
@@ -875,7 +880,8 @@ on_sent_signal_cb (TpChannel *proxy,
     }
   else
     {
-      DEBUG ("sent:\n\tto chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+          log_id,
           tpl_channel_text_get_chatroom_id (tpl_text),
           tpl_contact_get_identifier (tpl_contact_sender),
           tpl_contact_get_alias (tpl_contact_sender),
@@ -891,9 +897,12 @@ on_sent_signal_cb (TpChannel *proxy,
   account_path = tp_proxy_get_object_path (
       TP_PROXY (tpl_channel_get_account (TPL_CHANNEL (tpl_text))));
 
-  log = tpl_log_entry_text_new (arg_Timestamp, account_path,
+  log = tpl_log_entry_text_new (log_id, account_path,
       TPL_LOG_ENTRY_DIRECTION_OUT);
 
+  tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log),
+      TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED);
+  tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
   tpl_log_entry_text_set_chat_id (log, chat_id);
   tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
   tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
@@ -923,6 +932,8 @@ on_sent_signal_cb (TpChannel *proxy,
   g_object_unref (tpl_contact_sender);
   g_object_unref (logmanager);
   g_object_unref (log);
+
+  g_free (log_id);
 }
 
 
@@ -994,7 +1005,8 @@ keepon_on_receiving_signal (TplLogEntryText *log)
 
   tpl_contact_receiver = tpl_contact_from_tp_contact (local);
 
-  DEBUG ("recvd:\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+  DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+      tpl_log_entry_get_log_id (TPL_LOG_ENTRY (log)),
       tpl_contact_get_identifier (tpl_contact_receiver),
       tpl_contact_get_alias (tpl_contact_receiver),
       tpl_contact_get_identifier (tpl_contact_sender),
@@ -1046,6 +1058,9 @@ on_received_signal_cb (TpChannel *proxy,
   TplLogEntryText *log;
   TpAccount *account = tpl_channel_get_account (TPL_CHANNEL (tpl_text));
   const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
+  const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
+  gchar *log_id = create_message_token (channel_path,
+      tpl_time_to_string_local (arg_Timestamp, "%Y%m%d"), arg_ID);
 
   /* TODO use the Message iface to check the delivery
      notification and handle it correctly */
@@ -1058,9 +1073,11 @@ on_received_signal_cb (TpChannel *proxy,
     }
 
   /* Initialize TplLogEntryText (part 1) - chat_id still unknown */
-  log = tpl_log_entry_text_new (arg_ID, account_path,
+  log = tpl_log_entry_text_new (log_id, account_path,
       TPL_LOG_ENTRY_DIRECTION_IN);
 
+  tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
+  tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log), arg_ID);
   tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);
   tpl_log_entry_text_set_message (log, arg_Text);
   tpl_log_entry_text_set_message_type (log, arg_Type);
@@ -1083,7 +1100,7 @@ on_received_signal_cb (TpChannel *proxy,
     keepon_on_receiving_signal (log);
 
   g_object_unref (tpl_contact_receiver);
+  g_free (log_id);
 }
-
 /* End of Signal's Callbacks */
 
