@@ -2511,7 +2511,8 @@ tp_account_get_avatar_async (TpAccount *account,
  *
  * Finishes an async get operation of @account's avatar.
  *
- * Returns: a #GArray of the account's avatar, or %NULL on failure
+ * Returns: a #GArray of #guchar containing the bytes of the account's avatar,
+ *  or %NULL on failure
  *
  * Since: 0.9.0
  */
