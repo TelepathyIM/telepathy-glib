@@ -887,7 +887,8 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:current-presence-type:
    *
-   * The account connection's current presence type.
+   * The account connection's current presence type
+   * (a %TpConnectionPresenceType).
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -955,7 +956,7 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:connection-status:
    *
-   * The account's connection status type.
+   * The account's connection status type (a %TpConnectionStatus).
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -979,7 +980,7 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:connection-status-reason:
    *
-   * The account's connection status reason.
+   * The account's connection status reason (a %TpConnectionStatusReason).
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -1166,7 +1167,7 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:requested-presence-type:
    *
-   * The account's requested presence type.
+   * The account's requested presence type (a #TpConnectionPresenceType).
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
