@@ -2762,7 +2762,9 @@ set_or_free (gchar **target,
  * from the path. This includes replacing underscores with hyphens in the
  * protocol name, as defined in the Account specification.
  *
- * Any of the out parameters may be %NULL if not needed.
+ * Any of the out parameters may be %NULL if not needed. If %TRUE is returned,
+ * the caller is responsible for freeing the strings stored in any non-%NULL
+ * out parameters, using g_free().
  *
  * Returns: %TRUE if @object_path was successfully parsed; %FALSE and sets
  *          @error otherwise.
