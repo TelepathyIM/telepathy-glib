@@ -1435,7 +1435,7 @@ tp_account_ensure_connection (TpAccount *account,
     return NULL;
 
   /* Should be a full object path, not the special "/" value */
-  if (strlen (path) == 1)
+  if (!tp_strdiff (path, "/"))
     return NULL;
 
   _tp_account_set_connection (account, path);
