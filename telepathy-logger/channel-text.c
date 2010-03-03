@@ -33,6 +33,7 @@
 #include <telepathy-logger/observer.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager-priv.h>
+#include <telepathy-logger/log-store-index.h>
 #include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
 
@@ -81,6 +82,9 @@ static void on_sent_signal_cb (TpChannel *proxy, guint arg_Timestamp,
 static void on_send_error_cb (TpChannel *proxy, guint arg_Error,
     guint arg_Timestamp, guint arg_Type, const gchar *arg_Text,
     gpointer user_data, GObject *weak_object);
+static void on_pending_messages_removed_cb (TpChannel *proxy,
+    const GArray *arg_Message_IDs, gpointer user_data, GObject *weak_object);
+
 static void pendingproc_connect_signals (TplActionChain *ctx,
     gpointer user_data);
 static void pendingproc_get_pending_messages (TplActionChain *ctx,
@@ -98,6 +102,9 @@ static void pendingproc_get_remote_contact (TplActionChain *ctx,
    gpointer user_data);
 static void pendingproc_get_remote_handle_type (TplActionChain *ctx,
    gpointer user_data);
+static void pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
+    gpointer user_data);
+
 static void keepon_on_receiving_signal (TplLogEntryText *log);
 static void got_message_pending_messages_cb (TpProxy *proxy,
     const GValue *out_Value, const GError *error, gpointer user_data,
@@ -106,9 +113,7 @@ static void got_text_pending_messages_cb (TpChannel *proxy,
     const GPtrArray *result, const GError *error, gpointer user_data,
     GObject *weak_object);
 
-
 G_DEFINE_TYPE (TplChannelText, tpl_channel_text, TPL_TYPE_CHANNEL)
-
 
 /* used by _get_my_contact and _get_remote_contact */
 static void
@@ -496,6 +501,7 @@ tpl_channel_text_call_when_ready (TplChannelText *self,
   tpl_actionchain_append (actions, pendingproc_get_my_contact, NULL);
   tpl_actionchain_append (actions, pendingproc_get_remote_handle_type, NULL);
   tpl_actionchain_append (actions, pendingproc_get_pending_messages, NULL);
+  tpl_actionchain_append (actions, pendingproc_cleanup_pending_messages_db, NULL);
   /* start the chain consuming */
   tpl_actionchain_continue (actions);
 }
@@ -528,6 +534,72 @@ got_tpl_chan_ready_cb (GObject *obj,
 }
 
 
+/* Cleans up stale log-ids in the index logstore.
+ *
+ * It 'brutally' considers as stale all log-ids which timestamp is older than
+ * <time_limit> days AND are still not set as aknowledged.
+ *
+ * NOTE: While retrieving open channels, a partial clean-up for the channel's
+ * stale pending messages is done. It's not enough, since it doesn't consider
+ * all the channel that was closed at retrieval time.  This functions try to
+ * catch stale ids in the rest of the DB, heuristically.
+ *
+ * It is wrong to consider all the log-ids not having an channel currently
+ * open as stale, since a channel might be temporarely disconnected and
+ * reconnected and some protocols might repropose not acknowledged messages on
+ * reconnection. We need to consider only reasonably old log-ids.
+ *
+ * This function is meant only to reduce the size of the DB used for indexing.
+ *
+ * No tpl_actionchain_terminate() is called if some fatal error occurs since
+ * it's not considered a crucial point for TplChannel preparation.
+ */
+static void
+pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
+    gpointer user_data)
+{
+  /* five days ago in seconds */
+  const time_t time_limit = tpl_time_get_current () - (86400*5);
+  TplLogStore *index = tpl_log_store_index_dup ();
+  GList *l;
+  GError *error = NULL;
+
+  if (index == NULL)
+    {
+      DEBUG ("Unable to obtain the TplLogStoreIndex singleton");
+      goto out;
+    }
+
+  l = tpl_log_store_index_get_log_ids (index, NULL, time_limit,
+      &error);
+  if (error != NULL)
+    {
+      DEBUG ("unable to obtain log-id in Index DB: %s", error->message);
+      g_error_free (error);
+      /* do not call tpl_actionchain_terminate, if it's temporary next startup
+       * TPL will re-do the clean-up. If it's fatal, the flow will stop later
+       * anyway */
+      goto out;
+    }
+
+  while (l != NULL)
+    {
+      gchar *log_id = l->data;
+
+      /* brutally ACK the stale message and ignore any error */
+      tpl_log_store_index_set_acknowledgment (index, log_id, NULL);
+
+      g_free (log_id);
+      l = g_list_remove_link (l, l);
+    }
+
+out:
+  if (index != NULL)
+    g_object_unref (index);
+
+  tpl_actionchain_continue (ctx);
+}
+
 static void
 pendingproc_get_pending_messages (TplActionChain *ctx,
     gpointer user_data)
@@ -552,35 +624,58 @@ got_message_pending_messages_cb (TpProxy *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
+  const gchar *channel_path = tp_proxy_get_object_path (proxy);
+  TplLogStore *index = tpl_log_store_index_dup ();
   TplActionChain *ctx = user_data;
   GPtrArray *result = NULL;
+  GList *indexed_pending_msg = NULL;
+  GError *loc_error = NULL;
   guint i;
 
-  g_return_if_fail (TPL_IS_CHANNEL (proxy));
+  if (!TPL_IS_CHANNEL (proxy))
+    goto out;
 
   if (error != NULL)
-    DEBUG ("retrieving messages for Message iface: %s", error->message);
+    {
+      g_critical ("retrieving messages for Message iface: %s", error->message);
+      goto out;
+    }
 
   /* It's aaa{vs}, a list of message each containing a list of message's parts
    * each contain a dictioanry k:v */
   result = g_value_get_boxed (out_Value);
 
+  /* getting messages ids known to be pending at last TPL exit */
+  indexed_pending_msg = tpl_log_store_index_get_pending_messages (index,
+      TP_CHANNEL (proxy), &loc_error);
+  if (loc_error != NULL)
+    {
+      g_critical ("Unable to obtain pending messages stored in TPL DB: %s",
+          loc_error->message);
+      goto out;
+    }
+
   /* cycle the list of messages */
   PATH_DEBUG (proxy, "%d pending message(s) from Message iface", result->len);
+  PATH_DEBUG (proxy, "Checking if there are any un-logged messages among "
+      "pending messages");
   for (i = 0; i < result->len; ++i)
     {
       GPtrArray *message_parts;
       GHashTable *message_headers; /* string:gvalue */
       GHashTable *message_part; /* string:gvalue */
       const gchar *message_token;
+      gchar *tpl_message_token;
       guint64 message_timestamp;
       guint message_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
       guint message_flags = 0;
       guint message_id;
       TpHandle message_sender_handle;
+
       gboolean is_scrollback;
       gboolean is_rescued;
       const gchar *message_body;
+      GList *l = NULL;
 
       /* list of message's parts */
       message_parts = g_ptr_array_index (result, i);
@@ -596,9 +691,31 @@ got_message_pending_messages_cb (TpProxy *proxy,
       message_token = tp_asv_get_string (message_headers, "message-token");
       message_id = tp_asv_get_uint32 (message_headers, "pending-message-id",
           NULL);
-      //tp_asv_get_uint32 (message_headers, "pending-message-id", NULL);
       message_timestamp = tp_asv_get_uint64 (message_headers,
           "message-received", NULL);
+
+      tpl_message_token = create_message_token (channel_path,
+          tpl_time_to_string_local (message_timestamp, "%Y%m%d%H%M%S"),
+          message_id);
+
+      /* look for the current token among the TPL indexed tokens/log_id */
+      l = g_list_find_custom (indexed_pending_msg, tpl_message_token,
+            (GCompareFunc) g_strcmp0);
+      if (l != NULL)
+        {
+          PATH_DEBUG (proxy, "pending msg %s already logged, not logging",
+              tpl_message_token);
+          /* I remove the element so that at the end of the cycle I'll have
+           * only elements that I could not find in the pending msg list,
+           * which are stale elements */
+          indexed_pending_msg = g_list_remove_link (indexed_pending_msg, l);
+          g_free (l->data);
+          g_list_free (l);
+
+          /* do not log messages which log_id is present in LogStoreIndex */
+          continue;
+        }
+
       message_sender_handle = tp_asv_get_uint32 (message_headers,
           "message-sender", NULL);
 
@@ -615,15 +732,49 @@ got_message_pending_messages_cb (TpProxy *proxy,
 
       message_body = tp_asv_get_string (message_part, "content");
 
-      DEBUG ("pending message");
       on_received_signal_cb (TP_CHANNEL (proxy), message_id, message_timestamp,
           message_sender_handle, message_type, message_flags, message_body,
           TPL_CHANNEL_TEXT (proxy),
           NULL);
+
+      g_free (tpl_message_token);
     }
 
-  tpl_actionchain_continue (ctx);
+  /* Remove messages not set as ACK but not in the pending queue anymore: they
+   * are stale entries which was already ACK while TPL was 'down'.
+   *
+   * NOTE: this will clean up stale entries in index, related to any channel
+   * currently open, we don't know anything about all the other stale entries
+   * related to channel not currently open.
+   */
+  PATH_DEBUG (proxy, "Cleaning up stale messages");
+  while (indexed_pending_msg != NULL)
+    {
+      gchar *log_id = indexed_pending_msg->data;
 
+      PATH_DEBUG (proxy, "%s is stale, removing from DB", log_id);
+      tpl_log_store_index_set_acknowledgment (index, log_id, &loc_error);
+      if (loc_error != NULL)
+        {
+          g_critical ("Unable to set %s as acknoledged in TPL DB: %s", log_id,
+              loc_error->message);
+          g_clear_error (&loc_error);
+        }
+      g_free (log_id);
+      /* free list's head, which will return the next element, if any */
+      indexed_pending_msg = g_list_delete_link (indexed_pending_msg,
+          indexed_pending_msg);
+    }
+  PATH_DEBUG (proxy, "Clean up finished.");
+
+out:
+  if (index != NULL)
+    g_object_unref (index);
+
+  if (loc_error != NULL)
+      g_error_free (loc_error);
+
+  tpl_actionchain_continue (ctx);
 }
 
 
@@ -779,6 +930,17 @@ pendingproc_connect_signals (TplActionChain *ctx,
       is_error = TRUE;
     }
 
+  tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
+      channel, on_pending_messages_removed_cb, NULL, NULL,
+      G_OBJECT (tpl_text), &error);
+  if (error != NULL)
+    {
+      PATH_DEBUG (tpl_text, "'PendingMessagesRemoved' signal connect: %s",
+          error->message);
+      g_clear_error (&error);
+      is_error = TRUE;
+    }
+
   /* TODO connect to TpContacts' notify::presence-type */
 
   if (is_error)
@@ -790,6 +952,35 @@ pendingproc_connect_signals (TplActionChain *ctx,
 
 
 /* Signal's Callbacks */
+static void
+on_pending_messages_removed_cb (TpChannel *proxy,
+    const GArray *arg_Message_IDs,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TplLogStore *index = tpl_log_store_index_dup ();
+  guint i;
+  GError *error = NULL;
+
+  for (i = 0; i < arg_Message_IDs->len; ++i)
+    {
+      guint msg_id = g_array_index (arg_Message_IDs, guint, i);
+      tpl_log_store_index_set_acknowledgment_by_msg_id (index, proxy, msg_id,
+          &error);
+      PATH_DEBUG (proxy, "msg_id %d acknowledged", msg_id);
+      if (error != NULL)
+        {
+          PATH_DEBUG (proxy, "cannot set the ACK flag for msg_id %d: %s",
+              msg_id, error->message);
+          g_clear_error (&error);
+        }
+    }
+
+  if (index != NULL)
+    g_object_unref (index);
+}
+
+
 static void
 on_closed_cb (TpChannel *proxy,
     gpointer user_data,
@@ -849,11 +1040,14 @@ on_sent_signal_cb (TpChannel *proxy,
   TplLogManager *logmanager;
   const gchar *chat_id;
   const gchar *account_path;
-  const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-  gchar *log_id = create_message_token (channel_path,
-      tpl_time_to_string_local (arg_Timestamp, "%s"), G_MAXUINT);
+  const gchar *channel_path;
+  gchar *log_id;
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
+
+  channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
+  log_id = create_message_token (channel_path,
+      tpl_time_to_string_local (arg_Timestamp, "%Y%m%d%H%M%S"), G_MAXUINT);
 
   /* Initialize data for TplContact */
   me = tpl_channel_text_get_my_contact (tpl_text);
@@ -957,9 +1151,9 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 
   if (error != NULL)
     {
-      PATH_DEBUG (tpl_text, "Unrecoverable error retrieving remote contact "
-         "information: %s", error->message);
-      DEBUG ("Not able to log the received message: %s",
+      PATH_DEBUG (tpl_text, "An Unrecoverable error retrieving remote contact "
+         "information occured: %s", error->message);
+      PATH_DEBUG (tpl_text, "Unable to log the received message: %s",
          tpl_log_entry_text_get_message (log));
       g_object_unref (log);
       return;
@@ -967,9 +1161,9 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 
   if (n_failed > 0)
     {
-      DEBUG ("%d invalid handle(s) passed to "
+      PATH_DEBUG (tpl_text, "%d invalid handle(s) passed to "
          "tp_connection_get_contacts_by_handle()", n_failed);
-      DEBUG ("Not able to log the received message: %s",
+      PATH_DEBUG (tpl_text, "Not able to log the received message: %s",
          tpl_log_entry_text_get_message (log));
       g_object_unref (log);
       return;
@@ -1054,19 +1248,38 @@ on_received_signal_cb (TpChannel *proxy,
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpConnection *tp_conn;
   TpContact *me;
-  TplContact *tpl_contact_receiver;
+  TplContact *tpl_contact_receiver = NULL;
   TplLogEntryText *log;
   TpAccount *account = tpl_channel_get_account (TPL_CHANNEL (tpl_text));
+  TplLogStore *index = tpl_log_store_index_dup ();
   const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   gchar *log_id = create_message_token (channel_path,
-      tpl_time_to_string_local (arg_Timestamp, "%s"), arg_ID);
+      tpl_time_to_string_local (arg_Timestamp, "%Y%m%d%H%M%S"), arg_ID);
+
+  /* First, check if log_id has already been logged
+   *
+   * FIXME: There is a race condition for which, right after a 'NewChannel'
+   * signal is raised and a message is received, the 'received' signal handler
+   * may be cateched before or being slower and arriving after the TplChannel
+   * preparation (in which pending message list is examined)
+   *
+   * Workaround:
+   * In the first case the analisys of P.M.L will detect that actually the
+   * handler has already received and logged the message.
+   * In the latter (here), the handler will detect that the P.M.L analisys
+   * has found and logged it, returning immediatly */
+  if (tpl_log_store_index_log_id_is_present (index, log_id))
+    {
+      PATH_DEBUG (tpl_text, "%s found, not logging", log_id);
+      goto out;
+    }
 
   /* TODO use the Message iface to check the delivery
      notification and handle it correctly */
   if (arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
     {
-      DEBUG ("Non text content flag set. "
+      PATH_DEBUG (tpl_text, "Non text content flag set. "
           "Probably a delivery notification for a sent message. "
           "Ignoring");
       return;
@@ -1099,7 +1312,10 @@ on_received_signal_cb (TpChannel *proxy,
   else
     keepon_on_receiving_signal (log);
 
-  g_object_unref (tpl_contact_receiver);
+out:
+  if (tpl_contact_receiver != NULL)
+    g_object_unref (tpl_contact_receiver);
+  g_object_unref (index);
   g_free (log_id);
 }
 /* End of Signal's Callbacks */

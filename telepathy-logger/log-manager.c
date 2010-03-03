@@ -188,6 +188,17 @@ tpl_log_manager_init (TplLogManager *self)
   /* Load the message counting cache */
   add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE, TRUE);
 
+  index = tpl_log_store_index_dup ();
+  if (index == NULL)
+    g_critical ("Error during TplLogStoreIndex (name=TplMessageIndex) initialisation.");
+  else if (!tpl_log_manager_register_log_store (self, TPL_LOG_STORE (index)))
+    g_critical ("Not able to register the TplLogStore with "
+        "name=TplMessageIndex.");
+
+  /* internally referenced within register_logstore */
+  if (index != NULL)
+    g_object_unref (index);
+
   DEBUG ("Log Manager initialised");
 }
 
@@ -242,7 +253,8 @@ tpl_log_manager_add_message (TplLogManager *manager,
       result = tpl_log_store_add_message (store, message, &loc_error);
       if (!result)
         {
-          DEBUG ("add_message method for logstore name=%s: %s",
+          g_critical ("tpl_log_manager_add_message: logstore name=%s: %s. "
+              "Event may not be logged properly.",
               tpl_log_store_get_name (store), loc_error->message);
           g_clear_error (&loc_error);
         }
@@ -251,7 +263,8 @@ tpl_log_manager_add_message (TplLogManager *manager,
     }
   if (!retval)
     {
-      g_critical ("Failed to write to at least writable LogStore.");
+      g_critical ("tpl_log_manager_add_message: Failed to write to all "
+          "writable LogStores log-id %s.", tpl_log_entry_get_log_id (message));
       g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
           TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
           "Not recoverable error occurred during log manager's "
@@ -1051,7 +1064,6 @@ _get_filtered_messages_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of TPL_LOG_ENTRY */
   g_return_if_fail (data != NULL);
-  DEBUG ("FREED!");
 
   g_list_foreach (lst, (GFunc) g_object_unref, NULL);
   g_list_free (lst);
