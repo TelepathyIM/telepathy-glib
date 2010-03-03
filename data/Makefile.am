@@ -10,7 +10,7 @@ servicefile_DATA = $(servicefile_in_files:.service.in=.service)
 	$(QUIET_GEN)sed -e "s|%bindir%|$(bindir)|" $< > $@
 
 clientfiledir = $(datarootdir)/telepathy/clients
-clientfile_DATA = TelepathyLogger.client
+clientfile_DATA = Logger.client
 
 if GCONF_SCHEMAS_INSTALL
 install-data-local:
