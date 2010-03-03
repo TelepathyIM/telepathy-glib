@@ -1537,7 +1537,18 @@ tp_account_get_icon_name (TpAccount *account)
  * tp_account_get_parameters:
  * @account: a #TpAccount
  *
- * <!-- -->
+ * Returns the parameters of the account, in a hash table where each string
+ * is the parameter name (account, password, require-encryption etc.), and
+ * each value is a #GValue. Using the tp_asv_get family of functions
+ * (tp_asv_get_uint32(), tp_asv_dup_string() etc.) to access the parameters is
+ * recommended.
+ *
+ * The allowed parameters depend on the connection manager, and can be found
+ * via tp_connection_manager_get_protocol() and
+ * tp_connection_manager_protocol_get_param(). Well-known parameters are
+ * listed
+ * <ulink url="http://telepathy.freedesktop.org/spec/org.freedesktop.Telepathy.ConnectionManager.html#org.freedesktop.Telepathy.ConnectionManager.RequestConnection">in
+ * the Telepathy D-Bus Interface Specification</ulink>.
  *
  * Returns: the hash table of parameters on @account
  *
