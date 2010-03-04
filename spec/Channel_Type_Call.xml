@@ -40,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           <tp:dbus-ref namespace="org.freedesktop.Telepathy.Channel"
             >Requested</tp:dbus-ref> property is false, and the
           <tp:member-ref>CallState</tp:member-ref> is
-          Call_State_Pending_Initiator. While this is the case,
+          Call_State_Pending_Receiver. While this is the case,
           this method SHOULD change the
           <tp:member-ref>CallFlags</tp:member-ref> to include
           Call_Flag_Ringing, and notify the remote contact that the local
@@ -61,7 +61,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
           <tp:docstring>
-            The call is no longer in state Call_State_Pending_Initiator.
+            The call is no longer in state Call_State_Pending_Receiver.
           </tp:docstring>
         </tp:error>
       </tp:possible-errors>

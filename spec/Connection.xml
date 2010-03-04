@@ -228,10 +228,14 @@ USA.</p>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
-          The handle type is invalid
+          <tp:docstring>
+            The handle type is invalid
+          </tp:docstring>
         </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle">
-          One of the given handles is not valid
+          <tp:docstring>
+            One of the given handles is not valid
+          </tp:docstring>
         </tp:error>
       </tp:possible-errors>
     </method>
@@ -263,10 +267,14 @@ USA.</p>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.Disconnected"/>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
-          The handle type is invalid
+          <tp:docstring>
+            The handle type is invalid
+          </tp:docstring>
         </tp:error>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle">
-          One of the given handles is not valid
+          <tp:docstring>
+            One of the given handles is not valid
+          </tp:docstring>
         </tp:error>
       </tp:possible-errors>
     </method>

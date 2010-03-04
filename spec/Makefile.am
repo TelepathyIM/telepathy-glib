@@ -57,6 +57,7 @@ EXTRA_DIST = \
     Connection_Interface_Contacts.xml \
     Connection_Interface_Forwarding.xml \
     Connection_Interface_Location.xml \
+    Connection_Interface_Mail_Notification.xml \
     Connection_Interface_Presence.xml \
     Connection_Interface_Privacy.xml \
     Connection_Interface_Renaming.xml \

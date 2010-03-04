@@ -30,8 +30,10 @@
     </tp:docstring>
 
     <method name="SetSending" tp:name-for-bindings="Set_Sending">
-      <p>Set the stream to start or stop sending media from the local
-        user to other contacts.</p>
+      <tp:docstring>
+        Set the stream to start or stop sending media from the local
+          user to other contacts.
+      </tp:docstring>
 
       <arg name="Send" type="b" direction="in">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">

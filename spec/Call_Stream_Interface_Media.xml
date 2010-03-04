@@ -385,6 +385,7 @@
 
     <property name="Endpoints" tp:name-for-bindings="Endpoints"
       type="ao" access="read">
+      <tp:docstring>
         <p> The list of endpoints
            <tp:dbus-ref
               namespace="org.freedesktop.Telepathy.Call.Stream"
@@ -394,6 +395,7 @@
 
         <p>Change notification is via the
           <tp:member-ref>EndpointsChanged</tp:member-ref> signal.</p>
+      </tp:docstring>
     </property>
   </interface>
 </node>
