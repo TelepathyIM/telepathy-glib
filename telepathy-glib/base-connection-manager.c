@@ -199,6 +199,8 @@ struct _TpBaseConnectionManagerPrivate
   gboolean dispose_has_run;
   /* used as a set: key is TpBaseConnection *, value is TRUE */
   GHashTable *connections;
+  /* true after tp_base_connection_manager_register is called */
+  gboolean registered;
 };
 
 /* signal enum */
@@ -1017,6 +1019,8 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
   g_object_unref (bus_proxy);
   g_string_free (string, TRUE);
+
+  self->priv->registered = TRUE;
 
   return TRUE;
 }
