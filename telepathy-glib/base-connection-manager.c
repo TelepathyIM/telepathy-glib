@@ -37,10 +37,7 @@
 
 #include <dbus/dbus-protocol.h>
 
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "telepathy-glib/debug-internal.h"
