@@ -292,10 +292,6 @@ tpl_observer_get_property (GObject *self,
     GValue *value,
     GParamSpec *pspec)
 {
-  GPtrArray *array;
-  GList *key_list;
-  GHashTable *map;
-
   switch (property_id)
     {
       case PROP_INTERFACES:
@@ -303,20 +299,58 @@ tpl_observer_get_property (GObject *self,
         break;
 
       case PROP_CHANNEL_FILTER:
-        /* create an empty filter - which means all channels */
-        array = g_ptr_array_new ();
-        map = g_hash_table_new (NULL, NULL);
-        g_ptr_array_add (array, map);
-        g_value_set_boxed (value, array);
-        break;
+        {
+          GPtrArray *array = g_ptr_array_new ();
+
+          /* FIXME: it would be super great to be able to generate this
+           * from the .client file, tp-glib needs API for that */
+          g_ptr_array_add (array, tp_asv_new (
+                TP_IFACE_CHANNEL ".ChannelType",
+                G_TYPE_STRING,
+                TP_IFACE_CHANNEL_TYPE_TEXT,
+
+                TP_IFACE_CHANNEL ".TargetHandleType",
+                G_TYPE_UINT,
+                TP_HANDLE_TYPE_CONTACT,
+
+                NULL));
+
+          g_ptr_array_add (array, tp_asv_new (
+                TP_IFACE_CHANNEL ".ChannelType",
+                G_TYPE_STRING,
+                TP_IFACE_CHANNEL_TYPE_TEXT,
+
+                TP_IFACE_CHANNEL ".TargetHandleType",
+                G_TYPE_UINT,
+                TP_HANDLE_TYPE_ROOM,
+
+                NULL));
+
+          g_value_take_boxed (value, array);
+
+          break;
+        }
 
       case PROP_REGISTERED_CHANNELS:
-        array = g_ptr_array_new ();
-        key_list = g_hash_table_get_keys (tpl_observer_get_channel_map (
-              TPL_OBSERVER (self)));
-        g_ptr_array_add (array, key_list);
-        g_value_set_boxed (value, array);
-        break;
+        {
+          GPtrArray *array = g_ptr_array_new ();
+          GList *keys, *ptr;
+
+          keys = g_hash_table_get_keys (tpl_observer_get_channel_map (
+                TPL_OBSERVER (self)));
+
+          for (ptr = keys; ptr != NULL; ptr = ptr->next)
+            {
+              g_ptr_array_add (array, ptr->data);
+            }
+
+          g_value_set_boxed (value, array);
+
+          g_ptr_array_free (array, TRUE);
+          g_list_free (keys);
+
+          break;
+        }
 
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (self, property_id, pspec);
@@ -403,7 +437,8 @@ tpl_observer_class_init (TplObserverClass *klass)
       g_param_spec_boxed ("channel-filter",
         "Channel Filter",
         "Filter for channels we observe",
-        TP_ARRAY_TYPE_CHANNEL_CLASS_LIST, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+        TP_ARRAY_TYPE_CHANNEL_CLASS_LIST,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TplObserver:registered-channels:
@@ -418,8 +453,8 @@ tpl_observer_class_init (TplObserverClass *klass)
       g_param_spec_boxed ("registered-channels",
         "Registered Channels",
         "open TpChannels which the TplObserver is logging",
-        TP_ARRAY_TYPE_CHANNEL_CLASS_LIST, G_PARAM_READABLE |
-        G_PARAM_STATIC_STRINGS));
+        TP_ARRAY_TYPE_OBJECT_PATH_LIST,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /* call our mixin class init */
   klass->dbus_props_class.interfaces = prop_interfaces;
