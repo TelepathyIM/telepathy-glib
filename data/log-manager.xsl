@@ -1,3 +1,12 @@
+<!--
+This XSL stylesheet generates readable HTML output from an Empathy-style XML
+log file.
+
+To generate a HTML file, try something like:
+
+    xsltproc \-\-stringparam title "Chat Log" log-manager.xsl logfile.log
+-->
+
 <xsl:stylesheet version = '1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>
 
   <xsl:output method="html" encoding="utf-8" indent="yes"/>
