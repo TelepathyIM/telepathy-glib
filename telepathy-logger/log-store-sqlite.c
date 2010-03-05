@@ -217,7 +217,7 @@ tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
       NULL);
   if (e != SQLITE_OK)
     {
-      g_critical ("Failed to open Sqlite3 DB: %s\n",
+      CRITICAL ("Failed to open Sqlite3 DB: %s\n",
           sqlite3_errmsg (priv->db));
       goto out;
     }
@@ -235,7 +235,7 @@ tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
       NULL, NULL, &errmsg);
   if (errmsg != NULL)
     {
-      g_critical ("Failed to create table message_cache: %s\n", errmsg);
+      CRITICAL ("Failed to create table message_cache: %s\n", errmsg);
       sqlite3_free (errmsg);
       goto out;
     }
@@ -262,7 +262,7 @@ tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
       &errmsg);
   if (errmsg != NULL)
     {
-      g_critical ("Failed to create table: %s\n", errmsg);
+      CRITICAL ("Failed to create table messagecounts: %s\n", errmsg);
       sqlite3_free (errmsg);
       goto out;
     }
@@ -350,7 +350,7 @@ _cache_msg_id_is_present (TplLogStore *self,
 
   if (e != SQLITE_OK)
     {
-      g_critical ("Error preparing SQL to check msg_id %d for channel %s"
+      CRITICAL ("Error preparing SQL to check msg_id %d for channel %s"
           " presence: %s", msg_id, get_channel_name (channel),
           sqlite3_errmsg (priv->db));
       goto out;
@@ -364,7 +364,7 @@ _cache_msg_id_is_present (TplLogStore *self,
   if (e == SQLITE_ROW)
     retval = g_strdup ((const gchar *) sqlite3_column_text (sql, 0));
   else if (e == SQLITE_ERROR)
-    g_critical ("SQL Error: %s", sqlite3_errmsg (priv->db));
+    CRITICAL ("SQL Error: %s", sqlite3_errmsg (priv->db));
 
 out:
   if (sql != NULL)
@@ -408,7 +408,7 @@ tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
       -1, &sql, NULL);
   if (e != SQLITE_OK)
     {
-      g_critical ("Error preparing SQL to check log_id %s presence: %s",
+      CRITICAL ("Error preparing SQL to check log_id %s presence: %s",
           log_id, sqlite3_errmsg (priv->db));
       goto out;
     }
@@ -424,7 +424,7 @@ tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
   else if (e == SQLITE_ROW)
     DEBUG ("msg id %s found, returning TRUE", log_id);
   else if (e != SQLITE_ROW)
-    g_critical ("SQL Error: %s", sqlite3_errmsg (priv->db));
+    CRITICAL ("SQL Error: %s", sqlite3_errmsg (priv->db));
 
 out:
   if (sql != NULL)
@@ -863,7 +863,7 @@ tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
         -1, &sql, NULL);
   if (e != SQLITE_OK)
     {
-      g_critical ("Error preparing SQL for log-id list: %s",
+      CRITICAL ("Error preparing SQL for log-id list: %s",
           sqlite3_errmsg (priv->db));
       goto out;
     }
@@ -956,7 +956,7 @@ tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
         -1, &sql, NULL);
   if (e != SQLITE_OK)
     {
-      g_critical ("Error preparing SQL for pending messages list: %s",
+      CRITICAL ("Error preparing SQL for pending messages list: %s",
           sqlite3_errmsg (priv->db));
       goto out;
     }

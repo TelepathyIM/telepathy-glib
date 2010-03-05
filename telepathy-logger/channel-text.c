@@ -638,7 +638,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
 
   if (error != NULL)
     {
-      g_critical ("retrieving messages for Message iface: %s", error->message);
+      CRITICAL ("retrieving messages for Message iface: %s", error->message);
       goto out;
     }
 
@@ -651,7 +651,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
       TP_CHANNEL (proxy), &loc_error);
   if (loc_error != NULL)
     {
-      g_critical ("Unable to obtain pending messages stored in TPL DB: %s",
+      CRITICAL ("Unable to obtain pending messages stored in TPL DB: %s",
           loc_error->message);
       goto out;
     }
@@ -757,7 +757,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
       tpl_log_store_sqlite_set_acknowledgment (index, log_id, &loc_error);
       if (loc_error != NULL)
         {
-          g_critical ("Unable to set %s as acknoledged in TPL DB: %s", log_id,
+          CRITICAL ("Unable to set %s as acknoledged in TPL DB: %s", log_id,
               loc_error->message);
           g_clear_error (&loc_error);
         }

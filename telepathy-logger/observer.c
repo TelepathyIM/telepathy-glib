@@ -705,7 +705,7 @@ tpl_observer_got_channel_list_cb (TpProxy *proxy,
 
   if (!G_VALUE_HOLDS (value, TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST))
     {
-      g_critical ("channel list GValue does not hold "
+      CRITICAL ("channel list GValue does not hold "
           "TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST");
       return;
     }
