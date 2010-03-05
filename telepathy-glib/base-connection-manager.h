@@ -86,8 +86,12 @@ GType tp_base_connection_manager_get_type (void);
 
 gboolean tp_base_connection_manager_register (TpBaseConnectionManager *self);
 
+
 TpDBusDaemon *tp_base_connection_manager_get_dbus_daemon (
     TpBaseConnectionManager *self);
+
+void tp_base_connection_manager_add_protocol (TpBaseConnectionManager *self,
+    TpBaseProtocol *protocol);
 
 /* TYPE MACROS */
 #define TP_TYPE_BASE_CONNECTION_MANAGER \

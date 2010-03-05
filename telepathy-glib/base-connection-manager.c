@@ -139,6 +139,9 @@ struct _TpBaseConnectionManagerPrivate
   GHashTable *connections;
   /* true after tp_base_connection_manager_register is called */
   gboolean registered;
+   /* dup'd string => ref to TpBaseProtocol */
+  GHashTable *protocols;
+
   TpDBusDaemon *dbus_daemon;
 };
 
@@ -173,6 +176,12 @@ tp_base_connection_manager_dispose (GObject *object)
     {
       g_object_unref (priv->dbus_daemon);
       priv->dbus_daemon = NULL;
+    }
+
+  if (priv->protocols != NULL)
+    {
+      g_hash_table_destroy (priv->protocols);
+      priv->protocols = NULL;
     }
 
   if (dispose != NULL)
@@ -336,6 +345,8 @@ tp_base_connection_manager_init (TpBaseConnectionManager *self)
   self->priv = priv;
 
   priv->connections = g_hash_table_new (g_direct_hash, g_direct_equal);
+  priv->protocols = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, g_object_unref);
 }
 
 /**
@@ -978,4 +989,30 @@ tp_base_connection_manager_get_dbus_daemon (TpBaseConnectionManager *self)
   g_return_val_if_fail (TP_IS_BASE_CONNECTION_MANAGER (self), NULL);
 
   return self->priv->dbus_daemon;
+}
+
+/**
+ * tp_base_connection_manager_add_protocol:
+ * @self: a connection manager object which has not yet registered on D-Bus
+ *  (i.e. tp_base_connection_manager_register() must not have been called)
+ * @protocol: a protocol object, which must not have the same protocol name as
+ *  any that has already been added
+ *
+ * Add a protocol object to the set of supported protocols.
+ */
+void
+tp_base_connection_manager_add_protocol (TpBaseConnectionManager *self,
+    TpBaseProtocol *protocol)
+{
+  gchar *name;
+
+  g_return_if_fail (TP_IS_BASE_CONNECTION_MANAGER (self));
+  g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (TP_IS_BASE_PROTOCOL (protocol));
+
+  g_object_get (protocol,
+      "name", &name,
+      NULL);
+
+  g_hash_table_insert (self->priv->protocols, name, g_object_ref (protocol));
 }
