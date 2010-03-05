@@ -88,6 +88,22 @@ GType tp_base_protocol_get_type (void) G_GNUC_CONST;
 #define TP_BASE_PROTOCOL_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_PROTOCOL, \
                               TpBaseProtocolClass))
+
+struct _TpBaseProtocol
+{
+  /*<private>*/
+  GObject parent;
+  TpBaseProtocolPrivate *priv;
+};
+
+struct _TpBaseProtocolClass
+{
+  /*<private>*/
+  GObjectClass parent_class;
+  GCallback padding[8];
+  TpBaseProtocolClassPrivate *priv;
+};
+
 G_END_DECLS
 
 #endif

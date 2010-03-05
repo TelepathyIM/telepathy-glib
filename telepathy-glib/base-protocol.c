@@ -283,13 +283,6 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Since: 0.11.UNRELEASED
  */
 
-struct _TpBaseProtocol
-{
-  /*<private>*/
-  GObject parent;
-  TpBaseProtocolPrivate *priv;
-};
-
 /**
  * TpBaseProtocolClass:
  *
@@ -297,14 +290,6 @@ struct _TpBaseProtocol
  *
  * Since: 0.11.UNRELEASED
  */
-
-struct _TpBaseProtocolClass
-{
-  /*<private>*/
-  GObjectClass parent_class;
-  GCallback padding[8];
-  TpBaseProtocolClassPrivate *priv;
-};
 
 G_DEFINE_ABSTRACT_TYPE(TpBaseProtocol, tp_base_protocol, G_TYPE_OBJECT);
 
