@@ -104,3 +104,23 @@ void tpl_debug (TplDebugFlags flag,
 }
 
 #endif /* ENABLE_DEBUG */
+
+/* The following function has to be always define or CRITICAL messages won't
+ * be shown */
+
+void tpl_critical (TplDebugFlags flag,
+    const gchar *format,
+    ...)
+{
+  gchar *message;
+  va_list args;
+
+  va_start (args, format);
+  message = g_strdup_vprintf (format, args);
+  va_end (args);
+
+  if (flag & flags)
+    g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s", message);
+
+  g_free (message);
+}

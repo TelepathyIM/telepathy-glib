@@ -50,9 +50,15 @@ gboolean tpl_debug_flag_is_set (TplDebugFlags flag);
 void tpl_debug_free (void);
 void tpl_debug (TplDebugFlags flag, const gchar *format, ...)
     G_GNUC_PRINTF (2, 3);
+void tpl_critical (TplDebugFlags flag, const gchar *format, ...)
+    G_GNUC_PRINTF (2, 3);
 
 
 G_END_DECLS
+
+/* CRITICAL needs to be always defined */
+#define CRITICAL(format, ...) \
+  tpl_critical (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
 
 #ifdef DEBUG_FLAG
 
