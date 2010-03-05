@@ -83,7 +83,7 @@ typedef struct
   void (*finalize) (GObject *obj);
 
   gint64 (*get_timestamp) (TplLogEntry *self);
-  gint64 (*get_pending_msg_id) (TplLogEntry *self);
+  gint (*get_pending_msg_id) (TplLogEntry *self);
   gboolean (*is_pending) (TplLogEntry *self);
   TplLogEntrySignalType (*get_signal_type) (TplLogEntry *self);
   const gchar* (*get_log_id) (TplLogEntry *self);
@@ -95,7 +95,7 @@ typedef struct
   const gchar * (*get_channel_path) (TplLogEntry *self);
 
   void (*set_timestamp) (TplLogEntry *self, gint64 data);
-  void (*set_pending_msg_id) (TplLogEntry *self, gint64 data);
+  void (*set_pending_msg_id) (TplLogEntry *self, gint data);
   void (*set_signal_type) (TplLogEntry *self, TplLogEntrySignalType data);
   void (*set_log_id) (TplLogEntry *self, guint data);
   void (*set_direction) (TplLogEntry *self, TplLogEntryDirection data);
@@ -110,7 +110,7 @@ typedef struct
 
 GType tpl_log_entry_get_type (void);
 gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
-gint64 tpl_log_entry_get_pending_msg_id (TplLogEntry *self);
+gint tpl_log_entry_get_pending_msg_id (TplLogEntry *self);
 gboolean tpl_log_entry_is_pending (TplLogEntry *self);
 TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry *self);
 const gchar* tpl_log_entry_get_log_id (TplLogEntry *self);
@@ -123,7 +123,7 @@ TplContact *tpl_log_entry_get_sender (TplLogEntry *self);
 TplContact *tpl_log_entry_get_receiver (TplLogEntry *self);
 
 void tpl_log_entry_set_timestamp (TplLogEntry *self, gint64 data);
-void tpl_log_entry_set_pending_msg_id (TplLogEntry *self, gint64 data);
+void tpl_log_entry_set_pending_msg_id (TplLogEntry *self, gint data);
 void tpl_log_entry_set_signal_type (TplLogEntry *self,
     TplLogEntrySignalType data);
 void tpl_log_entry_set_direction (TplLogEntry *self,

@@ -512,7 +512,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       gboolean is_user = FALSE;
       gchar *msg_type_str;
       gchar *cm_id_str;
-      gint64 cm_id;
+      gint cm_id;
       gchar *instead_of_channel_path;
       gchar *log_id;
       TpChannelTextMessageType msg_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;

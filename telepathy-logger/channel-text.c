@@ -971,7 +971,7 @@ on_pending_messages_removed_cb (TpChannel *proxy,
       PATH_DEBUG (proxy, "msg_id %d acknowledged", msg_id);
       if (error != NULL)
         {
-          PATH_DEBUG (proxy, "cannot set the ACK flag for msg_id %d: %s",
+          PATH_DEBUG (proxy, "cannot set the ACK flag for msg_id %u: %s",
               msg_id, error->message);
           g_clear_error (&error);
         }

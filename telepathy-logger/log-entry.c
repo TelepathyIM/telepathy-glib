@@ -56,7 +56,9 @@ struct _TplLogEntryPriv
   gchar *chat_id;
   gchar *account_path;
   gchar *channel_path;
-  gint64 pending_msg_id;
+  /* in specs it's guint, TplLogEntry needs a way to represent ACK'd messages:
+   * if pending_msg_id reachs G_MAXINT32, then the problem is elsewhere :-) */
+  gint pending_msg_id;
 
   /* incoming/outgoing */
   TplLogEntryDirection direction;
@@ -133,7 +135,7 @@ tpl_log_entry_get_property (GObject *object,
         g_value_set_uint (value, priv->signal_type);
         break;
       case PROP_PENDING_MSG_ID:
-        g_value_set_uint (value, priv->pending_msg_id);
+        g_value_set_int (value, priv->pending_msg_id);
         break;
       case PROP_LOG_ID:
         g_value_set_string (value, priv->log_id);
@@ -179,7 +181,7 @@ tpl_log_entry_set_property (GObject *object,
         tpl_log_entry_set_signal_type (self, g_value_get_uint (value));
         break;
       case PROP_PENDING_MSG_ID:
-        tpl_log_entry_set_pending_msg_id (self, g_value_get_uint (value));
+        tpl_log_entry_set_pending_msg_id (self, g_value_get_int (value));
         break;
       case PROP_LOG_ID:
         tpl_log_entry_set_log_id (self, g_value_get_string (value));
@@ -266,7 +268,7 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
    * The couple (channel-path, pending-msg-id) cannot be considered unique.
    * Use #TplLogEntry::log-id for a TPL-unique identifier.
    */
-  param_spec = g_param_spec_int64 ("pending-msg-id",
+  param_spec = g_param_spec_int ("pending-msg-id",
       "PendingMessageId",
       "Pending Message ID, if set, the log entry is set as pending for ACK."
       " Default to -1 meaning not pending.",
@@ -352,7 +354,7 @@ tpl_log_entry_get_timestamp (TplLogEntry *self)
 }
 
 
-gint64
+gint
 tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
 {
   TplLogEntryPriv *priv = GET_PRIV (self);
@@ -505,7 +507,7 @@ tpl_log_entry_set_signal_type (TplLogEntry *self,
  */
 void
 tpl_log_entry_set_pending_msg_id (TplLogEntry *self,
-    gint64 data)
+    gint data)
 {
   TplLogEntryPriv *priv = GET_PRIV (self);
 
