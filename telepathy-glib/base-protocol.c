@@ -310,13 +310,86 @@ G_DEFINE_ABSTRACT_TYPE(TpBaseProtocol, tp_base_protocol, G_TYPE_OBJECT);
 
 struct _TpBaseProtocolPrivate
 {
-  int dummy;
+  gchar *name;
 };
+
+enum
+{
+    PROP_NAME = 1,
+    N_PROPS
+};
+
+static void
+tp_base_protocol_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpBaseProtocol *self = (TpBaseProtocol *) object;
+
+  switch (property_id)
+    {
+    case PROP_NAME:
+      g_value_set_string (value, self->priv->name);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+tp_base_protocol_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpBaseProtocol *self = (TpBaseProtocol *) object;
+
+  switch (property_id)
+    {
+    case PROP_NAME:
+      g_assert (self->priv->name == NULL);    /* construct-only */
+      self->priv->name = g_value_dup_string (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+tp_base_protocol_finalize (GObject *object)
+{
+  TpBaseProtocol *self = (TpBaseProtocol *) object;
+  GObjectFinalizeFunc finalize =
+    ((GObjectClass *) tp_base_protocol_parent_class)->finalize;
+
+  g_free (self->priv->name);
+
+  if (finalize != NULL)
+    finalize (object);
+}
 
 static void
 tp_base_protocol_class_init (TpBaseProtocolClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
   g_type_class_add_private (klass, sizeof (TpBaseProtocolPrivate));
+
+  object_class->get_property = tp_base_protocol_get_property;
+  object_class->set_property = tp_base_protocol_set_property;
+  object_class->finalize = tp_base_protocol_finalize;
+
+  g_object_class_install_property (object_class, PROP_NAME,
+      g_param_spec_string ("name",
+        "Name of this protocol",
+        "The Protocol from telepathy-spec, such as 'jabber' or 'local-xmpp'",
+        NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
