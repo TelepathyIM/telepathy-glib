@@ -285,6 +285,12 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
 
 /**
  * TpBaseProtocolClass:
+ * @parent_class: the parent class
+ * @is_stub: if %TRUE, this protocol will not be advertised on D-Bus (for
+ *  internal use by #TpBaseConnection)
+ * @get_parameters: a callback used to implement
+ *  tp_base_protocol_get_parameters(), which all subclasses must provide;
+ *  see the documentation of that method for details
  *
  * The class of a #TpBaseProtocol.
  *
@@ -382,4 +388,26 @@ tp_base_protocol_init (TpBaseProtocol *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_BASE_PROTOCOL,
       TpBaseProtocolPrivate);
+}
+
+/**
+ * tp_base_protocol_get_parameters:
+ * @self: a Protocol object
+ *
+ * Returns the parameters supported by this protocol, as an array of structs
+ * which must remain valid at least as long as @self exists (it will typically
+ * be a global static array).
+ *
+ * Returns: (transfer none) (array zero-terminated=1): a description of the
+ *  parameters supported by this protocol
+ */
+const TpCMParamSpec *
+tp_base_protocol_get_parameters (TpBaseProtocol *self)
+{
+  TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+
+  g_return_val_if_fail (cls != NULL, NULL);
+  g_return_val_if_fail (cls->get_parameters != NULL, NULL);
+
+  return cls->get_parameters (self);
 }

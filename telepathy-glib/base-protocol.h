@@ -98,11 +98,17 @@ struct _TpBaseProtocol
 
 struct _TpBaseProtocolClass
 {
-  /*<private>*/
   GObjectClass parent_class;
+
+  gboolean is_stub;
+  const TpCMParamSpec *(*get_parameters) (TpBaseProtocol *self);
+
+  /*<private>*/
   GCallback padding[8];
   TpBaseProtocolClassPrivate *priv;
 };
+
+const TpCMParamSpec *tp_base_protocol_get_parameters (TpBaseProtocol *self);
 
 G_END_DECLS
 

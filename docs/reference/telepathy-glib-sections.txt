@@ -4093,6 +4093,7 @@ TpSimpleHandlerPrivate
 <TITLE>base-protocol</TITLE>
 TpBaseProtocol
 TpBaseProtocolClass
+tp_base_protocol_get_parameters
 <SUBSECTION Standard>
 tp_base_protocol_get_type
 TP_BASE_PROTOCOL

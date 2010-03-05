@@ -92,9 +92,21 @@ G_DEFINE_TYPE(_TpLegacyProtocol,
     _tp_legacy_protocol,
     TP_TYPE_BASE_PROTOCOL);
 
+static const TpCMParamSpec *
+_tp_legacy_protocol_get_parameters (TpBaseProtocol *protocol)
+{
+  _TpLegacyProtocol *self = (_TpLegacyProtocol *) protocol;
+
+  return self->protocol_spec->parameters;
+}
+
 static void
 _tp_legacy_protocol_class_init (_TpLegacyProtocolClass *cls)
 {
+  TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) cls;
+
+  base_class->is_stub = TRUE;
+  base_class->get_parameters = _tp_legacy_protocol_get_parameters;
 }
 
 static void
@@ -421,6 +433,23 @@ connection_shutdown_finished_cb (TpBaseConnection *conn,
 }
 
 /* Parameter parsing */
+
+static TpBaseProtocol *
+tp_base_connection_manager_get_protocol (TpBaseConnectionManager *self,
+    const gchar *protocol_name,
+    GError **error)
+{
+  TpBaseProtocol *protocol = g_hash_table_lookup (self->priv->protocols,
+      protocol_name);
+
+  if (protocol != NULL)
+    return protocol;
+
+  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      "unknown protocol %s", protocol_name);
+
+  return NULL;
+}
 
 static gboolean
 get_parameters (const TpCMProtocolSpec *protos,
@@ -767,38 +796,43 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
 {
   GPtrArray *ret;
   GError *error = NULL;
-  const TpCMProtocolSpec *protospec = NULL;
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
   TpBaseConnectionManagerClass *cls =
     TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
-  GType param_type = TP_STRUCT_TYPE_PARAM_SPEC;
   guint i;
+  TpBaseProtocol *protocol;
+  const TpCMParamSpec *parameters;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
   g_assert (cls->protocol_params != NULL);
   /* a D-Bus method shouldn't be happening til we're on D-Bus */
   g_assert (self->priv->registered);
 
-  if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
+  protocol = tp_base_connection_manager_get_protocol (self, proto, &error);
+
+  if (protocol == NULL)
     {
       dbus_g_method_return_error (context, error);
       g_error_free (error);
       return;
     }
 
+  parameters = tp_base_protocol_get_parameters (protocol);
+  g_assert (parameters != NULL);
+
   ret = g_ptr_array_new ();
 
-  for (i = 0; protospec->parameters[i].name != NULL; i++)
+  for (i = 0; parameters[i].name != NULL; i++)
     {
       g_ptr_array_add (ret,
-          _tp_cm_param_spec_to_dbus (protospec->parameters + i));
+          _tp_cm_param_spec_to_dbus (parameters + i));
     }
 
   tp_svc_connection_manager_return_from_get_parameters (context, ret);
 
   for (i = 0; i < ret->len; i++)
     {
-      g_boxed_free (param_type, g_ptr_array_index (ret, i));
+      g_value_array_free (g_ptr_array_index (ret, i));
     }
 
   g_ptr_array_free (ret, TRUE);
