@@ -787,6 +787,8 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
   g_assert (cls->protocol_params != NULL);
+  /* a D-Bus method shouldn't be happening til we're on D-Bus */
+  g_assert (self->priv->registered);
 
   if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
     {
@@ -846,6 +848,9 @@ tp_base_connection_manager_list_protocols (TpSvcConnectionManager *iface,
   const char **protocols;
   guint i = 0;
 
+  /* a D-Bus method shouldn't be happening til we're on D-Bus */
+  g_assert (self->priv->registered);
+
   while (cls->protocol_params[i].name)
     i++;
 
@@ -894,6 +899,9 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   TpCMParamSetter set_param;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
+
+  /* a D-Bus method shouldn't be happening til we're on D-Bus */
+  g_assert (self->priv->registered);
 
   if (!tp_connection_manager_check_valid_protocol_name (proto, &error))
     goto ERROR;
