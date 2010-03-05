@@ -717,7 +717,7 @@ tpl_log_manager_get_date_readable (const gchar *date)
 
   t = tpl_time_parse (date);
 
-  return tpl_time_to_string_local (t, "%a %d %b %Y");
+  return tpl_time_to_string_local (t, TPL_TIME_FORMAT_DISPLAY_LONG);
 }
 
 

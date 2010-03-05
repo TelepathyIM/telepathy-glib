@@ -539,7 +539,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       if (cm_id_str)
         cm_id = atoi (cm_id_str);
       else
-        cm_id = 0;
+        cm_id = TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED;
 
       t = tpl_time_parse (time_);
 
