@@ -70,6 +70,49 @@
  * future version of telepathy-glib.
  */
 
+/*
+ * _TpLegacyProtocol:
+ *
+ * A limited implementation of TpProtocol, in terms of the ConnectionManager
+ * API from telepathy-spec 0.18.
+ */
+typedef struct {
+    TpBaseProtocol parent;
+    const TpCMProtocolSpec *protocol_spec;
+} _TpLegacyProtocol;
+
+typedef struct {
+    TpBaseProtocolClass parent;
+} _TpLegacyProtocolClass;
+
+#define _TP_TYPE_LEGACY_PROTOCOL (_tp_legacy_protocol_get_type ())
+GType _tp_legacy_protocol_get_type (void) G_GNUC_CONST;
+
+G_DEFINE_TYPE(_TpLegacyProtocol,
+    _tp_legacy_protocol,
+    TP_TYPE_BASE_PROTOCOL);
+
+static void
+_tp_legacy_protocol_class_init (_TpLegacyProtocolClass *cls)
+{
+}
+
+static void
+_tp_legacy_protocol_init (_TpLegacyProtocol *self)
+{
+}
+
+static TpBaseProtocol *
+_tp_legacy_protocol_new (const TpCMProtocolSpec *protocol_spec)
+{
+  _TpLegacyProtocol *self = g_object_new (_TP_TYPE_LEGACY_PROTOCOL,
+      "name", protocol_spec->name,
+      NULL);
+
+  self->protocol_spec = protocol_spec;
+  return (TpBaseProtocol *) self;
+}
+
 /**
  * TpBaseConnectionManager:
  *
@@ -922,12 +965,19 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   GError *error = NULL;
   TpBaseConnectionManagerClass *cls;
   GString *string = NULL;
+  guint i;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (self));
   cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
 
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     goto except;
+
+  for (i = 0; cls->protocol_params[i].name != NULL; i++)
+    {
+      tp_base_connection_manager_add_protocol (self,
+          _tp_legacy_protocol_new (cls->protocol_params + i));
+    }
 
   g_assert (self->priv->dbus_daemon != NULL);
 
