@@ -116,7 +116,6 @@ test_set_params (Test *test,
   guint i;
   GArray *array_of_bytes;
   guint8 bytes[] = { 0x1, 0x10, 0xA, 0xB, 0xC };
-  GValue *value;
 
   array_of_bytes = g_array_new (FALSE, FALSE, sizeof (guint8));
   g_array_append_vals (array_of_bytes, bytes, sizeof (bytes));
@@ -146,9 +145,9 @@ test_set_params (Test *test,
   g_hash_table_insert (parameters, "a-array-of-bytes",
       tp_g_value_slice_new_static_boxed (DBUS_TYPE_G_UCHAR_ARRAY,
         array_of_bytes));
-  value = tp_g_value_slice_new (DBUS_TYPE_G_OBJECT_PATH);
-  g_value_set_static_boxed (value, "/A/Object/Path");
-  g_hash_table_insert (parameters, "a-object-path", value);
+  g_hash_table_insert (parameters, "a-object-path",
+      tp_g_value_slice_new_static_boxed (DBUS_TYPE_G_OBJECT_PATH,
+        "/A/Object/Path"));
 
   tp_cli_connection_manager_run_request_connection (test->cm, -1,
       "example", parameters, NULL, NULL, &test->error, NULL);
