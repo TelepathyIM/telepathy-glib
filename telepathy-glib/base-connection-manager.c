@@ -893,27 +893,28 @@ tp_base_connection_manager_list_protocols (TpSvcConnectionManager *iface,
                                            DBusGMethodInvocation *context)
 {
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
-  TpBaseConnectionManagerClass *cls =
-    TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
-  const char **protocols;
-  guint i = 0;
+  GPtrArray *protocols;
+  GHashTableIter iter;
+  gpointer name;
 
   /* a D-Bus method shouldn't be happening til we're on D-Bus */
   g_assert (self->priv->registered);
 
-  while (cls->protocol_params[i].name)
-    i++;
+  protocols = g_ptr_array_sized_new (
+      g_hash_table_size (self->priv->protocols) + 1);
 
-  protocols = g_new0 (const char *, i + 1);
-  for (i = 0; cls->protocol_params[i].name; i++)
+  g_hash_table_iter_init (&iter, self->priv->protocols);
+
+  while (g_hash_table_iter_next (&iter, &name, NULL))
     {
-      protocols[i] = cls->protocol_params[i].name;
+      g_ptr_array_add (protocols, name);
     }
-  g_assert (protocols[i] == NULL);
+
+  g_ptr_array_add (protocols, NULL);
 
   tp_svc_connection_manager_return_from_list_protocols (
-      context, protocols);
-  g_free (protocols);
+      context, (const gchar **) protocols->pdata);
+  g_ptr_array_free (protocols, TRUE);
 }
 
 
