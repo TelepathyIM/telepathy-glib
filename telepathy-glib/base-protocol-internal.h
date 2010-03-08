@@ -25,10 +25,6 @@
 
 G_BEGIN_DECLS
 
-void _tp_cm_param_spec_set_default (const TpCMParamSpec *paramspec,
-    const TpCMParamSetter set_param,
-    gpointer params);
-
 GValueArray *_tp_cm_param_spec_to_dbus (const TpCMParamSpec *paramspec);
 
 G_END_DECLS

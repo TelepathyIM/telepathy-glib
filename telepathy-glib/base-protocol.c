@@ -182,17 +182,6 @@ param_default_value (const TpCMParamSpec *param)
   return value;
 }
 
-void
-_tp_cm_param_spec_set_default (const TpCMParamSpec *paramspec,
-    const TpCMParamSetter set_param,
-    gpointer params)
-{
-  GValue *value = param_default_value (paramspec);
-
-  set_param (paramspec, value, params);
-  tp_g_value_slice_free (value);
-}
-
 GValueArray *
 _tp_cm_param_spec_to_dbus (const TpCMParamSpec *paramspec)
 {
