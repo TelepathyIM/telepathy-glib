@@ -142,9 +142,12 @@ param_connection_manager_class_init (
 }
 
 CMParams *
-param_connection_manager_get_params_last_conn (void)
+param_connection_manager_steal_params_last_conn (void)
 {
-  return params;
+  CMParams *p = params;
+
+  params = NULL;
+  return p;
 }
 
 void

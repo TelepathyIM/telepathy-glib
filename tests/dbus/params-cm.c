@@ -155,7 +155,7 @@ test_set_params (Test *test,
   g_assert (test->error->code == TP_ERROR_NOT_IMPLEMENTED);
   g_clear_error (&test->error);
 
-  params = param_connection_manager_get_params_last_conn ();
+  params = param_connection_manager_steal_params_last_conn ();
   g_assert (params != NULL);
 
   g_assert (!tp_strdiff (params->a_string, "a string"));

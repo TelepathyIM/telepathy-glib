@@ -83,7 +83,7 @@ typedef struct {
     gchar *a_object_path;
 } CMParams;
 
-CMParams * param_connection_manager_get_params_last_conn (void);
+CMParams * param_connection_manager_steal_params_last_conn (void);
 void param_connection_manager_free_params (CMParams *params);
 
 G_END_DECLS
