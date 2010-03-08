@@ -129,7 +129,7 @@ test_set_params (Test *test,
   g_hash_table_insert (parameters, "a-array-of-strings",
       tp_g_value_slice_new_static_boxed (G_TYPE_STRV, array_of_strings));
   g_hash_table_insert (parameters, "a-array-of-bytes",
-      tp_g_value_slice_new_static_boxed (DBUS_TYPE_G_UCHAR_ARRAY,
+      tp_g_value_slice_new_boxed (DBUS_TYPE_G_UCHAR_ARRAY,
         array_of_bytes));
   g_hash_table_insert (parameters, "a-object-path",
       tp_g_value_slice_new_static_boxed (DBUS_TYPE_G_OBJECT_PATH,
