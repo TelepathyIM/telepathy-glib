@@ -20,6 +20,7 @@ void test_connection_run_until_dbus_queue_processed (TpConnection *connection);
 TpHandle test_connection_run_request_contact_handle (TpConnection *connection,
     const gchar *id);
 
+void test_connection_run_until_ready (TpConnection *conn);
 void test_connection_manager_run_until_ready (TpConnectionManager *cm);
 
 #define test_assert_no_error(e) _test_assert_no_error (e, __FILE__, __LINE__)
