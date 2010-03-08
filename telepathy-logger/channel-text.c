@@ -607,11 +607,11 @@ pendingproc_get_pending_messages (TplActionChain *ctx,
 {
   TplChannelText *chan_text = tpl_actionchain_get_object (ctx);
 
-  if (tp_proxy_has_interface (chan_text,
-        "org.freedesktop.Telepathy.Channel.Interface.Messages"))
+  if (tp_proxy_has_interface_by_id (chan_text,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
     tp_cli_dbus_properties_call_get (chan_text, -1,
-        "org.freedesktop.Telepathy.Channel.Interface.Messages",
-        "PendingMessages", got_message_pending_messages_cb, ctx, NULL, NULL);
+        TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "PendingMessages",
+        got_message_pending_messages_cb, ctx, NULL, NULL);
   else
     tp_cli_channel_type_text_call_list_pending_messages (TP_CHANNEL (chan_text),
         -1, FALSE, got_text_pending_messages_cb, ctx, NULL, NULL);
