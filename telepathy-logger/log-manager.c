@@ -237,8 +237,6 @@ tpl_log_manager_add_message (TplLogManager *manager,
       TplLogStore *store = l->data;
       gboolean result;
 
-      DEBUG ("STORE %s", tpl_log_store_get_name (store));
-
       result = tpl_log_store_add_message (store, message, &loc_error);
       if (!result)
         {

@@ -22,7 +22,7 @@
 #include "util.h"
 
 #include "datetime.h"
-#include "log-store-index.h"
+#include "log-store-sqlite.h"
 
 /* Bug#26838 prevents us to trust Messages' iface message-token
  * header, so I need to create a token which TPL can trust to be unique
@@ -35,7 +35,7 @@ create_message_token (const gchar *channel,
   GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
   gchar *retval;
   gchar *date = tpl_time_to_string_local (timestamp,
-      TPL_LOG_STORE_INDEX_TIMESTAMP_FORMAT);
+      TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
 
   g_checksum_update (log_id, (guchar *) channel, -1);
   g_checksum_update (log_id, (guchar *) date, -1);

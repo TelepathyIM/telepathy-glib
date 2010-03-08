@@ -951,7 +951,7 @@ tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
   else
     /* get the pending log-ids related to channel */
     e = sqlite3_prepare_v2 (priv->db, "SELECT * "
-        "FROM message_cache"
+        "FROM message_cache "
         "WHERE pending_msg_id is NOT NULL AND channel=?",
         -1, &sql, NULL);
   if (e != SQLITE_OK)
@@ -1041,7 +1041,7 @@ tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
       goto out;
     }
 
-  e = sqlite3_prepare_v2 (priv->db, "UPDATE message_cache"
+  e = sqlite3_prepare_v2 (priv->db, "UPDATE message_cache "
       "SET pending_msg_id=NULL "
       "WHERE log_identifier=?", -1, &sql, NULL);
   if (e != SQLITE_OK)
