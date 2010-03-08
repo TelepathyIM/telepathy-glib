@@ -195,6 +195,27 @@ tp_g_value_slice_new_int64 (gint64 n)
 }
 
 /**
+ * tp_g_value_slice_new_byte:
+ * @n: an unsigned integer
+ *
+ * Slice-allocate and initialize a #GValue. This function is convenient to
+ * use when constructing hash tables from string to #GValue, for example.
+ *
+ * Returns: a #GValue of type %G_TYPE_UCHAR with value @n, to be freed with
+ * tp_g_value_slice_free() or g_slice_free()
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GValue *
+tp_g_value_slice_new_byte (guchar n)
+{
+  GValue *v = tp_g_value_slice_new (G_TYPE_UCHAR);
+
+  g_value_set_uchar (v, n);
+  return v;
+}
+
+/**
  * tp_g_value_slice_new_uint:
  * @n: an unsigned integer
  *

@@ -1086,6 +1086,7 @@ tp_g_value_slice_new_static_string
 tp_g_value_slice_new_take_string
 tp_g_value_slice_new_uint
 tp_g_value_slice_new_uint64
+tp_g_value_slice_new_byte
 tp_g_value_slice_free
 tp_g_value_slice_dup
 tp_strdiff
