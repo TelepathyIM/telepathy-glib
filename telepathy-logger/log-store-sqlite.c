@@ -99,7 +99,7 @@ tpl_log_store_sqlite_get_property (GObject *self,
   switch (id)
     {
       case PROP_NAME:
-        g_value_set_string (value, "MessageCounts");
+        g_value_set_string (value, "Sqlite");
         break;
 
       case PROP_READABLE:
@@ -246,7 +246,7 @@ get_date (TplLogEntry *entry)
 static const char *
 tpl_log_store_sqlite_get_name (TplLogStore *self)
 {
-  return "MessageCounts";
+  return "Sqlite";
 }
 
 static gboolean
