@@ -105,18 +105,6 @@ typedef struct
 } Test;
 
 static void
-cm_ready_cb (TpConnectionManager *cm G_GNUC_UNUSED,
-             const GError *error,
-             gpointer user_data,
-             GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  test_assert_no_error (error);
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
 conn_ready_cb (TpConnection *conn G_GNUC_UNUSED,
                const GError *error,
                gpointer user_data)
@@ -160,9 +148,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "example_call",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  tp_connection_manager_call_when_ready (test->cm, cm_ready_cb, test, NULL,
-      NULL);
-  g_main_loop_run (test->mainloop);
+  test_connection_manager_run_until_ready (test->cm);
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
