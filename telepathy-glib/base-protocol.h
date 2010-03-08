@@ -101,6 +101,7 @@ struct _TpBaseProtocol
 struct _TpBaseProtocolClass
 {
   GObjectClass parent_class;
+  TpDBusPropertiesMixinClass dbus_properties_class;
 
   gboolean is_stub;
   const TpCMParamSpec *(*get_parameters) (TpBaseProtocol *self);

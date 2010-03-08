@@ -303,6 +303,8 @@ static void protocol_iface_init (TpSvcProtocolClass *cls);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
     G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL, protocol_iface_init));
 
 struct _TpBaseProtocolPrivate
@@ -370,9 +372,54 @@ tp_base_protocol_finalize (GObject *object)
     finalize (object);
 }
 
+typedef enum {
+    PP_PARAMETERS,
+    N_PP
+} ProtocolProp;
+
+static void
+protocol_properties_getter (GObject *object,
+    GQuark iface G_GNUC_UNUSED,
+    GQuark name G_GNUC_UNUSED,
+    GValue *value,
+    gpointer getter_data)
+{
+  TpBaseProtocol *self = (TpBaseProtocol *) object;
+
+  switch (GPOINTER_TO_INT (getter_data))
+    {
+    case PP_PARAMETERS:
+        {
+          GPtrArray *ret = g_ptr_array_new ();
+          const TpCMParamSpec *parameter;
+
+          for (parameter = tp_base_protocol_get_parameters (self);
+                parameter->name != NULL;
+                parameter++)
+            {
+              g_ptr_array_add (ret, _tp_cm_param_spec_to_dbus (parameter));
+            }
+
+          g_value_take_boxed (value, ret);
+        }
+      break;
+
+    default:
+      g_assert_not_reached ();
+    }
+}
+
 static void
 tp_base_protocol_class_init (TpBaseProtocolClass *klass)
 {
+  static TpDBusPropertiesMixinPropImpl channel_props[] = {
+      { "Parameters", GINT_TO_POINTER (PP_PARAMETERS), NULL },
+      { NULL }
+  };
+  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+      { TP_IFACE_PROTOCOL, protocol_properties_getter, NULL, channel_props },
+      { NULL }
+  };
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpBaseProtocolPrivate));
@@ -387,6 +434,10 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
         "The Protocol from telepathy-spec, such as 'jabber' or 'local-xmpp'",
         NULL,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  klass->dbus_properties_class.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (TpBaseProtocolClass, dbus_properties_class));
 }
 
 static void
