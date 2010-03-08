@@ -15,6 +15,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
+#include "examples/cm/echo-message-parts/connection-manager.h"
 #include "examples/cm/echo-message-parts/chan.h"
 #include "examples/cm/echo-message-parts/conn.h"
 #include "tests/lib/myassert.h"
@@ -59,11 +60,8 @@ on_received (TpChannel *chan,
              gpointer data,
              GObject *object)
 {
-  TpHandleRepoIface *contact_repo = data;
-
-  g_print ("%p: Received #%u: time %u, sender %u '%s', type %u, flags %u, "
-      "text '%s'\n", chan, id, timestamp, sender,
-      tp_handle_inspect (contact_repo, sender), type, flags, text);
+  g_print ("%p: Received #%u: time %u, sender %u, type %u, flags %u, "
+      "text '%s'\n", chan, id, timestamp, sender, type, flags, text);
 
   received_count++;
   last_received_id = id;
@@ -114,7 +112,6 @@ on_message_received (TpChannel *chan,
                      gpointer data,
                      GObject *object)
 {
-  TpHandleRepoIface *contact_repo = data;
   guint i;
   GHashTable *headers = g_ptr_array_index (parts, 0);
   guint id;
@@ -129,9 +126,8 @@ on_message_received (TpChannel *chan,
   sender = tp_asv_get_uint32 (headers, "message-sender", NULL);
   received = tp_asv_get_uint32 (headers, "message-received", NULL);
 
-  g_print ("%p: MessageReceived #%u: received at %u, sender %u '%s', type %u, "
-      "%u parts\n", chan, id, received, sender,
-      tp_handle_inspect (contact_repo, sender), type, parts->len);
+  g_print ("%p: MessageReceived #%u: received at %u, sender %u, type %u, "
+      "%u parts\n", chan, id, received, sender, type, parts->len);
 
   for (i = 0; i < parts->len; i++)
     {
@@ -197,10 +193,10 @@ int
 main (int argc,
       char **argv)
 {
-  ExampleEcho2Connection *service_conn;
-  TpBaseConnection *service_conn_as_base;
-  TpHandleRepoIface *contact_repo;
+  ExampleEcho2ConnectionManager *service_cm;
+  TpBaseConnectionManager *service_cm_as_base;
   TpDBusDaemon *dbus;
+  TpConnectionManager *cm;
   TpConnection *conn;
   TpChannel *chan;
   GError *error = NULL;
@@ -208,23 +204,37 @@ main (int argc,
   gchar *conn_path;
   gchar *chan_path;
   TpHandle handle;
+  gboolean ok;
+  GHashTable *parameters;
 
   g_type_init ();
   tp_debug_set_flags ("all");
   dbus = tp_dbus_daemon_new (tp_get_bus ());
 
-  service_conn = EXAMPLE_ECHO_2_CONNECTION (g_object_new (
-        EXAMPLE_TYPE_ECHO_2_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "example",
+  service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (g_object_new (
+        EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
         NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
+  g_assert (service_cm != NULL);
+  service_cm_as_base = TP_BASE_CONNECTION_MANAGER (service_cm);
+  g_assert (service_cm_as_base != NULL);
 
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "example",
-        &name, &conn_path, &error), "");
+  ok = tp_base_connection_manager_register (service_cm_as_base);
+  g_assert (ok);
+
+  cm = tp_connection_manager_new (dbus, "example_echo_2", NULL, &error);
+  g_assert (cm != NULL);
+  test_connection_manager_run_until_ready (cm);
+
+  parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  g_hash_table_insert (parameters, "account",
+      tp_g_value_slice_new_static_string ("me@example.com"));
+
+  tp_cli_connection_manager_run_request_connection (cm, -1,
+      "example", parameters, &name, &conn_path, &error, NULL);
   test_assert_no_error (error);
+
+  g_hash_table_unref (parameters);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
@@ -234,12 +244,8 @@ main (int argc,
       "");
   test_assert_no_error (error);
 
-  contact_repo = tp_base_connection_get_handles (service_conn_as_base,
-      TP_HANDLE_TYPE_CONTACT);
-  MYASSERT (contact_repo != NULL, "");
-
-  handle = tp_handle_ensure (contact_repo, "them@example.org", NULL, &error);
-  test_assert_no_error (error);
+  handle = test_connection_run_request_contact_handle (conn,
+      "them@example.com");
 
     {
       GHashTable *request = tp_asv_new (
@@ -265,14 +271,13 @@ main (int argc,
   test_assert_no_error (error);
 
   MYASSERT (tp_cli_channel_type_text_connect_to_received (chan, on_received,
-      g_object_ref (contact_repo), g_object_unref, NULL, NULL) != NULL, "");
+      NULL, NULL, NULL, NULL) != NULL, "");
   MYASSERT (tp_cli_channel_type_text_connect_to_sent (chan, on_sent,
       NULL, NULL, NULL, NULL) != NULL, "");
 
   MYASSERT (
       tp_cli_channel_interface_messages_connect_to_message_received (chan,
-          on_message_received, g_object_ref (contact_repo), g_object_unref,
-          NULL, NULL) != NULL, "");
+          on_message_received, NULL, NULL, NULL, NULL) != NULL, "");
   MYASSERT (tp_cli_channel_interface_messages_connect_to_message_sent (
         chan, on_message_sent, NULL, NULL, NULL, NULL) != NULL, "");
   MYASSERT (
@@ -1066,12 +1071,9 @@ main (int argc,
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   test_assert_no_error (error);
 
-  tp_handle_unref (contact_repo, handle);
   g_object_unref (chan);
   g_object_unref (conn);
 
-  service_conn_as_base = NULL;
-  g_object_unref (service_conn);
   g_object_unref (dbus);
   g_free (name);
   g_free (conn_path);
