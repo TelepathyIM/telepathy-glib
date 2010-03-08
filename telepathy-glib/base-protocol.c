@@ -22,6 +22,7 @@
 #include <telepathy-glib/base-protocol-internal.h>
 
 #include <dbus/dbus-protocol.h>
+#include <telepathy-glib/svc-protocol.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
@@ -283,13 +284,26 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * @new_connection: a callback used to implement
  *  tp_base_protocol_new_connection(), which all subclasses must provide;
  *  see the documentation of that method for details
+ * @normalize_contact: a callback used to implement the NormalizeContact
+ *  D-Bus method; it must either return a newly allocated string that is the
+ *  normalized version of @contact, or raise an error via @error and
+ *  return %NULL
+ * @identify_account: a callback used to implement the IdentifyAccount
+ *  D-Bus method; it takes as input a map from strings to #GValue<!---->s,
+ *  and must either return a newly allocated string that represents the
+ *  "identity" of the parameters in @asv (usually the "account" parameter),
+ *  or %NULL with an error raised via @error
  *
  * The class of a #TpBaseProtocol.
  *
  * Since: 0.11.UNRELEASED
  */
 
-G_DEFINE_ABSTRACT_TYPE(TpBaseProtocol, tp_base_protocol, G_TYPE_OBJECT);
+static void protocol_iface_init (TpSvcProtocolClass *cls);
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL, protocol_iface_init));
 
 struct _TpBaseProtocolPrivate
 {
@@ -738,4 +752,81 @@ finally:
     g_hash_table_unref (combined);
 
   return conn;
+}
+
+static void
+protocol_normalize_contact (TpSvcProtocol *protocol,
+    const gchar *contact,
+    DBusGMethodInvocation *context)
+{
+  TpBaseProtocol *self = TP_BASE_PROTOCOL (protocol);
+  TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+  GError *error = NULL;
+  gchar *ret = NULL;
+
+  g_return_if_fail (cls != NULL);
+
+  if (cls->normalize_contact != NULL)
+    {
+      ret = cls->normalize_contact (self, contact, &error);
+    }
+  else
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "This Protocol does not implement NormalizeContact");
+    }
+
+  if (ret == NULL)
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+    }
+  else
+    {
+      tp_svc_protocol_return_from_normalize_contact (context, ret);
+      g_free (ret);
+    }
+}
+
+static void
+protocol_identify_account (TpSvcProtocol *protocol,
+    GHashTable *parameters,
+    DBusGMethodInvocation *context)
+{
+  TpBaseProtocol *self = TP_BASE_PROTOCOL (protocol);
+  TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+  GError *error = NULL;
+  gchar *ret = NULL;
+
+  g_return_if_fail (cls != NULL);
+
+  if (cls->normalize_contact != NULL)
+    {
+      ret = cls->identify_account (self, parameters, &error);
+    }
+  else
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "This Protocol does not implement NormalizeContact");
+    }
+
+  if (ret == NULL)
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+    }
+  else
+    {
+      tp_svc_protocol_return_from_identify_account (context, ret);
+      g_free (ret);
+    }
+}
+
+static void
+protocol_iface_init (TpSvcProtocolClass *cls)
+{
+#define IMPLEMENT(x) tp_svc_protocol_implement_##x (cls, protocol_##x)
+  IMPLEMENT (normalize_contact);
+  IMPLEMENT (identify_account);
+#undef IMPLEMENT
 }
