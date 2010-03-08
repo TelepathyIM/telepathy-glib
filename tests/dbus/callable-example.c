@@ -215,29 +215,6 @@ static void test_dump_stream_events (Test *test)
 }
 
 static void
-cm_ready_cb (TpConnectionManager *cm G_GNUC_UNUSED,
-             const GError *error,
-             gpointer user_data,
-             GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  test_assert_no_error (error);
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-conn_ready_cb (TpConnection *conn G_GNUC_UNUSED,
-               const GError *error,
-               gpointer user_data)
-{
-  Test *test = user_data;
-
-  test_assert_no_error (error);
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
 setup (Test *test,
        gconstpointer data G_GNUC_UNUSED)
 {
@@ -277,9 +254,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "example_callable",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  tp_connection_manager_call_when_ready (test->cm, cm_ready_cb, test, NULL,
-      NULL);
-  g_main_loop_run (test->mainloop);
+  test_connection_manager_run_until_ready (test->cm);
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -297,8 +272,7 @@ setup (Test *test,
   test_assert_no_error (test->error);
   g_assert (test->conn != NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  tp_connection_call_when_ready (test->conn, conn_ready_cb, test);
-  g_main_loop_run (test->mainloop);
+  test_connection_run_until_ready (test->conn);
 
   test->self_handle = tp_connection_get_self_handle (test->conn);
   g_assert (test->self_handle != 0);

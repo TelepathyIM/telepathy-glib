@@ -105,17 +105,6 @@ typedef struct
 } Test;
 
 static void
-conn_ready_cb (TpConnection *conn G_GNUC_UNUSED,
-               const GError *error,
-               gpointer user_data)
-{
-  Test *test = user_data;
-
-  test_assert_no_error (error);
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
 setup (Test *test,
        gconstpointer data G_GNUC_UNUSED)
 {
@@ -166,8 +155,7 @@ setup (Test *test,
   test_assert_no_error (test->error);
   g_assert (test->conn != NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  tp_connection_call_when_ready (test->conn, conn_ready_cb, test);
-  g_main_loop_run (test->mainloop);
+  test_connection_run_until_ready (test->conn);
 
   test->self_handle = tp_connection_get_self_handle (test->conn);
   g_assert (test->self_handle != 0);
