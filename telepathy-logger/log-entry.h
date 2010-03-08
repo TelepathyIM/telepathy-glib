@@ -34,7 +34,20 @@ G_BEGIN_DECLS
 #define TPL_IS_LOG_ENTRY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_LOG_ENTRY))
 #define TPL_LOG_ENTRY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_ENTRY, TplLogEntryClass))
 
-/* value used to identify a ack'd message with the 'pending-msg-id' prop */
+/**
+ * TPL_LOG_ENTRY_MSG_ID_UNKNOWN:
+ *
+ * special value used to declare a message with a unknown status (ie pre
+ * #tpl_log_entry_set_pending_msg_id call or when an error obtaining the
+ * actual value  occurs)
+ */
+#define TPL_LOG_ENTRY_MSG_ID_UNKNOWN -2
+
+/**
+ * TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED:
+ *
+ * special value used to identify a ack'd messages
+ */
 #define TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED -1
 
 typedef enum

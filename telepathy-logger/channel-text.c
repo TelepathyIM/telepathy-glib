@@ -709,12 +709,11 @@ got_message_pending_messages_cb (TpProxy *proxy,
         {
           PATH_DEBUG (proxy, "pending msg %s already logged, not logging",
               tpl_message_token);
-          /* I remove the element so that at the end of the cycle I'll have
-           * only elements that I could not find in the pending msg list,
-           * which are stale elements */
-          indexed_pending_msg = g_list_remove_link (indexed_pending_msg, l);
+          /* Removing the element is a way to mark it as "present in pending
+           * message list", being also able to identify all the messages not
+           * present in the list, which I'll consider as stale entries */
           g_free (l->data);
-          g_list_free (l);
+          indexed_pending_msg = g_list_delete_link (indexed_pending_msg, l);
 
           /* do not log messages which log_id is present in LogStoreIndex */
           continue;

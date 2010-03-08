@@ -259,14 +259,22 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
    * TplLogEntry::pending-msg-id:
    *
    * The pending message id for the current log entry.
-   * The construction-time value if #TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED,
-   * meaning that the log entry is considered already acknoledged.
-   * An object instantiating a TplLogEntry subclass should explicitly set ths
+   * The default value, is #TPL_LOG_ENTRY_MSG_ID_UNKNOWN,
+   * meaning that it's not possible to know if the message is pending or has
+   * been acknowledged.
+   *
+   * An object instantiating a TplLogEntry subclass should explicitly set it
+   * to a valid msg-id number (id>=0) or to #TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED
+   * when acknowledged or if the entry is a result of
+   * 'sent' signal.
+   * In fact a sent entry is considered as 'automatically' ACK by TPL.
    *
    * The pending message id value is only meaningful when associated to the
    * #TplLogEntry::channel-path property.
-   * The couple (channel-path, pending-msg-id) cannot be considered unique.
-   * Use #TplLogEntry::log-id for a TPL-unique identifier.
+   * The couple (channel-path, pending-msg-id) cannot be considered unique,
+   * though, since a message-id might be reused over time.
+   *
+   * Use #TplLogEntry::log-id for a unique identifier within TPL.
    */
   param_spec = g_param_spec_int ("pending-msg-id",
       "PendingMessageId",
@@ -277,6 +285,16 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   g_object_class_install_property (object_class, PROP_PENDING_MSG_ID,
       param_spec);
 
+  /**
+   * TplLogEntry::log-id:
+   *
+   * A token which can be trusted as unique over time within TPL.
+   *
+   * Always use this token if you need to identify a TplLogEntry uniquely.
+   *
+   * @see_also: #Util:create_message_token for more information about how it's
+   * built.
+   */
   param_spec = g_param_spec_string ("log-id",
       "LogId",
       "Log identification token, it's unique among existing LogEntry, if two "
@@ -502,8 +520,9 @@ tpl_log_entry_set_signal_type (TplLogEntry *self,
  * @self: TplLogentry instance
  * @data: the pending message ID
  *
- * Sets the value of the pending message id, or
- * #TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED to set @self as aknowledged.
+ * Sets @self to be associated to pending message id @data.
+ *
+ * @see_also: #TplLogEntry::pending-msg-id for special values.
  */
 void
 tpl_log_entry_set_pending_msg_id (TplLogEntry *self,
