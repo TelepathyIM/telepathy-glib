@@ -451,7 +451,7 @@ log_manager_message_date_cmp (gconstpointer a,
 {
   TplLogEntry *one = (TplLogEntry *) a;
   TplLogEntry *two = (TplLogEntry *) b;
-  time_t one_time, two_time;
+  gint64 one_time, two_time;
 
   g_assert (TPL_IS_LOG_ENTRY (one));
   g_assert (TPL_IS_LOG_ENTRY (two));

@@ -347,7 +347,7 @@ tpl_log_entry_text_set_chatroom (TplLogEntryText *self,
 
 /* Methods inherited by TplLogEntry */
 
-time_t
+gint64
 tpl_log_entry_text_get_timestamp (TplLogEntryText *self)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
@@ -420,7 +420,7 @@ tpl_log_entry_text_get_receiver (TplLogEntryText *self)
 
 void
 tpl_log_entry_text_set_timestamp (TplLogEntryText *self,
-    time_t data)
+    gint64 data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   TPL_LOG_ENTRY_GET_CLASS (self)->set_timestamp (logentry, data);

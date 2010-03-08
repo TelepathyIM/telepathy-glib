@@ -21,16 +21,21 @@
 
 #include "util.h"
 
+#include "datetime.h"
+#include "log-store-index.h"
+
 /* Bug#26838 prevents us to trust Messages' iface message-token
  * header, so I need to create a token which TPL can trust to be unique
  * within itself */
 gchar *
 create_message_token (const gchar *channel,
-    const gchar *date,
+    gint64 timestamp,
     guint msgid)
 {
   GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
   gchar *retval;
+  gchar *date = tpl_time_to_string_local (timestamp,
+      TPL_LOG_STORE_INDEX_TIMESTAMP_FORMAT);
 
   g_checksum_update (log_id, (guchar *) channel, -1);
   g_checksum_update (log_id, (guchar *) date, -1);
@@ -39,6 +44,7 @@ create_message_token (const gchar *channel,
   retval = g_strdup (g_checksum_get_string (log_id));
 
   g_checksum_free (log_id);
+  g_free (date);
 
   return retval;
 }

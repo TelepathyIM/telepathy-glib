@@ -553,7 +553,7 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
        * token */
       instead_of_channel_path = g_strconcat (
           tp_proxy_get_object_path (account), sender_id, NULL);
-      log_id = create_message_token (instead_of_channel_path, time_, cm_id);
+      log_id = create_message_token (instead_of_channel_path, t, cm_id);
       message = tpl_log_entry_text_new (log_id,
           tp_proxy_get_object_path (account), TPL_LOG_ENTRY_DIRECTION_NONE);
       tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (message), cm_id);
