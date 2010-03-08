@@ -34,7 +34,7 @@
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include "debug.h"
 
-#define GET_PRIVATE(obj)	(G_TYPE_INSTANCE_GET_PRIVATE ((obj), TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqlitePrivate))
+#define GET_PRIV(obj)	(G_TYPE_INSTANCE_GET_PRIVATE ((obj), TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqlitePrivate))
 
 static void log_store_iface_init (TplLogStoreInterface *iface);
 
@@ -139,7 +139,7 @@ tpl_log_store_sqlite_set_property (GObject *self,
 static void
 tpl_log_store_sqlite_dispose (GObject *self)
 {
-  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
 
   if (priv->db != NULL)
     {
@@ -170,7 +170,7 @@ tpl_log_store_sqlite_class_init (TplLogStoreSqliteClass *klass)
 static void
 tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
 {
-  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   char *filename = get_cache_filename ();
   int e;
   char *errmsg = NULL;
@@ -254,7 +254,7 @@ tpl_log_store_sqlite_add_message (TplLogStore *self,
     TplLogEntry *message,
     GError **error)
 {
-  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   const char *account, *identifier;
   gboolean chatroom;
   char *date;
@@ -420,7 +420,7 @@ static GList *
 tpl_log_store_sqlite_get_chats (TplLogStore *self,
     TpAccount *account)
 {
-  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   sqlite3_stmt *sql = NULL;
   int e;
   GList *list = NULL;
@@ -493,7 +493,7 @@ tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
     TpAccount *account,
     const char *identifier)
 {
-  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   sqlite3_stmt *sql = NULL;
   int e;
   gint64 date = -1;;
@@ -544,12 +544,14 @@ out:
 
   return date;
 }
+
+
 double
 tpl_log_store_sqlite_get_frequency (TplLogStoreSqlite *self,
     TpAccount *account,
     const char *identifier)
 {
-  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   sqlite3_stmt *sql = NULL;
   int e;
   double freq = -1.;
