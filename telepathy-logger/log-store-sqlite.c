@@ -28,17 +28,17 @@
 
 #include "log-entry-text.h"
 #include "log-manager.h"
-#include "log-store-counter.h"
+#include "log-store-sqlite.h"
 #include "datetime.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include "debug.h"
 
-#define GET_PRIVATE(obj)	(G_TYPE_INSTANCE_GET_PRIVATE ((obj), TPL_TYPE_LOG_STORE_COUNTER, TplLogStoreCounterPrivate))
+#define GET_PRIVATE(obj)	(G_TYPE_INSTANCE_GET_PRIVATE ((obj), TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqlitePrivate))
 
 static void log_store_iface_init (TplLogStoreInterface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (TplLogStoreCounter, tpl_log_store_counter,
+G_DEFINE_TYPE_WITH_CODE (TplLogStoreSqlite, tpl_log_store_sqlite,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_LOG_STORE, log_store_iface_init));
 
@@ -50,8 +50,8 @@ enum /* properties */
   PROP_WRITABLE
 };
 
-typedef struct _TplLogStoreCounterPrivate TplLogStoreCounterPrivate;
-struct _TplLogStoreCounterPrivate
+typedef struct _TplLogStoreSqlitePrivate TplLogStoreSqlitePrivate;
+struct _TplLogStoreSqlitePrivate
 {
   sqlite3 *db;
 };
@@ -59,7 +59,7 @@ struct _TplLogStoreCounterPrivate
 static GObject *singleton = NULL;
 
 static GObject *
-tpl_log_store_counter_constructor (GType type,
+tpl_log_store_sqlite_constructor (GType type,
     guint n_props,
     GObjectConstructParam *props)
 {
@@ -68,7 +68,7 @@ tpl_log_store_counter_constructor (GType type,
   else
     {
       singleton =
-        G_OBJECT_CLASS (tpl_log_store_counter_parent_class)->constructor (
+        G_OBJECT_CLASS (tpl_log_store_sqlite_parent_class)->constructor (
             type, n_props, props);
 
       if (singleton == NULL)
@@ -91,7 +91,7 @@ get_cache_filename (void)
 }
 
 static void
-tpl_log_store_counter_get_property (GObject *self,
+tpl_log_store_sqlite_get_property (GObject *self,
     guint id,
     GValue *value,
     GParamSpec *pspec)
@@ -118,7 +118,7 @@ tpl_log_store_counter_get_property (GObject *self,
 }
 
 static void
-tpl_log_store_counter_set_property (GObject *self,
+tpl_log_store_sqlite_set_property (GObject *self,
     guint id,
     const GValue *value,
     GParamSpec *pspec)
@@ -137,9 +137,9 @@ tpl_log_store_counter_set_property (GObject *self,
 }
 
 static void
-tpl_log_store_counter_dispose (GObject *self)
+tpl_log_store_sqlite_dispose (GObject *self)
 {
-  TplLogStoreCounterPrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
 
   if (priv->db != NULL)
     {
@@ -147,30 +147,30 @@ tpl_log_store_counter_dispose (GObject *self)
       priv->db = NULL;
     }
 
-  G_OBJECT_CLASS (tpl_log_store_counter_parent_class)->dispose (self);
+  G_OBJECT_CLASS (tpl_log_store_sqlite_parent_class)->dispose (self);
 }
 
 static void
-tpl_log_store_counter_class_init (TplLogStoreCounterClass *klass)
+tpl_log_store_sqlite_class_init (TplLogStoreSqliteClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-  gobject_class->constructor = tpl_log_store_counter_constructor;
-  gobject_class->get_property = tpl_log_store_counter_get_property;
-  gobject_class->set_property = tpl_log_store_counter_set_property;
-  gobject_class->dispose = tpl_log_store_counter_dispose;
+  gobject_class->constructor = tpl_log_store_sqlite_constructor;
+  gobject_class->get_property = tpl_log_store_sqlite_get_property;
+  gobject_class->set_property = tpl_log_store_sqlite_set_property;
+  gobject_class->dispose = tpl_log_store_sqlite_dispose;
 
   g_object_class_override_property (gobject_class, PROP_NAME, "name");
   g_object_class_override_property (gobject_class, PROP_READABLE, "readable");
   g_object_class_override_property (gobject_class, PROP_WRITABLE, "writable");
 
-  g_type_class_add_private (gobject_class, sizeof (TplLogStoreCounterPrivate));
+  g_type_class_add_private (gobject_class, sizeof (TplLogStoreSqlitePrivate));
 }
 
 static void
-tpl_log_store_counter_init (TplLogStoreCounter *self)
+tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
 {
-  TplLogStoreCounterPrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
   char *filename = get_cache_filename ();
   int e;
   char *errmsg = NULL;
@@ -244,17 +244,17 @@ get_date (TplLogEntry *entry)
 }
 
 static const char *
-tpl_log_store_counter_get_name (TplLogStore *self)
+tpl_log_store_sqlite_get_name (TplLogStore *self)
 {
   return "MessageCounts";
 }
 
 static gboolean
-tpl_log_store_counter_add_message (TplLogStore *self,
+tpl_log_store_sqlite_add_message (TplLogStore *self,
     TplLogEntry *message,
     GError **error)
 {
-  TplLogStoreCounterPrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
   const char *account, *identifier;
   gboolean chatroom;
   char *date;
@@ -264,7 +264,7 @@ tpl_log_store_counter_add_message (TplLogStore *self,
   gboolean insert = FALSE;
   int e;
 
-  DEBUG ("tpl_log_store_counter_add_message");
+  DEBUG ("tpl_log_store_sqlite_add_message");
 
   if (!TPL_IS_LOG_ENTRY_TEXT (message) ||
       tpl_log_entry_get_signal_type (message) !=
@@ -417,10 +417,10 @@ out:
 }
 
 static GList *
-tpl_log_store_counter_get_chats (TplLogStore *self,
+tpl_log_store_sqlite_get_chats (TplLogStore *self,
     TpAccount *account)
 {
-  TplLogStoreCounterPrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
   sqlite3_stmt *sql = NULL;
   int e;
   GList *list = NULL;
@@ -477,23 +477,23 @@ out:
 static void
 log_store_iface_init (TplLogStoreInterface *iface)
 {
-  iface->get_name = tpl_log_store_counter_get_name;
-  iface->add_message = tpl_log_store_counter_add_message;
-  iface->get_chats = tpl_log_store_counter_get_chats;
+  iface->get_name = tpl_log_store_sqlite_get_name;
+  iface->add_message = tpl_log_store_sqlite_add_message;
+  iface->get_chats = tpl_log_store_sqlite_get_chats;
 }
 
 TplLogStore *
-tpl_log_store_counter_dup (void)
+tpl_log_store_sqlite_dup (void)
 {
-  return g_object_new (TPL_TYPE_LOG_STORE_COUNTER, NULL);
+  return g_object_new (TPL_TYPE_LOG_STORE_SQLITE, NULL);
 }
 
 gint64
-tpl_log_store_counter_get_most_recent (TplLogStoreCounter *self,
+tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
     TpAccount *account,
     const char *identifier)
 {
-  TplLogStoreCounterPrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
   sqlite3_stmt *sql = NULL;
   int e;
   gint64 date = -1;;
@@ -545,11 +545,11 @@ out:
   return date;
 }
 double
-tpl_log_store_counter_get_frequency (TplLogStoreCounter *self,
+tpl_log_store_sqlite_get_frequency (TplLogStoreSqlite *self,
     TpAccount *account,
     const char *identifier)
 {
-  TplLogStoreCounterPrivate *priv = GET_PRIVATE (self);
+  TplLogStoreSqlitePrivate *priv = GET_PRIVATE (self);
   sqlite3_stmt *sql = NULL;
   int e;
   double freq = -1.;

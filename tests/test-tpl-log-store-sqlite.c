@@ -1,4 +1,4 @@
-#include <telepathy-logger/log-store-counter.h>
+#include <telepathy-logger/log-store-sqlite.h>
 #include <telepathy-logger/debug.h>
 
 int
@@ -21,10 +21,10 @@ main (int argc, char **argv)
       &error);
   g_assert_no_error (error);
 
-  store = tpl_log_store_counter_dup ();
+  store = tpl_log_store_sqlite_dup ();
 
   g_print ("freq = %g\n",
-      tpl_log_store_counter_get_frequency (TPL_LOG_STORE_COUNTER (store),
+      tpl_log_store_sqlite_get_frequency (TPL_LOG_STORE_SQLITE (store),
         account, "dannielle.meyer@gmail.com"));
 
   g_object_unref (store);

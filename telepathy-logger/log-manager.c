@@ -38,7 +38,7 @@
 #include <telepathy-logger/log-entry.h>
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-empathy.h>
-#include <telepathy-logger/log-store-counter.h>
+#include <telepathy-logger/log-store-sqlite.h>
 #include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
 
@@ -186,7 +186,7 @@ tpl_log_manager_init (TplLogManager *self)
   add_log_store (self, TPL_TYPE_LOG_STORE_EMPATHY, "Empathy", FALSE, TRUE);
 
   /* Load the message counting cache */
-  add_log_store (self, TPL_TYPE_LOG_STORE_COUNTER, "MessageCounts", TRUE, TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", TRUE, TRUE);
 
   DEBUG ("Log Manager initialised");
 }

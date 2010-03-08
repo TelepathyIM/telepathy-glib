@@ -34,7 +34,7 @@ LIBTPL_HEADERS = \
 		log-manager.h			\
 		log-manager-priv.h		\
 		log-store.h			\
-		log-store-counter.h		\
+		log-store-sqlite.h		\
 		log-store-empathy.h		\
 		log-store-factory.h		\
 		observer.h			\
@@ -55,7 +55,7 @@ libtelepathy_logger_la_SOURCES = \
 		log-entry-text.c		\
 		log-manager.c			\
 		log-store.c			\
-		log-store-counter.c		\
+		log-store-sqlite.c		\
 		log-store-empathy.c		\
 		log-store-factory.c		\
 		observer.c			\
