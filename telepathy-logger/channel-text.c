@@ -672,11 +672,9 @@ got_message_pending_messages_cb (TpProxy *proxy,
       guint message_flags = 0;
       guint message_id;
       TpHandle message_sender_handle;
-
-      gboolean is_scrollback;
-      gboolean is_rescued;
       const gchar *message_body;
       GList *l = NULL;
+      gboolean valid;
 
       /* list of message's parts */
       message_parts = g_ptr_array_index (result, i);
@@ -691,7 +689,13 @@ got_message_pending_messages_cb (TpProxy *proxy,
 
       message_token = tp_asv_get_string (message_headers, "message-token");
       message_id = tp_asv_get_uint32 (message_headers, "pending-message-id",
-          NULL);
+          &valid);
+      if (!valid)
+        {
+          DEBUG ("pending-message-id not in a valid range, setting to "
+              "UNKNOWN");
+            message_id = TPL_LOG_ENTRY_MSG_ID_UNKNOWN;
+        }
       message_timestamp = tp_asv_get_uint64 (message_headers,
           "message-received", NULL);
 
@@ -719,16 +723,20 @@ got_message_pending_messages_cb (TpProxy *proxy,
       message_sender_handle = tp_asv_get_uint32 (message_headers,
           "message-sender", NULL);
 
-      if (g_hash_table_lookup (message_headers, "message-type") != NULL)
-        message_type = tp_asv_get_uint32 (message_headers, "message-type",
-            NULL);
+      message_type = tp_asv_get_uint32 (message_headers, "message-type",
+          &valid);
+      if (!valid)
+        {
+          PATH_DEBUG (proxy, "message-type not in a valid range, falling "
+              "back to type=NORMAL");
+          message_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
+        }
 
-      is_rescued = tp_asv_get_boolean (message_headers, "rescued", NULL);
-      is_scrollback = tp_asv_get_boolean (message_headers, "scrollback",
-          NULL);
-      message_flags = (is_rescued ? TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED : 0);
-      message_flags |= (is_scrollback ?
-          TP_CHANNEL_TEXT_MESSAGE_FLAG_SCROLLBACK : 0);
+      if (tp_asv_get_boolean (message_headers, "rescued", &valid) && valid)
+        message_flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED;
+
+      if (tp_asv_get_boolean (message_headers, "scrollback", NULL) && valid)
+        message_flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_SCROLLBACK;
 
       message_body = tp_asv_get_string (message_part, "content");
 
