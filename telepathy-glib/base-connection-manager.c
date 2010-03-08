@@ -728,31 +728,9 @@ set_param_from_value (const TpCMParamSpec *paramspec,
       return FALSE;
     }
 
-  if (paramspec->filter != NULL)
-    {
-      if (!(paramspec->filter) (paramspec, value, error))
-        {
-          DEBUG ("parameter %s rejected by filter function: %s",
-              paramspec->name, error ? (*error)->message : "(error ignored)");
-          return FALSE;
-        }
-
-      /* the filter may not change the type of the GValue */
-      g_return_val_if_fail (G_VALUE_TYPE (value) == paramspec->gtype, FALSE);
-    }
-
   set_param (paramspec, value, params);
 
   return TRUE;
-}
-
-static void
-report_unknown_param (gpointer key, gpointer value, gpointer user_data)
-{
-  const char *arg = (const char *) key;
-  GString **error_str = (GString **) user_data;
-  *error_str = g_string_append_c (*error_str, ' ');
-  *error_str = g_string_append (*error_str, arg);
 }
 
 static gboolean
@@ -764,41 +742,13 @@ parse_parameters (const TpCMParamSpec *paramspec,
                   GError **error)
 {
   int i;
-  guint mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REQUIRED;
   GValue *value;
-
-  value = g_hash_table_lookup (provided, "register");
-  if (value != NULL && G_VALUE_TYPE(value) == G_TYPE_BOOLEAN &&
-      g_value_get_boolean (value))
-    {
-      mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REGISTER;
-    }
 
   for (i = 0; paramspec[i].name; i++)
     {
       value = g_hash_table_lookup (provided, paramspec[i].name);
 
-      if (value == NULL)
-        {
-          if (paramspec[i].flags & mandatory_flag)
-            {
-              DEBUG ("missing mandatory param %s", paramspec[i].name);
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-                  "missing mandatory account parameter %s", paramspec[i].name);
-              return FALSE;
-            }
-          else if (paramspec[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT)
-            {
-              _tp_cm_param_spec_set_default (&paramspec[i], set_param, params);
-              tp_intset_add (params_present, i);
-            }
-          else
-            {
-              DEBUG ("%s not given, using default behaviour",
-                  paramspec[i].name);
-            }
-        }
-      else
+      if (value != NULL)
         {
           if (!set_param_from_value (&paramspec[i], value, set_param, params,
                 error))
@@ -810,21 +760,6 @@ parse_parameters (const TpCMParamSpec *paramspec,
 
           g_hash_table_remove (provided, paramspec[i].name);
         }
-    }
-
-  if (g_hash_table_size (provided) != 0)
-    {
-      gchar *error_txt;
-      GString *error_str = g_string_new ("unknown parameters provided:");
-
-      g_hash_table_foreach (provided, report_unknown_param, &error_str);
-      error_txt = g_string_free (error_str, FALSE);
-
-      DEBUG ("%s", error_txt);
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "%s", error_txt);
-      g_free (error_txt);
-      return FALSE;
     }
 
   return TRUE;
