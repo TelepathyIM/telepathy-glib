@@ -13,6 +13,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "conn.h"
+#include "im-manager.h"
 
 #include "_gen/param-spec-struct.h"
 
@@ -64,6 +65,103 @@ new_connection (TpBaseProtocol *protocol,
   return (TpBaseConnection *) conn;
 }
 
+gchar *
+example_echo_2_protocol_normalize_contact (const gchar *id, GError **error)
+{
+  if (id[0] == '\0')
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+          "ID must not be empty");
+      return NULL;
+    }
+
+  return g_utf8_strdown (id, -1);
+}
+
+static gchar *
+normalize_contact (TpBaseProtocol *self G_GNUC_UNUSED,
+    const gchar *contact,
+    GError **error)
+{
+  return example_echo_2_protocol_normalize_contact (contact, error);
+}
+
+static gchar *
+identify_account (TpBaseProtocol *self G_GNUC_UNUSED,
+    GHashTable *asv,
+    GError **error)
+{
+  const gchar *account = tp_asv_get_string (asv, "account");
+
+  if (account != NULL)
+    return g_strdup (account);
+
+  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      "'account' parameter not given");
+  return NULL;
+}
+
+static GStrv
+get_interfaces (TpBaseProtocol *self)
+{
+  return NULL;
+}
+
+static void
+get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
+    GStrv *guaranteed_interfaces,
+    GStrv *possible_interfaces,
+    GPtrArray **guaranteed_channel_classes,
+    GPtrArray **possible_channel_classes,
+    gchar **icon_name,
+    gchar **display_name,
+    gchar **vcard_field)
+{
+  if (guaranteed_interfaces != NULL)
+    {
+      *guaranteed_interfaces = g_strdupv (
+          (GStrv) example_echo_2_connection_get_guaranteed_interfaces ());
+    }
+
+  if (possible_interfaces != NULL)
+    {
+      *possible_interfaces = g_strdupv (
+          (GStrv) example_echo_2_connection_get_possible_interfaces ());
+    }
+
+  if (guaranteed_channel_classes != NULL)
+    {
+      *guaranteed_channel_classes = g_ptr_array_new ();
+      example_echo_2_im_manager_append_channel_classes (
+          *guaranteed_channel_classes);
+    }
+
+  if (possible_channel_classes != NULL)
+    {
+      *possible_channel_classes = g_ptr_array_new ();
+    }
+
+  if (icon_name != NULL)
+    {
+      /* a real protocol would use its own icon name - for this example we
+       * borrow the one from ICQ */
+      *icon_name = g_strdup ("im-icq");
+    }
+
+  if (display_name != NULL)
+    {
+      /* in a real protocol this would be "ICQ" or
+       * "Windows Live Messenger (MSN)" or something */
+      *display_name = g_strdup ("Echo II example");
+    }
+
+  if (vcard_field != NULL)
+    {
+      /* in a real protocol this would be "tel" or "x-jabber" or something */
+      *vcard_field = g_strdup ("x-telepathy-example");
+    }
+}
+
 static void
 example_echo_2_protocol_class_init (
     ExampleEcho2ProtocolClass *klass)
@@ -73,4 +171,9 @@ example_echo_2_protocol_class_init (
 
   base_class->get_parameters = get_parameters;
   base_class->new_connection = new_connection;
+
+  base_class->normalize_contact = normalize_contact;
+  base_class->identify_account = identify_account;
+  base_class->get_interfaces = get_interfaces;
+  base_class->get_connection_details = get_connection_details;
 }

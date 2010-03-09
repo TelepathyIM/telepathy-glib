@@ -59,6 +59,9 @@ GType example_echo_2_protocol_get_type (void);
         EXAMPLE_TYPE_ECHO_2_PROTOCOL, \
         ExampleEcho2ProtocolClass))
 
+gchar *example_echo_2_protocol_normalize_contact (const gchar *id,
+    GError **error);
+
 G_END_DECLS
 
 #endif
