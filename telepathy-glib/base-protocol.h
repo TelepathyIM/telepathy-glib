@@ -108,12 +108,24 @@ struct _TpBaseProtocolClass
   TpBaseConnection *(*new_connection) (TpBaseProtocol *self,
       GHashTable *asv,
       GError **error);
+
   gchar *(*normalize_contact) (TpBaseProtocol *self,
       const gchar *contact,
       GError **error);
   gchar *(*identify_account) (TpBaseProtocol *self,
       GHashTable *asv,
       GError **error);
+
+  GStrv (*get_interfaces) (TpBaseProtocol *self);
+
+  void (*get_connection_details) (TpBaseProtocol *self,
+      GStrv *guaranteed_interfaces,
+      GStrv *possible_interfaces,
+      GPtrArray **guaranteed_channel_classes,
+      GPtrArray **possible_channel_classes,
+      gchar **icon_name,
+      gchar **display_name,
+      gchar **vcard_field);
 
   /*<private>*/
   GCallback padding[8];

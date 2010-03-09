@@ -276,6 +276,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
 /**
  * TpBaseProtocolClass:
  * @parent_class: the parent class
+ * @dbus_properties_class: a D-Bus properties mixin
  * @is_stub: if %TRUE, this protocol will not be advertised on D-Bus (for
  *  internal use by #TpBaseConnection)
  * @get_parameters: a callback used to implement
@@ -293,6 +294,11 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *  and must either return a newly allocated string that represents the
  *  "identity" of the parameters in @asv (usually the "account" parameter),
  *  or %NULL with an error raised via @error
+ * @get_interfaces: a callback used to implement the Interfaces D-Bus property;
+ *  it must return a newly allocated #GStrv containing D-Bus interface names
+ * @get_connection_details: a callback used to implement the Protocol D-Bus
+ *  properties that represent details of the connections provided by this
+ *  protocol
  *
  * The class of a #TpBaseProtocol.
  *
@@ -310,6 +316,14 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
 struct _TpBaseProtocolPrivate
 {
   gchar *name;
+  GStrv interfaces;
+  GStrv guaranteed_interfaces;
+  GStrv possible_interfaces;
+  GPtrArray *guaranteed_channel_classes;
+  GPtrArray *possible_channel_classes;
+  gchar *icon;
+  gchar *display_name;
+  gchar *vcard_field;
 };
 
 enum
@@ -317,6 +331,43 @@ enum
     PROP_NAME = 1,
     N_PROPS
 };
+
+static void
+tp_base_protocol_constructed (GObject *object)
+{
+  TpBaseProtocol *self = (TpBaseProtocol *) object;
+  TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) tp_base_protocol_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  if (cls->get_interfaces != NULL)
+    {
+      self->priv->interfaces = (cls->get_interfaces) (self);
+    }
+
+  if (cls->get_connection_details != NULL)
+    {
+      (cls->get_connection_details) (self,
+          &self->priv->guaranteed_interfaces,
+          &self->priv->possible_interfaces,
+          &self->priv->guaranteed_channel_classes,
+          &self->priv->possible_channel_classes,
+          &self->priv->icon,
+          &self->priv->display_name,
+          &self->priv->vcard_field);
+    }
+  else
+    {
+      self->priv->guaranteed_channel_classes = g_ptr_array_sized_new (0);
+      self->priv->possible_channel_classes = g_ptr_array_sized_new (0);
+      self->priv->icon = g_strdup ("");
+      self->priv->display_name = g_strdup ("");
+      self->priv->vcard_field = g_strdup ("");
+    }
+}
 
 static void
 tp_base_protocol_get_property (GObject *object,
@@ -367,6 +418,20 @@ tp_base_protocol_finalize (GObject *object)
     ((GObjectClass *) tp_base_protocol_parent_class)->finalize;
 
   g_free (self->priv->name);
+  g_strfreev (self->priv->interfaces);
+  g_strfreev (self->priv->guaranteed_interfaces);
+  g_strfreev (self->priv->possible_interfaces);
+  g_free (self->priv->icon);
+  g_free (self->priv->display_name);
+  g_free (self->priv->vcard_field);
+
+  if (self->priv->guaranteed_channel_classes != NULL)
+    g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+        self->priv->guaranteed_channel_classes);
+
+  if (self->priv->possible_channel_classes != NULL)
+    g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+        self->priv->possible_channel_classes);
 
   if (finalize != NULL)
     finalize (object);
@@ -374,6 +439,14 @@ tp_base_protocol_finalize (GObject *object)
 
 typedef enum {
     PP_PARAMETERS,
+    PP_INTERFACES,
+    PP_GUARANTEED_INTERFACES,
+    PP_POSSIBLE_INTERFACES,
+    PP_GUARANTEED_CHANNEL_CLASSES,
+    PP_POSSIBLE_CHANNEL_CLASSES,
+    PP_VCARD_FIELD,
+    PP_DISPLAY_NAME,
+    PP_ICON,
     N_PP
 } ProtocolProp;
 
@@ -404,6 +477,38 @@ protocol_properties_getter (GObject *object,
         }
       break;
 
+    case PP_INTERFACES:
+      g_value_set_boxed (value, self->priv->interfaces);
+      break;
+
+    case PP_GUARANTEED_INTERFACES:
+      g_value_set_boxed (value, self->priv->guaranteed_interfaces);
+      break;
+
+    case PP_POSSIBLE_INTERFACES:
+      g_value_set_boxed (value, self->priv->possible_interfaces);
+      break;
+
+    case PP_GUARANTEED_CHANNEL_CLASSES:
+      g_value_set_boxed (value, self->priv->guaranteed_channel_classes);
+      break;
+
+    case PP_POSSIBLE_CHANNEL_CLASSES:
+      g_value_set_boxed (value, self->priv->possible_channel_classes);
+      break;
+
+    case PP_VCARD_FIELD:
+      g_value_set_string (value, self->priv->vcard_field);
+      break;
+
+    case PP_DISPLAY_NAME:
+      g_value_set_string (value, self->priv->display_name);
+      break;
+
+    case PP_ICON:
+      g_value_set_string (value, self->priv->icon);
+      break;
+
     default:
       g_assert_not_reached ();
     }
@@ -414,6 +519,17 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
       { "Parameters", GINT_TO_POINTER (PP_PARAMETERS), NULL },
+      { "Interfaces", GINT_TO_POINTER (PP_INTERFACES), NULL },
+      { "GuaranteedInterfaces", GINT_TO_POINTER (PP_GUARANTEED_INTERFACES),
+        NULL },
+      { "PossibleInterfaces", GINT_TO_POINTER (PP_POSSIBLE_INTERFACES), NULL },
+      { "GuaranteedChannelClasses",
+        GINT_TO_POINTER (PP_GUARANTEED_CHANNEL_CLASSES), NULL },
+      { "PossibleChannelClasses",
+        GINT_TO_POINTER (PP_POSSIBLE_CHANNEL_CLASSES), NULL },
+      { "VCardField", GINT_TO_POINTER (PP_VCARD_FIELD), NULL },
+      { "DisplayName", GINT_TO_POINTER (PP_DISPLAY_NAME), NULL },
+      { "Icon", GINT_TO_POINTER (PP_ICON), NULL },
       { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
@@ -424,6 +540,7 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpBaseProtocolPrivate));
 
+  object_class->constructed = tp_base_protocol_constructed;
   object_class->get_property = tp_base_protocol_get_property;
   object_class->set_property = tp_base_protocol_set_property;
   object_class->finalize = tp_base_protocol_finalize;
