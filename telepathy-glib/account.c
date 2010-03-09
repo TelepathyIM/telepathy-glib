@@ -1540,7 +1540,7 @@ tp_account_get_icon_name (TpAccount *account)
  * Returns the parameters of the account, in a hash table where each string
  * is the parameter name (account, password, require-encryption etc.), and
  * each value is a #GValue. Using the tp_asv_get family of functions
- * (tp_asv_get_uint32(), tp_asv_dup_string() etc.) to access the parameters is
+ * (tp_asv_get_uint32(), tp_asv_get_string() etc.) to access the parameters is
  * recommended.
  *
  * The allowed parameters depend on the connection manager, and can be found
