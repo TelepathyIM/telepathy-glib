@@ -81,6 +81,9 @@ typedef struct {
     GStrv a_array_of_strings;
     GArray *a_array_of_bytes;
     gchar *a_object_path;
+    gchar *lc_string;
+    gchar *uc_string;
+    gboolean would_have_been_freed;
 } CMParams;
 
 CMParams * param_connection_manager_steal_params_last_conn (void);

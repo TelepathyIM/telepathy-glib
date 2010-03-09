@@ -134,6 +134,10 @@ test_set_params (Test *test,
   g_hash_table_insert (parameters, "a-object-path",
       tp_g_value_slice_new_static_boxed (DBUS_TYPE_G_OBJECT_PATH,
         "/A/Object/Path"));
+  g_hash_table_insert (parameters, "lc-string",
+      tp_g_value_slice_new_static_string ("Filter Me"));
+  g_hash_table_insert (parameters, "uc-string",
+      tp_g_value_slice_new_static_string ("Filter Me"));
 
   tp_cli_connection_manager_run_request_connection (test->cm, -1,
       "example", parameters, NULL, NULL, &test->error, NULL);
@@ -164,10 +168,174 @@ test_set_params (Test *test,
     g_assert (params->a_array_of_bytes->data[i] == array_of_bytes->data[i]);
 
   g_assert (!tp_strdiff (params->a_object_path, "/A/Object/Path"));
+  g_assert (!tp_strdiff (params->lc_string, "filter me"));
+  g_assert (!tp_strdiff (params->uc_string, "FILTER ME"));
 
   param_connection_manager_free_params (params);
   g_hash_table_destroy (parameters);
   g_array_free (array_of_bytes, TRUE);
+}
+
+static void
+test_defaults (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *parameters;
+  CMParams *params;
+
+  parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  g_hash_table_insert (parameters, "a-boolean",
+      tp_g_value_slice_new_boolean (FALSE));
+
+  tp_cli_connection_manager_run_request_connection (test->cm, -1,
+      "example", parameters, NULL, NULL, &test->error, NULL);
+  g_assert (test->error != NULL);
+  g_assert_cmpint (test->error->code, ==, TP_ERROR_NOT_IMPLEMENTED);
+  g_clear_error (&test->error);
+
+  params = param_connection_manager_steal_params_last_conn ();
+  g_assert (params->would_have_been_freed);
+  g_assert_cmpstr (params->a_string, ==, "the default string");
+  g_assert_cmpint (params->a_int16, ==, 42);
+  g_assert_cmpint (params->a_int32, ==, 42);
+  param_connection_manager_free_params (params);
+
+  g_hash_table_destroy (parameters);
+}
+
+static void
+test_missing_required (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *parameters;
+  CMParams *params;
+
+  parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+
+  tp_cli_connection_manager_run_request_connection (test->cm, -1,
+      "example", parameters, NULL, NULL, &test->error, NULL);
+  g_assert (test->error != NULL);
+  g_assert_cmpint (test->error->code, ==, TP_ERROR_INVALID_ARGUMENT);
+  g_clear_error (&test->error);
+
+  params = param_connection_manager_steal_params_last_conn ();
+
+  if (params != NULL)
+    {
+      g_assert (params->would_have_been_freed);
+      param_connection_manager_free_params (params);
+    }
+
+  g_hash_table_destroy (parameters);
+}
+
+static void
+test_fail_filter (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *parameters;
+  CMParams *params;
+
+  parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  g_hash_table_insert (parameters, "a-boolean",
+      tp_g_value_slice_new_boolean (FALSE));
+  /* The lc-string and uc-string parameters have a filter which rejects
+   * anything outside ASCII, like these gratuitous umlauts */
+  g_hash_table_insert (parameters, "uc-string",
+      tp_g_value_slice_new_static_string ("M\xc3\xb6t\xc3\xb6rhead"));
+
+  tp_cli_connection_manager_run_request_connection (test->cm, -1,
+      "example", parameters, NULL, NULL, &test->error, NULL);
+  g_assert (test->error != NULL);
+  g_assert_cmpint (test->error->code, ==, TP_ERROR_INVALID_ARGUMENT);
+  g_clear_error (&test->error);
+
+  params = param_connection_manager_steal_params_last_conn ();
+
+  if (params != NULL)
+    {
+      g_assert (params->would_have_been_freed);
+      param_connection_manager_free_params (params);
+    }
+
+  g_hash_table_destroy (parameters);
+}
+
+static void
+test_wrong_type (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *parameters;
+  CMParams *params;
+
+  parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  g_hash_table_insert (parameters, "a-boolean",
+      tp_g_value_slice_new_string ("FALSE"));
+
+  tp_cli_connection_manager_run_request_connection (test->cm, -1,
+      "example", parameters, NULL, NULL, &test->error, NULL);
+  g_assert (test->error != NULL);
+  g_assert_cmpint (test->error->code, ==, TP_ERROR_INVALID_ARGUMENT);
+  g_clear_error (&test->error);
+
+  params = param_connection_manager_steal_params_last_conn ();
+
+  if (params != NULL)
+    {
+      g_assert (params->would_have_been_freed);
+      param_connection_manager_free_params (params);
+    }
+
+  g_hash_table_destroy (parameters);
+}
+
+static void
+test_unwelcome (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *parameters;
+  CMParams *params;
+
+  parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  g_hash_table_insert (parameters, "a-boolean",
+      tp_g_value_slice_new_boolean (FALSE));
+  g_hash_table_insert (parameters, "a-piece-of-cheese",
+      tp_g_value_slice_new_boolean (TRUE));
+
+  tp_cli_connection_manager_run_request_connection (test->cm, -1,
+      "example", parameters, NULL, NULL, &test->error, NULL);
+  g_assert (test->error != NULL);
+  g_assert_cmpint (test->error->code, ==, TP_ERROR_INVALID_ARGUMENT);
+  g_clear_error (&test->error);
+
+  params = param_connection_manager_steal_params_last_conn ();
+
+  if (params != NULL)
+    {
+      g_assert (params->would_have_been_freed);
+      param_connection_manager_free_params (params);
+    }
+
+  g_hash_table_destroy (parameters);
+}
+
+static void
+test_get_parameters_bad_proto (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GPtrArray *out = NULL;
+
+  tp_cli_connection_manager_run_get_parameters (test->cm, -1,
+      "not-example", &out, &test->error, NULL);
+  g_assert (out == NULL);
+  g_assert (test->error != NULL);
+  g_assert_cmpint (test->error->code, ==, TP_ERROR_NOT_IMPLEMENTED);
+  g_clear_error (&test->error);
 }
 
 int
@@ -179,6 +347,18 @@ main (int argc,
 
   g_test_add ("/params-cm/set-params", Test, NULL, setup, test_set_params,
       teardown);
+  g_test_add ("/params-cm/defaults", Test, NULL, setup, test_defaults,
+      teardown);
+  g_test_add ("/params-cm/fail-filter", Test, NULL, setup, test_fail_filter,
+      teardown);
+  g_test_add ("/params-cm/missing-required", Test, NULL, setup,
+      test_missing_required, teardown);
+  g_test_add ("/params-cm/wrong-type", Test, NULL, setup, test_wrong_type,
+      teardown);
+  g_test_add ("/params-cm/unwelcome", Test, NULL, setup, test_unwelcome,
+      teardown);
+  g_test_add ("/params-cm/get-parameters-bad-proto", Test, NULL, setup,
+      test_get_parameters_bad_proto, teardown);
 
   return g_test_run ();
 }
