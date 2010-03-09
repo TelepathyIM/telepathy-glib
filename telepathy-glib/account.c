@@ -887,7 +887,8 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:current-presence-type:
    *
-   * The account connection's current presence type.
+   * The account connection's current presence type
+   * (a %TpConnectionPresenceType).
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -955,7 +956,7 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:connection-status:
    *
-   * The account's connection status type.
+   * The account's connection status type (a %TpConnectionStatus).
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -979,7 +980,7 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:connection-status-reason:
    *
-   * The account's connection status reason.
+   * The account's connection status reason (a %TpConnectionStatusReason).
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -1166,7 +1167,7 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:requested-presence-type:
    *
-   * The account's requested presence type.
+   * The account's requested presence type (a #TpConnectionPresenceType).
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
@@ -1434,7 +1435,7 @@ tp_account_ensure_connection (TpAccount *account,
     return NULL;
 
   /* Should be a full object path, not the special "/" value */
-  if (strlen (path) == 1)
+  if (!tp_strdiff (path, "/"))
     return NULL;
 
   _tp_account_set_connection (account, path);
@@ -1536,7 +1537,18 @@ tp_account_get_icon_name (TpAccount *account)
  * tp_account_get_parameters:
  * @account: a #TpAccount
  *
- * <!-- -->
+ * Returns the parameters of the account, in a hash table where each string
+ * is the parameter name (account, password, require-encryption etc.), and
+ * each value is a #GValue. Using the tp_asv_get family of functions
+ * (tp_asv_get_uint32(), tp_asv_get_string() etc.) to access the parameters is
+ * recommended.
+ *
+ * The allowed parameters depend on the connection manager, and can be found
+ * via tp_connection_manager_get_protocol() and
+ * tp_connection_manager_protocol_get_param(). Well-known parameters are
+ * listed
+ * <ulink url="http://telepathy.freedesktop.org/spec/org.freedesktop.Telepathy.ConnectionManager.html#org.freedesktop.Telepathy.ConnectionManager.RequestConnection">in
+ * the Telepathy D-Bus Interface Specification</ulink>.
  *
  * Returns: the hash table of parameters on @account
  *
@@ -2499,7 +2511,8 @@ tp_account_get_avatar_async (TpAccount *account,
  *
  * Finishes an async get operation of @account's avatar.
  *
- * Returns: a #GArray of the account's avatar, or %NULL on failure
+ * Returns: a #GArray of #guchar containing the bytes of the account's avatar,
+ *  or %NULL on failure
  *
  * Since: 0.9.0
  */
@@ -2749,7 +2762,9 @@ set_or_free (gchar **target,
  * from the path. This includes replacing underscores with hyphens in the
  * protocol name, as defined in the Account specification.
  *
- * Any of the out parameters may be %NULL if not needed.
+ * Any of the out parameters may be %NULL if not needed. If %TRUE is returned,
+ * the caller is responsible for freeing the strings stored in any non-%NULL
+ * out parameters, using g_free().
  *
  * Returns: %TRUE if @object_path was successfully parsed; %FALSE and sets
  *          @error otherwise.
