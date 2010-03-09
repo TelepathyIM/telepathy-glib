@@ -215,11 +215,16 @@ tp_base_connection_manager_dispose (GObject *object)
 {
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (object);
   TpBaseConnectionManagerPrivate *priv = self->priv;
+  GObjectFinalizeFunc dispose =
+    G_OBJECT_CLASS (tp_base_connection_manager_parent_class)->dispose;
 
   if (priv->dispose_has_run)
     return;
 
   priv->dispose_has_run = TRUE;
+
+  if (dispose != NULL)
+    dispose (object);
 }
 
 static void
