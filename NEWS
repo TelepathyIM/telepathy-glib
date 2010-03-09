@@ -1,7 +1,30 @@
 telepathy-glib 0.11.0 (UNRELEASED)
 ==================================
 
-...
+Dependencies:
+
+* GLib, GObject and GIO ≥ 2.22 are now required
+
+Enhancements:
+
+* Update to telepathy-spec 0.19.1 (smcv)
+  - generate code for Connection.Interface.Balance
+
+* Add an example connection manager for the experimental Call API that will
+  eventually replace StreamedMedia (smcv)
+
+* Add tp_g_socket_address_from_variant,
+  tp_address_variant_from_g_socket_address (danni)
+
+Fixes:
+
+* Don't make an idle call to put received messages in the TpMessageMixin
+  queue, potentially avoiding a reference leak (Vivek)
+
+* tp_contacts_mixin_set_contact_attribute now takes a const gchar *
+  instead of a gchar * (mikhailz)
+
+* Improve TpAccount documentation (smcv)
 
 telepathy-glib 0.10.0 (2010-01-21)
 ==================================
