@@ -174,14 +174,7 @@ main (int argc,
 
   if (argv[2] == NULL)
     {
-      guint self_handle;
-
-      if (!tp_cli_connection_run_get_self_handle (connection, -1,
-            &self_handle, &error, NULL))
-        {
-          g_warning ("%s", error->message);
-          goto out;
-        }
+      guint self_handle = tp_connection_get_self_handle (connection);
 
       tp_connection_get_contacts_by_handle (connection,
           1, &self_handle,

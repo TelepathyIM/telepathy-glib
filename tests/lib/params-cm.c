@@ -57,15 +57,48 @@ enum {
     PARAM_ARRAY_STRINGS,
     PARAM_ARRAY_BYTES,
     PARAM_OBJECT_PATH,
+    PARAM_LC_STRING,
+    PARAM_UC_STRING,
     NUM_PARAM
 };
 
+static gboolean
+filter_string_ascii_case (const TpCMParamSpec *param_spec,
+    GValue *value,
+    GError **error)
+{
+  const gchar *s = g_value_get_string (value);
+  guint i;
+
+  for (i = 0; s[i] != '\0'; i++)
+    {
+      int c = s[i];           /* just to avoid -Wtype-limits */
+
+      if (c < 0 || c > 127)   /* char might be signed or unsigned */
+        {
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "%s must be ASCII", param_spec->name);
+          return FALSE;
+        }
+    }
+
+  if (GINT_TO_POINTER (param_spec->filter_data))
+    g_value_take_string (value, g_ascii_strup (s, -1));
+  else
+    g_value_take_string (value, g_ascii_strdown (s, -1));
+
+  return TRUE;
+}
+
 static TpCMParamSpec param_example_params[] = {
-  { "a-string", "s", G_TYPE_STRING, 0, NULL,
+  { "a-string", "s", G_TYPE_STRING,
+    TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT, "the default string",
     G_STRUCT_OFFSET (CMParams, a_string), NULL, NULL, NULL },
-  { "a-int16", "n", G_TYPE_INT, 0, NULL,
+  { "a-int16", "n", G_TYPE_INT,
+    TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT, GINT_TO_POINTER (42),
     G_STRUCT_OFFSET (CMParams, a_int16), NULL, NULL, NULL },
-  { "a-int32", "i", G_TYPE_INT, 0, NULL,
+  { "a-int32", "i", G_TYPE_INT,
+    TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT, GINT_TO_POINTER (42),
     G_STRUCT_OFFSET (CMParams, a_int32), NULL, NULL, NULL },
   { "a-uint16", "q", G_TYPE_UINT, 0, NULL,
     G_STRUCT_OFFSET (CMParams, a_uint16), NULL, NULL, NULL },
@@ -75,7 +108,7 @@ static TpCMParamSpec param_example_params[] = {
     G_STRUCT_OFFSET (CMParams, a_int64), NULL, NULL, NULL },
   { "a-uint64", "t", G_TYPE_UINT64, 0, NULL,
     G_STRUCT_OFFSET (CMParams, a_uint64), NULL, NULL, NULL },
-  { "a-boolean", "b", G_TYPE_BOOLEAN, 0, NULL,
+  { "a-boolean", "b", G_TYPE_BOOLEAN, TP_CONN_MGR_PARAM_FLAG_REQUIRED, NULL,
     G_STRUCT_OFFSET (CMParams, a_boolean), NULL, NULL, NULL },
   { "a-double", "d", G_TYPE_DOUBLE, 0, NULL,
     G_STRUCT_OFFSET (CMParams, a_double), NULL, NULL, NULL },
@@ -85,6 +118,14 @@ static TpCMParamSpec param_example_params[] = {
     G_STRUCT_OFFSET (CMParams, a_array_of_bytes), NULL, NULL, NULL },
   { "a-object-path", "o", 0, 0, NULL,
     G_STRUCT_OFFSET (CMParams, a_object_path), NULL, NULL, NULL },
+
+  /* demo of a filter */
+  { "lc-string", "s", G_TYPE_STRING, 0, NULL,
+    G_STRUCT_OFFSET (CMParams, lc_string),
+    filter_string_ascii_case, GINT_TO_POINTER (FALSE), NULL },
+  { "uc-string", "s", G_TYPE_STRING, 0, NULL,
+    G_STRUCT_OFFSET (CMParams, uc_string),
+    filter_string_ascii_case, GINT_TO_POINTER (TRUE), NULL },
   { NULL }
 };
 
@@ -102,6 +143,8 @@ static void
 free_params (gpointer p)
 {
   /* CM user is responsible to free params so he can check their values */
+  params = (CMParams *) p;
+  params->would_have_been_freed = TRUE;
 }
 
 static const TpCMProtocolSpec example_protocols[] = {
@@ -142,9 +185,12 @@ param_connection_manager_class_init (
 }
 
 CMParams *
-param_connection_manager_get_params_last_conn (void)
+param_connection_manager_steal_params_last_conn (void)
 {
-  return params;
+  CMParams *p = params;
+
+  params = NULL;
+  return p;
 }
 
 void
@@ -152,7 +198,8 @@ param_connection_manager_free_params (CMParams *p)
 {
   g_free (p->a_string);
   g_strfreev (p->a_array_of_strings);
-  g_array_free (p->a_array_of_bytes, TRUE);
+  if (p->a_array_of_bytes != NULL)
+    g_array_free (p->a_array_of_bytes, TRUE);
   g_free (p->a_object_path);
 
   g_slice_free (CMParams, p);

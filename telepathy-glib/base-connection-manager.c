@@ -37,10 +37,7 @@
 
 #include <dbus/dbus-protocol.h>
 
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/gtypes.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
 #include "telepathy-glib/debug-internal.h"
@@ -199,6 +196,8 @@ struct _TpBaseConnectionManagerPrivate
   gboolean dispose_has_run;
   /* used as a set: key is TpBaseConnection *, value is TRUE */
   GHashTable *connections;
+  /* true after tp_base_connection_manager_register is called */
+  gboolean registered;
 };
 
 /* signal enum */
@@ -788,6 +787,8 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
   g_assert (cls->protocol_params != NULL);
+  /* a D-Bus method shouldn't be happening til we're on D-Bus */
+  g_assert (self->priv->registered);
 
   if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
     {
@@ -847,6 +848,9 @@ tp_base_connection_manager_list_protocols (TpSvcConnectionManager *iface,
   const char **protocols;
   guint i = 0;
 
+  /* a D-Bus method shouldn't be happening til we're on D-Bus */
+  g_assert (self->priv->registered);
+
   while (cls->protocol_params[i].name)
     i++;
 
@@ -895,6 +899,9 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   TpCMParamSetter set_param;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
+
+  /* a D-Bus method shouldn't be happening til we're on D-Bus */
+  g_assert (self->priv->registered);
 
   if (!tp_connection_manager_check_valid_protocol_name (proto, &error))
     goto ERROR;
@@ -1017,6 +1024,8 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
   g_object_unref (bus_proxy);
   g_string_free (string, TRUE);
+
+  self->priv->registered = TRUE;
 
   return TRUE;
 }
