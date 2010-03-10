@@ -27,4 +27,16 @@ void test_connection_manager_run_until_ready (TpConnectionManager *cm);
 
 void _test_assert_no_error (const GError *error, const char *file, int line);
 
+#define test_assert_empty_strv(strv) \
+  _test_assert_empty_strv (__FILE__, __LINE__, strv)
+void _test_assert_empty_strv (const char *file, int line, gconstpointer strv);
+
+#define test_assert_strv_equals(actual, expected) \
+  _test_assert_strv_equals (__FILE__, __LINE__, \
+      #actual, actual, \
+      #expected, expected)
+void _test_assert_strv_equals (const char *file, int line,
+  const char *actual_desc, gconstpointer actual_strv,
+  const char *expected_desc, gconstpointer expected_strv);
+
 #endif

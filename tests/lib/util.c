@@ -128,3 +128,64 @@ _test_assert_no_error (const GError *error,
           error->code, error->message);
     }
 }
+
+void
+_test_assert_empty_strv (const char *file,
+    int line,
+    gconstpointer strv)
+{
+  const gchar * const *strings = strv;
+
+  if (strv != NULL && strings[0] != NULL)
+    {
+      guint i;
+
+      g_message ("%s:%d: expected empty strv, but got:", file, line);
+
+      for (i = 0; strings[i] != NULL; i++)
+        {
+          g_message ("* \"%s\"", strings[i]);
+        }
+
+      g_error ("%s:%d: strv wasn't empty (see above for contents",
+          file, line);
+    }
+}
+
+void
+_test_assert_strv_equals (const char *file,
+    int line,
+    const char *expected_desc,
+    gconstpointer expected_strv,
+    const char *actual_desc,
+    gconstpointer actual_strv)
+{
+  const gchar * const *expected = expected_strv;
+  const gchar * const *actual = actual_strv;
+  guint i;
+
+  g_assert (expected != NULL);
+  g_assert (actual != NULL);
+
+  for (i = 0; expected[i] != NULL || actual[i] != NULL; i++)
+    {
+      if (expected[i] == NULL)
+        {
+          g_error ("%s:%d: assertion failed: (%s)[%u] == (%s)[%u]: "
+              "NULL == %s", file, line, expected_desc, i,
+              actual_desc, i, actual[i]);
+        }
+      else if (actual[i] == NULL)
+        {
+          g_error ("%s:%d: assertion failed: (%s)[%u] == (%s)[%u]: "
+              "%s == NULL", file, line, expected_desc, i,
+              actual_desc, i, expected[i]);
+        }
+      else if (tp_strdiff (expected[i], actual[i]))
+        {
+          g_error ("%s:%d: assertion failed: (%s)[%u] == (%s)[%u]: "
+              "%s == %s", file, line, expected_desc, i,
+              actual_desc, i, expected[i], actual[i]);
+        }
+    }
+}
