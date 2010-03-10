@@ -237,7 +237,7 @@ struct _TpConnectionManagerPrivate {
      * Protocols from file, if file_info is TRUE but live_info is FALSE
      * Protocols from last time introspecting the CM succeeded, if live_info
      * is TRUE */
-    GPtrArray *protocols;
+    GPtrArray *protocol_structs;
 
     /* If we're waiting for a GetParameters, then GPtrArray of g_strdup'd
      * gchar * representing protocols we haven't yet introspected.
@@ -245,7 +245,7 @@ struct _TpConnectionManagerPrivate {
     GPtrArray *pending_protocols;
     /* If we're waiting for a GetParameters, then GPtrArray of
      * TpConnectionManagerProtocol * for the introspection that is in
-     * progress (will replace ->protocols when finished).
+     * progress (will replace ->protocol_structs when finished).
      * Otherwise NULL */
     GPtrArray *found_protocols;
 
@@ -762,14 +762,14 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 
       g_ptr_array_add (self->priv->found_protocols, NULL);
 
-      /* swap found_protocols and protocols, so we'll free the old protocols
-       * as part of end_introspection */
-      tmp = self->priv->protocols;
-      self->priv->protocols = self->priv->found_protocols;
+      /* swap found_protocols and protocol_structs, so we'll free the old
+       * protocol_structs as part of end_introspection */
+      tmp = self->priv->protocol_structs;
+      self->priv->protocol_structs = self->priv->found_protocols;
       self->priv->found_protocols = tmp;
 
       self->protocols = (const TpConnectionManagerProtocol * const *)
-          self->priv->protocols->pdata;
+          self->priv->protocol_structs->pdata;
 
       old = self->info_source;
       self->info_source = TP_CM_INFO_SOURCE_LIVE;
@@ -1348,7 +1348,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
   self->priv->manager_file_read_idle_id = 0;
 
-  if (self->priv->protocols == NULL)
+  if (self->priv->protocol_structs == NULL)
     {
       if (self->priv->manager_file != NULL &&
           self->priv->manager_file[0] != '\0')
@@ -1369,10 +1369,10 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
           else
             {
               g_ptr_array_add (protocols, NULL);
-              self->priv->protocols = protocols;
+              self->priv->protocol_structs = protocols;
 
               self->protocols = (const TpConnectionManagerProtocol * const *)
-                  self->priv->protocols->pdata;
+                  self->priv->protocol_structs->pdata;
 
               DEBUG ("Got info from file");
               /* previously it must have been NONE */
@@ -1517,9 +1517,9 @@ tp_connection_manager_finalize (GObject *object)
   if (self->priv->introspect_idle_id != 0)
     g_source_remove (self->priv->introspect_idle_id);
 
-  if (self->priv->protocols != NULL)
+  if (self->priv->protocol_structs != NULL)
     {
-      tp_connection_manager_free_protocols (self->priv->protocols);
+      tp_connection_manager_free_protocols (self->priv->protocol_structs);
     }
 
   if (self->priv->pending_protocols != NULL)
@@ -2331,14 +2331,14 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
   if (self->info_source == TP_CM_INFO_SOURCE_NONE)
     return NULL;
 
-  g_assert (self->priv->protocols != NULL);
+  g_assert (self->priv->protocol_structs != NULL);
 
-  ret = g_ptr_array_sized_new (self->priv->protocols->len);
+  ret = g_ptr_array_sized_new (self->priv->protocol_structs->len);
 
-  for (i = 0; i < self->priv->protocols->len; i++)
+  for (i = 0; i < self->priv->protocol_structs->len; i++)
     {
       TpConnectionManagerProtocol *proto = g_ptr_array_index (
-          self->priv->protocols, i);
+          self->priv->protocol_structs, i);
 
       if (proto != NULL)
         g_ptr_array_add (ret, g_strdup (proto->name));
@@ -2380,12 +2380,12 @@ tp_connection_manager_get_protocol (TpConnectionManager *self,
   if (self->info_source == TP_CM_INFO_SOURCE_NONE)
     return NULL;
 
-  g_assert (self->priv->protocols != NULL);
+  g_assert (self->priv->protocol_structs != NULL);
 
-  for (i = 0; i < self->priv->protocols->len; i++)
+  for (i = 0; i < self->priv->protocol_structs->len; i++)
     {
       TpConnectionManagerProtocol *proto = g_ptr_array_index (
-          self->priv->protocols, i);
+          self->priv->protocol_structs, i);
 
       if (proto != NULL && !tp_strdiff (proto->name, protocol))
         return proto;
