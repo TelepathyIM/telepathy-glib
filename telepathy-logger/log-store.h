@@ -44,7 +44,15 @@ typedef enum
 {
   /* generic error */
   TPL_LOG_STORE_ERROR_FAILED,
+  /* generic failure for add_message() method, when nothing else applies */
   TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+  /* data is already present in the LogStore */
+  TPL_LOG_STORE_ERROR_PRESENT,
+  /* data is not present in the LogStore */
+  TPL_LOG_STORE_ERROR_NOT_PRESENT,
+  /* to be used in TplLogStoreIndexError as first value, so that value won't
+   * overlap */
+  TPL_LOG_STORE_ERROR_LAST
 } TplLogStoreError;
 
 

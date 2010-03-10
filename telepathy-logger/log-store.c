@@ -22,7 +22,8 @@
  */
 
 #include "config.h"
-#include "log-store.h"
+
+#include <telepathy-logger/log-store.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug.h>
@@ -110,6 +111,7 @@ tpl_log_store_init (gpointer g_iface)
 const gchar *
 tpl_log_store_get_name (TplLogStore *self)
 {
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_name)
     return NULL;
 
@@ -123,6 +125,7 @@ tpl_log_store_exists (TplLogStore *self,
     const gchar *chat_id,
     gboolean chatroom)
 {
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->exists)
     return FALSE;
 
@@ -146,9 +149,14 @@ tpl_log_store_add_message (TplLogStore *self,
     TplLogEntry *message,
     GError **error)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->add_message)
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->add_message == NULL)
     {
-      g_warning ("LogStore: add_message not implemented");
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "%s: add_message not implemented, but writable set to TRUE : %s",
+          G_STRFUNC, G_OBJECT_CLASS_NAME (self));
       return FALSE;
     }
 
@@ -179,7 +187,8 @@ tpl_log_store_get_dates (TplLogStore *self,
     const gchar *chat_id,
     gboolean chatroom)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_dates)
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_dates == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_dates (self, account,
@@ -208,7 +217,8 @@ tpl_log_store_get_messages_for_date (TplLogStore *self,
     gboolean chatroom,
     const gchar *date)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date)
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date (self,
@@ -222,7 +232,8 @@ tpl_log_store_get_recent_messages (TplLogStore *self,
     const gchar *chat_id,
     gboolean chatroom)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_messages)
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_messages == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_messages (self, account,
@@ -246,7 +257,8 @@ GList *
 tpl_log_store_get_chats (TplLogStore *self,
     TpAccount *account)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_chats)
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_chats == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_chats (self, account);
@@ -272,7 +284,9 @@ tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
     gchar const *chat_id,
     const gchar *text)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new)
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new == \
+      NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new (self,
@@ -296,7 +310,8 @@ GList *
 tpl_log_store_search_new (TplLogStore *self,
     const gchar *text)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->search_new)
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->search_new == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->search_new (self, text);
@@ -331,7 +346,8 @@ tpl_log_store_get_filtered_messages (TplLogStore *self,
     TplLogMessageFilter filter,
     gpointer user_data)
 {
-  if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_messages)
+  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_messages == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_messages (self,
@@ -362,7 +378,7 @@ tpl_log_store_is_readable (TplLogStore *self)
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
 
   g_object_get (self,
-      "writable", &readable,
+      "readable", &readable,
       NULL);
 
   return readable;

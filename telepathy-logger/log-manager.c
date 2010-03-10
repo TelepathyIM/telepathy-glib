@@ -180,14 +180,13 @@ tpl_log_manager_init (TplLogManager *self)
   DEBUG ("Initialising the Log Manager");
 
   /* The TPL's default read-write logstore */
-  add_log_store (self, TPL_TYPE_LOG_STORE_EMPATHY,
-      TPL_LOG_MANAGER_LOG_STORE_DEFAULT, TRUE, TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_DEFAULT, "TpLogger", TRUE, TRUE);
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
-  add_log_store (self, TPL_TYPE_LOG_STORE_EMPATHY, "Empathy", FALSE, TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_EMPATHY, "Empathy", TRUE, FALSE);
 
   /* Load the message counting cache */
-  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", TRUE, TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE, TRUE);
 
   DEBUG ("Log Manager initialised");
 }
@@ -237,6 +236,8 @@ tpl_log_manager_add_message (TplLogManager *manager,
       GError *loc_error = NULL;
       TplLogStore *store = l->data;
       gboolean result;
+
+      DEBUG ("STORE %s", tpl_log_store_get_name (store));
 
       result = tpl_log_store_add_message (store, message, &loc_error);
       if (!result)

@@ -17,6 +17,7 @@
  * Boston, MA  02110-1301  USA
  *
  * Authors: Danielle Madeley <danielle.madeley@collabora.co.uk>
+ *          Cosimo Alfarano <danielle.madeley@collabora.co.uk>
  */
 
 #include <config.h>
@@ -30,13 +31,34 @@
 #include "log-manager.h"
 #include "log-store-sqlite.h"
 #include "datetime.h"
+#include "util.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include "debug.h"
 
-#define GET_PRIV(obj)	(G_TYPE_INSTANCE_GET_PRIVATE ((obj), TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqlitePrivate))
+#define GET_PRIV(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
+      TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqlitePrivate))
+
+#define TPL_LOG_STORE_SQLITE_NAME "Sqlite"
+
+/* order of the Columns in duplicate table, starting from 1 since
+ * sqlite3_bind_* start from 1 referring SQL tokens. */
+enum TplLogStoreSqliteTable {
+    TPL_LOG_STORE_SQLITE_KEY_CHAN = 1,
+    TPL_LOG_STORE_SQLITE_KEY_ACCOUNT,
+    TPL_LOG_STORE_SQLITE_KEY_PENDING_MSG_ID,
+    TPL_LOG_STORE_SQLITE_KEY_LOG_ID,
+    TPL_LOG_STORE_SQLITE_KEY_CHAT_ID,
+    TPL_LOG_STORE_SQLITE_KEY_IS_CHATROOM,
+    TPL_LOG_STORE_SQLITE_KEY_DATE
+};
 
 static void log_store_iface_init (TplLogStoreInterface *iface);
+static gboolean _insert_to_cache_table (TplLogStore *self,
+    TplLogEntry *message, GError **error);
+static void tpl_log_store_sqlite_purge (TplLogStoreSqlite *self, time_t delta,
+    GError **error);
+
 
 G_DEFINE_TYPE_WITH_CODE (TplLogStoreSqlite, tpl_log_store_sqlite,
     G_TYPE_OBJECT,
@@ -81,12 +103,12 @@ tpl_log_store_sqlite_constructor (GType type,
 }
 
 static char *
-get_cache_filename (void)
+get_db_filename (void)
 {
   return g_build_filename (g_get_user_cache_dir (),
       "telepathy",
       "logger",
-      "message-counts",
+      "sqlite-data",
       NULL);
 }
 
@@ -99,7 +121,7 @@ tpl_log_store_sqlite_get_property (GObject *self,
   switch (id)
     {
       case PROP_NAME:
-        g_value_set_string (value, "Sqlite");
+        g_value_set_string (value, TPL_LOG_STORE_SQLITE_NAME);
         break;
 
       case PROP_READABLE:
@@ -171,13 +193,15 @@ static void
 tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
-  char *filename = get_cache_filename ();
+  char *filename = get_db_filename ();
   int e;
   char *errmsg = NULL;
+  GError *error = NULL;
 
   DEBUG ("cache file is '%s'", filename);
 
-  /* check to see if the count cache exists */
+  /* counter & cache tables - common part */
+  /* check to see if the sqlite db exists */
   if (!g_file_test (filename, G_FILE_TEST_EXISTS))
     {
       char *dirname = g_path_get_dirname (filename);
@@ -197,7 +221,35 @@ tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
           sqlite3_errmsg (priv->db));
       goto out;
     }
+  /* end of common part */
 
+  /* start of cache table init */
+  sqlite3_exec (priv->db, "CREATE TABLE IF NOT EXISTS message_cache ( "
+      "channel TEXT NOT NULL, "
+      "account TEXT NOT NULL, "
+      "pending_msg_id INTEGER DEFAULT NULL, "
+      "log_identifier TEXT PRIMARY KEY, "
+      "chat_identifier TEXT NOT NULL, "
+      "chatroom BOOLEAN NOT NULL, "
+      "date DATETIME NOT NULL)",
+      NULL, NULL, &errmsg);
+  if (errmsg != NULL)
+    {
+      g_critical ("Failed to create table message_cache: %s\n", errmsg);
+      sqlite3_free (errmsg);
+      goto out;
+    }
+
+  tpl_log_store_sqlite_purge (self, TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT,
+      &error);
+  if (error != NULL)
+    {
+      DEBUG ("Unable to purge old entries for Sqlite: %s", error->message);
+      g_clear_error (&error);
+    }
+  /* end of cache table init */
+
+  /* start of counter table init */
   sqlite3_exec (priv->db,
       "CREATE TABLE IF NOT EXISTS messagecounts ("
         "account TEXT, "
@@ -214,6 +266,7 @@ tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
       sqlite3_free (errmsg);
       goto out;
     }
+  /* end of counter table init */
 
 out:
   g_free (filename);
@@ -233,6 +286,20 @@ get_account_name_from_entry (TplLogEntry *entry)
     strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
 }
 
+static const char *
+get_channel_name (TpChannel *chan)
+{
+  return tp_proxy_get_object_path (chan) +
+    strlen (TP_CONN_OBJECT_PATH_BASE);
+}
+
+static const char *
+get_channel_name_from_entry (TplLogEntry *entry)
+{
+  return tpl_log_entry_get_channel_path (entry) +
+    strlen (TP_CONN_OBJECT_PATH_BASE);
+}
+
 static char *
 get_date (TplLogEntry *entry)
 {
@@ -243,14 +310,132 @@ get_date (TplLogEntry *entry)
   return tpl_time_to_string_utc (t, "%Y-%m-%d");
 }
 
+static char *
+get_datetime (TplLogEntry *entry)
+{
+  time_t t;
+
+  t = tpl_log_entry_get_timestamp (entry);
+
+  return tpl_time_to_string_utc (t, TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
+}
+
 static const char *
 tpl_log_store_sqlite_get_name (TplLogStore *self)
 {
-  return "Sqlite";
+  return TPL_LOG_STORE_SQLITE_NAME;
 }
 
+/* returns log-id if present, NULL if not present */
+static gchar *
+_cache_msg_id_is_present (TplLogStore *self,
+  TpChannel *channel,
+  guint msg_id)
+{
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
+  sqlite3_stmt *sql = NULL;
+  gchar *retval = NULL;
+  int e;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_SQLITE (self), NULL);
+  g_return_val_if_fail (TP_IS_CHANNEL (channel), NULL);
+
+  /* get all the (chan,msg_id) couples, the most recent first */
+  e = sqlite3_prepare_v2 (priv->db,
+      "SELECT log_identifier "
+      "FROM message_cache "
+      "WHERE channel=? AND pending_msg_id=? "
+      "GROUP BY date",
+      -1, &sql, NULL);
+
+  if (e != SQLITE_OK)
+    {
+      g_critical ("Error preparing SQL to check msg_id %d for channel %s"
+          " presence: %s", msg_id, get_channel_name (channel),
+          sqlite3_errmsg (priv->db));
+      goto out;
+    }
+
+  sqlite3_bind_text (sql, 1, get_channel_name (channel), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int (sql, 2, msg_id);
+
+  e = sqlite3_step (sql);
+  /* return the first (most recent) entry if a raw is found */
+  if (e == SQLITE_ROW)
+    retval = g_strdup ((const gchar *) sqlite3_column_text (sql, 0));
+  else if (e == SQLITE_ERROR)
+    g_critical ("SQL Error: %s", sqlite3_errmsg (priv->db));
+
+out:
+  if (sql != NULL)
+    sqlite3_finalize (sql);
+
+  return retval;
+}
+
+
+/**
+ * tpl_log_store_sqlite_log_id_is_present:
+ * @self: A TplLogStoreSqlite
+ * @log_id: the log identifier token
+ *
+ * Checks if @log_id is present in DB or not.
+ *
+ * Note that absence of @log_id in the current Sqlite doesn't mean
+ * that the message has never been logged. Sqlite currently maintains a record
+ * of recent log identifier (currently fresher than 5 days).
+ *
+ * This method can be safely used for a just arrived or just acknowledged
+ * message.
+ *
+ * Returns: %TRUE if @log_id is found, %FALSE otherwise
+ */
+gboolean
+tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
+  const gchar* log_id)
+{
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
+  sqlite3_stmt *sql = NULL;
+  gboolean retval = TRUE; /* TRUE = present, which usually is a failure */
+  int e;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_SQLITE (self), FALSE);
+  g_return_val_if_fail (!TPL_STR_EMPTY (log_id), FALSE);
+
+  e = sqlite3_prepare_v2 (priv->db, "SELECT log_identifier "
+      "FROM message_cache "
+      "WHERE log_identifier=?",
+      -1, &sql, NULL);
+  if (e != SQLITE_OK)
+    {
+      g_critical ("Error preparing SQL to check log_id %s presence: %s",
+          log_id, sqlite3_errmsg (priv->db));
+      goto out;
+    }
+
+  sqlite3_bind_text (sql, 1, log_id, -1, SQLITE_TRANSIENT);
+
+  e = sqlite3_step (sql);
+  if (e == SQLITE_DONE)
+    {
+      DEBUG ("msg id %s not found, returning FALSE", log_id);
+      retval = FALSE;
+    }
+  else if (e == SQLITE_ROW)
+    DEBUG ("msg id %s found, returning TRUE", log_id);
+  else if (e != SQLITE_ROW)
+    g_critical ("SQL Error: %s", sqlite3_errmsg (priv->db));
+
+out:
+  if (sql != NULL)
+    sqlite3_finalize (sql);
+
+  return retval;
+}
+
+
 static gboolean
-tpl_log_store_sqlite_add_message (TplLogStore *self,
+tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
     TplLogEntry *message,
     GError **error)
 {
@@ -264,17 +449,15 @@ tpl_log_store_sqlite_add_message (TplLogStore *self,
   gboolean insert = FALSE;
   int e;
 
-  DEBUG ("tpl_log_store_sqlite_add_message");
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  if (!TPL_IS_LOG_ENTRY_TEXT (message) ||
-      tpl_log_entry_get_signal_type (message) !=
+  if (tpl_log_entry_get_signal_type (message) !=
           TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED)
     {
-      g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "Message not handled by this log store");
-
-      return FALSE;
+      DEBUG ("ignoring msg %s, not interesting for message-counter",
+          tpl_log_entry_get_log_id (message));
+      retval = TRUE;
+      goto out;
     }
 
   DEBUG ("message received");
@@ -416,6 +599,524 @@ out:
   return retval;
 }
 
+static gboolean
+tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
+    TplLogEntry *message,
+    GError **error)
+{
+  const char *log_id;
+  gboolean retval = FALSE;
+
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  log_id = tpl_log_entry_get_log_id (message);
+  DEBUG ("received %s, considering if can be cached", log_id);
+  if (tpl_log_store_sqlite_log_id_is_present (self, log_id))
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_PRESENT,
+          "log-id already logged: %s", log_id);
+
+      goto out;
+    }
+
+  DEBUG ("caching %s", log_id);
+  retval = _insert_to_cache_table (self, message, error);
+
+out:
+  /* check that we set an error if appropriate */
+  g_assert ((retval == TRUE && *error == NULL) ||
+      (retval == FALSE && *error != NULL));
+
+  return retval;
+}
+
+
+/**
+ * tpl_log_store_sqlite_add_message:
+ * @self: TplLogstoreSqlite instance
+ * @message: a TplLogEntry instance
+ * @error: memory pointer use in case of error
+ *
+ * @message will be sent to the MessageCounter and MessageSqlite tables.
+ *
+ * MessageSqlite will accept any instance of TplLogEntry for @message and will
+ * return %FALSE with @error set when a fatal error occurs or when @message
+ * has already been logged.
+ * For the last case a TPL_LOG_STORE_ERROR_PRESENT will be set as error
+ * code in @error, and is considered fatal, since it should never happen.
+ *
+ * A module implementing a TplChannel should always check for TplLogEntry
+ * log-id presence in the cache log-store if there is a chance to receive the
+ * same log-id twice.
+ *
+ * MessageCounter only handles Text messages, which means that it will
+ * silently (ie won't use @error) not log @message, when it won't be an
+ * instance ot TplLogEntryText, returning anyway %TRUE. This means "I could
+ * store @message, but I'm discarding it because I'm not interested in it" and
+ * is not cosidered an error (@error won't be set).
+ * It will return %FALSE with @error set if a fatal error occurred, for
+ * example it wasn't able to store it.
+ *
+ *
+ * Returns: %TRUE if @self was able to store, %FALSE with @error set if an error occurred.
+ * An already logged log-id or a failure in the persistence layer will make
+ * this method return %FALSE with @error set.
+ */
+static gboolean
+tpl_log_store_sqlite_add_message (TplLogStore *self,
+    TplLogEntry *message,
+    GError **error)
+{
+  gboolean retval = FALSE;
+
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  if (!TPL_IS_LOG_STORE_SQLITE (self))
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE, "TplLogStoreSqlite intance needed");
+      goto out;
+    }
+  if (!TPL_IS_LOG_ENTRY (message))
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE, "TplLogEntry instance needed");
+      goto out;
+    }
+
+  retval = tpl_log_store_sqlite_add_message_cache (self, message, error);
+  if (error != NULL && *error != NULL)
+    /* either the message has already been log, or a SQLite fatal error
+     * occurred, I won't update the counter table */
+    goto out;
+
+  retval = tpl_log_store_sqlite_add_message_counter (self, message, error);
+
+out:
+  /* check that we set an error if appropriate */
+  g_assert ((retval == TRUE && *error == NULL) ||
+            (retval == FALSE && *error != NULL));
+
+  DEBUG ("returning with %d", retval);
+  return retval;
+}
+
+static gboolean
+_insert_to_cache_table (TplLogStore *self,
+    TplLogEntry *message,
+    GError **error)
+{
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
+  const char *account, *channel, *identifier, *log_id;
+  gboolean chatroom;
+  char *date;
+  gint msg_id;
+  sqlite3_stmt *sql = NULL;
+  gboolean retval = FALSE;
+  int e;
+
+  if (!TPL_IS_LOG_ENTRY_TEXT (message))
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "Message not handled by this log store");
+
+      goto out;
+    }
+
+  account = get_account_name_from_entry (message);
+  channel = get_channel_name_from_entry (message);
+  identifier = tpl_log_entry_get_chat_id (message);
+  log_id = tpl_log_entry_get_log_id (message);
+  msg_id = tpl_log_entry_get_pending_msg_id (message);
+  chatroom = tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
+  date = get_datetime (message);
+
+  DEBUG ("channel = %s", channel);
+  DEBUG ("account = %s", account);
+  DEBUG ("chat_identifier = %s", identifier);
+  DEBUG ("log_identifier = %s", log_id);
+  DEBUG ("pending_msg_id = %d (%s)", msg_id,
+      (msg_id != TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED ?
+       "pending" : "acknowledged or sent"));
+  DEBUG ("chatroom = %i", chatroom);
+  DEBUG ("date = %s", date);
+
+  if (TPL_STR_EMPTY (account) || TPL_STR_EMPTY (channel) ||
+      TPL_STR_EMPTY (log_id) || TPL_STR_EMPTY (date))
+    {
+      g_set_error_literal (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "passed LogStore has at least one of the needed properties unset: "
+          "account-path, channel-path, log-id, timestamp");
+
+      goto out;
+    }
+
+  e = sqlite3_prepare_v2 (priv->db,
+      "INSERT INTO message_cache "
+      "VALUES (?, ?, ?, ?, ?, ?, datetime(?))",
+      -1, &sql, NULL);
+  if (e != SQLITE_OK)
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "SQL Error: %s", sqlite3_errmsg (priv->db));
+
+      goto out;
+    }
+
+  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_CHAN, channel, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_ACCOUNT, account, -1, SQLITE_TRANSIENT);
+  /* insert NULL if ACKNOWLEDGED (ie sent message's entries, which are created
+   * ACK'd */
+  if (msg_id == TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED)
+    sqlite3_bind_null (sql, TPL_LOG_STORE_SQLITE_KEY_PENDING_MSG_ID);
+  else
+    sqlite3_bind_int (sql, TPL_LOG_STORE_SQLITE_KEY_PENDING_MSG_ID, msg_id);
+  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_LOG_ID, log_id, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_CHAT_ID, identifier, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int (sql, TPL_LOG_STORE_SQLITE_KEY_IS_CHATROOM, chatroom);
+  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_DATE, date, -1, SQLITE_TRANSIENT);
+
+  e = sqlite3_step (sql);
+  if (e != SQLITE_DONE)
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "SQL Error bind: %s", sqlite3_errmsg (priv->db));
+
+      goto out;
+    }
+
+  retval = TRUE;
+
+out:
+  g_free (date);
+
+  if (sql != NULL)
+    sqlite3_finalize (sql);
+
+  /* check that we set an error if appropriate */
+  g_assert ((retval == TRUE && *error == NULL) ||
+            (retval == FALSE && *error != NULL));
+
+  return retval;
+}
+
+/**
+ * tpl_log_store_sqlite_get_log_ids:
+ * @self: a TplLogStoreSqlite instance
+ * @channel: a pointer to a TpChannel or NULL
+ * @timestamp: selects entries which timestamp is older than @timestamp.
+ *  use %G_MAXUINT to obtain all the entries.
+ * @error: set if an error occurs
+ *
+ * It gets all the log-ids for messages matching the object-path of
+ * @channel and older than @timestamp.
+ *
+ * If @channel is %NULL, it will get all the exiting log-ids.
+ *
+ * All the entries will be filtered against @timestamp, returning only log-ids
+ * older than this value (time_t). Set it to %G_MAXUINT or any other value in
+ * the future to obtain all the entries.
+ * For example, to obtain entries older than one day ago, use
+ * @timestamp = (#tpl_time_get_current()-86400)
+ *
+ * Note that (in case @channel is not %NULL) this method might return log-ids
+ * which are not currently related to @channel but just share the object-path,
+ * in fact it is possible that an channel-path is reused over time but referring
+ * to two completely different channels.
+ * There is no way to understand if a channel-path is actually related to a
+ * specific TpChannel instance with the same path or not, just knowking its
+ * path.
+ * This is not a problem, though, since log-ids are unique within TPL. If two
+ * log-ids match, they relates to the same TplLogEntry instance.
+ *
+ * Returns: a list of log-id
+ */
+GList *
+tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
+    TpChannel *channel,
+    time_t timestamp,
+    GError **error)
+{
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
+  sqlite3_stmt *sql = NULL;
+  GList *retval = NULL;
+  gchar *date = NULL;
+  int e;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_SQLITE (self), NULL);
+
+  if (channel == NULL)
+    /* get the the log-id older than date */
+    e = sqlite3_prepare_v2 (priv->db, "SELECT * "
+        "FROM message_cache "
+        "WHERE date<datetime(?)",
+        -1, &sql, NULL);
+  else
+    /* get the log-ids related to channel and older than date */
+    e = sqlite3_prepare_v2 (priv->db, "SELECT * "
+        "FROM message_cache "
+        "WHERE date<datetime(?) AND channel=?",
+        -1, &sql, NULL);
+  if (e != SQLITE_OK)
+    {
+      g_critical ("Error preparing SQL for log-id list: %s",
+          sqlite3_errmsg (priv->db));
+      goto out;
+    }
+
+  date = tpl_time_to_string_utc (timestamp,
+      TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
+  sqlite3_bind_text (sql, 1, date, -1, SQLITE_TRANSIENT);
+
+  if (channel != NULL)
+    sqlite3_bind_text (sql, 2, get_channel_name (channel), -1,
+        SQLITE_TRANSIENT);
+
+  /* create the log-id list */
+  while (SQLITE_ROW == (e = sqlite3_step (sql)))
+    {
+      gchar *log_id = g_strdup ((const gchar *) sqlite3_column_text (sql,
+          TPL_LOG_STORE_SQLITE_KEY_LOG_ID));
+      retval = g_list_prepend (retval, log_id);
+    }
+
+  if (e != SQLITE_DONE)
+    {
+      g_set_error (error, TPL_LOG_STORE_SQLITE_ERROR,
+          TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES,
+          "SQL Error: %s", sqlite3_errmsg (priv->db));
+      retval = NULL;
+    }
+
+out:
+  if (sql != NULL)
+    sqlite3_finalize (sql);
+  g_free (date);
+
+  /* check that we set an error if appropriate
+   * NOTE: retval == NULL && *error !=
+   * NULL doesn't apply to this method, since NULL is also for an empty list */
+  g_assert ((retval != NULL && *error == NULL) || retval == NULL);
+
+  return retval;
+}
+
+
+/**
+ * tpl_log_store_sqlite_get_pending_messages:
+ * @self: a TplLogStoreSqlite instance
+ * @channel: a pointer to a TpChannel or NULL
+ * @error: set if an error occurs
+ *
+ * It gets all the log-ids for messages matching the object-path of
+ * @channel and which are still set as not acknowledged in the persisten
+ * layer.
+ * If @channel is %NULL, it will get all the pending messages in the
+ * persistence layer, not filtering against any channel.
+ *
+ * Note that (in case @channel is not %NULL) this method might return log-ids
+ * which are not currently related to @channel but just share the object-path,
+ * in fact it is possible that an channel-path is reused over time but referring
+ * to two completely different channels.
+ * There is no way to understand if a channel-path is actually related to a
+ * specific TpChannel instance with the same path or not, just knowking its
+ * path.
+ * This is not a problem, though, since log-ids are unique within TPL. If two
+ * log-ids match, they relates to the same TplLogEntry instance.
+ *
+ * Returns: a list of log-id
+ */
+GList *
+tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
+    TpChannel *channel,
+    GError **error)
+{
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
+  sqlite3_stmt *sql = NULL;
+  GList *retval = NULL;
+  int e;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_SQLITE (self), NULL);
+
+  if (channel == NULL)
+    /* get all the pending log-ids */
+    e = sqlite3_prepare_v2 (priv->db, "SELECT * "
+        "FROM message_cache"
+        "WHERE pending_msg_id is NOT NULL",
+        -1, &sql, NULL);
+  else
+    /* get the pending log-ids related to channel */
+    e = sqlite3_prepare_v2 (priv->db, "SELECT * "
+        "FROM message_cache"
+        "WHERE pending_msg_id is NOT NULL AND channel=?",
+        -1, &sql, NULL);
+  if (e != SQLITE_OK)
+    {
+      g_critical ("Error preparing SQL for pending messages list: %s",
+          sqlite3_errmsg (priv->db));
+      goto out;
+    }
+
+  if (channel != NULL)
+    sqlite3_bind_text (sql, 1, get_channel_name (channel), -1,
+        SQLITE_TRANSIENT);
+
+  while (SQLITE_ROW == (e = sqlite3_step (sql)))
+    {
+      /* create the pending messages list */
+      gchar *log_id = g_strdup ((const gchar *) sqlite3_column_text (sql,
+          TPL_LOG_STORE_SQLITE_KEY_LOG_ID));
+      retval = g_list_prepend (retval, log_id);
+    }
+
+  if (e != SQLITE_DONE)
+    {
+      g_set_error (error, TPL_LOG_STORE_SQLITE_ERROR,
+          TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES,
+          "SQL Error: %s", sqlite3_errmsg (priv->db));
+      retval = NULL;
+    }
+
+out:
+  if (sql != NULL)
+    sqlite3_finalize (sql);
+
+  /* check that we set an error if appropriate
+   * NOTE: retval == NULL && *error !=
+   * NULL doesn't apply to this method, since NULL is also for an empty list */
+  g_assert ((retval != NULL && *error == NULL) || retval == NULL);
+
+  return retval;
+}
+
+
+void
+tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
+    TpChannel *channel,
+    guint msg_id,
+    GError **error)
+{
+  gchar *log_id = NULL;
+
+  g_return_if_fail (error == NULL || *error == NULL);
+  g_return_if_fail (TPL_IS_LOG_STORE_SQLITE (self));
+  g_return_if_fail (TP_IS_CHANNEL (channel));
+
+  log_id = _cache_msg_id_is_present (self, channel, msg_id);
+
+  if (log_id != NULL)
+    {
+      DEBUG ("%s: found %s for pending id %d", get_channel_name (channel),
+          log_id, msg_id);
+      tpl_log_store_sqlite_set_acknowledgment (self, log_id, error);
+    }
+  else
+    DEBUG ("%s: pending id %d not found", get_channel_name (channel), msg_id);
+
+  g_free (log_id);
+}
+
+void
+tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
+    const gchar* log_id,
+    GError **error)
+{
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
+  sqlite3_stmt *sql = NULL;
+  int e;
+
+  g_return_if_fail (error == NULL || *error == NULL);
+  g_return_if_fail (TPL_IS_LOG_STORE_SQLITE (self));
+  g_return_if_fail (!TPL_STR_EMPTY (log_id));
+
+  if (!tpl_log_store_sqlite_log_id_is_present (TPL_LOG_STORE (self), log_id))
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_NOT_PRESENT,
+          "log_id %s not found", log_id);
+      goto out;
+    }
+
+  e = sqlite3_prepare_v2 (priv->db, "UPDATE message_cache"
+      "SET pending_msg_id=NULL "
+      "WHERE log_identifier=?", -1, &sql, NULL);
+  if (e != SQLITE_OK)
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "SQL Error: %s", sqlite3_errmsg (priv->db));
+
+      goto out;
+    }
+
+  sqlite3_bind_text (sql, 1, log_id, -1, SQLITE_TRANSIENT);
+
+  e = sqlite3_step (sql);
+  if (e != SQLITE_DONE)
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "SQL Error: %s", sqlite3_errmsg (priv->db));
+    }
+
+out:
+  if (sql != NULL)
+    sqlite3_finalize (sql);
+}
+
+
+static void
+tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
+    time_t delta,
+    GError **error)
+{
+  TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
+  sqlite3_stmt *sql = NULL;
+  gchar *date;
+  int e;
+
+  g_return_if_fail (error == NULL || *error == NULL);
+  g_return_if_fail (TPL_IS_LOG_STORE_SQLITE (self));
+
+  date = tpl_time_to_string_utc ((tpl_time_get_current () - delta),
+      TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
+
+  DEBUG ("Purging entries older than %s (%d seconds ago)", date, (guint) delta);
+
+  e = sqlite3_prepare_v2 (priv->db, "DELETE FROM message_cache "
+      "WHERE date<datetime(?)",
+      -1, &sql, NULL);
+
+  if (e != SQLITE_OK)
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "SQL Error preparing statement: %s", sqlite3_errmsg (priv->db));
+
+      goto out;
+    }
+
+  sqlite3_bind_text (sql, 1, date, -1, SQLITE_TRANSIENT);
+
+  e = sqlite3_step (sql);
+  if (e != SQLITE_DONE)
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "SQL Error: %s", sqlite3_errmsg (priv->db));
+    }
+
+out:
+  if (sql != NULL)
+    sqlite3_finalize (sql);
+
+  g_free (date);
+}
+
 static GList *
 tpl_log_store_sqlite_get_chats (TplLogStore *self,
     TpAccount *account)
@@ -477,6 +1178,7 @@ out:
 static void
 log_store_iface_init (TplLogStoreInterface *iface)
 {
+  DEBUG ("INIT CLASS");
   iface->get_name = tpl_log_store_sqlite_get_name;
   iface->add_message = tpl_log_store_sqlite_add_message;
   iface->get_chats = tpl_log_store_sqlite_get_chats;

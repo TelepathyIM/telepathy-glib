@@ -851,7 +851,7 @@ on_sent_signal_cb (TpChannel *proxy,
   const gchar *account_path;
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   gchar *log_id = create_message_token (channel_path,
-      tpl_time_to_string_local (arg_Timestamp, "%Y%m%d"), G_MAXUINT);
+      tpl_time_to_string_local (arg_Timestamp, "%s"), G_MAXUINT);
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
@@ -1060,7 +1060,7 @@ on_received_signal_cb (TpChannel *proxy,
   const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   gchar *log_id = create_message_token (channel_path,
-      tpl_time_to_string_local (arg_Timestamp, "%Y%m%d"), arg_ID);
+      tpl_time_to_string_local (arg_Timestamp, "%s"), arg_ID);
 
   /* TODO use the Message iface to check the delivery
      notification and handle it correctly */

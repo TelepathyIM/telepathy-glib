@@ -37,6 +37,22 @@ G_BEGIN_DECLS
 #define TPL_IS_LOG_STORE_SQLITE_CLASS(obj)	(G_TYPE_CHECK_CLASS_TYPE ((obj), TPL_TYPE_LOG_STORE_SQLITE))
 #define TPL_LOG_STORE_SQLITE_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqliteClass))
 
+#define TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT (5 * 86400)
+#define TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT "%Y-%m-%d %H:%M:%S"
+#define TPL_LOG_STORE_SQLITE_ERROR g_quark_from_static_string ( \
+    "tpl-log-store-index-error-quark")
+typedef enum
+{
+  /* generic error, avoids clashing with TPL_LOG_STORE_ERROR using its last
+   * value */
+  TPL_LOG_STORE_SQLITE_ERROR_FAILED = TPL_LOG_STORE_ERROR_LAST,
+  /* generic tpl_log_store_sqlite_get_pending_messages() error, to be used when
+   * any other code cannot be use, including TPL_LOG_STORE_ERROR ones */
+  TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES
+} TplLogStoreSqliteError;
+
+
+
 typedef struct _TplLogStoreSqlite TplLogStoreSqlite;
 typedef struct _TplLogStoreSqliteClass TplLogStoreSqliteClass;
 
@@ -52,6 +68,18 @@ struct _TplLogStoreSqliteClass
 
 GType tpl_log_store_sqlite_get_type (void);
 TplLogStore *tpl_log_store_sqlite_dup (void);
+GList *tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
+    TpChannel *channel, GError **error);
+GList *tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
+    TpChannel *channel, time_t timestamp, GError **error);
+gboolean tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
+  const gchar* log_id);
+
+void tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
+    const gchar* log_id, GError **error);
+void tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
+    TpChannel *channel, guint msg_id, GError **error);
+
 gint64 tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
     TpAccount *account, const char *identifier);
 double tpl_log_store_sqlite_get_frequency (TplLogStoreSqlite *self,
