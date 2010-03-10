@@ -225,10 +225,9 @@ main (int argc,
   g_assert (cm != NULL);
   test_connection_manager_run_until_ready (cm);
 
-  parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-      (GDestroyNotify) tp_g_value_slice_free);
-  g_hash_table_insert (parameters, "account",
-      tp_g_value_slice_new_static_string ("me@example.com"));
+  parameters = tp_asv_new (
+      "account", G_TYPE_STRING, "me@example.com",
+      NULL);
 
   tp_cli_connection_manager_run_request_connection (cm, -1,
       "example", parameters, &name, &conn_path, &error, NULL);
@@ -484,40 +483,30 @@ main (int argc,
       gchar *token = NULL;
 
       /* Empty headers part */
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
+      part = tp_asv_new (NULL, NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("main"));
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/html"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string (
+      part = tp_asv_new (
+          "alternative", G_TYPE_STRING, "main",
+          "content-type", G_TYPE_STRING, "text/html",
+          "content", G_TYPE_STRING,
             "Here is a photo of a cat:<br />"
             "<img src=\"cid:lolcat\" alt=\"lol!\" /><br />"
-            "It's in ur regression tests verifying ur designs!"
-            ));
+            "It's in ur regression tests verifying ur designs!",
+          NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("main"));
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/plain"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string (EXPECTED_TEXT));
+      part = tp_asv_new (
+          "alternative", G_TYPE_STRING, "main",
+          "content-type", G_TYPE_STRING, "text/plain",
+          "content", G_TYPE_STRING, EXPECTED_TEXT,
+          NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "identifier",
-          tp_g_value_slice_new_string ("lolcat"));
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("image/jpeg"));
+      part = tp_asv_new (
+          "identifier", G_TYPE_STRING, "lolcat",
+          "content-type", G_TYPE_STRING, "image/jpeg",
+          NULL);
       g_hash_table_insert (part, "content", tp_g_value_slice_new_bytes (
             14, "\xff\xd8\xff\xe0\x00\x10JFIF\x00..."));
       g_ptr_array_add (send_parts, part);
@@ -588,58 +577,42 @@ main (int argc,
       gchar *token = NULL;
 
       /* Empty headers part */
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
+      part = tp_asv_new (NULL, NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("main"));
-      g_hash_table_insert (part, "identifier",
-          tp_g_value_slice_new_string ("html"));
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/html"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string (
+      part = tp_asv_new (
+          "alternative", G_TYPE_STRING, "main",
+          "identifier", G_TYPE_STRING, "html",
+          "content-type", G_TYPE_STRING, "text/html",
+          "content", G_TYPE_STRING,
             "Here is a photo of a cat:<br />"
             "<img src=\"cid:lolcat\" alt=\"lol!\" /><br />"
-            "It's in ur regression tests verifying ur designs!"
-            ));
+            "It's in ur regression tests verifying ur designs!",
+          NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("main"));
-      g_hash_table_insert (part, "identifier",
-          tp_g_value_slice_new_string ("text"));
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/plain"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string (EXPECTED_TEXT));
+      part = tp_asv_new (
+          "alternative", G_TYPE_STRING, "main",
+          "identifier", G_TYPE_STRING, "text",
+          "content-type", G_TYPE_STRING, "text/plain",
+          "content", G_TYPE_STRING, EXPECTED_TEXT,
+          NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "identifier",
-          tp_g_value_slice_new_string ("jpeg"));
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("lolcat"));
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("image/jpeg"));
+      part = tp_asv_new (
+          "identifier", G_TYPE_STRING, "jpeg",
+          "alternative", G_TYPE_STRING, "lolcat",
+          "content-type", G_TYPE_STRING, "image/jpeg",
+          NULL);
       g_hash_table_insert (part, "content", tp_g_value_slice_new_bytes (
             14, "\xff\xd8\xff\xe0\x00\x10JFIF\x00..."));
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "identifier",
-          tp_g_value_slice_new_string ("png"));
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("lolcat"));
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("image/png"));
+      part = tp_asv_new (
+          "identifier", G_TYPE_STRING, "png",
+          "alternative", G_TYPE_STRING, "lolcat",
+          "content-type", G_TYPE_STRING, "image/png",
+          NULL);
       g_hash_table_insert (part, "content", tp_g_value_slice_new_bytes (
             12, "\x89PNG\x0d\x0a\x1a\x0a\x00..."));
       g_ptr_array_add (send_parts, part);
@@ -713,32 +686,25 @@ main (int argc,
       gchar *token = NULL;
 
       /* Empty headers part */
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
+      part = tp_asv_new (NULL, NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/plain"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string ("I'm on a roll\n"));
+      part = tp_asv_new (
+          "content-type", G_TYPE_STRING, "text/plain",
+          "content", G_TYPE_STRING, "I'm on a roll\n",
+          NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/plain"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string ("I'm on a roll this time\n"));
+      part = tp_asv_new (
+          "content-type", G_TYPE_STRING, "text/plain",
+          "content", G_TYPE_STRING, "I'm on a roll this time\n",
+          NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/plain"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string ("I feel my luck could change\n"));
+      part = tp_asv_new (
+          "content-type", G_TYPE_STRING, "text/plain",
+          "content", G_TYPE_STRING, "I feel my luck could change\n",
+          NULL);
       g_ptr_array_add (send_parts, part);
 
       tp_cli_channel_interface_messages_run_send_message (chan, -1,
@@ -806,44 +772,33 @@ main (int argc,
       gchar *token = NULL;
 
       /* Empty headers part */
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
+      part = tp_asv_new (NULL, NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/plain"));
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("alt"));
-      g_hash_table_insert (part, "lang",
-          tp_g_value_slice_new_string ("fr_CA@collabora"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string (EXPECTED_TEXT));
+      part = tp_asv_new (
+          "content-type", G_TYPE_STRING, "text/plain",
+          "alternative", G_TYPE_STRING, "alt",
+          "lang", G_TYPE_STRING, "fr_CA@collabora",
+          "content", G_TYPE_STRING, EXPECTED_TEXT,
+          NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/plain"));
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("alt"));
-      g_hash_table_insert (part, "lang",
-          tp_g_value_slice_new_string ("en_GB"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string ("we're fixing the colour of the video stream"));
+      part = tp_asv_new (
+          "content-type", G_TYPE_STRING, "text/plain",
+          "alternative", G_TYPE_STRING, "alt",
+          "lang", G_TYPE_STRING, "en_GB",
+          "content", G_TYPE_STRING,
+            "we're fixing the colour of the video stream",
+          NULL);
       g_ptr_array_add (send_parts, part);
 
-      part = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-          (GDestroyNotify) tp_g_value_slice_free);
-      g_hash_table_insert (part, "content-type",
-          tp_g_value_slice_new_string ("text/plain"));
-      g_hash_table_insert (part, "alternative",
-          tp_g_value_slice_new_string ("alt"));
-      g_hash_table_insert (part, "lang",
-          tp_g_value_slice_new_string ("en_US"));
-      g_hash_table_insert (part, "content",
-          tp_g_value_slice_new_string ("we're fixing the color of the video stream"));
+      part = tp_asv_new (
+          "content-type", G_TYPE_STRING, "text/plain",
+          "alternative", G_TYPE_STRING, "alt",
+          "lang", G_TYPE_STRING, "en_US",
+          "content", G_TYPE_STRING,
+            "we're fixing the color of the video stream",
+          NULL);
       g_ptr_array_add (send_parts, part);
 
       tp_cli_channel_interface_messages_run_send_message (chan, -1,
