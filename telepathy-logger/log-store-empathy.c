@@ -568,6 +568,8 @@ log_store_empathy_get_messages_for_file (TplLogStore *self,
       messages = g_list_append (messages, message);
 
       g_object_unref (sender);
+      g_free (instead_of_channel_path);
+      g_free (log_id);
       xmlFree (time_);
       xmlFree (sender_id);
       xmlFree (sender_name);
