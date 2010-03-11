@@ -89,7 +89,7 @@ void tpl_log_entry_text_set_chatroom (TplLogEntryText *self, gboolean data);
 
 
 /* Methods inherited by TplLogEntry */
-time_t tpl_log_entry_text_get_timestamp (TplLogEntryText *self);
+gint64 tpl_log_entry_text_get_timestamp (TplLogEntryText *self);
 TplLogEntrySignalType tpl_log_entry_text_get_signal_type (
     TplLogEntryText *self);
 const gchar *tpl_log_entry_text_get_log_id (TplLogEntryText *self);
@@ -100,7 +100,7 @@ TplLogEntryDirection tpl_log_entry_text_get_direction (TplLogEntryText *self);
 TplContact *tpl_log_entry_text_get_sender (TplLogEntryText *self);
 TplContact *tpl_log_entry_text_get_receiver (TplLogEntryText *self);
 
-void tpl_log_entry_text_set_timestamp (TplLogEntryText *self, time_t data);
+void tpl_log_entry_text_set_timestamp (TplLogEntryText *self, gint64 data);
 void tpl_log_entry_text_set_signal_type (TplLogEntryText *self,
     TplLogEntrySignalType data);
 void tpl_log_entry_text_set_direction (TplLogEntryText *self,
