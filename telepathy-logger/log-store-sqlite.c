@@ -943,16 +943,17 @@ tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
   int e;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_SQLITE (self), NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
   if (channel == NULL)
     /* get all the pending log-ids */
-    e = sqlite3_prepare_v2 (priv->db, "SELECT * "
-        "FROM message_cache"
+    e = sqlite3_prepare_v2 (priv->db, "SELECT log_identifier "
+        "FROM message_cache "
         "WHERE pending_msg_id is NOT NULL",
         -1, &sql, NULL);
   else
     /* get the pending log-ids related to channel */
-    e = sqlite3_prepare_v2 (priv->db, "SELECT * "
+    e = sqlite3_prepare_v2 (priv->db, "SELECT log_identifier "
         "FROM message_cache "
         "WHERE pending_msg_id is NOT NULL AND channel=?",
         -1, &sql, NULL);
@@ -970,8 +971,7 @@ tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
   while (SQLITE_ROW == (e = sqlite3_step (sql)))
     {
       /* create the pending messages list */
-      gchar *log_id = g_strdup ((const gchar *) sqlite3_column_text (sql,
-          TPL_LOG_STORE_SQLITE_KEY_LOG_ID));
+      gchar *log_id = g_strdup ((const gchar *) sqlite3_column_text (sql, 0));
       retval = g_list_prepend (retval, log_id);
     }
 
