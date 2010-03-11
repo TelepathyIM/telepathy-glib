@@ -813,6 +813,12 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
 
   for (iter = protocols; *iter != NULL; iter++)
     {
+      if (!tp_connection_manager_check_valid_protocol_name (*iter, NULL))
+        {
+          DEBUG ("Protocol %s has an invalid name", *iter);
+          continue;
+        }
+
       g_ptr_array_add (self->priv->pending_protocols, g_strdup (*iter));
     }
 
