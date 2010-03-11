@@ -889,6 +889,8 @@ tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
       g_set_error (error, TPL_LOG_STORE_SQLITE_ERROR,
           TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES,
           "SQL Error: %s", sqlite3_errmsg (priv->db));
+      g_list_foreach (retval, (GFunc) g_free, NULL);
+      g_list_free (retval);
       retval = NULL;
     }
 
