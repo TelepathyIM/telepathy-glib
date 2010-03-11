@@ -8,8 +8,7 @@
  * notice and this notice are preserved.
  */
 
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/debug.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "examples/cm/echo/connection-manager.h"
 
@@ -168,26 +167,35 @@ test_file_got_info (Test *test,
   g_assert (test->cm->protocols[1] != NULL);
   g_assert (test->cm->protocols[2] == NULL);
 
-  /* FIXME: it's not technically an API guarantee that protocols and params
-   * come out in this order... */
-
   strv = tp_connection_manager_dup_protocol_names (test->cm);
-  g_assert_cmpstr (strv[0], ==, "normal");
-  g_assert_cmpstr (strv[1], ==, "weird");
+
+  if (tp_strdiff (strv[0], "normal"))
+    {
+      g_assert_cmpstr (strv[0], ==, "weird");
+      g_assert_cmpstr (strv[1], ==, "normal");
+    }
+  else
+    {
+      g_assert_cmpstr (strv[0], ==, "normal");
+      g_assert_cmpstr (strv[1], ==, "weird");
+    }
+
   g_assert (strv[2] == NULL);
   g_strfreev (strv);
 
   g_assert (tp_connection_manager_has_protocol (test->cm, "normal"));
   g_assert (!tp_connection_manager_has_protocol (test->cm, "not-there"));
 
-  protocol = test->cm->protocols[0];
+  protocol = tp_connection_manager_get_protocol (test->cm, "normal");
+
   g_assert_cmpstr (protocol->name, ==, "normal");
-  g_assert (protocol == tp_connection_manager_get_protocol (test->cm,
-        "normal"));
   g_assert (tp_connection_manager_protocol_can_register (protocol));
 
   g_assert (tp_connection_manager_protocol_has_param (protocol, "account"));
   g_assert (!tp_connection_manager_protocol_has_param (protocol, "not-there"));
+
+  /* FIXME: it's not technically an API guarantee that params
+   * come out in this order... */
 
   param = &protocol->params[0];
   g_assert_cmpstr (param->name, ==, "account");
@@ -240,7 +248,17 @@ test_file_got_info (Test *test,
   g_assert (strv[3] == NULL);
   g_strfreev (strv);
 
-  protocol = test->cm->protocols[1];
+  /* switch to the other protocol, whichever one that actually is */
+  if (protocol == test->cm->protocols[0])
+    {
+      protocol = test->cm->protocols[1];
+    }
+  else
+    {
+      g_assert (protocol == test->cm->protocols[1]);
+      protocol = test->cm->protocols[0];
+    }
+
   g_assert_cmpstr (protocol->name, ==, "weird");
   g_assert (protocol == tp_connection_manager_get_protocol (test->cm,
         "weird"));
@@ -256,8 +274,7 @@ test_file_got_info (Test *test,
   param = &protocol->params[1];
   g_assert (param->name == NULL);
 
-  protocol = test->cm->protocols[2];
-  g_assert (protocol == NULL);
+  g_assert (test->cm->protocols[2] == NULL);
 }
 
 static void
@@ -291,10 +308,10 @@ test_complex_file_got_info (Test *test,
   g_assert (test->cm->protocols[2] != NULL);
   g_assert (test->cm->protocols[3] == NULL);
 
-  /* FIXME: it's not technically an API guarantee that protocols and params
+  /* FIXME: it's not technically an API guarantee that params
    * come out in this order... */
 
-  protocol = test->cm->protocols[0];
+  protocol = tp_connection_manager_get_protocol (test->cm, "foo");
 
   g_assert_cmpstr (protocol->name, ==, "foo");
 
@@ -346,7 +363,7 @@ test_complex_file_got_info (Test *test,
   param = &protocol->params[6];
   g_assert (param->name == NULL);
 
-  protocol = test->cm->protocols[1];
+  protocol = tp_connection_manager_get_protocol (test->cm, "bar");
   g_assert_cmpstr (protocol->name, ==, "bar");
 
   param = &protocol->params[0];
@@ -400,8 +417,9 @@ test_complex_file_got_info (Test *test,
   param = &protocol->params[6];
   g_assert (param->name == NULL);
 
-  protocol = test->cm->protocols[2];
-  g_assert_cmpstr (test->cm->protocols[2]->name, ==, "somewhat-pathological");
+  protocol = tp_connection_manager_get_protocol (test->cm,
+      "somewhat-pathological");
+  g_assert_cmpstr (protocol->name, ==, "somewhat-pathological");
 
   param = &protocol->params[0];
   g_assert_cmpstr (param->name, ==, "foo");
