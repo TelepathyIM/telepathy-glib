@@ -626,10 +626,10 @@ got_message_pending_messages_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   const gchar *channel_path = tp_proxy_get_object_path (proxy);
-  TplLogStore *index = tpl_log_store_sqlite_dup ();
+  TplLogStore *cache = tpl_log_store_sqlite_dup ();
   TplActionChain *ctx = user_data;
   GPtrArray *result = NULL;
-  GList *indexed_pending_msg = NULL;
+  GList *cached_pending_msg = NULL;
   GError *loc_error = NULL;
   guint i;
 
@@ -647,7 +647,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
   result = g_value_get_boxed (out_Value);
 
   /* getting messages ids known to be pending at last TPL exit */
-  indexed_pending_msg = tpl_log_store_sqlite_get_pending_messages (index,
+  cached_pending_msg = tpl_log_store_sqlite_get_pending_messages (cache,
       TP_CHANNEL (proxy), &loc_error);
   if (loc_error != NULL)
     {
@@ -678,7 +678,6 @@ got_message_pending_messages_cb (TpProxy *proxy,
 
       /* list of message's parts */
       message_parts = g_ptr_array_index (result, i);
-
       /* message part 0 is the message's headers */
       message_headers = g_ptr_array_index (message_parts, 0);
       /* message part 1 is is the first part, the most 'faithful' among
@@ -686,7 +685,6 @@ got_message_pending_messages_cb (TpProxy *proxy,
        * TODO fully support alternatives and attachments/images
        * related to them */
       message_part = g_ptr_array_index (message_parts, 1);
-
       message_token = tp_asv_get_string (message_headers, "message-token");
       message_id = tp_asv_get_uint32 (message_headers, "pending-message-id",
           &valid);
@@ -702,8 +700,8 @@ got_message_pending_messages_cb (TpProxy *proxy,
       tpl_message_token = create_message_token (channel_path,
           message_timestamp, message_id);
 
-      /* look for the current token among the TPL indexed tokens/log_id */
-      l = g_list_find_custom (indexed_pending_msg, tpl_message_token,
+      /* look for the current token among the TPL cached tokens/log_id */
+      l = g_list_find_custom (cached_pending_msg, tpl_message_token,
             (GCompareFunc) g_strcmp0);
       if (l != NULL)
         {
@@ -713,7 +711,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
            * message list", being also able to identify all the messages not
            * present in the list, which I'll consider as stale entries */
           g_free (l->data);
-          indexed_pending_msg = g_list_delete_link (indexed_pending_msg, l);
+          cached_pending_msg = g_list_delete_link (cached_pending_msg, l);
 
           /* do not log messages which log_id is present in LogStoreIndex */
           continue;
@@ -750,17 +748,18 @@ got_message_pending_messages_cb (TpProxy *proxy,
   /* Remove messages not set as ACK but not in the pending queue anymore: they
    * are stale entries which was already ACK while TPL was 'down'.
    *
-   * NOTE: this will clean up stale entries in index, related to any channel
+   * NOTE: this will clean up stale entries in cache, related to any channel
    * currently open, we don't know anything about all the other stale entries
    * related to channel not currently open.
    */
   PATH_DEBUG (proxy, "Cleaning up stale messages");
-  while (indexed_pending_msg != NULL)
+  while (cached_pending_msg != NULL)
     {
-      gchar *log_id = indexed_pending_msg->data;
+      gchar *log_id = cached_pending_msg->data;
 
       PATH_DEBUG (proxy, "%s is stale, removing from DB", log_id);
-      tpl_log_store_sqlite_set_acknowledgment (index, log_id, &loc_error);
+
+      tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
       if (loc_error != NULL)
         {
           CRITICAL ("Unable to set %s as acknoledged in TPL DB: %s", log_id,
@@ -768,15 +767,16 @@ got_message_pending_messages_cb (TpProxy *proxy,
           g_clear_error (&loc_error);
         }
       g_free (log_id);
+
       /* free list's head, which will return the next element, if any */
-      indexed_pending_msg = g_list_delete_link (indexed_pending_msg,
-          indexed_pending_msg);
+      cached_pending_msg = g_list_delete_link (cached_pending_msg,
+          cached_pending_msg);
     }
   PATH_DEBUG (proxy, "Clean up finished.");
 
 out:
-  if (index != NULL)
-    g_object_unref (index);
+  if (cache != NULL)
+    g_object_unref (cache);
 
   if (loc_error != NULL)
       g_error_free (loc_error);
@@ -961,18 +961,18 @@ pendingproc_connect_signals (TplActionChain *ctx,
 /* Signal's Callbacks */
 static void
 on_pending_messages_removed_cb (TpChannel *proxy,
-    const GArray *arg_Message_IDs,
+    const GArray *message_ids,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplLogStore *index = tpl_log_store_sqlite_dup ();
+  TplLogStore *cache = tpl_log_store_sqlite_dup ();
   guint i;
   GError *error = NULL;
 
-  for (i = 0; i < arg_Message_IDs->len; ++i)
+  for (i = 0; i < message_ids->len; ++i)
     {
-      guint msg_id = g_array_index (arg_Message_IDs, guint, i);
-      tpl_log_store_sqlite_set_acknowledgment_by_msg_id (index, proxy, msg_id,
+      guint msg_id = g_array_index (message_ids, guint, i);
+      tpl_log_store_sqlite_set_acknowledgment_by_msg_id (cache, proxy, msg_id,
           &error);
       PATH_DEBUG (proxy, "msg_id %d acknowledged", msg_id);
       if (error != NULL)
@@ -983,8 +983,8 @@ on_pending_messages_removed_cb (TpChannel *proxy,
         }
     }
 
-  if (index != NULL)
-    g_object_unref (index);
+  if (cache != NULL)
+    g_object_unref (cache);
 }
 
 
