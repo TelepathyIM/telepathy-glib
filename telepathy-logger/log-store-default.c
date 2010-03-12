@@ -72,6 +72,7 @@ typedef struct
   gchar *name;
   gboolean readable;
   gboolean writable;
+  gboolean empathyLegacy;
   TpAccountManager *account_manager;
 } TplLogStoreDefaultPriv;
 
@@ -80,13 +81,14 @@ enum {
     PROP_NAME,
     PROP_READABLE,
     PROP_WRITABLE,
-    PROP_BASEDIR
+    PROP_BASEDIR,
+    PROP_EMPATHYLEGACY
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
-static void tpl_log_store_get_property (GObject *object, guint param_id, GValue *value,
+static void tpl_log_store_default_get_property (GObject *object, guint param_id, GValue *value,
     GParamSpec *pspec);
-static void tpl_log_store_set_property (GObject *object, guint param_id, const GValue *value,
+static void tpl_log_store_default_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
 static const gchar *log_store_default_get_name (TplLogStore *self);
 static void log_store_default_set_name (TplLogStore *self, const gchar *data);
@@ -141,7 +143,7 @@ log_store_default_finalize (GObject *object)
 
 
 static void
-tpl_log_store_get_property (GObject *object,
+tpl_log_store_default_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
@@ -162,6 +164,8 @@ tpl_log_store_get_property (GObject *object,
       case PROP_BASEDIR:
         g_value_set_string (value, priv->basedir);
         break;
+      case PROP_EMPATHYLEGACY:
+        g_value_set_boolean (value, priv->empathyLegacy);
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -170,7 +174,7 @@ tpl_log_store_get_property (GObject *object,
 
 
 static void
-tpl_log_store_set_property (GObject *object,
+tpl_log_store_default_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
@@ -188,6 +192,8 @@ tpl_log_store_set_property (GObject *object,
       case PROP_WRITABLE:
         log_store_default_set_writable (self, g_value_get_boolean (value));
         break;
+      case PROP_EMPATHYLEGACY:
+        GET_PRIV (self)->empathyLegacy = g_value_get_boolean (value);
       case PROP_BASEDIR:
         log_store_default_set_basedir (self, g_value_get_string (value));
         break;
@@ -206,28 +212,12 @@ tpl_log_store_default_class_init (TplLogStoreDefaultClass *klass)
 
   object_class->finalize = log_store_default_finalize;
   object_class->dispose = log_store_default_dispose;
-  object_class->get_property = tpl_log_store_get_property;
-  object_class->set_property = tpl_log_store_set_property;
+  object_class->get_property = tpl_log_store_default_get_property;
+  object_class->set_property = tpl_log_store_default_set_property;
 
-  /**
-   * TplLogStoreDefault:name:
-   *
-   * The log store's name. No default available, it has to be passed at object
-   * creation.
-   * As defined in #TplLogStore.
-   */
-  param_spec = g_param_spec_string ("name",
-      "Name",
-      "The TplLogStore implementation's name",
-      NULL, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_NAME, param_spec);
-
-  /* the default value for the basedir prop is composed by user_data_dir () +
-   * prop "name" value, it's not possible to know it at param_spec time, so
-   * it's set to NULL and let to get_basedir to set it to its default if
-   * priv->basedir == NULL
-   */
+  g_object_class_override_property (object_class, PROP_NAME, "name");
+  g_object_class_override_property (object_class, PROP_READABLE, "readable");
+  g_object_class_override_property (object_class, PROP_WRITABLE, "writable");
 
   /**
    * TplLogStoreDefault:basedir:
@@ -242,37 +232,18 @@ tpl_log_store_default_class_init (TplLogStoreDefaultClass *klass)
   g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
 
   /**
-   * TplLogStoreDefault:readable:
+   * TplLogStoreDefault:empathyLegacy:
    *
-   * Wether the log store is readable.
-   * Default: %TRUE
-   *
-   * As defined in #TplLogStore.
-   */
-  param_spec = g_param_spec_boolean ("readable",
-      "Readable",
-      "Defines wether the LogStore is readable or not, allowing searching "
-      "into this instance",
-      TRUE, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_READABLE, param_spec);
-
-  /**
-   * TplLogStoreDefault:writable:
-   *
-   * Wether the log store is writable.
+   * If %TRUE, the logstore pointed by TplLogStoreDefault::base-dir will be
+   * considered formatted as an Empathy's LogStore (pre telepathy-logger).
    * Default: %FALSE.
-   * Setting a LogStore to %TRUE might result in duplicate entries among logs.
-   *
-   * As defined in #TplLogStore.
    */
-  param_spec = g_param_spec_boolean ("writable",
-      "Writable",
-      "Defines wether the LogStore is writable or not, allowing message "
-      "to be stored into this instance",
-      FALSE, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-      G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_WRITABLE, param_spec);
+  param_spec = g_param_spec_boolean ("empathy-legacy",
+      "EmpathyLegacy",
+      "Enables compatibility with old Empathy's logs",
+      FALSE, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_EMPATHYLEGACY,
+      param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogStoreDefaultPriv));
 }
@@ -808,8 +779,8 @@ log_store_default_get_messages_for_file (TplLogStore *self,
       gchar *is_user_str;
       gboolean is_user = FALSE;
       gchar *msg_type_str;
-      gchar *cm_id_str;
-      guint cm_id;
+      gchar *log_id;
+      guint pending_id;
       TpChannelTextMessageType msg_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
 
       if (strcmp ((const gchar *) node->name, "message") != 0)
@@ -823,18 +794,23 @@ log_store_default_get_messages_for_file (TplLogStore *self,
           (const xmlChar *) "token");
       is_user_str = (gchar *) xmlGetProp (node, (const xmlChar *) "isuser");
       msg_type_str = (gchar *) xmlGetProp (node, (const xmlChar *) "type");
-      cm_id_str = (gchar *) xmlGetProp (node, (const xmlChar *) "cm_id");
+      /* in XML the attr is still cm_id to keep legacy Empathy LogStore
+       * compatibility, but actually it stores the log-id when not in
+       * legacy-mode */
+      log_id = (gchar *) xmlGetProp (node, (const xmlChar *) "cm_id");
 
-      if (is_user_str)
+      if (is_user_str != NULL)
         is_user = (!tp_strdiff (is_user_str, "true"));
 
-      if (msg_type_str)
+      if (msg_type_str != NULL)
         msg_type = tpl_log_entry_text_message_type_from_str (msg_type_str);
 
-      if (cm_id_str)
-        cm_id = atoi (cm_id_str);
+      if (log_id != NULL && GET_PRIV (self)->empathyLegacy)
+        /* in legacy mode, it's actually the pending message id before ACK */
+        pending_id = atoi (log_id);
       else
-        cm_id = 0;
+        /* we have no way in non empathyLegacy mode to know it */
+        pending_id = TPL_LOG_ENTRY_MSG_ID_UNKNOWN;
 
       t = tpl_time_parse (time_);
 
@@ -843,26 +819,40 @@ log_store_default_get_messages_for_file (TplLogStore *self,
       tpl_contact_set_alias (sender, sender_name);
       tpl_contact_set_avatar_token (sender, sender_avatar_token);
 
-      message = tpl_log_entry_text_new (cm_id_str,
+      if (GET_PRIV (self)->empathyLegacy)
+        {
+          /* in legacy Empathy LogStore there is no concept of log-id as a unique
+           * token, so I'll create, just for it to be present, an ad hoc unique
+           * token. */
+          gchar *instead_of_channel_path;
+
+          instead_of_channel_path = g_strconcat (
+              tp_proxy_get_object_path (account), sender_id, NULL);
+          log_id = create_message_token (instead_of_channel_path, t,
+              pending_id);
+
+          g_free (instead_of_channel_path);
+        }
+
+      message = tpl_log_entry_text_new (log_id,
           tp_proxy_get_object_path (account), TPL_LOG_ENTRY_DIRECTION_NONE);
+
+      tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (message), pending_id);
       tpl_log_entry_set_sender (TPL_LOG_ENTRY (message), sender);
       tpl_log_entry_set_timestamp (TPL_LOG_ENTRY (message), t);
       tpl_log_entry_text_set_message (message, body);
       tpl_log_entry_text_set_message_type (message, msg_type);
-      /* TODO uderstand if useful
-         tpl_log_entry_text_set_is_backlog (message, TRUE);
-       */
 
       messages = g_list_append (messages, message);
 
       g_object_unref (sender);
+      xmlFree (log_id);
       xmlFree (time_);
       xmlFree (sender_id);
       xmlFree (sender_name);
       xmlFree (body);
       xmlFree (is_user_str);
       xmlFree (msg_type_str);
-      xmlFree (cm_id_str);
       xmlFree (sender_avatar_token);
     }
 
