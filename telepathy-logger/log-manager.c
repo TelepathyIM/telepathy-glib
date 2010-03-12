@@ -37,7 +37,7 @@
 
 #include <telepathy-logger/log-entry.h>
 #include <telepathy-logger/log-store.h>
-#include <telepathy-logger/log-store-default.h>
+#include <telepathy-logger/log-store-xml.h>
 #include <telepathy-logger/log-store-sqlite.h>
 #include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
@@ -182,10 +182,10 @@ tpl_log_manager_init (TplLogManager *self)
   DEBUG ("Initialising the Log Manager");
 
   /* The TPL's default read-write logstore */
-  add_log_store (self, TPL_TYPE_LOG_STORE_DEFAULT, "TpLogger", TRUE, TRUE);
+  add_log_store (self, TPL_TYPE_LOG_STORE_XML, "TpLogger", TRUE, TRUE);
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
-  store = add_log_store (self, TPL_TYPE_LOG_STORE_DEFAULT, "Empathy", TRUE, FALSE);
+  store = add_log_store (self, TPL_TYPE_LOG_STORE_XML, "Empathy", TRUE, FALSE);
   if (store != NULL)
     g_object_set (store, "empathy-legacy", TRUE, NULL);
 

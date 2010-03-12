@@ -4,7 +4,7 @@
 
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store.h>
-#include <telepathy-logger/log-store-empathy.h>
+#include <telepathy-logger/log-store-xml.h>
 
 
 static GMainLoop *loop = NULL;
@@ -51,7 +51,7 @@ main (int argc, char *argv[])
 
   /* get the LogManager and register a non-default LogManager */
   manager = tpl_log_manager_dup_singleton ();
-  logstore = g_object_new (TPL_TYPE_LOG_STORE_EMPATHY,
+  logstore = g_object_new (TPL_TYPE_LOG_STORE_XML,
       "name", "Empathy", NULL);
   tpl_log_manager_register_log_store (manager, logstore);
 

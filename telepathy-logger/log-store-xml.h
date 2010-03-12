@@ -22,41 +22,41 @@
  *          Jonny Lamb <jonny.lamb@collabora.co.uk>
  */
 
-#ifndef __TPL_LOG_STORE_DEFAULT_H__
-#define __TPL_LOG_STORE_DEFAULT_H__
+#ifndef __TPL_LOG_STORE_XML_H__
+#define __TPL_LOG_STORE_XML_H__
 
 #include <glib.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_LOG_STORE_DEFAULT \
-  (tpl_log_store_default_get_type ())
-#define TPL_LOG_STORE_DEFAULT(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_STORE_DEFAULT, \
-                               TplLogStoreDefault))
-#define TPL_LOG_STORE_DEFAULT_CLASS(vtable) \
-  (G_TYPE_CHECK_CLASS_CAST ((vtable), TPL_TYPE_LOG_STORE_DEFAULT, \
-                            TplLogStoreDefaultClass))
-#define TPL_IS_LOG_STORE_DEFAULT(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_STORE_DEFAULT))
-#define TPL_IS_LOG_STORE_DEFAULT_CLASS(vtable) \
-  (G_TYPE_CHECK_CLASS_TYPE ((vtable), TPL_TYPE_LOG_STORE_DEFAULT))
-#define TPL_LOG_STORE_DEFAULT_GET_CLASS(inst) \
-  (G_TYPE_INSTANCE_GET_CLASS ((inst), TPL_TYPE_LOG_STORE_DEFAULT, \
-                              TplLogStoreDefaultClass))
+#define TPL_TYPE_LOG_STORE_XML \
+  (tpl_log_store_xml_get_type ())
+#define TPL_LOG_STORE_XML(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_STORE_XML, \
+                               TplLogStoreXml))
+#define TPL_LOG_STORE_XML_CLASS(vtable) \
+  (G_TYPE_CHECK_CLASS_CAST ((vtable), TPL_TYPE_LOG_STORE_XML, \
+                            TplLogStoreXmlClass))
+#define TPL_IS_LOG_STORE_XML(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_STORE_XML))
+#define TPL_IS_LOG_STORE_XML_CLASS(vtable) \
+  (G_TYPE_CHECK_CLASS_TYPE ((vtable), TPL_TYPE_LOG_STORE_XML))
+#define TPL_LOG_STORE_XML_GET_CLASS(inst) \
+  (G_TYPE_INSTANCE_GET_CLASS ((inst), TPL_TYPE_LOG_STORE_XML, \
+                              TplLogStoreXmlClass))
 
-typedef struct TplLogStoreDefault
+typedef struct TplLogStoreXml
 {
   GObject parent;
   gpointer priv;
-} TplLogStoreDefault;
+} TplLogStoreXml;
 
 typedef struct
 {
   GObjectClass parent;
-} TplLogStoreDefaultClass;
+} TplLogStoreXmlClass;
 
-GType tpl_log_store_default_get_type (void);
+GType tpl_log_store_xml_get_type (void);
 
 G_END_DECLS
-#endif /* __TPL_LOG_STORE_DEFAULT_H__ */
+#endif /* __TPL_LOG_STORE_XML_H__ */
