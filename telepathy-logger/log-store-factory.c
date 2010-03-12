@@ -22,7 +22,6 @@
 #include "config.h"
 #include "log-store-factory.h"
 
-#include <telepathy-logger/log-store-empathy.h>
 #include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE

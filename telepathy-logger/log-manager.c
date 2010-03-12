@@ -38,7 +38,6 @@
 #include <telepathy-logger/log-entry.h>
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-default.h>
-#include <telepathy-logger/log-store-empathy.h>
 #include <telepathy-logger/log-store-sqlite.h>
 #include <telepathy-logger/datetime.h>
 #include <telepathy-logger/util.h>
