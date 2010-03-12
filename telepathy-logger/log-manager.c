@@ -142,7 +142,7 @@ tpl_log_manager_class_init (TplLogManagerClass *klass)
   g_type_class_add_private (object_class, sizeof (TplLogManagerPriv));
 }
 
-static void
+static TplLogStore *
 add_log_store (TplLogManager *self,
     GType type,
     const char *name,
@@ -151,7 +151,7 @@ add_log_store (TplLogManager *self,
 {
   TplLogStore *store;
 
-  g_return_if_fail (g_type_is_a (type, TPL_TYPE_LOG_STORE));
+  g_return_val_if_fail (g_type_is_a (type, TPL_TYPE_LOG_STORE), NULL);
 
   store = g_object_new (type,
       "name", name,
@@ -167,11 +167,14 @@ add_log_store (TplLogManager *self,
   if (store != NULL)
     /* drop the initial ref */
     g_object_unref (store);
+
+  return store;
 }
 
 static void
 tpl_log_manager_init (TplLogManager *self)
 {
+  TplLogStore *store;
   TplLogManagerPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_MANAGER, TplLogManagerPriv);
 
@@ -183,7 +186,9 @@ tpl_log_manager_init (TplLogManager *self)
   add_log_store (self, TPL_TYPE_LOG_STORE_DEFAULT, "TpLogger", TRUE, TRUE);
 
   /* Load by default the Empathy's legacy 'past coversations' LogStore */
-  add_log_store (self, TPL_TYPE_LOG_STORE_EMPATHY, "Empathy", TRUE, FALSE);
+  store = add_log_store (self, TPL_TYPE_LOG_STORE_DEFAULT, "Empathy", TRUE, FALSE);
+  if (store != NULL)
+    g_object_set (store, "empathy-legacy", TRUE, NULL);
 
   /* Load the message counting cache */
   add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE, TRUE);
