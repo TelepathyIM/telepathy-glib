@@ -280,3 +280,19 @@ _tp_protocol_get_struct (TpProtocol *self)
 {
   return &self->priv->protocol_struct;
 }
+
+/**
+ * tp_protocol_get_name:
+ * @self: a protocol object
+ *
+ * Return the same thing as the protocol-name property, for convenient use
+ * in C code. The returned string is valid for as long as @self exists.
+ *
+ * Returns: the value of the #TpProtocol:protocol-name property
+ */
+const gchar *
+tp_protocol_get_name (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return self->priv->protocol_struct.name;
+}

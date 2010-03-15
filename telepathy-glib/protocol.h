@@ -62,6 +62,8 @@ TpProtocol *tp_protocol_new (TpDBusDaemon *dbus, const gchar *cm_name,
     const gchar *protocol_name, const GHashTable *immutable_properties,
     GError **error);
 
+const gchar *tp_protocol_get_name (TpProtocol *self);
+
 G_END_DECLS
 
 #endif
