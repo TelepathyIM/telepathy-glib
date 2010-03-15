@@ -1077,7 +1077,7 @@ tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
   date = tpl_time_to_string_utc ((tpl_time_get_current () - delta),
       TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
 
-  DEBUG ("Purging entries older than %s (%d seconds ago)", date, (guint) delta);
+  DEBUG ("Purging entries older than %s (%u seconds ago)", date, (guint) delta);
 
   e = sqlite3_prepare_v2 (priv->db, "DELETE FROM message_cache "
       "WHERE date<datetime(?)",
