@@ -516,7 +516,9 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   /* update table with new message count */
   if (insert)
     e = sqlite3_prepare_v2 (priv->db,
-        "INSERT INTO messagecounts VALUES (?, ?, ?, date(?), ?)",
+        "INSERT INTO messagecounts "
+          "(messages, account, identifier, chatroom, date) "
+        "VALUES (?, ?, ?, ?, date(?))",
         -1, &sql, NULL);
   else
     e = sqlite3_prepare_v2 (priv->db,
@@ -537,22 +539,11 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
       goto out;
     }
 
-  if (insert)
-    {
-      sqlite3_bind_text (sql, 1, account, -1, SQLITE_TRANSIENT);
-      sqlite3_bind_text (sql, 2, identifier, -1, SQLITE_TRANSIENT);
-      sqlite3_bind_int (sql, 3, chatroom);
-      sqlite3_bind_text (sql, 4, date, -1, SQLITE_TRANSIENT);
-      sqlite3_bind_int (sql, 5, count);
-    }
-  else
-    {
-      sqlite3_bind_int (sql, 1, count);
-      sqlite3_bind_text (sql, 2, account, -1, SQLITE_TRANSIENT);
-      sqlite3_bind_text (sql, 3, identifier, -1, SQLITE_TRANSIENT);
-      sqlite3_bind_int (sql, 4, chatroom);
-      sqlite3_bind_text (sql, 5, date, -1, SQLITE_TRANSIENT);
-    }
+  sqlite3_bind_int (sql, 1, count);
+  sqlite3_bind_text (sql, 2, account, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text (sql, 3, identifier, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int (sql, 4, chatroom);
+  sqlite3_bind_text (sql, 5, date, -1, SQLITE_TRANSIENT);
 
   e = sqlite3_step (sql);
   if (e != SQLITE_DONE)
