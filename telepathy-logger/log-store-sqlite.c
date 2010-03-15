@@ -47,6 +47,7 @@ static gboolean _insert_to_cache_table (TplLogStore *self,
     TplLogEntry *message, GError **error);
 static void tpl_log_store_sqlite_purge (TplLogStoreSqlite *self, time_t delta,
     GError **error);
+static gboolean purge_entry_timeout (gpointer logstore);
 
 
 G_DEFINE_TYPE_WITH_CODE (TplLogStoreSqlite, tpl_log_store_sqlite,
@@ -185,7 +186,6 @@ tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
   char *filename = get_db_filename ();
   int e;
   char *errmsg = NULL;
-  GError *error = NULL;
 
   DEBUG ("cache file is '%s'", filename);
 
@@ -229,13 +229,9 @@ tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
       goto out;
     }
 
-  tpl_log_store_sqlite_purge (self, TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT,
-      &error);
-  if (error != NULL)
-    {
-      DEBUG ("Unable to purge old entries for Sqlite: %s", error->message);
-      g_clear_error (&error);
-    }
+  /* purge old entries every hour (60*60 secs) and purges 24h old entries */
+  g_timeout_add_seconds (60*60, purge_entry_timeout, self);
+
   /* end of cache table init */
 
   /* start of counter table init */
@@ -970,7 +966,6 @@ out:
   return retval;
 }
 
-
 void
 tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
     TpChannel *channel,
@@ -1045,7 +1040,6 @@ out:
     sqlite3_finalize (sql);
 }
 
-
 static void
 tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
     time_t delta,
@@ -1093,6 +1087,24 @@ out:
     sqlite3_finalize (sql);
 
   g_free (date);
+}
+
+static gboolean
+purge_entry_timeout (gpointer logstore)
+{
+  GError *error = NULL;
+  TplLogStoreSqlite *self = logstore;
+
+  tpl_log_store_sqlite_purge (self, TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT,
+      &error);
+  if (error != NULL)
+    {
+      CRITICAL ("Unable to purge entries: %s", error->message);
+      g_error_free (error);
+    }
+
+  /* return TRUE to avoid g_timeout_add_seconds cancel the operation */
+  return TRUE;
 }
 
 static GList *
