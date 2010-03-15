@@ -41,17 +41,6 @@
 
 #define TPL_LOG_STORE_SQLITE_NAME "Sqlite"
 
-/* order of the Columns in duplicate table, starting from 1 since
- * sqlite3_bind_* start from 1 referring SQL tokens. */
-enum TplLogStoreSqliteTable {
-    TPL_LOG_STORE_SQLITE_KEY_CHAN = 1,
-    TPL_LOG_STORE_SQLITE_KEY_ACCOUNT,
-    TPL_LOG_STORE_SQLITE_KEY_PENDING_MSG_ID,
-    TPL_LOG_STORE_SQLITE_KEY_LOG_ID,
-    TPL_LOG_STORE_SQLITE_KEY_CHAT_ID,
-    TPL_LOG_STORE_SQLITE_KEY_IS_CHATROOM,
-    TPL_LOG_STORE_SQLITE_KEY_DATE
-};
 
 static void log_store_iface_init (TplLogStoreInterface *iface);
 static gboolean _insert_to_cache_table (TplLogStore *self,
@@ -755,6 +744,8 @@ _insert_to_cache_table (TplLogStore *self,
 
   e = sqlite3_prepare_v2 (priv->db,
       "INSERT INTO message_cache "
+      "(channel, account, pending_msg_id, log_identifier, "
+      "chat_identifier, chatroom, date) "
       "VALUES (?, ?, ?, ?, ?, ?, datetime(?))",
       -1, &sql, NULL);
   if (e != SQLITE_OK)
@@ -766,18 +757,18 @@ _insert_to_cache_table (TplLogStore *self,
       goto out;
     }
 
-  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_CHAN, channel, -1, SQLITE_TRANSIENT);
-  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_ACCOUNT, account, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text (sql, 1, channel, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text (sql, 2, account, -1, SQLITE_TRANSIENT);
   /* insert NULL if ACKNOWLEDGED (ie sent message's entries, which are created
    * ACK'd */
   if (TPL_LOG_ENTRY_MSG_ID_IS_VALID (msg_id))
-    sqlite3_bind_null (sql, TPL_LOG_STORE_SQLITE_KEY_PENDING_MSG_ID);
+    sqlite3_bind_null (sql, 3);
   else
-    sqlite3_bind_int (sql, TPL_LOG_STORE_SQLITE_KEY_PENDING_MSG_ID, msg_id);
-  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_LOG_ID, log_id, -1, SQLITE_TRANSIENT);
-  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_CHAT_ID, identifier, -1, SQLITE_TRANSIENT);
-  sqlite3_bind_int (sql, TPL_LOG_STORE_SQLITE_KEY_IS_CHATROOM, chatroom);
-  sqlite3_bind_text (sql, TPL_LOG_STORE_SQLITE_KEY_DATE, date, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int (sql, 3, msg_id);
+  sqlite3_bind_text (sql, 4, log_id, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text (sql, 5, identifier, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int (sql, 6, chatroom);
+  sqlite3_bind_text (sql, 7, date, -1, SQLITE_TRANSIENT);
 
   e = sqlite3_step (sql);
   if (e != SQLITE_DONE)
@@ -851,13 +842,13 @@ tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
 
   if (channel == NULL)
     /* get the the log-id older than date */
-    e = sqlite3_prepare_v2 (priv->db, "SELECT * "
+    e = sqlite3_prepare_v2 (priv->db, "SELECT log_identifier "
         "FROM message_cache "
         "WHERE date<datetime(?)",
         -1, &sql, NULL);
   else
     /* get the log-ids related to channel and older than date */
-    e = sqlite3_prepare_v2 (priv->db, "SELECT * "
+    e = sqlite3_prepare_v2 (priv->db, "SELECT log_identifier "
         "FROM message_cache "
         "WHERE date<datetime(?) AND channel=?",
         -1, &sql, NULL);
@@ -879,8 +870,7 @@ tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
   /* create the log-id list */
   while (SQLITE_ROW == (e = sqlite3_step (sql)))
     {
-      gchar *log_id = g_strdup ((const gchar *) sqlite3_column_text (sql,
-          TPL_LOG_STORE_SQLITE_KEY_LOG_ID));
+      gchar *log_id = g_strdup ((const gchar *) sqlite3_column_text (sql, 0));
       retval = g_list_prepend (retval, log_id);
     }
 
