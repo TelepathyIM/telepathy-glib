@@ -17,7 +17,7 @@
  * Boston, MA  02110-1301  USA
  *
  * Authors: Danielle Madeley <danielle.madeley@collabora.co.uk>
- *          Cosimo Alfarano <danielle.madeley@collabora.co.uk>
+ *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
 #include <config.h>
