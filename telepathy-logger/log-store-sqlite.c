@@ -471,12 +471,10 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
       -1, &sql, NULL);
   if (e != SQLITE_OK)
     {
-      DEBUG ("Failed to prepare SQL: %s",
-          sqlite3_errmsg (priv->db));
-
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error");
+          "SQL Error checking current counter in %s: %s", G_STRFUNC,
+          sqlite3_errmsg (priv->db));
 
       goto out;
     }
@@ -499,12 +497,10 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
     }
   else
     {
-      DEBUG ("Failed to execute SQL: %s",
-          sqlite3_errmsg (priv->db));
-
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error");
+          "SQL Error binding counter checking query in %s: %s", G_STRFUNC,
+          sqlite3_errmsg (priv->db));
 
       goto out;
     }
@@ -533,12 +529,10 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   if (e != SQLITE_OK)
     {
-      DEBUG ("Failed to prepare SQL: %s",
-          sqlite3_errmsg (priv->db));
-
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error");
+          "SQL Error preparing query in %s: %s", G_STRFUNC,
+          sqlite3_errmsg (priv->db));
 
       goto out;
     }
@@ -563,12 +557,11 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   e = sqlite3_step (sql);
   if (e != SQLITE_DONE)
     {
-      DEBUG ("Failed to execute SQL: %s",
-          sqlite3_errmsg (priv->db));
-
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error");
+          "SQL Error %s counter in %s: %s",
+          (insert ? "inserting new" : "updating"),
+          G_STRFUNC, sqlite3_errmsg (priv->db));
 
       goto out;
     }
@@ -604,7 +597,7 @@ tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_PRESENT,
-          "log-id already logged: %s", log_id);
+          "in %s: log-id already logged: %s", G_STRFUNC, log_id);
 
       goto out;
     }
@@ -663,7 +656,8 @@ tpl_log_store_sqlite_add_message (TplLogStore *self,
   if (!TPL_IS_LOG_STORE_SQLITE (self))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE, "TplLogStoreSqlite intance needed");
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          "TplLogStoreSqlite intance needed");
       goto out;
     }
   if (!TPL_IS_LOG_ENTRY (message))
@@ -752,7 +746,7 @@ _insert_to_cache_table (TplLogStore *self,
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error: %s", sqlite3_errmsg (priv->db));
+          "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
 
       goto out;
     }
@@ -775,7 +769,7 @@ _insert_to_cache_table (TplLogStore *self,
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error bind: %s", sqlite3_errmsg (priv->db));
+          "SQL Error bind in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
 
       goto out;
     }
@@ -878,7 +872,7 @@ tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
     {
       g_set_error (error, TPL_LOG_STORE_SQLITE_ERROR,
           TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES,
-          "SQL Error: %s", sqlite3_errmsg (priv->db));
+          "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
       g_list_foreach (retval, (GFunc) g_free, NULL);
       g_list_free (retval);
       retval = NULL;
@@ -969,7 +963,7 @@ tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
     {
       g_set_error (error, TPL_LOG_STORE_SQLITE_ERROR,
           TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES,
-          "SQL Error: %s", sqlite3_errmsg (priv->db));
+          "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
       retval = NULL;
     }
 
@@ -1040,7 +1034,7 @@ tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error: %s", sqlite3_errmsg (priv->db));
+          "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
 
       goto out;
     }
@@ -1052,7 +1046,7 @@ tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error: %s", sqlite3_errmsg (priv->db));
+          "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
     }
 
 out:
@@ -1087,7 +1081,8 @@ tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error preparing statement: %s", sqlite3_errmsg (priv->db));
+          "SQL Error preparing statement in %s: %s", G_STRFUNC,
+          sqlite3_errmsg (priv->db));
 
       goto out;
     }
@@ -1099,7 +1094,7 @@ tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "SQL Error: %s", sqlite3_errmsg (priv->db));
+          "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
     }
 
 out:
