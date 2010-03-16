@@ -72,7 +72,7 @@ typedef struct
   gchar *name;
   gboolean readable;
   gboolean writable;
-  gboolean empathyLegacy;
+  gboolean empathy_legacy;
   TpAccountManager *account_manager;
 } TplLogStoreXmlPriv;
 
@@ -82,7 +82,7 @@ enum {
     PROP_READABLE,
     PROP_WRITABLE,
     PROP_BASEDIR,
-    PROP_EMPATHYLEGACY
+    PROP_EMPATHY_LEGACY
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
@@ -164,8 +164,8 @@ tpl_log_store_xml_get_property (GObject *object,
       case PROP_BASEDIR:
         g_value_set_string (value, priv->basedir);
         break;
-      case PROP_EMPATHYLEGACY:
-        g_value_set_boolean (value, priv->empathyLegacy);
+      case PROP_EMPATHY_LEGACY:
+        g_value_set_boolean (value, priv->empathy_legacy);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -193,8 +193,8 @@ tpl_log_store_xml_set_property (GObject *object,
       case PROP_WRITABLE:
         log_store_xml_set_writable (self, g_value_get_boolean (value));
         break;
-      case PROP_EMPATHYLEGACY:
-        GET_PRIV (self)->empathyLegacy = g_value_get_boolean (value);
+      case PROP_EMPATHY_LEGACY:
+        GET_PRIV (self)->empathy_legacy = g_value_get_boolean (value);
         break;
       case PROP_BASEDIR:
         log_store_xml_set_basedir (self, g_value_get_string (value));
@@ -234,7 +234,7 @@ tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
   g_object_class_install_property (object_class, PROP_BASEDIR, param_spec);
 
   /**
-   * TplLogStoreXml:empathyLegacy:
+   * TplLogStoreXml:empathy-legacy:
    *
    * If %TRUE, the logstore pointed by TplLogStoreXml::base-dir will be
    * considered formatted as an Empathy's LogStore (pre telepathy-logger).
@@ -244,7 +244,7 @@ tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
       "EmpathyLegacy",
       "Enables compatibility with old Empathy's logs",
       FALSE, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_EMPATHYLEGACY,
+  g_object_class_install_property (object_class, PROP_EMPATHY_LEGACY,
       param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogStoreXmlPriv));
@@ -807,11 +807,11 @@ log_store_xml_get_messages_for_file (TplLogStore *self,
       if (msg_type_str != NULL)
         msg_type = tpl_log_entry_text_message_type_from_str (msg_type_str);
 
-      if (log_id != NULL && GET_PRIV (self)->empathyLegacy)
+      if (log_id != NULL && GET_PRIV (self)->empathy_legacy)
         /* in legacy mode, it's actually the pending message id before ACK */
         pending_id = atoi (log_id);
       else
-        /* we have no way in non empathyLegacy mode to know it */
+        /* we have no way in non empathy-legacy mode to know it */
         pending_id = TPL_LOG_ENTRY_MSG_ID_UNKNOWN;
 
       t = tpl_time_parse (time_);
@@ -821,7 +821,7 @@ log_store_xml_get_messages_for_file (TplLogStore *self,
       tpl_contact_set_alias (sender, sender_name);
       tpl_contact_set_avatar_token (sender, sender_avatar_token);
 
-      if (GET_PRIV (self)->empathyLegacy)
+      if (GET_PRIV (self)->empathy_legacy)
         {
           /* in legacy Empathy LogStore there is no concept of log-id as a unique
            * token, so I'll create, just for it to be present, an ad hoc unique
