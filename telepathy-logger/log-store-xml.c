@@ -166,6 +166,7 @@ tpl_log_store_xml_get_property (GObject *object,
         break;
       case PROP_EMPATHYLEGACY:
         g_value_set_boolean (value, priv->empathyLegacy);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -194,6 +195,7 @@ tpl_log_store_xml_set_property (GObject *object,
         break;
       case PROP_EMPATHYLEGACY:
         GET_PRIV (self)->empathyLegacy = g_value_get_boolean (value);
+        break;
       case PROP_BASEDIR:
         log_store_xml_set_basedir (self, g_value_get_string (value));
         break;

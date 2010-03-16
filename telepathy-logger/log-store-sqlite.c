@@ -1168,7 +1168,6 @@ out:
 static void
 log_store_iface_init (TplLogStoreInterface *iface)
 {
-  DEBUG ("INIT CLASS");
   iface->get_name = tpl_log_store_sqlite_get_name;
   iface->add_message = tpl_log_store_sqlite_add_message;
   iface->get_chats = tpl_log_store_sqlite_get_chats;
