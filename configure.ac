@@ -112,7 +112,7 @@ AC_ARG_ENABLE(debug,
 
 AC_ARG_ENABLE(Werror,
   AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
-    werror=$enableval, :)
+    werror=$enableval, werror=yes)
 
 AS_COMPILER_FLAG(-Wextra, wextra=yes, wextra=no)
 AS_COMPILER_FLAG(-Wno-missing-field-initializers,
