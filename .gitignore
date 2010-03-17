@@ -75,6 +75,8 @@ Makefile.in
 /telepathy-logger/telepathy-logger-0.1-uninstalled.pc
 /telepathy-logger/telepathy-logger-0.1.pc
 /telepathy-logger/_gen/*
+/telepathy-logger/tpl-marshal.c
+/telepathy-logger/tpl-marshal.h
 
 /tests/test-*[^ch]
 /tests/twisted/config.py

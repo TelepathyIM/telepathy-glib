@@ -10,8 +10,6 @@ AM_CPPFLAGS =						\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 
-BUILT_SOURCES =
-
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = telepathy-logger-0.1.pc
 
@@ -25,6 +23,17 @@ LIBTPL_HEADERS = \
 		log-manager.h			\
 		telepathy-logger.h \
 		$(NULL)
+
+%-marshal.c: %-marshal.list Makefile.am
+	$(QUIET_GEN)echo "#include \"tpl-marshal.h\"" > $@
+	$(QUIET_GEN)glib-genmarshal --body --prefix=tpl_marshal $< >> $@
+
+%-marshal.h: %-marshal.list Makefile.am
+	$(QUIET_GEN)glib-genmarshal --header --prefix=tpl_marshal $< > $@
+
+BUILT_SOURCES = \
+	tpl-marshal.c tpl-marshal.h \
+	$(NULL)
 
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
@@ -63,7 +72,12 @@ libtelepathy_logger_la_SOURCES = \
 		observer-internal.h			\
 		util-internal.h			\
 		util.c				\
+		$(BUILT_SOURCES)
 		$(NULL)
+
+EXTRA_DIST = \
+	tpl-marshal.list \
+	$(NULL)
 
 libtelepathy_logger_la_LIBADD = \
 	$(top_builddir)/extensions/libtpl-extensions-convenience.la
