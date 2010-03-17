@@ -416,9 +416,17 @@ TpChannelChatState
 tp_channel_get_chat_state (TpChannel *self,
     TpHandle contact)
 {
+  gpointer value;
+
   g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
 
-  /* stub implementation: we don't actually track it yet */
+  if (self->priv->chat_states != NULL &&
+      g_hash_table_lookup_extended (self->priv->chat_states,
+        GUINT_TO_POINTER (contact), NULL, &value))
+    {
+      return GPOINTER_TO_UINT (value);
+    }
+
   return TP_CHANNEL_CHAT_STATE_INACTIVE;
 }
 
@@ -488,7 +496,6 @@ _tp_channel_maybe_set_identifier (TpChannel *self,
           tp_g_value_slice_new_string (identifier));
     }
 }
-
 
 static void
 _tp_channel_maybe_set_interfaces (TpChannel *self,
@@ -608,6 +615,83 @@ _tp_channel_abort_introspection (TpChannel *self,
   tp_proxy_invalidate ((TpProxy *) self, error);
 }
 
+static void
+tp_channel_chat_state_changed_cb (TpChannel *self,
+    guint contact,
+    guint state,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *object G_GNUC_UNUSED)
+{
+  g_hash_table_insert (self->priv->chat_states,
+      GUINT_TO_POINTER (contact), GUINT_TO_POINTER (state));
+
+  /* Don't emit the signal until we've had the initial state */
+  if (!tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CHAT_STATES))
+    return;
+
+  g_signal_emit (self, signals[SIGNAL_CHAT_STATE_CHANGED], 0, contact, state);
+}
+
+static void
+tp_channel_get_initial_chat_states_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpChannel *self = TP_CHANNEL (proxy);
+
+  /* FIXME: fd.o #24882: when that spec bug is fixed, use Chat_State_Map
+   * instead of Channel_Call_State_Map (the underlying D-Bus type is the same
+   * though) */
+  if (error == NULL && G_VALUE_HOLDS (value,
+        TP_HASH_TYPE_CHANNEL_CALL_STATE_MAP))
+    {
+      tp_g_hash_table_update (self->priv->chat_states,
+          g_value_get_boxed (value), NULL, NULL);
+    }
+  /* else just ignore it and assume everyone was initially in the default
+   * Inactive state, unless we already saw a signal for them */
+
+  _tp_proxy_set_feature_prepared (proxy, TP_CHANNEL_FEATURE_CHAT_STATES, TRUE);
+}
+
+static void
+tp_channel_maybe_prepare_chat_states (TpProxy *proxy)
+{
+  TpChannel *self = (TpChannel *) proxy;
+
+  if (self->priv->chat_states != NULL)
+    return;   /* already done */
+
+  if (!_tp_proxy_is_preparing (proxy, TP_CHANNEL_FEATURE_CHAT_STATES))
+    return;   /* not interested right now */
+
+  if (!self->priv->ready)
+    return;   /* will try again when ready */
+
+  if (!tp_proxy_has_interface_by_id (proxy,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE))
+    {
+      /* not going to happen */
+      _tp_proxy_set_feature_prepared (proxy, TP_CHANNEL_FEATURE_CHAT_STATES,
+          FALSE);
+      return;
+    }
+
+  /* chat states? yes please! */
+  self->priv->chat_states = g_hash_table_new (NULL, NULL);
+  tp_cli_channel_interface_chat_state_connect_to_chat_state_changed (
+      self, tp_channel_chat_state_changed_cb, NULL, NULL, NULL,
+      NULL);
+
+  /* this isn't really in telepathy-spec yet (fd.o #24882) but is
+   * harmless... */
+  tp_cli_dbus_properties_call_get (self, -1,
+      TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE, "ChatStates",
+      tp_channel_get_initial_chat_states_cb,
+      NULL, NULL, NULL);
+}
 
 void
 _tp_channel_continue_introspection (TpChannel *self)
@@ -631,13 +715,16 @@ _tp_channel_continue_introspection (TpChannel *self)
       DEBUG ("%p: channel ready", self);
       self->priv->ready = TRUE;
       g_object_notify ((GObject *) self, "channel-ready");
+
+      _tp_proxy_set_feature_prepared ((TpProxy *) self,
+          TP_CHANNEL_FEATURE_CORE, TRUE);
+
+      tp_channel_maybe_prepare_chat_states ((TpProxy *) self);
     }
   else
     {
       TpChannelProc next = g_queue_pop_head (self->priv->introspect_needed);
 
-      _tp_proxy_set_feature_prepared ((TpProxy *) self,
-          TP_CHANNEL_FEATURE_CORE, TRUE);
       next (self);
     }
 }
@@ -1185,6 +1272,12 @@ tp_channel_finalize (GObject *object)
       self->priv->introspect_needed = NULL;
     }
 
+  if (self->priv->chat_states != NULL)
+    {
+      g_hash_table_destroy (self->priv->chat_states);
+      self->priv->chat_states = NULL;
+    }
+
   g_assert (self->priv->channel_properties != NULL);
   g_hash_table_destroy (self->priv->channel_properties);
 
@@ -1211,6 +1304,8 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CORE].core = TRUE;
 
   features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
+  features[FEAT_CHAT_STATES].start_preparing =
+    tp_channel_maybe_prepare_chat_states;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
