@@ -65,7 +65,7 @@ enum
 };
 
 static void
-tpl_observer_get_property (GObject *object,
+tpl_channel_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
@@ -84,7 +84,7 @@ tpl_observer_get_property (GObject *object,
 }
 
 static void
-tpl_observer_set_property (GObject *object,
+tpl_channel_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
@@ -115,12 +115,6 @@ tpl_channel_dispose (GObject *obj)
   G_OBJECT_CLASS (tpl_channel_parent_class)->dispose (obj);
 }
 
-static void
-tpl_channel_finalize (GObject *obj)
-{
-  G_OBJECT_CLASS (tpl_channel_parent_class)->finalize (obj);
-}
-
 
 static void
 tpl_channel_class_init (TplChannelClass *klass)
@@ -129,9 +123,8 @@ tpl_channel_class_init (TplChannelClass *klass)
   GParamSpec *param_spec;
 
   object_class->dispose = tpl_channel_dispose;
-  object_class->finalize = tpl_channel_finalize;
-  object_class->get_property = tpl_observer_get_property;
-  object_class->set_property = tpl_observer_set_property;
+  object_class->get_property = tpl_channel_get_property;
+  object_class->set_property = tpl_channel_set_property;
 
   klass->call_when_ready_protected = call_when_ready_protected;
 
