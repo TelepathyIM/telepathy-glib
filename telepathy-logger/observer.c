@@ -35,6 +35,7 @@
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/channel-factory.h>
 #include <telepathy-logger/log-manager.h>
+#include <telepathy-logger/action-chain.h>
 #include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_OBSERVER
@@ -103,6 +104,7 @@ struct _TplObserverPriv
 
 typedef struct
 {
+  TplObserver *self;
   guint chan_n;
   DBusGMethodInvocation *dbus_ctx;
 } ObservingContext;
@@ -210,6 +212,7 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
    * counter will be 0 and tp_svc_client_observer_return_from_observe_channels
    * can be called */
   observing_ctx = g_slice_new0 (ObservingContext);
+  observing_ctx->self = TPL_OBSERVER (self);
   observing_ctx->chan_n = channels->len;
   observing_ctx->dbus_ctx = dbus_context;
 
@@ -234,7 +237,8 @@ tpl_observer_observe_channels (TpSvcClientObserver *self,
           g_clear_error (&error);
           continue;
         }
-      PATH_DEBUG (tpl_chan, "Starting preparation fo TplChannel instance");
+      PATH_DEBUG (tpl_chan, "Starting preparation for TplChannel instance %p",
+          tpl_chan);
       tpl_channel_call_when_ready (tpl_chan, got_tpl_channel_text_ready_cb,
           observing_ctx);
     }
@@ -271,6 +275,21 @@ got_tpl_channel_text_ready_cb (GObject *obj,
 {
   ObservingContext *observing_ctx = user_data;
   DBusGMethodInvocation *dbus_ctx = observing_ctx->dbus_ctx;
+  gboolean success = tpl_actionchain_finish (result);
+
+  if (success)
+    {
+      PATH_DEBUG (obj, "prepared channel");
+
+      tpl_observer_register_channel (observing_ctx->self, TPL_CHANNEL (obj));
+    }
+  else
+    {
+      PATH_DEBUG (obj, "failed to prepare");
+    }
+
+  /* drop our ref */
+  g_object_unref (obj);
 
   observing_ctx->chan_n -= 1;
   if (observing_ctx->chan_n == 0)
@@ -472,8 +491,8 @@ tpl_observer_init (TplObserver *self)
       TPL_TYPE_OBSERVER, TplObserverPriv);
   self->priv = priv;
 
-  priv->channel_map = g_hash_table_new_full (g_str_hash,
-      g_str_equal, g_free, g_object_unref);
+  priv->channel_map = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, g_object_unref);
   priv->logmanager = tpl_log_manager_dup_singleton ();
 
   tpl_observer_get_open_channels ();
@@ -590,22 +609,12 @@ tpl_observer_register_channel (TplObserver *self,
   g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
   g_return_val_if_fail (glob_map != NULL, FALSE);
 
-  /* 'key' will be freed by the hash table on key removal/destruction */
-  key = g_strdup (tp_proxy_get_object_path (G_OBJECT (channel)));
+  key = (char *) tp_proxy_get_object_path (G_OBJECT (channel));
 
-  if (g_hash_table_lookup (glob_map, key) != NULL)
-    {
-      DEBUG ("Channel path found, replacing %s", key);
-      g_hash_table_replace (glob_map, key, channel);
-    }
-  else
-    {
-      DEBUG ("Channel path not found, registering %s", key);
-      g_hash_table_insert (glob_map, key, channel);
-    }
+  DEBUG ("Registering channel %s", key);
+
+  g_hash_table_insert (glob_map, key, g_object_ref (channel));
   g_object_notify (G_OBJECT (self), "registered-channels");
-
-  g_object_unref (channel);
 
   return TRUE;
 }
@@ -641,7 +650,7 @@ tpl_observer_unregister_channel (TplObserver *self,
   g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
   g_return_val_if_fail (glob_map != NULL, FALSE);
 
-  key = g_strdup (tp_proxy_get_object_path (TP_PROXY (channel)));
+  key = (char *) tp_proxy_get_object_path (TP_PROXY (channel));
 
   DEBUG ("Unregistering channel path %s", key);
 
@@ -650,9 +659,10 @@ tpl_observer_unregister_channel (TplObserver *self,
      value's object
    */
   retval = g_hash_table_remove (glob_map, key);
+
   if (retval)
     g_object_notify (G_OBJECT (self), "registered-channels");
-  g_free (key);
+
   return retval;
 }
 

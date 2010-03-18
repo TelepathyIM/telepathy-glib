@@ -39,6 +39,8 @@ tpl_actionchain_new (GObject *obj,
   ret->simple = g_simple_async_result_new (obj, cb, user_data,
       tpl_actionchain_finish);
 
+  g_object_set_data (G_OBJECT (ret->simple), "chain", ret);
+
   return ret;
 }
 
@@ -55,17 +57,22 @@ tpl_actionchain_free (TplActionChain *self)
 {
   g_queue_foreach (self->chain, (GFunc) link_free, NULL);
   g_queue_free (self->chain);
-  /* TODO free self->simple, I canont understand how */
+  g_object_unref (self->simple);
   g_slice_free (TplActionChain, self);
 }
 
 
-gpointer
+gpointer // FIXME GObject *
 tpl_actionchain_get_object (TplActionChain *self)
 {
+  GObject *obj;
+
   g_return_val_if_fail (self != NULL && self->simple != NULL, NULL);
 
-  return g_async_result_get_source_object (G_ASYNC_RESULT (self->simple));
+  obj = g_async_result_get_source_object (G_ASYNC_RESULT (self->simple));
+  g_object_unref (obj); /* don't want the extra ref */
+
+  return obj;
 }
 
 
@@ -105,8 +112,8 @@ tpl_actionchain_continue (TplActionChain *self)
   if (g_queue_is_empty (self->chain))
     {
       GSimpleAsyncResult *simple = self->simple;
-      tpl_actionchain_free (self);
-      g_simple_async_result_set_op_res_gboolean ((GSimpleAsyncResult *) simple, TRUE);
+
+      g_simple_async_result_set_op_res_gboolean (simple, TRUE);
       g_simple_async_result_complete (simple);
     }
   else
@@ -124,14 +131,31 @@ tpl_actionchain_terminate (TplActionChain *self)
 {
   GSimpleAsyncResult *simple = self->simple;
 
-  tpl_actionchain_free (self);
-  g_simple_async_result_set_op_res_gboolean ((GSimpleAsyncResult *) simple, FALSE);
+  g_simple_async_result_set_op_res_gboolean (simple, FALSE);
   g_simple_async_result_complete (simple);
 }
 
 
+/**
+ * tpl_actionchain_finish:
+ *
+ * Get the result from running the action chain (%TRUE if the chain completed
+ * successfully, %FALSE if it was terminated).
+ *
+ * This function also frees the chain.
+ */
 gboolean
 tpl_actionchain_finish (GAsyncResult *result)
 {
-  return g_simple_async_result_get_op_res_gboolean ((GSimpleAsyncResult *) result);
+  TplActionChain *chain;
+  gboolean retval;
+
+  chain = g_object_get_data (G_OBJECT (result), "chain");
+
+  retval = g_simple_async_result_get_op_res_gboolean (
+      G_SIMPLE_ASYNC_RESULT (result));
+
+  tpl_actionchain_free (chain);
+
+  return retval;
 }

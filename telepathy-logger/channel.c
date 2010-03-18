@@ -49,8 +49,6 @@ static void pendingproc_get_ready_tp_channel (TplActionChain *ctx,
     gpointer user_data);
 static void got_ready_tp_channel_cb (TpChannel *channel,
     const GError *error, gpointer user_data);
-static void pendingproc_register_tpl_channel (TplActionChain *ctx,
-    gpointer user_data);
 
 G_DEFINE_ABSTRACT_TYPE (TplChannel, tpl_channel, TP_TYPE_CHANNEL)
 
@@ -234,7 +232,6 @@ call_when_ready_protected (TplChannel *self,
   actions = tpl_actionchain_new (G_OBJECT (self), cb, user_data);
   tpl_actionchain_append (actions, pendingproc_get_ready_tp_connection, NULL);
   tpl_actionchain_append (actions, pendingproc_get_ready_tp_channel, NULL);
-  tpl_actionchain_append (actions, pendingproc_register_tpl_channel, NULL);
   tpl_actionchain_continue (actions);
 }
 
@@ -264,10 +261,9 @@ got_ready_tp_connection_cb (TpConnection *connection,
 
       tpl_chan = tpl_actionchain_get_object (ctx);
       chan_path = tp_proxy_get_object_path (TP_PROXY (tpl_chan));
-      DEBUG ("%s. Giving up channel '%s' observation", error->message,
-          chan_path);
+      PATH_DEBUG (tpl_chan, "Giving up channel observation: %s",
+          error->message);
 
-      g_object_unref (tpl_chan);
       tpl_actionchain_terminate (ctx);
       return;
     }
@@ -297,34 +293,12 @@ got_ready_tp_channel_cb (TpChannel *channel,
 
   if (error != NULL)
     {
-      const gchar *chan_path;
-      TpConnection *tp_conn;
+      PATH_DEBUG (tpl_chan, "Giving up channel observation: %s",
+          error->message);
 
-      tp_conn = tp_channel_borrow_connection (TP_CHANNEL (channel));
-      chan_path = tp_proxy_get_object_path (TP_PROXY (tp_conn));
-      DEBUG ("%s. Giving up channel '%s' observation", error->message,
-          chan_path);
-
-      g_object_unref (tpl_chan);
-      g_object_unref (tp_conn);
       tpl_actionchain_terminate (ctx);
       return;
     }
-
-  tpl_actionchain_continue (ctx);
-}
-
-
-static void
-pendingproc_register_tpl_channel (TplActionChain *ctx,
-    gpointer user_data)
-{
-  /* singleton */
-  TplObserver *observer = tpl_observer_new ();
-  TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
-
-  tpl_observer_register_channel (observer, tpl_chan);
-  g_object_unref (observer);
 
   tpl_actionchain_continue (ctx);
 }

@@ -148,7 +148,6 @@ got_contact_cb (TpConnection *connection,
 
       PATH_DEBUG (tpl_text, "Error resolving self handle for connection %s."
          " Aborting channel observation", conn_path);
-      tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
 
       g_object_unref (observer);
       tpl_actionchain_terminate (ctx);
@@ -166,7 +165,6 @@ got_contact_cb (TpConnection *connection,
       default:
         PATH_DEBUG (tpl_text, "retrieving TpContacts: passing invalid value"
             " for selector: %d Aborting channel observation", priv->selector);
-        tpl_observer_unregister_channel (observer, TPL_CHANNEL (tpl_text));
         g_object_unref (observer);
         tpl_actionchain_terminate (ctx);
         return;
@@ -283,6 +281,8 @@ static void
 tpl_channel_text_finalize (GObject *obj)
 {
   TplChannelTextPriv *priv = GET_PRIV (obj);
+
+  PATH_DEBUG (obj, "finalizing channel");
 
   g_free (priv->chatroom_id);
   priv->chatroom_id = NULL;
