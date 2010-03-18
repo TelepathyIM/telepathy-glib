@@ -29,7 +29,6 @@
 #include <telepathy-glib/account.h>
 
 #include <telepathy-logger/log-entry.h>
-#include <telepathy-logger/log-store.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_MANAGER  (tpl_log_manager_get_type ())
@@ -148,9 +147,6 @@ gchar *tpl_log_manager_get_date_readable (const gchar *date);
 void tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
 gint tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
     TplLogSearchHit *b);
-
-gboolean tpl_log_manager_register_log_store (TplLogManager *self,
-    TplLogStore *logstore);
 
 G_END_DECLS
 #endif /* __TPL_LOG_MANAGER_H__ */
