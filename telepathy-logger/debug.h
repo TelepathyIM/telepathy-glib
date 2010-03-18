@@ -56,9 +56,16 @@ void tpl_critical (TplDebugFlags flag, const gchar *format, ...)
 
 G_END_DECLS
 
-/* CRITICAL needs to be always defined */
+/* CRITICAL/PATH_CRITICAL needs to be always defined */
 #define CRITICAL(format, ...) \
   tpl_critical (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
+#define PATH_CRITICAL(_proxy, _format, ...) \
+G_STMT_START { \
+  const gchar *_path; \
+  g_assert (TP_IS_PROXY (_proxy)); \
+  _path = tp_proxy_get_object_path (TP_PROXY (_proxy)); \
+  CRITICAL (" %s: " _format, _path, ##__VA_ARGS__); \
+} G_STMT_END
 
 #ifdef DEBUG_FLAG
 
