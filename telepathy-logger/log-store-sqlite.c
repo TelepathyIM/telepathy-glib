@@ -28,7 +28,6 @@
 #include <sqlite3.h>
 
 #include "log-entry-text.h"
-#include "log-manager.h"
 #include "log-store-sqlite.h"
 #include "datetime.h"
 #include "util.h"
