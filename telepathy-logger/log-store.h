@@ -28,6 +28,7 @@
 #include <telepathy-glib/account.h>
 
 #include <telepathy-logger/log-entry.h>
+#include <telepathy-logger/log-manager.h>
 
 G_BEGIN_DECLS
 
@@ -58,8 +59,6 @@ typedef enum
 
 
 typedef struct _TplLogStore TplLogStore;  /*dummy object */
-typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
-    gpointer user_data);
 
 typedef struct
 {
