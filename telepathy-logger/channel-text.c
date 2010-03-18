@@ -601,6 +601,43 @@ out:
   tpl_actionchain_continue (ctx);
 }
 
+
+/* check if the passed token currently is the cached_pending_msg list.
+ * If it is, the entry in cached_pending_msg will be freed and removed and
+ * TRUE will be returned. FALSE with untouched cached_pending_msg will be
+ * retuened otherwise.
+ * used by:
+ * got_message_pending_messages_cb and got_text_pending_messages_cb */
+static gboolean
+tpl_channel_text_msg_token_exist_in_cache (TplChannelText *self,
+    GList *cached_pending_msg,
+    const gchar *tpl_message_token)
+{
+  gboolean retval = FALSE;
+  GList *l;
+
+  /* look for the current token among the TPL cached tokens/log_id */
+  l = g_list_find_custom (cached_pending_msg, tpl_message_token,
+      (GCompareFunc) g_strcmp0);
+  if (l != NULL)
+    {
+      PATH_DEBUG (self, "pending msg %s already logged, not logging",
+          tpl_message_token);
+      /* Removing the element is a way to mark it as "present in pending
+       * message list". After the loop, all the remaining messages in
+       * cached_pending_msg will be considered stale entries,
+       * since they cannot be associated with any currently present
+       * pending message -> already ACK'd */
+      g_free (l->data);
+      cached_pending_msg = g_list_delete_link (cached_pending_msg, l);
+
+      retval = TRUE;
+    }
+
+  return retval;
+}
+
+
 static void
 pendingproc_get_pending_messages (TplActionChain *ctx,
     gpointer user_data)
@@ -611,11 +648,56 @@ pendingproc_get_pending_messages (TplActionChain *ctx,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
     tp_cli_dbus_properties_call_get (chan_text, -1,
         TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "PendingMessages",
-        got_message_pending_messages_cb, ctx, NULL, NULL);
+        got_message_pending_messages_cb, ctx, NULL,
+        G_OBJECT (chan_text));
   else
     tp_cli_channel_type_text_call_list_pending_messages (TP_CHANNEL (chan_text),
         -1, FALSE, got_text_pending_messages_cb, ctx, NULL, NULL);
 }
+
+/* Clean up passed messages (GList of tokens), which are known to be stale.  
+ * used by:
+ * got_message_pending_messages_cb and got_text_pending_messages_cb */
+static void
+tpl_chanenl_text_clean_up_stale_tokens (TplChannelText *self,
+    GList *stale_tokens)
+{
+  TplLogStore *cache = tpl_log_store_sqlite_dup ();
+  GError *loc_error = NULL;
+
+  /* Remove messages not set as ACK'd but not in the pending queue anymore: they
+   * are stale entries, already ACK'd while TPL was 'down'.
+   *
+   * NOTE: this will clean up stale entries in cache, related to any currently
+   * open channel, we don't know anything about all the other stale entries
+   * related to channel not currently open. Those will need to be clean
+   * elsewhere.
+   */
+  PATH_DEBUG (self, "Cleaning up stale messages");
+  while (stale_tokens != NULL)
+    {
+      gchar *log_id = stale_tokens->data;
+
+      PATH_DEBUG (self, "%s is stale, removing from DB", log_id);
+
+      tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
+      if (loc_error != NULL)
+        {
+          PATH_CRITICAL (self, "Unable to set %s as acknoledged in "
+              "TPL DB: %s", log_id, loc_error->message);
+          g_clear_error (&loc_error);
+        }
+      g_free (log_id);
+
+      /* free list's head, which will return the next element, if any */
+      stale_tokens = g_list_delete_link (stale_tokens, stale_tokens);
+    }
+  PATH_DEBUG (self, "Clean up finished.");
+
+  if (cache != NULL)
+    g_object_unref (cache);
+}
+
 
 /* PendingMessages CB for Message interface */
 static void
@@ -634,19 +716,25 @@ got_message_pending_messages_cb (TpProxy *proxy,
   guint i;
 
   if (!TPL_IS_CHANNEL_TEXT (proxy))
-    goto out;
+    {
+      CRITICAL ("Passed proxy not a is proper TplChannelText");
+      goto out;
+    }
 
   if (!TPL_IS_CHANNEL_TEXT (weak_object))
-    goto out;
+    {
+      CRITICAL ("Passed weak_object is not a proper TplChannelText");
+      goto out;
+    }
 
   if (error != NULL)
     {
-      CRITICAL ("retrieving messages for Message iface: %s", error->message);
+      PATH_CRITICAL (weak_object, "retrieving messages for Message iface: %s", error->message);
       goto out;
     }
 
   /* It's aaa{vs}, a list of message each containing a list of message's parts
-   * each contain a dictioanry k:v */
+   * each containing a dictioanry k:v */
   result = g_value_get_boxed (out_Value);
 
   /* getting messages ids known to be pending at last TPL exit */
@@ -676,7 +764,6 @@ got_message_pending_messages_cb (TpProxy *proxy,
       guint message_id;
       TpHandle message_sender_handle;
       const gchar *message_body;
-      GList *l = NULL;
       gboolean valid;
 
       /* list of message's parts */
@@ -703,23 +790,6 @@ got_message_pending_messages_cb (TpProxy *proxy,
       tpl_message_token = create_message_token (channel_path,
           message_timestamp, message_id);
 
-      /* look for the current token among the TPL cached tokens/log_id */
-      l = g_list_find_custom (cached_pending_msg, tpl_message_token,
-            (GCompareFunc) g_strcmp0);
-      if (l != NULL)
-        {
-          PATH_DEBUG (proxy, "pending msg %s already logged, not logging",
-              tpl_message_token);
-          /* Removing the element is a way to mark it as "present in pending
-           * message list", being also able to identify all the messages not
-           * present in the list, which I'll consider as stale entries */
-          g_free (l->data);
-          cached_pending_msg = g_list_delete_link (cached_pending_msg, l);
-
-          /* do not log messages which log_id is present in LogStoreIndex */
-          continue;
-        }
-
       message_sender_handle = tp_asv_get_uint32 (message_headers,
           "message-sender", NULL);
 
@@ -740,42 +810,19 @@ got_message_pending_messages_cb (TpProxy *proxy,
 
       message_body = tp_asv_get_string (message_part, "content");
 
-      on_received_signal_cb (TP_CHANNEL (proxy), message_id, message_timestamp,
-          message_sender_handle, message_type, message_flags, message_body,
-          TPL_CHANNEL_TEXT (proxy),
-          NULL);
+      /* log only log-ids not in cached -> not already logged */
+      if (!tpl_channel_text_msg_token_exist_in_cache (TPL_CHANNEL_TEXT (proxy),
+            cached_pending_msg, tpl_message_token))
+        {
+          on_received_signal_cb (TP_CHANNEL (proxy), message_id, message_timestamp,
+              message_sender_handle, message_type, message_flags, message_body,
+              NULL, G_OBJECT (weak_object));
+        }
 
       g_free (tpl_message_token);
     }
 
-  /* Remove messages not set as ACK but not in the pending queue anymore: they
-   * are stale entries which was already ACK while TPL was 'down'.
-   *
-   * NOTE: this will clean up stale entries in cache, related to any channel
-   * currently open, we don't know anything about all the other stale entries
-   * related to channel not currently open.
-   */
-  PATH_DEBUG (proxy, "Cleaning up stale messages");
-  while (cached_pending_msg != NULL)
-    {
-      gchar *log_id = cached_pending_msg->data;
-
-      PATH_DEBUG (proxy, "%s is stale, removing from DB", log_id);
-
-      tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
-      if (loc_error != NULL)
-        {
-          CRITICAL ("Unable to set %s as acknoledged in TPL DB: %s", log_id,
-              loc_error->message);
-          g_clear_error (&loc_error);
-        }
-      g_free (log_id);
-
-      /* free list's head, which will return the next element, if any */
-      cached_pending_msg = g_list_delete_link (cached_pending_msg,
-          cached_pending_msg);
-    }
-  PATH_DEBUG (proxy, "Clean up finished.");
+    tpl_chanenl_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy), cached_pending_msg);
 
 out:
   if (cache != NULL)
@@ -784,6 +831,11 @@ out:
   if (loc_error != NULL)
       g_error_free (loc_error);
 
+/* If an error occured, do not _terminate, just have it logged.
+ * _terminate would be fatal for TplChannel preparation,
+ * but in this case it would just mean that it couldn't retrieve pending messages, but
+ * it might still log the rest. If the next operation in chain fails, it's
+ * fatal. Partial data loss is better than total data loss  */
   tpl_actionchain_continue (ctx);
 }
 
@@ -796,12 +848,29 @@ got_text_pending_messages_cb (TpChannel *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
+  TplLogStore *cache = tpl_log_store_sqlite_dup ();
   TplActionChain *ctx = user_data;
+  GList *cached_pending_msg;
+  const gchar *channel_path;
+  GError *loc_error = NULL;
   guint i;
 
   if (error != NULL)
     {
-      PATH_DEBUG (proxy, "retrieving pending messages for Text iface: %s", error->message);
+      PATH_CRITICAL (proxy, "retrieving pending messages for Text iface: %s", error->message);
+      tpl_actionchain_terminate (ctx);
+      return;
+    }
+
+  channel_path = tp_proxy_get_object_path (proxy);
+
+  /* getting messages ids known to be pending at last TPL exit */
+  cached_pending_msg = tpl_log_store_sqlite_get_pending_messages (cache,
+      TP_CHANNEL (proxy), &loc_error);
+  if (loc_error != NULL)
+    {
+      PATH_CRITICAL (proxy, "Unable to obtain pending messages stored in TPL DB: %s",
+          loc_error->message);
       tpl_actionchain_terminate (ctx);
       return;
     }
@@ -811,6 +880,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
     {
       GValueArray *message_struct;
       const gchar *message_body;
+      gchar *tpl_message_token;
       guint message_id;
       guint message_timestamp;
       guint from_handle;
@@ -827,12 +897,22 @@ got_text_pending_messages_cb (TpChannel *proxy,
       message_flags = g_value_get_uint (g_value_array_get_nth (message_struct, 4));
       message_body = g_value_get_string (g_value_array_get_nth (message_struct, 5));
 
+      tpl_message_token = create_message_token (channel_path,
+          message_timestamp, message_id);
 
-      /* call the received signal callback to trigger the message storing */
-      on_received_signal_cb (proxy, message_id, message_timestamp, from_handle,
-          message_type, message_flags, message_body, TPL_CHANNEL_TEXT (proxy),
-          NULL);
+      /* log only log-ids not in cached -> not already logged */
+      if (!tpl_channel_text_msg_token_exist_in_cache (TPL_CHANNEL_TEXT (proxy),
+            cached_pending_msg, tpl_message_token))
+        {
+          /* call the received signal callback to trigger the message storing */
+          on_received_signal_cb (proxy, message_id, message_timestamp, from_handle,
+              message_type, message_flags, message_body, NULL, G_OBJECT (proxy));
+        }
+
+      g_free (tpl_message_token);
     }
+
+  tpl_chanenl_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy), cached_pending_msg);
 
   tpl_actionchain_continue (ctx);
 }
