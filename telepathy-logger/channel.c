@@ -229,10 +229,10 @@ call_when_ready_protected (TplChannel *self,
 {
   TplActionChain *actions;
 
-  actions = tpl_actionchain_new (G_OBJECT (self), cb, user_data);
-  tpl_actionchain_append (actions, pendingproc_get_ready_tp_connection, NULL);
-  tpl_actionchain_append (actions, pendingproc_get_ready_tp_channel, NULL);
-  tpl_actionchain_continue (actions);
+  actions = tpl_action_chain_new (G_OBJECT (self), cb, user_data);
+  tpl_action_chain_append (actions, pendingproc_get_ready_tp_connection, NULL);
+  tpl_action_chain_append (actions, pendingproc_get_ready_tp_channel, NULL);
+  tpl_action_chain_continue (actions);
 }
 
 
@@ -240,7 +240,7 @@ static void
 pendingproc_get_ready_tp_connection (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
+  TplChannel *tpl_chan = tpl_action_chain_get_object (ctx);
   TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (
       tpl_chan));
 
@@ -259,23 +259,23 @@ got_ready_tp_connection_cb (TpConnection *connection,
       const gchar *chan_path;
       TplChannel *tpl_chan;
 
-      tpl_chan = tpl_actionchain_get_object (ctx);
+      tpl_chan = tpl_action_chain_get_object (ctx);
       chan_path = tp_proxy_get_object_path (TP_PROXY (tpl_chan));
       PATH_DEBUG (tpl_chan, "Giving up channel observation: %s",
           error->message);
 
-      tpl_actionchain_terminate (ctx);
+      tpl_action_chain_terminate (ctx);
       return;
     }
 
-  tpl_actionchain_continue (ctx);
+  tpl_action_chain_continue (ctx);
 }
 
 static void
 pendingproc_get_ready_tp_channel (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
+  TplChannel *tpl_chan = tpl_action_chain_get_object (ctx);
 
   /* user_data is a TplChannel instance */
   tp_channel_call_when_ready (TP_CHANNEL (tpl_chan), got_ready_tp_channel_cb,
@@ -289,16 +289,16 @@ got_ready_tp_channel_cb (TpChannel *channel,
     gpointer user_data)
 {
   TplActionChain *ctx = user_data;
-  TplChannel *tpl_chan = tpl_actionchain_get_object (ctx);
+  TplChannel *tpl_chan = tpl_action_chain_get_object (ctx);
 
   if (error != NULL)
     {
       PATH_DEBUG (tpl_chan, "Giving up channel observation: %s",
           error->message);
 
-      tpl_actionchain_terminate (ctx);
+      tpl_action_chain_terminate (ctx);
       return;
     }
 
-  tpl_actionchain_continue (ctx);
+  tpl_action_chain_continue (ctx);
 }

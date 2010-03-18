@@ -133,10 +133,10 @@ tpl_channel_test_call_when_ready (TplChannelTest *self,
    * If for any reason, the order is changed, it's need to check what objects
    * are unreferenced by g_object_unref: after the order change, it might
    * happend that an object still has to be created after the change */
-  actions = tpl_actionchain_new (G_OBJECT (self), cb, user_data);
-  tpl_actionchain_append (actions, pendingproc_prepare_tpl_channel, NULL);
+  actions = tpl_action_chain_new (G_OBJECT (self), cb, user_data);
+  tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   /* start the queue consuming */
-  tpl_actionchain_continue (actions);
+  tpl_action_chain_continue (actions);
 }
 
 
@@ -144,7 +144,7 @@ static void
 pendingproc_prepare_tpl_channel (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_actionchain_get_object (ctx));
+  TplChannel *tpl_chan = TPL_CHANNEL (tpl_action_chain_get_object (ctx));
 
   g_debug ("prepare tpl");
   TPL_CHANNEL_GET_CLASS (tpl_chan)->call_when_ready_protected (tpl_chan,
@@ -160,7 +160,7 @@ got_tpl_chan_ready_cb (GObject *obj,
   TplActionChain *ctx = user_data;
   g_debug ("PREPARE");
 
-  if (tpl_actionchain_finish (result) == TRUE)
-    tpl_actionchain_continue (ctx);
+  if (tpl_action_chain_finish (result) == TRUE)
+    tpl_action_chain_continue (ctx);
   return;
 }

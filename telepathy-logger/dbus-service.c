@@ -202,7 +202,7 @@ favourite_contacts_file_read_line_cb (GObject *object,
 {
   GDataInputStream *data_stream = G_DATA_INPUT_STREAM (object);
   TplActionChain *action_chain = (TplActionChain *) (user_data);
-  TplDBusService *self = tpl_actionchain_get_object (action_chain);
+  TplDBusService *self = tpl_action_chain_get_object (action_chain);
   TplDBusServicePriv *priv;
   gchar *line;
   GError *error = NULL;
@@ -215,7 +215,7 @@ favourite_contacts_file_read_line_cb (GObject *object,
     {
       DEBUG ("failed to open favourite contacts file: %s", error->message);
       g_clear_error (&error);
-      tpl_actionchain_terminate (action_chain);
+      tpl_action_chain_terminate (action_chain);
     }
   else if (line != NULL)
     {
@@ -225,7 +225,7 @@ favourite_contacts_file_read_line_cb (GObject *object,
           NULL, favourite_contacts_file_read_line_cb, action_chain);
     }
   else
-    tpl_actionchain_continue (action_chain);
+    tpl_action_chain_continue (action_chain);
 }
 
 
@@ -255,13 +255,13 @@ favourite_contacts_file_open_cb (GObject *object,
           "necessary.");
 
       g_clear_error (&error);
-      tpl_actionchain_continue (action_chain);
+      tpl_action_chain_continue (action_chain);
     }
   else
     {
       DEBUG ("Failed to open the favourite contacts file: %s", error->message);
       g_clear_error (&error);
-      tpl_actionchain_terminate (action_chain);
+      tpl_action_chain_terminate (action_chain);
     }
 }
 
@@ -309,7 +309,7 @@ favourite_contacts_file_parsed_cb (GObject *object,
   TplDBusService *self = TPL_DBUS_SERVICE (object);
   TplDBusServicePriv *priv = GET_PRIV (self);
 
-  if (!tpl_actionchain_finish (result))
+  if (!tpl_action_chain_finish (result))
     {
       DEBUG ("Failed to parse the favourite contacts file and/or execute "
           "subsequent queued method calls");
@@ -324,12 +324,12 @@ tpl_dbus_service_constructed (GObject *object)
 {
   TplDBusServicePriv *priv = GET_PRIV (object);
 
-  priv->favourite_contacts_actions = tpl_actionchain_new (object,
+  priv->favourite_contacts_actions = tpl_action_chain_new (object,
       favourite_contacts_file_parsed_cb, object);
 
-  tpl_actionchain_append (priv->favourite_contacts_actions,
+  tpl_action_chain_append (priv->favourite_contacts_actions,
       pendingproc_favourite_contacts_file_open, NULL);
-  tpl_actionchain_continue (priv->favourite_contacts_actions);
+  tpl_action_chain_continue (priv->favourite_contacts_actions);
 }
 
 
@@ -611,7 +611,7 @@ pendingproc_get_favourite_contacts (TplActionChain *action_chain,
   favourite_contact_closure_free (closure);
 
   if (action_chain != NULL)
-    tpl_actionchain_continue (action_chain);
+    tpl_action_chain_continue (action_chain);
 }
 
 
@@ -634,7 +634,7 @@ tpl_dbus_service_get_favourite_contacts (TplSvcLogger *self,
    * queue this action */
   if (priv->favourite_contacts_actions != NULL)
     {
-      tpl_actionchain_append (priv->favourite_contacts_actions,
+      tpl_action_chain_append (priv->favourite_contacts_actions,
           pendingproc_get_favourite_contacts, closure);
     }
   else
@@ -747,7 +747,7 @@ add_favourite_contact_file_save_cb (gboolean added_favourite,
 
   favourite_contact_closure_free (closure);
   if (action_chain != NULL)
-    tpl_actionchain_continue (action_chain);
+    tpl_action_chain_continue (action_chain);
 }
 
 
@@ -788,7 +788,7 @@ pendingproc_add_favourite_contact (TplActionChain *action_chain,
 pendingproc_add_favourite_contact_ERROR:
   g_clear_error (&error);
   if (action_chain != NULL)
-    tpl_actionchain_terminate (action_chain);
+    tpl_action_chain_terminate (action_chain);
 }
 
 
@@ -813,7 +813,7 @@ tpl_dbus_service_add_favourite_contact (TplSvcLogger *self,
    * queue this action */
   if (priv->favourite_contacts_actions != NULL)
     {
-      tpl_actionchain_append (priv->favourite_contacts_actions,
+      tpl_action_chain_append (priv->favourite_contacts_actions,
           pendingproc_add_favourite_contact, closure);
     }
   else
@@ -842,7 +842,7 @@ remove_favourite_contact_file_save_cb (gboolean removed_favourite,
 
   favourite_contact_closure_free (closure);
   if (action_chain != NULL)
-    tpl_actionchain_continue (action_chain);
+    tpl_action_chain_continue (action_chain);
 }
 
 
@@ -888,7 +888,7 @@ pendingproc_remove_favourite_contact (TplActionChain *action_chain,
 pendingproc_remove_favourite_contact_ERROR:
   g_clear_error (&error);
   if (action_chain != NULL)
-    tpl_actionchain_terminate (action_chain);
+    tpl_action_chain_terminate (action_chain);
 }
 
 static void
@@ -912,7 +912,7 @@ tpl_dbus_service_remove_favourite_contact (TplSvcLogger *self,
    * queue this action */
   if (priv->favourite_contacts_actions != NULL)
     {
-      tpl_actionchain_append (priv->favourite_contacts_actions,
+      tpl_action_chain_append (priv->favourite_contacts_actions,
           pendingproc_remove_favourite_contact, closure);
     }
   else
