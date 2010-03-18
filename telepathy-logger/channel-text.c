@@ -633,7 +633,10 @@ got_message_pending_messages_cb (TpProxy *proxy,
   GError *loc_error = NULL;
   guint i;
 
-  if (!TPL_IS_CHANNEL (proxy))
+  if (!TPL_IS_CHANNEL_TEXT (proxy))
+    goto out;
+
+  if (!TPL_IS_CHANNEL_TEXT (weak_object))
     goto out;
 
   if (error != NULL)
@@ -937,18 +940,20 @@ pendingproc_connect_signals (TplActionChain *ctx,
       is_error = TRUE;
     }
 
-  tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
-      channel, on_pending_messages_removed_cb, NULL, NULL,
-      G_OBJECT (tpl_text), &error);
-  if (error != NULL)
+  if (tp_proxy_has_interface_by_id (tpl_text,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
     {
-      PATH_DEBUG (tpl_text, "'PendingMessagesRemoved' signal connect: %s",
-          error->message);
-      g_clear_error (&error);
-      is_error = TRUE;
+      tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
+          channel, on_pending_messages_removed_cb, NULL, NULL,
+          G_OBJECT (tpl_text), &error);
+      if (error != NULL)
+        {
+          PATH_DEBUG (tpl_text, "'PendingMessagesRemoved' signal connect: %s",
+              error->message);
+          g_clear_error (&error);
+          is_error = TRUE;
+        }
     }
-
-  /* TODO connect to TpContacts' notify::presence-type */
 
   if (is_error)
     tpl_actionchain_terminate (ctx);
