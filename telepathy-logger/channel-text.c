@@ -534,6 +534,49 @@ got_tpl_chan_ready_cb (GObject *obj,
 }
 
 
+/* Clean up passed messages (GList of tokens), which are known to be stale.
+ * used by:
+ * got_message_pending_messages_cb
+ * got_text_pending_messages_cb
+ * pendingproc_cleanup_pending_messages_db */
+static void
+tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
+    GList *stale_tokens)
+{
+  TplLogStore *cache = tpl_log_store_sqlite_dup ();
+  GError *loc_error = NULL;
+
+  /* Remove messages not set as ACK'd but not in the pending queue anymore: they
+   * are stale entries, already ACK'd while TPL was 'down'.
+   *
+   * NOTE: this will clean up stale entries in cache, related to any currently
+   * open channel, we don't know anything about all the other stale entries
+   * related to channel not currently open. Those will need to be clean
+   * elsewhere.
+   */
+  while (stale_tokens != NULL)
+    {
+     gchar *log_id = stale_tokens->data;
+
+      PATH_DEBUG (self, "%s is stale, removing from DB", log_id);
+
+      tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
+      if (loc_error != NULL)
+        {
+          PATH_CRITICAL (self, "Unable to set %s as acknoledged in "
+              "TPL DB: %s", log_id, loc_error->message);
+          g_clear_error (&loc_error);
+        }
+      g_free (log_id);
+
+      /* free list's head, which will return the next element, if any */
+      stale_tokens = g_list_delete_link (stale_tokens, stale_tokens);
+    }
+
+  if (cache != NULL)
+    g_object_unref (cache);
+}
+
 /* Cleans up stale log-ids in the index logstore.
  *
  * It 'brutally' considers as stale all log-ids which timestamp is older than
@@ -559,19 +602,20 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data)
 {
   /* five days ago in seconds */
+  TplChannelText *self = tpl_action_chain_get_object (ctx);
   const time_t time_limit = tpl_time_get_current () -
     TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT;
-  TplLogStore *index = tpl_log_store_sqlite_dup ();
+  TplLogStore *cache = tpl_log_store_sqlite_dup ();
   GList *l;
   GError *error = NULL;
 
-  if (index == NULL)
+  if (cache == NULL)
     {
       DEBUG ("Unable to obtain the TplLogStoreIndex singleton");
       goto out;
     }
 
-  l = tpl_log_store_sqlite_get_log_ids (index, NULL, time_limit,
+  l = tpl_log_store_sqlite_get_log_ids (cache, NULL, time_limit,
       &error);
   if (error != NULL)
     {
@@ -583,20 +627,14 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
       goto out;
     }
 
-  while (l != NULL)
-    {
-      gchar *log_id = l->data;
-
-      /* brutally ACK the stale message and ignore any error */
-      tpl_log_store_sqlite_set_acknowledgment (index, log_id, NULL);
-
-      g_free (log_id);
-      l = g_list_remove_link (l, l);
-    }
+  PATH_DEBUG (self, "Cleaning up stale messages");
+  /* no need to free/unref l */
+  tpl_channel_text_clean_up_stale_tokens (self, l);
+  PATH_DEBUG (self, "Clean up finished.");
 
 out:
-  if (index != NULL)
-    g_object_unref (index);
+  if (cache != NULL)
+    g_object_unref (cache);
 
   tpl_action_chain_continue (ctx);
 }
@@ -653,49 +691,6 @@ pendingproc_get_pending_messages (TplActionChain *ctx,
   else
     tp_cli_channel_type_text_call_list_pending_messages (TP_CHANNEL (chan_text),
         -1, FALSE, got_text_pending_messages_cb, ctx, NULL, NULL);
-}
-
-/* Clean up passed messages (GList of tokens), which are known to be stale.
- * used by:
- * got_message_pending_messages_cb and got_text_pending_messages_cb */
-static void
-tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
-    GList *stale_tokens)
-{
-  TplLogStore *cache = tpl_log_store_sqlite_dup ();
-  GError *loc_error = NULL;
-
-  /* Remove messages not set as ACK'd but not in the pending queue anymore: they
-   * are stale entries, already ACK'd while TPL was 'down'.
-   *
-   * NOTE: this will clean up stale entries in cache, related to any currently
-   * open channel, we don't know anything about all the other stale entries
-   * related to channel not currently open. Those will need to be clean
-   * elsewhere.
-   */
-  PATH_DEBUG (self, "Cleaning up stale messages");
-  while (stale_tokens != NULL)
-    {
-      gchar *log_id = stale_tokens->data;
-
-      PATH_DEBUG (self, "%s is stale, removing from DB", log_id);
-
-      tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
-      if (loc_error != NULL)
-        {
-          PATH_CRITICAL (self, "Unable to set %s as acknoledged in "
-              "TPL DB: %s", log_id, loc_error->message);
-          g_clear_error (&loc_error);
-        }
-      g_free (log_id);
-
-      /* free list's head, which will return the next element, if any */
-      stale_tokens = g_list_delete_link (stale_tokens, stale_tokens);
-    }
-  PATH_DEBUG (self, "Clean up finished.");
-
-  if (cache != NULL)
-    g_object_unref (cache);
 }
 
 
