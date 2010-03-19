@@ -817,7 +817,6 @@ log_store_xml_get_messages_for_file (TplLogStore *self,
       t = tpl_time_parse (time_);
 
       sender = tpl_contact_new (sender_id);
-      tpl_contact_set_account (sender, account);
       tpl_contact_set_alias (sender, sender_name);
       tpl_contact_set_avatar_token (sender, sender_avatar_token);
 

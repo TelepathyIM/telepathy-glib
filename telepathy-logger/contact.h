@@ -65,18 +65,12 @@ TplContact *tpl_contact_new (const gchar *identifier);
 TpContact *tpl_contact_get_contact (TplContact *self);
 const gchar *tpl_contact_get_alias (TplContact *self);
 const gchar *tpl_contact_get_identifier (TplContact *self);
-const gchar *tpl_contact_get_presence_status (TplContact *self);
-const gchar *tpl_contact_get_presence_message (TplContact *self);
 TplContactType tpl_contact_get_contact_type (TplContact *self);
 const gchar *tpl_contact_get_avatar_token (TplContact *self);
-TpAccount *tpl_contact_get_account (TplContact *self);
 
 void tpl_contact_set_contact (TplContact *self, TpContact *data);
-void tpl_contact_set_account (TplContact *self, TpAccount *data);
 void tpl_contact_set_alias (TplContact *self, const gchar *data);
 void tpl_contact_set_identifier (TplContact *self, const gchar *data);
-void tpl_contact_set_presence_status (TplContact *self, const gchar *data);
-void tpl_contact_set_presence_message (TplContact *self, const gchar *data);
 void tpl_contact_set_contact_type (TplContact *self, TplContactType data);
 void tpl_contact_set_avatar_token (TplContact *self, const gchar *data);
 
