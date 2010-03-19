@@ -282,7 +282,7 @@ tpl_channel_text_finalize (GObject *obj)
 {
   TplChannelTextPriv *priv = GET_PRIV (obj);
 
-  PATH_DEBUG (obj, "finalizing channel");
+  PATH_DEBUG (obj, "finalizing channel %p", obj);
 
   g_free (priv->chatroom_id);
   priv->chatroom_id = NULL;
@@ -1239,7 +1239,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplLogEntryText *log = TPL_LOG_ENTRY_TEXT (user_data);
+  TplLogEntryText *log = TPL_LOG_ENTRY_TEXT (weak_object);
   TplChannelText *tpl_text;
   TpContact *remote;
 
@@ -1405,7 +1405,7 @@ on_received_signal_cb (TpChannel *proxy,
   if (tpl_channel_text_get_remote_contact (tpl_text) == NULL)
     tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
         G_N_ELEMENTS (features), features, on_received_signal_with_contact_cb,
-        log, g_object_unref, NULL);
+        NULL, NULL, G_OBJECT (log));
   else
     keepon_on_receiving_signal (log);
 
@@ -1413,6 +1413,7 @@ out:
   if (tpl_contact_receiver != NULL)
     g_object_unref (tpl_contact_receiver);
   g_object_unref (index);
+  g_object_unref (log);
   g_free (log_id);
 }
 /* End of Signal's Callbacks */

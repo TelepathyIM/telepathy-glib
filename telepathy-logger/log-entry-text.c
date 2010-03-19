@@ -168,7 +168,7 @@ static void tpl_log_entry_text_class_init (TplLogEntryTextClass *klass)
 
 
 static void
-tpl_log_entry_text_init (TplLogEntryText * self)
+tpl_log_entry_text_init (TplLogEntryText *self)
 {
   TplLogEntryTextPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_ENTRY_TEXT, TplLogEntryTextPriv);
