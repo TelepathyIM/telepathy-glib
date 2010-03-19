@@ -162,7 +162,7 @@ tpl_channel_init (TplChannel *self)
 TpAccount *
 tpl_channel_get_account (TplChannel *self)
 {
-  TplChannelPriv *priv = GET_PRIV(self);
+  TplChannelPriv *priv = GET_PRIV (self);
 
   g_return_val_if_fail (TPL_IS_CHANNEL (self), NULL);
 

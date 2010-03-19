@@ -659,7 +659,7 @@ pendingproc_get_pending_messages (TplActionChain *ctx,
  * used by:
  * got_message_pending_messages_cb and got_text_pending_messages_cb */
 static void
-tpl_chanenl_text_clean_up_stale_tokens (TplChannelText *self,
+tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
     GList *stale_tokens)
 {
   TplLogStore *cache = tpl_log_store_sqlite_dup ();
@@ -814,15 +814,17 @@ got_message_pending_messages_cb (TpProxy *proxy,
       if (!tpl_channel_text_msg_token_exist_in_cache (TPL_CHANNEL_TEXT (proxy),
             cached_pending_msg, tpl_message_token))
         {
-          on_received_signal_cb (TP_CHANNEL (proxy), message_id, message_timestamp,
-              message_sender_handle, message_type, message_flags, message_body,
-              NULL, G_OBJECT (weak_object));
+          on_received_signal_cb (TP_CHANNEL (proxy),
+              message_id, message_timestamp, message_sender_handle,
+              message_type, message_flags, message_body,
+              NULL, NULL);
         }
 
       g_free (tpl_message_token);
     }
 
-    tpl_chanenl_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy), cached_pending_msg);
+    tpl_channel_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy),
+        cached_pending_msg);
 
 out:
   if (cache != NULL)
@@ -909,14 +911,15 @@ got_text_pending_messages_cb (TpChannel *proxy,
             cached_pending_msg, tpl_message_token))
         {
           /* call the received signal callback to trigger the message storing */
-          on_received_signal_cb (proxy, message_id, message_timestamp, from_handle,
-              message_type, message_flags, message_body, NULL, G_OBJECT (proxy));
+          on_received_signal_cb (proxy, message_id, message_timestamp,
+              from_handle, message_type, message_flags, message_body,
+              NULL, NULL);
         }
 
       g_free (tpl_message_token);
     }
 
-  tpl_chanenl_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy),
+  tpl_channel_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy),
       cached_pending_msg);
 
   tpl_action_chain_continue (ctx);
@@ -976,12 +979,10 @@ pendingproc_connect_signals (TplActionChain *ctx,
   TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
   GError *error = NULL;
   gboolean is_error = FALSE;
-  TpChannel *channel = NULL;
-
-  channel = TP_CHANNEL (TPL_CHANNEL (tpl_text));
+  TpChannel *channel = TP_CHANNEL (tpl_text);
 
   tp_cli_channel_type_text_connect_to_received (channel,
-      on_received_signal_cb, tpl_text, NULL, NULL, &error);
+      on_received_signal_cb, NULL, NULL, NULL, &error);
   if (error != NULL)
     {
       PATH_DEBUG (tpl_text, "'received' signal connect: %s", error->message);
@@ -1341,7 +1342,7 @@ on_received_signal_cb (TpChannel *proxy,
     GObject *weak_object)
 {
   TpHandle remote_handle = (TpHandle) arg_Sender;
-  TplChannelText *tpl_text = TPL_CHANNEL_TEXT (user_data);
+  TplChannelText *tpl_text = TPL_CHANNEL_TEXT (proxy);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpConnection *tp_conn;
   TpContact *me;
