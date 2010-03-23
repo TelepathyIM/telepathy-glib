@@ -6,21 +6,26 @@
     <title>telepathy-logger Reference Manual</title>
   </bookinfo>
 
-  <chapter id="ch-unclassified">
-    <title>Unclassified</title>
+  <chapter id="ch-public">
+    <title>Public API</title>
+
+    <xi:include href="xml/log-manager.xml"/>
+    <xi:include href="xml/log-entry.xml"/>
+    <xi:include href="xml/log-entry-text.xml"/>
+    <xi:include href="xml/contact.xml"/>
+    <xi:include href="xml/conf.xml"/>
+  </chapter>
+
+  <chapter id="ch-internal">
+    <title>Internal API (at least for now)</title>
 
     <xi:include href="xml/action-chain.xml"/>
     <xi:include href="xml/channel-factory.xml"/>
     <xi:include href="xml/channel-text.xml"/>
     <xi:include href="xml/channel.xml"/>
-    <xi:include href="xml/conf.xml"/>
-    <xi:include href="xml/contact.xml"/>
     <xi:include href="xml/datetime.xml"/>
     <xi:include href="xml/dbus-service.xml"/>
     <xi:include href="xml/debug.xml"/>
-    <xi:include href="xml/log-entry-text.xml"/>
-    <xi:include href="xml/log-entry.xml"/>
-    <xi:include href="xml/log-manager.xml"/>
     <xi:include href="xml/log-store-factory.xml"/>
     <xi:include href="xml/log-store-sqlite.xml"/>
     <xi:include href="xml/log-store.xml"/>
