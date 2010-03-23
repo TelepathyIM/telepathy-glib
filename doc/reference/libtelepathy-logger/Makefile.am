@@ -14,7 +14,7 @@ AUTOMAKE_OPTIONS = 1.6
 DOC_MODULE=telepathy-logger
 
 # The top-level SGML file. You can change this if you want to.
-DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
+DOC_MAIN_SGML_FILE=docs.xml
 
 # The directory containing the source code. Relative to $(srcdir).
 # gtk-doc will search all .c & .h files beneath here for inline comments
@@ -27,7 +27,13 @@ SCANGOBJ_OPTIONS=
 
 # Extra options to supply to gtkdoc-scan.
 # e.g. SCAN_OPTIONS=--deprecated-guards="GTK_DISABLE_DEPRECATED"
-SCAN_OPTIONS=--deprecated-guards=TP_DISABLE_DEPRECATED
+# --rebuild-sections means we get a section (xml/*.xml) per header file: this
+# should be removed if we want to maintain the sections file by hand, to split
+# or combine sections.
+SCAN_OPTIONS= \
+    --deprecated-guards=TP_DISABLE_DEPRECATED \
+    --rebuild-sections \
+    --rebuild-types
 
 # Extra options to supply to gtkdoc-mkdb.
 # e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml
@@ -49,9 +55,8 @@ CFILE_GLOB=$(top_srcdir)/telepathy-logger/*.c
 
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
-IGNORE_HFILES= \
-	dbus-service-client.h
-	dbus-service-server.h
+IGNORE_HFILES=\
+    log-manager-priv.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png
