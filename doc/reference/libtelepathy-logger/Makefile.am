@@ -27,7 +27,13 @@ SCANGOBJ_OPTIONS=
 
 # Extra options to supply to gtkdoc-scan.
 # e.g. SCAN_OPTIONS=--deprecated-guards="GTK_DISABLE_DEPRECATED"
-SCAN_OPTIONS=--deprecated-guards=TP_DISABLE_DEPRECATED
+# --rebuild-sections means we get a section (xml/*.xml) per header file: this
+# should be removed if we want to maintain the sections file by hand, to split
+# or combine sections.
+SCAN_OPTIONS= \
+    --deprecated-guards=TP_DISABLE_DEPRECATED \
+    --rebuild-sections \
+    --rebuild-types
 
 # Extra options to supply to gtkdoc-mkdb.
 # e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml
