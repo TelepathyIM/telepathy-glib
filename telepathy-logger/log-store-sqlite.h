@@ -30,12 +30,21 @@
 
 G_BEGIN_DECLS
 
-#define TPL_TYPE_LOG_STORE_SQLITE	(tpl_log_store_sqlite_get_type ())
-#define TPL_LOG_STORE_SQLITE(obj)	(G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqlite))
-#define TPL_LOG_STORE_SQLITE_CLASS(obj)	(G_TYPE_CHECK_CLASS_CAST ((obj), TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqliteClass))
-#define TPL_IS_LOG_STORE_SQLITE(obj)	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_STORE_SQLITE))
-#define TPL_IS_LOG_STORE_SQLITE_CLASS(obj)	(G_TYPE_CHECK_CLASS_TYPE ((obj), TPL_TYPE_LOG_STORE_SQLITE))
-#define TPL_LOG_STORE_SQLITE_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqliteClass))
+#define TPL_TYPE_LOG_STORE_SQLITE \
+  (tpl_log_store_sqlite_get_type ())
+#define TPL_LOG_STORE_SQLITE(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_STORE_SQLITE, \
+                               TplLogStoreSqlite))
+#define TPL_LOG_STORE_SQLITE_CLASS(obj) \
+  (G_TYPE_CHECK_CLASS_CAST ((obj), TPL_TYPE_LOG_STORE_SQLITE, \
+                            TplLogStoreSqliteClass))
+#define TPL_IS_LOG_STORE_SQLITE(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_STORE_SQLITE))
+#define TPL_IS_LOG_STORE_SQLITE_CLASS(obj) \
+  (G_TYPE_CHECK_CLASS_TYPE ((obj), TPL_TYPE_LOG_STORE_SQLITE))
+#define TPL_LOG_STORE_SQLITE_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_STORE_SQLITE, \
+                              TplLogStoreSqliteClass))
 
 #define TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT (5 * 86400)
 #define TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT "%Y-%m-%d %H:%M:%S"
