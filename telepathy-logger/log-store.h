@@ -56,8 +56,6 @@ typedef enum
   TPL_LOG_STORE_ERROR_LAST
 } TplLogStoreError;
 
-
-
 typedef struct _TplLogStore TplLogStore;  /*dummy object */
 
 typedef struct
@@ -96,8 +94,8 @@ GList *tpl_log_store_get_dates (TplLogStore *self, TpAccount *account,
 GList *tpl_log_store_get_messages_for_date (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
     const gchar *date);
-GList *tpl_log_store_get_recent_messages (TplLogStore *self, TpAccount *account,
-    const gchar *chat_id, gboolean chatroom);
+GList *tpl_log_store_get_recent_messages (TplLogStore *self,
+    TpAccount *account, const gchar *chat_id, gboolean chatroom);
 GList *tpl_log_store_get_chats (TplLogStore *self, TpAccount *account);
 GList *tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
     TpAccount *account, gchar const *identifier, const gchar *text);
@@ -107,7 +105,6 @@ GList *tpl_log_store_get_filtered_messages (TplLogStore *self,
     guint num_messages, TplLogMessageFilter filter, gpointer user_data);
 gboolean tpl_log_store_is_writable (TplLogStore *self);
 gboolean tpl_log_store_is_readable (TplLogStore *self);
-
 
 G_END_DECLS
 
