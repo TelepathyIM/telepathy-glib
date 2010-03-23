@@ -66,7 +66,6 @@ doc/reference/libtelepathy-logger/tmpl/
 doc/reference/libtelepathy-logger/xml/
 doc/reference/libtelepathy-logger/telepathy-logger-*.txt
 doc/reference/libtelepathy-logger/telepathy-logger-*.bak
-doc/reference/libtelepathy-logger/telepathy-logger-*.sgml
 doc/reference/libtelepathy-logger/telepathy-logger.args
 doc/reference/libtelepathy-logger/telepathy-logger.hierarchy
 doc/reference/libtelepathy-logger/telepathy-logger.interfaces
