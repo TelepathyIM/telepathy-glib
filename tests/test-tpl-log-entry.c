@@ -2,7 +2,7 @@
 
 #define gconf_client_get_bool(obj,key,err) g_print ("%s", key)
 
-#define LOG_ID 0
+#define LOG_ID "0"
 #define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/FOO/BAR/BAZ"
 #define CHAT_ID "echo@test.collabora.co.uk"
 #define DIRECTION TPL_LOG_ENTRY_DIRECTION_IN
