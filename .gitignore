@@ -2,8 +2,6 @@ ChangeLog
 Makefile
 Makefile.in
 configure
-configure.in
-observer.py
 tags
 TAGS
 aclocal.m4
