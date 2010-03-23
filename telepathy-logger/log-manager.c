@@ -244,7 +244,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
       result = tpl_log_store_add_message (store, message, &loc_error);
       if (!result)
         {
-          CRITICAL ("tpl_log_manager_add_message: logstore name=%s: %s. "
+          CRITICAL ("logstore name=%s: %s. "
               "Event may not be logged properly.",
               tpl_log_store_get_name (store), loc_error->message);
           g_clear_error (&loc_error);
@@ -254,7 +254,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
     }
   if (!retval)
     {
-      CRITICAL ("tpl_log_manager_add_message: Failed to write to all "
+      CRITICAL ("Failed to write to all "
           "writable LogStores log-id %s.", tpl_log_entry_get_log_id (message));
       g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
           TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
