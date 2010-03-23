@@ -61,7 +61,7 @@ typedef struct
 
 GType tpl_channel_get_type (void);
 
-TpAccount *tpl_channel_get_account (TplChannel * self);
+TpAccount *tpl_channel_get_account (TplChannel *self);
 void tpl_channel_call_when_ready (TplChannel *self, GAsyncReadyCallback cb,
     gpointer user_data);
 

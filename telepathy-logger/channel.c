@@ -101,6 +101,7 @@ tpl_channel_set_property (GObject *object,
   };
 }
 
+
 static void
 tpl_channel_dispose (GObject *obj)
 {
@@ -155,9 +156,11 @@ tpl_channel_init (TplChannel *self)
 TpAccount *
 tpl_channel_get_account (TplChannel *self)
 {
-  TplChannelPriv *priv = GET_PRIV (self);
+  TplChannelPriv *priv;
 
   g_return_val_if_fail (TPL_IS_CHANNEL (self), NULL);
+
+  priv = GET_PRIV (self);
 
   return priv->account;
 }
@@ -167,10 +170,12 @@ static void
 tpl_channel_set_account (TplChannel *self,
     TpAccount *data)
 {
-  TplChannelPriv *priv = GET_PRIV(self);
+  TplChannelPriv *priv;
 
   g_return_if_fail (TPL_IS_CHANNEL (self));
   g_return_if_fail (TP_IS_ACCOUNT (data));
+
+  priv = GET_PRIV (self);
   g_return_if_fail (priv->account == NULL);
 
   priv->account = g_object_ref (data);
@@ -192,7 +197,8 @@ tpl_channel_set_account (TplChannel *self,
  * #TplChannelClass.call_when_ready_protected  in order to prepare also the
  * #TplChannel instance.
  */
-void tpl_channel_call_when_ready (TplChannel *self,
+void
+tpl_channel_call_when_ready (TplChannel *self,
     GAsyncReadyCallback cb,
     gpointer user_data)
 {
