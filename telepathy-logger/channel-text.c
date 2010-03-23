@@ -655,7 +655,7 @@ pendingproc_get_pending_messages (TplActionChain *ctx,
         -1, FALSE, got_text_pending_messages_cb, ctx, NULL, NULL);
 }
 
-/* Clean up passed messages (GList of tokens), which are known to be stale.  
+/* Clean up passed messages (GList of tokens), which are known to be stale.
  * used by:
  * got_message_pending_messages_cb and got_text_pending_messages_cb */
 static void
@@ -1347,7 +1347,7 @@ on_received_signal_cb (TpChannel *proxy,
   TpConnection *tp_conn;
   TpContact *me;
   TplContact *tpl_contact_receiver = NULL;
-  TplLogEntryText *log;
+  TplLogEntryText *log = NULL;
   TpAccount *account = tpl_channel_get_account (TPL_CHANNEL (tpl_text));
   TplLogStore *index = tpl_log_store_sqlite_dup ();
   const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
@@ -1412,8 +1412,12 @@ on_received_signal_cb (TpChannel *proxy,
 out:
   if (tpl_contact_receiver != NULL)
     g_object_unref (tpl_contact_receiver);
+
   g_object_unref (index);
-  g_object_unref (log);
+
+  if (log != NULL)
+    g_object_unref (log);
+
   g_free (log_id);
 }
 /* End of Signal's Callbacks */
