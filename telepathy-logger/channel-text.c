@@ -655,7 +655,7 @@ pendingproc_get_pending_messages (TplActionChain *ctx,
         -1, FALSE, got_text_pending_messages_cb, ctx, NULL, NULL);
 }
 
-/* Clean up passed messages (GList of tokens), which are known to be stale.  
+/* Clean up passed messages (GList of tokens), which are known to be stale.
  * used by:
  * got_message_pending_messages_cb and got_text_pending_messages_cb */
 static void
