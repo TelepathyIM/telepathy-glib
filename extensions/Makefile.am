@@ -59,7 +59,7 @@ _gen/svc.c _gen/svc.h: _gen/all.xml $(tools_dir)/glib-ginterface-gen.py \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tpl_Svc_
 
-_gen/cli.c _gen/cli.h: _gen/all.xml $(tools_dir)/glib-ginterface-gen.py \
+_gen/cli-body.h _gen/cli.h: _gen/all.xml $(tools_dir)/glib-ginterface-gen.py \
 	Makefile.am
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
 		--subclass=TpProxy \
