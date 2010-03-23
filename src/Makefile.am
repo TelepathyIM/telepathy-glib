@@ -1,4 +1,3 @@
-include $(top_srcdir)/tools/shave.mk
 include $(top_srcdir)/tools/flymake.mk
 
 AM_CPPFLAGS =						\

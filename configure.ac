@@ -20,6 +20,7 @@ m4_define(tpl_version, tpl_full_version[]tpl_maybe_datestamp)
 
 
 AC_INIT(telepathy-logger, tpl_version, https://bugs.freedesktop.org/buglist.cgi?product=Telepathy&component=logger)
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
 DBUS_SERVICES_DIR="$datadir/dbus-1/services"
 AC_SUBST(DBUS_SERVICES_DIR)
@@ -214,8 +215,6 @@ AC_ARG_ENABLE(coding-style-checks,
 AC_SUBST([ENABLE_CODING_STYLE_CHECKS])
 # -----------------------------------------------------------
 
-SHAVE_INIT(.)
-
 AC_OUTPUT([
    Makefile
    data/Makefile
@@ -232,8 +231,6 @@ AC_OUTPUT([
    tests/suppressions/Makefile
    tests/twisted/Makefile
    tests/twisted/tools/Makefile
-   shave
-   shave-libtool
 ])
 
 echo "
@@ -242,7 +239,6 @@ Configure summary:
 	Compiler....................:  ${CC}
 	Compiler Flags..............:  ${CFLAGS} ${ERROR_CFLAGS}
 	Prefix......................:  ${prefix}
-	Shaved build................:  ${enable_shave}
 	Coding style checks.........:  ${ENABLE_CODING_STYLE_CHECKS}
 	Python Twisted tests........:  ${TEST_PYTHON}
 	Bugreporting URL............:  ${PACKAGE_BUGREPORT}
