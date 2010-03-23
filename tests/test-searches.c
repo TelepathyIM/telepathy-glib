@@ -54,7 +54,7 @@ main (int argc, char *argv[])
   manager = tpl_log_manager_dup_singleton ();
   logstore = g_object_new (TPL_TYPE_LOG_STORE_XML,
       "name", "Empathy", NULL);
-  tpl_log_manager_register_log_store (manager, logstore);
+  _tpl_log_manager_register_log_store (manager, logstore);
 
   /* we are using the blocking API, the non-blocking one is a wrap around, so
    * it's assured to work as long as the blocking API and the wapper work */

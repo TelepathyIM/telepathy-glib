@@ -28,16 +28,16 @@
 #include <telepathy-logger/log-store-factory.h>
 #include <telepathy-logger/log-store.h>
 
-gboolean tpl_log_manager_add_message (TplLogManager *manager,
+gboolean _tpl_log_manager_add_message (TplLogManager *manager,
     TplLogEntry *message, GError **error);
 
-gboolean tpl_log_manager_add_message_async_finish (GAsyncResult *result,
+gboolean _tpl_log_manager_add_message_async_finish (GAsyncResult *result,
     GError **error);
 
-void tpl_log_manager_add_message_async (TplLogManager *manager,
+void _tpl_log_manager_add_message_async (TplLogManager *manager,
     TplLogEntry *message, GAsyncReadyCallback callback, gpointer user_data);
 
-gboolean tpl_log_manager_register_log_store (TplLogManager *self,
+gboolean _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore);
 
 #endif /* __TPL_LOG_MANAGER_PRIV_H__ */
