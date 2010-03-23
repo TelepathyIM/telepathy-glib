@@ -160,7 +160,7 @@ add_log_store (TplLogManager *self,
 
   if (store == NULL)
     CRITICAL ("Error creating %s (name=%s)", g_type_name (type), name);
-  else if (!tpl_log_manager_register_log_store (self, store))
+  else if (!_tpl_log_manager_register_log_store (self, store))
     CRITICAL ("Failed to register store name=%s", name);
 
   if (store != NULL)
@@ -204,7 +204,7 @@ tpl_log_manager_dup_singleton (void)
 
 
 /**
- * tpl_log_manager_add_message
+ * _tpl_log_manager_add_message
  * @manager: the log manager
  * @message: a TplLogEntry subclass's instance
  * @error: the memory location of GError, filled if an error occurs
@@ -220,7 +220,7 @@ tpl_log_manager_dup_singleton (void)
  * Returns: %TRUE if the message has been successfully added, %FALSE otherwise.
  */
 gboolean
-tpl_log_manager_add_message (TplLogManager *manager,
+_tpl_log_manager_add_message (TplLogManager *manager,
     TplLogEntry *message,
     GError **error)
 {
@@ -244,7 +244,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
       result = tpl_log_store_add_message (store, message, &loc_error);
       if (!result)
         {
-          CRITICAL ("tpl_log_manager_add_message: logstore name=%s: %s. "
+          CRITICAL ("logstore name=%s: %s. "
               "Event may not be logged properly.",
               tpl_log_store_get_name (store), loc_error->message);
           g_clear_error (&loc_error);
@@ -254,7 +254,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
     }
   if (!retval)
     {
-      CRITICAL ("tpl_log_manager_add_message: Failed to write to all "
+      CRITICAL ("Failed to write to all "
           "writable LogStores log-id %s.", tpl_log_entry_get_log_id (message));
       g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
           TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
@@ -266,7 +266,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
 
 
 /**
- * tpl_log_manager_register_log_store
+ * _tpl_log_manager_register_log_store
  * @self: the log manager
  * @logstore: a TplLogStore interface implementation
  *
@@ -280,7 +280,7 @@ tpl_log_manager_add_message (TplLogManager *manager,
  * #TplLogStore:readable is set to %TRUE.
  */
 gboolean
-tpl_log_manager_register_log_store (TplLogManager *self,
+_tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore)
 {
   TplLogManagerPriv *priv = GET_PRIV (self);
@@ -779,7 +779,7 @@ _tpl_log_manager_async_operation_cb (GObject *source_object,
 
 /* Start of add_message async implementation */
 gboolean
-tpl_log_manager_add_message_async_finish (GAsyncResult *result,
+_tpl_log_manager_add_message_async_finish (GAsyncResult *result,
     GError **error)
 {
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -801,7 +801,7 @@ _add_message_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  tpl_log_manager_add_message (async_data->manager, chat_info->logentry,
+  _tpl_log_manager_add_message (async_data->manager, chat_info->logentry,
       &error);
   if (error != NULL)
     {
@@ -814,7 +814,7 @@ _add_message_async_thread (GSimpleAsyncResult *simple,
 }
 
 void
-tpl_log_manager_add_message_async (TplLogManager *manager,
+_tpl_log_manager_add_message_async (TplLogManager *manager,
     TplLogEntry *message,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -843,7 +843,7 @@ tpl_log_manager_add_message_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_add_message_async_finish);
+      _tpl_log_manager_add_message_async_finish);
 
   g_simple_async_result_run_in_thread (simple, _add_message_async_thread, 0,
       NULL);
