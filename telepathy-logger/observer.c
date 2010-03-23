@@ -82,7 +82,6 @@
  * The class of a #TplObserver.
  */
 
-static void tpl_observer_finalize (GObject * obj);
 static void tpl_observer_dispose (GObject * obj);
 static void observer_iface_init (gpointer, gpointer);
 static void got_tpl_channel_text_ready_cb (GObject *obj, GAsyncResult *result,
@@ -406,7 +405,6 @@ tpl_observer_class_init (TplObserverClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->constructor = tpl_observer_constructor;
-  object_class->finalize = tpl_observer_finalize;
   object_class->dispose = tpl_observer_dispose;
   object_class->get_property = tpl_observer_get_property;
 
@@ -572,13 +570,6 @@ tpl_observer_dispose (GObject *obj)
     }
 
   G_OBJECT_CLASS (tpl_observer_parent_class)->dispose (obj);
-}
-
-
-static void
-tpl_observer_finalize (GObject *obj)
-{
-  G_OBJECT_CLASS (tpl_observer_parent_class)->finalize (obj);
 }
 
 
