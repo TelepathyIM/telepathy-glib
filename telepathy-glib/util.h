@@ -87,6 +87,9 @@ gulong tp_g_signal_connect_object (gpointer instance,
 GValueArray *tp_value_array_build (gsize length,
   GType type,
   ...) G_GNUC_WARN_UNUSED_RESULT;
+void tp_value_array_unpack (GValueArray *array,
+    gsize len,
+    ...);
 
 G_END_DECLS
 

@@ -1059,3 +1059,63 @@ tp_value_array_build (gsize length,
 
   return arr;
 }
+
+/**
+ * tp_value_array_unpack:
+ * @array: the array to unpack
+ * @length: The number of elements that should be in the array
+ * @...: a list of correctly typed pointers to store the values in
+ *
+ * Unpacks a #GValueArray into separate variables.
+ *
+ * The contents of the values aren't copied into the variables, and so become
+ * invalid when @array is freed.
+ *
+ * <example>
+ *   <title>using tp_value_array_unpack</title>
+ *    <programlisting>
+ * gchar *host;
+ * guint port;
+ *
+ * tp_value_array_unpack (array, 2,
+ *    &host,
+ *    &port);
+ *    </programlisting>
+ * </example>
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_value_array_unpack (GValueArray *array,
+    gsize len,
+    ...)
+{
+  va_list var_args;
+  guint i;
+
+  va_start (var_args, len);
+
+  for (i = 0; i < len; i++)
+    {
+      GValue *value;
+      char *error = NULL;
+
+      if (G_UNLIKELY (i > array->n_values))
+        {
+          g_warning ("More parameters than entries in the struct!");
+          break;
+        }
+
+      value = g_value_array_get_nth (array, i);
+
+      G_VALUE_LCOPY (value, var_args, G_VALUE_NOCOPY_CONTENTS, &error);
+      if (error != NULL)
+        {
+          g_warning ("%s: %s", G_STRFUNC, error);
+          g_free (error);
+          break;
+        }
+    }
+
+  va_end (var_args);
+}
