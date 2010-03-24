@@ -1099,6 +1099,7 @@ tp_g_key_file_get_int64
 tp_g_key_file_get_uint64
 tp_g_signal_connect_object
 tp_value_array_build
+tp_value_array_unpack
 </SECTION>
 
 <SECTION>

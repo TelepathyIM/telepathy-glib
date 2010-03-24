@@ -1063,7 +1063,7 @@ tp_value_array_build (gsize length,
 /**
  * tp_value_array_unpack:
  * @array: the array to unpack
- * @length: The number of elements that should be in the array
+ * @len: The number of elements that should be in the array
  * @...: a list of correctly typed pointers to store the values in
  *
  * Unpacks a #GValueArray into separate variables.
