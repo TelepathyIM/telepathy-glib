@@ -34,6 +34,57 @@ test_connection_run_until_ready (TpConnection *conn)
   g_main_loop_unref (loop);
 }
 
+typedef struct {
+    GMainLoop *loop;
+    GError **error;
+} NotReadyCtx;
+
+static void
+cm_not_ready_cb (TpConnectionManager *cm G_GNUC_UNUSED,
+             const GError *error,
+             gpointer user_data,
+             GObject *weak_object G_GNUC_UNUSED)
+{
+  NotReadyCtx *ctx = user_data;
+
+  g_assert (error != NULL);
+
+  if (ctx->error != NULL)
+    {
+      *(ctx->error) = g_error_copy (error);
+    }
+
+  g_main_loop_quit (ctx->loop);
+}
+
+void
+test_connection_manager_run_until_readying_fails (TpConnectionManager *cm,
+    GError **error)
+{
+  NotReadyCtx ctx = { NULL, error };
+  const GError *invalidated;
+
+  g_return_if_fail (error == NULL || *error == NULL);
+  g_return_if_fail (!tp_connection_manager_is_ready (cm));
+
+  invalidated = tp_proxy_get_invalidated (cm);
+
+  if (invalidated != NULL)
+    {
+      if (error != NULL)
+        *error = g_error_copy (invalidated);
+
+      return;
+    }
+
+  ctx.loop = g_main_loop_new (NULL, FALSE);
+
+  tp_connection_manager_call_when_ready (cm, cm_not_ready_cb, &ctx, NULL,
+      NULL);
+  g_main_loop_run (ctx.loop);
+  g_main_loop_unref (ctx.loop);
+}
+
 static void
 cm_ready_cb (TpConnectionManager *cm G_GNUC_UNUSED,
              const GError *error,

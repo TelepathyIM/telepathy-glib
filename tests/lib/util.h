@@ -22,6 +22,8 @@ TpHandle test_connection_run_request_contact_handle (TpConnection *connection,
 
 void test_connection_run_until_ready (TpConnection *conn);
 void test_connection_manager_run_until_ready (TpConnectionManager *cm);
+void test_connection_manager_run_until_readying_fails (TpConnectionManager *cm,
+    GError **error);
 
 #define test_assert_no_error(e) _test_assert_no_error (e, __FILE__, __LINE__)
 
