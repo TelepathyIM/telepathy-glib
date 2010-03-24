@@ -16,15 +16,9 @@ Enhancements:
 * Add tp_g_socket_address_from_variant,
   tp_address_variant_from_g_socket_address (danni)
 
-Fixes:
+* Add tp_g_value_slice_new_byte (smcv)
 
-* Don't make an idle call to put received messages in the TpMessageMixin
-  queue, potentially avoiding a reference leak (Vivek)
-
-* tp_contacts_mixin_set_contact_attribute now takes a const gchar *
-  instead of a gchar * (mikhailz)
-
-* Improve TpAccount documentation (smcv)
+* Add tp_value_array_unpack, the inverse of tp_value_array_build (danni)
 
 Fixes:
 
