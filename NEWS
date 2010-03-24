@@ -1,7 +1,10 @@
-telepathy-glib 0.10.1 (UNRELEASED)
+telepathy-glib 0.10.1 (2010-03-24)
 ==================================
 
-...
+The "usually quite loud" release.
+
+This version includes all the bugfixes from 0.8.2, plus some documentation
+improvements in code added since 0.8.
 
 Fixes:
 
@@ -20,26 +23,6 @@ Fixes:
   TpBaseConnectionManager (smcv)
 
 * Remove a misleading debug message from tp_list_connection_names (wjt)
-
-* fd.o #23853: if a connection manager is discovered not to be running while
-  TpConnectionManager has a ListProtocols call in-flight, then a new instance
-  of the CM starts up and replies to that call, don't crash with an assertion
-  failure (smcv)
-
-* If a connection manager returns error from GetParameters(), don't dereference
-  a NULL pointer and segfault (smcv)
-
-* When asked to activate or introspect a connection manager, don't do anything
-  until we have at least worked out whether it was initially running, in order
-  to provide the documented behaviour (smcv)
-
-* When getting parameter details from a running connection manager, consider
-  parameters called "password" or ending with "-password" to be secret even
-  if they lack the SECRET flag, as was already done when reading .manager
-  files (smcv)
-
-* Corrected the error message given when a write-only D-Bus property
-  is read (Pekka Pessi)
 
 telepathy-glib 0.10.0 (2010-01-21)
 ==================================
