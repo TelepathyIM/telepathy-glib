@@ -57,13 +57,6 @@ connection_manager_got_info (TpConnectionManager *cm,
   g_hash_table_destroy (empty);
 }
 
-static void
-early_cm_exited (TpConnectionManager *cm,
-    GMainLoop *mainloop)
-{
-  g_main_loop_quit (mainloop);
-}
-
 static gboolean
 time_out (gpointer mainloop)
 {
@@ -82,6 +75,13 @@ wait_for_name_owner_cb (TpDBusDaemon *dbus_daemon,
     g_main_loop_quit (main_loop);
 }
 
+static void
+early_cm_exited (TpConnectionManager *cm,
+    gboolean *saw_exited)
+{
+  *saw_exited = TRUE;
+}
+
 int
 main (int argc,
       char **argv)
@@ -90,6 +90,8 @@ main (int argc,
   TpConnectionManager *early_cm, *late_cm;
   TpDBusDaemon *dbus_daemon;
   gulong handler;
+  GError *error = NULL;
+  gboolean saw_exited;
 
   g_type_init ();
 
@@ -110,8 +112,23 @@ main (int argc,
 
   /* Failure to introspect is signalled as 'exited' */
   handler = g_signal_connect (early_cm, "exited",
-      G_CALLBACK (early_cm_exited), mainloop);
-  g_main_loop_run (mainloop);
+      G_CALLBACK (early_cm_exited), &saw_exited);
+
+  test_connection_manager_run_until_readying_fails (early_cm, &error);
+  g_assert (error != NULL);
+  g_assert (tp_proxy_get_invalidated (early_cm) == NULL);
+  g_assert_cmpuint (error->domain, ==, DBUS_GERROR);
+  g_assert_cmpint (error->code, ==, DBUS_GERROR_SERVICE_UNKNOWN);
+  g_clear_error (&error);
+
+  if (!saw_exited)
+    {
+      g_debug ("waiting for 'exited'...");
+
+      while (!saw_exited)
+        g_main_context_iteration (NULL, TRUE);
+    }
+
   g_signal_handler_disconnect (early_cm, handler);
 
   /* Now start the connection manager and wait for it to start */
