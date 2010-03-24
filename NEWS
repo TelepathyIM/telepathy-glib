@@ -26,6 +26,44 @@ Fixes:
 
 * Improve TpAccount documentation (smcv)
 
+Fixes:
+
+* Don't make an idle call to put received messages in the TpMessageMixin
+  queue, potentially avoiding a reference leak (Vivek)
+
+* tp_contacts_mixin_set_contact_attribute now takes a const gchar *
+  instead of a gchar * (mikhailz)
+
+* Escape the doc-comments better in generated service interfaces (smcv)
+
+* Fix some typos and broken cross-references in the documentation, and
+  improve the TpAccount documentation (smcv)
+
+* Chain up to GObject's dispose method when destroying a
+  TpBaseConnectionManager (smcv)
+
+* Remove a misleading debug message from tp_list_connection_names (wjt)
+
+* fd.o #23853: if a connection manager is discovered not to be running while
+  TpConnectionManager has a ListProtocols call in-flight, then a new instance
+  of the CM starts up and replies to that call, don't crash with an assertion
+  failure (smcv)
+
+* If a connection manager returns error from GetParameters(), don't dereference
+  a NULL pointer and segfault (smcv)
+
+* When asked to activate or introspect a connection manager, don't do anything
+  until we have at least worked out whether it was initially running, in order
+  to provide the documented behaviour (smcv)
+
+* When getting parameter details from a running connection manager, consider
+  parameters called "password" or ending with "-password" to be secret even
+  if they lack the SECRET flag, as was already done when reading .manager
+  files (smcv)
+
+* Corrected the error message given when a write-only D-Bus property
+  is read (Pekka Pessi)
+
 telepathy-glib 0.10.0 (2010-01-21)
 ==================================
 

@@ -1171,8 +1171,6 @@ tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
           g_ptr_array_add (protocols, proto);
           continue;
         }
-
-      DEBUG ("invalid name: %s", *iter);
     }
 
   g_ptr_array_add (bus_names, NULL);
