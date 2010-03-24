@@ -3,6 +3,28 @@ telepathy-glib 0.8.2 (UNRELEASED)
 
 ...
 
+Fixes:
+
+* Don't rely on enum types being unsigned (sjoerd)
+
+* In tp_dbus_properties_mixin_make_properties_hash, add a missing call to
+  va_end (smcv)
+
+* Don't make an idle call to put received messages in the TpMessageMixin
+  queue, potentially avoiding a reference leak (Vivek)
+
+* tp_contacts_mixin_set_contact_attribute now takes a const gchar *
+  instead of a gchar * (mikhailz)
+
+* Escape the doc-comments better in generated service interfaces (smcv)
+
+* Fix some typos and broken cross-references in the documentation (smcv)
+
+* Chain up to GObject's dispose method when destroying a
+  TpBaseConnectionManager (smcv)
+
+* Remove a misleading debug message from tp_list_connection_names (wjt)
+
 telepathy-glib 0.8.1 (2009-10-15)
 =================================
 
