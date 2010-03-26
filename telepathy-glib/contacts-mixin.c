@@ -282,19 +282,6 @@ tp_contacts_mixin_get_contact_attributes (
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
-  /* first validate the given interfaces */
-  for (i = 0; interfaces[i] != NULL; i++) {
-    if (g_hash_table_lookup (self->priv->interfaces, interfaces[i]) == NULL)
-      {
-        GError einval = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Non-inspectable Interface given" };
-
-        dbus_g_method_return_error (context, &einval);
-        return;
-      }
-  }
-
-
   /* Setup handle array and hash with valid handles, optionally holding them */
   valid_handles = g_array_sized_new (TRUE, TRUE, sizeof (TpHandle),
       handles->len);
@@ -336,9 +323,10 @@ tp_contacts_mixin_get_contact_attributes (
 
       func = g_hash_table_lookup (self->priv->interfaces, interfaces[i]);
 
-      g_assert (func != NULL);
-
-      func (G_OBJECT(iface), valid_handles, result);
+      if (func == NULL)
+        DEBUG ("non-inspectable interface %s given; ignoring", interfaces[i]);
+      else
+        func (G_OBJECT(iface), valid_handles, result);
     }
 
   tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
