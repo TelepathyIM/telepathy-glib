@@ -2682,7 +2682,11 @@ tp_cli_channel_type_room_list_signal_callback_listing_rooms
 <INCLUDE>telepathy-glib/connection.h</INCLUDE>
 TpConnectionNameListCb
 tp_list_connection_names
+TpConnection
+TpConnectionClass
 tp_connection_new
+TP_CONNECTION_FEATURE_CORE
+TP_CONNECTION_FEATURE_CONNECTED
 tp_connection_run_until_ready
 TpConnectionWhenReadyCb
 tp_connection_call_when_ready
@@ -2698,8 +2702,6 @@ tp_connection_unref_handles
 tp_connection_init_known_interfaces
 tp_connection_presence_type_cmp_availability
 tp_connection_parse_object_path
-TpConnection
-TpConnectionClass
 TP_UNKNOWN_CONNECTION_STATUS
 TP_ERRORS_DISCONNECTED
 <SUBSECTION Standard>
@@ -2712,6 +2714,8 @@ TP_CONNECTION_GET_CLASS
 TP_IS_CONNECTION
 TP_IS_CONNECTION_CLASS
 TpConnectionPrivate
+tp_connection_get_feature_quark_core
+tp_connection_get_feature_quark_connected
 <SUBSECTION>
 tp_cli_connection_callback_for_connect
 tp_cli_connection_call_connect

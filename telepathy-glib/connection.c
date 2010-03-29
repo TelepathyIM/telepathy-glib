@@ -37,6 +37,7 @@
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/proxy-internal.h"
 
 #include "_gen/tp-cli-connection-body.h"
 
@@ -59,6 +60,89 @@
  *
  * Since: 0.7.1
  */
+
+/**
+ * TP_CONNECTION_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the "core" feature
+ * on a #TpConnection.
+ *
+ * When this feature is prepared, the basic properties of the Connection have
+ * been retrieved and are available for use, and change-notification has been
+ * set up for those that can change.
+ *
+ * Specifically, this implies that:
+ *
+ * <itemizedlist>
+ *  <listitem>#TpConnection:status has a value other than
+ *    %TP_UNKNOWN_CONNECTION_STATUS, and #TpConnection:status-reason is
+ *    the reason for changing to that status</listitem>
+ *  <listitem>interfaces that are always available have been added to the
+ *    #TpProxy:interfaces (although the set of interfaces is not guaranteed
+ *    to be complete until #TpConnection:status becomes
+ *    %TP_CONNECTION_STATUS_CONNECTED))</listitem>
+ * </itemizedlist>
+ *
+ * <note>
+ *  <title>prepared does not imply connected</title>
+ *  <para>Unlike the older #TpConnection:connection-ready mechanism, this
+ *    feature does not imply that the connection has successfully connected.
+ *    It only implies that an initial status (disconnected, connecting or
+ *    connected) has been discovered. %TP_CONNECTION_FEATURE_CONNECTED
+ *    is the closest equivalent of #TpConnection:connection-ready.</para>
+ * </note>
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_connection_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-connection-feature-core");
+}
+
+/**
+ * TP_CONNECTION_FEATURE_CONNECTED:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "connected" feature.
+ *
+ * When this feature is prepared, it means that the connection has become
+ * connected to the appropriate real-time communications service, and all
+ * information requested via other features has been updated accordingly.
+ * In particular, the following aspects of %TP_CONNECTION_FEATURE_CORE
+ * will be up to date:
+ *
+ * <itemizedlist>
+ *  <listitem>#TpConnection:status is
+ *    %TP_CONNECTION_STATUS_CONNECTED</listitem>
+ *  <listitem>#TpConnection:self-handle is valid and non-zero</listitem>
+ *  <listitem>all interfaces have been added to the set of
+ *    #TpProxy:interfaces, and that set will not change again</listitem>
+ * </itemizedlist>
+ *
+ * <note>
+ *   <title>Someone still has to call Connect()</title>
+ *   <para>Requesting this feature via tp_proxy_prepare_async() means that
+ *     you want to wait for the connection to connect, but it doesn't actually
+ *     start the process of connecting: to do that, call
+ *     tp_cli_connection_call_connect() separately.</para>
+ * </note>
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_connection_get_feature_quark_connected (void)
+{
+  return g_quark_from_static_string ("tp-connection-feature-connected");
+}
 
 /**
  * TP_ERRORS_DISCONNECTED:
@@ -171,16 +255,23 @@ tp_connection_continue_introspection (TpConnection *self)
       if (!self->priv->introspecting_after_connected)
         {
           /* Introspection will restart when we become CONNECTED */
-          DEBUG ("Prepared, but not yet connected");
+          DEBUG ("CORE ready, but not CONNECTED");
+          _tp_proxy_set_feature_prepared ((TpProxy *) self,
+            TP_CONNECTION_FEATURE_CORE, TRUE);
           return;
         }
 
       /* signal CONNECTED; we shouldn't have gone to status CONNECTED for any
        * reason that isn't REQUESTED :-) */
-      DEBUG ("%p: connection ready", self);
+      DEBUG ("%p: CORE and CONNECTED ready", self);
       self->priv->status = TP_CONNECTION_STATUS_CONNECTED;
       self->priv->status_reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
       self->priv->ready = TRUE;
+
+      _tp_proxy_set_feature_prepared ((TpProxy *) self,
+          TP_CONNECTION_FEATURE_CONNECTED, TRUE);
+      _tp_proxy_set_feature_prepared ((TpProxy *) self,
+          TP_CONNECTION_FEATURE_CORE, TRUE);
 
       g_object_notify ((GObject *) self, "status");
       g_object_notify ((GObject *) self, "status-reason");
@@ -747,6 +838,31 @@ tp_connection_dispose (GObject *object)
   ((GObjectClass *) tp_connection_parent_class)->dispose (object);
 }
 
+enum {
+    FEAT_CORE,
+    FEAT_CONNECTED,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_CORE].name = TP_CONNECTION_FEATURE_CORE;
+  features[FEAT_CORE].core = TRUE;
+
+  features[FEAT_CONNECTED].name = TP_CONNECTION_FEATURE_CONNECTED;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
+}
+
 static void
 tp_connection_class_init (TpConnectionClass *klass)
 {
@@ -767,12 +883,16 @@ tp_connection_class_init (TpConnectionClass *klass)
   /* If you change this, you must also change TpChannel to stop asserting
    * that its connection has a unique name */
   proxy_class->must_have_unique_name = TRUE;
+  proxy_class->list_features = tp_connection_list_features;
 
   /**
    * TpConnection:status:
    *
    * This connection's status, or %TP_UNKNOWN_CONNECTION_STATUS if we don't
    * know yet.
+   *
+   * To wait for a valid status (and other properties), call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CORE.
    *
    * Since version 0.11.UNRELEASED, the change to status
    * %TP_CONNECTION_STATUS_CONNECTED is delayed slightly, until introspection
@@ -791,6 +911,10 @@ tp_connection_class_init (TpConnectionClass *klass)
    *
    * The %TP_HANDLE_TYPE_CONTACT handle of the local user on this connection,
    * or 0 if we don't know yet or if the connection has become invalid.
+   *
+   * To wait for a valid self-handle (and other properties), call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONNECTED.
    */
   param_spec = g_param_spec_uint ("self-handle", "Self handle",
       "The local user's Contact handle on this connection", 0, G_MAXUINT32,
@@ -801,6 +925,9 @@ tp_connection_class_init (TpConnectionClass *klass)
 
   /**
    * TpConnection:status-reason:
+   *
+   * To wait for a valid status (and other properties), call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CORE.
    *
    * The reason why #TpConnection:status changed to its current value,
    * or TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED if unknown.
@@ -823,6 +950,10 @@ tp_connection_class_init (TpConnectionClass *klass)
    * By the time this property becomes %TRUE, any extra interfaces will
    * have been set up and the #TpProxy:interfaces property will have been
    * populated.
+   *
+   * This is similar to %TP_CONNECTION_FEATURE_CONNECTED, except that once
+   * it has changed to %TRUE, it remains %TRUE even if the connection has
+   * been invalidated.
    */
   param_spec = g_param_spec_boolean ("connection-ready", "Connection ready?",
       "Initially FALSE; changes to TRUE when introspection finishes", FALSE,
@@ -917,9 +1048,8 @@ finally:
  * @self: a connection
  *
  * Return the %TP_HANDLE_TYPE_CONTACT handle of the local user on this
- * connection, or 0 if the connection is not ready (the
- * TpConnection:connection-ready property is false) or has become invalid
- * (the TpProxy::invalidated signal).
+ * connection, or 0 if the self-handle is not known yet or the connection
+ * has become invalid (the TpProxy::invalidated signal).
  *
  * The returned handle is not necessarily valid forever (the
  * notify::self-handle signal will be emitted if it changes, which can happen
