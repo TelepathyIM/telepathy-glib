@@ -108,13 +108,13 @@ test_run_until_invalid (Test *test,
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
-  MYASSERT (test->conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
   tp_proxy_invalidate ((TpProxy *) test->conn, &invalidated_for_test);
 
   MYASSERT (!tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
       "");
-  MYASSERT (error != NULL, "");
+  g_assert (error != NULL);
   MYASSERT_SAME_ERROR (&invalidated_for_test, error);
   g_error_free (error);
 }
@@ -127,12 +127,12 @@ test_run_until_ready (Test *test,
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
-  MYASSERT (test->conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 }
 
 static void
@@ -152,9 +152,9 @@ conn_ready (TpConnection *connection,
 
       g_message ("connection %p ready", connection);
       parsed = tp_connection_parse_object_path (connection, &proto, &cm_name);
-      MYASSERT (parsed ==  TRUE, "");
-      MYASSERT_SAME_STRING (proto, "simple-protocol");
-      MYASSERT_SAME_STRING (cm_name, "simple");
+      g_assert (parsed);
+      g_assert_cmpstr (proto, ==, "simple-protocol");
+      g_assert_cmpstr (cm_name, ==, "simple");
       g_free (proto);
       g_free (cm_name);
     }
@@ -175,8 +175,8 @@ test_call_when_ready (Test *test,
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
-  MYASSERT (test->conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
 
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
 
@@ -204,8 +204,8 @@ test_call_when_invalid (Test *test,
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
-  MYASSERT (test->conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
 
   /* Connection becomes invalid, so we are called back synchronously */
 
@@ -220,7 +220,7 @@ test_call_when_invalid (Test *test,
   test->cwr_ready = FALSE;
   test->cwr_error = NULL;
   tp_connection_call_when_ready (test->conn, conn_ready, test);
-  MYASSERT (test->cwr_ready == TRUE, "");
+  g_assert (test->cwr_ready);
   MYASSERT_SAME_ERROR (&invalidated_for_test, test->cwr_error);
   g_error_free (test->cwr_error);
   test->cwr_error = NULL;
