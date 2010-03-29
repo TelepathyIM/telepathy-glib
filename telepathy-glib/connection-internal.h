@@ -30,8 +30,8 @@ G_BEGIN_DECLS
 typedef void (*TpConnectionProc) (TpConnection *self);
 
 struct _TpConnectionPrivate {
-    /* GArray of TpConnectionProc */
-    GArray *introspect_needed;
+    /* list of TpConnectionProc */
+    GList *introspect_needed;
 
     TpHandle self_handle;
     TpConnectionStatus status;

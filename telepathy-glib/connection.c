@@ -160,19 +160,14 @@ tp_connection_get_property (GObject *object,
 static void
 tp_connection_continue_introspection (TpConnection *self)
 {
-  g_assert (self->priv->introspect_needed != NULL);
-
   if (tp_proxy_get_invalidated (self) != NULL)
     {
       DEBUG ("Already invalidated: not becoming ready");
       return;
     }
 
-  if (self->priv->introspect_needed->len == 0)
+  if (self->priv->introspect_needed == NULL)
     {
-      g_array_free (self->priv->introspect_needed, TRUE);
-      self->priv->introspect_needed = NULL;
-
       /* signal CONNECTED; we shouldn't have gone to status CONNECTED for any
        * reason that isn't REQUESTED :-) */
       DEBUG ("%p: connection ready", self);
@@ -186,11 +181,11 @@ tp_connection_continue_introspection (TpConnection *self)
     }
   else
     {
-      guint i = self->priv->introspect_needed->len - 1;
-      TpConnectionProc next = g_array_index (self->priv->introspect_needed,
-          TpConnectionProc, i);
+      GList *last = g_list_last (self->priv->introspect_needed);
+      TpConnectionProc next = last->data;
 
-      g_array_remove_index (self->priv->introspect_needed, i);
+      self->priv->introspect_needed = g_list_delete_link (
+          self->priv->introspect_needed, last);
       next (self);
     }
 }
@@ -257,8 +252,6 @@ got_contact_attribute_interfaces (TpProxy *proxy,
 static void
 introspect_contacts (TpConnection *self)
 {
-  g_assert (self->priv->introspect_needed != NULL);
-
   tp_cli_dbus_properties_call_get (self, -1,
        TP_IFACE_CONNECTION_INTERFACE_CONTACTS, "ContactAttributeInterfaces",
        got_contact_attribute_interfaces, NULL, NULL, NULL);
@@ -306,8 +299,6 @@ on_self_handle_changed (TpConnection *self,
 static void
 get_self_handle (TpConnection *self)
 {
-  g_assert (self->priv->introspect_needed != NULL);
-
   tp_cli_connection_connect_to_self_handle_changed (self,
       on_self_handle_changed, NULL, NULL, NULL, NULL);
 
@@ -326,8 +317,6 @@ tp_connection_got_interfaces_cb (TpConnection *self,
                                  gpointer user_data,
                                  GObject *user_object)
 {
-  TpConnectionProc func;
-
   if (error != NULL)
     {
       DEBUG ("%p: GetInterfaces() failed, assuming no interfaces: %s",
@@ -345,11 +334,9 @@ tp_connection_got_interfaces_cb (TpConnection *self,
     }
 
   g_assert (self->priv->introspect_needed == NULL);
-  self->priv->introspect_needed = g_array_new (FALSE, FALSE,
-      sizeof (TpConnectionProc));
-
-  func = get_self_handle;
-  g_array_append_val (self->priv->introspect_needed, func);
+  tp_verify_statement (sizeof (TpConnectionProc) <= sizeof (gpointer));
+  self->priv->introspect_needed = g_list_append (self->priv->introspect_needed,
+    get_self_handle);
 
   if (interfaces != NULL)
     {
@@ -365,8 +352,8 @@ tp_connection_got_interfaces_cb (TpConnection *self,
 
               if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS)
                 {
-                  func = introspect_contacts;
-                  g_array_append_val (self->priv->introspect_needed, func);
+                  self->priv->introspect_needed = g_list_append (
+                      self->priv->introspect_needed, introspect_contacts);
                 }
             }
           else
@@ -644,7 +631,7 @@ tp_connection_finalize (GObject *object)
   /* not true unless we were finalized before we were ready */
   if (self->priv->introspect_needed != NULL)
     {
-      g_array_free (self->priv->introspect_needed, TRUE);
+      g_list_free (self->priv->introspect_needed);
       self->priv->introspect_needed = NULL;
     }
 
