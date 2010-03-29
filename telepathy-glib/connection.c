@@ -349,8 +349,7 @@ tp_connection_got_interfaces_cb (TpConnection *self,
             {
               GQuark q = g_quark_from_string (*iter);
 
-              tp_proxy_add_interface_by_id ((TpProxy *) self,
-                  g_quark_from_string (*iter));
+              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
 
               if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS)
                 {
