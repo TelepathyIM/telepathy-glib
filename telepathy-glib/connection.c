@@ -199,6 +199,9 @@ got_contact_attribute_interfaces (TpProxy *proxy,
 {
   TpConnection *self = TP_CONNECTION (proxy);
 
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
+
   if (error == NULL)
     {
       if (G_VALUE_HOLDS (value, G_TYPE_STRV))
@@ -252,7 +255,8 @@ got_contact_attribute_interfaces (TpProxy *proxy,
 static void
 introspect_contacts (TpConnection *self)
 {
-  tp_cli_dbus_properties_call_get (self, -1,
+  g_assert (self->priv->introspection_call == NULL);
+  self->priv->introspection_call = tp_cli_dbus_properties_call_get (self, -1,
        TP_IFACE_CONNECTION_INTERFACE_CONTACTS, "ContactAttributeInterfaces",
        got_contact_attribute_interfaces, NULL, NULL, NULL);
 }
@@ -275,6 +279,8 @@ got_self_handle (TpConnection *self,
                  gpointer user_data G_GNUC_UNUSED,
                  GObject *user_object G_GNUC_UNUSED)
 {
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
 
   if (error != NULL)
     {
@@ -306,8 +312,9 @@ get_self_handle (TpConnection *self)
    * but until Connection has other interesting properties, there's no point in
    * trying to implement a fast path; GetSelfHandle is the only one guaranteed
    * to work, so we'll sometimes have to call it anyway */
-  tp_cli_connection_call_get_self_handle (self, -1,
-       got_self_handle, NULL, NULL, NULL);
+  g_assert (self->priv->introspection_call == NULL);
+  self->priv->introspection_call = tp_cli_connection_call_get_self_handle (
+      self, -1, got_self_handle, NULL, NULL, NULL);
 }
 
 static void
@@ -317,6 +324,9 @@ tp_connection_got_interfaces_cb (TpConnection *self,
                                  gpointer user_data,
                                  GObject *user_object)
 {
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
+
   if (error != NULL)
     {
       DEBUG ("%p: GetInterfaces() failed, assuming no interfaces: %s",
@@ -379,11 +389,11 @@ tp_connection_status_changed (TpConnection *self,
   if (status == TP_CONNECTION_STATUS_CONNECTED)
     {
       /* we defer the perceived change to CONNECTED until ready */
-      if (!self->priv->called_get_interfaces)
+      if (self->priv->introspection_call == NULL)
         {
-          tp_cli_connection_call_get_interfaces (self, -1,
-              tp_connection_got_interfaces_cb, NULL, NULL, NULL);
-          self->priv->called_get_interfaces = TRUE;
+          self->priv->introspection_call =
+            tp_cli_connection_call_get_interfaces (self, -1,
+                tp_connection_got_interfaces_cb, NULL, NULL, NULL);
         }
     }
   else
@@ -555,6 +565,9 @@ tp_connection_got_status_cb (TpConnection *self,
 {
   DEBUG ("%p", self);
 
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
+
   if (error == NULL)
     {
       DEBUG ("%p: Initial status is %d", self, status);
@@ -572,6 +585,13 @@ tp_connection_got_status_cb (TpConnection *self,
 static void
 tp_connection_invalidated (TpConnection *self)
 {
+  if (self->priv->introspection_call != NULL)
+    {
+      DEBUG ("Cancelling introspection");
+      tp_proxy_pending_call_cancel (self->priv->introspection_call);
+      self->priv->introspection_call = NULL;
+    }
+
   _tp_connection_set_self_handle (self, 0);
   _tp_connection_clean_up_handle_refs (self);
 }
@@ -596,7 +616,8 @@ tp_connection_constructor (GType type,
 
   /* get my initial status */
   DEBUG ("Calling GetStatus");
-  tp_cli_connection_call_get_status (self, -1,
+  g_assert (self->priv->introspection_call == NULL);
+  self->priv->introspection_call = tp_cli_connection_call_get_status (self, -1,
       tp_connection_got_status_cb, NULL, NULL, NULL);
 
   _tp_connection_init_handle_refs (self);
@@ -619,6 +640,7 @@ tp_connection_init (TpConnection *self)
   self->priv->status = TP_UNKNOWN_CONNECTION_STATUS;
   self->priv->status_reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
   self->priv->contacts = g_hash_table_new (g_direct_hash, g_direct_equal);
+  self->priv->introspection_call = NULL;
 }
 
 static void
