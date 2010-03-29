@@ -181,11 +181,11 @@ tp_connection_continue_introspection (TpConnection *self)
     }
   else
     {
-      GList *last = g_list_last (self->priv->introspect_needed);
-      TpConnectionProc next = last->data;
+      TpConnectionProc next = self->priv->introspect_needed->data;
 
       self->priv->introspect_needed = g_list_delete_link (
-          self->priv->introspect_needed, last);
+          self->priv->introspect_needed,
+          self->priv->introspect_needed);
       next (self);
     }
 }
