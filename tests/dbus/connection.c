@@ -19,7 +19,6 @@
 #include "tests/lib/util.h"
 
 typedef struct {
-    GMainLoop *mainloop;
     TpDBusDaemon *dbus;
     SimpleConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
@@ -44,7 +43,6 @@ setup (Test *test,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_dbus_daemon_dup (NULL);
   g_assert (test->dbus != NULL);
 
@@ -100,9 +98,6 @@ teardown (Test *test,
 
   g_object_unref (test->dbus);
   test->dbus = NULL;
-
-  g_main_loop_unref (test->mainloop);
-  test->mainloop = NULL;
 }
 
 static void
@@ -170,9 +165,6 @@ conn_ready (TpConnection *connection,
 
       test->cwr_error = g_error_copy (error);
     }
-
-  if (test->mainloop != NULL)
-    g_main_loop_quit (test->mainloop);
 }
 
 static void
@@ -189,13 +181,13 @@ test_call_when_ready (Test *test,
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
 
   tp_connection_call_when_ready (test->conn, conn_ready, test);
-  g_message ("Entering main loop");
-  g_main_loop_run (test->mainloop);
-  g_message ("Leaving main loop");
-  g_assert_cmpint (test->cwr_ready, ==, TRUE);
+
+  while (!test->cwr_ready)
+    g_main_context_iteration (NULL, TRUE);
+
   g_assert_no_error (test->cwr_error);
 
-  /* Connection already ready, so we are called back synchronously */
+  /* Connection already ready here, so we are called back synchronously */
 
   test->cwr_ready = FALSE;
   test->cwr_error = NULL;
