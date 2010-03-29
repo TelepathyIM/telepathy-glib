@@ -37,6 +37,8 @@ enum
 struct _SimpleConnectionPrivate
 {
   gchar *account;
+  guint connect_source;
+  guint disconnect_source;
 };
 
 static void
@@ -85,6 +87,16 @@ static void
 finalize (GObject *object)
 {
   SimpleConnection *self = SIMPLE_CONNECTION (object);
+
+  if (self->priv->connect_source != 0)
+    {
+      g_source_remove (self->priv->connect_source);
+    }
+
+  if (self->priv->disconnect_source != 0)
+    {
+      g_source_remove (self->priv->disconnect_source);
+    }
 
   g_free (self->priv->account);
 
@@ -155,9 +167,13 @@ pretend_connected (gpointer data)
   conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
       NULL, NULL);
 
-  tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
-      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  if (conn->status == TP_CONNECTION_STATUS_CONNECTING)
+    {
+      tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
+          TP_CONNECTION_STATUS_REASON_REQUESTED);
+    }
 
+  self->priv->connect_source = 0;
   return FALSE;
 }
 
@@ -174,7 +190,7 @@ start_connecting (TpBaseConnection *conn,
    * start connecting, then go to state CONNECTED when finished. Here there
    * isn't actually a connection, so we'll fake a connection process that
    * takes half a second. */
-  g_timeout_add (500, pretend_connected, self);
+  self->priv->connect_source = g_timeout_add (500, pretend_connected, self);
 
   return TRUE;
 }
@@ -182,18 +198,24 @@ start_connecting (TpBaseConnection *conn,
 static gboolean
 pretend_disconnected (gpointer data)
 {
+  SimpleConnection *self = SIMPLE_CONNECTION (data);
+
   tp_base_connection_finish_shutdown (TP_BASE_CONNECTION (data));
+  self->priv->disconnect_source = 0;
   return FALSE;
 }
 
 static void
 shut_down (TpBaseConnection *conn)
 {
+  SimpleConnection *self = SIMPLE_CONNECTION (conn);
+
   /* In a real connection manager we'd ask the underlying implementation to
    * start shutting down, then call this function when finished. Here there
    * isn't actually a connection, so we'll fake a disconnection process that
    * takes half a second. */
-  g_timeout_add (500, pretend_disconnected, conn);
+  self->priv->disconnect_source = g_timeout_add (500, pretend_disconnected,
+      conn);
 }
 
 static void
