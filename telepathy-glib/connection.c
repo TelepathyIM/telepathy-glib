@@ -162,13 +162,26 @@ tp_connection_continue_introspection (TpConnection *self)
 {
   g_assert (self->priv->introspect_needed != NULL);
 
+  if (tp_proxy_get_invalidated (self) != NULL)
+    {
+      DEBUG ("Already invalidated: not becoming ready");
+      return;
+    }
+
   if (self->priv->introspect_needed->len == 0)
     {
       g_array_free (self->priv->introspect_needed, TRUE);
       self->priv->introspect_needed = NULL;
 
+      /* signal CONNECTED; we shouldn't have gone to status CONNECTED for any
+       * reason that isn't REQUESTED :-) */
       DEBUG ("%p: connection ready", self);
+      self->priv->status = TP_CONNECTION_STATUS_CONNECTED;
+      self->priv->status_reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
       self->priv->ready = TRUE;
+
+      g_object_notify ((GObject *) self, "status");
+      g_object_notify ((GObject *) self, "status-reason");
       g_object_notify ((GObject *) self, "connection-ready");
     }
   else
@@ -376,17 +389,22 @@ tp_connection_status_changed (TpConnection *self,
 {
   DEBUG ("%p: %d -> %d because %d", self, self->priv->status, status, reason);
 
-  self->priv->status = status;
-  self->priv->status_reason = reason;
-  g_object_notify ((GObject *) self, "status");
-  g_object_notify ((GObject *) self, "status-reason");
-
-  if (status == TP_CONNECTION_STATUS_CONNECTED &&
-      !self->priv->called_get_interfaces)
+  if (status == TP_CONNECTION_STATUS_CONNECTED)
     {
-      tp_cli_connection_call_get_interfaces (self, -1,
-          tp_connection_got_interfaces_cb, NULL, NULL, NULL);
-      self->priv->called_get_interfaces = TRUE;
+      /* we defer the perceived change to CONNECTED until ready */
+      if (!self->priv->called_get_interfaces)
+        {
+          tp_cli_connection_call_get_interfaces (self, -1,
+              tp_connection_got_interfaces_cb, NULL, NULL, NULL);
+          self->priv->called_get_interfaces = TRUE;
+        }
+    }
+  else
+    {
+      self->priv->status = status;
+      self->priv->status_reason = reason;
+      g_object_notify ((GObject *) self, "status");
+      g_object_notify ((GObject *) self, "status-reason");
     }
 }
 
@@ -697,8 +715,12 @@ tp_connection_class_init (TpConnectionClass *klass)
   /**
    * TpConnection:status:
    *
-   * This connection's status, or TP_UNKNOWN_CONNECTION_STATUS if we don't
+   * This connection's status, or %TP_UNKNOWN_CONNECTION_STATUS if we don't
    * know yet.
+   *
+   * Since version 0.11.UNRELEASED, the change to status
+   * %TP_CONNECTION_STATUS_CONNECTED is delayed slightly, until introspection
+   * of the connection has finished.
    */
   param_spec = g_param_spec_uint ("status", "Status",
       "The status of this connection", 0, G_MAXUINT32,
