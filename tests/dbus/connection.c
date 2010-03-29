@@ -85,10 +85,6 @@ teardown (Test *test,
   g_assert (conn != NULL);
   g_assert_no_error (error);
 
-  ok = tp_connection_run_until_ready (conn, TRUE, &error, NULL);
-  g_assert (ok);
-  g_assert_no_error (error);
-
   ok = tp_cli_connection_run_disconnect (conn, -1, &error, NULL);
   g_assert (ok);
   g_assert_no_error (error);
@@ -190,6 +186,8 @@ test_call_when_ready (Test *test,
   MYASSERT (test->conn != NULL, "");
   test_assert_no_error (error);
 
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
+
   tp_connection_call_when_ready (test->conn, conn_ready, test);
   g_message ("Entering main loop");
   g_main_loop_run (test->mainloop);
@@ -240,16 +238,16 @@ int
 main (int argc,
       char **argv)
 {
-  Test test = { NULL };
+  g_test_init (&argc, &argv, NULL);
 
-  setup (&test, NULL);
+  g_test_add ("/conn/run_until_invalid", Test, NULL, setup,
+      test_run_until_invalid, teardown);
+  g_test_add ("/conn/run_until_ready", Test, NULL, setup,
+      test_run_until_ready, teardown);
+  g_test_add ("/conn/call_when_ready", Test, NULL, setup,
+      test_call_when_ready, teardown);
+  g_test_add ("/conn/call_when_invalid", Test, NULL, setup,
+      test_call_when_invalid, teardown);
 
-  test_run_until_invalid (&test, NULL);
-  test_run_until_ready (&test, NULL);
-  test_call_when_ready (&test, NULL);
-  test_call_when_invalid (&test, NULL);
-
-  teardown (&test, NULL);
-
-  return 0;
+  return g_test_run ();
 }
