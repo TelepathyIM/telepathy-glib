@@ -26,9 +26,10 @@ typedef struct {
     gchar *conn_name;
     gchar *conn_path;
     TpConnection *conn;
-} Test;
 
-static GMainLoop *mainloop = NULL;
+    gboolean cwr_ready;
+    GError *cwr_error /* initialized in setup */;
+} Test;
 
 static GError invalidated_for_test = { 0, TP_ERROR_PERMISSION_DENIED,
       "No connection for you!" };
@@ -59,6 +60,9 @@ setup (Test *test,
   g_assert (tp_base_connection_register (test->service_conn_as_base, "simple",
         &test->conn_name, &test->conn_path, &error));
   g_assert_no_error (error);
+
+  test->cwr_ready = FALSE;
+  test->cwr_error = NULL;
 }
 
 static void
@@ -140,20 +144,14 @@ test_run_until_ready (Test *test,
   test_assert_no_error (error);
 }
 
-typedef struct {
-    gboolean ready;
-    GError *error /* initialized to NULL statically */;
-    GMainLoop *mainloop;
-} WhenReadyContext;
-
 static void
 conn_ready (TpConnection *connection,
             const GError *error,
             gpointer user_data)
 {
-  WhenReadyContext *ctx = user_data;
+  Test *test = user_data;
 
-  ctx->ready = TRUE;
+  test->cwr_ready = TRUE;
 
   if (error == NULL)
     {
@@ -174,11 +172,11 @@ conn_ready (TpConnection *connection,
       g_message ("connection %p invalidated: %s #%u \"%s\"", connection,
           g_quark_to_string (error->domain), error->code, error->message);
 
-      ctx->error = g_error_copy (error);
+      test->cwr_error = g_error_copy (error);
     }
 
-  if (ctx->mainloop != NULL)
-    g_main_loop_quit (ctx->mainloop);
+  if (test->mainloop != NULL)
+    g_main_loop_quit (test->mainloop);
 }
 
 static void
@@ -186,26 +184,26 @@ test_call_when_ready (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
-  WhenReadyContext ctx = { FALSE, NULL, mainloop };
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
   MYASSERT (test->conn != NULL, "");
   test_assert_no_error (error);
 
-  tp_connection_call_when_ready (test->conn, conn_ready, &ctx);
+  tp_connection_call_when_ready (test->conn, conn_ready, test);
   g_message ("Entering main loop");
-  g_main_loop_run (mainloop);
+  g_main_loop_run (test->mainloop);
   g_message ("Leaving main loop");
-  MYASSERT (ctx.ready == TRUE, "");
-  test_assert_no_error (ctx.error);
+  g_assert_cmpint (test->cwr_ready, ==, TRUE);
+  g_assert_no_error (test->cwr_error);
 
   /* Connection already ready, so we are called back synchronously */
 
-  ctx.ready = FALSE;
-  tp_connection_call_when_ready (test->conn, conn_ready, &ctx);
-  MYASSERT (ctx.ready == TRUE, "");
-  test_assert_no_error (ctx.error);
+  test->cwr_ready = FALSE;
+  test->cwr_error = NULL;
+  tp_connection_call_when_ready (test->conn, conn_ready, test);
+  g_assert_cmpint (test->cwr_ready, ==, TRUE);
+  g_assert_no_error (test->cwr_error);
 }
 
 static void
@@ -213,7 +211,6 @@ test_call_when_invalid (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
-  WhenReadyContext ctx = { FALSE, NULL, mainloop };
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
@@ -222,22 +219,21 @@ test_call_when_invalid (Test *test,
 
   /* Connection becomes invalid, so we are called back synchronously */
 
-  ctx.ready = FALSE;
-  tp_connection_call_when_ready (test->conn, conn_ready, &ctx);
+  tp_connection_call_when_ready (test->conn, conn_ready, test);
   tp_proxy_invalidate ((TpProxy *) test->conn, &invalidated_for_test);
-  MYASSERT (ctx.ready == TRUE, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, ctx.error);
-  g_error_free (ctx.error);
-  ctx.error = NULL;
+  g_assert_cmpint (test->cwr_ready, ==, TRUE);
+  MYASSERT_SAME_ERROR (&invalidated_for_test, test->cwr_error);
+  g_clear_error (&test->cwr_error);
 
   /* Connection already invalid, so we are called back synchronously */
 
-  ctx.ready = FALSE;
-  tp_connection_call_when_ready (test->conn, conn_ready, &ctx);
-  MYASSERT (ctx.ready == TRUE, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, ctx.error);
-  g_error_free (ctx.error);
-  ctx.error = NULL;
+  test->cwr_ready = FALSE;
+  test->cwr_error = NULL;
+  tp_connection_call_when_ready (test->conn, conn_ready, test);
+  MYASSERT (test->cwr_ready == TRUE, "");
+  MYASSERT_SAME_ERROR (&invalidated_for_test, test->cwr_error);
+  g_error_free (test->cwr_error);
+  test->cwr_error = NULL;
 }
 
 int
@@ -247,8 +243,6 @@ main (int argc,
   Test test = { NULL };
 
   setup (&test, NULL);
-
-  mainloop = test.mainloop;
 
   test_run_until_invalid (&test, NULL);
   test_run_until_ready (&test, NULL);
