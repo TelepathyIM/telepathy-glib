@@ -127,16 +127,25 @@ test_dbus_daemon_dup_or_die (void)
   return d;
 }
 
-void
-test_proxy_run_until_dbus_queue_processed (gpointer proxy)
+static void
+introspect_cb (TpProxy *proxy G_GNUC_UNUSED,
+    const gchar *xml G_GNUC_UNUSED,
+    const GError *error G_GNUC_UNUSED,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
 {
-  tp_cli_dbus_introspectable_run_introspect (proxy, -1, NULL, NULL, NULL);
+  g_main_loop_quit (user_data);
 }
 
 void
-test_connection_run_until_dbus_queue_processed (TpConnection *connection)
+test_proxy_run_until_dbus_queue_processed (gpointer proxy)
 {
-  tp_cli_connection_run_get_protocol (connection, -1, NULL, NULL, NULL);
+  GMainLoop *loop = g_main_loop_new (NULL, FALSE);
+
+  tp_cli_dbus_introspectable_call_introspect (proxy, -1, introspect_cb,
+      loop, NULL, NULL);
+  g_main_loop_run (loop);
+  g_main_loop_unref (loop);
 }
 
 typedef struct {
