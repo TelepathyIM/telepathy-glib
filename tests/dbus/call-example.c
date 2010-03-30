@@ -121,8 +121,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_dbus_daemon_dup (NULL);
-  g_assert (test->dbus != NULL);
+  test->dbus = test_dbus_daemon_dup_or_die ();
 
   test->service_cm = EXAMPLE_CALL_CONNECTION_MANAGER (g_object_new (
         EXAMPLE_TYPE_CALL_CONNECTION_MANAGER,

@@ -48,7 +48,7 @@ main (int argc,
 
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = tp_dbus_daemon_new (tp_get_bus ());
+  dbus = test_dbus_daemon_dup_or_die ();
 
   service_conn = SIMPLE_CONNECTION (g_object_new (
         SIMPLE_TYPE_CONNECTION,

@@ -43,8 +43,7 @@ setup (Test *test,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  test->dbus = tp_dbus_daemon_dup (NULL);
-  g_assert (test->dbus != NULL);
+  test->dbus = test_dbus_daemon_dup_or_die ();
 
   test->service_conn = SIMPLE_CONNECTION (g_object_new (
         SIMPLE_TYPE_CONNECTION,

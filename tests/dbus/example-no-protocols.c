@@ -99,8 +99,7 @@ main (int argc,
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  dbus_daemon = tp_dbus_daemon_dup (NULL);
-  g_assert (dbus_daemon != NULL);
+  dbus_daemon = test_dbus_daemon_dup_or_die ();
 
   g_timeout_add (5000, time_out, mainloop);
 

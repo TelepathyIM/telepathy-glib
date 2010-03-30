@@ -12,6 +12,8 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
 
+#include "tests/lib/util.h"
+
 static void
 test_parse_failure (gconstpointer test_data)
 {
@@ -80,7 +82,7 @@ setup (Test *test,
        gconstpointer data)
 {
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_dbus_daemon_dup (NULL);
+  test->dbus = test_dbus_daemon_dup_or_die ();
   g_assert (test->dbus != NULL);
 
   test->account = NULL;
