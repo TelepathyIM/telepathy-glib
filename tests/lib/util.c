@@ -111,6 +111,22 @@ test_connection_manager_run_until_ready (TpConnectionManager *cm)
   g_main_loop_unref (loop);
 }
 
+TpDBusDaemon *
+test_dbus_daemon_dup_or_die (void)
+{
+  TpDBusDaemon *d = tp_dbus_daemon_dup (NULL);
+
+  /* In a shared library, this would be very bad (see fd.o #18832), but in a
+   * regression test that's going to be run under a temporary session bus,
+   * it's just what we want. */
+  if (d == NULL)
+    {
+      g_error ("Unable to connect to session bus");
+    }
+
+  return d;
+}
+
 void
 test_proxy_run_until_dbus_queue_processed (gpointer proxy)
 {
