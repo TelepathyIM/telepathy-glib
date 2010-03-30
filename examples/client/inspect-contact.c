@@ -13,6 +13,12 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+typedef struct {
+    const gchar *to_inspect;
+    int exit_status;
+    GMainLoop *main_loop;
+} InspectContactData;
+
 static void
 display_contact (TpContact *contact)
 {
@@ -45,11 +51,13 @@ got_contacts_by_handle (TpConnection *connection,
                         gpointer user_data,
                         GObject *weak_object)
 {
-  GMainLoop *mainloop = user_data;
+  InspectContactData *data = user_data;
 
   if (error == NULL)
     {
       guint i;
+
+      data->exit_status = 0;
 
       for (i = 0; i < n_contacts; i++)
         {
@@ -59,14 +67,16 @@ got_contacts_by_handle (TpConnection *connection,
       for (i = 0; i < n_invalid; i++)
         {
           g_warning ("Invalid handle %u", invalid[i]);
+          data->exit_status = 1;
         }
     }
   else
     {
       g_warning ("Error getting contacts: %s", error->message);
+      data->exit_status = 1;
     }
 
-  g_main_loop_quit (mainloop);
+  g_main_loop_quit (data->main_loop);
 }
 
 static void
@@ -79,13 +89,15 @@ got_contacts_by_id (TpConnection *connection,
                     gpointer user_data,
                     GObject *weak_object)
 {
-  GMainLoop *mainloop = user_data;
+  InspectContactData *data = user_data;
 
   if (error == NULL)
     {
       guint i;
       GHashTableIter hash_iter;
       gpointer key, value;
+
+      data->exit_status = 0;
 
       for (i = 0; i < n_contacts; i++)
         {
@@ -100,14 +112,58 @@ got_contacts_by_id (TpConnection *connection,
           GError *e = value;
 
           g_warning ("Invalid ID \"%s\": %s", id, e->message);
+          data->exit_status = 1;
         }
     }
   else
     {
       g_warning ("Error getting contacts: %s", error->message);
+      data->exit_status = 1;
     }
 
-  g_main_loop_quit (mainloop);
+  g_main_loop_quit (data->main_loop);
+}
+
+static void
+connection_ready_cb (TpConnection *connection,
+    const GError *error,
+    gpointer user_data)
+{
+  static TpContactFeature features[] = {
+      TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN,
+      TP_CONTACT_FEATURE_PRESENCE
+  };
+  InspectContactData *data = user_data;
+
+  if (error != NULL)
+    {
+      g_warning ("%s", error->message);
+      data->exit_status = 1;
+      g_main_loop_quit (data->main_loop);
+      return;
+    }
+
+  if (data->to_inspect == NULL)
+    {
+      TpHandle self_handle = tp_connection_get_self_handle (connection);
+
+      tp_connection_get_contacts_by_handle (connection,
+          1, &self_handle,
+          sizeof (features) / sizeof (features[0]), features,
+          got_contacts_by_handle,
+          data, NULL, NULL);
+    }
+  else
+    {
+      const gchar *contacts[] = { data->to_inspect, NULL };
+
+      tp_connection_get_contacts_by_id (connection,
+          1, contacts,
+          sizeof (features) / sizeof (features[0]), features,
+          got_contacts_by_id,
+          data, NULL, NULL);
+    }
 }
 
 int
@@ -116,15 +172,9 @@ main (int argc,
 {
   const gchar *bus_name, *object_path;
   TpConnection *connection = NULL;
-  GMainLoop *mainloop = NULL;
+  InspectContactData data = { NULL, 1, NULL };
   TpDBusDaemon *daemon = NULL;
   GError *error = NULL;
-  static TpContactFeature features[] = {
-      TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR_TOKEN,
-      TP_CONTACT_FEATURE_PRESENCE
-  };
-  int ret = 1;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
@@ -151,6 +201,8 @@ main (int argc,
       bus_name = argv[1];
     }
 
+  data.to_inspect = argv[2];
+
   daemon = tp_dbus_daemon_dup (&error);
 
   if (daemon == NULL)
@@ -161,49 +213,28 @@ main (int argc,
 
   connection = tp_connection_new (daemon, bus_name, object_path, &error);
 
-  if (connection == NULL ||
-      !tp_connection_run_until_ready (connection, FALSE, &error, NULL))
+  if (connection == NULL)
     {
       g_warning ("%s", error->message);
       goto out;
     }
 
-  g_message ("Connection ready\n");
+  data.main_loop = g_main_loop_new (NULL, FALSE);
 
-  mainloop = g_main_loop_new (NULL, FALSE);
+  /* for this example I assume it's an existing connection on which someone
+   * else has called (or will call) Connect(), so we won't call Connect()
+   * on it ourselves
+   */
+  tp_connection_call_when_ready (connection, connection_ready_cb, &data);
 
-  if (argv[2] == NULL)
-    {
-      guint self_handle = tp_connection_get_self_handle (connection);
-
-      tp_connection_get_contacts_by_handle (connection,
-          1, &self_handle,
-          sizeof (features) / sizeof (features[0]), features,
-          got_contacts_by_handle,
-          g_main_loop_ref (mainloop),
-          (GDestroyNotify) g_main_loop_unref, NULL);
-    }
-  else
-    {
-      const gchar *contacts[] = { argv[2], NULL };
-
-      tp_connection_get_contacts_by_id (connection,
-          1, contacts,
-          sizeof (features) / sizeof (features[0]), features,
-          got_contacts_by_id,
-          g_main_loop_ref (mainloop),
-          (GDestroyNotify) g_main_loop_unref, NULL);
-    }
-
-  g_main_loop_run (mainloop);
-  ret = 0;
+  g_main_loop_run (data.main_loop);
 
 out:
   if (error != NULL)
     g_error_free (error);
 
-  if (mainloop != NULL)
-    g_main_loop_unref (mainloop);
+  if (data.main_loop != NULL)
+    g_main_loop_unref (data.main_loop);
 
   if (connection != NULL)
     g_object_unref (connection);
@@ -211,5 +242,5 @@ out:
   if (daemon != NULL)
     g_object_unref (daemon);
 
-  return ret;
+  return data.exit_status;
 }
