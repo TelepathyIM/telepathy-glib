@@ -186,6 +186,7 @@ test_prepare (Test *test,
 {
   GError *error = NULL;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED };
+  TpConnectionStatusReason reason;
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
@@ -213,6 +214,9 @@ test_prepare (Test *test,
   g_assert (tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
   g_assert (!tp_proxy_is_prepared (test->conn,
         TP_CONNECTION_FEATURE_CONNECTED));
+  g_assert_cmpuint (tp_connection_get_self_handle (test->conn), ==, 0);
+  g_assert_cmpint (tp_connection_get_status (test->conn, NULL), ==,
+      TP_CONNECTION_STATUS_DISCONNECTED);
 
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
 
@@ -230,6 +234,10 @@ test_prepare (Test *test,
   g_assert (tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
   g_assert (tp_proxy_is_prepared (test->conn,
         TP_CONNECTION_FEATURE_CONNECTED));
+  g_assert_cmpuint (tp_connection_get_self_handle (test->conn), !=, 0);
+  g_assert_cmpint (tp_connection_get_status (test->conn, &reason), ==,
+      TP_CONNECTION_STATUS_CONNECTED);
+  g_assert_cmpint (reason, ==, TP_CONNECTION_STATUS_REASON_REQUESTED);
 }
 
 static void
