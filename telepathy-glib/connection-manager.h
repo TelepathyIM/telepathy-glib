@@ -22,8 +22,9 @@
 #ifndef __TP_CONNECTION_MANAGER_H__
 #define __TP_CONNECTION_MANAGER_H__
 
-#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/defs.h>
+#include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
 

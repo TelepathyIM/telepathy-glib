@@ -23,8 +23,9 @@
 #define TP_ACCOUNT_MANAGER_H
 
 #include <telepathy-glib/account.h>
-#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/defs.h>
+#include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
 

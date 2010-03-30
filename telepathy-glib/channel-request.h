@@ -22,8 +22,9 @@
 #ifndef TP_CHANNEL_REQUEST_H
 #define TP_CHANNEL_REQUEST_H
 
-#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/defs.h>
+#include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
 

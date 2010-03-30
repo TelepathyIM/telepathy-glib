@@ -26,6 +26,7 @@
 #error dbus-daemon.h not to be used directly, #include <telepathy-glib/dbus.h>
 #endif
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
