@@ -2,6 +2,7 @@
 #define __TP_DEBUG_H__
 
 #include <glib.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -16,10 +17,10 @@ void tp_debug_timestamped_log_handler (const gchar *log_domain,
 
 #ifndef TP_DISABLE_DEPRECATED
 void tp_debug_set_flags_from_string (const gchar *flags_string)
-  G_GNUC_DEPRECATED;
+  _TP_GNUC_DEPRECATED;
 void tp_debug_set_flags_from_env (const gchar *var)
-  G_GNUC_DEPRECATED;
-void tp_debug_set_all_flags (void) G_GNUC_DEPRECATED;
+  _TP_GNUC_DEPRECATED;
+void tp_debug_set_all_flags (void) _TP_GNUC_DEPRECATED;
 #endif
 
 G_END_DECLS
