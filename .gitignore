@@ -62,6 +62,7 @@ Makefile.in
 /doc/reference/libtelepathy-logger/tmpl/
 /doc/reference/libtelepathy-logger/xml/
 
+/extensions/tpl-extensions.pc
 /extensions/_gen/
 /extensions/doc/
 

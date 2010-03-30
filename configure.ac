@@ -148,16 +148,20 @@ AC_SUBST(ERROR_CFLAGS)
 # Pkg-Config dependency checks
 # -----------------------------------------------------------
 
-PKG_CHECK_MODULES(LIBTPL,
-[
-   gconf-2.0
-   gio-2.0
-   glib-2.0 >= $GLIB_REQUIRED
-   gobject-2.0
-   libxml-2.0
-   telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
-   sqlite3
-])
+LIBTPL_MODULES="""
+               gconf-2.0
+               gio-2.0
+               glib-2.0 >= $GLIB_REQUIRED
+               gobject-2.0
+               libxml-2.0
+               telepathy-glib >= $TELEPATHY_GLIB_REQUIRED 
+               sqlite3
+               """
+
+LIBTPL_MODULES=`echo $LIBTPL_MODULES`
+
+AC_SUBST([LIBTPL_MODULES])
+PKG_CHECK_MODULES(LIBTPL, [$LIBTPL_MODULES])
 
 PKG_CHECK_MODULES(TPL,
 [
@@ -169,6 +173,19 @@ PKG_CHECK_MODULES(TPL,
    telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
 ])
 
+
+# -----------------------------------------------------------
+# Enable public extensions library
+# -----------------------------------------------------------
+
+AC_ARG_ENABLE(public_extensions,
+  AC_HELP_STRING([--enable-public-extensions],[build a public wrapper for the Telepathy extensions library]),
+    enable_public_extensions=$enableval, enable_public_extensions=no )
+
+if test x$enable_public_extensions = xyes; then
+  AC_DEFINE(ENABLE_PUBLIC_EXTENSIONS, [], [Enable Public Extensions])
+fi
+AM_CONDITIONAL([ENABLE_PUBLIC_EXTENSIONS], [test "x$enable_public_extensions" = xyes])
 
 
 # -----------------------------------------------------------
@@ -222,6 +239,7 @@ AC_OUTPUT([
    doc/reference/Makefile
    doc/reference/libtelepathy-logger/Makefile
    extensions/Makefile
+   extensions/tpl-extensions.pc
    src/Makefile
    telepathy-logger/Makefile
    telepathy-logger/telepathy-logger.pc
@@ -243,6 +261,7 @@ Configure summary:
 	Python Twisted tests........:  ${TEST_PYTHON}
 	Bugreporting URL............:  ${PACKAGE_BUGREPORT}
 	Enable Text Channel.........:  ${enable_channeltext}
+	Public extensions library...:  ${enable_public_extensions}
 
 
 "

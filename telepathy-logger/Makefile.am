@@ -62,7 +62,7 @@ libtelepathy_logger_la_SOURCES = \
 		$(NULL)
 
 libtelepathy_logger_la_LIBADD = \
-	$(top_builddir)/extensions/libtpl-extensions.la
+	$(top_builddir)/extensions/libtpl-extensions-convenience.la
 
 check_c_sources = \
 	$(libtelepathy_logger_la_SOURCES)	\

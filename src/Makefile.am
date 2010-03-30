@@ -20,12 +20,10 @@ noinst_PROGRAMS = \
 
 telepathy_logger_LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(top_builddir)/extensions/libtpl-extensions.la \
 	$(LIBTPL_LIBS)
 
 test_api_LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(top_builddir)/extensions/libtpl-extensions.la \
 	$(LIBTPL_LIBS)
 
 

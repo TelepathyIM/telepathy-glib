@@ -3,16 +3,18 @@
 
 #include <telepathy-glib/proxy.h>
 
-#include "extensions/_gen/enums.h"
-#include "extensions/_gen/svc.h"
-#include "extensions/_gen/cli.h"
+#include "_gen/enums.h"
+#include "_gen/cli-misc.h"
+#include "_gen/svc-misc.h"
 
 G_BEGIN_DECLS
 
-#include "extensions/_gen/gtypes.h"
-#include "extensions/_gen/interfaces.h"
+#include "_gen/gtypes.h"
+#include "_gen/interfaces.h"
 
 G_END_DECLS
 
-#endif /* _GABBLE_EXTENSIONS_H */
+void tpl_cli_init (void);
+
+#endif /* _TPL_EXTENSIONS_H */
 

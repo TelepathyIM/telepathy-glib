@@ -7,6 +7,7 @@ EXTRA_DIST = \
     doc-generator.py \
     doc-generator.xsl \
     glib-client-gen.py \
+    glib-client-marshaller-gen.py \
     glib-ginterface-gen.py \
     glib-gtypes-generator.py \
     glib-interfaces-gen.py \

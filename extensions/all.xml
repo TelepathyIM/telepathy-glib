@@ -29,6 +29,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA</p>
     from="Telepathy specification"/>
 </tp:generic-types>
 
-<xi:include href="Logger.xml"/>
+<xi:include href="misc.xml"/>
 
 </tp:spec>
