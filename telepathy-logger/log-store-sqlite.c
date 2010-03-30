@@ -741,7 +741,7 @@ _insert_to_cache_table (TplLogStore *self,
   sqlite3_bind_text (sql, 2, account, -1, SQLITE_TRANSIENT);
   /* insert NULL if ACKNOWLEDGED (ie sent message's entries, which are created
    * ACK'd */
-  if (TPL_LOG_ENTRY_MSG_ID_IS_VALID (msg_id))
+  if (!TPL_LOG_ENTRY_MSG_ID_IS_VALID (msg_id))
     sqlite3_bind_null (sql, 3);
   else
     sqlite3_bind_int (sql, 3, msg_id);
