@@ -991,7 +991,10 @@ tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
       tpl_log_store_sqlite_set_acknowledgment (self, log_id, error);
     }
   else
-    DEBUG ("%s: pending id %d not found", get_channel_name (channel), msg_id);
+    g_set_error (error, TPL_LOG_STORE_ERROR,
+        TPL_LOG_STORE_ERROR_NOT_PRESENT,
+        "Unable to acknowledge pending message %d for channel %s: not found",
+        msg_id, get_channel_name (channel));
 
   g_free (log_id);
 }
