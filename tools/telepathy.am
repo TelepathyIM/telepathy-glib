@@ -7,7 +7,8 @@ dist-hook:
 	fi
 
 distcheck-hook:
-	@case @VERSION@ in \
+	@test "z$(CHECK_FOR_UNRELEASED)" = z || \
+	case @VERSION@ in \
 		*.*.*.*) ;; \
 		*) \
 			if grep -r UNRELEASED $(CHECK_FOR_UNRELEASED); \
