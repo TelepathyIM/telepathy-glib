@@ -38,58 +38,33 @@ die_if (const GError *error, const gchar *context)
 }
 
 static void
-conn_ready (TpConnection *conn,
-            GParamSpec *unused,
-            gpointer user_data)
+disconnect_cb (TpConnection *conn,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
-  GError *error = NULL;
-  GArray *handles;
-  const gchar *names[] = { "myself@server", "other@server", NULL };
-  GPtrArray *hats;
+  if (die_if (error, "Disconnect()"))
+    return;
+
+  main_ret = 0;
+  g_main_loop_quit (mainloop);
+}
+
+typedef struct {
+    TpContact *contacts[2];
+} ContactPair;
+
+static void
+got_hats_cb (TpConnection *conn,
+    const GPtrArray *hats,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
   guint i;
-  GHashTable *asv;
-
-  if (!tp_proxy_has_interface_by_id (conn,
-        EXAMPLE_IFACE_QUARK_CONNECTION_INTERFACE_HATS))
-    {
-      g_warning ("Connection does not support Hats interface");
-      g_main_loop_quit (mainloop);
-      return;
-    }
-
-  /* Get handles for myself and someone else */
-
-  tp_cli_connection_run_request_handles (conn, -1, TP_HANDLE_TYPE_CONTACT,
-      names, &handles, &error, NULL);
-
-  if (die_if (error, "RequestHandles()"))
-    {
-      g_error_free (error);
-      return;
-    }
-
-  asv = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-      (GDestroyNotify) tp_g_value_slice_free);
-  g_hash_table_insert (asv, "previous-owner",
-      tp_g_value_slice_new_static_string ("Shadowman"));
-  example_cli_connection_interface_hats_run_set_hat (conn, -1,
-      "red", EXAMPLE_HAT_STYLE_FEDORA, asv, &error, NULL);
-  g_hash_table_destroy (asv);
-
-  if (die_if (error, "SetHat()"))
-    {
-      g_error_free (error);
-      return;
-    }
-
-  example_cli_connection_interface_hats_run_get_hats (conn, -1,
-      handles, &hats, &error, NULL);
 
   if (die_if (error, "GetHats()"))
-    {
-      g_error_free (error);
-      return;
-    }
+    return;
 
   for (i = 0; i < hats->len; i++)
     {
@@ -104,19 +79,110 @@ conn_ready (TpConnection *conn,
                 3))));
     }
 
-  g_array_free (handles, TRUE);
-  g_boxed_free (EXAMPLE_ARRAY_TYPE_CONTACT_HAT_LIST, hats);
+  tp_cli_connection_call_disconnect (conn, -1, disconnect_cb,
+      NULL, NULL, NULL);
+}
 
-  tp_cli_connection_run_disconnect (conn, -1, &error, NULL);
+static void
+set_hat_cb (TpConnection *conn,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  ContactPair *pair = user_data;
+  GArray *handles = NULL;
+  TpHandle handle;
 
-  if (die_if (error, "Disconnect()"))
+  if (die_if (error, "SetHat()"))
+    return;
+
+  handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 2);
+  handle = tp_contact_get_handle (pair->contacts[0]);
+  g_array_append_val (handles, handle);
+  handle = tp_contact_get_handle (pair->contacts[1]);
+  g_array_append_val (handles, handle);
+
+  example_cli_connection_interface_hats_call_get_hats (conn, -1,
+      handles, got_hats_cb, NULL, NULL, NULL);
+}
+
+static void
+contact_pair_free (gpointer p)
+{
+  ContactPair *pair = p;
+
+  g_object_unref (pair->contacts[0]);
+  g_object_unref (pair->contacts[1]);
+  g_slice_free (ContactPair, pair);
+}
+
+static void
+contacts_ready_cb (TpConnection *conn,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const gchar * const *requested_ids,
+    GHashTable *failed_id_errors,
+    const GError *general_error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GHashTableIter iter;
+  gpointer k, v;
+  GHashTable *asv;
+  ContactPair *pair;
+
+  /* This runs if tp_connection_get_contacts_by_id failed completely (e.g.
+   * the CM crashed) */
+  if (die_if (general_error, "tp_connection_get_contacts_by_id()"))
+    return;
+
+  /* If any making a TpContact for one of the requested IDs fails, they'll
+   * be present in this hash table with an error as value */
+  g_hash_table_iter_init (&iter, failed_id_errors);
+
+  while (g_hash_table_iter_next (&iter, &k, &v))
     {
-      g_error_free (error);
+      const gchar *failed_id = k;
+      const GError *contact_error = v;
+
+      if (die_if (contact_error, failed_id))
+        return;
+    }
+
+  asv = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  g_hash_table_insert (asv, "previous-owner",
+      tp_g_value_slice_new_static_string ("Shadowman"));
+
+  pair = g_slice_new0 (ContactPair);
+  pair->contacts[0] = g_object_ref (contacts[0]);
+  pair->contacts[1] = g_object_ref (contacts[1]);
+
+  example_cli_connection_interface_hats_call_set_hat (conn, -1,
+      "red", EXAMPLE_HAT_STYLE_FEDORA, asv,
+      set_hat_cb, pair, contact_pair_free, NULL);
+
+  g_hash_table_destroy (asv);
+}
+
+static void
+conn_ready (TpConnection *conn,
+            GParamSpec *unused,
+            gpointer user_data)
+{
+  static const gchar * const names[] = { "myself@server", "other@server" };
+
+  if (!tp_proxy_has_interface_by_id (conn,
+        EXAMPLE_IFACE_QUARK_CONNECTION_INTERFACE_HATS))
+    {
+      g_warning ("Connection does not support Hats interface");
+      g_main_loop_quit (mainloop);
       return;
     }
 
-  main_ret = 0;
-  g_main_loop_quit (mainloop);
+  /* Get contact objects for myself and someone else */
+  tp_connection_get_contacts_by_id (conn, 2, names, 0, NULL,
+      contacts_ready_cb, NULL, NULL, NULL);
 }
 
 static void
