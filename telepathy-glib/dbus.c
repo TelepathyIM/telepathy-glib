@@ -121,6 +121,8 @@ _tp_dbus_starter_bus_conn (GError **error)
  * Most processes should use tp_dbus_daemon_dup() instead.
  *
  * Returns: a connection to the starter or session D-Bus daemon.
+ *
+ * Deprecated: 0.11.UNRELEASED: Use tp_dbus_daemon_dup() in new code.
  */
 DBusGConnection *
 tp_get_bus (void)
@@ -140,7 +142,8 @@ tp_get_bus (void)
 /**
  * tp_get_bus_proxy:
  *
- * Return a #DBusGProxy for the bus daemon object.
+ * Return a #DBusGProxy for the bus daemon object. The same caveats as for
+ * tp_get_bus() apply.
  *
  * Returns: a proxy for the bus daemon object on the starter or session bus.
  *
@@ -153,7 +156,14 @@ tp_get_bus_proxy (void)
 
   if (bus_proxy == NULL)
     {
-      DBusGConnection *bus = tp_get_bus ();
+      GError *error = NULL;
+      DBusGConnection *bus = _tp_dbus_starter_bus_conn (&error);
+
+      if (bus == NULL)
+        {
+          g_warning ("Failed to connect to starter bus: %s", error->message);
+          exit (1);
+        }
 
       bus_proxy = dbus_g_proxy_new_for_name (bus,
                                             "org.freedesktop.DBus",
