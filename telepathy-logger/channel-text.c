@@ -556,7 +556,7 @@ tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
    */
   while (stale_tokens != NULL)
     {
-     gchar *log_id = stale_tokens->data;
+      gchar *log_id = stale_tokens->data;
 
       PATH_DEBUG (self, "%s is stale, removing from DB", log_id);
 
@@ -743,9 +743,9 @@ got_message_pending_messages_cb (TpProxy *proxy,
     }
 
   /* cycle the list of messages */
-  PATH_DEBUG (proxy, "%d pending message(s) from Message iface", result->len);
-  PATH_DEBUG (proxy, "Checking if there are any un-logged messages among "
-      "pending messages");
+  if (result->len > 0)
+    PATH_DEBUG (proxy, "Checking if there are any un-logged messages among "
+        "%d pending messages", result->len);
   for (i = 0; i < result->len; ++i)
     {
       GPtrArray *message_parts;
@@ -818,8 +818,8 @@ got_message_pending_messages_cb (TpProxy *proxy,
       g_free (tpl_message_token);
     }
 
-    tpl_channel_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy),
-        cached_pending_msg);
+  tpl_channel_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy),
+      cached_pending_msg);
 
 out:
   if (cache != NULL)
