@@ -951,6 +951,10 @@ tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
       g_set_error (error, TPL_LOG_STORE_SQLITE_ERROR,
           TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES,
           "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
+
+      /* free partial result, which might be misleading */
+      g_list_foreach (retval, (GFunc) g_free, NULL);
+      g_list_free (retval);
       retval = NULL;
     }
 
