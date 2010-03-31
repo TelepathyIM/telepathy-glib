@@ -91,7 +91,7 @@ USA.</p>
             interfaces for the remainder of the Connection's lifetime.</p>
         </tp:rationale>
       </tp:docstring>
-      <tp:added version="0.19.UNRELEASED">Clients SHOULD fall back
+      <tp:added version="0.19.2">Clients SHOULD fall back
         to calling <tp:member-ref>GetInterfaces</tp:member-ref> if this
         property is not supported.</tp:added>
     </property>
@@ -202,7 +202,7 @@ USA.</p>
           SHOULD be removed from the bus entirely, meaning that retrieval of
           this property SHOULD fail.</p>
       </tp:docstring>
-      <tp:added version="0.19.UNRELEASED">Clients SHOULD fall back
+      <tp:added version="0.19.2">Clients SHOULD fall back
         to calling <tp:member-ref>GetStatus</tp:member-ref> if this
         property is not supported.</tp:added>
     </property>

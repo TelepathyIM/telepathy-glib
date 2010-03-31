@@ -143,7 +143,7 @@
             attributes.
           </tp:rationale>
         </tp:docstring>
-        <tp:changed version="UNRELEASED">
+        <tp:changed version="0.19.2">
           requesting information for interfaces not mentioned in
           <tp:member-ref>ContactAttributeInterfaces</tp:member-ref> is no
           longer an error. Be aware that older connection managers may still
