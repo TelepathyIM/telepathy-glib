@@ -15,14 +15,12 @@
 static void
 test_handles (void)
 {
-  TpDBusDaemon *bus_daemon = tp_dbus_daemon_dup (NULL);
+  TpDBusDaemon *bus_daemon = test_dbus_daemon_dup_or_die ();
   TpHandleRepoIface *tp_repo = NULL;
   GError *error = NULL;
   TpHandle handle = 0;
   const gchar *jid = "handle.test@foobar";
   const gchar *return_jid;
-
-  g_assert (bus_daemon != NULL);
 
   tp_repo = g_object_new (TP_TYPE_DYNAMIC_HANDLE_REPO,
       "handle-type", TP_HANDLE_TYPE_CONTACT,

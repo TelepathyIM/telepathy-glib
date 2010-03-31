@@ -4,6 +4,8 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
 
+#include "tests/lib/util.h"
+
 static void
 prepare (void)
 {
@@ -63,14 +65,33 @@ time_out (gpointer mainloop)
   return FALSE;
 }
 
+static void
+wait_for_name_owner_cb (TpDBusDaemon *dbus_daemon,
+    const gchar *name,
+    const gchar *new_owner,
+    gpointer main_loop)
+{
+  if (new_owner[0] != '\0')
+    g_main_loop_quit (main_loop);
+}
+
+static void
+early_cm_exited (TpConnectionManager *cm,
+    gboolean *saw_exited)
+{
+  *saw_exited = TRUE;
+}
+
 int
 main (int argc,
       char **argv)
 {
   GMainLoop *mainloop;
-  TpConnectionManager *cm;
-
-  prepare ();
+  TpConnectionManager *early_cm, *late_cm;
+  TpDBusDaemon *dbus_daemon;
+  gulong handler;
+  GError *error = NULL;
+  gboolean saw_exited;
 
   g_type_init ();
 
@@ -78,18 +99,61 @@ main (int argc,
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  cm = tp_connection_manager_new (tp_dbus_daemon_new (tp_get_bus ()),
-      "example_no_protocols", NULL, NULL);
-  g_assert (cm != NULL);
-
-  g_signal_connect (cm, "got-info",
-      G_CALLBACK (connection_manager_got_info), mainloop);
+  dbus_daemon = test_dbus_daemon_dup_or_die ();
 
   g_timeout_add (5000, time_out, mainloop);
 
+  /* First try making a TpConnectionManager before the CM is available. This
+   * will fail. */
+  early_cm = tp_connection_manager_new (dbus_daemon, "example_no_protocols",
+      NULL, NULL);
+  g_assert (early_cm != NULL);
+
+  /* Failure to introspect is signalled as 'exited' */
+  handler = g_signal_connect (early_cm, "exited",
+      G_CALLBACK (early_cm_exited), &saw_exited);
+
+  test_connection_manager_run_until_readying_fails (early_cm, &error);
+  g_assert (error != NULL);
+  g_assert (tp_proxy_get_invalidated (early_cm) == NULL);
+  g_assert_cmpuint (error->domain, ==, DBUS_GERROR);
+  g_assert_cmpint (error->code, ==, DBUS_GERROR_SERVICE_UNKNOWN);
+  g_clear_error (&error);
+
+  if (!saw_exited)
+    {
+      g_debug ("waiting for 'exited'...");
+
+      while (!saw_exited)
+        g_main_context_iteration (NULL, TRUE);
+    }
+
+  g_signal_handler_disconnect (early_cm, handler);
+
+  /* Now start the connection manager and wait for it to start */
+  prepare ();
+  tp_dbus_daemon_watch_name_owner (dbus_daemon,
+      TP_CM_BUS_NAME_BASE "example_no_protocols", wait_for_name_owner_cb,
+      g_main_loop_ref (mainloop), (GDestroyNotify) g_main_loop_unref);
   g_main_loop_run (mainloop);
 
-  g_object_unref (cm);
+  /* This TpConnectionManager works fine. */
+  late_cm = tp_connection_manager_new (dbus_daemon, "example_no_protocols",
+      NULL, NULL);
+  g_assert (late_cm != NULL);
+
+  handler = g_signal_connect (late_cm, "got-info",
+      G_CALLBACK (connection_manager_got_info), mainloop);
+  g_main_loop_run (mainloop);
+  g_signal_handler_disconnect (late_cm, handler);
+
+  /* Now both objects can become ready */
+  test_connection_manager_run_until_ready (early_cm);
+  test_connection_manager_run_until_ready (late_cm);
+
+  g_object_unref (late_cm);
+  g_object_unref (early_cm);
+  g_object_unref (dbus_daemon);
   g_main_loop_unref (mainloop);
 
   return 0;

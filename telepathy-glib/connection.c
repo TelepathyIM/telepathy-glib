@@ -349,8 +349,7 @@ tp_connection_got_interfaces_cb (TpConnection *self,
             {
               GQuark q = g_quark_from_string (*iter);
 
-              tp_proxy_add_interface_by_id ((TpProxy *) self,
-                  g_quark_from_string (*iter));
+              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
 
               if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS)
                 {
@@ -906,6 +905,9 @@ tp_connection_get_status (TpConnection *self,
  *  %FALSE if the connection has become invalid.
  *
  * Since: 0.7.1
+ * Deprecated: since 0.9.UNRELEASED. Use tp_connection_call_when_ready,
+ *  or restructure your program in such a way as to avoid re-entering the
+ *  main loop.
  */
 
 typedef struct {

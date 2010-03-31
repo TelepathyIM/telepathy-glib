@@ -436,7 +436,7 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	subclass_assert= ; \
 	case $* in \
 		generic) \
-			maybe_reentrant=--generate-reentrant; \
+			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		account-manager) \
 			subclass=--subclass=TpAccountManager; \
@@ -449,7 +449,7 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		channel) \
 			subclass=--subclass=TpChannel; \
 			subclass_assert=--subclass-assert=TP_IS_CHANNEL; \
-			maybe_reentrant=--generate-reentrant; \
+			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		channel-dispatcher) \
 			subclass=--subclass=TpChannelDispatcher; \
@@ -470,27 +470,27 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		connection-manager) \
 			subclass=--subclass=TpConnectionManager; \
 			subclass_assert=--subclass-assert=TP_IS_CONNECTION_MANAGER \
-			maybe_reentrant=--generate-reentrant; \
+			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		connection) \
 			subclass=--subclass=TpConnection; \
 			subclass_assert=--subclass-assert=TP_IS_CONNECTION; \
-			maybe_reentrant=--generate-reentrant; \
+			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		media-session-handler) \
 			subclass=--subclass=TpMediaSessionHandler; \
 			subclass_assert=--subclass-assert=TP_IS_MEDIA_SESSION_HANDLER; \
-			maybe_reentrant=--generate-reentrant; \
+			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		media-stream-handler) \
 			subclass=--subclass=TpMediaStreamHandler; \
 			subclass_assert=--subclass-assert=TP_IS_MEDIA_STREAM_HANDLER; \
-			maybe_reentrant=--generate-reentrant; \
+			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		dbus-daemon) \
 			subclass=--subclass=TpDBusDaemon; \
 			subclass_assert=--subclass-assert=TP_IS_DBUS_DAEMON; \
-			maybe_reentrant=--generate-reentrant; \
+			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 	esac; \
 	$(PYTHON) $(tools_dir)/glib-client-gen.py \
@@ -498,5 +498,6 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		--group `echo $* | tr - _` \
 		--iface-quark-prefix=TP_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
+		--deprecation-attribute=_TP_GNUC_DEPRECATED \
 		$$maybe_reentrant \
 		$< Tp_Cli _gen/tp-cli-$*

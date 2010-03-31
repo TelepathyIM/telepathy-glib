@@ -58,6 +58,8 @@ class Generator(object):
         self.generate_reentrant = ('--generate-reentrant' in opts or
                 '--deprecate-reentrant' in opts)
         self.deprecate_reentrant = opts.get('--deprecate-reentrant', None)
+        self.deprecation_attribute = opts.get('--deprecation-attribute',
+                'G_GNUC_DEPRECATED')
 
     def h(self, s):
         if isinstance(s, unicode):
@@ -987,7 +989,7 @@ class Generator(object):
         self.h('    GError **error,')
 
         if self.deprecate_reentrant:
-            self.h('    GMainLoop **loop) G_GNUC_DEPRECATED;')
+            self.h('    GMainLoop **loop) %s;' % self.deprecation_attribute)
             self.h('#endif /* not %s */' % self.deprecate_reentrant)
         else:
             self.h('    GMainLoop **loop);')
@@ -1193,7 +1195,8 @@ if __name__ == '__main__':
     options, argv = gnu_getopt(sys.argv[1:], '',
                                ['group=', 'subclass=', 'subclass-assert=',
                                 'iface-quark-prefix=', 'tp-proxy-api=',
-                                'generate-reentrant', 'deprecate-reentrant='])
+                                'generate-reentrant', 'deprecate-reentrant=',
+                                'deprecation-attribute='])
 
     opts = {}
 

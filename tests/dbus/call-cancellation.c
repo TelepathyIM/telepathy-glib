@@ -8,6 +8,7 @@
 
 #include "tests/lib/myassert.h"
 #include "tests/lib/stub-object.h"
+#include "tests/lib/util.h"
 
 /* just for convenience, since it's used a lot */
 #define PTR(ui) GUINT_TO_POINTER(ui)
@@ -183,29 +184,29 @@ main (int argc,
   /* We use TpDBusDaemon because it's a convenient concrete subclass of
    * TpProxy. */
   g_message ("Creating proxies");
-  a = tp_dbus_daemon_new (tp_get_bus ());
+  a = test_dbus_daemon_dup_or_die ();
   g_message ("a=%p", a);
-  b = tp_dbus_daemon_new (tp_get_bus ());
+  b = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("b=%p", b);
-  c = tp_dbus_daemon_new (tp_get_bus ());
+  c = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("c=%p", c);
-  d = tp_dbus_daemon_new (tp_get_bus ());
+  d = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("d=%p", d);
-  e = tp_dbus_daemon_new (tp_get_bus ());
+  e = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("e=%p", e);
-  f = tp_dbus_daemon_new (tp_get_bus ());
+  f = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("f=%p", f);
-  g = tp_dbus_daemon_new (tp_get_bus ());
+  g = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("g=%p", g);
-  h = tp_dbus_daemon_new (tp_get_bus ());
+  h = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("h=%p", h);
-  i = tp_dbus_daemon_new (tp_get_bus ());
+  i = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("i=%p", i);
-  j = tp_dbus_daemon_new (tp_get_bus ());
+  j = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("j=%p", j);
-  k = tp_dbus_daemon_new (tp_get_bus ());
+  k = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("k=%p", k);
-  z = tp_dbus_daemon_new (tp_get_bus ());
+  z = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("z=%p", z);
 
   /* a survives */

@@ -109,5 +109,14 @@ G_BEGIN_DECLS
  */
 #define TP_CLIENT_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/Client/"
 
+/* telepathy-glib-specific version of G_GNUC_DEPRECATED so our regression
+ * tests can continue to test deprecated functionality, while avoiding
+ * deprecated bits of other libraries */
+#ifdef _TP_IGNORE_DEPRECATIONS
+#define _TP_GNUC_DEPRECATED /* nothing */
+#else
+#define _TP_GNUC_DEPRECATED G_GNUC_DEPRECATED
+#endif
+
 G_END_DECLS
 #endif

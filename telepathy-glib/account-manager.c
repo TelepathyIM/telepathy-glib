@@ -1492,60 +1492,6 @@ tp_account_manager_prepare_finish (TpAccountManager *manager,
 }
 
 /**
- * _tp_account_manager_get_requested_features:
- * @manager: a #TpAccountManager
- *
- * <!-- -->
- *
- * Returns: a 0-terminated list of requested features on @manager
- *
- * Since: 0.9.0
- */
-const GQuark *
-_tp_account_manager_get_requested_features (TpAccountManager *manager)
-{
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
-
-  return (const GQuark *) manager->priv->requested_features->data;
-}
-
-/**
- * _tp_account_manager_get_actual_features:
- * @manager: a #TpAccountManager
- *
- * <!-- -->
- *
- * Returns: a 0-terminated list of actual features on @manager
- *
- * Since: 0.9.0
- */
-const GQuark *
-_tp_account_manager_get_actual_features (TpAccountManager *manager)
-{
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
-
-  return (const GQuark *) manager->priv->actual_features->data;
-}
-
-/**
- * _tp_account_manager_get_missing_features:
- * @manager: a #TpAccountManager
- *
- * <!-- -->
- *
- * Returns: a 0-terminated list of missing features on @manager
- *
- * Since: 0.9.0
- */
-const GQuark *
-_tp_account_manager_get_missing_features (TpAccountManager *manager)
-{
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
-
-  return (const GQuark *) manager->priv->missing_features->data;
-}
-
-/**
  * tp_account_manager_enable_restart:
  * @manager: a #TpAccountManager
  *

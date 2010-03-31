@@ -900,7 +900,7 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = tp_dbus_daemon_new (tp_get_bus ());
+  dbus = test_dbus_daemon_dup_or_die ();
 
   service_conn = CONTACTS_CONNECTION (g_object_new (
         CONTACTS_TYPE_CONNECTION,

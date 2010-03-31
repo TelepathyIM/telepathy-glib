@@ -23,6 +23,7 @@
 #define __TELEPATHY_DBUS_H__
 #define __TP_IN_DBUS_H__
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/dbus-daemon.h>
 
 G_BEGIN_DECLS
@@ -127,7 +128,7 @@ void tp_asv_set_strv (GHashTable *asv, const gchar *key, gchar **value);
 void tp_asv_dump (GHashTable *asv);
 
 #ifndef TP_DISABLE_DEPRECATED
-DBusGProxy * tp_get_bus_proxy (void) G_GNUC_DEPRECATED;
+DBusGProxy * tp_get_bus_proxy (void) _TP_GNUC_DEPRECATED;
 #endif
 
 G_END_DECLS

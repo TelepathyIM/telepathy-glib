@@ -18,68 +18,130 @@
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/util.h"
 
-static GMainLoop *mainloop;
+typedef struct {
+    TpDBusDaemon *dbus;
+    SimpleConnection *service_conn;
+    TpBaseConnection *service_conn_as_base;
+    gchar *conn_name;
+    gchar *conn_path;
+    TpConnection *conn;
+
+    gboolean cwr_ready;
+    GError *cwr_error /* initialized in setup */;
+} Test;
 
 static GError invalidated_for_test = { 0, TP_ERROR_PERMISSION_DENIED,
       "No connection for you!" };
 
 static void
-test_run_until_invalid (TpDBusDaemon *dbus,
-                        SimpleConnection *service_conn,
-                        const gchar *name,
-                        const gchar *conn_path)
+setup (Test *test,
+    gconstpointer data)
 {
-  TpConnection *conn;
   GError *error = NULL;
 
-  conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
-  tp_proxy_invalidate ((TpProxy *) conn, &invalidated_for_test);
+  invalidated_for_test.domain = TP_ERRORS;
 
-  MYASSERT (!tp_connection_run_until_ready (conn, TRUE, &error, NULL),
-      "");
-  MYASSERT (error != NULL, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
-  g_error_free (error);
+  g_type_init ();
+  tp_debug_set_flags ("all");
+  test->dbus = test_dbus_daemon_dup_or_die ();
 
-  g_object_unref (conn);
+  test->service_conn = SIMPLE_CONNECTION (g_object_new (
+        SIMPLE_TYPE_CONNECTION,
+        "account", "me@example.com",
+        "protocol", "simple-protocol",
+        NULL));
+  test->service_conn_as_base = TP_BASE_CONNECTION (test->service_conn);
+  g_assert (test->service_conn != NULL);
+  g_assert (test->service_conn_as_base != NULL);
+
+  g_assert (tp_base_connection_register (test->service_conn_as_base, "simple",
+        &test->conn_name, &test->conn_path, &error));
+  g_assert_no_error (error);
+
+  test->cwr_ready = FALSE;
+  test->cwr_error = NULL;
 }
 
 static void
-test_run_until_ready (TpDBusDaemon *dbus,
-                      SimpleConnection *service_conn,
-                      const gchar *name,
-                      const gchar *conn_path)
+teardown (Test *test,
+    gconstpointer data)
 {
   TpConnection *conn;
+  gboolean ok;
   GError *error = NULL;
 
-  conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  if (test->conn != NULL)
+    {
+      g_object_unref (test->conn);
+      test->conn = NULL;
+    }
 
-  MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
-      "");
-  test_assert_no_error (error);
+  /* disconnect the connection so we don't leak it */
+  conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  g_assert (conn != NULL);
+  g_assert_no_error (error);
 
-  g_object_unref (conn);
+  ok = tp_cli_connection_run_disconnect (conn, -1, &error, NULL);
+  g_assert (ok);
+  g_assert_no_error (error);
+
+  g_assert (!tp_connection_run_until_ready (conn, FALSE, &error, NULL));
+  g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
+  g_clear_error (&error);
+
+  test->service_conn_as_base = NULL;
+  g_object_unref (test->service_conn);
+  g_free (test->conn_name);
+  g_free (test->conn_path);
+
+  g_object_unref (test->dbus);
+  test->dbus = NULL;
 }
 
-typedef struct {
-    gboolean ready;
-    GError *error /* initialized to NULL statically */;
-    GMainLoop *mainloop;
-} WhenReadyContext;
+static void
+test_run_until_invalid (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
+  tp_proxy_invalidate ((TpProxy *) test->conn, &invalidated_for_test);
+
+  MYASSERT (!tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
+      "");
+  g_assert (error != NULL);
+  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_error_free (error);
+}
+
+static void
+test_run_until_ready (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
+
+  MYASSERT (tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
+      "");
+  g_assert_no_error (error);
+}
 
 static void
 conn_ready (TpConnection *connection,
             const GError *error,
             gpointer user_data)
 {
-  WhenReadyContext *ctx = user_data;
+  Test *test = user_data;
 
-  ctx->ready = TRUE;
+  test->cwr_ready = TRUE;
 
   if (error == NULL)
     {
@@ -89,9 +151,9 @@ conn_ready (TpConnection *connection,
 
       g_message ("connection %p ready", connection);
       parsed = tp_connection_parse_object_path (connection, &proto, &cm_name);
-      MYASSERT (parsed ==  TRUE, "");
-      MYASSERT_SAME_STRING (proto, "simple-protocol");
-      MYASSERT_SAME_STRING (cm_name, "simple");
+      g_assert (parsed);
+      g_assert_cmpstr (proto, ==, "simple-protocol");
+      g_assert_cmpstr (cm_name, ==, "simple");
       g_free (proto);
       g_free (cm_name);
     }
@@ -100,139 +162,83 @@ conn_ready (TpConnection *connection,
       g_message ("connection %p invalidated: %s #%u \"%s\"", connection,
           g_quark_to_string (error->domain), error->code, error->message);
 
-      ctx->error = g_error_copy (error);
+      test->cwr_error = g_error_copy (error);
     }
-
-  if (ctx->mainloop != NULL)
-    g_main_loop_quit (ctx->mainloop);
 }
 
 static void
-test_call_when_ready (TpDBusDaemon *dbus,
-                      SimpleConnection *service_conn,
-                      const gchar *name,
-                      const gchar *conn_path)
+test_call_when_ready (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
 {
-  TpConnection *conn;
   GError *error = NULL;
-  WhenReadyContext ctx = { FALSE, NULL, mainloop };
 
-  conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
 
-  tp_connection_call_when_ready (conn, conn_ready, &ctx);
-  g_message ("Entering main loop");
-  g_main_loop_run (mainloop);
-  g_message ("Leaving main loop");
-  MYASSERT (ctx.ready == TRUE, "");
-  test_assert_no_error (ctx.error);
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
 
-  /* Connection already ready, so we are called back synchronously */
+  tp_connection_call_when_ready (test->conn, conn_ready, test);
 
-  ctx.ready = FALSE;
-  tp_connection_call_when_ready (conn, conn_ready, &ctx);
-  MYASSERT (ctx.ready == TRUE, "");
-  test_assert_no_error (ctx.error);
+  while (!test->cwr_ready)
+    g_main_context_iteration (NULL, TRUE);
 
-  g_object_unref (conn);
+  g_assert_no_error (test->cwr_error);
+
+  /* Connection already ready here, so we are called back synchronously */
+
+  test->cwr_ready = FALSE;
+  test->cwr_error = NULL;
+  tp_connection_call_when_ready (test->conn, conn_ready, test);
+  g_assert_cmpint (test->cwr_ready, ==, TRUE);
+  g_assert_no_error (test->cwr_error);
 }
 
 static void
-test_call_when_invalid (TpDBusDaemon *dbus,
-                        SimpleConnection *service_conn,
-                        const gchar *name,
-                        const gchar *conn_path)
+test_call_when_invalid (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
 {
-  TpConnection *conn;
   GError *error = NULL;
-  WhenReadyContext ctx = { FALSE, NULL, mainloop };
 
-  conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
 
   /* Connection becomes invalid, so we are called back synchronously */
 
-  ctx.ready = FALSE;
-  tp_connection_call_when_ready (conn, conn_ready, &ctx);
-  tp_proxy_invalidate ((TpProxy *) conn, &invalidated_for_test);
-  MYASSERT (ctx.ready == TRUE, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, ctx.error);
-  g_error_free (ctx.error);
-  ctx.error = NULL;
+  tp_connection_call_when_ready (test->conn, conn_ready, test);
+  tp_proxy_invalidate ((TpProxy *) test->conn, &invalidated_for_test);
+  g_assert_cmpint (test->cwr_ready, ==, TRUE);
+  MYASSERT_SAME_ERROR (&invalidated_for_test, test->cwr_error);
+  g_clear_error (&test->cwr_error);
 
   /* Connection already invalid, so we are called back synchronously */
 
-  ctx.ready = FALSE;
-  tp_connection_call_when_ready (conn, conn_ready, &ctx);
-  MYASSERT (ctx.ready == TRUE, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, ctx.error);
-  g_error_free (ctx.error);
-  ctx.error = NULL;
-
-  g_object_unref (conn);
+  test->cwr_ready = FALSE;
+  test->cwr_error = NULL;
+  tp_connection_call_when_ready (test->conn, conn_ready, test);
+  g_assert (test->cwr_ready);
+  MYASSERT_SAME_ERROR (&invalidated_for_test, test->cwr_error);
+  g_error_free (test->cwr_error);
+  test->cwr_error = NULL;
 }
 
 int
 main (int argc,
       char **argv)
 {
-  TpDBusDaemon *dbus;
-  SimpleConnection *service_conn;
-  TpBaseConnection *service_conn_as_base;
-  gchar *name;
-  gchar *conn_path;
-  GError *error = NULL;
-  TpConnection *conn;
+  g_test_init (&argc, &argv, NULL);
 
-  invalidated_for_test.domain = TP_ERRORS;
+  g_test_add ("/conn/run_until_invalid", Test, NULL, setup,
+      test_run_until_invalid, teardown);
+  g_test_add ("/conn/run_until_ready", Test, NULL, setup,
+      test_run_until_ready, teardown);
+  g_test_add ("/conn/call_when_ready", Test, NULL, setup,
+      test_call_when_ready, teardown);
+  g_test_add ("/conn/call_when_invalid", Test, NULL, setup,
+      test_call_when_invalid, teardown);
 
-  g_type_init ();
-  tp_debug_set_flags ("all");
-  mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = tp_dbus_daemon_new (tp_get_bus ());
-
-  service_conn = SIMPLE_CONNECTION (g_object_new (
-        SIMPLE_TYPE_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple-protocol",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
-
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  test_assert_no_error (error);
-
-  test_run_until_invalid (dbus, service_conn, name, conn_path);
-  test_run_until_ready (dbus, service_conn, name, conn_path);
-  test_call_when_ready (dbus, service_conn, name, conn_path);
-  test_call_when_invalid (dbus, service_conn, name, conn_path);
-
-  conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
-      "");
-  test_assert_no_error (error);
-  MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  test_assert_no_error (error);
-
-  MYASSERT (!tp_connection_run_until_ready (conn, FALSE, &error, NULL), "");
-  MYASSERT_SAME_UINT (error->domain, TP_ERRORS);
-  MYASSERT_SAME_UINT (error->code, TP_ERROR_CANCELLED);
-  g_error_free (error);
-  error = NULL;
-
-  service_conn_as_base = NULL;
-  g_object_unref (service_conn);
-  g_free (name);
-  g_free (conn_path);
-
-  g_object_unref (dbus);
-  g_main_loop_unref (mainloop);
-
-  return 0;
+  return g_test_run ();
 }

@@ -22,6 +22,7 @@
 #ifndef __TP_MEDIA_INTERFACES_H__
 #define __TP_MEDIA_INTERFACES_H__
 
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS

@@ -25,6 +25,8 @@
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
+
 G_BEGIN_DECLS
 
 /* Forward declaration of a subclass - from dbus.h */

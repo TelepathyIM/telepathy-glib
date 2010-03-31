@@ -13,6 +13,7 @@
 #include <telepathy-glib/defs.h>
 
 #include "tests/lib/simple-account-manager.h"
+#include "tests/lib/util.h"
 
 typedef struct {
     GFunc action;
@@ -127,8 +128,7 @@ setup (Test *test,
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
 
-  test->dbus = tp_dbus_daemon_dup (NULL);
-  g_assert (test->dbus != NULL);
+  test->dbus = test_dbus_daemon_dup_or_die ();
 
   test->am = NULL;
   test->timeout_id = 0;
@@ -142,7 +142,7 @@ setup_service (Test *test,
 
   setup (test, data);
 
-  test->bus = tp_get_bus ();
+  test->bus = tp_proxy_get_dbus_connection (test->dbus);
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,
           TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error));

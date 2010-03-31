@@ -25,8 +25,9 @@
 #include <gio/gio.h>
 
 #include <telepathy-glib/connection.h>
-#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/defs.h>
+#include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
 

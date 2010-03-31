@@ -26,15 +26,6 @@
 
 G_BEGIN_DECLS
 
-const GQuark * _tp_account_manager_get_requested_features (
-    TpAccountManager *manager);
-
-const GQuark * _tp_account_manager_get_actual_features (
-    TpAccountManager *manager);
-
-const GQuark * _tp_account_manager_get_missing_features (
-    TpAccountManager *manager);
-
 G_END_DECLS
 
 #endif

@@ -3,6 +3,8 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 
+#include "tests/lib/util.h"
+
 static void
 test_get_interface_after_invalidate (void)
 {
@@ -11,8 +13,7 @@ test_get_interface_after_invalidate (void)
   GError invalidation_reason = { TP_ERRORS, TP_ERROR_NOT_YOURS, "bees!" };
   GError *error = NULL;
 
-  bus_daemon = tp_dbus_daemon_dup (NULL);
-  g_assert (bus_daemon != NULL);
+  bus_daemon = test_dbus_daemon_dup_or_die ();
   tp_proxy_invalidate ((TpProxy *) bus_daemon, &invalidation_reason);
 
   props = tp_proxy_borrow_interface_by_id ((TpProxy *) bus_daemon,

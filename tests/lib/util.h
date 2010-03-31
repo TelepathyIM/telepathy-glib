@@ -13,15 +13,20 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+TpDBusDaemon *test_dbus_daemon_dup_or_die (void);
+
 void test_proxy_run_until_dbus_queue_processed (gpointer proxy);
 
-void test_connection_run_until_dbus_queue_processed (TpConnection *connection);
+#define test_connection_run_until_dbus_queue_processed(c) \
+  (test_proxy_run_until_dbus_queue_processed (c))
 
 TpHandle test_connection_run_request_contact_handle (TpConnection *connection,
     const gchar *id);
 
 void test_connection_run_until_ready (TpConnection *conn);
 void test_connection_manager_run_until_ready (TpConnectionManager *cm);
+void test_connection_manager_run_until_readying_fails (TpConnectionManager *cm,
+    GError **error);
 
 #define test_assert_no_error(e) _test_assert_no_error (e, __FILE__, __LINE__)
 

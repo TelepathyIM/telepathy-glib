@@ -12,6 +12,7 @@
 
 #include "_gen/svc.h"
 #include "tests/lib/myassert.h"
+#include "tests/lib/util.h"
 
 typedef struct _TestProperties {
     GObject parent;
@@ -124,6 +125,7 @@ int
 main (int argc, char **argv)
 {
   TestProperties *obj;
+  TpDBusDaemon *dbus_daemon;
   DBusGConnection *bus;
   TpProxy *proxy;
   GValue *value;
@@ -131,7 +133,8 @@ main (int argc, char **argv)
 
   tp_debug_set_flags ("all");
   g_type_init ();
-  bus = tp_get_bus ();
+  dbus_daemon = test_dbus_daemon_dup_or_die ();
+  bus = tp_proxy_get_dbus_connection (dbus_daemon);
 
   obj = g_object_new (TEST_TYPE_PROPERTIES, NULL);
   dbus_g_connection_register_g_object (bus, "/", (GObject *) obj);
@@ -182,6 +185,7 @@ main (int argc, char **argv)
 
   g_object_unref (obj);
   g_object_unref (proxy);
+  g_object_unref (dbus_daemon);
 
   return 0;
 }

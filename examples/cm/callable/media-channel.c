@@ -164,6 +164,7 @@ constructed (GObject *object)
   DBusGConnection *bus;
   TpIntSet *members;
   TpIntSet *local_pending;
+  TpDBusDaemon *dbus_daemon;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -171,8 +172,12 @@ constructed (GObject *object)
   tp_handle_ref (contact_repo, self->priv->handle);
   tp_handle_ref (contact_repo, self->priv->initiator);
 
-  bus = tp_get_bus ();
+  /* we're running under tp_run_connection_manager(), so t_d_d_d can't fail */
+  dbus_daemon = tp_dbus_daemon_dup (NULL);
+  g_assert (dbus_daemon != NULL);
+  bus = tp_proxy_get_dbus_connection (dbus_daemon);
   dbus_g_connection_register_g_object (bus, self->priv->object_path, object);
+  g_object_unref (dbus_daemon);
 
   tp_group_mixin_init (object,
       G_STRUCT_OFFSET (ExampleCallableMediaChannel, group),

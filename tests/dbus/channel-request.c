@@ -69,7 +69,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = tp_dbus_daemon_dup (NULL);
+  test->dbus = test_dbus_daemon_dup_or_die ();
   g_assert (test->dbus != NULL);
 
   libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
