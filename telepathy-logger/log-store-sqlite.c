@@ -913,6 +913,7 @@ tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
   int e;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_SQLITE (self), NULL);
+  g_return_val_if_fail (TPL_IS_CHANNEL (channel) || channel == NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
   if (channel == NULL)
