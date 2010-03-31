@@ -8,7 +8,11 @@ Dependencies:
 Deprecations:
 
 * fd.o #22206: all the re-entrant functions (of the form tp_FOO_run_until_ready
-  and tp_cli_FOO_run_BAR) are deprecated in this version (smcv)
+  and tp_cli_FOO_run_BAR) are deprecated in this version, please use
+  asynchronous calls instead (smcv)
+
+* fd.o #24114: tp_get_bus() is deprecated, please use tp_dbus_daemon_dup()
+  followed by tp_proxy_get_dbus_connection() (smcv)
 
 Enhancements:
 
@@ -35,6 +39,8 @@ Fixes:
   telepathy-spec 0.19.2 as a reference (Maiku)
 
 * Avoid using re-entrant functions, other than in regression tests (smcv)
+
+* fd.o #21956: clean up documentation/defaults of TpContact properties (smcv)
 
 * telepathy.am: if copied into a project where CHECK_FOR_UNRELEASED is empty,
   don't hang waiting for input (smcv)
