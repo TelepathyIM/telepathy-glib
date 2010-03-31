@@ -20,6 +20,20 @@ Enhancements:
 
 * Add tp_value_array_unpack, the inverse of tp_value_array_build (danni)
 
+telepathy-glib 0.10.2 (2010-03-31)
+==================================
+
+The "is that a koala in your roster or are you just nearby?" release.
+
+Fixes:
+
+* TpAccount: correctly add interfaces such as Avatars (danni)
+
+* Make GetContactAttributes() in GLib CMs tolerate unsupported interfaces,
+  as per telepathy-spec 0.19.2 (wjt)
+
+* Improve documentation of TpContactsMixinFillContactAttributesFunc (mikhailz)
+
 telepathy-glib 0.10.1 (2010-03-24)
 ==================================
 
