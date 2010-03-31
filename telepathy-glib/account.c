@@ -2448,7 +2448,7 @@ tp_account_set_nickname_async (TpAccount *account,
   g_return_if_fail (nickname != NULL);
 
   result = g_simple_async_result_new (G_OBJECT (account),
-      callback, user_data, tp_account_request_presence_finish);
+      callback, user_data, tp_account_set_nickname_finish);
 
   if (nickname == NULL)
     {
