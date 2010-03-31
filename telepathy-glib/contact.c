@@ -509,7 +509,10 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * The contact's identifier in the instant messaging protocol (e.g.
    * XMPP JID, SIP URI, AOL screenname or IRC nick - whatever the underlying
-   * protocol uses to identify a user). This is never %NULL.
+   * protocol uses to identify a user).
+   *
+   * This is never %NULL for contact objects that are visible to library-user
+   * code.
    */
   param_spec = g_param_spec_string ("identifier",
       "IM protocol identifier",
@@ -524,11 +527,14 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * The contact's alias if available, falling back to their
    * #TpContact:identifier if no alias is available or if the #TpContact has
-   * not been set up to track %TP_CONTACT_FEATURE_ALIAS. This is never %NULL.
+   * not been set up to track %TP_CONTACT_FEATURE_ALIAS.
    *
    * This alias may have been supplied by the contact themselves, or by the
    * local user, so it does not necessarily unambiguously identify the contact.
    * However, it is suitable for use as a main "display name" for the contact.
+   *
+   * This is never %NULL for contact objects that are visible to library-user
+   * code.
    */
   param_spec = g_param_spec_string ("alias",
       "Alias",
@@ -571,7 +577,7 @@ tp_contact_class_init (TpContactClass *klass)
   param_spec = g_param_spec_uint ("presence-type",
       "Presence type",
       "The TpConnectionPresenceType for this contact",
-      0, G_MAXUINT32, 0,
+      0, G_MAXUINT32, TP_CONNECTION_PRESENCE_TYPE_UNSET,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PRESENCE_TYPE,
       param_spec);
@@ -590,7 +596,7 @@ tp_contact_class_init (TpContactClass *klass)
       "Presence status",
       "Possibly connection-manager-specific string representing the "
         "contact's presence status",
-      NULL,
+      "",
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PRESENCE_STATUS,
       param_spec);
@@ -610,7 +616,7 @@ tp_contact_class_init (TpContactClass *klass)
   param_spec = g_param_spec_string ("presence-message",
       "Presence message",
       "User-defined status message, or an empty string",
-      NULL,
+      "",
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PRESENCE_MESSAGE,
       param_spec);

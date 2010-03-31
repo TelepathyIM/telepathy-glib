@@ -5,9 +5,18 @@ Dependencies:
 
 * GLib, GObject and GIO ≥ 2.22 are now required
 
+Deprecations:
+
+* fd.o #22206: all the re-entrant functions (of the form tp_FOO_run_until_ready
+  and tp_cli_FOO_run_BAR) are deprecated in this version, please use
+  asynchronous calls instead (smcv)
+
+* fd.o #24114: tp_get_bus() is deprecated, please use tp_dbus_daemon_dup()
+  followed by tp_proxy_get_dbus_connection() (smcv)
+
 Enhancements:
 
-* Update to telepathy-spec 0.19.1 (smcv)
+* Update to telepathy-spec 0.19.3 (smcv)
   - generate code for Connection.Interface.Balance
 
 * Add an example connection manager for the experimental Call API that will
@@ -20,12 +29,21 @@ Enhancements:
 
 * Add tp_value_array_unpack, the inverse of tp_value_array_build (danni)
 
+* Make various minor improvements to the tests (smcv)
+
 Fixes:
 
 * tp_account_set_nickname_async: set the right source_tag (cassidy)
 
 * fd.o #27281: clarify documentation for tp_message_mixin_sent, using
   telepathy-spec 0.19.2 as a reference (Maiku)
+
+* Avoid using re-entrant functions, other than in regression tests (smcv)
+
+* fd.o #21956: clean up documentation/defaults of TpContact properties (smcv)
+
+* telepathy.am: if copied into a project where CHECK_FOR_UNRELEASED is empty,
+  don't hang waiting for input (smcv)
 
 telepathy-glib 0.10.2 (2010-03-31)
 ==================================
