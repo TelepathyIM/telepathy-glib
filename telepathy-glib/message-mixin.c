@@ -1638,7 +1638,9 @@ struct _TpMessageMixinOutgoingMessagePrivate {
  * @error: %NULL on success, or the error with which message submission failed
  *
  * Indicate to the message mixin that message submission to the IM server has
- * succeeded or failed.
+ * succeeded or failed. This should be called as soon as the CM determines
+ * it's theoretically possible to send the message (e.g. the parameters are
+ * supported and correct).
  *
  * After this function is called, @message will have been freed, and must not
  * be dereferenced.
