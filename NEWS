@@ -1,7 +1,12 @@
 telepathy-glib 0.10.3 (UNRELEASED)
 ==================================
 
-...
+Fixes:
+
+* tp_account_set_nickname_async: set the right source_tag (cassidy)
+
+* fd.o #27281: clarify documentation for tp_message_mixin_sent, using
+  telepathy-spec 0.19.2 as a reference (Maiku)
 
 telepathy-glib 0.10.2 (2010-03-31)
 ==================================
