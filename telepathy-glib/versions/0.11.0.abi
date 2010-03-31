@@ -1,0 +1,13 @@
+Version: TELEPATHY_GLIB_0.11.0
+Extends: TELEPATHY_GLIB_0.9.2
+Release: 0.11.0
+
+tp_address_variant_from_g_socket_address
+tp_cli_connection_interface_balance_connect_to_balance_changed
+tp_g_socket_address_from_variant
+tp_g_value_slice_new_byte
+tp_iface_quark_connection_interface_balance
+tp_svc_connection_interface_balance_emit_balance_changed
+tp_svc_connection_interface_balance_get_type
+tp_type_dbus_struct_ius
+tp_value_array_unpack

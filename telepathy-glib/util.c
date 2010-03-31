@@ -204,7 +204,7 @@ tp_g_value_slice_new_int64 (gint64 n)
  * Returns: a #GValue of type %G_TYPE_UCHAR with value @n, to be freed with
  * tp_g_value_slice_free() or g_slice_free()
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.0
  */
 GValue *
 tp_g_value_slice_new_byte (guchar n)
@@ -1083,7 +1083,7 @@ tp_value_array_build (gsize length,
  *    </programlisting>
  * </example>
  *
- * Since: UNRELEASED
+ * Since: 0.11.0
  */
 void
 tp_value_array_unpack (GValueArray *array,

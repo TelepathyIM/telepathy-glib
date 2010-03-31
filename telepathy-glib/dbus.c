@@ -122,7 +122,7 @@ _tp_dbus_starter_bus_conn (GError **error)
  *
  * Returns: a connection to the starter or session D-Bus daemon.
  *
- * Deprecated: 0.11.UNRELEASED: Use tp_dbus_daemon_dup() in new code.
+ * Deprecated: 0.11.0: Use tp_dbus_daemon_dup() in new code.
  */
 DBusGConnection *
 tp_get_bus (void)
