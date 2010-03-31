@@ -24,7 +24,10 @@
 
 #include "config.h"
 
+#include <string.h>
+
 #include <glib.h>
+#include <telepathy-glib/defs.h>
 
 #ifdef ENABLE_DEBUG
 
@@ -64,6 +67,10 @@ G_STMT_START { \
   const gchar *_path; \
   g_assert (TP_IS_PROXY (_proxy)); \
   _path = tp_proxy_get_object_path (TP_PROXY (_proxy)); \
+  if (TP_IS_CHANNEL (_proxy)) \
+    _path += strlen (TP_CONN_OBJECT_PATH_BASE); \
+  else if (TP_IS_ACCOUNT (_proxy)) \
+    _path += strlen (TP_ACCOUNT_OBJECT_PATH_BASE); \
   CRITICAL (" %s: " _format, _path, ##__VA_ARGS__); \
 } G_STMT_END
 
@@ -81,6 +88,10 @@ G_STMT_START { \
   const gchar *_path; \
   g_assert (TP_IS_PROXY (_proxy)); \
   _path = tp_proxy_get_object_path (TP_PROXY (_proxy)); \
+  if (TP_IS_CHANNEL (_proxy)) \
+    _path += strlen (TP_CONN_OBJECT_PATH_BASE); \
+  else if (TP_IS_ACCOUNT (_proxy)) \
+    _path += strlen (TP_ACCOUNT_OBJECT_PATH_BASE); \
   DEBUG (" %s: " _format, _path, ##__VA_ARGS__); \
 } G_STMT_END
 
