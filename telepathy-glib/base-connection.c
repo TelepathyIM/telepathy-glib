@@ -270,6 +270,8 @@ enum
 {
     PROP_PROTOCOL = 1,
     PROP_SELF_HANDLE,
+    PROP_INTERFACES,
+    PROP_DBUS_STATUS,
 };
 
 /* signal enum */
@@ -402,6 +404,10 @@ struct _TpBaseConnectionPrivate
   TpDBusDaemon *bus_proxy;
 };
 
+static guint tp_base_connection_get_dbus_status (TpBaseConnection *self);
+static const gchar * const *tp_base_connection_get_interfaces (
+    TpBaseConnection *self);
+
 static void
 tp_base_connection_get_property (GObject *object,
                                  guint property_id,
@@ -411,7 +417,8 @@ tp_base_connection_get_property (GObject *object,
   TpBaseConnection *self = (TpBaseConnection *) object;
   TpBaseConnectionPrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+    {
     case PROP_PROTOCOL:
       g_value_set_string (value, priv->protocol);
       break;
@@ -420,10 +427,18 @@ tp_base_connection_get_property (GObject *object,
       g_value_set_uint (value, self->self_handle);
       break;
 
+    case PROP_INTERFACES:
+      g_value_set_boxed (value, tp_base_connection_get_interfaces (self));
+      break;
+
+    case PROP_DBUS_STATUS:
+      g_value_set_uint (value, tp_base_connection_get_dbus_status (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
-  }
+    }
 }
 
 static void
@@ -1368,6 +1383,8 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl connection_properties[] = {
       { "SelfHandle", "self-handle", NULL },
+      { "Status", "dbus-status", NULL },
+      { "Interfaces", "interfaces", NULL },
       { NULL }
   };
   static TpDBusPropertiesMixinPropImpl requests_properties[] = {
@@ -1416,6 +1433,41 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       G_PARAM_READWRITE |
       G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_SELF_HANDLE, param_spec);
+
+  /**
+   * TpBaseConnection:interfaces:
+   *
+   * The set of D-Bus interfaces available on this Connection, other than
+   * Connection itself.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("interfaces",
+      "Connection.Interfaces",
+      "The set of D-Bus interfaces available on this Connection, other than "
+      "Connection itself",
+      G_TYPE_STRV,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
+
+  /**
+   * TpBaseConnection:dbus-status:
+   *
+   * The Connection.Status as visible on D-Bus, which is the same as
+   * #TpBaseConnection.status except that %TP_INTERNAL_CONNECTION_STATUS_NEW
+   * is replaced by %TP_CONNECTION_STATUS_DISCONNECTED.
+   *
+   * The #GObject::notify signal is not currently emitted for this property.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_uint ("dbus-status",
+      "Connection.Status",
+      "The connection status as visible on D-Bus",
+      TP_CONNECTION_STATUS_CONNECTED, TP_CONNECTION_STATUS_DISCONNECTED,
+      TP_CONNECTION_STATUS_DISCONNECTED,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
 
   /* signal definitions */
 
@@ -1727,6 +1779,27 @@ tp_base_connection_disconnect (TpSvcConnection *iface,
       TP_CONNECTION_STATUS_REASON_REQUESTED);
 }
 
+static const gchar * const *
+tp_base_connection_get_interfaces (TpBaseConnection *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
+
+  if (self->priv->interfaces != NULL)
+    {
+      /* There are some extra interfaces for this connection */
+      return (const gchar * const *)(self->priv->interfaces->data);
+    }
+  else
+    {
+      TpBaseConnectionClass *klass = TP_BASE_CONNECTION_GET_CLASS (self);
+
+      /* We only have the interfaces that are always present.
+       * Instead of bothering to duplicate the static
+       * array into the GArray, we just use it directly */
+      return (const gchar * const *)klass->interfaces_always_present;
+    }
+}
+
 /**
  * tp_base_connection_get_interfaces
  *
@@ -1734,33 +1807,12 @@ tp_base_connection_disconnect (TpSvcConnection *iface,
  * on interface org.freedesktop.Telepathy.Connection
  */
 static void
-tp_base_connection_get_interfaces (TpSvcConnection *iface,
-                                   DBusGMethodInvocation *context)
+tp_base_connection_dbus_get_interfaces (TpSvcConnection *iface,
+    DBusGMethodInvocation *context)
 {
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-  TpBaseConnectionPrivate *priv;
-  TpBaseConnectionClass *klass;
-  const gchar **interfaces;
-
-  g_assert (TP_IS_BASE_CONNECTION (self));
-
-  priv = self->priv;
-  klass = TP_BASE_CONNECTION_GET_CLASS (self);
-
-  if (priv->interfaces)
-    {
-      /* There are some extra interfaces for this connection */
-      interfaces = (const gchar **)(priv->interfaces->data);
-    }
-  else
-    {
-      /* We only have the interfaces that are always present.
-       * Instead of bothering to duplicate the static
-       * array into the GArray, we just use it directly */
-      interfaces = klass->interfaces_always_present;
-    }
-
-  tp_svc_connection_return_from_get_interfaces (context, interfaces);
+  tp_svc_connection_return_from_get_interfaces (context,
+      (const gchar **) tp_base_connection_get_interfaces (
+        (TpBaseConnection *) iface));
 }
 
 /**
@@ -1811,28 +1863,35 @@ tp_base_connection_dbus_get_self_handle (TpSvcConnection *iface,
       context, self->self_handle);
 }
 
-/**
- * tp_base_connection_get_status
+static guint
+tp_base_connection_get_dbus_status (TpBaseConnection *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self),
+      TP_CONNECTION_STATUS_DISCONNECTED);
+
+  if (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
+    {
+      return TP_CONNECTION_STATUS_DISCONNECTED;
+    }
+  else
+    {
+      return self->status;
+    }
+}
+
+/*
+ * tp_base_connection_dbus_get_status
  *
  * Implements D-Bus method GetStatus
  * on interface org.freedesktop.Telepathy.Connection
  */
 static void
-tp_base_connection_get_status (TpSvcConnection *iface,
-                               DBusGMethodInvocation *context)
+tp_base_connection_dbus_get_status (TpSvcConnection *iface,
+    DBusGMethodInvocation *context)
 {
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
-
-  if (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW)
-    {
-      tp_svc_connection_return_from_get_status (
-          context, TP_CONNECTION_STATUS_DISCONNECTED);
-    }
-  else
-    {
-      tp_svc_connection_return_from_get_status (
-          context, self->status);
-    }
+  tp_svc_connection_return_from_get_status (
+      context, tp_base_connection_get_dbus_status (
+        (TpBaseConnection *) iface));
 }
 
 
@@ -2834,10 +2893,10 @@ conn_iface_init (gpointer g_iface, gpointer iface_data)
     tp_base_connection_##prefix##x)
   IMPLEMENT(,connect);
   IMPLEMENT(,disconnect);
-  IMPLEMENT(,get_interfaces);
+  IMPLEMENT(dbus_,get_interfaces);
   IMPLEMENT(,get_protocol);
   IMPLEMENT(dbus_,get_self_handle);
-  IMPLEMENT(,get_status);
+  IMPLEMENT(dbus_,get_status);
   IMPLEMENT(,hold_handles);
   IMPLEMENT(,inspect_handles);
   IMPLEMENT(,list_channels);
