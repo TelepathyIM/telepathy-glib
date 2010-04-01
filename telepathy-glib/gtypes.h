@@ -28,8 +28,10 @@ G_BEGIN_DECLS
 #include <telepathy-glib/_gen/gtypes.h>
 
 #define TP_ARRAY_TYPE_OBJECT_PATH_LIST (tp_type_dbus_array_of_o ())
+#define TP_TYPE_UCHAR_ARRAY (tp_type_dbus_array_of_y ())
 
 GType tp_type_dbus_array_of_o (void);
+GType tp_type_dbus_array_of_y (void);
 
 GValue *tp_dbus_specialized_value_slice_new (GType type);
 
