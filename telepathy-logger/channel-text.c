@@ -534,11 +534,8 @@ got_tpl_chan_ready_cb (GObject *obj,
 }
 
 
-/* Clean up passed messages (GList of tokens), which are known to be stale.
- * used by:
- * got_message_pending_messages_cb
- * got_text_pending_messages_cb
- * pendingproc_cleanup_pending_messages_db */
+/* Clean up passed messages (GList of tokens), which are known to be stale,
+ * setting them acknowledged in SQLite */
 static void
 tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
     GList *stale_tokens)
@@ -546,19 +543,9 @@ tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
   TplLogStore *cache = tpl_log_store_sqlite_dup ();
   GError *loc_error = NULL;
 
-  /* Remove messages not set as ACK'd but not in the pending queue anymore: they
-   * are stale entries, already ACK'd while TPL was 'down'.
-   *
-   * NOTE: this will clean up stale entries in cache, related to any currently
-   * open channel, we don't know anything about all the other stale entries
-   * related to channel not currently open. Those will need to be clean
-   * elsewhere.
-   */
-  while (stale_tokens != NULL)
+  for (; stale_tokens != NULL; stale_tokens = g_list_next (stale_tokens))
     {
       gchar *log_id = stale_tokens->data;
-
-      PATH_DEBUG (self, "%s is stale, removing from DB", log_id);
 
       tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
       if (loc_error != NULL)
@@ -567,10 +554,6 @@ tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
               "TPL DB: %s", log_id, loc_error->message);
           g_clear_error (&loc_error);
         }
-      g_free (log_id);
-
-      /* free list's head, which will return the next element, if any */
-      stale_tokens = g_list_delete_link (stale_tokens, stale_tokens);
     }
 
   if (cache != NULL)
@@ -628,8 +611,13 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     }
 
   PATH_DEBUG (self, "Cleaning up stale messages");
-  /* no need to free/unref l */
   tpl_channel_text_clean_up_stale_tokens (self, l);
+  while (l != NULL)
+    {
+      PATH_DEBUG (self, "%s is stale, removed from DB", (gchar *) l->data);
+      g_list_free (l->data);
+      l = g_list_delete_link (l, l);
+    }
   PATH_DEBUG (self, "Clean up finished.");
 
 out:
@@ -794,8 +782,20 @@ got_message_pending_messages_cb (TpProxy *proxy,
       g_free (tpl_message_token);
     }
 
+  /* At this point all remaining elements of cached_pending_msgs are those
+   * that the TplLogStoreSqlite knew as pending but currently not
+   * listed as such in the current pending message list -> stale */
   tpl_channel_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy),
-      cached_pending_msg);
+      cached_pending_msgs);
+  while (cached_pending_msgs != NULL)
+    {
+      PATH_DEBUG (proxy, "%s is stale, removed from DB",
+          (gchar *) cached_pending_msgs->data);
+
+      g_list_free (cached_pending_msgs->data);
+      cached_pending_msgs = g_list_delete_link (cached_pending_msgs,
+          cached_pending_msgs);
+    }
 
 out:
   if (cache != NULL)
@@ -900,8 +900,20 @@ got_text_pending_messages_cb (TpChannel *proxy,
       g_free (tpl_message_token);
     }
 
+  /* At this point all remaining elements of cached_pending_msgs are those
+   * that the TplLogStoreSqlite knew as pending but currently not
+   * listed as such in the current pending message list -> stale */
   tpl_channel_text_clean_up_stale_tokens (TPL_CHANNEL_TEXT (proxy),
-      cached_pending_msg);
+      cached_pending_msgs);
+  while (cached_pending_msgs != NULL)
+    {
+      PATH_DEBUG (proxy, "%s is stale, removed from DB",
+          (gchar *) cached_pending_msgs->data);
+
+      g_list_free (cached_pending_msgs->data);
+      cached_pending_msgs = g_list_delete_link (cached_pending_msgs,
+          cached_pending_msgs);
+    }
 
   tpl_action_chain_continue (ctx);
 }
