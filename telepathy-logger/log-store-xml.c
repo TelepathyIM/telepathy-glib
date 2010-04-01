@@ -552,11 +552,11 @@ log_store_xml_add_message (TplLogStore *self,
       case TPL_LOG_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE:
         return add_message_text (self, TPL_LOG_ENTRY_TEXT (message), error);
       default:
-        g_set_error (error, TPL_LOG_STORE_ERROR,
-            TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-            "LogEntrySignalType not handled by this LogStore (%s)",
-            log_store_xml_get_name (self));
-        return FALSE;
+        DEBUG ("TplLogEntrySignalType not handled by this LogStore (%s). "
+            "Ignoring LogEntry", log_store_xml_get_name (self));
+        /* do not consider it an error, this LogStore simply do not want/need
+         * this LogEntry */
+        return TRUE;
     }
 }
 
