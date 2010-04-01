@@ -1130,3 +1130,116 @@ tp_value_array_unpack (GValueArray *array,
 
   va_end (var_args);
 }
+
+/**
+ * TpWeakRef:
+ *
+ * A simple wrapper for a weak reference to a #GObject, suitable for use in
+ * asynchronous calls which should only affect the object if it hasn't already
+ * been freed.
+ *
+ * As well as wrapping a weak reference to an object, this structure can
+ * contain an extra pointer to arbitrary data. This is useful for asynchronous
+ * calls which act on an object and some second piece of data, which are quite
+ * common in practice.
+ *
+ * If more than one piece of auxiliary data is required, the @user_data
+ * argument to the constructor can be a struct or a #GValueArray.
+ */
+struct _TpWeakRef {
+    /*<private>*/
+    gpointer magic;
+    gpointer object;
+    gpointer user_data;
+    GDestroyNotify destroy;
+};
+
+/**
+ * tp_weak_ref_new:
+ * @object: (type Object): an object to which to take a weak reference
+ * @user_data: optional additional data to store alongside the weak ref
+ * @destroy: destructor for @user_data, called when the weak ref
+ *  is freed
+ *
+ * Return a new weak reference wrapper for @object.
+ *
+ * Returns: a new weak-reference wrapper
+ *
+ * Free-function: tp_weak_ref_destroy()
+ */
+TpWeakRef *
+tp_weak_ref_new (gpointer object,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  TpWeakRef *self;
+
+  g_return_val_if_fail (G_IS_OBJECT (object), NULL);
+
+  self = g_slice_new (TpWeakRef);
+  self->magic = tp_weak_ref_new;
+  self->object = object;
+  g_object_add_weak_pointer (self->object, &self->object);
+  self->user_data = user_data;
+  self->destroy = destroy;
+  return self;
+}
+
+/**
+ * tp_weak_ref_get_user_data:
+ * @self: a weak reference
+ *
+ * Return the additional data that was passed to tp_weak_ref_new().
+ *
+ * Returns: the additional data supplied in tp_weak_ref_new(), which may be
+ *  %NULL
+ */
+gpointer
+tp_weak_ref_get_user_data (TpWeakRef *self)
+{
+  g_return_val_if_fail (self->magic == tp_weak_ref_new, NULL);
+  return self->user_data;
+}
+
+/**
+ * tp_weak_ref_dup_object:
+ * @self: a weak reference
+ *
+ * If the weakly referenced object still exists, return a new reference to
+ * it. Otherwise, return %NULL.
+ *
+ * Returns: (type Object) (transfer full): a new reference, or %NULL
+ */
+gpointer
+tp_weak_ref_dup_object (TpWeakRef *self)
+{
+  g_return_val_if_fail (self->magic == tp_weak_ref_new, NULL);
+
+  if (self->object != NULL)
+    return g_object_ref (self->object);
+
+  return NULL;
+}
+
+/**
+ * tp_weak_ref_destroy:
+ * @self: a weak reference
+ *
+ * Free a weak reference wrapper. This drops the weak reference to the
+ * object (if it still exists), and frees the user data with the user-supplied
+ * destructor function if one was provided.
+ */
+void
+tp_weak_ref_destroy (TpWeakRef *self)
+{
+  g_return_if_fail (self->magic == tp_weak_ref_new);
+  self->magic = NULL;
+
+  if (self->object != NULL)
+    g_object_remove_weak_pointer (self->object, &self->object);
+
+  if (self->destroy != NULL)
+    (self->destroy) (self->user_data);
+
+  g_slice_free (TpWeakRef, self);
+}
