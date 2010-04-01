@@ -2239,9 +2239,14 @@ tp_iface_quark_channel_interface_call_state
 <TITLE>proxy</TITLE>
 <INCLUDE>telepathy-glib/proxy.h</INCLUDE>
 TpProxy
+TpProxyFeature
+TpProxyClassFeatureListFunc
 TpProxyClass
 tp_proxy_has_interface
 tp_proxy_has_interface_by_id
+tp_proxy_is_prepared
+tp_proxy_prepare_async
+tp_proxy_prepare_finish
 TpProxyPendingCall
 tp_proxy_pending_call_cancel
 TpProxySignalConnection

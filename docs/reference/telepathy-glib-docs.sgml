@@ -111,4 +111,6 @@
     <xi:include href="xml/intset.xml"/>
     <xi:include href="xml/heap.xml"/>
   </chapter>
+
+  <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
 </book>
