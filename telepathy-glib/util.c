@@ -509,6 +509,15 @@ tp_g_hash_table_update (GHashTable *target,
   g_hash_table_foreach (source, _tp_g_hash_table_update_helper, &data);
 }
 
+/**
+ * tp_str_empty:
+ * @s: (type utf8) (transfer none): a string
+ *
+ * Return true if @s is empty, counting %NULL as empty.
+ *
+ * Returns: (type boolean): %TRUE if @s is either %NULL or ""
+ */
+/* no definition here - it's inlined */
 
 /**
  * tp_strdiff:
