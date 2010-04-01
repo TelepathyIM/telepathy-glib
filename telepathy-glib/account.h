@@ -187,6 +187,17 @@ void tp_account_prepare_async (TpAccount *account, const GQuark *features,
 gboolean tp_account_prepare_finish (TpAccount *account, GAsyncResult *result,
     GError **error);
 
+void tp_account_set_avatar_async (TpAccount *self,
+    const guchar *avatar,
+    gsize len,
+    const gchar *mime_type,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_set_avatar_finish (TpAccount *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account.h>

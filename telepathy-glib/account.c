@@ -2817,3 +2817,94 @@ _tp_account_refresh_properties (TpAccount *account)
   tp_cli_dbus_properties_call_get_all (account, -1, TP_IFACE_ACCOUNT,
       _tp_account_got_all_cb, NULL, NULL, G_OBJECT (account));
 }
+
+/**
+ * tp_account_set_avatar_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async avatar change request on @account.
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_account_set_avatar_finish (TpAccount *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), tp_account_set_avatar_async), FALSE);
+
+  return TRUE;
+}
+
+/**
+ * tp_account_set_avatar_async:
+ * @self: a #TpAccount
+ * @avatar: a new avatar to set; can be %NULL only if @len equals 0
+ * @len: the length of the new avatar
+ * @mime_type: the MIME type of the new avatar; can be %NULL only if
+ * @len equals 0
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous change of the Avatar parameter on @self. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_account_set_avatar_finish() to get the result of the operation.
+ *
+ * If @len equals 0, the avatar is cleared.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_account_set_avatar_async (TpAccount *self,
+    const guchar *avatar,
+    gsize len,
+    const gchar *mime_type,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GValue value = {0, };
+  GSimpleAsyncResult *result;
+  GValueArray *arr;
+  GArray *tmp;
+
+  g_return_if_fail (TP_IS_ACCOUNT (self));
+  g_return_if_fail (avatar != NULL || len == 0);
+  g_return_if_fail (mime_type != NULL || len == 0);
+
+  result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_account_set_avatar_async);
+
+  tmp = g_array_new (FALSE, FALSE, sizeof (guchar));
+
+  if (len > 0)
+    g_array_append_vals (tmp, avatar, len);
+
+  arr = tp_value_array_build (2,
+      TP_TYPE_UCHAR_ARRAY, tmp,
+      G_TYPE_STRING, mime_type,
+      G_TYPE_INVALID);
+
+  g_value_init (&value, TP_STRUCT_TYPE_AVATAR);
+  g_value_take_boxed (&value, arr);
+
+  tp_cli_dbus_properties_call_set (self, -1,
+      TP_IFACE_ACCOUNT_INTERFACE_AVATAR, "Avatar", &value,
+      _tp_account_property_set_cb, result, NULL, NULL);
+
+  g_value_unset (&value);
+}
