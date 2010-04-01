@@ -53,6 +53,7 @@
 #include <telepathy-glib/debug-ansi.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/intset.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_PROPERTIES
 
@@ -497,7 +498,7 @@ tp_properties_mixin_has_property (GObject *obj, const gchar *name,
 
   for (i = 0; i < mixin_cls->num_props; i++)
     {
-      if (strcmp (mixin_cls->signatures[i].name, name) == 0)
+      if (!tp_strdiff (mixin_cls->signatures[i].name, name))
         {
           if (property)
             *property = i;

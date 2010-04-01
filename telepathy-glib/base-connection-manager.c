@@ -335,7 +335,7 @@ get_parameters (const TpCMProtocolSpec *protos,
 
   for (i = 0; protos[i].name; i++)
     {
-      if (!strcmp (proto, protos[i].name))
+      if (!tp_strdiff (proto, protos[i].name))
         {
           *ret = protos + i;
           return TRUE;

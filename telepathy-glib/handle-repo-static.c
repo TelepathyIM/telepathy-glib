@@ -44,6 +44,7 @@
 #include <string.h>
 
 #include <telepathy-glib/handle-repo-internal.h>
+#include <telepathy-glib/util.h>
 
 enum
 {
@@ -267,7 +268,7 @@ static_lookup_handle (TpHandleRepoIface *irepo,
 
   for (i = 0; i < self->last_handle; i++)
     {
-      if (!strcmp (self->handle_names[i], id))
+      if (!tp_strdiff (self->handle_names[i], id))
         return (TpHandle) i + 1;
     }
 
