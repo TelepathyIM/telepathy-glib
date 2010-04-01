@@ -640,42 +640,6 @@ out:
 }
 
 
-/* check if the passed token currently is the cached_pending_msg list.
- * If it is, the entry in cached_pending_msg will be freed and removed and
- * TRUE will be returned. FALSE with untouched cached_pending_msg will be
- * retuened otherwise.
- * used by:
- * got_message_pending_messages_cb and got_text_pending_messages_cb */
-static gboolean
-tpl_channel_text_msg_token_exist_in_cache (TplChannelText *self,
-    GList *cached_pending_msg,
-    const gchar *tpl_message_token)
-{
-  gboolean retval = FALSE;
-  GList *l;
-
-  /* look for the current token among the TPL cached tokens/log_id */
-  l = g_list_find_custom (cached_pending_msg, tpl_message_token,
-      (GCompareFunc) g_strcmp0);
-  if (l != NULL)
-    {
-      PATH_DEBUG (self, "pending msg %s already logged, not logging",
-          tpl_message_token);
-      /* Removing the element is a way to mark it as "present in pending
-       * message list". After the loop, all the remaining messages in
-       * cached_pending_msg will be considered stale entries,
-       * since they cannot be associated with any currently present
-       * pending message -> already ACK'd */
-      g_free (l->data);
-      cached_pending_msg = g_list_delete_link (cached_pending_msg, l);
-
-      retval = TRUE;
-    }
-
-  return retval;
-}
-
-
 static void
 pendingproc_get_pending_messages (TplActionChain *ctx,
     gpointer user_data)
@@ -706,7 +670,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
   TplLogStore *cache = tpl_log_store_sqlite_dup ();
   TplActionChain *ctx = user_data;
   GPtrArray *result = NULL;
-  GList *cached_pending_msg = NULL;
+  GList *cached_pending_msgs = NULL;
   GError *loc_error = NULL;
   guint i;
 
@@ -733,7 +697,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
   result = g_value_get_boxed (out_Value);
 
   /* getting messages ids known to be pending at last TPL exit */
-  cached_pending_msg = tpl_log_store_sqlite_get_pending_messages (cache,
+  cached_pending_msgs = tpl_log_store_sqlite_get_pending_messages (cache,
       TP_CHANNEL (proxy), &loc_error);
   if (loc_error != NULL)
     {
@@ -751,6 +715,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
       GPtrArray *message_parts;
       GHashTable *message_headers; /* string:gvalue */
       GHashTable *message_part; /* string:gvalue */
+      GList *l;
       const gchar *message_token;
       gchar *tpl_message_token;
       guint64 message_timestamp;
@@ -805,14 +770,25 @@ got_message_pending_messages_cb (TpProxy *proxy,
 
       message_body = tp_asv_get_string (message_part, "content");
 
-      /* log only log-ids not in cached -> not already logged */
-      if (!tpl_channel_text_msg_token_exist_in_cache (TPL_CHANNEL_TEXT (proxy),
-            cached_pending_msg, tpl_message_token))
+      /* log only log-ids not in cached_pending_msgs -> not already logged */
+      l = g_list_find_custom (cached_pending_msgs, tpl_message_token,
+          (GCompareFunc) g_strcmp0);
+
+      if (l == NULL)
         {
+          /* call the received signal callback to trigger the message storing */
           on_received_signal_cb (TP_CHANNEL (proxy),
               message_id, message_timestamp, message_sender_handle,
               message_type, message_flags, message_body,
               NULL, NULL);
+        }
+      else
+        {
+          /* the message has been already logged, remove it from the list so
+           * that, in the end of the loop, the items still in
+           * cached_pending_msgs can be considered stale */
+          g_free (l->data);
+          cached_pending_msgs = g_list_delete_link (cached_pending_msgs, l);
         }
 
       g_free (tpl_message_token);
@@ -847,7 +823,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
 {
   TplLogStore *cache = tpl_log_store_sqlite_dup ();
   TplActionChain *ctx = user_data;
-  GList *cached_pending_msg;
+  GList *cached_pending_msgs, *l;
   const gchar *channel_path;
   GError *loc_error = NULL;
   guint i;
@@ -863,7 +839,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
   channel_path = tp_proxy_get_object_path (proxy);
 
   /* getting messages ids known to be pending at last TPL exit */
-  cached_pending_msg = tpl_log_store_sqlite_get_pending_messages (cache,
+  cached_pending_msgs = tpl_log_store_sqlite_get_pending_messages (cache,
       TP_CHANNEL (proxy), &loc_error);
 
   if (loc_error != NULL)
@@ -901,14 +877,24 @@ got_text_pending_messages_cb (TpChannel *proxy,
       tpl_message_token = create_message_token (channel_path,
           message_timestamp, message_id);
 
-      /* log only log-ids not in cached -> not already logged */
-      if (!tpl_channel_text_msg_token_exist_in_cache (TPL_CHANNEL_TEXT (proxy),
-            cached_pending_msg, tpl_message_token))
+      /* log only log-ids not in cached_pending_msgs -> not already logged */
+      l = g_list_find_custom (cached_pending_msgs, tpl_message_token,
+          (GCompareFunc) g_strcmp0);
+
+      if (l == NULL)
         {
           /* call the received signal callback to trigger the message storing */
           on_received_signal_cb (proxy, message_id, message_timestamp,
               from_handle, message_type, message_flags, message_body,
               NULL, NULL);
+        }
+      else
+        {
+          /* the message has been already logged, remove it from the list so
+           * that, in the end of the loop, the items still in
+           * cached_pending_msgs can be considered stale */
+          g_free (l->data);
+          cached_pending_msgs = g_list_delete_link (cached_pending_msgs, l);
         }
 
       g_free (tpl_message_token);
