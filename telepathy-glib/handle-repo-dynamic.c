@@ -48,6 +48,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/heap.h>
 #include <telepathy-glib/handle-repo-internal.h>
+#include <telepathy-glib/util.h>
 
 /**
  * TpDynamicHandleRepoNormalizeFunc:
@@ -281,7 +282,7 @@ handles_name_owner_changed_cb (TpDBusDaemon *dbus_daemon,
 {
   TpDynamicHandleRepo *repo = user_data;
 
-  if (new_owner == NULL || new_owner[0] == '\0')
+  if (tp_str_empty (new_owner))
     {
       tp_dbus_daemon_cancel_name_owner_watch (dbus_daemon, name,
           handles_name_owner_changed_cb, repo);

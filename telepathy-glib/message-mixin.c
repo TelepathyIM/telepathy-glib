@@ -956,7 +956,7 @@ parts_to_text (const GPtrArray *parts,
         {
           DEBUG ("... wondering whether this is NON_TEXT_CONTENT?");
 
-          if (alternative == NULL || alternative[0] == '\0')
+          if (tp_str_empty (alternative))
             {
               /* This part can't possibly have a text alternative, since it
                * isn't part of a multipart/alternative group

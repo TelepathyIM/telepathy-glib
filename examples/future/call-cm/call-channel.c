@@ -1129,7 +1129,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
       return NULL;
     }
 
-  if (requested_name == NULL || requested_name[0] == '\0')
+  if (tp_str_empty (requested_name))
     {
       requested_name = type_str;
     }

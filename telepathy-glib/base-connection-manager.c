@@ -1085,7 +1085,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
 {
   const gchar *str = g_value_get_string (value);
 
-  if (str == NULL || str[0] == '\0')
+  if (tp_str_empty (str))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Account parameter '%s' may not be set to an empty string",

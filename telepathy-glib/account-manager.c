@@ -347,7 +347,7 @@ _tp_account_manager_name_owner_cb (TpDBusDaemon *proxy,
 {
   DEBUG ("Name owner changed for %s, new name: %s", name, new_owner);
 
-  if (new_owner == NULL || new_owner[0] == '\0')
+  if (tp_str_empty (new_owner))
     {
       /* MC5 quit or crashed for some reason, let's start it again */
       _tp_account_manager_start_mc5 (proxy);

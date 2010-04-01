@@ -531,7 +531,7 @@ _tp_account_update (TpAccount *account,
 
       icon_name = tp_asv_get_string (properties, "Icon");
 
-      if (icon_name == NULL || icon_name[0] == '\0')
+      if (tp_str_empty (icon_name))
         priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
       else
         priv->icon_name = g_strdup (icon_name);
