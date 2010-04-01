@@ -35,6 +35,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/proxy-internal.h"
 
 #include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
@@ -109,22 +110,7 @@ struct _TpAccountPrivate {
   gchar *display_name;
 
   GHashTable *parameters;
-
-  /* Features. */
-  GList *features;
-  GList *callbacks;
-  GArray *requested_features;
 };
-
-typedef struct {
-  GQuark name;
-  gboolean ready;
-} TpAccountFeature;
-
-typedef struct {
-  GSimpleAsyncResult *result;
-  GArray *features;
-} TpAccountFeatureCallback;
 
 G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
 
@@ -170,7 +156,7 @@ enum {
  * set up.
  *
  * One can ask for a feature to be prepared using the
- * tp_account_prepare_async() function, and waiting for it to callback.
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
  * Since: 0.9.0
  */
@@ -191,14 +177,24 @@ tp_account_get_feature_quark_core (void)
   return g_quark_from_static_string ("tp-account-feature-core");
 }
 
-static const GQuark *
-_tp_account_get_known_features (void)
-{
-  static GQuark features[] = { 0, 0 };
+enum {
+    FEAT_CORE,
+    N_FEAT
+};
 
-  if (G_UNLIKELY (features[0] == 0))
+static const TpProxyFeature *
+_tp_account_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_UNLIKELY (features[0].name == 0))
     {
-      features[0] = TP_ACCOUNT_FEATURE_CORE;
+      features[FEAT_CORE].name = TP_ACCOUNT_FEATURE_CORE;
+      features[FEAT_CORE].core = TRUE;
+      /* no need for a start_preparing function - the constructor starts it */
+
+      /* assert that the terminator at the end is there */
+      g_assert (features[N_FEAT].name == 0);
     }
 
   return features;
@@ -213,114 +209,6 @@ tp_account_init (TpAccount *self)
   self->priv->connection_status = TP_CONNECTION_STATUS_DISCONNECTED;
 }
 
-static TpAccountFeature *
-_tp_account_get_feature (TpAccount *self,
-    GQuark feature)
-{
-  TpAccountPrivate *priv = self->priv;
-  GList *l;
-
-  for (l = priv->features; l != NULL; l = l->next)
-    {
-      TpAccountFeature *f = l->data;
-
-      if (f->name == feature)
-        return f;
-    }
-
-  return NULL;
-}
-
-static gboolean
-_tp_account_feature_in_array (GQuark feature,
-    const GArray *array)
-{
-  const GQuark *c = (const GQuark *) array->data;
-
-  for (; *c != 0; c++)
-    {
-      if (*c == feature)
-        return TRUE;
-    }
-
-  return FALSE;
-}
-
-static gboolean
-_tp_account_check_features (TpAccount *self,
-    const GArray *features)
-{
-  const GQuark *f;
-  TpAccountFeature *feat;
-
-  for (f = (GQuark *) features->data; f != NULL && *f != 0; f++)
-    {
-      feat = _tp_account_get_feature (self, *f);
-
-      /* features which are NULL (ie. don't exist) are always considered as
-       * being ready, except in _is_prepared when it doesn't make sense to
-       * return TRUE. */
-      if (feat != NULL && !feat->ready)
-        return FALSE;
-    }
-
-  /* Special-case core: no other feature is ready unless core itself is
-   * ready. */
-  feat = _tp_account_get_feature (self, TP_ACCOUNT_FEATURE_CORE);
-  if (!feat->ready)
-    return FALSE;
-
-  return TRUE;
-}
-
-static void
-_tp_account_become_ready (TpAccount *self,
-    GQuark feature)
-{
-  TpAccountPrivate *priv = self->priv;
-  TpAccountFeature *f = NULL;
-  GList *l, *remove = NULL;
-
-  f = _tp_account_get_feature (self, feature);
-
-  g_assert (f != NULL);
-
-  if (f->ready)
-    return;
-
-  f->ready = TRUE;
-
-  /* First, find which callbacks are satisfied and add those items
-   * from the remove list. */
-  l = priv->callbacks;
-  while (l != NULL)
-    {
-      GList *c = l;
-      TpAccountFeatureCallback *cb = l->data;
-
-      l = l->next;
-
-      if (_tp_account_check_features (self, cb->features))
-        {
-          priv->callbacks = g_list_remove_link (priv->callbacks, c);
-          remove = g_list_concat (c, remove);
-        }
-    }
-
-  /* Next, complete these callbacks */
-  for (l = remove; l != NULL; l = l->next)
-    {
-      TpAccountFeatureCallback *cb = l->data;
-
-      g_simple_async_result_complete (cb->result);
-      g_object_unref (cb->result);
-      g_array_free (cb->features, TRUE);
-      g_slice_free (TpAccountFeatureCallback, cb);
-    }
-
-  g_list_free (remove);
-}
-
 static void
 _tp_account_invalidated_cb (TpAccount *self,
     guint domain,
@@ -328,7 +216,6 @@ _tp_account_invalidated_cb (TpAccount *self,
     gchar *message)
 {
   TpAccountPrivate *priv = self->priv;
-  GList *l;
 
   /* The connection will get disconnected as a result of account deletion,
    * but by then we will no longer be telling the API user about changes -
@@ -350,22 +237,6 @@ _tp_account_invalidated_cb (TpAccount *self,
       g_object_notify ((GObject *) self, "connection-status");
       g_object_notify ((GObject *) self, "connection-status-reason");
     }
-
-  /* Make all currently pending callbacks fail. */
-  for (l = priv->callbacks; l != NULL; l = l->next)
-    {
-      TpAccountFeatureCallback *cb = l->data;
-
-      g_simple_async_result_set_error (cb->result,
-          domain, code, "%s", message);
-      g_simple_async_result_complete (cb->result);
-      g_object_unref (cb->result);
-      g_array_free (cb->features, TRUE);
-      g_slice_free (TpAccountFeatureCallback, cb);
-    }
-
-  g_list_free (priv->callbacks);
-  priv->callbacks = NULL;
 }
 
 static void
@@ -631,7 +502,8 @@ _tp_account_update (TpAccount *account,
         g_object_notify (G_OBJECT (account), "has-been-online");
     }
 
-  _tp_account_become_ready (account, TP_ACCOUNT_FEATURE_CORE);
+  _tp_proxy_set_feature_prepared ((TpProxy *) account,
+      TP_ACCOUNT_FEATURE_CORE, TRUE);
 }
 
 static void
@@ -642,7 +514,7 @@ _tp_account_properties_changed (TpAccount *proxy,
 {
   TpAccount *self = TP_ACCOUNT (weak_object);
 
-  if (!tp_account_is_prepared (self, TP_ACCOUNT_FEATURE_CORE))
+  if (!tp_proxy_is_prepared (self, TP_ACCOUNT_FEATURE_CORE))
     return;
 
   _tp_account_update (self, properties);
@@ -680,29 +552,11 @@ _tp_account_constructed (GObject *object)
     ((GObjectClass *) tp_account_parent_class)->constructed;
   GError *error = NULL;
   TpProxySignalConnection *sc;
-  guint i;
-  const GQuark *known_features;
 
   if (chain_up != NULL)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
-
-  priv->features = NULL;
-  priv->callbacks = NULL;
-  priv->requested_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
-
-  known_features = _tp_account_get_known_features ();
-
-  /* Fill features list */
-  for (i = 0; known_features[i] != 0; i++)
-    {
-      TpAccountFeature *feature;
-      feature = g_slice_new0 (TpAccountFeature);
-      feature->name = known_features[i];
-      feature->ready = FALSE;
-      priv->features = g_list_prepend (priv->features, feature);
-    }
 
   sc = tp_cli_account_connect_to_removed (self, _tp_account_removed_cb,
       NULL, NULL, NULL, &error);
@@ -819,13 +673,6 @@ _tp_account_dispose (GObject *object)
 }
 
 static void
-_tp_account_feature_free (gpointer data,
-    gpointer user_data)
-{
-  g_slice_free (TpAccountFeature, data);
-}
-
-static void
 _tp_account_finalize (GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (object);
@@ -843,19 +690,6 @@ _tp_account_finalize (GObject *object)
   g_free (priv->proto_name);
   g_free (priv->icon_name);
   g_free (priv->display_name);
-
-  g_list_foreach (priv->features, _tp_account_feature_free, NULL);
-  g_list_free (priv->features);
-  priv->features = NULL;
-
-  /* GSimpleAsyncResult keeps a ref to the source GObject, so this list
-   * should be empty. */
-  g_assert_cmpuint (g_list_length (priv->callbacks), ==, 0);
-
-  g_list_free (priv->callbacks);
-  priv->callbacks = NULL;
-
-  g_array_free (priv->requested_features, TRUE);
 
   /* free any data held directly by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)
@@ -885,7 +719,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is FALSE.
+   * tp_proxy_prepare_async() has finished; until then, the value is FALSE.
    *
    * Since: 0.9.0
    */
@@ -907,7 +741,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %TP_CONNECTION_PRESENCE_TYPE_UNSET.
    *
    * Since: 0.9.0
@@ -931,7 +765,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
    * Since: 0.9.0
@@ -953,7 +787,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
    * Since: 0.9.0
@@ -975,7 +809,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %TP_CONNECTION_STATUS_DISCONNECTED.
    *
    * Since: 0.9.0
@@ -999,7 +833,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED.
    *
    * Since: 0.9.0
@@ -1024,7 +858,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
    * Since: 0.9.0
@@ -1046,7 +880,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
    * Since: 0.9.0
@@ -1097,7 +931,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
    * Since: 0.9.0
@@ -1120,7 +954,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %FALSE.
    *
    * Since: 0.9.0
@@ -1142,7 +976,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %FALSE.
    *
    * Since: 0.9.0
@@ -1164,7 +998,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %FALSE.
    *
    * Since: 0.9.0
@@ -1242,7 +1076,7 @@ tp_account_class_init (TpAccountClass *klass)
    * detail.
    *
    * This is not guaranteed to have been retrieved until
-   * tp_account_prepare_async() has finished; until then, the value is
+   * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
    * Since: 0.9.0
@@ -1296,6 +1130,7 @@ tp_account_class_init (TpAccountClass *klass)
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT;
+  proxy_class->list_features = _tp_account_list_features;
   tp_account_init_known_interfaces ();
 }
 
@@ -2557,7 +2392,7 @@ tp_account_get_avatar_finish (TpAccount *account,
  *
  * <!-- -->
  *
- * Returns: %TRUE if @feature is ready on @account, otherwise %FALSE
+ * Returns: the same thing as tp_proxy_is_prepared()
  *
  * Since: 0.9.0
  */
@@ -2565,19 +2400,7 @@ gboolean
 tp_account_is_prepared (TpAccount *account,
     GQuark feature)
 {
-  TpAccountFeature *f;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-
-  if (tp_proxy_get_invalidated (account) != NULL)
-    return FALSE;
-
-  f = _tp_account_get_feature (account, feature);
-
-  if (f == NULL)
-    return FALSE;
-
-  return f->ready;
+  return tp_proxy_is_prepared (account, feature);
 }
 
 /**
@@ -2599,6 +2422,9 @@ tp_account_is_prepared (TpAccount *account,
  * operation is finished. Instead, it will simply set @features on @manager.
  * Note that if @callback is %NULL, then @user_data must also be %NULL.
  *
+ * Since 0.11.UNRELEASED, this is equivalent to calling the new function
+ * tp_proxy_prepare_async() with the same arguments.
+ *
  * Since: 0.9.0
  */
 void
@@ -2607,60 +2433,7 @@ tp_account_prepare_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpAccountPrivate *priv;
-  GSimpleAsyncResult *result;
-  const GError *error;
-  const GQuark *f;
-  GArray *feature_array;
-
-  g_return_if_fail (TP_IS_ACCOUNT (account));
-
-  priv = account->priv;
-
-  /* In this object, there are no features which are activatable (core is
-   * forced on you). They'd be activated here though. */
-
-  for (f = features; f != NULL && *f != 0; f++)
-    {
-      /* Only add features to requested which exist on this object and are not
-       * already in the list. */
-      if (_tp_account_get_feature (account, *f) != NULL
-          && !_tp_account_feature_in_array (*f, priv->requested_features))
-        g_array_append_val (priv->requested_features, *f);
-    }
-
-  if (callback == NULL)
-    return;
-
-  result = g_simple_async_result_new (G_OBJECT (account),
-      callback, user_data, tp_account_prepare_finish);
-
-  feature_array = _tp_quark_array_copy (features);
-
-  error = tp_proxy_get_invalidated (account);
-
-  if (error != NULL)
-    {
-      g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete_in_idle (result);
-      g_object_unref (result);
-      g_array_free (feature_array, TRUE);
-    }
-  else if (_tp_account_check_features (account, feature_array))
-    {
-      g_simple_async_result_complete_in_idle (result);
-      g_object_unref (result);
-      g_array_free (feature_array, TRUE);
-    }
-  else
-    {
-      TpAccountFeatureCallback *cb;
-
-      cb = g_slice_new0 (TpAccountFeatureCallback);
-      cb->result = result;
-      cb->features = feature_array;
-      priv->callbacks = g_list_prepend (priv->callbacks, cb);
-    }
+  tp_proxy_prepare_async (account, features, callback, user_data);
 }
 
 /**
@@ -2680,20 +2453,7 @@ tp_account_prepare_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_prepare_finish), FALSE);
-
-  return TRUE;
+  return tp_proxy_prepare_finish (account, result, error);
 }
 
 static void
