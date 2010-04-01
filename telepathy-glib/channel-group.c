@@ -471,7 +471,7 @@ _tp_channel_group_set_one_lp (TpChannel *self,
   tp_intset_remove (self->priv->group_remote_pending, handle);
 
   if (actor == 0 && reason == TP_CHANNEL_GROUP_CHANGE_REASON_NONE &&
-      (message == NULL || message[0] == '\0'))
+      tp_str_empty (message))
     {
       /* we just don't bother storing informationless local-pending */
       if (self->priv->group_local_pending_info != NULL)
@@ -509,7 +509,7 @@ _tp_channel_group_set_one_lp (TpChannel *self,
   info->reason = reason;
   g_free (info->message);
 
-  if (message == NULL || message[0] == '\0')
+  if (tp_str_empty (message))
     info->message = NULL;
   else
     info->message = g_strdup (message);

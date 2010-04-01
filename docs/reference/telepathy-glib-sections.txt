@@ -1089,6 +1089,7 @@ tp_g_value_slice_new_uint64
 tp_g_value_slice_new_byte
 tp_g_value_slice_free
 tp_g_value_slice_dup
+tp_str_empty
 tp_strdiff
 tp_mixin_offset_cast
 tp_mixin_class_get_offset

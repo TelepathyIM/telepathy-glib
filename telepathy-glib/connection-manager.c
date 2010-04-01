@@ -1910,7 +1910,7 @@ tp_connection_manager_check_valid_name (const gchar *name,
 {
   const gchar *name_char;
 
-  if (name == NULL || name[0] == '\0')
+  if (tp_str_empty (name))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "The empty string is not a valid connection manager name");
