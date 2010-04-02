@@ -291,6 +291,8 @@ test_no_features (ContactsConnection *service_conn,
             TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
       MYASSERT (!tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_PRESENCE), "");
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_LOCATION), "");
     }
 
   for (i = 0; i < 3; i++)
