@@ -81,6 +81,11 @@ void contacts_connection_change_presences (ContactsConnection *self, guint n,
 void contacts_connection_change_avatar_tokens (ContactsConnection *self,
     guint n, const TpHandle *handles, const gchar * const *tokens);
 
+void contacts_connection_change_locations (ContactsConnection *self,
+    guint n,
+    const TpHandle *handles,
+    GHashTable **locations);
+
 /* Legacy version (no Contacts interface) */
 
 typedef struct _LegacyContactsConnection LegacyContactsConnection;
