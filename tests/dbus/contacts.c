@@ -383,11 +383,19 @@ test_upgrade (ContactsConnection *service_conn,
       CONTACTS_CONNECTION_STATUS_AWAY };
   static const gchar * const messages[] = { "", "Fixing it",
       "GON OUT BACKSON" };
+  GHashTable *location_1 = tp_asv_new (
+      "country",  G_TYPE_STRING, "United-kingdoms", NULL);
+  GHashTable *location_2 = tp_asv_new (
+      "country",  G_TYPE_STRING, "Atlantis", NULL);
+  GHashTable *location_3 = tp_asv_new (
+      "country",  G_TYPE_STRING, "Belgium", NULL);
+  GHashTable *locations[] = { location_1, location_2, location_3 };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
       (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
   TpContact *contacts[3];
   TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE };
+      TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE,
+      TP_CONTACT_FEATURE_LOCATION };
   guint i;
 
   g_message (G_STRFUNC);
@@ -399,6 +407,7 @@ test_upgrade (ContactsConnection *service_conn,
   contacts_connection_change_presences (service_conn, 3, handles,
       statuses, messages);
   contacts_connection_change_avatar_tokens (service_conn, 3, handles, tokens);
+  contacts_connection_change_locations (service_conn, 3, handles, locations);
 
   tp_connection_get_contacts_by_handle (client_conn,
       3, handles,
@@ -438,6 +447,8 @@ test_upgrade (ContactsConnection *service_conn,
             TP_CONTACT_FEATURE_AVATAR_TOKEN), "");
       MYASSERT (!tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_PRESENCE), "");
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_LOCATION), "");
     }
 
   /* clean up before doing the second request */
@@ -483,6 +494,11 @@ test_upgrade (ContactsConnection *service_conn,
             TP_CONTACT_FEATURE_PRESENCE), "");
       MYASSERT_SAME_STRING (tp_contact_get_presence_message (contacts[i]),
           messages[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_LOCATION), "");
+      ASSERT_SAME_LOCATION (tp_contact_get_location (contacts[i]),
+          locations[i]);
     }
 
   MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
