@@ -529,6 +529,62 @@ test_upgrade (ContactsConnection *service_conn,
   g_assert (result.error == NULL);
 }
 
+typedef struct
+{
+  gboolean alias_changed;
+  gboolean avatar_token_changed;
+  gboolean presence_type_changed;
+  gboolean presence_status_changed;
+  gboolean presence_msg_changed;
+  gboolean location_changed;
+} notify_ctx;
+
+static void
+notify_ctx_init (notify_ctx *ctx)
+{
+  ctx->alias_changed = FALSE;
+  ctx->avatar_token_changed = FALSE;
+  ctx->presence_type_changed = FALSE;
+  ctx->presence_status_changed = FALSE;
+  ctx->presence_msg_changed = FALSE;
+  ctx->location_changed = FALSE;
+}
+
+static gboolean
+notify_ctx_is_fully_changed (notify_ctx *ctx)
+{
+  return ctx->alias_changed && ctx->avatar_token_changed &&
+    ctx->presence_type_changed && ctx->presence_status_changed &&
+    ctx->presence_msg_changed && ctx->location_changed;
+}
+
+static gboolean
+notify_ctx_is_changed (notify_ctx *ctx)
+{
+  return ctx->alias_changed || ctx->avatar_token_changed ||
+    ctx->presence_type_changed || ctx->presence_status_changed ||
+    ctx->presence_msg_changed || ctx->location_changed;
+}
+
+static void
+contact_notify_cb (TpContact *contact,
+    GParamSpec *param,
+    notify_ctx *ctx)
+{
+  if (!tp_strdiff (param->name, "alias"))
+    ctx->alias_changed = TRUE;
+  else if (!tp_strdiff (param->name, "avatar-token"))
+    ctx->avatar_token_changed = TRUE;
+  else if (!tp_strdiff (param->name, "presence-type"))
+    ctx->presence_type_changed = TRUE;
+  else if (!tp_strdiff (param->name, "presence-status"))
+    ctx->presence_status_changed = TRUE;
+  else if (!tp_strdiff (param->name, "presence-message"))
+    ctx->presence_msg_changed = TRUE;
+  else if (!tp_strdiff (param->name, "location"))
+    ctx->location_changed = TRUE;
+}
+
 static void
 test_features (ContactsConnection *service_conn,
                TpConnection *client_conn)
@@ -581,6 +637,7 @@ test_features (ContactsConnection *service_conn,
       gchar *presence_message;
       GHashTable *location;
   } from_gobject;
+  notify_ctx notify_ctx_alice, notify_ctx_chris;
 
   g_message (G_STRFUNC);
 
@@ -681,6 +738,14 @@ test_features (ContactsConnection *service_conn,
   g_free (from_gobject.presence_message);
   g_hash_table_unref (from_gobject.location);
 
+  notify_ctx_init (&notify_ctx_alice);
+  g_signal_connect (contacts[0], "notify",
+      G_CALLBACK (contact_notify_cb), &notify_ctx_alice);
+
+  notify_ctx_init (&notify_ctx_chris);
+  g_signal_connect (contacts[2], "notify",
+      G_CALLBACK (contact_notify_cb), &notify_ctx_chris);
+
   /* Change Alice and Bob's contact info, leave Chris as-is */
   contacts_connection_change_aliases (service_conn, 2, handles, new_aliases);
   contacts_connection_change_presences (service_conn, 2, handles,
@@ -690,6 +755,9 @@ test_features (ContactsConnection *service_conn,
   contacts_connection_change_locations (service_conn, 2, handles,
       new_locations);
   test_connection_run_until_dbus_queue_processed (client_conn);
+
+  g_assert (notify_ctx_is_fully_changed (&notify_ctx_alice));
+  g_assert (!notify_ctx_is_changed (&notify_ctx_chris));
 
   for (i = 0; i < 2; i++)
     {
