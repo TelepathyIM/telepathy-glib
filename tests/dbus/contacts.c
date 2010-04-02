@@ -357,6 +357,15 @@ upgrade_cb (TpConnection *connection,
     }
 }
 
+/* Just put a country in locations for easier comparaisons.
+ * FIXME: Ideally we should have a MYASSERT_SAME_ASV */
+#define ASSERT_SAME_LOCATION(left, right)\
+  G_STMT_START {\
+    MYASSERT_SAME_UINT (g_hash_table_size (left), g_hash_table_size (right));\
+    MYASSERT_SAME_STRING(g_hash_table_lookup (left, "country"),\
+        g_hash_table_lookup (right, "country"));\
+  } G_STMT_END
+
 static void
 test_upgrade (ContactsConnection *service_conn,
               TpConnection *client_conn)
@@ -524,11 +533,24 @@ test_features (ContactsConnection *service_conn,
       CONTACTS_CONNECTION_STATUS_AWAY, CONTACTS_CONNECTION_STATUS_AVAILABLE };
   static const gchar * const new_messages[] = { "At the Mad Hatter's",
       "It'll cost you" };
+  GHashTable *location_1 = tp_asv_new (
+      "country",  G_TYPE_STRING, "United-kingdoms", NULL);
+  GHashTable *location_2 = tp_asv_new (
+      "country",  G_TYPE_STRING, "Atlantis", NULL);
+  GHashTable *location_3 = tp_asv_new (
+      "country",  G_TYPE_STRING, "Belgium", NULL);
+  GHashTable *locations[] = { location_1, location_2, location_3 };
+  GHashTable *location_4 = tp_asv_new (
+      "country",  G_TYPE_STRING, "France", NULL);
+  GHashTable *location_5 = tp_asv_new (
+      "country",  G_TYPE_STRING, "Irland", NULL);
+  GHashTable *new_locations[] = { location_4, location_5 };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
       (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
   TpContact *contacts[3];
   TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE };
+      TP_CONTACT_FEATURE_AVATAR_TOKEN, TP_CONTACT_FEATURE_PRESENCE,
+      TP_CONTACT_FEATURE_LOCATION };
   guint i;
   struct {
       TpConnection *connection;
@@ -539,6 +561,7 @@ test_features (ContactsConnection *service_conn,
       TpConnectionPresenceType presence_type;
       gchar *presence_status;
       gchar *presence_message;
+      GHashTable *location;
   } from_gobject;
 
   g_message (G_STRFUNC);
@@ -550,6 +573,7 @@ test_features (ContactsConnection *service_conn,
   contacts_connection_change_presences (service_conn, 3, handles,
       statuses, messages);
   contacts_connection_change_avatar_tokens (service_conn, 3, handles, tokens);
+  contacts_connection_change_locations (service_conn, 3, handles, locations);
 
   tp_connection_get_contacts_by_handle (client_conn,
       3, handles,
@@ -588,6 +612,11 @@ test_features (ContactsConnection *service_conn,
             TP_CONTACT_FEATURE_PRESENCE), "");
       MYASSERT_SAME_STRING (tp_contact_get_presence_message (contacts[i]),
           messages[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_LOCATION), "");
+      ASSERT_SAME_LOCATION (tp_contact_get_location (contacts[i]),
+          locations[i]);
     }
 
   MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
@@ -595,6 +624,7 @@ test_features (ContactsConnection *service_conn,
   MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[0]),
       "available");
   MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[1]),
+
       TP_CONNECTION_PRESENCE_TYPE_BUSY);
   MYASSERT_SAME_STRING (tp_contact_get_presence_status (contacts[1]),
       "busy");
@@ -613,6 +643,7 @@ test_features (ContactsConnection *service_conn,
       "presence-type", &from_gobject.presence_type,
       "presence-status", &from_gobject.presence_status,
       "presence-message", &from_gobject.presence_message,
+      "location", &from_gobject.location,
       NULL);
   MYASSERT (from_gobject.connection == client_conn, "");
   MYASSERT_SAME_UINT (from_gobject.handle, handles[0]);
@@ -623,12 +654,14 @@ test_features (ContactsConnection *service_conn,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   MYASSERT_SAME_STRING (from_gobject.presence_status, "available");
   MYASSERT_SAME_STRING (from_gobject.presence_message, "");
+  ASSERT_SAME_LOCATION (from_gobject.location, locations[0]);
   g_object_unref (from_gobject.connection);
   g_free (from_gobject.identifier);
   g_free (from_gobject.alias);
   g_free (from_gobject.avatar_token);
   g_free (from_gobject.presence_status);
   g_free (from_gobject.presence_message);
+  g_hash_table_unref (from_gobject.location);
 
   /* Change Alice and Bob's contact info, leave Chris as-is */
   contacts_connection_change_aliases (service_conn, 2, handles, new_aliases);
@@ -636,6 +669,8 @@ test_features (ContactsConnection *service_conn,
       new_statuses, new_messages);
   contacts_connection_change_avatar_tokens (service_conn, 2, handles,
       new_tokens);
+  contacts_connection_change_locations (service_conn, 2, handles,
+      new_locations);
   test_connection_run_until_dbus_queue_processed (client_conn);
 
   for (i = 0; i < 2; i++)
@@ -657,6 +692,11 @@ test_features (ContactsConnection *service_conn,
             TP_CONTACT_FEATURE_PRESENCE), "");
       MYASSERT_SAME_STRING (tp_contact_get_presence_message (contacts[i]),
           new_messages[i]);
+
+      MYASSERT (tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_LOCATION), "");
+      ASSERT_SAME_LOCATION (tp_contact_get_location (contacts[i]),
+          new_locations[i]);
     }
 
   MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
@@ -681,6 +721,11 @@ test_features (ContactsConnection *service_conn,
   g_array_free (result.invalid, TRUE);
   g_ptr_array_free (result.contacts, TRUE);
   g_assert (result.error == NULL);
+  g_hash_table_unref (location_1);
+  g_hash_table_unref (location_2);
+  g_hash_table_unref (location_3);
+  g_hash_table_unref (location_4);
+  g_hash_table_unref (location_5);
 }
 
 static void
