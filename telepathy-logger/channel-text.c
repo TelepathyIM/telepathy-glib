@@ -548,6 +548,7 @@ tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
       gchar *log_id = stale_tokens->data;
 
       tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
+
       if (loc_error != NULL)
         {
           PATH_CRITICAL (self, "Unable to set %s as acknoledged in "
@@ -1058,12 +1059,15 @@ on_pending_messages_removed_cb (TpChannel *proxy,
       guint msg_id = g_array_index (message_ids, guint, i);
       tpl_log_store_sqlite_set_acknowledgment_by_msg_id (cache, proxy, msg_id,
           &error);
-      PATH_DEBUG (proxy, "msg_id %d acknowledged", msg_id);
       if (error != NULL)
         {
           PATH_DEBUG (proxy, "cannot set the ACK flag for msg_id %u: %s",
               msg_id, error->message);
           g_clear_error (&error);
+        }
+      else
+        {
+          PATH_DEBUG (proxy, "msg_id %d acknowledged", msg_id);
         }
     }
 
