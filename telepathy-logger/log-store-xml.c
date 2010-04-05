@@ -430,7 +430,7 @@ add_message_text_chat (TplLogStore *self,
   gchar *avatar_token = NULL;
   gchar *body;
   gchar *timestamp;
-  gchar *contact_name;
+  gchar *contact_name = NULL;
   gchar *contact_id;
   gchar *entry;
   TpChannelTextMessageType msg_type;
@@ -460,9 +460,12 @@ add_message_text_chat (TplLogStore *self,
       TPL_LOG_ENTRY (message));
 
   sender = tpl_log_entry_get_sender (TPL_LOG_ENTRY (message));
-  contact_name = g_markup_escape_text (tpl_contact_get_alias (sender), -1);
   contact_id = g_markup_escape_text (tpl_contact_get_identifier (sender), -1);
-  avatar_token = g_markup_escape_text (tpl_contact_get_avatar_token (sender), -1);
+  if (tpl_contact_get_alias (sender) != NULL)
+    contact_name = g_markup_escape_text (tpl_contact_get_alias (sender), -1);
+  if (tpl_contact_get_avatar_token (sender) != NULL)
+    avatar_token = g_markup_escape_text (tpl_contact_get_avatar_token
+        (sender), -1);
 
   entry = g_strdup_printf ("<message time='%s' cm_id='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'>"
