@@ -2820,7 +2820,7 @@ _tp_account_refresh_properties (TpAccount *account)
 
 /**
  * tp_account_set_avatar_finish:
- * @account: a #TpAccount
+ * @self: a #TpAccount
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
