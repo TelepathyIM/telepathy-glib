@@ -86,6 +86,7 @@ struct _TpContact {
  * @TP_CONTACT_FEATURE_AVATAR_TOKEN: #TpContact:avatar-token
  * @TP_CONTACT_FEATURE_PRESENCE: #TpContact:presence-type,
  *  #TpContact:presence-status and #TpContact:presence-message
+ * @TP_CONTACT_FEATURE_LOCATION: #TpContact:location
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
  *
@@ -109,6 +110,7 @@ enum {
     PROP_PRESENCE_TYPE,
     PROP_PRESENCE_STATUS,
     PROP_PRESENCE_MESSAGE,
+    PROP_LOCATION,
     N_PROPS
 };
 
@@ -119,6 +121,7 @@ typedef enum {
     CONTACT_FEATURE_FLAG_ALIAS = 1 << TP_CONTACT_FEATURE_ALIAS,
     CONTACT_FEATURE_FLAG_AVATAR_TOKEN = 1 << TP_CONTACT_FEATURE_AVATAR_TOKEN,
     CONTACT_FEATURE_FLAG_PRESENCE = 1 << TP_CONTACT_FEATURE_PRESENCE,
+    CONTACT_FEATURE_FLAG_LOCATION = 1 << TP_CONTACT_FEATURE_LOCATION,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -138,6 +141,9 @@ struct _TpContactPrivate {
     TpConnectionPresenceType presence_type;
     gchar *presence_status;
     gchar *presence_message;
+
+    /* location */
+    GHashTable *location;
 };
 
 
@@ -352,6 +358,27 @@ tp_contact_get_presence_message (TpContact *self)
       self->priv->presence_message);
 }
 
+/**
+ * tp_contact_get_location:
+ * @self: a contact
+ *
+ * Return the contact's user-defined location or %NULL if the location is
+ * unspecified.
+ * This remains valid until the main loop is re-entered; if the caller
+ * requires a hash table that will persist for longer than that, it must be
+ * reffed with g_hash_table_ref().
+ *
+ * Returns: the same #GHashTable (or %NULL) as the #TpContact:location property
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GHashTable *
+tp_contact_get_location (TpContact *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  return self->priv->location;
+}
 
 void
 _tp_contact_connection_invalidated (TpContact *contact)
@@ -385,6 +412,12 @@ tp_contact_dispose (GObject *object)
     {
       g_object_unref (self->priv->connection);
       self->priv->connection = NULL;
+    }
+
+  if (self->priv->location != NULL)
+    {
+      g_hash_table_unref (self->priv->location);
+      self->priv->location = NULL;
     }
 
   ((GObjectClass *) tp_contact_parent_class)->dispose (object);
@@ -449,6 +482,10 @@ tp_contact_get_property (GObject *object,
 
     case PROP_PRESENCE_MESSAGE:
       g_value_set_string (value, tp_contact_get_presence_message (self));
+      break;
+
+    case PROP_LOCATION:
+      g_value_set_boxed (value, tp_contact_get_location (self));
       break;
 
     default:
@@ -619,6 +656,26 @@ tp_contact_class_init (TpContactClass *klass)
       "",
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PRESENCE_MESSAGE,
+      param_spec);
+
+  /**
+   * TpContact:location:
+   *
+   * If this contact has set a user-defined location, a string to
+   * #GValue * hash table containing his location. If not, %NULL.
+   * tp_asv_get_string() and similar functions can be used to access
+   * the contents.
+   *
+   * This may be %NULL even if the contact has set a location,
+   * if this #TpContact object has not been set up to track
+   * %TP_CONTACT_FEATURE_LOCATION.
+   */
+  param_spec = g_param_spec_boxed ("location",
+      "Location",
+      "User-defined location, or NULL",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_LOCATION,
       param_spec);
 }
 
@@ -1412,6 +1469,20 @@ contact_maybe_set_simple_presence (TpContact *contact,
   g_object_notify ((GObject *) contact, "presence-message");
 }
 
+static void
+contact_maybe_set_location (TpContact *self,
+    GHashTable *location)
+{
+  if (self == NULL || location == NULL)
+    return;
+
+  if (self->priv->location != NULL)
+    g_hash_table_unref (self->priv->location);
+
+  self->priv->has_features |= CONTACT_FEATURE_FLAG_LOCATION;
+  self->priv->location = g_hash_table_ref (location);
+  g_object_notify ((GObject *) self, "location");
+}
 
 static void
 contacts_presences_changed (TpConnection *connection,
@@ -1497,6 +1568,86 @@ contacts_get_simple_presence (ContactsContext *c)
   contacts_context_continue (c);
 }
 
+static void
+contacts_location_updated (TpConnection *connection,
+    guint handle,
+    GHashTable *location,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  TpContact *contact = _tp_connection_lookup_contact (connection,
+          GPOINTER_TO_UINT (handle));
+
+  contact_maybe_set_location (contact, location);
+}
+
+static void
+contacts_bind_to_location_updated (TpConnection *connection)
+{
+  if (!connection->priv->tracking_location_changed)
+    {
+      connection->priv->tracking_location_changed = TRUE;
+
+      tp_cli_connection_interface_location_connect_to_location_updated
+        (connection, contacts_location_updated, NULL, NULL, NULL, NULL);
+    }
+}
+
+static void
+contacts_got_locations (TpConnection *connection,
+    GHashTable *locations,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("GetLocations failed with %s %u: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+  else
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, locations);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          contacts_location_updated (connection, GPOINTER_TO_UINT (key),
+              value, NULL, NULL);
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+static void
+contacts_get_locations (ContactsContext *c)
+{
+  guint i;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  contacts_bind_to_location_updated (c->connection);
+
+  for (i = 0; i < c->contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_LOCATION) == 0)
+        {
+          c->refcount++;
+          tp_cli_connection_interface_location_call_get_locations (
+              c->connection, -1, c->handles, contacts_got_locations,
+              c, contacts_context_unref, c->weak_object);
+          return;
+        }
+    }
+
+  contacts_context_continue (c);
+}
 
 static void
 contacts_avatar_updated (TpConnection *connection,
@@ -1631,6 +1782,13 @@ contacts_context_queue_features (ContactsContext *context,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
     {
       g_queue_push_tail (&context->todo, contacts_get_avatar_tokens);
+    }
+
+  if ((feature_flags & CONTACT_FEATURE_FLAG_LOCATION) != 0 &&
+      tp_proxy_has_interface_by_id (context->connection,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION))
+    {
+      g_queue_push_tail (&context->todo, contacts_get_locations);
     }
 }
 
@@ -1774,6 +1932,12 @@ contacts_got_attributes (TpConnection *connection,
           TP_STRUCT_TYPE_SIMPLE_PRESENCE);
       contact_maybe_set_simple_presence (contact, boxed);
 
+      /* Location */
+      boxed = tp_asv_get_boxed (asv,
+          TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE "/location",
+          TP_HASH_TYPE_LOCATION);
+      contact_maybe_set_location (contact, boxed);
+
       /* FIXME: TP_IFACE_CONNECTION_INTERFACE_CAPABILITIES "/caps" */
     }
 
@@ -1833,6 +1997,15 @@ contacts_get_attributes (ContactsContext *context)
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
               contacts_bind_to_presences_changed (context->connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_LOCATION) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_LOCATION);
+              contacts_bind_to_location_updated (context->connection);
             }
         }
     }

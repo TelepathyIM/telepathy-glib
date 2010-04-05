@@ -3094,6 +3094,7 @@ tp_contact_get_identifier
 tp_contact_get_presence_message
 tp_contact_get_presence_status
 tp_contact_get_presence_type
+tp_contact_get_location
 tp_contact_has_feature
 <SUBSECTION Standard>
 tp_contact_get_type

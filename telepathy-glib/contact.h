@@ -54,6 +54,7 @@ typedef enum {
     TP_CONTACT_FEATURE_ALIAS,
     TP_CONTACT_FEATURE_AVATAR_TOKEN,
     TP_CONTACT_FEATURE_PRESENCE,
+    TP_CONTACT_FEATURE_LOCATION,
     NUM_TP_CONTACT_FEATURES
 } TpContactFeature;
 
@@ -74,6 +75,8 @@ TpConnectionPresenceType tp_contact_get_presence_type (TpContact *self);
 const gchar *tp_contact_get_presence_status (TpContact *self);
 const gchar *tp_contact_get_presence_message (TpContact *self);
 
+/* TP_CONTACT_FEATURE_LOCATION */
+GHashTable *tp_contact_get_location (TpContact *self);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,
