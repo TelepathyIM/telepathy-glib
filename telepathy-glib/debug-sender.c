@@ -59,7 +59,6 @@
 
 /**
  * TpDebugSender:
- * @parent: The parent class instance
  *
  * An object for exposing the Telepathy debug interface.
  *

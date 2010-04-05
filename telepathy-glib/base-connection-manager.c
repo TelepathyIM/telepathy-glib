@@ -129,8 +129,6 @@
 
 /**
  * TpBaseConnectionManager:
- * @parent: The parent instance structure
- * @priv: Pointer to opaque private data
  *
  * A base class for connection managers. There are no interesting public
  * fields in the instance structure.

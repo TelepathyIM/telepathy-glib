@@ -55,9 +55,9 @@ typedef enum {
 } TpDBusError;
 
 struct _TpProxy {
+    /*<private>*/
     GObject parent;
 
-    /*<private>*/
     TpDBusDaemon *dbus_daemon;
     DBusGConnection *dbus_connection;
     gchar *bus_name;

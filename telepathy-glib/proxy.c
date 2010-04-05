@@ -159,7 +159,6 @@ tp_dbus_errors_quark (void)
 
 /**
  * TpProxy:
- * @parent: parent object
  *
  * Structure representing a Telepathy client-side proxy.
  *
