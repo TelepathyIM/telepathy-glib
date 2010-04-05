@@ -563,11 +563,11 @@ tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
 /* Cleans up stale log-ids in the index logstore.
  *
  * It 'brutally' considers as stale all log-ids which timestamp is older than
- * <time_limit> days AND are still not set as aknowledged.
+ * <time_limit> days AND are still not set as acknowledged.
  *
  * NOTE: While retrieving open channels, a partial clean-up for the channel's
  * stale pending messages is done. It's not enough, since it doesn't consider
- * all the channel that was closed at retrieval time.  This functions try to
+ * all the channels being closed at retrieval time. This function tries to
  * catch stale ids in the rest of the DB, heuristically.
  *
  * It is wrong to consider all the log-ids not having an channel currently
