@@ -615,7 +615,7 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
   while (l != NULL)
     {
       PATH_DEBUG (self, "%s is stale, removed from DB", (gchar *) l->data);
-      g_list_free (l->data);
+      g_free (l->data);
       l = g_list_delete_link (l, l);
     }
   PATH_DEBUG (self, "Clean up finished.");
@@ -792,7 +792,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
       PATH_DEBUG (proxy, "%s is stale, removed from DB",
           (gchar *) cached_pending_msgs->data);
 
-      g_list_free (cached_pending_msgs->data);
+      g_free (cached_pending_msgs->data);
       cached_pending_msgs = g_list_delete_link (cached_pending_msgs,
           cached_pending_msgs);
     }
@@ -910,7 +910,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
       PATH_DEBUG (proxy, "%s is stale, removed from DB",
           (gchar *) cached_pending_msgs->data);
 
-      g_list_free (cached_pending_msgs->data);
+      g_free (cached_pending_msgs->data);
       cached_pending_msgs = g_list_delete_link (cached_pending_msgs,
           cached_pending_msgs);
     }
