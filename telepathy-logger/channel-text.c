@@ -610,7 +610,8 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
       goto out;
     }
 
-  PATH_DEBUG (self, "Cleaning up stale messages");
+  if (l != NULL)
+    PATH_DEBUG (self, "Cleaning up stale messages");
   tpl_channel_text_clean_up_stale_tokens (self, l);
   while (l != NULL)
     {
@@ -618,7 +619,6 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
       g_free (l->data);
       l = g_list_delete_link (l, l);
     }
-  PATH_DEBUG (self, "Clean up finished.");
 
 out:
   if (cache != NULL)
