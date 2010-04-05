@@ -389,6 +389,10 @@ link_interface (GType type,
   return TRUE;
 }
 
+/* if this assertion fails, TpDBusPropertiesMixinIfaceImpl.mixin_next (which
+ * used to be a GCallback but is now a gpointer) will be an ABI break on this
+ * architecture, so do some evil trick with unions or something */
+tp_verify (sizeof (GCallback) == sizeof (gpointer));
 
 /**
  * tp_dbus_properties_mixin_implement_interface:
@@ -464,7 +468,7 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
       /* assert that we're not trying to implement the same interface twice */
       for (iter = next;
            iter != NULL && iter->name != NULL;
-           iter = iter->mixin_next.priv)
+           iter = iter->mixin_next)
         {
           TpDBusPropertiesMixinIfaceInfo *other_info = iter->mixin_priv;
 
@@ -503,7 +507,7 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
 #endif
 
       /* form a linked list */
-      iface_impl->mixin_next.priv = next;
+      iface_impl->mixin_next = next;
       g_type_set_qdata (type, extras_quark, iface_impl);
     }
 
@@ -646,7 +650,7 @@ _tp_dbus_properties_mixin_find_iface_impl (GObject *self,
 
       for (iface_impl = g_type_get_qdata (type, extras_quark);
            iface_impl != NULL;
-           iface_impl = iface_impl->mixin_next.priv)
+           iface_impl = iface_impl->mixin_next)
         {
           iface_info = iface_impl->mixin_priv;
 

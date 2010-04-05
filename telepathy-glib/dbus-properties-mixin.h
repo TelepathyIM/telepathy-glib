@@ -79,12 +79,6 @@ typedef struct {
     gpointer mixin_priv;
 } TpDBusPropertiesMixinPropImpl;
 
-/* this union is to keep ABI if sizeof (GCallback) > sizeof (void *) */
-typedef union {
-    GCallback _padding;
-    gpointer priv;
-} _TpDBusPropertiesMixinPaddedPointer;
-
 typedef struct {
     const gchar *name;
     TpDBusPropertiesMixinGetter getter;
@@ -93,7 +87,7 @@ typedef struct {
     /*<private>*/
     GCallback _1;
     GCallback _2;
-    _TpDBusPropertiesMixinPaddedPointer mixin_next;
+    gpointer mixin_next;
     gpointer mixin_priv;
 } TpDBusPropertiesMixinIfaceImpl;
 
