@@ -980,7 +980,7 @@ _log_store_xml_search_in_files (TplLogStore *self,
 static GList *
 log_store_xml_search_in_identifier_chats_new (TplLogStore *self,
     TpAccount *account,
-    gchar const *identifier,
+    const gchar *identifier,
     const gchar *text)
 {
   GList *files;

@@ -281,7 +281,7 @@ tpl_log_store_get_chats (TplLogStore *self,
 GList *
 tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
     TpAccount *account,
-    gchar const *chat_id,
+    const gchar *chat_id,
     const gchar *text)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);

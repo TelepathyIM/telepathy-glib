@@ -76,7 +76,7 @@ typedef struct
   GList * (*get_chats) (TplLogStore *self, TpAccount *account);
   GList * (*search_new) (TplLogStore *self, const gchar *text);
   GList * (*search_in_identifier_chats_new) (TplLogStore *self,
-      TpAccount *account, gchar const *identifier, const gchar *text);
+      TpAccount *account, const gchar *identifier, const gchar *text);
   GList * (*get_filtered_messages) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom, guint num_messages,
       TplLogMessageFilter filter, gpointer user_data);
@@ -98,7 +98,7 @@ GList *tpl_log_store_get_recent_messages (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
 GList *tpl_log_store_get_chats (TplLogStore *self, TpAccount *account);
 GList *tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
-    TpAccount *account, gchar const *identifier, const gchar *text);
+    TpAccount *account, const gchar *identifier, const gchar *text);
 GList *tpl_log_store_search_new (TplLogStore *self, const gchar *text);
 GList *tpl_log_store_get_filtered_messages (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
