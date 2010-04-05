@@ -496,8 +496,8 @@ tpl_channel_text_call_when_ready (TplChannelText *self,
    * are unreferenced by g_object_unref but used by a next action AND what object are actually not
    * prepared but used anyway */
   actions = tpl_action_chain_new (G_OBJECT (self), cb, user_data);
-  tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
   tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
+  tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
   tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   tpl_action_chain_append (actions, pendingproc_get_remote_handle_type, NULL);
   tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
