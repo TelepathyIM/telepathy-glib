@@ -1,7 +1,24 @@
-telepathy-glib 0.11.1 (UNRELEASED)
+telepathy-glib 0.11.1 (2010-04-05)
 ==================================
 
-...
+The “26-bit address bus” release.
+
+Enhancements:
+
+◈ Add tp_str_empty() macro, a shortcut for ‘NULL or ""’ (smcv)
+
+◈ Add TP_TYPE_UCHAR_ARRAY, a dbus-glib GArray of guchar (i.e. the default
+  representation for the D-Bus 'ay' type) (cassidy)
+
+◈ Add tp_account_set_avatar_async() (cassidy)
+
+Fixes:
+
+◈ Only fail “make check” on documentation warnings in unreleased versions, to
+  avoid build failures in releases when gtk-doc in a distribution doesn't have
+  the same definition of full coverage that we do (smcv)
+
+◈ Fix compatibility with gtk-doc 1.14 (smcv)
 
 telepathy-glib 0.11.0 (2010-03-31)
 ==================================

@@ -2828,7 +2828,7 @@ _tp_account_refresh_properties (TpAccount *account)
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.1
  */
 gboolean
 tp_account_set_avatar_finish (TpAccount *self,
@@ -2867,7 +2867,7 @@ tp_account_set_avatar_finish (TpAccount *self,
  *
  * If @len equals 0, the avatar is cleared.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.1
  */
 void
 tp_account_set_avatar_async (TpAccount *self,

@@ -85,7 +85,7 @@ tp_dbus_specialized_value_slice_new (GType type)
  * that returns the #GType of a #GArray
  * of %G_TYPE_UCHAR.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.1
  */
 
 GType

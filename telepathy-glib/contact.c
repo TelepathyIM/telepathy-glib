@@ -86,7 +86,7 @@ struct _TpContact {
  * @TP_CONTACT_FEATURE_AVATAR_TOKEN: #TpContact:avatar-token
  * @TP_CONTACT_FEATURE_PRESENCE: #TpContact:presence-type,
  *  #TpContact:presence-status and #TpContact:presence-message
- * @TP_CONTACT_FEATURE_LOCATION: #TpContact:location
+ * @TP_CONTACT_FEATURE_LOCATION: #TpContact:location (available since 0.11.1)
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
  *
@@ -370,7 +370,7 @@ tp_contact_get_presence_message (TpContact *self)
  *
  * Returns: the same #GHashTable (or %NULL) as the #TpContact:location property
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.1
  */
 GHashTable *
 tp_contact_get_location (TpContact *self)
@@ -669,6 +669,8 @@ tp_contact_class_init (TpContactClass *klass)
    * This may be %NULL even if the contact has set a location,
    * if this #TpContact object has not been set up to track
    * %TP_CONTACT_FEATURE_LOCATION.
+   *
+   * Since: 0.11.1
    */
   param_spec = g_param_spec_boxed ("location",
       "Location",

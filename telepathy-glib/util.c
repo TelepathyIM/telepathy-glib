@@ -516,6 +516,8 @@ tp_g_hash_table_update (GHashTable *target,
  * Return %TRUE if @s is empty, counting %NULL as empty.
  *
  * Returns: (type boolean): %TRUE if @s is either %NULL or ""
+ *
+ * Since: 0.11.1
  */
 /* no definition here - it's inlined */
 
