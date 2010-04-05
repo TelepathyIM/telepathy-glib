@@ -45,9 +45,9 @@ typedef struct _TpDebugSenderPrivate TpDebugSenderPrivate;
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DEBUG_SENDER, TpDebugSenderClass))
 
 struct _TpDebugSender {
+  /*<private>*/
   GObject parent;
 
-  /*<private>*/
   TpDebugSenderPrivate *priv;
 };
 

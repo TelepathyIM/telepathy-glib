@@ -106,10 +106,9 @@ tp_errors_disconnected_quark (void)
 
 /**
  * TpConnection:
- * @parent: the parent class instance
- * @priv: pointer to opaque private data
  *
- * A proxy object for a Telepathy connection.
+ * A proxy object for a Telepathy connection. There are no interesting
+ * public struct fields.
  *
  * (Changed in 0.7.12: the layout of the structure is visible, allowing
  * subclassing.)

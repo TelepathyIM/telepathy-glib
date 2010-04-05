@@ -72,10 +72,10 @@
 
 /**
  * TpChannel:
- * @parent: parent class instance
- * @priv: pointer to opaque private data
  *
  * A proxy object for a Telepathy channel.
+ * A proxy object for a Telepathy channel. There are no interesting
+ * public struct fields.
  *
  * (Changed in 0.7.12: the layout of the structure is visible, allowing
  * subclassing.)

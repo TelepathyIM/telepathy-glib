@@ -96,17 +96,37 @@ include $(top_srcdir)/gtk-doc.make
 
 if ENABLE_GTK_DOC
 check-local:
-	@if grep '^0 symbols incomplete' \
+	@err=0; \
+	if grep '^0 symbols incomplete' \
 		$(srcdir)/telepathy-glib-undocumented.txt; then\
-		:; else \
-		cat $(srcdir)/telepathy-glib-undocumented.txt; exit 1; fi
-	@if grep '^0 not documented' \
+		:; \
+	else \
+		cat $(srcdir)/telepathy-glib-undocumented.txt; \
+		err=1; \
+	fi; \
+	if grep '^0 not documented' \
 		$(srcdir)/telepathy-glib-undocumented.txt; then\
-		:; else \
-		cat $(srcdir)/telepathy-glib-undocumented.txt; exit 1; fi
-	@if grep . $(srcdir)/telepathy-glib-unused.txt; then\
-		echo "^^^ Unused symbols" >&2; exit 1; fi
-	@if test -e $(srcdir)/telepathy-glib-undeclared.txt &&\
+		:; \
+	else \
+		cat $(srcdir)/telepathy-glib-undocumented.txt; \
+		err=1; \
+	fi; \
+	if grep . $(srcdir)/telepathy-glib-unused.txt; then\
+		echo "^^^ Unused symbols" >&2; \
+		err=1; \
+	fi; \
+	if test -e $(srcdir)/telepathy-glib-undeclared.txt &&\
 		grep . $(srcdir)/telepathy-glib-undeclared.txt; then\
-		echo "^^^ Undeclared symbols" >&2; exit 1; fi
+		echo "^^^ Undeclared symbols" >&2; \
+		err=1; \
+	fi; \
+	case @ENABLE_DOC_CHECKS@/$$err in \
+		(yes/1) \
+			echo "Documentation check failed" >&2; \
+			exit $$err; \
+			;; \
+		(*) \
+			exit 0; \
+			;; \
+	esac
 endif

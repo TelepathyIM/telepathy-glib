@@ -43,6 +43,7 @@ struct _TpConnectionClass {
 };
 
 struct _TpConnection {
+    /*<private>*/
     TpProxy parent;
     TpConnectionPrivate *priv;
 };

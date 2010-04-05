@@ -211,13 +211,14 @@
 
 /**
  * TpChannelManagerIter:
- * @see_also: tp_base_connection_channel_manager_iter_init(),
- *            tp_base_connection_channel_manager_iter_next()
  *
  * An iterator over the #TpChannelManager objects known to a #TpBaseConnection.
  * It has no public fields.
  *
  * Since: 0.7.15
+ *
+ * @see_also: tp_base_connection_channel_manager_iter_init(),
+ *            tp_base_connection_channel_manager_iter_next()
  */
 
 /**
