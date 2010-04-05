@@ -45,7 +45,7 @@ struct _TpChannelClass {
 };
 
 struct _TpChannel {
-    /*<private*/
+    /*<private>*/
     TpProxy parent;
 
     TpChannelPrivate *priv;
