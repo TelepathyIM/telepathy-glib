@@ -289,7 +289,7 @@ log_store_xml_get_dir (TplLogStore *self,
   gchar *escaped;
   TplLogStoreXmlPriv *priv;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   /* chat_id may be NULL, but not empthy string if not-NULL */
   g_return_val_if_fail ((chat_id == NULL) || (*chat_id != '\0'), NULL);
@@ -384,6 +384,12 @@ _log_store_xml_write_to_store (TplLogStore *self,
   gchar *filename;
   gchar *basedir;
 
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), FALSE);
+  g_return_val_if_fail (!TPL_STR_EMPTY (entry), FALSE);
+
   filename = log_store_xml_get_filename (self, account, chat_id,
       chatroom);
   basedir = g_path_get_dirname (filename);
@@ -434,6 +440,10 @@ add_message_text_chat (TplLogStore *self,
   gchar *contact_id;
   gchar *entry;
   TpChannelTextMessageType msg_type;
+
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
 
   bus_daemon = tp_dbus_daemon_dup (error);
   if (bus_daemon == NULL)
@@ -511,7 +521,8 @@ add_message_text (TplLogStore *self,
 {
   TplLogEntryTextSignalType signal_type;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
 
   signal_type = tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message));
@@ -546,6 +557,7 @@ log_store_xml_add_message (TplLogStore *self,
     GError **error)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
   switch (tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message)))
     {
@@ -573,7 +585,7 @@ log_store_xml_exists (TplLogStore *self,
   gchar *dir;
   gboolean exists;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), FALSE);
 
@@ -598,7 +610,7 @@ log_store_xml_get_dates (TplLogStore *self,
   const gchar *filename;
   const gchar *p;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
 
@@ -650,7 +662,7 @@ log_store_xml_get_filename_for_date (TplLogStore *self,
   gchar *timestamp;
   gchar *filename;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (date), NULL);
@@ -678,7 +690,7 @@ log_store_xml_search_hit_new (TplLogStore *self,
   guint len;
   GList *accounts, *l;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
   g_return_val_if_fail (g_str_has_suffix (filename, LOG_FILENAME_SUFFIX),
       NULL);
@@ -736,7 +748,7 @@ log_store_xml_get_messages_for_file (TplLogStore *self,
   xmlNodePtr log_node;
   xmlNodePtr node;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
 
@@ -882,8 +894,8 @@ log_store_xml_get_all_files (TplLogStore *self,
 
   priv = GET_PRIV (self);
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  /* dir can be NULL, do not check :-) */
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
+  /* dir can be NULL, do not check */
 
   basedir = (dir != NULL) ? dir : log_store_xml_get_basedir (self);
 
@@ -928,7 +940,7 @@ _log_store_xml_search_in_files (TplLogStore *self,
   GList *hits = NULL;
   gchar *text_casefold;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
   text_casefold = g_utf8_casefold (text, -1);
@@ -986,7 +998,7 @@ log_store_xml_search_in_identifier_chats_new (TplLogStore *self,
   GList *files;
   gchar *dir, *account_dir;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
@@ -1009,7 +1021,7 @@ log_store_xml_search_new (TplLogStore *self,
 {
   GList *files;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
   files = log_store_xml_get_all_files (self, NULL);
@@ -1028,6 +1040,9 @@ log_store_xml_get_chats_for_dir (TplLogStore *self,
   GList *hits = NULL;
   const gchar *name;
   GError *error = NULL;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (dir), NULL);
 
   gdir = g_dir_open (dir, 0, &error);
   if (!gdir)
@@ -1073,9 +1088,10 @@ log_store_xml_get_messages_for_date (TplLogStore *self,
   gchar *filename;
   GList *messages;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (date), NULL);
 
   filename = log_store_xml_get_filename_for_date (self, account, chat_id,
       chatroom, date);
@@ -1094,6 +1110,9 @@ log_store_xml_get_chats (TplLogStore *self,
   gchar *dir;
   GList *hits;
   TplLogStoreXmlPriv *priv;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
   priv = GET_PRIV (self);
 
@@ -1214,6 +1233,10 @@ log_store_xml_get_filtered_messages (TplLogStore *self,
 {
   GList *dates, *l, *messages = NULL;
   guint i = 0;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
 
   dates = log_store_xml_get_dates (self, account, chat_id, chatroom);
 
