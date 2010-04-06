@@ -1,5 +1,7 @@
-telepathy-glib 0.10.3 (UNRELEASED)
+telepathy-glib 0.10.3 (2010-04-06)
 ==================================
+
+The "why is it looking for an exclamation mark?" release.
 
 Fixes:
 
