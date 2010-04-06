@@ -1,7 +1,14 @@
+telepathy-glib 0.10.4 (UNRELEASED)
+==================================
+
+...
+
 telepathy-glib 0.10.3 (2010-04-06)
 ==================================
 
 The "why is it looking for an exclamation mark?" release.
+
+This version includes all the bugfixes from 0.8.3.
 
 Fixes:
 
@@ -12,14 +19,14 @@ Fixes:
 * Don't warn/error if we're using deprecated functions, since this is a stable
   branch, so it's not going to be fixed here (smcv)
 
+* tp_account_set_nickname_async: set the right source_tag (cassidy)
+
 Documentation:
 
 * fd.o #27281: clarify documentation for tp_message_mixin_sent, using
   telepathy-spec 0.19.2 as a reference (Maiku)
 
 * Improve documentation of TpContactsMixinFillContactAttributesFunc (mikhailz)
-
-* tp_account_set_nickname_async: set the right source_tag (cassidy)
 
 telepathy-glib 0.10.2 (2010-03-31)
 ==================================
