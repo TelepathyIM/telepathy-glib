@@ -1,7 +1,16 @@
-telepathy-glib 0.11.2 (UNRELEASED)
+telepathy-glib 0.11.2 (2010-04-06)
 ==================================
 
-...
+The "not actually deprecated" release.
+
+This version includes all the bugfixes from today's 0.8.3 and 0.10.3 releases
+(they were all included in the previous version, in fact).
+
+Un-deprecations:
+
+☀ tp_get_bus is not considered to be deprecated yet after all; many connection
+  managers use it, and the current alternative is considerably more verbose.
+  This reopens fd.o #24114. (smcv)
 
 telepathy-glib 0.11.1 (2010-04-05)
 ==================================
