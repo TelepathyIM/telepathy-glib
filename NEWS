@@ -1,5 +1,16 @@
-telepathy-glib 0.8.3 (UNRELEASED)
+telepathy-glib 0.8.3 (2010-04-06)
 =================================
+
+The "armour-plated beehive" release.
+
+Fixes:
+
+* Don't fail 'make check' if gtk-doc complains that the documentation is
+  incomplete, since this is a stable branch, but gtk-doc's definition of
+  "complete" changes from release to release (smcv)
+
+* Don't warn/error if we're using deprecated functions, since this is a stable
+  branch, so it's not going to be fixed here (smcv)
 
 Documentation:
 
