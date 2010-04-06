@@ -91,7 +91,8 @@ TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
    format-security \
    init-self],
   [missing-field-initializers \
-   unused-parameter])
+   unused-parameter \
+   deprecated-declarations])
 AC_SUBST([ERROR_CFLAGS])
 
 # these aren't really error flags but they serve a similar purpose for us -
