@@ -1148,7 +1148,6 @@ tp_value_array_unpack (GValueArray *array,
  */
 struct _TpWeakRef {
     /*<private>*/
-    gpointer magic;
     gpointer object;
     gpointer user_data;
     GDestroyNotify destroy;
@@ -1177,7 +1176,6 @@ tp_weak_ref_new (gpointer object,
   g_return_val_if_fail (G_IS_OBJECT (object), NULL);
 
   self = g_slice_new (TpWeakRef);
-  self->magic = tp_weak_ref_new;
   self->object = object;
   g_object_add_weak_pointer (self->object, &self->object);
   self->user_data = user_data;
@@ -1197,7 +1195,6 @@ tp_weak_ref_new (gpointer object,
 gpointer
 tp_weak_ref_get_user_data (TpWeakRef *self)
 {
-  g_return_val_if_fail (self->magic == tp_weak_ref_new, NULL);
   return self->user_data;
 }
 
@@ -1213,8 +1210,6 @@ tp_weak_ref_get_user_data (TpWeakRef *self)
 gpointer
 tp_weak_ref_dup_object (TpWeakRef *self)
 {
-  g_return_val_if_fail (self->magic == tp_weak_ref_new, NULL);
-
   if (self->object != NULL)
     return g_object_ref (self->object);
 
@@ -1232,9 +1227,6 @@ tp_weak_ref_dup_object (TpWeakRef *self)
 void
 tp_weak_ref_destroy (TpWeakRef *self)
 {
-  g_return_if_fail (self->magic == tp_weak_ref_new);
-  self->magic = NULL;
-
   if (self->object != NULL)
     g_object_remove_weak_pointer (self->object, &self->object);
 
