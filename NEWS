@@ -3,10 +3,21 @@ telepathy-glib 0.10.3 (UNRELEASED)
 
 Fixes:
 
-* tp_account_set_nickname_async: set the right source_tag (cassidy)
+* Don't fail 'make check' if gtk-doc complains that the documentation is
+  incomplete, since this is a stable branch, but gtk-doc's definition of
+  "complete" changes from release to release (smcv)
+
+* Don't warn/error if we're using deprecated functions, since this is a stable
+  branch, so it's not going to be fixed here (smcv)
+
+Documentation:
 
 * fd.o #27281: clarify documentation for tp_message_mixin_sent, using
   telepathy-spec 0.19.2 as a reference (Maiku)
+
+* Improve documentation of TpContactsMixinFillContactAttributesFunc (mikhailz)
+
+* tp_account_set_nickname_async: set the right source_tag (cassidy)
 
 telepathy-glib 0.10.2 (2010-03-31)
 ==================================
