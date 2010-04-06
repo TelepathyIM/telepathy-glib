@@ -126,8 +126,10 @@ tp_asv_get_strv (const GHashTable *asv, const gchar *key);
 void tp_asv_set_strv (GHashTable *asv, const gchar *key, gchar **value);
 void tp_asv_dump (GHashTable *asv);
 
+/* planned for deprecation (fd.o #24114) but not dead yet */
+DBusGConnection * tp_get_bus (void);
+
 #ifndef TP_DISABLE_DEPRECATED
-DBusGConnection * tp_get_bus (void) _TP_GNUC_DEPRECATED;
 DBusGProxy * tp_get_bus_proxy (void) _TP_GNUC_DEPRECATED;
 #endif
 
