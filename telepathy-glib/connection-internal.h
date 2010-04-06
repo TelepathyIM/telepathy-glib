@@ -52,6 +52,7 @@ struct _TpConnectionPrivate {
     unsigned tracking_presences_changed:1;
     unsigned tracking_presence_update:1;
     unsigned tracking_location_changed:1;
+    unsigned introspecting_after_connected:1;
 };
 
 void _tp_connection_init_handle_refs (TpConnection *self);

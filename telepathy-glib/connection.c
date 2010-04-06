@@ -168,6 +168,13 @@ tp_connection_continue_introspection (TpConnection *self)
 
   if (self->priv->introspect_needed == NULL)
     {
+      if (!self->priv->introspecting_after_connected)
+        {
+          /* Introspection will restart when we become CONNECTED */
+          DEBUG ("Prepared, but not yet connected");
+          return;
+        }
+
       /* signal CONNECTED; we shouldn't have gone to status CONNECTED for any
        * reason that isn't REQUESTED :-) */
       DEBUG ("%p: connection ready", self);
@@ -233,7 +240,9 @@ got_contact_attribute_interfaces (TpProxy *proxy,
                 }
             }
 
-          g_assert (self->priv->contact_attribute_interfaces == NULL);
+          if (self->priv->contact_attribute_interfaces != NULL)
+            g_array_free (self->priv->contact_attribute_interfaces, TRUE);
+
           self->priv->contact_attribute_interfaces = arr;
         }
       else
@@ -255,6 +264,13 @@ got_contact_attribute_interfaces (TpProxy *proxy,
 static void
 introspect_contacts (TpConnection *self)
 {
+  /* "This cannot change during the lifetime of the Connection." -- tp-spec */
+  if (self->priv->contact_attribute_interfaces != NULL)
+    {
+      tp_connection_continue_introspection (self);
+      return;
+    }
+
   g_assert (self->priv->introspection_call == NULL);
   self->priv->introspection_call = tp_cli_dbus_properties_call_get (self, -1,
        TP_IFACE_CONNECTION_INTERFACE_CONTACTS, "ContactAttributeInterfaces",
@@ -305,6 +321,14 @@ on_self_handle_changed (TpConnection *self,
 static void
 get_self_handle (TpConnection *self)
 {
+  if (!self->priv->introspecting_after_connected)
+    {
+      tp_connection_continue_introspection (self);
+      return;
+    }
+
+  /* this only happens when we introspect after CONNECTED, so there's no need
+   * to track whether this is the first time */
   tp_cli_connection_connect_to_self_handle_changed (self,
       on_self_handle_changed, NULL, NULL, NULL, NULL);
 
@@ -388,6 +412,20 @@ tp_connection_status_changed (TpConnection *self,
 
   if (status == TP_CONNECTION_STATUS_CONNECTED)
     {
+      if (self->priv->introspection_call != NULL &&
+          !self->priv->introspecting_after_connected)
+        {
+          /* We thought we knew what was going on, but now the connection has
+           * gone to CONNECTED and all bets are off. Start again! */
+          DEBUG ("Cancelling pre-CONNECTED introspection and starting again");
+          tp_proxy_pending_call_cancel (self->priv->introspection_call);
+          self->priv->introspection_call = NULL;
+          g_list_free (self->priv->introspect_needed);
+          self->priv->introspect_needed = NULL;
+        }
+
+      self->priv->introspecting_after_connected = TRUE;
+
       /* we defer the perceived change to CONNECTED until ready */
       if (self->priv->introspection_call == NULL)
         {
@@ -573,6 +611,15 @@ tp_connection_got_status_cb (TpConnection *self,
       DEBUG ("%p: Initial status is %d", self, status);
       tp_connection_status_changed (self, status,
           TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED);
+
+      /* try introspecting before CONNECTED - it might work... */
+      if (status != TP_CONNECTION_STATUS_CONNECTED &&
+          self->priv->introspection_call == NULL)
+        {
+          self->priv->introspection_call =
+            tp_cli_connection_call_get_interfaces (self, -1,
+                tp_connection_got_interfaces_cb, NULL, NULL, NULL);
+        }
     }
   else
     {
