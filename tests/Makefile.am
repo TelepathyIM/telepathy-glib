@@ -1,6 +1,6 @@
 SUBDIRS = \
-    . \
     lib \
+    . \
     dbus \
     tools
 
@@ -11,6 +11,7 @@ noinst_PROGRAMS = \
     test-heap \
     test-internal-debug \
     test-intset \
+    test-signal-connect-object \
     test-util \
     test-debug-domain
 
@@ -65,6 +66,12 @@ test_debug_domain_SOURCES = \
 
 test_internal_debug_SOURCES = \
     internal-debug.c
+
+test_signal_connect_object_SOURCES = \
+    signal-connect-object.c
+test_signal_connect_object_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(LDADD)
 
 # this needs to link against the static convenience library so that
 # _tp_debug is still visible
