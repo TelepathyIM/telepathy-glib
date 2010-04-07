@@ -99,6 +99,14 @@ void tp_value_array_unpack (GValueArray *array,
     gsize len,
     ...);
 
+typedef struct _TpWeakRef TpWeakRef;
+TpWeakRef *tp_weak_ref_new (gpointer object,
+    gpointer user_data,
+    GDestroyNotify destroy) G_GNUC_WARN_UNUSED_RESULT;
+gpointer tp_weak_ref_get_user_data (TpWeakRef *self) G_GNUC_WARN_UNUSED_RESULT;
+gpointer tp_weak_ref_dup_object (TpWeakRef *self) G_GNUC_WARN_UNUSED_RESULT;
+void tp_weak_ref_destroy (TpWeakRef *self);
+
 G_END_DECLS
 
 #undef  __TP_IN_UTIL_H__
