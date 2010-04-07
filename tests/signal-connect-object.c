@@ -112,6 +112,18 @@ test_dead_observer (Test *test,
 }
 
 static void
+test_dead_emitter (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  tp_g_signal_connect_object (test->emitter, "notify::name",
+      G_CALLBACK (increment_caught), test->observer, 0);
+  g_object_notify (test->emitter, "name");
+  g_object_notify (test->emitter, "name");
+  test_clear_object (&test->emitter);
+  g_assert_cmpuint (test->caught, ==, 2);
+}
+
+static void
 test_disconnected (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -157,6 +169,8 @@ main (int argc,
       teardown);
   g_test_add (TEST_PREFIX "dead_observer", Test, NULL, setup,
       test_dead_observer, teardown);
+  g_test_add (TEST_PREFIX "dead_emitter", Test, NULL, setup,
+      test_dead_emitter, teardown);
   g_test_add (TEST_PREFIX "disconnected", Test, NULL, setup,
       test_disconnected, teardown);
   g_test_add (TEST_PREFIX "dead_observer_and_disconnected", Test, NULL, setup,
