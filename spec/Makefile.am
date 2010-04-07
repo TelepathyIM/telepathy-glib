@@ -70,4 +70,5 @@ EXTRA_DIST = \
     generic-types.xml \
     Media_Session_Handler.xml \
     Media_Stream_Handler.xml \
-    Properties_Interface.xml
+    Properties_Interface.xml \
+    template.xml
