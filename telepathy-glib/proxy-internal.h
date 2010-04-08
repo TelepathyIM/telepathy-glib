@@ -37,8 +37,10 @@ struct _TpProxyFeature {
     gpointer priv;
 };
 
-gboolean _tp_proxy_is_preparing (gpointer self, GQuark feature);
-void _tp_proxy_set_feature_prepared (TpProxy *self, GQuark feature,
+gboolean _tp_proxy_is_preparing (gpointer self,
+    GQuark feature);
+void _tp_proxy_set_feature_prepared (TpProxy *self,
+    GQuark feature,
     gboolean succeeded);
 
 #endif

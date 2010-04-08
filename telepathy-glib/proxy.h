@@ -144,11 +144,15 @@ void tp_proxy_dbus_error_to_gerror (gpointer self,
     const char *dbus_error, const char *debug_message, GError **error);
 
 gboolean tp_proxy_is_prepared (gpointer self, GQuark feature);
-void tp_proxy_prepare_async (gpointer self, const GQuark *features,
-    GAsyncReadyCallback callback, gpointer user_data);
-gboolean tp_proxy_prepare_finish (gpointer self, GAsyncResult *result,
+void tp_proxy_prepare_async (gpointer self,
+    const GQuark *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_proxy_prepare_finish (gpointer self,
+    GAsyncResult *result,
     GError **error);
-void _tp_proxy_set_features_failed (TpProxy *self, const GError *error);
+void _tp_proxy_set_features_failed (TpProxy *self,
+    const GError *error);
 
 G_END_DECLS
 
