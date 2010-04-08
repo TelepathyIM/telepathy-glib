@@ -2117,7 +2117,6 @@ tp_base_connection_hold_handles (TpSvcConnection *iface,
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
   TpBaseConnectionPrivate *priv;
   GError *error = NULL;
-  gchar *sender;
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
@@ -2132,21 +2131,6 @@ tp_base_connection_hold_handles (TpSvcConnection *iface,
       g_error_free (error);
       return;
     }
-
-  sender = dbus_g_method_get_sender (context);
-
-  DEBUG ("%u handles of type %u, for %s", handles->len, handle_type, sender);
-
-  if (!tp_handles_client_hold (priv->handles[handle_type], sender,
-        handles, &error))
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      g_free (sender);
-      return;
-    }
-
-  g_free (sender);
 
   tp_svc_connection_return_from_hold_handles (context);
 }
@@ -2541,7 +2525,6 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (iface);
   TpBaseConnectionPrivate *priv = self->priv;
-  char *sender;
   GError *error = NULL;
 
   g_assert (TP_IS_BASE_CONNECTION (self));
@@ -2555,20 +2538,6 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
       g_error_free (error);
       return;
     }
-
-  sender = dbus_g_method_get_sender (context);
-  DEBUG ("%u handles of type %u, for %s", handles->len, handle_type, sender);
-
-  if (!tp_handles_client_release (priv->handles[handle_type],
-        sender, handles, &error))
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      g_free (sender);
-      return;
-    }
-
-  g_free (sender);
 
   tp_svc_connection_return_from_release_handles (context);
 }
@@ -2602,7 +2571,6 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
   const gchar **cur_name;
   GError *error = NULL;
   GArray *handles = NULL;
-  gchar *sender;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (self));
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
@@ -2645,15 +2613,6 @@ tp_base_connection_dbus_request_handles (TpSvcConnection *iface,
         }
       g_array_append_val (handles, handle);
     }
-
-  sender = dbus_g_method_get_sender (context);
-  DEBUG ("%u handles of type %u, for %s", handles->len, handle_type, sender);
-
-  if (!tp_handles_client_hold (handle_repo, sender, handles, &error))
-    {
-      g_assert (error != NULL);
-    }
-  g_free (sender);
 
 out:
   if (error == NULL)
