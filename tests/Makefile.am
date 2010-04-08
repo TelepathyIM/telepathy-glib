@@ -32,7 +32,7 @@ VALGRIND_TESTS_ENVIRONMENT = \
     $(TESTS_ENVIRONMENT) \
     G_SLICE=always-malloc \
     $(top_builddir)/libtool --mode=execute \
-    $(VALGRIND) $(VALGRIND_FLAGS)
+    $(VALGRIND) --suppressions=$(top_srcdir)/tests/tests.supp $(VALGRIND_FLAGS)
 
 check-valgrind:
 	$(MAKE) check-TESTS \
@@ -42,7 +42,8 @@ check-valgrind:
 	$(MAKE) -C dbus check-valgrind
 
 EXTRA_DIST = README \
-    all-errors-documented.py
+    all-errors-documented.py \
+    tests.supp
 
 test_asv_SOURCES = \
     asv.c
