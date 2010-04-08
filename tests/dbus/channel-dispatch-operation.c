@@ -111,11 +111,9 @@ teardown (Test *test,
       test->private_dbus = NULL;
     }
 
-#if 0
   /* not leaking this object would crash dbus-glib (fd.o #5688) */
   g_object_unref (test->cdo_service);
   test->cdo_service = NULL;
-#endif
 
   if (test->private_conn != NULL)
     {
