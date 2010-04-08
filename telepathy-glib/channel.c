@@ -121,9 +121,8 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
  * Expands to a call to a function that returns a quark for the "core" feature
  * on a #TpChannel.
  *
- * When this feature is prepared, the basic Channel and Group properties of the
- * Channel have been retrieved and are available for use, and
- * change-notification has been set up for those that can change.
+ * When this feature is prepared, the basic Channel properties of the
+ * Channel have been retrieved and are available for use.
  *
  * Specifically, this implies that:
  *
@@ -132,15 +131,10 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
  * - any extra interfaces will have been set up in TpProxy (i.e.
  *   #TpProxy:interfaces contains at least all extra Channel interfaces)
  *
- * In addition, if #TpProxy:interfaces includes the Group interface:
- *
- * - the initial value of the #TpChannel:group-self-handle property will
- *   have been fetched and change notification will have been set up
- * - the initial value of the #TpChannel:group-flags property will
- *   have been fetched and change notification will have been set up
- *
- * (These are the same guarantees offered by the older #TpChannel:ready
- * and tp_channel_call_when_ready() mechanisms.)
+ * (These are a subset of the guarantees offered by the older #TpChannel:ready
+ * and tp_channel_call_when_ready() mechanisms, which are now equivalent to
+ * (%TP_CHANNEL_FEATURE_CORE, %TP_CHANNEL_FEATURE_GROUP) if the channel is
+ * a group, or just %TP_CHANNEL_FEATURE_CORE otherwise.)
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
@@ -152,6 +146,36 @@ GQuark
 tp_channel_get_feature_quark_core (void)
 {
   return g_quark_from_static_string ("tp-channel-feature-core");
+}
+
+/**
+ * TP_CHANNEL_FEATURE_GROUP:
+ *
+ * Expands to a call to a function that returns a quark representing the Group
+ * features of a TpChannel.
+ *
+ * When this feature is prepared, the Group properties of the
+ * Channel have been retrieved and are available for use, and
+ * change-notification has been set up for those that can change:
+ *
+ * - the initial value of the #TpChannel:group-self-handle property will
+ *   have been fetched and change notification will have been set up
+ * - the initial value of the #TpChannel:group-flags property will
+ *   have been fetched and change notification will have been set up
+ *
+ * (These are the same guarantees offered for Group channels by the older
+ * #TpChannel:ready and tp_channel_call_when_ready() mechanisms.)
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_channel_get_feature_quark_group (void)
+{
+  return g_quark_from_static_string ("tp-channel-feature-group");
 }
 
 /**
@@ -186,7 +210,9 @@ tp_channel_get_feature_quark_chat_states (void)
  * Get the D-Bus interface name representing this channel's type,
  * if it has been discovered.
  *
- * This is the same as the #TpChannel:channel-type property.
+ * This is the same as the #TpChannel:channel-type property; it isn't
+ * guaranteed to be non-%NULL until the %TP_CHANNEL_FEATURE_CORE feature has
+ * been prepared.
  *
  * Returns: the channel type, if the channel is ready; either the channel
  *  type or %NULL, if the channel is not yet ready.
@@ -209,7 +235,8 @@ tp_channel_get_channel_type (TpChannel *self)
  * if it has been discovered.
  *
  * This is the same as the #TpChannel:channel-type property, except that it
- * is a GQuark rather than a string.
+ * is a GQuark rather than a string. It isn't guaranteed to be nonzero until
+ * the %TP_CHANNEL_FEATURE_CORE property is ready.
  *
  * Returns: the channel type, if the channel is ready; either the channel
  *  type or 0, if the channel is not yet ready.
@@ -233,7 +260,8 @@ tp_channel_get_channel_type_id (TpChannel *self)
  * channel communicates for its whole lifetime, or 0 if there is no such
  * handle or it has not yet been discovered.
  *
- * This is the same as the #TpChannel:handle property.
+ * This is the same as the #TpChannel:handle property. It isn't guaranteed to
+ * have its final value until the %TP_CHANNEL_FEATURE_CORE property is ready.
  *
  * If %handle_type is not %NULL, the type of handle is written into it.
  * This will be %TP_UNKNOWN_HANDLE_TYPE if the handle has not yet been
@@ -265,7 +293,8 @@ tp_channel_get_handle (TpChannel *self,
  * This channel's associated identifier, or NULL if no identifier or unknown.
  *
  * The identifier is the result of inspecting #TpChannel:handle.
- * This is the same as the #TpChannel:identifier property.
+ * This is the same as the #TpChannel:identifier property, and isn't guaranteed
+ * to be non-%NULL until the %TP_CHANNEL_FEATURE_CORE property is ready.
  *
  * Returns: the identifier
  * Since: 0.7.21
@@ -284,8 +313,13 @@ tp_channel_get_identifier (TpChannel *self)
  *
  * Returns the same thing as the #TpChannel:channel-ready property.
  *
- * This is a less general form of tp_proxy_is_prepared(), which should be
- * used in new code.
+ * New code should use tp_proxy_is_prepared(), which is a more general form of
+ * this method.
+ *
+ * For group channels, this method is equivalent to checking for the
+ * combination of %TP_CHANNEL_FEATURE_CORE and %TP_CHANNEL_FEATURE_GROUP; for
+ * non-group channels, it's equivalent to checking for
+ * %TP_CHANNEL_FEATURE_CORE.
  *
  * One important difference is that after #TpChannel::invalidated is
  * signalled, #TpChannel:channel-ready keeps its current value - which might
@@ -339,8 +373,8 @@ tp_channel_borrow_connection (TpChannel *self)
  * construction (e.g. by calling tp_channel_new_from_properties()), a
  * reasonable but possibly incomplete version will be made up from the values
  * of individual properties; reading this property repeatedly may yield
- * progressively more complete values until #TpChannel:channel-ready
- * becomes %TRUE.
+ * progressively more complete values until the %TP_CHANNEL_FEATURE_CORE
+ * feature is prepared.
  *
  * Returns: a #GHashTable where the keys are strings,
  *  D-Bus interface name + "." + property name, and the values are #GValue
@@ -716,8 +750,14 @@ _tp_channel_continue_introspection (TpChannel *self)
       self->priv->ready = TRUE;
       g_object_notify ((GObject *) self, "channel-ready");
 
+      /* for now, we only have one introspection queue, so CORE and
+       * (if supported) GROUP turn up simultaneously */
       _tp_proxy_set_feature_prepared ((TpProxy *) self,
           TP_CHANNEL_FEATURE_CORE, TRUE);
+      _tp_proxy_set_feature_prepared ((TpProxy *) self,
+          TP_CHANNEL_FEATURE_GROUP,
+          tp_proxy_has_interface_by_id (self,
+            TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP));
 
       tp_channel_maybe_prepare_chat_states ((TpProxy *) self);
     }
@@ -1288,6 +1328,7 @@ tp_channel_finalize (GObject *object)
 
 enum {
     FEAT_CORE,
+    FEAT_GROUP,
     FEAT_CHAT_STATES,
     N_FEAT
 };
@@ -1302,6 +1343,8 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_CORE].name = TP_CHANNEL_FEATURE_CORE;
   features[FEAT_CORE].core = TRUE;
+
+  features[FEAT_GROUP].name = TP_CHANNEL_FEATURE_GROUP;
 
   features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
   features[FEAT_CHAT_STATES].start_preparing =
@@ -1428,7 +1471,8 @@ tp_channel_class_init (TpChannelClass *klass)
    * TpChannel:channel-ready:
    *
    * Initially %FALSE; changes to %TRUE when tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE.
+   * finished preparing %TP_CHANNEL_FEATURE_CORE, and if the channel is a
+   * group, %TP_CHANNEL_FEATURE_GROUP.
    *
    * This is a less general form of tp_proxy_is_prepared(), which should be
    * used in new code.
@@ -1463,10 +1507,11 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:group-self-handle:
    *
-   * If this channel is ready (#TpChannel:channel-ready) and is a group, and
-   * the user is a member of it, the #TpHandle representing them in this group.
+   * If this channel is a group and %TP_CHANNEL_FEATURE_GROUP has been
+   * prepared, and the user is a member of the group, the #TpHandle
+   * representing them in this group.
    *
-   * Otherwise, either a handle representing the user, or 0.
+   * Otherwise, the result may be either a handle representing the user, or 0.
    *
    * Change notification is via notify::group-self-handle.
    *
@@ -1482,11 +1527,11 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:group-flags:
    *
-   * If this channel is ready (#TpChannel:channel-ready) and is a group,
+   * If the %TP_CHANNEL_FEATURE_GROUP feature has been prepared successfully,
    * #TpChannelGroupFlags indicating the capabilities and behaviour of that
    * group.
    *
-   * Otherwise, 0.
+   * Otherwise, this may be 0.
    *
    * Change notification is via notify::group-flags or
    * TpChannel::group-flags-changed.

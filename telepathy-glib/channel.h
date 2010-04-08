@@ -119,6 +119,10 @@ TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
 
 GQuark tp_channel_get_feature_quark_core (void) G_GNUC_CONST;
 
+#define TP_CHANNEL_FEATURE_GROUP \
+  tp_channel_get_feature_quark_group ()
+GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
+
 #define TP_CHANNEL_FEATURE_CHAT_STATES \
   tp_channel_get_feature_quark_chat_states ()
 GQuark tp_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
