@@ -83,7 +83,7 @@ tp_dbus_specialized_value_slice_new (GType type)
  *
  * Expands to a call to a function
  * that returns the #GType of a #GArray
- * of %G_TYPE_UCHAR.
+ * of %G_TYPE_UCHAR, i.e. the same thing as %DBUS_TYPE_G_UCHAR_ARRAY
  *
  * Since: 0.11.1
  */
@@ -94,7 +94,7 @@ tp_type_dbus_array_of_y (void)
   static GType t = 0;
 
   if (G_UNLIKELY (t == 0))
-    t = dbus_g_type_get_collection ("GArray", G_TYPE_UCHAR);
+    t = DBUS_TYPE_G_UCHAR_ARRAY;
 
   return t;
 }
