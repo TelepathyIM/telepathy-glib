@@ -143,7 +143,8 @@ setup_service (Test *test,
   g_assert (tp_dbus_daemon_request_name (test->dbus,
           TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error));
 
-  test->service = g_object_new (SIMPLE_TYPE_ACCOUNT_MANAGER, NULL);
+  test->service = test_object_new_static_class (SIMPLE_TYPE_ACCOUNT_MANAGER,
+      NULL);
   tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
       test->service);
 }

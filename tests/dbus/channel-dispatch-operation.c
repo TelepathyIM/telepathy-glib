@@ -83,7 +83,8 @@ setup (Test *test,
 
   test->cdo = NULL;
 
-  test->cdo_service = g_object_new (test_simple_cdo_get_type (),
+  test->cdo_service = test_object_new_static_class (
+      test_simple_cdo_get_type (),
       NULL);
   tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cdo_service);

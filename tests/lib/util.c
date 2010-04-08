@@ -306,3 +306,20 @@ test_create_and_connect_conn (GType conn_type,
 
   g_object_unref (dbus);
 }
+
+/* This object exists solely so that tests/tests.supp can ignore "leaked"
+ * classes. */
+gpointer
+test_object_new_static_class (GType type,
+    ...)
+{
+  va_list ap;
+  GObject *object;
+  const gchar *first_property;
+
+  va_start (ap, type);
+  first_property = va_arg (ap, const gchar *);
+  object = g_object_new_valist (type, first_property, ap);
+  va_end (ap);
+  return object;
+}

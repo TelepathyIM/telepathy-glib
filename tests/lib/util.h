@@ -57,9 +57,13 @@ void _test_assert_strv_equals (const char *file, int line,
     } \
   G_STMT_END
 
+
 void test_create_and_connect_conn (GType conn_type,
     const gchar *account,
     TpBaseConnection **service_conn,
     TpConnection **client_conn);
+
+gpointer test_object_new_static_class (GType type,
+    ...) G_GNUC_NULL_TERMINATED;
 
 #endif

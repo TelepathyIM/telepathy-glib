@@ -131,7 +131,8 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (g_object_new (SIMPLE_TYPE_CONNECTION,
+  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
+        SIMPLE_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -160,7 +161,7 @@ main (int argc,
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = TEST_TEXT_CHANNEL_NULL (g_object_new (
+  service_chan = TEST_TEXT_CHANNEL_NULL (test_object_new_static_class (
         TEST_TYPE_TEXT_CHANNEL_NULL,
         "connection", service_conn,
         "object-path", chan_path,
@@ -169,7 +170,7 @@ main (int argc,
 
   props_chan_path = g_strdup_printf ("%s/PropertiesChannel", conn_path);
 
-  service_props_chan = TEST_PROPS_TEXT_CHANNEL (g_object_new (
+  service_props_chan = TEST_PROPS_TEXT_CHANNEL (test_object_new_static_class (
         TEST_TYPE_PROPS_TEXT_CHANNEL,
         "connection", service_conn,
         "object-path", props_chan_path,
@@ -178,7 +179,8 @@ main (int argc,
 
   props_group_chan_path = g_strdup_printf ("%s/PropsGroupChannel", conn_path);
 
-  service_props_group_chan = TEST_PROPS_GROUP_TEXT_CHANNEL (g_object_new (
+  service_props_group_chan = TEST_PROPS_GROUP_TEXT_CHANNEL (
+      test_object_new_static_class (
         TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL,
         "connection", service_conn,
         "object-path", props_group_chan_path,
