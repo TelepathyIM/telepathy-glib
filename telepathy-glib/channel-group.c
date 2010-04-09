@@ -947,9 +947,6 @@ handle_members_changed (TpChannel *self,
               (error_detail != NULL && message[0] != '\0' ? ": " : ""),
               message);
         }
-
-      /* FIXME: should check against the Connection's self-handle too,
-       * after I add that API */
     }
 
   g_signal_emit_by_name (self, "group-members-changed", message,
