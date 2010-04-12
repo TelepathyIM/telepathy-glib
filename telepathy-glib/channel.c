@@ -974,8 +974,15 @@ tp_channel_got_identifier_cb (TpConnection *connection,
 static void
 _tp_channel_get_identifier (TpChannel *self)
 {
-  if (self->priv->identifier == NULL && self->priv->handle != 0 &&
-      self->priv->handle_type != TP_HANDLE_TYPE_NONE)
+  if (self->priv->identifier == NULL &&
+      (self->priv->handle == 0 ||
+       self->priv->handle_type == TP_HANDLE_TYPE_NONE))
+    {
+      /* no need to emit GObject::notify here since the initial value was "" */
+      _tp_channel_maybe_set_identifier (self, "");
+    }
+
+  if (self->priv->identifier == NULL)
     {
       GArray handles = {(gchar *) &self->priv->handle, 1};
 
