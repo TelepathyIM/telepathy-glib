@@ -953,24 +953,30 @@ tp_channel_got_identifier_cb (TpConnection *connection,
 {
   TpChannel *self = user_data;
 
-  if (error == NULL)
-    {
-      DEBUG ("%p: Introspected identifier %s", self, *identifier);
-      self->priv->identifier = g_strdup (*identifier);
-
-      g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_PROP_CHANNEL_TARGET_ID),
-          tp_g_value_slice_new_string (*identifier));
-
-      g_object_notify ((GObject *) self, "identifier");
-
-      _tp_channel_continue_introspection (self);
-    }
-  else
+  if (error != NULL)
     {
       _tp_channel_abort_introspection (self, "InspectHandles failed", error);
+      goto finally;
     }
 
+  if (identifier == NULL || identifier[0] == NULL || identifier[1] != NULL)
+    {
+      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "CM is broken: InspectHandles(CONTACT, [TargetHandle]) returned "
+          "non-1 length" };
+
+      _tp_channel_abort_introspection (self, "InspectHandles inconsistent",
+          &e);
+      goto finally;
+    }
+
+  DEBUG ("%p: Introspected identifier %s", self, identifier[0]);
+  _tp_channel_maybe_set_identifier (self, identifier[0]);
+  g_object_notify ((GObject *) self, "identifier");
+
+  _tp_channel_continue_introspection (self);
+
+finally:
   g_object_unref (self);
 }
 
