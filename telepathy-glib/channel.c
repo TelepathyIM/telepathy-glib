@@ -606,6 +606,10 @@ tp_channel_set_property (GObject *object,
             {
               guint u;
 
+              /* no need to emit GObject::notify for any of these since this
+               * can only happen at construct time, before anyone has
+               * connected to it */
+
               tp_g_hash_table_update (self->priv->channel_properties,
                   asv, (GBoxedCopyFunc) g_strdup,
                   (GBoxedCopyFunc) tp_g_value_slice_dup);
