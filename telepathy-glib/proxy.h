@@ -23,7 +23,7 @@
 #define __TP_PROXY_H__
 
 #include <dbus/dbus-glib.h>
-#include <glib-object.h>
+#include <gio/gio.h>
 
 #include <telepathy-glib/defs.h>
 
@@ -70,6 +70,12 @@ struct _TpProxy {
 
 typedef struct _TpProxyClass TpProxyClass;
 
+/* defined in proxy-internal.h for now */
+typedef struct _TpProxyFeature TpProxyFeature;
+
+typedef const TpProxyFeature *(*TpProxyClassFeatureListFunc) (
+    TpProxyClass *cls);
+
 struct _TpProxyClass {
     /*<public>*/
     GObjectClass parent_class;
@@ -79,7 +85,8 @@ struct _TpProxyClass {
     unsigned int must_have_unique_name:1;
     guint _reserved_flags:31;
 
-    GCallback _reserved[4];
+    TpProxyClassFeatureListFunc list_features;
+    GCallback _reserved[3];
     gpointer priv;
 };
 
@@ -135,6 +142,17 @@ const GError *tp_proxy_get_invalidated (gpointer self);
 
 void tp_proxy_dbus_error_to_gerror (gpointer self,
     const char *dbus_error, const char *debug_message, GError **error);
+
+gboolean tp_proxy_is_prepared (gpointer self, GQuark feature);
+void tp_proxy_prepare_async (gpointer self,
+    const GQuark *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_proxy_prepare_finish (gpointer self,
+    GAsyncResult *result,
+    GError **error);
+void _tp_proxy_set_features_failed (TpProxy *self,
+    const GError *error);
 
 G_END_DECLS
 

@@ -114,6 +114,21 @@ gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
 
 TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
 
+#define TP_CHANNEL_FEATURE_CORE \
+  tp_channel_get_feature_quark_core ()
+
+GQuark tp_channel_get_feature_quark_core (void) G_GNUC_CONST;
+
+#define TP_CHANNEL_FEATURE_GROUP \
+  tp_channel_get_feature_quark_group ()
+GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
+
+#define TP_CHANNEL_FEATURE_CHAT_STATES \
+  tp_channel_get_feature_quark_chat_states ()
+GQuark tp_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
+TpChannelChatState tp_channel_get_chat_state (TpChannel *self,
+    TpHandle contact);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel.h>

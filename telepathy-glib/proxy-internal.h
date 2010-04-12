@@ -25,4 +25,22 @@
 GError *_tp_proxy_take_and_remap_error (TpProxy *self, GError *error)
   G_GNUC_WARN_UNUSED_RESULT;
 
+typedef void (*TpProxyProc) (TpProxy *);
+
+struct _TpProxyFeature {
+    /*<public>*/
+    GQuark name;
+    gboolean core;
+    TpProxyProc start_preparing;
+    /*<private>*/
+    GCallback _reserved[4];
+    gpointer priv;
+};
+
+gboolean _tp_proxy_is_preparing (gpointer self,
+    GQuark feature);
+void _tp_proxy_set_feature_prepared (TpProxy *self,
+    GQuark feature,
+    gboolean succeeded);
+
 #endif

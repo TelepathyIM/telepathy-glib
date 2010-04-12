@@ -28,6 +28,7 @@
 #include "telepathy-glib/errors.h"
 #include "telepathy-glib/gtypes.h"
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include "telepathy-glib/util.h"
 
@@ -62,13 +63,37 @@
  *
  * Signature of the callback supplied to tp_list_connection_managers().
  *
- * Since 0.7.26, tp_list_connection_managers() will wait for each
- * #TpConnectionManager to become ready, so all connection managers passed
- * to @callback will be ready (tp_connection_manager_is_ready() will return
- * %TRUE) unless an error occurred while launching that connection manager.
+ * Since 0.11.UNRELEASED, tp_list_connection_managers() will
+ * wait for %TP_CONNECTION_MANAGER_FEATURE_CORE to be prepared (so
+ * tp_connection_manager_is_prepared() will return %TRUE) on each
+ * connection manager passed to @callback, unless an error occurred while
+ * launching that connection manager.
  *
  * Since: 0.7.1
  */
+
+/**
+ * TP_CONNECTION_MANAGER_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the "core" feature
+ * on a #TpConnectionManager.
+ *
+ * When this feature is prepared, [...]
+ *
+ * (These are the same guarantees offered by the older
+ * tp_connection_manager_call_when_ready() mechanism.)
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_connection_manager_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-connection-manager-feature-core");
+}
 
 /**
  * TpCMInfoSource:
@@ -136,8 +161,8 @@ enum
  * references to it are discarded.
  *
  * Various fields and methods on this object do not work until
- * tp_connection_manager_is_ready() returns %TRUE. Use
- * tp_connection_manager_call_when_ready() to wait for this to happen.
+ * %TP_CONNECTION_MANAGER_FEATURE_CORE is prepared. Use
+ * tp_proxy_prepare_async() to wait for this to happen.
  *
  * Since: 0.7.1
  */
@@ -225,20 +250,18 @@ typedef struct {
     TpConnectionManagerWhenReadyCb callback;
     gpointer user_data;
     GDestroyNotify destroy;
-    GObject *weak_object;
+    TpWeakRef *weak_ref;
 } WhenReadyContext;
-
-static void when_ready_context_cancel (gpointer d, GObject *corpse);
 
 static void
 when_ready_context_free (gpointer d)
 {
   WhenReadyContext *c = d;
 
-  if (c->weak_object != NULL)
+  if (c->weak_ref != NULL)
     {
-      g_object_weak_unref (c->weak_object, when_ready_context_cancel, c);
-      c->weak_object = NULL;
+      tp_weak_ref_destroy (c->weak_ref);
+      c->weak_ref = NULL;
     }
 
   if (c->cm != NULL)
@@ -254,48 +277,9 @@ when_ready_context_free (gpointer d)
 }
 
 static void
-when_ready_context_cancel (gpointer d,
-                           GObject *corpse)
-{
-  WhenReadyContext *c = d;
-
-  g_assert (c->weak_object == corpse);
-  c->weak_object = NULL;
-  c->callback = NULL;
-
-  if (c->destroy != NULL)
-    {
-      c->destroy (c->user_data);
-      c->destroy = NULL;
-    }
-
-  if (c->cm != NULL)
-    {
-      g_object_unref (c->cm);
-      c->cm = NULL;
-    }
-}
-
-static gboolean
-when_ready_context_complete (gpointer d)
-{
-  WhenReadyContext *c = d;
-
-  if (c->callback != NULL)
-    c->callback (c->cm, NULL, c->user_data, c->weak_object);
-
-  return FALSE;
-}
-
-static void
 tp_connection_manager_ready_or_failed (TpConnectionManager *self,
                                        const GError *error)
 {
-  GList *waiters = self->priv->waiting_for_ready;
-  GList *link;
-
-  self->priv->waiting_for_ready = NULL;
-
   if (self->info_source > TP_CM_INFO_SOURCE_NONE)
     {
       /* we have info already, so suppress any error and return the old info */
@@ -306,18 +290,52 @@ tp_connection_manager_ready_or_failed (TpConnectionManager *self,
       g_assert (error != NULL);
     }
 
-  for (link = waiters; link != NULL; link = g_list_next (link))
+  if (error == NULL)
     {
-      WhenReadyContext *c = link->data;
+      _tp_proxy_set_feature_prepared ((TpProxy *) self,
+          TP_CONNECTION_MANAGER_FEATURE_CORE, TRUE);
+    }
+  else
+    {
+      _tp_proxy_set_features_failed ((TpProxy *) self, error);
+    }
+}
 
-      if (c->callback != NULL)
-        c->callback (c->cm, error, c->user_data, c->weak_object);
+static void
+tp_connection_manager_ready_cb (GObject *source_object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  WhenReadyContext *c = user_data;
+  GError *error = NULL;
+  GObject *weak_object = NULL;
 
-      when_ready_context_free (c);
-      link->data = NULL;
+  g_return_if_fail (source_object == (GObject *) c->cm);
+
+  if (c->weak_ref != NULL)
+    {
+      weak_object = tp_weak_ref_dup_object (c->weak_ref);
+
+      if (weak_object == NULL)
+        goto finally;
     }
 
-  g_list_free (waiters);
+  if (tp_proxy_prepare_finish (source_object, res, &error))
+    {
+      c->callback (c->cm, NULL, c->user_data, weak_object);
+    }
+  else
+    {
+      g_assert (error != NULL);
+      c->callback (c->cm, error, c->user_data, weak_object);
+      g_error_free (error);
+    }
+
+finally:
+  if (weak_object != NULL)
+    g_object_unref (weak_object);
+
+  when_ready_context_free (c);
 }
 
 /**
@@ -368,22 +386,13 @@ tp_connection_manager_call_when_ready (TpConnectionManager *self,
   c->callback = callback;
   c->user_data = user_data;
   c->destroy = destroy;
-  c->weak_object = weak_object;
 
   if (weak_object != NULL)
     {
-      g_object_weak_ref (weak_object, when_ready_context_cancel, c);
+      c->weak_ref = tp_weak_ref_new (weak_object, NULL, NULL);
     }
 
-  if (self->info_source != TP_CM_INFO_SOURCE_NONE)
-    {
-      g_idle_add_full (G_PRIORITY_HIGH, when_ready_context_complete,
-          c, when_ready_context_free);
-      return;
-    }
-
-  self->priv->waiting_for_ready = g_list_append (self->priv->waiting_for_ready,
-      c);
+  tp_proxy_prepare_async (self, NULL, tp_connection_manager_ready_cb, c);
 }
 
 static void tp_connection_manager_continue_introspection
@@ -1470,6 +1479,28 @@ tp_connection_manager_init_known_interfaces (void)
     }
 }
 
+enum {
+    FEAT_CORE,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tp_connection_manager_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_CORE].name = TP_CONNECTION_MANAGER_FEATURE_CORE;
+  features[FEAT_CORE].core = TRUE;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
+}
+
 static void
 tp_connection_manager_class_init (TpConnectionManagerClass *klass)
 {
@@ -1488,6 +1519,7 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
   object_class->finalize = tp_connection_manager_finalize;
 
   proxy_class->interface = TP_IFACE_QUARK_CONNECTION_MANAGER;
+  proxy_class->list_features = tp_connection_manager_list_features;
 
   /**
    * TpConnectionManager:info-source:

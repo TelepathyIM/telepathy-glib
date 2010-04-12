@@ -28,10 +28,24 @@ typedef struct {
 
     gboolean cwr_ready;
     GError *cwr_error /* initialized in setup */;
+
+    GAsyncResult *prepare_result;
 } Test;
 
 static GError invalidated_for_test = { 0, TP_ERROR_PERMISSION_DENIED,
       "No connection for you!" };
+
+static void
+connection_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_message ("%p prepared", object);
+  g_assert (test->prepare_result == NULL);
+  test->prepare_result = g_object_ref (res);
+}
 
 static void
 setup (Test *test,
@@ -167,6 +181,122 @@ conn_ready (TpConnection *connection,
 }
 
 static void
+test_prepare (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED };
+  TpConnectionStatusReason reason;
+
+  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
+
+  g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
+  g_assert (!tp_proxy_is_prepared (test->conn,
+        TP_CONNECTION_FEATURE_CONNECTED));
+
+  tp_proxy_prepare_async (test->conn, NULL, connection_prepared_cb, test);
+  /* this is not synchronous */
+  g_assert (test->prepare_result == NULL);
+  g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
+
+  while (test->prepare_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (tp_proxy_prepare_finish (test->conn, test->prepare_result,
+        &error));
+  g_assert_no_error (error);
+  g_object_unref (test->prepare_result);
+  test->prepare_result = NULL;
+
+  g_assert (tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
+  g_assert (!tp_proxy_is_prepared (test->conn,
+        TP_CONNECTION_FEATURE_CONNECTED));
+  g_assert_cmpuint (tp_connection_get_self_handle (test->conn), ==, 0);
+  g_assert_cmpint (tp_connection_get_status (test->conn, NULL), ==,
+      TP_CONNECTION_STATUS_DISCONNECTED);
+
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
+
+  tp_proxy_prepare_async (test->conn, features, connection_prepared_cb, test);
+
+  while (test->prepare_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (tp_proxy_prepare_finish (test->conn, test->prepare_result,
+        &error));
+  g_assert_no_error (error);
+  g_object_unref (test->prepare_result);
+  test->prepare_result = NULL;
+
+  g_assert (tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (test->conn,
+        TP_CONNECTION_FEATURE_CONNECTED));
+  g_assert_cmpuint (tp_connection_get_self_handle (test->conn), !=, 0);
+  g_assert_cmpint (tp_connection_get_status (test->conn, &reason), ==,
+      TP_CONNECTION_STATUS_CONNECTED);
+  g_assert_cmpint (reason, ==, TP_CONNECTION_STATUS_REASON_REQUESTED);
+}
+
+static void
+test_fail_to_prepare (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED };
+
+  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  g_assert (test->conn != NULL);
+  g_assert_no_error (error);
+
+  g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
+  g_assert (!tp_proxy_is_prepared (test->conn,
+        TP_CONNECTION_FEATURE_CONNECTED));
+
+  tp_proxy_prepare_async (test->conn, NULL, connection_prepared_cb, test);
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
+  tp_proxy_invalidate ((TpProxy *) test->conn, &invalidated_for_test);
+  /* this is not synchronous */
+  g_assert (test->prepare_result == NULL);
+  g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
+
+  while (test->prepare_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (!tp_proxy_prepare_finish (test->conn, test->prepare_result,
+        &error));
+  g_assert_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED);
+  g_clear_error (&error);
+  g_object_unref (test->prepare_result);
+  test->prepare_result = NULL;
+
+  g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
+  g_assert (!tp_proxy_is_prepared (test->conn,
+        TP_CONNECTION_FEATURE_CONNECTED));
+
+  /* it's not synchronous even if we were already invalidated */
+  tp_proxy_prepare_async (test->conn, features, connection_prepared_cb, test);
+  g_assert (test->prepare_result == NULL);
+
+  while (test->prepare_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (!tp_proxy_prepare_finish (test->conn, test->prepare_result,
+        &error));
+  g_assert_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED);
+  g_clear_error (&error);
+  g_object_unref (test->prepare_result);
+  test->prepare_result = NULL;
+
+  g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
+  g_assert (!tp_proxy_is_prepared (test->conn,
+        TP_CONNECTION_FEATURE_CONNECTED));
+}
+
+static void
 test_call_when_ready (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
@@ -231,6 +361,9 @@ main (int argc,
 {
   g_test_init (&argc, &argv, NULL);
 
+  g_test_add ("/conn/prepare", Test, NULL, setup, test_prepare, teardown);
+  g_test_add ("/conn/fail_to_prepare", Test, NULL, setup, test_fail_to_prepare,
+      teardown);
   g_test_add ("/conn/run_until_invalid", Test, NULL, setup,
       test_run_until_invalid, teardown);
   g_test_add ("/conn/run_until_ready", Test, NULL, setup,

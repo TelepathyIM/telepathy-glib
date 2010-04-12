@@ -29,6 +29,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_GROUPS
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/proxy-internal.h"
 
 
 /**
@@ -108,11 +109,11 @@ tp_channel_group_get_flags (TpChannel *self)
  * tp_channel_group_get_members:
  * @self: a channel
  *
- * If @self is ready and is a group, return a #TpIntSet containing
- * its members.
+ * If @self is a group and the %TP_CHANNEL_FEATURE_GROUP feature has been
+ * prepared, return a #TpIntSet containing its members.
  *
- * If @self is a group but is not ready, the result may either be a set
- * of members, or %NULL.
+ * If @self is a group but %TP_CHANNEL_FEATURE_GROUP has not been prepared,
+ * the result may either be a set of members, or %NULL.
  *
  * If @self is not a group, return %NULL.
  *
@@ -132,11 +133,11 @@ tp_channel_group_get_members (TpChannel *self)
  * tp_channel_group_get_local_pending:
  * @self: a channel
  *
- * If @self is ready and is a group, return a #TpIntSet containing
- * its local-pending members.
+ * If @self is a group and the %TP_CHANNEL_FEATURE_GROUP feature has been
+ * prepared, return a #TpIntSet containing its local-pending members.
  *
- * If @self is a group but is not ready, the result may either be a set
- * of local-pending members, or %NULL.
+ * If @self is a group but %TP_CHANNEL_FEATURE_GROUP has not been prepared,
+ * the result may either be a set of local-pending members, or %NULL.
  *
  * If @self is not a group, return %NULL.
  *
@@ -156,11 +157,11 @@ tp_channel_group_get_local_pending (TpChannel *self)
  * tp_channel_group_get_remote_pending:
  * @self: a channel
  *
- * If @self is ready and is a group, return a #TpIntSet containing
- * its remote-pending members.
+ * If @self is a group and the %TP_CHANNEL_FEATURE_GROUP feature has been
+ * prepared, return a #TpIntSet containing its remote-pending members.
  *
- * If @self is a group but is not ready, the result may either be a set
- * of remote-pending members, or %NULL.
+ * If @self is a group but %TP_CHANNEL_FEATURE_GROUP has not been prepared,
+ * the result may either be a set of remote-pending members, or %NULL.
  *
  * If @self is not a group, return %NULL.
  *
@@ -260,7 +261,8 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
  *
  * - if @self is not a group or @handle is not a member of this channel,
  *   result is undefined;
- * - if @self does not have #TpChannel:ready = TRUE, result is undefined;
+ * - if %TP_CHANNEL_FEATURE_GROUP has not yet been prepared, result is
+ *   undefined;
  * - if @self does not have flags that include %TP_CHANNEL_FLAG_PROPERTIES,
  *   result is undefined;
  * - if @handle is channel-specific and its globally valid "owner" is known,
@@ -1114,6 +1116,9 @@ _tp_channel_get_group_properties (TpChannel *self)
   if (!tp_proxy_has_interface_by_id (self,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
     {
+      _tp_proxy_set_feature_prepared ((TpProxy *) self,
+          TP_CHANNEL_FEATURE_GROUP, FALSE);
+
       DEBUG ("%p: not a Group, continuing", self);
       _tp_channel_continue_introspection (self);
       return;

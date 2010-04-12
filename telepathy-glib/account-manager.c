@@ -34,6 +34,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/proxy-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-account-manager-body.h"
 
@@ -84,13 +85,6 @@ struct _TpAccountManagerPrivate {
   gchar *requested_status_message;
 
   GHashTable *create_results;
-
-  /* Features */
-  GList *features;
-  GList *callbacks;
-  GArray *requested_features;
-  GArray *actual_features;
-  GArray *missing_features;
 };
 
 typedef struct {
@@ -128,7 +122,7 @@ G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY);
  * are available for use, and change-notification has been set up.
  *
  * One can ask for a feature to be prepared using the
- * tp_account_manager_prepare_async() function, and waiting for it to callback.
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
  * Since: 0.9.0
  */
@@ -149,155 +143,27 @@ tp_account_manager_get_feature_quark_core (void)
   return g_quark_from_static_string ("tp-account-manager-feature-core");
 }
 
-static const GQuark *
-_tp_account_manager_get_known_features (void)
-{
-  static GQuark features[] = { 0, 0 };
+enum {
+    FEAT_CORE,
+    N_FEAT
+};
 
-  if (G_UNLIKELY (features[0] == 0))
+static const TpProxyFeature *
+_tp_account_manager_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_UNLIKELY (features[0].name == 0))
     {
-      features[0] = TP_ACCOUNT_MANAGER_FEATURE_CORE;
+      features[FEAT_CORE].name = TP_ACCOUNT_MANAGER_FEATURE_CORE;
+      features[FEAT_CORE].core = TRUE;
+      /* no need for a start_preparing function - the constructor starts it */
+
+      /* assert that the terminator at the end is there */
+      g_assert (features[N_FEAT].name == 0);
     }
 
   return features;
-}
-
-static TpAccountManagerFeature *
-_tp_account_manager_get_feature (TpAccountManager *self,
-    GQuark feature)
-{
-  TpAccountManagerPrivate *priv = self->priv;
-  GList *l;
-
-  for (l = priv->features; l != NULL; l = l->next)
-    {
-      TpAccountManagerFeature *f = l->data;
-
-      if (f->name == feature)
-        return f;
-    }
-
-  return NULL;
-}
-
-static gboolean
-_tp_account_manager_feature_in_array (GQuark feature,
-    const GArray *array)
-{
-  const GQuark *c = (const GQuark *) array->data;
-
-  for (; *c != 0; c++)
-    {
-      if (*c == feature)
-        return TRUE;
-    }
-
-  return FALSE;
-}
-
-static gboolean
-_tp_account_manager_check_features (TpAccountManager *self,
-    const GArray *features)
-{
-  const GQuark *f;
-  TpAccountManagerFeature *feat;
-
-  for (f = (GQuark *) features->data; f != NULL && *f != 0; f++)
-    {
-      feat = _tp_account_manager_get_feature (self, *f);
-
-      /* features which are NULL (ie. don't exist) are always considered as
-       * being ready, except in _is_prepared when it doesn't make sense to
-       * return TRUE. */
-      if (feat != NULL && !feat->ready)
-        return FALSE;
-    }
-
-  /* Special-case core: no other feature is ready unless core itself is
-   * ready. */
-  feat = _tp_account_manager_get_feature (self,
-      TP_ACCOUNT_MANAGER_FEATURE_CORE);
-  if (!feat->ready)
-    return FALSE;
-
-  return TRUE;
-}
-
-static void
-_tp_account_manager_become_ready (TpAccountManager *self,
-    GQuark feature)
-{
-  TpAccountManagerPrivate *priv = self->priv;
-  TpAccountManagerFeature *f = NULL;
-  GList *l, *remove = NULL;
-
-  f = _tp_account_manager_get_feature (self, feature);
-
-  g_assert (f != NULL);
-
-  if (f->ready)
-    return;
-
-  f->ready = TRUE;
-
-  if (!_tp_account_manager_feature_in_array (feature, priv->actual_features))
-    g_array_append_val (priv->actual_features, feature);
-
-  /* First, find which callbacks are satisfied and add those items
-   * from the remove list. */
-  l = priv->callbacks;
-  while (l != NULL)
-    {
-      GList *c = l;
-      TpAccountManagerFeatureCallback *cb = l->data;
-
-      l = l->next;
-
-      if (_tp_account_manager_check_features (self, cb->features))
-        {
-          priv->callbacks = g_list_remove_link (priv->callbacks, c);
-          remove = g_list_concat (c, remove);
-        }
-    }
-
-  /* Next, complete these callbacks */
-  for (l = remove; l != NULL; l = l->next)
-    {
-      TpAccountManagerFeatureCallback *cb = l->data;
-
-      g_simple_async_result_complete (cb->result);
-      g_object_unref (cb->result);
-      g_array_free (cb->features, TRUE);
-      g_slice_free (TpAccountManagerFeatureCallback, cb);
-    }
-
-  g_list_free (remove);
-}
-
-static void
-_tp_account_manager_invalidated_cb (TpAccountManager *self,
-    guint domain,
-    guint code,
-    gchar *message)
-{
-  TpAccountManagerPrivate *priv = self->priv;
-  GList *l;
-
-  /* Make all currently pending callbacks fail. */
-  for (l = priv->callbacks; l != NULL; l = l->next)
-    {
-      TpAccountManagerFeatureCallback *cb = l->data;
-
-      g_simple_async_result_set_error (cb->result,
-          domain, code, "%s", message);
-      g_simple_async_result_complete (cb->result);
-      g_object_unref (cb->result);
-      g_array_free (cb->features, TRUE);
-      g_slice_free (TpAccountManagerFeatureCallback, cb);
-    }
-
-  g_list_free (priv->callbacks);
-  priv->callbacks = NULL;
 }
 
 static void
@@ -316,9 +182,6 @@ tp_account_manager_init (TpAccountManager *self)
       g_free, (GDestroyNotify) g_object_unref);
 
   priv->create_results = g_hash_table_new (g_direct_hash, g_direct_equal);
-
-  g_signal_connect (self, "invalidated",
-      G_CALLBACK (_tp_account_manager_invalidated_cb), NULL);
 }
 
 static void
@@ -526,7 +389,7 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
   GHashTableIter iter;
   gpointer value;
 
-  if (tp_account_manager_is_prepared (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE))
+  if (tp_proxy_is_prepared (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE))
     return;
 
   g_hash_table_iter_init (&iter, priv->accounts);
@@ -550,7 +413,8 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
 
   _tp_account_manager_update_most_available_presence (manager);
 
-  _tp_account_manager_become_ready (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE);
+  _tp_proxy_set_feature_prepared ((TpProxy *) manager,
+      TP_ACCOUNT_MANAGER_FEATURE_CORE, TRUE);
 }
 
 static void
@@ -590,33 +454,11 @@ _tp_account_manager_constructed (GObject *object)
   TpAccountManager *self = TP_ACCOUNT_MANAGER (object);
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_account_manager_parent_class)->constructed;
-  TpAccountManagerPrivate *priv = self->priv;
-  guint i;
-  const GQuark *known_features;
 
   if (chain_up != NULL)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
-
-  priv->features = NULL;
-  priv->callbacks = NULL;
-
-  priv->requested_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
-  priv->actual_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
-  priv->missing_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
-
-  known_features = _tp_account_manager_get_known_features ();
-
-  /* Fill features list. */
-  for (i = 0; known_features[i] != 0; i++)
-    {
-      TpAccountManagerFeature *feature;
-      feature = g_slice_new0 (TpAccountManagerFeature);
-      feature->name = known_features[i];
-      feature->ready = FALSE;
-      priv->features = g_list_prepend (priv->features, feature);
-    }
 
   tp_cli_account_manager_connect_to_account_validity_changed (self,
       _tp_account_manager_validity_changed_cb, NULL,
@@ -624,13 +466,6 @@ _tp_account_manager_constructed (GObject *object)
 
   tp_cli_dbus_properties_call_get_all (self, -1, TP_IFACE_ACCOUNT_MANAGER,
       _tp_account_manager_got_all_cb, NULL, NULL, G_OBJECT (self));
-}
-
-static void
-_tp_account_manager_feature_free (gpointer data,
-    gpointer user_data)
-{
-  g_slice_free (TpAccountManagerFeature, data);
 }
 
 static void
@@ -644,20 +479,6 @@ _tp_account_manager_finalize (GObject *object)
 
   g_free (priv->requested_status);
   g_free (priv->requested_status_message);
-
-  g_list_foreach (priv->features, _tp_account_manager_feature_free, NULL);
-  g_list_free (priv->features);
-  priv->features = NULL;
-
-  /* GSimpleAsyncResult keeps a ref to the source GObject, so this list
-   * should be empty. */
-  g_assert_cmpuint (g_list_length (priv->callbacks), ==, 0);
-  g_list_free (priv->callbacks);
-  priv->callbacks = NULL;
-
-  g_array_free (priv->requested_features, TRUE);
-  g_array_free (priv->actual_features, TRUE);
-  g_array_free (priv->missing_features, TRUE);
 
   G_OBJECT_CLASS (tp_account_manager_parent_class)->finalize (object);
 }
@@ -700,6 +521,7 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
   object_class->dispose = _tp_account_manager_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_ACCOUNT_MANAGER;
+  proxy_class->list_features = _tp_account_manager_list_features;
   tp_account_manager_init_known_interfaces ();
 
   /**
@@ -1097,7 +919,7 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
  *
  * The list of valid accounts returned is not guaranteed to have been retrieved
  * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
- * (tp_account_manager_prepare_async() has returned). Until this feature has
+ * (tp_proxy_prepare_async() has returned). Until this feature has
  * been prepared, an empty list (%NULL) will be returned.
  *
  * Returns: a newly allocated #GList of valid accounts in @manager
@@ -1134,7 +956,8 @@ tp_account_manager_get_valid_accounts (TpAccountManager *manager)
  * tp_account_manager_get_most_available_presence().
  *
  * Setting a requested presence on all accounts will have no effect
- * until tp_account_manager_prepare_async() has finished.
+ * until tp_proxy_prepare_async()
+ * (or the older tp_account_manager_prepare_async()) has finished.
  *
  * Since: 0.9.0
  */
@@ -1198,7 +1021,7 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
  * (%TP_CONNECTION_PRESENCE_TYPE_OFFLINE, "offline", "").
  *
  * The return value of this function is not guaranteed to have been retrieved
- * until tp_account_manager_prepare_async() has finished; until then, the
+ * until tp_proxy_prepare_async() has finished; until then, the
  * value will be the same as if no accounts are enabled or valid.
  *
  * Returns: the most available presence across all accounts
@@ -1352,7 +1175,7 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
  *
  * <!-- -->
  *
- * Returns: %TRUE if @feature is ready on @manager, otherwise %FALSE
+ * Returns: the same thing as tp_proxy_is_prepared()
  *
  * Since: 0.9.0
  */
@@ -1360,19 +1183,7 @@ gboolean
 tp_account_manager_is_prepared (TpAccountManager *manager,
     GQuark feature)
 {
-  TpAccountManagerFeature *f;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), FALSE);
-
-  if (tp_proxy_get_invalidated (manager) != NULL)
-    return FALSE;
-
-  f = _tp_account_manager_get_feature (manager, feature);
-
-  if (f == NULL)
-    return FALSE;
-
-  return f->ready;
+  return tp_proxy_is_prepared (manager, feature);
 }
 
 /**
@@ -1382,17 +1193,18 @@ tp_account_manager_is_prepared (TpAccountManager *manager,
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Requests an asynchronous preparation of @manager with the features specified
+ * Requests an asynchronous preparation of @manager with
+ * %TP_ACCOUNT_MANAGER_FEATURE_CORE, plus any features specified
  * by @features. When the operation is finished, @callback will be called. You
  * can then call tp_account_manager_prepare_finish() to get the result of the
  * operation.
  *
- * If @features is %NULL, then @callback will be called when the implied
- * %TP_ACCOUNT_MANAGER_FEATURE_CORE feature is ready.
- *
  * If %NULL is given to @callback, then no callback will be called when the
  * operation is finished. Instead, it will simply set @features on @manager.
  * Note that if @callback is %NULL, then @user_data must also be %NULL.
+ *
+ * In version 0.11.UNRELEASED or later, this is equivalent to calling
+ * tp_proxy_prepare_async() with the same arguments.
  *
  * Since: 0.9.0
  */
@@ -1402,60 +1214,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpAccountManagerPrivate *priv;
-  GSimpleAsyncResult *result;
-  const GQuark *f;
-  const GError *error;
-  GArray *feature_array;
-
-  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
-
-  priv = manager->priv;
-
-  /* In this object, there are no features which are activatable (core is
-   * forced on you). They'd be activated here though. */
-
-  for (f = features; f != NULL && *f != 0; f++)
-    {
-      /* Only add features to requested which exist on this object and are not
-       * already in the list.
-       */
-      if (_tp_account_manager_get_feature (manager, *f) != NULL
-          && !_tp_account_manager_feature_in_array (*f, priv->requested_features))
-        g_array_append_val (priv->requested_features, *f);
-    }
-
-  if (callback == NULL)
-    return;
-
-  result = g_simple_async_result_new (G_OBJECT (manager),
-      callback, user_data, tp_account_manager_prepare_finish);
-
-  feature_array = _tp_quark_array_copy (features);
-
-  error = tp_proxy_get_invalidated (manager);
-  if (error != NULL)
-    {
-      g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete_in_idle (result);
-      g_object_unref (result);
-      g_array_free (feature_array, TRUE);
-    }
-  else if (_tp_account_manager_check_features (manager, feature_array))
-    {
-      g_simple_async_result_complete_in_idle (result);
-      g_object_unref (result);
-      g_array_free (feature_array, TRUE);
-    }
-  else
-    {
-      TpAccountManagerFeatureCallback *cb;
-
-      cb = g_slice_new0 (TpAccountManagerFeatureCallback);
-      cb->result = result;
-      cb->features = feature_array;
-      priv->callbacks = g_list_prepend (priv->callbacks, cb);
-    }
+  tp_proxy_prepare_async (manager, features, callback, user_data);
 }
 
 /**
@@ -1475,20 +1234,7 @@ tp_account_manager_prepare_finish (TpAccountManager *manager,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (manager),tp_account_manager_prepare_finish), FALSE);
-
-  return TRUE;
+  return tp_proxy_prepare_finish (manager, result, error);
 }
 
 /**

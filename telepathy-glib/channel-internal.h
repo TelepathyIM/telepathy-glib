@@ -70,6 +70,10 @@ struct _TpChannelPrivate {
     /* guint => guint, NULL if not discovered yet */
     GHashTable *group_handle_owners;
 
+    /* NULL, or TpHandle => TpChannelChatState;
+     * if non-NULL, we're watching for ChatStateChanged */
+    GHashTable *chat_states;
+
     /* These are really booleans, but gboolean is signed. Thanks, GLib */
 
     /* channel-ready */

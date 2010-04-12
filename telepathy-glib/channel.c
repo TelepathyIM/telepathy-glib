@@ -30,6 +30,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-channel-body.h"
@@ -102,6 +103,7 @@ enum {
   SIGNAL_GROUP_FLAGS_CHANGED,
   SIGNAL_GROUP_MEMBERS_CHANGED,
   SIGNAL_GROUP_MEMBERS_CHANGED_DETAILED,
+  SIGNAL_CHAT_STATE_CHANGED,
   N_SIGNALS
 };
 
@@ -112,6 +114,90 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
     tp_channel,
     TP_TYPE_PROXY,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL));
+
+/**
+ * TP_CHANNEL_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the "core" feature
+ * on a #TpChannel.
+ *
+ * When this feature is prepared, the basic Channel properties of the
+ * Channel have been retrieved and are available for use.
+ *
+ * Specifically, this implies that:
+ *
+ * - #TpChannel:channel-type is set
+ * - #TpChannel:handle-type and #TpChannel:handle are set
+ * - any extra interfaces will have been set up in TpProxy (i.e.
+ *   #TpProxy:interfaces contains at least all extra Channel interfaces)
+ *
+ * (These are a subset of the guarantees offered by the older #TpChannel:ready
+ * and tp_channel_call_when_ready() mechanisms, which are now equivalent to
+ * (%TP_CHANNEL_FEATURE_CORE, %TP_CHANNEL_FEATURE_GROUP) if the channel is
+ * a group, or just %TP_CHANNEL_FEATURE_CORE otherwise.)
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_channel_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-channel-feature-core");
+}
+
+/**
+ * TP_CHANNEL_FEATURE_GROUP:
+ *
+ * Expands to a call to a function that returns a quark representing the Group
+ * features of a TpChannel.
+ *
+ * When this feature is prepared, the Group properties of the
+ * Channel have been retrieved and are available for use, and
+ * change-notification has been set up for those that can change:
+ *
+ * - the initial value of the #TpChannel:group-self-handle property will
+ *   have been fetched and change notification will have been set up
+ * - the initial value of the #TpChannel:group-flags property will
+ *   have been fetched and change notification will have been set up
+ *
+ * (These are the same guarantees offered for Group channels by the older
+ * #TpChannel:ready and tp_channel_call_when_ready() mechanisms.)
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_channel_get_feature_quark_group (void)
+{
+  return g_quark_from_static_string ("tp-channel-feature-group");
+}
+
+/**
+ * TP_CHANNEL_FEATURE_CHAT_STATES:
+ *
+ * Expands to a call to a function that returns a quark representing the
+ * chat states feature on a #TpChannel.
+ *
+ * When this feature is prepared, tp_channel_get_chat_state() and the
+ * #TpChannel::chat-state-changed signal become useful.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_channel_get_feature_quark_chat_states (void)
+{
+  return g_quark_from_static_string ("tp-channel-feature-chat-states");
+}
 
 
 /* Convenient property accessors for C (these duplicate the properties) */
@@ -124,7 +210,9 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
  * Get the D-Bus interface name representing this channel's type,
  * if it has been discovered.
  *
- * This is the same as the #TpChannel:channel-type property.
+ * This is the same as the #TpChannel:channel-type property; it isn't
+ * guaranteed to be non-%NULL until the %TP_CHANNEL_FEATURE_CORE feature has
+ * been prepared.
  *
  * Returns: the channel type, if the channel is ready; either the channel
  *  type or %NULL, if the channel is not yet ready.
@@ -147,7 +235,8 @@ tp_channel_get_channel_type (TpChannel *self)
  * if it has been discovered.
  *
  * This is the same as the #TpChannel:channel-type property, except that it
- * is a GQuark rather than a string.
+ * is a GQuark rather than a string. It isn't guaranteed to be nonzero until
+ * the %TP_CHANNEL_FEATURE_CORE property is ready.
  *
  * Returns: the channel type, if the channel is ready; either the channel
  *  type or 0, if the channel is not yet ready.
@@ -171,7 +260,8 @@ tp_channel_get_channel_type_id (TpChannel *self)
  * channel communicates for its whole lifetime, or 0 if there is no such
  * handle or it has not yet been discovered.
  *
- * This is the same as the #TpChannel:handle property.
+ * This is the same as the #TpChannel:handle property. It isn't guaranteed to
+ * have its final value until the %TP_CHANNEL_FEATURE_CORE property is ready.
  *
  * If %handle_type is not %NULL, the type of handle is written into it.
  * This will be %TP_UNKNOWN_HANDLE_TYPE if the handle has not yet been
@@ -203,7 +293,8 @@ tp_channel_get_handle (TpChannel *self,
  * This channel's associated identifier, or NULL if no identifier or unknown.
  *
  * The identifier is the result of inspecting #TpChannel:handle.
- * This is the same as the #TpChannel:identifier property.
+ * This is the same as the #TpChannel:identifier property, and isn't guaranteed
+ * to be non-%NULL until the %TP_CHANNEL_FEATURE_CORE property is ready.
  *
  * Returns: the identifier
  * Since: 0.7.21
@@ -221,6 +312,19 @@ tp_channel_get_identifier (TpChannel *self)
  * @self: a channel
  *
  * Returns the same thing as the #TpChannel:channel-ready property.
+ *
+ * New code should use tp_proxy_is_prepared(), which is a more general form of
+ * this method.
+ *
+ * For group channels, this method is equivalent to checking for the
+ * combination of %TP_CHANNEL_FEATURE_CORE and %TP_CHANNEL_FEATURE_GROUP; for
+ * non-group channels, it's equivalent to checking for
+ * %TP_CHANNEL_FEATURE_CORE.
+ *
+ * One important difference is that after #TpChannel::invalidated is
+ * signalled, #TpChannel:channel-ready keeps its current value - which might
+ * be %TRUE, if the channel was successfully prepared before it became
+ * invalidated - but tp_proxy_is_prepared() returns %FALSE for all features.
  *
  * Returns: %TRUE if introspection has completed
  * Since: 0.7.12
@@ -269,8 +373,8 @@ tp_channel_borrow_connection (TpChannel *self)
  * construction (e.g. by calling tp_channel_new_from_properties()), a
  * reasonable but possibly incomplete version will be made up from the values
  * of individual properties; reading this property repeatedly may yield
- * progressively more complete values until #TpChannel:channel-ready
- * becomes %TRUE.
+ * progressively more complete values until the %TP_CHANNEL_FEATURE_CORE
+ * feature is prepared.
  *
  * Returns: a #GHashTable where the keys are strings,
  *  D-Bus interface name + "." + property name, and the values are #GValue
@@ -327,6 +431,37 @@ tp_channel_get_property (GObject *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
   }
+}
+
+/**
+ * tp_channel_get_chat_state:
+ * @self: a channel
+ * @contact: a contact handle
+ *
+ * Return the chat state for the given contact. If tp_proxy_is_prepared()
+ * would return %FALSE for the feature %TP_CHANNEL_FEATURE_CHAT_STATES,
+ * the result will always be %TP_CHANNEL_CHAT_STATE_INACTIVE.
+ *
+ * Returns: the chat state for @contact, or %TP_CHANNEL_CHAT_STATE_INACTIVE
+ *  if their chat state is not known
+ * Since: 0.11.UNRELEASED
+ */
+TpChannelChatState
+tp_channel_get_chat_state (TpChannel *self,
+    TpHandle contact)
+{
+  gpointer value;
+
+  g_return_val_if_fail (TP_IS_CHANNEL (self), 0);
+
+  if (self->priv->chat_states != NULL &&
+      g_hash_table_lookup_extended (self->priv->chat_states,
+        GUINT_TO_POINTER (contact), NULL, &value))
+    {
+      return GPOINTER_TO_UINT (value);
+    }
+
+  return TP_CHANNEL_CHAT_STATE_INACTIVE;
 }
 
 
@@ -395,7 +530,6 @@ _tp_channel_maybe_set_identifier (TpChannel *self,
           tp_g_value_slice_new_string (identifier));
     }
 }
-
 
 static void
 _tp_channel_maybe_set_interfaces (TpChannel *self,
@@ -515,6 +649,83 @@ _tp_channel_abort_introspection (TpChannel *self,
   tp_proxy_invalidate ((TpProxy *) self, error);
 }
 
+static void
+tp_channel_chat_state_changed_cb (TpChannel *self,
+    guint contact,
+    guint state,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *object G_GNUC_UNUSED)
+{
+  g_hash_table_insert (self->priv->chat_states,
+      GUINT_TO_POINTER (contact), GUINT_TO_POINTER (state));
+
+  /* Don't emit the signal until we've had the initial state */
+  if (!tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CHAT_STATES))
+    return;
+
+  g_signal_emit (self, signals[SIGNAL_CHAT_STATE_CHANGED], 0, contact, state);
+}
+
+static void
+tp_channel_get_initial_chat_states_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpChannel *self = TP_CHANNEL (proxy);
+
+  /* FIXME: fd.o #24882: when that spec bug is fixed, use Chat_State_Map
+   * instead of Channel_Call_State_Map (the underlying D-Bus type is the same
+   * though) */
+  if (error == NULL && G_VALUE_HOLDS (value,
+        TP_HASH_TYPE_CHANNEL_CALL_STATE_MAP))
+    {
+      tp_g_hash_table_update (self->priv->chat_states,
+          g_value_get_boxed (value), NULL, NULL);
+    }
+  /* else just ignore it and assume everyone was initially in the default
+   * Inactive state, unless we already saw a signal for them */
+
+  _tp_proxy_set_feature_prepared (proxy, TP_CHANNEL_FEATURE_CHAT_STATES, TRUE);
+}
+
+static void
+tp_channel_maybe_prepare_chat_states (TpProxy *proxy)
+{
+  TpChannel *self = (TpChannel *) proxy;
+
+  if (self->priv->chat_states != NULL)
+    return;   /* already done */
+
+  if (!_tp_proxy_is_preparing (proxy, TP_CHANNEL_FEATURE_CHAT_STATES))
+    return;   /* not interested right now */
+
+  if (!self->priv->ready)
+    return;   /* will try again when ready */
+
+  if (!tp_proxy_has_interface_by_id (proxy,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE))
+    {
+      /* not going to happen */
+      _tp_proxy_set_feature_prepared (proxy, TP_CHANNEL_FEATURE_CHAT_STATES,
+          FALSE);
+      return;
+    }
+
+  /* chat states? yes please! */
+  self->priv->chat_states = g_hash_table_new (NULL, NULL);
+  tp_cli_channel_interface_chat_state_connect_to_chat_state_changed (
+      self, tp_channel_chat_state_changed_cb, NULL, NULL, NULL,
+      NULL);
+
+  /* this isn't really in telepathy-spec yet (fd.o #24882) but is
+   * harmless... */
+  tp_cli_dbus_properties_call_get (self, -1,
+      TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE, "ChatStates",
+      tp_channel_get_initial_chat_states_cb,
+      NULL, NULL, NULL);
+}
 
 void
 _tp_channel_continue_introspection (TpChannel *self)
@@ -538,6 +749,17 @@ _tp_channel_continue_introspection (TpChannel *self)
       DEBUG ("%p: channel ready", self);
       self->priv->ready = TRUE;
       g_object_notify ((GObject *) self, "channel-ready");
+
+      /* for now, we only have one introspection queue, so CORE and
+       * (if supported) GROUP turn up simultaneously */
+      _tp_proxy_set_feature_prepared ((TpProxy *) self,
+          TP_CHANNEL_FEATURE_CORE, TRUE);
+      _tp_proxy_set_feature_prepared ((TpProxy *) self,
+          TP_CHANNEL_FEATURE_GROUP,
+          tp_proxy_has_interface_by_id (self,
+            TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP));
+
+      tp_channel_maybe_prepare_chat_states ((TpProxy *) self);
     }
   else
     {
@@ -1090,12 +1312,48 @@ tp_channel_finalize (GObject *object)
       self->priv->introspect_needed = NULL;
     }
 
+  if (self->priv->chat_states != NULL)
+    {
+      g_hash_table_destroy (self->priv->chat_states);
+      self->priv->chat_states = NULL;
+    }
+
   g_assert (self->priv->channel_properties != NULL);
   g_hash_table_destroy (self->priv->channel_properties);
 
   g_free (self->priv->identifier);
 
   ((GObjectClass *) tp_channel_parent_class)->finalize (object);
+}
+
+enum {
+    FEAT_CORE,
+    FEAT_GROUP,
+    FEAT_CHAT_STATES,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_CORE].name = TP_CHANNEL_FEATURE_CORE;
+  features[FEAT_CORE].core = TRUE;
+
+  features[FEAT_GROUP].name = TP_CHANNEL_FEATURE_GROUP;
+
+  features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
+  features[FEAT_CHAT_STATES].start_preparing =
+    tp_channel_maybe_prepare_chat_states;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
 }
 
 static void
@@ -1118,6 +1376,7 @@ tp_channel_class_init (TpChannelClass *klass)
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL;
   proxy_class->must_have_unique_name = TRUE;
+  proxy_class->list_features = tp_channel_list_features;
 
   /**
    * TpChannel:channel-type:
@@ -1128,6 +1387,9 @@ tp_channel_class_init (TpChannelClass *klass)
    * (default), we ask the remote D-Bus object what its channel type is;
    * reading this property will yield %NULL until we get the reply, or if
    * GetChannelType() fails.
+   *
+   * This is not guaranteed to be set until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CORE.
    */
   g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
       "channel-type");
@@ -1142,6 +1404,9 @@ tp_channel_class_init (TpChannelClass *klass)
    * during construction (default), we ask the remote D-Bus object what its
    * handle type is; reading this property will yield TP_UNKNOWN_HANDLE_TYPE
    * until we get the reply.
+   *
+   * This is not guaranteed to be set until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CORE.
    */
   g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
       "handle-type");
@@ -1156,6 +1421,9 @@ tp_channel_class_init (TpChannelClass *klass)
    * we ask the remote D-Bus object what its handle type is; reading this
    * property will yield 0 until we get the reply, or if GetHandle()
    * fails.
+   *
+   * This is not guaranteed to be set until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CORE.
    */
   g_object_class_override_property (object_class, PROP_HANDLE,
       "handle");
@@ -1166,6 +1434,9 @@ tp_channel_class_init (TpChannelClass *klass)
    * This channel's associated identifier, or NULL if no identifier or unknown.
    *
    * The identifier is the result of inspecting #TpChannel:handle.
+   *
+   * This is not guaranteed to be set until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CORE.
    */
   param_spec = g_param_spec_string ("identifier",
       "The identifier",
@@ -1186,7 +1457,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * during construction, a reasonable (but possibly incomplete) version
    * will be made up from the values of individual properties; reading this
    * property repeatedly may yield progressively more complete values until
-   * #TpChannel:channel-ready becomes %TRUE.
+   * tp_proxy_prepare_async() has finished preparing %TP_CHANNEL_FEATURE_CORE.
    */
   param_spec = g_param_spec_boxed ("channel-properties",
       "Immutable D-Bus properties",
@@ -1199,23 +1470,17 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:channel-ready:
    *
-   * Initially %FALSE; changes to %TRUE when introspection of the channel
-   * has finished and it's ready for use.
+   * Initially %FALSE; changes to %TRUE when tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CORE, and if the channel is a
+   * group, %TP_CHANNEL_FEATURE_GROUP.
    *
-   * By the time this property becomes %TRUE, the following will be true:
+   * This is a less general form of tp_proxy_is_prepared(), which should be
+   * used in new code.
    *
-   * - #TpChannel:channel-type set, unless introspection failed
-   * - #TpChannel:handle-type and #TpChannel:handle set, unless introspection
-   *   failed
-   * - any extra interfaces will have been set up in TpProxy (i.e.
-   *   #TpProxy:interfaces contains at least all extra Channel interfaces)
-   *
-   * In addition, if #TpProxy:interfaces includes the Group interface:
-   *
-   * - the initial value of the #TpChannel:group-self-handle property will
-   *   have been fetched and change notification will have been set up
-   * - the initial value of the #TpChannel:group-flags property will
-   *   have been fetched and change notification will have been set up
+   * One important difference is that after #TpChannel::invalidated is
+   * signalled, #TpChannel:channel-ready keeps its current value - which might
+   * be %TRUE, if the channel was successfully prepared before it became
+   * invalidated - but tp_proxy_is_prepared() returns %FALSE for all features.
    *
    * Change notification is via notify::channel-ready.
    */
@@ -1242,10 +1507,11 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:group-self-handle:
    *
-   * If this channel is ready (#TpChannel:channel-ready) and is a group, and
-   * the user is a member of it, the #TpHandle representing them in this group.
+   * If this channel is a group and %TP_CHANNEL_FEATURE_GROUP has been
+   * prepared, and the user is a member of the group, the #TpHandle
+   * representing them in this group.
    *
-   * Otherwise, either a handle representing the user, or 0.
+   * Otherwise, the result may be either a handle representing the user, or 0.
    *
    * Change notification is via notify::group-self-handle.
    *
@@ -1261,11 +1527,11 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:group-flags:
    *
-   * If this channel is ready (#TpChannel:channel-ready) and is a group,
+   * If the %TP_CHANNEL_FEATURE_GROUP feature has been prepared successfully,
    * #TpChannelGroupFlags indicating the capabilities and behaviour of that
    * group.
    *
-   * Otherwise, 0.
+   * Otherwise, this may be 0.
    *
    * Change notification is via notify::group-flags or
    * TpChannel::group-flags-changed.
@@ -1355,6 +1621,25 @@ tp_channel_class_init (TpChannelClass *klass)
       _tp_marshal_VOID__BOXED_BOXED_BOXED_BOXED_BOXED,
       G_TYPE_NONE, 5,
       au_type, au_type, au_type, au_type, TP_HASH_TYPE_STRING_VARIANT_MAP);
+
+  /**
+   * TpChannel::chat-state-changed:
+   * @self: a channel
+   * @contact: a contact handle for the local user or another contact
+   * @state: the new #TpChannelChatState for the contact
+   *
+   * Emitted when a contact's chat state changes after tp_proxy_prepare_async()
+   * has finished preparing the feature %TP_CHANNEL_FEATURE_CHAT_STATES.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  signals[SIGNAL_CHAT_STATE_CHANGED] = g_signal_new ("chat-state-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__UINT_UINT,
+      G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 
@@ -1632,6 +1917,11 @@ cwr_ready (TpChannel *self,
  * immediately, then return. Otherwise, arrange
  * for @callback to be called when @self either becomes ready for use
  * or becomes invalid.
+ *
+ * This is a less general form of tp_proxy_prepare_async(), which should be
+ * used in new code. (One important difference is that this function can call
+ * @callback before it has returned, whereas tp_proxy_prepare_async() always
+ * calls @callback from the main loop.)
  *
  * Since: 0.7.7
  */

@@ -30,8 +30,8 @@ G_BEGIN_DECLS
 typedef void (*TpConnectionProc) (TpConnection *self);
 
 struct _TpConnectionPrivate {
-    /* GArray of TpConnectionProc */
-    GArray *introspect_needed;
+    /* list of TpConnectionProc */
+    GList *introspect_needed;
 
     TpHandle self_handle;
     TpConnectionStatus status;
@@ -44,13 +44,15 @@ struct _TpConnectionPrivate {
     /* TpHandle => weak ref to TpContact */
     GHashTable *contacts;
 
+    TpProxyPendingCall *introspection_call;
+
     unsigned ready:1;
-    unsigned called_get_interfaces:1;
     unsigned tracking_aliases_changed:1;
     unsigned tracking_avatar_updated:1;
     unsigned tracking_presences_changed:1;
     unsigned tracking_presence_update:1;
     unsigned tracking_location_changed:1;
+    unsigned introspecting_after_connected:1;
 };
 
 void _tp_connection_init_handle_refs (TpConnection *self);

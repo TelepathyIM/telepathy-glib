@@ -173,6 +173,11 @@ gboolean tp_connection_manager_param_get_default (
 
 void tp_connection_manager_init_known_interfaces (void);
 
+#define TP_CONNECTION_MANAGER_FEATURE_CORE \
+  (tp_connection_manager_get_feature_quark_core ())
+
+GQuark tp_connection_manager_get_feature_quark_core (void) G_GNUC_CONST;
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection-manager.h>

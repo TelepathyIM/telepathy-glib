@@ -51,6 +51,20 @@ channel_ready (TpChannel *channel,
 }
 
 static void
+channel_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  GAsyncResult **output = user_data;
+
+  g_message ("channel %p prepared", object);
+  *output = g_object_ref (res);
+
+  if (mainloop != NULL)
+    g_main_loop_quit (mainloop);
+}
+
+static void
 assert_chan_sane (TpChannel *chan,
                   TpHandle handle)
 {
@@ -109,6 +123,9 @@ main (int argc,
   GError invalidated_for_test = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
       "No channel for you!" };
   GHashTable *asv;
+  GAsyncResult *prepare_result;
+  GQuark some_features[] = { TP_CHANNEL_FEATURE_CORE,
+      TP_CHANNEL_FEATURE_CHAT_STATES, 0 };
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -175,13 +192,37 @@ main (int argc,
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   test_assert_no_error (error);
+
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      FALSE);
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
+      ==, FALSE);
+
   tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
+
+  prepare_result = NULL;
+  tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT (error != NULL, "");
   MYASSERT_SAME_ERROR (&invalidated_for_test, error);
   g_error_free (error);
   error = NULL;
+
+  if (prepare_result == NULL)
+    g_main_loop_run (mainloop);
+
+  MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
+  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_clear_error (&error);
+  /* it was never ready */
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      FALSE);
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
+      ==, FALSE);
+
+  g_object_unref (prepare_result);
+  prepare_result = NULL;
 
   g_object_unref (chan);
   chan = NULL;
@@ -193,6 +234,11 @@ main (int argc,
   test_assert_no_error (error);
 
   was_ready = FALSE;
+  tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
+
+  /* no way to see what this is doing - just make sure it doesn't crash */
+  tp_proxy_prepare_async (chan, some_features, NULL, NULL);
+
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
   tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
   MYASSERT (was_ready == TRUE, "");
@@ -200,6 +246,20 @@ main (int argc,
   MYASSERT_SAME_ERROR (&invalidated_for_test, invalidated);
   g_error_free (invalidated);
   invalidated = NULL;
+
+  /* prepare_async never calls back synchronously */
+  MYASSERT (prepare_result == NULL, "");
+  g_main_loop_run (mainloop);
+  MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
+  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_clear_error (&error);
+  g_object_unref (prepare_result);
+  prepare_result = NULL;
+  /* it was never ready */
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      FALSE);
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
+      ==, FALSE);
 
   g_object_unref (chan);
   chan = NULL;
@@ -216,11 +276,28 @@ main (int argc,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
   test_assert_no_error (error);
 
+  prepare_result = NULL;
+  tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
+
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   test_assert_no_error (error);
   MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
   MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
   MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      TRUE);
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
+      ==, FALSE);
+
+  if (prepare_result == NULL)
+    g_main_loop_run (mainloop);
+
+  MYASSERT (tp_proxy_prepare_finish (chan, prepare_result, &error), "");
+  test_assert_no_error (error);
+
+  g_object_unref (prepare_result);
+  prepare_result = NULL;
 
   assert_chan_sane (chan, handle);
 
@@ -240,6 +317,15 @@ main (int argc,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
   test_assert_no_error (error);
 
+  prepare_result = NULL;
+  tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
+      &prepare_result);
+
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      FALSE);
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
+      ==, FALSE);
+
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   test_assert_no_error (error);
   MYASSERT_SAME_UINT (
@@ -249,7 +335,37 @@ main (int argc,
   MYASSERT_SAME_UINT (
       TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, 0);
 
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      TRUE);
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
+      ==, FALSE);
+
+  if (prepare_result == NULL)
+    g_main_loop_run (mainloop);
+
+  MYASSERT (tp_proxy_prepare_finish (chan, prepare_result, &error), "");
+  test_assert_no_error (error);
+
+  g_object_unref (prepare_result);
+  prepare_result = NULL;
+
   assert_chan_sane (chan, handle);
+
+  /* no way to see what this is doing - just make sure it doesn't crash */
+  tp_proxy_prepare_async (chan, some_features, NULL, NULL);
+
+  prepare_result = NULL;
+  tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
+      &prepare_result);
+
+  if (prepare_result == NULL)
+    g_main_loop_run (mainloop);
+
+  MYASSERT (tp_proxy_prepare_finish (chan, prepare_result, &error), "");
+  test_assert_no_error (error);
+
+  g_object_unref (prepare_result);
+  prepare_result = NULL;
 
   g_object_unref (chan);
   chan = NULL;
@@ -575,10 +691,20 @@ main (int argc,
 
   g_message ("Channel already dead, so we are called back synchronously");
 
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      TRUE);
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
+      ==, FALSE);
+
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   test_assert_no_error (error);
 
   was_ready = FALSE;
+
+  prepare_result = NULL;
+  tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
+      &prepare_result);
+
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
   MYASSERT (was_ready == TRUE, "");
   MYASSERT (invalidated != NULL, "");
@@ -586,8 +712,23 @@ main (int argc,
       ": %s", g_quark_to_string (invalidated->domain));
   MYASSERT (invalidated->code == TP_ERROR_CANCELLED,
       ": %u", invalidated->code);
-  g_error_free (invalidated);
-  invalidated = NULL;
+
+  /* is_prepared becomes FALSE because the channel broke */
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
+      FALSE);
+  g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
+      ==, FALSE);
+  MYASSERT_SAME_ERROR (tp_proxy_get_invalidated (chan), invalidated);
+
+  /* ... but prepare_async still hasn't finished until we run the main loop */
+  g_assert (prepare_result == NULL);
+  g_main_loop_run (mainloop);
+  g_assert (prepare_result != NULL);
+  MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
+  MYASSERT_SAME_ERROR (tp_proxy_get_invalidated (chan), invalidated);
+
+  g_clear_error (&error);
+  g_clear_error (&invalidated);
 
   g_object_unref (chan);
   chan = NULL;
