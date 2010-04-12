@@ -290,11 +290,15 @@ tp_channel_get_handle (TpChannel *self,
  * tp_channel_get_identifier:
  * @self: a channel
  *
- * This channel's associated identifier, or NULL if no identifier or unknown.
+ * This channel's associated identifier, or the empty string if no identifier
+ * or unknown.
  *
- * The identifier is the result of inspecting #TpChannel:handle.
  * This is the same as the #TpChannel:identifier property, and isn't guaranteed
- * to be non-%NULL until the %TP_CHANNEL_FEATURE_CORE property is ready.
+ * to be set until the %TP_CHANNEL_FEATURE_CORE property is ready.
+ *
+ * Changed in 0.11.UNRELEASED: as with #TpChannel:identifier, this could
+ * previously either be %NULL or the empty string if there was no suitable
+ * value. It is now non-%NULL in all cases.
  *
  * Returns: the identifier
  * Since: 0.7.21
@@ -303,6 +307,9 @@ const gchar *
 tp_channel_get_identifier (TpChannel *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
+  if (self->priv->identifier == NULL)
+    return "";
 
   return self->priv->identifier;
 }
@@ -1431,17 +1438,24 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:identifier:
    *
-   * This channel's associated identifier, or NULL if no identifier or unknown.
+   * This channel's associated identifier, or the empty string if it has
+   * handle type %TP_HANDLE_TYPE_NONE.
    *
-   * The identifier is the result of inspecting #TpChannel:handle.
+   * For channels where #TpChannel:handle is non-zero, this is the result of
+   * inspecting #TpChannel:handle.
    *
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE.
+   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
+   * the empty string.
+   *
+   * Changed in 0.11.UNRELEASED: this property is never %NULL. Previously,
+   * it was %NULL before an identifier was known, or when a channel
+   * with no TargetID D-Bus property had TargetHandleType %TP_HANDLE_TYPE_NONE.
    */
   param_spec = g_param_spec_string ("identifier",
       "The identifier",
       "The identifier of the channel",
-      NULL,
+      "",
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IDENTIFIER,
       param_spec);
