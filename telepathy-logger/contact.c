@@ -213,6 +213,16 @@ tpl_contact_from_chatroom_id (const gchar *chatroom_id)
 }
 
 
+/* tpl_contact_from_tp_contact:
+ * @contact: the TpContact instance to create the TplContact from
+ *
+ * Return a TplContact instance with identifier, alias and
+ * avatar's token copied. It also sets %TPL_CONTACT_USER as contact type for
+ * the #TplContact returned. The client needs to set it to %TPL_CONTACT_SELF
+ * in case the contact is the account's onwer.
+ *
+ * @see #tpl_contact_set_contact_type() and %TPL_CONTACT_SELF description.
+ */
 TplContact *
 tpl_contact_from_tp_contact (TpContact *contact)
 {
@@ -226,6 +236,11 @@ tpl_contact_from_tp_contact (TpContact *contact)
     tpl_contact_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
   if (tp_contact_get_avatar_token (contact) != NULL)
     tpl_contact_set_avatar_token (ret, tp_contact_get_avatar_token (contact));
+
+  /* set contact type to TPL_CONTACT_USER by default, the client need to set
+   * it to TPL_CONTACT_SELF in case the contact is actually the account's
+   * owner */
+  tpl_contact_set_contact_type (ret, TPL_CONTACT_USER);
 
   DEBUG ("ID: %s, TOK: %s", tpl_contact_get_identifier (ret),
       tpl_contact_get_avatar_token (ret));
@@ -324,6 +339,19 @@ tpl_contact_set_identifier (TplContact *self,
 }
 
 
+/* tpl_contact_set_contact_type:
+ * @self: a TplContact instance
+ * @data: the contact type for @self
+ *
+ * Set a contact type for @self.
+ *
+ * Note: %TPL_CONTACT_USER and %TPL_CONTACT_GROUP are automatically set after
+ * #tpl_contact_from_tp_contact() and #tpl_contact_from_chatroom_id(),
+ * respectively. Though, the client will need to set %TPL_CONTACT_SELF after
+ * those function calls when @self represents the owner of the account.
+ *
+ * @see #TplContactType
+ */
 void
 tpl_contact_set_contact_type (TplContact *self,
     TplContactType data)

@@ -34,6 +34,16 @@ G_BEGIN_DECLS
 #define TPL_IS_CONTACT_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONTACT))
 #define TPL_CONTACT_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONTACT, TplContactClass))
 
+/* TplContactType:
+ *
+ * @TPL_CONTACT_UNKNOWN: the current contact's type is unknown
+ * @TPL_CONTACT_USER: the contact's type represents a user (buddy), but not
+ * the the account's owner for which @TPL_CONTACT_SELF is used
+ * @TPL_CONTACT_GROUP: the contact's type represents a chatroom
+ * @TPL_CONTACT_SELF: the contact's type represents the owner of the account
+ * whose channel has been logged, as opposite to @TPL_CONTACT_USER which
+ * represents any other user
+ */
 typedef enum
 {
   TPL_CONTACT_UNKNOWN,
