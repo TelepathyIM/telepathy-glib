@@ -144,6 +144,7 @@ our_headers = \
     client.h \
     connection.h \
     connection-manager.h \
+    capabilities.h \
     contact.h \
     contacts-mixin.h \
     dbus.h \
@@ -290,6 +291,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-manager-internal.h \
     base-connection.c \
     base-connection-manager.c \
+    capabilities.c \
+    capabilities-internal.h \
     channel.c \
     channel-group.c \
     channel-internal.h \
