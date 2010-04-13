@@ -37,8 +37,13 @@ G_BEGIN_DECLS
 typedef enum
 {
   TPL_CONTACT_UNKNOWN,
+  /* contact is a user (buddy) */
   TPL_CONTACT_USER,
-  TPL_CONTACT_GROUP
+  /* contact is a chatroom, meaning that the related message has been sent to
+   * a chatroom instead of to a 1-1 channel */
+  TPL_CONTACT_GROUP,
+  /* contact is both a USER and the account's owner (self-handle) */
+  TPL_CONTACT_SELF
 } TplContactType;
 
 typedef struct _TplContactPriv TplContactPriv;
