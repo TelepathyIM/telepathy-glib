@@ -21,12 +21,13 @@
 #include "telepathy-glib/capabilities-internal.h"
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/enums.h>
 #include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
-
 
 /**
  * SECTION:capabilities
@@ -249,4 +250,92 @@ _tp_capabilities_new (GPtrArray *classes,
       "channel-classes", classes,
       "contact-specific", contact_specific,
       NULL);
+}
+
+static gboolean
+supports_simple_channel (TpCapabilities *self,
+    const gchar *expected_chan_type,
+    TpHandleType expected_handle_type)
+{
+  guint i;
+
+  for (i = 0; i < self->priv->classes->len; i++)
+    {
+      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
+      GHashTable *fixed;
+      const gchar *chan_type;
+      TpHandleType handle_type;
+      gboolean valid;
+
+      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+
+      if (g_hash_table_size (fixed) != 2)
+        continue;
+
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      handle_type = tp_asv_get_uint32 (fixed,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+
+      if (!valid)
+        continue;
+
+      if (!tp_strdiff (chan_type, expected_chan_type) &&
+          handle_type == expected_handle_type)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+/**
+ * tp_capabilities_supports_text_chats:
+ * @self: a #TpCapabilities object
+ *
+ * Return whether private text channels can be established by providing
+ * a contact identifier.
+ *
+ * If the protocol is such that text chats can be established, but only via a
+ * more elaborate D-Bus API than normal (because more information is needed),
+ * then this method will return %FALSE.
+ *
+ * Returns: %TRUE if a channel request containing Text as ChannelType,
+ * HandleTypeContact as TargetHandleType and a contact identifier can be
+ * expected to work, %FALSE otherwise.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_text_chats (TpCapabilities *self)
+{
+  return supports_simple_channel (self, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_HANDLE_TYPE_CONTACT);
+}
+
+/**
+ * tp_capabilities_supports_text_chatrooms:
+ * @self: a #TpCapabilities object
+ *
+ * If the #TpCapabilities:contact-specific property is %FALSE, this function
+ * checks if named text chatrooms can be joined by providing a chatroom
+ * identifier.
+ *
+ * If the #TpCapabilities:contact-specific property is %TRUE, this function
+ * checks if the contact associated with this #TpCapabilities can be invited
+ * to named text chatrooms.
+ *
+ * If the protocol is such that chatrooms can be joined or contacts can be
+ * invited, but only via a more elaborate D-Bus API than normal
+ * (because more information is needed), then this method will return %FALSE.
+ *
+ * Returns: %TRUE if a channel request containing Text as ChannelType,
+ * HandleTypeRoom as TargetHandleType and a channel identifier can be
+ * expected to work, %FALSE otherwise.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
+{
+  return supports_simple_channel (self, TP_IFACE_CHANNEL_TYPE_TEXT,
+      TP_HANDLE_TYPE_ROOM);
 }

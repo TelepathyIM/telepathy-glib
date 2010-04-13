@@ -50,6 +50,9 @@ GPtrArray * tp_capabilities_get_channel_classes (TpCapabilities *self);
 
 gboolean tp_capabilities_is_specific_to_contact (TpCapabilities *self);
 
+gboolean tp_capabilities_supports_text_chats (TpCapabilities *self);
+gboolean tp_capabilities_supports_text_chatrooms (TpCapabilities *self);
+
 G_END_DECLS
 
 #endif

@@ -3143,6 +3143,8 @@ TpContactPrivate
 TpCapabilities
 tp_capabilities_get_channel_classes
 tp_capabilities_is_specific_to_contact
+tp_capabilities_supports_text_chatrooms
+tp_capabilities_supports_text_chats
 <SUBSECTION Standard>
 tp_capabilities_get_type
 TP_CAPABILITIES
