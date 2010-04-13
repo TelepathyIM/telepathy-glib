@@ -19,6 +19,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
 G_DEFINE_TYPE_WITH_CODE (SimpleConnection,
@@ -225,7 +226,8 @@ simple_connection_class_init (SimpleConnectionClass *klass)
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
-  static const gchar *interfaces_always_present[] = { NULL };
+  static const gchar *interfaces_always_present[] = {
+      TP_IFACE_CONNECTION_INTERFACE_REQUESTS, NULL };
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
