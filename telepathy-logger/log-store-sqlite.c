@@ -426,7 +426,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   const char *account, *identifier;
   gboolean chatroom;
-  char *date;
+  char *date = NULL;
   int count = 0;
   sqlite3_stmt *sql = NULL;
   gboolean retval = FALSE;
