@@ -266,8 +266,6 @@ tpl_log_entry_text_get_message (TplLogEntryText * self)
 TpChannelTextMessageType
 tpl_log_entry_text_get_message_type (TplLogEntryText * self)
 {
-  /* TODO is TYPE_NORMAL the right value to return in case of error? I doubt
-   * :) */
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self),
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
 
@@ -433,6 +431,12 @@ tpl_log_entry_text_set_chat_id (TplLogEntryText *self,
 }
 
 
+/* tpl_log_entry_text_set_sender:
+ * @self: a log entry text entry
+ * @data: a TPL contact instance for the sender
+ *
+ * Set who sent this log entry.
+ */
 void
 tpl_log_entry_text_set_sender (TplLogEntryText *self,
     TplContact *data)
@@ -442,6 +446,12 @@ tpl_log_entry_text_set_sender (TplLogEntryText *self,
 }
 
 
+/* tpl_log_entry_text_set_receiver:
+ * @self: a log entry text entry
+ * @data: a TPL contact instance for the receiver
+ *
+ * Set who received this log entry.
+ */
 void
 tpl_log_entry_text_set_receiver (TplLogEntryText *self,
     TplContact *data)
