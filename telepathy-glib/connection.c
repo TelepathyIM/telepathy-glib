@@ -28,12 +28,14 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
+#include "telepathy-glib/capabilities-internal.h"
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
@@ -268,6 +270,82 @@ tp_connection_get_property (GObject *object,
 }
 
 static void
+tp_connection_get_rcc_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpConnection *self = (TpConnection *) proxy;
+
+  self->priv->fetching_rcc = FALSE;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get RequestableChannelClasses property: %s",
+          error->message);
+
+      _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
+          FALSE);
+      return;
+    }
+
+  g_assert (self->priv->capabilities == NULL);
+
+  if (!G_VALUE_HOLDS (value, TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST))
+    {
+      DEBUG ("RequestableChannelClasses is not of type a(a{sv}as)");
+
+      _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
+          FALSE);
+      return;
+    }
+
+  DEBUG ("CAPABILITIES ready");
+
+  self->priv->capabilities = _tp_capabilities_new (g_value_get_boxed (value),
+      FALSE);
+
+  _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
+      TRUE);
+
+  g_object_notify ((GObject *) self, "capabilities");
+}
+
+static void
+tp_connection_maybe_prepare_capabilities (TpProxy *proxy)
+{
+  TpConnection *self = (TpConnection *) proxy;
+
+  if (self->priv->capabilities != NULL)
+    return;   /* already done */
+
+  if (!_tp_proxy_is_preparing (proxy, TP_CONNECTION_FEATURE_CAPABILITIES))
+    return;   /* not interested right now */
+
+  if (!self->priv->ready)
+    return;   /* will try again when ready */
+
+  if (self->priv->fetching_rcc)
+    return;   /* Another Get operation is running */
+
+  if (!tp_proxy_has_interface_by_id (proxy,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS))
+    {
+      /* not going to happen */
+      _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
+          FALSE);
+      return;
+    }
+
+  self->priv->fetching_rcc = TRUE;
+
+  tp_cli_dbus_properties_call_get (self, -1,
+      TP_IFACE_CONNECTION_INTERFACE_REQUESTS, "RequestableChannelClasses",
+      tp_connection_get_rcc_cb, NULL, NULL, NULL);
+}
+
+static void
 tp_connection_continue_introspection (TpConnection *self)
 {
   if (tp_proxy_get_invalidated (self) != NULL)
@@ -302,6 +380,8 @@ tp_connection_continue_introspection (TpConnection *self)
       g_object_notify ((GObject *) self, "status");
       g_object_notify ((GObject *) self, "status-reason");
       g_object_notify ((GObject *) self, "connection-ready");
+
+      tp_connection_maybe_prepare_capabilities ((TpProxy *) self);
     }
   else
     {
@@ -873,6 +953,7 @@ tp_connection_dispose (GObject *object)
 enum {
     FEAT_CORE,
     FEAT_CONNECTED,
+    FEAT_CAPABILITIES,
     N_FEAT
 };
 
@@ -888,6 +969,10 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CORE].core = TRUE;
 
   features[FEAT_CONNECTED].name = TP_CONNECTION_FEATURE_CONNECTED;
+
+  features[FEAT_CAPABILITIES].name = TP_CONNECTION_FEATURE_CAPABILITIES;
+  features[FEAT_CAPABILITIES].start_preparing =
+    tp_connection_maybe_prepare_capabilities;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
