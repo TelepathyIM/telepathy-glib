@@ -190,6 +190,29 @@ tpl_contact_init (TplContact *self)
 }
 
 
+/* tpl_contact_from_chatroom_id:
+ * @chatroom_id: the chatroom id which will be the identifier for the contact
+ *
+ * Return a TplContact instance with identifier, alias copied from
+ * @chatroom_id. It also sets %TPL_CONTACT_GROUP as contact type for
+ * the #TplContact returned.
+ */
+TplContact *
+tpl_contact_from_chatroom_id (const gchar *chatroom_id)
+{
+  TplContact *ret;
+
+  g_return_val_if_fail (!TPL_STR_EMPTY (chatroom_id), NULL);
+
+  ret = tpl_contact_new (chatroom_id);
+  tpl_contact_set_alias (ret, chatroom_id);
+  tpl_contact_set_contact_type (ret, TPL_CONTACT_GROUP);
+
+  DEBUG ("Chatroom id: %s", chatroom_id);
+  return ret;
+}
+
+
 TplContact *
 tpl_contact_from_tp_contact (TpContact *contact)
 {
