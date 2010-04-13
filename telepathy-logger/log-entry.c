@@ -409,9 +409,10 @@ tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
 gboolean
 tpl_log_entry_is_pending (TplLogEntry *self)
 {
-  return (tpl_log_entry_get_pending_msg_id (self) !=
-    TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED);
+  return TPL_LOG_ENTRY_MSG_ID_IS_VALID (
+      tpl_log_entry_get_pending_msg_id (self));
 }
+
 
 TplLogEntrySignalType
 tpl_log_entry_get_signal_type (TplLogEntry *self)
@@ -580,9 +581,12 @@ tpl_log_entry_set_receiver (TplLogEntry *self,
   g_return_if_fail (TPL_IS_CONTACT (data) || data == NULL);
 
   priv = self->priv;
+
   if (priv->receiver != NULL)
     g_object_unref (priv->receiver);
+
   priv->receiver = g_object_ref (data);
+
   g_object_notify (G_OBJECT (self), "receiver");
 }
 
