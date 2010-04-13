@@ -6,6 +6,7 @@ SUBDIRS = \
 
 noinst_PROGRAMS = \
     test-asv \
+    test-capabilities \
     test-availability-cmp \
     test-gnio-util \
     test-heap \
@@ -45,6 +46,9 @@ EXTRA_DIST = README \
 
 test_asv_SOURCES = \
     asv.c
+
+test_capabilities_SOURCES = \
+    capabilities.c
 
 test_heap_SOURCES = \
     heap.c
