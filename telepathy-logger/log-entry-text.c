@@ -290,7 +290,8 @@ tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
 
 
 void
-tpl_log_entry_text_set_message (TplLogEntryText *self, const gchar *data)
+tpl_log_entry_text_set_message (TplLogEntryText *self,
+    const gchar *data)
 {
   TplLogEntryTextPriv *priv;
 
