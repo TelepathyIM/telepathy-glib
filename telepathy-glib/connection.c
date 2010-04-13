@@ -145,6 +145,28 @@ tp_connection_get_feature_quark_connected (void)
 }
 
 /**
+ * TP_CONNECTION_FEATURE_CAPABILITIES:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "capabilities" feature.
+ *
+ * When this feature is prepared, the Requests.RequestableChannelClasses
+ * property of the Connection has been retrieved.
+ * In particular, the %TpConnection:capabilities property has been set.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_connection_get_feature_quark_capabilities (void)
+{
+  return g_quark_from_static_string ("tp-connection-feature-capabilities");
+}
+
+/**
  * TP_ERRORS_DISCONNECTED:
  *
  * #GError domain representing a Telepathy connection becoming disconnected.
@@ -206,6 +228,7 @@ enum
   PROP_STATUS_REASON,
   PROP_CONNECTION_READY,
   PROP_SELF_HANDLE,
+  PROP_CAPABILITIES,
   N_PROPS
 };
 
@@ -234,6 +257,9 @@ tp_connection_get_property (GObject *object,
       break;
     case PROP_SELF_HANDLE:
       g_value_set_uint (value, self->priv->self_handle);
+      break;
+    case PROP_CAPABILITIES:
+      g_value_set_object (value, self->priv->capabilities);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -835,6 +861,12 @@ tp_connection_dispose (GObject *object)
       self->priv->contacts = NULL;
     }
 
+  if (self->priv->capabilities != NULL)
+    {
+      g_object_unref (self->priv->capabilities);
+      self->priv->capabilities = NULL;
+    }
+
   ((GObjectClass *) tp_connection_parent_class)->dispose (object);
 }
 
@@ -960,6 +992,22 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_PARAM_READABLE
       | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_CONNECTION_READY,
+      param_spec);
+
+ /**
+   * TpConnection:capabilities:
+   *
+   * The %TpCapabilities object representing the capabilities of this
+   * connection, or NULL if we don't know yet.
+   *
+   * To wait for valid capability information, call tp_proxy_prepare_async()
+   * with the feature %TP_CONNECTION_FEATURE_CAPABILITIES.
+   */
+  param_spec = g_param_spec_object ("capabilities", "Capabilities",
+      "A TpCapabilities object representing the capabilities of the connection",
+      TP_TYPE_CAPABILITIES,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CAPABILITIES,
       param_spec);
 }
 
@@ -1749,4 +1797,22 @@ tp_connection_is_ready (TpConnection *self)
   g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
 
   return self->priv->ready;
+}
+
+/**
+ * tp_connection_get_capabilities:
+ * @self: a connection
+ *
+ * <!-- -->
+ *
+ * Returns: the same #TpCapabilities as the #TpConnection:capabilities
+ * property
+ * Since: 0.11.UNRELEASED
+ */
+TpCapabilities *
+tp_connection_get_capabilities (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  return self->priv->capabilities;
 }

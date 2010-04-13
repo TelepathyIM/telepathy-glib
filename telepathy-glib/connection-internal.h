@@ -22,6 +22,7 @@
 #ifndef TP_CONNECTION_INTERNAL_H
 #define TP_CONNECTION_INTERNAL_H
 
+#include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 
@@ -43,6 +44,8 @@ struct _TpConnectionPrivate {
 
     /* TpHandle => weak ref to TpContact */
     GHashTable *contacts;
+
+    TpCapabilities *capabilities;
 
     TpProxyPendingCall *introspection_call;
 

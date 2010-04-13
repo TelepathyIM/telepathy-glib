@@ -22,6 +22,7 @@
 #ifndef __TP_CONNECTION_H__
 #define __TP_CONNECTION_H__
 
+#include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>
@@ -80,6 +81,8 @@ TpConnectionStatus tp_connection_get_status (TpConnection *self,
 
 TpHandle tp_connection_get_self_handle (TpConnection *self);
 
+TpCapabilities * tp_connection_get_capabilities (TpConnection *self);
+
 gboolean tp_connection_is_ready (TpConnection *self);
 
 #ifndef TP_DISABLE_DEPRECATED
@@ -119,6 +122,10 @@ GQuark tp_connection_get_feature_quark_core (void) G_GNUC_CONST;
 #define TP_CONNECTION_FEATURE_CONNECTED \
   (tp_connection_get_feature_quark_connected ())
 GQuark tp_connection_get_feature_quark_connected (void) G_GNUC_CONST;
+
+#define TP_CONNECTION_FEATURE_CAPABILITIES \
+  (tp_connection_get_feature_quark_capabilities ())
+GQuark tp_connection_get_feature_quark_capabilities (void) G_GNUC_CONST;
 
 /* connection-handles.c */
 
