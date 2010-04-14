@@ -1370,7 +1370,8 @@ on_received_signal_cb (TpChannel *proxy,
   tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);
   tpl_log_entry_text_set_message (log, arg_Text);
   tpl_log_entry_text_set_message_type (log, arg_Type);
-  tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
+  tpl_log_entry_text_set_signal_type (log,
+      TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
 
   me = tpl_channel_text_get_my_contact (tpl_text);
   tpl_contact_receiver = tpl_contact_from_tp_contact (me);
