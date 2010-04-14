@@ -153,6 +153,86 @@ test_basics (Test *test,
   g_object_unref (caps);
 }
 
+static void
+test_supports (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpCapabilities *caps;
+  GPtrArray *classes;
+
+  /* TpCapabilities containing the text chats caps */
+  classes = g_ptr_array_sized_new (1);
+  add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
+
+  caps = g_object_new (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_is_specific_to_contact (caps));
+  g_assert (tp_capabilities_supports_text_chats (caps));
+  g_assert (!tp_capabilities_supports_text_chatrooms (caps));
+
+  g_object_unref (caps);
+
+  /* TpCapabilities containing the text chatrooms caps */
+  classes = g_ptr_array_sized_new (1);
+  add_text_chat_class (classes, TP_HANDLE_TYPE_ROOM);
+
+  caps = g_object_new (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_is_specific_to_contact (caps));
+  g_assert (!tp_capabilities_supports_text_chats (caps));
+  g_assert (tp_capabilities_supports_text_chatrooms (caps));
+
+  g_object_unref (caps);
+
+  /* TpCapabilities containing both caps */
+  classes = g_ptr_array_sized_new (2);
+  add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
+  add_text_chat_class (classes, TP_HANDLE_TYPE_ROOM);
+
+  caps = g_object_new (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_is_specific_to_contact (caps));
+  g_assert (tp_capabilities_supports_text_chats (caps));
+  g_assert (tp_capabilities_supports_text_chatrooms (caps));
+
+  g_object_unref (caps);
+
+  /* TpCapabilities containing no caps */
+  classes = g_ptr_array_sized_new (0);
+
+  caps = g_object_new (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", TRUE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_is_specific_to_contact (caps));
+  g_assert (!tp_capabilities_supports_text_chats (caps));
+  g_assert (!tp_capabilities_supports_text_chatrooms (caps));
+
+  g_object_unref (caps);
+}
+
 int
 main (int argc,
     char **argv)
@@ -163,6 +243,8 @@ main (int argc,
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add (TEST_PREFIX "basics", Test, NULL, setup, test_basics,
+      NULL);
+  g_test_add (TEST_PREFIX "supports", Test, NULL, setup, test_supports,
       NULL);
 
   return g_test_run ();
