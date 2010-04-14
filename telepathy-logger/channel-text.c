@@ -1308,6 +1308,7 @@ keepon_on_receiving_signal (TplLogEntryText *log)
     }
 
   g_object_unref (tpl_contact_sender);
+  g_object_unref (log);
   g_object_unref (logmanager);
 }
 
@@ -1397,9 +1398,7 @@ out:
     g_object_unref (tpl_contact_receiver);
 
   g_object_unref (index);
-
-  if (log != NULL)
-    g_object_unref (log);
+  /* log is unrefed in keepon_on_receiving_signal() */
 
   g_free (log_id);
 }
