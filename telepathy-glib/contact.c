@@ -1936,7 +1936,7 @@ contacts_got_attributes (TpConnection *connection,
 
       /* Location */
       boxed = tp_asv_get_boxed (asv,
-          TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE "/location",
+          TP_IFACE_CONNECTION_INTERFACE_LOCATION "/location",
           TP_HASH_TYPE_LOCATION);
       contact_maybe_set_location (contact, boxed);
 
