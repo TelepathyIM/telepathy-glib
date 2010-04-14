@@ -23,6 +23,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/handle.h>
 
@@ -55,6 +56,7 @@ typedef enum {
     TP_CONTACT_FEATURE_AVATAR_TOKEN,
     TP_CONTACT_FEATURE_PRESENCE,
     TP_CONTACT_FEATURE_LOCATION,
+    TP_CONTACT_FEATURE_CAPABILITIES,
     NUM_TP_CONTACT_FEATURES
 } TpContactFeature;
 
@@ -77,6 +79,9 @@ const gchar *tp_contact_get_presence_message (TpContact *self);
 
 /* TP_CONTACT_FEATURE_LOCATION */
 GHashTable *tp_contact_get_location (TpContact *self);
+
+/* TP_CONTACT_FEATURE_CAPABILITIES */
+TpCapabilities *tp_contact_get_capabilities (TpContact *self);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,

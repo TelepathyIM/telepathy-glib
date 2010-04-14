@@ -87,6 +87,8 @@ struct _TpContact {
  * @TP_CONTACT_FEATURE_PRESENCE: #TpContact:presence-type,
  *  #TpContact:presence-status and #TpContact:presence-message
  * @TP_CONTACT_FEATURE_LOCATION: #TpContact:location (available since 0.11.1)
+ * @TP_CONTACT_FEATURE_CAPABILITIES: #TpContact:capabilities
+ *  (available since 0.11.UNRELEASED)
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
  *
@@ -111,6 +113,7 @@ enum {
     PROP_PRESENCE_STATUS,
     PROP_PRESENCE_MESSAGE,
     PROP_LOCATION,
+    PROP_CAPABILITIES,
     N_PROPS
 };
 
@@ -144,6 +147,9 @@ struct _TpContactPrivate {
 
     /* location */
     GHashTable *location;
+
+    /* capabilities */
+    TpCapabilities *capabilities;
 };
 
 
@@ -380,6 +386,26 @@ tp_contact_get_location (TpContact *self)
   return self->priv->location;
 }
 
+/**
+ * tp_contact_get_capabilities:
+ * @self: a contact
+ *
+ * <!-- -->
+ *
+ * Returns: the same #TpCapabilities (or %NULL) as the
+ * #TpContact:capabilities property
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpCapabilities *
+tp_contact_get_capabilities (TpContact *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  return self->priv->capabilities;
+}
+
+
 void
 _tp_contact_connection_invalidated (TpContact *contact)
 {
@@ -418,6 +444,12 @@ tp_contact_dispose (GObject *object)
     {
       g_hash_table_unref (self->priv->location);
       self->priv->location = NULL;
+    }
+
+  if (self->priv->capabilities != NULL)
+    {
+      g_object_unref (self->priv->capabilities);
+      self->priv->capabilities = NULL;
     }
 
   ((GObjectClass *) tp_contact_parent_class)->dispose (object);
@@ -486,6 +518,10 @@ tp_contact_get_property (GObject *object,
 
     case PROP_LOCATION:
       g_value_set_boxed (value, tp_contact_get_location (self));
+      break;
+
+    case PROP_CAPABILITIES:
+      g_value_set_object (value, tp_contact_get_capabilities (self));
       break;
 
     default:
@@ -678,6 +714,28 @@ tp_contact_class_init (TpContactClass *klass)
       TP_HASH_TYPE_STRING_VARIANT_MAP,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOCATION,
+      param_spec);
+
+  /**
+   * TpContact:capabilities:
+   *
+   * The capabilities supported by this contact. If the underlying Connection
+   * doesn't support the ContactCapabilities interface, this property will
+   * contain the capabilities supported by the connection.
+   * Use tp_capabilities_is_specific_to_contact() to check if the capabilities
+   * are specific to this #TpContact or not.
+   *
+   * This may be %NULL if this #TpContact object has not been set up to track
+   * %TP_CONTACT_FEATURE_CAPABILITIES.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("capabilities",
+      "Capabilities",
+      "Capabilities of the contact, or NULL",
+      TP_TYPE_CAPABILITIES,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CAPABILITIES,
       param_spec);
 }
 
