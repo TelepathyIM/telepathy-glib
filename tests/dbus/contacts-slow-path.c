@@ -1,11 +1,6 @@
-/* Feature test for TpContact creation.
- *
- * Code missing coverage in contact.c:
- * - connection becoming invalid
- * - fatal error on the connection
- * - inconsistent CM
- * - having to fall back to RequestAliases
- * - get_contacts_by_id with features (but it's trivial)
+/* Feature test for TpContact creation using a connection which doesn't
+ * support Contacts.
+ * Those tests are not updated any more as Contacts is now mandatory.
  *
  * Copyright (C) 2008 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2008 Nokia Corporation
