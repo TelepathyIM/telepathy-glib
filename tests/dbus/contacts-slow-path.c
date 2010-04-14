@@ -1020,27 +1020,18 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  ContactsConnection *service_conn, *legacy_service_conn;
-  TpBaseConnection *service_conn_as_base, *legacy_service_conn_as_base;
-  gchar *name, *legacy_name;
-  gchar *conn_path, *legacy_conn_path;
+  ContactsConnection *legacy_service_conn;
+  TpBaseConnection *legacy_service_conn_as_base;
+  gchar *legacy_name;
+  gchar *legacy_conn_path;
   GError *error = NULL;
-  TpConnection *client_conn, *legacy_client_conn;
+  TpConnection *legacy_client_conn;
 
   /* Setup */
 
   g_type_init ();
   tp_debug_set_flags ("all");
   dbus = test_dbus_daemon_dup_or_die ();
-
-  service_conn = CONTACTS_CONNECTION (g_object_new (
-        CONTACTS_TYPE_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
 
   legacy_service_conn = CONTACTS_CONNECTION (g_object_new (
         LEGACY_CONTACTS_TYPE_CONNECTION,
@@ -1051,19 +1042,8 @@ main (int argc,
   MYASSERT (legacy_service_conn != NULL, "");
   MYASSERT (legacy_service_conn_as_base != NULL, "");
 
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  test_assert_no_error (error);
-
   MYASSERT (tp_base_connection_register (legacy_service_conn_as_base, "simple",
         &legacy_name, &legacy_conn_path, &error), "");
-  test_assert_no_error (error);
-
-  client_conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (client_conn != NULL, "");
-  test_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
-      "");
   test_assert_no_error (error);
 
   legacy_client_conn = tp_connection_new (dbus, legacy_name, legacy_conn_path,
@@ -1075,13 +1055,6 @@ main (int argc,
   test_assert_no_error (error);
 
   /* Tests */
-
-  test_by_handle (service_conn, client_conn);
-  test_no_features (service_conn, client_conn);
-  test_features (service_conn, client_conn);
-  test_upgrade (service_conn, client_conn);
-  test_by_id (client_conn);
-
   test_by_handle (legacy_service_conn, legacy_client_conn);
   test_no_features (legacy_service_conn, legacy_client_conn);
   test_features (legacy_service_conn, legacy_client_conn);
@@ -1090,20 +1063,10 @@ main (int argc,
 
   /* Teardown */
 
-  MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
-      "");
-  test_assert_no_error (error);
-  g_object_unref (client_conn);
-
   MYASSERT (tp_cli_connection_run_disconnect (legacy_client_conn, -1, &error,
         NULL), "");
   test_assert_no_error (error);
   g_object_unref (legacy_client_conn);
-
-  service_conn_as_base = NULL;
-  g_object_unref (service_conn);
-  g_free (name);
-  g_free (conn_path);
 
   legacy_service_conn_as_base = NULL;
   g_object_unref (legacy_service_conn);
