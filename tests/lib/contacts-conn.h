@@ -86,6 +86,9 @@ void contacts_connection_change_locations (ContactsConnection *self,
     const TpHandle *handles,
     GHashTable **locations);
 
+void contacts_connection_change_capabilities (ContactsConnection *self,
+    GHashTable *capabilities);
+
 /* Legacy version (no Contacts interface) */
 
 typedef struct _LegacyContactsConnection LegacyContactsConnection;

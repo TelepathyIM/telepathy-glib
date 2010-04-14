@@ -24,6 +24,7 @@
 static void init_aliasing (gpointer, gpointer);
 static void init_avatars (gpointer, gpointer);
 static void init_location (gpointer, gpointer);
+static void init_contact_caps (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (ContactsConnection,
     contacts_connection,
@@ -40,6 +41,9 @@ G_DEFINE_TYPE_WITH_CODE (ContactsConnection,
       tp_presence_mixin_simple_presence_iface_init)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_LOCATION,
       init_location)
+    G_IMPLEMENT_INTERFACE (
+      TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_CAPABILITIES,
+      init_contact_caps)
     );
 
 /* type definition stuff */
@@ -61,7 +65,15 @@ struct _ContactsConnectionPrivate
   GHashTable *presence_messages;
   /* TpHandle => GHashTable * */
   GHashTable *locations;
+  /* TpHandle => GPtrArray * */
+  GHashTable *capabilities;
 };
+
+static void
+free_rcc_list (GPtrArray *rccs)
+{
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, rccs);
+}
 
 static void
 contacts_connection_init (ContactsConnection *self)
@@ -78,6 +90,8 @@ contacts_connection_init (ContactsConnection *self)
       g_direct_equal, NULL, g_free);
   self->priv->locations = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, (GDestroyNotify) g_hash_table_unref);
+  self->priv->capabilities = g_hash_table_new_full (g_direct_hash,
+      g_direct_equal, NULL, (GDestroyNotify) free_rcc_list);
 }
 
 static void
@@ -91,6 +105,7 @@ finalize (GObject *object)
   g_hash_table_destroy (self->priv->presence_statuses);
   g_hash_table_destroy (self->priv->presence_messages);
   g_hash_table_destroy (self->priv->locations);
+  g_hash_table_destroy (self->priv->capabilities);
 
   G_OBJECT_CLASS (contacts_connection_parent_class)->finalize (object);
 }
@@ -170,6 +185,30 @@ location_fill_contact_attributes (GObject *object,
 }
 
 static void
+contact_caps_fill_contact_attributes (GObject *object,
+    const GArray *contacts,
+    GHashTable *attributes)
+{
+  guint i;
+  ContactsConnection *self = CONTACTS_CONNECTION (object);
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpHandle handle = g_array_index (contacts, guint, i);
+      GPtrArray *caps = g_hash_table_lookup (self->priv->capabilities,
+          GUINT_TO_POINTER (handle));
+
+      if (caps != NULL)
+        {
+          tp_contacts_mixin_set_contact_attribute (attributes, handle,
+              TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES "/capabilities",
+              tp_g_value_slice_new_boxed (
+                TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, caps));
+        }
+    }
+}
+
+static void
 constructed (GObject *object)
 {
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
@@ -191,6 +230,9 @@ constructed (GObject *object)
   tp_contacts_mixin_add_contact_attributes_iface (object,
       TP_IFACE_CONNECTION_INTERFACE_LOCATION,
       location_fill_contact_attributes);
+  tp_contacts_mixin_add_contact_attributes_iface (object,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES,
+      contact_caps_fill_contact_attributes);
 
   tp_presence_mixin_init (object,
       G_STRUCT_OFFSET (ContactsConnection, presence_mixin));
@@ -300,6 +342,7 @@ contacts_connection_class_init (ContactsConnectionClass *klass)
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_LOCATION,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES,
       NULL };
 
   object_class->constructed = constructed;
@@ -433,6 +476,26 @@ contacts_connection_change_locations (ContactsConnection *self,
       tp_svc_connection_interface_location_emit_location_updated (self,
           handles[i], locations[i]);
     }
+}
+
+void
+contacts_connection_change_capabilities (ContactsConnection *self,
+    GHashTable *capabilities)
+{
+  GHashTableIter iter;
+  gpointer handle, caps;
+
+  g_hash_table_iter_init (&iter, capabilities);
+  while (g_hash_table_iter_next (&iter, &handle, &caps))
+    {
+      g_hash_table_insert (self->priv->capabilities,
+          handle,
+          g_boxed_copy (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+            caps));
+    }
+
+  tp_svc_connection_interface_contact_capabilities_emit_contact_capabilities_changed (
+      self, capabilities);
 }
 
 static void
@@ -707,6 +770,60 @@ init_location (gpointer g_iface,
 #define IMPLEMENT(x) tp_svc_connection_interface_location_implement_##x (\
     klass, my_##x)
   IMPLEMENT(get_locations);
+#undef IMPLEMENT
+}
+
+static void
+my_get_contact_capabilities (TpSvcConnectionInterfaceContactCapabilities *obj,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  ContactsConnection *self = CONTACTS_CONNECTION (obj);
+  TpBaseConnection *base = TP_BASE_CONNECTION (obj);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (base,
+      TP_HANDLE_TYPE_CONTACT);
+  GError *error = NULL;
+  GHashTable *result;
+  guint i;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
+
+  if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  result = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpHandle handle = g_array_index (contacts, TpHandle, i);
+      GPtrArray *arr = g_hash_table_lookup (self->priv->capabilities,
+          GUINT_TO_POINTER (handle));
+
+      if (arr != NULL)
+        {
+          g_hash_table_insert (result, GUINT_TO_POINTER (handle), arr);
+        }
+    }
+
+  tp_svc_connection_interface_contact_capabilities_return_from_get_contact_capabilities (
+      context, result);
+
+  g_hash_table_destroy (result);
+}
+
+static void
+init_contact_caps (gpointer g_iface,
+    gpointer iface_data)
+{
+  TpSvcConnectionInterfaceContactCapabilitiesClass *klass = g_iface;
+
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_capabilities_implement_##x (\
+    klass, my_##x)
+  IMPLEMENT(get_contact_capabilities);
 #undef IMPLEMENT
 }
 
