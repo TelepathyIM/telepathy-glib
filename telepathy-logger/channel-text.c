@@ -225,7 +225,7 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx,
         break;
       case TP_HANDLE_TYPE_NONE:
         PATH_DEBUG (tpl_text, "HANDLE_TYPE_NONE received, probably an anonymous "
-            "chat, like MSN ones. TODO: implement this possibility");
+            "chat, like MSN ones. NOT IMPLEMENTED");
         _tpl_action_chain_terminate (ctx);
         return;
         break;
@@ -936,12 +936,12 @@ get_chatroom_id_cb (TpConnection *proxy,
 
   if (error != NULL)
     {
-      PATH_DEBUG (proxy, "retrieving chatroom identifier: %s", error->message);
+      PATH_DEBUG (tpl_text, "retrieving chatroom identifier: %s", error->message);
       _tpl_action_chain_terminate (ctx);
       return;
     }
 
-  PATH_DEBUG (proxy, "Chatroom id: %s", identifiers[0]);
+  PATH_DEBUG (tpl_text, "Chatroom id: %s", identifiers[0]);
   tpl_channel_text_set_chatroom_id (tpl_text, identifiers[0]);
 
   _tpl_action_chain_continue (ctx);
@@ -1208,6 +1208,10 @@ on_sent_signal_cb (TpChannel *proxy,
 }
 
 
+/* the only function of this CB is resolving the remote TpHandle, in case
+ * cannot be known at preparation time (ie on chatrooms channels)
+ *
+ * It sets gets a TplLogEntryText as weak_ref and sets the sender for it */
 static void
 on_received_signal_with_contact_cb (TpConnection *connection,
     guint n_contacts,
@@ -1284,7 +1288,6 @@ keepon_on_receiving_signal (TplLogEntryText *log)
       tpl_contact_get_alias (tpl_contact_sender),
       tpl_log_entry_text_get_message (log));
 
-  /* Initialise LogStore and store the message */
 
   if (!tpl_channel_text_is_chatroom (tpl_text))
     tpl_log_entry_text_set_chat_id (log, tpl_contact_get_identifier (
@@ -1300,7 +1303,7 @@ keepon_on_receiving_signal (TplLogEntryText *log)
   _tpl_log_manager_add_message (logmanager, TPL_LOG_ENTRY (log), &e);
   if (e != NULL)
     {
-      DEBUG ("LogStore: %s", e->message);
+      DEBUG ("%s", e->message);
       g_error_free (e);
     }
 
