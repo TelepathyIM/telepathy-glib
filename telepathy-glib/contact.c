@@ -20,6 +20,7 @@
 
 #include <telepathy-glib/contact.h>
 
+#include <telepathy-glib/capabilities-internal.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
@@ -125,6 +126,7 @@ typedef enum {
     CONTACT_FEATURE_FLAG_AVATAR_TOKEN = 1 << TP_CONTACT_FEATURE_AVATAR_TOKEN,
     CONTACT_FEATURE_FLAG_PRESENCE = 1 << TP_CONTACT_FEATURE_PRESENCE,
     CONTACT_FEATURE_FLAG_LOCATION = 1 << TP_CONTACT_FEATURE_LOCATION,
+    CONTACT_FEATURE_FLAG_CAPABILITIES = 1 << TP_CONTACT_FEATURE_CAPABILITIES,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -1545,6 +1547,22 @@ contact_maybe_set_location (TpContact *self,
 }
 
 static void
+contact_maybe_set_capabilities (TpContact *self,
+    GPtrArray *arr)
+{
+  if (self == NULL || arr == NULL)
+    return;
+
+  if (self->priv->capabilities != NULL)
+    g_object_unref (self->priv->capabilities);
+
+  self->priv->has_features |= CONTACT_FEATURE_FLAG_CAPABILITIES;
+  self->priv->capabilities = _tp_capabilities_new (arr, TRUE);
+  g_object_notify ((GObject *) self, "capabilities");
+}
+
+
+static void
 contacts_presences_changed (TpConnection *connection,
                             GHashTable *presences,
                             gpointer user_data G_GNUC_UNUSED,
@@ -1710,6 +1728,37 @@ contacts_get_locations (ContactsContext *c)
 }
 
 static void
+contacts_capabilities_updated (TpConnection *connection,
+    GHashTable *capabilities,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  GHashTableIter iter;
+  gpointer handle, value;
+
+  g_hash_table_iter_init (&iter, capabilities);
+  while (g_hash_table_iter_next (&iter, &handle, &value))
+    {
+      TpContact *contact = _tp_connection_lookup_contact (connection,
+              GPOINTER_TO_UINT (handle));
+
+      contact_maybe_set_capabilities (contact, value);
+    }
+}
+
+static void
+contacts_bind_to_capabilities_updated (TpConnection *connection)
+{
+  if (!connection->priv->tracking_contact_caps_changed)
+    {
+      connection->priv->tracking_contact_caps_changed = TRUE;
+
+      tp_cli_connection_interface_contact_capabilities_connect_to_contact_capabilities_changed
+        (connection, contacts_capabilities_updated, NULL, NULL, NULL, NULL);
+    }
+}
+
+static void
 contacts_avatar_updated (TpConnection *connection,
                          TpHandle handle,
                          const gchar *new_token,
@@ -1850,6 +1899,10 @@ contacts_context_queue_features (ContactsContext *context,
     {
       g_queue_push_tail (&context->todo, contacts_get_locations);
     }
+
+  /* Don't implement slow path for ContactCapabilities as Contacts is now
+   * mandatory so any CM supporting ContactCapabilities will implement
+   * Contacts as well. */
 }
 
 
@@ -1998,7 +2051,12 @@ contacts_got_attributes (TpConnection *connection,
           TP_HASH_TYPE_LOCATION);
       contact_maybe_set_location (contact, boxed);
 
-      /* FIXME: TP_IFACE_CONNECTION_INTERFACE_CAPABILITIES "/caps" */
+      /* Capabilities */
+      boxed = tp_asv_get_boxed (asv,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES "/capabilities",
+          TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
+
+      contact_maybe_set_capabilities (contact, boxed);
     }
 
   contacts_context_continue (c);
@@ -2066,6 +2124,15 @@ contacts_get_attributes (ContactsContext *context)
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_LOCATION);
               contacts_bind_to_location_updated (context->connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES);
+              contacts_bind_to_capabilities_updated (context->connection);
             }
         }
     }

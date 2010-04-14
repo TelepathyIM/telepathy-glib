@@ -56,6 +56,7 @@ struct _TpConnectionPrivate {
     unsigned tracking_presences_changed:1;
     unsigned tracking_presence_update:1;
     unsigned tracking_location_changed:1;
+    unsigned tracking_contact_caps_changed:1;
     unsigned introspecting_after_connected:1;
 };
 
