@@ -1048,9 +1048,9 @@ create_and_connect_conn (GType conn_type,
       &error);
   g_assert (*client_conn != NULL);
   test_assert_no_error (error);
-  g_assert (tp_connection_run_until_ready (*client_conn, TRUE, &error,
-        NULL));
-  test_assert_no_error (error);
+
+  tp_cli_connection_call_connect (*client_conn, -1, NULL, NULL, NULL, NULL);
+  test_connection_run_until_ready (*client_conn);
 
   g_free (name);
   g_free (conn_path);
