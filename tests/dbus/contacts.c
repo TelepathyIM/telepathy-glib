@@ -1015,15 +1015,54 @@ test_by_id (TpConnection *client_conn)
   result.bad_ids = NULL;
 }
 
+static void
+create_and_connect_conn (GType conn_type,
+    ContactsConnection **service_conn,
+    TpConnection **client_conn)
+{
+  TpDBusDaemon *dbus;
+  TpBaseConnection *service_conn_as_base;
+  gchar *name;
+  gchar *conn_path;
+  GError *error = NULL;
+
+  g_assert (service_conn != NULL);
+  g_assert (client_conn != NULL);
+
+  dbus = test_dbus_daemon_dup_or_die ();
+
+  *service_conn = CONTACTS_CONNECTION (g_object_new (
+        conn_type,
+        "account", "me@example.com",
+        "protocol", "simple",
+        NULL));
+  service_conn_as_base = TP_BASE_CONNECTION (*service_conn);
+  MYASSERT (*service_conn != NULL, "");
+  MYASSERT (service_conn_as_base != NULL, "");
+
+  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
+        &name, &conn_path, &error), "");
+  test_assert_no_error (error);
+
+  *client_conn = tp_connection_new (dbus, name, conn_path,
+      &error);
+  MYASSERT (*client_conn != NULL, "");
+  test_assert_no_error (error);
+  MYASSERT (tp_connection_run_until_ready (*client_conn, TRUE, &error,
+        NULL), "");
+  test_assert_no_error (error);
+
+  g_free (name);
+  g_free (conn_path);
+
+  g_object_unref (dbus);
+}
+
 int
 main (int argc,
       char **argv)
 {
-  TpDBusDaemon *dbus;
   ContactsConnection *service_conn;
-  TpBaseConnection *service_conn_as_base;
-  gchar *name;
-  gchar *conn_path;
   GError *error = NULL;
   TpConnection *client_conn;
 
@@ -1031,27 +1070,9 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = CONTACTS_CONNECTION (g_object_new (
-        CONTACTS_TYPE_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
-
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  test_assert_no_error (error);
-
-  client_conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (client_conn != NULL, "");
-  test_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
-      "");
-  test_assert_no_error (error);
+  create_and_connect_conn (CONTACTS_TYPE_CONNECTION,
+      &service_conn, &client_conn);
 
   /* Tests */
 
@@ -1068,12 +1089,7 @@ main (int argc,
   test_assert_no_error (error);
   g_object_unref (client_conn);
 
-  service_conn_as_base = NULL;
   g_object_unref (service_conn);
-  g_free (name);
-  g_free (conn_path);
-
-  g_object_unref (dbus);
 
   return 0;
 }
