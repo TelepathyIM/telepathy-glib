@@ -13,6 +13,8 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+#include "tests/lib/contacts-conn.h"
+
 TpDBusDaemon *test_dbus_daemon_dup_or_die (void);
 
 void test_proxy_run_until_dbus_queue_processed (gpointer proxy);
@@ -55,5 +57,9 @@ void _test_assert_strv_equals (const char *file, int line,
         g_object_unref (_test_clear_object_obj); \
     } \
   G_STMT_END
+
+void create_and_connect_conn (GType conn_type,
+    ContactsConnection **service_conn,
+    TpConnection **client_conn);
 
 #endif
