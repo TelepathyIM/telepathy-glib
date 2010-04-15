@@ -1547,18 +1547,29 @@ contact_maybe_set_location (TpContact *self,
 }
 
 static void
-contact_maybe_set_capabilities (TpContact *self,
-    GPtrArray *arr)
+contact_set_capabilities (TpContact *self,
+    TpCapabilities *capabilities)
 {
-  if (self == NULL || arr == NULL)
-    return;
-
   if (self->priv->capabilities != NULL)
     g_object_unref (self->priv->capabilities);
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_CAPABILITIES;
-  self->priv->capabilities = _tp_capabilities_new (arr, TRUE);
+  self->priv->capabilities = g_object_ref (capabilities);
   g_object_notify ((GObject *) self, "capabilities");
+}
+
+static void
+contact_maybe_set_capabilities (TpContact *self,
+    GPtrArray *arr)
+{
+  TpCapabilities *capabilities;
+
+  if (self == NULL || arr == NULL)
+    return;
+
+  capabilities = _tp_capabilities_new (arr, TRUE);
+  contact_set_capabilities (self, capabilities);
+  g_object_unref (capabilities);
 }
 
 
