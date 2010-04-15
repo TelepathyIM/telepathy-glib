@@ -1236,9 +1236,10 @@ tp_proxy_class_init (TpProxyClass *klass)
  *
  * <!-- -->
  *
- * Returns: a borrowed reference to the #TpDBusDaemon for this object, if any;
- *  always %NULL if this object is itself a #TpDBusDaemon. The caller must
- *  reference the returned object with g_object_ref() if it will be kept.
+ * Returns: (transfer none): a borrowed reference to the #TpDBusDaemon for
+ *  this object, if any; always %NULL if this object is itself a
+ *  #TpDBusDaemon. The caller must reference the returned object with
+ *  g_object_ref() if it will be kept.
  *
  * Since: 0.7.17
  */
@@ -1518,8 +1519,9 @@ _tp_proxy_is_preparing (gpointer self,
 /**
  * tp_proxy_prepare_async:
  * @self: an instance of a #TpProxy subclass
- * @features: an  array of desired features, ending with 0; %NULL is
- *  equivalent to an  array containing only 0
+ * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ *  of desired features, ending with 0; %NULL is equivalent to an array
+ *  containing only 0
  * @callback: if not %NULL, called exactly once, when the features have all
  *  been prepared or failed to prepare, or after the proxy is invalidated
  * @user_data: user data for @callback
