@@ -869,7 +869,7 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
  * The caller must keep a ref to the returned object using g_object_ref() if
  * it is to be kept.
  *
- * Returns: a new #TpAccount at @path
+ * Returns: (transfer none): a new #TpAccount at @path
  *
  * Since: 0.9.0
  */
@@ -922,7 +922,7 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
  * (tp_proxy_prepare_async() has returned). Until this feature has
  * been prepared, an empty list (%NULL) will be returned.
  *
- * Returns: a newly allocated #GList of valid accounts in @manager
+ * Returns: (element-type TelepathyGLib.Account) (transfer container): a newly allocated #GList of valid accounts in @manager
  *
  * Since: 0.9.0
  */
@@ -1008,8 +1008,9 @@ tp_account_manager_set_all_requested_presences (TpAccountManager *manager,
 /**
  * tp_account_manager_get_most_available_presence:
  * @manager: a #TpAccountManager
- * @status: a string to fill with the actual status
- * @message: a string to fill with the actual status message
+ * @status: (out) (transfer full): a string to fill with the actual status
+ * @message: (out) (transfer full): a string to fill with the actual status
+ *  message
  *
  * Gets the most available presence over all accounts in @manager. This
  * function does not average presences across all accounts, but it merely
@@ -1082,8 +1083,10 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
  * @connection_manager: the name of a connection manager
  * @protocol: the name of a protocol
  * @display_name: the display name for the account
- * @parameters: parameters for the new account
- * @properties: properties for the new account
+ * @parameters: (element-type utf8 GObject.Value) (transfer none): parameters
+ *  for the new account
+ * @properties: (element-type utf8 GObject.Value) (transfer none): properties
+ *  for the new account
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -1169,7 +1172,7 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_is_prepared:
+ * tp_account_manager_is_prepared: (skip)
  * @manager: a #TpAccountManager
  * @feature: a feature which is required
  *
@@ -1187,7 +1190,7 @@ tp_account_manager_is_prepared (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_prepare_async:
+ * tp_account_manager_prepare_async: (skip)
  * @manager: a #TpAccountManager
  * @features: a 0-terminated list of features, or %NULL
  * @callback: a callback to call when the request is satisfied
@@ -1218,7 +1221,7 @@ tp_account_manager_prepare_async (TpAccountManager *manager,
 }
 
 /**
- * tp_account_manager_prepare_finish:
+ * tp_account_manager_prepare_finish: (skip)
  * @manager: a #TpAccountManager
  * @result: a #GAsyncResult
  * @error: a #GError to fill

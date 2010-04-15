@@ -1230,7 +1230,7 @@ unescape_protocol (gchar *protocol)
  *
  * <!-- -->
  *
- * Returns: the same as the #TpAccount:connection property
+ * Returns: (transfer none): the same as the #TpAccount:connection property
  *
  * Since: 0.9.0
  **/
@@ -1262,8 +1262,8 @@ tp_account_get_connection (TpAccount *account)
  * already know the object path for the connection, so you can let @account
  * create its #TpConnection and return it for use.
  *
- * Returns: the connection of the account, or %NULL if either the object path
- *   @path is invalid or it is the null-value "/"
+ * Returns: (transfer none): the connection of the account, or %NULL if either
+ *  the object path @path is invalid or it is the null-value "/"
  *
  * Since: 0.9.0
  **/
@@ -1397,7 +1397,8 @@ tp_account_get_icon_name (TpAccount *account)
  * <ulink url="http://telepathy.freedesktop.org/spec/org.freedesktop.Telepathy.ConnectionManager.html#org.freedesktop.Telepathy.ConnectionManager.RequestConnection">in
  * the Telepathy D-Bus Interface Specification</ulink>.
  *
- * Returns: the hash table of parameters on @account
+ * Returns: (transfer none) (element-type utf8 GObject.Value): the hash table of
+ *  parameters on @account
  *
  * Since: 0.9.0
  */
@@ -1702,7 +1703,8 @@ _tp_account_updated_cb (TpAccount *proxy,
 /**
  * tp_account_update_parameters_async:
  * @account: a #TpAccount
- * @parameters: new parameters to set on @account
+ * @parameters: (element-type utf8 GObject.Value) (transfer none): new
+ *  parameters to set on @account
  * @unset_parameters: list of parameters to unset on @account
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
@@ -1736,8 +1738,8 @@ tp_account_update_parameters_async (TpAccount *account,
  * tp_account_update_parameters_finish:
  * @account: a #TpAccount
  * @result: a #GAsyncResult
- * @reconnect_required: a #GStrv to fill with properties that need a reconnect
- *                      to take effect
+ * @reconnect_required: (out) (type GLib.Strv) (transfer full): a #GStrv to
+ *  fill with properties that need a reconnect to take effect
  * @error: a #GError to fill
  *
  * Finishes an async update of the parameters on @account.
@@ -2111,7 +2113,7 @@ tp_account_get_has_been_online (TpAccount *account)
 /**
  * tp_account_get_connection_status:
  * @account: a #TpAccount
- * @reason: a #TpConnectionStatusReason to fill, or %NULL
+ * @reason: (out): a #TpConnectionStatusReason to fill, or %NULL
  *
  * Gets the connection status and reason from @account. The two values
  * are the same as the #TpAccount:connection-status and
@@ -2137,8 +2139,9 @@ tp_account_get_connection_status (TpAccount *account,
 /**
  * tp_account_get_current_presence:
  * @account: a #TpAccount
- * @status: return location for the current status
- * @status_message: return location for the current status message
+ * @status: (out) (transfer full): return location for the current status
+ * @status_message: (out) (transfer full): return location for the current
+ *  status message
  *
  * Gets the current presence, status and status message of @account. These
  * values are the same as the #TpAccount:current-presence-type,
@@ -2168,8 +2171,9 @@ tp_account_get_current_presence (TpAccount *account,
 /**
  * tp_account_get_requested_presence:
  * @account: a #TpAccount
- * @status: return location for the requested status
- * @status_message: return location for the requested status message
+ * @status: (out) (transfer none): return location for the requested status
+ * @status_message: (out) (transfer full): return location for the requested
+ *  status message
  *
  * Gets the requested presence, status and status message of @account. These
  * values are the same as the #TpAccount:requested-presence-type,
@@ -2386,7 +2390,7 @@ tp_account_get_avatar_finish (TpAccount *account,
 }
 
 /**
- * tp_account_is_prepared:
+ * tp_account_is_prepared: (skip)
  * @account: a #TpAccount
  * @feature: a feature which is required
  *
@@ -2404,7 +2408,7 @@ tp_account_is_prepared (TpAccount *account,
 }
 
 /**
- * tp_account_prepare_async:
+ * tp_account_prepare_async: (skip)
  * @account: a #TpAccount
  * @features: a 0-terminated list of features, or %NULL
  * @callback: a callback to call when the request is satisfied
@@ -2437,7 +2441,7 @@ tp_account_prepare_async (TpAccount *account,
 }
 
 /**
- * tp_account_prepare_finish:
+ * tp_account_prepare_finish: (skip)
  * @account: a #TpAccount
  * @result: a #GAsyncResult
  * @error: a #GError to fill
@@ -2469,9 +2473,12 @@ set_or_free (gchar **target,
 /**
  * tp_account_parse_object_path:
  * @object_path: a Telepathy Account's object path
- * @cm: location at which to store the account's connection manager's name
- * @protocol: location at which to store the account's protocol
- * @account_id: location at which to store the account's unique identifier
+ * @cm: (out) (transfer full): location at which to store the account's
+ *  connection manager's name
+ * @protocol: (out) (transfer full): location at which to store the account's
+ *  protocol
+ * @account_id: (out) (transfer full): location at which to store the account's
+ *  unique identifier
  * @error: location at which to return an error
  *
  * Validates and parses a Telepathy Account's object path, extracting the
@@ -2614,10 +2621,11 @@ tp_account_set_avatar_finish (TpAccount *self,
 /**
  * tp_account_set_avatar_async:
  * @self: a #TpAccount
- * @avatar: a new avatar to set; can be %NULL only if @len equals 0
+ * @avatar: (allow-none) (array length=len): a new avatar to set; can be %NULL
+ *  only if @len equals 0
  * @len: the length of the new avatar
- * @mime_type: the MIME type of the new avatar; can be %NULL only if
- * @len equals 0
+ * @mime_type: (allow-none): the MIME type of the new avatar; can be %NULL
+ *  only if @len equals 0
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
