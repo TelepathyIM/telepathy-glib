@@ -1213,13 +1213,13 @@ tp_connection_class_init (TpConnectionClass *klass)
 /**
  * tp_connection_new:
  * @dbus: a D-Bus daemon; may not be %NULL
- * @bus_name: the well-known or unique name of the connection process;
- *  if well-known, this function will make a blocking call to the bus daemon
- *  to resolve the unique name. May be %NULL if @object_path is not, in which
- *  case a well-known name will be derived from @object_path.
- * @object_path: the object path of the connection process. May be %NULL
- *  if @bus_name is a well-known name, in which case the object path will
- *  be derived from @bus_name.
+ * @bus_name: (allow-none): the well-known or unique name of the connection
+ *  process; if well-known, this function will make a blocking call to the bus
+ *  daemon to resolve the unique name. May be %NULL if @object_path is not, in
+ *  which case a well-known name will be derived from @object_path.
+ * @object_path: (allow-none): the object path of the connection process.
+ *  May be %NULL if @bus_name is a well-known name, in which case the object
+ *  path will be derived from @bus_name.
  * @error: used to indicate the error if %NULL is returned
  *
  * <!-- -->
@@ -1318,7 +1318,7 @@ tp_connection_get_self_handle (TpConnection *self)
 /**
  * tp_connection_get_status:
  * @self: a connection
- * @reason: a TpConnectionStatusReason, or %NULL
+ * @reason: (out): a TpConnectionStatusReason, or %NULL
  *
  * If @reason is not %NULL it is set to the reason why "status" changed to its
  * current value, or %TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED if unknown.
@@ -1341,7 +1341,7 @@ tp_connection_get_status (TpConnection *self,
 }
 
 /**
- * tp_connection_run_until_ready:
+ * tp_connection_run_until_ready: (skip)
  * @self: a connection
  * @connect: if %TRUE, call Connect() if it appears to be necessary;
  *  if %FALSE, rely on Connect() to be called by another client
@@ -1796,7 +1796,7 @@ cwr_ready (TpConnection *self,
  */
 
 /**
- * tp_connection_call_when_ready:
+ * tp_connection_call_when_ready: (skip)
  * @self: a connection
  * @callback: called when the connection becomes ready or invalidated,
  *  whichever happens first
@@ -1912,9 +1912,10 @@ tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
 /**
  * tp_connection_parse_object_path:
  * @self: a connection
- * @protocol: If not NULL, used to return the protocol of the connection
- * @cm_name: If not NULL, used to return the connection manager name of the
- * connection
+ * @protocol: (out) (transfer full): If not NULL, used to return the protocol
+ *  of the connection
+ * @cm_name: (out) (transfer full): If not NULL, used to return the connection
+ *  manager name of the connection
  *
  * If the object path of @connection is in the correct form, set
  * @protocol and @cm_name, return TRUE. Otherwise leave them unchanged and
@@ -1982,7 +1983,7 @@ _tp_connection_add_contact (TpConnection *self,
 
 
 /**
- * tp_connection_is_ready:
+ * tp_connection_is_ready: (skip)
  * @self: a connection
  *
  * Returns the same thing as the #TpConnection:connection-ready property.
