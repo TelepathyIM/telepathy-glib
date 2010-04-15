@@ -1019,6 +1019,7 @@ int
 main (int argc,
       char **argv)
 {
+  TpBaseConnection *base_connection;
   ContactsConnection *service_conn;
   GError *error = NULL;
   TpConnection *client_conn;
@@ -1029,7 +1030,9 @@ main (int argc,
   tp_debug_set_flags ("all");
 
   test_create_and_connect_conn (CONTACTS_TYPE_CONNECTION, "me@test.com",
-      &service_conn, &client_conn);
+      &base_connection, &client_conn);
+
+  service_conn = CONTACTS_CONNECTION (base_connection);
 
   /* Tests */
 

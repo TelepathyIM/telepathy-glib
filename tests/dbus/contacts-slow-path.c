@@ -1014,6 +1014,7 @@ int
 main (int argc,
       char **argv)
 {
+  TpBaseConnection *base_connection;
   ContactsConnection *legacy_service_conn;
   GError *error = NULL;
   TpConnection *legacy_client_conn;
@@ -1024,7 +1025,9 @@ main (int argc,
   tp_debug_set_flags ("all");
 
   test_create_and_connect_conn (LEGACY_CONTACTS_TYPE_CONNECTION, "me@test.com",
-      &legacy_service_conn, &legacy_client_conn);
+      &base_connection, &legacy_client_conn);
+
+  legacy_service_conn = CONTACTS_CONNECTION (base_connection);
 
   /* Tests */
   test_by_handle (legacy_service_conn, legacy_client_conn);

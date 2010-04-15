@@ -269,11 +269,10 @@ _test_assert_strv_equals (const char *file,
 void
 test_create_and_connect_conn (GType conn_type,
     const gchar *account,
-    ContactsConnection **service_conn,
+    TpBaseConnection **service_conn,
     TpConnection **client_conn)
 {
   TpDBusDaemon *dbus;
-  TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
@@ -288,11 +287,9 @@ test_create_and_connect_conn (GType conn_type,
         "account", account,
         "protocol", "simple",
         NULL);
-  service_conn_as_base = TP_BASE_CONNECTION (*service_conn);
   g_assert (*service_conn != NULL);
-  g_assert (service_conn_as_base != NULL);
 
-  g_assert (tp_base_connection_register (service_conn_as_base, "simple",
+  g_assert (tp_base_connection_register (*service_conn, "simple",
         &name, &conn_path, &error));
   test_assert_no_error (error);
 

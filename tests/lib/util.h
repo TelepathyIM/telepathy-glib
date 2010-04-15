@@ -12,8 +12,7 @@
 #define TEST_LIB_UTIL_H
 
 #include <telepathy-glib/telepathy-glib.h>
-
-#include "tests/lib/contacts-conn.h"
+#include <telepathy-glib/base-connection.h>
 
 TpDBusDaemon *test_dbus_daemon_dup_or_die (void);
 
@@ -60,7 +59,7 @@ void _test_assert_strv_equals (const char *file, int line,
 
 void test_create_and_connect_conn (GType conn_type,
     const gchar *account,
-    ContactsConnection **service_conn,
+    TpBaseConnection **service_conn,
     TpConnection **client_conn);
 
 #endif
