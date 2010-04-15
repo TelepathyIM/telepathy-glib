@@ -270,7 +270,7 @@
           invited into the new channel, as if they had been added with
           <tp:dbus-ref namespace="org.freedesktop.Telepathy.Channel.Interface"
             >Group.AddMembers</tp:dbus-ref>(InitialInviteeHandles,
-          <tp:member-ref>InvitationMessage</tp:member-ref> immediately after
+          <tp:member-ref>InvitationMessage</tp:member-ref>) immediately after
           the channel was created.</p>
 
         <tp:rationale>
