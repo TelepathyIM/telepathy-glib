@@ -51,7 +51,8 @@
 
 /**
  * TpConnectionManagerListCb:
- * @cms: %NULL-terminated array of #TpConnectionManager (the objects will
+ * @cms: (array zero-terminated=1): %NULL-terminated array of
+ *   #TpConnectionManager (the objects will
  *   be unreferenced and the array will be freed after the callback returns,
  *   so the callback must reference any CMs it stores a pointer to),
  *   or %NULL on error
@@ -535,7 +536,7 @@ finally:
  */
 
 /**
- * tp_connection_manager_call_when_ready:
+ * tp_connection_manager_call_when_ready: (skip)
  * @self: a connection manager
  * @callback: callback to call when information has been retrieved or on
  *            error
@@ -1801,8 +1802,8 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
  * tp_connection_manager_new:
  * @dbus: Proxy for the D-Bus daemon
  * @name: The connection manager name (such as "gabble")
- * @manager_filename: The #TpConnectionManager:manager-file property, which may
- *                    (and generally should) be %NULL.
+ * @manager_filename: (allow-none): The #TpConnectionManager:manager-file
+ *  property, which may (and generally should) be %NULL.
  * @error: used to return an error if %NULL is returned
  *
  * Convenience function to create a new connection manager proxy. If
@@ -1845,7 +1846,7 @@ tp_connection_manager_new (TpDBusDaemon *dbus,
 }
 
 /**
- * tp_connection_manager_activate:
+ * tp_connection_manager_activate: (skip)
  * @self: a connection manager proxy
  *
  * Attempt to run and introspect the connection manager, asynchronously.
@@ -2047,13 +2048,14 @@ tp_list_connection_managers_got_names (TpDBusDaemon *bus_daemon,
 /**
  * tp_list_connection_managers:
  * @bus_daemon: proxy for the D-Bus daemon
- * @callback: callback to be called when listing the CMs succeeds or fails;
- *   not called if the @weak_object goes away
+ * @callback: (scope async): callback to be called when listing the CMs
+ *  succeeds or fails; not called if the @weak_object goes away
  * @user_data: user-supplied data for the callback
  * @destroy: callback to destroy the user-supplied data, called after
  *   @callback, but also if the @weak_object goes away
- * @weak_object: if not %NULL, will be weakly referenced; the callback will
- *   not be called, and the call will be cancelled, if the object has vanished
+ * @weak_object: (allow-none) (transfer none): if not %NULL, will be weakly
+ *  referenced; the callback will not be called, and the call will be
+ *  cancelled, if the object has vanished
  *
  * List the available (running or installed) connection managers. Call the
  * callback when done.
@@ -2211,7 +2213,7 @@ tp_connection_manager_get_name (TpConnectionManager *self)
 }
 
 /**
- * tp_connection_manager_is_ready:
+ * tp_connection_manager_is_ready: (skip)
  * @self: a connection manager
  *
  * If protocol and parameter information has been obtained from the connection
@@ -2292,7 +2294,7 @@ tp_connection_manager_get_info_source (TpConnectionManager *self)
  * The result is copied and must be freed by the caller, but it is not
  * necessarily still true after the main loop is re-entered.
  *
- * Returns: a #GStrv of protocol names
+ * Returns: (type GLib.Strv) (transfer full): a #GStrv of protocol names
  * Since: 0.7.26
  */
 gchar **
@@ -2339,7 +2341,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  *
  * The result is not necessarily valid after the main loop is re-entered.
  *
- * Returns: a structure representing the protocol
+ * Returns: (transfer none): a structure representing the protocol
  * Since: 0.7.26
  */
 const TpConnectionManagerProtocol *
@@ -2466,7 +2468,7 @@ tp_connection_manager_protocol_can_register (
  *
  * The result is copied and must be freed by the caller with g_strfreev().
  *
- * Returns: a #GStrv of protocol names
+ * Returns: (type GLib.Strv) (transfer full): a #GStrv of protocol names
  * Since: 0.7.26
  */
 gchar **
