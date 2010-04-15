@@ -1739,6 +1739,54 @@ contacts_get_locations (ContactsContext *c)
 }
 
 static void
+set_conn_capabilities_on_contacts (GPtrArray *contacts,
+    TpConnection *connection)
+{
+  guint i;
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (contacts, i);
+
+      contact_set_capabilities (contact, tp_connection_get_capabilities (
+            connection));
+    }
+}
+
+static void
+connection_capabilities_prepare_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  GError *error = NULL;
+  ContactsContext *c = user_data;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Failed to prepare Connection capabilities feature: %s %u: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+  else
+    {
+      set_conn_capabilities_on_contacts (c->contacts, c->connection);
+    }
+
+  contacts_context_continue (c);
+  contacts_context_unref (c);
+}
+
+static void
+contacts_get_conn_capabilities (ContactsContext *c)
+{
+  GQuark features[] = { TP_CONNECTION_FEATURE_CAPABILITIES, 0 };
+  g_assert (c->handles->len == c->contacts->len);
+
+  c->refcount++;
+  tp_proxy_prepare_async (c->connection, features,
+      connection_capabilities_prepare_cb, c);
+}
+
+static void
 contacts_capabilities_updated (TpConnection *connection,
     GHashTable *capabilities,
     gpointer user_data G_GNUC_UNUSED,
@@ -1913,7 +1961,21 @@ contacts_context_queue_features (ContactsContext *context,
 
   /* Don't implement slow path for ContactCapabilities as Contacts is now
    * mandatory so any CM supporting ContactCapabilities will implement
-   * Contacts as well. */
+   * Contacts as well.
+   *
+   * But if ContactCapabilities is NOT supported, we fallback to connection
+   * capabilities.
+   * */
+
+  if ((feature_flags & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0 &&
+      !tp_proxy_has_interface_by_id (context->connection,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES))
+    {
+      DEBUG ("Connection doesn't support ContactCapabilities; fallback to "
+          "connection capabilities");
+
+      g_queue_push_tail (&context->todo, contacts_get_conn_capabilities);
+    }
 }
 
 
