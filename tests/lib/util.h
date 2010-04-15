@@ -58,7 +58,7 @@ void _test_assert_strv_equals (const char *file, int line,
     } \
   G_STMT_END
 
-void create_and_connect_conn (GType conn_type,
+void test_create_and_connect_conn (GType conn_type,
     ContactsConnection **service_conn,
     TpConnection **client_conn);
 

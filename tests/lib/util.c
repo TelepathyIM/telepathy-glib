@@ -267,7 +267,7 @@ _test_assert_strv_equals (const char *file,
 }
 
 void
-create_and_connect_conn (GType conn_type,
+test_create_and_connect_conn (GType conn_type,
     ContactsConnection **service_conn,
     TpConnection **client_conn)
 {

@@ -1028,7 +1028,7 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  create_and_connect_conn (CONTACTS_TYPE_CONNECTION,
+  test_create_and_connect_conn (CONTACTS_TYPE_CONNECTION,
       &service_conn, &client_conn);
 
   /* Tests */
