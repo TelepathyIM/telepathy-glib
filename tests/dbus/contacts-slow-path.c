@@ -1014,11 +1014,7 @@ int
 main (int argc,
       char **argv)
 {
-  TpDBusDaemon *dbus;
   ContactsConnection *legacy_service_conn;
-  TpBaseConnection *legacy_service_conn_as_base;
-  gchar *legacy_name;
-  gchar *legacy_conn_path;
   GError *error = NULL;
   TpConnection *legacy_client_conn;
 
@@ -1026,28 +1022,9 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
 
-  legacy_service_conn = CONTACTS_CONNECTION (g_object_new (
-        LEGACY_CONTACTS_TYPE_CONNECTION,
-        "account", "legacy@example.com",
-        "protocol", "simple",
-        NULL));
-  legacy_service_conn_as_base = TP_BASE_CONNECTION (legacy_service_conn);
-  MYASSERT (legacy_service_conn != NULL, "");
-  MYASSERT (legacy_service_conn_as_base != NULL, "");
-
-  MYASSERT (tp_base_connection_register (legacy_service_conn_as_base, "simple",
-        &legacy_name, &legacy_conn_path, &error), "");
-  test_assert_no_error (error);
-
-  legacy_client_conn = tp_connection_new (dbus, legacy_name, legacy_conn_path,
-      &error);
-  MYASSERT (legacy_client_conn != NULL, "");
-  test_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (legacy_client_conn, TRUE, &error,
-        NULL), "");
-  test_assert_no_error (error);
+  create_and_connect_conn (LEGACY_CONTACTS_TYPE_CONNECTION,
+      &legacy_service_conn, &legacy_client_conn);
 
   /* Tests */
   test_by_handle (legacy_service_conn, legacy_client_conn);
@@ -1061,14 +1038,9 @@ main (int argc,
   MYASSERT (tp_cli_connection_run_disconnect (legacy_client_conn, -1, &error,
         NULL), "");
   test_assert_no_error (error);
+
   g_object_unref (legacy_client_conn);
-
-  legacy_service_conn_as_base = NULL;
   g_object_unref (legacy_service_conn);
-  g_free (legacy_name);
-  g_free (legacy_conn_path);
-
-  g_object_unref (dbus);
 
   return 0;
 }
