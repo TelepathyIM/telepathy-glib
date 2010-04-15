@@ -254,7 +254,7 @@ tp_channel_get_channel_type_id (TpChannel *self)
 /**
  * tp_channel_get_handle:
  * @self: a channel
- * @handle_type: if not %NULL, used to return the type of this handle
+ * @handle_type: (out): if not %NULL, used to return the type of this handle
  *
  * Get the handle representing the contact, chatroom, etc. with which this
  * channel communicates for its whole lifetime, or 0 if there is no such
@@ -315,7 +315,7 @@ tp_channel_get_identifier (TpChannel *self)
 }
 
 /**
- * tp_channel_is_ready:
+ * tp_channel_is_ready: (skip)
  * @self: a channel
  *
  * Returns the same thing as the #TpChannel:channel-ready property.
@@ -352,7 +352,7 @@ tp_channel_is_ready (TpChannel *self)
  * Returns the connection for this channel. The returned pointer is only valid
  * while this channel is valid - reference it with g_object_ref() if needed.
  *
- * Returns: the value of #TpChannel:connection
+ * Returns: (transfer none): the value of #TpChannel:connection
  * Since: 0.7.12
  */
 TpConnection *
@@ -383,7 +383,8 @@ tp_channel_borrow_connection (TpChannel *self)
  * progressively more complete values until the %TP_CHANNEL_FEATURE_CORE
  * feature is prepared.
  *
- * Returns: a #GHashTable where the keys are strings,
+ * Returns: (transfer none) (element-type utf8 GObject.Value): a #GHashTable
+ *  where the keys are strings,
  *  D-Bus interface name + "." + property name, and the values are #GValue
  *  instances
  */
@@ -1680,7 +1681,8 @@ tp_channel_class_init (TpChannelClass *klass)
  * tp_channel_new_from_properties:
  * @conn: a connection; may not be %NULL
  * @object_path: the object path of the channel; may not be %NULL
- * @immutable_properties: the immutable properties of the channel,
+ * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
+ *  the immutable properties of the channel,
  *  as signalled by the NewChannel D-Bus signal or returned by the
  *  CreateChannel and EnsureChannel D-Bus methods: a mapping from
  *  strings (D-Bus interface name + "." + property name) to #GValue instances
@@ -1804,7 +1806,7 @@ finally:
 }
 
 /**
- * tp_channel_run_until_ready:
+ * tp_channel_run_until_ready: (skip)
  * @self: a channel
  * @error: if not %NULL and %FALSE is returned, used to raise an error
  * @loop: if not %NULL, a #GMainLoop is placed here while it is being run
@@ -1940,7 +1942,7 @@ cwr_ready (TpChannel *self,
  */
 
 /**
- * tp_channel_call_when_ready:
+ * tp_channel_call_when_ready: (skip)
  * @self: a channel
  * @callback: called when the channel becomes ready or invalidated, whichever
  *  happens first
