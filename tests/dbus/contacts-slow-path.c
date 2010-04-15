@@ -1023,7 +1023,7 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  test_create_and_connect_conn (LEGACY_CONTACTS_TYPE_CONNECTION,
+  test_create_and_connect_conn (LEGACY_CONTACTS_TYPE_CONNECTION, "me@test.com",
       &legacy_service_conn, &legacy_client_conn);
 
   /* Tests */

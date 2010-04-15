@@ -268,6 +268,7 @@ _test_assert_strv_equals (const char *file,
 
 void
 test_create_and_connect_conn (GType conn_type,
+    const gchar *account,
     ContactsConnection **service_conn,
     TpConnection **client_conn)
 {
@@ -284,7 +285,7 @@ test_create_and_connect_conn (GType conn_type,
 
   *service_conn = g_object_new (
         conn_type,
-        "account", "me@example.com",
+        "account", account,
         "protocol", "simple",
         NULL);
   service_conn_as_base = TP_BASE_CONNECTION (*service_conn);
