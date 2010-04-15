@@ -343,6 +343,7 @@ contacts_connection_class_init (ContactsConnectionClass *klass)
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_LOCATION,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES,
+      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
       NULL };
 
   object_class->constructed = constructed;
@@ -849,6 +850,7 @@ legacy_contacts_connection_class_init (LegacyContactsConnectionClass *klass)
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_LOCATION,
+      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
       NULL };
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
