@@ -282,11 +282,11 @@ create_and_connect_conn (GType conn_type,
 
   dbus = test_dbus_daemon_dup_or_die ();
 
-  *service_conn = CONTACTS_CONNECTION (g_object_new (
+  *service_conn = g_object_new (
         conn_type,
         "account", "me@example.com",
         "protocol", "simple",
-        NULL));
+        NULL);
   service_conn_as_base = TP_BASE_CONNECTION (*service_conn);
   g_assert (*service_conn != NULL);
   g_assert (service_conn_as_base != NULL);
