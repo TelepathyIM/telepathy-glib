@@ -2,7 +2,7 @@
 
 #include <glib.h>
 
-#include "telepathy-glib/capabilities.h"
+#include "telepathy-glib/capabilities-internal.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/debug.h>
@@ -216,19 +216,14 @@ test_supports (Test *test,
   g_object_unref (caps);
 
   /* TpCapabilities containing no caps */
-  classes = g_ptr_array_sized_new (0);
-
-  caps = g_object_new (TP_TYPE_CAPABILITIES,
-      "channel-classes", classes,
-      "contact-specific", TRUE,
-      NULL);
-
-  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-     classes);
+  caps = _tp_capabilities_new (NULL, TRUE);
 
   g_assert (tp_capabilities_is_specific_to_contact (caps));
   g_assert (!tp_capabilities_supports_text_chats (caps));
   g_assert (!tp_capabilities_supports_text_chatrooms (caps));
+
+  classes = tp_capabilities_get_channel_classes (caps);
+  g_assert_cmpuint (classes->len, ==, 0);
 
   g_object_unref (caps);
 }

@@ -1766,6 +1766,10 @@ connection_capabilities_prepare_cb (GObject *object,
       DEBUG ("Failed to prepare Connection capabilities feature: %s %u: %s",
           g_quark_to_string (error->domain), error->code, error->message);
     }
+  else if (!tp_proxy_is_prepared (object, TP_CONNECTION_FEATURE_CAPABILITIES))
+    {
+      DEBUG ("Connection capabilities feature has not been actually prepared");
+    }
   else
     {
       set_conn_capabilities_on_contacts (c->contacts, c->connection);
