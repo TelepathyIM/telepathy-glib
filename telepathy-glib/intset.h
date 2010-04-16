@@ -27,6 +27,9 @@
 
 G_BEGIN_DECLS
 
+#define TP_TYPE_INTSET (tp_intset_get_type ())
+GType tp_intset_get_type (void);
+
 /**
  * TpIntSet:
  *

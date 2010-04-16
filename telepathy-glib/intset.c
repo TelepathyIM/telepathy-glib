@@ -40,6 +40,27 @@
 #define DEFAULT_INCREMENT 8
 #define DEFAULT_INCREMENT_LOG2 3
 
+/**
+ * TP_TYPE_INTSET:
+ *
+ * The boxed type of a #TpIntSet.
+ */
+
+GType
+tp_intset_get_type (void)
+{
+  static GType type = 0;
+
+  if (G_UNLIKELY (type == 0))
+    {
+      type = g_boxed_type_register_static (g_intern_static_string ("TpIntSet"),
+          (GBoxedCopyFunc) tp_intset_copy,
+          (GBoxedFreeFunc) tp_intset_destroy);
+    }
+
+  return type;
+}
+
 struct _TpIntSet
 {
   guint32 *bits;

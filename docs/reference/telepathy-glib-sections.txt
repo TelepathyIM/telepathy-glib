@@ -1598,6 +1598,7 @@ TP_GROUP_MIXIN
 <INCLUDE>telepathy-glib/intset.h</INCLUDE>
 <TITLE>TpIntSet</TITLE>
 TpIntSet
+TP_TYPE_INTSET
 TpIntFunc
 tp_intset_sized_new
 tp_intset_new
@@ -1623,6 +1624,8 @@ TpIntSetIter
 tp_intset_iter_init
 tp_intset_iter_next
 tp_intset_iter_reset
+<SUBSECTION Standard>
+tp_intset_get_type
 </SECTION>
 
 <SECTION>
