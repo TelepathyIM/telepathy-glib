@@ -282,23 +282,24 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
 
   if (error != NULL)
     {
-      DEBUG ("Failed to get RequestableChannelClasses property: %s",
-          error->message);
+      DEBUG ("Failed to get RequestableChannelClasses property, using an "
+          "empty set: %s", error->message);
 
-      _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
-          FALSE);
-      return;
+      /* it's NULL-safe */
+      self->priv->capabilities = _tp_capabilities_new (NULL, FALSE);
+      goto finally;
     }
 
   g_assert (self->priv->capabilities == NULL);
 
   if (!G_VALUE_HOLDS (value, TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST))
     {
-      DEBUG ("RequestableChannelClasses is not of type a(a{sv}as)");
+      DEBUG ("RequestableChannelClasses is not of type a(a{sv}as), using an "
+          "empty set: %s", G_VALUE_TYPE_NAME (value));
 
-      _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
-          FALSE);
-      return;
+      /* it's NULL-safe */
+      self->priv->capabilities = _tp_capabilities_new (NULL, FALSE);
+      goto finally;
     }
 
   DEBUG ("CAPABILITIES ready");
@@ -306,6 +307,7 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
   self->priv->capabilities = _tp_capabilities_new (g_value_get_boxed (value),
       FALSE);
 
+finally:
   _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
       TRUE);
 
