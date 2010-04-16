@@ -1221,15 +1221,72 @@ test_capabilities_without_contact_caps (ContactsConnection *service_conn,
   g_assert (result.error == NULL);
 }
 
+static void
+test_prepare_contact_caps_without_request (ContactsConnection *service_conn,
+    TpConnection *client_conn)
+{
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TpHandle handles[] = { 0, 0, 0 };
+  static const gchar * const ids[] = { "alice", "bob", "chris" };
+  TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
+      (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
+  TpContact *contacts[3];
+  guint i;
+  TpContactFeature features[] = { TP_CONTACT_FEATURE_CAPABILITIES };
+
+  g_message (G_STRFUNC);
+
+  for (i = 0; i < 3; i++)
+    handles[i] = tp_handle_ensure (service_repo, ids[i], NULL, NULL);
+
+  tp_connection_get_contacts_by_handle (client_conn,
+      3, handles,
+      sizeof (features) / sizeof (features[0]), features,
+      by_handle_cb,
+      &result, finish, NULL);
+
+  g_main_loop_run (result.loop);
+
+  MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
+  MYASSERT (result.invalid->len == 0, ": %u", result.invalid->len);
+  test_assert_no_error (result.error);
+
+  MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
+  MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
+
+  for (i = 0; i < 3; i++)
+    contacts[i] = g_ptr_array_index (result.contacts, i);
+
+  for (i = 0; i < 3; i++)
+    {
+      TpCapabilities *caps;
+
+      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[i]), ids[i]);
+
+      MYASSERT (!tp_contact_has_feature (contacts[i],
+            TP_CONTACT_FEATURE_CAPABILITIES), "");
+
+      caps = tp_contact_get_capabilities (contacts[i]);
+      MYASSERT (caps == NULL, "");
+    }
+
+  g_main_loop_unref (result.loop);
+  g_array_free (result.invalid, TRUE);
+  g_ptr_array_free (result.contacts, TRUE);
+  g_assert (result.error == NULL);
+}
 
 int
 main (int argc,
       char **argv)
 {
-  TpBaseConnection *base_connection, *legacy_base_connection;
+  TpBaseConnection *base_connection, *legacy_base_connection,
+                   *no_requests_base_connection;
   ContactsConnection *service_conn;
   GError *error = NULL;
-  TpConnection *client_conn, *legacy_client_conn;
+  TpConnection *client_conn, *legacy_client_conn, *no_requests_client_conn;
 
   /* Setup */
 
@@ -1244,6 +1301,9 @@ main (int argc,
   test_create_and_connect_conn (LEGACY_CONTACTS_TYPE_CONNECTION, "me2@test.com",
       &legacy_base_connection, &legacy_client_conn);
 
+  test_create_and_connect_conn (NO_REQUESTS_TYPE_CONNECTION, "me3@test.com",
+      &no_requests_base_connection, &no_requests_client_conn);
+
   /* Tests */
 
   test_by_handle (service_conn, client_conn);
@@ -1256,6 +1316,12 @@ main (int argc,
    * ContactCapabilities is not implemented. */
   test_capabilities_without_contact_caps (
       CONTACTS_CONNECTION (legacy_base_connection), legacy_client_conn);
+
+  /* test if TP_CONTACT_FEATURE_CAPABILITIES is *not* prepared if the
+   * connection doesn't support ContactCapabilities and Requests */
+  test_prepare_contact_caps_without_request (
+      CONTACTS_CONNECTION (no_requests_base_connection),
+      no_requests_client_conn);
 
   /* Teardown */
 
@@ -1270,6 +1336,12 @@ main (int argc,
   test_assert_no_error (error);
   g_object_unref (legacy_client_conn);
   g_object_unref (legacy_base_connection);
+
+  MYASSERT (tp_cli_connection_run_disconnect (no_requests_client_conn, -1,
+        &error, NULL), "");
+  test_assert_no_error (error);
+  g_object_unref (no_requests_client_conn);
+  g_object_unref (no_requests_base_connection);
 
   return 0;
 }
