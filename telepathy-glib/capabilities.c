@@ -242,14 +242,29 @@ tp_capabilities_init (TpCapabilities *self)
       TpCapabilitiesPrivate);
 }
 
+/* NULL-safe for @classes */
 TpCapabilities *
 _tp_capabilities_new (const GPtrArray *classes,
     gboolean contact_specific)
 {
-  return g_object_new (TP_TYPE_CAPABILITIES,
+  GPtrArray *empty = NULL;
+  TpCapabilities *self;
+
+  if (classes == NULL)
+    {
+      empty = g_ptr_array_sized_new (0);
+      classes = empty;
+    }
+
+  self = g_object_new (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
       "contact-specific", contact_specific,
       NULL);
+
+  if (empty != NULL)
+    g_ptr_array_free (empty, TRUE);
+
+  return self;
 }
 
 static gboolean

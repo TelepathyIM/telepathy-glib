@@ -25,6 +25,7 @@
 
 G_BEGIN_DECLS
 
+/* NULL-safe for @classes */
 TpCapabilities * _tp_capabilities_new (const GPtrArray *classes,
     gboolean contact_specific);
 
