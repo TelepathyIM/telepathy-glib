@@ -47,8 +47,12 @@ EXTRA_DIST = README \
 test_asv_SOURCES = \
     asv.c
 
+# this one uses internal ABI
 test_capabilities_SOURCES = \
     capabilities.c
+test_capabilities_LDADD = \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
+    $(GLIB_LIBS)
 
 test_heap_SOURCES = \
     heap.c
