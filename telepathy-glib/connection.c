@@ -336,15 +336,10 @@ tp_connection_maybe_prepare_capabilities (TpProxy *proxy)
     {
       /* Connection doesn't support Requests; set an empty TpCapabilities
        * object as all calls to CreateChannel/EnsureChannel will fail. */
-      GPtrArray *empty;
 
-      empty = g_ptr_array_sized_new (0);
-      self->priv->capabilities = _tp_capabilities_new (empty, FALSE);
-      g_ptr_array_free (empty, TRUE);
-
+      self->priv->capabilities = _tp_capabilities_new (NULL, FALSE);
       _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
           TRUE);
-
       return;
     }
 
