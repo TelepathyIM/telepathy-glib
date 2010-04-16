@@ -857,3 +857,30 @@ legacy_contacts_connection_class_init (LegacyContactsConnectionClass *klass)
 
   base_class->interfaces_always_present = interfaces_always_present;
 }
+
+/* =============== No Requests and no ContactCapabilities ================= */
+
+G_DEFINE_TYPE (NoRequestsConnection, no_requests_connection,
+    CONTACTS_TYPE_CONNECTION);
+
+static void
+no_requests_connection_init (NoRequestsConnection *self)
+{
+}
+
+static void
+no_requests_connection_class_init (NoRequestsConnectionClass *klass)
+{
+  static const gchar *interfaces_always_present[] = {
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_LOCATION,
+      NULL };
+  TpBaseConnectionClass *base_class =
+      (TpBaseConnectionClass *) klass;
+
+  base_class->interfaces_always_present = interfaces_always_present;
+}
