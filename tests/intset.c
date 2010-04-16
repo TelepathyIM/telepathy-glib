@@ -79,6 +79,8 @@ int main (int argc, char **argv)
   g_assert (tp_intset_is_equal (ab_union, ab_expected_union));
   tp_intset_destroy (ab_union);
   tp_intset_destroy (ab_expected_union);
+  ab_union = NULL;
+  ab_expected_union = NULL;
 
   ab_expected_inter = tp_intset_new ();
   tp_intset_add (ab_expected_inter, NUM_C);
@@ -88,6 +90,8 @@ int main (int argc, char **argv)
   g_assert (tp_intset_is_equal (ab_inter, ab_expected_inter));
   tp_intset_destroy (ab_inter);
   tp_intset_destroy (ab_expected_inter);
+  ab_inter = NULL;
+  ab_expected_inter = NULL;
 
   a_expected_diff_b = tp_intset_new ();
   tp_intset_add (a_expected_diff_b, NUM_A);
@@ -97,6 +101,8 @@ int main (int argc, char **argv)
   g_assert (tp_intset_is_equal (a_diff_b, a_expected_diff_b));
   tp_intset_destroy (a_diff_b);
   tp_intset_destroy (a_expected_diff_b);
+  a_diff_b = NULL;
+  a_expected_diff_b = NULL;
 
   b_expected_diff_a = tp_intset_new ();
   tp_intset_add (b_expected_diff_a, NUM_E);
@@ -106,6 +112,8 @@ int main (int argc, char **argv)
   g_assert (tp_intset_is_equal (b_diff_a, b_expected_diff_a));
   tp_intset_destroy (b_diff_a);
   tp_intset_destroy (b_expected_diff_a);
+  b_diff_a = NULL;
+  b_expected_diff_a = NULL;
 
   ab_expected_symmdiff = tp_intset_new ();
   tp_intset_add (ab_expected_symmdiff, NUM_A);
@@ -117,6 +125,8 @@ int main (int argc, char **argv)
   g_assert (tp_intset_is_equal (ab_symmdiff, ab_expected_symmdiff));
   tp_intset_destroy (ab_symmdiff);
   tp_intset_destroy (ab_expected_symmdiff);
+  ab_symmdiff = NULL;
+  ab_expected_symmdiff = NULL;
 
   {
     GArray *arr;
@@ -127,12 +137,16 @@ int main (int argc, char **argv)
     g_assert (tp_intset_is_equal (a, tmp));
     g_array_free (arr, TRUE);
     tp_intset_destroy (tmp);
+    arr = NULL;
+    tmp = NULL;
 
     arr = tp_intset_to_array (b);
     tmp = tp_intset_from_array (arr);
     g_assert (tp_intset_is_equal (b, tmp));
     g_array_free (arr, TRUE);
     tp_intset_destroy (tmp);
+    arr = NULL;
+    tmp = NULL;
   }
 
   value = tp_g_value_slice_new_take_boxed (TP_TYPE_INTSET, a);
@@ -142,9 +156,12 @@ int main (int argc, char **argv)
   g_assert (tp_intset_is_equal (copy, a));
   g_boxed_free (TP_TYPE_INTSET, copy);
 
-  /* a is owned by value */
+  /* a is owned by value now, so don't free it explicitly */
   tp_g_value_slice_free (value);
   tp_intset_destroy (b);
+  a = NULL;
+  value = NULL;
+  b = NULL;
 
   return 0;
 }
