@@ -1261,15 +1261,19 @@ test_prepare_contact_caps_without_request (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       TpCapabilities *caps;
+      GPtrArray *classes;
 
       MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
       MYASSERT_SAME_STRING (tp_contact_get_identifier (contacts[i]), ids[i]);
 
-      MYASSERT (!tp_contact_has_feature (contacts[i],
+      MYASSERT (tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_CAPABILITIES), "");
 
       caps = tp_contact_get_capabilities (contacts[i]);
-      MYASSERT (caps == NULL, "");
+      MYASSERT (caps != NULL, "");
+      MYASSERT (!tp_capabilities_is_specific_to_contact (caps), "");
+      classes = tp_capabilities_get_channel_classes (caps);
+      MYASSERT_SAME_UINT (classes->len, 0);
     }
 
   g_main_loop_unref (result.loop);
@@ -1317,8 +1321,9 @@ main (int argc,
   test_capabilities_without_contact_caps (
       CONTACTS_CONNECTION (legacy_base_connection), legacy_client_conn);
 
-  /* test if TP_CONTACT_FEATURE_CAPABILITIES is *not* prepared if the
-   * connection doesn't support ContactCapabilities and Requests */
+  /* test if TP_CONTACT_FEATURE_CAPABILITIES is prepared but with
+   * an empty set of capabilities if the connection doesn't support
+   * ContactCapabilities and Requests. */
   test_prepare_contact_caps_without_request (
       CONTACTS_CONNECTION (no_requests_base_connection),
       no_requests_client_conn);
