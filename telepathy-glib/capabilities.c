@@ -243,7 +243,7 @@ tp_capabilities_init (TpCapabilities *self)
 }
 
 TpCapabilities *
-_tp_capabilities_new (GPtrArray *classes,
+_tp_capabilities_new (const GPtrArray *classes,
     gboolean contact_specific)
 {
   return g_object_new (TP_TYPE_CAPABILITIES,

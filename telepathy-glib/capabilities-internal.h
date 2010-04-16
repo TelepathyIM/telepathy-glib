@@ -25,7 +25,7 @@
 
 G_BEGIN_DECLS
 
-TpCapabilities * _tp_capabilities_new (GPtrArray *classes,
+TpCapabilities * _tp_capabilities_new (const GPtrArray *classes,
     gboolean contact_specific);
 
 G_END_DECLS
