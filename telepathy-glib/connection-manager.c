@@ -245,6 +245,171 @@ G_DEFINE_TYPE (TpConnectionManager,
     tp_connection_manager,
     TP_TYPE_PROXY);
 
+
+static void
+_tp_connection_manager_param_copy_contents (
+    const TpConnectionManagerParam *in,
+    TpConnectionManagerParam *out)
+{
+  out->name = g_strdup (in->name);
+  out->dbus_signature = g_strdup (in->dbus_signature);
+  out->flags = in->flags;
+
+  if (G_IS_VALUE (&in->default_value))
+    {
+      g_value_init (&out->default_value, G_VALUE_TYPE (&in->default_value));
+      g_value_copy (&in->default_value, &out->default_value);
+    }
+}
+
+
+static void
+_tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
+{
+  g_free (param->name);
+  g_free (param->dbus_signature);
+
+  if (G_IS_VALUE (&param->default_value))
+    g_value_unset (&param->default_value);
+}
+
+
+/**
+ * tp_connection_manager_param_copy:
+ * @in: the #TpConnectionManagerParam to copy
+ *
+ * Returns: a newly (slice) allocated #TpConnectionManagerParam, free with
+ *  tp_connection_manager_param_free()
+ */
+TpConnectionManagerParam *
+tp_connection_manager_param_copy (const TpConnectionManagerParam *in)
+{
+  TpConnectionManagerParam *out = g_slice_new0 (TpConnectionManagerParam);
+
+  _tp_connection_manager_param_copy_contents (in, out);
+
+  return out;
+}
+
+
+/**
+ * tp_connection_manager_param_free:
+ * @param: the #TpConnectionManagerParam to free
+ *
+ * Frees @param, which was copied with tp_connection_manager_param_copy().
+ */
+void
+tp_connection_manager_param_free (TpConnectionManagerParam *param)
+{
+  _tp_connection_manager_param_free_contents (param);
+
+  g_slice_free (TpConnectionManagerParam, param);
+}
+
+
+/**
+ * tp_connection_manager_protocol_copy:
+ * @in: the #TpConnectionManagerProtocol to copy
+ *
+ * Returns: a newly (slice) allocated #TpConnectionManagerProtocol, free with
+ *  tp_connection_manager_protocol_free()
+ */
+TpConnectionManagerProtocol *
+tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
+{
+  TpConnectionManagerProtocol *out = g_slice_new0 (TpConnectionManagerProtocol);
+  TpConnectionManagerParam *param;
+  GArray *params = g_array_new (TRUE, TRUE,
+      sizeof (TpConnectionManagerParam));
+
+  out->name = g_strdup (in->name);
+
+  for (param = in->params; param->name != NULL; param++)
+    {
+      TpConnectionManagerParam copy = { 0, };
+
+      _tp_connection_manager_param_copy_contents (param, &copy);
+      g_array_append_val (params, copy);
+    }
+
+  out->params = (TpConnectionManagerParam *) g_array_free (params, FALSE);
+
+  return out;
+}
+
+
+/**
+ * tp_connection_manager_protocol_free:
+ * @param: the #TpConnectionManagerProtocol to free
+ *
+ * Frees @param, which was copied with tp_connection_manager_protocol_copy().
+ */
+void
+tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
+{
+  TpConnectionManagerParam *param;
+
+  g_free (proto->name);
+
+  for (param = proto->params; param->name != NULL; param++)
+    {
+      _tp_connection_manager_param_free_contents (param);
+    }
+
+  g_free (proto->params);
+
+  g_slice_free (TpConnectionManagerProtocol, proto);
+}
+
+
+/**
+ * TP_TYPE_CONNECTION_MANAGER_PARAM:
+ *
+ * The boxed type of a #TpConnectionManagerParam.
+ */
+
+
+GType
+tp_connection_manager_param_get_type (void)
+{
+  static GType type = 0;
+
+  if (G_UNLIKELY (type == 0))
+    {
+      type = g_boxed_type_register_static (
+          g_intern_static_string ("TpConnectionManagerParam"),
+          (GBoxedCopyFunc) tp_connection_manager_param_copy,
+          (GBoxedFreeFunc) tp_connection_manager_param_free);
+    }
+
+  return type;
+}
+
+
+/**
+ * TP_TYPE_CONNECTION_MANAGER_PROTOCOL:
+ *
+ * The boxed type of a #TpConnectionManagerProtocol.
+ */
+
+
+GType
+tp_connection_manager_protocol_get_type (void)
+{
+  static GType type = 0;
+
+  if (G_UNLIKELY (type == 0))
+    {
+      type = g_boxed_type_register_static (
+          g_intern_static_string ("TpConnectionManagerProtocol"),
+          (GBoxedCopyFunc) tp_connection_manager_protocol_copy,
+          (GBoxedFreeFunc) tp_connection_manager_protocol_free);
+    }
+
+  return type;
+}
+
+
 typedef struct {
     TpConnectionManager *cm;
     TpConnectionManagerWhenReadyCb callback;
@@ -501,24 +666,11 @@ tp_connection_manager_free_protocols (GPtrArray *protocols)
   for (i = 0; i < protocols->len; i++)
     {
       TpConnectionManagerProtocol *proto = g_ptr_array_index (protocols, i);
-      TpConnectionManagerParam *param;
 
       if (proto == NULL)
         continue;
 
-      g_free (proto->name);
-
-      for (param = proto->params; param->name != NULL; param++)
-        {
-          g_free (param->name);
-          g_free (param->dbus_signature);
-          if (G_IS_VALUE (&param->default_value))
-            g_value_unset (&param->default_value);
-        }
-
-      g_free (proto->params);
-
-      g_slice_free (TpConnectionManagerProtocol, proto);
+      tp_connection_manager_protocol_free (proto);
     }
 
   g_ptr_array_free (protocols, TRUE);

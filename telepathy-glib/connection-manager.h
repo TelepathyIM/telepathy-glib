@@ -33,6 +33,8 @@ typedef struct _TpConnectionManagerClass TpConnectionManagerClass;
 typedef struct _TpConnectionManagerPrivate TpConnectionManagerPrivate;
 
 GType tp_connection_manager_get_type (void);
+GType tp_connection_manager_param_get_type (void);
+GType tp_connection_manager_protocol_get_type (void);
 
 /* TYPE MACROS */
 #define TP_TYPE_CONNECTION_MANAGER \
@@ -50,6 +52,11 @@ GType tp_connection_manager_get_type (void);
 #define TP_CONNECTION_MANAGER_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONNECTION_MANAGER, \
                               TpConnectionManagerClass))
+
+#define TP_TYPE_CONNECTION_MANAGER_PARAM \
+  (tp_connection_manager_param_get_type ())
+#define TP_TYPE_CONNECTION_MANAGER_PROTOCOL \
+  (tp_connection_manager_protocol_get_type ())
 
 typedef struct _TpConnectionManagerParam TpConnectionManagerParam;
 struct _TpConnectionManagerParam
@@ -177,6 +184,13 @@ void tp_connection_manager_init_known_interfaces (void);
   (tp_connection_manager_get_feature_quark_core ())
 
 GQuark tp_connection_manager_get_feature_quark_core (void) G_GNUC_CONST;
+
+TpConnectionManagerParam *tp_connection_manager_param_copy (
+    const TpConnectionManagerParam *in);
+void tp_connection_manager_param_free (TpConnectionManagerParam *param);
+TpConnectionManagerProtocol *tp_connection_manager_protocol_copy (
+    const TpConnectionManagerProtocol *in);
+void tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto);
 
 G_END_DECLS
 
