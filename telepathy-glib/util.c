@@ -938,7 +938,7 @@ tp_g_signal_connect_object (gpointer instance,
     ctx->closure = g_cclosure_new_object (c_handler, gobject);
 
   ctx->handler_id = g_signal_connect_closure (instance, detailed_signal,
-      ctx->closure, 0);
+      ctx->closure, (connect_flags & G_CONNECT_AFTER) ? TRUE : FALSE);
 
   g_object_weak_ref (instance_obj, instance_destroyed_cb, ctx);
   g_object_weak_ref (gobject, observer_destroyed_cb, ctx);
