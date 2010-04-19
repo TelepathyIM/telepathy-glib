@@ -122,8 +122,6 @@ constructed (GObject *object)
   TpHandle self_handle = self->priv->conn->self_handle;
   TpHandleRepoIface *handle_repo = tp_base_connection_get_handles
       (self->priv->conn, self->priv->handle_type);
-  DBusGConnection *bus;
-  TpDBusDaemon *dbus_daemon;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -131,12 +129,9 @@ constructed (GObject *object)
   g_assert (TP_IS_BASE_CONNECTION (self->priv->conn));
   g_assert (EXAMPLE_IS_CONTACT_LIST_MANAGER (self->priv->manager));
 
-  /* we're running under tp_run_connection_manager(), so t_d_d_d can't fail */
-  dbus_daemon = tp_dbus_daemon_dup (NULL);
-  g_assert (dbus_daemon != NULL);
-  bus = tp_proxy_get_dbus_connection (dbus_daemon);
-  dbus_g_connection_register_g_object (bus, self->priv->object_path, object);
-  g_object_unref (dbus_daemon);
+  tp_dbus_daemon_register_object (
+      tp_base_connection_get_dbus_daemon (self->priv->conn),
+      self->priv->object_path, self);
 
   tp_handle_ref (handle_repo, self->priv->handle);
   tp_group_mixin_init (object, G_STRUCT_OFFSET (ExampleContactListBase, group),
