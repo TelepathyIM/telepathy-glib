@@ -21,7 +21,7 @@
  */
 
 #include "config.h"
-#include "datetime.h"
+#include "datetime-internal.h"
 
 #include <glib/gi18n.h>
 #include <stdio.h>
@@ -33,13 +33,13 @@
 /* Note: TplTime is always in UTC. */
 
 time_t
-tpl_time_get_current (void)
+_tpl_time_get_current (void)
 {
   return time (NULL);
 }
 
 time_t
-tpl_time_get_local_time (struct tm *tm)
+_tpl_time_get_local_time (struct tm *tm)
 {
   const gchar *tz;
   time_t t;
@@ -65,7 +65,7 @@ tpl_time_get_local_time (struct tm *tm)
  * failure. The alternative format "20021209" is also accepted.
  */
 time_t
-tpl_time_parse (const gchar *str)
+_tpl_time_parse (const gchar *str)
 {
   struct tm tm;
   gint year, month;
@@ -85,12 +85,12 @@ tpl_time_parse (const gchar *str)
   tm.tm_mon = month - 1;
   tm.tm_isdst = -1;
 
-  return tpl_time_get_local_time (&tm);
+  return _tpl_time_get_local_time (&tm);
 }
 
 /* Converts the UTC timestamp to a string, also in UTC. Returns NULL on failure. */
 gchar *
-tpl_time_to_string_utc (time_t t,
+_tpl_time_to_string_utc (time_t t,
     const gchar * format)
 {
   gchar stamp[128];
@@ -109,7 +109,7 @@ tpl_time_to_string_utc (time_t t,
 
 /* Converts the UTC timestamp to a string, in local time. Returns NULL on failure. */
 gchar *
-tpl_time_to_string_local (time_t t,
+_tpl_time_to_string_local (time_t t,
     const gchar *format)
 {
   gchar stamp[128];
@@ -127,7 +127,7 @@ tpl_time_to_string_local (time_t t,
 }
 
 gchar *
-tpl_time_to_string_relative (time_t then)
+_tpl_time_to_string_relative (time_t then)
 {
   time_t now;
   gint seconds;

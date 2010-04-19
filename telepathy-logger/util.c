@@ -21,7 +21,7 @@
 
 #include "util-internal.h"
 
-#include "datetime.h"
+#include "datetime-internal.h"
 #include "log-store-sqlite.h"
 
 /* Bug#26838 prevents us to trust Messages' iface message-token
@@ -34,7 +34,7 @@ _tpl_create_message_token (const gchar *channel,
 {
   GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
   gchar *retval;
-  gchar *date = tpl_time_to_string_local (timestamp,
+  gchar *date = _tpl_time_to_string_local (timestamp,
       TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
 
   g_checksum_update (log_id, (guchar *) channel, -1);

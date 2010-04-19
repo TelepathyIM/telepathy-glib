@@ -34,9 +34,9 @@
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager-priv.h>
 #include <telepathy-logger/log-store-sqlite.h>
-#include <telepathy-logger/datetime.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
+#include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
@@ -569,7 +569,7 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
 {
   /* five days ago in seconds */
   TplChannelText *self = tpl_action_chain_get_object (ctx);
-  const time_t time_limit = tpl_time_get_current () -
+  const time_t time_limit = _tpl_time_get_current () -
     TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT;
   TplLogStore *cache = tpl_log_store_sqlite_dup ();
   GList *l;

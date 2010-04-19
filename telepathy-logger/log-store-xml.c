@@ -44,9 +44,9 @@
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store.h>
-#include <telepathy-logger/datetime.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
+#include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
@@ -313,8 +313,8 @@ log_store_xml_get_timestamp_filename (void)
   gchar *time_str;
   gchar *filename;
 
-  t = tpl_time_get_current ();
-  time_str = tpl_time_to_string_local (t, LOG_TIME_FORMAT);
+  t = _tpl_time_get_current ();
+  time_str = _tpl_time_to_string_local (t, LOG_TIME_FORMAT);
   filename = g_strconcat (time_str, LOG_FILENAME_SUFFIX, NULL);
 
   g_free (time_str);
@@ -331,7 +331,7 @@ log_store_xml_get_timestamp_from_message (TplLogEntry *message)
   t = tpl_log_entry_get_timestamp (message);
 
   /* We keep the timestamps in the messages as UTC */
-  return tpl_time_to_string_utc (t, LOG_TIME_FORMAT_FULL);
+  return _tpl_time_to_string_utc (t, LOG_TIME_FORMAT_FULL);
 }
 
 
@@ -826,7 +826,7 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
         /* we have no way in non empathy-legacy mode to know it */
         pending_id = TPL_LOG_ENTRY_MSG_ID_UNKNOWN;
 
-      t = tpl_time_parse (time_);
+      t = _tpl_time_parse (time_);
 
       sender = tpl_contact_new (sender_id);
       tpl_contact_set_alias (sender, sender_name);

@@ -29,9 +29,9 @@
 
 #include "log-entry-text.h"
 #include "log-store-sqlite.h"
-#include "datetime.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
+#include "datetime-internal.h"
 #include "debug-internal.h"
 #include "util-internal.h"
 
@@ -291,7 +291,7 @@ get_date (TplLogEntry *entry)
 
   t = tpl_log_entry_get_timestamp (entry);
 
-  return tpl_time_to_string_utc (t, "%Y-%m-%d");
+  return _tpl_time_to_string_utc (t, "%Y-%m-%d");
 }
 
 static char *
@@ -301,7 +301,7 @@ get_datetime (TplLogEntry *entry)
 
   t = tpl_log_entry_get_timestamp (entry);
 
-  return tpl_time_to_string_utc (t, TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
+  return _tpl_time_to_string_utc (t, TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
 }
 
 static const char *
@@ -792,7 +792,7 @@ out:
  * older than this value (time_t). Set it to %G_MAXUINT or any other value in
  * the future to obtain all the entries.
  * For example, to obtain entries older than one day ago, use
- * @timestamp = (#tpl_time_get_current()-86400)
+ * @timestamp = (#_tpl_time_get_current()-86400)
  *
  * Note that (in case @channel is not %NULL) this method might return log-ids
  * which are not currently related to @channel but just share the object-path,
@@ -839,7 +839,7 @@ tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
       goto out;
     }
 
-  date = tpl_time_to_string_utc (timestamp,
+  date = _tpl_time_to_string_utc (timestamp,
       TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
   sqlite3_bind_text (sql, 1, date, -1, SQLITE_TRANSIENT);
 
@@ -1060,7 +1060,7 @@ tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
   g_return_if_fail (error == NULL || *error == NULL);
   g_return_if_fail (TPL_IS_LOG_STORE_SQLITE (self));
 
-  date = tpl_time_to_string_utc ((tpl_time_get_current () - delta),
+  date = _tpl_time_to_string_utc ((_tpl_time_get_current () - delta),
       TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
 
   DEBUG ("Purging entries older than %s (%u seconds ago)", date, (guint) delta);
