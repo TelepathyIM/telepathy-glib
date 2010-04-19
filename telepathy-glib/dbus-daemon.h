@@ -87,6 +87,10 @@ void tp_dbus_daemon_list_activatable_names (TpDBusDaemon *self,
     gint timeout_ms, TpDBusDaemonListNamesCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
+void tp_dbus_daemon_register_object (TpDBusDaemon *self,
+    const gchar *object_path, gpointer object);
+void tp_dbus_daemon_unregister_object (TpDBusDaemon *self, gpointer object);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-dbus-daemon.h>
