@@ -26,6 +26,10 @@ DBUS_SERVICES_DIR="$datadir/dbus-1/services"
 AC_SUBST(DBUS_SERVICES_DIR)
 AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [Where services dir for DBUS is])
 
+ifelse(tpl_released, 1,
+    [ official_release=yes ],
+    [ official_release=no ])
+
 AC_PREREQ(2.59)
 AC_COPYRIGHT([
   Copyright (C) 2003-2007 Imendio AB
@@ -94,46 +98,38 @@ AM_CONDITIONAL([WANT_TWISTED_TESTS], test false != "$TEST_PYTHON")
 # -----------------------------------------------------------
 # Error flags
 # -----------------------------------------------------------
-AS_COMPILER_FLAG(-Wall, ERROR_CFLAGS="-Wall", ERROR_CFLAGS="")
-AS_COMPILER_FLAG(-Werror, werror=yes, werror=no)
 
-AC_ARG_ENABLE(debug,
-  AC_HELP_STRING([--disable-debug],[compile without debug code]),
-    enable_debug=$enableval, enable_debug=yes)
+TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
+  [all \
+   extra \
+   missing-prototypes \
+   shadow \
+   sign-compare \
+   strict-prototypes],
+  [missing-field-initializers \
+   unused-parameter])
+
+# things that telepathy-glib uses, but we don't here:
+#   declaration-after-statement \
+#   format-security \
+#   init-self \
+#   nested-externs \
+#   pointer-arith \
+#
+# of which d-a-s seems to be deliberate (this code fails it).
 
 AC_ARG_ENABLE(Werror,
   AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
     werror=$enableval, werror=yes)
 
-AS_COMPILER_FLAG(-Wextra, wextra=yes, wextra=no)
-AS_COMPILER_FLAG(-Wno-missing-field-initializers,
-        wno_missing_field_initializers=yes,
-        wno_missing_field_initializers=no)
-AS_COMPILER_FLAG(-Wno-unused-parameter,
-        wno_unused_parameter=yes,
-        wno_unused_parameter=no)
-
-ifelse(tpl_released, 1, [],
-    [
-        if test x$werror = xyes; then
-            ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
-        fi
-        if test x$wextra = xyes -a \
-            x$wno_missing_field_initializers = xyes -a \
-            x$wno_unused_parameter = xyes; then
-            ERROR_CFLAGS="$ERROR_CFLAGS -Wextra -Wno-missing-field-initializers -Wno-unused-parameter"
-        fi
-    ])
-
-AS_COMPILER_FLAG(-D_POSIX_SOURCE, ERROR_CFLAGS="$ERROR_CFLAGS -D_POSIX_SOURCE")
-AS_COMPILER_FLAG(-std=c99, ERROR_CFLAGS="$ERROR_CFLAGS -std=c99")
-#AS_COMPILER_FLAG(-Wdeclaration-after-statement, ERROR_CFLAGS="$ERROR_CFLAGS -Wdeclaration-after-statement")
-AS_COMPILER_FLAG(-Wshadow, ERROR_CFLAGS="$ERROR_CFLAGS -Wshadow")
-AS_COMPILER_FLAG(-Wmissing-prototypes, ERROR_CFLAGS="$ERROR_CFLAGS -Wmissing-prototypes")
-AS_COMPILER_FLAG(-Wmissing-declarations, ERROR_CFLAGS="$ERROR_CFLAGS -Wmissing-declarations")
-AS_COMPILER_FLAG(-Wstrict-prototypes, ERROR_CFLAGS="$ERROR_CFLAGS -Wstrict-prototypes")
+TP_COMPILER_FLAG(-D_POSIX_SOURCE, ERROR_CFLAGS="$ERROR_CFLAGS -D_POSIX_SOURCE")
+TP_COMPILER_FLAG(-std=c99, ERROR_CFLAGS="$ERROR_CFLAGS -std=c99")
 
 AC_SUBST(ERROR_CFLAGS)
+
+AC_ARG_ENABLE(debug,
+  AC_HELP_STRING([--disable-debug],[compile without debug code]),
+    enable_debug=$enableval, enable_debug=yes)
 
 # -----------------------------------------------------------
 # Pkg-Config dependency checks
