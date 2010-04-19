@@ -45,7 +45,6 @@
 #define DEBUG_FLAG TPL_DEBUG_LOG_MANAGER
 #include <telepathy-logger/debug.h>
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogManager)
 typedef struct
 {
   GList *stores;
@@ -91,7 +90,7 @@ log_manager_finalize (GObject *object)
 {
   TplLogManagerPriv *priv;
 
-  priv = GET_PRIV (object);
+  priv = TPL_LOG_MANAGER (object)->priv;
 
   g_list_foreach (priv->stores, (GFunc) g_object_unref, NULL);
   g_list_free (priv->stores);
@@ -232,7 +231,7 @@ _tpl_log_manager_add_message (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
 
-  priv = GET_PRIV (manager);
+  priv = manager->priv;
 
   /* send the message to any writable log store */
   for (l = priv->writable_stores; l != NULL; l = g_list_next (l))
@@ -283,7 +282,7 @@ gboolean
 _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore)
 {
-  TplLogManagerPriv *priv = GET_PRIV (self);
+  TplLogManagerPriv *priv = self->priv;
   GList *l;
   gboolean found = FALSE;
 
@@ -350,7 +349,7 @@ tpl_log_manager_exists (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
   g_return_val_if_fail (chat_id != NULL, FALSE);
 
-  priv = GET_PRIV (manager);
+  priv = manager->priv;
 
   for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
@@ -394,7 +393,7 @@ tpl_log_manager_get_dates (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
   g_return_val_if_fail (chat_id != NULL, NULL);
 
-  priv = GET_PRIV (manager);
+  priv = manager->priv;
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
@@ -433,7 +432,7 @@ tpl_log_manager_get_messages_for_date (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
   g_return_val_if_fail (chat_id != NULL, NULL);
 
-  priv = GET_PRIV (manager);
+  priv = manager->priv;
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
@@ -486,7 +485,7 @@ tpl_log_manager_get_filtered_messages (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
 
-  priv = GET_PRIV (manager);
+  priv = manager->priv;
 
   /* Get num_messages from each log store and keep only the
    * newest ones in the out list. Keep that list sorted: Older first. */
@@ -600,7 +599,7 @@ tpl_log_manager_get_chats (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  priv = GET_PRIV (manager);
+  priv = manager->priv;
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
@@ -645,7 +644,7 @@ tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
   g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
-  priv = GET_PRIV (manager);
+  priv = manager->priv;
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
@@ -670,7 +669,7 @@ tpl_log_manager_search_new (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
-  priv = GET_PRIV (manager);
+  priv = manager->priv;
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
