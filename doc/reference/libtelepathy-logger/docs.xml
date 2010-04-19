@@ -23,7 +23,6 @@
     <xi:include href="xml/channel-factory.xml"/>
     <xi:include href="xml/channel-text.xml"/>
     <xi:include href="xml/channel.xml"/>
-    <xi:include href="xml/datetime.xml"/>
     <xi:include href="xml/dbus-service.xml"/>
     <xi:include href="xml/log-store-factory.xml"/>
     <xi:include href="xml/log-store-sqlite.xml"/>

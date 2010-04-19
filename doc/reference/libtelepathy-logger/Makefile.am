@@ -57,6 +57,7 @@ CFILE_GLOB=$(top_srcdir)/telepathy-logger/*.c
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES=\
     log-manager-priv.h \
+    datetime-internal.h \
     debug-internal.h \
     util-internal.h
 
