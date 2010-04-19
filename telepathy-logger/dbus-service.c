@@ -45,7 +45,6 @@
 
 static void tpl_logger_iface_init (gpointer iface, gpointer iface_data);
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplDBusService)
 struct _TplDBusServicePriv
 {
   TplLogManager *manager;
@@ -121,7 +120,7 @@ favourite_contacts_add_entry (TplDBusService *self,
   g_return_val_if_fail (account != NULL, FALSE);
   g_return_val_if_fail (contact_id != NULL, FALSE);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   DEBUG ("adding favourite contact: account '%s', ID '%s'",
       account, contact_id);
@@ -207,7 +206,7 @@ favourite_contacts_file_read_line_cb (GObject *object,
   gchar *line;
   GError *error = NULL;
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   line = g_data_input_stream_read_line_finish (data_stream, result, NULL, &error);
 
@@ -286,7 +285,7 @@ pendingproc_favourite_contacts_file_open (TplActionChain *action_chain,
 static void
 tpl_dbus_service_dispose (GObject *obj)
 {
-  TplDBusServicePriv *priv = GET_PRIV (obj);
+  TplDBusServicePriv *priv = TPL_DBUS_SERVICE (obj)->priv;
 
   if (priv->accounts_contacts_map != NULL)
     {
@@ -307,7 +306,7 @@ favourite_contacts_file_parsed_cb (GObject *object,
     gpointer user_data)
 {
   TplDBusService *self = TPL_DBUS_SERVICE (object);
-  TplDBusServicePriv *priv = GET_PRIV (self);
+  TplDBusServicePriv *priv = self->priv;
 
   if (!tpl_action_chain_finish (result))
     {
@@ -322,7 +321,7 @@ favourite_contacts_file_parsed_cb (GObject *object,
 static void
 tpl_dbus_service_constructed (GObject *object)
 {
-  TplDBusServicePriv *priv = GET_PRIV (object);
+  TplDBusServicePriv *priv = TPL_DBUS_SERVICE (object)->priv;
 
   priv->favourite_contacts_actions = tpl_action_chain_new (object,
       favourite_contacts_file_parsed_cb, object);
@@ -434,7 +433,7 @@ _get_messages_return (GObject *manager,
 static void
 _lookup_next_date (RecentMessagesContext *ctx)
 {
-  TplDBusServicePriv *priv = GET_PRIV (ctx->self);
+  TplDBusServicePriv *priv = ctx->self->priv;
 
   if (ctx->ptr != NULL && ctx->lines > 0)
     {
@@ -507,7 +506,7 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
     guint lines,
     DBusGMethodInvocation *context)
 {
-  TplDBusServicePriv *priv = GET_PRIV (self);
+  TplDBusServicePriv *priv = TPL_DBUS_SERVICE (self)->priv;
   TpDBusDaemon *tp_dbus;
   TpAccount *account;
   RecentMessagesContext *ctx;
@@ -598,7 +597,7 @@ pendingproc_get_favourite_contacts (TplActionChain *action_chain,
   g_return_if_fail (TPL_IS_DBUS_SERVICE (closure->service));
   g_return_if_fail (closure->context != NULL);
 
-  priv = GET_PRIV (closure->service);
+  priv = closure->service->priv;
 
   packed = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 
@@ -616,19 +615,20 @@ pendingproc_get_favourite_contacts (TplActionChain *action_chain,
 
 
 static void
-tpl_dbus_service_get_favourite_contacts (TplSvcLogger *self,
+tpl_dbus_service_get_favourite_contacts (TplSvcLogger *logger,
     DBusGMethodInvocation *context)
 {
+  TplDBusService *self;
   TplDBusServicePriv *priv;
   FavouriteContactClosure *closure;
 
-  g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
+  g_return_if_fail (TPL_IS_DBUS_SERVICE (logger));
   g_return_if_fail (context != NULL);
 
-  priv = GET_PRIV (self);
+  self = TPL_DBUS_SERVICE (logger);
+  priv = self->priv;
 
-  closure = favourite_contact_closure_new (TPL_DBUS_SERVICE (self), NULL, NULL,
-      context);
+  closure = favourite_contact_closure_new (self, NULL, NULL, context);
 
   /* If we're still waiting on the contacts to finish being parsed from disk,
    * queue this action */
@@ -657,7 +657,7 @@ append_favourite_contacts_file_entries (const gchar *account,
 static gchar *
 favourite_contacts_to_string (TplDBusService *self)
 {
-  TplDBusServicePriv *priv = GET_PRIV (self);
+  TplDBusServicePriv *priv = self->priv;
   GString *string;
 
   string = g_string_new ("");
@@ -729,7 +729,7 @@ static void
 add_favourite_contact_file_save_cb (gboolean added_favourite,
     FavouriteContactClosure *closure)
 {
-  TplDBusServicePriv *priv = GET_PRIV (closure->service);
+  TplDBusServicePriv *priv = closure->service->priv;
   TplActionChain *action_chain = priv->favourite_contacts_actions;
 
   if (added_favourite)
@@ -764,7 +764,7 @@ pendingproc_add_favourite_contact (TplActionChain *action_chain,
   g_return_if_fail (TPL_IS_DBUS_SERVICE (closure->service));
   g_return_if_fail (closure->context != NULL);
 
-  priv = GET_PRIV (closure->service);
+  priv = closure->service->priv;
 
   if (!tp_dbus_check_valid_object_path (closure->account, &error))
     {
@@ -793,21 +793,21 @@ pendingproc_add_favourite_contact_ERROR:
 
 
 static void
-tpl_dbus_service_add_favourite_contact (TplSvcLogger *self,
+tpl_dbus_service_add_favourite_contact (TplSvcLogger *logger,
     const gchar *account,
     const gchar *contact_id,
     DBusGMethodInvocation *context)
 {
+  TplDBusService *self = TPL_DBUS_SERVICE (logger);
   TplDBusServicePriv *priv;
   FavouriteContactClosure *closure;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
-  closure = favourite_contact_closure_new (TPL_DBUS_SERVICE (self), account,
-      contact_id, context);
+  closure = favourite_contact_closure_new (self, account, contact_id, context);
 
   /* If we're still waiting on the contacts to finish being parsed from disk,
    * queue this action */
@@ -824,7 +824,7 @@ static void
 remove_favourite_contact_file_save_cb (gboolean removed_favourite,
     FavouriteContactClosure *closure)
 {
-  TplDBusServicePriv *priv = GET_PRIV (closure->service);
+  TplDBusServicePriv *priv = closure->service->priv;
   TplActionChain *action_chain = priv->favourite_contacts_actions;
 
   if (removed_favourite)
@@ -859,7 +859,7 @@ pendingproc_remove_favourite_contact (TplActionChain *action_chain,
   g_return_if_fail (TPL_IS_DBUS_SERVICE (closure->service));
   g_return_if_fail (closure->context != NULL);
 
-  TplDBusServicePriv *priv = GET_PRIV (closure->service);
+  TplDBusServicePriv *priv = closure->service->priv;
 
   if (!tp_dbus_check_valid_object_path (closure->account, &error))
     {
@@ -892,21 +892,21 @@ pendingproc_remove_favourite_contact_ERROR:
 }
 
 static void
-tpl_dbus_service_remove_favourite_contact (TplSvcLogger *self,
+tpl_dbus_service_remove_favourite_contact (TplSvcLogger *logger,
     const gchar *account,
     const gchar *contact_id,
     DBusGMethodInvocation *context)
 {
+  TplDBusService *self = TPL_DBUS_SERVICE (logger);
   TplDBusServicePriv *priv;
   FavouriteContactClosure *closure;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
   g_return_if_fail (context != NULL);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
-  closure = favourite_contact_closure_new (TPL_DBUS_SERVICE (self), account,
-      contact_id, context);
+  closure = favourite_contact_closure_new (self, account, contact_id, context);
 
   /* If we're still waiting on the contacts to finish being parsed from disk,
    * queue this action */
