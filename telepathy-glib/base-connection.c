@@ -273,6 +273,8 @@ enum
     PROP_SELF_HANDLE,
     PROP_INTERFACES,
     PROP_DBUS_STATUS,
+    PROP_DBUS_DAEMON,
+    N_PROPS
 };
 
 /* signal enum */
@@ -401,13 +403,27 @@ struct _TpBaseConnectionPrivate
    * DISCONNECTED). */
   GPtrArray *disconnect_requests;
 
-  /* Only non-NULL if we have taken our ->bus_name. */
   TpDBusDaemon *bus_proxy;
 };
 
 static guint tp_base_connection_get_dbus_status (TpBaseConnection *self);
 static const gchar * const *tp_base_connection_get_interfaces (
     TpBaseConnection *self);
+
+static gboolean
+tp_base_connection_ensure_dbus (TpBaseConnection *self,
+    GError **error)
+{
+  if (self->priv->bus_proxy == NULL)
+    {
+      self->priv->bus_proxy = tp_dbus_daemon_dup (error);
+
+      if (self->priv->bus_proxy == NULL)
+        return FALSE;
+    }
+
+  return TRUE;
+}
 
 static void
 tp_base_connection_get_property (GObject *object,
@@ -434,6 +450,10 @@ tp_base_connection_get_property (GObject *object,
 
     case PROP_DBUS_STATUS:
       g_value_set_uint (value, tp_base_connection_get_dbus_status (self));
+      break;
+
+    case PROP_DBUS_DAEMON:
+      g_value_set_object (value, self->priv->bus_proxy);
       break;
 
     default:
@@ -480,6 +500,17 @@ tp_base_connection_set_property (GObject      *object,
 
         tp_svc_connection_emit_self_handle_changed (self, self->self_handle);
       }
+      break;
+
+    case PROP_DBUS_DAEMON:
+        {
+          TpDBusDaemon *dbus_daemon = g_value_get_object (value);
+
+          g_assert (self->priv->bus_proxy == NULL);     /* construct-only */
+
+          if (dbus_daemon != NULL)
+            self->priv->bus_proxy = g_object_ref (dbus_daemon);
+        }
       break;
 
     default:
@@ -1200,6 +1231,10 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   g_assert (cls->shut_down != NULL);
   g_assert (cls->start_connecting != NULL);
 
+  /* if we fail to connect to D-Bus here, we'll return an error from
+   * register */
+  tp_base_connection_ensure_dbus (self, NULL);
+
   (cls->create_handle_repos) (self, priv->handles);
 
   /* a connection that doesn't support contacts is no use to anyone */
@@ -1470,6 +1505,24 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
 
+  /**
+   * TpBaseConnection:dbus-daemon:
+   *
+   * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
+   * Read-only except during construction.
+   *
+   * If this property is %NULL or omitted during construction, the object will
+   * automatically attempt to connect to the starter or session bus with
+   * tp_dbus_daemon_dup() just after it is constructed; if this fails, this
+   * property will remain %NULL, and tp_base_connection_register() will fail.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
+      g_param_spec_object ("dbus-daemon", "D-Bus daemon",
+        "The D-Bus daemon used by this object", TP_TYPE_DBUS_DAEMON,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
   /* signal definitions */
 
   /**
@@ -1621,10 +1674,7 @@ tp_base_connection_register (TpBaseConnection *self,
       unique_name = g_strdup_printf ("_%p", self);
     }
 
-  if (priv->bus_proxy == NULL)
-    priv->bus_proxy = tp_dbus_daemon_dup (error);
-
-  if (priv->bus_proxy == NULL)
+  if (!tp_base_connection_ensure_dbus (self, error))
     return FALSE;
 
   self->bus_name = g_strdup_printf (TP_CONN_BUS_NAME_BASE "%s.%s.%s",
@@ -3352,4 +3402,22 @@ tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
   tp_contacts_mixin_add_contact_attributes_iface (G_OBJECT (self),
       TP_IFACE_CONNECTION,
       tp_base_connection_fill_contact_attributes);
+}
+
+/**
+ * tp_base_connection_get_dbus_daemon:
+ * @self: the connection manager
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the value of the
+ *  #TpBaseConnectionManager:dbus-daemon property. The caller must reference
+ *  the returned object with g_object_ref() if it will be kept.
+ */
+TpDBusDaemon *
+tp_base_connection_get_dbus_daemon (TpBaseConnection *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
+
+  return self->priv->bus_proxy;
 }
