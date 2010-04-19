@@ -52,7 +52,6 @@ static void got_ready_tp_channel_cb (TpChannel *channel,
 
 G_DEFINE_ABSTRACT_TYPE (TplChannel, tpl_channel, TP_TYPE_CHANNEL)
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplChannel)
 struct _TplChannelPriv
 {
   TpAccount *account;
@@ -70,7 +69,7 @@ tpl_channel_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplChannelPriv *priv = GET_PRIV (object);
+  TplChannelPriv *priv = TPL_CHANNEL (object)->priv;
 
   switch (param_id)
     {
@@ -105,7 +104,7 @@ tpl_channel_set_property (GObject *object,
 static void
 tpl_channel_dispose (GObject *obj)
 {
-  TplChannelPriv *priv = GET_PRIV (obj);
+  TplChannelPriv *priv = TPL_CHANNEL (obj)->priv;
 
   if (priv->account != NULL)
     {
@@ -160,7 +159,7 @@ tpl_channel_get_account (TplChannel *self)
 
   g_return_val_if_fail (TPL_IS_CHANNEL (self), NULL);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   return priv->account;
 }
@@ -175,7 +174,7 @@ tpl_channel_set_account (TplChannel *self,
   g_return_if_fail (TPL_IS_CHANNEL (self));
   g_return_if_fail (TP_IS_ACCOUNT (data));
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
   g_return_if_fail (priv->account == NULL);
 
   priv->account = g_object_ref (data);

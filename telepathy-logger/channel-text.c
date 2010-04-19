@@ -44,7 +44,6 @@
 #define TP_CONTACT_MYSELF 0
 #define TP_CONTACT_REMOTE 1
 
-#define GET_PRIV(obj)    TPL_GET_PRIV (obj, TplChannelText)
 struct _TplChannelTextPriv
 {
   gboolean chatroom;
@@ -129,7 +128,7 @@ got_contact_cb (TpConnection *connection,
   TplObserver *observer = tpl_observer_new (); /* singleton */
   TplActionChain *ctx = user_data;
   TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
-  TplChannelTextPriv *priv = GET_PRIV (tpl_text);
+  TplChannelTextPriv *priv = tpl_text->priv;
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpChannel *tp_chan = TP_CHANNEL (tpl_chan);
 
@@ -187,7 +186,7 @@ pendingproc_get_remote_contact (TplActionChain *ctx,
 
   remote_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan), NULL);
 
-  GET_PRIV (tpl_text)->selector = TP_CONTACT_REMOTE;
+  tpl_text->priv->selector = TP_CONTACT_REMOTE;
   tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
       G_N_ELEMENTS (features), features, got_contact_cb, ctx, NULL, NULL);
 }
@@ -202,7 +201,7 @@ pendingproc_get_my_contact (TplActionChain *ctx,
       TP_CHANNEL (tpl_text));
   TpHandle my_handle = tp_connection_get_self_handle (tp_conn);
 
-  GET_PRIV (tpl_text)->selector = TP_CONTACT_MYSELF;
+  tpl_text->priv->selector = TP_CONTACT_MYSELF;
   tp_connection_get_contacts_by_handle (tp_conn, 1, &my_handle,
       G_N_ELEMENTS (features), features, got_contact_cb, ctx, NULL, NULL);
 }
@@ -260,7 +259,7 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx,
 static void
 tpl_channel_text_dispose (GObject *obj)
 {
-  TplChannelTextPriv *priv = GET_PRIV (obj);
+  TplChannelTextPriv *priv = TPL_CHANNEL_TEXT (obj)->priv;
 
   if (priv->my_contact != NULL)
     {
@@ -280,7 +279,7 @@ tpl_channel_text_dispose (GObject *obj)
 static void
 tpl_channel_text_finalize (GObject *obj)
 {
-  TplChannelTextPriv *priv = GET_PRIV (obj);
+  TplChannelTextPriv *priv = TPL_CHANNEL_TEXT (obj)->priv;
 
   PATH_DEBUG (obj, "finalizing channel %p", obj);
 
@@ -377,7 +376,7 @@ tpl_channel_text_new (TpConnection *conn,
 TpContact *
 tpl_channel_text_get_remote_contact (TplChannelText *self)
 {
-  TplChannelTextPriv *priv = GET_PRIV (self);
+  TplChannelTextPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
 
@@ -388,7 +387,7 @@ tpl_channel_text_get_remote_contact (TplChannelText *self)
 TpContact *
 tpl_channel_text_get_my_contact (TplChannelText *self)
 {
-  TplChannelTextPriv *priv = GET_PRIV (self);
+  TplChannelTextPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
 
@@ -399,7 +398,7 @@ tpl_channel_text_get_my_contact (TplChannelText *self)
 gboolean
 tpl_channel_text_is_chatroom (TplChannelText *self)
 {
-  TplChannelTextPriv *priv = GET_PRIV (self);
+  TplChannelTextPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), FALSE);
 
@@ -410,7 +409,7 @@ tpl_channel_text_is_chatroom (TplChannelText *self)
 const gchar *
 tpl_channel_text_get_chatroom_id (TplChannelText *self)
 {
-  TplChannelTextPriv *priv = GET_PRIV (self);
+  TplChannelTextPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
 
@@ -422,7 +421,7 @@ void
 tpl_channel_text_set_remote_contact (TplChannelText *self,
     TpContact *data)
 {
-  TplChannelTextPriv *priv = GET_PRIV (self);
+  TplChannelTextPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
   g_return_if_fail (TP_IS_CONTACT (data));
@@ -436,7 +435,7 @@ void
 tpl_channel_text_set_my_contact (TplChannelText *self,
     TpContact *data)
 {
-  TplChannelTextPriv *priv = GET_PRIV (self);
+  TplChannelTextPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
   g_return_if_fail (TP_IS_CONTACT (data));
@@ -450,7 +449,7 @@ void
 tpl_channel_text_set_chatroom (TplChannelText *self,
     gboolean data)
 {
-  TplChannelTextPriv *priv = GET_PRIV (self);
+  TplChannelTextPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
 
@@ -462,7 +461,7 @@ void
 tpl_channel_text_set_chatroom_id (TplChannelText *self,
     const gchar *data)
 {
-  TplChannelTextPriv *priv = GET_PRIV (self);
+  TplChannelTextPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
