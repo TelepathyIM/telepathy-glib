@@ -65,8 +65,7 @@
     "</log>\n"
 
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogStoreXml)
-typedef struct
+struct _TplLogStoreXmlPriv
 {
   gchar *basedir;
   gchar *name;
@@ -74,7 +73,7 @@ typedef struct
   gboolean writable;
   gboolean empathy_legacy;
   TpAccountManager *account_manager;
-} TplLogStoreXmlPriv;
+};
 
 enum {
     PROP_0,
@@ -90,13 +89,13 @@ static void tpl_log_store_xml_get_property (GObject *object, guint param_id, GVa
     GParamSpec *pspec);
 static void tpl_log_store_xml_set_property (GObject *object, guint param_id, const GValue *value,
     GParamSpec *pspec);
-static const gchar *log_store_xml_get_name (TplLogStore *self);
-static void log_store_xml_set_name (TplLogStore *self, const gchar *data);
-static const gchar *log_store_xml_get_basedir (TplLogStore *self);
-static void log_store_xml_set_basedir (TplLogStore *self,
+static const gchar *log_store_xml_get_name (TplLogStore *store);
+static void log_store_xml_set_name (TplLogStoreXml *self, const gchar *data);
+static const gchar *log_store_xml_get_basedir (TplLogStoreXml *self);
+static void log_store_xml_set_basedir (TplLogStoreXml *self,
     const gchar *data);
-static void log_store_xml_set_writable (TplLogStore *self, gboolean data);
-static void log_store_xml_set_readable (TplLogStore *self, gboolean data);
+static void log_store_xml_set_writable (TplLogStoreXml *self, gboolean data);
+static void log_store_xml_set_readable (TplLogStoreXml *self, gboolean data);
 
 
 G_DEFINE_TYPE_WITH_CODE (TplLogStoreXml, tpl_log_store_xml,
@@ -107,7 +106,7 @@ static void
 log_store_xml_dispose (GObject *object)
 {
   TplLogStoreXml *self = TPL_LOG_STORE_XML (object);
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXmlPriv *priv = self->priv;
 
   /* FIXME See TP-bug #25569, when dispose a non prepared TP_AM, it
      might segfault.
@@ -127,7 +126,7 @@ static void
 log_store_xml_finalize (GObject *object)
 {
   TplLogStoreXml *self = TPL_LOG_STORE_XML (object);
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXmlPriv *priv = self->priv;
 
   if (priv->basedir != NULL)
     {
@@ -148,7 +147,7 @@ tpl_log_store_xml_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplLogStoreXmlPriv *priv = GET_PRIV (object);
+  TplLogStoreXmlPriv *priv = TPL_LOG_STORE_XML (object)->priv;
 
   switch (param_id)
     {
@@ -180,7 +179,7 @@ tpl_log_store_xml_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TplLogStore *self = TPL_LOG_STORE (object);
+  TplLogStoreXml *self = TPL_LOG_STORE_XML (object);
 
   switch (param_id)
     {
@@ -194,7 +193,7 @@ tpl_log_store_xml_set_property (GObject *object,
         log_store_xml_set_writable (self, g_value_get_boolean (value));
         break;
       case PROP_EMPATHY_LEGACY:
-        GET_PRIV (self)->empathy_legacy = g_value_get_boolean (value);
+        self->priv->empathy_legacy = g_value_get_boolean (value);
         break;
       case PROP_BASEDIR:
         log_store_xml_set_basedir (self, g_value_get_string (value));
@@ -280,7 +279,7 @@ log_store_account_to_dirname (TpAccount *account)
  * If NULL, the returned dir will be composed until the account part.
  * If non-NULL, the returned dir will be composed until the chat_id part */
 static gchar *
-log_store_xml_get_dir (TplLogStore *self,
+log_store_xml_get_dir (TplLogStoreXml *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
@@ -294,7 +293,7 @@ log_store_xml_get_dir (TplLogStore *self,
   /* chat_id may be NULL, but not empthy string if not-NULL */
   g_return_val_if_fail ((chat_id == NULL) || (*chat_id != '\0'), NULL);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   escaped = log_store_account_to_dirname (account);
 
@@ -342,7 +341,7 @@ log_store_xml_get_timestamp_from_message (TplLogEntry *message)
 
 
 static gchar *
-log_store_xml_get_filename (TplLogStore *self,
+log_store_xml_get_filename (TplLogStoreXml *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
@@ -373,7 +372,7 @@ log_store_xml_get_filename (TplLogStore *self,
  * LogEntry<Type> instance. it should the only method allowed to write to the
  * store */
 static gboolean
-_log_store_xml_write_to_store (TplLogStore *self,
+_log_store_xml_write_to_store (TplLogStoreXml *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
@@ -424,7 +423,7 @@ _log_store_xml_write_to_store (TplLogStore *self,
 
 
 static gboolean
-add_message_text_chat (TplLogStore *self,
+add_message_text_chat (TplLogStoreXml *self,
     TplLogEntryText *message,
     GError **error)
 {
@@ -515,7 +514,7 @@ out:
 
 
 static gboolean
-add_message_text (TplLogStore *self,
+add_message_text (TplLogStoreXml *self,
     TplLogEntryText *message,
     GError **error)
 {
@@ -552,10 +551,12 @@ add_message_text (TplLogStore *self,
 
 /* First of two phases selection: understand the type LogEntry */
 static gboolean
-log_store_xml_add_message (TplLogStore *self,
+log_store_xml_add_message (TplLogStore *store,
     TplLogEntry *message,
     GError **error)
 {
+  TplLogStoreXml *self = TPL_LOG_STORE_XML (store);
+
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -568,7 +569,7 @@ log_store_xml_add_message (TplLogStore *self,
         return add_message_text (self, TPL_LOG_ENTRY_TEXT (message), error);
       default:
         DEBUG ("TplLogEntrySignalType not handled by this LogStore (%s). "
-            "Ignoring LogEntry", log_store_xml_get_name (self));
+            "Ignoring LogEntry", log_store_xml_get_name (store));
         /* do not consider it an error, this LogStore simply do not want/need
          * this LogEntry */
         return TRUE;
@@ -577,11 +578,12 @@ log_store_xml_add_message (TplLogStore *self,
 
 
 static gboolean
-log_store_xml_exists (TplLogStore *self,
+log_store_xml_exists (TplLogStore *store,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
 {
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *dir;
   gboolean exists;
 
@@ -598,11 +600,12 @@ log_store_xml_exists (TplLogStore *self,
 
 
 static GList *
-log_store_xml_get_dates (TplLogStore *self,
+log_store_xml_get_dates (TplLogStore *store,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
 {
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *dates = NULL;
   gchar *date;
   gchar *directory;
@@ -652,7 +655,7 @@ log_store_xml_get_dates (TplLogStore *self,
 
 
 static gchar *
-log_store_xml_get_filename_for_date (TplLogStore *self,
+log_store_xml_get_filename_for_date (TplLogStoreXml *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
@@ -679,10 +682,10 @@ log_store_xml_get_filename_for_date (TplLogStore *self,
 
 
 static TplLogSearchHit *
-log_store_xml_search_hit_new (TplLogStore *self,
+log_store_xml_search_hit_new (TplLogStoreXml *self,
     const gchar *filename)
 {
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXmlPriv *priv = self->priv;
   TplLogSearchHit *hit;
   gchar *account_name;
   const gchar *end;
@@ -738,7 +741,7 @@ log_store_xml_search_hit_new (TplLogStore *self,
 
 /* returns a Glist of TplLogEntryText instances */
 static GList *
-log_store_xml_get_messages_for_file (TplLogStore *self,
+log_store_xml_get_messages_for_file (TplLogStoreXml *self,
     TpAccount *account,
     const gchar *filename)
 {
@@ -821,7 +824,7 @@ log_store_xml_get_messages_for_file (TplLogStore *self,
       if (msg_type_str != NULL)
         msg_type = tpl_log_entry_text_message_type_from_str (msg_type_str);
 
-      if (log_id != NULL && GET_PRIV (self)->empathy_legacy)
+      if (log_id != NULL && self->priv->empathy_legacy)
         /* in legacy mode, it's actually the pending message id before ACK */
         pending_id = atoi (log_id);
       else
@@ -834,7 +837,7 @@ log_store_xml_get_messages_for_file (TplLogStore *self,
       tpl_contact_set_alias (sender, sender_name);
       tpl_contact_set_avatar_token (sender, sender_avatar_token);
 
-      if (GET_PRIV (self)->empathy_legacy)
+      if (self->priv->empathy_legacy)
         {
           /* in legacy Empathy LogStore there is no concept of log-id as a unique
            * token, so I'll create, just for it to be present, an ad hoc unique
@@ -883,7 +886,7 @@ log_store_xml_get_messages_for_file (TplLogStore *self,
 /* If dir is NULL, basedir will be used instead.
  * Used to make possible the full search vs. specific subtrees search */
 static GList *
-log_store_xml_get_all_files (TplLogStore *self,
+log_store_xml_get_all_files (TplLogStoreXml *self,
     const gchar *dir)
 {
   GDir *gdir;
@@ -892,7 +895,7 @@ log_store_xml_get_all_files (TplLogStore *self,
   const gchar *basedir;
   TplLogStoreXmlPriv *priv;
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   /* dir can be NULL, do not check */
@@ -932,7 +935,7 @@ log_store_xml_get_all_files (TplLogStore *self,
 
 
 static GList *
-_log_store_xml_search_in_files (TplLogStore *self,
+_log_store_xml_search_in_files (TplLogStoreXml *self,
     const gchar *text,
     GList *files)
 {
@@ -990,11 +993,12 @@ _log_store_xml_search_in_files (TplLogStore *self,
 
 
 static GList *
-log_store_xml_search_in_identifier_chats_new (TplLogStore *self,
+log_store_xml_search_in_identifier_chats_new (TplLogStore *store,
     TpAccount *account,
     const gchar *identifier,
     const gchar *text)
 {
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *files;
   gchar *dir, *account_dir;
 
@@ -1016,9 +1020,10 @@ log_store_xml_search_in_identifier_chats_new (TplLogStore *self,
 
 
 static GList *
-log_store_xml_search_new (TplLogStore *self,
+log_store_xml_search_new (TplLogStore *store,
     const gchar *text)
 {
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *files;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
@@ -1032,7 +1037,7 @@ log_store_xml_search_new (TplLogStore *self,
 
 /* Returns: (GList *) of (TplLogSearchHit *) */
 static GList *
-log_store_xml_get_chats_for_dir (TplLogStore *self,
+log_store_xml_get_chats_for_dir (TplLogStoreXml *self,
     const gchar *dir,
     gboolean is_chatroom)
 {
@@ -1079,12 +1084,13 @@ log_store_xml_get_chats_for_dir (TplLogStore *self,
 
 /* returns a Glist of TplLogEntryText instances */
 static GList *
-log_store_xml_get_messages_for_date (TplLogStore *self,
+log_store_xml_get_messages_for_date (TplLogStore *store,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
     const gchar *date)
 {
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *filename;
   GList *messages;
 
@@ -1104,9 +1110,10 @@ log_store_xml_get_messages_for_date (TplLogStore *self,
 
 
 static GList *
-log_store_xml_get_chats (TplLogStore *self,
+log_store_xml_get_chats (TplLogStore *store,
     TpAccount *account)
 {
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *dir;
   GList *hits;
   TplLogStoreXmlPriv *priv;
@@ -1114,7 +1121,7 @@ log_store_xml_get_chats (TplLogStore *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   dir = log_store_xml_get_dir (self, account, NULL, FALSE);
   hits = log_store_xml_get_chats_for_dir (self, dir, FALSE);
@@ -1132,21 +1139,21 @@ log_store_xml_get_chats (TplLogStore *self,
 
 
 static const gchar *
-log_store_xml_get_name (TplLogStore *self)
+log_store_xml_get_name (TplLogStore *store)
 {
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
 
-  return priv->name;
+  return self->priv->name;
 }
 
 
 /* returns am absolute path for the base directory of LogStore */
 static const gchar *
-log_store_xml_get_basedir (TplLogStore *self)
+log_store_xml_get_basedir (TplLogStoreXml *self)
 {
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXmlPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
 
@@ -1157,7 +1164,7 @@ log_store_xml_get_basedir (TplLogStore *self)
       gchar *dir;
 
       dir = g_build_path (G_DIR_SEPARATOR_S, g_get_user_data_dir (),
-          log_store_xml_get_name (self), "logs", NULL);
+          log_store_xml_get_name ((TplLogStore *) self), "logs", NULL);
       log_store_xml_set_basedir (self, dir);
       g_free (dir);
     }
@@ -1167,10 +1174,10 @@ log_store_xml_get_basedir (TplLogStore *self)
 
 
 static void
-log_store_xml_set_name (TplLogStore *self,
+log_store_xml_set_name (TplLogStoreXml *self,
     const gchar *data)
 {
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXmlPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
@@ -1180,10 +1187,10 @@ log_store_xml_set_name (TplLogStore *self,
 }
 
 static void
-log_store_xml_set_basedir (TplLogStore *self,
+log_store_xml_set_basedir (TplLogStoreXml *self,
     const gchar *data)
 {
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXmlPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
   g_return_if_fail (priv->basedir == NULL);
@@ -1199,10 +1206,10 @@ log_store_xml_set_basedir (TplLogStore *self,
 
 
 static void
-log_store_xml_set_readable (TplLogStore *self,
+log_store_xml_set_readable (TplLogStoreXml *self,
     gboolean data)
 {
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXmlPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
 
@@ -1211,10 +1218,10 @@ log_store_xml_set_readable (TplLogStore *self,
 
 
 static void
-log_store_xml_set_writable (TplLogStore *self,
+log_store_xml_set_writable (TplLogStoreXml *self,
     gboolean data)
 {
-  TplLogStoreXmlPriv *priv = GET_PRIV (self);
+  TplLogStoreXmlPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
 
@@ -1223,7 +1230,7 @@ log_store_xml_set_writable (TplLogStore *self,
 
 
 static GList *
-log_store_xml_get_filtered_messages (TplLogStore *self,
+log_store_xml_get_filtered_messages (TplLogStore *store,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
@@ -1231,6 +1238,7 @@ log_store_xml_get_filtered_messages (TplLogStore *self,
     TplLogMessageFilter filter,
     gpointer user_data)
 {
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *dates, *l, *messages = NULL;
   guint i = 0;
 
@@ -1238,7 +1246,7 @@ log_store_xml_get_filtered_messages (TplLogStore *self,
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
 
-  dates = log_store_xml_get_dates (self, account, chat_id, chatroom);
+  dates = log_store_xml_get_dates (store, account, chat_id, chatroom);
 
   for (l = g_list_last (dates); l != NULL && i < num_messages;
        l = g_list_previous (l))
@@ -1247,7 +1255,7 @@ log_store_xml_get_filtered_messages (TplLogStore *self,
 
       /* FIXME: We should really restrict the message parsing to get only
        * the newest num_messages. */
-      new_messages = log_store_xml_get_messages_for_date (self, account,
+      new_messages = log_store_xml_get_messages_for_date (store, account,
           chat_id, chatroom, l->data);
 
       n = new_messages;

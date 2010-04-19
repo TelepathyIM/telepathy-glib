@@ -45,10 +45,12 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((inst), TPL_TYPE_LOG_STORE_XML, \
                               TplLogStoreXmlClass))
 
+typedef struct _TplLogStoreXmlPriv TplLogStoreXmlPriv;
+
 typedef struct TplLogStoreXml
 {
   GObject parent;
-  gpointer priv;
+  TplLogStoreXmlPriv *priv;
 } TplLogStoreXml;
 
 typedef struct
