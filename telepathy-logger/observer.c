@@ -91,7 +91,6 @@ static GHashTable *tpl_observer_get_channel_map (TplObserver *self);
 static void tpl_observer_get_open_channels (void);
 
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplObserver)
 struct _TplObserverPriv
 {
     /* mapping channel_path->TplChannel instances */
@@ -556,7 +555,7 @@ observer_iface_init (gpointer g_iface,
 static void
 tpl_observer_dispose (GObject *obj)
 {
-  TplObserverPriv *priv = GET_PRIV (obj);
+  TplObserverPriv *priv = TPL_OBSERVER (obj)->priv;
 
   if (priv->channel_map != NULL)
     {
@@ -585,7 +584,7 @@ tpl_observer_get_channel_map (TplObserver *self)
 {
   g_return_val_if_fail (TPL_IS_OBSERVER (self), NULL);
 
-  return GET_PRIV (self)->channel_map;
+  return self->priv->channel_map;
 }
 
 
@@ -663,7 +662,7 @@ tpl_observer_get_channel_factory (TplObserver *self)
 {
   g_return_val_if_fail (TPL_IS_OBSERVER (self), NULL);
 
-  return GET_PRIV (self)->channel_factory;
+  return self->priv->channel_factory;
 }
 
 
@@ -671,7 +670,7 @@ void
 tpl_observer_set_channel_factory (TplObserver *self,
     TplChannelFactory factory)
 {
-  TplObserverPriv *priv = GET_PRIV (self);
+  TplObserverPriv *priv = self->priv;
 
   g_return_if_fail (factory != NULL);
   g_return_if_fail (priv->channel_factory == NULL);

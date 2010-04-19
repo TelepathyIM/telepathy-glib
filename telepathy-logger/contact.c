@@ -29,7 +29,6 @@
 
 G_DEFINE_TYPE (TplContact, tpl_contact, G_TYPE_OBJECT)
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplContact)
 struct _TplContactPriv
 {
   TpContact *contact;
@@ -52,7 +51,7 @@ static void
 tpl_contact_finalize (GObject *obj)
 {
   TplContact *self = TPL_CONTACT (obj);
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_free (priv->alias);
   priv->alias = NULL;
@@ -67,7 +66,7 @@ static void
 tpl_contact_dispose (GObject *obj)
 {
   TplContact *self = TPL_CONTACT (obj);
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   if (priv->contact != NULL)
     {
@@ -85,7 +84,7 @@ tpl_contact_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplContactPriv *priv = GET_PRIV (object);
+  TplContactPriv *priv = TPL_CONTACT (object)->priv;
 
   switch (param_id)
     {
@@ -225,7 +224,7 @@ tpl_contact_new (const gchar *identifier)
 TpContact *
 tpl_contact_get_contact (TplContact *self)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CONTACT (self), NULL);
 
@@ -236,7 +235,7 @@ tpl_contact_get_contact (TplContact *self)
 const gchar *
 tpl_contact_get_alias (TplContact *self)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CONTACT (self), NULL);
 
@@ -247,7 +246,7 @@ tpl_contact_get_alias (TplContact *self)
 const gchar *
 tpl_contact_get_identifier (TplContact *self)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CONTACT (self), NULL);
 
@@ -258,7 +257,7 @@ tpl_contact_get_identifier (TplContact *self)
 TplContactType
 tpl_contact_get_contact_type (TplContact *self)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CONTACT (self), TPL_CONTACT_UNKNOWN);
 
@@ -269,7 +268,7 @@ tpl_contact_get_contact_type (TplContact *self)
 const gchar *
 tpl_contact_get_avatar_token (TplContact *self)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_val_if_fail (TPL_IS_CONTACT (self), NULL);
 
@@ -281,7 +280,7 @@ void
 tpl_contact_set_contact (TplContact *self,
     TpContact *data)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CONTACT (self));
   g_return_if_fail (TP_IS_CONTACT (data));
@@ -295,7 +294,7 @@ void
 tpl_contact_set_alias (TplContact *self,
     const gchar *data)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CONTACT (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
@@ -309,7 +308,7 @@ void
 tpl_contact_set_identifier (TplContact *self,
     const gchar *data)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CONTACT (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
@@ -323,7 +322,7 @@ void
 tpl_contact_set_contact_type (TplContact *self,
     TplContactType data)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CONTACT (self));
 
@@ -335,7 +334,7 @@ void
 tpl_contact_set_avatar_token (TplContact *self,
     const gchar *data)
 {
-  TplContactPriv *priv = GET_PRIV (self);
+  TplContactPriv *priv = self->priv;
 
   g_return_if_fail (TPL_IS_CONTACT (self));
   g_return_if_fail (priv->avatar_token == NULL);
