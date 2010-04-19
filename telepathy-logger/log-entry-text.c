@@ -33,7 +33,6 @@
 
 G_DEFINE_TYPE (TplLogEntryText, tpl_log_entry_text, TPL_TYPE_LOG_ENTRY)
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogEntryText)
 struct _TplLogEntryTextPriv
 {
   TplChannelText *tpl_text;
@@ -54,7 +53,7 @@ static void
 tpl_log_entry_text_dispose (GObject * obj)
 {
   TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (obj);
-  TplLogEntryTextPriv *priv = GET_PRIV (self);
+  TplLogEntryTextPriv *priv = self->priv;
 
   if (priv->tpl_text != NULL)
     {
@@ -70,7 +69,7 @@ static void
 tpl_log_entry_text_finalize (GObject * obj)
 {
   TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (obj);
-  TplLogEntryTextPriv *priv = GET_PRIV (self);
+  TplLogEntryTextPriv *priv = self->priv;
 
   g_free (priv->message);
   priv->message = NULL;
@@ -85,7 +84,7 @@ tpl_log_entry_text_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplLogEntryTextPriv *priv = GET_PRIV (object);
+  TplLogEntryTextPriv *priv = TPL_LOG_ENTRY_TEXT (object)->priv;
 
   switch (param_id)
     {
@@ -240,51 +239,39 @@ tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
 gboolean
 tpl_log_entry_text_is_chatroom (TplLogEntryText * self)
 {
-  TplLogEntryTextPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), FALSE);
 
-  priv = GET_PRIV (self);
-  return priv->chatroom;
+  return self->priv->chatroom;
 }
 
 
 TplChannelText *
 tpl_log_entry_text_get_tpl_channel_text (TplLogEntryText * self)
 {
-  TplLogEntryTextPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), NULL);
 
-  priv = GET_PRIV (self);
-  return priv->tpl_text;
+  return self->priv->tpl_text;
 }
 
 
 const gchar *
 tpl_log_entry_text_get_message (TplLogEntryText * self)
 {
-  TplLogEntryTextPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), NULL);
 
-  priv = GET_PRIV (self);
-  return priv->message;
+  return self->priv->message;
 }
 
 
 TpChannelTextMessageType
 tpl_log_entry_text_get_message_type (TplLogEntryText * self)
 {
-  TplLogEntryTextPriv *priv;
-
   /* TODO is TYPE_NORMAL the right value to return in case of error? I doubt
    * :) */
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self),
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
 
-  priv = GET_PRIV (self);
-  return priv->message_type;
+  return self->priv->message_type;
 }
 
 
@@ -297,7 +284,7 @@ tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (data) || data == NULL);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
   if (priv->tpl_text != NULL)
     g_object_unref (priv->tpl_text);
   priv->tpl_text = g_object_ref (data);
@@ -311,7 +298,7 @@ tpl_log_entry_text_set_message (TplLogEntryText *self, const gchar *data)
 
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   g_free (priv->message);
   priv->message = g_strdup (data);
@@ -322,13 +309,9 @@ void
 tpl_log_entry_text_set_message_type (TplLogEntryText *self,
     TpChannelTextMessageType data)
 {
-  TplLogEntryTextPriv *priv;
-
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
 
-  priv = GET_PRIV (self);
-
-  priv->message_type = data;
+  self->priv->message_type = data;
 }
 
 
@@ -336,13 +319,9 @@ void
 tpl_log_entry_text_set_chatroom (TplLogEntryText *self,
     gboolean data)
 {
-  TplLogEntryTextPriv *priv;
-
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
 
-  priv = GET_PRIV (self);
-
-  priv->chatroom = data;
+  self->priv->chatroom = data;
 }
 
 /* Methods inherited by TplLogEntry */

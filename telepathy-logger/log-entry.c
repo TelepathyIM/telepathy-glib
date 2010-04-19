@@ -74,7 +74,6 @@ static void tpl_log_entry_set_log_id (TplLogEntry *self, const gchar *data);
 static void tpl_log_entry_set_account_path (TplLogEntry *self,
     const gchar *data);
 
-#define GET_PRIV(obj) TPL_GET_PRIV (obj, TplLogEntry)
 struct _TplLogEntryPriv
 {
   gchar *log_id;
@@ -113,7 +112,8 @@ enum {
 static void
 tpl_log_entry_finalize (GObject *obj)
 {
-  TplLogEntryPriv *priv = GET_PRIV (obj);
+  TplLogEntry *self = TPL_LOG_ENTRY (obj);
+  TplLogEntryPriv *priv = self->priv;
 
   g_free (priv->chat_id);
   priv->chat_id = NULL;
@@ -128,7 +128,7 @@ static void
 tpl_log_entry_dispose (GObject *obj)
 {
   TplLogEntry *self = TPL_LOG_ENTRY (obj);
-  TplLogEntryPriv *priv = GET_PRIV (self);
+  TplLogEntryPriv *priv = self->priv;
 
   if (priv->sender != NULL)
     {
@@ -151,7 +151,8 @@ tpl_log_entry_get_property (GObject *object,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplLogEntryPriv *priv = GET_PRIV (object);
+  TplLogEntry *self = TPL_LOG_ENTRY (object);
+  TplLogEntryPriv *priv = self->priv;
 
   switch (param_id)
     {
@@ -390,24 +391,18 @@ tpl_log_entry_init (TplLogEntry *self)
 gint64
 tpl_log_entry_get_timestamp (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv = GET_PRIV (self);
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), -1);
 
-  priv = GET_PRIV (self);
-  return priv->timestamp;
+  return self->priv->timestamp;
 }
 
 
 gint
 tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv = GET_PRIV (self);
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), -1);
 
-  priv = GET_PRIV (self);
-  return priv->pending_msg_id;
+  return self->priv->pending_msg_id;
 }
 
 
@@ -421,97 +416,73 @@ tpl_log_entry_is_pending (TplLogEntry *self)
 TplLogEntrySignalType
 tpl_log_entry_get_signal_type (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), TPL_LOG_ENTRY_SIGNAL_NONE);
 
-  priv = GET_PRIV (self);
-  return priv->signal_type;
+  return self->priv->signal_type;
 }
 
 
 const gchar *
 tpl_log_entry_get_log_id (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), 0);
 
-  priv = GET_PRIV (self);
-  return priv->log_id;
+  return self->priv->log_id;
 }
 
 
 TplLogEntryDirection
 tpl_log_entry_get_direction (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self),
       TPL_LOG_ENTRY_DIRECTION_NONE);
 
-  priv = GET_PRIV (self);
-  return priv->direction;
+  return self->priv->direction;
 }
 
 
 TplContact *
 tpl_log_entry_get_sender (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
-  priv = GET_PRIV (self);
-  return priv->sender;
+  return self->priv->sender;
 }
 
 
 TplContact *
 tpl_log_entry_get_receiver (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
-  priv = GET_PRIV (self);
-  return priv->receiver;
+  return self->priv->receiver;
 }
 
 
 const gchar *
 tpl_log_entry_get_chat_id (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
-  priv = GET_PRIV (self);
-  return priv->chat_id;
+  return self->priv->chat_id;
 }
 
 
 const gchar *
 tpl_log_entry_get_account_path (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
-  priv = GET_PRIV (self);
-  return priv->account_path;
+  return self->priv->account_path;
 }
 
 
 const gchar *
 tpl_log_entry_get_channel_path (TplLogEntry *self)
 {
-  TplLogEntryPriv *priv;
-
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
-  priv = GET_PRIV (self);
-  return priv->channel_path;
+  return self->priv->channel_path;
 }
 
 
@@ -519,12 +490,9 @@ void
 tpl_log_entry_set_timestamp (TplLogEntry *self,
     gint64 data)
 {
-  TplLogEntryPriv *priv = GET_PRIV (self);
-
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
 
-  priv = GET_PRIV (self);
-  priv->timestamp = data;
+  self->priv->timestamp = data;
   g_object_notify (G_OBJECT (self), "timestamp");
 }
 
@@ -533,12 +501,9 @@ void
 tpl_log_entry_set_signal_type (TplLogEntry *self,
     TplLogEntrySignalType data)
 {
-  TplLogEntryPriv *priv;
-
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
 
-  priv = GET_PRIV (self);
-  priv->signal_type = data;
+  self->priv->signal_type = data;
   g_object_notify (G_OBJECT (self), "signal-type");
 }
 
@@ -555,12 +520,9 @@ void
 tpl_log_entry_set_pending_msg_id (TplLogEntry *self,
     gint data)
 {
-  TplLogEntryPriv *priv = GET_PRIV (self);
-
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
 
-  priv = GET_PRIV (self);
-  priv->pending_msg_id = data;
+  self->priv->pending_msg_id = data;
   g_object_notify (G_OBJECT (self), "pending-msg-id");
 }
 
@@ -570,15 +532,11 @@ static void
 tpl_log_entry_set_log_id (TplLogEntry *self,
     const gchar* data)
 {
-  TplLogEntryPriv *priv;
-
-  priv = GET_PRIV (self);
-
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (priv->log_id == NULL);
+  g_return_if_fail (self->priv->log_id == NULL);
 
-  priv->log_id = g_strdup (data);
+  self->priv->log_id = g_strdup (data);
   g_object_notify (G_OBJECT (self), "log-id");
 }
 
@@ -587,12 +545,9 @@ void
 tpl_log_entry_set_direction (TplLogEntry *self,
     TplLogEntryDirection data)
 {
-  TplLogEntryPriv *priv;
-
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
 
-  priv = GET_PRIV (self);
-  priv->direction = data;
+  self->priv->direction = data;
   g_object_notify (G_OBJECT (self), "direction");
 }
 
@@ -606,7 +561,7 @@ tpl_log_entry_set_sender (TplLogEntry *self,
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (TPL_IS_CONTACT (data) || data == NULL);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   if (priv->sender != NULL)
     g_object_unref (priv->sender);
@@ -624,7 +579,7 @@ tpl_log_entry_set_receiver (TplLogEntry *self,
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (TPL_IS_CONTACT (data) || data == NULL);
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
   if (priv->receiver != NULL)
     g_object_unref (priv->receiver);
   priv->receiver = g_object_ref (data);
@@ -638,7 +593,7 @@ tpl_log_entry_set_chat_id (TplLogEntry *self,
 {
   TplLogEntryPriv *priv;
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
@@ -655,7 +610,7 @@ tpl_log_entry_set_account_path (TplLogEntry *self,
 {
   TplLogEntryPriv *priv;
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
@@ -672,7 +627,7 @@ tpl_log_entry_set_channel_path (TplLogEntry *self,
 {
   TplLogEntryPriv *priv;
 
-  priv = GET_PRIV (self);
+  priv = self->priv;
 
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
