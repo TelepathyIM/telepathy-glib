@@ -19,7 +19,6 @@
   <chapter id="ch-internal">
     <title>Internal API (at least for now)</title>
 
-    <xi:include href="xml/action-chain.xml"/>
     <xi:include href="xml/channel-factory.xml"/>
     <xi:include href="xml/channel-text.xml"/>
     <xi:include href="xml/channel.xml"/>

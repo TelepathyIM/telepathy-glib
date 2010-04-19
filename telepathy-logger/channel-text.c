@@ -27,7 +27,6 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/proxy.h>
 
-#include <telepathy-logger/action-chain.h>
 #include <telepathy-logger/contact.h>
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/observer.h>
@@ -36,6 +35,7 @@
 #include <telepathy-logger/log-store-sqlite.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
+#include <telepathy-logger/action-chain-internal.h>
 #include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
@@ -126,7 +126,7 @@ got_contact_cb (TpConnection *connection,
 {
   TplObserver *observer = tpl_observer_new (); /* singleton */
   TplActionChain *ctx = user_data;
-  TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
+  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
   TplChannelTextPriv *priv = tpl_text->priv;
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpChannel *tp_chan = TP_CHANNEL (tpl_chan);
@@ -148,7 +148,7 @@ got_contact_cb (TpConnection *connection,
          " Aborting channel observation", conn_path);
 
       g_object_unref (observer);
-      tpl_action_chain_terminate (ctx);
+      _tpl_action_chain_terminate (ctx);
       return;
     }
 
@@ -164,12 +164,12 @@ got_contact_cb (TpConnection *connection,
         PATH_DEBUG (tpl_text, "retrieving TpContacts: passing invalid value"
             " for selector: %d Aborting channel observation", priv->selector);
         g_object_unref (observer);
-        tpl_action_chain_terminate (ctx);
+        _tpl_action_chain_terminate (ctx);
         return;
     }
 
   g_object_unref (observer);
-  tpl_action_chain_continue (ctx);
+  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -177,7 +177,7 @@ static void
 pendingproc_get_remote_contact (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
+  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpHandle remote_handle;
   TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (
@@ -195,7 +195,7 @@ static void
 pendingproc_get_my_contact (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
+  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
   TpConnection *tp_conn = tp_channel_borrow_connection (
       TP_CHANNEL (tpl_text));
   TpHandle my_handle = tp_connection_get_self_handle (tp_conn);
@@ -210,7 +210,7 @@ static void
 pendingproc_get_remote_handle_type (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
+  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
   TpHandleType remote_handle_type;
 
   tp_channel_get_handle (TP_CHANNEL (tpl_text), &remote_handle_type);
@@ -218,39 +218,39 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx,
   switch (remote_handle_type)
     {
       case TP_HANDLE_TYPE_CONTACT:
-        tpl_action_chain_prepend (ctx, pendingproc_get_remote_contact, NULL);
+        _tpl_action_chain_prepend (ctx, pendingproc_get_remote_contact, NULL);
         break;
       case TP_HANDLE_TYPE_ROOM:
-        tpl_action_chain_prepend (ctx, pendingproc_get_chatroom_id, NULL);
+        _tpl_action_chain_prepend (ctx, pendingproc_get_chatroom_id, NULL);
         break;
       case TP_HANDLE_TYPE_NONE:
         PATH_DEBUG (tpl_text, "HANDLE_TYPE_NONE received, probably an anonymous "
             "chat, like MSN ones. TODO: implement this possibility");
-        tpl_action_chain_terminate (ctx);
+        _tpl_action_chain_terminate (ctx);
         return;
         break;
       /* follows unhandled TpHandleType */
       case TP_HANDLE_TYPE_LIST:
         PATH_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_LIST: "
             "un-handled. Check the TelepathyLogger.client file.");
-        tpl_action_chain_terminate (ctx);
+        _tpl_action_chain_terminate (ctx);
         return;
         break;
       case TP_HANDLE_TYPE_GROUP:
         PATH_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_GROUP: "
             "un-handled. Check the TelepathyLogger.client file.");
-        tpl_action_chain_terminate (ctx);
+        _tpl_action_chain_terminate (ctx);
         return;
         break;
       default:
         PATH_DEBUG (tpl_text, "remote handle type unknown %d.",
             remote_handle_type);
-        tpl_action_chain_terminate (ctx);
+        _tpl_action_chain_terminate (ctx);
         return;
         break;
     }
 
-  tpl_action_chain_continue (ctx);
+  _tpl_action_chain_continue (ctx);
 }
 /* end of async Callbacks */
 
@@ -477,15 +477,15 @@ tpl_channel_text_call_when_ready (TplChannelText *self,
    * If for any reason, the order is changed, it's needed to check what objects
    * are unreferenced by g_object_unref but used by a next action AND what object are actually not
    * prepared but used anyway */
-  actions = tpl_action_chain_new (G_OBJECT (self), cb, user_data);
-  tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
-  tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
-  tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
-  tpl_action_chain_append (actions, pendingproc_get_remote_handle_type, NULL);
-  tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
-  tpl_action_chain_append (actions, pendingproc_cleanup_pending_messages_db, NULL);
+  actions = _tpl_action_chain_new (G_OBJECT (self), cb, user_data);
+  _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
+  _tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
+  _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
+  _tpl_action_chain_append (actions, pendingproc_get_remote_handle_type, NULL);
+  _tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
+  _tpl_action_chain_append (actions, pendingproc_cleanup_pending_messages_db, NULL);
   /* start the chain consuming */
-  tpl_action_chain_continue (actions);
+  _tpl_action_chain_continue (actions);
 }
 
 
@@ -493,7 +493,7 @@ static void
 pendingproc_prepare_tpl_channel (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_action_chain_get_object (ctx));
+  TplChannel *tpl_chan = TPL_CHANNEL (_tpl_action_chain_get_object (ctx));
 
   TPL_CHANNEL_GET_CLASS (tpl_chan)->call_when_ready_protected (tpl_chan,
       got_tpl_chan_ready_cb, ctx);
@@ -508,10 +508,10 @@ got_tpl_chan_ready_cb (GObject *obj,
   TplActionChain *ctx = user_data;
 
   /* if TplChannel preparation is OK, keep on with the TplChannelText */
-  if (tpl_action_chain_finish (tpl_chan_result))
-    tpl_action_chain_continue (ctx);
+  if (_tpl_action_chain_finish (tpl_chan_result))
+    _tpl_action_chain_continue (ctx);
   else
-     tpl_action_chain_terminate (ctx);
+     _tpl_action_chain_terminate (ctx);
   return;
 }
 
@@ -560,7 +560,7 @@ tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
  *
  * This function is meant only to reduce the size of the DB used for indexing.
  *
- * No tpl_action_chain_terminate() is called if some fatal error occurs since
+ * No _tpl_action_chain_terminate() is called if some fatal error occurs since
  * it's not considered a crucial point for TplChannel preparation.
  */
 static void
@@ -568,7 +568,7 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data)
 {
   /* five days ago in seconds */
-  TplChannelText *self = tpl_action_chain_get_object (ctx);
+  TplChannelText *self = _tpl_action_chain_get_object (ctx);
   const time_t time_limit = _tpl_time_get_current () -
     TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT;
   TplLogStore *cache = tpl_log_store_sqlite_dup ();
@@ -587,7 +587,7 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     {
       DEBUG ("unable to obtain log-id in Index DB: %s", error->message);
       g_error_free (error);
-      /* do not call tpl_action_chain_terminate, if it's temporary next startup
+      /* do not call _tpl_action_chain_terminate, if it's temporary next startup
        * TPL will re-do the clean-up. If it's fatal, the flow will stop later
        * anyway */
       goto out;
@@ -607,7 +607,7 @@ out:
   if (cache != NULL)
     g_object_unref (cache);
 
-  tpl_action_chain_continue (ctx);
+  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -615,7 +615,7 @@ static void
 pendingproc_get_pending_messages (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannelText *chan_text = tpl_action_chain_get_object (ctx);
+  TplChannelText *chan_text = _tpl_action_chain_get_object (ctx);
 
   if (tp_proxy_has_interface_by_id (chan_text,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
@@ -792,7 +792,7 @@ out:
  * but in this case it would just mean that it couldn't retrieve pending
  * messages, but it might still log the rest. If the next operation in chain
  * fails, it's fatal. Partial data loss is better than total data loss */
-  tpl_action_chain_continue (ctx);
+  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -815,7 +815,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
     {
       PATH_CRITICAL (proxy, "retrieving pending messages for Text iface: %s",
           error->message);
-      tpl_action_chain_terminate (ctx);
+      _tpl_action_chain_terminate (ctx);
       return;
     }
 
@@ -830,7 +830,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
       PATH_CRITICAL (proxy,
           "Unable to obtain pending messages stored in TPL DB: %s",
           loc_error->message);
-      tpl_action_chain_terminate (ctx);
+      _tpl_action_chain_terminate (ctx);
 
       return;
     }
@@ -898,7 +898,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
           cached_pending_msgs);
     }
 
-  tpl_action_chain_continue (ctx);
+  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -906,7 +906,7 @@ static void
 pendingproc_get_chatroom_id (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
+  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpConnection *connection = tp_channel_borrow_connection (TP_CHANNEL (
         tpl_chan));
@@ -930,21 +930,21 @@ get_chatroom_id_cb (TpConnection *proxy,
     GObject *weak_object)
 {
   TplActionChain *ctx = user_data;
-  TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
+  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
   if (error != NULL)
     {
       PATH_DEBUG (proxy, "retrieving chatroom identifier: %s", error->message);
-      tpl_action_chain_terminate (ctx);
+      _tpl_action_chain_terminate (ctx);
       return;
     }
 
   PATH_DEBUG (proxy, "Chatroom id: %s", identifiers[0]);
   tpl_channel_text_set_chatroom_id (tpl_text, identifiers[0]);
 
-  tpl_action_chain_continue (ctx);
+  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -952,7 +952,7 @@ static void
 pendingproc_connect_signals (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannelText *tpl_text = tpl_action_chain_get_object (ctx);
+  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
   GError *error = NULL;
   gboolean is_error = FALSE;
   TpChannel *channel = TP_CHANNEL (tpl_text);
@@ -1018,9 +1018,9 @@ pendingproc_connect_signals (TplActionChain *ctx,
     }
 
   if (is_error)
-    tpl_action_chain_terminate (ctx);
+    _tpl_action_chain_terminate (ctx);
   else
-    tpl_action_chain_continue (ctx);
+    _tpl_action_chain_continue (ctx);
 }
 
 

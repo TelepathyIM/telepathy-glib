@@ -30,17 +30,17 @@ typedef struct {
     GSimpleAsyncResult *simple;
 } TplActionChain;
 
-TplActionChain *tpl_action_chain_new (GObject *obj, GAsyncReadyCallback cb,
+TplActionChain *_tpl_action_chain_new (GObject *obj, GAsyncReadyCallback cb,
     gpointer user_data);
-void tpl_action_chain_free (TplActionChain *self);
+void _tpl_action_chain_free (TplActionChain *self);
 typedef void (*TplPendingAction) (TplActionChain *ctx, gpointer user_data);
-void tpl_action_chain_append (TplActionChain *self, TplPendingAction func,
+void _tpl_action_chain_append (TplActionChain *self, TplPendingAction func,
     gpointer user_data);
-void tpl_action_chain_prepend (TplActionChain *self, TplPendingAction func,
+void _tpl_action_chain_prepend (TplActionChain *self, TplPendingAction func,
     gpointer user_data);
-void tpl_action_chain_continue (TplActionChain *self);
-void tpl_action_chain_terminate (TplActionChain *self);
-gpointer tpl_action_chain_get_object (TplActionChain *self);
-gboolean tpl_action_chain_finish (GAsyncResult *result);
+void _tpl_action_chain_continue (TplActionChain *self);
+void _tpl_action_chain_terminate (TplActionChain *self);
+gpointer _tpl_action_chain_get_object (TplActionChain *self);
+gboolean _tpl_action_chain_finish (GAsyncResult *result);
 
 #endif // __TPL_ACTION_CHAIN_H__

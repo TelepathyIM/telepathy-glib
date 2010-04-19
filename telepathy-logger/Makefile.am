@@ -19,7 +19,6 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 
 LIBTPLdir = $(includedir)/telepathy-logger
 LIBTPL_HEADERS = \
-		action-chain.h			\
 		channel.h			\
 		channel-factory.h		\
 		channel-text.h			\
@@ -39,6 +38,7 @@ LIBTPL_HEADERS = \
 
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
+		action-chain-internal.h		\
 		channel.c			\
 		channel-factory.c		\
 		channel-text.c			\

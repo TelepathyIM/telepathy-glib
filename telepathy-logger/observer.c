@@ -35,9 +35,9 @@
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/channel-factory.h>
 #include <telepathy-logger/log-manager.h>
-#include <telepathy-logger/action-chain.h>
 
 #define DEBUG_FLAG TPL_DEBUG_OBSERVER
+#include <telepathy-logger/action-chain-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
@@ -273,7 +273,7 @@ got_tpl_channel_text_ready_cb (GObject *obj,
 {
   ObservingContext *observing_ctx = user_data;
   DBusGMethodInvocation *dbus_ctx = observing_ctx->dbus_ctx;
-  gboolean success = tpl_action_chain_finish (result);
+  gboolean success = _tpl_action_chain_finish (result);
 
   if (success)
     {
