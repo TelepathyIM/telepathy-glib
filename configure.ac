@@ -124,10 +124,6 @@ TP_COMPILER_FLAG(-std=c99, ERROR_CFLAGS="$ERROR_CFLAGS -std=c99")
 
 AC_SUBST(ERROR_CFLAGS)
 
-AC_ARG_ENABLE(debug,
-  AC_HELP_STRING([--disable-debug],[compile without debug code]),
-    enable_debug=$enableval, enable_debug=yes)
-
 # -----------------------------------------------------------
 # Pkg-Config dependency checks
 # -----------------------------------------------------------
