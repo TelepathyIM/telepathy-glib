@@ -102,21 +102,18 @@ AM_CONDITIONAL([WANT_TWISTED_TESTS], test false != "$TEST_PYTHON")
 TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
   [all \
    extra \
+   format-security \
+   init-self \
    missing-prototypes \
+   nested-externs \
+   pointer-arith \
    shadow \
    sign-compare \
    strict-prototypes],
   [missing-field-initializers \
    unused-parameter])
 
-# things that telepathy-glib uses, but we don't here:
-#   declaration-after-statement \
-#   format-security \
-#   init-self \
-#   nested-externs \
-#   pointer-arith \
-#
-# of which d-a-s seems to be deliberate (this code fails it).
+# declaration-after-statement is deliberately not used here
 
 AC_ARG_ENABLE(Werror,
   AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
