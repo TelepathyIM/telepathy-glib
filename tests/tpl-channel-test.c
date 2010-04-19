@@ -38,7 +38,6 @@ static void got_tpl_chan_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
 
 
-#define GET_PRIV(obj)    TPL_GET_PRIV (obj, TplChannelTest)
 struct _TplChannelTestPriv
 {
   gpointer nonempty;
