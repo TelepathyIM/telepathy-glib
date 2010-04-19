@@ -85,7 +85,7 @@ setup (Test *test,
 
   test->cdo_service = g_object_new (test_simple_cdo_get_type (),
       NULL);
-  dbus_g_connection_register_g_object (test->private_conn, "/whatever",
+  tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cdo_service);
 }
 
