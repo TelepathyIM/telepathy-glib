@@ -196,9 +196,15 @@ struct _TpBaseConnectionManagerPrivate
   GHashTable *connections;
   /* true after tp_base_connection_manager_register is called */
   gboolean registered;
+  TpDBusDaemon *dbus_daemon;
 };
 
-/* signal enum */
+enum
+{
+    PROP_DBUS_DAEMON = 1,
+    N_PROPS
+};
+
 enum
 {
     NO_MORE_CONNECTIONS,
@@ -220,6 +226,12 @@ tp_base_connection_manager_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
+  if (priv->dbus_daemon != NULL)
+    {
+      g_object_unref (priv->dbus_daemon);
+      priv->dbus_daemon = NULL;
+    }
+
   if (dispose != NULL)
     dispose (object);
 }
@@ -235,6 +247,21 @@ tp_base_connection_manager_finalize (GObject *object)
   G_OBJECT_CLASS (tp_base_connection_manager_parent_class)->finalize (object);
 }
 
+static gboolean
+tp_base_connection_manager_ensure_dbus (TpBaseConnectionManager *self,
+    GError **error)
+{
+  if (self->priv->dbus_daemon == NULL)
+    {
+      self->priv->dbus_daemon = tp_dbus_daemon_dup (error);
+
+      if (self->priv->dbus_daemon == NULL)
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
 static GObject *
 tp_base_connection_manager_constructor (GType type,
                                         guint n_params,
@@ -247,12 +274,66 @@ tp_base_connection_manager_constructor (GType type,
             params));
   TpBaseConnectionManagerClass *cls =
       TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
+  GError *error = NULL;
 
   g_assert (tp_connection_manager_check_valid_name (cls->cm_dbus_name, NULL));
   g_assert (cls->protocol_params != NULL);
   g_assert (cls->new_connection != NULL);
 
+  if (!tp_base_connection_manager_ensure_dbus (self, &error))
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+    }
+
   return (GObject *) self;
+}
+
+static void
+tp_base_connection_manager_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (object);
+
+  switch (property_id)
+    {
+    case PROP_DBUS_DAEMON:
+      g_value_set_object (value, self->priv->dbus_daemon);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+tp_base_connection_manager_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (object);
+
+  switch (property_id)
+    {
+    case PROP_DBUS_DAEMON:
+        {
+          TpDBusDaemon *dbus_daemon = g_value_get_object (value);
+
+          g_assert (self->priv->dbus_daemon == NULL);     /* construct-only */
+
+          if (dbus_daemon != NULL)
+            self->priv->dbus_daemon = g_object_ref (dbus_daemon);
+        }
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
 }
 
 static void
@@ -262,8 +343,29 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpBaseConnectionManagerPrivate));
   object_class->constructor = tp_base_connection_manager_constructor;
+  object_class->get_property = tp_base_connection_manager_get_property;
+  object_class->set_property = tp_base_connection_manager_set_property;
   object_class->dispose = tp_base_connection_manager_dispose;
   object_class->finalize = tp_base_connection_manager_finalize;
+
+  /**
+   * TpBaseConnectionManager:dbus-daemon:
+   *
+   * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
+   * Read-only except during construction.
+   *
+   * If this property is %NULL or omitted during construction, the object will
+   * automatically attempt to connect to the starter or session bus with
+   * tp_dbus_daemon_dup() just after it is constructed; if this fails, a
+   * warning will be logged with g_warning(), and this property will remain
+   * %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
+      g_param_spec_object ("dbus-daemon", "D-Bus daemon",
+        "The D-Bus daemon used by this object", TP_TYPE_DBUS_DAEMON,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TpBaseConnectionManager::no-more-connections:
@@ -987,45 +1089,45 @@ OUT:
 gboolean
 tp_base_connection_manager_register (TpBaseConnectionManager *self)
 {
-  TpDBusDaemon *bus_proxy;
   GError *error = NULL;
   TpBaseConnectionManagerClass *cls;
-  GString *string;
+  GString *string = NULL;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (self));
   cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
 
-  bus_proxy = tp_dbus_daemon_dup (&error);
+  if (!tp_base_connection_manager_ensure_dbus (self, &error))
+    goto except;
 
-  if (bus_proxy == NULL)
-    {
-      g_warning ("%s", error->message);
-      g_error_free (error);
-      return FALSE;
-    }
+  g_assert (self->priv->dbus_daemon != NULL);
 
   string = g_string_new (TP_CM_BUS_NAME_BASE);
   g_string_append (string, cls->cm_dbus_name);
 
-  if (!tp_dbus_daemon_request_name (bus_proxy, string->str, TRUE, &error))
-    {
-      g_warning ("%s", error->message);
-      g_error_free (error);
-      g_string_free (string, TRUE);
-      return FALSE;
-    }
+  if (!tp_dbus_daemon_request_name (self->priv->dbus_daemon, string->str,
+        TRUE, &error))
+    goto except;
 
   g_string_assign (string, TP_CM_OBJECT_PATH_BASE);
   g_string_append (string, cls->cm_dbus_name);
   dbus_g_connection_register_g_object (
-      tp_proxy_get_dbus_connection (bus_proxy), string->str, G_OBJECT (self));
+      tp_proxy_get_dbus_connection (self->priv->dbus_daemon), string->str,
+      G_OBJECT (self));
 
-  g_object_unref (bus_proxy);
   g_string_free (string, TRUE);
 
   self->priv->registered = TRUE;
 
   return TRUE;
+
+except:
+  g_warning ("%s", error->message);
+  g_error_free (error);
+
+  if (string != NULL)
+    g_string_free (string, TRUE);
+
+  return FALSE;
 }
 
 static void
@@ -1091,4 +1193,22 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
       return FALSE;
     }
   return TRUE;
+}
+
+/**
+ * tp_base_connection_manager_get_dbus_daemon:
+ * @self: the connection manager
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the value of the
+ *  #TpBaseConnectionManager:dbus-daemon property. The caller must reference
+ *  the returned object with g_object_ref() if it will be kept.
+ */
+TpDBusDaemon *
+tp_base_connection_manager_get_dbus_daemon (TpBaseConnectionManager *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION_MANAGER (self), NULL);
+
+  return self->priv->dbus_daemon;
 }
