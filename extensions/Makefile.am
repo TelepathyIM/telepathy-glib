@@ -74,7 +74,7 @@ libtpl_extensions_la_SOURCES =
 libtpl_extensions_la_LIBADD = libtpl-extensions-convenience.la
 endif # ENABLE_PUBLIC_EXTENSIONS
 
-AM_CFLAGS = $(ERROR_CFLAGS) @LIBTPL_CFLAGS@ @HANDLE_LEAK_DEBUG_CFLAGS@
+AM_CFLAGS = $(ERROR_CFLAGS) @LIBTPL_CFLAGS@
 AM_LDFLAGS = @LIBTPL_LIBS@
 
 # Generated stuff
