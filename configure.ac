@@ -38,9 +38,6 @@ DBUS_REQUIRED=1.1.0
 DBUS_GLIB_REQUIRED=0.82
 TELEPATHY_GLIB_REQUIRED=0.9.0
 
-# Use --enable-maintainer-mode to disabled deprecated symbols
-GNOME_MAINTAINER_MODE_DEFINES
-
 # Warning if GLib/GDK/GTK headers are included
 AC_DEFINE(G_DISABLE_SINGLE_INCLUDES, [], [Disable single includes for GLib])
 AC_DEFINE(GDK_PIXBUF_DISABLE_SINGLE_INCLUDES, [], [Disable single includes for GDK pixbuf])
