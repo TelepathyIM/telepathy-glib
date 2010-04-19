@@ -68,18 +68,19 @@ typedef enum
   TPL_LOG_ENTRY_TEXT
 } TplLogEntryType;
 
+typedef struct _TplLogEntry TplLogEntry;
+typedef struct _TplLogEntryClass TplLogEntryClass;
 typedef struct _TplLogEntryPriv TplLogEntryPriv;
 
-typedef struct
+struct _TplLogEntry
 {
   GObject parent;
 
   /* Private */
   TplLogEntryPriv *priv;
-} TplLogEntry;
+};
 
-typedef struct
-{
+struct _TplLogEntryClass {
   GObjectClass parent_class;
 
   void (*dispose) (GObject *obj);
@@ -109,7 +110,7 @@ typedef struct
 
   /* to be implemented only by subclasses */
   gboolean (*equal) (TplLogEntry *entry1, TplLogEntry *entry2);
-} TplLogEntryClass;
+};
 
 GType tpl_log_entry_get_type (void);
 gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
