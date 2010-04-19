@@ -719,7 +719,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
       message_timestamp = tp_asv_get_uint64 (message_headers,
           "message-received", NULL);
 
-      tpl_message_token = create_message_token (channel_path,
+      tpl_message_token = _tpl_create_message_token (channel_path,
           message_timestamp, message_id);
 
       message_sender_handle = tp_asv_get_uint32 (message_headers,
@@ -858,7 +858,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
       message_flags = g_value_get_uint (g_value_array_get_nth (message_struct, 4));
       message_body = g_value_get_string (g_value_array_get_nth (message_struct, 5));
 
-      tpl_message_token = create_message_token (channel_path,
+      tpl_message_token = _tpl_create_message_token (channel_path,
           message_timestamp, message_id);
 
       /* log only log-ids not in cached_pending_msgs -> not already logged */
@@ -1124,7 +1124,7 @@ on_sent_signal_cb (TpChannel *proxy,
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
   channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-  log_id = create_message_token (channel_path, arg_Timestamp,
+  log_id = _tpl_create_message_token (channel_path, arg_Timestamp,
       TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED);
 
   /* Initialize data for TplContact */
@@ -1332,7 +1332,7 @@ on_received_signal_cb (TpChannel *proxy,
   TplLogStore *index = tpl_log_store_sqlite_dup ();
   const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-  gchar *log_id = create_message_token (channel_path, arg_Timestamp, arg_ID);
+  gchar *log_id = _tpl_create_message_token (channel_path, arg_Timestamp, arg_ID);
 
   /* First, check if log_id has already been logged
    *

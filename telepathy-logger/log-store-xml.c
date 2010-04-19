@@ -841,7 +841,7 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
 
           instead_of_channel_path = g_strconcat (
               tp_proxy_get_object_path (account), sender_id, NULL);
-          log_id = create_message_token (instead_of_channel_path, t,
+          log_id = _tpl_create_message_token (instead_of_channel_path, t,
               pending_id);
 
           g_free (instead_of_channel_path);

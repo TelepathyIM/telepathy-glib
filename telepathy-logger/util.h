@@ -41,7 +41,7 @@
       return; \
     }
 
-gchar *create_message_token (const gchar *channel, gint64 timestamp,
+gchar *_tpl_create_message_token (const gchar *channel, gint64 timestamp,
     guint msgid);
 
 

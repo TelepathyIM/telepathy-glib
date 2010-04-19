@@ -28,7 +28,7 @@
  * header, so I need to create a token which TPL can trust to be unique
  * within itself */
 gchar *
-create_message_token (const gchar *channel,
+_tpl_create_message_token (const gchar *channel,
     gint64 timestamp,
     guint msgid)
 {
