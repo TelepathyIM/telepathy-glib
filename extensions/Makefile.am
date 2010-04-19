@@ -106,7 +106,7 @@ _gen/svc-misc.c _gen/svc-misc.h: _gen/misc.xml $(tools_dir)/glib-ginterface-gen.
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		$< Tpl_Svc_
 
-_gen/cli-misc-body.h _gen/cli-misc.h: _gen/misc.xml $(tools_dir)/glib-ginterface-gen.py \
+_gen/cli-misc-body.h _gen/cli-misc.h: _gen/misc.xml $(tools_dir)/glib-client-gen.py \
 	Makefile.am
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
 		--group=misc \
