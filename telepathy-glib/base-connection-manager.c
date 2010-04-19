@@ -1110,9 +1110,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
 
   g_string_assign (string, TP_CM_OBJECT_PATH_BASE);
   g_string_append (string, cls->cm_dbus_name);
-  dbus_g_connection_register_g_object (
-      tp_proxy_get_dbus_connection (self->priv->dbus_daemon), string->str,
-      G_OBJECT (self));
+  tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str, self);
 
   g_string_free (string, TRUE);
 

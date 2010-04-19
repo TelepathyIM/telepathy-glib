@@ -1695,12 +1695,9 @@ tp_base_connection_register (TpBaseConnection *self,
     }
 
   DEBUG ("bus name %s", self->bus_name);
-
-  dbus_g_connection_register_g_object (
-      tp_proxy_get_dbus_connection (priv->bus_proxy), self->object_path,
-      G_OBJECT (self));
-
   DEBUG ("object path %s", self->object_path);
+
+  tp_dbus_daemon_register_object (priv->bus_proxy, self->object_path, self);
 
   *bus_name = g_strdup (self->bus_name);
   *object_path = g_strdup (self->object_path);
