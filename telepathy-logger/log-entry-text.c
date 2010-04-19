@@ -25,11 +25,11 @@
 #include <glib-object.h>
 #include <telepathy-glib/util.h>
 
-#include <telepathy-logger/util.h>
 #include <telepathy-logger/log-entry.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/util-internal.h>
 
 G_DEFINE_TYPE (TplLogEntryText, tpl_log_entry_text, TPL_TYPE_LOG_ENTRY)
 

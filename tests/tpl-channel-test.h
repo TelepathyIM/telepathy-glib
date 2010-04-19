@@ -35,7 +35,6 @@
 
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/observer.h>
-#include <telepathy-logger/util.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_CHANNEL_TEST                 (tpl_channel_test_get_type ())

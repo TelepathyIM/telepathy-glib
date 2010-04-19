@@ -36,10 +36,10 @@
 #include <telepathy-logger/channel-factory.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/action-chain.h>
-#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_OBSERVER
 #include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/util-internal.h>
 
 /**
  * SECTION:observer

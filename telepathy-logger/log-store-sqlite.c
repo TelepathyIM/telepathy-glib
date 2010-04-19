@@ -30,10 +30,10 @@
 #include "log-entry-text.h"
 #include "log-store-sqlite.h"
 #include "datetime.h"
-#include "util.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include "debug-internal.h"
+#include "util-internal.h"
 
 #define GET_PRIV(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
       TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqlitePrivate))

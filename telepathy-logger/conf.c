@@ -24,10 +24,9 @@
 
 #include <glib.h>
 
-#include <telepathy-logger/util.h>
-
 #define DEBUG_FLAG TPL_DEBUG_CONF
 #include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/util-internal.h>
 
 #define GET_PRIV(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TPL_TYPE_CONF, TplConfPriv))
 

@@ -22,10 +22,9 @@
 #include "config.h"
 #include "contact.h"
 
-#include <telepathy-logger/util.h>
-
 #define DEBUG_FLAG TPL_DEBUG_CONTACT
 #include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/util-internal.h>
 
 G_DEFINE_TYPE (TplContact, tpl_contact, G_TYPE_OBJECT)
 

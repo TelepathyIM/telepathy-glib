@@ -19,7 +19,7 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#include "util.h"
+#include "util-internal.h"
 
 #include "datetime.h"
 #include "log-store-sqlite.h"

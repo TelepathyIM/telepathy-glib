@@ -36,7 +36,6 @@ LIBTPL_HEADERS = \
 		log-store-sqlite.h		\
 		log-store-factory.h		\
 		observer.h			\
-		util.h				\
 		$(NULL)
 
 libtelepathy_logger_la_SOURCES = \
@@ -58,6 +57,7 @@ libtelepathy_logger_la_SOURCES = \
 		log-store-sqlite.c		\
 		log-store-factory.c		\
 		observer.c			\
+		util-internal.h			\
 		util.c				\
 		$(NULL)
 

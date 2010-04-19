@@ -30,10 +30,10 @@
 #include <telepathy-logger/action-chain.h>
 #include <telepathy-logger/channel-text.h>
 #include <telepathy-logger/observer.h>
-#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/util-internal.h>
 
 #define TPCHAN_PROP_PREFIX "org.freedesktop.Telepathy.Channel."
 #define TPCHAN_PROP_PREFIX_LEN strlen(TPCHAN_PROP_PREFIX)

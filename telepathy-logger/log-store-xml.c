@@ -45,10 +45,10 @@
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/datetime.h>
-#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/util-internal.h>
 
 #define LOG_DIR_CREATE_MODE       (S_IRUSR | S_IWUSR | S_IXUSR)
 #define LOG_FILE_CREATE_MODE      (S_IRUSR | S_IWUSR)
