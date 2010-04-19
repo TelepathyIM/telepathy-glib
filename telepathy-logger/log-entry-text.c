@@ -29,7 +29,7 @@
 #include <telepathy-logger/log-entry.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 G_DEFINE_TYPE (TplLogEntryText, tpl_log_entry_text, TPL_TYPE_LOG_ENTRY)
 

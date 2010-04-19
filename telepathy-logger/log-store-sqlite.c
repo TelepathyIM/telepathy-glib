@@ -33,7 +33,7 @@
 #include "util.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
-#include "debug.h"
+#include "debug-internal.h"
 
 #define GET_PRIV(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
       TPL_TYPE_LOG_STORE_SQLITE, TplLogStoreSqlitePrivate))

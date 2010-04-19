@@ -43,7 +43,7 @@
 #include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_MANAGER
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 typedef struct
 {

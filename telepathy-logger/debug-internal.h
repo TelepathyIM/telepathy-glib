@@ -47,11 +47,11 @@ typedef enum
   TPL_DEBUG_OBSERVER      = 1 << 9
 } TplDebugFlags;
 
-void tpl_debug_set_flags_from_env (void);
-void tpl_debug_set_flags (TplDebugFlags flags);
-gboolean tpl_debug_flag_is_set (TplDebugFlags flag);
-void tpl_debug_free (void);
-void tpl_debug (TplDebugFlags flag, const gchar *format, ...)
+void _tpl_debug_set_flags_from_env (void);
+void _tpl_debug_set_flags (TplDebugFlags flags);
+gboolean _tpl_debug_flag_is_set (TplDebugFlags flag);
+void _tpl_debug_free (void);
+void _tpl_debug (TplDebugFlags flag, const gchar *format, ...)
     G_GNUC_PRINTF (2, 3);
 void tpl_critical (TplDebugFlags flag, const gchar *format, ...)
     G_GNUC_PRINTF (2, 3);
@@ -77,7 +77,7 @@ G_STMT_START { \
 #ifdef DEBUG_FLAG
 
 #define DEBUG(format, ...) \
-  tpl_debug (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
+  _tpl_debug (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
 
 #define DEBUGGING gabble_debug_flag_is_set (DEBUG_FLAG)
 
@@ -107,7 +107,7 @@ G_STMT_START { \
 
 #endif /* DEBUG_FLAG */
 
-#define tpl_debug_free() G_STMT_START { } G_STMT_END
+#define _tpl_debug_free() G_STMT_START { } G_STMT_END
 
 #endif /* ENABLE_DEBUG */
 

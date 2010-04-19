@@ -1,5 +1,5 @@
 #include <telepathy-logger/log-store-sqlite.h>
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 int
 main (int argc, char **argv)
@@ -11,7 +11,7 @@ main (int argc, char **argv)
 
   g_type_init ();
 
-  tpl_debug_set_flags_from_env ();
+  _tpl_debug_set_flags_from_env ();
 
   bus = tp_dbus_daemon_dup (&error);
   g_assert_no_error (error);

@@ -39,7 +39,7 @@
 #include <extensions/extensions.h>
 
 #define DEBUG_FLAG TPL_DEBUG_DBUS_SERVICE
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 #define FAVOURITE_CONTACTS_FILENAME "favourite-contacts.txt"
 

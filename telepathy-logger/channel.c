@@ -33,7 +33,7 @@
 #include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 #define TPCHAN_PROP_PREFIX "org.freedesktop.Telepathy.Channel."
 #define TPCHAN_PROP_PREFIX_LEN strlen(TPCHAN_PROP_PREFIX)

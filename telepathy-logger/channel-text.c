@@ -39,7 +39,7 @@
 
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 #define TP_CONTACT_MYSELF 0
 #define TP_CONTACT_REMOTE 1

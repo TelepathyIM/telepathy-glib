@@ -48,7 +48,7 @@
 #include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 #define LOG_DIR_CREATE_MODE       (S_IRUSR | S_IWUSR | S_IXUSR)
 #define LOG_FILE_CREATE_MODE      (S_IRUSR | S_IWUSR)

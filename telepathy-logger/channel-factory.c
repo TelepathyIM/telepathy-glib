@@ -28,7 +28,7 @@
 #include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 static GHashTable *channel_table = NULL;
 

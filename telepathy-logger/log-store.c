@@ -26,7 +26,7 @@
 #include <telepathy-logger/log-store.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 /**
  * SECTION:log-store

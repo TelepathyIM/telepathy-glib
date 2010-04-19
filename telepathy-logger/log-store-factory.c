@@ -25,7 +25,7 @@
 #include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 static GHashTable *logstores_table = NULL;
 
