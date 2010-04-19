@@ -114,6 +114,44 @@ GQuark
            'prop' : prop.getAttribute('name'),
            })
 
+
+        for prop in iface.getElementsByTagNameNS(NS_TP, 'contact-attribute'):
+            self.decls.write("""
+/**
+ * %(TOKEN_PREFIX)s_%(TOKEN_UC)s:
+ *
+ * The fully-qualified contact attribute token name "%(name)s.%(prop)s"
+ */
+#define %(TOKEN_PREFIX)s_%(TOKEN_UC)s \\
+"%(name)s.%(prop)s"
+""" % {'TOKEN_PREFIX' : (self.prefix + 'TOKEN_' + \
+                parent_name).upper().replace('/', ''),
+           'TOKEN_UC': prop.getAttributeNS(None, "name").upper().replace("-", "_").replace(".", "_"),
+           'name' : iface.getAttribute('name'),
+           'prop' : prop.getAttribute('name'),
+           })
+
+
+
+        for prop in iface.getElementsByTagNameNS(NS_TP, 'hct'):
+            if (prop.getAttribute('is-family') != "yes"):
+                self.decls.write("""
+/**
+ * %(TOKEN_PREFIX)s_%(TOKEN_UC)s:
+ *
+ * The fully-qualified capability token name "%(name)s.%(prop)s"
+ */
+#define %(TOKEN_PREFIX)s_%(TOKEN_UC)s \\
+"%(name)s.%(prop)s"
+""" % {'TOKEN_PREFIX' : (self.prefix + 'TOKEN_' + \
+                parent_name).upper().replace('/', ''),
+           'TOKEN_UC': prop.getAttributeNS(None, "name").upper().replace("-", "_").replace(".", "_"),
+           'name' : iface.getAttribute('name'),
+           'prop' : prop.getAttribute('name'),
+           })
+
+        self.decls.write("\n")
+
 if __name__ == '__main__':
     argv = argv[1:]
     Generator(argv[0], argv[1], argv[2], xml.dom.minidom.parse(argv[3]))()
