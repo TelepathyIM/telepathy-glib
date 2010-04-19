@@ -1,8 +1,8 @@
 /* intset.c - Source for a set of unsigned integers (implemented as a
  * variable length bitfield)
  *
- * Copyright (C) 2005, 2006 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2005, 2006 Nokia Corporation
+ * Copyright © 2005-2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2005-2006 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -39,6 +39,89 @@
 #define DEFAULT_SIZE 16
 #define DEFAULT_INCREMENT 8
 #define DEFAULT_INCREMENT_LOG2 3
+
+/**
+ * TP_TYPE_INTSET:
+ *
+ * The boxed type of a #TpIntSet.
+ */
+
+GType
+tp_intset_get_type (void)
+{
+  static GType type = 0;
+
+  if (G_UNLIKELY (type == 0))
+    {
+      type = g_boxed_type_register_static (g_intern_static_string ("TpIntSet"),
+          (GBoxedCopyFunc) tp_intset_copy,
+          (GBoxedFreeFunc) tp_intset_destroy);
+    }
+
+  return type;
+}
+
+/**
+ * TpIntFunc:
+ * @i: The relevant integer
+ * @userdata: Opaque user data
+ *
+ * A callback function acting on unsigned integers.
+ */
+/* (typedef, see header) */
+
+/**
+ * TpIntSetIter:
+ * @set: The set iterated over.
+ * @element: Must be (guint)(-1) before iteration starts. Set to the next
+ *  element in the set by tp_intset_iter_next(); undefined after
+ *  tp_intset_iter_next() returns %FALSE.
+ *
+ * A structure representing iteration over a set of integers. Must be
+ * initialized with either TP_INTSET_ITER_INIT() or tp_intset_iter_init().
+ */
+/* (public, see header) */
+
+/**
+ * TP_INTSET_ITER_INIT:
+ * @set: A set of integers
+ *
+ * A suitable static initializer for a #TpIntSetIter, to be used as follows:
+ *
+ * <informalexample><programlisting>
+ * void
+ * do_something (const TpIntSet *intset)
+ * {
+ *   TpIntSetIter iter = TP_INTSET_ITER_INIT (intset);
+ *   /<!-- -->* ... do something with iter ... *<!-- -->/
+ * }
+ * </programlisting></informalexample>
+ */
+/* (macro, see header) */
+
+/**
+ * tp_intset_iter_init:
+ * @iter: An integer set iterator to be initialized.
+ * @set: An integer set to be used by that iterator
+ *
+ * Reset the iterator @iter to the beginning and make it iterate over @set.
+ */
+/* (inline, see header) */
+
+/**
+ * tp_intset_iter_reset:
+ * @iter: An integer set iterator to be reset.
+ *
+ * Reset the iterator @iter to the beginning. It must already be associated
+ * with a set.
+ */
+/* (inline, see header) */
+
+/**
+ * TpIntSet:
+ *
+ * Opaque type representing a set of unsigned integers.
+ */
 
 struct _TpIntSet
 {
