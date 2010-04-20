@@ -97,7 +97,7 @@
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 GQuark
@@ -137,7 +137,7 @@ tp_connection_get_feature_quark_core (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 GQuark
@@ -159,7 +159,7 @@ tp_connection_get_feature_quark_connected (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 GQuark
@@ -1016,7 +1016,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * To wait for a valid status (and other properties), call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CORE.
    *
-   * Since version 0.11.UNRELEASED, the change to status
+   * Since version 0.11.3, the change to status
    * %TP_CONNECTION_STATUS_CONNECTED is delayed slightly, until introspection
    * of the connection has finished.
    */
@@ -1897,7 +1897,7 @@ tp_connection_is_ready (TpConnection *self)
  *
  * Returns: the same #TpCapabilities as the #TpConnection:capabilities
  * property
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 TpCapabilities *
 tp_connection_get_capabilities (TpConnection *self)

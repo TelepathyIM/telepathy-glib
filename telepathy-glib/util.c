@@ -1148,6 +1148,8 @@ tp_value_array_unpack (GValueArray *array,
  *
  * If more than one piece of auxiliary data is required, the @user_data
  * argument to the constructor can be a struct or a #GValueArray.
+ *
+ * Since: 0.11.3
  */
 struct _TpWeakRef {
     /*<private>*/
@@ -1168,6 +1170,8 @@ struct _TpWeakRef {
  * Returns: a new weak-reference wrapper
  *
  * Free-function: tp_weak_ref_destroy()
+ *
+ * Since: 0.11.3
  */
 TpWeakRef *
 tp_weak_ref_new (gpointer object,
@@ -1194,6 +1198,8 @@ tp_weak_ref_new (gpointer object,
  *
  * Returns: the additional data supplied in tp_weak_ref_new(), which may be
  *  %NULL
+ *
+ * Since: 0.11.3
  */
 gpointer
 tp_weak_ref_get_user_data (TpWeakRef *self)
@@ -1209,6 +1215,8 @@ tp_weak_ref_get_user_data (TpWeakRef *self)
  * it. Otherwise, return %NULL.
  *
  * Returns: (type Object) (transfer full): a new reference, or %NULL
+ *
+ * Since: 0.11.3
  */
 gpointer
 tp_weak_ref_dup_object (TpWeakRef *self)
@@ -1226,6 +1234,8 @@ tp_weak_ref_dup_object (TpWeakRef *self)
  * Free a weak reference wrapper. This drops the weak reference to the
  * object (if it still exists), and frees the user data with the user-supplied
  * destructor function if one was provided.
+ *
+ * Since: 0.11.3
  */
 void
 tp_weak_ref_destroy (TpWeakRef *self)

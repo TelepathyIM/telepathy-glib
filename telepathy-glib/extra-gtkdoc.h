@@ -650,6 +650,8 @@
  *
  * This section documents the auto-generated C wrappers for the
  * Balance interface, used with #TpConnection objects.
+ *
+ * Since: 0.11.0
  */
 
 /**
@@ -665,4 +667,6 @@
  *
  * This section documents the auto-generated C wrappers for the
  * ContactInfo interface, used with #TpConnection objects.
+ *
+ * Since: 0.11.3
  */

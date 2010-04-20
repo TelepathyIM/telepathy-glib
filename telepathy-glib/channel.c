@@ -139,7 +139,7 @@ G_DEFINE_TYPE_WITH_CODE (TpChannel,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 GQuark
@@ -169,7 +169,7 @@ tp_channel_get_feature_quark_core (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 GQuark
@@ -190,7 +190,7 @@ tp_channel_get_feature_quark_group (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 GQuark
@@ -444,7 +444,7 @@ tp_channel_get_property (GObject *object,
  *
  * Returns: the chat state for @contact, or %TP_CHANNEL_CHAT_STATE_INACTIVE
  *  if their chat state is not known
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 TpChannelChatState
 tp_channel_get_chat_state (TpChannel *self,
@@ -1631,7 +1631,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * Emitted when a contact's chat state changes after tp_proxy_prepare_async()
    * has finished preparing the feature %TP_CHANNEL_FEATURE_CHAT_STATES.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.3
    */
   signals[SIGNAL_CHAT_STATE_CHANGED] = g_signal_new ("chat-state-changed",
       G_OBJECT_CLASS_TYPE (klass),

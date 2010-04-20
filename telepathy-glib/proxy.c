@@ -200,6 +200,8 @@ tp_dbus_errors_quark (void)
  *
  * Structure representing a feature. This is currently opaque to code outside
  * telepathy-glib itself.
+ *
+ * Since: 0.11.3
  */
 
 /**
@@ -211,6 +213,8 @@ tp_dbus_errors_quark (void)
  * implement this.
  *
  * Returns: an array of feature descriptions
+ *
+ * Since: 0.11.3
  */
 
 typedef struct _TpProxyErrorMappingLink TpProxyErrorMappingLink;
@@ -1455,6 +1459,8 @@ cont:
  * To prepare features, call tp_proxy_prepare_async().
  *
  * Returns: %TRUE if @feature has been prepared successfully
+ *
+ * Since: 0.11.3
  */
 gboolean
 tp_proxy_is_prepared (gpointer self,
@@ -1563,6 +1569,8 @@ _tp_proxy_is_preparing (gpointer self,
  * features when instantiated, and features will sometimes become prepared as
  * a side-effect of other actions, but to ensure that a feature is present you
  * must generally call tp_proxy_prepare_async() and wait for the result.
+ *
+ * Since: 0.11.3
  */
 void
 tp_proxy_prepare_async (gpointer self,
@@ -1645,6 +1653,8 @@ finally:
  *
  * Returns: %FALSE (setting @error) if tp_proxy_prepare_async() failed
  *  or was cancelled
+ *
+ * Since: 0.11.3
  */
 gboolean
 tp_proxy_prepare_finish (gpointer self,

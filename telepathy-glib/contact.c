@@ -89,7 +89,7 @@ struct _TpContact {
  *  #TpContact:presence-status and #TpContact:presence-message
  * @TP_CONTACT_FEATURE_LOCATION: #TpContact:location (available since 0.11.1)
  * @TP_CONTACT_FEATURE_CAPABILITIES: #TpContact:capabilities
- *  (available since 0.11.UNRELEASED)
+ *  (available since 0.11.3)
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
  *
@@ -397,7 +397,7 @@ tp_contact_get_location (TpContact *self)
  * Returns: the same #TpCapabilities (or %NULL) as the
  * #TpContact:capabilities property
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 TpCapabilities *
 tp_contact_get_capabilities (TpContact *self)
@@ -730,7 +730,7 @@ tp_contact_class_init (TpContactClass *klass)
    * This may be %NULL if this #TpContact object has not been set up to track
    * %TP_CONTACT_FEATURE_CAPABILITIES.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.3
    */
   param_spec = g_param_spec_object ("capabilities",
       "Capabilities",

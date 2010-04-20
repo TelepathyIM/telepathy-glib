@@ -1203,7 +1203,7 @@ tp_account_manager_is_prepared (TpAccountManager *manager,
  * operation is finished. Instead, it will simply set @features on @manager.
  * Note that if @callback is %NULL, then @user_data must also be %NULL.
  *
- * In version 0.11.UNRELEASED or later, this is equivalent to calling
+ * In version 0.11.3 or later, this is equivalent to calling
  * tp_proxy_prepare_async() with the same arguments.
  *
  * Since: 0.9.0

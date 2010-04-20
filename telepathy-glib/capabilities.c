@@ -37,7 +37,7 @@
  * #TpCapabilities objects represent the capabilities a #TpConnection
  * or a #TpContact supports.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 /**
@@ -45,7 +45,7 @@
  *
  * An object representing capabilities a #TpConnection or #TpContact supports.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 struct _TpCapabilitiesClass {
@@ -80,7 +80,7 @@ struct _TpCapabilitiesPrivate {
  *
  * Returns: the same #GPtrArray as the #TpCapabilities:channel-classes property
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 GPtrArray *
 tp_capabilities_get_channel_classes (TpCapabilities *self)
@@ -98,7 +98,7 @@ tp_capabilities_get_channel_classes (TpCapabilities *self)
  *
  * Returns: the same #gboolean as the #TpCapabilities:contact-specific property
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 gboolean
 tp_capabilities_is_specific_to_contact (TpCapabilities *self)
@@ -317,7 +317,7 @@ supports_simple_channel (TpCapabilities *self,
  * HandleTypeContact as TargetHandleType and a contact identifier can be
  * expected to work, %FALSE otherwise.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 gboolean
 tp_capabilities_supports_text_chats (TpCapabilities *self)
@@ -346,7 +346,7 @@ tp_capabilities_supports_text_chats (TpCapabilities *self)
  * HandleTypeRoom as TargetHandleType and a channel identifier can be
  * expected to work, %FALSE otherwise.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 gboolean
 tp_capabilities_supports_text_chatrooms (TpCapabilities *self)

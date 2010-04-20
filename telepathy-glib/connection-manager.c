@@ -63,7 +63,7 @@
  *
  * Signature of the callback supplied to tp_list_connection_managers().
  *
- * Since 0.11.UNRELEASED, tp_list_connection_managers() will
+ * Since 0.11.3, tp_list_connection_managers() will
  * wait for %TP_CONNECTION_MANAGER_FEATURE_CORE to be prepared (so
  * tp_connection_manager_is_prepared() will return %TRUE) on each
  * connection manager passed to @callback, unless an error occurred while
@@ -86,7 +86,7 @@
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 
 GQuark
@@ -282,6 +282,8 @@ _tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
  *
  * Returns: a newly (slice) allocated #TpConnectionManagerParam, free with
  *  tp_connection_manager_param_free()
+ *
+ * Since: 0.11.3
  */
 TpConnectionManagerParam *
 tp_connection_manager_param_copy (const TpConnectionManagerParam *in)
@@ -299,6 +301,8 @@ tp_connection_manager_param_copy (const TpConnectionManagerParam *in)
  * @param: the #TpConnectionManagerParam to free
  *
  * Frees @param, which was copied with tp_connection_manager_param_copy().
+ *
+ * Since: 0.11.3
  */
 void
 tp_connection_manager_param_free (TpConnectionManagerParam *param)
@@ -317,6 +321,8 @@ tp_connection_manager_param_free (TpConnectionManagerParam *param)
  *
  * Returns: a newly (slice) allocated #TpConnectionManagerProtocol, free with
  *  tp_connection_manager_protocol_free()
+ *
+ * Since: 0.11.3
  */
 TpConnectionManagerProtocol *
 tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
@@ -347,6 +353,8 @@ tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
  * @proto: the #TpConnectionManagerProtocol to free
  *
  * Frees @proto, which was copied with tp_connection_manager_protocol_copy().
+ *
+ * Since: 0.11.3
  */
 void
 tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
@@ -370,6 +378,8 @@ tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
  * TP_TYPE_CONNECTION_MANAGER_PARAM:
  *
  * The boxed type of a #TpConnectionManagerParam.
+ *
+ * Since: 0.11.3
  */
 
 
@@ -394,6 +404,8 @@ tp_connection_manager_param_get_type (void)
  * TP_TYPE_CONNECTION_MANAGER_PROTOCOL:
  *
  * The boxed type of a #TpConnectionManagerProtocol.
+ *
+ * Since: 0.11.3
  */
 
 

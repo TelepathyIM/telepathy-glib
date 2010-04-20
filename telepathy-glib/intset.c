@@ -44,6 +44,8 @@
  * TP_TYPE_INTSET:
  *
  * The boxed type of a #TpIntSet.
+ *
+ * Since: 0.11.3
  */
 
 GType

@@ -1476,7 +1476,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * The set of D-Bus interfaces available on this Connection, other than
    * Connection itself.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.3
    */
   param_spec = g_param_spec_boxed ("interfaces",
       "Connection.Interfaces",
@@ -1495,7 +1495,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    *
    * The #GObject::notify signal is not currently emitted for this property.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.3
    */
   param_spec = g_param_spec_uint ("dbus-status",
       "Connection.Status",
@@ -1516,7 +1516,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * tp_dbus_daemon_dup() just after it is constructed; if this fails, this
    * property will remain %NULL, and tp_base_connection_register() will fail.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.3
    */
   g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
       g_param_spec_object ("dbus-daemon", "D-Bus daemon",
@@ -3410,6 +3410,8 @@ tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
  * Returns: (transfer none): the value of the
  *  #TpBaseConnectionManager:dbus-daemon property. The caller must reference
  *  the returned object with g_object_ref() if it will be kept.
+ *
+ * Since: 0.11.3
  */
 TpDBusDaemon *
 tp_base_connection_get_dbus_daemon (TpBaseConnection *self)

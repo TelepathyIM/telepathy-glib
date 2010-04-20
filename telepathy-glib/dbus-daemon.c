@@ -922,6 +922,8 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
  *
  * Export @object at @object_path. This is a convenience wrapper around
  * dbus_g_connection_register_g_object(), and behaves similarly.
+ *
+ * Since: 0.11.3
  */
 void
 tp_dbus_daemon_register_object (TpDBusDaemon *self,
@@ -946,6 +948,8 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
  *
  * Stop exporting @object on D-Bus. This is a convenience wrapper around
  * dbus_g_connection_unregister_g_object(), and behaves similarly.
+ *
+ * Since: 0.11.3
  */
 void
 tp_dbus_daemon_unregister_object (TpDBusDaemon *self,

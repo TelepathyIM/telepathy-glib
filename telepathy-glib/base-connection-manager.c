@@ -360,7 +360,7 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
    * warning will be logged with g_warning(), and this property will remain
    * %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.3
    */
   g_object_class_install_property (object_class, PROP_DBUS_DAEMON,
       g_param_spec_object ("dbus-daemon", "D-Bus daemon",
@@ -1202,6 +1202,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Returns: (transfer none): the value of the
  *  #TpBaseConnectionManager:dbus-daemon property. The caller must reference
  *  the returned object with g_object_ref() if it will be kept.
+ *
+ * Since: 0.11.3
  */
 TpDBusDaemon *
 tp_base_connection_manager_get_dbus_daemon (TpBaseConnectionManager *self)
