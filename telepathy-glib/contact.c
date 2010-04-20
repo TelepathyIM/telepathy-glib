@@ -1919,19 +1919,50 @@ contacts_get_avatar_tokens (ContactsContext *c)
   contacts_context_continue (c);
 }
 
+static gboolean
+contacts_context_supports_iface (ContactsContext *context,
+    GQuark iface)
+{
+  GArray *contact_attribute_interfaces =
+      context->connection->priv->contact_attribute_interfaces;
+  guint i;
+
+  if (!tp_proxy_has_interface_by_id (context->connection,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    return FALSE;
+
+  g_assert (contact_attribute_interfaces != NULL);
+
+  for (i = 0; i < contact_attribute_interfaces->len; i++)
+    {
+      GQuark q = g_array_index (contact_attribute_interfaces, GQuark, i);
+
+      if (q == iface)
+        return TRUE;
+    }
+
+  return FALSE;
+}
 
 static void
 contacts_context_queue_features (ContactsContext *context,
                                  ContactFeatureFlags feature_flags)
 {
+  /* Start slow path for requested features that are not in
+   * ContactAttributeInterfaces */
+
   if ((feature_flags & CONTACT_FEATURE_FLAG_ALIAS) != 0 &&
+      !contacts_context_supports_iface (context,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING) &&
       tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING))
     {
       g_queue_push_tail (&context->todo, contacts_get_aliases);
     }
 
-  if ((feature_flags & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
+  if ((feature_flags & CONTACT_FEATURE_FLAG_PRESENCE) != 0 &&
+      !contacts_context_supports_iface (context,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE))
     {
       if (tp_proxy_has_interface_by_id (context->connection,
             TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE))
@@ -1950,6 +1981,8 @@ contacts_context_queue_features (ContactsContext *context,
     }
 
   if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0 &&
+      !contacts_context_supports_iface (context,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS) &&
       tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
     {
@@ -1957,6 +1990,8 @@ contacts_context_queue_features (ContactsContext *context,
     }
 
   if ((feature_flags & CONTACT_FEATURE_FLAG_LOCATION) != 0 &&
+      !contacts_context_supports_iface (context,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION) &&
       tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION))
     {
