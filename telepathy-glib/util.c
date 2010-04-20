@@ -927,7 +927,8 @@ closure_invalidated_cb (gpointer ctx_,
  * @detailed_signal: a string of the form "signal-name::detail".
  * @c_handler: the #GCallback to connect.
  * @gobject: the object to pass as data to @c_handler.
- * @connect_flags: a combination of #GConnectFlags.
+ * @connect_flags: a combination of #GConnectFlags. Only
+ *  %G_CONNECT_AFTER and %G_CONNECT_SWAPPED are supported by this function.
  *
  * Connects a #GCallback function to a signal for a particular object, as if
  * with g_signal_connect(). Additionally, arranges for the signal handler to be
@@ -944,6 +945,8 @@ closure_invalidated_cb (gpointer ctx_,
  * This is intended to be a convenient way for objects to use themselves as
  * user_data for callbacks without having to explicitly disconnect all the
  * handlers in their finalizers.
+ *
+ * Changed in 0.11.UNRELEASED: %G_CONNECT_AFTER is now respected.
  *
  * Returns: the handler id
  *
@@ -970,7 +973,7 @@ tp_g_signal_connect_object (gpointer instance,
     ctx->closure = g_cclosure_new_object (c_handler, gobject);
 
   ctx->handler_id = g_signal_connect_closure (instance, detailed_signal,
-      ctx->closure, 0);
+      ctx->closure, (connect_flags & G_CONNECT_AFTER) ? TRUE : FALSE);
 
   g_object_weak_ref (instance_obj, instance_destroyed_cb, ctx);
   g_object_weak_ref (gobject, observer_destroyed_cb, ctx);
