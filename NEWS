@@ -31,6 +31,8 @@ Enhancements:
 
 ◈ Add tp_account_set_avatar_async() (cassidy)
 
+◈ Add TP_CONTACT_FEATURE_LOCATION (cassidy)
+
 Fixes:
 
 ◈ Only fail “make check” on documentation warnings in unreleased versions, to
