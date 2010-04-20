@@ -1,7 +1,10 @@
 telepathy-glib 0.10.4 (UNRELEASED)
 ==================================
 
-...
+Fixes:
+
+* fd.o #27537: fix assertion failure if getting contact attributes
+  fails (cassidy)
 
 telepathy-glib 0.10.3 (2010-04-06)
 ==================================

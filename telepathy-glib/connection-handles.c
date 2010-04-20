@@ -699,8 +699,9 @@ connection_got_contact_attributes (TpConnection *self,
 {
   GetContactAttributesContext *c = user_data;
 
-  DEBUG ("%u handles, hold=%c", g_hash_table_size (attributes),
-      c->hold ? 'T' : 'F');
+  if (error == NULL)
+    DEBUG ("%u handles, hold=%c", g_hash_table_size (attributes),
+        c->hold ? 'T' : 'F');
 
   if (error == NULL && c->hold)
     {
