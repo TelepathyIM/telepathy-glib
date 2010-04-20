@@ -1,7 +1,51 @@
-telepathy-glib 0.11.3 (UNRELEASED)
+telepathy-glib 0.11.3 (2010-04-20)
 ==================================
 
-...
+The "can we have a hippopotamus?" release.
+
+This version includes both the bugfixes from today's 0.10.4 release.
+
+Enhancements:
+
+↠ Upgrade to telepathy-spec 0.19.5 (smcv)
+  → Connection.Status, Connection.Interfaces properties (all telepathy-glib
+    CMs that use TpBaseConnection should gain support for these automatically)
+  → Observer.Recover property
+  → ContactInfo interface
+
+↠ Add TpWeakRef, a wrapper for a weak reference and an optional extra pointer
+  (smcv)
+
+↠ fd.o #21097: push the "feature" concept from TpAccount and TpAccountManager
+  into the TpProxy base class, and use it to implement feature-preparation
+  for core functionality of TpChannel, TpConnection, TpConnectionManager (smcv)
+
+↠ add TP_CHANNEL_FEATURE_CHAT_STATES (smcv)
+
+↠ fd.o #27511: add TpCapabilities, TP_CONNECTION_FEATURE_CAPABILITIES and
+  TP_CONTACT_FEATURE_CAPABILITIES (cassidy)
+
+↠ fd.o #27690, #27709: add boxed types for TpIntSet,
+  TpConnectionManagerProtocol and TpConnectionManagerParam (danni, smcv)
+
+↠ fd.o #27741: make it easier to export objects without using tp_get_bus(),
+  particularly in connection managers (smcv)
+
+↠ fd.o #26211: generate TP_TOKEN_${INTERFACE}_${TOKEN} constants for contact
+  attributes and handler capability tokens (KA)
+
+Fixes:
+
+↠ Use the fast-path for Location correctly (cassidy)
+
+↠ fd.o #27714: support G_CONNECT_AFTER in tp_g_signal_connect_object, and
+  document exactly which flags we support (Maiku, smcv)
+
+↠ fd.o #27537: fix assertion failure if getting contact attributes
+  fails (cassidy)
+
+↠ fd.o #27695: only try the slow path in Contacts if the fast path isn't
+  supported (cassidy)
 
 telepathy-glib 0.11.2 (2010-04-06)
 ==================================
