@@ -29,6 +29,7 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle-repo.h>
+#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/svc-connection.h>
 
 G_BEGIN_DECLS
@@ -191,6 +192,8 @@ gboolean tp_base_connection_channel_manager_iter_next (
         return; \
       } \
   } G_STMT_END
+
+TpDBusDaemon *tp_base_connection_get_dbus_daemon (TpBaseConnection *self);
 
 G_END_DECLS
 

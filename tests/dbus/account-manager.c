@@ -23,7 +23,6 @@ typedef struct {
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
-    DBusGConnection *bus;
 
     SimpleAccountManager *service /* initialized in prepare_service */;
     TpAccountManager *am;
@@ -139,17 +138,14 @@ static void
 setup_service (Test *test,
     gconstpointer data)
 {
-
   setup (test, data);
-
-  test->bus = tp_proxy_get_dbus_connection (test->dbus);
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,
           TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error));
 
   test->service = g_object_new (SIMPLE_TYPE_ACCOUNT_MANAGER, NULL);
-  dbus_g_connection_register_g_object (test->bus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
-      (GObject *) test->service);
+  tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
+      test->service);
 }
 
 static void
@@ -182,7 +178,7 @@ teardown_service (Test *test,
   g_assert (
       tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
                                &test->error));
-  dbus_g_connection_unregister_g_object (test->bus, G_OBJECT (test->service));
+  tp_dbus_daemon_unregister_object (test->dbus, test->service);
   g_object_unref (test->service);
   test->service = NULL;
   teardown (test, data);
@@ -425,8 +421,8 @@ register_service_action (gpointer script_data,
 {
   Test *test = (Test *) script_data;
 
-  dbus_g_connection_register_g_object (test->bus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
-      (GObject *) test->service);
+  tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
+      test->service);
 
   script_continue (test);
 }
@@ -487,7 +483,7 @@ static void
 test_prepare_destroyed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  dbus_g_connection_unregister_g_object (test->bus, G_OBJECT (test->service));
+  tp_dbus_daemon_unregister_object (test->dbus, test->service);
   test_prepare (test, data);
   script_append_action (test, assert_failed_action, NULL);
   script_append_action (test, register_service_action, NULL);

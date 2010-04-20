@@ -225,9 +225,8 @@ tp_debug_sender_constructed (GObject *object)
 
   if (dbus_daemon != NULL)
     {
-      dbus_g_connection_register_g_object (
-          tp_proxy_get_dbus_connection (dbus_daemon),
-          "/org/freedesktop/Telepathy/debug", (GObject *) debug_sender);
+      tp_dbus_daemon_register_object (dbus_daemon,
+          "/org/freedesktop/Telepathy/debug", debug_sender);
 
       g_object_unref (dbus_daemon);
     }

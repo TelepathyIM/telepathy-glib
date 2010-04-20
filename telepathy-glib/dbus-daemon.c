@@ -915,6 +915,51 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
 }
 
 /**
+ * tp_dbus_daemon_register_object:
+ * @self: object representing a connection to a bus
+ * @object_path: an object path
+ * @object: (type Object) (transfer none): an object to export
+ *
+ * Export @object at @object_path. This is a convenience wrapper around
+ * dbus_g_connection_register_g_object(), and behaves similarly.
+ */
+void
+tp_dbus_daemon_register_object (TpDBusDaemon *self,
+    const gchar *object_path,
+    gpointer object)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+
+  g_return_if_fail (TP_IS_DBUS_DAEMON (self));
+  g_return_if_fail (tp_dbus_check_valid_object_path (object_path, NULL));
+  g_return_if_fail (G_IS_OBJECT (object));
+
+  dbus_g_connection_register_g_object (as_proxy->dbus_connection,
+      object_path, object);
+}
+
+/**
+ * tp_dbus_daemon_unregister_object:
+ * @self: object representing a connection to a bus
+ * @object: (type Object) (transfer none): an object previously exported with
+ *  tp_dbus_daemon_register_object()
+ *
+ * Stop exporting @object on D-Bus. This is a convenience wrapper around
+ * dbus_g_connection_unregister_g_object(), and behaves similarly.
+ */
+void
+tp_dbus_daemon_unregister_object (TpDBusDaemon *self,
+    gpointer object)
+{
+  TpProxy *as_proxy = (TpProxy *) self;
+
+  g_return_if_fail (TP_IS_DBUS_DAEMON (self));
+  g_return_if_fail (G_IS_OBJECT (object));
+
+  dbus_g_connection_unregister_g_object (as_proxy->dbus_connection, object);
+}
+
+/**
  * tp_dbus_daemon_get_unique_name:
  * @self: object representing a connection to a bus
  *

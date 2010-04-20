@@ -126,7 +126,6 @@ main (int argc, char **argv)
 {
   TestProperties *obj;
   TpDBusDaemon *dbus_daemon;
-  DBusGConnection *bus;
   TpProxy *proxy;
   GValue *value;
   GHashTable *hash;
@@ -134,16 +133,14 @@ main (int argc, char **argv)
   tp_debug_set_flags ("all");
   g_type_init ();
   dbus_daemon = test_dbus_daemon_dup_or_die ();
-  bus = tp_proxy_get_dbus_connection (dbus_daemon);
 
   obj = g_object_new (TEST_TYPE_PROPERTIES, NULL);
-  dbus_g_connection_register_g_object (bus, "/", (GObject *) obj);
+  tp_dbus_daemon_register_object (dbus_daemon, "/", obj);
 
   /* Open a D-Bus connection to myself */
   proxy = TP_PROXY (g_object_new (TP_TYPE_PROXY,
-      "dbus-connection", bus,
-      "bus-name",
-          dbus_bus_get_unique_name (dbus_g_connection_get_connection (bus)),
+      "dbus-daemon", dbus_daemon,
+      "bus-name", tp_dbus_daemon_get_unique_name (dbus_daemon),
       "object-path", "/",
       NULL));
 

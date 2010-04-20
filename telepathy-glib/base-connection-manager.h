@@ -27,6 +27,7 @@
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/proxy.h>
 #include <telepathy-glib/svc-connection-manager.h>
 
 G_BEGIN_DECLS
@@ -124,6 +125,9 @@ struct _TpBaseConnectionManager {
 GType tp_base_connection_manager_get_type (void);
 
 gboolean tp_base_connection_manager_register (TpBaseConnectionManager *self);
+
+TpDBusDaemon *tp_base_connection_manager_get_dbus_daemon (
+    TpBaseConnectionManager *self);
 
 /* TYPE MACROS */
 #define TP_TYPE_BASE_CONNECTION_MANAGER \

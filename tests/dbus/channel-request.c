@@ -88,7 +88,7 @@ setup (Test *test,
 
   test->cr_service = g_object_new (test_simple_cr_get_type (),
       NULL);
-  dbus_g_connection_register_g_object (test->private_conn, "/whatever",
+  tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cr_service);
 }
 
@@ -111,11 +111,9 @@ teardown (Test *test,
       test->private_dbus = NULL;
     }
 
-#if 0
   /* not leaking this object would crash dbus-glib (fd.o #5688) */
   g_object_unref (test->cr_service);
   test->cr_service = NULL;
-#endif
 
   if (test->private_conn != NULL)
     {
