@@ -278,6 +278,8 @@ _tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
  * tp_connection_manager_param_copy:
  * @in: the #TpConnectionManagerParam to copy
  *
+ * <!-- Returns: says it all -->
+ *
  * Returns: a newly (slice) allocated #TpConnectionManagerParam, free with
  *  tp_connection_manager_param_free()
  */
@@ -311,6 +313,8 @@ tp_connection_manager_param_free (TpConnectionManagerParam *param)
  * tp_connection_manager_protocol_copy:
  * @in: the #TpConnectionManagerProtocol to copy
  *
+ * <!-- Returns: says it all -->
+ *
  * Returns: a newly (slice) allocated #TpConnectionManagerProtocol, free with
  *  tp_connection_manager_protocol_free()
  */
@@ -340,9 +344,9 @@ tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
 
 /**
  * tp_connection_manager_protocol_free:
- * @param: the #TpConnectionManagerProtocol to free
+ * @proto: the #TpConnectionManagerProtocol to free
  *
- * Frees @param, which was copied with tp_connection_manager_protocol_copy().
+ * Frees @proto, which was copied with tp_connection_manager_protocol_copy().
  */
 void
 tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
