@@ -3,6 +3,9 @@ telepathy-glib 0.10.4 (UNRELEASED)
 
 Fixes:
 
+* fd.o #27714: support G_CONNECT_AFTER in tp_g_signal_connect_object, and
+  document exactly which flags we support (Maiku, smcv)
+
 * fd.o #27537: fix assertion failure if getting contact attributes
   fails (cassidy)
 
