@@ -914,7 +914,7 @@ closure_invalidated_cb (gpointer ctx_,
  * user_data for callbacks without having to explicitly disconnect all the
  * handlers in their finalizers.
  *
- * Changed in 0.11.UNRELEASED: %G_CONNECT_AFTER is now respected.
+ * Changed in 0.10.4 and 0.11.3: %G_CONNECT_AFTER is now respected.
  *
  * Returns: the handler id
  *
