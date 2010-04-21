@@ -33,6 +33,10 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
+
+#define DEBUG_FLAG TP_DEBUG_CLIENT
+#include "telepathy-glib/debug-internal.h"
+
 struct _TpBaseClientClass {
     /*<private>*/
     GObjectClass parent_class;
@@ -338,12 +342,49 @@ tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
 void
 tp_base_client_register (TpBaseClient *self)
 {
+  GString *string;
+  GError *error = NULL;
+  gchar *path;
+  static guint unique_counter = 0;
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  /* Client should at least be an Observer, Approver or Handler */
+  g_return_if_fail (self->priv->flags != 0);
+
+  string = g_string_new (TP_CLIENT_BUS_NAME_BASE);
+  g_string_append (string, self->priv->name);
+
+  if (self->priv->uniquify_name)
+    {
+      const gchar *unique;
+
+      unique = tp_dbus_daemon_get_unique_name (self->priv->dbus);
+      g_string_append_printf (string, ".%s", tp_escape_as_identifier (unique));
+      g_string_append_printf (string, ".n%u", unique_counter++);
+    }
+
+  DEBUG ("request name %s", string->str);
+
+  if (!tp_dbus_daemon_request_name (self->priv->dbus, string->str, TRUE,
+        &error))
+    {
+      g_warning ("%s", error->message);
+      g_error_free (error);
+      g_string_free (string, TRUE);
+      return;
+    }
+
+  path = g_strdup_printf ("/%s", g_strdelimit (string->str, ".", '/'));
+
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (self->priv->dbus),
+      path, G_OBJECT (self));
+
+  g_string_free (string, TRUE);
+  g_free (path);
 
   self->priv->registered = TRUE;
-
-  /* FIXME */
 }
 
 /**
