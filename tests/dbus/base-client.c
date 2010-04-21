@@ -248,6 +248,73 @@ test_observer (Test *test,
   g_assert_no_error (test->error);
 }
 
+/* Test Approver */
+static void
+get_approver_prop_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  Test *test = user_data;
+  GPtrArray *filters;
+
+  if (error != NULL)
+    {
+      test->error = g_error_copy (error);
+      goto out;
+    }
+
+  g_assert_cmpint (g_hash_table_size (properties), == , 1);
+
+  filters = tp_asv_get_boxed (properties, "ApproverChannelFilter",
+      TP_ARRAY_TYPE_CHANNEL_CLASS_LIST);
+  check_filters (filters);
+
+out:
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_approver (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *filter;
+
+  filter = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
+      NULL);
+
+  tp_base_client_add_approver_filter (test->base_client, filter);
+  g_hash_table_unref (filter);
+
+  tp_base_client_take_approver_filter (test->base_client, tp_asv_new (
+        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+          TP_HANDLE_TYPE_CONTACT,
+        NULL));
+
+  tp_base_client_register (test->base_client);
+
+  /* Check Client properties */
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+  g_assert_cmpint (g_strv_length (test->interfaces), ==, 1);
+  g_assert (tp_strv_contains ((const gchar * const *) test->interfaces,
+        TP_IFACE_CLIENT_APPROVER));
+
+  /* Check Approver properties */
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT_APPROVER, get_approver_prop_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -262,6 +329,8 @@ main (int argc,
   g_test_add ("/base-client/register", Test, NULL, setup, test_register,
       teardown);
   g_test_add ("/base-client/observer", Test, NULL, setup, test_observer,
+      teardown);
+  g_test_add ("/base-client/approver", Test, NULL, setup, test_approver,
       teardown);
 
   return g_test_run ();
