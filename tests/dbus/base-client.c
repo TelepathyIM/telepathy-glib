@@ -315,6 +315,102 @@ test_approver (Test *test,
   g_assert_no_error (test->error);
 }
 
+/* Test Handler */
+static void
+get_handler_prop_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  Test *test = user_data;
+  GPtrArray *filters;
+  gboolean bypass;
+  gboolean valid;
+  const gchar * const * capabilities;
+  GPtrArray *handled;
+
+  if (error != NULL)
+    {
+      test->error = g_error_copy (error);
+      goto out;
+    }
+
+  g_assert_cmpint (g_hash_table_size (properties), == , 4);
+
+  filters = tp_asv_get_boxed (properties, "HandlerChannelFilter",
+      TP_ARRAY_TYPE_CHANNEL_CLASS_LIST);
+  check_filters (filters);
+
+  bypass = tp_asv_get_boolean (properties, "BypassApproval", &valid);
+  g_assert (valid);
+  g_assert (bypass);
+
+  capabilities = tp_asv_get_strv (properties, "Capabilities");
+  g_assert_cmpint (g_strv_length ((GStrv) capabilities), ==, 5);
+  g_assert (tp_strv_contains (capabilities, "badger"));
+  g_assert (tp_strv_contains (capabilities, "mushroom"));
+  g_assert (tp_strv_contains (capabilities, "snake"));
+  g_assert (tp_strv_contains (capabilities, "goat"));
+  g_assert (tp_strv_contains (capabilities, "pony"));
+
+  handled = tp_asv_get_boxed (properties, "HandledChannels",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  g_assert (handled != NULL);
+  g_assert_cmpint (handled->len, ==, 0);
+
+out:
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_handler (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *filter;
+  const gchar *caps[] = { "mushroom", "snake", NULL };
+
+  filter = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
+      NULL);
+
+  tp_base_client_add_handler_filter (test->base_client, filter);
+  g_hash_table_unref (filter);
+
+  tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
+        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+          TP_HANDLE_TYPE_CONTACT,
+        NULL));
+
+  tp_base_client_set_handler_bypass_approval (test->base_client, TRUE);
+
+  tp_base_client_add_handler_capability (test->base_client, "badger");
+  tp_base_client_add_handler_capabilities (test->base_client, caps);
+  tp_base_client_add_handler_capabilities_varargs (test->base_client,
+      "goat", "pony", NULL);
+
+  tp_base_client_register (test->base_client);
+
+  /* Check Client properties */
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+  g_assert_cmpint (g_strv_length (test->interfaces), ==, 1);
+  g_assert (tp_strv_contains ((const gchar * const *) test->interfaces,
+        TP_IFACE_CLIENT_HANDLER));
+
+  /* Check Handler properties */
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT_HANDLER, get_handler_prop_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -331,6 +427,8 @@ main (int argc,
   g_test_add ("/base-client/observer", Test, NULL, setup, test_observer,
       teardown);
   g_test_add ("/base-client/approver", Test, NULL, setup, test_approver,
+      teardown);
+  g_test_add ("/base-client/handler", Test, NULL, setup, test_handler,
       teardown);
 
   return g_test_run ();
