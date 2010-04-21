@@ -48,10 +48,6 @@ struct _TpBaseClient {
 
 GType tp_base_client_get_type (void);
 
-TpBaseClient *tp_base_client_new (TpDBusDaemon *dbus_daemon,
-    const gchar *name,
-    gboolean uniquify_name);
-
 /* setup functions which can only be called before register() */
 
 void tp_base_client_add_observer_filter (TpBaseClient *self,

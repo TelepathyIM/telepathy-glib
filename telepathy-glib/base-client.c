@@ -86,18 +86,6 @@ struct _TpBaseClientPrivate
   GPtrArray *handler_caps;
 };
 
-TpBaseClient *
-tp_base_client_new (TpDBusDaemon *dbus_daemon,
-    const gchar *name,
-    gboolean uniquify_name)
-{
-  return g_object_new (TP_TYPE_BASE_CLIENT,
-      "dbus-daemon", dbus_daemon,
-      "name", name,
-      "uniquify-name", uniquify_name,
-      NULL);
-}
-
 static GHashTable *
 _tp_base_client_copy_filter (GHashTable *filter)
 {
