@@ -26,12 +26,25 @@
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 
 G_BEGIN_DECLS
 
 typedef struct _TpBaseClient TpBaseClient;
 typedef struct _TpBaseClientClass TpBaseClientClass;
 typedef struct _TpBaseClientPrivate TpBaseClientPrivate;
+
+struct _TpBaseClientClass {
+    /*<private>*/
+    GObjectClass parent_class;
+    TpDBusPropertiesMixinClass dbus_properties_class;
+};
+
+struct _TpBaseClient {
+    /*<private>*/
+    GObject parent;
+    TpBaseClientPrivate *priv;
+};
 
 GType tp_base_client_get_type (void);
 

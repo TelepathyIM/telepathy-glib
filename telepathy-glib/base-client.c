@@ -37,18 +37,6 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 
-struct _TpBaseClientClass {
-    /*<private>*/
-    GObjectClass parent_class;
-    TpDBusPropertiesMixinClass dbus_properties_class;
-};
-
-struct _TpBaseClient {
-    /*<private>*/
-    GObject parent;
-    TpBaseClientPrivate *priv;
-};
-
 static void observer_iface_init (gpointer, gpointer);
 static void approver_iface_init (gpointer, gpointer);
 static void handler_iface_init (gpointer, gpointer);
