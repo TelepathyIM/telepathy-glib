@@ -290,11 +290,15 @@ tp_channel_get_handle (TpChannel *self,
  * tp_channel_get_identifier:
  * @self: a channel
  *
- * This channel's associated identifier, or NULL if no identifier or unknown.
+ * This channel's associated identifier, or the empty string if no identifier
+ * or unknown.
  *
- * The identifier is the result of inspecting #TpChannel:handle.
  * This is the same as the #TpChannel:identifier property, and isn't guaranteed
- * to be non-%NULL until the %TP_CHANNEL_FEATURE_CORE property is ready.
+ * to be set until the %TP_CHANNEL_FEATURE_CORE property is ready.
+ *
+ * Changed in 0.11.UNRELEASED: as with #TpChannel:identifier, this could
+ * previously either be %NULL or the empty string if there was no suitable
+ * value. It is now non-%NULL in all cases.
  *
  * Returns: the identifier
  * Since: 0.7.21
@@ -303,6 +307,9 @@ const gchar *
 tp_channel_get_identifier (TpChannel *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
+
+  if (self->priv->identifier == NULL)
+    return "";
 
   return self->priv->identifier;
 }
@@ -416,7 +423,7 @@ tp_channel_get_property (GObject *object,
       g_value_set_uint (value, self->priv->handle);
       break;
     case PROP_IDENTIFIER:
-      g_value_set_string (value, self->priv->identifier);
+      g_value_set_string (value, tp_channel_get_identifier (self));
       break;
     case PROP_CHANNEL_PROPERTIES:
       g_value_set_boxed (value, self->priv->channel_properties);
@@ -598,6 +605,10 @@ tp_channel_set_property (GObject *object,
           if (asv != NULL)
             {
               guint u;
+
+              /* no need to emit GObject::notify for any of these since this
+               * can only happen at construct time, before anyone has
+               * connected to it */
 
               tp_g_hash_table_update (self->priv->channel_properties,
                   asv, (GBoxedCopyFunc) g_strdup,
@@ -942,24 +953,30 @@ tp_channel_got_identifier_cb (TpConnection *connection,
 {
   TpChannel *self = user_data;
 
-  if (error == NULL)
-    {
-      DEBUG ("%p: Introspected identifier %s", self, *identifier);
-      self->priv->identifier = g_strdup (*identifier);
-
-      g_hash_table_insert (self->priv->channel_properties,
-          g_strdup (TP_PROP_CHANNEL_TARGET_ID),
-          tp_g_value_slice_new_string (*identifier));
-
-      g_object_notify ((GObject *) self, "identifier");
-
-      _tp_channel_continue_introspection (self);
-    }
-  else
+  if (error != NULL)
     {
       _tp_channel_abort_introspection (self, "InspectHandles failed", error);
+      goto finally;
     }
 
+  if (identifier == NULL || identifier[0] == NULL || identifier[1] != NULL)
+    {
+      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "CM is broken: InspectHandles(CONTACT, [TargetHandle]) returned "
+          "non-1 length" };
+
+      _tp_channel_abort_introspection (self, "InspectHandles inconsistent",
+          &e);
+      goto finally;
+    }
+
+  DEBUG ("%p: Introspected identifier %s", self, identifier[0]);
+  _tp_channel_maybe_set_identifier (self, identifier[0]);
+  g_object_notify ((GObject *) self, "identifier");
+
+  _tp_channel_continue_introspection (self);
+
+finally:
   g_object_unref (self);
 }
 
@@ -967,8 +984,15 @@ tp_channel_got_identifier_cb (TpConnection *connection,
 static void
 _tp_channel_get_identifier (TpChannel *self)
 {
-  if (self->priv->identifier == NULL && self->priv->handle != 0 &&
-      self->priv->handle_type != TP_HANDLE_TYPE_NONE)
+  if (self->priv->identifier == NULL &&
+      (self->priv->handle == 0 ||
+       self->priv->handle_type == TP_HANDLE_TYPE_NONE))
+    {
+      /* no need to emit GObject::notify here since the initial value was "" */
+      _tp_channel_maybe_set_identifier (self, "");
+    }
+
+  if (self->priv->identifier == NULL)
     {
       GArray handles = {(gchar *) &self->priv->handle, 1};
 
@@ -1431,17 +1455,24 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel:identifier:
    *
-   * This channel's associated identifier, or NULL if no identifier or unknown.
+   * This channel's associated identifier, or the empty string if it has
+   * handle type %TP_HANDLE_TYPE_NONE.
    *
-   * The identifier is the result of inspecting #TpChannel:handle.
+   * For channels where #TpChannel:handle is non-zero, this is the result of
+   * inspecting #TpChannel:handle.
    *
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE.
+   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
+   * the empty string.
+   *
+   * Changed in 0.11.UNRELEASED: this property is never %NULL. Previously,
+   * it was %NULL before an identifier was known, or when a channel
+   * with no TargetID D-Bus property had TargetHandleType %TP_HANDLE_TYPE_NONE.
    */
   param_spec = g_param_spec_string ("identifier",
       "The identifier",
       "The identifier of the channel",
-      NULL,
+      "",
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IDENTIFIER,
       param_spec);
