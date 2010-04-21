@@ -78,7 +78,7 @@
 /* (#define + static inline in dbus.h) */
 
 /**
- * tp_dbus_g_method_return_not_implemented:
+ * tp_dbus_g_method_return_not_implemented: (skip)
  * @context: The D-Bus method invocation context
  *
  * Return the Telepathy error NotImplemented from the method invocation
@@ -106,7 +106,7 @@ _tp_dbus_starter_bus_conn (GError **error)
 }
 
 /**
- * tp_get_bus:
+ * tp_get_bus: (skip)
  *
  * Returns a connection to the D-Bus daemon on which this process was
  * activated if it was launched by D-Bus service activation, or the session
@@ -138,7 +138,7 @@ tp_get_bus (void)
 }
 
 /**
- * tp_get_bus_proxy:
+ * tp_get_bus_proxy: (skip)
  *
  * Return a #DBusGProxy for the bus daemon object. The same caveats as for
  * tp_get_bus() apply.

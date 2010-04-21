@@ -541,7 +541,6 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) libtelepathy-glib.la
 		-I$(top_builddir) \
 		-I$(top_srcdir) \
 		--include=GLib-2.0 \
-		--include=DBusGLib-1.0 \
 		--include=Gio-2.0 \
 		--libtool="$(top_builddir)/libtool" \
 		--library=libtelepathy-glib.la \

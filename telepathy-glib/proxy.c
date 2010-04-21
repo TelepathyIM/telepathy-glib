@@ -356,7 +356,7 @@ static guint signals[N_SIGNALS] = {0};
 static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
 
 /**
- * tp_proxy_borrow_interface_by_id:
+ * tp_proxy_borrow_interface_by_id: (skip)
  * @self: the TpProxy
  * @iface: quark representing the interface required
  * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @iface
@@ -556,7 +556,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
 }
 
 /**
- * tp_proxy_add_interface_by_id:
+ * tp_proxy_add_interface_by_id: (skip)
  * @self: the TpProxy, which must not have become #TpProxy::invalidated.
  * @iface: quark representing the interface to be added
  *
@@ -1139,7 +1139,7 @@ tp_proxy_class_init (TpProxyClass *klass)
       param_spec);
 
   /**
-   * TpProxy:dbus-connection:
+   * TpProxy:dbus-connection: (skip)
    *
    * The D-Bus connection for this object. Read-only except during
    * construction.
@@ -1189,7 +1189,7 @@ tp_proxy_class_init (TpProxyClass *klass)
       param_spec);
 
   /**
-   * TpProxy::interface-added:
+   * TpProxy::interface-added: (skip)
    * @self: the proxy object
    * @id: the GQuark representing the interface
    * @proxy: the dbus-glib proxy representing the interface
@@ -1252,7 +1252,7 @@ tp_proxy_get_dbus_daemon (gpointer self)
 }
 
 /**
- * tp_proxy_get_dbus_connection:
+ * tp_proxy_get_dbus_connection: (skip)
  * @self: a #TpProxy or subclass
  *
  * <!-- -->
