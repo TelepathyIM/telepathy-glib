@@ -14,12 +14,14 @@
 #include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/util.h"
+#include "tests/lib/simple-client.h"
 
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
 
     TpBaseClient *base_client;
+    SimpleClient *simple_client;
     /* client side object */
     TpClient *client;
 
@@ -35,8 +37,9 @@ setup (Test *test,
   test->dbus = test_dbus_daemon_dup_or_die ();
   g_assert (test->dbus != NULL);
 
-  test->base_client = tp_base_client_new (test->dbus, "Test", FALSE);
-  g_assert (test->base_client);
+  test->simple_client = simple_client_new (test->dbus, "Test", FALSE);
+  g_assert (test->simple_client != NULL);
+  test->base_client = TP_BASE_CLIENT (test->simple_client);
 
   test->client = g_object_new (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
