@@ -411,6 +411,64 @@ test_handler (Test *test,
   g_assert_no_error (test->error);
 }
 
+/* Test Requests interface on Handler */
+static void
+get_requests_prop_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  Test *test = user_data;
+
+  if (error != NULL)
+    {
+      test->error = g_error_copy (error);
+      goto out;
+    }
+
+  g_assert_cmpint (g_hash_table_size (properties), == , 0);
+
+out:
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_handler_requests (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
+        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+          TP_HANDLE_TYPE_CONTACT,
+        NULL));
+
+  tp_base_client_set_handler_request_notification (test->base_client);
+
+  tp_base_client_register (test->base_client);
+
+  /* Check Client properties */
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+  g_assert_cmpint (g_strv_length (test->interfaces), ==, 2);
+  g_assert (tp_strv_contains ((const gchar * const *) test->interfaces,
+        TP_IFACE_CLIENT_HANDLER));
+  g_assert (tp_strv_contains ((const gchar * const *) test->interfaces,
+        TP_IFACE_CLIENT_INTERFACE_REQUESTS));
+
+  /* Check Requests properties */
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT_INTERFACE_REQUESTS, get_requests_prop_cb,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -430,6 +488,8 @@ main (int argc,
       teardown);
   g_test_add ("/base-client/handler", Test, NULL, setup, test_handler,
       teardown);
+  g_test_add ("/base-client/handler-requests", Test, NULL, setup,
+      test_handler_requests, teardown);
 
   return g_test_run ();
 }
