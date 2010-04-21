@@ -11,6 +11,7 @@
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/util.h"
 
@@ -207,10 +208,30 @@ out:
 }
 
 static void
+no_return_cb (TpClient *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  Test *test = user_data;
+
+  if (error != NULL)
+    {
+      test->error = g_error_copy (error);
+      goto out;
+    }
+
+out:
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_observer (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *filter;
+  GPtrArray *channels, *requests_satisified;
+  GHashTable *info;
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -246,6 +267,27 @@ test_observer (Test *test,
   g_main_loop_run (test->mainloop);
 
   g_assert_no_error (test->error);
+
+  /* Call ObserveChannels */
+  channels = g_ptr_array_sized_new (0);
+  requests_satisified = g_ptr_array_sized_new (0);
+  info = g_hash_table_new (NULL, NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_OBSERVER);
+
+  tp_cli_client_observer_call_observe_channels (test->client, -1,
+      "/org/freedesktop/Telepathy/Account/fake",
+      "/org/freedesktop/Telepathy/Connection/fake",
+      channels, "/", requests_satisified, info,
+      no_return_cb, test, NULL, NULL);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+
+  g_ptr_array_free (channels, TRUE);
+  g_ptr_array_free (requests_satisified, TRUE);
+  g_hash_table_unref (info);
 }
 
 /* Test Approver */
@@ -280,6 +322,8 @@ test_approver (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *filter;
+  GPtrArray *channels;
+  GHashTable *properties;
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -311,8 +355,24 @@ test_approver (Test *test,
   tp_cli_dbus_properties_call_get_all (test->client, -1,
       TP_IFACE_CLIENT_APPROVER, get_approver_prop_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-
   g_assert_no_error (test->error);
+
+  /* Call AddDispatchOperation */
+  channels = g_ptr_array_sized_new (0);
+  properties = g_hash_table_new (NULL, NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_APPROVER);
+
+  tp_cli_client_approver_call_add_dispatch_operation (test->client, -1,
+      channels,  "/DispatchOperation", properties,
+      no_return_cb, test, NULL, NULL);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+
+  g_ptr_array_free (channels, TRUE);
+  g_hash_table_unref (properties);
 }
 
 /* Test Handler */
@@ -369,6 +429,9 @@ test_handler (Test *test,
 {
   GHashTable *filter;
   const gchar *caps[] = { "mushroom", "snake", NULL };
+  GPtrArray *channels;
+  GPtrArray *requests_satisified;
+  GHashTable *info;
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -407,8 +470,28 @@ test_handler (Test *test,
   tp_cli_dbus_properties_call_get_all (test->client, -1,
       TP_IFACE_CLIENT_HANDLER, get_handler_prop_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-
   g_assert_no_error (test->error);
+
+  /* Call HandleChannels */
+  channels = g_ptr_array_sized_new (0);
+  requests_satisified = g_ptr_array_sized_new (0);
+  info = g_hash_table_new (NULL, NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_HANDLER);
+
+  tp_cli_client_handler_call_handle_channels (test->client, -1,
+      "/org/freedesktop/Telepathy/Account/fake",
+      "/org/freedesktop/Telepathy/Connection/fake",
+      channels, requests_satisified, 0, info,
+      no_return_cb, test, NULL, NULL);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+
+  g_ptr_array_free (channels, TRUE);
+  g_ptr_array_free (requests_satisified, TRUE);
+  g_hash_table_unref (info);
 }
 
 /* Test Requests interface on Handler */
@@ -437,6 +520,8 @@ static void
 test_handler_requests (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  GHashTable *properties;
+
   tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
           TP_IFACE_CHANNEL_TYPE_STREAM_TUBE,
@@ -465,8 +550,32 @@ test_handler_requests (Test *test,
       TP_IFACE_CLIENT_INTERFACE_REQUESTS, get_requests_prop_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-
   g_assert_no_error (test->error);
+
+  /* Call AddRequest */
+  properties = g_hash_table_new (NULL, NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_INTERFACE_REQUESTS);
+
+  tp_cli_client_interface_requests_call_add_request (test->client, -1,
+      "/Request", properties,
+      no_return_cb, test, NULL, NULL);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  /* TODO: check if signal has been fired */
+
+  /* Call RemoveRequest */
+  tp_cli_client_interface_requests_call_remove_request (test->client, -1,
+      "/Remove", "Badger", "snake",
+      no_return_cb, test, NULL, NULL);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  /* TODO: check if signal has been fired */
+
+  g_hash_table_unref (properties);
 }
 
 int
