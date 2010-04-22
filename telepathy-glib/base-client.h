@@ -24,7 +24,10 @@
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
+#include <telepathy-glib/account.h>
 #include <telepathy-glib/base-client-context.h>
+#include <telepathy-glib/channel-dispatch-operation.h>
+#include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
@@ -54,11 +57,11 @@ GType tp_base_client_get_type (void);
 
 typedef void (*TpBaseClientClassObserveChannelsImpl) (
     TpBaseClient *self,
-    const gchar *account,
-    const gchar *connection,
-    const GPtrArray *channels,
-    const gchar *dispatch_operation,
-    const GPtrArray *requests,
+    TpAccount *account,
+    TpConnection *connection,
+    GList *channels,
+    TpChannelDispatchOperation *dispatch_operation,
+    GList *requests,
     TpObserveChannelsContext *context);
 
 void tp_base_client_implement_observe_channels (TpBaseClientClass *klass,

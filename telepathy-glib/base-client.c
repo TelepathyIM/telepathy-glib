@@ -29,6 +29,8 @@
 #include "telepathy-glib/base-client.h"
 
 #include <telepathy-glib/base-client-context-internal.h>
+#include <telepathy-glib/channel.h>
+#include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/interfaces.h>
@@ -668,18 +670,25 @@ tp_base_client_class_init (TpBaseClientClass *cls)
 
 static void
 _tp_base_client_observe_channels (TpSvcClientObserver *iface,
-    const gchar *account,
-    const gchar *connection,
-    const GPtrArray *channels,
-    const gchar *dispatch_operation,
-    const GPtrArray *requests,
+    const gchar *account_path,
+    const gchar *connection_path,
+    const GPtrArray *channels_arr,
+    const gchar *dispatch_operation_path,
+    const GPtrArray *requests_arr,
     GHashTable *observer_info,
     DBusGMethodInvocation *context)
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpObserveChannelsContext *ctx;
   TpBaseClientClassPrivate *klass_pv = G_TYPE_CLASS_GET_PRIVATE (
-      TP_BASE_CLIENT_GET_CLASS (self), TP_TYPE_BASE_CLIENT, TpBaseClientClassPrivate);
+      TP_BASE_CLIENT_GET_CLASS (self), TP_TYPE_BASE_CLIENT,
+      TpBaseClientClassPrivate);
+  GError *error = NULL;
+  TpAccount *account = NULL;
+  TpConnection *connection = NULL;
+  GList *channels = NULL, *requests = NULL;
+  TpChannelDispatchOperation *dispatch_operation = NULL;
+  guint i;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
     {
@@ -696,6 +705,75 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       return;
     }
 
+  account = tp_account_new (self->priv->dbus, account_path, &error);
+  if (account == NULL)
+    {
+      DEBUG ("Failed to create TpAccount: %s", error->message);
+      goto out;
+    }
+
+  connection = tp_connection_new (self->priv->dbus, NULL, connection_path,
+      &error);
+  if (connection == NULL)
+    {
+      DEBUG ("Failed to create TpConnection: %s", error->message);
+      goto out;
+    }
+
+  for (i = 0; i < channels_arr->len; i++)
+    {
+      const gchar *chan_path;
+      GHashTable *chan_props;
+      TpChannel *channel;
+
+      tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
+          &chan_path, &chan_props);
+
+      channel = tp_channel_new_from_properties (connection,
+          chan_path, chan_props, &error);
+      if (channel == NULL)
+        {
+          DEBUG ("Failed to create TpChannel: %s", error->message);
+          goto out;
+        }
+
+      channels = g_list_prepend (channels, channel);
+    }
+  channels = g_list_reverse (channels);
+
+  if (!tp_strdiff (dispatch_operation_path, "/"))
+    {
+      dispatch_operation = NULL;
+    }
+  else
+    {
+      dispatch_operation = tp_channel_dispatch_operation_new (self->priv->dbus,
+            dispatch_operation_path, NULL, &error);
+     if (dispatch_operation == NULL)
+       {
+         DEBUG ("Failed to create TpChannelDispatchOperation: %s",
+             error->message);
+         goto out;
+        }
+    }
+
+  for (i = 0; i < requests_arr->len; i++)
+    {
+      const gchar *req_path = g_ptr_array_index (requests_arr, i);
+      TpChannelRequest *request;
+
+      request = tp_channel_request_new (self->priv->dbus, req_path, NULL,
+          &error);
+      if (request == NULL)
+        {
+          DEBUG ("Failed to create TpChannelRequest: %s", error->message);
+          goto out;
+        }
+
+      requests = g_list_prepend (requests, request);
+    }
+  requests = g_list_reverse (requests);
+
   ctx = _tp_observe_channels_context_new (context, observer_info);
 
   klass_pv->observe_channels_impl (self, account, connection, channels,
@@ -707,6 +785,28 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
         "tp_observe_channels_context_{accept,fail,delay}");
 
   g_object_unref (ctx);
+
+out:
+  if (account != NULL)
+    g_object_unref (account);
+
+  if (connection != NULL)
+    g_object_unref (connection);
+
+  g_list_foreach (channels, (GFunc) g_object_unref, NULL);
+  g_list_free (channels);
+
+  if (dispatch_operation != NULL)
+    g_object_unref (dispatch_operation);
+
+  g_list_foreach (requests, (GFunc) g_object_unref, NULL);
+  g_list_free (requests);
+
+  if (error == NULL)
+    return;
+
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
