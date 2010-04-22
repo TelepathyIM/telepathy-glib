@@ -703,6 +703,11 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   klass_pv->observe_channels_impl (self, account, connection, channels,
       dispatch_operation, requests, ctx);
 
+  if (_tp_observe_channels_context_get_state (ctx) ==
+      TP_BASE_CLIENT_CONTEXT_STATE_NONE)
+    g_warning ("Implementation of ObserveChannels didn't call "
+        "tp_observe_channels_context_{accept,fail,delay}");
+
   g_object_unref (ctx);
 }
 
