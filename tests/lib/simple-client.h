@@ -26,6 +26,8 @@ struct _SimpleClientClass {
 
 struct _SimpleClient {
     TpBaseClient parent;
+
+    TpObserveChannelsContext *observe_ctx;
 };
 
 GType simple_client_get_type (void);
