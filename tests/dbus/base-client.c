@@ -293,6 +293,7 @@ test_observer (Test *test,
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_OBSERVER);
 
+#if 0
   tp_cli_client_observer_call_observe_channels (test->client, -1,
       "/org/freedesktop/Telepathy/Account/fake",
       "/org/freedesktop/Telepathy/Connection/fake",
@@ -315,6 +316,7 @@ test_observer (Test *test,
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+#endif
 
   g_ptr_array_free (channels, TRUE);
   g_ptr_array_free (requests_satisified, TRUE);
