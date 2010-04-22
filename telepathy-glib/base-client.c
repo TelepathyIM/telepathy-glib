@@ -362,9 +362,7 @@ tp_base_client_register (TpBaseClient *self)
 
   path = g_strdup_printf ("/%s", g_strdelimit (string->str, ".", '/'));
 
-  dbus_g_connection_register_g_object (
-      tp_proxy_get_dbus_connection (self->priv->dbus),
-      path, G_OBJECT (self));
+  tp_dbus_daemon_register_object (self->priv->dbus, path, G_OBJECT (self));
 
   g_string_free (string, TRUE);
   g_free (path);
