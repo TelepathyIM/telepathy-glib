@@ -34,30 +34,10 @@ G_BEGIN_DECLS
 #define TPL_IS_LOG_ENTRY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_LOG_ENTRY))
 #define TPL_LOG_ENTRY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_ENTRY, TplLogEntryClass))
 
-
-/**
- * TPL_LOG_ENTRY_MSG_ID_IS_VALID:
- *
- * return %TRUE if the valid is a valid msg_id or %FALSE otherwise.
- * When %FALSE is retuned, it means that either a invalid input has been
- * passed or the TplLogEntry is currently set to TPL_LOG_ENTRY_MSG_ID_UNKNOWN
- * or TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED */
 #define TPL_LOG_ENTRY_MSG_ID_IS_VALID(msg) (msg >= 0)
 
-/**
- * TPL_LOG_ENTRY_MSG_ID_UNKNOWN:
- *
- * special value used to declare a message with a unknown status (ie pre
- * #tpl_log_entry_set_pending_msg_id call or when an error obtaining the
- * actual value  occurs)
- */
 #define TPL_LOG_ENTRY_MSG_ID_UNKNOWN -2
 
-/**
- * TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED:
- *
- * special value used to identify a ack'd messages
- */
 #define TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED -1
 
 typedef enum
@@ -88,18 +68,19 @@ typedef enum
   TPL_LOG_ENTRY_TEXT
 } TplLogEntryType;
 
+typedef struct _TplLogEntry TplLogEntry;
+typedef struct _TplLogEntryClass TplLogEntryClass;
 typedef struct _TplLogEntryPriv TplLogEntryPriv;
 
-typedef struct
+struct _TplLogEntry
 {
   GObject parent;
 
   /* Private */
   TplLogEntryPriv *priv;
-} TplLogEntry;
+};
 
-typedef struct
-{
+struct _TplLogEntryClass {
   GObjectClass parent_class;
 
   void (*dispose) (GObject *obj);
@@ -129,7 +110,7 @@ typedef struct
 
   /* to be implemented only by subclasses */
   gboolean (*equal) (TplLogEntry *entry1, TplLogEntry *entry2);
-} TplLogEntryClass;
+};
 
 GType tpl_log_entry_get_type (void);
 gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
