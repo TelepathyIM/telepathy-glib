@@ -274,7 +274,9 @@ test_observer (Test *test,
   /* Call ObserveChannels */
   channels = g_ptr_array_sized_new (0);
   requests_satisified = g_ptr_array_sized_new (0);
-  info = g_hash_table_new (NULL, NULL);
+  info = tp_asv_new (
+      "recovering", G_TYPE_BOOLEAN, TRUE,
+      NULL);
 
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_OBSERVER);
@@ -286,7 +288,21 @@ test_observer (Test *test,
       no_return_cb, test, NULL, NULL);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+  g_assert_no_error (test->error);
+
+  g_assert (test->simple_client->observe_ctx != NULL);
+  g_assert (tp_observe_channels_context_get_recovering (
+        test->simple_client->observe_ctx));
+
+  /* Now call it with an invalid argument */
+  tp_cli_client_observer_call_observe_channels (test->client, -1,
+      "/INVALID",
+      "/INVALID",
+      channels, "/", requests_satisified, info,
+      no_return_cb, test, NULL, NULL);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
 
   g_ptr_array_free (channels, TRUE);
   g_ptr_array_free (requests_satisified, TRUE);
