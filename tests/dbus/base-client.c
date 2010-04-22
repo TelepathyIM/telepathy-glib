@@ -80,6 +80,12 @@ teardown (Test *test,
       g_strfreev (test->interfaces);
       test->interfaces = NULL;
     }
+
+  if (test->error != NULL)
+    {
+      g_error_free (test->error);
+      test->error = NULL;
+    }
 }
 
 /* Test Basis */
@@ -217,6 +223,12 @@ no_return_cb (TpClient *proxy,
     GObject *weak_object)
 {
   Test *test = user_data;
+
+  if (test->error != NULL)
+    {
+      g_error_free (test->error);
+      test->error = NULL;
+    }
 
   if (error != NULL)
     {
