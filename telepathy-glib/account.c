@@ -432,7 +432,12 @@ _tp_account_set_connection (TpAccount *account,
         }
     }
 
-  g_object_notify (G_OBJECT (account), "connection");
+  if (tp_strdiff (priv->connection_object_path, path))
+    {
+      g_free (priv->connection_object_path);
+      priv->connection_object_path = g_strdup (path);
+      g_object_notify (G_OBJECT (account), "connection");
+    }
 }
 
 static void
@@ -601,19 +606,19 @@ _tp_account_update (TpAccount *account,
 
   if (g_hash_table_lookup (properties, "Connection") != NULL)
     {
-      g_free (priv->connection_object_path);
+      const gchar *path = tp_asv_get_object_path (properties, "Connection");
 
-      priv->connection_object_path =
-        g_strdup (tp_asv_get_object_path (properties, "Connection"));
-
-      if (priv->connection != NULL)
+      if (tp_strdiff (path, priv->connection_object_path))
         {
-          if (tp_strdiff (priv->connection_object_path,
-                  tp_proxy_get_object_path (priv->connection)))
-            _tp_account_free_connection (account);
-        }
+          g_free (priv->connection_object_path);
 
-      g_object_notify (G_OBJECT (account), "connection");
+          priv->connection_object_path = g_strdup (path);
+
+          if (priv->connection != NULL)
+            _tp_account_free_connection (account);
+
+          g_object_notify (G_OBJECT (account), "connection");
+        }
     }
 
   if (g_hash_table_lookup (properties, "ConnectAutomatically") != NULL)
