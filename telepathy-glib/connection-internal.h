@@ -47,8 +47,11 @@ struct _TpConnectionPrivate {
 
     TpCapabilities *capabilities;
 
+    TpAvatarRequirements *avatar_requirements;
+
     TpProxyPendingCall *introspection_call;
     unsigned fetching_rcc:1;
+    unsigned fetching_avatar_requirements:1;
 
     unsigned ready:1;
     unsigned tracking_aliases_changed:1;
