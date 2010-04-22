@@ -26,6 +26,7 @@ our_headers = \
     account.h \
     account-manager.h \
     base-client.h \
+    base-client-context.h \
     base-connection.h \
     base-connection-manager.h \
     channel.h \
@@ -111,6 +112,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-manager.c \
     account-manager-internal.h \
     base-client.c \
+    base-client-context.c \
+    base-client-context-internal.h \
     base-connection.c \
     base-connection-manager.c \
     capabilities.c \
