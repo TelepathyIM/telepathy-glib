@@ -23,13 +23,36 @@
 
 #include <dbus/dbus-glib.h>
 
+#include <telepathy-glib/account.h>
 #include <telepathy-glib/base-client-context.h>
+#include <telepathy-glib/channel-dispatch-operation.h>
 
 G_BEGIN_DECLS
 
+struct _TpObserveChannelsContext {
+  /*<private>*/
+  GObject parent;
+  TpObserveChannelsContextPrivate *priv;
+
+  TpAccount *account;
+  TpConnection *connection;
+  /* array of reffed TpChannel */
+  GPtrArray *channels;
+  /* List of reffed TpChannelDispatchOperation */
+  TpChannelDispatchOperation *dispatch_operation;
+  GPtrArray *requests;
+  GHashTable *observer_info;
+  DBusGMethodInvocation *dbus_context;
+};
+
 TpObserveChannelsContext * _tp_observe_channels_context_new (
-    DBusGMethodInvocation *dbus_context,
-    GHashTable *observer_info);
+    TpAccount *account,
+    TpConnection *connection,
+    GPtrArray *channels,
+    TpChannelDispatchOperation *dispatch_operation,
+    GPtrArray *requests,
+    GHashTable *observer_info,
+    DBusGMethodInvocation *dbus_context);
 
 TpBaseClientContextState _tp_observe_channels_context_get_state (
     TpObserveChannelsContext *self);

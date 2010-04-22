@@ -32,25 +32,22 @@ struct _TpObserveChannelsContextClass {
     GObjectClass parent_class;
 };
 
-struct _TpObserveChannelsContext {
-    /*<private>*/
-    GObject parent;
-    TpObserveChannelsContextPrivate *priv;
-};
-
 G_DEFINE_TYPE(TpObserveChannelsContext, tp_observe_channels_context,
     G_TYPE_OBJECT)
 
 enum {
-    PROP_DBUS_CONTEXT = 1,
+    PROP_ACCOUNT = 1,
+    PROP_CONNECTION,
+    PROP_CHANNELS,
+    PROP_DISPATCH_OPERATION,
+    PROP_REQUESTS,
     PROP_OBSERVER_INFO,
+    PROP_DBUS_CONTEXT,
     N_PROPS
 };
 
 struct _TpObserveChannelsContextPrivate
 {
-  DBusGMethodInvocation *dbus_context;
-  GHashTable *observer_info;
   TpBaseClientContextState state;
 };
 
@@ -70,10 +67,42 @@ tp_observe_channels_context_dispose (GObject *object)
   void (*dispose) (GObject *) =
     G_OBJECT_CLASS (tp_observe_channels_context_parent_class)->dispose;
 
-  if (self->priv->observer_info != NULL)
+  if (self->account != NULL)
     {
-      g_hash_table_unref (self->priv->observer_info);
-      self->priv->observer_info = NULL;
+      g_object_unref (self->account);
+      self->account = NULL;
+    }
+
+  if (self->connection != NULL)
+    {
+      g_object_unref (self->connection);
+      self->connection = NULL;
+    }
+
+  if (self->channels != NULL)
+    {
+      g_ptr_array_foreach (self->channels, (GFunc) g_object_unref, NULL);
+      g_ptr_array_unref (self->channels);
+      self->channels = NULL;
+    }
+
+  if (self->dispatch_operation != NULL)
+    {
+      g_object_unref (self->dispatch_operation);
+      self->dispatch_operation = NULL;
+    }
+
+  if (self->requests != NULL)
+    {
+      g_ptr_array_foreach (self->requests, (GFunc) g_object_unref, NULL);
+      g_ptr_array_unref (self->requests);
+      self->requests = NULL;
+    }
+
+  if (self->observer_info != NULL)
+    {
+      g_hash_table_unref (self->observer_info);
+      self->observer_info = NULL;
     }
 
   if (dispose != NULL)
@@ -90,11 +119,26 @@ tp_observe_channels_context_get_property (GObject *object,
 
   switch (property_id)
     {
+      case PROP_ACCOUNT:
+        g_value_set_object (value, self->account);
+        break;
+      case PROP_CONNECTION:
+        g_value_set_object (value, self->connection);
+        break;
+      case PROP_CHANNELS:
+        g_value_set_boxed (value, self->channels);
+        break;
+      case PROP_DISPATCH_OPERATION:
+        g_value_set_object (value, self->dispatch_operation);
+        break;
+      case PROP_REQUESTS:
+        g_value_set_boxed (value, self->requests);
+        break;
       case PROP_DBUS_CONTEXT:
-        g_value_set_pointer (value, self->priv->dbus_context);
+        g_value_set_pointer (value, self->dbus_context);
         break;
       case PROP_OBSERVER_INFO:
-        g_value_set_boxed (value, self->priv->observer_info);
+        g_value_set_boxed (value, self->observer_info);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -112,16 +156,53 @@ tp_observe_channels_context_set_property (GObject *object,
 
   switch (property_id)
     {
+      case PROP_ACCOUNT:
+        self->account = g_value_dup_object (value);
+        break;
+      case PROP_CONNECTION:
+        self->connection = g_value_dup_object (value);
+        break;
+      case PROP_CHANNELS:
+        self->channels = g_value_dup_boxed (value);
+        g_ptr_array_foreach (self->channels, (GFunc) g_object_ref, NULL);
+        break;
+      case PROP_DISPATCH_OPERATION:
+        self->dispatch_operation = g_value_dup_object (value);
+        break;
+      case PROP_REQUESTS:
+        self->requests = g_value_dup_boxed (value);
+        g_ptr_array_foreach (self->requests, (GFunc) g_object_ref, NULL);
+        break;
       case PROP_DBUS_CONTEXT:
-        self->priv->dbus_context = g_value_get_pointer (value);
+        self->dbus_context = g_value_get_pointer (value);
         break;
       case PROP_OBSERVER_INFO:
-        self->priv->observer_info = g_value_dup_boxed (value);
+        self->observer_info = g_value_dup_boxed (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
   }
+}
+
+static void
+tp_observe_channels_context_constructed (GObject *object)
+{
+  TpObserveChannelsContext *self = TP_OBSERVE_CHANNELS_CONTEXT (object);
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) tp_observe_channels_context_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  g_assert (self->account != NULL);
+  g_assert (self->connection != NULL);
+  g_assert (self->channels != NULL);
+  g_assert (self->requests != NULL);
+  g_assert (self->observer_info != NULL);
+  g_assert (self->dbus_context != NULL);
+
+  /* self->dispatch_operation may be NULL (channels were requested) */
 }
 
 static void
@@ -134,7 +215,44 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
 
   object_class->get_property = tp_observe_channels_context_get_property;
   object_class->set_property = tp_observe_channels_context_set_property;
+  object_class->constructed = tp_observe_channels_context_constructed;
   object_class->dispose = tp_observe_channels_context_dispose;
+
+  param_spec = g_param_spec_object ("account", "TpAccount",
+      "The TpAccount that has been passed to ObserveChannels",
+      TP_TYPE_ACCOUNT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ACCOUNT,
+      param_spec);
+
+  param_spec = g_param_spec_object ("connection", "TpConnection",
+      "The TpConnection that has been passed to ObserveChannels",
+      TP_TYPE_CONNECTION,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONNECTION,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
+      "The TpChannels that have been passed to ObserveChannels",
+      G_TYPE_PTR_ARRAY,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNELS,
+      param_spec);
+
+  param_spec = g_param_spec_object ("dispatch-operation",
+     "TpChannelDispatchOperation",
+     "The TpChannelDispatchOperation that has been passed to ObserveChannels",
+     TP_TYPE_CHANNEL_DISPATCH_OPERATION,
+     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DISPATCH_OPERATION,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("requests", "GPtrArray of TpChannelRequest",
+      "The TpChannelRequest that have been passed to ObserveChannels",
+      G_TYPE_PTR_ARRAY,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_REQUESTS,
+      param_spec);
 
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
       "The DBusGMethodInvocation associated with the ObserveChannels call",
@@ -152,12 +270,22 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
 
 TpObserveChannelsContext *
 _tp_observe_channels_context_new (
-    DBusGMethodInvocation *dbus_context,
-    GHashTable *observer_info)
+    TpAccount *account,
+    TpConnection *connection,
+    GPtrArray *channels,
+    TpChannelDispatchOperation *dispatch_operation,
+    GPtrArray *requests,
+    GHashTable *observer_info,
+    DBusGMethodInvocation *dbus_context)
 {
   return g_object_new (TP_TYPE_OBSERVE_CHANNELS_CONTEXT,
-      "dbus-context", dbus_context,
+      "account", account,
+      "connection", connection,
+      "channels", channels,
+      "dispatch-operation", dispatch_operation,
+      "requests", requests,
       "observer-info", observer_info,
+      "dbus-context", dbus_context,
       NULL);
 }
 
@@ -165,7 +293,7 @@ void
 tp_observe_channels_context_accept (TpObserveChannelsContext *self)
 {
   self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_DONE;
-  dbus_g_method_return (self->priv->dbus_context);
+  dbus_g_method_return (self->dbus_context);
 }
 
 void
@@ -173,7 +301,7 @@ tp_observe_channels_context_fail (TpObserveChannelsContext *self,
     const GError *error)
 {
   self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_FAILED;
-  dbus_g_method_return_error (self->priv->dbus_context, error);
+  dbus_g_method_return_error (self->dbus_context, error);
 }
 
 void
@@ -187,7 +315,7 @@ tp_observe_channels_context_get_recovering (TpObserveChannelsContext *self)
 {
   /* tp_asv_get_boolean returns FALSE if the key is not set which is what we
    * want */
-  return tp_asv_get_boolean (self->priv->observer_info, "recovering", NULL);
+  return tp_asv_get_boolean (self->observer_info, "recovering", NULL);
 }
 
 TpBaseClientContextState

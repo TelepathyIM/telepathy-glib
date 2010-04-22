@@ -668,6 +668,18 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       G_STRUCT_OFFSET (TpBaseClientClass, dbus_properties_class));
 }
 
+static GList *
+ptr_array_to_list (GPtrArray *arr)
+{
+  guint i;
+  GList *result = NULL;
+
+  for (i = 0; i > arr->len; i++)
+    result = g_list_prepend (result, g_ptr_array_index (arr, i));
+
+  return g_list_reverse (result);
+}
+
 static void
 _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     const gchar *account_path,
@@ -686,9 +698,10 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   GError *error = NULL;
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
-  GList *channels = NULL, *requests = NULL;
+  GPtrArray *channels = NULL, *requests = NULL;
   TpChannelDispatchOperation *dispatch_operation = NULL;
   guint i;
+  GList *channels_list, *requests_list;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
     {
@@ -720,6 +733,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       goto out;
     }
 
+  channels = g_ptr_array_new_with_free_func (g_object_unref);
   for (i = 0; i < channels_arr->len; i++)
     {
       const gchar *chan_path;
@@ -737,9 +751,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
           goto out;
         }
 
-      channels = g_list_prepend (channels, channel);
+      g_ptr_array_add (channels, channel);
     }
-  channels = g_list_reverse (channels);
 
   if (!tp_strdiff (dispatch_operation_path, "/"))
     {
@@ -757,6 +770,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
         }
     }
 
+  requests = g_ptr_array_new_with_free_func (g_object_unref);
   for (i = 0; i < requests_arr->len; i++)
     {
       const gchar *req_path = g_ptr_array_index (requests_arr, i);
@@ -770,14 +784,20 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
           goto out;
         }
 
-      requests = g_list_prepend (requests, request);
+      g_ptr_array_add (requests, request);
     }
-  requests = g_list_reverse (requests);
 
-  ctx = _tp_observe_channels_context_new (context, observer_info);
+  ctx = _tp_observe_channels_context_new (account, connection, channels,
+      dispatch_operation, requests, observer_info, context);
 
-  klass_pv->observe_channels_impl (self, account, connection, channels,
-      dispatch_operation, requests, ctx);
+  channels_list = ptr_array_to_list (channels);
+  requests_list = ptr_array_to_list (requests);
+
+  klass_pv->observe_channels_impl (self, account, connection, channels_list,
+      dispatch_operation, requests_list, ctx);
+
+  g_list_free (channels_list);
+  g_list_free (requests_list);
 
   if (_tp_observe_channels_context_get_state (ctx) ==
       TP_BASE_CLIENT_CONTEXT_STATE_NONE)
@@ -793,14 +813,14 @@ out:
   if (connection != NULL)
     g_object_unref (connection);
 
-  g_list_foreach (channels, (GFunc) g_object_unref, NULL);
-  g_list_free (channels);
+  if (channels != NULL)
+    g_ptr_array_unref (channels);
 
   if (dispatch_operation != NULL)
     g_object_unref (dispatch_operation);
 
-  g_list_foreach (requests, (GFunc) g_object_unref, NULL);
-  g_list_free (requests);
+  if (requests != NULL)
+    g_ptr_array_unref (requests);
 
   if (error == NULL)
     return;
