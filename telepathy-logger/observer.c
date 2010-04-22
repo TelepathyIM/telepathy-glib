@@ -670,13 +670,11 @@ void
 tpl_observer_set_channel_factory (TplObserver *self,
     TplChannelFactory factory)
 {
-  TplObserverPriv *priv = self->priv;
-
-  g_return_if_fail (factory != NULL);
-  g_return_if_fail (priv->channel_factory == NULL);
   g_return_if_fail (TPL_IS_OBSERVER (self));
+  g_return_if_fail (factory != NULL);
+  g_return_if_fail (self->priv->channel_factory == NULL);
 
-  priv->channel_factory = factory;
+  self->priv->channel_factory = factory;
 }
 
 
