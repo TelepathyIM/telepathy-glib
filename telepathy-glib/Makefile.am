@@ -66,7 +66,8 @@ EXTRA_DIST = \
     generic.xml \
     media-session-handler.xml \
     media-stream-handler.xml \
-    stable-interfaces.xml
+    stable-interfaces.xml \
+    kludge-616375.xsl
 
 lib_LTLIBRARIES = libtelepathy-glib.la
 noinst_LTLIBRARIES = libtelepathy-glib-internal.la
@@ -532,7 +533,7 @@ INTROSPECTION_FILES = \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h
 
-TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) libtelepathy-glib.la
+TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) libtelepathy-glib.la kludge-616375.xsl
 	sed -e 's/gpointer self/TpProxy *self/' < proxy.h > _gen/proxy-introspectable.h
 	$(INTROSPECTION_SCANNER) -v \
 		--namespace TelepathyGLib \
@@ -546,9 +547,11 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) libtelepathy-glib.la
 		--library=libtelepathy-glib.la \
 		--pkg gio-2.0 \
 		--pkg dbus-glib-1 \
-		--output $@ \
+		--output _gen/$@.tmp \
 		$(INTROSPECTION_FILES)
+	xsltproc kludge-616375.xsl _gen/$@.tmp > $@
 	rm -f _gen/proxy-introspectable.h
+	rm -f _gen/$@.tmp
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(BUILT_GIRFILES)
