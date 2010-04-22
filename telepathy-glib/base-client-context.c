@@ -51,6 +51,7 @@ struct _TpObserveChannelsContextPrivate
 {
   DBusGMethodInvocation *dbus_context;
   GHashTable *observer_info;
+  TpBaseClientContextState state;
 };
 
 static void
@@ -58,6 +59,8 @@ tp_observe_channels_context_init (TpObserveChannelsContext *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_OBSERVE_CHANNELS_CONTEXT, TpObserveChannelsContextPrivate);
+
+  self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_NONE;
 }
 
 static void
@@ -161,6 +164,7 @@ tp_observe_channels_context_new (
 void
 tp_observe_channels_context_accept (TpObserveChannelsContext *self)
 {
+  self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_DONE;
   dbus_g_method_return (self->priv->dbus_context);
 }
 
@@ -168,6 +172,7 @@ void
 tp_observe_channels_context_fail (TpObserveChannelsContext *self,
     const GError *error)
 {
+  self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_FAILED;
   dbus_g_method_return_error (self->priv->dbus_context, error);
 }
 
@@ -177,4 +182,11 @@ tp_observe_channels_context_get_recovering (TpObserveChannelsContext *self)
   /* tp_asv_get_boolean returns FALSE if the key is not set which is what we
    * want */
   return tp_asv_get_boolean (self->priv->observer_info, "recovering", NULL);
+}
+
+TpBaseClientContextState
+_tp_observe_channels_context_get_state (
+    TpObserveChannelsContext *self)
+{
+  return self->priv->state;
 }

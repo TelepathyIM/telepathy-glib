@@ -31,6 +31,14 @@ typedef struct _TpObserveChannelsContextPrivate TpObserveChannelsContextPrivate;
 
 GType tp_observe_channels_context_get_type (void);
 
+typedef enum
+{
+  TP_BASE_CLIENT_CONTEXT_STATE_NONE,
+  TP_BASE_CLIENT_CONTEXT_STATE_DONE,
+  TP_BASE_CLIENT_CONTEXT_STATE_FAILED,
+  TP_BASE_CLIENT_CONTEXT_STATE_DELAYED,
+} TpBaseClientContextState;
+
 #define TP_TYPE_OBSERVE_CHANNELS_CONTEXT \
   (tp_observe_channels_context_get_type ())
 #define TP_OBSERVE_CHANNELS_CONTEXT(obj) \
