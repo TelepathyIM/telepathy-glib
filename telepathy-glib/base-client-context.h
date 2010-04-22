@@ -60,6 +60,8 @@ void tp_observe_channels_context_accept (TpObserveChannelsContext *self);
 void tp_observe_channels_context_fail (TpObserveChannelsContext *self,
     const GError *error);
 
+void tp_observe_channels_context_delay (TpObserveChannelsContext *self);
+
 gboolean tp_observe_channels_context_get_recovering (
     TpObserveChannelsContext *self);
 

@@ -176,6 +176,12 @@ tp_observe_channels_context_fail (TpObserveChannelsContext *self,
   dbus_g_method_return_error (self->priv->dbus_context, error);
 }
 
+void
+tp_observe_channels_context_delay (TpObserveChannelsContext *self)
+{
+  self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_DELAYED;
+}
+
 gboolean
 tp_observe_channels_context_get_recovering (TpObserveChannelsContext *self)
 {
