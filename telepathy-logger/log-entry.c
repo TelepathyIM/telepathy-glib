@@ -591,15 +591,11 @@ void
 tpl_log_entry_set_chat_id (TplLogEntry *self,
     const gchar *data)
 {
-  TplLogEntryPriv *priv;
-
-  priv = self->priv;
-
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (priv->chat_id == NULL);
+  g_return_if_fail (self->priv->chat_id == NULL);
 
-  priv->chat_id = g_strdup (data);
+  self->priv->chat_id = g_strdup (data);
   g_object_notify (G_OBJECT (self), "chat-id");
 }
 
@@ -608,15 +604,11 @@ static void
 tpl_log_entry_set_account_path (TplLogEntry *self,
     const gchar *data)
 {
-  TplLogEntryPriv *priv;
-
-  priv = self->priv;
-
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (priv->account_path == NULL);
+  g_return_if_fail (self->priv->account_path == NULL);
 
-  priv->account_path = g_strdup (data);
+  self->priv->account_path = g_strdup (data);
   g_object_notify (G_OBJECT (self), "account-path");
 }
 
@@ -625,15 +617,11 @@ void
 tpl_log_entry_set_channel_path (TplLogEntry *self,
     const gchar *data)
 {
-  TplLogEntryPriv *priv;
-
-  priv = self->priv;
-
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (priv->channel_path == NULL);
+  g_return_if_fail (self->priv->channel_path == NULL);
 
-  priv->channel_path = g_strdup (data);
+  self->priv->channel_path = g_strdup (data);
   g_object_notify (G_OBJECT (self), "channel-path");
 }
 
