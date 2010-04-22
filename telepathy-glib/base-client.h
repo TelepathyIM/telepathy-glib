@@ -24,6 +24,7 @@
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
 
+#include <telepathy-glib/base-client-context.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
@@ -47,6 +48,20 @@ struct _TpBaseClient {
 };
 
 GType tp_base_client_get_type (void);
+
+/* Protected methods; should be called only by subclasses */
+
+typedef void (*TpBaseClientClassObserveChannelsImpl) (
+    TpBaseClient *self,
+    const gchar *account,
+    const gchar *connection,
+    const GPtrArray *channels,
+    const gchar *dispatch_operation,
+    const GPtrArray *requests,
+    TpObserveChannelsContext *context);
+
+void tp_base_client_implement_observe_channels (TpBaseClientClass *klass,
+    TpBaseClientClassObserveChannelsImpl impl);
 
 /* setup functions which can only be called before register() */
 

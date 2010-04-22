@@ -28,14 +28,21 @@
 
 #include "telepathy-glib/base-client.h"
 
+#include <telepathy-glib/base-client-context-internal.h>
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
-
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+
+typedef struct _TpBaseClientClassPrivate TpBaseClientClassPrivate;
+
+struct _TpBaseClientClassPrivate {
+    /*<private>*/
+    TpBaseClientClassObserveChannelsImpl observe_channels_impl;
+};
 
 static void observer_iface_init (gpointer, gpointer);
 static void approver_iface_init (gpointer, gpointer);
@@ -50,7 +57,9 @@ G_DEFINE_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_APPROVER, approver_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_HANDLER, handler_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS,
-      requests_iface_init))
+      requests_iface_init);
+    g_type_add_class_private (g_define_type_id, sizeof (
+        TpBaseClientClassPrivate));)
 
 enum {
     PROP_DBUS_DAEMON = 1,
@@ -666,8 +675,32 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     GHashTable *observer_info,
     DBusGMethodInvocation *context)
 {
-  /* FIXME */
-  tp_dbus_g_method_return_not_implemented (context);
+  TpBaseClient *self = TP_BASE_CLIENT (iface);
+  TpObserveChannelsContext *ctx;
+  TpBaseClientClassPrivate *klass_pv = G_TYPE_CLASS_GET_PRIVATE (
+      TP_BASE_CLIENT_GET_CLASS (self), TP_TYPE_BASE_CLIENT, TpBaseClientClassPrivate);
+
+  if (!(self->priv->flags & CLIENT_IS_OBSERVER))
+    {
+      /* Pretend that the method is not implemented if we are not supposed to
+       * be an Observer. */
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  if (klass_pv->observe_channels_impl == NULL)
+    {
+      DEBUG ("ObserveChannels has not be implemented");
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  ctx = tp_observe_channels_context_new (context, observer_info);
+
+  klass_pv->observe_channels_impl (self, account, connection, channels,
+      dispatch_operation, requests, ctx);
+
+  g_object_unref (ctx);
 }
 
 static void
@@ -755,4 +788,14 @@ requests_iface_init (gpointer g_iface,
   IMPLEMENT (add_request);
   IMPLEMENT (remove_request);
 #undef IMPLEMENT
+}
+
+void
+tp_base_client_implement_observe_channels (TpBaseClientClass *klass,
+    TpBaseClientClassObserveChannelsImpl impl)
+{
+  TpBaseClientClassPrivate *klass_pv = G_TYPE_CLASS_GET_PRIVATE (
+      klass, TP_TYPE_BASE_CLIENT, TpBaseClientClassPrivate);
+
+  klass_pv->observe_channels_impl = impl;
 }
