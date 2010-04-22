@@ -406,10 +406,13 @@ tp_base_client_init (TpBaseClient *self)
       TpBaseClientPrivate);
 
   /* wild guess: most clients won't need more than one of each filter */
-  self->priv->observer_filters = g_ptr_array_sized_new (1);
-  self->priv->approver_filters = g_ptr_array_sized_new (1);
-  self->priv->handler_filters = g_ptr_array_sized_new (1);
-  self->priv->handler_caps = g_ptr_array_new ();
+  self->priv->observer_filters = g_ptr_array_new_with_free_func (
+      (GDestroyNotify) g_hash_table_unref);
+  self->priv->approver_filters = g_ptr_array_new_with_free_func (
+      (GDestroyNotify) g_hash_table_unref);
+  self->priv->handler_filters = g_ptr_array_new_with_free_func (
+      (GDestroyNotify) g_hash_table_unref);
+  self->priv->handler_caps = g_ptr_array_new_with_free_func (g_free);
   g_ptr_array_add (self->priv->handler_caps, NULL);
 }
 
