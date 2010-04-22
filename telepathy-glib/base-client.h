@@ -38,6 +38,7 @@ typedef struct _TpBaseClientPrivate TpBaseClientPrivate;
 struct _TpBaseClientClass {
     /*<private>*/
     GObjectClass parent_class;
+    GCallback _padding[7];
     TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
