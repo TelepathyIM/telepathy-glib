@@ -376,44 +376,36 @@ tpl_channel_text_new (TpConnection *conn,
 TpContact *
 tpl_channel_text_get_remote_contact (TplChannelText *self)
 {
-  TplChannelTextPriv *priv = self->priv;
-
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
 
-  return priv->remote_contact;
+  return self->priv->remote_contact;
 }
 
 
 TpContact *
 tpl_channel_text_get_my_contact (TplChannelText *self)
 {
-  TplChannelTextPriv *priv = self->priv;
-
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
 
-  return priv->my_contact;
+  return self->priv->my_contact;
 }
 
 
 gboolean
 tpl_channel_text_is_chatroom (TplChannelText *self)
 {
-  TplChannelTextPriv *priv = self->priv;
-
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), FALSE);
 
-  return priv->chatroom;
+  return self->priv->chatroom;
 }
 
 
 const gchar *
 tpl_channel_text_get_chatroom_id (TplChannelText *self)
 {
-  TplChannelTextPriv *priv = self->priv;
-
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
 
-  return priv->chatroom_id;
+  return self->priv->chatroom_id;
 }
 
 
@@ -421,13 +413,11 @@ void
 tpl_channel_text_set_remote_contact (TplChannelText *self,
     TpContact *data)
 {
-  TplChannelTextPriv *priv = self->priv;
-
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
   g_return_if_fail (TP_IS_CONTACT (data));
-  g_return_if_fail (priv->remote_contact == NULL);
+  g_return_if_fail (self->priv->remote_contact == NULL);
 
-  priv->remote_contact = g_object_ref (data);
+  self->priv->remote_contact = g_object_ref (data);
 }
 
 
@@ -435,13 +425,11 @@ void
 tpl_channel_text_set_my_contact (TplChannelText *self,
     TpContact *data)
 {
-  TplChannelTextPriv *priv = self->priv;
-
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
   g_return_if_fail (TP_IS_CONTACT (data));
-  g_return_if_fail (priv->my_contact == NULL);
+  g_return_if_fail (self->priv->my_contact == NULL);
 
-  priv->my_contact = g_object_ref (data);
+  self->priv->my_contact = g_object_ref (data);
 }
 
 
@@ -449,11 +437,9 @@ void
 tpl_channel_text_set_chatroom (TplChannelText *self,
     gboolean data)
 {
-  TplChannelTextPriv *priv = self->priv;
-
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
 
-  priv->chatroom = data;
+  self->priv->chatroom = data;
 }
 
 
@@ -461,12 +447,10 @@ void
 tpl_channel_text_set_chatroom_id (TplChannelText *self,
     const gchar *data)
 {
-  TplChannelTextPriv *priv = self->priv;
-
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (priv->chatroom_id == NULL);
-  priv->chatroom_id = g_strdup (data);
+  g_return_if_fail (self->priv->chatroom_id == NULL);
+  self->priv->chatroom_id = g_strdup (data);
 }
 
 
