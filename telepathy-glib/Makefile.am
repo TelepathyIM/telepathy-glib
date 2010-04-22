@@ -25,6 +25,7 @@ noinst_LTLIBRARIES = libtelepathy-glib-internal.la
 our_headers = \
     account.h \
     account-manager.h \
+    base-client.h \
     base-connection.h \
     base-connection-manager.h \
     channel.h \
@@ -109,6 +110,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \
+    base-client.c \
     base-connection.c \
     base-connection-manager.c \
     capabilities.c \
