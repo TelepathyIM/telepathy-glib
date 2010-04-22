@@ -27,7 +27,7 @@
 
 G_BEGIN_DECLS
 
-TpObserveChannelsContext * tp_observe_channels_context_new (
+TpObserveChannelsContext * _tp_observe_channels_context_new (
     DBusGMethodInvocation *dbus_context,
     GHashTable *observer_info);
 

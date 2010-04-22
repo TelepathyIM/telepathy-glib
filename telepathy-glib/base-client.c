@@ -698,7 +698,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       return;
     }
 
-  ctx = tp_observe_channels_context_new (context, observer_info);
+  ctx = _tp_observe_channels_context_new (context, observer_info);
 
   klass_pv->observe_channels_impl (self, account, connection, channels,
       dispatch_operation, requests, ctx);

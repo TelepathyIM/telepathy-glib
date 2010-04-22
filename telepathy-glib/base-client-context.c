@@ -151,7 +151,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
 }
 
 TpObserveChannelsContext *
-tp_observe_channels_context_new (
+_tp_observe_channels_context_new (
     DBusGMethodInvocation *dbus_context,
     GHashTable *observer_info)
 {
