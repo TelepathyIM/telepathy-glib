@@ -300,3 +300,16 @@
    ...
    fun:tp_channel_new
 }
+
+# ============================= questionable ==========================
+
+{
+   creating classes for instances (this is a pretty big hammer)
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:g_type_create_instance
+   ...
+   fun:g_param_spec_string
+}
