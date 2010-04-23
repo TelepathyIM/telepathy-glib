@@ -123,23 +123,20 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
-  if (test->base_client != NULL)
-    {
-      g_object_unref (test->base_client);
-      test->base_client = NULL;
-    }
-
-  if (test->client != NULL)
-    {
-      g_object_unref (test->client);
-      test->client = NULL;
-    }
-
   if (test->error != NULL)
     {
       g_error_free (test->error);
       test->error = NULL;
     }
+
+  if (test->interfaces != NULL)
+    {
+      g_strfreev (test->interfaces);
+      test->interfaces = NULL;
+    }
+
+  g_object_unref (test->base_client);
+  g_object_unref (test->client);
 
   tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
   g_object_unref (test->account_service);
@@ -152,12 +149,6 @@ teardown (Test *test,
   test->dbus = NULL;
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
-
-  if (test->interfaces != NULL)
-    {
-      g_strfreev (test->interfaces);
-      test->interfaces = NULL;
-    }
 
   g_object_unref (test->account);
 
