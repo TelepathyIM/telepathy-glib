@@ -30,14 +30,14 @@ INTROSPECTION_FILES = \
 	_gen/telepathy-interfaces.h
 
 _gen/proxy-introspectable.h: proxy.h Makefile.am
-	$(mkdir_p) _gen
-	sed -e 's/gpointer self/TpProxy *self/' < $< > $@
+	@$(mkdir_p) _gen
+	$(AM_V_GEN)sed -e 's/gpointer self/TpProxy *self/' < $< > $@
 
 TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		libtelepathy-glib.la \
 		kludge-616375.xsl \
 		$(INTROSPECTION_FILES)
-	$(INTROSPECTION_SCANNER) -v \
+	$(AM_V_GEN)$(INTROSPECTION_SCANNER) -v \
 		--namespace TelepathyGLib \
 		--nsversion=$(VERSION) \
 		--strip-prefix=tp \
@@ -51,15 +51,15 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		--pkg dbus-glib-1 \
 		--output _gen/$@.tmp \
 		$(INTROSPECTION_FILES)
-	xsltproc kludge-616375.xsl _gen/$@.tmp > $@
-	rm -f _gen/proxy-introspectable.h
-	rm -f _gen/$@.tmp
+	@xsltproc kludge-616375.xsl _gen/$@.tmp > $@
+	@rm -f _gen/proxy-introspectable.h
+	@rm -f _gen/$@.tmp
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(BUILT_GIRFILES)
 
 %.typelib: %.gir $(INTROSPECTION_COMPILER)
-	$(top_builddir)/libtool --mode=execute \
+	$(AM_V_GEN)$(top_builddir)/libtool --mode=execute \
 	    $(INTROSPECTION_COMPILER) \
 	        --includedir=$(srcdir) \
 	        --includedir=. \
