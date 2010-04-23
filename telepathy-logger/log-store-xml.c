@@ -895,10 +895,10 @@ log_store_xml_get_all_files (TplLogStoreXml *self,
   const gchar *basedir;
   TplLogStoreXmlPriv *priv;
 
-  priv = self->priv;
-
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   /* dir can be NULL, do not check */
+
+  priv = self->priv;
 
   basedir = (dir != NULL) ? dir : log_store_xml_get_basedir (self);
 
@@ -1153,13 +1153,11 @@ log_store_xml_get_name (TplLogStore *store)
 static const gchar *
 log_store_xml_get_basedir (TplLogStoreXml *self)
 {
-  TplLogStoreXmlPriv *priv = self->priv;
-
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
 
   /* set default based on name if NULL, see prop's comment about it in
    * class_init method */
-  if (priv->basedir == NULL)
+  if (self->priv->basedir == NULL)
     {
       gchar *dir;
 
@@ -1169,7 +1167,7 @@ log_store_xml_get_basedir (TplLogStoreXml *self)
       g_free (dir);
     }
 
-  return priv->basedir;
+  return self->priv->basedir;
 }
 
 
@@ -1177,30 +1175,26 @@ static void
 log_store_xml_set_name (TplLogStoreXml *self,
     const gchar *data)
 {
-  TplLogStoreXmlPriv *priv = self->priv;
-
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (priv->name == NULL);
+  g_return_if_fail (self->priv->name == NULL);
 
-  priv->name = g_strdup (data);
+  self->priv->name = g_strdup (data);
 }
 
 static void
 log_store_xml_set_basedir (TplLogStoreXml *self,
     const gchar *data)
 {
-  TplLogStoreXmlPriv *priv = self->priv;
-
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
-  g_return_if_fail (priv->basedir == NULL);
+  g_return_if_fail (self->priv->basedir == NULL);
   /* data may be NULL when the class is initialized and the default value is
    * set */
 
-  priv->basedir = g_strdup (data);
+  self->priv->basedir = g_strdup (data);
 
   /* at install_spec time, default value is set to NULL, ignore it */
-  if (priv->basedir != NULL)
+  if (self->priv->basedir != NULL)
     DEBUG ("logstore set to dir: %s", data);
 }
 
@@ -1209,11 +1203,9 @@ static void
 log_store_xml_set_readable (TplLogStoreXml *self,
     gboolean data)
 {
-  TplLogStoreXmlPriv *priv = self->priv;
-
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
 
-  priv->readable = data;
+  self->priv->readable = data;
 }
 
 
@@ -1221,11 +1213,9 @@ static void
 log_store_xml_set_writable (TplLogStoreXml *self,
     gboolean data)
 {
-  TplLogStoreXmlPriv *priv = self->priv;
-
   g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
 
-  priv->writable = data;
+  self->priv->writable = data;
 }
 
 
