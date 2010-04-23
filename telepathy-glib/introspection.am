@@ -1,0 +1,59 @@
+# To be included by Makefile.am.
+
+BUILT_GIRFILES = \
+	TelepathyGLib-0.12.gir
+
+INTROSPECTION_FILES = \
+	proxy.c _gen/proxy-introspectable.h \
+	account.c account.h \
+	account-manager.c account-manager.h \
+	connection.c connection.h \
+	connection-handles.c \
+	connection-manager.c connection-manager.h \
+	channel.c channel.h \
+	handle.c handle.h \
+	dbus-daemon.c dbus-daemon.h \
+	interfaces.c interfaces.h \
+	intset.c intset.h \
+	dbus.c dbus.h \
+	capabilities.c capabilities.h \
+	contact.c contact.h \
+	defs.h \
+	debug.c debug.h \
+	_gen/telepathy-enums.h \
+	_gen/telepathy-interfaces.h
+
+TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) libtelepathy-glib.la kludge-616375.xsl
+	sed -e 's/gpointer self/TpProxy *self/' < proxy.h > _gen/proxy-introspectable.h
+	$(INTROSPECTION_SCANNER) -v \
+		--namespace TelepathyGLib \
+		--nsversion=$(VERSION) \
+		--strip-prefix=tp \
+		-I$(top_builddir) \
+		-I$(top_srcdir) \
+		--include=GLib-2.0 \
+		--include=Gio-2.0 \
+		--libtool="$(top_builddir)/libtool" \
+		--library=libtelepathy-glib.la \
+		--pkg gio-2.0 \
+		--pkg dbus-glib-1 \
+		--output _gen/$@.tmp \
+		$(INTROSPECTION_FILES)
+	xsltproc kludge-616375.xsl _gen/$@.tmp > $@
+	rm -f _gen/proxy-introspectable.h
+	rm -f _gen/$@.tmp
+
+girdir = $(datadir)/gir-1.0
+gir_DATA = $(BUILT_GIRFILES)
+
+%.typelib: %.gir $(INTROSPECTION_COMPILER)
+	$(top_builddir)/libtool --mode=execute \
+	    $(INTROSPECTION_COMPILER) \
+	        --includedir=$(srcdir) \
+	        --includedir=. \
+	        $(INTROSPECTION_COMPILER_OPTS) $< -o $(@F)
+
+typelibsdir = $(libdir)/girepository-1.0/
+typelibs_DATA = $(BUILT_GIRFILES:.gir=.typelib)
+
+# vim:set ft=automake:
