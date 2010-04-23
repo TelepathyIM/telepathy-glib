@@ -179,6 +179,9 @@ test_prepare_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+  TpConnectionStatusReason reason;
+  gchar *status = NULL;
+  gchar *message = NULL;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -186,6 +189,57 @@ test_prepare_success (Test *test,
   tp_account_prepare_async (test->account, account_features,
       account_prepare_cb, test);
   g_main_loop_run (test->mainloop);
+
+  /* the obvious accessors */
+  g_assert (tp_account_is_prepared (test->account, TP_ACCOUNT_FEATURE_CORE));
+  g_assert (tp_account_is_enabled (test->account));
+  g_assert (tp_account_is_valid (test->account));
+  g_assert_cmpstr (tp_account_get_display_name (test->account), ==,
+      "Fake Account");
+  g_assert_cmpstr (tp_account_get_nickname (test->account), ==, "badger");
+  g_assert_cmpuint (tp_asv_size (tp_account_get_parameters (test->account)),
+      ==, 0);
+  g_assert (!tp_account_get_connect_automatically (test->account));
+  g_assert (tp_account_get_has_been_online (test->account));
+  g_assert_cmpint (tp_account_get_connection_status (test->account, NULL),
+      ==, TP_CONNECTION_STATUS_CONNECTED);
+  g_assert_cmpint (tp_account_get_connection_status (test->account, &reason),
+      ==, TP_CONNECTION_STATUS_CONNECTED);
+  g_assert_cmpint (reason, ==, TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+  /* the CM and protocol come from the object path */
+  g_assert_cmpstr (tp_account_get_connection_manager (test->account),
+      ==, "what");
+  g_assert_cmpstr (tp_account_get_protocol (test->account), ==, "ev");
+
+  /* the icon name in SimpleAccount is "", so we guess based on the protocol */
+  g_assert_cmpstr (tp_account_get_icon_name (test->account), ==, "im-ev");
+
+  /* RequestedPresence is (Available, "available", "") */
+  g_assert_cmpint (tp_account_get_requested_presence (test->account, NULL,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpint (tp_account_get_requested_presence (test->account, &status,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (status, ==, "available");
+  g_free (status);
+  g_assert_cmpint (tp_account_get_requested_presence (test->account, NULL,
+        &message), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (message, ==, "");
+  g_free (message);
+
+  /* CurrentPresence is the same as RequestedPresence */
+  g_assert_cmpint (tp_account_get_current_presence (test->account, NULL,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpint (tp_account_get_current_presence (test->account, &status,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (status, ==, "available");
+  g_free (status);
+  g_assert_cmpint (tp_account_get_current_presence (test->account, NULL,
+        &message), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (message, ==, "");
+  g_free (message);
+
+  /* NormalizedName and AutomaticPresence aren't available yet */
 }
 
 int
