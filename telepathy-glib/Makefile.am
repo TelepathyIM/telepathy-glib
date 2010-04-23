@@ -6,46 +6,6 @@ genincludedir=$(tpgincludedir)/_gen
 pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-glib.pc
 
-ABI_LISTS = \
-    versions/0.7.0.abi \
-    versions/0.7.1.abi \
-    versions/0.7.2.abi \
-    versions/0.7.3.abi \
-    versions/0.7.5.abi \
-    versions/0.7.6.abi \
-    versions/0.7.7.abi \
-    versions/0.7.8.abi \
-    versions/0.7.9.abi \
-    versions/0.7.10.abi \
-    versions/0.7.12.abi \
-    versions/0.7.13.abi \
-    versions/0.7.14.abi \
-    versions/0.7.15.abi \
-    versions/0.7.16.abi \
-    versions/0.7.17.abi \
-    versions/0.7.18.abi \
-    versions/0.7.19.abi \
-    versions/0.7.20.abi \
-    versions/0.7.21.abi \
-    versions/0.7.23.abi \
-    versions/0.7.24.abi \
-    versions/0.7.26.abi \
-    versions/0.7.27.abi \
-    versions/0.7.28.abi \
-    versions/0.7.29.abi \
-    versions/0.7.30.abi \
-    versions/0.7.31.abi \
-    versions/0.7.32.abi \
-    versions/0.7.34.abi \
-    versions/0.7.35.abi \
-    versions/0.7.36.abi \
-    versions/0.7.37.abi \
-    versions/0.9.0.abi \
-    versions/0.9.2.abi \
-    versions/0.11.0.abi \
-    versions/0.11.1.abi \
-    versions/0.11.3.abi
-
 EXTRA_DIST = \
     $(ABI_LISTS) \
     account.xml \
@@ -69,66 +29,14 @@ EXTRA_DIST = \
     stable-interfaces.xml \
     kludge-616375.xsl
 
-lib_LTLIBRARIES = libtelepathy-glib.la
-noinst_LTLIBRARIES = libtelepathy-glib-internal.la
-
-# libtelepathy-glib is just a shared version of libtelepathy-glib-internal.
+# libtelepathy-glib is just a shared version of libtelepathy-glib-internal,
+# produced by abi.am.
+#
 # The static version is necessary because one of the tests wants to use
 # internal symbols (_tp_debug) which are made invisible by GNU ld.
 
-# The quoting here is unnecessary but harmless, and has the useful side-effect
-# that vim quickfix mode (:make) doesn't interpret the libtool --mode=link
-# command as an error message in a bizarrely named file
-libtelepathy_glib_la_LDFLAGS = \
-    -version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
-libtelepathy_glib_la_LIBADD = libtelepathy-glib-internal.la
-nodist_libtelepathy_glib_la_SOURCES =
-libtelepathy_glib_la_DEPENDENCIES = libtelepathy-glib-internal.la Makefile.am
-
-if HAVE_LD_VERSION_SCRIPT
-nodist_libtelepathy_glib_la_SOURCES += _gen/version-script.txt
-libtelepathy_glib_la_DEPENDENCIES += _gen/version-script.txt _gen/abi.txt
-
-if OFFICIAL_RELEASE
-# don't allow undocumented ABI
-MAKE_VERSION_SCRIPT_FLAGS =
-else
-# allow new ABI, and silently put it in a dummy version (which can be used to
-# check whether binaries have been linked against unguaranteed ABI)
-MAKE_VERSION_SCRIPT_FLAGS = \
-    --unreleased-version=TELEPATHY_GLIB_@VERSION@_UNRELEASED
-endif
-
-_gen/version-script.txt: $(ABI_LISTS) _gen/abi.txt Makefile.am \
-	$(top_srcdir)/tools/make-version-script.py
-	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/make-version-script.py \
-		 --symbols=_gen/abi.txt $(MAKE_VERSION_SCRIPT_FLAGS) \
-		 $(ABI_LISTS:%=$(srcdir)/%) > $@
-	$(PYTHON) $(top_srcdir)/tools/make-version-script.py \
-		 --symbols=_gen/abi.txt $(MAKE_VERSION_SCRIPT_FLAGS) \
-		 --dpkg "libtelepathy-glib.so.0 libtelepathy-glib0 #MINVER#" \
-		 --dpkg-build-depends-package "libtelepathy-glib-dev" \
-		 $(ABI_LISTS:%=$(srcdir)/%) > _gen/libtelepathy-glib0.symbols
-	sed -n -e "s/^[	 ]*\\(tp_.*\\);/\\1/p" < $@ > _gen/versioned-abi.tmp
-	sort -u < _gen/versioned-abi.tmp > _gen/versioned-abi.txt
-	: # the versioned API should always match the ^tp API
-	diff -c _gen/versioned-abi.txt _gen/abi.txt
-
-_gen/abi.txt: libtelepathy-glib-internal.la Makefile.am
-	$(NM) .libs/libtelepathy-glib-internal.a > _gen/abi.nm
-	grep " [DT] " < _gen/abi.nm > _gen/abi.funcs
-	cut -d" " -f3 < _gen/abi.funcs > _gen/abi.funcnames
-	grep "^tp" < _gen/abi.funcnames > _gen/abi.tpfuncnames
-	$(AM_V_GEN)sort -u < _gen/abi.tpfuncnames > $@
-
-libtelepathy_glib_la_LDFLAGS += \
-    $(VERSION_SCRIPT_ARG)=_gen/version-script.txt
-
-else # !HAVE_LD_VERSION_SCRIPT
-
-libtelepathy_glib_la_LDFLAGS += -export-symbols-regex '^tp'
-
-endif # !HAVE_LD_VERSION_SCRIPT
+lib_LTLIBRARIES = libtelepathy-glib.la
+noinst_LTLIBRARIES = libtelepathy-glib-internal.la
 
 # headers that are subject to coding-style checks
 our_headers = \
@@ -287,5 +195,6 @@ ALL_LIBS = \
     @DBUS_LIBS@ \
     @GLIB_LIBS@
 
+include abi.am
 include codegen.am
 include introspection.am
