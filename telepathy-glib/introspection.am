@@ -25,8 +25,14 @@ INTROSPECTION_FILES = \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h
 
-TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) libtelepathy-glib.la kludge-616375.xsl
-	sed -e 's/gpointer self/TpProxy *self/' < proxy.h > _gen/proxy-introspectable.h
+_gen/proxy-introspectable.h: proxy.h Makefile.am
+	$(mkdir_p) _gen
+	sed -e 's/gpointer self/TpProxy *self/' < $< > $@
+
+TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
+		libtelepathy-glib.la \
+		kludge-616375.xsl \
+		$(INTROSPECTION_FILES)
 	$(INTROSPECTION_SCANNER) -v \
 		--namespace TelepathyGLib \
 		--nsversion=$(VERSION) \
