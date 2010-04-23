@@ -286,14 +286,11 @@ log_store_xml_get_dir (TplLogStoreXml *self,
 {
   gchar *basedir;
   gchar *escaped;
-  TplLogStoreXmlPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   /* chat_id may be NULL, but not empthy string if not-NULL */
   g_return_val_if_fail ((chat_id == NULL) || (*chat_id != '\0'), NULL);
-
-  priv = self->priv;
 
   escaped = log_store_account_to_dirname (account);
 
@@ -893,12 +890,9 @@ log_store_xml_get_all_files (TplLogStoreXml *self,
   GList *files = NULL;
   const gchar *name;
   const gchar *basedir;
-  TplLogStoreXmlPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   /* dir can be NULL, do not check */
-
-  priv = self->priv;
 
   basedir = (dir != NULL) ? dir : log_store_xml_get_basedir (self);
 
@@ -1116,12 +1110,9 @@ log_store_xml_get_chats (TplLogStore *store,
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *dir;
   GList *hits;
-  TplLogStoreXmlPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-
-  priv = self->priv;
 
   dir = log_store_xml_get_dir (self, account, NULL, FALSE);
   hits = log_store_xml_get_chats_for_dir (self, dir, FALSE);
