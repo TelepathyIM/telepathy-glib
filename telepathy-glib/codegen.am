@@ -143,10 +143,10 @@ _gen/tp-signals-marshal.list: $(tools_dir)/glib-signals-marshal-gen.py \
 _gen/signals-marshal.list: signals-marshal.list _gen/tp-signals-marshal.list
 	$(AM_V_GEN)sort -u $^ > $@
 
-_gen/signals-marshal.h: _gen/signals-marshal.list Makefile.am
+_gen/signals-marshal.h: _gen/signals-marshal.list codegen.am
 	$(AM_V_GEN)$(GLIB_GENMARSHAL) --header --prefix=_tp_marshal $< > $@
 
-_gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
+_gen/signals-marshal.c: _gen/signals-marshal.list codegen.am
 	$(AM_V_GEN){ echo '#include "_gen/signals-marshal.h"' && \
 	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< ; } > $@
 
@@ -162,7 +162,7 @@ _gen/tp-spec-%.xml: %.xml _gen/spec-stamp $(tools_dir)/xincludator.py
 
 _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 	$(tools_dir)/glib-ginterface-gen.py \
-	Makefile.am
+	codegen.am
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
 		--filename=_gen/tp-svc-$* \
 		--signal-marshal-prefix=_tp \
@@ -173,7 +173,7 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 
 _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	$(tools_dir)/glib-client-gen.py \
-	Makefile.am
+	codegen.am
 	$(AM_V_GEN)set -e; \
 	subclass= ; \
 	subclass_assert= ; \
