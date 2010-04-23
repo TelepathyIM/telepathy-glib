@@ -6,3 +6,6 @@ Where to put new tests:
 (a temporary session bus will be used)
 
 /tests/tools/ if they're shell scripts that test the code generation tools
+
+To run a single test:
+  make -C tests/dbus check TESTS=test-contacts
