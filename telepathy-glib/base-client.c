@@ -681,6 +681,41 @@ ptr_array_to_list (GPtrArray *arr)
 }
 
 static void
+context_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseClient *self = user_data;
+  TpBaseClientClassPrivate *klass_pv = G_TYPE_CLASS_GET_PRIVATE (
+      TP_BASE_CLIENT_GET_CLASS (self), TP_TYPE_BASE_CLIENT,
+      TpBaseClientClassPrivate);
+  TpObserveChannelsContext *ctx = TP_OBSERVE_CHANNELS_CONTEXT (source);
+  GError *error = NULL;
+  GList *channels_list, *requests_list;
+
+  if (!tp_observe_channels_context_prepare_finish (ctx, result, &error))
+    {
+      DEBUG ("Failed to prepare TpObserveChannelsContext: %s", error->message);
+      dbus_g_method_return_error (ctx->dbus_context, error);
+      return;
+    }
+
+  channels_list = ptr_array_to_list (ctx->channels);
+  requests_list = ptr_array_to_list (ctx->requests);
+
+  klass_pv->observe_channels_impl (self, ctx->account, ctx->connection,
+      channels_list, ctx->dispatch_operation, requests_list, ctx);
+
+  g_list_free (channels_list);
+  g_list_free (requests_list);
+
+  if (_tp_observe_channels_context_get_state (ctx) ==
+      TP_BASE_CLIENT_CONTEXT_STATE_NONE)
+    g_warning ("Implementation of ObserveChannels didn't call "
+        "tp_observe_channels_context_{accept,fail,delay}");
+}
+
+static void
 _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     const gchar *account_path,
     const gchar *connection_path,
@@ -701,7 +736,6 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   GPtrArray *channels = NULL, *requests = NULL;
   TpChannelDispatchOperation *dispatch_operation = NULL;
   guint i;
-  GList *channels_list, *requests_list;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
     {
@@ -790,19 +824,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   ctx = _tp_observe_channels_context_new (account, connection, channels,
       dispatch_operation, requests, observer_info, context);
 
-  channels_list = ptr_array_to_list (channels);
-  requests_list = ptr_array_to_list (requests);
-
-  klass_pv->observe_channels_impl (self, account, connection, channels_list,
-      dispatch_operation, requests_list, ctx);
-
-  g_list_free (channels_list);
-  g_list_free (requests_list);
-
-  if (_tp_observe_channels_context_get_state (ctx) ==
-      TP_BASE_CLIENT_CONTEXT_STATE_NONE)
-    g_warning ("Implementation of ObserveChannels didn't call "
-        "tp_observe_channels_context_{accept,fail,delay}");
+  tp_observe_channels_context_prepare_async (ctx, context_prepare_cb, self);
 
   g_object_unref (ctx);
 
