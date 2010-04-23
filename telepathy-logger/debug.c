@@ -20,7 +20,7 @@
  */
 
 #include "config.h"
-#include "debug.h"
+#include "telepathy-logger/debug-internal.h"
 
 #include <telepathy-glib/debug.h>
 
@@ -43,7 +43,7 @@ static GDebugKey keys[] = {
 };
 
 void
-tpl_debug_set_flags_from_env (void)
+_tpl_debug_set_flags_from_env (void)
 {
   guint nkeys;
   const gchar *flags_string;
@@ -53,21 +53,21 @@ tpl_debug_set_flags_from_env (void)
   flags_string = g_getenv ("TPL_DEBUG");
 
   if (flags_string != NULL)
-    tpl_debug_set_flags (g_parse_debug_string (flags_string, keys, nkeys));
+    _tpl_debug_set_flags (g_parse_debug_string (flags_string, keys, nkeys));
 
   tp_debug_set_flags (g_getenv ("TP_DEBUG"));
 }
 
 
 void
-tpl_debug_set_flags (TplDebugFlags new_flags)
+_tpl_debug_set_flags (TplDebugFlags new_flags)
 {
   flags |= new_flags;
 }
 
 
 gboolean
-tpl_debug_flag_is_set (TplDebugFlags flag)
+_tpl_debug_flag_is_set (TplDebugFlags flag)
 {
   return flag & flags;
 }
@@ -76,7 +76,7 @@ GHashTable *flag_to_domains = NULL;
 
 
 void
-tpl_debug_free (void)
+_tpl_debug_free (void)
 {
   if (flag_to_domains == NULL)
     return;
@@ -86,7 +86,7 @@ tpl_debug_free (void)
 }
 
 
-void tpl_debug (TplDebugFlags flag,
+void _tpl_debug (TplDebugFlags flag,
     const gchar *format,
     ...)
 {

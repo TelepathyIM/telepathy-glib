@@ -27,7 +27,7 @@
 
 #include "tpl-channel-test.h"
 
-#include <telepathy-logger/action-chain.h>
+#include <telepathy-logger/action-chain-internal.h>
 #include <telepathy-logger/channel.h>
 
 static void call_when_ready_wrapper (TplChannel *tpl_chan, GAsyncReadyCallback
@@ -132,10 +132,10 @@ tpl_channel_test_call_when_ready (TplChannelTest *self,
    * If for any reason, the order is changed, it's need to check what objects
    * are unreferenced by g_object_unref: after the order change, it might
    * happend that an object still has to be created after the change */
-  actions = tpl_action_chain_new (G_OBJECT (self), cb, user_data);
-  tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
+  actions = _tpl_action_chain_new (G_OBJECT (self), cb, user_data);
+  _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   /* start the queue consuming */
-  tpl_action_chain_continue (actions);
+  _tpl_action_chain_continue (actions);
 }
 
 
@@ -143,7 +143,7 @@ static void
 pendingproc_prepare_tpl_channel (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_action_chain_get_object (ctx));
+  TplChannel *tpl_chan = TPL_CHANNEL (_tpl_action_chain_get_object (ctx));
 
   g_debug ("prepare tpl");
   TPL_CHANNEL_GET_CLASS (tpl_chan)->call_when_ready_protected (tpl_chan,
@@ -159,7 +159,7 @@ got_tpl_chan_ready_cb (GObject *obj,
   TplActionChain *ctx = user_data;
   g_debug ("PREPARE");
 
-  if (tpl_action_chain_finish (result) == TRUE)
-    tpl_action_chain_continue (ctx);
+  if (_tpl_action_chain_finish (result) == TRUE)
+    _tpl_action_chain_continue (ctx);
   return;
 }

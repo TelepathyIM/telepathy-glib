@@ -39,11 +39,11 @@
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-xml.h>
 #include <telepathy-logger/log-store-sqlite.h>
-#include <telepathy-logger/datetime.h>
-#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_MANAGER
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/datetime-internal.h>
+#include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/util-internal.h>
 
 typedef struct
 {
@@ -716,9 +716,9 @@ tpl_log_manager_get_date_readable (const gchar *date)
 {
   time_t t;
 
-  t = tpl_time_parse (date);
+  t = _tpl_time_parse (date);
 
-  return tpl_time_to_string_local (t, TPL_TIME_FORMAT_DISPLAY_LONG);
+  return _tpl_time_to_string_local (t, _TPL_TIME_FORMAT_DISPLAY_LONG);
 }
 
 

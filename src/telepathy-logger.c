@@ -31,7 +31,7 @@
 #include <telepathy-logger/dbus-service.h>
 
 #define DEBUG_FLAG TPL_DEBUG_MAIN
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
 
 static GMainLoop *loop = NULL;
 
@@ -157,7 +157,7 @@ main (int argc,
   tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
 
 #ifdef ENABLE_DEBUG
-  tpl_debug_set_flags_from_env ();
+  _tpl_debug_set_flags_from_env ();
 
   stamp_logs = (g_getenv ("TPL_TIMING") != NULL);
   debug_sender = tp_debug_sender_dup ();

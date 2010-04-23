@@ -20,7 +20,7 @@
  */
 
 #include "config.h"
-#include "action-chain.h"
+#include "action-chain-internal.h"
 
 typedef struct {
   TplPendingAction action;
@@ -29,7 +29,7 @@ typedef struct {
 
 
 TplActionChain *
-tpl_action_chain_new (GObject *obj,
+_tpl_action_chain_new (GObject *obj,
     GAsyncReadyCallback cb,
     gpointer user_data)
 {
@@ -37,7 +37,7 @@ tpl_action_chain_new (GObject *obj,
 
   ret->chain = g_queue_new ();
   ret->simple = g_simple_async_result_new (obj, cb, user_data,
-      tpl_action_chain_finish);
+      _tpl_action_chain_finish);
 
   g_object_set_data (G_OBJECT (ret->simple), "chain", ret);
 
@@ -53,7 +53,7 @@ link_free (TplActionLink *link)
 
 
 void
-tpl_action_chain_free (TplActionChain *self)
+_tpl_action_chain_free (TplActionChain *self)
 {
   g_queue_foreach (self->chain, (GFunc) link_free, NULL);
   g_queue_free (self->chain);
@@ -63,7 +63,7 @@ tpl_action_chain_free (TplActionChain *self)
 
 
 gpointer // FIXME GObject *
-tpl_action_chain_get_object (TplActionChain *self)
+_tpl_action_chain_get_object (TplActionChain *self)
 {
   GObject *obj;
 
@@ -77,7 +77,7 @@ tpl_action_chain_get_object (TplActionChain *self)
 
 
 void
-tpl_action_chain_prepend (TplActionChain *self,
+_tpl_action_chain_prepend (TplActionChain *self,
     TplPendingAction func,
     gpointer user_data)
 {
@@ -92,7 +92,7 @@ tpl_action_chain_prepend (TplActionChain *self,
 
 
 void
-tpl_action_chain_append (TplActionChain *self,
+_tpl_action_chain_append (TplActionChain *self,
     TplPendingAction func,
     gpointer user_data)
 {
@@ -107,7 +107,7 @@ tpl_action_chain_append (TplActionChain *self,
 
 
 void
-tpl_action_chain_continue (TplActionChain *self)
+_tpl_action_chain_continue (TplActionChain *self)
 {
   if (g_queue_is_empty (self->chain))
     {
@@ -127,7 +127,7 @@ tpl_action_chain_continue (TplActionChain *self)
 
 
 void
-tpl_action_chain_terminate (TplActionChain *self)
+_tpl_action_chain_terminate (TplActionChain *self)
 {
   GSimpleAsyncResult *simple = self->simple;
 
@@ -137,7 +137,7 @@ tpl_action_chain_terminate (TplActionChain *self)
 
 
 /**
- * tpl_action_chain_finish:
+ * _tpl_action_chain_finish:
  *
  * Get the result from running the action chain (%TRUE if the chain completed
  * successfully, %FALSE if it was terminated).
@@ -145,7 +145,7 @@ tpl_action_chain_terminate (TplActionChain *self)
  * This function also frees the chain.
  */
 gboolean
-tpl_action_chain_finish (GAsyncResult *result)
+_tpl_action_chain_finish (GAsyncResult *result)
 {
   TplActionChain *chain;
   gboolean retval;
@@ -155,7 +155,7 @@ tpl_action_chain_finish (GAsyncResult *result)
   retval = g_simple_async_result_get_op_res_gboolean (
       G_SIMPLE_ASYNC_RESULT (result));
 
-  tpl_action_chain_free (chain);
+  _tpl_action_chain_free (chain);
 
   return retval;
 }

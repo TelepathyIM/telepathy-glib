@@ -25,10 +25,10 @@
 #include <telepathy-glib/util.h>
 
 #include <telepathy-logger/contact.h>
-#include <telepathy-logger/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_ENTRY
-#include <telepathy-logger/debug.h>
+#include <telepathy-logger/debug-internal.h>
+#include <telepathy-logger/util-internal.h>
 
 /**
  * SECTION:log-entry

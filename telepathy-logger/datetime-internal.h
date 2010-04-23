@@ -29,14 +29,14 @@
 #include <glib.h>
 
 G_BEGIN_DECLS
-#define TPL_TIME_FORMAT_DISPLAY_SHORT "%H:%M"
-#define TPL_TIME_FORMAT_DISPLAY_LONG  "%a %d %b %Y"
-time_t tpl_time_get_current (void);
-time_t tpl_time_get_local_time (struct tm *tm);
-time_t tpl_time_parse (const gchar * str);
-gchar *tpl_time_to_string_utc (time_t t, const gchar * format);
-gchar *tpl_time_to_string_local (time_t t, const gchar * format);
-gchar *tpl_time_to_string_relative (time_t t);
+#define _TPL_TIME_FORMAT_DISPLAY_SHORT "%H:%M"
+#define _TPL_TIME_FORMAT_DISPLAY_LONG  "%a %d %b %Y"
+time_t _tpl_time_get_current (void);
+time_t _tpl_time_get_local_time (struct tm *tm);
+time_t _tpl_time_parse (const gchar * str);
+gchar *_tpl_time_to_string_utc (time_t t, const gchar * format);
+gchar *_tpl_time_to_string_local (time_t t, const gchar * format);
+gchar *_tpl_time_to_string_relative (time_t t);
 
 G_END_DECLS
 #endif /* __TPL_TIME_H__ */
