@@ -338,6 +338,9 @@ context_is_prepared (TpObserveChannelsContext *self)
   if (!tp_proxy_is_prepared (self->account, TP_ACCOUNT_FEATURE_CORE))
     return FALSE;
 
+  if (!tp_proxy_is_prepared (self->connection, TP_CONNECTION_FEATURE_CORE))
+    return FALSE;
+
   /* TODO */
   return TRUE;
 }
@@ -394,12 +397,41 @@ out:
 }
 
 static void
+conn_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpObserveChannelsContext *self = user_data;
+  GError *error = NULL;
+
+  if (self->priv->result == NULL)
+    goto out;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      DEBUG ("Failed to prepare connection: %s", error->message);
+      failed_to_prepare (self, error);
+      g_error_free (error);
+      goto out;
+    }
+
+  context_check_prepare (self);
+
+out:
+  g_object_unref (self);
+}
+
+static void
 context_prepare (TpObserveChannelsContext *self)
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
 
   tp_proxy_prepare_async (self->account, account_features,
       account_prepare_cb, g_object_ref (self));
+
+  tp_proxy_prepare_async (self->connection, conn_features,
+      conn_prepare_cb, g_object_ref (self));
 
   /* FIXME: prepare other objects */
 }
