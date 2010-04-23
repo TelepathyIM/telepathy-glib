@@ -335,8 +335,73 @@ _tp_observe_channels_context_get_state (
 static gboolean
 context_is_prepared (TpObserveChannelsContext *self)
 {
+  if (!tp_proxy_is_prepared (self->account, TP_ACCOUNT_FEATURE_CORE))
+    return FALSE;
+
   /* TODO */
   return TRUE;
+}
+
+static void
+context_check_prepare (TpObserveChannelsContext *self)
+{
+  if (!context_is_prepared (self))
+    return;
+
+  /* Context is prepared */
+  g_simple_async_result_complete (self->priv->result);
+
+  g_object_unref (self->priv->result);
+  self->priv->result = NULL;
+}
+
+static void
+failed_to_prepare (TpObserveChannelsContext *self,
+    const GError *error)
+{
+  g_return_if_fail (self->priv->result != NULL);
+
+  g_simple_async_result_set_from_error (self->priv->result, error);
+  g_simple_async_result_complete (self->priv->result);
+
+  g_object_unref (self->priv->result);
+  self->priv->result = NULL;
+}
+
+static void
+account_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpObserveChannelsContext *self = user_data;
+  GError *error = NULL;
+
+  if (self->priv->result == NULL)
+    goto out;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      DEBUG ("Failed to prepare account: %s", error->message);
+      failed_to_prepare (self, error);
+      g_error_free (error);
+      goto out;
+    }
+
+  context_check_prepare (self);
+
+out:
+  g_object_unref (self);
+}
+
+static void
+context_prepare (TpObserveChannelsContext *self)
+{
+  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+
+  tp_proxy_prepare_async (self->account, account_features,
+      account_prepare_cb, g_object_ref (self));
+
+  /* FIXME: prepare other objects */
 }
 
 void
@@ -357,6 +422,8 @@ tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
       self->priv->result = NULL;
       return;
     }
+
+  context_prepare (self);
 }
 
 gboolean
