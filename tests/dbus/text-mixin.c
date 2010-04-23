@@ -95,7 +95,7 @@ main (int argc,
   /* tp_debug_set_flags ("all"); */
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = EXAMPLE_ECHO_CONNECTION (g_object_new (
+  service_conn = EXAMPLE_ECHO_CONNECTION (test_object_new_static_class (
         EXAMPLE_TYPE_ECHO_CONNECTION,
         "account", "me@example.com",
         "protocol", "example",
@@ -127,7 +127,7 @@ main (int argc,
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = EXAMPLE_ECHO_CHANNEL (g_object_new (
+  service_chan = EXAMPLE_ECHO_CHANNEL (test_object_new_static_class (
         EXAMPLE_TYPE_ECHO_CHANNEL,
         "connection", service_conn,
         "object-path", chan_path,

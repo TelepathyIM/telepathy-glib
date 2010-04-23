@@ -148,7 +148,7 @@ main (int argc,
   dbus = test_dbus_daemon_dup_or_die ();
 
   DEBUG ("a");
-  service_conn = CONTACTS_CONNECTION (g_object_new (
+  service_conn = CONTACTS_CONNECTION (test_object_new_static_class (
         BUG_19101_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",

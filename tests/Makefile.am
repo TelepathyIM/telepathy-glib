@@ -52,6 +52,7 @@ test_asv_SOURCES = \
 test_capabilities_SOURCES = \
     capabilities.c
 test_capabilities_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
     $(GLIB_LIBS)
 

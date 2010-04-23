@@ -282,7 +282,7 @@ test_create_and_connect_conn (GType conn_type,
 
   dbus = test_dbus_daemon_dup_or_die ();
 
-  *service_conn = g_object_new (
+  *service_conn = test_object_new_static_class (
         conn_type,
         "account", account,
         "protocol", "simple",

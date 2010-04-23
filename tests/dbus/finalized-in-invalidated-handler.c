@@ -76,7 +76,7 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (g_object_new (SIMPLE_TYPE_CONNECTION,
+  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -108,7 +108,7 @@ main (int argc,
   test_assert_no_error (error);
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = TEST_TEXT_CHANNEL_NULL (g_object_new (
+  service_chan = TEST_TEXT_CHANNEL_NULL (test_object_new_static_class (
         TEST_TYPE_TEXT_CHANNEL_NULL,
         "connection", service_conn,
         "object-path", chan_path,

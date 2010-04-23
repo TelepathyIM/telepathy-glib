@@ -54,7 +54,7 @@ static void
 test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
-  test->client = g_object_new (TP_TYPE_CLIENT,
+  test->client = test_object_new_static_class (TP_TYPE_CLIENT,
       "dbus-daemon", test->dbus,
       "object-path", "/org/freedesktop/Telepathy/Client/whatever",
       "bus-name", "org.freedesktop.Telepathy.Client.whatever",

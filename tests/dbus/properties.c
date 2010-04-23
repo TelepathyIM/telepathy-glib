@@ -134,11 +134,11 @@ main (int argc, char **argv)
   g_type_init ();
   dbus_daemon = test_dbus_daemon_dup_or_die ();
 
-  obj = g_object_new (TEST_TYPE_PROPERTIES, NULL);
+  obj = test_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
   tp_dbus_daemon_register_object (dbus_daemon, "/", obj);
 
   /* Open a D-Bus connection to myself */
-  proxy = TP_PROXY (g_object_new (TP_TYPE_PROXY,
+  proxy = TP_PROXY (test_object_new_static_class (TP_TYPE_PROXY,
       "dbus-daemon", dbus_daemon,
       "bus-name", tp_dbus_daemon_get_unique_name (dbus_daemon),
       "object-path", "/",

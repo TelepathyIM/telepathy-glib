@@ -158,7 +158,7 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = CONTACTS_CONNECTION (g_object_new (
+  service_conn = CONTACTS_CONNECTION (test_object_new_static_class (
         CONTACTS_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",

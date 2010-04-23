@@ -63,7 +63,7 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = test_dbus_daemon_dup_or_die ();
 
-  test->service_cm = PARAM_CONNECTION_MANAGER (g_object_new (
+  test->service_cm = PARAM_CONNECTION_MANAGER (test_object_new_static_class (
         TYPE_PARAM_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);

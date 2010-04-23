@@ -22,7 +22,7 @@ test_handles (void)
   const gchar *jid = "handle.test@foobar";
   const gchar *return_jid;
 
-  tp_repo = g_object_new (TP_TYPE_DYNAMIC_HANDLE_REPO,
+  tp_repo = test_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
       "handle-type", TP_HANDLE_TYPE_CONTACT,
       NULL);
   g_assert (tp_repo != NULL);

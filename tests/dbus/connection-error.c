@@ -114,7 +114,7 @@ main (int argc,
   tp_proxy_subclass_add_error_mapping (TP_TYPE_CONNECTION,
       "com.example", example_com_error_quark (), example_com_error_get_type ());
 
-  service_conn = SIMPLE_CONNECTION (g_object_new (
+  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
         SIMPLE_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",

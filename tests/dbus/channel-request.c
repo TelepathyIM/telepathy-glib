@@ -86,7 +86,7 @@ setup (Test *test,
 
   test->cr = NULL;
 
-  test->cr_service = g_object_new (test_simple_cr_get_type (),
+  test->cr_service = test_object_new_static_class (test_simple_cr_get_type (),
       NULL);
   tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cr_service);

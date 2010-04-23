@@ -211,7 +211,7 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (g_object_new (
+  service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (test_object_new_static_class (
         EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
         NULL));
   g_assert (service_cm != NULL);

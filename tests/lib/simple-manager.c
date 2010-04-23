@@ -18,6 +18,7 @@
 #include <telepathy-glib/errors.h>
 
 #include "simple-conn.h"
+#include "tests/lib/util.h"
 
 G_DEFINE_TYPE (SimpleConnectionManager,
     simple_connection_manager,
@@ -75,7 +76,7 @@ new_connection (TpBaseConnectionManager *self,
 {
   SimpleParams *params = parsed_params;
   SimpleConnection *conn = SIMPLE_CONNECTION
-      (g_object_new (SIMPLE_TYPE_CONNECTION,
+      (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
           "account", params->account,
           "protocol", proto,
           NULL));
