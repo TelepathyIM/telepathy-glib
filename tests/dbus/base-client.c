@@ -14,33 +14,66 @@
 #include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/util.h"
+#include "tests/lib/simple-account.h"
 #include "tests/lib/simple-client.h"
+#include "tests/lib/simple-conn.h"
+#include "tests/lib/textchan-null.h"
 
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
 
+    /* Service side objects */
     TpBaseClient *base_client;
     SimpleClient *simple_client;
-    /* client side object */
+    TpBaseConnection *base_connection;
+    SimpleAccount *account_service;
+    TestTextChannelNull *text_chan_service;
+
+    /* Client side objects */
     TpClient *client;
+    TpConnection *connection;
+    TpAccount *account;
+    TpChannel *text_chan;
 
     GError *error /* initialized where needed */;
     GStrv interfaces;
 } Test;
 
+#define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
+
 static void
 setup (Test *test,
        gconstpointer data)
 {
+  gchar *chan_path;
+  TpHandle handle;
+  TpHandleRepoIface *contact_repo;
+
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = test_dbus_daemon_dup_or_die ();
   g_assert (test->dbus != NULL);
 
+  test->error = NULL;
+  test->interfaces = NULL;
+
+  /* Claim AccountManager bus-name (needed as we're going to export an Account
+   * object). */
+  tp_dbus_daemon_request_name (test->dbus,
+          TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error);
+  g_assert_no_error (test->error);
+
+  /* Create service-side Client object */
   test->simple_client = simple_client_new (test->dbus, "Test", FALSE);
   g_assert (test->simple_client != NULL);
   test->base_client = TP_BASE_CLIENT (test->simple_client);
 
+  /* Create service-side Account object */
+  test->account_service = g_object_new (SIMPLE_TYPE_ACCOUNT, NULL);
+  tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
+      test->account_service);
+
+  /* Create client-side Client object */
   test->client = g_object_new (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
           "dbus-connection", ((TpProxy *) test->dbus)->dbus_connection,
@@ -50,8 +83,40 @@ setup (Test *test,
 
   g_assert (test->client != NULL);
 
-  test->error = NULL;
-  test->interfaces = NULL;
+  /* Create client-side Account object */
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
+  /* Create (service and client sides) connection objects */
+  test_create_and_connect_conn (SIMPLE_TYPE_CONNECTION, "me@test.com",
+      &test->base_connection, &test->connection);
+
+  /* Create service-side text channel object */
+  chan_path = g_strdup_printf ("%s/Channel",
+      tp_proxy_get_object_path (test->connection));
+
+  contact_repo = tp_base_connection_get_handles (test->base_connection,
+      TP_HANDLE_TYPE_CONTACT);
+  g_assert (contact_repo != NULL);
+
+  handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  test->text_chan_service = TEST_TEXT_CHANNEL_NULL (g_object_new (
+        TEST_TYPE_TEXT_CHANNEL_NULL,
+        "connection", test->base_connection,
+        "object-path", chan_path,
+        "handle", handle,
+        NULL));
+
+  /* Create client-side text channel object */
+  test->text_chan = tp_channel_new (test->connection, chan_path, NULL,
+      TP_HANDLE_TYPE_CONTACT, handle, &test->error);
+  g_assert_no_error (test->error);
+
+  tp_handle_unref (contact_repo, handle);
+
+  g_free (chan_path);
 }
 
 static void
@@ -70,6 +135,19 @@ teardown (Test *test,
       test->client = NULL;
     }
 
+  if (test->error != NULL)
+    {
+      g_error_free (test->error);
+      test->error = NULL;
+    }
+
+  tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
+  g_object_unref (test->account_service);
+
+  tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+      &test->error);
+  g_assert_no_error (test->error);
+
   g_object_unref (test->dbus);
   test->dbus = NULL;
   g_main_loop_unref (test->mainloop);
@@ -81,11 +159,16 @@ teardown (Test *test,
       test->interfaces = NULL;
     }
 
-  if (test->error != NULL)
-    {
-      g_error_free (test->error);
-      test->error = NULL;
-    }
+  g_object_unref (test->account);
+
+  g_object_unref (test->text_chan_service);
+  g_object_unref (test->text_chan);
+
+  tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
+  g_assert_no_error (test->error);
+
+  g_object_unref (test->connection);
+  g_object_unref (test->base_connection);
 }
 
 /* Test Basis */
@@ -241,6 +324,31 @@ out:
 }
 
 static void
+add_channel_to_ptr_array (GPtrArray *arr,
+    TpChannel *channel)
+{
+  GValueArray *tmp;
+
+  g_assert (arr != NULL);
+  g_assert (channel != NULL);
+
+  tmp = tp_value_array_build (2,
+      DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
+      TP_HASH_TYPE_STRING_VARIANT_MAP, tp_channel_borrow_immutable_properties (
+        channel),
+      G_TYPE_INVALID);
+
+  g_ptr_array_add (arr, tmp);
+}
+
+static void
+free_channel_details (gpointer data,
+    gpointer user_data)
+{
+  g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
+}
+
+static void
 test_observer (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -284,7 +392,9 @@ test_observer (Test *test,
   g_assert_no_error (test->error);
 
   /* Call ObserveChannels */
-  channels = g_ptr_array_sized_new (0);
+  channels = g_ptr_array_sized_new (1);
+  add_channel_to_ptr_array (channels, test->text_chan);
+
   requests_satisified = g_ptr_array_sized_new (0);
   info = tp_asv_new (
       "recovering", G_TYPE_BOOLEAN, TRUE,
@@ -293,10 +403,9 @@ test_observer (Test *test,
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_OBSERVER);
 
-#if 0
   tp_cli_client_observer_call_observe_channels (test->client, -1,
-      "/org/freedesktop/Telepathy/Account/fake",
-      "/org/freedesktop/Telepathy/Connection/fake",
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
       channels, "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
@@ -307,6 +416,7 @@ test_observer (Test *test,
   g_assert (tp_observe_channels_context_get_recovering (
         test->simple_client->observe_ctx));
 
+#if 0
   /* Now call it with an invalid argument */
   tp_cli_client_observer_call_observe_channels (test->client, -1,
       "/INVALID",
@@ -318,6 +428,7 @@ test_observer (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
 #endif
 
+  g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
   g_ptr_array_free (requests_satisified, TRUE);
   g_hash_table_unref (info);
