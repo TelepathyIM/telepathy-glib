@@ -1,5 +1,7 @@
 # To be included by Makefile.am.
 
+introspection_extra_dist = kludge-616375.xsl
+
 BUILT_GIRFILES = \
 	TelepathyGLib-0.12.gir
 

@@ -8,26 +8,9 @@ pkgconfig_DATA = telepathy-glib.pc
 
 EXTRA_DIST = \
     $(ABI_LISTS) \
-    account.xml \
-    account-manager.xml \
-    channel.xml \
-    channel-dispatcher.xml \
-    channel-dispatch-operation.xml \
-    channel-request.xml \
-    client.xml \
-    debug.xml \
-    connection.xml \
-    connection-manager.xml \
-    dbus-daemon.xml \
-    dbus-introspectable.xml \
-    dbus-peer.xml \
-    dbus-properties.xml \
-    extra-gtkdoc.h \
-    generic.xml \
-    media-session-handler.xml \
-    media-stream-handler.xml \
-    stable-interfaces.xml \
-    kludge-616375.xsl
+    $(codegen_extra_dist) \
+    $(introspection_extra_dist) \
+    extra-gtkdoc.h
 
 # libtelepathy-glib is just a shared version of libtelepathy-glib-internal,
 # produced by abi.am.

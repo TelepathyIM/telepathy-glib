@@ -1,5 +1,25 @@
 # To be included by Makefile.am.
 
+codegen_extra_dist = \
+    account.xml \
+    account-manager.xml \
+    channel.xml \
+    channel-dispatcher.xml \
+    channel-dispatch-operation.xml \
+    channel-request.xml \
+    client.xml \
+    debug.xml \
+    connection.xml \
+    connection-manager.xml \
+    dbus-daemon.xml \
+    dbus-introspectable.xml \
+    dbus-peer.xml \
+    dbus-properties.xml \
+    generic.xml \
+    media-session-handler.xml \
+    media-stream-handler.xml \
+    stable-interfaces.xml
+
 codegen_sources = \
     $(nodist_libtelepathy_glib_internal_la_SOURCES) \
     $(nodist_geninclude_HEADERS) \
