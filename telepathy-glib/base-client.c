@@ -752,6 +752,14 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       return;
     }
 
+  if (channels_arr->len == 0)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Channels should contain at least one channel");
+      DEBUG ("%s", error->message);
+      goto out;
+    }
+
   account = tp_account_new (self->priv->dbus, account_path, &error);
   if (account == NULL)
     {
