@@ -21,6 +21,7 @@
 #ifndef __TP_BASE_CLIENT_CONTEXT_H__
 #define __TP_BASE_CLIENT_CONTEXT_H__
 
+#include <gio/gio.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
@@ -64,6 +65,15 @@ void tp_observe_channels_context_delay (TpObserveChannelsContext *self);
 
 gboolean tp_observe_channels_context_get_recovering (
     TpObserveChannelsContext *self);
+
+void tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_observe_channels_context_prepare_finish (
+    TpObserveChannelsContext *self,
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 

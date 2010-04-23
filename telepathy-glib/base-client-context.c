@@ -49,6 +49,7 @@ enum {
 struct _TpObserveChannelsContextPrivate
 {
   TpBaseClientContextState state;
+  GSimpleAsyncResult *result;
 };
 
 static void
@@ -103,6 +104,12 @@ tp_observe_channels_context_dispose (GObject *object)
     {
       g_hash_table_unref (self->observer_info);
       self->observer_info = NULL;
+    }
+
+  if (self->priv->result != NULL)
+    {
+      g_object_unref (self->priv->result);
+      self->priv->result = NULL;
     }
 
   if (dispose != NULL)
@@ -323,4 +330,53 @@ _tp_observe_channels_context_get_state (
     TpObserveChannelsContext *self)
 {
   return self->priv->state;
+}
+
+static gboolean
+context_is_prepared (TpObserveChannelsContext *self)
+{
+  /* TODO */
+  return TRUE;
+}
+
+void
+tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  g_return_if_fail (TP_IS_OBSERVE_CHANNELS_CONTEXT (self));
+  g_return_if_fail (self->priv->result == NULL);
+
+  self->priv->result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_observe_channels_context_prepare_async);
+
+  if (context_is_prepared (self))
+    {
+      g_simple_async_result_complete_in_idle (self->priv->result);
+      g_object_unref (self->priv->result);
+      self->priv->result = NULL;
+      return;
+    }
+}
+
+gboolean
+tp_observe_channels_context_prepare_finish (
+    TpObserveChannelsContext *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_OBSERVE_CHANNELS_CONTEXT (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), tp_observe_channels_context_prepare_async), FALSE);
+
+  return TRUE;
 }
