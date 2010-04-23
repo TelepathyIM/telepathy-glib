@@ -301,6 +301,16 @@
    fun:tp_channel_new
 }
 
+{
+   creating a boxed type to use in TpCapabilities
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:g_param_spec_boxed
+   fun:tp_capabilities_class_intern_init
+}
+
 # ============================= questionable ==========================
 
 {
