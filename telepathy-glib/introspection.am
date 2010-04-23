@@ -29,7 +29,7 @@ INTROSPECTION_FILES = \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h
 
-_gen/proxy-introspectable.h: proxy.h Makefile.am
+_gen/proxy-introspectable.h: proxy.h introspection.am
 	@$(mkdir_p) _gen
 	$(AM_V_GEN)sed -e 's/gpointer self/TpProxy *self/' < $< > $@
 
