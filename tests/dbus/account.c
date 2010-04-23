@@ -104,10 +104,8 @@ setup_service (Test *test,
   g_assert_no_error (test->error);
 
   test->account_service = g_object_new (SIMPLE_TYPE_ACCOUNT, NULL);
-
-  dbus_g_connection_register_g_object (
-      tp_proxy_get_dbus_connection (test->dbus), ACCOUNT_PATH,
-      G_OBJECT (test->account_service));
+  tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
+      test->account_service);
 }
 
 static void
@@ -134,9 +132,7 @@ teardown_service (Test *test,
       &test->error);
   g_assert_no_error (test->error);
 
-  dbus_g_connection_unregister_g_object (
-      tp_proxy_get_dbus_connection (test->dbus),
-      G_OBJECT (test->account_service));
+  tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
 
   g_object_unref (test->account_service);
   test->account_service = NULL;
@@ -169,7 +165,7 @@ account_prepare_cb (GObject *source,
   Test *test = user_data;
   GError *error = NULL;
 
-  tp_account_prepare_finish (TP_ACCOUNT (source), result, &error);
+  tp_proxy_prepare_finish (source, result, &error);
   g_assert_no_error (error);
 
   g_main_loop_quit (test->mainloop);
@@ -184,7 +180,7 @@ test_prepare_success (Test *test,
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
-  tp_account_prepare_async (test->account, account_features,
+  tp_proxy_prepare_async (test->account, account_features,
       account_prepare_cb, test);
   g_main_loop_run (test->mainloop);
 }
