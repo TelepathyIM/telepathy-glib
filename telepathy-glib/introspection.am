@@ -2,7 +2,11 @@
 
 introspection_extra_dist = kludge-616375.xsl
 
-BUILT_GIRFILES = \
+BUILT_GIRFILES =
+
+if HAVE_INTROSPECTION
+
+BUILT_GIRFILES += \
 	TelepathyGLib-0.12.gir
 
 INTROSPECTION_FILES = \
@@ -63,5 +67,7 @@ gir_DATA = $(BUILT_GIRFILES)
 
 typelibsdir = $(libdir)/girepository-1.0/
 typelibs_DATA = $(BUILT_GIRFILES:.gir=.typelib)
+
+endif
 
 # vim:set ft=automake:
