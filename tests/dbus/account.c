@@ -12,6 +12,10 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
 
+#include "tests/lib/simple-account.h"
+
+#define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
+
 static void
 test_parse_failure (gconstpointer test_data)
 {
@@ -73,6 +77,8 @@ typedef struct {
 
     TpAccount *account;
     GError *error /* initialized where needed */;
+
+    SimpleAccount *account_service /* initialized in prepare_service */;
 } Test;
 
 static void
@@ -84,6 +90,23 @@ setup (Test *test,
   g_assert (test->dbus != NULL);
 
   test->account = NULL;
+}
+
+static void
+setup_service (Test *test,
+    gconstpointer data)
+{
+  setup (test, data);
+
+  tp_dbus_daemon_request_name (test->dbus,
+      TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error);
+  g_assert_no_error (test->error);
+
+  test->account_service = g_object_new (SIMPLE_TYPE_ACCOUNT, NULL);
+
+  dbus_g_connection_register_g_object (
+      tp_proxy_get_dbus_connection (test->dbus), ACCOUNT_PATH,
+      G_OBJECT (test->account_service));
 }
 
 static void
@@ -103,6 +126,24 @@ teardown (Test *test,
 }
 
 static void
+teardown_service (Test *test,
+    gconstpointer data)
+{
+  tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+      &test->error);
+  g_assert_no_error (test->error);
+
+  dbus_g_connection_unregister_g_object (
+      tp_proxy_get_dbus_connection (test->dbus),
+      G_OBJECT (test->account_service));
+
+  g_object_unref (test->account_service);
+  test->account_service = NULL;
+
+  teardown (test, data);
+}
+
+static void
 test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
@@ -117,6 +158,34 @@ test_new (Test *test,
   test->account = tp_account_new (test->dbus,
       "/org/freedesktop/Telepathy/Account/what/ev/er", NULL);
   g_assert (test->account != NULL);
+}
+
+static void
+account_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+  GError *error = NULL;
+
+  tp_account_prepare_finish (TP_ACCOUNT (source), result, &error);
+  g_assert_no_error (error);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_prepare_success (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
+  tp_account_prepare_async (test->account, account_features,
+      account_prepare_cb, test);
+  g_main_loop_run (test->mainloop);
 }
 
 int
@@ -167,6 +236,9 @@ main (int argc,
       test_parse_success);
 
   g_test_add ("/account/new", Test, NULL, setup, test_new, teardown);
+
+  g_test_add ("/account/prepare/success", Test, NULL, setup_service,
+              test_prepare_success, teardown_service);
 
   return g_test_run ();
 }
