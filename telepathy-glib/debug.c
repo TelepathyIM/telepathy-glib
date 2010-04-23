@@ -78,7 +78,7 @@ static TpDebugFlags flags = 0;
 static gboolean tp_debug_persistent = FALSE;
 
 /**
- * tp_debug_set_all_flags:
+ * tp_debug_set_all_flags: (skip)
  *
  * Activate all possible debug modes. This also activates persistent mode,
  * which should have been orthogonal.
@@ -175,7 +175,7 @@ tp_debug_set_flags (const gchar *flags_string)
 }
 
 /**
- * tp_debug_set_flags_from_string:
+ * tp_debug_set_flags_from_string: (skip)
  * @flags_string: The flags to set, comma-separated. If %NULL or empty,
  *  no additional flags are set.
  *
@@ -204,7 +204,7 @@ tp_debug_set_flags_from_string (const gchar *flags_string)
 }
 
 /**
- * tp_debug_set_flags_from_env:
+ * tp_debug_set_flags_from_env: (skip)
  * @var: The name of the environment variable to parse
  *
  * Equivalent to
