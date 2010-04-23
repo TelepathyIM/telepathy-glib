@@ -866,6 +866,9 @@ _tp_account_finalize (GObject *object)
   g_array_free (priv->actual_features, TRUE);
   g_array_free (priv->missing_features, TRUE);
 
+  if (priv->parameters != NULL)
+    g_hash_table_unref (priv->parameters);
+
   /* free any data held directly by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)
     G_OBJECT_CLASS (tp_account_parent_class)->finalize (object);
