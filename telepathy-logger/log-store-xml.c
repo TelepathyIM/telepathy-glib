@@ -253,11 +253,9 @@ tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
 static void
 tpl_log_store_xml_init (TplLogStoreXml *self)
 {
-  TplLogStoreXmlPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_STORE_XML, TplLogStoreXmlPriv);
-
-  self->priv = priv;
-  priv->account_manager = tp_account_manager_dup ();
+  self->priv->account_manager = tp_account_manager_dup ();
 }
 
 
@@ -682,7 +680,6 @@ static TplLogSearchHit *
 log_store_xml_search_hit_new (TplLogStoreXml *self,
     const gchar *filename)
 {
-  TplLogStoreXmlPriv *priv = self->priv;
   TplLogSearchHit *hit;
   gchar *account_name;
   const gchar *end;
@@ -712,7 +709,8 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
 
   /* FIXME: This assumes the account manager is prepared, but the
    * synchronous API forces this. See bug #599189. */
-  accounts = tp_account_manager_get_valid_accounts (priv->account_manager);
+  accounts = tp_account_manager_get_valid_accounts (
+      self->priv->account_manager);
 
   for (l = accounts; l != NULL; l = g_list_next (l))
     {
