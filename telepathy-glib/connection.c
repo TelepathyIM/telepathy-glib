@@ -191,53 +191,51 @@ got_contact_attribute_interfaces (TpProxy *proxy,
                                   GObject *weak_object G_GNUC_UNUSED)
 {
   TpConnection *self = TP_CONNECTION (proxy);
+  GArray *arr;
 
-  if (error == NULL)
+  if (error == NULL && G_VALUE_HOLDS (value, G_TYPE_STRV))
     {
-      if (G_VALUE_HOLDS (value, G_TYPE_STRV))
+      gchar **interfaces = g_value_get_boxed (value);
+      gchar **iter;
+
+      arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark),
+          interfaces == NULL ? 0 : g_strv_length (interfaces));
+
+      if (interfaces != NULL)
         {
-          GArray *arr;
-          gchar **interfaces = g_value_get_boxed (value);
-          gchar **iter;
-
-          arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark),
-              interfaces == NULL ? 0 : g_strv_length (interfaces));
-
-          if (interfaces != NULL)
+          for (iter = interfaces; *iter != NULL; iter++)
             {
-              for (iter = interfaces; *iter != NULL; iter++)
+              if (tp_dbus_check_valid_interface_name (*iter, NULL))
                 {
-                  if (tp_dbus_check_valid_interface_name (*iter, NULL))
-                    {
-                      GQuark q = g_quark_from_string (*iter);
+                  GQuark q = g_quark_from_string (*iter);
 
-                      DEBUG ("%p: ContactAttributeInterfaces has %s", self,
-                          *iter);
-                      g_array_append_val (arr, q);
-                    }
-                  else
-                    {
-                      DEBUG ("%p: ignoring invalid interface: %s", self,
-                          *iter);
-                    }
+                  DEBUG ("%p: ContactAttributeInterfaces has %s", self,
+                      *iter);
+                  g_array_append_val (arr, q);
+                }
+              else
+                {
+                  DEBUG ("%p: ignoring invalid interface: %s", self,
+                      *iter);
                 }
             }
-
-          g_assert (self->priv->contact_attribute_interfaces == NULL);
-          self->priv->contact_attribute_interfaces = arr;
-        }
-      else
-        {
-          DEBUG ("%p: ContactAttributeInterfaces had wrong type %s, "
-              "ignoring", self, G_VALUE_TYPE_NAME (value));
         }
     }
   else
     {
-      DEBUG ("%p: Get(Contacts, ContactAttributeInterfaces) failed with "
-          "%s %d: %s", self, g_quark_to_string (error->domain), error->code,
-          error->message);
+      if (error == NULL)
+        DEBUG ("%p: ContactAttributeInterfaces had wrong type %s, "
+            "ignoring", self, G_VALUE_TYPE_NAME (value));
+      else
+        DEBUG ("%p: Get(Contacts, ContactAttributeInterfaces) failed with "
+            "%s %d: %s", self, g_quark_to_string (error->domain), error->code,
+            error->message);
+
+      arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark), 0);
     }
+
+  g_assert (self->priv->contact_attribute_interfaces == NULL);
+  self->priv->contact_attribute_interfaces = arr;
 
   tp_connection_continue_introspection (self);
 }
