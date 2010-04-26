@@ -78,6 +78,7 @@ void tp_base_client_take_observer_filter (TpBaseClient *self,
 void tp_base_client_set_observer_recover (TpBaseClient *self,
     gboolean recover);
 
+#if 0
 void tp_base_client_add_approver_filter (TpBaseClient *self,
     GHashTable *filter);
 void tp_base_client_take_approver_filter (TpBaseClient *self,
@@ -105,13 +106,16 @@ void tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
 void tp_base_client_set_handler_related_conferences_bypass_approval (
     TpBaseClient *self, gboolean bypass_approval);
     */
+#endif
 
 void tp_base_client_register (TpBaseClient *self);
 
+#if 0
 /* Normal methods, can be called at any time */
 
 GList *tp_base_client_get_pending_requests (TpBaseClient *self);
 GList *tp_base_client_get_handled_channels (TpBaseClient *self);
+#endif
 
 #define TP_TYPE_BASE_CLIENT \
   (tp_base_client_get_type ())

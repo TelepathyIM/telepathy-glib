@@ -157,6 +157,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
   self->priv->flags |= (CLIENT_IS_OBSERVER | CLIENT_OBSERVER_RECOVER);
 }
 
+#if 0
 void
 tp_base_client_add_approver_filter (TpBaseClient *self,
     GHashTable *filter)
@@ -313,6 +314,7 @@ tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
 
   va_end (ap);
 }
+#endif
 
 /**
  * tp_base_client_register:
@@ -372,6 +374,7 @@ tp_base_client_register (TpBaseClient *self)
   self->priv->registered = TRUE;
 }
 
+#if 0
 /**
  * Only works after tp_base_client_set_handler_request_notification().
  *
@@ -398,6 +401,7 @@ tp_base_client_get_handled_channels (TpBaseClient *self)
   /* FIXME */
   return NULL;
 }
+#endif
 
 static void
 tp_base_client_init (TpBaseClient *self)
@@ -550,6 +554,7 @@ tp_base_client_get_dbus_properties (GObject *object,
       g_value_set_boxed (value, self->priv->observer_filters);
       break;
 
+#if 0
     case DP_APPROVER_CHANNEL_FILTER:
       g_value_set_boxed (value, self->priv->approver_filters);
       break;
@@ -582,6 +587,7 @@ tp_base_client_get_dbus_properties (GObject *object,
           g_list_free (channels);
         }
       break;
+#endif
 
     case DP_OBSERVER_RECOVER:
       g_value_set_boolean (value,
@@ -869,6 +875,7 @@ observer_iface_init (gpointer g_iface,
 #undef IMPLEMENT
 }
 
+#if 0
 static void
 _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
     const GPtrArray *channels,
@@ -879,17 +886,21 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   /* FIXME */
   tp_dbus_g_method_return_not_implemented (context);
 }
+#endif
 
 static void
 approver_iface_init (gpointer g_iface,
     gpointer unused G_GNUC_UNUSED)
 {
+#if 0
 #define IMPLEMENT(x) tp_svc_client_approver_implement_##x (\
   g_iface, _tp_base_client_##x)
   IMPLEMENT (add_dispatch_operation);
 #undef IMPLEMENT
+#endif
 }
 
+#if 0
 static void
 _tp_base_client_handle_channels (TpSvcClientHandler *iface,
     const gchar *account,
@@ -903,17 +914,21 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   /* FIXME */
   tp_dbus_g_method_return_not_implemented (context);
 }
+#endif
 
 static void
 handler_iface_init (gpointer g_iface,
     gpointer unused G_GNUC_UNUSED)
 {
+#if 0
 #define IMPLEMENT(x) tp_svc_client_handler_implement_##x (\
   g_iface, _tp_base_client_##x)
   IMPLEMENT (handle_channels);
 #undef IMPLEMENT
+#endif
 }
 
+#if 0
 static void
 _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
     const gchar *request,
@@ -934,16 +949,19 @@ _tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
   /* FIXME: emit a signal first */
   tp_svc_client_interface_requests_return_from_remove_request (context);
 }
+#endif
 
 static void
 requests_iface_init (gpointer g_iface,
     gpointer unused G_GNUC_UNUSED)
 {
+#if 0
 #define IMPLEMENT(x) tp_svc_client_interface_requests_implement_##x (\
   g_iface, _tp_base_client_##x)
   IMPLEMENT (add_request);
   IMPLEMENT (remove_request);
 #undef IMPLEMENT
+#endif
 }
 
 void
