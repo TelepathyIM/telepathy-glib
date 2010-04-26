@@ -18,6 +18,32 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:observe-channels-context
+ * @title: TpObserveChannelsContext
+ * @short_description: context of a Observer.ObserveChannels() call
+ *
+ * Object used to represent the context of a Observer.ObserveChannels()
+ * D-Bus call on a #TpBaseClient.
+ */
+
+/**
+ * TpObserveChannelsContext:
+ *
+ * Data structure representing the context of a Observer.ObserveChannels()
+ * call.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+/**
+ * TpObserveChannelsContextClass:
+ *
+ * The class of a #TpObserveChannelsContext.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
 #include "telepathy-glib/observe-channels-context-internal.h"
 #include "telepathy-glib/observe-channels-context.h"
 
@@ -223,6 +249,17 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
   object_class->constructed = tp_observe_channels_context_constructed;
   object_class->dispose = tp_observe_channels_context_dispose;
 
+  /**
+   * TpObserveChannelsContext:account:
+   *
+   * A #TpAccount object representing the Account that has been passed to
+   * ObserveChannels.
+   * Read-only except during construction.
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   param_spec = g_param_spec_object ("account", "TpAccount",
       "The TpAccount that has been passed to ObserveChannels",
       TP_TYPE_ACCOUNT,
@@ -230,6 +267,17 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
   g_object_class_install_property (object_class, PROP_ACCOUNT,
       param_spec);
 
+  /**
+   * TpObserveChannelsContext:connection:
+   *
+   * A #TpConnection object representing the Connection that has been passed
+   * to ObserveChannels.
+   * Read-only except during construction.
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The TpConnection that has been passed to ObserveChannels",
       TP_TYPE_CONNECTION,
@@ -237,6 +285,17 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
   g_object_class_install_property (object_class, PROP_CONNECTION,
       param_spec);
 
+  /**
+   * TpObserveChannelsContext:channels:
+   *
+   * A #GPtrArray containing #TpChannel objects representing the channels
+   * that have been passed to ObserveChannels.
+   * Read-only except during construction.
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
       "The TpChannels that have been passed to ObserveChannels",
       G_TYPE_PTR_ARRAY,
@@ -244,6 +303,16 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
   g_object_class_install_property (object_class, PROP_CHANNELS,
       param_spec);
 
+  /**
+   * TpObserveChannelsContext:dispatch-operation:
+   *
+   * A #TpChannelDispatchOperation object representing the
+   * ChannelDispatchOperation that has been passed to ObserveChannels,
+   * or %NULL if none has been passed.
+   * Read-only except during construction.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   param_spec = g_param_spec_object ("dispatch-operation",
      "TpChannelDispatchOperation",
      "The TpChannelDispatchOperation that has been passed to ObserveChannels",
@@ -252,6 +321,17 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
   g_object_class_install_property (object_class, PROP_DISPATCH_OPERATION,
       param_spec);
 
+  /**
+   * TpObserveChannelsContext:requests:
+   *
+   * A #GPtrArray containing #TpChannelRequest objects representing the
+   * requests that have been passed to ObserveChannels.
+   * Read-only except during construction.
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   param_spec = g_param_spec_boxed ("requests", "GPtrArray of TpChannelRequest",
       "The TpChannelRequest that have been passed to ObserveChannels",
       G_TYPE_PTR_ARRAY,
@@ -259,12 +339,34 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
   g_object_class_install_property (object_class, PROP_REQUESTS,
       param_spec);
 
+  /**
+   * TpObserveChannelsContext:dbus-context:
+   *
+   * The #DBusGMethodInvocation representing the D-Bus context of the
+   * ObserveChannels call.
+   * Can only be written during construction.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
       "The DBusGMethodInvocation associated with the ObserveChannels call",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONTEXT,
       param_spec);
 
+  /**
+   * TpObserveChannelsContext:observer-info:
+   *
+   * A #GHashTable where the keys are string and values are GValue instances.
+   * It represents the Observer_Info hash table that has been passed to
+   * ObserveChannels.
+   * It's recommended to use high-level method such as
+   * tp_observe_channels_context_get_recovering() to access to its content.
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   param_spec = g_param_spec_boxed ("observer-info", "Observer info",
       "The Observer_Info that has been passed to ObserveChannels",
       TP_HASH_TYPE_STRING_VARIANT_MAP,
@@ -294,6 +396,15 @@ _tp_observe_channels_context_new (
       NULL);
 }
 
+/**
+ * tp_observe_channels_context_accept:
+ * @self: a #TpObserveChannelsContext
+ *
+ * Called by #TpBaseClientClassObserveChannelsImpl when it's done so the D-Bus
+ * method can return.
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_observe_channels_context_accept (TpObserveChannelsContext *self)
 {
@@ -307,6 +418,15 @@ tp_observe_channels_context_accept (TpObserveChannelsContext *self)
   self->dbus_context = NULL;
 }
 
+/**
+ * tp_observe_channels_context_fail:
+ * @self: a #TpObserveChannelsContext
+ * @error: the error to return from the method
+ *
+ * Called by #TpBaseClientClassObserveChannelsImpl to raise a D-Bus error.
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_observe_channels_context_fail (TpObserveChannelsContext *self,
     const GError *error)
@@ -321,6 +441,17 @@ tp_observe_channels_context_fail (TpObserveChannelsContext *self,
   self->dbus_context = NULL;
 }
 
+/**
+ * tp_observe_channels_context_delay:
+ * @self: a #TpObserveChannelsContext
+ *
+ * Called by #TpBaseClientClassObserveChannelsImpl to indicate that it
+ * implements the method in an async way. It has to ref the
+ * #TpObserveChannelsContext before calling this function and is responsible
+ * to call tp_observe_channels_context_accept once the call is done.
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_observe_channels_context_delay (TpObserveChannelsContext *self)
 {
@@ -330,6 +461,17 @@ tp_observe_channels_context_delay (TpObserveChannelsContext *self)
   self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED;
 }
 
+/**
+ * tp_observe_channels_context_get_recovering:
+ * @self: a #TpObserveChannelsContext
+ *
+ * If the "recovering" key in present in the Observer_Info hash table
+ * associated with this context, its value; %FALSE if the key is not present.
+ *
+ * Returns: value
+ *
+ * Since: 0.11.UNRELEASED
+ */
 gboolean
 tp_observe_channels_context_get_recovering (TpObserveChannelsContext *self)
 {

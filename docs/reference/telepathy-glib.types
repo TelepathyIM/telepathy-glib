@@ -21,6 +21,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
 #include <telepathy-glib/media-interfaces.h>
+#include <telepathy-glib/observe-channels-context.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/svc-account.h>
 #include <telepathy-glib/svc-account-manager.h>
@@ -61,6 +62,7 @@ tp_exportable_channel_get_type
 tp_handle_repo_iface_get_type
 tp_media_session_handler_get_type
 tp_media_stream_handler_get_type
+tp_observe_channels_context_get_type
 tp_proxy_get_type
 tp_svc_account_get_type
 tp_svc_account_interface_avatar_get_type

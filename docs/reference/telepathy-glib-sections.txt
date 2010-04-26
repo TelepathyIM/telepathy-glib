@@ -3749,3 +3749,23 @@ TP_TYPE_BASE_CLIENT
 TpBaseClientClass
 TpBaseClientPrivate
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/observe-channels-context.h</INCLUDE>
+<FILE>observe-channels-context</FILE>
+<TITLE>observe-channels-context</TITLE>
+TpObserveChannelsContext
+tp_observe_channels_context_accept
+tp_observe_channels_context_delay
+tp_observe_channels_context_fail
+tp_observe_channels_context_get_recovering
+<SUBSECTION Standard>
+tp_observe_channels_context_get_type
+TP_OBSERVE_CHANNELS_CONTEXT
+TP_OBSERVE_CHANNELS_CONTEXT_CLASS
+TP_OBSERVE_CHANNELS_CONTEXT_GET_CLASS
+TP_IS_OBSERVE_CHANNELS_CONTEXT
+TP_IS_OBSERVE_CHANNELS_CONTEXT_CLASS
+TpObserveChannelsContextClass
+TpObserveChannelsContextPrivate
+</SECTION>
