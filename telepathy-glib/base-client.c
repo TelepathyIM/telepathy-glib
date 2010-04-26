@@ -699,7 +699,7 @@ context_prepare_cb (GObject *source,
   GError *error = NULL;
   GList *channels_list, *requests_list;
 
-  if (!tp_observe_channels_context_prepare_finish (ctx, result, &error))
+  if (!_tp_observe_channels_context_prepare_finish (ctx, result, &error))
     {
       DEBUG ("Failed to prepare TpObserveChannelsContext: %s", error->message);
       dbus_g_method_return_error (ctx->dbus_context, error);
@@ -838,7 +838,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   ctx = _tp_observe_channels_context_new (account, connection, channels,
       dispatch_operation, requests, observer_info, context);
 
-  tp_observe_channels_context_prepare_async (ctx, context_prepare_cb, self);
+  _tp_observe_channels_context_prepare_async (ctx, context_prepare_cb, self);
 
   g_object_unref (ctx);
 

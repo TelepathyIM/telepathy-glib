@@ -57,6 +57,15 @@ TpObserveChannelsContext * _tp_observe_channels_context_new (
 TpObserveChannelsContextState _tp_observe_channels_context_get_state (
     TpObserveChannelsContext *self);
 
+void _tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean _tp_observe_channels_context_prepare_finish (
+    TpObserveChannelsContext *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #endif

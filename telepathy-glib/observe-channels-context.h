@@ -66,15 +66,6 @@ void tp_observe_channels_context_delay (TpObserveChannelsContext *self);
 gboolean tp_observe_channels_context_get_recovering (
     TpObserveChannelsContext *self);
 
-void tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_observe_channels_context_prepare_finish (
-    TpObserveChannelsContext *self,
-    GAsyncResult *result,
-    GError **error);
-
 G_END_DECLS
 
 #endif

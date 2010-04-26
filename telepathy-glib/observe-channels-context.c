@@ -480,7 +480,7 @@ context_prepare (TpObserveChannelsContext *self)
 }
 
 void
-tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
+_tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -488,7 +488,7 @@ tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
   g_return_if_fail (self->priv->result == NULL);
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, tp_observe_channels_context_prepare_async);
+      callback, user_data, _tp_observe_channels_context_prepare_async);
 
   if (context_is_prepared (self))
     {
@@ -502,7 +502,7 @@ tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
 }
 
 gboolean
-tp_observe_channels_context_prepare_finish (
+_tp_observe_channels_context_prepare_finish (
     TpObserveChannelsContext *self,
     GAsyncResult *result,
     GError **error)
@@ -518,7 +518,7 @@ tp_observe_channels_context_prepare_finish (
     return FALSE;
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_observe_channels_context_prepare_async), FALSE);
+          G_OBJECT (self), _tp_observe_channels_context_prepare_async), FALSE);
 
   return TRUE;
 }
