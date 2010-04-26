@@ -432,7 +432,12 @@ _tp_account_set_connection (TpAccount *account,
         }
     }
 
-  g_object_notify (G_OBJECT (account), "connection");
+  if (tp_strdiff (priv->connection_object_path, path))
+    {
+      g_free (priv->connection_object_path);
+      priv->connection_object_path = g_strdup (path);
+      g_object_notify (G_OBJECT (account), "connection");
+    }
 }
 
 static void
@@ -601,16 +606,18 @@ _tp_account_update (TpAccount *account,
 
   if (g_hash_table_lookup (properties, "Connection") != NULL)
     {
-      g_free (priv->connection_object_path);
+      const gchar *path = tp_asv_get_object_path (properties, "Connection");
 
-      priv->connection_object_path =
-        g_strdup (tp_asv_get_object_path (properties, "Connection"));
-
-      if (priv->connection != NULL)
+      if (tp_strdiff (path, priv->connection_object_path))
         {
-          if (tp_strdiff (priv->connection_object_path,
-                  tp_proxy_get_object_path (priv->connection)))
+          g_free (priv->connection_object_path);
+
+          priv->connection_object_path = g_strdup (path);
+
+          if (priv->connection != NULL)
             _tp_account_free_connection (account);
+
+          g_object_notify (G_OBJECT (account), "connection");
         }
     }
 
@@ -865,6 +872,9 @@ _tp_account_finalize (GObject *object)
   g_array_free (priv->requested_features, TRUE);
   g_array_free (priv->actual_features, TRUE);
   g_array_free (priv->missing_features, TRUE);
+
+  if (priv->parameters != NULL)
+    g_hash_table_unref (priv->parameters);
 
   /* free any data held directly by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)

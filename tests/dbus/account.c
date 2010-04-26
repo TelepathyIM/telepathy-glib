@@ -11,10 +11,16 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/svc-account.h>
 
 #include "tests/lib/simple-account.h"
+#include "tests/lib/util.h"
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
+#define CONN1_PATH TP_CONN_OBJECT_PATH_BASE "what/ev/er"
+#define CONN2_PATH TP_CONN_OBJECT_PATH_BASE "what/ev/s"
+#define CONN1_BUS_NAME TP_CONN_BUS_NAME_BASE "what.ev.er"
+#define CONN2_BUS_NAME TP_CONN_BUS_NAME_BASE "what.ev.s"
 
 static void
 test_parse_failure (gconstpointer test_data)
@@ -76,6 +82,9 @@ typedef struct {
     TpDBusDaemon *dbus;
 
     TpAccount *account;
+    gulong notify_id;
+    /* g_strdup (property name) => GUINT_TO_POINTER (counter) */
+    GHashTable *times_notified;
     GError *error /* initialized where needed */;
 
     SimpleAccount *account_service /* initialized in prepare_service */;
@@ -90,6 +99,9 @@ setup (Test *test,
   g_assert (test->dbus != NULL);
 
   test->account = NULL;
+
+  test->times_notified = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, NULL);
 }
 
 static void
@@ -102,11 +114,54 @@ setup_service (Test *test,
       TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error);
   g_assert_no_error (test->error);
 
+  tp_dbus_daemon_request_name (test->dbus,
+      CONN1_BUS_NAME, FALSE, &test->error);
+  g_assert_no_error (test->error);
+
+  tp_dbus_daemon_request_name (test->dbus,
+      CONN2_BUS_NAME, FALSE, &test->error);
+  g_assert_no_error (test->error);
+
   test->account_service = g_object_new (SIMPLE_TYPE_ACCOUNT, NULL);
 
   dbus_g_connection_register_g_object (
       tp_proxy_get_dbus_connection (test->dbus), ACCOUNT_PATH,
       G_OBJECT (test->account_service));
+}
+
+static guint
+test_get_times_notified (Test *test,
+    const gchar *property)
+{
+  return GPOINTER_TO_UINT (g_hash_table_lookup (test->times_notified,
+        property));
+}
+
+static void
+test_notify_cb (Test *test,
+    GParamSpec *pspec,
+    TpAccount *account)
+{
+  guint counter = test_get_times_notified (test, pspec->name);
+
+  g_hash_table_insert (test->times_notified, g_strdup (pspec->name),
+      GUINT_TO_POINTER (++counter));
+}
+
+static void
+test_set_up_account_notify (Test *test)
+{
+  g_assert (test->account != NULL);
+
+  g_hash_table_remove_all (test->times_notified);
+
+  if (test->notify_id != 0)
+    {
+      g_signal_handler_disconnect (test->account, test->notify_id);
+    }
+
+  test->notify_id = g_signal_connect_swapped (test->account, "notify",
+      G_CALLBACK (test_notify_cb), test);
 }
 
 static void
@@ -115,9 +170,19 @@ teardown (Test *test,
 {
   if (test->account != NULL)
     {
+      test_proxy_run_until_dbus_queue_processed (test->account);
+
+      if (test->notify_id != 0)
+        {
+          g_signal_handler_disconnect (test->account, test->notify_id);
+        }
+
       g_object_unref (test->account);
       test->account = NULL;
     }
+
+  g_hash_table_destroy (test->times_notified);
+  test->times_notified = NULL;
 
   g_object_unref (test->dbus);
   test->dbus = NULL;
@@ -130,6 +195,12 @@ teardown_service (Test *test,
     gconstpointer data)
 {
   tp_dbus_daemon_release_name (test->dbus, TP_ACCOUNT_MANAGER_BUS_NAME,
+      &test->error);
+  g_assert_no_error (test->error);
+  tp_dbus_daemon_release_name (test->dbus, CONN1_BUS_NAME,
+      &test->error);
+  g_assert_no_error (test->error);
+  tp_dbus_daemon_release_name (test->dbus, CONN2_BUS_NAME,
       &test->error);
   g_assert_no_error (test->error);
 
@@ -179,6 +250,9 @@ test_prepare_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+  TpConnectionStatusReason reason;
+  gchar *status = NULL;
+  gchar *message = NULL;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -186,6 +260,167 @@ test_prepare_success (Test *test,
   tp_account_prepare_async (test->account, account_features,
       account_prepare_cb, test);
   g_main_loop_run (test->mainloop);
+
+  /* the obvious accessors */
+  g_assert (tp_account_is_prepared (test->account, TP_ACCOUNT_FEATURE_CORE));
+  g_assert (tp_account_is_enabled (test->account));
+  g_assert (tp_account_is_valid (test->account));
+  g_assert_cmpstr (tp_account_get_display_name (test->account), ==,
+      "Fake Account");
+  g_assert_cmpstr (tp_account_get_nickname (test->account), ==, "badger");
+  g_assert_cmpuint (tp_asv_size (tp_account_get_parameters (test->account)),
+      ==, 0);
+  g_assert (!tp_account_get_connect_automatically (test->account));
+  g_assert (tp_account_get_has_been_online (test->account));
+  g_assert_cmpint (tp_account_get_connection_status (test->account, NULL),
+      ==, TP_CONNECTION_STATUS_CONNECTED);
+  g_assert_cmpint (tp_account_get_connection_status (test->account, &reason),
+      ==, TP_CONNECTION_STATUS_CONNECTED);
+  g_assert_cmpint (reason, ==, TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+  /* the CM and protocol come from the object path */
+  g_assert_cmpstr (tp_account_get_connection_manager (test->account),
+      ==, "what");
+  g_assert_cmpstr (tp_account_get_protocol (test->account), ==, "ev");
+
+  /* the icon name in SimpleAccount is "", so we guess based on the protocol */
+  g_assert_cmpstr (tp_account_get_icon_name (test->account), ==, "im-ev");
+
+  /* RequestedPresence is (Available, "available", "") */
+  g_assert_cmpint (tp_account_get_requested_presence (test->account, NULL,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpint (tp_account_get_requested_presence (test->account, &status,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (status, ==, "available");
+  g_free (status);
+  g_assert_cmpint (tp_account_get_requested_presence (test->account, NULL,
+        &message), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (message, ==, "");
+  g_free (message);
+
+  /* CurrentPresence is the same as RequestedPresence */
+  g_assert_cmpint (tp_account_get_current_presence (test->account, NULL,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpint (tp_account_get_current_presence (test->account, &status,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (status, ==, "available");
+  g_free (status);
+  g_assert_cmpint (tp_account_get_current_presence (test->account, NULL,
+        &message), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (message, ==, "");
+  g_free (message);
+
+  /* NormalizedName and AutomaticPresence aren't available yet */
+}
+
+static void
+test_connection (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+  GHashTable *change = tp_asv_new (NULL, NULL);
+  TpConnection *conn;
+
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
+  tp_account_prepare_async (test->account, account_features,
+      account_prepare_cb, test);
+  g_main_loop_run (test->mainloop);
+
+  g_assert (tp_account_is_prepared (test->account, TP_ACCOUNT_FEATURE_CORE));
+
+  /* a connection turns up */
+
+  test_set_up_account_notify (test);
+  tp_asv_set_object_path (change, "Connection", CONN1_PATH);
+  tp_asv_set_uint32 (change, "ConnectionStatus",
+      TP_CONNECTION_STATUS_CONNECTING);
+  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  tp_svc_account_emit_account_property_changed (test->account_service, change);
+  g_hash_table_remove_all (change);
+
+  while (test_get_times_notified (test, "connection") < 1)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+  conn = tp_account_get_connection (test->account);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+
+  /* ensure the same connection - no change notification */
+
+  test_set_up_account_notify (test);
+  conn = tp_account_ensure_connection (test->account, CONN1_PATH);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 0);
+
+  /* a no-op "change" */
+
+  test_set_up_account_notify (test);
+  tp_asv_set_object_path (change, "Connection", CONN1_PATH);
+  tp_asv_set_uint32 (change, "ConnectionStatus",
+      TP_CONNECTION_STATUS_CONNECTING);
+  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  tp_svc_account_emit_account_property_changed (test->account_service, change);
+  g_hash_table_remove_all (change);
+
+  test_proxy_run_until_dbus_queue_processed (test->account);
+
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 0);
+  conn = tp_account_get_connection (test->account);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 0);
+
+  /* atomically flip from one connection to another (unlikely) */
+
+  test_set_up_account_notify (test);
+  tp_asv_set_object_path (change, "Connection", CONN2_PATH);
+  tp_asv_set_uint32 (change, "ConnectionStatus",
+      TP_CONNECTION_STATUS_CONNECTED);
+  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  tp_svc_account_emit_account_property_changed (test->account_service, change);
+  g_hash_table_remove_all (change);
+
+  while (test_get_times_notified (test, "connection") < 1)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+  conn = tp_account_get_connection (test->account);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN2_PATH);
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+
+  /* no more connection for you */
+
+  test_set_up_account_notify (test);
+  tp_asv_set_object_path (change, "Connection", "/");
+  tp_asv_set_uint32 (change, "ConnectionStatus",
+      TP_CONNECTION_STATUS_DISCONNECTED);
+  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+      TP_CONNECTION_STATUS_REASON_ENCRYPTION_ERROR);
+  tp_svc_account_emit_account_property_changed (test->account_service, change);
+  g_hash_table_remove_all (change);
+
+  while (test_get_times_notified (test, "connection") < 1)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+  conn = tp_account_get_connection (test->account);
+  g_assert (conn == NULL);
+
+  /* staple on a Connection (this is intended for use in e.g. observers,
+   * if they're told about a Connection that the Account hasn't told them
+   * about yet) */
+
+  test_set_up_account_notify (test);
+  conn = tp_account_ensure_connection (test->account, CONN1_PATH);
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+
+  g_hash_table_destroy (change);
 }
 
 int
@@ -239,6 +474,9 @@ main (int argc,
 
   g_test_add ("/account/prepare/success", Test, NULL, setup_service,
               test_prepare_success, teardown_service);
+
+  g_test_add ("/account/connection", Test, NULL, setup_service,
+              test_connection, teardown_service);
 
   return g_test_run ();
 }
