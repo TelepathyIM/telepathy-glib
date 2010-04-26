@@ -1,7 +1,8 @@
 telepathy-glib 0.10.5 (UNRELEASED)
 ==================================
 
-...
+* Fix more assertion failures (this time in TpContact) if getting contact
+  attributes fails or yields the wrong type (wjt)
 
 telepathy-glib 0.10.4 (2010-04-20)
 ==================================
