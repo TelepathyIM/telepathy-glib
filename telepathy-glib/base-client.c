@@ -710,7 +710,7 @@ context_prepare_cb (GObject *source,
   g_list_free (requests_list);
 
   if (_tp_observe_channels_context_get_state (ctx) ==
-      TP_BASE_CLIENT_CONTEXT_STATE_NONE)
+      TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE)
     g_warning ("Implementation of ObserveChannels didn't call "
         "tp_observe_channels_context_{accept,fail,delay}");
 }

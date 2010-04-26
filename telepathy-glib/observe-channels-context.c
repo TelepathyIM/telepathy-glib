@@ -49,7 +49,7 @@ enum {
 
 struct _TpObserveChannelsContextPrivate
 {
-  TpBaseClientContextState state;
+  TpObserveChannelsContextState state;
   GSimpleAsyncResult *result;
 };
 
@@ -59,7 +59,7 @@ tp_observe_channels_context_init (TpObserveChannelsContext *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_OBSERVE_CHANNELS_CONTEXT, TpObserveChannelsContextPrivate);
 
-  self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_NONE;
+  self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE;
 }
 
 static void
@@ -300,7 +300,7 @@ _tp_observe_channels_context_new (
 void
 tp_observe_channels_context_accept (TpObserveChannelsContext *self)
 {
-  self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_DONE;
+  self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_DONE;
   dbus_g_method_return (self->dbus_context);
 }
 
@@ -308,14 +308,14 @@ void
 tp_observe_channels_context_fail (TpObserveChannelsContext *self,
     const GError *error)
 {
-  self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_FAILED;
+  self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_FAILED;
   dbus_g_method_return_error (self->dbus_context, error);
 }
 
 void
 tp_observe_channels_context_delay (TpObserveChannelsContext *self)
 {
-  self->priv->state = TP_BASE_CLIENT_CONTEXT_STATE_DELAYED;
+  self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED;
 }
 
 gboolean
@@ -326,7 +326,7 @@ tp_observe_channels_context_get_recovering (TpObserveChannelsContext *self)
   return tp_asv_get_boolean (self->observer_info, "recovering", NULL);
 }
 
-TpBaseClientContextState
+TpObserveChannelsContextState
 _tp_observe_channels_context_get_state (
     TpObserveChannelsContext *self)
 {

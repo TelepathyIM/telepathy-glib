@@ -54,7 +54,7 @@ TpObserveChannelsContext * _tp_observe_channels_context_new (
     GHashTable *observer_info,
     DBusGMethodInvocation *dbus_context);
 
-TpBaseClientContextState _tp_observe_channels_context_get_state (
+TpObserveChannelsContextState _tp_observe_channels_context_get_state (
     TpObserveChannelsContext *self);
 
 G_END_DECLS
