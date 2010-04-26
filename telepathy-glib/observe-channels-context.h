@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_BASE_CLIENT_CONTEXT_H__
-#define __TP_BASE_CLIENT_CONTEXT_H__
+#ifndef __TP_OBSERVE_CHANNELS_CONTEXT_H__
+#define __TP_OBSERVE_CHANNELS_CONTEXT_H__
 
 #include <gio/gio.h>
 #include <glib-object.h>

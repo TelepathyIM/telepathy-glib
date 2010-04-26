@@ -28,7 +28,7 @@
 
 #include "telepathy-glib/base-client.h"
 
-#include <telepathy-glib/base-client-context-internal.h>
+#include <telepathy-glib/observe-channels-context-internal.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/svc-client.h>

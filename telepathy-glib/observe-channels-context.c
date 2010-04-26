@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "telepathy-glib/base-client-context.h"
-#include "telepathy-glib/base-client-context-internal.h"
+#include "telepathy-glib/observe-channels-context.h"
+#include "telepathy-glib/observe-channels-context-internal.h"
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus.h>

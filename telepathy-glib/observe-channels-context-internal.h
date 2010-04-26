@@ -18,13 +18,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_BASE_CLIENT_CONTEXT_INTERNAL_H__
-#define __TP_BASE_CLIENT_CONTEXT_INTERNAL_H__
+#ifndef __TP_OBSERVE_CHANNELS_CONTEXT_INTERNAL_H__
+#define __TP_OBSERVE_CHANNELS_CONTEXT_INTERNAL_H__
 
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/account.h>
-#include <telepathy-glib/base-client-context.h>
+#include <telepathy-glib/observe-channels-context.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
 
 G_BEGIN_DECLS
