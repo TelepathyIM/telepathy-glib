@@ -3,15 +3,21 @@ telepathy-glib 0.11.4 (UNRELEASED)
 
 Enhancements:
 
-* fd.o #27794: improve regression test coverage for TpAccount (cassidy, smcv)
+∮ fd.o #27769: add TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS (Zdra)
+
+∮ fd.o #27794: improve regression test coverage for TpAccount (cassidy, smcv)
+
+∮ fd.o #19164: tighten the definition of TpChannel:identifier to guarantee
+  that it's always non-NULL, even before the channel is ready (previously,
+  it could be NULL before the channel was ready)
 
 Fixes:
 
-* fd.o #27780: when TpAccount:connection changes, emit notify::connection (smcv)
+∮ fd.o #27780: when TpAccount:connection changes, emit notify::connection (smcv)
 
-* Don't leak TpAccount:parameters when disposed (smcv)
+∮ Don't leak TpAccount:parameters when disposed (smcv)
 
-* Fix more assertion failures (this time in TpContact) if getting contact
+∮ Fix more assertion failures (this time in TpContact) if getting contact
   attributes fails or yields the wrong type (wjt)
 
 telepathy-glib 0.11.3 (2010-04-20)
