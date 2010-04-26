@@ -1,6 +1,16 @@
 telepathy-glib 0.10.5 (UNRELEASED)
 ==================================
 
+Enhancements:
+
+* fd.o #27794: improve regression test coverage for TpAccount (cassidy, smcv)
+
+Fixes:
+
+* fd.o #27780: when TpAccount:connection changes, emit notify::connection (smcv)
+
+* Don't leak TpAccount:parameters when disposed (smcv)
+
 * Fix more assertion failures (this time in TpContact) if getting contact
   attributes fails or yields the wrong type (wjt)
 
