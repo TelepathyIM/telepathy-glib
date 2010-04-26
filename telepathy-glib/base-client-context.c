@@ -21,6 +21,7 @@
 #include "telepathy-glib/base-client-context.h"
 #include "telepathy-glib/base-client-context-internal.h"
 
+#include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 
@@ -335,13 +336,22 @@ _tp_observe_channels_context_get_state (
 static gboolean
 context_is_prepared (TpObserveChannelsContext *self)
 {
+  guint i;
+
   if (!tp_proxy_is_prepared (self->account, TP_ACCOUNT_FEATURE_CORE))
     return FALSE;
 
   if (!tp_proxy_is_prepared (self->connection, TP_CONNECTION_FEATURE_CORE))
     return FALSE;
 
-  /* TODO */
+  for (i = 0; i < self->channels->len; i++)
+    {
+      TpChannel *channel = g_ptr_array_index (self->channels, i);
+
+      if (!tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE))
+        return FALSE;
+    }
+
   return TRUE;
 }
 
@@ -422,10 +432,37 @@ out:
 }
 
 static void
+channel_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpObserveChannelsContext *self = user_data;
+  GError *error = NULL;
+
+  if (self->priv->result == NULL)
+    goto out;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      DEBUG ("Failed to prepare channel: %s", error->message);
+      failed_to_prepare (self, error);
+      g_error_free (error);
+      goto out;
+    }
+
+  context_check_prepare (self);
+
+out:
+  g_object_unref (self);
+}
+
+static void
 context_prepare (TpObserveChannelsContext *self)
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
+  GQuark channel_features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
+  guint i;
 
   tp_proxy_prepare_async (self->account, account_features,
       account_prepare_cb, g_object_ref (self));
@@ -433,7 +470,13 @@ context_prepare (TpObserveChannelsContext *self)
   tp_proxy_prepare_async (self->connection, conn_features,
       conn_prepare_cb, g_object_ref (self));
 
-  /* FIXME: prepare other objects */
+  for (i = 0; i < self->channels->len; i++)
+    {
+      TpChannel *channel = g_ptr_array_index (self->channels, i);
+
+      tp_proxy_prepare_async (channel, channel_features,
+          channel_prepare_cb, g_object_ref (self));
+    }
 }
 
 void
