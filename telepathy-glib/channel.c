@@ -1138,17 +1138,20 @@ tp_channel_closed_cb (TpChannel *self,
                       gpointer user_data,
                       GObject *weak_object)
 {
-  GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
-      "Channel was closed" };
 
-  if (self->priv->group_remove_message != NULL)
+  if (self->priv->group_remove_error != NULL)
     {
-      e.domain = TP_ERRORS_REMOVED_FROM_GROUP;
-      e.code = self->priv->group_remove_reason;
-      e.message = self->priv->group_remove_message;
+      /* use the error provided by the Group code */
+      tp_proxy_invalidate ((TpProxy *) self, self->priv->group_remove_error);
+      g_clear_error (&self->priv->group_remove_error);
     }
+  else
+    {
+      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
+          "Channel was closed" };
 
-  tp_proxy_invalidate ((TpProxy *) self, &e);
+      tp_proxy_invalidate ((TpProxy *) self, &e);
+    }
 }
 
 static void
@@ -1297,8 +1300,8 @@ tp_channel_finalize (GObject *object)
 
   DEBUG ("%p", self);
 
-  g_free (self->priv->group_remove_message);
-  self->priv->group_remove_message = NULL;
+  if (self->priv->group_remove_error != NULL)
+    g_clear_error (&self->priv->group_remove_error);
 
   if (self->priv->group_local_pending_info != NULL)
     {

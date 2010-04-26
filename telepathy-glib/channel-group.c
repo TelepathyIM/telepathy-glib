@@ -937,17 +937,46 @@ handle_members_changed (TpChannel *self,
           handle == tp_connection_get_self_handle (self->priv->connection))
         {
           const gchar *error_detail = tp_asv_get_string (details, "error");
+          const gchar *debug_message = tp_asv_get_string (details,
+              "debug-message");
 
-          self->priv->group_remove_reason = reason;
-          g_free (self->priv->group_remove_message);
+          if (debug_message == NULL && message[0] != '\0')
+            debug_message = message;
 
-          /* If there's an error detail and a message, "$error: $message", else
-           * just the non-empty one (or indeed the empty string).
-           */
-          self->priv->group_remove_message = g_strdup_printf ("%s%s%s",
-              (error_detail != NULL ? error_detail : ""),
-              (error_detail != NULL && message[0] != '\0' ? ": " : ""),
-              message);
+          if (debug_message == NULL && error_detail != NULL)
+            debug_message = error_detail;
+
+          if (debug_message == NULL)
+            debug_message = "(no message provided)";
+
+          if (self->priv->group_remove_error != NULL)
+            g_clear_error (&self->priv->group_remove_error);
+
+          if (error_detail != NULL)
+            {
+              /* CM specified a D-Bus error name */
+              tp_proxy_dbus_error_to_gerror (self, error_detail,
+                  debug_message == NULL || debug_message[0] == '\0'
+                      ? error_detail
+                      : debug_message,
+                  &self->priv->group_remove_error);
+
+              /* ... but if we don't know anything about that D-Bus error
+               * name, we can still do better by using RemovedFromGroup */
+              if (g_error_matches (self->priv->group_remove_error,
+                    TP_DBUS_ERRORS, TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR))
+                {
+                  self->priv->group_remove_error->domain =
+                    TP_ERRORS_REMOVED_FROM_GROUP;
+                  self->priv->group_remove_error->code = reason;
+                }
+            }
+          else
+            {
+              /* Use our separate error domain */
+              g_set_error_literal (&self->priv->group_remove_error,
+                  TP_ERRORS_REMOVED_FROM_GROUP, reason, debug_message);
+            }
         }
     }
 
