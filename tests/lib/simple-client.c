@@ -35,6 +35,23 @@ simple_observe_channels (
     TpObserveChannelsContext *context)
 {
   SimpleClient *self = SIMPLE_CLIENT (client);
+  GHashTable *info;
+  gboolean fail;
+
+  /* Fail if caller set the fake "FAIL" info */
+  g_object_get (context, "observer-info", &info, NULL);
+  fail = tp_asv_get_boolean (info, "FAIL", NULL);
+  g_hash_table_unref (info);
+
+  if (fail)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "No observation for you!" };
+
+      self->observe_ctx = NULL;
+      tp_observe_channels_context_fail (context, &error);
+      return;
+    }
 
   if (self->observe_ctx != NULL)
     g_object_unref (self->observe_ctx);
