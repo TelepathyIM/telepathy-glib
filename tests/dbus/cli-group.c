@@ -295,36 +295,36 @@ run_membership_tests (void)
 }
 
 #define REMOVED_REASON TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER
-#define REMOVED_ERROR "if.bob.dylan.were.hiding.at.the.bottom.of.a.well"
+#define REMOVED_KNOWN_ERROR_CODE TP_ERROR_CONNECTION_REFUSED
+#define REMOVED_KNOWN_ERROR_STR TP_ERROR_STR_CONNECTION_REFUSED
+#define REMOVED_UNKNOWN_ERROR "if.bob.dylan.were.hiding.at.the.bottom.of.a.well"
 #define REMOVED_MESSAGE \
   "I'm just sittin' here, hidin' inside of a well, and I ain't comin' out!"
 
 static void
-check_invalidated_cb (TpProxy *proxy,
-                      guint domain,
-                      gint code,
-                      gchar *message,
-                      gpointer user_data)
+check_invalidated_unknown_error_cb (TpProxy *proxy,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
 {
   gboolean *invalidated = user_data;
+  GError e = { domain, code, message };
+  GError *error = &e;
 
   MYASSERT (!*invalidated, "");
   *invalidated = TRUE;
 
-  MYASSERT (domain == TP_ERRORS_REMOVED_FROM_GROUP, ": %u (%s) != %u (%s)",
-      domain, g_quark_to_string (domain),
-      TP_ERRORS_REMOVED_FROM_GROUP, g_quark_to_string
-      (TP_ERRORS_REMOVED_FROM_GROUP));
-  MYASSERT (code == REMOVED_REASON, ": %i != %i", code, REMOVED_REASON);
-  MYASSERT (strstr (message, REMOVED_ERROR) != NULL, " (%s, %s)", message,
-      REMOVED_ERROR);
+  g_assert_error (error, TP_ERRORS_REMOVED_FROM_GROUP, REMOVED_REASON);
+  MYASSERT (strstr (message, REMOVED_UNKNOWN_ERROR) != NULL, " (%s, %s)",
+      message, REMOVED_UNKNOWN_ERROR);
   MYASSERT (strstr (message, REMOVED_MESSAGE) != NULL, " (%s, %s)", message,
       REMOVED_MESSAGE);
 }
 
 
 static void
-check_removed_error_in_invalidated (void)
+check_removed_unknown_error_in_invalidated (void)
 {
   gchar *chan_path;
   TestTextChannelGroup *service_chan;
@@ -352,8 +352,8 @@ check_removed_error_in_invalidated (void)
   test_assert_no_error (error);
   DEBUG ("ready!");
 
-  g_signal_connect (chan, "invalidated", (GCallback) check_invalidated_cb,
-      &invalidated);
+  g_signal_connect (chan, "invalidated",
+      (GCallback) check_invalidated_unknown_error_cb, &invalidated);
 
   tp_intset_add (self_handle_singleton, self_handle);
   tp_group_mixin_change_members ((GObject *) service_chan, "hello",
@@ -369,7 +369,96 @@ check_removed_error_in_invalidated (void)
       tp_g_value_slice_new_static_string (REMOVED_MESSAGE));
 
   g_hash_table_insert (details, "error",
-      tp_g_value_slice_new_static_string (REMOVED_ERROR));
+      tp_g_value_slice_new_static_string (REMOVED_UNKNOWN_ERROR));
+
+  tp_group_mixin_change_members_detailed ((GObject *) service_chan, NULL,
+      self_handle_singleton, NULL, NULL, details);
+
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  tp_cli_channel_call_close (chan, -1, NULL, NULL, NULL, NULL);
+
+  g_hash_table_unref (details);
+
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  MYASSERT (invalidated, "");
+
+  g_object_unref (chan);
+  g_object_unref (service_chan);
+  g_free (chan_path);
+  tp_intset_destroy (self_handle_singleton);
+}
+
+static void
+check_invalidated_known_error_cb (TpProxy *proxy,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
+{
+  gboolean *invalidated = user_data;
+  GError e = { domain, code, message };
+  GError *error = &e;
+
+  MYASSERT (!*invalidated, "");
+  *invalidated = TRUE;
+
+  g_assert_error (error, TP_ERRORS, REMOVED_KNOWN_ERROR_CODE);
+  MYASSERT (strstr (message, REMOVED_KNOWN_ERROR_STR) == NULL, " (%s, %s)",
+      message, REMOVED_KNOWN_ERROR_STR);
+  MYASSERT (strstr (message, REMOVED_MESSAGE) != NULL, " (%s, %s)", message,
+      REMOVED_MESSAGE);
+}
+
+
+static void
+check_removed_known_error_in_invalidated (void)
+{
+  gchar *chan_path;
+  TestTextChannelGroup *service_chan;
+  TpChannel *chan;
+  TpIntSet *self_handle_singleton = tp_intset_new ();
+  GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  gboolean invalidated = FALSE;
+  GError *error = NULL;
+
+  chan_path = g_strdup_printf ("%s/Channel_1_6180339887", conn_path);
+  service_chan = TEST_TEXT_CHANNEL_GROUP (g_object_new (
+      TEST_TYPE_TEXT_CHANNEL_GROUP,
+      "connection", service_conn,
+      "object-path", chan_path,
+      "detailed", TRUE,
+      "properties", TRUE,
+      NULL));
+  chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
+      &error);
+
+  test_assert_no_error (error);
+
+  MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
+  test_assert_no_error (error);
+  DEBUG ("ready!");
+
+  g_signal_connect (chan, "invalidated",
+      (GCallback) check_invalidated_known_error_cb, &invalidated);
+
+  tp_intset_add (self_handle_singleton, self_handle);
+  tp_group_mixin_change_members ((GObject *) service_chan, "hello",
+      self_handle_singleton, NULL, NULL, NULL, 0,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  test_connection_run_until_dbus_queue_processed (conn);
+
+  g_hash_table_insert (details, "change-reason",
+      tp_g_value_slice_new_uint (REMOVED_REASON));
+
+  g_hash_table_insert (details, "message",
+      tp_g_value_slice_new_static_string (REMOVED_MESSAGE));
+
+  g_hash_table_insert (details, "error",
+      tp_g_value_slice_new_static_string (REMOVED_KNOWN_ERROR_STR));
 
   tp_group_mixin_change_members_detailed ((GObject *) service_chan, NULL,
       self_handle_singleton, NULL, NULL, details);
@@ -437,7 +526,8 @@ main (int argc,
   test_assert_no_error (error);
 
   run_membership_tests ();
-  check_removed_error_in_invalidated ();
+  check_removed_unknown_error_in_invalidated ();
+  check_removed_known_error_in_invalidated ();
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
   test_assert_no_error (error);
