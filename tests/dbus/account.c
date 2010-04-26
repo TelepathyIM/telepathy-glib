@@ -254,7 +254,7 @@ test_prepare_success (Test *test,
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
 
-  tp_account_prepare_async (test->account, account_features,
+  tp_proxy_prepare_async (test->account, account_features,
       account_prepare_cb, test);
   g_main_loop_run (test->mainloop);
 
