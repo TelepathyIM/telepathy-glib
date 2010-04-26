@@ -52,7 +52,7 @@ struct _TpConnection {
 typedef struct _TpAvatarRequirements TpAvatarRequirements;
 struct _TpAvatarRequirements
 {
-  GStrv supported_mime_types;
+  gchar **supported_mime_types;
   guint minimum_width;
   guint minimum_height;
   guint recommended_width;
