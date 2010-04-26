@@ -407,17 +407,17 @@ test_observer (Test *test,
   g_assert (tp_observe_channels_context_get_recovering (
         test->simple_client->observe_ctx));
 
-#if 0
   /* Now call it with an invalid argument */
+  tp_asv_set_boolean (info, "FAIL", TRUE);
+
   tp_cli_client_observer_call_observe_channels (test->client, -1,
-      "/INVALID",
-      "/INVALID",
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
       channels, "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
-#endif
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
