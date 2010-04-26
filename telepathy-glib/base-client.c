@@ -23,7 +23,46 @@
  * @title: TpBaseClient
  * @short_description: base class for Telepathy clients on D-Bus
  *
- * FIXME
+ * This base class makes it easier to write #TpSvcClient
+ * implementations. Subclasses should usually pass the filters they
+ * want and override the D-Bus methods they implement.
+ */
+
+/**
+ * TpBaseClient:
+ *
+ * Data structure representing a generic #TpSvcClient implementation.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+/**
+ * TpBaseClientClass:
+ *
+ * The class of a #TpBaseClient.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+/**
+ * TpBaseClientClassObserveChannelsImpl:
+ * @self: a #TpBaseClient instance
+ * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared
+ * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
+ * @channels: a #GPtrArray of #TpChannel having all %TP_CHANNEL_FEATURE_CORE
+ * prepared
+ * @dispatch_operation: a #TpChannelDispatchOperation or %NULL; the
+ * dispatch_operation is not garanteed to be prepared
+ * @requests: a #GList of #TpChannelRequest having their object-path defined
+ * but are not garanteed to be prepared.
+ * @context: a #TpObserveChannelsContext representing the context of this
+ * D-Bus call
+ *
+ * Signature of the implementation of the ObserveChannels method.
+ * This function MUST call tp_observe_channels_context_accept,
+ * tp_observe_channels_context_delay or tp_observe_channels_context_fail.
+ *
+ * Since: 0.11.UNRELEASED
  */
 
 #include "telepathy-glib/base-client.h"
@@ -109,6 +148,15 @@ _tp_base_client_copy_filter (GHashTable *filter)
   return copy;
 }
 
+/**
+ * tp_base_client_add_observer_filter:
+ * @self: a #TpBaseClient
+ * @filter: a %TP_HASH_TYPE_CHANNEL_CLASS
+ *
+ * Register a new channel class as Observer.ObserverChannelFilter
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_add_observer_filter (TpBaseClient *self,
     GHashTable *filter)
@@ -119,7 +167,7 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
 }
 
 /**
- * tp_base_client_take_observer_filter: (skip)
+ * tp_base_client_take_observer_filter:
  * @self: a client
  * @filter: a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
  *
@@ -135,6 +183,8 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
  *            TP_HANDLE_TYPE_CONTACT,
  *        ...));
  * ]|
+ *
+ * Since: 0.11.UNRELEASED
  */
 void
 tp_base_client_take_observer_filter (TpBaseClient *self,
@@ -147,6 +197,15 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
   g_ptr_array_add (self->priv->observer_filters, filter);
 }
 
+/**
+ * tp_base_client_set_observer_recover:
+ * @self: a #TpBaseClient
+ * @recover: the value of the Observer.Recover property
+ *
+ * Define the value of the Observer.Recover property.
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_set_observer_recover (TpBaseClient *self,
     gboolean recover)
@@ -318,7 +377,7 @@ tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
 
 /**
  * tp_base_client_register:
- * @self: a client, which must not have been registered with
+ * @self: a #TpBaseClient, which must not have been registered with
  *  tp_base_client_register() yet
  *
  * Publish @self as an available client. After this method is called, as long
@@ -665,18 +724,46 @@ tp_base_client_class_init (TpBaseClientClass *cls)
   object_class->dispose = tp_base_client_dispose;
   object_class->finalize = tp_base_client_finalize;
 
+  /**
+   * TpBaseClient:dbus-daemon:
+   *
+   * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
+   * Read-only except during construction.
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   param_spec = g_param_spec_object ("dbus-daemon", "TpDBusDaemon object",
       "The dbus daemon associated with this client",
       TP_TYPE_DBUS_DAEMON,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_DAEMON, param_spec);
 
+  /**
+   * TpBaseClient:name:
+   *
+   * The name of the client. This is used to register the D-Bus service name
+   * and object path of the service.
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
  param_spec = g_param_spec_string ("name", "name",
       "The name of the client",
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_NAME, param_spec);
 
+  /**
+   * TpBaseClient:uniquify-name:
+   *
+   * If %TRUE, tp_base_client_register() will append an unique token to the
+   * service bus name and object path to ensure they are unique.
+   *
+   * Since: 0.11.UNRELEASED
+   */
  param_spec = g_param_spec_boolean ("uniquify-name", "Uniquify name",
       "if TRUE, append a unique token to the name",
       FALSE,
@@ -992,6 +1079,17 @@ requests_iface_init (gpointer g_iface,
 #endif
 }
 
+/**
+ * tp_base_client_implement_observe_channels:
+ * @klass: the #TpBaseClientClass of the object
+ * @impl: the #TpBaseClientClassObserveChannelsImpl function implementing
+ * ObserveChannels()
+ *
+ * Called by subclasses to define the actual implementation of the
+ * ObserveChannels() D-Bus method.
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
     TpBaseClientClassObserveChannelsImpl impl)

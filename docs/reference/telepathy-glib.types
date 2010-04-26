@@ -1,7 +1,8 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-manager.h>
-#include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/base-client.h>
 #include <telepathy-glib/base-connection-manager.h>
+#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/channel-factory-iface.h>
 #include <telepathy-glib/channel.h>
@@ -37,6 +38,7 @@
 
 tp_account_get_type
 tp_account_manager_get_type
+tp_base_client_get_type
 tp_base_connection_get_type
 tp_base_connection_manager_get_type
 tp_capabilities_get_type
