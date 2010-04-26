@@ -6,6 +6,9 @@ Fixes:
 * fd.o #27537: fix assertion failure if getting contact attributes
   fails (cassidy)
 
+* Fix more assertion failures (this time in TpContact) if getting contact
+  attributes fails or yields the wrong type (wjt)
+
 telepathy-glib 0.8.3 (2010-04-06)
 =================================
 
