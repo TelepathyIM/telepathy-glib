@@ -38,8 +38,9 @@ struct _TpObserveChannelsContext {
   TpConnection *connection;
   /* array of reffed TpChannel */
   GPtrArray *channels;
-  /* List of reffed TpChannelDispatchOperation */
+  /* Reffed TpChannelDispatchOperation, or NULL */
   TpChannelDispatchOperation *dispatch_operation;
+  /* Array of reffed TpChannelRequest */
   GPtrArray *requests;
   GHashTable *observer_info;
   DBusGMethodInvocation *dbus_context;
