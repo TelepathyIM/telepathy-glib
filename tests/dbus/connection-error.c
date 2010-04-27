@@ -121,7 +121,8 @@ global_setup (void)
 }
 
 static void
-setup (Test *test)
+setup (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
 
@@ -153,7 +154,8 @@ setup (Test *test)
 }
 
 static void
-teardown (Test *test)
+teardown (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
 {
   tp_cli_connection_run_disconnect (test->conn, -1, NULL, NULL);
 
@@ -165,16 +167,12 @@ teardown (Test *test)
   g_main_loop_unref (test->mainloop);
 }
 
-int
-main (int argc,
-      char **argv)
+static void
+test_registered_error (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
   const GHashTable *asv;
-  Test test_struct = { NULL };
-  Test *test = &test_struct;
-
-  setup (test);
 
   asv = GUINT_TO_POINTER (0xDEADBEEF);
   g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
@@ -213,8 +211,16 @@ main (int argc,
   MYASSERT_SAME_UINT (error->code, DOMAIN_SPECIFIC_ERROR);
   g_error_free (error);
   error = NULL;
+}
 
-  teardown (test);
+int
+main (int argc,
+      char **argv)
+{
+  g_test_init (&argc, &argv, NULL);
 
-  return 0;
+  g_test_add ("/connection/registered-error", Test, NULL, setup,
+      test_registered_error, teardown);
+
+  return g_test_run ();
 }
