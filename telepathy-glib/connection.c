@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+#include <dbus/dbus-protocol.h>
+
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
@@ -2178,4 +2180,78 @@ tp_avatar_requirements_destroy (TpAvatarRequirements *self)
 
   g_strfreev (self->supported_mime_types);
   g_slice_free (TpAvatarRequirements, self);
+}
+
+/**
+ * tp_connection_get_detailed_error:
+ * @self: a connection
+ * @details: (out) (allow-none) (element-type utf8 GObject.Value) (transfer none):
+ *  optionally used to return a map from string to #GValue, which must not be
+ *  modified or destroyed by the caller
+ *
+ * If the connection has disconnected, return the D-Bus error name with which
+ * it disconnected (in particular, this is %TP_ERROR_STR_CANCELLED if it was
+ * disconnected by a user request).
+ *
+ * Otherwise, return %NULL, without altering @details.
+ *
+ * Returns: (transfer none) (allow-none): a D-Bus error name, or %NULL.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_connection_get_detailed_error (TpConnection *self,
+    const GHashTable **details)
+{
+  TpProxy *proxy = (TpProxy *) self;
+
+  if (proxy->invalidated == NULL)
+    return NULL;
+
+  if (self->priv->connection_error != NULL)
+    {
+      g_assert (self->priv->connection_error_details != NULL);
+
+      if (details != NULL)
+        *details = self->priv->connection_error_details;
+
+      return self->priv->connection_error;
+    }
+  else
+    {
+      /* no detailed error, but we *have* been invalidated - guess one based
+       * on the invalidation reason, and don't give any details */
+
+      if (details != NULL)
+        *details = tp_asv_new (NULL, NULL);
+
+      if (proxy->invalidated->domain == TP_ERRORS)
+        {
+          return tp_error_get_dbus_name (proxy->invalidated->code);
+        }
+      else if (proxy->invalidated->domain == TP_DBUS_ERRORS)
+        {
+          switch (proxy->invalidated->code)
+            {
+            case TP_DBUS_ERROR_NAME_OWNER_LOST:
+              /* the CM probably crashed */
+              return DBUS_ERROR_NO_REPLY;
+              break;
+
+            case TP_DBUS_ERROR_OBJECT_REMOVED:
+            case TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR:
+            case TP_DBUS_ERROR_INCONSISTENT:
+            /* ... and all other cases up to and including
+             * TP_DBUS_ERROR_INCONSISTENT don't make sense in this context, so
+             * just use the generic one for them too */
+            default:
+              return TP_ERROR_STR_DISCONNECTED;
+            }
+        }
+      else
+        {
+          /* no idea what that means */
+          return TP_ERROR_STR_DISCONNECTED;
+        }
+    }
 }

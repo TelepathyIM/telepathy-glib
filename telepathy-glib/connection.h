@@ -156,6 +156,9 @@ gint tp_connection_presence_type_cmp_availability (TpConnectionPresenceType p1,
 gboolean tp_connection_parse_object_path (TpConnection *self, gchar **protocol,
     gchar **cm_name);
 
+const gchar *tp_connection_get_detailed_error (TpConnection *self,
+    const GHashTable **details);
+
 #define TP_CONNECTION_FEATURE_CORE \
   (tp_connection_get_feature_quark_core ())
 GQuark tp_connection_get_feature_quark_core (void) G_GNUC_CONST;

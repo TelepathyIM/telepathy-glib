@@ -2772,6 +2772,7 @@ tp_connection_get_capabilities
 tp_connection_get_avatar_requirements
 TP_UNKNOWN_CONNECTION_STATUS
 TP_ERRORS_DISCONNECTED
+tp_connection_get_detailed_error
 <SUBSECTION Standard>
 tp_errors_disconnected_quark
 tp_connection_get_type
