@@ -792,7 +792,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       goto out;
     }
 
-  channels = g_ptr_array_new_with_free_func (g_object_unref);
+  channels = g_ptr_array_sized_new (channels_arr->len);
+  g_ptr_array_set_free_func (channels, g_object_unref);
   for (i = 0; i < channels_arr->len; i++)
     {
       const gchar *chan_path;
@@ -829,7 +830,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
         }
     }
 
-  requests = g_ptr_array_new_with_free_func (g_object_unref);
+  requests = g_ptr_array_sized_new (requests_arr->len);
+  g_ptr_array_set_free_func (requests, g_object_unref);
   for (i = 0; i < requests_arr->len; i++)
     {
       const gchar *req_path = g_ptr_array_index (requests_arr, i);
