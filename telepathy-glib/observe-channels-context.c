@@ -142,9 +142,6 @@ tp_observe_channels_context_get_property (GObject *object,
       case PROP_REQUESTS:
         g_value_set_boxed (value, self->requests);
         break;
-      case PROP_DBUS_CONTEXT:
-        g_value_set_pointer (value, self->dbus_context);
-        break;
       case PROP_OBSERVER_INFO:
         g_value_set_boxed (value, self->observer_info);
         break;
@@ -264,7 +261,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
 
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
       "The DBusGMethodInvocation associated with the ObserveChannels call",
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONTEXT,
       param_spec);
 
