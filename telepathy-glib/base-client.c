@@ -505,6 +505,20 @@ tp_base_client_set_property (GObject *object,
   }
 }
 
+static void
+tp_base_client_constructed (GObject *object)
+{
+  TpBaseClient *self = TP_BASE_CLIENT (object);
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) tp_base_client_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  g_assert (self->priv->dbus != NULL);
+  g_assert (self->priv->name != NULL);
+}
+
 typedef enum {
     DP_INTERFACES,
     DP_APPROVER_CHANNEL_FILTER,
@@ -647,6 +661,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
 
   object_class->get_property = tp_base_client_get_property;
   object_class->set_property = tp_base_client_set_property;
+  object_class->constructed = tp_base_client_constructed;
   object_class->dispose = tp_base_client_dispose;
   object_class->finalize = tp_base_client_finalize;
 
