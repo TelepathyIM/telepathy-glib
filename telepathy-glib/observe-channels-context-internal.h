@@ -29,6 +29,14 @@
 
 G_BEGIN_DECLS
 
+typedef enum
+{
+  TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE,
+  TP_OBSERVE_CHANNELS_CONTEXT_STATE_DONE,
+  TP_OBSERVE_CHANNELS_CONTEXT_STATE_FAILED,
+  TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED,
+} TpObserveChannelsContextState;
+
 struct _TpObserveChannelsContext {
   /*<private>*/
   GObject parent;
