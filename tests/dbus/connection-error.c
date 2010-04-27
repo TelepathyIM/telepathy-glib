@@ -93,27 +93,59 @@ example_com_error_quark (void)
   return (GQuark) quark;
 }
 
+typedef struct {
+  TpDBusDaemon *dbus;
+  GMainLoop *mainloop;
+} Test;
+
+static void
+global_setup (void)
+{
+  static gboolean done = FALSE;
+
+  if (done)
+    return;
+
+  done = TRUE;
+
+  g_type_init ();
+  tp_debug_set_flags ("all");
+
+  tp_proxy_subclass_add_error_mapping (TP_TYPE_CONNECTION,
+      "com.example", example_com_error_quark (), example_com_error_get_type ());
+}
+
+static void
+setup (Test *test)
+{
+  global_setup ();
+
+  test->mainloop = g_main_loop_new (NULL, FALSE);
+  test->dbus = test_dbus_daemon_dup_or_die ();
+}
+
+static void
+teardown (Test *test)
+{
+  g_object_unref (test->dbus);
+  g_main_loop_unref (test->mainloop);
+}
+
 int
 main (int argc,
       char **argv)
 {
-  TpDBusDaemon *dbus;
   SimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
   TpConnection *conn;
-  GMainLoop *mainloop;
   const GHashTable *asv;
+  Test test_struct = { NULL };
+  Test *test = &test_struct;
 
-  g_type_init ();
-  tp_debug_set_flags ("all");
-  mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = test_dbus_daemon_dup_or_die ();
-
-  tp_proxy_subclass_add_error_mapping (TP_TYPE_CONNECTION,
-      "com.example", example_com_error_quark (), example_com_error_get_type ());
+  setup (test);
 
   service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
         SIMPLE_TYPE_CONNECTION,
@@ -128,7 +160,7 @@ main (int argc,
         &name, &conn_path, &error), "");
   test_assert_no_error (error);
 
-  conn = tp_connection_new (dbus, name, conn_path, &error);
+  conn = tp_connection_new (test->dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
   test_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
@@ -144,13 +176,13 @@ main (int argc,
   tp_cli_connection_connect_to_connection_error (conn, on_connection_error,
       NULL, NULL, NULL, NULL);
   tp_cli_connection_connect_to_status_changed (conn, on_status_changed,
-      mainloop, NULL, NULL, NULL);
+      test->mainloop, NULL, NULL, NULL);
 
   tp_base_connection_disconnect_with_dbus_error (service_conn_as_base,
       "com.example.DomainSpecificError", NULL,
       TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
 
-  g_main_loop_run (mainloop);
+  g_main_loop_run (test->mainloop);
 
   MYASSERT_SAME_UINT (connection_errors, 1);
 
@@ -175,8 +207,7 @@ main (int argc,
   g_free (name);
   g_free (conn_path);
 
-  g_object_unref (dbus);
-  g_main_loop_unref (mainloop);
+  teardown (test);
 
   return 0;
 }
