@@ -199,6 +199,9 @@ tp_connection_get_feature_quark_avatar_requirements (void)
  *
  * This macro expands to a function call returning a #GQuark.
  *
+ * Since 0.7.24, this error domain is only used if a connection manager emits
+ * a #TpConnectionStatusReason not known to telepathy-glib.
+ *
  * Since: 0.7.1
  */
 GQuark
