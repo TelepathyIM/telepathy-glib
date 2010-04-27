@@ -59,7 +59,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
   test->dbus = test_dbus_daemon_dup_or_die ();
 
-  test->service_conn = SIMPLE_CONNECTION (g_object_new (
+  test->service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
         SIMPLE_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple-protocol",

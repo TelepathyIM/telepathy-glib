@@ -86,7 +86,7 @@ setup (Test *test,
 
   test->cr = NULL;
 
-  test->cr_service = g_object_new (test_simple_cr_get_type (),
+  test->cr_service = test_object_new_static_class (test_simple_cr_get_type (),
       NULL);
   tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cr_service);
@@ -123,6 +123,9 @@ teardown (Test *test,
       dbus_g_connection_unref (test->private_conn);
       test->private_conn = NULL;
     }
+
+  /* make sure any pending things have happened */
+  test_proxy_run_until_dbus_queue_processed (test->dbus);
 
   g_object_unref (test->dbus);
   test->dbus = NULL;

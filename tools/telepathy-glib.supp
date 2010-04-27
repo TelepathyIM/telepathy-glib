@@ -22,6 +22,27 @@
    fun:tp_handle_ensure
 }
 
+{
+   ld.so initialization on glibc 2.9
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start
+   obj:/lib/ld-2.9.so
+}
+
+{
+   ld.so initialization on glibc 2.9
+   Memcheck:Cond
+   fun:strlen
+   fun:_dl_init_paths
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start
+   obj:/lib/ld-2.9.so
+}
+
 # ============================= GLib ==================================
 
 {
@@ -131,6 +152,24 @@
    fun:g_type_register_static
 }
 
+{
+   g_type_add_interface_static
+   Memcheck:Leak
+   ...
+   fun:g_type_add_interface_static
+}
+
+# ============================= GIO ===================================
+
+{
+   g_simple_async_result class
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:g_simple_async_result_new
+}
+
 # ============================= dbus-glib =============================
 
 {
@@ -220,38 +259,67 @@
    fun:tp_dbus_daemon_constructor
 }
 
-# ============================= unclassified ==========================
-
 {
-   creating param specs in tp_proxy_class_intern_init
+   tp_g_socket_address_from_variant reffing GNIO types
    Memcheck:Leak
-   fun:memalign
-   fun:posix_memalign
-   fun:slab_allocator_alloc_chunk
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:tp_g_socket_address_from_variant
+}
+
+{
+   creating classes for DBusGProxy
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:g_object_new
+   ...
+   fun:tp_proxy_borrow_interface_by_id
+}
+
+{
+   creating classes for tp_dbus_daemon_new
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:g_object_new
+   ...
+   fun:tp_dbus_daemon_new
+}
+
+{
+   creating classes for TpCHannel
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:g_object_new
+   ...
+   fun:tp_channel_new
+}
+
+{
+   creating a boxed type to use in TpCapabilities
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:g_param_spec_boxed
+   fun:tp_capabilities_class_intern_init
+}
+
+# ============================= questionable ==========================
+
+{
+   creating classes for instances (this is a pretty big hammer)
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
    fun:g_type_create_instance
-   fun:g_param_spec_internal
+   ...
    fun:g_param_spec_string
-}
-
-{
-   ld.so initialization on glibc 2.9
-   Memcheck:Cond
-   fun:_dl_relocate_object
-   fun:dl_main
-   fun:_dl_sysdep_start
-   fun:_dl_start
-   obj:/lib/ld-2.9.so
-}
-
-{
-   ld.so initialization on glibc 2.9
-   Memcheck:Cond
-   fun:strlen
-   fun:_dl_init_paths
-   fun:dl_main
-   fun:_dl_sysdep_start
-   fun:_dl_start
-   obj:/lib/ld-2.9.so
 }

@@ -67,7 +67,7 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service = SIMPLE_CONNECTION (g_object_new (SIMPLE_TYPE_CONNECTION,
+  service = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

@@ -1,0 +1,10 @@
+# Valgrind error suppression file
+
+{
+   static classes in tests
+   Memcheck:Leak
+   ...
+   fun:g_type_class_ref
+   ...
+   fun:test_object_new_static_class
+}

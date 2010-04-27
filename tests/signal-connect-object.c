@@ -62,10 +62,10 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->caught = 0;
-  test->observer = g_object_new (stub_object_get_type (),
+  test->observer = test_object_new_static_class (stub_object_get_type (),
     NULL);
   g_object_set_data (test->observer, DATA_KEY, test);
-  test->emitter = g_object_new (stub_object_get_type (),
+  test->emitter = test_object_new_static_class (stub_object_get_type (),
     NULL);
 }
 

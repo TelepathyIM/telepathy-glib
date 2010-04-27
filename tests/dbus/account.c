@@ -183,6 +183,9 @@ teardown (Test *test,
   g_hash_table_destroy (test->times_notified);
   test->times_notified = NULL;
 
+  /* make sure any pending calls on the account have happened, so it can die */
+  test_proxy_run_until_dbus_queue_processed (test->dbus);
+
   g_object_unref (test->dbus);
   test->dbus = NULL;
   g_main_loop_unref (test->mainloop);

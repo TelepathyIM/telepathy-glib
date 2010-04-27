@@ -42,7 +42,7 @@ main (int argc,
   g_type_init ();
 
   MYASSERT (strlen (LONG_ACCOUNT_IS_LONG) == 256, "");
-  service_conn = EXAMPLE_ECHO_CONNECTION (g_object_new (
+  service_conn = EXAMPLE_ECHO_CONNECTION (test_object_new_static_class (
         EXAMPLE_TYPE_ECHO_CONNECTION,
         "account", LONG_ACCOUNT_IS_LONG,
         "protocol", "example",

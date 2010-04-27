@@ -123,7 +123,7 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = test_dbus_daemon_dup_or_die ();
 
-  test->service_cm = EXAMPLE_CALL_CONNECTION_MANAGER (g_object_new (
+  test->service_cm = EXAMPLE_CALL_CONNECTION_MANAGER (test_object_new_static_class (
         EXAMPLE_TYPE_CALL_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);
@@ -1074,6 +1074,9 @@ teardown (Test *test,
   CLEAR_OBJECT (&test->cm);
 
   CLEAR_OBJECT (&test->service_cm);
+
+  /* make sure any pending things have happened */
+  test_proxy_run_until_dbus_queue_processed (test->dbus);
 
   CLEAR_OBJECT (&test->dbus);
   g_main_loop_unref (test->mainloop);

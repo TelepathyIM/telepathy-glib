@@ -257,7 +257,7 @@ run_membership_test (guint channel_number,
   GError *error = NULL;
 
   chan_path = g_strdup_printf ("%s/Channel%u", conn_path, channel_number);
-  service_chan = TEST_TEXT_CHANNEL_GROUP (g_object_new (
+  service_chan = TEST_TEXT_CHANNEL_GROUP (test_object_new_static_class (
       TEST_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
       "object-path", chan_path,
@@ -336,7 +336,7 @@ check_removed_error_in_invalidated (void)
   GError *error = NULL;
 
   chan_path = g_strdup_printf ("%s/Channel_1_6180339887", conn_path);
-  service_chan = TEST_TEXT_CHANNEL_GROUP (g_object_new (
+  service_chan = TEST_TEXT_CHANNEL_GROUP (test_object_new_static_class (
       TEST_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
       "object-path", chan_path,
@@ -403,7 +403,7 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (g_object_new (SIMPLE_TYPE_CONNECTION,
+  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

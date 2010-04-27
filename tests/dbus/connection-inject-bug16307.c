@@ -43,7 +43,7 @@ main (int argc,
   dbus = test_dbus_daemon_dup_or_die ();
 
   /* service side */
-  service_conn = BUG16307_CONNECTION (g_object_new (
+  service_conn = BUG16307_CONNECTION (test_object_new_static_class (
         BUG16307_TYPE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",

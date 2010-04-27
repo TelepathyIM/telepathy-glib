@@ -9,6 +9,7 @@
 #include <telepathy-glib/errors.h>
 
 #include "tests/lib/myassert.h"
+#include "tests/lib/util.h"
 
 int
 main (int argc,
@@ -23,7 +24,7 @@ main (int argc,
 
   g_type_init ();
 
-  repo = (TpHandleRepoIface *) g_object_new (TP_TYPE_DYNAMIC_HANDLE_REPO,
+  repo = test_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
       "handle-type", TP_HANDLE_TYPE_CONTACT,
       NULL);
   MYASSERT (repo != NULL, "");
