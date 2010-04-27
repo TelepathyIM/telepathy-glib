@@ -3772,3 +3772,22 @@ TpObserveChannelsContextClass
 TpObserveChannelsContextPrivate
 TpBaseClientClassPrivate
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/simple-observer.h</INCLUDE>
+<FILE>simple-observer</FILE>
+<TITLE>simple-observer</TITLE>
+TpSimpleObserver
+TpSimpleObserverObserveChannelsImpl
+tp_simple_observer_new
+<SUBSECTION Standard>
+tp_simple_observer_get_type
+TP_TYPE_SIMPLE_OBSERVER
+TP_SIMPLE_OBSERVER
+TP_SIMPLE_OBSERVER_CLASS
+TP_SIMPLE_OBSERVER_GET_CLASS
+TP_IS_SIMPLE_OBSERVER
+TP_IS_SIMPLE_OBSERVER_CLASS
+TpSimpleObserverClass
+TpSimpleObserverPrivate
+</SECTION>
