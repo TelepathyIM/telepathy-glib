@@ -257,6 +257,7 @@ test_fail_to_prepare (Test *test,
 {
   GError *error = NULL;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  const GHashTable *asv;
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
@@ -305,6 +306,12 @@ test_fail_to_prepare (Test *test,
   g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
   g_assert (!tp_proxy_is_prepared (test->conn,
         TP_CONNECTION_FEATURE_CONNECTED));
+
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
+      TP_ERROR_STR_PERMISSION_DENIED);
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
+      TP_ERROR_STR_PERMISSION_DENIED);
+  g_assert (asv != NULL);
 }
 
 static void

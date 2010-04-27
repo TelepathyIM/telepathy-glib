@@ -105,6 +105,7 @@ main (int argc,
   GError *error = NULL;
   TpConnection *conn;
   GMainLoop *mainloop;
+  const GHashTable *asv;
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -134,6 +135,11 @@ main (int argc,
       "");
   test_assert_no_error (error);
 
+  asv = GUINT_TO_POINTER (0xDEADBEEF);
+  g_assert_cmpstr (tp_connection_get_detailed_error (conn, NULL), ==, NULL);
+  g_assert_cmpstr (tp_connection_get_detailed_error (conn, &asv), ==, NULL);
+  g_assert_cmpuint (GPOINTER_TO_UINT (asv), ==, 0xDEADBEEF);
+
   connection_errors = 0;
   tp_cli_connection_connect_to_connection_error (conn, on_connection_error,
       NULL, NULL, NULL, NULL);
@@ -149,6 +155,15 @@ main (int argc,
   MYASSERT_SAME_UINT (connection_errors, 1);
 
   MYASSERT (!tp_connection_run_until_ready (conn, FALSE, &error, NULL), "");
+
+  g_assert_error (error, example_com_error_quark (), DOMAIN_SPECIFIC_ERROR);
+
+  g_assert_cmpstr (tp_connection_get_detailed_error (conn, NULL), ==,
+      "com.example.DomainSpecificError");
+  g_assert_cmpstr (tp_connection_get_detailed_error (conn, &asv), ==,
+      "com.example.DomainSpecificError");
+  g_assert (asv != NULL);
+
   MYASSERT_SAME_STRING (g_quark_to_string (error->domain),
       g_quark_to_string (example_com_error_quark ()));
   MYASSERT_SAME_UINT (error->code, DOMAIN_SPECIFIC_ERROR);
