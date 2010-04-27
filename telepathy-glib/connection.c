@@ -749,15 +749,14 @@ tp_connection_connection_error_cb (TpConnection *self,
                                    gpointer user_data,
                                    GObject *weak_object)
 {
-  if (self->priv->connection_error != NULL)
-    {
-      g_error_free (self->priv->connection_error);
-      self->priv->connection_error = NULL;
-    }
+  g_free (self->priv->connection_error);
+  self->priv->connection_error = g_strdup (error_name);
 
-  tp_proxy_dbus_error_to_gerror (self, error_name,
-        tp_asv_get_string (details, "debug-message"),
-        &(self->priv->connection_error));
+  if (self->priv->connection_error_details != NULL)
+    g_hash_table_unref (self->priv->connection_error_details);
+
+  self->priv->connection_error_details = g_boxed_copy (
+      TP_HASH_TYPE_STRING_VARIANT_MAP, details);
 }
 
 static void
@@ -880,16 +879,24 @@ tp_connection_status_changed_cb (TpConnection *self,
 
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
+      GError *error = NULL;
+
       if (self->priv->connection_error == NULL)
         {
-          tp_connection_status_reason_to_gerror (reason, prev_status,
-              &(self->priv->connection_error));
+          g_assert (self->priv->connection_error_details == NULL);
+
+          tp_connection_status_reason_to_gerror (reason, prev_status, &error);
+        }
+      else
+        {
+          g_assert (self->priv->connection_error_details != NULL);
+          tp_proxy_dbus_error_to_gerror (self, self->priv->connection_error,
+              tp_asv_get_string (self->priv->connection_error_details,
+                "debug-message"), &error);
         }
 
-      tp_proxy_invalidate ((TpProxy *) self, self->priv->connection_error);
-
-      g_error_free (self->priv->connection_error);
-      self->priv->connection_error = NULL;
+      tp_proxy_invalidate ((TpProxy *) self, error);
+      g_error_free (error);
     }
 }
 
@@ -1009,10 +1016,13 @@ tp_connection_finalize (GObject *object)
       self->priv->contact_attribute_interfaces = NULL;
     }
 
-  if (self->priv->connection_error != NULL)
+  g_free (self->priv->connection_error);
+  self->priv->connection_error = NULL;
+
+  if (self->priv->connection_error_details != NULL)
     {
-      g_error_free (self->priv->connection_error);
-      self->priv->connection_error = NULL;
+      g_hash_table_unref (self->priv->connection_error_details);
+      self->priv->connection_error_details = NULL;
     }
 
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);
