@@ -692,7 +692,7 @@ context_prepare_cb (GObject *source,
     gpointer user_data)
 {
   TpBaseClient *self = user_data;
-  TpBaseClientClassPrivate *klass_pv = G_TYPE_CLASS_GET_PRIVATE (
+  TpBaseClientClassPrivate *cls_pv = G_TYPE_CLASS_GET_PRIVATE (
       TP_BASE_CLIENT_GET_CLASS (self), TP_TYPE_BASE_CLIENT,
       TpBaseClientClassPrivate);
   TpObserveChannelsContext *ctx = TP_OBSERVE_CHANNELS_CONTEXT (source);
@@ -709,7 +709,7 @@ context_prepare_cb (GObject *source,
   channels_list = ptr_array_to_list (ctx->channels);
   requests_list = ptr_array_to_list (ctx->requests);
 
-  klass_pv->observe_channels_impl (self, ctx->account, ctx->connection,
+  cls_pv->observe_channels_impl (self, ctx->account, ctx->connection,
       channels_list, ctx->dispatch_operation, requests_list, ctx);
 
   g_list_free (channels_list);
@@ -742,7 +742,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpObserveChannelsContext *ctx;
-  TpBaseClientClassPrivate *klass_pv = G_TYPE_CLASS_GET_PRIVATE (
+  TpBaseClientClassPrivate *cls_pv = G_TYPE_CLASS_GET_PRIVATE (
       TP_BASE_CLIENT_GET_CLASS (self), TP_TYPE_BASE_CLIENT,
       TpBaseClientClassPrivate);
   GError *error = NULL;
@@ -760,7 +760,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       return;
     }
 
-  if (klass_pv->observe_channels_impl == NULL)
+  if (cls_pv->observe_channels_impl == NULL)
     {
       DEBUG ("class %s does not implement ObserveChannels",
           G_OBJECT_TYPE_NAME (self));
@@ -976,11 +976,11 @@ requests_iface_init (gpointer g_iface,
 }
 
 void
-tp_base_client_implement_observe_channels (TpBaseClientClass *klass,
+tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
     TpBaseClientClassObserveChannelsImpl impl)
 {
-  TpBaseClientClassPrivate *klass_pv = G_TYPE_CLASS_GET_PRIVATE (
-      klass, TP_TYPE_BASE_CLIENT, TpBaseClientClassPrivate);
+  TpBaseClientClassPrivate *cls_pv = G_TYPE_CLASS_GET_PRIVATE (
+      cls, TP_TYPE_BASE_CLIENT, TpBaseClientClassPrivate);
 
-  klass_pv->observe_channels_impl = impl;
+  cls_pv->observe_channels_impl = impl;
 }
