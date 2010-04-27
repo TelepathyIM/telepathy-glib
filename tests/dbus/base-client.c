@@ -165,7 +165,7 @@ teardown (Test *test,
 /* Test Basis */
 
 static void
-test_basis (Test *test,
+test_basics (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpDBusDaemon *dbus;
@@ -727,7 +727,7 @@ main (int argc,
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  g_test_add ("/base-client/basis", Test, NULL, setup, test_basis, teardown);
+  g_test_add ("/base-client/basics", Test, NULL, setup, test_basics, teardown);
 #if 0
   g_test_add ("/base-client/register", Test, NULL, setup, test_register,
       teardown);
