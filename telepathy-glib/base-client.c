@@ -753,7 +753,9 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
 
   if (klass_pv->observe_channels_impl == NULL)
     {
-      DEBUG ("ObserveChannels has not be implemented");
+      DEBUG ("class %s does not implement ObserveChannels",
+          G_OBJECT_TYPE_NAME (self));
+
       tp_dbus_g_method_return_not_implemented (context);
       return;
     }
