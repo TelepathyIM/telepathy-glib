@@ -381,6 +381,7 @@ tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
  * tp_base_client_register:
  * @self: a #TpBaseClient, which must not have been registered with
  *  tp_base_client_register() yet
+ * @error: used to indicate the error if %FALSE is returned
  *
  * Publish @self as an available client. After this method is called, as long
  * as it continues to exist, it will receive and process whatever events were
@@ -388,19 +389,23 @@ tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
  *
  * Methods that set the filters and other immutable state cannot be called
  * after this one.
+ *
+ * Returns: %TRUE if the client has been registered.
+ *
+ * Since: 0.11.UNRELEASED
  */
-void
-tp_base_client_register (TpBaseClient *self)
+gboolean
+tp_base_client_register (TpBaseClient *self,
+    GError **error)
 {
   GString *string;
-  GError *error = NULL;
   gchar *path;
   static guint unique_counter = 0;
 
-  g_return_if_fail (TP_IS_BASE_CLIENT (self));
-  g_return_if_fail (!self->priv->registered);
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), FALSE);
+  g_return_val_if_fail (!self->priv->registered, FALSE);
   /* Client should at least be an Observer, Approver or Handler */
-  g_return_if_fail (self->priv->flags != 0);
+  g_return_val_if_fail (self->priv->flags != 0, FALSE);
 
   string = g_string_new (TP_CLIENT_BUS_NAME_BASE);
   g_string_append (string, self->priv->name);
@@ -417,12 +422,11 @@ tp_base_client_register (TpBaseClient *self)
   DEBUG ("request name %s", string->str);
 
   if (!tp_dbus_daemon_request_name (self->priv->dbus, string->str, TRUE,
-        &error))
+        error))
     {
-      g_warning ("%s", error->message);
-      g_error_free (error);
+      g_warning ("Failed to register bus name %s\n", string->str);
       g_string_free (string, TRUE);
-      return;
+      return FALSE;
     }
 
   path = g_strdup_printf ("/%s", g_strdelimit (string->str, ".", '/'));
@@ -433,6 +437,8 @@ tp_base_client_register (TpBaseClient *self)
   g_free (path);
 
   self->priv->registered = TRUE;
+
+  return TRUE;
 }
 
 #if 0

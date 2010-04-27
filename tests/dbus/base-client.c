@@ -228,7 +228,8 @@ test_register (Test *test,
   g_error_free (test->error);
   test->error = NULL;
 
-  tp_base_client_register (test->base_client);
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
 
   tp_cli_dbus_properties_call_get_all (test->client, -1,
       TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
@@ -365,7 +366,8 @@ test_observer (Test *test,
 
   tp_base_client_set_observer_recover (test->base_client, TRUE);
 
-  tp_base_client_register (test->base_client);
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
 
   /* Check Client properties */
   tp_cli_dbus_properties_call_get_all (test->client, -1,
@@ -477,7 +479,8 @@ test_approver (Test *test,
           TP_HANDLE_TYPE_CONTACT,
         NULL));
 
-  tp_base_client_register (test->base_client);
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
 
   /* Check Client properties */
   tp_cli_dbus_properties_call_get_all (test->client, -1,
@@ -592,7 +595,8 @@ test_handler (Test *test,
   tp_base_client_add_handler_capabilities_varargs (test->base_client,
       "goat", "pony", NULL);
 
-  tp_base_client_register (test->base_client);
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
 
   /* Check Client properties */
   tp_cli_dbus_properties_call_get_all (test->client, -1,
@@ -669,7 +673,8 @@ test_handler_requests (Test *test,
 
   tp_base_client_set_handler_request_notification (test->base_client);
 
-  tp_base_client_register (test->base_client);
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
 
   /* Check Client properties */
   tp_cli_dbus_properties_call_get_all (test->client, -1,

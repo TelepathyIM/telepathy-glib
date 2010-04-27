@@ -108,7 +108,8 @@ void tp_base_client_set_handler_related_conferences_bypass_approval (
     */
 #endif
 
-void tp_base_client_register (TpBaseClient *self);
+gboolean tp_base_client_register (TpBaseClient *self,
+    GError **error);
 
 #if 0
 /* Normal methods, can be called at any time */
