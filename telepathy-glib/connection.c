@@ -895,6 +895,21 @@ tp_connection_status_changed_cb (TpConnection *self,
           tp_proxy_dbus_error_to_gerror (self, self->priv->connection_error,
               tp_asv_get_string (self->priv->connection_error_details,
                 "debug-message"), &error);
+
+          /* ... but if we don't know anything about that D-Bus error
+           * name, we can still be more helpful by deriving an error code from
+           * TpConnectionStatusReason */
+          if (g_error_matches (error, TP_DBUS_ERRORS,
+                TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR))
+            {
+              GError *from_csr = NULL;
+
+              tp_connection_status_reason_to_gerror (reason, prev_status,
+                  &from_csr);
+              error->domain = from_csr->domain;
+              error->code = from_csr->code;
+              g_error_free (from_csr);
+            }
         }
 
       tp_proxy_invalidate ((TpProxy *) self, error);
