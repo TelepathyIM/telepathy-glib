@@ -151,7 +151,8 @@ _tp_base_client_copy_filter (GHashTable *filter)
 /**
  * tp_base_client_add_observer_filter:
  * @self: a #TpBaseClient
- * @filter: a %TP_HASH_TYPE_CHANNEL_CLASS
+ * @filter: (transfer none) (element-type utf8 GObject.Value):
+ * a %TP_HASH_TYPE_CHANNEL_CLASS
  *
  * Register a new channel class as Observer.ObserverChannelFilter
  *
@@ -169,7 +170,8 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
 /**
  * tp_base_client_take_observer_filter:
  * @self: a client
- * @filter: a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
+ * @filter: (transfer container) (element-type utf8 GObject.Value):
+ * a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
  *
  * The same as tp_base_client_add_observer_filter(), but ownership of @filter
  * is taken by @self. This makes it convenient to call using tp_asv_new():
