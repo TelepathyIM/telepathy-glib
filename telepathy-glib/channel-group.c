@@ -819,6 +819,98 @@ OUT:
   _tp_channel_continue_introspection (self);
 }
 
+/*
+ * If the @group_remove_error is derived from a TpChannelGroupChangeReason,
+ * attempt to rewrite it into a TpError.
+ */
+static void
+_tp_channel_group_improve_remove_error (TpChannel *self,
+    TpHandle actor)
+{
+  GError *error = self->priv->group_remove_error;
+
+  if (error == NULL || error->domain != TP_ERRORS_REMOVED_FROM_GROUP)
+    return;
+
+  switch (error->code)
+    {
+    case TP_CHANNEL_GROUP_CHANGE_REASON_NONE:
+      if (actor == self->priv->group_self_handle ||
+          actor == tp_connection_get_self_handle (self->priv->connection))
+        {
+          error->code = TP_ERROR_CANCELLED;
+        }
+      else
+        {
+          error->code = TP_ERROR_TERMINATED;
+        }
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_OFFLINE:
+      error->code = TP_ERROR_OFFLINE;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_KICKED:
+      error->code = TP_ERROR_CHANNEL_KICKED;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_BUSY:
+      error->code = TP_ERROR_BUSY;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_INVITED:
+      DEBUG ("%s: Channel_Group_Change_Reason_Invited makes no sense as a "
+          "removal reason!", tp_proxy_get_object_path (self));
+      error->domain = TP_DBUS_ERRORS;
+      error->code = TP_DBUS_ERROR_INCONSISTENT;
+      return;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_BANNED:
+      error->code = TP_ERROR_CHANNEL_BANNED;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_ERROR:
+      /* hopefully all CMs that use this will also give us an error detail,
+       * but if they didn't, or gave us one we didn't understand... */
+      error->code = TP_ERROR_NOT_AVAILABLE;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_INVALID_CONTACT:
+      error->code = TP_ERROR_DOES_NOT_EXIST;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_NO_ANSWER:
+      error->code = TP_ERROR_NO_ANSWER;
+      break;
+
+    /* TP_CHANNEL_GROUP_CHANGE_REASON_RENAMED shouldn't be the last error
+     * seen in the channel - we'll get removed again with a real reason,
+     * later, so there's no point in doing anything special with this one */
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_PERMISSION_DENIED:
+      error->code = TP_ERROR_PERMISSION_DENIED;
+      break;
+
+    case TP_CHANNEL_GROUP_CHANGE_REASON_SEPARATED:
+      DEBUG ("%s: Channel_Group_Change_Reason_Separated makes no sense as a "
+          "removal reason!", tp_proxy_get_object_path (self));
+      error->domain = TP_DBUS_ERRORS;
+      error->code = TP_DBUS_ERROR_INCONSISTENT;
+      return;
+
+    /* all values up to and including Separated have been checked */
+
+    default:
+      /* We don't understand this reason code, so keeping the domain and code
+       * the same (i.e. using TP_ERRORS_REMOVED_FROM_GROUP) is no worse than
+       * anything else we could do. */
+      return;
+    }
+
+  /* If we changed the code we also need to change the domain; if not, we did
+   * an early return, so we'll never reach this */
+  error->domain = TP_ERRORS;
+}
 
 static void
 handle_members_changed (TpChannel *self,
@@ -969,6 +1061,8 @@ handle_members_changed (TpChannel *self,
                   self->priv->group_remove_error->domain =
                     TP_ERRORS_REMOVED_FROM_GROUP;
                   self->priv->group_remove_error->code = reason;
+
+                  _tp_channel_group_improve_remove_error (self, actor);
                 }
             }
           else
@@ -976,6 +1070,8 @@ handle_members_changed (TpChannel *self,
               /* Use our separate error domain */
               g_set_error_literal (&self->priv->group_remove_error,
                   TP_ERRORS_REMOVED_FROM_GROUP, reason, debug_message);
+
+              _tp_channel_group_improve_remove_error (self, actor);
             }
         }
     }
