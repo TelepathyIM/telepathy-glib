@@ -1552,6 +1552,9 @@ teardown (Test *test,
 
   CLEAR_OBJECT (&test->service_cm);
 
+  /* make sure any pending things have happened */
+  test_proxy_run_until_dbus_queue_processed (test->dbus);
+
   CLEAR_OBJECT (&test->dbus);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;

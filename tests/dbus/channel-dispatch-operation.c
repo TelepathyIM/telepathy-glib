@@ -124,6 +124,9 @@ teardown (Test *test,
       test->private_conn = NULL;
     }
 
+  /* make sure any pending things have happened */
+  test_proxy_run_until_dbus_queue_processed (test->dbus);
+
   g_object_unref (test->dbus);
   test->dbus = NULL;
   g_main_loop_unref (test->mainloop);
