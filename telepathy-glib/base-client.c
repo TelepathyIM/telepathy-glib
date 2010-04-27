@@ -717,8 +717,17 @@ context_prepare_cb (GObject *source,
 
   if (_tp_observe_channels_context_get_state (ctx) ==
       TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE)
-    g_warning ("Implementation of ObserveChannels didn't call "
-        "tp_observe_channels_context_{accept,fail,delay}");
+    {
+      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Implementation of ObserveChannels of %s didn't call "
+          "tp_observe_channels_context_{accept,fail,delay}",
+          G_OBJECT_TYPE_NAME (self));
+
+      g_critical ("%s", error->message);
+
+      tp_observe_channels_context_fail (ctx, error);
+      g_error_free (error);
+    }
 }
 
 static void
