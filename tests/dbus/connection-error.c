@@ -213,6 +213,56 @@ test_registered_error (Test *test,
   error = NULL;
 }
 
+static void
+on_unregistered_connection_error (TpConnection *conn,
+    const gchar *error,
+    GHashTable *details,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  connection_errors++;
+  MYASSERT_SAME_STRING (error, "net.example.WTF");
+  MYASSERT_SAME_UINT (g_hash_table_size (details), 0);
+}
+
+static void
+test_unregistered_error (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+  const GHashTable *asv;
+
+  connection_errors = 0;
+  tp_cli_connection_connect_to_connection_error (test->conn,
+      on_unregistered_connection_error, NULL, NULL, NULL, NULL);
+  tp_cli_connection_connect_to_status_changed (test->conn, on_status_changed,
+      test->mainloop, NULL, NULL, NULL);
+
+  tp_base_connection_disconnect_with_dbus_error (test->service_conn_as_base,
+      "net.example.WTF", NULL,
+      TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
+
+  g_main_loop_run (test->mainloop);
+
+  MYASSERT_SAME_UINT (connection_errors, 1);
+
+  MYASSERT (!tp_connection_run_until_ready (test->conn, FALSE, &error, NULL),
+      "");
+
+  /* Because we didn't understand net.example.WTF as a GError, TpConnection
+   * falls back to turning the Connection_Status_Reason into a GError. */
+  g_assert_error (error, TP_ERRORS, TP_ERROR_NETWORK_ERROR);
+
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
+      "net.example.WTF");
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
+      "net.example.WTF");
+  g_assert (asv != NULL);
+
+  g_error_free (error);
+  error = NULL;
+}
+
 int
 main (int argc,
       char **argv)
@@ -221,6 +271,8 @@ main (int argc,
 
   g_test_add ("/connection/registered-error", Test, NULL, setup,
       test_registered_error, teardown);
+  g_test_add ("/connection/unregistered-error", Test, NULL, setup,
+      test_unregistered_error, teardown);
 
   return g_test_run ();
 }
