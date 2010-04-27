@@ -297,21 +297,36 @@ _tp_observe_channels_context_new (
 void
 tp_observe_channels_context_accept (TpObserveChannelsContext *self)
 {
+  g_return_if_fail (self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE
+      || self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED);
+  g_return_if_fail (self->dbus_context != NULL);
+
   self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_DONE;
   dbus_g_method_return (self->dbus_context);
+
+  self->dbus_context = NULL;
 }
 
 void
 tp_observe_channels_context_fail (TpObserveChannelsContext *self,
     const GError *error)
 {
+  g_return_if_fail (self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE
+      || self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED);
+  g_return_if_fail (self->dbus_context != NULL);
+
   self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_FAILED;
   dbus_g_method_return_error (self->dbus_context, error);
+
+  self->dbus_context = NULL;
 }
 
 void
 tp_observe_channels_context_delay (TpObserveChannelsContext *self)
 {
+  g_return_if_fail (self->priv->state ==
+      TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE);
+
   self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED;
 }
 
