@@ -96,6 +96,11 @@ example_com_error_quark (void)
 typedef struct {
   TpDBusDaemon *dbus;
   GMainLoop *mainloop;
+  SimpleConnection *service_conn;
+  TpBaseConnection *service_conn_as_base;
+  gchar *conn_name;
+  gchar *conn_path;
+  TpConnection *conn;
 } Test;
 
 static void
@@ -118,15 +123,44 @@ global_setup (void)
 static void
 setup (Test *test)
 {
+  GError *error = NULL;
+
   global_setup ();
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = test_dbus_daemon_dup_or_die ();
+
+  test->service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
+        SIMPLE_TYPE_CONNECTION,
+        "account", "me@example.com",
+        "protocol", "simple",
+        NULL));
+  test->service_conn_as_base = TP_BASE_CONNECTION (test->service_conn);
+  MYASSERT (test->service_conn != NULL, "");
+  MYASSERT (test->service_conn_as_base != NULL, "");
+
+  MYASSERT (tp_base_connection_register (test->service_conn_as_base, "simple",
+        &test->conn_name, &test->conn_path, &error), "");
+  test_assert_no_error (error);
+
+  test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
+      &error);
+  MYASSERT (test->conn != NULL, "");
+  test_assert_no_error (error);
+  MYASSERT (tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
+      "");
+  test_assert_no_error (error);
 }
 
 static void
 teardown (Test *test)
 {
+  tp_cli_connection_run_disconnect (test->conn, -1, NULL, NULL);
+
+  test->service_conn_as_base = NULL;
+  g_object_unref (test->service_conn);
+  g_free (test->conn_name);
+  g_free (test->conn_path);
   g_object_unref (test->dbus);
   g_main_loop_unref (test->mainloop);
 }
@@ -135,50 +169,27 @@ int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service_conn;
-  TpBaseConnection *service_conn_as_base;
-  gchar *name;
-  gchar *conn_path;
   GError *error = NULL;
-  TpConnection *conn;
   const GHashTable *asv;
   Test test_struct = { NULL };
   Test *test = &test_struct;
 
   setup (test);
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
-
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  test_assert_no_error (error);
-
-  conn = tp_connection_new (test->dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
-      "");
-  test_assert_no_error (error);
-
   asv = GUINT_TO_POINTER (0xDEADBEEF);
-  g_assert_cmpstr (tp_connection_get_detailed_error (conn, NULL), ==, NULL);
-  g_assert_cmpstr (tp_connection_get_detailed_error (conn, &asv), ==, NULL);
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
+      NULL);
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
+      NULL);
   g_assert_cmpuint (GPOINTER_TO_UINT (asv), ==, 0xDEADBEEF);
 
   connection_errors = 0;
-  tp_cli_connection_connect_to_connection_error (conn, on_connection_error,
-      NULL, NULL, NULL, NULL);
-  tp_cli_connection_connect_to_status_changed (conn, on_status_changed,
+  tp_cli_connection_connect_to_connection_error (test->conn,
+      on_connection_error, NULL, NULL, NULL, NULL);
+  tp_cli_connection_connect_to_status_changed (test->conn, on_status_changed,
       test->mainloop, NULL, NULL, NULL);
 
-  tp_base_connection_disconnect_with_dbus_error (service_conn_as_base,
+  tp_base_connection_disconnect_with_dbus_error (test->service_conn_as_base,
       "com.example.DomainSpecificError", NULL,
       TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
 
@@ -186,13 +197,14 @@ main (int argc,
 
   MYASSERT_SAME_UINT (connection_errors, 1);
 
-  MYASSERT (!tp_connection_run_until_ready (conn, FALSE, &error, NULL), "");
+  MYASSERT (!tp_connection_run_until_ready (test->conn, FALSE, &error, NULL),
+      "");
 
   g_assert_error (error, example_com_error_quark (), DOMAIN_SPECIFIC_ERROR);
 
-  g_assert_cmpstr (tp_connection_get_detailed_error (conn, NULL), ==,
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, NULL), ==,
       "com.example.DomainSpecificError");
-  g_assert_cmpstr (tp_connection_get_detailed_error (conn, &asv), ==,
+  g_assert_cmpstr (tp_connection_get_detailed_error (test->conn, &asv), ==,
       "com.example.DomainSpecificError");
   g_assert (asv != NULL);
 
@@ -201,11 +213,6 @@ main (int argc,
   MYASSERT_SAME_UINT (error->code, DOMAIN_SPECIFIC_ERROR);
   g_error_free (error);
   error = NULL;
-
-  service_conn_as_base = NULL;
-  g_object_unref (service_conn);
-  g_free (name);
-  g_free (conn_path);
 
   teardown (test);
 
