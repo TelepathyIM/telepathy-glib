@@ -24,8 +24,8 @@
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/account.h>
-#include <telepathy-glib/observe-channels-context.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
+#include <telepathy-glib/observe-channels-context.h>
 
 G_BEGIN_DECLS
 

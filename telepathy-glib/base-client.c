@@ -28,12 +28,12 @@
 
 #include "telepathy-glib/base-client.h"
 
-#include <telepathy-glib/observe-channels-context-internal.h>
-#include <telepathy-glib/channel.h>
 #include <telepathy-glib/channel-request.h>
+#include <telepathy-glib/channel.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/observe-channels-context-internal.h>
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/svc-generic.h>
-#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
