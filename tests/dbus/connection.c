@@ -256,7 +256,7 @@ test_fail_to_prepare (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
-  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED };
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);

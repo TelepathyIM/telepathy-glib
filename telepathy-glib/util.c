@@ -1088,7 +1088,7 @@ tp_value_array_build (gsize length,
  * <example>
  *   <title>using tp_value_array_unpack</title>
  *    <programlisting>
- * gchar *host;
+ * const gchar *host;
  * guint port;
  *
  * tp_value_array_unpack (array, 2,
