@@ -619,8 +619,8 @@ test_handler (Test *test,
       TP_IFACE_QUARK_CLIENT_HANDLER);
 
   tp_cli_client_handler_call_handle_channels (test->client, -1,
-      "/org/freedesktop/Telepathy/Account/fake",
-      "/org/freedesktop/Telepathy/Connection/fake",
+      "/org/freedesktop/Telepathy/Account/fake/fake/fake",
+      "/org/freedesktop/Telepathy/Connection/fake/fake/fake",
       channels, requests_satisified, 0, info,
       no_return_cb, test, NULL, NULL);
 
