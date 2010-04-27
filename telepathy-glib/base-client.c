@@ -61,7 +61,7 @@ G_DEFINE_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS,
       requests_iface_init);
     g_type_add_class_private (g_define_type_id, sizeof (
-        TpBaseClientClassPrivate));)
+        TpBaseClientClassPrivate)))
 
 enum {
     PROP_DBUS_DAEMON = 1,
