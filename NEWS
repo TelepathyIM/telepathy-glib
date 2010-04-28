@@ -1,7 +1,18 @@
 telepathy-glib 0.11.4 (UNRELEASED)
 ==================================
 
-...
+Requirements:
+
+* gtk-doc 1.14 is now required. Applying commit 0a874b3a from gtk-doc git
+  to support the (skip) annotation (as was done in Debian's gtk-doc 1.14-2) is
+  also highly recommended; it'll be in upstream release 1.15.
+
+Enhancements:
+
+* telepathy-glib now has experimental GObject-Introspection bindings, for use
+  by language bindings like PyGI and gjs. At this stage, these bindings are
+  incomplete, and are *not* covered by our normal API guarantees - incompatible
+  changes between versions are likely. (danni, smcv)
 
 telepathy-glib 0.11.3 (2010-04-20)
 ==================================

@@ -62,6 +62,9 @@ In a development (odd) branch, if we make incompatible ABI changes
 between one release tarball and the next, we will change the SONAME of the
 library; we will attempt to avoid incompatible API or ABI changes.
 
+The GObject-Introspection bindings are not currently considered to be stable,
+so they have no API/ABI guarantees yet.
+
 Unreleased builds straight from git identify themselves as version
 "x.y.z.1". We DO NOT make any API guarantees about unreleased builds:
 any binary relying on new functionality from an unreleased build is not
