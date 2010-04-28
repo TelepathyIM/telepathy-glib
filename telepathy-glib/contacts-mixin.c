@@ -194,15 +194,11 @@ tp_contacts_mixin_get_offset_quark ()
 void
 tp_contacts_mixin_class_init (GObjectClass *obj_cls, glong offset)
 {
-  TpContactsMixinClass *mixin_cls;
-
   g_assert (G_IS_OBJECT_CLASS (obj_cls));
 
   g_type_set_qdata (G_OBJECT_CLASS_TYPE (obj_cls),
       TP_CONTACTS_MIXIN_CLASS_OFFSET_QUARK,
       GINT_TO_POINTER (offset));
-
-  mixin_cls = TP_CONTACTS_MIXIN_CLASS (obj_cls);
 
   tp_dbus_properties_mixin_implement_interface (obj_cls,
       TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS,
