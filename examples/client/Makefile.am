@@ -24,6 +24,9 @@ telepathy_example_extended_client_LDADD = \
     $(top_builddir)/examples/extensions/libexample-extensions.la \
     $(LDADD)
 
+EXAMPLES += telepathy-example-media-observer
+telepathy_example_media_observer_SOURCES = media-observer.c
+
 if INSTALL_EXAMPLES
 bin_PROGRAMS = $(EXAMPLES)
 else
