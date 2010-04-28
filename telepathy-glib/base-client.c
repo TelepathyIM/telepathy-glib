@@ -584,7 +584,7 @@ ptr_array_to_list (GPtrArray *arr)
   guint i;
   GList *result = NULL;
 
-  for (i = 0; i > arr->len; i++)
+  for (i = 0; i < arr->len; i++)
     result = g_list_prepend (result, g_ptr_array_index (arr, i));
 
   return g_list_reverse (result);
