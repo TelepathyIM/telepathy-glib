@@ -91,8 +91,7 @@ tpginclude_HEADERS = \
 BUILT_SOURCES = $(codegen_sources)
 
 CLEANFILES = \
-    $(BUILT_SOURCES) \
-    $(BUILT_GIRFILES)
+    $(BUILT_SOURCES)
 
 distclean-local:
 	rm -rf _gen

@@ -2,12 +2,7 @@
 
 introspection_extra_dist = kludge-616375.xsl
 
-BUILT_GIRFILES =
-
 if HAVE_INTROSPECTION
-
-BUILT_GIRFILES += \
-	TelepathyGLib-0.12.gir
 
 INTROSPECTION_FILES = \
 	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
@@ -56,7 +51,7 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 	@rm -f _gen/$@.tmp
 
 girdir = $(datadir)/gir-1.0
-gir_DATA = $(BUILT_GIRFILES)
+gir_DATA = TelepathyGLib-0.12.gir
 
 %.typelib: %.gir $(INTROSPECTION_COMPILER)
 	$(AM_V_GEN)$(top_builddir)/libtool --mode=execute \
@@ -66,7 +61,11 @@ gir_DATA = $(BUILT_GIRFILES)
 	        $(INTROSPECTION_COMPILER_OPTS) $< -o $(@F)
 
 typelibsdir = $(libdir)/girepository-1.0/
-typelibs_DATA = $(BUILT_GIRFILES:.gir=.typelib)
+typelibs_DATA = $(gir_DATA:.gir=.typelib)
+
+CLEANFILES += \
+    $(gir_DATA) \
+    $(typelibs_DATA)
 
 endif
 
