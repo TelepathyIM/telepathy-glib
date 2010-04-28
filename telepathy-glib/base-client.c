@@ -46,15 +46,15 @@
 
 /**
  * TpBaseClientClassObserveChannelsImpl:
- * @self: a #TpBaseClient instance
+ * @client: a #TpBaseClient instance
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
- * @channels: a #GPtrArray of #TpChannel having all %TP_CHANNEL_FEATURE_CORE
- * prepared
- * @dispatch_operation: a #TpChannelDispatchOperation or %NULL; the
- * dispatch_operation is not garanteed to be prepared
- * @requests: a #GList of #TpChannelRequest having their object-path defined
- * but are not garanteed to be prepared.
+ * @channels: (element-type Tp.Channel): a #GPtrArray of #TpChannel having
+ * all %TP_CHANNEL_FEATURE_CORE prepared
+ * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
+ * the dispatch_operation is not guaranteed to be prepared
+ * @requests: (element-type Tp.ChannelRequest): a #GList of #TpChannelRequest
+ * having their object-path defined but are not guaranteed to be prepared.
  * @context: a #TpObserveChannelsContext representing the context of this
  * D-Bus call
  *
@@ -151,10 +151,17 @@ _tp_base_client_copy_filter (GHashTable *filter)
 /**
  * tp_base_client_add_observer_filter:
  * @self: a #TpBaseClient
- * @filter: (transfer none) (element-type utf8 GObject.Value):
+ * @filter: (transfer none) (element-type utf8 GObject.Value):
  * a %TP_HASH_TYPE_CHANNEL_CLASS
  *
- * Register a new channel class as Observer.ObserverChannelFilter
+ * Register a new channel class as Observer.ObserverChannelFilter.
+ * The @observe_channels virtual method set up using
+ * tp_base_client_implement_observe_channels() will be called whenever
+ * a new channel's properties match the ones in @filter.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects that implement
+ * @observe_channels.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -167,10 +174,11 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
       _tp_base_client_copy_filter (filter));
 }
 
+/* FIXME: This function should be (skip) but that breaks gtk-doc <= 1.14 */
 /**
  * tp_base_client_take_observer_filter:
  * @self: a client
- * @filter: (transfer container) (element-type utf8 GObject.Value):
+ * @filter: (transfer full) (element-type utf8 GObject.Value):
  * a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
  *
  * The same as tp_base_client_add_observer_filter(), but ownership of @filter
@@ -204,7 +212,22 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  * @self: a #TpBaseClient
  * @recover: the value of the Observer.Recover property
  *
- * Define the value of the Observer.Recover property.
+ * Set whether the channel dispatcher should attempt to recover
+ * this Observer if it crashes. (This is implemented by setting
+ * the value of its Recover D-Bus property.)
+ *
+ * Normally, Observers are only notified when new channels
+ * appear. If an Observer is set to recover, when it registers with
+ * tp_base_client_register(), it will also be told about any channels
+ * that already existed before it started.
+ *
+ * For Observers that are activatable as a D-Bus service, if the
+ * Observer exits or crashes while there are any channels that match
+ * its filter, it will automatically be restarted by service-activation.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects that implement
+ * @observe_channels.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -387,10 +410,10 @@ tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
  * as it continues to exist, it will receive and process whatever events were
  * requested via the various filters.
  *
- * Methods that set the filters and other immutable state cannot be called
- * after this one.
+ * Methods that set the filters and other immutable state, such as
+ * tp_base_client_add_observer_filter(), cannot be called after this one.
  *
- * Returns: %TRUE if the client has been registered.
+ * Returns: %TRUE if the client was registered successfully
  *
  * Since: 0.11.UNRELEASED
  */
@@ -835,7 +858,7 @@ context_prepare_cb (GObject *source,
       TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE)
     {
       error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Implementation of ObserveChannels of %s didn't call "
+          "Implementation of ObserveChannels in %s didn't call "
           "tp_observe_channels_context_{accept,fail,delay}",
           G_OBJECT_TYPE_NAME (self));
 
