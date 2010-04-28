@@ -198,8 +198,11 @@ void
 tp_base_client_take_observer_filter (TpBaseClient *self,
     GHashTable *filter)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->priv->observe_channels_impl != NULL);
 
   self->priv->flags |= CLIENT_IS_OBSERVER;
   g_ptr_array_add (self->priv->observer_filters, filter);
@@ -233,8 +236,11 @@ void
 tp_base_client_set_observer_recover (TpBaseClient *self,
     gboolean recover)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->priv->observe_channels_impl != NULL);
 
   self->priv->flags |= (CLIENT_IS_OBSERVER | CLIENT_OBSERVER_RECOVER);
 }
