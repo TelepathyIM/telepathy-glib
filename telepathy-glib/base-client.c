@@ -585,10 +585,12 @@ tp_base_client_set_property (GObject *object,
   switch (property_id)
     {
       case PROP_DBUS_DAEMON:
+        g_assert (self->priv->dbus == NULL);    /* construct-only */
         self->priv->dbus = g_value_dup_object (value);
         break;
 
       case PROP_NAME:
+        g_assert (self->priv->name == NULL);    /* construct-only */
         self->priv->name = g_value_dup_string (value);
         break;
 
