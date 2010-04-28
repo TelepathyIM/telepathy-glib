@@ -1,3 +1,8 @@
+telepathy-glib 0.11.5 (UNRELEASED)
+==================================
+
+...
+
 telepathy-glib 0.11.4 (2010-04-28)
 ==================================
 
@@ -10,6 +15,8 @@ Requirements:
 ∮ gtk-doc 1.14 is now required. Applying commit 0a874b3a from gtk-doc git
   to support the (skip) annotation (as was done in Debian's gtk-doc 1.14-2) is
   also highly recommended; it'll be in upstream release 1.15.
+
+∮ GLib 2.24 is now required.
 
 Enhancements:
 
