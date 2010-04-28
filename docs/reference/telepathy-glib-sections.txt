@@ -3768,4 +3768,5 @@ TP_IS_OBSERVE_CHANNELS_CONTEXT
 TP_IS_OBSERVE_CHANNELS_CONTEXT_CLASS
 TpObserveChannelsContextClass
 TpObserveChannelsContextPrivate
+TpBaseClientClassPrivate
 </SECTION>

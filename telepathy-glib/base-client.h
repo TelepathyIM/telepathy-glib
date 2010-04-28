@@ -37,12 +37,14 @@ G_BEGIN_DECLS
 typedef struct _TpBaseClient TpBaseClient;
 typedef struct _TpBaseClientClass TpBaseClientClass;
 typedef struct _TpBaseClientPrivate TpBaseClientPrivate;
+typedef struct _TpBaseClientClassPrivate TpBaseClientClassPrivate;
 
 struct _TpBaseClientClass {
     /*<private>*/
     GObjectClass parent_class;
     GCallback _padding[7];
     TpDBusPropertiesMixinClass dbus_properties_class;
+    TpBaseClientClassPrivate *priv;
 };
 
 struct _TpBaseClient {

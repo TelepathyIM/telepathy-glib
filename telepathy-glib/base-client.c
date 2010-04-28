@@ -78,8 +78,6 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 
-typedef struct _TpBaseClientClassPrivate TpBaseClientClassPrivate;
-
 struct _TpBaseClientClassPrivate {
     /*<private>*/
     TpBaseClientClassObserveChannelsImpl observe_channels_impl;
@@ -818,6 +816,9 @@ tp_base_client_class_init (TpBaseClientClass *cls)
   cls->dbus_properties_class.interfaces = prop_ifaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseClientClass, dbus_properties_class));
+
+  cls->priv = G_TYPE_CLASS_GET_PRIVATE (cls, TP_TYPE_BASE_CLIENT,
+      TpBaseClientClassPrivate);
 }
 
 static GList *
@@ -838,9 +839,7 @@ context_prepare_cb (GObject *source,
     gpointer user_data)
 {
   TpBaseClient *self = user_data;
-  TpBaseClientClassPrivate *cls_pv = G_TYPE_CLASS_GET_PRIVATE (
-      TP_BASE_CLIENT_GET_CLASS (self), TP_TYPE_BASE_CLIENT,
-      TpBaseClientClassPrivate);
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
   TpObserveChannelsContext *ctx = TP_OBSERVE_CHANNELS_CONTEXT (source);
   GError *error = NULL;
   GList *channels_list, *requests_list;
@@ -855,7 +854,7 @@ context_prepare_cb (GObject *source,
   channels_list = ptr_array_to_list (ctx->channels);
   requests_list = ptr_array_to_list (ctx->requests);
 
-  cls_pv->observe_channels_impl (self, ctx->account, ctx->connection,
+  cls->priv->observe_channels_impl (self, ctx->account, ctx->connection,
       channels_list, ctx->dispatch_operation, requests_list, ctx);
 
   g_list_free (channels_list);
@@ -888,9 +887,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
 {
   TpBaseClient *self = TP_BASE_CLIENT (iface);
   TpObserveChannelsContext *ctx;
-  TpBaseClientClassPrivate *cls_pv = G_TYPE_CLASS_GET_PRIVATE (
-      TP_BASE_CLIENT_GET_CLASS (self), TP_TYPE_BASE_CLIENT,
-      TpBaseClientClassPrivate);
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
   GError *error = NULL;
   TpAccount *account = NULL;
   TpConnection *connection = NULL;
@@ -906,7 +903,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       return;
     }
 
-  if (cls_pv->observe_channels_impl == NULL)
+  if (cls->priv->observe_channels_impl == NULL)
     {
       DEBUG ("class %s does not implement ObserveChannels",
           G_OBJECT_TYPE_NAME (self));
@@ -1138,8 +1135,5 @@ void
 tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
     TpBaseClientClassObserveChannelsImpl impl)
 {
-  TpBaseClientClassPrivate *cls_pv = G_TYPE_CLASS_GET_PRIVATE (
-      cls, TP_TYPE_BASE_CLIENT, TpBaseClientClassPrivate);
-
-  cls_pv->observe_channels_impl = impl;
+  cls->priv->observe_channels_impl = impl;
 }
