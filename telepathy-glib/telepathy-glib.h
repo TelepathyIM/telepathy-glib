@@ -32,6 +32,7 @@
 #include <telepathy-glib/intset.h>
 #include <telepathy-glib/heap.h>
 
+#include <telepathy-glib/base-client.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/channel.h>
