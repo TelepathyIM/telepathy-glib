@@ -40,12 +40,12 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/util.h>
 
-#include <telepathy-logger/contact.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
+#include <telepathy-logger/contact-internal.h>
 #include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
@@ -828,7 +828,7 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
 
       t = _tpl_time_parse (time_);
 
-      sender = tpl_contact_new (sender_id);
+      sender = _tpl_contact_new (sender_id);
       tpl_contact_set_alias (sender, sender_name);
       tpl_contact_set_avatar_token (sender, sender_avatar_token);
 

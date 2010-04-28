@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2009 Collabora Ltd.
+ * Copyright (C) 2009-2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  */
 
 #include "config.h"
-#include "contact.h"
+#include "contact-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_CONTACT
 #include <telepathy-logger/debug-internal.h>
@@ -191,14 +191,15 @@ tpl_contact_init (TplContact *self)
 
 
 TplContact *
-tpl_contact_from_tp_contact (TpContact *contact)
+_tpl_contact_from_tp_contact (TpContact *contact)
 {
   TplContact *ret;
 
   g_return_val_if_fail (TP_IS_CONTACT (contact), NULL);
 
-  ret = tpl_contact_new (tp_contact_get_identifier (contact));
+  ret = _tpl_contact_new (tp_contact_get_identifier (contact));
   tpl_contact_set_contact (ret, contact);
+
   if (tp_contact_get_alias (contact) != NULL)
     tpl_contact_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
   if (tp_contact_get_avatar_token (contact) != NULL)
@@ -211,7 +212,7 @@ tpl_contact_from_tp_contact (TpContact *contact)
 
 
 TplContact *
-tpl_contact_new (const gchar *identifier)
+_tpl_contact_new (const gchar *identifier)
 {
   g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
 

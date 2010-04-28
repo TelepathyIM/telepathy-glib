@@ -27,7 +27,6 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/proxy.h>
 
-#include <telepathy-logger/contact.h>
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/observer.h>
 #include <telepathy-logger/log-entry-text.h>
@@ -36,6 +35,7 @@
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/action-chain-internal.h>
+#include <telepathy-logger/contact-internal.h>
 #include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
@@ -1128,7 +1128,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   /* Initialize data for TplContact */
   me = tpl_channel_text_get_my_contact (tpl_text);
-  tpl_contact_sender = tpl_contact_from_tp_contact (me);
+  tpl_contact_sender = _tpl_contact_from_tp_contact (me);
   tpl_contact_set_contact_type (tpl_contact_sender, TPL_CONTACT_USER);
 
   if (!tpl_channel_text_is_chatroom (tpl_text))
@@ -1137,7 +1137,7 @@ on_sent_signal_cb (TpChannel *proxy,
       if (remote == NULL)
         PATH_DEBUG (tpl_text, "sending message: Remote TplContact=NULL on 1-1"
             "Chat");
-      tpl_contact_receiver = tpl_contact_from_tp_contact (remote);
+      tpl_contact_receiver = _tpl_contact_from_tp_contact (remote);
       tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
 
       DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
@@ -1270,11 +1270,11 @@ keepon_on_receiving_signal (TplLogEntryText *log)
   remote = tpl_channel_text_get_remote_contact (tpl_text);
   local = tpl_channel_text_get_my_contact (tpl_text);
 
-  tpl_contact_sender = tpl_contact_from_tp_contact (remote);
+  tpl_contact_sender = _tpl_contact_from_tp_contact (remote);
   tpl_contact_set_contact_type (tpl_contact_sender, TPL_CONTACT_USER);
   tpl_log_entry_text_set_sender (log, tpl_contact_sender);
 
-  tpl_contact_receiver = tpl_contact_from_tp_contact (local);
+  tpl_contact_receiver = _tpl_contact_from_tp_contact (local);
 
   DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
       tpl_log_entry_get_log_id (TPL_LOG_ENTRY (log)),
@@ -1373,7 +1373,7 @@ on_received_signal_cb (TpChannel *proxy,
   tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
 
   me = tpl_channel_text_get_my_contact (tpl_text);
-  tpl_contact_receiver = tpl_contact_from_tp_contact (me);
+  tpl_contact_receiver = _tpl_contact_from_tp_contact (me);
   tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
   tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
 
