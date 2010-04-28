@@ -125,11 +125,7 @@ teardown (Test *test,
 {
   g_clear_error (&test->error);
 
-  if (test->interfaces != NULL)
-    {
-      g_strfreev (test->interfaces);
-      test->interfaces = NULL;
-    }
+  g_strfreev (test->interfaces);
 
   g_object_unref (test->base_client);
   g_object_unref (test->client);
