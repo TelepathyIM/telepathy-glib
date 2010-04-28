@@ -720,6 +720,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
         { "Interfaces", GINT_TO_POINTER (DP_INTERFACES) },
         { NULL }
   };
+#if 0
   static TpDBusPropertiesMixinPropImpl handler_properties[] = {
         { "HandlerChannelFilter",
           GINT_TO_POINTER (DP_HANDLER_CHANNEL_FILTER) },
@@ -736,6 +737,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
           GINT_TO_POINTER (DP_APPROVER_CHANNEL_FILTER) },
         { NULL }
   };
+#endif
   static TpDBusPropertiesMixinPropImpl observer_properties[] = {
         { "ObserverChannelFilter",
           GINT_TO_POINTER (DP_OBSERVER_CHANNEL_FILTER) },
@@ -748,10 +750,12 @@ tp_base_client_class_init (TpBaseClientClass *cls)
           client_properties },
         { TP_IFACE_CLIENT_OBSERVER, tp_base_client_get_dbus_properties, NULL,
           observer_properties },
+#if 0
         { TP_IFACE_CLIENT_APPROVER, tp_base_client_get_dbus_properties, NULL,
           approver_properties },
         { TP_IFACE_CLIENT_HANDLER, tp_base_client_get_dbus_properties, NULL,
           handler_properties },
+#endif
         { NULL }
   };
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
