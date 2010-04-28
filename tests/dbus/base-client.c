@@ -408,7 +408,7 @@ test_observer (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (test->simple_client->observe_ctx != NULL);
-  g_assert (tp_observe_channels_context_get_recovering (
+  g_assert (tp_observe_channels_context_is_recovering (
         test->simple_client->observe_ctx));
 
   /* Now call it with an invalid argument */

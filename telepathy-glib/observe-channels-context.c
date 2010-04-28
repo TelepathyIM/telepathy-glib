@@ -361,7 +361,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
    * It represents the Observer_Info hash table that has been passed to
    * ObserveChannels.
    * It's recommended to use high-level method such as
-   * tp_observe_channels_context_get_recovering() to access to its content.
+   * tp_observe_channels_context_is_recovering() to access to its content.
    *
    * This property can't be %NULL.
    *
@@ -462,7 +462,7 @@ tp_observe_channels_context_delay (TpObserveChannelsContext *self)
 }
 
 /**
- * tp_observe_channels_context_get_recovering:
+ * tp_observe_channels_context_is_recovering:
  * @self: a #TpObserveChannelsContext
  *
  * If the "recovering" key in present in the Observer_Info hash table
@@ -473,7 +473,7 @@ tp_observe_channels_context_delay (TpObserveChannelsContext *self)
  * Since: 0.11.UNRELEASED
  */
 gboolean
-tp_observe_channels_context_get_recovering (TpObserveChannelsContext *self)
+tp_observe_channels_context_is_recovering (TpObserveChannelsContext *self)
 {
   /* tp_asv_get_boolean returns FALSE if the key is not set which is what we
    * want */
