@@ -26,6 +26,9 @@
  * This base class makes it easier to write #TpSvcClient
  * implementations. Subclasses should usually pass the filters they
  * want and override the D-Bus methods they implement.
+ *
+ * See #TpSimpleObserver for a class implementing a simple observer using
+ * #TpBaseClient.
  */
 
 /**
